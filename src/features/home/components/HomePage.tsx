@@ -1,27 +1,55 @@
+import { BookOpen, Sparkles, UserPlus } from 'lucide-react';
+import { Link } from 'react-router';
+import { Button, Card, PageHeader } from '@vitru/styleguide';
+import { useAuth } from '@/features/auth';
+import { BookList } from '@/features/books';
 import styles from './HomePage.module.css';
 
-const NPM_SCRIPTS: ReadonlyArray<{ command: string; description: string }> = [
-  { command: 'npm run dev', description: 'Inicia o servidor de desenvolvimento (Vite)' },
-  { command: 'npm run build', description: 'Type-check e build de produção' },
-  { command: 'npm run lint', description: 'Roda o ESLint' },
-  { command: 'npm run format', description: 'Formata os arquivos com Prettier' },
-  { command: 'npm run typecheck', description: 'Verifica os tipos com o TypeScript' },
-  { command: 'npm run test', description: 'Roda os testes com Vitest' },
-  { command: 'npm run validate', description: 'Roda toda a suíte de verificações' },
-];
-
 export function HomePage() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return null;
+  }
+
+  if (user) {
+    return <BookList authorId={user.uid} />;
+  }
+
   return (
-    <section className={styles.section}>
-      <h2>Comandos npm disponíveis</h2>
-      <ul className={styles.scripts}>
-        {NPM_SCRIPTS.map(({ command, description }) => (
-          <li key={command}>
-            <code>{command}</code>
-            <span>{description}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <div className={styles.landing}>
+      <Card tone="raised">
+        <div className={styles.hero}>
+          <PageHeader
+            title="Assistente para Autores de Ficção"
+            description="Escreva livros com compêndio integrado de lore, continuidade de personagens e assistência de inteligência artificial em tempo real."
+          />
+
+          <div className={styles.features}>
+            <div className={styles.featureItem}>
+              <BookOpen className="icon" aria-hidden="true" />
+              <h3>Gestão de Livros e Capítulos</h3>
+              <p>Estruture suas histórias, organize capítulos e acompanhe contagem de palavras.</p>
+            </div>
+            <div className={styles.featureItem}>
+              <Sparkles className="icon" aria-hidden="true" />
+              <h3>Lore e Personagens Conectados</h3>
+              <p>
+                Mantenha a consistência da narrativa com tooltips automáticos e sidebar de contexto.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.cta}>
+            <Link to="/login">
+              <Button variant="primary">
+                <UserPlus className="icon icon-sm" aria-hidden="true" />
+                Começar a Escrever Gratuitamente
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 }

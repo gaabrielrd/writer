@@ -29,24 +29,24 @@ Implementar a feature `books` com listagem e criação de livros no painel princ
 
 ## Critérios de aceite
 
-- [ ] Autor autenticado na página inicial visualiza seus livros cadastrados em cards ricos.
-- [ ] Quando o autor não possui livros, é apresentado o `EmptyState` com botão claro "Criar Primeiro Livro".
-- [ ] Autor pode criar um novo livro informando título, gênero e sinopse; o livro é salvo no Firestore com status "draft".
-- [ ] Autor pode criar, renomear e excluir capítulos dentro de um livro.
-- [ ] A contagem total de palavras do livro reflete a soma dos capítulos cadastrados.
-- [ ] O autor pode alternar o status do livro entre "Rascunho" e "Publicado".
-- [ ] Testes cobrem o ciclo de vida de livros e capítulos no Firestore.
+- [x] Autor autenticado na página inicial visualiza seus livros cadastrados em cards ricos.
+- [x] Quando o autor não possui livros, é apresentado o `EmptyState` com botão claro "Criar Primeiro Livro".
+- [x] Autor pode criar um novo livro informando título, gênero e sinopse; o livro é salvo no Firestore com status "draft".
+- [x] Autor pode criar, renomear e excluir capítulos dentro de um livro.
+- [x] A contagem total de palavras do livro reflete a soma dos capítulos cadastrados.
+- [x] O autor pode alternar o status do livro entre "Rascunho" e "Publicado".
+- [x] Testes cobrem o ciclo de vida de livros e capítulos no Firestore.
 
 ## Tarefas
 
-- [ ] 1. Gerar a feature `src/features/books` (`npm run generate:feature -- --name="books"`).
-- [ ] 2. Definir os modelos e validações em `src/features/books/model/`.
-- [ ] 3. Implementar serviços de persistência e consultas Firestore em `src/features/books/services/bookService.ts`.
-- [ ] 4. Criar componentes visuais (`BookCard`, `BookList`, `BookFormDialog`, `ChapterList`) com `@vitru/styleguide`.
-- [ ] 5. Implementar hooks de gerenciamento `useBooks` e `useChapters`.
-- [ ] 6. Atualizar a página inicial (`HomePage`) para renderizar `BookList` para usuários autenticados.
-- [ ] 7. Escrever testes em `src/features/books/tests/`.
-- [ ] 8. Executar `npm run validate` e garantir 100% de sucesso.
+- [x] 1. Gerar a feature `src/features/books` (`npm run generate:feature -- --name="books"`).
+- [x] 2. Definir os modelos e validações em `src/features/books/model/`.
+- [x] 3. Implementar serviços de persistência e consultas Firestore em `src/features/books/services/bookService.ts`.
+- [x] 4. Criar componentes visuais (`BookCard`, `BookList`, `BookFormDialog`, `ChapterList`) com `@vitru/styleguide`.
+- [x] 5. Implementar hooks de gerenciamento `useBooks` e `useChapters`.
+- [x] 6. Atualizar a página inicial (`HomePage`) para renderizar `BookList` para usuários autenticados.
+- [x] 7. Escrever testes em `src/features/books/tests/`.
+- [x] 8. Executar `npm run validate` e garantir 100% de sucesso.
 
 ## Riscos
 
