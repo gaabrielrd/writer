@@ -6,6 +6,42 @@ import { useAuth } from '../hooks/useAuth';
 import { useGoogleOneTap } from '../hooks/useGoogleOneTap';
 import styles from './LoginPage.module.css';
 
+export function formatAuthError(err: unknown): string | null {
+  if (!(err instanceof Error)) return 'Erro ao processar autenticação.';
+
+  const msg = err.message || '';
+  if (
+    msg.includes('auth/popup-closed-by-user') ||
+    msg.includes('popup-closed') ||
+    msg.includes('Popup cancelado')
+  ) {
+    return 'Autenticação cancelada pelo usuário.';
+  }
+  if (msg.includes('auth/cancelled-popup-request')) {
+    return null;
+  }
+  if (msg.includes('auth/unauthorized-domain')) {
+    return 'Domínio não autorizado no Firebase Console. Adicione o domínio nas configurações de autenticação do Firebase.';
+  }
+  if (msg.includes('Database is closing') || msg.includes('closing/hidden')) {
+    return null;
+  }
+  if (
+    msg.includes('auth/invalid-credential') ||
+    msg.includes('auth/wrong-password') ||
+    msg.includes('auth/user-not-found')
+  ) {
+    return 'E-mail ou senha incorretos.';
+  }
+  if (msg.includes('auth/email-already-in-use')) {
+    return 'Este e-mail já está cadastrado. Tente entrar.';
+  }
+  if (msg.includes('auth/weak-password')) {
+    return 'A senha deve conter no mínimo 6 caracteres.';
+  }
+  return msg;
+}
+
 export function LoginPage() {
   const { user, signInWithGoogle, signInWithGoogleIdToken, signInWithEmail, signUpWithEmail } =
     useAuth();
@@ -27,9 +63,8 @@ export function LoginPage() {
         await signInWithGoogleIdToken(idToken);
         void navigate('/');
       } catch (err) {
-        setLocalError(
-          err instanceof Error ? err.message : 'Erro ao autenticar com Google One Tap.',
-        );
+        const friendly = formatAuthError(err);
+        if (friendly) setLocalError(friendly);
       } finally {
         setIsSubmitting(false);
       }
@@ -54,7 +89,8 @@ export function LoginPage() {
         }
         void navigate('/');
       } catch (err) {
-        setLocalError(err instanceof Error ? err.message : 'Erro ao processar autenticação.');
+        const friendly = formatAuthError(err);
+        if (friendly) setLocalError(friendly);
       } finally {
         setIsSubmitting(false);
       }
@@ -69,7 +105,8 @@ export function LoginPage() {
         await signInWithGoogle();
         void navigate('/');
       } catch (err) {
-        setLocalError(err instanceof Error ? err.message : 'Erro ao autenticar com Google.');
+        const friendly = formatAuthError(err);
+        if (friendly) setLocalError(friendly);
       } finally {
         setIsSubmitting(false);
       }

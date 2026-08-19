@@ -1,7 +1,12 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { initializeAppCheck, ReCaptchaEnterpriseProvider, type AppCheck } from 'firebase/app-check';
+import {
+  initializeAppCheck,
+  ReCaptchaV3Provider,
+  ReCaptchaEnterpriseProvider,
+  type AppCheck,
+} from 'firebase/app-check';
 import { getAI, GoogleAIBackend, type AI } from 'firebase/ai';
 import { env } from '@/shared/config';
 
@@ -23,12 +28,19 @@ export function getAppCheck(): AppCheck | null {
 
   try {
     return initializeAppCheck(firebaseApp, {
-      provider: new ReCaptchaEnterpriseProvider(env.firebase.appCheckKey),
+      provider: new ReCaptchaV3Provider(env.firebase.appCheckKey),
       isTokenAutoRefreshEnabled: true,
     });
   } catch {
-    // AppCheck may be already initialized or skipped in test environment
-    return null;
+    try {
+      return initializeAppCheck(firebaseApp, {
+        provider: new ReCaptchaEnterpriseProvider(env.firebase.appCheckKey),
+        isTokenAutoRefreshEnabled: true,
+      });
+    } catch {
+      // AppCheck may be already initialized or skipped in test environment
+      return null;
+    }
   }
 }
 

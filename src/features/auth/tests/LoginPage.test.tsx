@@ -95,7 +95,7 @@ describe('LoginPage', () => {
     renderLoginPage({ signInWithGoogle: mockSignInGoogle });
 
     await user.click(screen.getByRole('button', { name: /continuar com google/i }));
-    expect(await screen.findByText(/popup cancelado/i)).toBeInTheDocument();
+    expect(await screen.findByText(/autenticação cancelada/i)).toBeInTheDocument();
   });
 
   it('executa signInWithGoogle com sucesso', async () => {
