@@ -1,15 +1,13 @@
 import { expect, test } from '@playwright/test';
 
-test('executa o fluxo principal e preserva a rota de fallback', async ({ page }) => {
+test('executa a navegacao principal, tela de login e rota de fallback', async ({ page }) => {
   await page.goto('/');
 
-  await page.getByRole('textbox', { name: 'Título da nota' }).fill('Nota pelo navegador');
-  await page.getByRole('button', { name: 'Adicionar' }).click();
-  await expect(page.getByText('Nota pelo navegador')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Writer Assistant' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /entrar/i })).toBeVisible();
 
-  await page.getByRole('button', { name: 'Remover nota: Nota pelo navegador' }).click();
-  await expect(page.getByText('Nota pelo navegador')).toBeHidden();
-  await expect(page.getByText(/Nenhuma nota ainda/)).toBeVisible();
+  await page.getByRole('button', { name: /entrar/i }).click();
+  await expect(page.getByRole('heading', { name: /entrar no writer assistant/i })).toBeVisible();
 
   await page.goto('/rota-que-nao-existe');
   await expect(page.getByRole('heading', { name: /pagina nao encontrada/i })).toBeVisible();
