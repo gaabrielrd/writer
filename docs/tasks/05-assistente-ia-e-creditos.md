@@ -31,25 +31,25 @@ Implementar a feature `ai-assistant` contendo o cliente de integração com mode
 
 ## Critérios de aceite
 
-- [ ] Autor com créditos disponíveis pausa a digitação por mais de 600ms e recebe uma sugestão de continuação contextualizada em texto translúcido.
-- [ ] Pressionar `Tab` insere o texto sugerido no editor e debita exatamente 1 crédito do saldo do autor no Firestore.
-- [ ] Pressionar `Esc` ou continuar a digitação cancela a sugestão sem debitar nenhum crédito.
-- [ ] Menu de ações sob demanda permite selecionar texto e solicitar melhorias de estilo ou expansão de cena.
-- [ ] Quando o saldo de créditos chega a zero e não há chave BYOK, as chamadas de IA são pausadas e o modal `OutOfCreditsDialog` é oferecido sem interromper a digitação manual nem o salvamento.
-- [ ] Autor pode cadastrar sua chave de API nas configurações locais (BYOK); quando preenchida, as chamadas utilizam a chave informada e não consomem créditos do sistema.
-- [ ] Testes cobrem o comportamento observável do autocomplete, débito no aceite e descarte sem cobrança.
+- [x] Autor com créditos disponíveis pausa a digitação por mais de 600ms e recebe uma sugestão de continuação contextualizada em texto translúcido.
+- [x] Pressionar `Tab` insere o texto sugerido no editor e debita exatamente 1 crédito do saldo do autor no Firestore.
+- [x] Pressionar `Esc` ou continuar a digitação cancela a sugestão sem debitar nenhum crédito.
+- [x] Menu de ações sob demanda permite selecionar texto e solicitar melhorias de estilo ou expansão de cena.
+- [x] Quando o saldo de créditos chega a zero e não há chave BYOK, as chamadas de IA são pausadas e o modal `OutOfCreditsDialog` é oferecido sem interromper a digitação manual nem o salvamento.
+- [x] Autor pode cadastrar sua chave de API nas configurações locais (BYOK); quando preenchida, as chamadas utilizam a chave informada e não consomem créditos do sistema.
+- [x] Testes cobrem o comportamento observável do autocomplete, débito no aceite e descarte sem cobrança.
 
 ## Tarefas
 
-- [ ] 1. Gerar a feature `src/features/ai-assistant` (`npm run generate:feature -- --name="ai-assistant"`).
-- [ ] 2. Implementar os modelos de prompt contextual e tipos de configuração em `model/`.
-- [ ] 3. Implementar o serviço de chamadas de IA `aiClient.ts` e o repositório `byokStorage.ts`.
-- [ ] 4. Implementar o serviço de débito transacional de créditos em `creditsService.ts`.
-- [ ] 5. Construir o hook `useAIAutocomplete` com debounce e controle de teclado (`Tab` e `Esc`).
-- [ ] 6. Criar os componentes de interface (`GhostSuggestion`, `AIActionMenu`, `OutOfCreditsDialog`, `BYOKSettingsDialog`).
-- [ ] 7. Integrar o autocomplete e o menu de ações ao `RichEditor` da feature `editor`.
-- [ ] 8. Escrever testes em `src/features/ai-assistant/tests/`.
-- [ ] 9. Executar `npm run validate` e garantir 100% de sucesso.
+- [x] 1. Gerar a feature `src/features/ai-assistant` (`npm run generate:feature -- --name="ai-assistant"`).
+- [x] 2. Implementar os modelos de prompt contextual e tipos de configuração em `model/`.
+- [x] 3. Implementar o serviço de chamadas de IA `aiClient.ts` e o repositório `byokStorage.ts`.
+- [x] 4. Implementar o serviço de débito transacional de créditos em `creditsService.ts`.
+- [x] 5. Construir o hook `useAIAutocomplete` com debounce e controle de teclado (`Tab` e `Esc`).
+- [x] 6. Criar os componentes de interface (`GhostSuggestion`, `AIActionMenu`, `OutOfCreditsDialog`, `BYOKSettingsDialog`).
+- [x] 7. Integrar o autocomplete e o menu de ações ao `RichEditor` da feature `editor`.
+- [x] 8. Escrever testes em `src/features/ai-assistant/tests/`.
+- [x] 9. Executar `npm run validate` e garantir 100% de sucesso.
 
 ## Riscos
 

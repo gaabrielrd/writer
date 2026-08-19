@@ -10,6 +10,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Button, ErrorState, LoadingState } from '@vitru/styleguide';
+import { useAuth, CreditsBadge } from '@/features/auth';
 import { getBook, listChapters, getChapter, type Book, type Chapter } from '@/features/books';
 import {
   listLoreEntities,
@@ -25,8 +26,12 @@ import { EditorLoreSidebar } from './EditorLoreSidebar';
 import styles from './EditorPage.module.css';
 
 export function EditorPage() {
-  const { bookId, chapterId } = useParams<{ bookId: string; chapterId: string }>();
+  const { bookId, chapterId } = useParams<{
+    bookId: string;
+    chapterId: string;
+  }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [book, setBook] = useState<Book | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -35,6 +40,8 @@ export function EditorPage() {
 
   const [content, setContent] = useState<string>('');
   const [wordCount, setWordCount] = useState<number>(0);
+  const [overrideCredits, setOverrideCredits] = useState<number | null>(null);
+  const currentCredits = overrideCredits ?? user?.credits ?? 0;
 
   const [loading, setLoading] = useState<boolean>(() => Boolean(bookId && chapterId));
   const [error, setError] = useState<string | null>(null);
@@ -168,6 +175,8 @@ export function EditorPage() {
         </div>
 
         <div className={styles.topBarRight}>
+          <CreditsBadge credits={currentCredits} tier={user?.tier || 'free'} />
+
           <div className={styles.saveStatusWrapper} aria-live="polite">
             {saveStatus === 'saving' && (
               <span className={styles.statusSaving}>
@@ -240,6 +249,9 @@ export function EditorPage() {
           onSelectEntity={handleSelectEntity}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          userId={user?.uid}
+          userCredits={currentCredits}
+          onCreditDeducted={(newTotal) => setOverrideCredits(newTotal)}
         />
 
         <EditorLoreSidebar

@@ -36,10 +36,17 @@ describe('createEnv', () => {
     const env = createEnv(raw());
     expect(env.firebase.projectId).toBe('writer-44cd5');
     expect(env.firebase.apiKey).toBe('AIzaSyB1mNeWUowIT4o638JUf9vJBGWhp6I4vAY');
+    expect(env.firebase.appCheckKey).toBe('6LePNI4tAAAAAFAMXZqWQlT1FxZkdbUU-7j9Amfz');
   });
 
   it('permite sobrescrever valores de configuracao do firebase', () => {
-    const env = createEnv(raw({ VITE_FIREBASE_PROJECT_ID: 'custom-proj' }));
+    const env = createEnv(
+      raw({
+        VITE_FIREBASE_PROJECT_ID: 'custom-proj',
+        VITE_FIREBASE_APPCHECK_KEY: 'custom-key',
+      }),
+    );
     expect(env.firebase.projectId).toBe('custom-proj');
+    expect(env.firebase.appCheckKey).toBe('custom-key');
   });
 });

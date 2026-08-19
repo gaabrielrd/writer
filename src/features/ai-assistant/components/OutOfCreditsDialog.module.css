@@ -1,0 +1,65 @@
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+}
+
+.iconWrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-full, 9999px);
+  background-color: var(--surface-quiet);
+  border: 1px solid var(--line);
+}
+
+.alertIcon {
+  color: var(--danger);
+  width: 32px;
+  height: 32px;
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--ink);
+  margin: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--surface-quiet);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  width: 100%;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--ink);
+  font-size: var(--text-sm);
+}
+
+.cardText {
+  font-size: var(--text-xs);
+  color: var(--ink-quiet);
+  line-height: var(--line-height-normal, 1.4);
+  margin: 0;
+}
+
+.footerActions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: var(--space-2);
+}

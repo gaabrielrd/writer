@@ -1,4 +1,11 @@
-import { useState, useRef, useMemo, type KeyboardEvent, type ChangeEvent } from 'react';
+import {
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  type KeyboardEvent,
+  type ChangeEvent,
+} from 'react';
 import {
   Bold,
   Italic,
@@ -10,6 +17,7 @@ import {
   BookOpen,
   Eye,
   Edit3,
+  KeyRound,
 } from 'lucide-react';
 import { Button, Badge } from '@vitru/styleguide';
 import {
@@ -19,6 +27,14 @@ import {
   type LoreEntity,
   type LoreMatch,
 } from '@/features/lore';
+import {
+  useAIAutocomplete,
+  GhostSuggestion,
+  AIActionMenu,
+  OutOfCreditsDialog,
+  BYOKSettingsDialog,
+  getBYOKConfig,
+} from '@/features/ai-assistant';
 import { MentionMenu } from './MentionMenu';
 import styles from './RichEditor.module.css';
 
@@ -30,6 +46,9 @@ export interface RichEditorProps {
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   placeholder?: string;
+  userId?: string | null;
+  userCredits?: number;
+  onCreditDeducted?: (newCredits: number) => void;
 }
 
 const CATEGORY_BADGES: Record<
@@ -50,8 +69,15 @@ export function RichEditor({
   isSidebarOpen,
   onToggleSidebar,
   placeholder = 'Comece a escrever seu capítulo aqui...',
+  userId,
+  userCredits = 0,
+  onCreditDeducted,
 }: RichEditorProps) {
   const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
+  const [cursorPosition, setCursorPosition] = useState<number>(0);
+  const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
+  const [isBYOKSettingsOpen, setIsBYOKSettingsOpen] = useState(false);
+
   const [mentionState, setMentionState] = useState<{
     isOpen: boolean;
     query: string;
@@ -65,6 +91,20 @@ export function RichEditor({
   });
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const isUsingBYOK = getBYOKConfig().provider !== 'firebase_ai';
+
+  // Hook de Autocomplete Preditivo de IA
+  const { suggestion, acceptSuggestion, discardSuggestion } = useAIAutocomplete({
+    content,
+    cursorPosition,
+    loreEntities: entities,
+    userId,
+    userCredits,
+    onCreditDeducted,
+    onShowOutOfCredits: () => setIsOutOfCreditsOpen(true),
+    enabled: viewMode === 'write',
+  });
 
   // Mapeia todas as ocorrências de lore no texto atual
   const matches = useMemo(() => {
@@ -114,6 +154,7 @@ export function RichEditor({
       textarea.focus();
       const newCursorPos = start + prefix.length + (selectedText ? selectedText.length : 5);
       textarea.setSelectionRange(newCursorPos, newCursorPos);
+      setCursorPosition(newCursorPos);
     }, 0);
   };
 
@@ -131,6 +172,7 @@ export function RichEditor({
       textarea.focus();
       const newCursorPos = start + 2;
       textarea.setSelectionRange(newCursorPos, newCursorPos);
+      setCursorPosition(newCursorPos);
     }, 0);
   };
 
@@ -158,12 +200,37 @@ export function RichEditor({
       textarea.focus();
       const newPos = before.length + insertion.length;
       textarea.setSelectionRange(newPos, newPos);
+      setCursorPosition(newPos);
     }, 0);
   };
+
+  const handleAcceptGhost = useCallback(async () => {
+    const acceptedText = await acceptSuggestion();
+    if (!acceptedText) return;
+
+    const textarea = textareaRef.current;
+    const cursor = textarea ? textarea.selectionStart : content.length;
+    const before = content.substring(0, cursor);
+    const after = content.substring(cursor);
+
+    const toInsert = (before.endsWith(' ') ? '' : ' ') + acceptedText;
+    const newContent = before + toInsert + after;
+    onChange(newContent);
+
+    setTimeout(() => {
+      if (textarea) {
+        textarea.focus();
+        const newPos = before.length + toInsert.length;
+        textarea.setSelectionRange(newPos, newPos);
+        setCursorPosition(newPos);
+      }
+    }, 0);
+  }, [acceptSuggestion, content, onChange]);
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const newText = e.target.value;
     const cursorPos = e.target.selectionStart;
+    setCursorPosition(cursorPos);
     onChange(newText);
 
     // Detecção de caractere de menção @
@@ -230,6 +297,20 @@ export function RichEditor({
         });
         return;
       }
+    }
+
+    // Atalho Tab: aceitar sugestão preditiva de IA
+    if (e.key === 'Tab' && suggestion) {
+      e.preventDefault();
+      void handleAcceptGhost();
+      return;
+    }
+
+    // Atalho Escape: descartar sugestão preditiva
+    if (e.key === 'Escape' && suggestion) {
+      e.preventDefault();
+      discardSuggestion();
+      return;
     }
 
     // Atalhos de formatação de escrita
@@ -333,6 +414,32 @@ export function RichEditor({
     );
   };
 
+  const getSelectedText = (): string => {
+    const textarea = textareaRef.current;
+    if (!textarea) return '';
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    return content.substring(start, end);
+  };
+
+  const handleReplaceSelection = (replacement: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newContent = content.substring(0, start) + replacement + content.substring(end);
+    onChange(newContent);
+  };
+
+  const handleInsertText = (textToInsert: string) => {
+    const textarea = textareaRef.current;
+    const cursor = textarea ? textarea.selectionStart : content.length;
+    const before = content.substring(0, cursor);
+    const after = content.substring(cursor);
+    const newContent = before + '\n\n' + textToInsert + '\n\n' + after;
+    onChange(newContent);
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.toolbar} role="toolbar" aria-label="Ferramentas de escrita">
@@ -403,6 +510,27 @@ export function RichEditor({
         </div>
 
         <div className={styles.toolGroup}>
+          <AIActionMenu
+            onGetSelectedText={getSelectedText}
+            loreEntities={entities}
+            userId={userId}
+            userCredits={userCredits}
+            onCreditDeducted={onCreditDeducted}
+            onShowOutOfCredits={() => setIsOutOfCreditsOpen(true)}
+            onInsertText={handleInsertText}
+            onReplaceSelection={handleReplaceSelection}
+            onOpenBYOKSettings={() => setIsBYOKSettingsOpen(true)}
+          />
+
+          <Button
+            variant="secondary"
+            onClick={() => setIsBYOKSettingsOpen(true)}
+            title="Configurações de IA e Chaves de API (BYOK)"
+            aria-label="Configurações de IA e Chaves de API"
+          >
+            <KeyRound className="icon icon-sm" aria-hidden="true" />
+          </Button>
+
           <button
             type="button"
             className={`${styles.modeBtn} ${viewMode === 'write' ? styles.modeBtnActive : ''}`}
@@ -470,6 +598,15 @@ export function RichEditor({
               spellCheck={true}
             />
 
+            {suggestion && (
+              <GhostSuggestion
+                suggestion={suggestion}
+                onAccept={() => void handleAcceptGhost()}
+                onDiscard={discardSuggestion}
+                isUsingBYOK={isUsingBYOK}
+              />
+            )}
+
             {mentionState.isOpen && (
               <div className={styles.mentionMenuWrapper}>
                 <MentionMenu
@@ -478,7 +615,10 @@ export function RichEditor({
                   selectedIndex={mentionState.selectedIndex}
                   onSelect={handleSelectMention}
                   onHoverIndex={(idx) =>
-                    setMentionState((prev) => ({ ...prev, selectedIndex: idx }))
+                    setMentionState((prev) => ({
+                      ...prev,
+                      selectedIndex: idx,
+                    }))
                   }
                 />
               </div>
@@ -494,6 +634,17 @@ export function RichEditor({
           </div>
         )}
       </div>
+
+      <OutOfCreditsDialog
+        open={isOutOfCreditsOpen}
+        onClose={() => setIsOutOfCreditsOpen(false)}
+        onOpenBYOKSettings={() => {
+          setIsOutOfCreditsOpen(false);
+          setIsBYOKSettingsOpen(true);
+        }}
+      />
+
+      <BYOKSettingsDialog open={isBYOKSettingsOpen} onClose={() => setIsBYOKSettingsOpen(false)} />
     </div>
   );
 }

@@ -8,6 +8,25 @@ import * as loreService from '@/features/lore';
 import type { Book, Chapter } from '@/features/books';
 import type { LoreEntity } from '@/features/lore';
 
+vi.mock('@/features/auth', async () => {
+  const actual = await vi.importActual<typeof import('@/features/auth')>('@/features/auth');
+  return {
+    ...actual,
+    useAuth: vi.fn(() => ({
+      user: {
+        id: 'auth-1',
+        email: 'autor@exemplo.com',
+        name: 'Autor',
+        tier: 'free',
+        credits: 10,
+        createdAt: 1000,
+        updatedAt: 1000,
+      },
+      loading: false,
+    })),
+  };
+});
+
 describe('EditorPage', () => {
   const mockBook: Book = {
     id: 'b-1',

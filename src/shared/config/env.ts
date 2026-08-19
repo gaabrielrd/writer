@@ -22,6 +22,7 @@ export interface FirebaseConfig {
   readonly messagingSenderId: string;
   readonly appId: string;
   readonly measurementId?: string;
+  readonly appCheckKey?: string;
 }
 
 export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
@@ -32,6 +33,7 @@ export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
   messagingSenderId: '404822288771',
   appId: '1:404822288771:web:4f1b6e123c716374d76eb6',
   measurementId: 'G-XXK14L9PFH',
+  appCheckKey: '6LePNI4tAAAAAFAMXZqWQlT1FxZkdbUU-7j9Amfz',
 };
 
 export interface Env {
@@ -108,6 +110,8 @@ export function createEnv(raw: ImportMetaEnv): Env {
     appId: readOptional(raw, 'VITE_FIREBASE_APP_ID') ?? DEFAULT_FIREBASE_CONFIG.appId,
     measurementId:
       readOptional(raw, 'VITE_FIREBASE_MEASUREMENT_ID') ?? DEFAULT_FIREBASE_CONFIG.measurementId,
+    appCheckKey:
+      readOptional(raw, 'VITE_FIREBASE_APPCHECK_KEY') ?? DEFAULT_FIREBASE_CONFIG.appCheckKey,
   };
 
   return {

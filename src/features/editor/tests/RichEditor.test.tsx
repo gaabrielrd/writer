@@ -3,6 +3,22 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RichEditor } from '../components/RichEditor';
 import type { LoreEntity } from '@/features/lore';
+import * as aiAssistantModule from '@/features/ai-assistant';
+
+vi.mock('@/features/ai-assistant', async () => {
+  const actual = await vi.importActual<typeof aiAssistantModule>('@/features/ai-assistant');
+  return {
+    ...actual,
+    useAIAutocomplete: vi.fn(() => ({
+      suggestion: 'sugestão mágica de IA',
+      isLoading: false,
+      error: null,
+      acceptSuggestion: vi.fn().mockResolvedValue('sugestão mágica de IA'),
+      discardSuggestion: vi.fn(),
+      triggerManualAutocomplete: vi.fn(),
+    })),
+  };
+});
 
 describe('RichEditor', () => {
   const mockEntities: LoreEntity[] = [
@@ -226,5 +242,89 @@ describe('RichEditor', () => {
     expect(screen.getByRole('listbox')).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('permite aceitar sugestao com Tab e abrir configuracoes de IA / BYOK', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(
+      <RichEditor
+        content="Texto de teste para editor"
+        onChange={onChange}
+        entities={mockEntities}
+        onSelectEntity={vi.fn()}
+        isSidebarOpen={false}
+        onToggleSidebar={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('sugestão mágica de IA')).toBeInTheDocument();
+
+    const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
+    textarea.focus();
+    await user.keyboard('{Tab}');
+
+    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('sugestão mágica de IA'));
+
+    const byokBtn = screen.getByRole('button', {
+      name: /configurações de ia e chaves de api/i,
+    });
+    await user.click(byokBtn);
+
+    expect(screen.getByText('Configurações de Inteligência Artificial')).toBeInTheDocument();
+  });
+
+  it('descarta sugestao com Escape', async () => {
+    const user = userEvent.setup();
+    const discardFn = vi.fn();
+    vi.mocked(aiAssistantModule.useAIAutocomplete).mockReturnValueOnce({
+      suggestion: 'sugestão temporária',
+      isLoading: false,
+      error: null,
+      acceptSuggestion: vi.fn(),
+      discardSuggestion: discardFn,
+      triggerManualAutocomplete: vi.fn(),
+    });
+
+    render(
+      <RichEditor
+        content="Era uma noite fria"
+        onChange={vi.fn()}
+        entities={mockEntities}
+        onSelectEntity={vi.fn()}
+        isSidebarOpen={false}
+        onToggleSidebar={vi.fn()}
+      />,
+    );
+
+    const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
+    textarea.focus();
+    await user.keyboard('{Escape}');
+
+    expect(discardFn).toHaveBeenCalled();
+  });
+
+  it('permite abrir o menu de acoes de IA e inserir texto gerado', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(
+      <RichEditor
+        content="Texto do capitulo"
+        onChange={onChange}
+        entities={mockEntities}
+        onSelectEntity={vi.fn()}
+        isSidebarOpen={false}
+        onToggleSidebar={vi.fn()}
+      />,
+    );
+
+    const aiMenuBtn = screen.getByRole('button', {
+      name: /Abrir Assistente Criativo de IA/i,
+    });
+    await user.click(aiMenuBtn);
+
+    expect(screen.getByRole('heading', { name: 'Assistente Criativo de IA' })).toBeInTheDocument();
   });
 });
