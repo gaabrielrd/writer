@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowDown, ArrowUp, Edit2, Plus, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { ArrowDown, ArrowUp, Edit2, PenLine, Plus, Trash2 } from 'lucide-react';
 import { Alert, Button, Dialog, Input, LoadingState } from '@vitru/styleguide';
 import type { Book } from '../model/book';
 import type { Chapter } from '../model/chapter';
@@ -14,6 +15,7 @@ export interface ChapterListProps {
 }
 
 export function ChapterList({ book, open, onClose, onChapterCountChanged }: ChapterListProps) {
+  const navigate = useNavigate();
   const { chapters, loading, error, createChapter, updateChapter, deleteChapter, reorderChapters } =
     useChapters(open ? book.id : null);
 
@@ -168,6 +170,15 @@ export function ChapterList({ book, open, onClose, onChapterCountChanged }: Chap
                 </div>
 
                 <div className={styles.chapterActions}>
+                  <Button
+                    variant="primary"
+                    onClick={() => void navigate(`/books/${book.id}/editor/${ch.id}`)}
+                    title="Abrir no editor de escrita"
+                    aria-label={`Escrever ${ch.title}`}
+                  >
+                    <PenLine className="icon icon-sm" aria-hidden="true" />
+                    Escrever
+                  </Button>
                   <Button
                     variant="secondary"
                     onClick={() => handleMove(index, 'up')}

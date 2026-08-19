@@ -5,6 +5,7 @@ import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallbac
 import { HomePage } from '@/features/home';
 import { LoginPage } from '@/features/auth';
 import { LorePage } from '@/features/lore';
+import { EditorPage } from '@/features/editor';
 
 /**
  * Definicao das rotas, separada do router para permitir montar a mesma
@@ -28,6 +29,10 @@ export const routes: RouteObject[] = [
       {
         path: 'books/:bookId/lore',
         element: <LorePage />,
+      },
+      {
+        path: 'books/:bookId/editor/:chapterId',
+        element: <EditorPage />,
       },
       {
         // Referência viva fornecida pelo pacote compartilhado.

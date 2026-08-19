@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { ChapterList } from '../components/ChapterList';
 import * as bookService from '../services/bookService';
 import type { Book } from '../model/book';
@@ -50,17 +51,26 @@ describe('ChapterList', () => {
   it('lista capitulos do livro com contagem de palavras e total', async () => {
     vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
 
-    render(<ChapterList book={mockBook} open={true} onClose={vi.fn()} />);
+    render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open={true} onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
 
     expect(await screen.findByText('Capítulo 1')).toBeInTheDocument();
     expect(screen.getByText('Capítulo 2')).toBeInTheDocument();
     expect(screen.getByText(/1\.500/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Escrever Capítulo 1' })).toBeInTheDocument();
   });
 
   it('exibe alerta quando ocorre erro ao carregar', async () => {
     vi.spyOn(bookService, 'listChapters').mockRejectedValueOnce(new Error('Erro de carregamento'));
 
-    render(<ChapterList book={mockBook} open={true} onClose={vi.fn()} />);
+    render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open={true} onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
 
     expect(await screen.findByText('Erro de carregamento')).toBeInTheDocument();
   });
@@ -79,7 +89,11 @@ describe('ChapterList', () => {
       updatedAt: 2000,
     });
 
-    render(<ChapterList book={mockBook} open={true} onClose={vi.fn()} />);
+    render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open={true} onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
 
     await screen.findByText('Capítulo 1');
 
@@ -94,7 +108,11 @@ describe('ChapterList', () => {
     vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
     vi.spyOn(bookService, 'updateChapter').mockResolvedValue();
 
-    render(<ChapterList book={mockBook} open={true} onClose={vi.fn()} />);
+    render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open={true} onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
 
     await screen.findByText('Capítulo 1');
 
@@ -125,7 +143,11 @@ describe('ChapterList', () => {
     vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
     vi.spyOn(bookService, 'reorderChapters').mockResolvedValue();
 
-    render(<ChapterList book={mockBook} open={true} onClose={vi.fn()} />);
+    render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open={true} onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
 
     await screen.findByText('Capítulo 1');
 
@@ -143,7 +165,11 @@ describe('ChapterList', () => {
     vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
     vi.spyOn(bookService, 'deleteChapter').mockResolvedValue();
 
-    render(<ChapterList book={mockBook} open={true} onClose={vi.fn()} />);
+    render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open={true} onClose={vi.fn()} />
+      </MemoryRouter>,
+    );
 
     await screen.findByText('Capítulo 1');
 

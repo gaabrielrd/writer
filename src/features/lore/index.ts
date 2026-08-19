@@ -1,5 +1,6 @@
 export * from './model';
 export * from './services';
+export * as loreService from './services';
 export * from './hooks/useLore';
 export { LoreTooltip } from './components/LoreTooltip';
 export type { LoreTooltipProps } from './components/LoreTooltip';
