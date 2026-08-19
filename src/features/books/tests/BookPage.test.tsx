@@ -108,9 +108,10 @@ describe('BookPage', () => {
     expect(bookService.updateBook).toHaveBeenCalledWith('book-1', { status: 'published' });
   });
 
-  it('permite abrir dialogo de edicao', async () => {
+  it('permite abrir dialogo de edicao e salvar alteracoes', async () => {
     const user = userEvent.setup();
     vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'updateBook').mockResolvedValue();
     vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
 
     renderBookPage();
@@ -119,5 +120,46 @@ describe('BookPage', () => {
 
     await user.click(screen.getByRole('button', { name: /editar/i }));
     expect(screen.getByRole('heading', { name: 'Editar Obra' })).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText(/título da obra/i), ' Final');
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+
+    expect(bookService.updateBook).toHaveBeenCalledWith(
+      'book-1',
+      expect.objectContaining({ title: 'A Jornada do Herói Final' }),
+    );
+  });
+
+  it('permite excluir o livro e redirecionar para a home', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'deleteBook').mockResolvedValue();
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+
+    renderBookPage();
+
+    await screen.findByText('A Jornada do Herói');
+
+    const deleteBtn = screen.getByRole('button', { name: 'Excluir' });
+    await user.click(deleteBtn);
+
+    expect(bookService.deleteBook).toHaveBeenCalledWith('book-1');
+  });
+
+  it('permite abrir modal de importacao de capitulos', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+
+    renderBookPage();
+
+    await screen.findByText('A Jornada do Herói');
+
+    const importBtn = screen.getByRole('button', { name: /importar docx\/pdf/i });
+    await user.click(importBtn);
+
+    expect(
+      screen.getByRole('heading', { name: 'Importar Capítulos — A Jornada do Herói' }),
+    ).toBeInTheDocument();
   });
 });

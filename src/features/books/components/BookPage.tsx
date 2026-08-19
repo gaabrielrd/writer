@@ -9,6 +9,7 @@ import {
   Lock,
   Scroll,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import { Badge, Button, ErrorState, LoadingState, PageHeader } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
@@ -18,6 +19,7 @@ import type { CreateBookInput } from '../model/book';
 import * as bookService from '../services/bookService';
 import { ChapterList } from './ChapterList';
 import { BookFormDialog } from './BookFormDialog';
+import { ImportBookModal } from './ImportBookModal';
 import styles from './BookPage.module.css';
 
 type TabId = 'chapters' | 'compendium' | 'publication';
@@ -44,6 +46,7 @@ export function BookPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('chapters');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
@@ -158,6 +161,14 @@ export function BookPage() {
                 <div className={styles.headerActions}>
                   <Button
                     variant="secondary"
+                    onClick={() => setIsImportOpen(true)}
+                    title="Importar capítulos de documento"
+                  >
+                    <Upload className="icon icon-sm" aria-hidden="true" />
+                    Importar DOCX/PDF
+                  </Button>
+                  <Button
+                    variant="secondary"
                     onClick={() => setIsFormOpen(true)}
                     title="Editar dados da obra"
                   >
@@ -221,6 +232,7 @@ export function BookPage() {
             onClose={() => {}}
             onChapterCountChanged={refreshBook}
             mode="inline"
+            onOpenImport={isOwner ? () => setIsImportOpen(true) : undefined}
           />
         )}
 
@@ -273,6 +285,18 @@ export function BookPage() {
           bookToEdit={book}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleEditSubmit}
+        />
+      )}
+
+      {isImportOpen && (
+        <ImportBookModal
+          open={isImportOpen}
+          targetBook={book}
+          authorId={book.authorId}
+          onClose={() => setIsImportOpen(false)}
+          onSuccess={() => {
+            refreshBook();
+          }}
         />
       )}
     </div>

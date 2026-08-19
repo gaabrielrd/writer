@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowDown, ArrowUp, Edit2, PenLine, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Edit2, PenLine, Plus, Trash2, Upload } from 'lucide-react';
 import { Alert, Button, Dialog, Input, LoadingState } from '@/shared/ui';
 import type { Book } from '../model/book';
 import type { Chapter } from '../model/chapter';
@@ -14,6 +14,8 @@ export interface ChapterListProps {
   onChapterCountChanged?: () => void;
   /** Quando 'inline', renderiza sem Dialog. Default: 'dialog'. */
   mode?: 'dialog' | 'inline';
+  /** Callback para abrir o modal de importação de documentos (.docx/.pdf) */
+  onOpenImport?: () => void;
 }
 
 export function ChapterList({
@@ -22,6 +24,7 @@ export function ChapterList({
   onClose,
   onChapterCountChanged,
   mode = 'dialog',
+  onOpenImport,
 }: ChapterListProps) {
   const navigate = useNavigate();
   const { chapters, loading, error, createChapter, updateChapter, deleteChapter, reorderChapters } =
@@ -134,13 +137,34 @@ export function ChapterList({
           <Plus className="icon icon-sm" aria-hidden="true" />
           Adicionar
         </Button>
+        {onOpenImport && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onOpenImport}
+            disabled={isProcessing}
+            title="Importar capítulos de arquivo .docx ou .pdf"
+          >
+            <Upload className="icon icon-sm" aria-hidden="true" />
+            Importar Arquivo
+          </Button>
+        )}
       </form>
 
       {loading ? (
         <LoadingState label="Carregando capítulos..." />
       ) : chapters.length === 0 ? (
         <div className={styles.emptyChapters}>
-          Nenhum capítulo criado ainda. Adicione o primeiro capítulo acima!
+          <p className="mb-3">
+            Nenhum capítulo criado ainda. Adicione o primeiro capítulo acima ou importe de um
+            arquivo (.docx / .pdf).
+          </p>
+          {onOpenImport && (
+            <Button variant="secondary" onClick={onOpenImport}>
+              <Upload className="icon icon-sm" aria-hidden="true" />
+              Importar Manuscrito (.docx, .pdf)
+            </Button>
+          )}
         </div>
       ) : (
         <div className={styles.chapterList}>

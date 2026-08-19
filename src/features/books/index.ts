@@ -12,3 +12,5 @@ export type { BookFormDialogProps } from './components/BookFormDialog';
 export { ChapterList } from './components/ChapterList';
 export type { ChapterListProps } from './components/ChapterList';
 export { BookPage } from './components/BookPage';
+export { ImportBookModal } from './components/ImportBookModal';
+export type { ImportBookModalProps } from './components/ImportBookModal';

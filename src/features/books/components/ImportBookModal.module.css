@@ -1,0 +1,192 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.dropzone {
+  border: 2px dashed var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  text-align: center;
+  background-color: var(--surface-quiet);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dropzone:hover,
+.dropzoneActive {
+  border-color: hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.05);
+}
+
+.dropzoneIcon {
+  color: hsl(var(--primary));
+}
+
+.dropzoneTitle {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--navy);
+  margin: 0;
+}
+
+.dropzoneSubtitle {
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+.fileInputHidden {
+  display: none;
+}
+
+.fileSelectedCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-quiet);
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.fileName {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.targetBookBanner {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-quiet);
+  border-left: 4px solid hsl(var(--primary));
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.newBookFields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+/* Summary toolbar */
+.summaryToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-quiet);
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.summaryText {
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.summaryStats {
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+/* Chapters list */
+.chaptersList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: var(--space-1);
+}
+
+.chapterCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface);
+  border: var(--border-width) solid var(--line);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.chapterCardSelected {
+  border-color: hsl(var(--primary));
+  background-color: hsl(var(--primary) / 0.02);
+}
+
+.chapterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.chapterCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 220px;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 1.125rem;
+  height: 1.125rem;
+  accent-color: hsl(var(--primary));
+  cursor: pointer;
+}
+
+.chapterTitleInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.chapterPreview {
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+  line-height: var(--leading-normal);
+  padding-left: calc(1.125rem + var(--space-2));
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.footerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-2);
+}
+
+.footerGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

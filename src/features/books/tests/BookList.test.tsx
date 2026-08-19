@@ -44,6 +44,24 @@ describe('BookList', () => {
     expect(await screen.findByText('Primeiro Livro')).toBeInTheDocument();
   });
 
+  it('permite abrir o modal de importacao a partir do EmptyState', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'listBooksByAuthor').mockResolvedValueOnce([]);
+
+    render(
+      <MemoryRouter>
+        <BookList authorId="auth-1" />
+      </MemoryRouter>,
+    );
+
+    const importBtn = await screen.findByRole('button', { name: /importar documento/i });
+    await user.click(importBtn);
+
+    expect(
+      screen.getByRole('heading', { name: 'Importar Livro de Documento' }),
+    ).toBeInTheDocument();
+  });
+
   it('exibe ErrorState e permite retentativa', async () => {
     const user = userEvent.setup();
     vi.spyOn(bookService, 'listBooksByAuthor')
@@ -63,7 +81,8 @@ describe('BookList', () => {
     expect(await screen.findByText('Nenhum livro cadastrado')).toBeInTheDocument();
   });
 
-  it('renderiza cards como links para a pagina do livro', async () => {
+  it('renderiza cards como links para a pagina do livro e permite abrir importacao', async () => {
+    const user = userEvent.setup();
     const mockBook: Book = {
       id: 'b-1',
       authorId: 'auth-1',
@@ -89,5 +108,13 @@ describe('BookList', () => {
 
     const link = screen.getByRole('link');
     expect(link).toHaveAttribute('href', '/books/b-1');
+
+    // Abre importação pela toolbar
+    const importBtn = screen.getByRole('button', { name: /importar documento/i });
+    await user.click(importBtn);
+
+    expect(
+      screen.getByRole('heading', { name: 'Importar Livro de Documento' }),
+    ).toBeInTheDocument();
   });
 });

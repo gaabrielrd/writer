@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { useNavigate } from 'react-router';
+import { Plus, Upload } from 'lucide-react';
 import { Button, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
 import type { CreateBookInput } from '../model/book';
 import { useBooks } from '../hooks/useBooks';
 import { BookCard } from './BookCard';
 import { BookFormDialog } from './BookFormDialog';
+import { ImportBookModal } from './ImportBookModal';
 import styles from './BookList.module.css';
 
 export interface BookListProps {
@@ -12,15 +14,27 @@ export interface BookListProps {
 }
 
 export function BookList({ authorId }: BookListProps) {
+  const navigate = useNavigate();
   const { books, loading, error, refreshBooks, createBook } = useBooks(authorId);
+
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
 
   const handleOpenCreate = () => {
     setIsFormOpen(true);
   };
 
+  const handleOpenImport = () => {
+    setIsImportOpen(true);
+  };
+
   const handleFormSubmit = async (input: CreateBookInput) => {
     await createBook(input);
+  };
+
+  const handleImportSuccess = (newBookId: string) => {
+    void refreshBooks();
+    void navigate(`/books/${newBookId}`);
   };
 
   if (loading) {
@@ -46,12 +60,18 @@ export function BookList({ authorId }: BookListProps) {
       <div className={styles.container}>
         <EmptyState
           title="Nenhum livro cadastrado"
-          description="Você ainda não começou a escrever nenhuma obra. Crie seu primeiro livro para estruturar capítulos e compêndio de lore."
+          description="Você ainda não começou a escrever nenhuma obra. Crie seu primeiro livro para estruturar capítulos e compêndio de lore, ou importe um manuscrito pronto."
           action={
-            <Button variant="primary" onClick={handleOpenCreate}>
-              <Plus className="icon icon-sm" aria-hidden="true" />
-              Criar Primeiro Livro
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <Button variant="primary" onClick={handleOpenCreate}>
+                <Plus className="icon icon-sm" aria-hidden="true" />
+                Criar Primeiro Livro
+              </Button>
+              <Button variant="secondary" onClick={handleOpenImport}>
+                <Upload className="icon icon-sm" aria-hidden="true" />
+                Importar Documento (.docx, .pdf)
+              </Button>
+            </div>
           }
         />
 
@@ -59,6 +79,13 @@ export function BookList({ authorId }: BookListProps) {
           open={isFormOpen}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleFormSubmit}
+        />
+
+        <ImportBookModal
+          open={isImportOpen}
+          onClose={() => setIsImportOpen(false)}
+          authorId={authorId}
+          onSuccess={handleImportSuccess}
         />
       </div>
     );
@@ -73,10 +100,20 @@ export function BookList({ authorId }: BookListProps) {
             {books.length} {books.length === 1 ? 'livro em andamento' : 'livros em andamento'}
           </p>
         </div>
-        <Button variant="primary" onClick={handleOpenCreate}>
-          <Plus className="icon icon-sm" aria-hidden="true" />
-          Novo Livro
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="secondary"
+            onClick={handleOpenImport}
+            title="Importar livro de arquivo .docx ou .pdf"
+          >
+            <Upload className="icon icon-sm" aria-hidden="true" />
+            Importar Documento
+          </Button>
+          <Button variant="primary" onClick={handleOpenCreate}>
+            <Plus className="icon icon-sm" aria-hidden="true" />
+            Novo Livro
+          </Button>
+        </div>
       </div>
 
       <div className={styles.grid}>
@@ -89,6 +126,13 @@ export function BookList({ authorId }: BookListProps) {
         open={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleFormSubmit}
+      />
+
+      <ImportBookModal
+        open={isImportOpen}
+        onClose={() => setIsImportOpen(false)}
+        authorId={authorId}
+        onSuccess={handleImportSuccess}
       />
     </section>
   );
