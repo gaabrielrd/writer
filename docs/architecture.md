@@ -1,6 +1,6 @@
 # Arquitetura
 
-Este documento descreve como o código do `web-project-template` é organizado e as regras que mantêm o projeto simples e sustentável.
+Este documento descreve como o código do `Writer Assistant` é organizado e as regras que mantêm o projeto simples e sustentável.
 
 ## Princípios
 
@@ -142,3 +142,49 @@ Detalhes em [testing.md](testing.md).
 ## Evolução incremental
 
 O template começa simples de propósito. Adicione estrutura, bibliotecas ou camadas apenas quando um problema real aparecer, e registre a mudança em um ADR (`docs/decisions/`).
+
+## Decisões do produto
+
+Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) para o **Writer Assistant**.
+
+### Limite do sistema e plataformas
+
+- **Tipo:** Aplicação Web SPA executada diretamente no navegador, servida estaticamente via Firebase Hosting.
+- **Dispositivos:** Navegadores modernos (Chromium, Firefox, Safari) com layout otimizado para escrita em desktop/laptop e leitura responsiva para qualquer tamanho de tela.
+- **Backend:** Firebase (Firebase Auth para autenticação e Cloud Firestore para persistência em nuvem e sincronização offline).
+
+### Mapa de capacidades para features
+
+1. `src/features/auth`
+   - **Responsabilidade:** Login, logout, observação da sessão com Firebase Auth e sincronização do documento de perfil e cota de créditos do usuário no Firestore.
+   - **Público:** `useAuth`, `AuthButton`, `UserBadge`, `CreditsCounter`.
+2. `src/features/books`
+   - **Responsabilidade:** CRUD de livros e capítulos, ordenação, contagem de palavras e renderizador da página pública de leitura (`/read/:bookId`).
+   - **Público:** `BookList`, `BookSettingsDialog`, `ReaderView`, serviços de busca e gravação de livros.
+3. `src/features/lore`
+   - **Responsabilidade:** Compêndio de worldbuilding (Personagens, Locais, Conceitos, Outros), modelagem de atributos, relações, filtragem por visibilidade e detecção de correspondência de termos no texto.
+   - **Público:** `LoreList`, `LoreEntityCard`, `LoreDrawer`, `LoreTooltip`, motor de correspondência textual de entidades.
+4. `src/features/editor`
+   - **Responsabilidade:** Editor de texto rico (WYSIWYG), integração com menção rápida via `@`, visualização contextual com tooltips e integração com exportadores (Markdown, DOCX, PDF).
+   - **Público:** `RichEditor`, `MentionMenu`, `ExportActions`.
+5. `src/features/ai-assistant`
+   - **Responsabilidade:** Comunicação com provedores de IA (Gemini / OpenAI), controle de debounce para autocomplete preditivo contínuo, menu de ações contextuais de escrita e orquestração de consumo de créditos.
+   - **Público:** `useAIAutocomplete`, `AIContextMenu`, `BYOKSettings`.
+
+### Fluxo de dados e persistência
+
+- **Autenticação:** O cliente autentica via Firebase Auth SDK; o UID do usuário é utilizado como chave de partição nos dados no Firestore (`users/{uid}` e consultas com filtro `authorId == uid`).
+- **Livros e Lore:** Cada livro é um documento na coleção `books/{bookId}` com subcoleções `chapters` e `lore`. Leituras e gravações passam estritamente por serviços dedicados em cada feature (`services/`).
+- **Cache Offline:** O SDK do Firestore mantém cache local ativo para tolerância a falhas momentâneas de conexão.
+- **Chave BYOK:** Armazenada estritamente em `localStorage` do navegador do cliente através de repositório isolado em `src/features/ai-assistant/services/byokStorage.ts`.
+
+### Exportações
+
+- **Markdown:** Compilação direta do texto e metadados no cliente para arquivo `.md`.
+- **DOCX:** Conversão client-side gerando arquivo `.docx` para download.
+- **PDF:** Estilização com folha de estilo de impressão limpa (`@media print`) acionada via diálogo nativo do navegador.
+
+### Restrições e trade-offs
+
+- **Sem backend customizado:** Toda a infraestrutura roda no cliente contra o Firebase gerenciado. As regras de acesso e privacidade são asseguradas por regras de segurança do Firestore (`firestore.rules`).
+- **Consumo de créditos no aceite:** A IA não cobra do saldo do usuário por sugestões descartadas ou falhas de conexão; o débito ocorre somente no evento de confirmação de uso (`Tab` ou clique no botão de aceite).

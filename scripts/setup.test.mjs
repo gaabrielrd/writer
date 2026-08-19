@@ -179,6 +179,8 @@ test('restaura a demonstração quando uma etapa posterior falha', () => {
   const root = copyFixture();
   try {
     const notes = join(root, 'src/features/notes');
+    mkdirSync(notes, { recursive: true });
+    writeFileSync(join(notes, 'index.ts'), 'export const notes = true;\n');
     const customFeature = join(root, 'src/features/custom-feature/index.ts');
     mkdirSync(dirname(customFeature), { recursive: true });
     writeFileSync(customFeature, 'export const customFeature = true;\n');

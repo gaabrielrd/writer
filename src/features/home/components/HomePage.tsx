@@ -1,4 +1,3 @@
-import { NoteList } from '@/features/notes';
 import styles from './HomePage.module.css';
 
 const NPM_SCRIPTS: ReadonlyArray<{ command: string; description: string }> = [
@@ -13,23 +12,16 @@ const NPM_SCRIPTS: ReadonlyArray<{ command: string; description: string }> = [
 
 export function HomePage() {
   return (
-    <>
-      <section className={styles.section}>
-        <h2>Exemplo: notas</h2>
-        <NoteList />
-      </section>
-
-      <section className={styles.section}>
-        <h2>Comandos npm disponíveis</h2>
-        <ul className={styles.scripts}>
-          {NPM_SCRIPTS.map(({ command, description }) => (
-            <li key={command}>
-              <code>{command}</code>
-              <span>{description}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </>
+    <section className={styles.section}>
+      <h2>Comandos npm disponíveis</h2>
+      <ul className={styles.scripts}>
+        {NPM_SCRIPTS.map(({ command, description }) => (
+          <li key={command}>
+            <code>{command}</code>
+            <span>{description}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

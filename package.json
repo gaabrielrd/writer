@@ -1,5 +1,5 @@
 {
-  "name": "web-project-template",
+  "name": "writer-assistant",
   "private": true,
   "version": "0.0.0",
   "license": "UNLICENSED",
@@ -81,5 +81,6 @@
     "eslint-plugin-jsx-a11y": {
       "eslint": "$eslint"
     }
-  }
+  },
+  "description": "Assistente para escritores de materiais educacionais ou livros"
 }
