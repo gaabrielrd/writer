@@ -30,24 +30,24 @@ Implementar a feature `lore` com o compêndio completo de entidades vinculado a 
 
 ## Critérios de aceite
 
-- [ ] Autor pode acessar a página do compêndio `/books/:bookId/lore` e visualizar todas as entidades cadastradas organizadas por categoria.
-- [ ] Formulário permite cadastrar entidade com nome, apelidos/aliases, resumo de até 140 caracteres, detalhes, relações com outras entidades e toggle de visibilidade pública.
-- [ ] O `loreMatcher` identifica com precisão termos e apelidos no texto, retornando os trechos casados e a entidade correspondente.
-- [ ] Entidades podem ser editadas e excluídas com atualização imediata no Firestore.
-- [ ] Busca por texto filtra entidades instantaneamente por nome, apelidos ou resumo.
-- [ ] Testes automatizados cobrem o `loreMatcher` com múltiplos cenários (plurais, variações, apelidos, pontuação) e os componentes do compêndio.
+- [x] Autor pode acessar a página do compêndio `/books/:bookId/lore` e visualizar todas as entidades cadastradas organizadas por categoria.
+- [x] Formulário permite cadastrar entidade com nome, apelidos/aliases, resumo de até 140 caracteres, detalhes, relações com outras entidades e toggle de visibilidade pública.
+- [x] O `loreMatcher` identifica com precisão termos e apelidos no texto, retornando os trechos casados e a entidade correspondente.
+- [x] Entidades podem ser editadas e excluídas com atualização imediata no Firestore.
+- [x] Busca por texto filtra entidades instantaneamente por nome, apelidos ou resumo.
+- [x] Testes automatizados cobrem o `loreMatcher` com múltiplos cenários (plurais, variações, apelidos, pontuação) e os componentes do compêndio.
 
 ## Tarefas
 
-- [ ] 1. Gerar a feature `src/features/lore` (`npm run generate:feature -- --name="lore"`).
-- [ ] 2. Implementar os modelos e tipos em `src/features/lore/model/loreEntity.ts`.
-- [ ] 3. Implementar e testar rigorosamente o motor de correspondência em `src/features/lore/model/loreMatcher.ts`.
-- [ ] 4. Implementar o serviço de persistência no Firestore em `src/features/lore/services/loreService.ts`.
-- [ ] 5. Construir os componentes de formulário, cards, drawer e tooltips com o kit `@vitru/styleguide`.
-- [ ] 6. Criar a página de compêndio `LorePage` com busca, filtros por categoria e ordenação.
-- [ ] 7. Registrar a rota `/books/:bookId/lore` nas rotas da aplicação.
-- [ ] 8. Escrever testes em `src/features/lore/tests/`.
-- [ ] 9. Executar `npm run validate` e garantir 100% de sucesso.
+- [x] 1. Gerar a feature `src/features/lore` (`npm run generate:feature -- --name="lore"`).
+- [x] 2. Implementar os modelos e tipos em `src/features/lore/model/loreEntity.ts`.
+- [x] 3. Implementar e testar rigorosamente o motor de correspondência em `src/features/lore/model/loreMatcher.ts`.
+- [x] 4. Implementar o serviço de persistência no Firestore em `src/features/lore/services/loreService.ts`.
+- [x] 5. Construir os componentes de formulário, cards, drawer e tooltips com o kit `@vitru/styleguide`.
+- [x] 6. Criar a página de compêndio `LorePage` com busca, filtros por categoria e ordenação.
+- [x] 7. Registrar a rota `/books/:bookId/lore` nas rotas da aplicação.
+- [x] 8. Escrever testes em `src/features/lore/tests/`.
+- [x] 9. Executar `npm run validate` e garantir 100% de sucesso.
 
 ## Riscos
 

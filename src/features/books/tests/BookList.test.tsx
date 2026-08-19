@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { BookList } from '../components/BookList';
 import * as bookService from '../services/bookService';
 import type { Book } from '../model/book';
@@ -26,7 +27,11 @@ describe('BookList', () => {
       updatedAt: 1000,
     });
 
-    render(<BookList authorId="auth-1" />);
+    render(
+      <MemoryRouter>
+        <BookList authorId="auth-1" />
+      </MemoryRouter>,
+    );
 
     const createBtn = await screen.findByRole('button', { name: /criar primeiro livro/i });
     await user.click(createBtn);
@@ -45,7 +50,11 @@ describe('BookList', () => {
       .mockRejectedValueOnce(new Error('Falha de rede'))
       .mockResolvedValueOnce([]);
 
-    render(<BookList authorId="auth-1" />);
+    render(
+      <MemoryRouter>
+        <BookList authorId="auth-1" />
+      </MemoryRouter>,
+    );
 
     expect(await screen.findByText('Falha de rede')).toBeInTheDocument();
     const retryBtn = screen.getByRole('button', { name: /tentar novamente/i });
@@ -74,7 +83,11 @@ describe('BookList', () => {
     vi.spyOn(bookService, 'deleteBook').mockResolvedValue();
     vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
 
-    render(<BookList authorId="auth-1" />);
+    render(
+      <MemoryRouter>
+        <BookList authorId="auth-1" />
+      </MemoryRouter>,
+    );
 
     expect(await screen.findByText('Livro Existente')).toBeInTheDocument();
 

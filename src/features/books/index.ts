@@ -1,5 +1,6 @@
 export * from './model';
 export * from './services';
+export * as bookService from './services';
 export * from './hooks/useBooks';
 export * from './hooks/useChapters';
 export { BookCard } from './components/BookCard';

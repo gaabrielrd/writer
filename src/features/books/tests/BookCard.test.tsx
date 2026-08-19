@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { BookCard } from '../components/BookCard';
 import type { Book } from '../model/book';
 
@@ -20,30 +21,35 @@ describe('BookCard', () => {
 
   it('renderiza os dados do livro e botoes de acao', () => {
     render(
-      <BookCard
-        book={mockBook}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-        onToggleStatus={vi.fn()}
-        onManageChapters={vi.fn()}
-      />,
+      <MemoryRouter>
+        <BookCard
+          book={mockBook}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onToggleStatus={vi.fn()}
+          onManageChapters={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByRole('heading', { name: 'O Enigma das Sombras' })).toBeInTheDocument();
     expect(screen.getByText('Fantasia Obscura')).toBeInTheDocument();
     expect(screen.getByText(/15\.400 palavras/)).toBeInTheDocument();
     expect(screen.getByText('Rascunho')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /compêndio/i })).toBeInTheDocument();
   });
 
   it('renderiza capa quando coverUrl e fornecido', () => {
     render(
-      <BookCard
-        book={{ ...mockBook, coverUrl: 'https://exemplo.com/capa.jpg' }}
-        onEdit={vi.fn()}
-        onDelete={vi.fn()}
-        onToggleStatus={vi.fn()}
-        onManageChapters={vi.fn()}
-      />,
+      <MemoryRouter>
+        <BookCard
+          book={{ ...mockBook, coverUrl: 'https://exemplo.com/capa.jpg' }}
+          onEdit={vi.fn()}
+          onDelete={vi.fn()}
+          onToggleStatus={vi.fn()}
+          onManageChapters={vi.fn()}
+        />
+      </MemoryRouter>,
     );
 
     expect(screen.getByAltText('Capa de O Enigma das Sombras')).toHaveAttribute(
@@ -60,13 +66,15 @@ describe('BookCard', () => {
     const onManageChapters = vi.fn();
 
     render(
-      <BookCard
-        book={mockBook}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        onToggleStatus={onToggleStatus}
-        onManageChapters={onManageChapters}
-      />,
+      <MemoryRouter>
+        <BookCard
+          book={mockBook}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onToggleStatus={onToggleStatus}
+          onManageChapters={onManageChapters}
+        />
+      </MemoryRouter>,
     );
 
     await user.click(screen.getByRole('button', { name: /capítulos/i }));

@@ -1,0 +1,122 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-md);
+}
+
+.colName {
+  display: flex;
+  flex-direction: column;
+}
+
+.colCategory {
+  display: flex;
+  flex-direction: column;
+}
+
+.visibilityToggle {
+  display: flex;
+  align-items: center;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.checkbox {
+  accent-color: var(--accent);
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+}
+
+.relationsSection {
+  border-top: 1px solid var(--line-subtle);
+  padding-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.relationsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.relationsTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.relationsSubtitle {
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  color: var(--ink-quiet);
+  margin: var(--space-xxs) 0 0 0;
+}
+
+.emptyNotice {
+  font-size: var(--text-xs);
+  color: var(--ink-quiet);
+  font-style: italic;
+  margin: 0;
+}
+
+.relationsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.relationRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-xs);
+  align-items: flex-end;
+  background-color: var(--surface-quiet);
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+}
+
+.relSelect,
+.relType {
+  display: flex;
+  flex-direction: column;
+}
+
+.relRemove {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: var(--space-xxs);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+@media (max-width: 600px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+  .relationRow {
+    grid-template-columns: 1fr;
+  }
+}

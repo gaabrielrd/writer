@@ -1,4 +1,5 @@
-import { Book as BookIcon, Edit2, FileText, Globe, Lock, Trash2 } from 'lucide-react';
+import { Link } from 'react-router';
+import { Book as BookIcon, Edit2, FileText, Globe, Lock, Scroll, Trash2 } from 'lucide-react';
 import { Badge, Button, Card } from '@vitru/styleguide';
 import type { Book } from '../model/book';
 import styles from './BookCard.module.css';
@@ -69,6 +70,12 @@ export function BookCard({
               <FileText className="icon icon-sm" aria-hidden="true" />
               Capítulos
             </Button>
+            <Link to={`/books/${book.id}/lore`}>
+              <Button variant="secondary" title="Abrir Compêndio de Lore">
+                <Scroll className="icon icon-sm" aria-hidden="true" />
+                Compêndio
+              </Button>
+            </Link>
             <Button
               variant="secondary"
               onClick={() => onToggleStatus(book)}
