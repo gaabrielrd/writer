@@ -1,79 +1,127 @@
 .container {
   max-width: 480px;
-  margin: var(--space-8) auto;
-  padding: 0 var(--space-4);
+  margin: 1.5rem auto 3rem auto;
+  width: 100%;
 }
 
 .card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: 1.5rem;
+  padding: 2.25rem 1.75rem;
+  border-radius: 1rem;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.05),
+    0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 640px) {
+  .card {
+    padding: 2.75rem 2.25rem;
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: hsl(var(--foreground));
+  line-height: 1.25;
+}
+
+.description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
+
+.benefits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  background-color: hsl(var(--secondary) / 0.5);
+  border: 1px solid hsl(var(--border));
+  font-size: 0.825rem;
+  color: hsl(var(--foreground));
+}
+
+.benefitItem {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  line-height: 1.4;
+}
+
+.googleButton {
+  width: 100%;
+  padding: 0.75rem;
+  font-weight: 600;
 }
 
 .divider {
   display: flex;
   align-items: center;
   text-align: center;
-  color: var(--ink-subtle, var(--border));
-  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: var(--space-2) 0;
+  letter-spacing: 0.06em;
+  margin: 0.25rem 0;
 }
 
 .divider::before,
 .divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid var(--border-subtle, var(--border));
+  border-bottom: 1px solid hsl(var(--border));
 }
 
 .divider span {
-  padding: 0 var(--space-3);
+  padding: 0 0.75rem;
 }
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: 1.25rem;
 }
 
 .actions {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  margin-top: var(--space-2);
+  gap: 0.75rem;
+  margin-top: 0.25rem;
 }
 
 .toggle {
   text-align: center;
-  font-size: var(--text-sm);
-  color: var(--ink-subtle, var(--ink));
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+  padding-top: 0.5rem;
 }
 
 .toggleButton {
   background: none;
   border: none;
-  color: var(--accent);
+  color: hsl(var(--primary));
   font-weight: 700;
   cursor: pointer;
-  padding: 0 var(--space-1);
+  padding: 0 0.35rem;
   text-decoration: underline;
+  transition: opacity var(--transition-fast);
 }
 
-.benefits {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border-radius: var(--radius-md, 8px);
-  background: var(--surface-subtle, var(--paper-2));
-  font-size: var(--text-sm);
-  color: var(--ink);
-}
-
-.benefitItem {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
+.toggleButton:hover {
+  opacity: 0.85;
 }

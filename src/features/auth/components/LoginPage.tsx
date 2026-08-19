@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, Card, Input, Alert, PageHeader } from '@/shared/ui';
+import { Button, Card, Input, Alert } from '@/shared/ui';
 import { LogIn, UserPlus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { useGoogleOneTap } from '../hooks/useGoogleOneTap';
 import styles from './LoginPage.module.css';
 
 export function LoginPage() {
-  const { user, signInWithGoogle, signInWithEmail, signUpWithEmail } = useAuth();
+  const { user, signInWithGoogle, signInWithGoogleIdToken, signInWithEmail, signUpWithEmail } =
+    useAuth();
   const navigate = useNavigate();
 
   const [isSignUp, setIsSignUp] = useState(false);
@@ -15,6 +17,25 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Inicializa Google One Tap automaticamente para login sem atrito
+  useGoogleOneTap({
+    onSuccess: async (idToken) => {
+      setLocalError(null);
+      setIsSubmitting(true);
+      try {
+        await signInWithGoogleIdToken(idToken);
+        void navigate('/');
+      } catch (err) {
+        setLocalError(
+          err instanceof Error ? err.message : 'Erro ao autenticar com Google One Tap.',
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    disabled: !!user,
+  });
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -58,21 +79,20 @@ export function LoginPage() {
   if (user) {
     return (
       <div className={styles.container}>
-        <Card tone="raised">
-          <div className={styles.card}>
-            <PageHeader
-              title="Você já está autenticado"
-              description={`Conectado como ${user.displayName || user.email}`}
-            />
-            <Button
-              variant="primary"
-              onClick={() => {
-                void navigate('/');
-              }}
-            >
-              Ir para meus livros
-            </Button>
+        <Card className={styles.card}>
+          <div className={styles.header}>
+            <h1 className={styles.title}>Você já está autenticado</h1>
+            <p className={styles.description}>Conectado como {user.displayName || user.email}</p>
           </div>
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => {
+              void navigate('/');
+            }}
+          >
+            Ir para meus livros
+          </Button>
         </Card>
       </div>
     );
@@ -80,109 +100,117 @@ export function LoginPage() {
 
   return (
     <div className={styles.container}>
-      <Card tone="raised">
-        <div className={styles.card}>
-          <PageHeader
-            title={isSignUp ? 'Criar sua conta de autor' : 'Entrar no Writer Assistant'}
-            description={
-              isSignUp
-                ? 'Comece agora com 100 créditos gratuitos para assistência por IA.'
-                : 'Acesse seus livros, compêndios de lore e manuscritos salvos na nuvem.'
-            }
-          />
+      <Card className={styles.card}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>
+            {isSignUp ? 'Criar sua conta de autor' : 'Entrar no Writer Assistant'}
+          </h1>
+          <p className={styles.description}>
+            {isSignUp
+              ? 'Comece agora com 100 créditos gratuitos para assistência por IA.'
+              : 'Acesse seus livros, compêndios de lore e manuscritos salvos na nuvem.'}
+          </p>
+        </div>
 
-          {localError && (
-            <Alert variant="danger" title="Atenção">
-              {localError}
-            </Alert>
+        {localError && (
+          <Alert variant="danger" title="Atenção">
+            {localError}
+          </Alert>
+        )}
+
+        <div className={styles.benefits}>
+          <div className={styles.benefitItem}>
+            <Sparkles className="icon icon-sm" aria-hidden="true" />
+            <span>100 créditos iniciais de IA para autocomplete e sugestões</span>
+          </div>
+          <div className={styles.benefitItem}>
+            <CheckCircle2 className="icon icon-sm" aria-hidden="true" />
+            <span>Sincronização em nuvem e compêndio de lore ilimitado</span>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="secondary"
+          size="lg"
+          className={styles.googleButton}
+          onClick={handleGoogleSignIn}
+          disabled={isSubmitting}
+        >
+          <LogIn className="icon icon-sm" aria-hidden="true" />
+          <span>Continuar com Google</span>
+        </Button>
+
+        <div className={styles.divider}>
+          <span>ou com e-mail</span>
+        </div>
+
+        <form onSubmit={handleSubmit} className={styles.form}>
+          {isSignUp && (
+            <Input
+              label="Nome de Autor"
+              placeholder="Ex: J. K. Silva"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              disabled={isSubmitting}
+            />
           )}
 
-          <div className={styles.benefits}>
-            <div className={styles.benefitItem}>
-              <Sparkles className="icon icon-sm" aria-hidden="true" />
-              <span>100 créditos iniciais de IA para autocomplete e sugestões</span>
-            </div>
-            <div className={styles.benefitItem}>
-              <CheckCircle2 className="icon icon-sm" aria-hidden="true" />
-              <span>Sincronização em nuvem e compêndio de lore ilimitado</span>
-            </div>
-          </div>
-
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleGoogleSignIn}
+          <Input
+            label="E-mail"
+            type="email"
+            placeholder="autor@exemplo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             disabled={isSubmitting}
-          >
-            <LogIn className="icon icon-sm" aria-hidden="true" />
-            Continuar com Google
-          </Button>
+          />
 
-          <div className={styles.divider}>
-            <span>ou com e-mail</span>
-          </div>
+          <Input
+            label="Senha"
+            type="password"
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            disabled={isSubmitting}
+          />
 
-          <form onSubmit={handleSubmit} className={styles.form}>
-            {isSignUp && (
-              <Input
-                label="Nome de Autor"
-                placeholder="Ex: J. K. Silva"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                disabled={isSubmitting}
-              />
-            )}
-
-            <Input
-              label="E-mail"
-              type="email"
-              placeholder="autor@exemplo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+          <div className={styles.actions}>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
               disabled={isSubmitting}
-            />
-
-            <Input
-              label="Senha"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isSubmitting}
-            />
-
-            <div className={styles.actions}>
-              <Button type="submit" variant="primary" disabled={isSubmitting}>
-                {isSignUp ? (
-                  <>
-                    <UserPlus className="icon icon-sm" aria-hidden="true" />
-                    Criar conta gratuita
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="icon icon-sm" aria-hidden="true" />
-                    Entrar
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-
-          <div className={styles.toggle}>
-            <span>{isSignUp ? 'Já possui uma conta?' : 'Ainda não tem conta?'}</span>
-            <button
-              type="button"
-              className={styles.toggleButton}
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setLocalError(null);
-              }}
+              className="w-full"
             >
-              {isSignUp ? 'Entrar' : 'Cadastre-se gratuitamente'}
-            </button>
+              {isSignUp ? (
+                <>
+                  <UserPlus className="icon icon-sm" aria-hidden="true" />
+                  Criar conta gratuita
+                </>
+              ) : (
+                <>
+                  <LogIn className="icon icon-sm" aria-hidden="true" />
+                  Entrar
+                </>
+              )}
+            </Button>
           </div>
+        </form>
+
+        <div className={styles.toggle}>
+          <span>{isSignUp ? 'Já possui uma conta?' : 'Ainda não tem conta?'}</span>
+          <button
+            type="button"
+            className={styles.toggleButton}
+            onClick={() => {
+              setIsSignUp(!isSignUp);
+              setLocalError(null);
+            }}
+          >
+            {isSignUp ? 'Entrar' : 'Cadastre-se gratuitamente'}
+          </button>
         </div>
       </Card>
     </div>

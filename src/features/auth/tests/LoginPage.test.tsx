@@ -11,6 +11,7 @@ function renderLoginPage(authOverrides: Partial<AuthContextValue> = {}) {
     loading: false,
     error: null,
     signInWithGoogle: vi.fn(),
+    signInWithGoogleIdToken: vi.fn(),
     signInWithEmail: vi.fn(),
     signUpWithEmail: vi.fn(),
     signOut: vi.fn(),

@@ -23,6 +23,7 @@ export interface FirebaseConfig {
   readonly appId: string;
   readonly measurementId?: string;
   readonly appCheckKey?: string;
+  readonly googleClientId?: string;
 }
 
 export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
@@ -34,6 +35,7 @@ export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
   appId: '1:404822288771:web:4f1b6e123c716374d76eb6',
   measurementId: 'G-XXK14L9PFH',
   appCheckKey: '6LePNI4tAAAAAFAMXZqWQlT1FxZkdbUU-7j9Amfz',
+  googleClientId: '404822288771-uvpfno7e3ianqfkls677tflqhviujk19.apps.googleusercontent.com',
 };
 
 export interface Env {
@@ -112,6 +114,8 @@ export function createEnv(raw: ImportMetaEnv): Env {
       readOptional(raw, 'VITE_FIREBASE_MEASUREMENT_ID') ?? DEFAULT_FIREBASE_CONFIG.measurementId,
     appCheckKey:
       readOptional(raw, 'VITE_FIREBASE_APPCHECK_KEY') ?? DEFAULT_FIREBASE_CONFIG.appCheckKey,
+    googleClientId:
+      readOptional(raw, 'VITE_GOOGLE_CLIENT_ID') ?? DEFAULT_FIREBASE_CONFIG.googleClientId,
   };
 
   return {

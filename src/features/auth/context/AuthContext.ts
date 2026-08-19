@@ -6,6 +6,7 @@ export interface AuthContextValue {
   loading: boolean;
   error: string | null;
   signInWithGoogle: () => Promise<void>;
+  signInWithGoogleIdToken: (idToken: string) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
   signOut: () => Promise<void>;

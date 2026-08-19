@@ -6,6 +6,7 @@ import {
   updateCredits,
   subscribeToAuthState,
   signInWithGoogle,
+  signInWithGoogleIdToken,
   signInWithEmail,
   signUpWithEmail,
   signOutUser,
@@ -20,16 +21,24 @@ vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(() => ({})),
 }));
 
-vi.mock('firebase/auth', () => ({
-  getAuth: vi.fn(() => ({})),
-  GoogleAuthProvider: vi.fn(),
-  signInWithPopup: vi.fn(),
-  signInWithEmailAndPassword: vi.fn(),
-  createUserWithEmailAndPassword: vi.fn(),
-  updateProfile: vi.fn(),
-  signOut: vi.fn(),
-  onAuthStateChanged: vi.fn(),
-}));
+vi.mock('firebase/auth', () => {
+  class MockGoogleAuthProvider {
+    setCustomParameters = vi.fn();
+    static credential = vi.fn((token: string) => ({ token }));
+  }
+
+  return {
+    getAuth: vi.fn(() => ({})),
+    GoogleAuthProvider: MockGoogleAuthProvider,
+    signInWithPopup: vi.fn(),
+    signInWithCredential: vi.fn(),
+    signInWithEmailAndPassword: vi.fn(),
+    createUserWithEmailAndPassword: vi.fn(),
+    updateProfile: vi.fn(),
+    signOut: vi.fn(),
+    onAuthStateChanged: vi.fn(),
+  };
+});
 
 describe('authService', () => {
   beforeEach(() => {
@@ -104,6 +113,26 @@ describe('authService', () => {
     const profile = await signInWithGoogle();
     expect(profile.uid).toBe('google-uid');
     expect(authModule.signInWithPopup).toHaveBeenCalledTimes(1);
+  });
+
+  it('executa signInWithGoogleIdToken com credencial e sincroniza o perfil', async () => {
+    vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+      exists: () => false,
+      data: () => undefined,
+    } as unknown as firestoreModule.DocumentSnapshot);
+
+    vi.mocked(authModule.signInWithCredential).mockResolvedValueOnce({
+      user: {
+        uid: 'onetap-uid',
+        email: 'onetap@autor.com',
+        displayName: 'Autor One Tap',
+        photoURL: 'https://google.com/onetap.jpg',
+      },
+    } as unknown as authModule.UserCredential);
+
+    const profile = await signInWithGoogleIdToken('jwt-token-xyz');
+    expect(profile.uid).toBe('onetap-uid');
+    expect(authModule.signInWithCredential).toHaveBeenCalledTimes(1);
   });
 
   it('executa signInWithEmail e sincroniza o perfil', async () => {

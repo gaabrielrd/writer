@@ -1,6 +1,7 @@
 import {
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithCredential,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
@@ -22,37 +23,57 @@ interface UserDocData {
 }
 
 export async function syncUserProfile(firebaseUser: FirebaseUser): Promise<UserProfile> {
-  const userRef = doc(firestore, 'users', firebaseUser.uid);
-  const snapshot = await getDoc(userRef);
+  try {
+    const userRef = doc(firestore, 'users', firebaseUser.uid);
+    const snapshot = await getDoc(userRef);
 
-  if (snapshot.exists()) {
-    const data = snapshot.data() as UserDocData;
-    return {
-      uid: firebaseUser.uid,
-      email: firebaseUser.email,
-      displayName: firebaseUser.displayName ?? data.displayName ?? null,
-      photoUrl: firebaseUser.photoURL ?? data.photoUrl ?? null,
-      credits: typeof data.credits === 'number' ? data.credits : 100,
-      tier: data.tier === 'premium' ? 'premium' : 'free',
-      createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
-      updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
-    };
+    if (snapshot.exists()) {
+      const data = snapshot.data() as UserDocData;
+      return {
+        uid: firebaseUser.uid,
+        email: firebaseUser.email,
+        displayName: firebaseUser.displayName ?? data.displayName ?? null,
+        photoUrl: firebaseUser.photoURL ?? data.photoUrl ?? null,
+        credits: typeof data.credits === 'number' ? data.credits : 100,
+        tier: data.tier === 'premium' ? 'premium' : 'free',
+        createdAt: typeof data.createdAt === 'number' ? data.createdAt : Date.now(),
+        updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : Date.now(),
+      };
+    }
+
+    const newProfile = createDefaultProfile(
+      firebaseUser.uid,
+      firebaseUser.email,
+      firebaseUser.displayName,
+      firebaseUser.photoURL,
+    );
+
+    await setDoc(userRef, newProfile);
+    return newProfile;
+  } catch (err) {
+    console.warn(
+      'Aviso: falha temporária ao sincronizar perfil no Firestore, usando perfil local:',
+      err,
+    );
+    return createDefaultProfile(
+      firebaseUser.uid,
+      firebaseUser.email,
+      firebaseUser.displayName,
+      firebaseUser.photoURL,
+    );
   }
-
-  const newProfile = createDefaultProfile(
-    firebaseUser.uid,
-    firebaseUser.email,
-    firebaseUser.displayName,
-    firebaseUser.photoURL,
-  );
-
-  await setDoc(userRef, newProfile);
-  return newProfile;
 }
 
 export async function signInWithGoogle(): Promise<UserProfile> {
   const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: 'select_account' });
   const result = await signInWithPopup(auth, provider);
+  return syncUserProfile(result.user);
+}
+
+export async function signInWithGoogleIdToken(idToken: string): Promise<UserProfile> {
+  const credential = GoogleAuthProvider.credential(idToken);
+  const result = await signInWithCredential(auth, credential);
   return syncUserProfile(result.user);
 }
 
@@ -96,7 +117,6 @@ export function subscribeToAuthState(
           if (onError && err instanceof Error) {
             onError(err);
           } else {
-            // Fallback para perfil em memória se o Firestore falhar momentaneamente
             onUserChanged(
               createDefaultProfile(
                 firebaseUser.uid,

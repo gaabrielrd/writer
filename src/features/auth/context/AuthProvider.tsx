@@ -3,6 +3,7 @@ import type { UserProfile } from '../model/user';
 import {
   subscribeToAuthState,
   signInWithGoogle,
+  signInWithGoogleIdToken,
   signInWithEmail,
   signUpWithEmail,
   signOutUser,
@@ -40,6 +41,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(profile);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Falha ao autenticar com Google';
+      setError(msg);
+      throw err;
+    }
+  }, []);
+
+  const handleSignInGoogleIdToken = useCallback(async (idToken: string) => {
+    setError(null);
+    try {
+      const profile = await signInWithGoogleIdToken(idToken);
+      setUser(profile);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Falha ao autenticar com Google One Tap';
       setError(msg);
       throw err;
     }
@@ -95,6 +108,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         loading,
         error,
         signInWithGoogle: handleSignInGoogle,
+        signInWithGoogleIdToken: handleSignInGoogleIdToken,
         signInWithEmail: handleSignInEmail,
         signUpWithEmail: handleSignUpEmail,
         signOut: handleSignOut,
