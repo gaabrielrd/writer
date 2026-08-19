@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowDown, ArrowUp, Edit2, PenLine, Plus, Trash2 } from 'lucide-react';
-import { Alert, Button, Dialog, Input, LoadingState } from '@vitru/styleguide';
+import { Alert, Button, Dialog, Input, LoadingState } from '@/shared/ui';
 import type { Book } from '../model/book';
 import type { Chapter } from '../model/chapter';
 import { useChapters } from '../hooks/useChapters';

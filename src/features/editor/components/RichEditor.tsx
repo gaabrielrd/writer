@@ -19,7 +19,7 @@ import {
   Edit3,
   KeyRound,
 } from 'lucide-react';
-import { Button, Badge } from '@vitru/styleguide';
+import { Button, Badge } from '@/shared/ui';
 import {
   findLoreMatches,
   LoreTooltip,
@@ -51,14 +51,11 @@ export interface RichEditorProps {
   onCreditDeducted?: (newCredits: number) => void;
 }
 
-const CATEGORY_BADGES: Record<
-  LoreCategory,
-  'neutral' | 'accent' | 'success' | 'danger' | 'highlight'
-> = {
+const CATEGORY_BADGES: Record<LoreCategory, 'default' | 'accent' | 'success' | 'secondary'> = {
   character: 'accent',
   location: 'success',
-  concept: 'highlight',
-  other: 'neutral',
+  concept: 'default',
+  other: 'secondary',
 };
 
 export function RichEditor({

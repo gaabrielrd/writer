@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { Button, Card, Input, Alert, PageHeader } from '@vitru/styleguide';
+import { Button, Card, Input, Alert, PageHeader } from '@/shared/ui';
 import { LogIn, UserPlus, Sparkles, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import styles from './LoginPage.module.css';

@@ -1,6 +1,6 @@
 import { BookOpen, Sparkles, UserPlus } from 'lucide-react';
 import { Link } from 'react-router';
-import { Button, Card, PageHeader } from '@vitru/styleguide';
+import { Button, Card, PageHeader } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
 import { BookList } from '@/features/books';
 import styles from './HomePage.module.css';
@@ -18,7 +18,7 @@ export function HomePage() {
 
   return (
     <div className={styles.landing}>
-      <Card tone="raised">
+      <Card>
         <div className={styles.hero}>
           <PageHeader
             title="Assistente para Autores de Ficção"

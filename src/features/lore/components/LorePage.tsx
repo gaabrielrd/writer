@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
 import { BookOpen, MapPin, Plus, Tag, User, X } from 'lucide-react';
-import { Button, EmptyState, ErrorState, Input, LoadingState, PageHeader } from '@vitru/styleguide';
+import { Button, EmptyState, ErrorState, Input, LoadingState, PageHeader } from '@/shared/ui';
 import { getBook, type Book } from '@/features/books';
 import {
   type CreateLoreEntityInput,

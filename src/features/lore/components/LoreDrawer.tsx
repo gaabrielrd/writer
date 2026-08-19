@@ -1,5 +1,5 @@
 import { Edit2, Eye, EyeOff, Tag } from 'lucide-react';
-import { Badge, Button, Dialog } from '@vitru/styleguide';
+import { Badge, Button, Dialog } from '@/shared/ui';
 import type { LoreCategory, LoreEntity } from '../model/loreEntity';
 import styles from './LoreDrawer.module.css';
 

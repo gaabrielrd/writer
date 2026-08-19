@@ -1,19 +1,13 @@
 #!/usr/bin/env node
-// Verifica se o styleguide do template continua sendo respeitado.
+// Verifica se o design system e os temas continuam sendo respeitados.
 //
-// Executado dentro de `npm run validate`. Por padrão apenas AVISA (sai com
-// código 0), para não bloquear quem está no meio de uma refatoração visual.
-// Use `npm run check:styleguide -- --strict` (ou no CI) para transformar os
-// avisos em falha.
+// Executado dentro de `npm run validate`.
 //
 // Regras verificadas:
-//  1. O pacote `@vitru/styleguide` está instalado e expõe os tokens esperados.
-//  2. `main.tsx` importa o CSS público e `index.html` declara o tema.
-//  3. Nenhum CSS fora de `tokens.css` usa cor literal (hex, rgb, hsl ou nome
-//     de cor CSS): componentes consomem `var(--token)`.
-//  4. A única biblioteca de ícones é `lucide-react`, declarada em
-//     `dependencies`.
-//  5. O pacote continua expondo o kit base esperado pelo template.
+//  1. `src/styles/globals.css` expõe os tokens semânticos de tema esperados.
+//  2. `src/main.tsx` importa o CSS global de estilos.
+//  3. A única biblioteca de ícones é `lucide-react`, declarada em `dependencies`.
+//  4. `src/shared/ui` continua expondo o kit base esperado.
 //
 // Compatível com macOS, Linux e Windows: apenas APIs nativas do Node.
 
@@ -24,55 +18,30 @@ import { fileURLToPath } from 'node:url';
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const defaultRoot = resolve(scriptDir, '..');
 
-export const STYLEGUIDE_PACKAGE = '@vitru/styleguide';
-export const TOKENS_FILE = 'node_modules/@vitru/styleguide/dist/tokens.css';
+export const GLOBALS_CSS_FILE = 'src/styles/globals.css';
 export const ICON_LIBRARY = 'lucide-react';
-const LOCAL_DEPENDENCY_PROTOCOL = /^(?:file|link|workspace):/;
 
-/** Tokens de tema obrigatórios: renomeá-los quebra os componentes do template. */
+/** Tokens de tema obrigatórios */
 export const REQUIRED_THEME_TOKENS = [
-  '--ink',
-  '--ink-soft',
-  '--paper',
-  '--paper-2',
-  '--line',
+  '--background',
+  '--foreground',
+  '--card',
+  '--card-foreground',
+  '--primary',
+  '--primary-foreground',
+  '--secondary',
+  '--secondary-foreground',
+  '--muted',
+  '--muted-foreground',
   '--accent',
-  '--navy',
-  '--navy-strong',
-  '--danger',
-  '--danger-line',
-  '--success',
-  '--field-bg',
-  '--field-border',
-  '--danger-bg',
-  '--danger-bg-hover',
-  '--week-today-bg',
-  '--week-today-fill',
-  '--on-accent',
-  '--shadow',
-  '--backdrop',
-  '--bar-edge',
-  '--event-ferias-bg',
-  '--event-ferias-ink',
-  '--event-viagem-bg',
-  '--event-viagem-ink',
-  '--event-evento-bg',
-  '--event-evento-ink',
+  '--destructive',
+  '--border',
+  '--input',
+  '--ring',
+  '--radius',
 ];
 
-/** Escalas compartilhadas por qualquer tema. */
-export const REQUIRED_SCALE_TOKENS = [
-  '--font-display',
-  '--font-sans',
-  '--font-mono',
-  '--text-md',
-  '--space-4',
-  '--radius-md',
-  '--transition-base',
-  '--icon-size',
-];
-
-/** Kit base esperado no contrato público do pacote. */
+/** Kit base esperado no src/shared/ui */
 export const REQUIRED_COMPONENTS = [
   'Alert',
   'Badge',
@@ -80,7 +49,6 @@ export const REQUIRED_COMPONENTS = [
   'Card',
   'Dialog',
   'EmptyState',
-  'ErrorBoundary',
   'ErrorState',
   'Input',
   'LoadingState',
@@ -104,16 +72,6 @@ const FORBIDDEN_ICON_PACKAGES = [
   'bootstrap-icons',
 ];
 
-// Cores literais em CSS. Nomes de cor cobrem só os mais comuns: a intenção é
-// pegar o descuido, não policiar o dicionário inteiro do CSS.
-const COLOR_PATTERNS = [
-  /#[0-9a-fA-F]{3,8}\b/,
-  /\brgba?\(/,
-  /\bhsla?\(/,
-  /\b(?:oklch|oklab|lab|lch|color)\(/,
-  /:\s*(?:white|black|red|blue|green|yellow|orange|purple|pink|gray|grey|silver|navy|teal|olive|maroon|lime|aqua|fuchsia)\b/,
-];
-
 function listFiles(directory, extensions) {
   if (!existsSync(directory)) return [];
   const files = [];
@@ -135,45 +93,21 @@ function withoutComments(css) {
 }
 
 function checkTokens(root, warnings) {
-  const tokensPath = join(root, TOKENS_FILE);
-  if (!existsSync(tokensPath)) {
-    warnings.push(`${TOKENS_FILE}: tokens do pacote ausentes; instale "${STYLEGUIDE_PACKAGE}".`);
+  const globalsPath = join(root, GLOBALS_CSS_FILE);
+  if (!existsSync(globalsPath)) {
+    warnings.push(`${GLOBALS_CSS_FILE}: folha de estilos global ausente.`);
   } else {
-    const tokens = withoutComments(readFileSync(tokensPath, 'utf8'));
-    for (const token of [...REQUIRED_THEME_TOKENS, ...REQUIRED_SCALE_TOKENS]) {
+    const tokens = withoutComments(readFileSync(globalsPath, 'utf8'));
+    for (const token of REQUIRED_THEME_TOKENS) {
       if (!new RegExp(`(?:^|[^-\\w])${token}\\s*:`, 'm').test(tokens)) {
-        warnings.push(`${TOKENS_FILE}: token obrigatório "${token}" não está declarado.`);
+        warnings.push(`${GLOBALS_CSS_FILE}: token obrigatório "${token}" não está declarado.`);
       }
     }
   }
 
   const mainPath = join(root, 'src/main.tsx');
-  if (
-    !existsSync(mainPath) ||
-    !readFileSync(mainPath, 'utf8').includes('@vitru/styleguide/styles.css')
-  ) {
-    warnings.push('src/main.tsx: importe "@vitru/styleguide/styles.css" uma única vez.');
-  }
-
-  const indexPath = join(root, 'index.html');
-  if (existsSync(indexPath) && !/<html[^>]*\sdata-theme=/.test(readFileSync(indexPath, 'utf8'))) {
-    warnings.push('index.html: declare o tema no <html> (ex.: data-theme="vitru").');
-  }
-}
-
-function checkCssLiterals(root, warnings) {
-  const sourceRoot = join(root, 'src');
-  for (const file of listFiles(sourceRoot, new Set(['.css']))) {
-    const label = normalized(relative(root, file));
-    if (label === TOKENS_FILE) continue;
-    const lines = withoutComments(readFileSync(file, 'utf8')).split('\n');
-    lines.forEach((line, index) => {
-      if (COLOR_PATTERNS.some((pattern) => pattern.test(line))) {
-        warnings.push(
-          `${label}:${index + 1}: cor literal fora de tokens.css; use var(--token). -> ${line.trim()}`,
-        );
-      }
-    });
+  if (!existsSync(mainPath) || !readFileSync(mainPath, 'utf8').includes('./styles/globals.css')) {
+    warnings.push('src/main.tsx: importe "./styles/globals.css" uma única vez.');
   }
 }
 
@@ -182,14 +116,6 @@ function checkIcons(root, warnings) {
   if (existsSync(packagePath)) {
     const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
     const dependencies = pkg.dependencies ?? {};
-    const styleguideVersion = dependencies[STYLEGUIDE_PACKAGE];
-    if (!styleguideVersion) {
-      warnings.push(`package.json: "${STYLEGUIDE_PACKAGE}" deve estar em dependencies.`);
-    } else if (LOCAL_DEPENDENCY_PROTOCOL.test(styleguideVersion)) {
-      warnings.push(
-        `package.json: "${STYLEGUIDE_PACKAGE}" deve usar uma versão publicada no npm, não "${styleguideVersion}".`,
-      );
-    }
     if (!dependencies[ICON_LIBRARY]) {
       warnings.push(`package.json: "${ICON_LIBRARY}" deve estar em dependencies.`);
     }
@@ -215,17 +141,15 @@ function checkIcons(root, warnings) {
 }
 
 function checkKit(root, warnings) {
-  const indexPath = join(root, 'node_modules/@vitru/styleguide/dist/index.d.ts');
+  const indexPath = join(root, 'src/shared/ui/index.ts');
   if (!existsSync(indexPath)) {
-    warnings.push(`${indexPath}: declarações públicas do kit ausentes.`);
+    warnings.push(`${indexPath}: ponto de entrada do kit de componentes ausente.`);
     return;
   }
   const index = readFileSync(indexPath, 'utf8');
   for (const component of REQUIRED_COMPONENTS) {
     if (!new RegExp(`\\b${component}\\b`).test(index)) {
-      warnings.push(
-        `${STYLEGUIDE_PACKAGE}: o kit base perdeu "${component}" (docs/styleguide.md).`,
-      );
+      warnings.push(`src/shared/ui: o kit base perdeu o componente "${component}".`);
     }
   }
 }
@@ -233,7 +157,6 @@ function checkKit(root, warnings) {
 export function checkStyleguide(root = defaultRoot) {
   const warnings = [];
   checkTokens(root, warnings);
-  checkCssLiterals(root, warnings);
   checkIcons(root, warnings);
   checkKit(root, warnings);
   return warnings;

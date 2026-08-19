@@ -1,13 +1,13 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { RouterProvider } from 'react-router';
-import '@vitru/styleguide/styles.css';
+import './styles/globals.css';
 import { router } from './app/routes';
+import { ThemeProvider } from './shared/theme';
 // Valida as variaveis de ambiente antes de montar a aplicacao: uma
 // configuracao ausente ou malformada falha aqui, com mensagem clara, em vez
 // de virar `undefined` em algum ponto distante do codigo.
 import './shared/config';
-import './styles/themix.css';
 
 const rootElement = document.getElementById('root');
 
@@ -17,6 +17,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <ThemeProvider defaultTheme="system">
+      <RouterProvider router={router} />
+    </ThemeProvider>
   </StrictMode>,
 );

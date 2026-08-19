@@ -1,6 +1,6 @@
 import { LogIn, LogOut, User } from 'lucide-react';
 import { Link } from 'react-router';
-import { Button } from '@vitru/styleguide';
+import { Button } from '@/shared/ui';
 import { useAuth } from '../hooks/useAuth';
 import styles from './AuthButton.module.css';
 

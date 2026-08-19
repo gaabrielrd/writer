@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { BookOpen, MapPin, Plus, Search, Tag, User, X } from 'lucide-react';
-import { Badge, Button, Input } from '@vitru/styleguide';
+import { Badge, Button, Input } from '@/shared/ui';
 import {
   type CreateLoreEntityInput,
   type LoreCategory,
@@ -20,14 +20,11 @@ export interface EditorLoreSidebarProps {
   onUpdateEntity: (id: string, input: UpdateLoreEntityInput) => Promise<void>;
 }
 
-const CATEGORY_BADGES: Record<
-  LoreCategory,
-  'neutral' | 'accent' | 'success' | 'danger' | 'highlight'
-> = {
+const CATEGORY_BADGES: Record<LoreCategory, 'default' | 'accent' | 'success' | 'secondary'> = {
   character: 'accent',
   location: 'success',
-  concept: 'highlight',
-  other: 'neutral',
+  concept: 'default',
+  other: 'secondary',
 };
 
 const CATEGORY_LABELS: Record<LoreCategory, string> = {

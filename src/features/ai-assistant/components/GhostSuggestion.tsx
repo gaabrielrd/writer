@@ -1,5 +1,5 @@
 import { Sparkles, X, Check } from 'lucide-react';
-import { Button } from '@vitru/styleguide';
+import { Button } from '@/shared/ui';
 import styles from './GhostSuggestion.module.css';
 
 export interface GhostSuggestionProps {

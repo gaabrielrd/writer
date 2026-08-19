@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { Button, Dialog, Input, Select, Textarea } from '@vitru/styleguide';
+import { Button, Dialog, Input, Select, Textarea } from '@/shared/ui';
 import {
   LORE_CATEGORIES,
   type CreateLoreEntityInput,

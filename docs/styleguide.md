@@ -1,101 +1,58 @@
-# Styleguide
+# Styleguide & Design System
 
-A base visual deste template vem do pacote `@vitru/styleguide`. A referência
-viva continua disponível em `/styleguide` e é renderizada pelo subpath
-`@vitru/styleguide/showcase`.
+A base visual do Writer Assistant é estruturada em torno do padrão **shadcn/ui** (utilizando **Tailwind CSS**, **Radix UI Primitives** e **Lucide React**), com componentes abertos, tipados e modulares localizados em `src/shared/ui` e motor de temas dinâmico em `src/shared/theme`. A referência interativa viva está disponível na rota `/styleguide`.
 
 ## Instalação e imports
 
-O pacote está em `dependencies`. O CSS público é importado uma única vez por
-`src/main.tsx`:
+O CSS global é importado uma única vez em `src/main.tsx`:
 
 ```tsx
-import '@vitru/styleguide/styles.css';
+import './styles/globals.css';
 ```
 
-Componentes são importados pelo entrypoint público:
+Os componentes de interface são importados pelo módulo compartilhado `@/shared/ui`:
 
 ```tsx
-import { Button, Card, Input, PageHeader } from '@vitru/styleguide';
+import { Button, Card, Input, PageHeader, Dialog, Badge } from '@/shared/ui';
 ```
 
-O template instala a versão publicada no registro público do npm. Atualize a
-faixa semver em `package.json` e o lockfile para receber novas versões do kit;
-não use `file:`, `link:` ou `workspace:` no template distribuído.
+## Motor de Temas (`src/shared/theme`)
 
-## Regras
+A aplicação possui suporte nativo e reativo a múltiplos temas, controlados pelo `ThemeProvider` e pelo hook `useTheme`:
 
-1. Cor, espaçamento, tipografia, raio, sombra e transição vêm dos tokens
-   expostos por `@vitru/styleguide/tokens.css`.
-2. CSS de componentes não declara cor literal.
-3. A biblioteca de ícones é `lucide-react`.
-4. Estilo de feature permanece em CSS Module próprio.
-5. Campos usam `Input`, `Textarea` ou `Select` do pacote.
-6. Toda tela com dados cobre carregando, vazio, erro e sucesso.
-7. Evoluções do kit acontecem no repositório `styleguide-vitru`, com teste e
-   atualização da referência visual.
+1. **Tema Claro (`light`)**: Alto contraste, superfícies claras com acentos em azul royal.
+2. **Tema Escuro (`dark`)**: Superfície escura profunda para escrita e foco noturno.
+3. **Tema Sépia (`sepia`)**: Tom quente e relaxante inspirado em pergaminho e papel de livro, ideal para sessões prolongadas de leitura e escrita.
+4. **Sistema (`system`)**: Acompanha a preferência do sistema operacional (`prefers-color-scheme`).
 
-## Tema e tokens
+O controle de alternância de tema no cabeçalho é feito via `<ThemeToggle />` ou `<ThemeSelect />`.
 
-O tema padrão é `vitru`, aplicado por `data-theme="vitru"` no `<html>`. O pacote
-também fornece a paleta para `:root` sem atributo.
+## Regras de Interface
 
-Principais grupos:
+1. **Tokens Semânticos**: Cores e superfícies vêm das variáveis CSS (`--background`, `--foreground`, `--primary`, `--card`, `--border`, `--muted`, `--accent`, etc.) definidas em `src/styles/globals.css`.
+2. **Ícones**: Biblioteca oficial `lucide-react` com a classe `icon` (`icon-sm` para dimensões menores).
+3. **Componentes Padrão**: Campos utilizam `Input`, `Textarea` ou `Select` de `@/shared/ui`.
+4. **Resiliência Visual**: Toda tela com busca assíncrona cobre estados de carregamento (`LoadingState`), lista vazia (`EmptyState`), erro com retry (`ErrorState`) e sucesso.
+5. **Acessibilidade (a11y)**: Primitivos do Radix UI garantem 100% de conformidade com WAI-ARIA (fechamento por tecla `Esc`, armadilhas de foco, navegação por teclado e rótulos de leitor de tela).
 
-- cores: `--paper`, `--ink`, `--accent`, `--danger`, `--success` e superfícies;
-- tipografia: `--font-display`, `--font-sans`, tamanhos, pesos e entrelinhas;
-- espaçamento: `--space-1` a `--space-8`;
-- formas: raios, borda e elevações;
-- movimento, foco, ícones e largura de layout.
+## Kit de Componentes (`src/shared/ui`)
 
-Consulte `/styleguide` ou o arquivo distribuído por
-`@vitru/styleguide/tokens.css` para o catálogo atual.
-
-## Fontes
-
-Archivo e sua licença OFL são distribuídas pelo pacote. TheMix é comercial: o
-pacote contém apenas o nome da família e fallbacks adequados para títulos, nunca
-os seus binários.
-
-Este template mantém os arquivos licenciados em `public/fonts` e as declarações
-locais em `src/styles/themix.css`. Em outro consumidor, copie os WOFF2 para
-`public`, `src/assets` ou diretório equivalente e execute:
-
-```bash
-npx vitru-install-themix
-```
-
-O comando encontra o CSS principal e adiciona um bloco `@font-face` idempotente.
-Use `--css=src/caminho.css` para indicar outro arquivo. Sem TheMix, os títulos
-caem para `Arial Narrow`, `Aptos Display`, `Roboto Condensed` e fontes do
-sistema.
-
-## Kit público
-
-O contrato atual inclui `PageHeader`, `Card`, `Button`, `Input`, `Textarea`,
-`Select`, `Table`, `Alert`, `Badge`, `Dialog`, `LoadingState`, `EmptyState`,
-`ErrorState` e `ErrorBoundary`.
-
-Uma ação primária por tela; ações destrutivas pedem confirmação. Alertas e
-etiquetas precisam transmitir significado por texto, não apenas por cor.
-
-## Acessibilidade
-
-- contraste mínimo AA;
-- foco visível preservado;
-- movimento reduzido respeitado;
-- ícones decorativos com `aria-hidden="true"`;
-- ícone sem texto exige nome acessível no controle.
+- `Button`: Variantes (`primary`, `secondary`, `outline`, `destructive`, `ghost`, `link`) e tamanhos (`sm`, `md`, `lg`, `icon`).
+- `Input`: Entrada de texto com suporte a labels flutuantes, ícones, helpers e erros.
+- `Textarea`: Área de texto redimensionável com feedback de validação.
+- `Select`: Menu de seleção acessível.
+- `Badge`: Pílulas de identificação e status (`default`, `secondary`, `accent`, `success`, `destructive`, `outline`).
+- `Card`: Agrupamento de conteúdo (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`).
+- `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog.
+- `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).
+- `LoadingState`, `EmptyState`, `ErrorState`: Estados padrão de ciclo de vida.
+- `PageHeader`: Cabeçalho padrão de páginas com suporte a breadcrumbs e ações.
+- `Table`: Tabelas responsivas estilizadas.
+- `StyleguidePage`: Página viva do catálogo acessível em `/styleguide`.
 
 ## Verificação
 
 ```bash
 npm run check:styleguide
 npm run validate
-npm run test:e2e
 ```
-
-`check:styleguide` confirma a dependência e os exports do pacote, o import do
-CSS, os tokens obrigatórios, a biblioteca de ícones e a ausência de cores
-literais no código consumidor. O E2E protege o contrato computado e a regressão
-visual de `/styleguide`.

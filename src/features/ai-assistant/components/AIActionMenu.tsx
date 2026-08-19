@@ -10,7 +10,7 @@ import {
   Settings,
   Check,
 } from 'lucide-react';
-import { Alert, Button, Dialog, Input, LoadingState } from '@vitru/styleguide';
+import { Alert, Button, Dialog, Input, LoadingState } from '@/shared/ui';
 import { buildActionPrompt, type AIActionType, type LoreContextItem } from '../model/aiPrompt';
 import { getBYOKConfig } from '../services/byokStorage';
 import { generateAIResponse } from '../services/aiClient';

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
-import { Alert, Button, Dialog, Input, Select } from '@vitru/styleguide';
+import { Alert, Button, Dialog, Input, Select } from '@/shared/ui';
 import type { AIProvider, BYOKConfig } from '../model/byokConfig';
 import { validateBYOKConfig } from '../model/byokConfig';
 import { getBYOKConfig, saveBYOKConfig, clearBYOKConfig } from '../services/byokStorage';

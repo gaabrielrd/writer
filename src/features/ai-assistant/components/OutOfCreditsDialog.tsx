@@ -1,5 +1,5 @@
 import { AlertCircle, KeyRound, Sparkles } from 'lucide-react';
-import { Button, Dialog } from '@vitru/styleguide';
+import { Button, Dialog } from '@/shared/ui';
 import styles from './OutOfCreditsDialog.module.css';
 
 export interface OutOfCreditsDialogProps {

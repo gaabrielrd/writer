@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Badge } from '@vitru/styleguide';
+import { Badge } from '@/shared/ui';
 import type { LoreCategory, LoreEntity } from '../model/loreEntity';
 import styles from './LoreTooltip.module.css';
 
@@ -15,14 +15,11 @@ const CATEGORY_LABELS: Record<LoreCategory, string> = {
   other: 'Outro',
 };
 
-const CATEGORY_BADGES: Record<
-  LoreCategory,
-  'neutral' | 'accent' | 'success' | 'danger' | 'highlight'
-> = {
+const CATEGORY_BADGES: Record<LoreCategory, 'default' | 'accent' | 'success' | 'secondary'> = {
   character: 'accent',
   location: 'success',
-  concept: 'highlight',
-  other: 'neutral',
+  concept: 'default',
+  other: 'secondary',
 };
 
 export function LoreTooltip({ entity, children }: LoreTooltipProps) {

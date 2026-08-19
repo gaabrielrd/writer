@@ -9,7 +9,7 @@ import {
   CloudOff,
   Loader2,
 } from 'lucide-react';
-import { Button, ErrorState, LoadingState } from '@vitru/styleguide';
+import { Button, ErrorState, LoadingState } from '@/shared/ui';
 import { useAuth, CreditsBadge } from '@/features/auth';
 import { getBook, listChapters, getChapter, type Book, type Chapter } from '@/features/books';
 import {

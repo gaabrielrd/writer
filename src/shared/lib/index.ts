@@ -9,3 +9,4 @@ export {
   getFirebaseAI,
   getAppCheck,
 } from './firebase';
+export { cn } from './utils';

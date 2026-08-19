@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
-import { Button, EmptyState, ErrorState, LoadingState } from '@vitru/styleguide';
+import { Button, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
 import type { Book, CreateBookInput } from '../model/book';
 import { useBooks } from '../hooks/useBooks';
 import { BookCard } from './BookCard';

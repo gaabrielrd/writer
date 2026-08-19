@@ -1,5 +1,5 @@
 import { createBrowserRouter, type RouteObject } from 'react-router';
-import { StyleguidePage } from '@vitru/styleguide/showcase';
+import { StyleguidePage } from '@/shared/ui';
 import { App } from '@/app/App';
 import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallback';
 import { HomePage } from '@/features/home';

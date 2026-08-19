@@ -32,20 +32,13 @@
 ## Estilo e interface
 
 - Siga `docs/styleguide.md`.
-- Cor, espaçamento, tipografia, raio e transição vêm dos tokens de
-  `@vitru/styleguide/tokens.css`. Não escreva cor literal em CSS de componente.
-- Ícones somente de `lucide-react`, com a classe `icon`; acrescente
-  `icon-sm` para o tamanho menor.
-- Fontes oficiais: TheMix nos títulos (`--font-display`, só peso 700) e
-  Archivo no texto (`--font-sans`). Não adicione fonte nem use CDN.
-- Estilo de componente fica no CSS Module do próprio componente.
-- Monte as telas com o kit de `@vitru/styleguide` (`PageHeader`, `Card`,
-  `Input`, `Table`, `Alert`, `Dialog`, `LoadingState`, `EmptyState`,
-  `ErrorState`...). Só crie componente novo se nenhum deles resolver.
-- Campo de formulário sempre pelo `Input`/`Textarea`/`Select`.
+- Cores, superfícies e estados visuais vêm das variáveis de tema semânticas em `src/styles/globals.css` (`--background`, `--foreground`, `--primary`, `--secondary`, `--card`, `--border`, etc.).
+- Suporte a temas dinâmicos via `src/shared/theme` (`ThemeProvider`, `useTheme`, `ThemeToggle`): Claro (`light`), Escuro (`dark`) e Sépia (`sepia`).
+- Ícones somente de `lucide-react`, com a classe `icon`; acrescente `icon-sm` para o tamanho menor.
+- Monte as telas com os componentes modulares de `@/shared/ui` (`Button`, `Input`, `Textarea`, `Select`, `Badge`, `Card`, `Dialog`, `Alert`, `LoadingState`, `EmptyState`, `ErrorState`, `PageHeader`, `Table`).
+- Campo de formulário sempre pelo `Input`/`Textarea`/`Select` de `@/shared/ui`.
 - Toda tela que busca dados cobre carregando, vazio, erro e sucesso.
-- Para mudar a identidade visual, altere os tokens, não os componentes.
-- Mantenha a rota `/styleguide` funcionando e atualizada.
+- Mantenha a rota `/styleguide` funcionando e atualizada com os temas.
 
 ## Escopo
 

@@ -1,5 +1,5 @@
 import { BookOpen, Edit2, Eye, EyeOff, MapPin, Tag, Trash2, User } from 'lucide-react';
-import { Badge, Button, Card } from '@vitru/styleguide';
+import { Badge, Button, Card } from '@/shared/ui';
 import type { LoreCategory, LoreEntity } from '../model/loreEntity';
 import styles from './LoreEntityCard.module.css';
 

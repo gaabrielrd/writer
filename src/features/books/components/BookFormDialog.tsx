@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Button, Dialog, Input, Textarea } from '@vitru/styleguide';
+import { Button, Dialog, Input, Textarea } from '@/shared/ui';
 import type { Book, CreateBookInput } from '../model/book';
 import styles from './BookFormDialog.module.css';
 

@@ -1,6 +1,6 @@
 import { Link } from 'react-router';
 import { Book as BookIcon, Edit2, FileText, Globe, Lock, Scroll, Trash2 } from 'lucide-react';
-import { Badge, Button, Card } from '@vitru/styleguide';
+import { Badge, Button, Card } from '@/shared/ui';
 import type { Book } from '../model/book';
 import styles from './BookCard.module.css';
 
