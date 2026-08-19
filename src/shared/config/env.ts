@@ -14,12 +14,34 @@
 /** Variaveis sem as quais a aplicacao nao deve subir. */
 const REQUIRED_KEYS: readonly string[] = [];
 
+export interface FirebaseConfig {
+  readonly apiKey: string;
+  readonly authDomain: string;
+  readonly projectId: string;
+  readonly storageBucket: string;
+  readonly messagingSenderId: string;
+  readonly appId: string;
+  readonly measurementId?: string;
+}
+
+export const DEFAULT_FIREBASE_CONFIG: FirebaseConfig = {
+  apiKey: 'AIzaSyB1mNeWUowIT4o638JUf9vJBGWhp6I4vAY',
+  authDomain: 'writer-44cd5.firebaseapp.com',
+  projectId: 'writer-44cd5',
+  storageBucket: 'writer-44cd5.firebasestorage.app',
+  messagingSenderId: '404822288771',
+  appId: '1:404822288771:web:4f1b6e123c716374d76eb6',
+  measurementId: 'G-XXK14L9PFH',
+};
+
 export interface Env {
   /** Modo do Vite: `development`, `production` ou um modo customizado. */
   readonly mode: string;
   readonly isProduction: boolean;
   /** Base da API, quando o projeto usa uma. */
   readonly apiUrl: string | undefined;
+  /** Configuração do Firebase */
+  readonly firebase: FirebaseConfig;
 }
 
 export class EnvValidationError extends Error {
@@ -73,10 +95,26 @@ export function createEnv(raw: ImportMetaEnv): Env {
 
   if (problems.length > 0) throw new EnvValidationError(problems);
 
+  const firebase: FirebaseConfig = {
+    apiKey: readOptional(raw, 'VITE_FIREBASE_API_KEY') ?? DEFAULT_FIREBASE_CONFIG.apiKey,
+    authDomain:
+      readOptional(raw, 'VITE_FIREBASE_AUTH_DOMAIN') ?? DEFAULT_FIREBASE_CONFIG.authDomain,
+    projectId: readOptional(raw, 'VITE_FIREBASE_PROJECT_ID') ?? DEFAULT_FIREBASE_CONFIG.projectId,
+    storageBucket:
+      readOptional(raw, 'VITE_FIREBASE_STORAGE_BUCKET') ?? DEFAULT_FIREBASE_CONFIG.storageBucket,
+    messagingSenderId:
+      readOptional(raw, 'VITE_FIREBASE_MESSAGING_SENDER_ID') ??
+      DEFAULT_FIREBASE_CONFIG.messagingSenderId,
+    appId: readOptional(raw, 'VITE_FIREBASE_APP_ID') ?? DEFAULT_FIREBASE_CONFIG.appId,
+    measurementId:
+      readOptional(raw, 'VITE_FIREBASE_MEASUREMENT_ID') ?? DEFAULT_FIREBASE_CONFIG.measurementId,
+  };
+
   return {
     mode: raw.MODE,
     isProduction: raw.PROD,
     apiUrl,
+    firebase,
   };
 }
 

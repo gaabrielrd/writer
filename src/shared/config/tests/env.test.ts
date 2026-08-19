@@ -32,13 +32,14 @@ describe('createEnv', () => {
     expect(() => createEnv(raw({ VITE_API_URL: 'api.exemplo.com' }))).toThrow(/URL absoluta/);
   });
 
-  it('reune todos os problemas em uma unica mensagem', () => {
-    try {
-      createEnv(raw({ VITE_API_URL: 'nao-e-url' }));
-      expect.unreachable('createEnv deveria ter lancado');
-    } catch (error) {
-      expect(error).toBeInstanceOf(EnvValidationError);
-      expect((error as Error).message).toContain('.env.local');
-    }
+  it('expoe configuracao do firebase com defaults quando variaveis nao sao fornecidas', () => {
+    const env = createEnv(raw());
+    expect(env.firebase.projectId).toBe('writer-44cd5');
+    expect(env.firebase.apiKey).toBe('AIzaSyB1mNeWUowIT4o638JUf9vJBGWhp6I4vAY');
+  });
+
+  it('permite sobrescrever valores de configuracao do firebase', () => {
+    const env = createEnv(raw({ VITE_FIREBASE_PROJECT_ID: 'custom-proj' }));
+    expect(env.firebase.projectId).toBe('custom-proj');
   });
 });

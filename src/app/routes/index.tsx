@@ -3,6 +3,7 @@ import { StyleguidePage } from '@vitru/styleguide/showcase';
 import { App } from '@/app/App';
 import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallback';
 import { HomePage } from '@/features/home';
+import { LoginPage } from '@/features/auth';
 
 /**
  * Definicao das rotas, separada do router para permitir montar a mesma
@@ -18,6 +19,10 @@ export const routes: RouteObject[] = [
       {
         index: true,
         element: <HomePage />,
+      },
+      {
+        path: 'login',
+        element: <LoginPage />,
       },
       {
         // Referência viva fornecida pelo pacote compartilhado.

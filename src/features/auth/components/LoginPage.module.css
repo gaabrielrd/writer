@@ -1,0 +1,79 @@
+.container {
+  max-width: 480px;
+  margin: var(--space-8) auto;
+  padding: 0 var(--space-4);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  color: var(--ink-subtle, var(--border));
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: var(--space-2) 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid var(--border-subtle, var(--border));
+}
+
+.divider span {
+  padding: 0 var(--space-3);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.toggle {
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--ink-subtle, var(--ink));
+}
+
+.toggleButton {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0 var(--space-1);
+  text-decoration: underline;
+}
+
+.benefits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md, 8px);
+  background: var(--surface-subtle, var(--paper-2));
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+
+.benefitItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}

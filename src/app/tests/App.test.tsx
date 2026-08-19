@@ -29,6 +29,14 @@ describe('composicao da aplicacao', () => {
     // O layout continua visivel: o erro nao derruba a aplicacao inteira.
     expect(screen.getByRole('banner')).toBeInTheDocument();
   });
+
+  it('renderiza a rota /login com o formulario de autenticacao', async () => {
+    renderAt('/login');
+
+    expect(
+      await screen.findByRole('heading', { name: /entrar no writer assistant/i }),
+    ).toBeInTheDocument();
+  });
 });
 
 describe('errorElement das rotas', () => {

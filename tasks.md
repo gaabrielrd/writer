@@ -5,7 +5,6 @@ Registre aqui as tarefas do projeto. O detalhamento de cada demanda fica em
 
 ## A fazer
 
-- [ ] [Tarefa 01: Autenticação e Base Firebase](docs/tasks/01-auth-e-base-firebase.md)
 - [ ] [Tarefa 02: Gestão de Livros e Capítulos](docs/tasks/02-gestao-de-livros-e-capitulos.md)
 - [ ] [Tarefa 03: Compêndio de Lore (Worldbuilding)](docs/tasks/03-compendio-de-lore.md)
 - [ ] [Tarefa 04: Editor WYSIWYG e Lore Integrado](docs/tasks/04-editor-wysiwyg-e-lore-integrado.md)
@@ -16,3 +15,5 @@ Registre aqui as tarefas do projeto. O detalhamento de cada demanda fica em
 ## Em andamento
 
 ## Concluído
+
+- [x] [Tarefa 01: Autenticação e Base Firebase](docs/tasks/01-auth-e-base-firebase.md)

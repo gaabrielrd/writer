@@ -1,2 +1,2 @@
 // Utilitarios puros e neutros de dominio (formatadores, helpers, etc.).
-export {};
+export { firebaseApp, auth, firestore, getFirebaseApp } from './firebase';

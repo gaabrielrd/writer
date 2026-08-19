@@ -28,23 +28,23 @@ Configurar o cliente Firebase (Firebase Auth e Cloud Firestore), implementar a f
 
 ## Critérios de aceite
 
-- [ ] Usuário não autenticado vê o botão "Entrar" na navegação e pode navegar para `/login`.
-- [ ] Ao autenticar (Google ou E-mail), a conta é criada no Firestore com 100 créditos iniciais (se for primeiro acesso) ou seu saldo existente é recuperado.
-- [ ] A barra superior exibe o avatar do autor, seu nome e seu saldo de créditos atualizado.
-- [ ] Ao clicar em "Sair", a sessão é encerrada e a interface atualiza para o estado deslogado.
-- [ ] Testes automatizados cobrem a criação de usuário, login, logout e renderização do `CreditsBadge`.
+- [x] Usuário não autenticado vê o botão "Entrar" na navegação e pode navegar para `/login`.
+- [x] Ao autenticar (Google ou E-mail), a conta é criada no Firestore com 100 créditos iniciais (se for primeiro acesso) ou seu saldo existente é recuperado.
+- [x] A barra superior exibe o avatar do autor, seu nome e seu saldo de créditos atualizado.
+- [x] Ao clicar em "Sair", a sessão é encerrada e a interface atualiza para o estado deslogado.
+- [x] Testes automatizados cobrem a criação de usuário, login, logout e renderização do `CreditsBadge`.
 
 ## Tarefas
 
-- [ ] 1. Declarar as variáveis do Firebase em `src/vite-env.d.ts` e configurar em `src/shared/config/env.ts` (ou fallback seguro para desenvolvimento/testes).
-- [ ] 2. Criar o cliente inicializado do Firebase em `src/shared/lib/firebase.ts`.
-- [ ] 3. Gerar a feature `src/features/auth` (`npm run generate:feature -- --name="auth"`).
-- [ ] 4. Implementar a modelagem de usuário e perfis em `src/features/auth/model/user.ts`.
-- [ ] 5. Implementar o serviço de autenticação e persistência de perfil em `src/features/auth/services/authService.ts`.
-- [ ] 6. Implementar os componentes de interface (`LoginPage`, `AuthButton`, `CreditsBadge`) utilizando o kit `@vitru/styleguide`.
-- [ ] 7. Criar a rota `/login` em `src/app/routes/index.tsx` e integrar no cabeçalho em `src/app/App.tsx`.
-- [ ] 8. Escrever testes unitários e de integração da feature em `src/features/auth/tests/`.
-- [ ] 9. Executar `npm run validate` e garantir 100% de sucesso.
+- [x] 1. Declarar as variáveis do Firebase em `src/vite-env.d.ts` e configurar em `src/shared/config/env.ts` (ou fallback seguro para desenvolvimento/testes).
+- [x] 2. Criar o cliente inicializado do Firebase em `src/shared/lib/firebase.ts`.
+- [x] 3. Gerar a feature `src/features/auth` (`npm run generate:feature -- --name="auth"`).
+- [x] 4. Implementar a modelagem de usuário e perfis em `src/features/auth/model/user.ts`.
+- [x] 5. Implementar o serviço de autenticação e persistência de perfil em `src/features/auth/services/authService.ts`.
+- [x] 6. Implementar os componentes de interface (`LoginPage`, `AuthButton`, `CreditsBadge`) utilizando o kit `@vitru/styleguide`.
+- [x] 7. Criar a rota `/login` em `src/app/routes/index.tsx` e integrar no cabeçalho em `src/app/App.tsx`.
+- [x] 8. Escrever testes unitários e de integração da feature em `src/features/auth/tests/`.
+- [x] 9. Executar `npm run validate` e garantir 100% de sucesso.
 
 ## Riscos
 

@@ -7,11 +7,26 @@
   gap: var(--space-7);
 }
 
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
 .brand {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-2);
+  text-decoration: none;
+  color: inherit;
 }
 
 .mark {
@@ -24,25 +39,16 @@
   color: var(--navy);
 }
 
-.status {
-  display: inline-flex;
+.userBar {
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
-  margin: 0;
-  color: var(--ink-soft);
-}
-
-/* `icon` e uma classe global de global.css: dentro de um CSS Module ela
- * precisa de :global(), senao o nome seria hasheado e nunca casaria. */
-.status :global(.icon) {
-  color: var(--success);
+  gap: var(--space-3);
 }
 
 .nav {
   display: flex;
   gap: var(--space-4);
-  margin-top: var(--space-4);
-  padding-top: var(--space-4);
+  padding-top: var(--space-3);
   border-top: var(--border-width) solid var(--line);
   font-size: var(--text-sm);
 }
@@ -52,6 +58,7 @@
   align-items: center;
   gap: var(--space-2);
   text-decoration: none;
+  color: var(--ink);
 }
 
 .nav a:hover {
