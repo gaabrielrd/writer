@@ -11,3 +11,4 @@ export { BookFormDialog } from './components/BookFormDialog';
 export type { BookFormDialogProps } from './components/BookFormDialog';
 export { ChapterList } from './components/ChapterList';
 export type { ChapterListProps } from './components/ChapterList';
+export { BookPage } from './components/BookPage';

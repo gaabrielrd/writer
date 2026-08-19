@@ -4,6 +4,7 @@ import { App } from '@/app/App';
 import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallback';
 import { HomePage } from '@/features/home';
 import { LoginPage } from '@/features/auth';
+import { BookPage } from '@/features/books';
 import { LorePage } from '@/features/lore';
 import { EditorPage } from '@/features/editor';
 
@@ -25,6 +26,10 @@ export const routes: RouteObject[] = [
       {
         path: 'login',
         element: <LoginPage />,
+      },
+      {
+        path: 'books/:bookId',
+        element: <BookPage />,
       },
       {
         path: 'books/:bookId/lore',

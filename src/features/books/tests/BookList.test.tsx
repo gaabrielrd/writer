@@ -63,8 +63,7 @@ describe('BookList', () => {
     expect(await screen.findByText('Nenhum livro cadastrado')).toBeInTheDocument();
   });
 
-  it('permite editar, excluir, alternar status e gerenciar capitulos de um livro', async () => {
-    const user = userEvent.setup();
+  it('renderiza cards como links para a pagina do livro', async () => {
     const mockBook: Book = {
       id: 'b-1',
       authorId: 'auth-1',
@@ -79,9 +78,6 @@ describe('BookList', () => {
     };
 
     vi.spyOn(bookService, 'listBooksByAuthor').mockResolvedValue([mockBook]);
-    vi.spyOn(bookService, 'updateBook').mockResolvedValue();
-    vi.spyOn(bookService, 'deleteBook').mockResolvedValue();
-    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
 
     render(
       <MemoryRouter>
@@ -91,31 +87,7 @@ describe('BookList', () => {
 
     expect(await screen.findByText('Livro Existente')).toBeInTheDocument();
 
-    // Alternar status
-    await user.click(screen.getByRole('button', { name: /publicar/i }));
-    expect(bookService.updateBook).toHaveBeenCalledWith('b-1', { status: 'published' });
-
-    // Editar
-    await user.click(screen.getByLabelText('Editar Livro Existente'));
-    expect(screen.getByRole('heading', { name: 'Editar Obra' })).toBeInTheDocument();
-    await user.type(screen.getByLabelText(/título da obra/i), ' Editado');
-    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
-    expect(bookService.updateBook).toHaveBeenCalledWith(
-      'b-1',
-      expect.objectContaining({ title: 'Livro Existente Editado' }),
-    );
-
-    // Gerenciar capítulos
-    await user.click(screen.getByRole('button', { name: /capítulos/i }));
-    expect(
-      await screen.findByRole('heading', { name: /capítulos — livro existente/i }),
-    ).toBeInTheDocument();
-    const closeButtons = screen.getAllByRole('button', { name: 'Fechar' });
-    const closeBtn = closeButtons[closeButtons.length - 1];
-    if (closeBtn) await user.click(closeBtn);
-
-    // Excluir
-    await user.click(screen.getByLabelText('Excluir Livro Existente'));
-    expect(bookService.deleteBook).toHaveBeenCalledWith('b-1');
+    const link = screen.getByRole('link');
+    expect(link).toHaveAttribute('href', '/books/b-1');
   });
 });

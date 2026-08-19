@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
-import type { Book, CreateBookInput } from '../model/book';
+import type { CreateBookInput } from '../model/book';
 import { useBooks } from '../hooks/useBooks';
 import { BookCard } from './BookCard';
 import { BookFormDialog } from './BookFormDialog';
-import { ChapterList } from './ChapterList';
 import styles from './BookList.module.css';
 
 export interface BookListProps {
@@ -13,38 +12,15 @@ export interface BookListProps {
 }
 
 export function BookList({ authorId }: BookListProps) {
-  const { books, loading, error, refreshBooks, createBook, updateBook, deleteBook } =
-    useBooks(authorId);
-
+  const { books, loading, error, refreshBooks, createBook } = useBooks(authorId);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingBook, setEditingBook] = useState<Book | null>(null);
-  const [managingBook, setManagingBook] = useState<Book | null>(null);
 
   const handleOpenCreate = () => {
-    setEditingBook(null);
-    setIsFormOpen(true);
-  };
-
-  const handleOpenEdit = (book: Book) => {
-    setEditingBook(book);
     setIsFormOpen(true);
   };
 
   const handleFormSubmit = async (input: CreateBookInput) => {
-    if (editingBook) {
-      await updateBook(editingBook.id, input);
-    } else {
-      await createBook(input);
-    }
-  };
-
-  const handleToggleStatus = (book: Book) => {
-    const nextStatus = book.status === 'published' ? 'draft' : 'published';
-    void updateBook(book.id, { status: nextStatus });
-  };
-
-  const handleDelete = (bookId: string) => {
-    void deleteBook(bookId);
+    await createBook(input);
   };
 
   if (loading) {
@@ -81,7 +57,6 @@ export function BookList({ authorId }: BookListProps) {
 
         <BookFormDialog
           open={isFormOpen}
-          bookToEdit={editingBook}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleFormSubmit}
         />
@@ -106,35 +81,15 @@ export function BookList({ authorId }: BookListProps) {
 
       <div className={styles.grid}>
         {books.map((book) => (
-          <BookCard
-            key={book.id}
-            book={book}
-            onEdit={handleOpenEdit}
-            onDelete={handleDelete}
-            onToggleStatus={handleToggleStatus}
-            onManageChapters={(b) => setManagingBook(b)}
-          />
+          <BookCard key={book.id} book={book} />
         ))}
       </div>
 
       <BookFormDialog
         open={isFormOpen}
-        bookToEdit={editingBook}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleFormSubmit}
       />
-
-      {managingBook && (
-        <ChapterList
-          book={managingBook}
-          open={Boolean(managingBook)}
-          onClose={() => {
-            setManagingBook(null);
-            void refreshBooks();
-          }}
-          onChapterCountChanged={() => void refreshBooks()}
-        />
-      )}
     </section>
   );
 }

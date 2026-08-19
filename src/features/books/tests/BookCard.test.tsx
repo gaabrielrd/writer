@@ -1,6 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { BookCard } from '../components/BookCard';
 import type { Book } from '../model/book';
@@ -19,16 +18,10 @@ describe('BookCard', () => {
     updatedAt: 2000,
   };
 
-  it('renderiza os dados do livro e botoes de acao', () => {
+  it('renderiza os dados do livro como link para a pagina do livro', () => {
     render(
       <MemoryRouter>
-        <BookCard
-          book={mockBook}
-          onEdit={vi.fn()}
-          onDelete={vi.fn()}
-          onToggleStatus={vi.fn()}
-          onManageChapters={vi.fn()}
-        />
+        <BookCard book={mockBook} />
       </MemoryRouter>,
     );
 
@@ -36,19 +29,15 @@ describe('BookCard', () => {
     expect(screen.getByText('Fantasia Obscura')).toBeInTheDocument();
     expect(screen.getByText(/15\.400 palavras/)).toBeInTheDocument();
     expect(screen.getByText('Rascunho')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /compêndio/i })).toBeInTheDocument();
+
+    const link = screen.getByRole('link');
+    expect(link).toHaveAttribute('href', '/books/book-123');
   });
 
   it('renderiza capa quando coverUrl e fornecido', () => {
     render(
       <MemoryRouter>
-        <BookCard
-          book={{ ...mockBook, coverUrl: 'https://exemplo.com/capa.jpg' }}
-          onEdit={vi.fn()}
-          onDelete={vi.fn()}
-          onToggleStatus={vi.fn()}
-          onManageChapters={vi.fn()}
-        />
+        <BookCard book={{ ...mockBook, coverUrl: 'https://exemplo.com/capa.jpg' }} />
       </MemoryRouter>,
     );
 
@@ -58,35 +47,13 @@ describe('BookCard', () => {
     );
   });
 
-  it('dispara callbacks de acoes ao clicar nos botoes', async () => {
-    const user = userEvent.setup();
-    const onEdit = vi.fn();
-    const onDelete = vi.fn();
-    const onToggleStatus = vi.fn();
-    const onManageChapters = vi.fn();
-
+  it('exibe badge Publicado para livros com status published', () => {
     render(
       <MemoryRouter>
-        <BookCard
-          book={mockBook}
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onToggleStatus={onToggleStatus}
-          onManageChapters={onManageChapters}
-        />
+        <BookCard book={{ ...mockBook, status: 'published' }} />
       </MemoryRouter>,
     );
 
-    await user.click(screen.getByRole('button', { name: /capítulos/i }));
-    expect(onManageChapters).toHaveBeenCalledWith(mockBook);
-
-    await user.click(screen.getByRole('button', { name: /publicar/i }));
-    expect(onToggleStatus).toHaveBeenCalledWith(mockBook);
-
-    await user.click(screen.getByLabelText('Editar O Enigma das Sombras'));
-    expect(onEdit).toHaveBeenCalledWith(mockBook);
-
-    await user.click(screen.getByLabelText('Excluir O Enigma das Sombras'));
-    expect(onDelete).toHaveBeenCalledWith('book-123');
+    expect(screen.getByText('Publicado')).toBeInTheDocument();
   });
 });

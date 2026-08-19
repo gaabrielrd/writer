@@ -11,3 +11,5 @@ export type { LoreEntityFormProps } from './components/LoreEntityForm';
 export { LoreDrawer } from './components/LoreDrawer';
 export type { LoreDrawerProps } from './components/LoreDrawer';
 export { LorePage } from './components/LorePage';
+export { LoreTab } from './components/LoreTab';
+export type { LoreTabProps } from './components/LoreTab';

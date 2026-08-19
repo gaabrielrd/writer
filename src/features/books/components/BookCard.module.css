@@ -1,3 +1,18 @@
+.cardLink {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  border-radius: var(--radius-lg);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.cardLink:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px hsl(var(--primary) / 0.12);
+}
+
 .cardWrapper {
   display: flex;
   flex-direction: column;
@@ -81,21 +96,4 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  background-color: var(--surface-quiet);
-  border-top: var(--border-width) solid var(--line);
-  border-radius: 0 0 calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px);
-}
-
-.actionGroup {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }

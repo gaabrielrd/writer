@@ -120,7 +120,7 @@ describe('LorePage', () => {
     expect(
       await screen.findByRole('heading', { name: 'Compêndio de Lore — Crônicas de Avalon' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Nenhuma entidade cadastrada')).toBeInTheDocument();
+    expect(await screen.findByText('Nenhuma entidade cadastrada')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /cadastrar primeira entidade/i }));
 
