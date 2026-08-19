@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Planejar aplicativo'
+  short_description: 'Transforme uma ideia em um produto definido'
+  default_prompt: 'Use $plan-app para transformar minha ideia em um PRD completo antes de implementar.'

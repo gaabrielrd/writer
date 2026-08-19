@@ -1,0 +1,59 @@
+.app {
+  max-width: var(--layout-max);
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-7);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.mark {
+  flex: none;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  color: var(--navy);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+/* `icon` e uma classe global de global.css: dentro de um CSS Module ela
+ * precisa de :global(), senao o nome seria hasheado e nunca casaria. */
+.status :global(.icon) {
+  color: var(--success);
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--line);
+  font-size: var(--text-sm);
+}
+
+.nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+}
+
+.nav a:hover {
+  text-decoration: underline;
+}

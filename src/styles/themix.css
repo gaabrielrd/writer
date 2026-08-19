@@ -1,0 +1,17 @@
+/* vitru-themix:start */
+@font-face {
+  font-family: 'TheMix';
+  src: url('/fonts/themix-bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TheMix';
+  src: url('/fonts/themix-bold-italic.woff2') format('woff2');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+/* vitru-themix:end */

@@ -1,0 +1,4 @@
+# Barreira antes de publicar a branch. O `validate` completo roda no CI;
+# aqui ficam as checagens rápidas que evitam abrir um PR vermelho.
+npm run typecheck
+npm run test:unit

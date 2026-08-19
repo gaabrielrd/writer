@@ -1,0 +1,31 @@
+# Dependências
+node_modules/
+
+# Build
+dist/
+*.tsbuildinfo
+
+# Cobertura e cache
+coverage/
+.eslintcache
+playwright-report/
+test-results/
+
+# Segredos e variáveis locais
+.env
+.env.local
+.env.*.local
+
+# Skills geradas (cópias sincronizadas por npm run sync:skills).
+# Só as cópias são ignoradas: assim o projeto pode versionar configurações
+# de agente como .claude/settings.json.
+.claude/skills/
+.agents/skills/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/

@@ -1,0 +1,30 @@
+name: '✨ Feature'
+description: 'Solicitar uma nova funcionalidade.'
+labels: ['feature']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema ou necessidade
+      description: Descreva o problema que esta funcionalidade resolveria.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solução proposta
+      description: Como você imagina a solução?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceite
+      description: Como saberemos que está pronto?
+      value: |
+        - [ ]
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexto adicional
+      description: Referências, mockups, exemplos, etc.

@@ -1,0 +1,28 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      # Agrupa atualizações de patch/minor em um único PR para reduzir ruído.
+      # Majors continuam vindo separados, pois exigem leitura do changelog.
+      dev-dependencies:
+        dependency-type: development
+        update-types: ['minor', 'patch']
+      production-dependencies:
+        dependency-type: production
+        update-types: ['minor', 'patch']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
