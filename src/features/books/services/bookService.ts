@@ -43,10 +43,10 @@ interface StoredChapterDoc {
 
 export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
   const booksRef = collection(firestore, 'books');
-  const q = query(booksRef, where('authorId', '==', authorId), orderBy('updatedAt', 'desc'));
+  const q = query(booksRef, where('authorId', '==', authorId));
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docSnap) => {
+  const books = snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as StoredBookDoc;
     return {
       id: docSnap.id,
@@ -61,6 +61,8 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
       updatedAt: data.updatedAt ?? Date.now(),
     };
   });
+
+  return books.sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 export async function getBook(bookId: string): Promise<Book | null> {
