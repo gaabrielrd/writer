@@ -10,7 +10,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
     <div
       ref={ref}
       className={cn(
-        'rounded-lg border border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--card-foreground))] shadow-sm transition-colors',
+        'rounded-[var(--radius-lg)] border border-[hsl(var(--border))] panel-surface text-[hsl(var(--card-foreground))] shadow-sm transition-colors',
         tone === 'raised' && 'shadow-md',
         tone === 'flat' && 'shadow-none',
         className,

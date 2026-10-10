@@ -112,6 +112,21 @@ jobs:
       - name: Testar no navegador
         run: npm run test:e2e
 
+      - name: Testar prévia visual com dados fictícios
+        if: ${{ !cancelled() }}
+        run: npx playwright test -c playwright.visual.config.ts
+
+      - name: Publicar prévia visual para revisão
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: writer-visual-preview
+          path: |
+            visual-playwright-report/
+            visual-test-results/
+          retention-days: 7
+          if-no-files-found: warn
+
       - name: Publicar evidências de falha
         if: failure()
         uses: actions/upload-artifact@v7

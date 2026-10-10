@@ -1,8 +1,10 @@
 .pageLayout {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  background-color: var(--surface);
+  height: calc(100dvh - 160px);
+  min-height: 540px;
+  gap: var(--space-3);
+  background: transparent;
   overflow: hidden;
 }
 
@@ -16,9 +18,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-2) var(--space-4);
-  background-color: var(--surface);
-  border-bottom: 1px solid var(--line);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
   flex-shrink: 0;
   gap: var(--space-4);
 }
@@ -34,8 +36,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
   border-radius: var(--radius-sm);
   color: var(--ink-quiet);
   background: transparent;
@@ -47,7 +50,7 @@
 .backLink:hover {
   color: var(--ink);
   background-color: var(--surface-quiet);
-  border-color: var(--accent);
+  border-color: hsl(var(--primary));
 }
 
 .titleInfo {
@@ -105,7 +108,7 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  color: var(--accent);
+  color: var(--ink);
   font-weight: 500;
 }
 
@@ -143,8 +146,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   background-color: var(--surface);
   border: 1px solid var(--line);
@@ -156,7 +159,7 @@
 
 .navBtn:hover:not(:disabled) {
   color: var(--ink);
-  border-color: var(--accent);
+  border-color: hsl(var(--primary));
   background-color: var(--surface-quiet);
 }
 
@@ -167,7 +170,42 @@
 
 .workspace {
   display: flex;
+  gap: var(--space-3);
+  min-height: 0;
   flex: 1;
   overflow: hidden;
   position: relative;
+}
+
+@media (max-width: 760px) {
+  .pageLayout {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .topBarLeft {
+    width: 100%;
+  }
+  .topBarRight {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    width: 100%;
+  }
+  .titleInfo {
+    flex-wrap: wrap;
+    gap: var(--space-1);
+  }
+  .bookTitle {
+    max-width: 38vw;
+  }
+  .chapterTitle {
+    max-width: 55vw;
+  }
+  .chapterNavigation {
+    margin-left: auto;
+  }
+  .workspace {
+    flex-direction: column;
+    overflow: visible;
+  }
 }

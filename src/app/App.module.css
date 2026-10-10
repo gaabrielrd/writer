@@ -1,98 +1,141 @@
+.appBackdrop {
+  min-height: 100dvh;
+  background:
+    radial-gradient(ellipse at 12% 0%, hsl(var(--primary) / 0.14), transparent 45%),
+    radial-gradient(ellipse at 100% 85%, hsl(var(--primary) / 0.06), transparent 45%),
+    hsl(var(--background));
+  color: hsl(var(--foreground));
+}
 .appWrapper {
   max-width: var(--layout-max);
   margin: 0 auto;
-  padding: 1.5rem 1.25rem 3rem 1.25rem;
+  padding: var(--space-4) var(--space-5) var(--space-8);
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  min-height: 100vh;
+  gap: var(--space-6);
+  min-height: 100dvh;
 }
-
-@media (min-width: 640px) {
-  .appWrapper {
-    padding: 2rem 1.5rem 4rem 1.5rem;
-  }
-}
-
 .header {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  border-bottom: 1px solid hsl(var(--border));
-  padding-bottom: 1.25rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-5);
 }
-
 .topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+  gap: var(--space-4);
+  flex: 1;
+  min-width: 0;
 }
-
 .brand {
   display: inline-flex;
   align-items: center;
+  gap: var(--space-3);
   text-decoration: none;
   color: inherit;
-  transition: opacity var(--transition-fast);
 }
-
-.brand:hover {
-  opacity: 0.85;
+.brandMark {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-full);
+  border: 1px solid hsl(var(--primary) / 0.25);
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.08);
 }
-
 .brandText {
-  font-size: 1.35rem;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  color: hsl(var(--foreground));
+  font-size: var(--text-base);
+  font-weight: 650;
+  letter-spacing: -0.035em;
 }
-
 .userBar {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  justify-content: flex-end;
+  gap: var(--space-2);
   flex-wrap: wrap;
 }
-
 .nav {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding-top: 0.5rem;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
+  order: -1;
 }
-
-.navLink {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  text-decoration: none;
-  font-weight: 500;
-  color: hsl(var(--muted-foreground));
-  transition: color var(--transition-fast);
-  padding: 0.25rem 0;
+.header .topBar {
+  order: -2;
 }
-
-.navLink:hover {
-  color: hsl(var(--foreground));
-}
-
+.navLink,
 .navLinkActive {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: var(--space-2);
   text-decoration: none;
-  font-weight: 600;
-  color: hsl(var(--primary));
-  padding: 0.25rem 0;
-  border-bottom: 2px solid hsl(var(--primary));
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid transparent;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
-
+.navLink:hover,
+.navLinkActive {
+  color: hsl(var(--foreground));
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.25);
+}
 .mainContent {
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-width: 0;
   flex: 1;
+  outline: none;
+}
+.skipLink {
+  position: fixed;
+  top: var(--space-4);
+  left: var(--space-4);
+  transform: translateY(-200%);
+  z-index: 100;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.skipLink:focus {
+  transform: translateY(0);
+}
+@media (max-width: 700px) {
+  .appWrapper {
+    padding: var(--space-2) var(--space-3) var(--space-6);
+    gap: var(--space-4);
+  }
+  .header {
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+  }
+  .topBar {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+  .brandText {
+    font-size: var(--text-sm);
+  }
+  .brandMark {
+    width: 30px;
+    height: 30px;
+  }
+  .userBar {
+    gap: var(--space-1);
+  }
+  .nav {
+    width: 100%;
+  }
 }

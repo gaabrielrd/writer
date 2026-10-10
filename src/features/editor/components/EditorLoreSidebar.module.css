@@ -1,12 +1,11 @@
 .sidebar {
-  width: 360px;
+  width: clamp(280px, 28vw, 360px);
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
   height: 100%;
-  background-color: var(--surface);
-  border-left: 1px solid var(--line);
-  box-shadow: -4px 0 12px var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
   animation: slideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -54,7 +53,7 @@
 
 .closeBtn:hover {
   color: var(--ink);
-  background-color: var(--surface);
+  background-color: hsl(var(--primary-foreground));
   border-color: var(--line);
 }
 
@@ -90,22 +89,22 @@
   font-size: var(--text-xs);
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--line);
-  background-color: var(--surface);
+  background-color: hsl(var(--primary-foreground));
   border-radius: var(--radius-sm);
   color: var(--ink-quiet);
   cursor: pointer;
   transition: all var(--transition-fast);
 }
 
-.filterChip:hover {
-  border-color: var(--accent);
+.filterChip:hover:not(.filterChipActive) {
+  border-color: hsl(var(--primary));
   color: var(--ink);
 }
 
 .filterChipActive {
-  background-color: var(--accent);
-  border-color: var(--accent);
-  color: var(--surface);
+  background-color: hsl(var(--primary));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
   font-weight: 600;
 }
 
@@ -139,7 +138,7 @@
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3);
-  background-color: var(--surface);
+  background-color: hsl(var(--primary-foreground));
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   transition:
@@ -148,11 +147,11 @@
 }
 
 .entityItem:hover {
-  border-color: var(--accent);
+  border-color: hsl(var(--primary));
 }
 
 .entityItemHighlighted {
-  border-color: var(--accent);
+  border-color: hsl(var(--primary));
   box-shadow: 0 0 0 2px var(--line);
 }
 
@@ -194,4 +193,15 @@
   align-items: center;
   gap: var(--space-2);
   margin-top: var(--space-1);
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    width: 100%;
+    height: 480px;
+  }
+  .closeBtn {
+    min-width: 40px;
+    min-height: 40px;
+  }
 }

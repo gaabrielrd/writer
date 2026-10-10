@@ -39,7 +39,7 @@ export function ThemeToggle({
     <button
       type="button"
       onClick={toggleTheme}
-      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer border border-transparent hover:border-black/10 dark:hover:border-white/10 ${className}`}
+      className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer border border-transparent hover:border-black/10 dark:hover:border-white/10 ${className}`}
       title={`Alternar tema (Atual: ${getLabel()})`}
       aria-label={`Alternar tema. Atual: ${getLabel()}`}
     >
@@ -56,7 +56,7 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
     <select
       value={theme}
       onChange={(e) => setTheme(e.target.value as Theme)}
-      className={`px-3 py-1.5 rounded-md text-sm bg-transparent border border-black/15 dark:border-white/20 transition-colors ${className}`}
+      className={`px-3 py-1.5 rounded-full text-sm bg-transparent border border-black/15 dark:border-white/20 transition-colors ${className}`}
       aria-label="Selecionar tema visual"
     >
       <option value="light">Claro</option>

@@ -116,7 +116,7 @@ export function LoginPage() {
   if (user) {
     return (
       <div className={styles.container}>
-        <Card className={styles.card}>
+        <Card className={`${styles.card} glass-surface`}>
           <div className={styles.header}>
             <h1 className={styles.title}>Você já está autenticado</h1>
             <p className={styles.description}>Conectado como {user.displayName || user.email}</p>
@@ -137,7 +137,7 @@ export function LoginPage() {
 
   return (
     <div className={styles.container}>
-      <Card className={styles.card}>
+      <Card className={`${styles.card} glass-surface`}>
         <div className={styles.header}>
           <h1 className={styles.title}>
             {isSignUp ? 'Criar sua conta de autor' : 'Entrar no Writer Assistant'}

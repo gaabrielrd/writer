@@ -11,6 +11,8 @@ coverage/
 .firebase/
 playwright-report/
 test-results/
+visual-test-results/
+visual-playwright-report/
 
 # Segredos e variáveis locais
 .env

@@ -1,67 +1,63 @@
-import { BookOpen, Sparkles, UserPlus } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Feather, Sparkles } from 'lucide-react';
 import { Link } from 'react-router';
-import { Button, Card } from '@/shared/ui';
+import { buttonVariants } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
 import { BookList } from '@/features/books';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return null;
-  }
-
-  if (user) {
-    return <BookList authorId={user.uid} />;
-  }
+  if (loading) return null;
+  if (user) return <BookList authorId={user.uid} />;
 
   return (
     <div className={styles.landing}>
-      <Card className={styles.heroCard}>
-        <div className={styles.heroContent}>
-          <div className={styles.heroHeader}>
-            <h1 className={styles.heroTitle}>Assistente para Autores de Ficção</h1>
-            <p className={styles.heroDescription}>
-              Escreva livros com compêndio integrado de lore, continuidade de personagens e
-              assistência de inteligência artificial em tempo real.
-            </p>
-          </div>
-
-          <div className={styles.features}>
-            <div className={styles.featureItem}>
-              <div className={styles.featureIcon}>
-                <BookOpen className="icon" aria-hidden="true" />
-              </div>
-              <h3 className={styles.featureTitle}>Gestão de Livros e Capítulos</h3>
-              <p className={styles.featureText}>
-                Estruture suas histórias, organize capítulos e acompanhe a contagem de palavras com
-                facilidade.
-              </p>
-            </div>
-
-            <div className={styles.featureItem}>
-              <div className={styles.featureIcon}>
-                <Sparkles className="icon" aria-hidden="true" />
-              </div>
-              <h3 className={styles.featureTitle}>Lore e Personagens Conectados</h3>
-              <p className={styles.featureText}>
-                Mantenha a consistência da narrativa com tooltips automáticos e sidebar de contexto
-                inteligente.
-              </p>
-            </div>
-          </div>
-
-          <div className={styles.cta}>
-            <Link to="/login">
-              <Button size="lg" variant="primary" className={styles.ctaButton}>
-                <UserPlus className="icon icon-sm" aria-hidden="true" />
-                <span>Começar a Escrever Gratuitamente</span>
-              </Button>
-            </Link>
+      <section className={styles.heroHeader}>
+        <p className={styles.eyebrow}>Writer Assistant · Seu estúdio de escrita</p>
+        <h1 className={styles.heroTitle}>Assistente para Autores de Ficção</h1>
+        <p className={styles.heroDescription}>
+          Um lugar para escrever seus capítulos, construir universos e dar continuidade às suas
+          ideias.
+        </p>
+      </section>
+      <section className={`${styles.creationPanel} glass-surface`} aria-label="Comece sua história">
+        <div className={styles.panelHeading}>
+          <span className={styles.writingIcon}>
+            <Feather className="icon" aria-hidden="true" />
+          </span>
+          <div>
+            <h2>Sua próxima história começa aqui.</h2>
+            <p>Do primeiro rascunho ao universo completo.</p>
           </div>
         </div>
-      </Card>
+        <div className={styles.features}>
+          <div className={styles.featureItem}>
+            <BookOpen className="icon icon-sm" aria-hidden="true" />
+            <div>
+              <h3>Gestão de Livros e Capítulos</h3>
+              <p>Estruture a narrativa e acompanhe suas palavras.</p>
+            </div>
+          </div>
+          <div className={styles.featureItem}>
+            <Sparkles className="icon icon-sm" aria-hidden="true" />
+            <div>
+              <h3>Lore e Personagens Conectados</h3>
+              <p>Mantenha seu universo sempre por perto.</p>
+            </div>
+          </div>
+        </div>
+        <div className={styles.cta}>
+          <span>Organize. Escreva. Imagine.</span>
+          <Link
+            to="/login"
+            className={`${buttonVariants({ size: 'lg', variant: 'primary' })} ${styles.ctaButton}`}
+          >
+            Começar a Escrever Gratuitamente
+            <ArrowUpRight className="icon icon-sm" aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
+      <p className={styles.footerNote}>Seu texto no centro. Seu universo ao alcance.</p>
     </div>
   );
 }

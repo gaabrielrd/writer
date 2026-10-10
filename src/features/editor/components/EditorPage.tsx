@@ -156,7 +156,7 @@ export function EditorPage() {
 
   return (
     <div className={styles.pageLayout}>
-      <header className={styles.topBar}>
+      <header className={`${styles.topBar} glass-surface`}>
         <div className={styles.topBarLeft}>
           <Link
             to="/"
@@ -241,7 +241,7 @@ export function EditorPage() {
         </div>
       </header>
 
-      <main className={styles.workspace}>
+      <section className={styles.workspace} aria-label="Espaço de escrita">
         <RichEditor
           content={content}
           onChange={setContent}
@@ -262,7 +262,7 @@ export function EditorPage() {
           onCreateEntity={handleCreateLoreEntity}
           onUpdateEntity={handleUpdateLoreEntity}
         />
-      </main>
+      </section>
     </div>
   );
 }

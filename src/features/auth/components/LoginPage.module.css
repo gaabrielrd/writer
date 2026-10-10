@@ -9,10 +9,8 @@
   flex-direction: column;
   gap: 1.5rem;
   padding: 2.25rem 1.75rem;
-  border-radius: 1rem;
-  box-shadow:
-    0 10px 25px -5px rgba(0, 0, 0, 0.05),
-    0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  border-radius: calc(var(--radius-lg) * 1.25);
+  box-shadow: var(--shadow-panel);
 }
 
 @media (min-width: 640px) {
@@ -31,7 +29,8 @@
 .title {
   margin: 0;
   font-size: 1.5rem;
-  font-weight: 800;
+  font-weight: 500;
+  font-family: var(--font-reading);
   letter-spacing: -0.025em;
   color: hsl(var(--foreground));
   line-height: 1.25;

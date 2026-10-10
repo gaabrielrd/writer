@@ -140,7 +140,7 @@ export function BookPage() {
         </Link>
       </div>
 
-      <div className={styles.bookHeader}>
+      <div className={`${styles.bookHeader} glass-surface`}>
         <div className={styles.bookCover}>
           {book.coverUrl ? (
             <img src={book.coverUrl} alt={`Capa de ${book.title}`} className={styles.coverImage} />

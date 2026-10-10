@@ -15,7 +15,7 @@
   height: 28px;
   border-radius: var(--radius-pill, 9999px);
   object-fit: cover;
-  border: 1px solid var(--border-subtle, var(--border));
+  border: 1px solid var(--line);
 }
 
 .avatarFallback {
@@ -29,7 +29,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border-subtle, var(--border));
+  border: 1px solid var(--line);
 }
 
 .name {

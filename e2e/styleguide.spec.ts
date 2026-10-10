@@ -22,16 +22,16 @@ test.use({ colorScheme: 'light' });
 const themes = [
   {
     id: 'light',
-    background: '0 0% 100%',
-    foreground: '222.2 84% 4.9%',
-    primary: '221.2 83.2% 53.3%',
+    background: '40 20% 97%',
+    foreground: '25 16% 15%',
+    primary: '26 58% 35%',
     destructive: '0 84.2% 60.2%',
   },
   {
     id: 'dark',
-    background: '224 71% 4%',
-    foreground: '213 31% 91%',
-    primary: '217.2 91.2% 59.8%',
+    background: '24 12% 7%',
+    foreground: '38 24% 94%',
+    primary: '38 82% 72%',
     destructive: '0 62.8% 40.6%',
   },
   {
