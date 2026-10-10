@@ -6,9 +6,9 @@ export const buttonVariants = cva(
     variants: {
       variant: {
         primary:
-          'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow hover:opacity-90 active:scale-[0.98]',
+          'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow hover:bg-[hsl(var(--primary-hover))] active:scale-[0.98]',
         default:
-          'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow hover:opacity-90 active:scale-[0.98]',
+          'bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] shadow hover:bg-[hsl(var(--primary-hover))] active:scale-[0.98]',
         secondary:
           'bg-[hsl(var(--secondary))] text-[hsl(var(--secondary-foreground))] border border-[hsl(var(--border))] hover:bg-[hsl(var(--accent))] hover:text-[hsl(var(--accent-foreground))]',
         outline:

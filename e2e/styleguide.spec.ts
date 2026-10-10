@@ -24,21 +24,21 @@ const themes = [
     id: 'light',
     background: '40 20% 97%',
     foreground: '25 16% 15%',
-    primary: '26 58% 35%',
+    primary: '26 48% 36%',
     destructive: '0 84.2% 60.2%',
   },
   {
     id: 'dark',
     background: '24 12% 7%',
     foreground: '38 24% 94%',
-    primary: '38 82% 72%',
+    primary: '26 40% 57%',
     destructive: '0 62.8% 40.6%',
   },
   {
     id: 'sepia',
     background: '37 38% 92%',
     foreground: '24 33% 17%',
-    primary: '27 61% 36%',
+    primary: '25 43% 34%',
     destructive: '0 65% 45%',
   },
 ];
@@ -90,6 +90,35 @@ for (const theme of themes) {
         .getByRole('alert')
         .filter({ has: page.getByRole('heading', { name: 'Erro', exact: true }) }),
     ).toHaveCSS('color', colors.destructive);
+    const primaryButton = page.getByRole('button', { name: 'Primary', exact: true });
+    for (const hovered of [false, true]) {
+      if (hovered) await primaryButton.hover();
+      const contrast = await primaryButton.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1;
+        const context = canvas.getContext('2d')!;
+        const luminance = (color: string) => {
+          context.fillStyle = color;
+          context.fillRect(0, 0, 1, 1);
+          const channels = context.getImageData(0, 0, 1, 1).data.slice(0, 3);
+          return Array.from(channels).reduce((total, channel, index) => {
+            const value = channel / 255;
+            const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+            return total + linear * [0.2126, 0.7152, 0.0722][index];
+          }, 0);
+        };
+        const [low, high] = [luminance(style.color), luminance(style.backgroundColor)].sort(
+          (a, b) => a - b,
+        );
+        return (high + 0.05) / (low + 0.05);
+      });
+      expect(
+        contrast,
+        `${theme.id}: contraste da ação ${hovered ? 'hover' : 'normal'}`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+    await page.mouse.move(0, 0);
     await expect(page.getByRole('button', { name: 'Disabled', exact: true })).toBeDisabled();
     await page.reload();
     await expect(root).toHaveAttribute('data-theme', theme.id);

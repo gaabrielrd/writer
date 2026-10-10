@@ -81,3 +81,15 @@ e commit explícitos; baselines existentes nunca são atualizados automaticament
 Para revisar: abrir os artefatos `writer-visual-preview`, comparar os três temas,
 percorrer biblioteca → obra → editor, abrir/fechar modais pelo teclado, testar
 textos longos, 320 px, preferência de transparência reduzida e histórico do navegador.
+
+## Ajuste de cor solicitado após a primeira prévia
+
+A direção visual foi aprovada, com pedido de trocar o âmbar por caramelo/café.
+O tema escuro passa a usar caramelo tostado com texto café; os temas claro e
+sépia usam café mais profundo com texto claro. Hover recebe token próprio,
+sem baixar a opacidade do texto. O E2E verifica contraste mínimo de 4,5:1 na
+ação primária normal e em hover nos três temas. Layout e comportamento aprovados
+permanecem iguais; novas capturas e CI confirmam o ajuste antes de integração.
+
+O polimento anterior e a base `5d810719f99bedcf8407f6e8cd370c8a2650f5cb`
+aprovaram os quatro jobs do [CI 38063400397](https://github.com/gaabrielrd/writer/actions/runs/38063400397).
