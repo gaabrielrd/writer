@@ -37,7 +37,7 @@ Nenhum serviço de produção é implantado automaticamente pela implementação
 1. Verifique projeto, Storage, faturamento, cotas globais e modelos disponíveis.
 2. Configure `BOOK_GENERATION_GEMINI_KEY` no Secret Manager via Firebase CLI, fora de arquivos versionados. Nunca use variável `VITE_` para essa chave.
 3. Copie `functions/.env.example` para `functions/.env.<project-id>` e confira os parâmetros de servidor: `BOOK_SYNOPSIS_MODEL` (`gemini-3.7-flash`), `BOOK_COVER_MODEL` (`gemini-3.1-flash-image`), `BOOK_SYNOPSIS_CREDITS` (1), `BOOK_COVER_CREDITS` (5). A CLI exige valores explícitos no deploy não interativo. Confirme disponibilidade dos modelos na conta antes da implantação. O arquivo do destino é ignorado pelo Git e não contém a chave privada.
-4. Configure App Check para o domínio. Em desenvolvimento, use o mecanismo oficial de debug com token autorizado; mantenha a exigência nas funções.
+4. Configure App Check com reCAPTCHA Enterprise para o domínio, usando a chave pública correspondente em `VITE_FIREBASE_APPCHECK_KEY`. O frontend usa `ReCaptchaEnterpriseProvider`; uma chave Enterprise não funciona com `ReCaptchaV3Provider`. Em desenvolvimento, use o mecanismo oficial de debug com token autorizado; mantenha a exigência nas funções.
 5. Após autorização para o destino verificado, publique somente as funções do codebase `book-generation`, regras Storage, regras Firestore e índices, definidos em `firebase.json`. Workflows existentes não passam a implantar Functions/Storage automaticamente.
 6. Faça uma geração controlada, aceite, retentativa e criação. Confira saldo, armazenamento e limites antes da liberação.
 
@@ -62,3 +62,9 @@ Os testes do provedor não criaram livros nem debitaram saldo do aplicativo. O f
 O usuário substituiu `.gemini-api-key` por uma chave habilitada. A consulta ao modelo de sinopse retornou HTTP 200. A geração real de capa retornou HTTP 200 e foi normalizada em memória para PNG de 1200 × 1800. A primeira checagem local da imagem precisou ser corrigida para usar a exportação pública do pacote sharp; a segunda verificação confirmou formato e dimensões.
 
 A nova chave foi cadastrada como versão 3 de `BOOK_GENERATION_GEMINI_KEY`. Somente `generateBookAsset` foi reimplantada. A consulta remota confirmou estado `ACTIVE`, vínculo à versão 3 e custos 1/5. O endpoint manteve a rejeição HTTP 401 sem Auth/App Check. Nenhum valor de chave foi exibido ou versionado.
+
+### Correção do App Check no navegador
+
+Após o teste no aplicativo, a consulta de disponibilidade retornou 401: os logs indicavam Auth `VALID` e App Check `MISSING`. O frontend usava `ReCaptchaV3Provider` com a chave Enterprise cadastrada. O fallback síncrono não tratava a falha assíncrona de troca de token (HTTP 400).
+
+`shared/lib/firebase.ts` passou a inicializar diretamente `ReCaptchaEnterpriseProvider`. O Hosting foi republicado após validação completa. A sessão autenticada no navegador mostrou preço e botão de sinopse habilitado; os logs confirmaram HTTP 200, Auth `VALID` e App Check `VALID`. A verificação usou uma aba separada e foi cancelada sem criar livro ou debitar créditos. A exigência de App Check nas funções permanece ativa.

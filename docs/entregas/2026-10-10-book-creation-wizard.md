@@ -165,3 +165,33 @@ A chave foi cadastrada no Secret Manager como versão 3. Somente `generateBookAs
 ```
 
 A pendência de cota de imagens está resolvida. O fluxo autenticado completo de aceite/criação e o CI no pull request permanecem sem confirmação. Não houve alteração de código neste incremento; a validação completa anterior continua aplicável. Documentação, formatação e diff foram conferidos novamente. O arquivo da chave continua ignorado pelo Git.
+
+## Incremento em 2026-10-10 — correção de disponibilidade no navegador
+
+O usuário reportou o botão de IA indisponível e capturou App Check 400 seguido de callable 401. Os logs confirmaram Auth válido, mas App Check ausente. O cadastro remoto usa reCAPTCHA Enterprise; o frontend tentava v3 e o fallback síncrono não alcançava falhas assíncronas de token.
+
+- `src/shared/lib/firebase.ts` inicializa diretamente Enterprise, preservando renovação automática e a exigência de App Check no servidor.
+- `src/shared/lib/tests/firebase.test.ts` adiciona regressão do provedor cadastrado e da renovação.
+- `docs/book-creation.md` documenta a configuração correta e a verificação remota.
+- Hosting republicado; consulta autenticada no navegador retorna preço e habilita o botão de sinopse. Logs confirmam App Check/Auth válidos e HTTP 200.
+
+Validação real:
+
+```text
+Test Files  66 passed (66)
+     Tests  427 passed (427)
+All files | 93.59 | 82.71 | 90.96 | 95.58
+ℹ tests 13
+ℹ pass 13
+ℹ fail 0
+Smoke test do bundle OK.
++  Deploy complete!
+{"status":200}
+{"message":"Callable request verification passed","verifications":{"app":"VALID","auth":"VALID"}}
+```
+
+`npm run validate` passou, incluindo 66 testes de ferramentas além das suítes acima. Documentação e diff foram conferidos. A aba de teste exibiu **Ao usar a sinopse: 1 crédito. Saldo: 100 créditos.** com botão habilitado. O modal foi cancelado e a aba fechada; não houve criação de livro ou débito, nem alteração do formulário da aba original.
+
+![Disponibilidade da IA confirmada no navegador](evidencias/2026-10-10-app-check-enterprise.jpg)
+
+O aceite/criação completo e o CI do pull request continuam sem confirmação; a consulta autenticada de disponibilidade foi verificada em produção.

@@ -6,12 +6,7 @@ import {
   persistentMultipleTabManager,
   type Firestore,
 } from 'firebase/firestore';
-import {
-  initializeAppCheck,
-  ReCaptchaV3Provider,
-  ReCaptchaEnterpriseProvider,
-  type AppCheck,
-} from 'firebase/app-check';
+import { initializeAppCheck, ReCaptchaEnterpriseProvider, type AppCheck } from 'firebase/app-check';
 import { getAI, GoogleAIBackend, type AI } from 'firebase/ai';
 import { env } from '@/shared/config';
 
@@ -37,19 +32,12 @@ export function getAppCheck(): AppCheck | null {
 
   try {
     return initializeAppCheck(firebaseApp, {
-      provider: new ReCaptchaV3Provider(env.firebase.appCheckKey),
+      provider: new ReCaptchaEnterpriseProvider(env.firebase.appCheckKey),
       isTokenAutoRefreshEnabled: true,
     });
   } catch {
-    try {
-      return initializeAppCheck(firebaseApp, {
-        provider: new ReCaptchaEnterpriseProvider(env.firebase.appCheckKey),
-        isTokenAutoRefreshEnabled: true,
-      });
-    } catch {
-      // AppCheck may be already initialized or skipped in test environment
-      return null;
-    }
+    // Initialization is synchronous; token-exchange failures cannot switch providers here.
+    return null;
   }
 }
 
