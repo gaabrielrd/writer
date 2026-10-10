@@ -47,13 +47,13 @@ export function StyleguidePage() {
           <Card className="p-4 flex flex-col gap-2">
             <h3 className="font-semibold text-base">Tema Claro</h3>
             <p className="text-xs opacity-75">
-              Alto contraste, superfícies brancas com acentos em azul royal.
+              Superfícies de papel claro com acentos em café e contraste de leitura.
             </p>
           </Card>
           <Card className="p-4 flex flex-col gap-2">
             <h3 className="font-semibold text-base">Tema Escuro</h3>
             <p className="text-xs opacity-75">
-              Superfície escura profunda para escrita e foco noturno.
+              Carvão quente, vidro fumê e acentos em caramelo para foco noturno.
             </p>
           </Card>
           <Card className="p-4 flex flex-col gap-2">
