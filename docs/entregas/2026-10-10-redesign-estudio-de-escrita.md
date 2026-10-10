@@ -71,12 +71,14 @@ rede impedem comunicação com serviços reais durante as capturas.
 
 ## Limites e verificação manual
 
-O PR permanece em rascunho. Não houve integração nem deploy. As capturas usam
+O usuário aprovou a versão caramelo/café e autorizou a integração do PR #16
+após os checks finais. Não foi solicitado deploy. As capturas usam
 conteúdo de teste, não a biblioteca real de qualquer pessoa. A camada visual
 foi validada no Chromium; Safari e Firefox não foram executados. O baseline
-macOS anterior representa o layout substituído e deve ser regenerado no macOS.
-Uma referência Linux é capturada no CI quando ainda inexistente, para inspeção
-e commit explícitos; baselines existentes nunca são atualizados automaticamente.
+macOS anterior foi removido por representar o layout substituído; deve ser
+regenerado no macOS antes de comparar pixels nessa plataforma. A referência
+Linux foi capturada no CI, inspecionada e versionada explicitamente. O CI falha
+se essa referência estiver ausente; não há atualização automática de baselines.
 
 Para revisar: abrir os artefatos `writer-visual-preview`, comparar os três temas,
 percorrer biblioteca → obra → editor, abrir/fechar modais pelo teclado, testar
@@ -93,3 +95,9 @@ permanecem iguais; novas capturas e CI confirmam o ajuste antes de integração.
 
 O polimento anterior e a base `5d810719f99bedcf8407f6e8cd370c8a2650f5cb`
 aprovaram os quatro jobs do [CI 38063400397](https://github.com/gaabrielrd/writer/actions/runs/38063400397).
+
+A versão caramelo/café aprovou os quatro jobs do [CI 38063795494](https://github.com/gaabrielrd/writer/actions/runs/38063795494):
+223 testes unitários, 45 testes de scripts, lint, tipos, build, smoke, auditoria
+e navegação Chromium. As 54 verificações visuais geraram 96 capturas nos três
+temas e tamanhos desktop/móvel. A inspeção independente aprovou landing,
+biblioteca, editor, chips, modal, foco e correção do sépia.

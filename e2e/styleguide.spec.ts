@@ -147,10 +147,12 @@ test('acompanha o sistema e permite alternar os três temas', async ({ page }) =
 });
 
 test('mantém a aparência da página do styleguide', async ({ page }) => {
-  // Sem referência para esta plataforma o teste é pulado com instrução, em vez
-  // de falhar por um arquivo que ninguém gerou ainda. `--update-snapshots`
-  // (npm run test:e2e:update) muda o modo e cria a imagem.
+  // Linux é a referência revisada do CI. Outras plataformas precisam gerar
+  // sua própria imagem explicitamente com npm run test:e2e:update.
   const criandoReferencia = test.info().config.updateSnapshots !== 'missing';
+  if (process.env.CI && process.platform === 'linux' && !criandoReferencia) {
+    expect(existsSync(baseline), 'A referência Linux revisada deve estar versionada').toBe(true);
+  }
   test.skip(
     !existsSync(baseline) && !criandoReferencia,
     `Sem imagem de referência para ${process.platform}. Gere com: npm run test:e2e:update`,
