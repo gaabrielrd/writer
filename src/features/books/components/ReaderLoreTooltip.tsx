@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Button } from '@/shared/ui';
 import type { PublicLoreEntity } from '../services/publicBookService';
 import styles from './ReaderView.module.css';
@@ -19,6 +19,15 @@ export function ReaderLoreTooltip({
 }) {
   const [open, setOpen] = useState(false);
   const id = useId();
+  useEffect(() => {
+    if (!open) return;
+    // Hover-only tooltips must also dismiss when focus remains elsewhere.
+    const dismiss = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', dismiss);
+    return () => window.removeEventListener('keydown', dismiss);
+  }, [open]);
   if (entity.isPublic !== true) return <>{children}</>;
   return (
     <span
@@ -33,9 +42,6 @@ export function ReaderLoreTooltip({
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={() => setOpen(true)}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') setOpen(false);
-        }}
         aria-expanded={open}
         aria-describedby={open ? id : undefined}
         aria-label={`Ver resumo de ${entity.name}`}

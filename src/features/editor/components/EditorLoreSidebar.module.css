@@ -199,6 +199,8 @@
   .sidebar {
     width: 100%;
     height: 480px;
+    /* A horizontal entrance expands mobile layout viewports before auto-zoom settles. */
+    animation-name: slideInMobile;
   }
   .closeBtn {
     min-width: 40px;
@@ -223,4 +225,15 @@
 }
 .fullRecord ul {
   padding-left: var(--space-4);
+}
+
+@keyframes slideInMobile {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

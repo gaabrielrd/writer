@@ -1,10 +1,57 @@
 import { readFile } from 'node:fs/promises';
+import type { Locator } from '@playwright/test';
 import JSZip from 'jszip';
 import { books, chapters, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 import { capture, expect, expectDialogWithinViewport, test } from './support';
 
 const bookPath = `/books/${FIXTURE_BOOK_ID}`;
 const editorPath = `${bookPath}/editor/${FIXTURE_CHAPTER_ID}`;
+
+async function expectReadableNotice(notice: Locator): Promise<void> {
+  const contrast = await notice.evaluate((element) => {
+    const dialog = element.closest('[role="dialog"]');
+    const content = element.querySelector(':scope > div > div');
+    if (!dialog || !content) throw new Error('Aviso de exportação incompleto.');
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('Não foi possível medir o contraste do aviso.');
+    // Composite the translucent notice surface over its actual opaque dialog surface.
+    context.fillStyle = getComputedStyle(dialog).backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+    context.fillStyle = getComputedStyle(element).backgroundColor;
+    context.fillRect(0, 0, 1, 1);
+    const background = context.getImageData(0, 0, 1, 1).data;
+    let opacity = 1;
+    for (let node: Element | null = content; node && node !== dialog; node = node.parentElement) {
+      opacity *= Number(getComputedStyle(node).opacity);
+    }
+    context.globalAlpha = opacity;
+    context.fillStyle = getComputedStyle(content).color;
+    context.fillRect(0, 0, 1, 1);
+    const foreground = context.getImageData(0, 0, 1, 1).data;
+    const luminance = (rgba: Uint8ClampedArray) => {
+      const channels = Array.from(rgba)
+        .slice(0, 3)
+        .map((value) => {
+          const channel = value / 255;
+          return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        });
+      return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+    };
+    const values = [luminance(background), luminance(foreground)].sort((a, b) => a - b);
+    return {
+      ratio: (values[1] + 0.05) / (values[0] + 0.05),
+      background: Array.from(background),
+      foreground: Array.from(foreground),
+      opacity,
+    };
+  });
+  expect(
+    contrast.ratio,
+    `Contraste do texto do aviso: ${JSON.stringify(contrast)}`,
+  ).toBeGreaterThanOrEqual(4.5);
+}
 
 test('exportação preserva a versão atual, reabre o diálogo e baixa Markdown', async ({
   page,
@@ -33,6 +80,11 @@ test('exportação preserva a versão atual, reabre o diálogo e baixa Markdown'
   expect(markdown).not.toContain('visual-author');
   expect(markdown).not.toContain('A longa travessia');
   await expect(page.getByRole('status')).toContainText('Arquivo preparado');
+  await expect(page.getByRole('status')).toHaveCSS(
+    'color',
+    await page.getByRole('dialog').evaluate((dialog) => getComputedStyle(dialog).color),
+  );
+  await expectReadableNotice(page.getByRole('status'));
   await capture(page, testInfo, 'exportacao-concluida');
 });
 
@@ -61,6 +113,11 @@ test('exporta o livro inteiro como DOCX real e backup JSON privado', async ({ pa
   await page.getByLabel('Formato do arquivo').selectOption('json');
   await expect(page.getByLabel('Conteúdo da exportação')).toBeDisabled();
   await expect(page.getByText(/fichas de lore privadas/)).toBeVisible();
+  await expect(page.getByRole('alert')).toHaveCSS(
+    'color',
+    await page.getByRole('dialog').evaluate((dialog) => getComputedStyle(dialog).color),
+  );
+  await expectReadableNotice(page.getByRole('alert'));
   await capture(page, testInfo, 'exportar-backup-privado');
   const [jsonDownload] = await Promise.all([
     page.waitForEvent('download'),
@@ -88,6 +145,11 @@ test('falha de carregamento mantém diálogo aberto e permite tentar novamente',
   await page.evaluate(() => sessionStorage.setItem('writer.visual.export-failure', 'true'));
   await page.getByRole('button', { name: 'Baixar arquivo' }).click();
   await expect(page.getByRole('alert')).toContainText('Falha simulada na exportação');
+  await expect(page.getByRole('alert')).toHaveCSS(
+    'color',
+    await page.getByRole('dialog').evaluate((dialog) => getComputedStyle(dialog).color),
+  );
+  await expectReadableNotice(page.getByRole('alert'));
   await expect(page.getByRole('button', { name: 'Baixar arquivo' })).toBeEnabled();
   await capture(page, testInfo, 'exportacao-erro-recuperavel');
   await page.evaluate(() => sessionStorage.removeItem('writer.visual.export-failure'));

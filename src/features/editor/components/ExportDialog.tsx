@@ -124,7 +124,11 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
           </p>
         )}
         {format === 'json' && (
-          <Alert variant="warning" title="Backup privado">
+          <Alert
+            variant="warning"
+            title="Backup privado"
+            className="text-[hsl(var(--foreground))] dark:text-[hsl(var(--foreground))]"
+          >
             Inclui todos os capítulos, fichas de lore privadas e relações deste livro. Compartilhe
             somente com pessoas de confiança.
           </Alert>
@@ -135,12 +139,20 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
           </p>
         )}
         {error && (
-          <Alert variant="destructive" title="Falha na exportação">
+          <Alert
+            variant="destructive"
+            title="Falha na exportação"
+            className="text-[hsl(var(--foreground))] dark:text-[hsl(var(--foreground))]"
+          >
             {error}
           </Alert>
         )}
         {result && (
-          <Alert variant="success" role="status">
+          <Alert
+            variant="success"
+            role="status"
+            className="text-[hsl(var(--foreground))] dark:text-[hsl(var(--foreground))]"
+          >
             {result}
           </Alert>
         )}

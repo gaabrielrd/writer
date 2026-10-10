@@ -307,11 +307,27 @@ test('WYSIWYG preserva seleção, desfaz, salva ao navegar e consulta lore duran
 }) => {
   await page.goto(editorPath);
   const manuscript = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+  // A real pointer focus distinguishes deliberate Home navigation from the
+  // browser's transient selection reset when contenteditable first receives focus.
+  await manuscript.getByRole('heading', { name: chapterTitle, exact: true }).click();
   await manuscript.fill('Lia observa o porto.');
   await manuscript.press('Control+Home');
+  await expect
+    .poll(() =>
+      manuscript.evaluate((element) => {
+        const selection = window.getSelection();
+        if (!selection?.anchorNode || !element.contains(selection.anchorNode)) return null;
+        const beforeCaret = document.createRange();
+        beforeCaret.selectNodeContents(element);
+        beforeCaret.setEnd(selection.anchorNode, selection.anchorOffset);
+        return { collapsed: selection.isCollapsed, before: beforeCaret.toString() };
+      }),
+    )
+    .toEqual({ collapsed: true, before: '' });
   await manuscript.press('Shift+ArrowRight');
   await manuscript.press('Shift+ArrowRight');
   await manuscript.press('Shift+ArrowRight');
+  await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('Lia');
   await page.getByRole('button', { name: 'Negrito', exact: true }).click();
   await expect(manuscript.locator('strong')).toHaveText('Lia');
   await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('Lia');

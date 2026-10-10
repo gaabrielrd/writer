@@ -79,6 +79,9 @@ pagamentos e concessão/reconciliação de direitos de usuários reais.
 
 - O saldo de produto não é um gateway de cobrança das chamadas diretas à IA.
   Direitos Premium legados exigem auditoria; a renovação falha fechada sem direito administrativo.
+- Encerramento forçado do navegador ou revogação externa da autenticação não
+  oferece atomicidade entre débito de crédito e inserção do texto no desenho
+  atual client-side; guards cobrem a navegação e saída controladas pela aplicação.
 - Publicação requer rollout coordenado de regras e aplicativo e republicação explícita;
   nenhuma obra antiga vira pública automaticamente.
 - PDF usa impressão/salvar PDF do navegador. Layout final e navegador ficam pendentes
@@ -98,3 +101,31 @@ pagamentos e concessão/reconciliação de direitos de usuários reais.
 4. Navegar capítulos e histórico; tornar lore privado e verificar indisponibilidade do leitor.
 5. Exportar texto atual e livro completo em Markdown/DOCX; abrir impressão e salvar PDF.
 6. Revisar workflows e documentação mantendo os gates de deploy desabilitados.
+
+## Revisão após o primeiro CI do PR
+
+No commit `401b200001177d44070af7367e8e96d40b9a8d0b`, validação Node 22/24,
+auditoria, emulador Firestore e os seis testes Chromium básicos passaram. A
+suíte ampliada terminou com 91 passagens diretas, 11 passagens após retry e seis
+falhas; isso **não** foi tratado como aceite completo.
+
+Os traces identificaram hooks compartilhados que não eram registrados para
+cada arquivo no mesmo worker, relógio artificial congelado incompatível com a
+heurística de foco do editor, animação lateral que ampliava temporariamente o
+viewport mobile e Escape sem efeito em tooltip aberto apenas por hover.
+A correção mantém os 108 cenários, usa fixture automática por teste e relógio
+que avança, verifica seleção antes da formatação, fortalece o limite real de
+viewport e permite fechar tooltip por Escape independentemente do foco.
+O próximo SHA precisa passar integralmente pelo CI; não houve redução de
+cobertura, retirada de cenários ou alteração das referências visuais existentes.
+
+### Inspeção dos artefatos de exportação
+
+Os 24 cenários de exportação passaram no primeiro CI. Os seis PDFs reais do
+Chromium têm três páginas A4 cada; as 18 páginas renderizadas são idênticas entre
+os temas/viewports. A inspeção confirmou margens de 22 mm, acentuação, títulos
+longos e quebras por capítulo, sem texto cortado ou páginas vazias. A inspeção
+visual também encontrou contraste insuficiente no aviso de backup privado em
+tema escuro; a correção usa os tokens semânticos existentes, sem alterar a paleta.
+O diálogo nativo de impressão continua simulado no teste, enquanto o PDF é
+produzido pelo renderizador real do navegador.
