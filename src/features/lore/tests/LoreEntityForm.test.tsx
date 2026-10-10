@@ -45,8 +45,11 @@ describe('LoreEntityForm', () => {
       screen.getByLabelText(/resumo curto/i),
       'A lendária lâmina forjada em Avalon.',
     );
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await fill(user, screen.getByLabelText(/ficha detalhada/i), 'Concedida pela Dama do Lago.');
 
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
     // Adicionar relação
     await user.click(screen.getByRole('button', { name: /adicionar relação/i }));
     expect(screen.getByLabelText('Entidade Vinculada')).toBeInTheDocument();
@@ -103,6 +106,8 @@ describe('LoreEntityForm', () => {
     expect(screen.getByRole('heading', { name: 'Editar Entidade: Arthur' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Arthur')).toBeInTheDocument();
 
+    for (let step = 0; step < 3; step++)
+      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     // Alternar visibilidade
     const checkbox = screen.getByLabelText(/tornar visível no leitor público/i);
     await user.click(checkbox);
@@ -150,10 +155,13 @@ it('preserva notas estruturadas privadas e descricao da relacao', async () => {
   );
   expect(screen.getByLabelText('Nome da Entidade')).toHaveValue('Nova');
   await fill(user, screen.getByLabelText(/Resumo Curto/), 'Resumo público');
+  await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await fill(user, screen.getByLabelText('Aparência'), 'Capa azul');
   await fill(user, screen.getByLabelText('Personalidade'), 'Reservada');
+  await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await fill(user, screen.getByLabelText('Histórico'), 'Viajante');
   await fill(user, screen.getByLabelText('Notas privadas'), 'Segredo');
+  await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByRole('button', { name: 'Adicionar Relação' }));
   await fill(user, screen.getByLabelText('Descrição da Relação'), 'Vínculo secreto');
   await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
@@ -186,9 +194,15 @@ it('mostra erro mantendo dados preenchidos para tentar novamente', async () => {
     />,
   );
   await fill(user, screen.getByLabelText(/Resumo Curto/), 'Resumo');
+  for (let step = 0; step < 3; step++)
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
   expect(await screen.findByText('Sem conexão')).toBeInTheDocument();
+  for (let step = 0; step < 3; step++)
+    await user.click(screen.getByRole('button', { name: 'Voltar' }));
   expect(screen.getByLabelText('Nome da Entidade')).toHaveValue('Nova');
+  for (let step = 0; step < 3; step++)
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
   expect(onSubmit).toHaveBeenCalledTimes(2);
 });

@@ -1,3 +1,7 @@
+import { listUniverses } from '@/features/universes';
+vi.mock('@/features/universes/services/universeService', () => ({
+  listUniverses: vi.fn().mockResolvedValue([]),
+}));
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -137,4 +141,39 @@ describe('BookFormDialog', () => {
     expect(screen.getByDisplayValue('Ficção Científica')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Arrakis')).toBeInTheDocument();
   });
+});
+
+it('desvincula um livro existente sem copiar ou remover o lore local', async () => {
+  vi.mocked(listUniverses).mockResolvedValue([
+    {
+      id: 'world',
+      authorId: 'user-1',
+      name: 'Atlas',
+      description: '',
+      bookCount: 1,
+      privacyVersion: 0,
+      loreVersion: 0,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ]);
+  const submit = vi.fn().mockResolvedValue(undefined);
+  const book: Book = {
+    id: 'book',
+    authorId: 'user-1',
+    universeId: 'world',
+    title: 'Livro',
+    status: 'published',
+    wordCount: 12,
+    createdAt: 1,
+    updatedAt: 1,
+  };
+  render(<BookFormDialog open bookToEdit={book} onClose={vi.fn()} onSubmit={submit} />);
+  const user = userEvent.setup();
+  await user.selectOptions(await screen.findByLabelText('Universo compartilhado'), '');
+  expect(screen.getByText(/Capítulos e lore local serão preservados/)).toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+  expect(submit).toHaveBeenCalledWith(
+    expect.objectContaining({ universeId: null, title: 'Livro' }),
+  );
 });

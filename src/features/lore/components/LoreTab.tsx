@@ -1,11 +1,21 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { BookOpen, MapPin, Plus, Tag, User, X } from 'lucide-react';
-import { Button, EmptyState, ErrorState, Input, LoadingState } from '@/shared/ui';
+import {
+  Alert,
+  Button,
+  Dialog,
+  EmptyState,
+  ErrorState,
+  Input,
+  LoadingState,
+  Select,
+} from '@/shared/ui';
 import type { Book } from '@/features/books';
 import {
   type CreateLoreEntityInput,
   type LoreCategory,
   type LoreEntity,
+  type LoreScope,
 } from '../model/loreEntity';
 import { useLore } from '../hooks/useLore';
 import { LoreEntityCard } from './LoreEntityCard';
@@ -22,6 +32,55 @@ export interface LoreTabProps {
  * Usado inline no BookPage (aba Compêndio) e no LorePage standalone.
  */
 export function LoreTab({ book }: LoreTabProps) {
+  return (
+    <BookLoreScopes key={`${book.authorId}:${book.id}:${book.universeId ?? ''}`} book={book} />
+  );
+}
+function BookLoreScopes({ book }: LoreTabProps) {
+  const [selected, setSelected] = useState('local');
+  const globalScope = useMemo(
+    () => (book.universeId ? { kind: 'universe' as const, id: book.universeId } : null),
+    [book.universeId],
+  );
+  const globalLore = useLore(globalScope);
+  return (
+    <>
+      {book.universeId && (
+        <Select
+          label="Escopo do compêndio"
+          value={selected}
+          onChange={(event) => setSelected(event.target.value)}
+          options={[
+            { value: 'local', label: 'Lore local — somente este livro' },
+            { value: 'global', label: 'Lore global — universo compartilhado' },
+          ]}
+        />
+      )}
+      {globalLore.error && (
+        <ErrorState
+          title="Não foi possível carregar o lore global"
+          description={globalLore.error}
+          action={
+            <Button onClick={() => void globalLore.refreshEntities()}>Tentar novamente</Button>
+          }
+        />
+      )}
+      {selected === 'global' && globalScope ? (
+        <LoreCollection key="global" scope={globalScope} />
+      ) : (
+        <LoreCollection key="local" scope={book.id} relatedEntities={globalLore.entities} />
+      )}
+    </>
+  );
+}
+export function LoreCollection({
+  scope,
+  relatedEntities = [],
+}: {
+  scope: string | LoreScope;
+  relatedEntities?: LoreEntity[];
+}) {
+  const global = typeof scope !== 'string' && scope.kind === 'universe';
   const {
     entities,
     filteredEntities,
@@ -35,8 +94,11 @@ export function LoreTab({ book }: LoreTabProps) {
     createEntity,
     updateEntity,
     deleteEntity,
-  } = useLore(book.id);
+  } = useLore(scope);
 
+  const [actionError, setActionError] = useState('');
+  const [deletingEntity, setDeletingEntity] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<LoreEntity | null>(null);
   const [viewingEntity, setViewingEntity] = useState<LoreEntity | null>(null);
@@ -59,15 +121,32 @@ export function LoreTab({ book }: LoreTabProps) {
     }
   };
 
+  async function remove(entityId: string) {
+    setDeleting(true);
+    setActionError('');
+    try {
+      await deleteEntity(entityId);
+      setDeletingEntity(null);
+    } catch (cause) {
+      setActionError(
+        cause instanceof Error ? cause.message : 'Não foi possível excluir a entidade.',
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
   const handleDelete = (entityId: string) => {
-    void deleteEntity(entityId);
+    if (global) {
+      setActionError('');
+      setDeletingEntity(entityId);
+    } else void remove(entityId);
   };
 
-  if (loreLoading && entities.length === 0) {
+  if (loreLoading && entities.length === 0 && !isFormOpen) {
     return <LoadingState label="Carregando compêndio de lore..." />;
   }
 
-  if (loreError) {
+  if (loreError && entities.length === 0 && !isFormOpen) {
     return (
       <ErrorState
         title="Não foi possível carregar o compêndio"
@@ -99,6 +178,53 @@ export function LoreTab({ book }: LoreTabProps) {
 
   return (
     <div className={styles.loreTabContainer}>
+      {loreError && (
+        <Alert variant="warning" title="Falha ao sincronizar o lore">
+          {loreError}
+          <Button variant="secondary" onClick={() => void refreshEntities()}>
+            Tentar novamente
+          </Button>
+        </Alert>
+      )}
+      {global && (
+        <p>
+          Edite o lore global deste universo. As alterações são compartilhadas entre seus livros.
+        </p>
+      )}
+      {actionError && !deletingEntity && <Alert variant="destructive">{actionError}</Alert>}
+      {deletingEntity && (
+        <Dialog
+          open
+          title="Excluir entidade global?"
+          onClose={() => {
+            if (!deleting) setDeletingEntity(null);
+          }}
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                disabled={deleting}
+                onClick={() => setDeletingEntity(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                disabled={deleting}
+                onClick={() => void remove(deletingEntity)}
+              >
+                Confirmar exclusão
+              </Button>
+            </>
+          }
+        >
+          <p>
+            A entidade será removida de todos os livros do universo. Se for pública, as publicações
+            ficarão indisponíveis até republicar.
+          </p>
+          {actionError && <Alert variant="destructive">{actionError}</Alert>}
+        </Dialog>
+      )}
       <div className={styles.loreTabHeader}>
         <Button variant="primary" onClick={handleOpenCreate}>
           <Plus className="icon icon-sm" aria-hidden="true" />
@@ -143,7 +269,7 @@ export function LoreTab({ book }: LoreTabProps) {
       {entities.length === 0 ? (
         <EmptyState
           title="Nenhuma entidade cadastrada"
-          description="Você ainda não cadastrou personagens, locais ou conceitos para este livro. Crie sua primeira entidade para estruturar o worldbuilding."
+          description={`Cadastre personagens, locais e conceitos para ${global ? 'este universo' : 'este livro'}.`}
           action={
             <Button variant="primary" onClick={handleOpenCreate}>
               <Plus className="icon icon-sm" aria-hidden="true" />
@@ -184,8 +310,9 @@ export function LoreTab({ book }: LoreTabProps) {
 
       <LoreEntityForm
         open={isFormOpen}
+        global={global}
         entityToEdit={editingEntity}
-        allEntities={entities}
+        allEntities={[...entities, ...relatedEntities]}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleFormSubmit}
       />
@@ -193,7 +320,7 @@ export function LoreTab({ book }: LoreTabProps) {
       <LoreDrawer
         open={Boolean(viewingEntity)}
         entity={viewingEntity}
-        allEntities={entities}
+        allEntities={[...entities, ...relatedEntities]}
         onClose={() => setViewingEntity(null)}
         onEdit={(e) => {
           setViewingEntity(null);

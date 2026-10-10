@@ -1,3 +1,5 @@
+import { getUniverse } from '@/features/universes';
+vi.mock('@/features/universes', () => ({ getUniverse: vi.fn() }));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { listChapters } from '@/features/books';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
@@ -217,4 +219,54 @@ describe('exportManuscript', () => {
       }),
     ).rejects.toThrow('livro inteiro');
   });
+});
+
+it('inclui cópia separada do universo no backup privado, sem identidade de conta', async () => {
+  vi.mocked(getUniverse).mockResolvedValue({
+    id: 'world',
+    authorId: 'secret-author',
+    name: 'Atlas',
+    description: 'Descrição',
+    bookCount: 2,
+    privacyVersion: 0,
+    loreVersion: 0,
+    createdAt: 1,
+    updatedAt: 1,
+  });
+  const global: LoreEntity = {
+    id: 'universe:world:arthur',
+    universeId: 'world',
+    name: 'Arthur',
+    category: 'character',
+    summary: 'Rei',
+    aliases: [],
+    details: 'Privado',
+    relations: [],
+    isPublic: false,
+    createdAt: 1,
+    updatedAt: 1,
+  };
+  vi.mocked(listLoreEntities).mockImplementation((scope) =>
+    Promise.resolve(typeof scope === 'string' ? [] : [global]),
+  );
+  await exportManuscript({
+    book: { ...exportBook, universeId: 'world' },
+    scope: 'book',
+    format: 'json',
+  });
+  const text = await downloadedText();
+  expect(JSON.parse(text)).toMatchObject({
+    version: 2,
+    lore: [],
+    universe: { id: 'world', lore: [{ id: global.id, details: 'Privado' }] },
+  });
+  expect(text).not.toContain('secret-author');
+  vi.mocked(getUniverse).mockResolvedValue(null);
+  await expect(
+    exportManuscript({
+      book: { ...exportBook, universeId: 'world' },
+      scope: 'book',
+      format: 'json',
+    }),
+  ).rejects.toThrow('Universo indisponível');
 });

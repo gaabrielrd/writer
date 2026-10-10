@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { ImageLibraryPicker } from '@/features/image-library';
+import { UniverseSelect } from '@/features/universes';
 import { Alert, Button, Dialog, Input, Textarea } from '@/shared/ui';
 import type { Book, CreateBookInput } from '../model/book';
 import styles from './BookFormDialog.module.css';
@@ -21,6 +22,7 @@ interface FormContentProps {
 function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
   const [title, setTitle] = useState(bookToEdit?.title ?? '');
   const [genre, setGenre] = useState(bookToEdit?.genre ?? '');
+  const [universeId, setUniverseId] = useState(bookToEdit?.universeId ?? null);
   const [synopsis, setSynopsis] = useState(bookToEdit?.synopsis ?? '');
   const [coverUrl, setCoverUrl] = useState(bookToEdit?.coverUrl ?? '');
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -39,6 +41,7 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
         await onSubmit({
           title: title.trim(),
           genre: genre.trim(),
+          ...(universeId !== (bookToEdit?.universeId ?? null) ? { universeId } : {}),
           synopsis: synopsis.trim(),
           coverUrl: coverUrl.trim() || null,
           coverImageId,
@@ -78,6 +81,18 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
       }
     >
       <form id="book-form" onSubmit={handleSubmit} className={styles.form}>
+        <UniverseSelect
+          value={universeId}
+          onChange={setUniverseId}
+          disabled={isSubmitting}
+          alwaysShow
+        />
+        {universeId !== (bookToEdit?.universeId ?? null) && (
+          <Alert variant="warning">
+            Alterar o universo retira a publicação atual. Capítulos e lore local serão preservados;
+            referências ao universo anterior ficarão indisponíveis.
+          </Alert>
+        )}
         <Input
           label="Título da Obra"
           placeholder="Ex: As Crônicas de Eldoria"

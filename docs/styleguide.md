@@ -110,3 +110,12 @@ Nome/avatar abre email e saída em dropdown. Imagens da biblioteca têm miniatur
 2:3, carregamento tardio e controles de gerenciamento com rótulos acessíveis.
 
 Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
+
+## Fichas de lore por etapas
+
+Criação e edição de lore local/global usam quatro etapas: Identificação,
+Características, História e notas, Relações e visibilidade. O progresso fica
+visível, o foco acompanha o título da etapa e Voltar preserva campos. O conteúdo
+da etapa pode rolar em janelas pequenas, mantendo ações no rodapé do diálogo.
+Relações são editadas uma por vez; o escopo global é indicado antes dos campos.
+O novo fluxo usa os componentes e tokens existentes e os mesmos três temas.

@@ -35,7 +35,12 @@ function mapBook(snapshot: DocumentSnapshot): PublicBook | null {
   if (!snapshot.exists()) return null;
   const data: Record<string, unknown> = snapshot.data();
   if (
-    data.schemaVersion !== 1 ||
+    (data.schemaVersion !== 1 && data.schemaVersion !== 2) ||
+    (data.schemaVersion === 2 &&
+      (typeof data.universeId !== 'string' ||
+        !/^[a-zA-Z0-9_-]{1,128}$/.test(data.universeId) ||
+        !Number.isInteger(data.universePrivacyVersion) ||
+        Number(data.universePrivacyVersion) < 0)) ||
     typeof data.title !== 'string' ||
     typeof data.authorName !== 'string' ||
     typeof data.revisionId !== 'string' ||
@@ -51,12 +56,26 @@ function mapBook(snapshot: DocumentSnapshot): PublicBook | null {
     authorName: data.authorName,
     revisionId: data.revisionId,
     publishedAt: data.publishedAt,
+    ...(data.schemaVersion === 2
+      ? {
+          universeId: data.universeId as string,
+          universePrivacyVersion: data.universePrivacyVersion as number,
+        }
+      : {}),
   };
 }
 
 export async function getPublicBook(bookId: string): Promise<PublicBook | null> {
   try {
-    return mapBook(await getDocFromServer(doc(firestore, 'publicBooks', bookId)));
+    const book = mapBook(await getDocFromServer(doc(firestore, 'publicBooks', bookId)));
+    if (book?.universeId) {
+      const privacy = (
+        await getDocFromServer(doc(firestore, 'publicUniversePrivacy', book.universeId))
+      ).data();
+      if (!privacy || privacy.active !== true || privacy.version !== book.universePrivacyVersion)
+        return null;
+    }
+    return book;
   } catch (error) {
     if (isPublicBookUnavailable(error)) return null;
     throw error;
@@ -69,17 +88,62 @@ export function subscribePublicBook(
   onChange: (book: PublicBook | null) => void,
   onError: (error: unknown) => void,
 ): Unsubscribe {
-  return onSnapshot(
+  let stopPrivacy: Unsubscribe | undefined;
+  let active = true;
+  let currentKey: string | undefined;
+  const stopRoot = onSnapshot(
     doc(firestore, 'publicBooks', bookId),
     { includeMetadataChanges: true },
     (snapshot) => {
-      if (!snapshot.metadata.fromCache) onChange(mapBook(snapshot));
+      if (snapshot.metadata.fromCache || !active) return;
+      const book = mapBook(snapshot);
+      const key = book?.universeId
+        ? `${book.universeId}:${book.universePrivacyVersion}:${book.revisionId}`
+        : undefined;
+      if (key !== currentKey) {
+        stopPrivacy?.();
+        stopPrivacy = undefined;
+        currentKey = key;
+      }
+      if (!book?.universeId) {
+        onChange(book);
+        return;
+      }
+      if (!stopPrivacy) {
+        stopPrivacy = onSnapshot(
+          doc(firestore, 'publicUniversePrivacy', book.universeId),
+          { includeMetadataChanges: true },
+          (privacySnapshot) => {
+            if (!active || key !== currentKey || privacySnapshot.metadata.fromCache) return;
+            const privacy = privacySnapshot.data();
+            onChange(
+              privacy?.active === true && privacy.version === book.universePrivacyVersion
+                ? book
+                : null,
+            );
+          },
+          (error) => {
+            if (active && key === currentKey) {
+              if (isPublicBookUnavailable(error)) onChange(null);
+              else onError(error);
+            }
+          },
+        );
+      }
     },
     (error) => {
+      stopPrivacy?.();
+      stopPrivacy = undefined;
+      currentKey = undefined;
       if (isPublicBookUnavailable(error)) onChange(null);
       else onError(error);
     },
   );
+  return () => {
+    active = false;
+    stopRoot();
+    stopPrivacy?.();
+  };
 }
 
 /** No reads of private books, chapters, profiles or lore occur on the public route. */

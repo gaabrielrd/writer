@@ -1,3 +1,7 @@
+import { listUniverses } from '@/features/universes';
+vi.mock('@/features/universes/services/universeService', () => ({
+  listUniverses: vi.fn().mockResolvedValue([]),
+}));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -264,4 +268,31 @@ describe('BookCreationWizard', () => {
       expect(screen.getByText(/não retornou um resultado válido/)).toBeInTheDocument(),
     );
   });
+});
+
+it('permite selecionar um universo na primeira etapa e preserva a escolha ao voltar', async () => {
+  vi.mocked(listUniverses).mockResolvedValue([
+    {
+      id: 'world',
+      authorId: 'author',
+      name: 'Atlas',
+      description: '',
+      bookCount: 0,
+      privacyVersion: 0,
+      loreVersion: 0,
+      createdAt: 1,
+      updatedAt: 1,
+    },
+  ]);
+  const submit = vi.fn().mockResolvedValue(undefined);
+  render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
+  const user = userEvent.setup();
+  await user.selectOptions(await screen.findByLabelText('Universo compartilhado'), 'world');
+  await start();
+  await user.click(screen.getByRole('button', { name: 'Voltar' }));
+  expect(await screen.findByLabelText('Universo compartilhado')).toHaveValue('world');
+  await user.click(screen.getByRole('button', { name: 'Continuar' }));
+  await user.click(screen.getByRole('button', { name: 'Continuar' }));
+  await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
+  expect(submit).toHaveBeenCalledWith(expect.objectContaining({ universeId: 'world' }));
 });

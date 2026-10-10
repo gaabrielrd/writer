@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { BookImage, Sparkles } from 'lucide-react';
 import { ImageLibraryPicker } from '@/features/image-library';
 import { useAuth } from '@/features/auth';
+import { UniverseSelect } from '@/features/universes';
 import { useBookGeneration } from '@/features/ai-assistant';
 import { Alert, Button, Dialog, Input, Textarea } from '@/shared/ui';
 import type { CreateBookInput } from '../model/book';
@@ -18,6 +19,7 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState('');
   const [genre, setGenre] = useState('');
+  const [universeId, setUniverseId] = useState<string | null>(null);
   const [synopsis, setSynopsis] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -75,6 +77,7 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
       await onSubmit({
         title: title.trim(),
         genre: genre.trim(),
+        ...(universeId ? { universeId } : {}),
         synopsis: synopsis.trim() || undefined,
         coverUrl: coverUrl.trim() || null,
         creationId,
@@ -141,6 +144,7 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
         </h3>
         {step === 0 && (
           <>
+            <UniverseSelect value={universeId} onChange={setUniverseId} disabled={locked} />
             <Input
               label="Título da Obra"
               value={title}

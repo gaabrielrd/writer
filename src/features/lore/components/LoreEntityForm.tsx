@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Alert, Button, Dialog, Input, Select, Textarea } from '@/shared/ui';
 import {
@@ -15,17 +15,11 @@ export interface LoreEntityFormProps {
   initialName?: string;
   entityToEdit?: LoreEntity | null;
   allEntities: LoreEntity[];
+  global?: boolean;
   onClose: () => void;
   onSubmit: (input: CreateLoreEntityInput) => Promise<void>;
 }
-
-interface FormContentProps {
-  initialName?: string;
-  entityToEdit?: LoreEntity | null;
-  allEntities: LoreEntity[];
-  onClose: () => void;
-  onSubmit: (input: CreateLoreEntityInput) => Promise<void>;
-}
+const steps = ['Identificação', 'Características', 'História e notas', 'Relações e visibilidade'];
 
 function LoreEntityFormContent({
   entityToEdit,
@@ -33,326 +27,369 @@ function LoreEntityFormContent({
   onClose,
   onSubmit,
   initialName = '',
-}: FormContentProps) {
+  global = false,
+}: Omit<LoreEntityFormProps, 'open'>) {
+  const [step, setStep] = useState(0);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const submitLock = useRef(false);
+  const [creationId] = useState(() => crypto.randomUUID());
   const [name, setName] = useState(entityToEdit?.name ?? initialName);
   const [category, setCategory] = useState<LoreCategory>(entityToEdit?.category ?? 'character');
-  const [aliasesText, setAliasesText] = useState(
-    entityToEdit?.aliases ? entityToEdit.aliases.join(', ') : '',
-  );
+  const [aliasesText, setAliasesText] = useState(entityToEdit?.aliases.join(', ') ?? '');
   const [summary, setSummary] = useState(entityToEdit?.summary ?? '');
   const [details, setDetails] = useState(entityToEdit?.details ?? '');
   const [isPublic, setIsPublic] = useState(entityToEdit?.isPublic ?? true);
   const [relations, setRelations] = useState<LoreRelation[]>(
     entityToEdit?.relations ? [...entityToEdit.relations] : [],
   );
-  const [structuredDetails, setStructuredDetails] = useState(
-    entityToEdit?.structuredDetails ?? { appearance: '', personality: '', history: '', notes: '' },
-  );
+  const [relationIndex, setRelationIndex] = useState(0);
+  const [structuredDetails, setStructuredDetails] = useState({
+    appearance: '',
+    personality: '',
+    history: '',
+    notes: '',
+    ...entityToEdit?.structuredDetails,
+  });
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Entidades elegíveis para relação (exclui a própria entidade sendo editada)
-  const availableTargetEntities = allEntities.filter(
-    (e) => !entityToEdit || e.id !== entityToEdit.id,
+  useEffect(() => {
+    heading.current?.focus();
+  }, [step]);
+  const globalScope = global || Boolean(entityToEdit?.universeId);
+  const available = allEntities.filter(
+    (item) => item.id !== entityToEdit?.id && (!globalScope || Boolean(item.universeId)),
   );
-
-  const handleAddRelation = () => {
-    if (availableTargetEntities.length === 0) return;
-    const firstTarget = availableTargetEntities[0];
-    if (!firstTarget) return;
-
-    setRelations((prev) => [
-      ...prev,
-      {
-        targetEntityId: firstTarget.id,
-        relationType: 'Relacionado com',
-        description: '',
-      },
-    ]);
-  };
-
-  const handleUpdateRelation = (index: number, field: keyof LoreRelation, value: string) => {
-    setRelations((prev) => prev.map((rel, i) => (i === index ? { ...rel, [field]: value } : rel)));
-  };
-
-  const handleRemoveRelation = (index: number) => {
-    setRelations((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !summary.trim()) return;
-
-    const parsedAliases = aliasesText
-      .split(',')
-      .map((a) => a.trim())
-      .filter(Boolean);
-
+  const aliases = aliasesText
+    .split(',')
+    .map((alias) => alias.trim())
+    .filter(Boolean);
+  const validIdentification = Boolean(
+    name.trim() &&
+    summary.trim() &&
+    summary.length <= 140 &&
+    name.length <= 200 &&
+    aliases.length <= 20 &&
+    aliases.every((alias) => alias.length <= 200),
+  );
+  const relation = relations[relationIndex];
+  const validRelations = relations.every((item) => item.targetEntityId && item.relationType.trim());
+  function close() {
+    if (!submitLock.current) onClose();
+  }
+  function navigate(next: number) {
+    setError(null);
+    setStep(next);
+  }
+  function updateRelation(field: keyof LoreRelation, value: string) {
+    setRelations((previous) =>
+      previous.map((item, index) => (index === relationIndex ? { ...item, [field]: value } : item)),
+    );
+  }
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (submitLock.current || isSubmitting) return;
+    if (!validIdentification) {
+      setError('Preencha nome e resumo; use até 20 apelidos de até 200 caracteres.');
+      setStep(0);
+      return;
+    }
+    if (step < 3) {
+      navigate(step + 1);
+      return;
+    }
+    if (!validRelations) {
+      setError('Selecione o destino e informe o tipo de cada relação.');
+      return;
+    }
     setError(null);
     setIsSubmitting(true);
-    void (async () => {
-      try {
-        await onSubmit({
-          name: name.trim(),
-          category,
-          aliases: parsedAliases,
-          summary: summary.slice(0, 140).trim(),
-          details: details.trim(),
-          relations,
-          structuredDetails,
-          isPublic,
-        });
-        onClose();
-      } catch (cause) {
-        setError(
-          cause instanceof Error
-            ? cause.message
-            : 'Não foi possível salvar a ficha. Tente novamente.',
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
-    })();
-  };
-
-  const dialogTitle = entityToEdit
+    submitLock.current = true;
+    try {
+      await onSubmit({
+        ...(entityToEdit ? {} : { creationId }),
+        name: name.trim(),
+        category,
+        aliases,
+        summary: summary.trim(),
+        details: details.trim(),
+        structuredDetails,
+        relations,
+        isPublic,
+      });
+      onClose();
+    } catch (cause) {
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível salvar a ficha. Tente novamente.',
+      );
+    } finally {
+      setIsSubmitting(false);
+      submitLock.current = false;
+    }
+  }
+  const title = entityToEdit
     ? `Editar Entidade: ${entityToEdit.name}`
     : 'Cadastrar Nova Entidade no Compêndio';
-
-  const categoryOptions = LORE_CATEGORIES.map((c) => ({
-    value: c.value,
-    label: c.label,
-  }));
-
-  const targetEntityOptions = availableTargetEntities.map((e) => ({
-    value: e.id,
-    label: `${e.name} (${e.category})`,
-  }));
-
   return (
     <Dialog
-      open={true}
-      title={dialogTitle}
-      onClose={onClose}
+      open
+      title={title}
+      description={`Etapa ${step + 1} de 4 • ${globalScope ? 'Lore global' : 'Lore local'}`}
+      onClose={close}
+      className={styles.dialog}
       footer={
         <div className={styles.footer}>
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting}>
+          <Button type="button" variant="secondary" onClick={close} disabled={isSubmitting}>
             Cancelar
           </Button>
+          {step > 0 && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => navigate(step - 1)}
+              disabled={isSubmitting}
+            >
+              Voltar
+            </Button>
+          )}
           <Button
             type="submit"
             form="lore-entity-form"
-            variant="primary"
-            disabled={isSubmitting || !name.trim() || !summary.trim()}
+            disabled={isSubmitting || !validIdentification || (step === 3 && !validRelations)}
           >
-            {entityToEdit ? 'Salvar Alterações' : 'Cadastrar Entidade'}
+            {isSubmitting
+              ? 'Salvando...'
+              : step < 3
+                ? 'Continuar'
+                : entityToEdit
+                  ? 'Salvar Alterações'
+                  : 'Cadastrar Entidade'}
           </Button>
         </div>
       }
     >
-      <form id="lore-entity-form" onSubmit={handleSubmit} className={styles.form}>
+      <ol className={styles.steps} aria-label="Etapas da ficha de lore">
+        {steps.map((label, index) => (
+          <li key={label} aria-current={index === step ? 'step' : undefined}>
+            {index + 1}. {label}
+          </li>
+        ))}
+      </ol>
+      <form id="lore-entity-form" className={styles.form} onSubmit={(event) => void submit(event)}>
+        <h3 className={styles.stepTitle} ref={heading} tabIndex={-1}>
+          {steps[step]}
+        </h3>
+        {globalScope && (
+          <p className={styles.scopeNotice}>
+            Esta entidade pertence ao universo e é compartilhada com outros livros.
+          </p>
+        )}
         {error && (
           <Alert variant="destructive" title="Falha ao salvar">
             {error}
           </Alert>
         )}
-        <div className={styles.row}>
-          <div className={styles.colName}>
+        {step === 0 && (
+          <>
             <Input
               label="Nome da Entidade"
-              placeholder="Ex: Rei Arthur, Floresta Proibida, Espada Excalibur"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={200}
               required
               disabled={isSubmitting}
             />
-          </div>
-          <div className={styles.colCategory}>
             <Select
               label="Categoria"
               value={category}
-              onChange={(e) => setCategory(e.target.value as LoreCategory)}
-              options={categoryOptions}
+              onChange={(event) => setCategory(event.target.value as LoreCategory)}
+              options={LORE_CATEGORIES}
               disabled={isSubmitting}
             />
-          </div>
-        </div>
-
-        <Input
-          label="Apelidos / Aliases (separados por vírgula)"
-          placeholder="Ex: O Rei Supremo, Pendragon, Artorius"
-          value={aliasesText}
-          onChange={(e) => setAliasesText(e.target.value)}
-          hint="Esses termos também serão reconhecidos e destacados automaticamente no texto."
-          disabled={isSubmitting}
-        />
-
-        <div>
-          <Textarea
-            label="Resumo Curto (exibido nos tooltips de leitura e edição)"
-            placeholder="Resumo objetivo de quem é, o que faz ou qual seu significado na trama..."
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-            rows={2}
-            required
-            maxLength={140}
-            hint={`${summary.length}/140 caracteres`}
-            disabled={isSubmitting}
-          />
-        </div>
-
-        <Textarea
-          label="Ficha Detalhada / Lore Completo (opcional)"
-          placeholder="História pregressa, aparência física, motivações, características psicológicas, segredos, etc."
-          value={details}
-          onChange={(e) => setDetails(e.target.value)}
-          rows={5}
-          disabled={isSubmitting}
-        />
-
-        {(
-          [
-            ['appearance', 'Aparência'],
-            ['personality', 'Personalidade'],
-            ['history', 'Histórico'],
-            ['notes', 'Notas privadas'],
-          ] as const
-        ).map(([field, label]) => (
-          <Textarea
-            key={field}
-            label={label}
-            value={structuredDetails[field]}
-            onChange={(event) =>
-              setStructuredDetails((previous) => ({ ...previous, [field]: event.target.value }))
-            }
-            rows={3}
-            disabled={isSubmitting}
-          />
-        ))}
-        <p>
-          Somente nome, apelidos, categoria e resumo podem aparecer no leitor público. A ficha
-          detalhada, relações e notas permanecem privadas.
-        </p>
-        {entityToEdit?.isPublic && !isPublic && (
-          <Alert variant="warning" title="A publicação será retirada">
-            Tornar esta entidade privada também retira a publicação atual da obra para revogar o
-            acesso ao resumo. Você poderá publicar uma nova versão sem esta entidade.
-          </Alert>
+            <Input
+              label="Apelidos / Aliases (separados por vírgula)"
+              value={aliasesText}
+              onChange={(event) => setAliasesText(event.target.value)}
+              disabled={isSubmitting}
+              hint="Até 20 apelidos de até 200 caracteres. Os termos também serão reconhecidos no texto."
+            />
+            <Textarea
+              label="Resumo Curto (exibido nos tooltips de leitura e edição)"
+              value={summary}
+              onChange={(event) => setSummary(event.target.value)}
+              rows={2}
+              maxLength={140}
+              required
+              disabled={isSubmitting}
+              hint={`${summary.length}/140 caracteres`}
+            />
+          </>
         )}
-        <div className={styles.visibilityToggle}>
-          <label className={styles.checkboxLabel}>
-            <input
-              type="checkbox"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
+        {step === 1 &&
+          (['appearance', 'personality'] as const).map((field) => (
+            <Textarea
+              key={field}
+              label={field === 'appearance' ? 'Aparência' : 'Personalidade'}
+              value={structuredDetails[field]}
+              onChange={(event) =>
+                setStructuredDetails((previous) => ({ ...previous, [field]: event.target.value }))
+              }
+              rows={3}
+              maxLength={150000}
               disabled={isSubmitting}
-              className={styles.checkbox}
             />
-            <span>Tornar visível no leitor público da obra</span>
-          </label>
-        </div>
-
-        <div className={styles.relationsSection}>
-          <div className={styles.relationsHeader}>
-            <div>
-              <strong className={styles.relationsTitle}>Relações com Outras Entidades</strong>
-              <p className={styles.relationsSubtitle}>
-                Conecte esta entidade com outros personagens, locais ou conceitos da história.
-              </p>
-            </div>
-            {availableTargetEntities.length > 0 && (
+          ))}
+        {step === 2 && (
+          <>
+            <Textarea
+              label="Ficha Detalhada / Lore Completo (opcional)"
+              value={details}
+              onChange={(event) => setDetails(event.target.value)}
+              rows={3}
+              maxLength={150000}
+              disabled={isSubmitting}
+            />
+            {(['history', 'notes'] as const).map((field) => (
+              <Textarea
+                key={field}
+                label={field === 'history' ? 'Histórico' : 'Notas privadas'}
+                value={structuredDetails[field]}
+                onChange={(event) =>
+                  setStructuredDetails((previous) => ({ ...previous, [field]: event.target.value }))
+                }
+                rows={3}
+                maxLength={150000}
+                disabled={isSubmitting}
+              />
+            ))}
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <p>
+              Somente nome, apelidos, categoria e resumo podem aparecer no leitor público. Ficha
+              detalhada, relações e notas permanecem privadas.
+            </p>
+            {entityToEdit?.isPublic && !isPublic && (
+              <Alert variant="warning" title="A publicação será retirada">
+                {globalScope
+                  ? 'As publicações dos livros deste universo ficarão indisponíveis até uma nova publicação sem esta entidade.'
+                  : 'A publicação atual da obra será retirada para revogar o acesso ao resumo. Você poderá publicar uma nova versão sem esta entidade.'}
+              </Alert>
+            )}
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={isPublic}
+                onChange={(event) => setIsPublic(event.target.checked)}
+                disabled={isSubmitting}
+                className={styles.checkbox}
+              />
+              <span>Tornar visível no leitor público da obra</span>
+            </label>
+            <div className={styles.relationsHeader}>
+              <strong>Relações com Outras Entidades</strong>
               <Button
                 type="button"
                 variant="secondary"
-                onClick={handleAddRelation}
-                disabled={isSubmitting}
-                title="Adicionar relação"
+                disabled={isSubmitting || available.length === 0 || relations.length >= 50}
+                onClick={() => {
+                  const target = available[0];
+                  if (target) {
+                    setRelationIndex(relations.length);
+                    setRelations((previous) => [
+                      ...previous,
+                      {
+                        targetEntityId: target.id,
+                        relationType: 'Relacionado com',
+                        description: '',
+                      },
+                    ]);
+                  }
+                }}
               >
                 <Plus className="icon icon-sm" aria-hidden="true" />
                 Adicionar Relação
               </Button>
-            )}
-          </div>
-
-          {availableTargetEntities.length === 0 && (
-            <p className={styles.emptyNotice}>
-              Cadastre outras entidades no livro para vinculá-las em relações.
-            </p>
-          )}
-
-          {relations.length > 0 && (
-            <div className={styles.relationsList}>
-              {relations.map((rel, index) => (
-                <div key={index} className={styles.relationRow}>
-                  <div className={styles.relSelect}>
-                    <Select
-                      label="Entidade Vinculada"
-                      value={rel.targetEntityId}
-                      onChange={(e) =>
-                        handleUpdateRelation(index, 'targetEntityId', e.target.value)
-                      }
-                      options={targetEntityOptions}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  <div className={styles.relType}>
-                    <Input
-                      label="Tipo de Relação"
-                      placeholder="Ex: Aliado de, Rival de, Governante de"
-                      value={rel.relationType}
-                      onChange={(e) => handleUpdateRelation(index, 'relationType', e.target.value)}
-                      disabled={isSubmitting}
-                    />
-                  </div>
-                  <Textarea
-                    label="Descrição da Relação"
-                    value={rel.description ?? ''}
-                    onChange={(event) =>
-                      handleUpdateRelation(index, 'description', event.target.value)
-                    }
-                    disabled={isSubmitting}
-                    rows={2}
-                  />
-                  <div className={styles.relRemove}>
-                    <Button
-                      type="button"
-                      variant="danger"
-                      onClick={() => handleRemoveRelation(index)}
-                      disabled={isSubmitting}
-                      title="Remover relação"
-                      aria-label="Remover relação"
-                    >
-                      <Trash2 className="icon icon-sm" aria-hidden="true" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
             </div>
-          )}
-        </div>
+            {!available.length && (
+              <p className={styles.scopeNotice}>
+                Cadastre outras entidades neste escopo para vinculá-las em relações.
+              </p>
+            )}
+            {relation && (
+              <>
+                {relations.length > 1 && (
+                  <Select
+                    label="Relação em edição"
+                    value={relationIndex}
+                    onChange={(event) => setRelationIndex(Number(event.target.value))}
+                    options={relations.map((item, index) => ({
+                      value: index,
+                      label: `${index + 1}. ${available.find((target) => target.id === item.targetEntityId)?.name ?? 'Entidade não disponível'}`,
+                    }))}
+                    disabled={isSubmitting}
+                  />
+                )}
+                <Select
+                  label="Entidade Vinculada"
+                  value={relation.targetEntityId}
+                  onChange={(event) => updateRelation('targetEntityId', event.target.value)}
+                  options={[
+                    ...available.map((item) => ({
+                      value: item.id,
+                      label: `${item.name} (${item.universeId ? 'Global' : 'Local'})`,
+                    })),
+                    ...(!available.some((item) => item.id === relation.targetEntityId)
+                      ? [{ value: relation.targetEntityId, label: 'Entidade não disponível' }]
+                      : []),
+                  ]}
+                  disabled={isSubmitting}
+                />
+                <Input
+                  label="Tipo de Relação"
+                  value={relation.relationType}
+                  onChange={(event) => updateRelation('relationType', event.target.value)}
+                  maxLength={200}
+                  disabled={isSubmitting}
+                />
+                <Textarea
+                  label="Descrição da Relação"
+                  value={relation.description ?? ''}
+                  onChange={(event) => updateRelation('description', event.target.value)}
+                  maxLength={4000}
+                  rows={2}
+                  disabled={isSubmitting}
+                />
+                <Button
+                  type="button"
+                  variant="danger"
+                  aria-label="Remover relação"
+                  disabled={isSubmitting}
+                  onClick={() => {
+                    setRelations((previous) =>
+                      previous.filter((_, index) => index !== relationIndex),
+                    );
+                    setRelationIndex(Math.max(0, relationIndex - 1));
+                  }}
+                >
+                  <Trash2 className="icon icon-sm" aria-hidden="true" />
+                  Remover relação
+                </Button>
+              </>
+            )}
+          </>
+        )}
       </form>
     </Dialog>
   );
 }
-
-export function LoreEntityForm({
-  open,
-  initialName,
-  entityToEdit,
-  allEntities,
-  onClose,
-  onSubmit,
-}: LoreEntityFormProps) {
-  if (!open) return null;
-
-  return (
+export function LoreEntityForm({ open, ...props }: LoreEntityFormProps) {
+  return open ? (
     <LoreEntityFormContent
-      key={entityToEdit ? entityToEdit.id : 'new-entity'}
-      initialName={initialName}
-      entityToEdit={entityToEdit}
-      allEntities={allEntities}
-      onClose={onClose}
-      onSubmit={onSubmit}
+      key={props.entityToEdit?.id ?? props.initialName ?? 'new-entity'}
+      {...props}
     />
-  );
+  ) : null;
 }

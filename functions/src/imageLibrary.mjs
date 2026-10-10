@@ -1,4 +1,5 @@
 import { GenerationError, validateId } from './generation.mjs';
+import { prepareUniverseLink } from './universes.mjs';
 
 export const imageRef = (db, uid, id) => db.doc(`users/${uid}/imageLibrary/${validateId(id)}`);
 export function libraryImage(id, record, now) {
@@ -61,8 +62,6 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
       authorize(uid);
       const bookId = validateId(data.bookId ?? data.creationId);
       const bookRef = db.doc(`books/${bookId}`);
-      const id = data.coverImageId ?? data.coverGenerationId ?? null;
-      const selectedRef = id ? imageRef(db, uid, id) : null;
       if (
         (!data.bookId || data.title !== undefined) &&
         (typeof data.title !== 'string' || !data.title.trim() || data.title.trim().length > 300)
@@ -76,7 +75,8 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
           fail('invalid-argument', 'Dados do livro inválidos.');
       }
       if (
-        !id &&
+        !data.coverImageId &&
+        !data.coverGenerationId &&
         data.coverUrl != null &&
         (typeof data.coverUrl !== 'string' ||
           data.coverUrl.length > 4000 ||
@@ -84,20 +84,37 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
       )
         fail('invalid-argument', 'URL da capa inválida.');
       return db.runTransaction(async (tx) => {
-        const [snapshot, deleted, image] = await Promise.all([
+        const [snapshot, deleted] = await Promise.all([
           tx.get(bookRef),
           tx.get(db.doc(`deletedBooks/${bookId}`)),
-          selectedRef ? tx.get(selectedRef) : null,
         ]);
         const book = snapshot.data();
+        const id =
+          data.coverImageId === undefined && data.coverGenerationId === undefined && data.bookId
+            ? (book?.coverImageId ?? null)
+            : (data.coverImageId ?? data.coverGenerationId ?? null);
+        const selectedRef = id ? imageRef(db, uid, id) : null;
+        const image = selectedRef ? await tx.get(selectedRef) : null;
+        const universeId =
+          data.universeId === undefined ? (book?.universeId ?? null) : data.universeId;
         if (deleted.exists || book?.deleting)
           fail('failed-precondition', 'Livro removido ou em exclusão.');
         if (book && book.authorId !== uid) fail('permission-denied', 'Livro indisponível.');
         if (data.bookId && !book) fail('not-found', 'Livro indisponível.');
         if (!data.bookId && book) {
-          if (book.coverImageId !== id) fail('failed-precondition', 'Identificador já utilizado.');
+          if (book.coverImageId !== id || (book.universeId ?? null) !== universeId)
+            fail('failed-precondition', 'Identificador já utilizado.');
           return book;
         }
+        const universeLink = await prepareUniverseLink(
+          tx,
+          db,
+          uid,
+          bookId,
+          book?.universeId,
+          universeId,
+          now,
+        );
         if (selectedRef) active(image.data());
         const previousId = book?.coverImageId;
         const changed = previousId !== id;
@@ -107,6 +124,7 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
           oldRef ? tx.get(useRef(uid, previousId, bookId)) : null,
           selectedRef && changed ? tx.get(useRef(uid, id, bookId)) : null,
         ]);
+        universeLink.commit();
         if (oldUse?.exists) {
           tx.delete(useRef(uid, previousId, bookId));
           tx.update(oldRef, { useCount: Math.max(0, oldImage.data().useCount - 1) });
@@ -126,10 +144,22 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
           title: data.title?.trim() ?? book.title,
           genre: data.genre?.trim() ?? book?.genre ?? '',
           synopsis: data.synopsis?.trim() ?? book?.synopsis ?? '',
+          ...(universeId || book?.universeId || data.universeId !== undefined
+            ? { universeId }
+            : {}),
           coverImageId: id,
-          coverUrl: selectedRef ? image.data().url : (data.coverUrl ?? null),
+          coverUrl: selectedRef
+            ? image.data().url
+            : data.coverUrl === undefined
+              ? (book?.coverUrl ?? null)
+              : data.coverUrl,
           updatedAt: now(),
         };
+        if (book && (book.universeId ?? null) !== universeId) {
+          value.status = 'draft';
+          value.publicationPrivacyVersion = (book.publicationPrivacyVersion ?? 0) + 1;
+          tx.delete(db.doc(`publicBooks/${bookId}`));
+        }
         tx.set(bookRef, value);
         return value;
       });

@@ -163,3 +163,18 @@ As regras no emulador impedem forjar imagens ou referências pelo navegador.
 `e2e/visual/image-library.visual.ts` valida menus por teclado, tooltip, breadcrumb,
 gerenciamento e seleção no wizard nos três temas e em desktop/celular, incluindo
 320 px. Serviços fictícios isolados impedem acesso ao Firebase de produção.
+
+## Universos e lore compartilhado
+
+Testes de componentes cobrem gestão de universos, vínculos, wizard de lore,
+edição separada no editor, atualização global e backup privado de versão 2.
+O backend cobre autoria, retentativas, contadores, referências globais e exclusão
+concorrente. `npm run test:rules` inclui isolamento de universos, proteção de
+metadados, consentimento global e revogação por URLs diretas.
+
+A suíte visual usa serviços fictícios isolados, sem rede externa, em desktop e
+celular nos temas claro, escuro e sépia:
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/universes.visual.ts
+```

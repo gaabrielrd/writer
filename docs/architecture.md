@@ -202,3 +202,12 @@ A exclusão explícita exige zero usos; exclusão de livro libera referências v
 trigger sem remover o arquivo. Metadados são privados e mutações de referências
 no browser são proibidas. Migração em lotes preserva capas aceitas antigas
 existentes sem cobrança. Veja [biblioteca](image-library.md) e [ADR 0017](decisions/0017-image-library-and-cover-references.md).
+
+## Universos e lore compartilhado
+
+`src/features/universes` cuida do cadastro, seleção e páginas privadas dos
+universos do autor. `lore` mantém fichas e formulários por escopo; `books` guarda
+o vínculo opcional; `editor` combina entidades para reconhecimento, menções e IA.
+Vínculos e mutações globais passam por functions; regras protegem os originais
+e validam a versão pública de privacidade. Veja [universos](shared-lore.md) e
+[ADR 0018](decisions/0018-shared-universes-and-lore.md).

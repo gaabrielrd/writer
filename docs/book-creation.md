@@ -68,3 +68,11 @@ A nova chave foi cadastrada como versão 3 de `BOOK_GENERATION_GEMINI_KEY`. Some
 Após o teste no aplicativo, a consulta de disponibilidade retornou 401: os logs indicavam Auth `VALID` e App Check `MISSING`. O frontend usava `ReCaptchaV3Provider` com a chave Enterprise cadastrada. O fallback síncrono não tratava a falha assíncrona de troca de token (HTTP 400).
 
 `shared/lib/firebase.ts` passou a inicializar diretamente `ReCaptchaEnterpriseProvider`. O Hosting foi republicado após validação completa. A sessão autenticada no navegador mostrou preço e botão de sinopse habilitado; os logs confirmaram HTTP 200, Auth `VALID` e App Check `VALID`. A verificação usou uma aba separada e foi cancelada sem criar livro ou debitar créditos. A exigência de App Check nas funções permanece ativa.
+
+## Universo na primeira etapa
+
+Quando o autor tem universos, a etapa **Livro** oferece **Universo compartilhado**
+e a opção **Sem universo**. Voltar preserva a seleção, e as três etapas continuam
+as mesmas. A criação vinculada é validada no servidor, com ou sem capa.
+Configurações de livros existentes permitem trocar ou remover o vínculo sem
+apagar capítulos ou lore local. Veja [universos](shared-lore.md).

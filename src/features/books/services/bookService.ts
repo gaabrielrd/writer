@@ -28,6 +28,7 @@ import {
 } from '../model/chapter';
 
 interface StoredBookDoc {
+  universeId?: string | null;
   authorId: string;
   title: string;
   genre?: string;
@@ -60,6 +61,7 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
     return {
       id: docSnap.id,
       authorId: data.authorId,
+      ...(data.universeId ? { universeId: data.universeId } : {}),
       title: data.title,
       genre: data.genre ?? '',
       synopsis: data.synopsis ?? '',
@@ -85,6 +87,7 @@ export async function getBook(bookId: string): Promise<Book | null> {
   return {
     id: snapshot.id,
     authorId: data.authorId,
+    ...(data.universeId ? { universeId: data.universeId } : {}),
     title: data.title,
     genre: data.genre ?? '',
     synopsis: data.synopsis ?? '',
@@ -98,7 +101,11 @@ export async function getBook(bookId: string): Promise<Book | null> {
 }
 
 export async function createBook(authorId: string, input: CreateBookInput): Promise<Book> {
-  if (input.coverGenerationId || input.coverImageId) return createBookWithGeneratedCover(input);
+  if (input.coverGenerationId || input.coverImageId || input.universeId)
+    return createBookWithGeneratedCover({
+      ...input,
+      creationId: input.creationId ?? crypto.randomUUID(),
+    });
   const booksRef = collection(firestore, 'books');
   if (input.creationId && !/^[a-zA-Z0-9-]{16,80}$/.test(input.creationId))
     throw new Error('Identificador de criação inválido.');
@@ -139,7 +146,7 @@ export async function updateBook(bookId: string, input: UpdateBookInput): Promis
     throw new Error('Use a publicação para revisar e disponibilizar uma cópia pública do livro.');
   }
   if (input.status === 'draft') await unpublishBook(bookId);
-  if ('coverImageId' in input) {
+  if ('coverImageId' in input || 'universeId' in input) {
     await saveBookLibraryCover(bookId, input);
     return;
   }

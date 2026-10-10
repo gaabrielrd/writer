@@ -1,4 +1,5 @@
 import { createBrowserRouter, type RouteObject } from 'react-router';
+import { UniversePage, UniverseLorePage } from '@/features/universes';
 import { StyleguidePage } from '@/shared/ui';
 import { App } from '@/app/App';
 import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallback';
@@ -54,6 +55,8 @@ export const routes: RouteObject[] = [
         ),
       },
       { path: 'library', element: <ImageLibraryPage /> },
+      { path: 'universes', element: <UniversePage /> },
+      { path: 'universes/:universeId/lore', element: <UniverseLorePage /> },
       { path: 'read/:bookId', element: <ReaderView /> },
       {
         // Referência viva fornecida pelo pacote compartilhado.

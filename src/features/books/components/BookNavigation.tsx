@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router';
-import { BookOpen, ChevronDown, Images } from 'lucide-react';
+import { BookOpen, ChevronDown, Globe, Images } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { Button, Dropdown, DropdownItem } from '@/shared/ui';
 import { watchBookTitle } from '../services/bookNavigationService';
@@ -19,7 +19,8 @@ export function BookNavigation() {
   if (!user) return null;
   const current = title?.key === key ? title.text : '';
   const imageLibrarySelected = pathname === '/library';
-  const SelectedIcon = imageLibrarySelected ? Images : BookOpen;
+  const loreLibrarySelected = pathname === '/universes' || pathname.startsWith('/universes/');
+  const SelectedIcon = loreLibrarySelected ? Globe : imageLibrarySelected ? Images : BookOpen;
   return (
     <nav className={styles.nav} aria-label="Navegação principal">
       <span className={styles.separator} aria-hidden="true">
@@ -30,11 +31,21 @@ export function BookNavigation() {
         trigger={
           <Button variant="ghost">
             <SelectedIcon className="icon icon-sm" aria-hidden="true" />
-            {imageLibrarySelected ? 'Biblioteca de Imagens' : 'Meus Livros'}
+            {loreLibrarySelected
+              ? 'Lore compartilhado'
+              : imageLibrarySelected
+                ? 'Biblioteca de Imagens'
+                : 'Meus Livros'}
             <ChevronDown className="icon icon-sm" aria-hidden="true" />
           </Button>
         }
       >
+        <DropdownItem asChild>
+          <Link to="/universes" aria-current={loreLibrarySelected ? 'page' : undefined}>
+            <Globe className="icon icon-sm" aria-hidden="true" />
+            Lore compartilhado
+          </Link>
+        </DropdownItem>
         <DropdownItem asChild>
           <Link to="/" aria-current={pathname === '/' ? 'page' : undefined}>
             <BookOpen className="icon icon-sm" aria-hidden="true" />

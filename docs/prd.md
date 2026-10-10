@@ -219,3 +219,22 @@ Entregar uma aplicação web onde o autor consiga se cadastrar, criar livros com
 ## 16. Decisões em aberto
 
 Nenhuma.
+
+## Incremento: Universos e lore compartilhado
+
+O autor gerencia universos próprios pela opção **Lore compartilhado** no header.
+Cada universo reutiliza entidades entre livros vinculados. O primeiro passo da
+criação oferece o vínculo quando há universos; as configurações de livros
+existentes permitem selecionar, trocar ou remover o universo. O lore local
+permanece independente.
+
+Compêndio e editor permitem gerenciar lore local e global separadamente. Ambos
+participam de menções, reconhecimento e contexto da IA; somente entidades
+públicas e campos permitidos entram na publicação. Revogar consentimento global
+invalida publicações antigas do universo. Cadastro e edição de fichas usam
+quatro etapas, preservando dados e evitando formulários extensos.
+
+Aceite: compartilhar uma ficha entre dois livros; preservar lore local ao trocar
+vínculo; criar livros sem universo; manter autoria e privacidade; revogar leituras
+antigas e URLs diretas; usar o wizard em todos os pontos de entrada; funcionar
+nos três temas em desktop e celular. Veja [comportamento completo](shared-lore.md).

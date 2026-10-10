@@ -88,3 +88,19 @@ describe('book navigation', () => {
     auth.user = { uid: 'author' };
   });
 });
+
+it('identifica lore compartilhado no header inclusive dentro de um universo', async () => {
+  auth.user = { uid: 'author' };
+  vi.clearAllMocks();
+  render(
+    <MemoryRouter initialEntries={['/universes/world/lore']}>
+      <BookNavigation />
+    </MemoryRouter>,
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Lore compartilhado' }));
+  expect(screen.getByRole('menuitem', { name: 'Lore compartilhado' })).toHaveAttribute(
+    'aria-current',
+    'page',
+  );
+  expect(watchBookTitle).not.toHaveBeenCalled();
+});

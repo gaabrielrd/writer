@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { BookOpen, MapPin, Plus, Search, Tag, User, X } from 'lucide-react';
-import { Badge, Button, Input } from '@/shared/ui';
+import { Badge, Button, Input, Select } from '@/shared/ui';
 import {
   type CreateLoreEntityInput,
   type LoreCategory,
@@ -14,11 +14,12 @@ import styles from './EditorLoreSidebar.module.css';
 export interface EditorLoreSidebarProps {
   isOpen: boolean;
   entities: LoreEntity[];
+  universeId?: string | null;
   selectedEntityId?: string | null;
   createEntityName?: string | null;
   onCreateRequestHandled?: () => void;
   onClose: () => void;
-  onCreateEntity: (input: CreateLoreEntityInput) => Promise<void>;
+  onCreateEntity: (input: CreateLoreEntityInput, scope?: 'local' | 'global') => Promise<void>;
   onUpdateEntity: (id: string, input: UpdateLoreEntityInput) => Promise<void>;
 }
 
@@ -46,6 +47,7 @@ const CATEGORY_ICONS: Record<LoreCategory, typeof User> = {
 export function EditorLoreSidebar({
   isOpen,
   entities,
+  universeId,
   selectedEntityId,
   createEntityName,
   onCreateRequestHandled,
@@ -53,6 +55,16 @@ export function EditorLoreSidebar({
   onCreateEntity,
   onUpdateEntity,
 }: EditorLoreSidebarProps) {
+  const [scopeChoice, setScopeChoice] = useState<{
+    target?: string | null;
+    value: 'local' | 'global';
+  }>({ value: 'local' });
+  const selectedScope =
+    scopeChoice.target === selectedEntityId
+      ? scopeChoice.value
+      : entities.find((item) => item.id === selectedEntityId)?.universeId
+        ? 'global'
+        : 'local';
   const selectedCard = useRef<HTMLDivElement>(null);
   useEffect(() => {
     selectedCard.current?.scrollIntoView?.({ block: 'nearest' });
@@ -68,6 +80,7 @@ export function EditorLoreSidebar({
 
   const filteredEntities = useMemo(() => {
     return entities.filter((entity) => {
+      if (Boolean(entity.universeId) !== (selectedScope === 'global')) return false;
       if (entity.id === selectedEntityId) return true;
       const matchesCategory = selectedCategory === 'all' || entity.category === selectedCategory;
       if (!matchesCategory) return false;
@@ -80,7 +93,7 @@ export function EditorLoreSidebar({
 
       return nameMatch || summaryMatch || aliasMatch;
     });
-  }, [entities, selectedCategory, searchQuery, selectedEntityId]);
+  }, [entities, selectedCategory, searchQuery, selectedEntityId, selectedScope]);
 
   if (!isOpen) return null;
 
@@ -98,7 +111,8 @@ export function EditorLoreSidebar({
     if (editingEntity) {
       await onUpdateEntity(editingEntity.id, input);
     } else {
-      await onCreateEntity(input);
+      if (universeId) await onCreateEntity(input, isCreationRequested ? 'local' : selectedScope);
+      else await onCreateEntity(input);
     }
   };
 
@@ -125,6 +139,22 @@ export function EditorLoreSidebar({
       </div>
 
       <div className={styles.controls}>
+        {universeId && (
+          <Select
+            label="Escopo do lore"
+            value={selectedScope}
+            onChange={(event) =>
+              setScopeChoice({
+                target: selectedEntityId,
+                value: event.target.value as 'local' | 'global',
+              })
+            }
+            options={[
+              { value: 'local', label: 'Lore local — somente este livro' },
+              { value: 'global', label: 'Lore global — universo compartilhado' },
+            ]}
+          />
+        )}
         <Input
           label="Buscar no compêndio"
           placeholder="Buscar personagem, local, item..."
@@ -276,6 +306,10 @@ export function EditorLoreSidebar({
 
       <LoreEntityForm
         open={isFormOpen || isCreationRequested}
+        global={
+          !isCreationRequested &&
+          (editingEntity ? Boolean(editingEntity.universeId) : selectedScope === 'global')
+        }
         initialName={createEntityName ?? undefined}
         entityToEdit={editingEntity}
         allEntities={entities}

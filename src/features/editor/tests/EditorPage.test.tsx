@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { EditorPage } from '../components/EditorPage';
@@ -177,6 +177,8 @@ describe('EditorPage', () => {
     await user.paste('Guinevere');
     await user.click(within(createDialog).getByLabelText(/resumo curto/i));
     await user.paste('Rainha');
+    for (let step = 0; step < 3; step++)
+      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
 
     await waitFor(() => expect(createDialog).not.toBeInTheDocument());
@@ -194,6 +196,8 @@ describe('EditorPage', () => {
     await user.click(within(editDialog).getByLabelText(/resumo curto/i));
     await user.keyboard('{End}');
     await user.paste(' de Camelot');
+    for (let step = 0; step < 3; step++)
+      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
     await waitFor(() => expect(editDialog).not.toBeInTheDocument());
     expect(await within(sidebar).findByText('Herdeiro do trono de Camelot')).toBeInTheDocument();
@@ -210,6 +214,70 @@ describe('EditorPage', () => {
     expect(screen.getByLabelText(/área de escrita do capítulo/i)).toHaveTextContent(
       'A espada brilhava na pedra.',
     );
+  });
+  it('carrega, reconhece e edita lore global separadamente e acompanha alterações do universo', async () => {
+    const global: LoreEntity = {
+      ...mockEntities[0]!,
+      id: 'universe:world:e-1',
+      bookId: undefined,
+      universeId: 'world',
+      name: 'Sábia',
+      summary: 'Uma sábia do universo',
+    };
+    vi.spyOn(bookService, 'getBook').mockResolvedValue({ ...mockBook, universeId: 'world' });
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    vi.spyOn(bookService, 'getChapter').mockResolvedValue({
+      ...mockChapters[0]!,
+      content: '<p>Arthur encontra a Sábia.</p>',
+    });
+    vi.spyOn(loreService, 'listLoreEntities').mockImplementation((scope) =>
+      Promise.resolve(typeof scope === 'string' ? mockEntities : [global]),
+    );
+    const update = vi.spyOn(loreService, 'updateLoreEntity').mockResolvedValue();
+    const listeners = new Map<string, (entities: LoreEntity[]) => void>();
+    const stop = vi.fn();
+    vi.spyOn(loreService, 'subscribeLoreEntities').mockImplementation((scope, changed) => {
+      const key = typeof scope === 'string' ? scope : scope.id;
+      listeners.set(key, changed);
+      changed(key === 'world' ? [global] : mockEntities);
+      return stop;
+    });
+    const view = render(
+      <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+        <Routes>
+          <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const user = userEvent.setup();
+    await screen.findByLabelText(/área de escrita do capítulo/i);
+    act(() => screen.getByRole('button', { name: 'Ver ficha de Sábia' }).focus());
+    await user.keyboard('{Enter}');
+    expect(screen.getByLabelText('Escopo do lore')).toHaveValue('global');
+    await user.click(screen.getByRole('button', { name: 'Editar' }));
+    for (let step = 0; step < 3; step++)
+      await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByLabelText(/Tornar visível/));
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+    expect(update).toHaveBeenCalledWith(
+      { kind: 'universe', id: 'world' },
+      global.id,
+      expect.objectContaining({ isPublic: false }),
+    );
+    act(() => {
+      listeners.get('world')?.([
+        { ...global, name: 'Oráculo', summary: 'Resumo atualizado globalmente' },
+      ]);
+    });
+    expect(screen.getByText('Resumo atualizado globalmente')).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText('Escopo do lore'), 'local');
+    expect(
+      within(screen.getByRole('complementary', { name: /Painel lateral/ })).getByText(
+        mockEntities[0]!.name,
+      ),
+    ).toBeInTheDocument();
+    view.unmount();
+    expect(stop).toHaveBeenCalledTimes(2);
   });
   it.each(['Recuperar texto local', 'Manter versão salva'])(
     'exige escolha explicita para rascunho divergente: %s',
@@ -236,7 +304,9 @@ describe('EditorPage', () => {
       ).toBeInTheDocument();
       expect(bookService.updateChapter).not.toHaveBeenCalled();
       expect(screen.queryByLabelText(/área de escrita do capítulo/i)).not.toBeInTheDocument();
-      await user.click(screen.getByRole('button', { name: choice }));
+      const choiceButton = screen.getByRole('button', { name: choice });
+      await waitFor(() => expect(getComputedStyle(choiceButton).pointerEvents).not.toBe('none'));
+      await user.click(choiceButton);
       const editor = await screen.findByLabelText(/área de escrita do capítulo/i);
       expect(editor).toHaveTextContent(
         choice === 'Recuperar texto local'

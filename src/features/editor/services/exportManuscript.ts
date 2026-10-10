@@ -1,5 +1,6 @@
 import { listChapters, type Book, type Chapter } from '@/features/books';
 import { listLoreEntities } from '@/features/lore';
+import { getUniverse } from '@/features/universes';
 import {
   createExportDocument,
   exportFileName,
@@ -49,12 +50,41 @@ export async function exportManuscript({
   );
   if (format === 'json') {
     const lore = await listLoreEntities(book.id);
+    const universe = book.universeId ? await getUniverse(book.universeId) : null;
+    if (book.universeId && (!universe || universe.deleting))
+      throw new Error('Universo indisponível para backup. Tente novamente.');
+    const globalLore = book.universeId
+      ? await listLoreEntities({ kind: 'universe', id: book.universeId })
+      : [];
     signal?.throwIfAborted();
     const backup = {
       format: 'writer-book-backup',
-      version: 1,
+      version: universe ? 2 : 1,
+      ...(universe
+        ? {
+            universe: {
+              id: universe.id,
+              name: universe.name,
+              description: universe.description,
+              lore: globalLore.map((entity) => ({
+                id: entity.id,
+                name: entity.name,
+                aliases: entity.aliases,
+                category: entity.category,
+                summary: entity.summary,
+                details: entity.details,
+                structuredDetails: entity.structuredDetails,
+                relations: entity.relations,
+                isPublic: entity.isPublic,
+                createdAt: entity.createdAt,
+                updatedAt: entity.updatedAt,
+              })),
+            },
+          }
+        : {}),
       book: {
         id: book.id,
+        ...(book.universeId ? { universeId: book.universeId } : {}),
         title: book.title,
         genre: book.genre ?? '',
         synopsis: book.synopsis ?? '',

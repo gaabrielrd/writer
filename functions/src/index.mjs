@@ -7,6 +7,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import { defineSecret, defineString, defineInt } from 'firebase-functions/params';
 import { createImageLibraryService } from './imageLibrary.mjs';
+import { createUniverseService } from './universes.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createGenerationService, generationPrompt, GenerationError } from './generation.mjs';
 
@@ -112,7 +113,12 @@ const callable = (method, secrets = []) =>
     },
     async (request) => {
       try {
-        const handler = service()[method] ? service() : createImageLibraryService({ db, assets });
+        const universeService = createUniverseService({ db });
+        const handler = universeService[method]
+          ? universeService
+          : service()[method]
+            ? service()
+            : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
@@ -133,11 +139,22 @@ export const renameLibraryImage = callable('rename');
 export const deleteLibraryImage = callable('remove');
 export const saveBookImage = callable('saveBook');
 export const migrateImageLibrary = callable('migrate');
+export const createUniverse = callable('createUniverse');
+export const updateUniverse = callable('updateUniverse');
+export const deleteUniverse = callable('deleteUniverse');
+export const saveUniverseLore = callable('saveUniverseLore');
+export const deleteUniverseLore = callable('deleteUniverseLore');
 export const cleanupDeletedBookCover = onDocumentDeleted(
   { document: 'books/{bookId}', region: 'us-central1', retry: true },
   async (event) => {
     const uid = event.data?.data().authorId;
     if (!uid) return;
+    if (event.data.data().universeId)
+      await createUniverseService({ db }).detachUniverse(
+        uid,
+        event.data.data().universeId,
+        event.params.bookId,
+      );
     const library = createImageLibraryService({ db, assets });
     const id = event.data.data().coverImageId;
     if (id) await library.detach(uid, event.params.bookId, id);
