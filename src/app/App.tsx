@@ -20,7 +20,9 @@ function AppHeader() {
           <span className={styles.brandText}>{PROJECT_NAME}</span>
         </Link>
         <div className={styles.userBar}>
-          {user && <CreditsBadge credits={user.credits} tier={user.tier} />}
+          {user && !location.pathname.includes('/editor/') && (
+            <CreditsBadge credits={user.credits} tier={user.tier} />
+          )}
           <ThemeToggle />
           <AuthButton />
         </div>

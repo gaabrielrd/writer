@@ -31,9 +31,12 @@ São seis projetos: desktop de 1440 × 1000 e mobile de 390 × 844, cada um em e
 - Editor com texto e lore, painel lateral e configurações de IA
 - Navegação repetida entre biblioteca, obra e capítulos, incluindo Voltar/Avançar
 - Ausência de transbordamento horizontal e limites do modal em relação à viewport
+- Biblioteca vazia, erro de serviço simulado e recuperação pelo botão de tentar novamente
+- Preferência por transparência reduzida, com opacidade e desfoque computados verificados
+- Percurso adicional de biblioteca, obra, editor, lore e modal na largura mínima de 320px
 - Ausência de exceções JavaScript e de tentativas de chamadas externas
 
-As 11 capturas por projeto recebem a marca **“Prévia visual • dados fictícios”**. O relatório HTML apresenta cada PNG como anexo, junto com tema, viewport e evidência de isolamento. Elas são material de revisão visual; **não são baselines aprovadas nem um teste de comparação pixel a pixel**. As verificações funcionais e geométricas geram falhas reais.
+As 16 capturas por projeto recebem a marca **“Prévia visual • dados fictícios”**. O relatório HTML apresenta cada PNG como anexo, junto com tema, viewport e evidência de isolamento. Elas são material de revisão visual; **não são baselines aprovadas nem um teste de comparação pixel a pixel**. As verificações funcionais e geométricas geram falhas reais.
 
 O CI executa a suíte após o E2E existente, inclusive se esse E2E falhar, e publica `writer-visual-preview` em sucesso ou falha. O artefato contém `visual-playwright-report/` e `visual-test-results/`, com retenção de sete dias. Abra `visual-playwright-report/index.html` ou os PNGs após baixar o artefato. Capturas automáticas e traces adicionais são preservados em falhas.
 
@@ -41,7 +44,7 @@ O CI executa a suíte após o E2E existente, inclusive se esse E2E falhar, e pub
 
 - Somente o config separado de Vite resolve os módulos de serviços para `fixtures/`. Os componentes e hooks não são substituídos.
 - O plugin aplica-se apenas a `serve`; tentar gerar um build com esse config falha deliberadamente. O config normal de produção não o importa.
-- Autenticação, livros, capítulos, lore, respostas de IA e créditos usam dados locais determinísticos. Alterações são apenas em memória e desaparecem ao recarregar a página. A seleção da sessão de teste usa o `sessionStorage` exclusivo do contexto do navegador.
+- Autenticação, livros, capítulos, lore, respostas de IA e créditos usam dados locais determinísticos. Alterações são apenas em memória e desaparecem ao recarregar a página. A seleção da sessão e dos cenários vazio/erro usa o `sessionStorage` exclusivo do contexto do navegador, lido somente pelos serviços fictícios. Não há seleção de cenário no código de produção.
 - A exportação compartilhada de Firebase é inerte e falha explicitamente se um caminho inesperado tentar inicializar o SDK.
 - O hook real de Google One Tap encontra uma implementação local inerte. Não há login externo.
 - Um CSP limita requisições à origem local. O Playwright bloqueia todas as outras origens, registra tentativas e bloqueia service workers. As capas são SVGs fictícios embutidos; nenhuma foto remota é carregada.

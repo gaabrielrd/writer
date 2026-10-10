@@ -5,6 +5,7 @@ import type { LoreEntity } from '../../../src/features/lore/model/loreEntity';
 
 export const FIXTURE_TIME = Date.UTC(2026, 8, 18, 14, 30);
 export const FIXTURE_SESSION_KEY = 'writer.visual.authenticated';
+export const FIXTURE_LIBRARY_STATE_KEY = 'writer.visual.library-state';
 export const FIXTURE_BOOK_ID = 'visual-atlas';
 export const FIXTURE_CHAPTER_ID = 'visual-chapter-1';
 export const FIXTURE_LABEL = 'Prévia visual • dados fictícios';

@@ -1,53 +1,70 @@
 import { expect, test as base, type Page, type TestInfo } from '@playwright/test';
-import { FIXTURE_LABEL, FIXTURE_SESSION_KEY, FIXTURE_TIME } from './fixtures/data';
+import {
+  FIXTURE_LABEL,
+  FIXTURE_LIBRARY_STATE_KEY,
+  FIXTURE_SESSION_KEY,
+  FIXTURE_TIME,
+} from './fixtures/data';
 import type { VisualOptions } from './options';
 
 export const test = base.extend<VisualOptions>({
   visualTheme: ['dark', { option: true }],
   authenticated: [true, { option: true }],
+  libraryState: ['populated', { option: true }],
 });
 export { expect };
 
-test.beforeEach(async ({ context, page, baseURL, visualTheme, authenticated }, testInfo) => {
-  const blockedRequests: string[] = [];
-  const runtimeErrors: string[] = [];
-  page.on('pageerror', (error) => runtimeErrors.push(error.message));
-  // Defense in depth: fixture aliases and a same-origin CSP are also installed by Vite.
-  await context.route('**/*', async (route) => {
-    if (new URL(route.request().url()).origin !== baseURL) {
-      blockedRequests.push(route.request().url());
-      await route.abort('blockedbyclient');
-      return;
-    }
-    await route.continue();
-  });
-  await context.addInitScript(
-    ({ theme, isAuthenticated, sessionKey }) => {
-      localStorage.setItem('writer_theme', theme);
-      localStorage.removeItem('writer_byok_config');
-      sessionStorage.setItem(sessionKey, String(isAuthenticated));
-    },
-    { theme: visualTheme, isAuthenticated: authenticated, sessionKey: FIXTURE_SESSION_KEY },
-  );
-  await page.clock.setFixedTime(new Date(FIXTURE_TIME));
-  await testInfo.attach('contexto-da-previa', {
-    body: JSON.stringify(
-      {
-        label: FIXTURE_LABEL,
-        source: 'Componentes e rotas reais; autenticação, livros, capítulos, lore e IA fictícios.',
-        theme: visualTheme,
-        viewport: testInfo.project.use.viewport,
-        productionBackend: 'desativado; rede externa bloqueada',
+test.beforeEach(
+  async ({ context, page, baseURL, visualTheme, authenticated, libraryState }, testInfo) => {
+    const blockedRequests: string[] = [];
+    const runtimeErrors: string[] = [];
+    page.on('pageerror', (error) => runtimeErrors.push(error.message));
+    // Defense in depth: fixture aliases and a same-origin CSP are also installed by Vite.
+    await context.route('**/*', async (route) => {
+      if (new URL(route.request().url()).origin !== baseURL) {
+        blockedRequests.push(route.request().url());
+        await route.abort('blockedbyclient');
+        return;
+      }
+      await route.continue();
+    });
+    await context.addInitScript(
+      ({ theme, isAuthenticated, sessionKey, dataState, dataStateKey }) => {
+        localStorage.setItem('writer_theme', theme);
+        localStorage.removeItem('writer_byok_config');
+        sessionStorage.setItem(sessionKey, String(isAuthenticated));
+        sessionStorage.setItem(dataStateKey, dataState);
       },
-      null,
-      2,
-    ),
-    contentType: 'application/json',
-  });
-  // Arrays are checked in a test-scoped teardown even when an earlier assertion fails.
-  testInfo.annotations.push({ type: 'preview', description: FIXTURE_LABEL });
-  networkEvidence.set(page, { blockedRequests, runtimeErrors });
-});
+      {
+        theme: visualTheme,
+        isAuthenticated: authenticated,
+        sessionKey: FIXTURE_SESSION_KEY,
+        dataState: libraryState,
+        dataStateKey: FIXTURE_LIBRARY_STATE_KEY,
+      },
+    );
+    await page.clock.setFixedTime(new Date(FIXTURE_TIME));
+    await testInfo.attach('contexto-da-previa', {
+      body: JSON.stringify(
+        {
+          label: FIXTURE_LABEL,
+          source:
+            'Componentes e rotas reais; autenticação, livros, capítulos, lore e IA fictícios.',
+          theme: visualTheme,
+          libraryState,
+          viewport: testInfo.project.use.viewport,
+          productionBackend: 'desativado; rede externa bloqueada',
+        },
+        null,
+        2,
+      ),
+      contentType: 'application/json',
+    });
+    // Arrays are checked in a test-scoped teardown even when an earlier assertion fails.
+    testInfo.annotations.push({ type: 'preview', description: FIXTURE_LABEL });
+    networkEvidence.set(page, { blockedRequests, runtimeErrors });
+  },
+);
 
 const networkEvidence = new WeakMap<Page, { blockedRequests: string[]; runtimeErrors: string[] }>();
 
@@ -77,8 +94,13 @@ export async function capture(page: Page, testInfo: TestInfo, name: string): Pro
     marker.textContent = label;
   }, FIXTURE_LABEL);
   const path = testInfo.outputPath(`${name}.png`);
-  await page.screenshot({ path, fullPage: true, animations: 'disabled', caret: 'hide' });
+  const hasDialog = (await page.getByRole('dialog').count()) > 0;
+  await page.screenshot({ path, fullPage: !hasDialog, animations: 'disabled', caret: 'hide' });
   await testInfo.attach(`${name} — ${FIXTURE_LABEL}`, { path, contentType: 'image/png' });
+  await expectNoHorizontalOverflow(page, name);
+}
+
+export async function expectNoHorizontalOverflow(page: Page, name: string): Promise<void> {
   const overflow = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
     content: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),

@@ -256,3 +256,9 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* The theme class shares its name with Tailwind's image-filter utility.
+   Theme colors must not be recolored by a page-wide sepia filter. */
+html[data-theme='sepia'] {
+  filter: none;
+}

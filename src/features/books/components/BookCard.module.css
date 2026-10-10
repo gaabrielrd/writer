@@ -59,7 +59,7 @@
 .header {
   display: flex;
   align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
   gap: var(--space-2);
 }
 
@@ -69,6 +69,10 @@
   color: var(--navy);
   font-family: var(--font-reading);
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   font-weight: 500;
   line-height: var(--leading-tight);
 }
@@ -99,4 +103,8 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
+}
+
+.cardLink > div {
+  height: 100%;
 }

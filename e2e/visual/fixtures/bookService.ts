@@ -9,13 +9,17 @@ import {
   type CreateChapterInput,
   type UpdateChapterInput,
 } from '../../../src/features/books/model/chapter';
-import { author, books, chapters, FIXTURE_TIME } from './data';
+import { author, books, chapters, FIXTURE_LIBRARY_STATE_KEY, FIXTURE_TIME } from './data';
 
-const bookStore = new Map(books.map((book) => [book.id, structuredClone(book)]));
+const initialBooks = sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'empty' ? [] : books;
+const bookStore = new Map(initialBooks.map((book) => [book.id, structuredClone(book)]));
 const chapterStore = new Map(chapters.map((chapter) => [chapter.id, structuredClone(chapter)]));
 let sequence = 0;
 
 export function listBooksByAuthor(authorId: string): Promise<Book[]> {
+  if (sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'error') {
+    return Promise.reject(new Error('Falha simulada de conexão. Tente novamente.'));
+  }
   return Promise.resolve(
     structuredClone([...bookStore.values()].filter((book) => book.authorId === authorId)),
   );

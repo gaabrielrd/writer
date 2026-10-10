@@ -32,7 +32,9 @@ export function BookCard({ book }: BookCardProps) {
 
           <div className={styles.content}>
             <div className={styles.header}>
-              <h3 className={styles.title}>{book.title}</h3>
+              <h3 className={styles.title} title={book.title}>
+                {book.title}
+              </h3>
               {book.genre && <Badge variant="neutral">{book.genre}</Badge>}
             </div>
 

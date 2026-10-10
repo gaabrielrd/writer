@@ -52,6 +52,7 @@ for (const theme of themes) {
     await page.getByRole('combobox', { name: 'Selecionar tema visual' }).selectOption(theme.id);
     const root = page.locator('html');
     await expect(root).toHaveAttribute('data-theme', theme.id);
+    await expect(root).toHaveCSS('filter', 'none');
     for (const token of ['background', 'foreground', 'primary', 'destructive'] as const) {
       await expect(root).toHaveCSS(`--${token}`, theme[token]);
     }
@@ -92,6 +93,7 @@ for (const theme of themes) {
     await expect(page.getByRole('button', { name: 'Disabled', exact: true })).toBeDisabled();
     await page.reload();
     await expect(root).toHaveAttribute('data-theme', theme.id);
+    await expect(root).toHaveCSS('filter', 'none');
     await expect(page.getByRole('combobox', { name: 'Selecionar tema visual' })).toHaveValue(
       theme.id,
     );

@@ -1,5 +1,17 @@
-import { books, chapters, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
-import { capture, expect, expectDialogWithinViewport, test } from './support';
+import {
+  books,
+  chapters,
+  FIXTURE_BOOK_ID,
+  FIXTURE_CHAPTER_ID,
+  FIXTURE_LIBRARY_STATE_KEY,
+} from './fixtures/data';
+import {
+  capture,
+  expect,
+  expectDialogWithinViewport,
+  expectNoHorizontalOverflow,
+  test,
+} from './support';
 
 const bookTitle = books[0].title;
 const chapterTitle = chapters[0].title;
@@ -161,4 +173,119 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
     await page.getByRole('link', { name: 'Voltar para a lista de obras', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
   }
+});
+
+test.describe('Biblioteca vazia', () => {
+  test.use({ libraryState: 'empty' });
+
+  test('estado vazio mantém ações para começar ou importar', async ({ page }, testInfo) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Nenhum livro cadastrado' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Criar Primeiro Livro' })).toBeEnabled();
+    await expect(
+      page.getByRole('button', { name: 'Importar Documento (.docx, .pdf)' }),
+    ).toBeEnabled();
+    await capture(page, testInfo, '12-biblioteca-vazia');
+  });
+});
+
+test.describe('Falha de serviço simulada', () => {
+  test.use({ libraryState: 'error' });
+
+  test('mostra erro e recupera os livros ao tentar novamente', async ({ page }, testInfo) => {
+    await page.goto('/');
+    await expect(
+      page.getByRole('heading', { name: 'Não foi possível carregar os livros' }),
+    ).toBeVisible();
+    await expect(page.getByText('Falha simulada de conexão. Tente novamente.')).toBeVisible();
+    await capture(page, testInfo, '13-biblioteca-erro');
+    // Recover only the fake service; the real error UI and retry handler remain unchanged.
+    await page.evaluate(
+      (key) => sessionStorage.setItem(key, 'populated'),
+      FIXTURE_LIBRARY_STATE_KEY,
+    );
+    await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toHaveCount(
+      0,
+    );
+  });
+});
+
+test('preferência por menos transparência usa superfícies opacas e sem desfoque', async ({
+  page,
+  context,
+}, testInfo) => {
+  const session = await context.newCDPSession(page);
+  try {
+    await session.send('Emulation.setEmulatedMedia', {
+      features: [
+        { name: 'prefers-reduced-transparency', value: 'reduce' },
+        { name: 'prefers-reduced-motion', value: 'reduce' },
+      ],
+    });
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+    const computed = await page
+      .locator('.glass-surface')
+      .first()
+      .evaluate((element) => {
+        const style = getComputedStyle(element);
+        const root = getComputedStyle(document.documentElement);
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Não foi possível verificar a opacidade computada.');
+        context.fillStyle = style.backgroundColor;
+        context.fillRect(0, 0, 1, 1);
+        return {
+          mediaMatches: matchMedia('(prefers-reduced-transparency: reduce)').matches,
+          glassOpacity: root.getPropertyValue('--glass-opacity').trim(),
+          panelOpacity: root.getPropertyValue('--panel-opacity').trim(),
+          blur: style.backdropFilter,
+          backgroundAlpha: context.getImageData(0, 0, 1, 1).data[3],
+        };
+      });
+    await testInfo.attach('superficie-com-transparencia-reduzida', {
+      body: JSON.stringify(computed, null, 2),
+      contentType: 'application/json',
+    });
+    expect(computed.mediaMatches).toBe(true);
+    expect(computed.glassOpacity).toBe('1');
+    expect(computed.panelOpacity).toBe('1');
+    expect(computed.blur).toMatch(/^(none|blur\(0px\))$/);
+    expect(computed.backgroundAlpha).toBe(255);
+    await capture(page, testInfo, '14-transparencia-reduzida');
+  } finally {
+    await session.detach();
+  }
+});
+
+test('largura mínima de 320px mantém biblioteca, obra e editor sem transbordamento', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await testInfo.attach('viewport-minima', {
+    body: JSON.stringify({ width: 320, height: 740 }),
+    contentType: 'application/json',
+  });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: books[1].title, exact: true })).toBeVisible();
+  await capture(page, testInfo, '15-biblioteca-320px');
+  await page.locator(`a[href="${bookPath}"]`).click();
+  await expect(page.getByText(secondChapterTitle, { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page, 'obra-320px');
+  await page.getByRole('button', { name: `Escrever ${chapterTitle}`, exact: true }).click();
+  await expect(page.getByRole('heading', { name: chapterTitle, exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page, 'editor-320px');
+  await page.getByRole('button', { name: /Compêndio/ }).click();
+  await expect(
+    page.getByRole('complementary', { name: 'Painel lateral do Compêndio de Lore' }),
+  ).toBeVisible();
+  await capture(page, testInfo, '16-editor-lore-320px');
+  await page.getByRole('button', { name: 'Configurações de IA e Chaves de API' }).click();
+  await expectDialogWithinViewport(page);
+  await expectNoHorizontalOverflow(page, 'configuracoes-320px');
 });

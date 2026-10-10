@@ -112,6 +112,12 @@ jobs:
       - name: Testar no navegador
         run: npm run test:e2e
 
+      # Bootstrap only when no Linux baseline exists. The reviewed image is committed
+      # afterwards; existing baselines are never automatically updated.
+      - name: Capturar referência visual inicial no Linux
+        if: ${{ !cancelled() && hashFiles('e2e/__screenshots__/linux/styleguide.png') == '' }}
+        run: npx playwright test e2e/styleguide.spec.ts --update-snapshots
+
       - name: Testar prévia visual com dados fictícios
         if: ${{ !cancelled() }}
         run: npx playwright test -c playwright.visual.config.ts
@@ -124,6 +130,7 @@ jobs:
           path: |
             visual-playwright-report/
             visual-test-results/
+            e2e/__screenshots__/linux/styleguide.png
           retention-days: 7
           if-no-files-found: warn
 

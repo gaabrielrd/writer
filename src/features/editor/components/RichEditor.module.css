@@ -94,6 +94,7 @@
 }
 
 .loreSummaryLabel {
+  flex-shrink: 0;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -106,6 +107,8 @@
 }
 
 .lorePill {
+  flex-shrink: 0;
+  white-space: nowrap;
   background: transparent;
   border: none;
   padding: 0;
