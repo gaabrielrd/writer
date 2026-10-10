@@ -12,12 +12,34 @@ import {
   expectNoHorizontalOverflow,
   test,
 } from './support';
+import type { Page } from '@playwright/test';
 
 const bookTitle = books[0].title;
 const chapterTitle = chapters[0].title;
 const secondChapterTitle = chapters[1].title;
 const bookPath = `/books/${FIXTURE_BOOK_ID}`;
 const editorPath = `${bookPath}/editor/${FIXTURE_CHAPTER_ID}`;
+
+async function expectPortraitBooks(page: Page, count: number) {
+  const cards = page
+    .locator('a[href^="/books/"]')
+    .filter({ has: page.getByRole('heading', { level: 3 }) });
+  await expect(cards).toHaveCount(count);
+  for (const card of await cards.all()) {
+    const bounds = await card.boundingBox();
+    expect(bounds).not.toBeNull();
+    if (!bounds) throw new Error('O livro deve ter dimensões visíveis.');
+    expect(bounds.width).toBeLessThanOrEqual(300);
+    expect(bounds.height).toBeGreaterThan(bounds.width);
+    const cover = (await card.locator('img').count())
+      ? card.locator('img')
+      : card.getByText('Sem capa', { exact: true }).locator('..').locator('..');
+    const coverBounds = await cover.boundingBox();
+    expect(coverBounds).not.toBeNull();
+    if (!coverBounds) throw new Error('A capa deve ter dimensões visíveis.');
+    expect(coverBounds.width / coverBounds.height).toBeCloseTo(2 / 3, 2);
+  }
+}
 
 test.describe('Páginas públicas', () => {
   test.use({ authenticated: false });
@@ -54,6 +76,7 @@ test('biblioteca populada, modal por teclado e devolução de foco', async ({ pa
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
   await expect(page.getByRole('heading', { name: books[1].title, exact: true })).toBeVisible();
+  await expectPortraitBooks(page, 3);
   await capture(page, testInfo, '04-biblioteca-populada');
 
   const trigger = page.getByRole('button', { name: 'Novo Livro', exact: true });
@@ -196,6 +219,22 @@ test.describe('Biblioteca vazia', () => {
       page.getByRole('button', { name: 'Importar Documento (.docx, .pdf)' }),
     ).toBeEnabled();
     await capture(page, testInfo, '12-biblioteca-vazia');
+  });
+
+  test('um único livro mantém capa vertical sem ocupar toda a linha', async ({
+    page,
+  }, testInfo) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Criar Primeiro Livro' }).click();
+    await page.getByLabel('Título da Obra').fill('Livro vertical');
+    await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Livro vertical', exact: true })).toBeVisible();
+    await expectPortraitBooks(page, 1);
+    await capture(page, testInfo, '17-biblioteca-um-livro');
+    await page.setViewportSize({ width: 320, height: 740 });
+    await expectPortraitBooks(page, 1);
+    await expectNoHorizontalOverflow(page, 'um-livro-320px');
   });
 });
 

@@ -80,6 +80,9 @@ Tripo integra o aplicativo.
   `prefers-reduced-transparency` e `prefers-contrast: more` tornam o vidro opaco.
 - **Responsividade:** grades respeitam a largura disponível, barras de ferramentas
   quebram linhas e o compêndio aparece abaixo do manuscrito em telas estreitas.
+  Na biblioteca, cada livro tem largura máxima de 300 px e capa vertical na
+  proporção 2:3, inclusive sem imagem ou quando existe apenas uma obra. Capas
+  usam recorte proporcional sem distorção; os metadados podem quebrar linhas.
 - **Movimento:** entrada breve na apresentação, resposta de hover nos livros e
   abertura do painel contextual. Não há animação contínua atrás do editor.
 
