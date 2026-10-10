@@ -32,6 +32,7 @@ features/minha-feature/
 npm run test          # roda os testes uma vez, com limites de cobertura
 npm run test:unit     # roda apenas Vitest, sem cobertura (mais rápido)
 npm run test:coverage # roda Vitest aplicando os limites de cobertura
+npm run test:book-generation # backend de geração e normalização real de capas
 npm run test:setup    # testa setup e regras arquiteturais em projetos temporários
 npm run test:e2e      # testa o fluxo crítico em um navegador Chromium real
 npm run test:e2e:update # regera as imagens de referência do styleguide
@@ -80,6 +81,8 @@ as dependências de sistema do Chromium e publica trace e screenshot apenas em
 caso de falha.
 
 ## Cobertura
+
+Instale também as dependências do backend com `npm ci --prefix functions`. `npm run test:setup` executa os testes de geração. Os testes de regras cobrem criação manual atômica e isolamento dos registros de geração.
 
 `npm run test` aplica limites mínimos definidos em `vitest.config.ts`: 85% de instruções e linhas, 75% de ramos e 90% de funções. Uma queda abaixo disso falha o `validate` e o CI.
 

@@ -33,6 +33,7 @@ Indicado para:
 
 ```bash
 npm install
+npm ci --prefix functions
 ```
 
 ## Execução
@@ -138,6 +139,8 @@ Regras de arquitetura em [docs/architecture.md](docs/architecture.md); regras vi
 Decisões relevantes de arquitetura ou tecnologia viram um ADR (Architecture Decision Record) em `docs/decisions/`. Use o formato do primeiro registro, [docs/decisions/0001-initial-architecture.md](docs/decisions/0001-initial-architecture.md), como modelo.
 
 ## Limitações conhecidas
+
+- A criação usa três etapas, com sinopse/capa opcionais por IA (1 e 5 créditos no aceite). A geração exige configurar e implantar backend/Storage; veja [criação de livros](docs/book-creation.md). Criação manual funciona sem IA.
 
 - A autenticação e a persistência em nuvem dependem da configuração das credenciais do Firebase.
 - O autocomplete de IA preditivo depende de conexão ativa e saldo de créditos (ou chave de API BYOK informada).

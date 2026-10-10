@@ -13,6 +13,7 @@ const replacements = new Map(
     ['src/features/lore/services/loreService.ts', 'loreService.ts'],
     ['src/features/ai-assistant/services/aiClient.ts', 'aiService.ts'],
     ['src/features/ai-assistant/services/creditsService.ts', 'aiService.ts'],
+    ['src/features/ai-assistant/services/bookGenerationService.ts', 'bookGenerationService.ts'],
     ['src/shared/lib/firebase.ts', 'firebase.ts'],
   ].map(([source, fixture]) => [
     normalizePath(resolve(root, source)),

@@ -85,6 +85,8 @@ test('biblioteca populada, modal por teclado e devolução de foco', async ({ pa
   const dialog = page.getByRole('dialog', { name: 'Criar Novo Livro' });
   await expect(dialog).toBeVisible();
   await page.getByLabel('Título da Obra').fill(books[1].title);
+  await page.getByLabel('Gênero Literário').fill('Fantasia');
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await page.getByLabel('Sinopse / Premissa').fill(books[0].synopsis ?? '');
   await capture(page, testInfo, '05-modal-novo-livro');
   await expectDialogWithinViewport(page);
@@ -211,6 +213,40 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
 test.describe('Biblioteca vazia', () => {
   test.use({ libraryState: 'empty' });
 
+  test('wizard gera sinopse e capa, confirma créditos e cria a obra', async ({
+    page,
+  }, testInfo) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Criar Primeiro Livro' }).click();
+    await page.getByLabel('Título da Obra').fill('Atlas de Outono');
+    await page.getByLabel('Gênero Literário').fill('Fantasia');
+    await capture(page, testInfo, '18-criacao-livro');
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: 'Gerar sinopse com IA' }).click();
+    await expect(page.getByLabel('Sinopse / Premissa')).toHaveValue('');
+    await page.getByRole('button', { name: /Usar sinopse/ }).click();
+    await expect(page.getByLabel('Sinopse / Premissa')).toHaveValue(/Atlas de Outono/);
+    await capture(page, testInfo, '19-criacao-sinopse');
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: 'Gerar capa com IA' }).click();
+    const image = page.getByAltText('Sugestão de capa de Atlas de Outono');
+    await expect(image).toBeVisible();
+    await expect
+      .poll(() =>
+        image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
+      )
+      .toBe(true);
+    await page.getByRole('button', { name: /Usar capa/ }).click();
+    await expect(page.getByAltText('Capa selecionada de Atlas de Outono')).toBeVisible();
+    await capture(page, testInfo, '20-criacao-capa');
+    await expectDialogWithinViewport(page);
+    await expect(page.getByText('78', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Atlas de Outono', exact: true })).toBeVisible();
+    await expectPortraitBooks(page, 1);
+  });
+
   test('estado vazio mantém ações para começar ou importar', async ({ page }, testInfo) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Nenhum livro cadastrado' })).toBeVisible();
@@ -227,6 +263,9 @@ test.describe('Biblioteca vazia', () => {
     await page.goto('/');
     await page.getByRole('button', { name: 'Criar Primeiro Livro' }).click();
     await page.getByLabel('Título da Obra').fill('Livro vertical');
+    await page.getByLabel('Gênero Literário').fill('Fantasia');
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
     await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Livro vertical', exact: true })).toBeVisible();

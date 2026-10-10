@@ -140,6 +140,7 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
 - **Tipo:** Aplicação Web SPA executada diretamente no navegador, servida estaticamente via Firebase Hosting.
 - **Dispositivos:** Navegadores modernos (Chromium, Firefox, Safari) com layout otimizado para escrita em desktop/laptop e leitura responsiva para qualquer tamanho de tela.
 - **Backend:** Firebase (Firebase Auth para autenticação e Cloud Firestore para persistência em nuvem e sincronização offline).
+- **Geração na criação:** Cloud Functions em `functions/` para IA autenticada, limites e débito idempotente; Storage para capas. Veja [ADR 0016](decisions/0016-book-creation-and-generation.md).
 
 ### Mapa de capacidades para features
 
@@ -188,5 +189,6 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
 
 ### Restrições e trade-offs
 
-- **Sem backend customizado:** Toda a infraestrutura roda no cliente contra o Firebase gerenciado. As regras de acesso e privacidade são asseguradas por regras de segurança do Firestore (`firestore.rules`).
+- **Backend limitado:** O editor mantém a integração no cliente. Sinopse/capa na criação usam servidor com segredo, Auth, App Check e registros privados. A implantação é explícita; veja [criação de livros](book-creation.md).
 - **Consumo de créditos no aceite:** A IA não cobra do saldo do usuário por sugestões descartadas ou falhas de conexão; o débito ocorre somente no evento de confirmação de uso (`Tab` ou clique no botão de aceite).
+  No wizard, sinopse custa 1 crédito e capa 5, controlados pelo servidor. Descartes podem consumir recursos do provedor, tratados com limites de geração.

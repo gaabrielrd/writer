@@ -3,6 +3,12 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BookFormDialog } from '../components/BookFormDialog';
 import type { Book } from '../model/book';
+vi.mock('@/features/auth', () => ({
+  useAuth: () => ({ user: { uid: 'user-1', credits: 20 }, updateUserCreditsState: vi.fn() }),
+}));
+vi.mock('@/features/ai-assistant/services/bookGenerationService', () => ({
+  quoteBookGeneration: vi.fn().mockResolvedValue({ synopsis: 1, cover: 5 }),
+}));
 
 describe('BookFormDialog', () => {
   it('renderiza modo de criacao e submete dados', async () => {
@@ -16,15 +22,19 @@ describe('BookFormDialog', () => {
 
     await user.type(screen.getByLabelText(/título da obra/i), 'O Senhor dos Aneis');
     await user.type(screen.getByLabelText(/gênero literário/i), 'Alta Fantasia');
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.type(screen.getByLabelText(/sinopse/i), 'A jornada do anel.');
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
 
-    expect(onSubmit).toHaveBeenCalledWith({
-      title: 'O Senhor dos Aneis',
-      genre: 'Alta Fantasia',
-      synopsis: 'A jornada do anel.',
-      coverUrl: null,
-    });
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'O Senhor dos Aneis',
+        genre: 'Alta Fantasia',
+        synopsis: 'A jornada do anel.',
+        coverUrl: null,
+      }),
+    );
     expect(onClose).toHaveBeenCalled();
   });
 

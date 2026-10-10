@@ -29,6 +29,8 @@ import {
   reorderChapters,
   recalculateBookWordCount,
 } from '../services/bookService';
+import * as generatedService from '../services/generatedBookService';
+import type { Book } from '../model/book';
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn((_db: unknown, ...pathSegments: string[]) => ({ pathSegments })),
@@ -45,6 +47,7 @@ vi.mock('firebase/firestore', () => ({
   where: vi.fn(),
   orderBy: vi.fn(),
   getFirestore: vi.fn(() => ({})),
+  runTransaction: vi.fn(),
 }));
 
 describe('bookService', () => {
@@ -53,6 +56,41 @@ describe('bookService', () => {
   });
 
   describe('Books CRUD', () => {
+    it('reuses a stable ID after a manual creation was already saved', async () => {
+      const stored = { id: 'book-0000000000001', authorId: 'author-123', title: 'Atlas' };
+      vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+        callback({
+          get: () => Promise.resolve({ exists: () => true, data: () => stored }),
+        } as unknown as firestoreModule.Transaction),
+      );
+      expect(await createBook('author-123', { title: 'Atlas', creationId: stored.id })).toEqual(
+        stored,
+      );
+      expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+    });
+    it('creates a manual draft atomically when its ID is absent', async () => {
+      const set = vi.fn();
+      vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+        callback({
+          get: () => Promise.resolve({ exists: () => false }),
+          set,
+        } as unknown as firestoreModule.Transaction),
+      );
+      const book = await createBook('author-123', {
+        title: 'Atlas',
+        creationId: 'book-0000000000001',
+      });
+      expect(set).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ id: book.id, status: 'draft' }),
+      );
+    });
+    it('routes generated covers to the backend rather than writing unverified URLs', async () => {
+      const input = { title: 'Atlas', coverGenerationId: 'cover-1' };
+      const saved = { id: 'book-1' } as Book;
+      vi.spyOn(generatedService, 'createBookWithGeneratedCover').mockResolvedValueOnce(saved);
+      expect(await createBook('author-123', input)).toEqual(saved);
+    });
     it('lista livros por autor mapeando campos corretamente', async () => {
       vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
         docs: [

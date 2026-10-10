@@ -59,6 +59,7 @@
 - Chamadas HTTP em serviços/clientes.
 - Acesso a localStorage em adaptadores/repositórios.
 - Leitura de `import.meta.env` só em `shared/config/env.ts`.
+- Mantenha geração de livros e débitos de créditos em `functions`; configure segredos somente no servidor.
 
 ## Rotas
 
@@ -76,6 +77,7 @@
 - Toda mudança de comportamento deve considerar testes.
 - Teste o resultado observável.
 - `npm run test` aplica limites de cobertura; não os reduza para fazer passar.
+- Instale as dependências de `functions` com `npm ci --prefix functions` antes de validar.
 
 ## Documentação
 

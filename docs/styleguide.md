@@ -95,6 +95,7 @@ Tripo integra o aplicativo.
   usam recorte proporcional sem distorção; os metadados podem quebrar linhas.
 - **Movimento:** entrada breve na apresentação, resposta de hover nos livros e
   abertura do painel contextual. Não há animação contínua atrás do editor.
+- **Criação de livro:** modal em três etapas (Livro, Sinopse, Capa), com progresso, Voltar/Continuar e foco no título da etapa. Sugestões exigem aceite explícito com preço visível. Prévia de capa em 2:3; criação manual disponível em falha da IA.
 
 Os tokens ficam em `src/styles/globals.css`; os três temas e a preferência do
 sistema continuam compartilhando um único provider. A suíte visual usa serviços

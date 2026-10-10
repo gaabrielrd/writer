@@ -9,8 +9,10 @@ import {
   query,
   where,
   orderBy,
+  runTransaction,
 } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
+import { createBookWithGeneratedCover } from './generatedBookService';
 import {
   beginBookDeletion,
   deletePublicationRevisions,
@@ -93,8 +95,11 @@ export async function getBook(bookId: string): Promise<Book | null> {
 }
 
 export async function createBook(authorId: string, input: CreateBookInput): Promise<Book> {
+  if (input.coverGenerationId) return createBookWithGeneratedCover(input);
   const booksRef = collection(firestore, 'books');
-  const newDocRef = doc(booksRef);
+  if (input.creationId && !/^[a-zA-Z0-9-]{16,80}$/.test(input.creationId))
+    throw new Error('Identificador de criação inválido.');
+  const newDocRef = input.creationId ? doc(booksRef, input.creationId) : doc(booksRef);
   const now = Date.now();
 
   const newBook: Book = {
@@ -110,6 +115,18 @@ export async function createBook(authorId: string, input: CreateBookInput): Prom
     updatedAt: now,
   };
 
+  if (input.creationId) {
+    return runTransaction(firestore, async (transaction) => {
+      const existing = await transaction.get(newDocRef);
+      if (existing.exists()) {
+        const book = existing.data() as Book;
+        if (book.authorId !== authorId) throw new Error('Livro indisponível.');
+        return book;
+      }
+      transaction.set(newDocRef, newBook);
+      return newBook;
+    });
+  }
   await setDoc(newDocRef, newBook);
   return newBook;
 }

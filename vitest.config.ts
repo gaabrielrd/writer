@@ -9,7 +9,13 @@ export default mergeConfig(
       maxWorkers: 2,
       globals: true,
       setupFiles: './src/test/setup.ts',
-      exclude: [...configDefaults.exclude, 'scripts/**/*.test.mjs', 'tests/firestore/**', 'e2e/**'],
+      exclude: [
+        ...configDefaults.exclude,
+        'scripts/**/*.test.mjs',
+        'tests/firestore/**',
+        'e2e/**',
+        'functions/**',
+      ],
       css: true,
       typecheck: {
         tsconfig: './tsconfig.app.json',

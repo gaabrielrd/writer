@@ -1,0 +1,86 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.stepTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+}
+.steps {
+  display: flex;
+  gap: var(--space-3);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.steps li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+}
+.steps li[aria-current] {
+  color: hsl(var(--primary));
+  font-weight: 600;
+}
+.steps span {
+  border: var(--border-width) solid hsl(var(--border));
+  border-radius: var(--radius-full);
+  padding: var(--space-1) var(--space-2);
+}
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+.generation {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.generation p {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.suggestion {
+  padding: var(--space-4);
+  border: var(--border-width) solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.cover {
+  position: relative;
+  width: min(100%, 240px);
+  aspect-ratio: 2 / 3;
+  margin-inline: auto;
+  overflow: hidden;
+  border: var(--border-width) solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  background: hsl(var(--secondary));
+}
+.cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: hsl(var(--muted-foreground));
+}

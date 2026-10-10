@@ -14,6 +14,8 @@ export interface Book {
 }
 
 export interface CreateBookInput {
+  creationId?: string;
+  coverGenerationId?: string;
   title: string;
   genre?: string;
   synopsis?: string;

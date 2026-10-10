@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Button, Dialog, Input, Textarea } from '@/shared/ui';
 import type { Book, CreateBookInput } from '../model/book';
 import styles from './BookFormDialog.module.css';
+import { BookCreationWizard } from './BookCreationWizard';
 
 export interface BookFormDialogProps {
   open: boolean;
@@ -107,6 +108,7 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
 
 export function BookFormDialog({ open, bookToEdit, onClose, onSubmit }: BookFormDialogProps) {
   if (!open) return null;
+  if (!bookToEdit) return <BookCreationWizard onClose={onClose} onSubmit={onSubmit} />;
 
   return (
     <BookFormContent

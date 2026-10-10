@@ -5,6 +5,12 @@ import { MemoryRouter } from 'react-router';
 import { BookList } from '../components/BookList';
 import * as bookService from '../services/bookService';
 import type { Book } from '../model/book';
+vi.mock('@/features/auth', () => ({
+  useAuth: () => ({ user: { uid: 'auth-1', credits: 20 }, updateUserCreditsState: vi.fn() }),
+}));
+vi.mock('@/features/ai-assistant/services/bookGenerationService', () => ({
+  quoteBookGeneration: vi.fn().mockResolvedValue({ synopsis: 1, cover: 5 }),
+}));
 
 describe('BookList', () => {
   beforeEach(() => {
@@ -39,6 +45,9 @@ describe('BookList', () => {
     expect(screen.getByRole('heading', { name: 'Criar Novo Livro' })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/título da obra/i), 'Primeiro Livro');
+    await user.type(screen.getByLabelText(/gênero literário/i), 'Aventura');
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
 
     expect(await screen.findByText('Primeiro Livro')).toBeInTheDocument();
