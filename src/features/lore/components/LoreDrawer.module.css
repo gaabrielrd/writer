@@ -94,7 +94,7 @@
 
 .relTypeBadge {
   font-weight: 700;
-  color: var(--accent);
+  color: hsl(var(--primary));
 }
 
 .targetName {

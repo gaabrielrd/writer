@@ -34,6 +34,8 @@
   display: flex;
   gap: var(--space-6);
   align-items: flex-start;
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
 }
 
 @media (max-width: 640px) {
@@ -110,7 +112,12 @@
 .tabBar {
   display: flex;
   gap: var(--space-1);
-  border-bottom: 2px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-full);
+  align-self: flex-start;
+  max-width: 100%;
+  padding: var(--space-1);
+  background: hsl(var(--card) / var(--panel-opacity));
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -123,7 +130,8 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
+  margin: 0;
+  border-radius: var(--radius-full);
   font-family: var(--font-sans);
   font-size: var(--text-sm);
   font-weight: 500;
@@ -139,7 +147,8 @@
 
 .tabActive {
   color: hsl(var(--primary));
-  border-bottom-color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1);
+  border-bottom-color: transparent;
   font-weight: 700;
 }
 

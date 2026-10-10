@@ -1,3 +1,5 @@
+import { useState } from 'react';
+import userEvent from '@testing-library/user-event';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -119,6 +121,37 @@ describe('UI Design System Components', () => {
     const closeBtn = screen.getByRole('button', { name: 'Fechar' });
     fireEvent.click(closeBtn);
     expect(handleClose).toHaveBeenCalled();
+  });
+
+  it('devolve foco ao acionador ao fechar com Escape e permite reabrir', async () => {
+    const user = userEvent.setup();
+    function Example() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <Button onClick={() => setOpen(true)}>Abrir formulário</Button>
+          <Dialog
+            open={open}
+            onClose={() => setOpen(false)}
+            title="Formulário"
+            description="Dados de exemplo"
+          >
+            <Input label="Nome" />
+          </Dialog>
+        </>
+      );
+    }
+    render(<Example />);
+    const trigger = screen.getByRole('button', { name: 'Abrir formulário' });
+    await user.click(trigger);
+    expect(screen.getByLabelText('Nome')).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(trigger).toHaveFocus();
   });
 
   it('renderiza Alert em todas as variantes', () => {

@@ -34,7 +34,7 @@ describe('HomePage', () => {
       screen.getByRole('heading', { name: /assistente para autores de ficção/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: /começar a escrever gratuitamente/i }),
+      screen.getByRole('link', { name: /começar a escrever gratuitamente/i }),
     ).toBeInTheDocument();
   });
 

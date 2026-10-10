@@ -22,23 +22,23 @@ test.use({ colorScheme: 'light' });
 const themes = [
   {
     id: 'light',
-    background: '0 0% 100%',
-    foreground: '222.2 84% 4.9%',
-    primary: '221.2 83.2% 53.3%',
+    background: '40 20% 97%',
+    foreground: '25 16% 15%',
+    primary: '26 48% 36%',
     destructive: '0 84.2% 60.2%',
   },
   {
     id: 'dark',
-    background: '224 71% 4%',
-    foreground: '213 31% 91%',
-    primary: '217.2 91.2% 59.8%',
+    background: '24 12% 7%',
+    foreground: '38 24% 94%',
+    primary: '26 40% 57%',
     destructive: '0 62.8% 40.6%',
   },
   {
     id: 'sepia',
     background: '37 38% 92%',
     foreground: '24 33% 17%',
-    primary: '27 61% 36%',
+    primary: '25 43% 34%',
     destructive: '0 65% 45%',
   },
 ];
@@ -52,6 +52,7 @@ for (const theme of themes) {
     await page.getByRole('combobox', { name: 'Selecionar tema visual' }).selectOption(theme.id);
     const root = page.locator('html');
     await expect(root).toHaveAttribute('data-theme', theme.id);
+    await expect(root).toHaveCSS('filter', 'none');
     for (const token of ['background', 'foreground', 'primary', 'destructive'] as const) {
       await expect(root).toHaveCSS(`--${token}`, theme[token]);
     }
@@ -89,9 +90,39 @@ for (const theme of themes) {
         .getByRole('alert')
         .filter({ has: page.getByRole('heading', { name: 'Erro', exact: true }) }),
     ).toHaveCSS('color', colors.destructive);
+    const primaryButton = page.getByRole('button', { name: 'Primary', exact: true });
+    for (const hovered of [false, true]) {
+      if (hovered) await primaryButton.hover();
+      const contrast = await primaryButton.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 1;
+        const context = canvas.getContext('2d')!;
+        const luminance = (color: string) => {
+          context.fillStyle = color;
+          context.fillRect(0, 0, 1, 1);
+          const channels = context.getImageData(0, 0, 1, 1).data.slice(0, 3);
+          return Array.from(channels).reduce((total, channel, index) => {
+            const value = channel / 255;
+            const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+            return total + linear * [0.2126, 0.7152, 0.0722][index];
+          }, 0);
+        };
+        const [low, high] = [luminance(style.color), luminance(style.backgroundColor)].sort(
+          (a, b) => a - b,
+        );
+        return (high + 0.05) / (low + 0.05);
+      });
+      expect(
+        contrast,
+        `${theme.id}: contraste da ação ${hovered ? 'hover' : 'normal'}`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+    await page.mouse.move(0, 0);
     await expect(page.getByRole('button', { name: 'Disabled', exact: true })).toBeDisabled();
     await page.reload();
     await expect(root).toHaveAttribute('data-theme', theme.id);
+    await expect(root).toHaveCSS('filter', 'none');
     await expect(page.getByRole('combobox', { name: 'Selecionar tema visual' })).toHaveValue(
       theme.id,
     );
@@ -116,10 +147,12 @@ test('acompanha o sistema e permite alternar os três temas', async ({ page }) =
 });
 
 test('mantém a aparência da página do styleguide', async ({ page }) => {
-  // Sem referência para esta plataforma o teste é pulado com instrução, em vez
-  // de falhar por um arquivo que ninguém gerou ainda. `--update-snapshots`
-  // (npm run test:e2e:update) muda o modo e cria a imagem.
+  // Linux é a referência revisada do CI. Outras plataformas precisam gerar
+  // sua própria imagem explicitamente com npm run test:e2e:update.
   const criandoReferencia = test.info().config.updateSnapshots !== 'missing';
+  if (process.env.CI && process.platform === 'linux' && !criandoReferencia) {
+    expect(existsSync(baseline), 'A referência Linux revisada deve estar versionada').toBe(true);
+  }
   test.skip(
     !existsSync(baseline) && !criandoReferencia,
     `Sem imagem de referência para ${process.platform}. Gere com: npm run test:e2e:update`,

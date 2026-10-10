@@ -91,7 +91,10 @@ export function EditorLoreSidebar({
   };
 
   return (
-    <aside className={styles.sidebar} aria-label="Painel lateral do Compêndio de Lore">
+    <aside
+      className={`${styles.sidebar} glass-surface`}
+      aria-label="Painel lateral do Compêndio de Lore"
+    >
       <div className={styles.header}>
         <div className={styles.headerTitleRow}>
           <h3 className={styles.title}>Compêndio de Lore</h3>

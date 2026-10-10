@@ -3,7 +3,8 @@
   flex-direction: column;
   gap: var(--space-lg);
   padding: var(--space-lg) var(--space-md);
-  max-width: 1200px;
+  max-width: var(--layout-max);
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -11,7 +12,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  background-color: var(--surface-raised);
+  background-color: hsl(var(--card) / var(--panel-opacity));
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: var(--space-md);
@@ -52,8 +53,8 @@
 
 .tabActive {
   background-color: var(--surface-quiet);
-  border-color: var(--accent);
-  color: var(--accent);
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
   font-weight: 700;
 }
 
@@ -71,13 +72,13 @@
 }
 
 .tabActive .tabCount {
-  background-color: var(--accent);
-  color: var(--surface);
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: var(--space-md);
 }
 
