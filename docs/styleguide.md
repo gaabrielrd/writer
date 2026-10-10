@@ -52,6 +52,16 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 - `Table`: Tabelas responsivas estilizadas.
 - `StyleguidePage`: Página viva do catálogo acessível em `/styleguide`.
 
+## Favicon
+
+O favicon em `public/writer-favicon.svg` usa a pena `Feather` do Lucide, o mesmo símbolo
+do cabeçalho, sobre um quadrado bronze com cantos arredondados. As cores fixas do
+asset reproduzem os tokens `--primary` (26 48% 36%) e `--background` (40 20% 97%)
+do tema claro; o SVG independente não herda o CSS da aplicação. O fundo mantém o
+contraste em abas claras e escuras, e os traços reforçados favorecem tamanhos pequenos.
+A referência em `index.html` usa um nome próprio para renovar o cache ao
+substituir a identidade anterior. O asset é servido localmente, sem fontes ou imagens externas.
+
 ## Verificação
 
 ```bash
