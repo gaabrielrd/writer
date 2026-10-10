@@ -49,10 +49,16 @@ Sem upload manual, edição avançada, galeria, BYOK no wizard ou alterações d
 
 O deploy local foi autorizado para `writer-44cd5`. Hosting, regras Firestore/Storage e índice de expiração foram publicados. O bucket padrão foi criado em `us-central1`; o índice chegou a `READY`. O HTML e três assets de entrada servidos correspondem byte a byte ao build validado do commit `65cc686`. A configuração existente do App Check foi confirmada.
 
-As sete funções do codebase `book-generation` foram verificadas em estado `ACTIVE`, com custos de 1/5 créditos. A geração usa a versão 2 do segredo. A limpeza horária está `ENABLED`; imagens de build no Artifact Registry têm retenção de 30 dias. As duas falhas iniciais de criação (Cloud Run 500 e propagação do agente Eventarc) foram resolvidas por retentativa somente das funções afetadas.
+As sete funções do codebase `book-generation` foram verificadas em estado `ACTIVE`, com custos de 1/5 créditos. Após a rotação abaixo, a geração usa a versão 3 do segredo. A limpeza horária está `ENABLED`; imagens de build no Artifact Registry têm retenção de 30 dias. As duas falhas iniciais de criação (Cloud Run 500 e propagação do agente Eventarc) foram resolvidas por retentativa somente das funções afetadas.
 
 A chave fornecida em `.gemini-api-key` foi cadastrada no Secret Manager sem exibir seu valor. Esse arquivo e `functions/.env.<project-id>` são ignorados pelo Git. Os modelos responderam à consulta de metadados da conta.
 
-O teste real de sinopse identificou truncamento com 1000 tokens. O backend passou a usar 2048 tokens e raciocínio `low`, rejeitando respostas com `MAX_TOKENS`. A nova requisição retornou 158 palavras e término `STOP`. O teste real de capa retornou HTTP 429, com cota gratuita de imagens igual a zero para o projeto da chave. **Geração de capa depende de liberar faturamento/cota da API Gemini nesse projeto ou substituir a chave por uma habilitada.** O faturamento ativo do projeto Firebase não comprova a cota do projeto da chave Gemini.
+O teste real de sinopse identificou truncamento com 1000 tokens. O backend passou a usar 2048 tokens e raciocínio `low`, rejeitando respostas com `MAX_TOKENS`. A nova requisição retornou 158 palavras e término `STOP`. A chave inicial retornou HTTP 429 para capa, com cota gratuita de imagens igual a zero. Essa pendência foi resolvida pela substituição registrada abaixo. O faturamento ativo do projeto Firebase não comprova a cota do projeto da chave Gemini.
 
-Os testes do provedor não criaram livros nem debitaram saldo do aplicativo. O fluxo completo autenticado de gerar/aceitar/criar ainda precisa ser verificado após liberar a cota. As chamadas sem Auth/App Check aos endpoints publicados foram rejeitadas com HTTP 401.
+Os testes do provedor não criaram livros nem debitaram saldo do aplicativo. O fluxo completo autenticado de gerar/aceitar/criar ainda precisa ser verificado no aplicativo. As chamadas sem Auth/App Check aos endpoints publicados foram rejeitadas com HTTP 401.
+
+### Rotação da chave e liberação de capas
+
+O usuário substituiu `.gemini-api-key` por uma chave habilitada. A consulta ao modelo de sinopse retornou HTTP 200. A geração real de capa retornou HTTP 200 e foi normalizada em memória para PNG de 1200 × 1800. A primeira checagem local da imagem precisou ser corrigida para usar a exportação pública do pacote sharp; a segunda verificação confirmou formato e dimensões.
+
+A nova chave foi cadastrada como versão 3 de `BOOK_GENERATION_GEMINI_KEY`. Somente `generateBookAsset` foi reimplantada. A consulta remota confirmou estado `ACTIVE`, vínculo à versão 3 e custos 1/5. O endpoint manteve a rejeição HTTP 401 sem Auth/App Check. Nenhum valor de chave foi exibido ou versionado.

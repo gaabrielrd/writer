@@ -146,4 +146,22 @@ Smoke test do bundle OK.
 Validação da documentação OK.
 ```
 
-**Pendência externa:** o teste de capa no provedor retornou HTTP 429, `generate_content_free_tier_requests`, limite zero para `gemini-3.1-flash-image`. É necessário liberar faturamento/cota no projeto da chave Gemini ou substituí-la por uma habilitada. O deploy foi concluído, mas geração de capas e o fluxo autenticado de aceite/criação não foram confirmados em produção. Testes do provedor não criaram livros nem debitaram saldo do aplicativo.
+**Pendência externa inicial (resolvida abaixo):** o teste de capa no provedor retornou HTTP 429, `generate_content_free_tier_requests`, limite zero para `gemini-3.1-flash-image`. No primeiro deploy, geração de capas e o fluxo autenticado de aceite/criação não foram confirmados em produção. Testes do provedor não criaram livros nem debitaram saldo do aplicativo.
+
+## Incremento em 2026-10-10 — nova chave habilitada
+
+O usuário atualizou o arquivo local da chave. A nova chave permitiu acessar o modelo de sinopse e gerar uma capa no provedor. A imagem foi normalizada em memória para PNG de 1200 × 1800, sem criar livro ou debitar créditos do aplicativo. Uma falha no import usado pela checagem local foi corrigida antes da confirmação das dimensões.
+
+A chave foi cadastrada no Secret Manager como versão 3. Somente `generateBookAsset` foi reimplantada; a consulta remota confirmou a função em `ACTIVE` com a versão 3 e custos 1/5. A proteção sem Auth/App Check foi verificada novamente.
+
+```text
+{"synopsisModelAvailable":true,"status":200}
+{"providerCoverStatus":200,"imageReturned":true}
+{"width":1200,"height":1800,"format":"png"}
++  functions[book-generation:generateBookAsset(us-central1)] Successful update operation.
++  Deploy complete!
+{"function":"generateBookAsset","state":"ACTIVE","secretVersion":"3","costs":{"synopsis":"1","cover":"5"}}
+{"status":401,"unauthenticatedRejected":true}
+```
+
+A pendência de cota de imagens está resolvida. O fluxo autenticado completo de aceite/criação e o CI no pull request permanecem sem confirmação. Não houve alteração de código neste incremento; a validação completa anterior continua aplicável. Documentação, formatação e diff foram conferidos novamente. O arquivo da chave continua ignorado pelo Git.
