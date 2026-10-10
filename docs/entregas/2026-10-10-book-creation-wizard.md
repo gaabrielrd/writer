@@ -92,7 +92,7 @@ Upload manual, galeria de capas, tipografia incorporada pela IA, edição avanç
 
 ## Limitações e pendências conhecidas
 
-A integração real requer Functions, Storage, regras/índices, App Check e `BOOK_GENERATION_GEMINI_KEY` no servidor. Modelos e cotas devem ser confirmados na conta de destino, conforme [ativação](../book-creation.md). Não foi consumida uma chave real nem efetuada implantação de produção. Testes visuais usam respostas fictícias; testes do domínio usam transações simuladas e os testes de regras usam Firestore real emulado. Storage e provedor remoto não foram validados em produção.
+Na implementação inicial, não foi consumida uma chave real nem efetuada implantação de produção. A ativação posterior autorizada está registrada abaixo. Testes visuais usam respostas fictícias; testes do domínio usam transações simuladas e os testes de regras usam Firestore real emulado. O fluxo completo autenticado em produção permanece pendente da liberação da cota Gemini de imagens.
 
 Capas aceitas usam URLs com token: quem possui o link pode acessar. Aceitar e depois cancelar/remover não reembolsa créditos. Limite de dez gerações por usuário/hora inclui falhas e descartes. Capas aceitas sem livro expiram após sete dias.
 
@@ -105,3 +105,45 @@ As alterações são registradas em commit local, sem push ou pull request nesta
 3. Avance, gere uma capa e confirme **Usar capa**; confira o débito de 5 créditos e a prévia vertical.
 4. Crie o livro e confira a capa na listagem. Repita com criação manual e use **Voltar** para conferir a preservação dos campos.
 5. Para IA real, conclua primeiro a configuração de [criação de livros](../book-creation.md). Para revisão sem serviços remotos, use a suíte visual.
+
+## Incremento em 2026-10-10 — deploy local autorizado
+
+O usuário autorizou o deploy pela CLI local e forneceu a chave por arquivo local. O destino autenticado foi confirmado como `writer-44cd5`.
+
+- Hosting, regras Storage/Firestore e índice publicados; HTML e três assets de entrada conferidos byte a byte com o build validado. Índice de expiração verificado em `READY`.
+- Bucket padrão `writer-44cd5.firebasestorage.app` criado em `us-central1`; faturamento Firebase e cadastro App Check verificados. Regras Firestore anteriores preservadas em arquivo temporário local.
+- Chave cadastrada no Secret Manager; valor não exibido nem versionado. `.gemini-api-key` e configuração local de destino ignorados pelo Git. Template não secreto em `functions/.env.example`.
+- Sete funções em `ACTIVE`, custos 1/5, geração vinculada à versão 2 do segredo e limpeza horária `ENABLED`. Retenção de imagens de build configurada em 30 dias.
+- Primeiras falhas de Cloud Run/Eventarc resolvidas repetindo apenas as duas funções afetadas, sem exclusão forçada.
+- Workflows preparados passam a instalar as dependências de `functions` antes da validação. Seus gates de implantação não foram ativados.
+- Teste de sinopse real identificou truncamento; limite ajustado para 2048 tokens com raciocínio `low`, rejeitando `MAX_TOKENS`. Novo teste retornou 158 palavras completas.
+- Novo teste de backend confirma que recusa pelo provedor não debita créditos e não produz sugestão aceitável.
+
+Saídas reais selecionadas:
+
+```text
++  Deploy complete!
+Hosting URL: https://writer-44cd5.web.app
+{"hostingVerified":true,"assetsVerified":3,"build":"65cc686"}
+{"indexes":[{"queryScope":"COLLECTION_GROUP","state":"READY"}]}
++  functions[book-generation:acceptBookAsset(us-central1)] Successful create operation.
++  functions[book-generation:cleanupDeletedBookCover(us-central1)] Successful create operation.
++  functions[book-generation:generateBookAsset(us-central1)] Successful update operation.
+{"providerSynopsisStatus":200,"textCharacters":938,"words":158,"finishReason":"STOP"}
+```
+
+Os cinco endpoints callable rejeitaram chamadas sem Auth/App Check com HTTP 401. A consulta remota confirmou `ACTIVE` para os sete exports e `ENABLED` para `firebase-schedule-cleanupBookAssets-us-central1`.
+
+Validação após os ajustes: `npm run validate` verde, com 426 testes da aplicação, 66 testes de ferramentas e 13 testes do backend aprovados. Documentação e diff foram verificados novamente após registrar o deploy.
+
+```text
+Test Files  66 passed (66)
+     Tests  426 passed (426)
+ℹ tests 13
+ℹ pass 13
+ℹ fail 0
+Smoke test do bundle OK.
+Validação da documentação OK.
+```
+
+**Pendência externa:** o teste de capa no provedor retornou HTTP 429, `generate_content_free_tier_requests`, limite zero para `gemini-3.1-flash-image`. É necessário liberar faturamento/cota no projeto da chave Gemini ou substituí-la por uma habilitada. O deploy foi concluído, mas geração de capas e o fluxo autenticado de aceite/criação não foram confirmados em produção. Testes do provedor não criaram livros nem debitaram saldo do aplicativo.

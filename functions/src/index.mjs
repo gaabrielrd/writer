@@ -62,12 +62,18 @@ async function generator(context) {
                 responseModalities: ['IMAGE'],
                 imageConfig: { aspectRatio: '2:3', imageSize: '1K' },
               }
-            : { maxOutputTokens: 1000, temperature: 0.7 },
+            : {
+                maxOutputTokens: 2048,
+                temperature: 0.7,
+                thinkingConfig: { thinkingLevel: 'low' },
+              },
       }),
     },
   );
   if (!response.ok) throw new Error('Falha no provedor.');
   const data = await response.json();
+  if (context.kind === 'synopsis' && data.candidates?.[0]?.finishReason === 'MAX_TOKENS')
+    throw new Error('Sinopse interrompida pelo limite de tokens.');
   const parts = data.candidates?.[0]?.content?.parts ?? [];
   if (context.kind === 'synopsis')
     return {

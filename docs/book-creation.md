@@ -36,7 +36,7 @@ Nenhum serviço de produção é implantado automaticamente pela implementação
 
 1. Verifique projeto, Storage, faturamento, cotas globais e modelos disponíveis.
 2. Configure `BOOK_GENERATION_GEMINI_KEY` no Secret Manager via Firebase CLI, fora de arquivos versionados. Nunca use variável `VITE_` para essa chave.
-3. Confira os parâmetros de servidor: `BOOK_SYNOPSIS_MODEL` (`gemini-3.7-flash`), `BOOK_COVER_MODEL` (`gemini-3.1-flash-image`), `BOOK_SYNOPSIS_CREDITS` (1), `BOOK_COVER_CREDITS` (5). Confirme disponibilidade dos modelos na conta antes da implantação.
+3. Copie `functions/.env.example` para `functions/.env.<project-id>` e confira os parâmetros de servidor: `BOOK_SYNOPSIS_MODEL` (`gemini-3.7-flash`), `BOOK_COVER_MODEL` (`gemini-3.1-flash-image`), `BOOK_SYNOPSIS_CREDITS` (1), `BOOK_COVER_CREDITS` (5). A CLI exige valores explícitos no deploy não interativo. Confirme disponibilidade dos modelos na conta antes da implantação. O arquivo do destino é ignorado pelo Git e não contém a chave privada.
 4. Configure App Check para o domínio. Em desenvolvimento, use o mecanismo oficial de debug com token autorizado; mantenha a exigência nas funções.
 5. Após autorização para o destino verificado, publique somente as funções do codebase `book-generation`, regras Storage, regras Firestore e índices, definidos em `firebase.json`. Workflows existentes não passam a implantar Functions/Storage automaticamente.
 6. Faça uma geração controlada, aceite, retentativa e criação. Confira saldo, armazenamento e limites antes da liberação.
@@ -44,3 +44,15 @@ Nenhum serviço de produção é implantado automaticamente pela implementação
 ## Escopo
 
 Sem upload manual, edição avançada, galeria, BYOK no wizard ou alterações do editor. IA produz arte plana sem texto incorporado. Sinopse/capa opcionais na criação manual.
+
+## Verificação no destino em 2026-10-10
+
+O deploy local foi autorizado para `writer-44cd5`. Hosting, regras Firestore/Storage e índice de expiração foram publicados. O bucket padrão foi criado em `us-central1`; o índice chegou a `READY`. O HTML e três assets de entrada servidos correspondem byte a byte ao build validado do commit `65cc686`. A configuração existente do App Check foi confirmada.
+
+As sete funções do codebase `book-generation` foram verificadas em estado `ACTIVE`, com custos de 1/5 créditos. A geração usa a versão 2 do segredo. A limpeza horária está `ENABLED`; imagens de build no Artifact Registry têm retenção de 30 dias. As duas falhas iniciais de criação (Cloud Run 500 e propagação do agente Eventarc) foram resolvidas por retentativa somente das funções afetadas.
+
+A chave fornecida em `.gemini-api-key` foi cadastrada no Secret Manager sem exibir seu valor. Esse arquivo e `functions/.env.<project-id>` são ignorados pelo Git. Os modelos responderam à consulta de metadados da conta.
+
+O teste real de sinopse identificou truncamento com 1000 tokens. O backend passou a usar 2048 tokens e raciocínio `low`, rejeitando respostas com `MAX_TOKENS`. A nova requisição retornou 158 palavras e término `STOP`. O teste real de capa retornou HTTP 429, com cota gratuita de imagens igual a zero para o projeto da chave. **Geração de capa depende de liberar faturamento/cota da API Gemini nesse projeto ou substituir a chave por uma habilitada.** O faturamento ativo do projeto Firebase não comprova a cota do projeto da chave Gemini.
+
+Os testes do provedor não criaram livros nem debitaram saldo do aplicativo. O fluxo completo autenticado de gerar/aceitar/criar ainda precisa ser verificado após liberar a cota. As chamadas sem Auth/App Check aos endpoints publicados foram rejeitadas com HTTP 401.

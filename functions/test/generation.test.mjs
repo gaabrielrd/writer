@@ -46,12 +46,14 @@ function fixture(options = {}) {
     db,
     costs: { synopsis: 1, cover: 5 },
     now: () => time,
-    generator: async (context) => {
-      calls++;
-      return context.kind === 'cover'
-        ? { image: Buffer.from('image') }
-        : { text: 'Uma viajante busca um mapa perdido.' };
-    },
+    generator:
+      options.generator ??
+      (async (context) => {
+        calls++;
+        return context.kind === 'cover'
+          ? { image: Buffer.from('image') }
+          : { text: 'Uma viajante busca um mapa perdido.' };
+      }),
     assets: {
       save: async (path, image) => {
         images.set(path, image);
@@ -203,4 +205,23 @@ test('a failure to release cover access can be retried without a second debit', 
   const retry = await f.service.accept('author', { id: cover.id });
   assert.equal(retry.credits, 15);
   assert.equal(attempts, 2);
+});
+
+test('provider failures leave credits unchanged and cannot be accepted', async () => {
+  const f = fixture({
+    generator: async () => {
+      throw new Error('provider quota exhausted');
+    },
+  });
+  const requestId = 'request-0000000001';
+  await assert.rejects(f.service.generate('author', f.input(requestId, 'cover')), {
+    code: 'unavailable',
+  });
+  assert.equal(f.records.get('users/author').credits, 20);
+  assert.equal(f.records.get(`users/author/bookGenerations/${requestId}`).state, 'failed');
+  assert.equal(f.images.size, 0);
+  await assert.rejects(f.service.accept('author', { id: requestId }), {
+    code: 'failed-precondition',
+  });
+  assert.equal(f.records.get('users/author').credits, 20);
 });

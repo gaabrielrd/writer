@@ -4,7 +4,10 @@
 
 Os workflows estão **preparados, desabilitados por padrão e sem acesso Google
 provisionado por esta entrega**. Não houve deploy, criação de identidade,
-concessão IAM, configuração de variables/secrets/environments nem merge.
+concessão IAM, configuração de variables/secrets/environments nem merge nessa
+entrega original de preparação. A implantação local autorizada do wizard em
+2026-10-10 é registrada em [criação de livros](book-creation.md); ela não ativa
+os gates dos workflows.
 A aprovação para preparar estes arquivos não autoriza sua ativação.
 
 - `deploy-hosting.yml`: após push na `master`, valida o commit e publica somente
