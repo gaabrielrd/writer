@@ -1,11 +1,8 @@
-import {
-  useState,
-  useRef,
-  useMemo,
-  useCallback,
-  type KeyboardEvent,
-  type ChangeEvent,
-} from 'react';
+import { useState, useRef, useMemo, useEffect, useId } from 'react';
+import { createPortal } from 'react-dom';
+import { EditorContent, useEditor, type Editor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import {
   Bold,
   Italic,
@@ -18,15 +15,11 @@ import {
   Eye,
   Edit3,
   KeyRound,
+  Undo2,
+  Redo2,
 } from 'lucide-react';
 import { Button, Badge } from '@/shared/ui';
-import {
-  findLoreMatches,
-  LoreTooltip,
-  type LoreCategory,
-  type LoreEntity,
-  type LoreMatch,
-} from '@/features/lore';
+import { findLoreMatches, type LoreCategory, type LoreEntity } from '@/features/lore';
 import {
   useAIAutocomplete,
   GhostSuggestion,
@@ -35,20 +28,33 @@ import {
   BYOKSettingsDialog,
   getBYOKConfig,
 } from '@/features/ai-assistant';
+import { renderRichText, sanitizeRichText } from '@/shared/lib/sanitizeRichText';
+import {
+  createLoreExtension,
+  GhostTextExtension,
+  ghostSuggestionKey,
+  getMentionRange,
+  loreDecorationKey,
+  mentionCandidates,
+  plainTextContent,
+} from '../model/richDocument';
 import { MentionMenu } from './MentionMenu';
 import styles from './RichEditor.module.css';
 
 export interface RichEditorProps {
+  documentId?: string;
   content: string;
   onChange: (content: string) => void;
   entities: LoreEntity[];
   onSelectEntity: (entity: LoreEntity) => void;
+  onCreateEntity?: (name: string) => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
   placeholder?: string;
   userId?: string | null;
   userCredits?: number;
   onCreditDeducted?: (newCredits: number) => void;
+  onBusyChange?: (busy: boolean) => void;
 }
 
 const CATEGORY_BADGES: Record<LoreCategory, 'default' | 'accent' | 'success' | 'secondary'> = {
@@ -57,385 +63,348 @@ const CATEGORY_BADGES: Record<LoreCategory, 'default' | 'accent' | 'success' | '
   concept: 'default',
   other: 'secondary',
 };
+const CATEGORY_LABELS: Record<LoreCategory, string> = {
+  character: 'Personagem',
+  location: 'Local',
+  concept: 'Conceito',
+  other: 'Outro',
+};
+interface SelectionTarget {
+  doc: ProseMirrorNode;
+  from: number;
+  to: number;
+}
 
 export function RichEditor({
+  documentId,
   content,
   onChange,
   entities,
   onSelectEntity,
+  onCreateEntity,
   isSidebarOpen,
   onToggleSidebar,
   placeholder = 'Comece a escrever seu capítulo aqui...',
   userId,
   userCredits = 0,
   onCreditDeducted,
+  onBusyChange,
 }: RichEditorProps) {
+  // Initial parsing is intentionally lazy: transaction-driven renders must not
+  // sanitize the whole chapter again. Real external replacements use the effect below.
+  const [initialHtml] = useState(() => renderRichText(content));
   const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
-  const [cursorPosition, setCursorPosition] = useState<number>(0);
   const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
   const [isBYOKSettingsOpen, setIsBYOKSettingsOpen] = useState(false);
+  const [mentionDismissed, setMentionDismissed] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [accepting, setAccepting] = useState(false);
+  const [hover, setHover] = useState<{ entity: LoreEntity; left: number; top: number } | null>(
+    null,
+  );
+  const menuId = useId();
+  const lastContent = useRef(content);
+  const keyHandler = useRef<(event: KeyboardEvent) => boolean>(() => false);
+  const discardRef = useRef<() => void>(() => undefined);
+  const acceptingRef = useRef(false);
+  const aiTarget = useRef<SelectionTarget | null>(null);
+  const previousSidebar = useRef(isSidebarOpen);
+  const [menuPosition, setMenuPosition] = useState({ top: 40, left: 0 });
+  const [loreOptions] = useState(() => ({
+    getEntities: () => entities,
+    onSelect: onSelectEntity,
+    onHover: (entity: LoreEntity | null, element?: HTMLElement) => {
+      if (!entity || !element) {
+        setHover(null);
+        return;
+      }
+      const bounds = element.getBoundingClientRect();
+      setHover({
+        entity,
+        left: Math.max(8, Math.min(bounds.left, window.innerWidth - 296)),
+        top:
+          bounds.bottom > window.innerHeight - 180
+            ? Math.max(8, bounds.top - 150)
+            : bounds.bottom + 8,
+      });
+    },
+  }));
+  const [loreExtension] = useState(() => createLoreExtension(loreOptions));
 
-  const [mentionState, setMentionState] = useState<{
-    isOpen: boolean;
-    query: string;
-    startIndex: number;
-    selectedIndex: number;
-  }>({
-    isOpen: false,
-    query: '',
-    startIndex: -1,
-    selectedIndex: 0,
-  });
-
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit.configure({
+          link: { openOnClick: false, autolink: false },
+          trailingNode: false,
+        }),
+        loreExtension.extension,
+        GhostTextExtension,
+      ],
+      content: initialHtml,
+      shouldRerenderOnTransaction: true,
+      editorProps: {
+        attributes: {
+          class: styles.richText ?? '',
+          role: 'textbox',
+          'aria-multiline': 'true',
+          'aria-label': 'Área de escrita do capítulo',
+          spellcheck: 'true',
+          'data-placeholder': placeholder,
+        },
+        transformPastedHTML: sanitizeRichText,
+        handleKeyDown: (_view, event) => keyHandler.current(event),
+      },
+      onUpdate: ({ editor: activeEditor }) => {
+        lastContent.current = activeEditor.getHTML();
+        onChange(lastContent.current);
+        setMentionDismissed(false);
+        setSelectedIndex(0);
+        setHover(null);
+        discardRef.current();
+      },
+      onSelectionUpdate: () => {
+        setMentionDismissed(false);
+        setSelectedIndex(0);
+        discardRef.current();
+      },
+    },
+    [documentId],
+  );
+  const text = editor?.getText({ blockSeparator: '\n' }) ?? '';
+  const cursorPosition =
+    editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
   const isUsingBYOK = getBYOKConfig().provider !== 'firebase_ai';
-
-  // Hook de Autocomplete Preditivo de IA
   const { suggestion, acceptSuggestion, discardSuggestion } = useAIAutocomplete({
-    content,
+    content: text,
     cursorPosition,
     loreEntities: entities,
     userId,
     userCredits,
     onCreditDeducted,
     onShowOutOfCredits: () => setIsOutOfCreditsOpen(true),
-    enabled: viewMode === 'write',
+    enabled: viewMode === 'write' && !accepting && Boolean(editor?.state.selection.empty),
   });
 
-  // Mapeia todas as ocorrências de lore no texto atual
-  const matches = useMemo(() => {
-    return findLoreMatches(content, entities);
-  }, [content, entities]);
+  useEffect(() => {
+    discardRef.current = discardSuggestion;
+  }, [discardSuggestion]);
+  useEffect(() => {
+    loreExtension.update({ onSelect: onSelectEntity });
+  }, [onSelectEntity, loreExtension]);
+  useEffect(() => {
+    loreExtension.update({ getEntities: () => entities });
+    if (editor && !editor.isDestroyed)
+      editor.view.dispatch(editor.state.tr.setMeta(loreDecorationKey, true));
+  }, [entities, editor, loreExtension]);
+  useEffect(() => {
+    // A parent echo must never recreate the document: that loses cursor, composition and undo.
+    if (!editor || content === lastContent.current) return;
+    lastContent.current = content;
+    editor.commands.setContent(renderRichText(content), { emitUpdate: false });
+  }, [content, editor]);
+  useEffect(() => {
+    editor?.setEditable(viewMode === 'write' && !accepting, false);
+    editor?.view.dom.setAttribute('aria-readonly', String(viewMode !== 'write' || accepting));
+  }, [editor, viewMode, accepting]);
+  useEffect(() => {
+    if (previousSidebar.current && !isSidebarOpen && viewMode === 'write')
+      editor?.commands.focus(undefined, { scrollIntoView: false });
+    previousSidebar.current = isSidebarOpen;
+  }, [isSidebarOpen, editor, viewMode]);
 
-  // Lista de entidades únicas mencionadas no texto
+  const matches = useMemo(() => findLoreMatches(text, entities), [text, entities]);
   const mentionedEntities = useMemo(() => {
     const map = new Map<string, { entity: LoreEntity; count: number }>();
-    for (const m of matches) {
-      const existing = map.get(m.entityId);
-      if (existing) {
-        existing.count++;
-      } else {
-        map.set(m.entityId, { entity: m.entity, count: 1 });
-      }
+    for (const match of matches) {
+      const existing = map.get(match.entityId);
+      if (existing) existing.count += 1;
+      else map.set(match.entityId, { entity: match.entity, count: 1 });
     }
     return Array.from(map.values());
   }, [matches]);
-
-  // Filtra entidades para o menu de menções (@)
-  const mentionCandidates = useMemo(() => {
-    if (!mentionState.isOpen) return [];
-    const q = mentionState.query.toLowerCase();
-    return entities.filter((e) => {
-      if (!q) return true;
-      const nameMatch = e.name.toLowerCase().includes(q);
-      const aliasMatch = e.aliases.some((a) => a.toLowerCase().includes(q));
-      return nameMatch || aliasMatch;
-    });
-  }, [entities, mentionState.isOpen, mentionState.query]);
-
-  const insertFormatting = (prefix: string, suffix = '') => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = content.substring(start, end);
-
-    const replacement = `${prefix}${selectedText || 'texto'}${suffix}`;
-    const newContent = content.substring(0, start) + replacement + content.substring(end);
-
-    onChange(newContent);
-
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + prefix.length + (selectedText ? selectedText.length : 5);
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-      setCursorPosition(newCursorPos);
-    }, 0);
-  };
-
-  const insertDialogueDash = () => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const lineStart = content.lastIndexOf('\n', start - 1) + 1;
-    const newContent = content.substring(0, lineStart) + '— ' + content.substring(lineStart);
-
-    onChange(newContent);
-
-    setTimeout(() => {
-      textarea.focus();
-      const newCursorPos = start + 2;
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-      setCursorPosition(newCursorPos);
-    }, 0);
-  };
-
-  const handleSelectMention = (entity: LoreEntity) => {
-    const textarea = textareaRef.current;
-    if (!textarea || mentionState.startIndex === -1) return;
-
-    const before = content.substring(0, mentionState.startIndex);
-    const cursor = textarea.selectionStart;
-    const after = content.substring(cursor);
-
-    const insertion = entity.name + ' ';
-    const newContent = before + insertion + after;
-
-    onChange(newContent);
-
-    setMentionState({
-      isOpen: false,
-      query: '',
-      startIndex: -1,
-      selectedIndex: 0,
-    });
-
-    setTimeout(() => {
-      textarea.focus();
-      const newPos = before.length + insertion.length;
-      textarea.setSelectionRange(newPos, newPos);
-      setCursorPosition(newPos);
-    }, 0);
-  };
-
-  const handleAcceptGhost = useCallback(async () => {
-    const acceptedText = await acceptSuggestion();
-    if (!acceptedText) return;
-
-    const textarea = textareaRef.current;
-    const cursor = textarea ? textarea.selectionStart : content.length;
-    const before = content.substring(0, cursor);
-    const after = content.substring(cursor);
-
-    const toInsert = (before.endsWith(' ') ? '' : ' ') + acceptedText;
-    const newContent = before + toInsert + after;
-    onChange(newContent);
-
-    setTimeout(() => {
-      if (textarea) {
-        textarea.focus();
-        const newPos = before.length + toInsert.length;
-        textarea.setSelectionRange(newPos, newPos);
-        setCursorPosition(newPos);
-      }
-    }, 0);
-  }, [acceptSuggestion, content, onChange]);
-
-  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    const newText = e.target.value;
-    const cursorPos = e.target.selectionStart;
-    setCursorPosition(cursorPos);
-    onChange(newText);
-
-    // Detecção de caractere de menção @
-    const lastAtIndex = newText.lastIndexOf('@', cursorPos - 1);
-    if (lastAtIndex !== -1) {
-      const textAfterAt = newText.substring(lastAtIndex + 1, cursorPos);
-      // Menção é válida se não houver quebra de linha nem múltiplos espaços
-      if (!textAfterAt.includes('\n') && textAfterAt.length <= 30) {
-        setMentionState({
-          isOpen: true,
-          query: textAfterAt,
-          startIndex: lastAtIndex,
-          selectedIndex: 0,
-        });
-        return;
-      }
-    }
-
-    if (mentionState.isOpen) {
-      setMentionState({
-        isOpen: false,
-        query: '',
-        startIndex: -1,
-        selectedIndex: 0,
-      });
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
-    // Menu de menção aberto: captura navegação do teclado
-    if (mentionState.isOpen && mentionCandidates.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setMentionState((prev) => ({
-          ...prev,
-          selectedIndex: (prev.selectedIndex + 1) % mentionCandidates.length,
-        }));
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setMentionState((prev) => ({
-          ...prev,
-          selectedIndex:
-            (prev.selectedIndex - 1 + mentionCandidates.length) % mentionCandidates.length,
-        }));
-        return;
-      }
-      if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        const candidate = mentionCandidates[mentionState.selectedIndex];
-        if (candidate) {
-          handleSelectMention(candidate);
-        }
-        return;
-      }
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setMentionState({
-          isOpen: false,
-          query: '',
-          startIndex: -1,
-          selectedIndex: 0,
-        });
-        return;
-      }
-    }
-
-    // Atalho Tab: aceitar sugestão preditiva de IA
-    if (e.key === 'Tab' && suggestion) {
-      e.preventDefault();
-      void handleAcceptGhost();
-      return;
-    }
-
-    // Atalho Escape: descartar sugestão preditiva
-    if (e.key === 'Escape' && suggestion) {
-      e.preventDefault();
-      discardSuggestion();
-      return;
-    }
-
-    // Atalhos de formatação de escrita
-    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-      e.preventDefault();
-      insertFormatting('**', '**');
-      return;
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
-      e.preventDefault();
-      insertFormatting('*', '*');
-      return;
-    }
-  };
-
-  // Renderização do texto anotado com LoreTooltips e marcações
-  const renderAnnotatedContent = (rawText: string, loreMatches: LoreMatch[]) => {
-    const lines = rawText.split('\n');
-    let accumulatedOffset = 0;
-
-    return (
-      <div className={styles.renderedParagraphs}>
-        {lines.map((line, pIdx) => {
-          const pStart = accumulatedOffset;
-          const pEnd = pStart + line.length;
-          accumulatedOffset = pEnd + 1;
-
-          if (!line.trim()) {
-            return (
-              <div key={pIdx} className={styles.renderedParagraph}>
-                <br />
-              </div>
-            );
-          }
-
-          const isH1 = line.startsWith('# ');
-          const isH2 = line.startsWith('## ');
-          const prefixLen = isH1 ? 2 : isH2 ? 3 : 0;
-          const cleanLine = line.substring(prefixLen);
-
-          const pMatches = loreMatches.filter(
-            (m) => m.startIndex >= pStart + prefixLen && m.endIndex <= pEnd,
-          );
-
-          let contentNodes;
-
-          if (pMatches.length === 0) {
-            contentNodes = cleanLine;
-          } else {
-            let lineCursor = prefixLen;
-            const inlineElements = [];
-
-            for (let i = 0; i < pMatches.length; i++) {
-              const m = pMatches[i];
-              if (!m) continue;
-
-              const matchStartInLine = m.startIndex - pStart;
-              const matchEndInLine = m.endIndex - pStart;
-
-              if (matchStartInLine > lineCursor) {
-                inlineElements.push(line.substring(lineCursor, matchStartInLine));
-              }
-
-              inlineElements.push(
-                <LoreTooltip key={`m-${m.entityId}-${m.startIndex}`} entity={m.entity}>
-                  <button
-                    type="button"
-                    className={styles.loreHighlightBtn}
-                    onClick={() => {
-                      onSelectEntity(m.entity);
-                    }}
-                    title={`Ver ficha de ${m.entity.name}`}
-                  >
-                    {m.matchedText}
-                  </button>
-                </LoreTooltip>,
-              );
-              lineCursor = matchEndInLine;
-            }
-
-            if (lineCursor < line.length) {
-              inlineElements.push(line.substring(lineCursor));
-            }
-
-            contentNodes = inlineElements;
-          }
-
-          return (
-            <div key={pIdx} className={styles.renderedParagraph}>
-              {isH1 ? (
-                <span className={styles.h1}>{contentNodes}</span>
-              ) : isH2 ? (
-                <span className={styles.h2}>{contentNodes}</span>
-              ) : (
-                contentNodes
-              )}
-            </div>
-          );
-        })}
-      </div>
+  const mention =
+    editor && !mentionDismissed && viewMode === 'write' ? getMentionRange(editor.state) : null;
+  const candidates = mention ? mentionCandidates(entities, mention.query) : [];
+  const activeGhost = viewMode === 'write' && !mention && !accepting ? suggestion : null;
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    const position = editor.state.selection.from;
+    const before = editor.state.doc.textBetween(Math.max(0, position - 1), position);
+    editor.view.dispatch(
+      editor.state.tr.setMeta(
+        ghostSuggestionKey,
+        activeGhost
+          ? { position, text: `${before && !/\s$/.test(before) ? ' ' : ''}${activeGhost}` }
+          : null,
+      ),
     );
+  }, [editor, activeGhost]);
+  const canCreate = Boolean(mention?.query.trim() && candidates.length === 0 && onCreateEntity);
+  const optionCount = candidates.length + (canCreate ? 1 : 0);
+  const activeIndex = optionCount ? Math.min(selectedIndex, optionCount - 1) : 0;
+
+  const selectMention = (entity: LoreEntity) => {
+    if (!editor || !mention) return;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(
+        { from: mention.from, to: mention.to },
+        { type: 'text', text: `${entity.name} ` },
+      )
+      .run();
+    setMentionDismissed(true);
+  };
+  const createMention = () => {
+    if (!mention || !onCreateEntity) return;
+    setMentionDismissed(true);
+    onCreateEntity(mention.query.trim());
+  };
+  const setApplying = (busy: boolean) => {
+    acceptingRef.current = busy;
+    setAccepting(busy);
+    editor?.setEditable(viewMode === 'write' && !busy, false);
+    onBusyChange?.(busy);
+  };
+  const handleAcceptGhost = async () => {
+    if (!editor || acceptingRef.current) return;
+    const target = {
+      doc: editor.state.doc,
+      from: editor.state.selection.from,
+      to: editor.state.selection.to,
+    };
+    setApplying(true);
+    try {
+      const accepted = await acceptSuggestion(
+        () => !editor.isDestroyed && editor.state.doc.eq(target.doc),
+      );
+      if (!accepted || editor.isDestroyed || !editor.state.doc.eq(target.doc)) return;
+      const before = editor.state.doc.textBetween(Math.max(0, target.from - 1), target.from);
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(
+          { from: target.from, to: target.to },
+          { type: 'text', text: `${before && !/\s$/.test(before) ? ' ' : ''}${accepted}` },
+        )
+        .run();
+    } finally {
+      if (!editor.isDestroyed) setApplying(false);
+    }
   };
 
-  const getSelectedText = (): string => {
-    const textarea = textareaRef.current;
-    if (!textarea) return '';
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    return content.substring(start, end);
-  };
+  useEffect(() => {
+    keyHandler.current = (event) => {
+      if (event.isComposing || editor?.view.composing) return false;
+      if (acceptingRef.current) return true;
+      if (mention) {
+        if (event.key === 'Escape') {
+          setMentionDismissed(true);
+          event.preventDefault();
+          return true;
+        }
+        if (optionCount > 0 && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+          setSelectedIndex(
+            (activeIndex + (event.key === 'ArrowDown' ? 1 : -1) + optionCount) % optionCount,
+          );
+          event.preventDefault();
+          return true;
+        }
+        if (optionCount > 0 && (event.key === 'Enter' || event.key === 'Tab')) {
+          const candidate = candidates[activeIndex];
+          if (candidate) selectMention(candidate);
+          else createMention();
+          event.preventDefault();
+          return true;
+        }
+      }
+      if (event.key === 'Tab' && suggestion) {
+        event.preventDefault();
+        void handleAcceptGhost();
+        return true;
+      }
+      if (event.key === 'Escape') {
+        discardSuggestion();
+        setHover(null);
+        return true;
+      }
+      return false; // StarterKit owns formatting, history and platform keyboard conventions.
+    };
+  });
 
-  const handleReplaceSelection = (replacement: string) => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const newContent = content.substring(0, start) + replacement + content.substring(end);
-    onChange(newContent);
+  const captureSelection = () => {
+    if (!editor) return '';
+    const { from, to } = editor.state.selection;
+    aiTarget.current = { doc: editor.state.doc, from, to };
+    return editor.state.doc.textBetween(from, to, '\n');
   };
-
-  const handleInsertText = (textToInsert: string) => {
-    const textarea = textareaRef.current;
-    const cursor = textarea ? textarea.selectionStart : content.length;
-    const before = content.substring(0, cursor);
-    const after = content.substring(cursor);
-    const newContent = before + '\n\n' + textToInsert + '\n\n' + after;
-    onChange(newContent);
+  const canApplyResult = () =>
+    Boolean(
+      editor &&
+      !editor.isDestroyed &&
+      aiTarget.current &&
+      editor.state.doc.eq(aiTarget.current.doc),
+    );
+  const applyGeneratedText = (value: string, replace: boolean) => {
+    const target = aiTarget.current;
+    if (!editor || !target || !canApplyResult()) return false;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(
+        replace ? { from: target.from, to: target.to } : target.to,
+        plainTextContent(value),
+      )
+      .run();
+    aiTarget.current = null;
+    return true;
   };
+  const run = (command: (activeEditor: Editor) => void) => {
+    if (editor && !accepting) command(editor);
+  };
+  useEffect(() => {
+    if (!editor) return;
+    const positionMenu = () => {
+      const range = getMentionRange(editor.state);
+      if (!range) return;
+      try {
+        const caret = editor.view.coordsAtPos(range.to);
+        setMenuPosition({
+          top:
+            caret.bottom > window.innerHeight - 296
+              ? Math.max(8, caret.top - 286)
+              : caret.bottom + 6,
+          left: Math.max(8, Math.min(caret.left, window.innerWidth - 328)),
+        });
+      } catch {
+        /* Geometry is unavailable in non-layout test environments. */
+      }
+    };
+    editor.on('transaction', positionMenu);
+    window.addEventListener('scroll', positionMenu, true);
+    window.addEventListener('resize', positionMenu);
+    return () => {
+      editor.off('transaction', positionMenu);
+      window.removeEventListener('scroll', positionMenu, true);
+      window.removeEventListener('resize', positionMenu);
+    };
+  }, [editor]);
+  useEffect(() => {
+    if (!editor) return;
+    const element = editor.view.dom;
+    element.setAttribute('aria-expanded', String(Boolean(mention)));
+    element.setAttribute('aria-autocomplete', 'list');
+    if (mention) {
+      element.setAttribute('aria-controls', menuId);
+      if (optionCount > 0)
+        element.setAttribute('aria-activedescendant', `${menuId}-option-${activeIndex}`);
+      else element.removeAttribute('aria-activedescendant');
+    } else {
+      element.removeAttribute('aria-controls');
+      element.removeAttribute('aria-activedescendant');
+    }
+  }, [editor, mention, menuId, optionCount, activeIndex]);
 
   return (
     <div className={styles.container}>
@@ -444,43 +413,82 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            onClick={() => insertFormatting('# ')}
-            title="Título Principal (# )"
+            disabled={accepting || viewMode === 'preview'}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                active.chain().focus().toggleHeading({ level: 1 }).run();
+              })
+            }
+            title="Título Principal"
             aria-label="Título Principal"
+            aria-pressed={editor?.isActive('heading', { level: 1 }) ?? false}
           >
             <Heading1 className="icon icon-sm" aria-hidden="true" />
           </button>
           <button
             type="button"
             className={styles.toolBtn}
-            onClick={() => insertFormatting('## ')}
-            title="Subtítulo (## )"
+            disabled={accepting || viewMode === 'preview'}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                active.chain().focus().toggleHeading({ level: 2 }).run();
+              })
+            }
+            title="Subtítulo"
             aria-label="Subtítulo"
+            aria-pressed={editor?.isActive('heading', { level: 2 }) ?? false}
           >
             <Heading2 className="icon icon-sm" aria-hidden="true" />
           </button>
           <button
             type="button"
             className={styles.toolBtn}
-            onClick={() => insertFormatting('**', '**')}
-            title="Negrito (**texto** / Ctrl+B)"
+            disabled={accepting || viewMode === 'preview'}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                active.chain().focus().toggleBold().run();
+              })
+            }
+            title="Negrito (Ctrl+B / ⌘B)"
             aria-label="Negrito"
+            aria-pressed={editor?.isActive('bold') ?? false}
           >
             <Bold className="icon icon-sm" aria-hidden="true" />
           </button>
           <button
             type="button"
             className={styles.toolBtn}
-            onClick={() => insertFormatting('*', '*')}
-            title="Itálico (*texto* / Ctrl+I)"
+            disabled={accepting || viewMode === 'preview'}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                active.chain().focus().toggleItalic().run();
+              })
+            }
+            title="Itálico (Ctrl+I / ⌘I)"
             aria-label="Itálico"
+            aria-pressed={editor?.isActive('italic') ?? false}
           >
             <Italic className="icon icon-sm" aria-hidden="true" />
           </button>
           <button
             type="button"
             className={styles.toolBtn}
-            onClick={insertDialogueDash}
+            disabled={accepting || viewMode === 'preview'}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                const { $from } = active.state.selection;
+                active
+                  .chain()
+                  .focus()
+                  .insertContentAt($from.start(), { type: 'text', text: '— ' })
+                  .run();
+              })
+            }
             title="Diálogo (— Travessão)"
             aria-label="Travessão de Diálogo"
           >
@@ -489,36 +497,80 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            onClick={() => insertFormatting('> ')}
-            title="Citação (> )"
+            disabled={accepting || viewMode === 'preview'}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                active.chain().focus().toggleBlockquote().run();
+              })
+            }
+            title="Citação"
             aria-label="Citação"
+            aria-pressed={editor?.isActive('blockquote') ?? false}
           >
             <Quote className="icon icon-sm" aria-hidden="true" />
           </button>
           <button
             type="button"
             className={styles.toolBtn}
-            onClick={() => insertFormatting('@')}
+            disabled={accepting || viewMode === 'preview'}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                active.chain().focus().insertContent({ type: 'text', text: '@' }).run();
+              })
+            }
             title="Mencionar Lore (@)"
             aria-label="Mencionar Lore"
           >
             <AtSign className="icon icon-sm" aria-hidden="true" />
           </button>
+          <button
+            type="button"
+            className={styles.toolBtn}
+            disabled={accepting || viewMode === 'preview' || !editor?.can().undo()}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                active.chain().focus().undo().run();
+              })
+            }
+            title="Desfazer (Ctrl+Z / ⌘Z)"
+            aria-label="Desfazer"
+          >
+            <Undo2 className="icon icon-sm" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className={styles.toolBtn}
+            disabled={accepting || viewMode === 'preview' || !editor?.can().redo()}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() =>
+              run((active) => {
+                active.chain().focus().redo().run();
+              })
+            }
+            title="Refazer (Ctrl+Shift+Z / ⌘Shift+Z)"
+            aria-label="Refazer"
+          >
+            <Redo2 className="icon icon-sm" aria-hidden="true" />
+          </button>
         </div>
-
         <div className={styles.toolGroup}>
           <AIActionMenu
-            onGetSelectedText={getSelectedText}
+            onGetSelectedText={captureSelection}
+            onGetContextText={() => text}
+            onCanApplyResult={() => !acceptingRef.current && canApplyResult()}
+            onApplyingChange={setApplying}
             loreEntities={entities}
             userId={userId}
             userCredits={userCredits}
             onCreditDeducted={onCreditDeducted}
             onShowOutOfCredits={() => setIsOutOfCreditsOpen(true)}
-            onInsertText={handleInsertText}
-            onReplaceSelection={handleReplaceSelection}
+            onInsertText={(value) => applyGeneratedText(value, false)}
+            onReplaceSelection={(value) => applyGeneratedText(value, true)}
             onOpenBYOKSettings={() => setIsBYOKSettingsOpen(true)}
           />
-
           <Button
             variant="secondary"
             onClick={() => setIsBYOKSettingsOpen(true)}
@@ -527,10 +579,11 @@ export function RichEditor({
           >
             <KeyRound className="icon icon-sm" aria-hidden="true" />
           </Button>
-
           <button
             type="button"
+            disabled={accepting}
             className={`${styles.modeBtn} ${viewMode === 'write' ? styles.modeBtnActive : ''}`}
+            aria-pressed={viewMode === 'write'}
             onClick={() => setViewMode('write')}
           >
             <Edit3 className="icon icon-sm" aria-hidden="true" />
@@ -538,13 +591,17 @@ export function RichEditor({
           </button>
           <button
             type="button"
+            disabled={accepting}
             className={`${styles.modeBtn} ${viewMode === 'preview' ? styles.modeBtnActive : ''}`}
-            onClick={() => setViewMode('preview')}
+            aria-pressed={viewMode === 'preview'}
+            onClick={() => {
+              discardSuggestion();
+              setViewMode('preview');
+            }}
           >
             <Eye className="icon icon-sm" aria-hidden="true" />
             <span>Leitura com Lore</span>
           </button>
-
           <Button
             variant={isSidebarOpen ? 'primary' : 'secondary'}
             onClick={onToggleSidebar}
@@ -558,7 +615,6 @@ export function RichEditor({
           </Button>
         </div>
       </div>
-
       {mentionedEntities.length > 0 && (
         <div className={styles.loreSummaryBar} aria-label="Entidades mencionadas neste capítulo">
           <span className={styles.loreSummaryLabel}>Lore no texto:</span>
@@ -580,58 +636,60 @@ export function RichEditor({
           </div>
         </div>
       )}
-
       <div className={styles.editorBody}>
-        {viewMode === 'write' ? (
-          <div className={styles.writeContainer}>
-            <textarea
-              ref={textareaRef}
-              className={styles.textarea}
-              value={content}
-              placeholder={placeholder}
-              onChange={handleChange}
-              onKeyDown={handleKeyDown}
-              aria-label="Área de escrita do capítulo"
-              spellCheck={true}
+        <div className={styles.writeContainer}>
+          {viewMode === 'preview' && editor?.isEmpty && (
+            <p className={styles.emptyPreview}>Nenhum texto escrito ainda.</p>
+          )}
+          <EditorContent
+            editor={editor}
+            className={viewMode === 'preview' ? styles.previewContainer : undefined}
+            aria-busy={accepting}
+          />
+          {viewMode === 'write' && suggestion && (
+            <GhostSuggestion
+              compact
+              suggestion={suggestion}
+              onAccept={() => void handleAcceptGhost()}
+              onDiscard={discardSuggestion}
+              isUsingBYOK={isUsingBYOK}
             />
-
-            {suggestion && (
-              <GhostSuggestion
-                suggestion={suggestion}
-                onAccept={() => void handleAcceptGhost()}
-                onDiscard={discardSuggestion}
-                isUsingBYOK={isUsingBYOK}
-              />
-            )}
-
-            {mentionState.isOpen && (
-              <div className={styles.mentionMenuWrapper}>
+          )}
+          {mention &&
+            createPortal(
+              <div className={styles.mentionMenuWrapper} style={menuPosition}>
                 <MentionMenu
-                  entities={mentionCandidates}
-                  query={mentionState.query}
-                  selectedIndex={mentionState.selectedIndex}
-                  onSelect={handleSelectMention}
-                  onHoverIndex={(idx) =>
-                    setMentionState((prev) => ({
-                      ...prev,
-                      selectedIndex: idx,
-                    }))
-                  }
+                  id={menuId}
+                  entities={candidates}
+                  query={mention.query}
+                  selectedIndex={activeIndex}
+                  onSelect={selectMention}
+                  onHoverIndex={setSelectedIndex}
+                  onCreate={canCreate ? createMention : undefined}
                 />
-              </div>
+              </div>,
+              document.body,
             )}
-          </div>
-        ) : (
-          <div className={styles.previewContainer}>
-            {content.trim() ? (
-              renderAnnotatedContent(content, matches)
-            ) : (
-              <p className={styles.emptyPreview}>Nenhum texto escrito ainda.</p>
-            )}
-          </div>
-        )}
+        </div>
       </div>
-
+      {hover &&
+        createPortal(
+          <div
+            className={styles.inlineTooltip}
+            role="tooltip"
+            style={{ left: hover.left, top: hover.top }}
+          >
+            <strong>{hover.entity.name}</strong>
+            <Badge variant={CATEGORY_BADGES[hover.entity.category]}>
+              {CATEGORY_LABELS[hover.entity.category]}
+            </Badge>
+            <p>{hover.entity.summary}</p>
+            {hover.entity.aliases.length > 0 && (
+              <small>Apelidos: {hover.entity.aliases.join(', ')}</small>
+            )}
+          </div>,
+          document.body,
+        )}
       <OutOfCreditsDialog
         open={isOutOfCreditsOpen}
         onClose={() => setIsOutOfCreditsOpen(false)}
@@ -640,7 +698,6 @@ export function RichEditor({
           setIsBYOKSettingsOpen(true);
         }}
       />
-
       <BYOKSettingsDialog open={isBYOKSettingsOpen} onClose={() => setIsBYOKSettingsOpen(false)} />
     </div>
   );

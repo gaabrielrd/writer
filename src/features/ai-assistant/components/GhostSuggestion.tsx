@@ -7,6 +7,7 @@ export interface GhostSuggestionProps {
   onAccept: () => void;
   onDiscard: () => void;
   isUsingBYOK?: boolean;
+  compact?: boolean;
 }
 
 export function GhostSuggestion({
@@ -14,6 +15,7 @@ export function GhostSuggestion({
   onAccept,
   onDiscard,
   isUsingBYOK = false,
+  compact = false,
 }: GhostSuggestionProps) {
   if (!suggestion) return null;
 
@@ -24,7 +26,7 @@ export function GhostSuggestion({
       aria-label="Sugestão de IA para continuação do texto"
     >
       <Sparkles className={`icon icon-sm ${styles.icon}`} aria-hidden="true" />
-      <span className={styles.text}>{suggestion}</span>
+      <span className={compact ? 'sr-only' : styles.text}>{suggestion}</span>
       <div className={styles.actions}>
         <span className={styles.keyHint} title="Pressione Tab no teclado">
           Tab

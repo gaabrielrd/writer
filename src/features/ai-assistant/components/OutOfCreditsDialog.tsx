@@ -27,7 +27,8 @@ export function OutOfCreditsDialog({ open, onClose, onOpenBYOKSettings }: OutOfC
           </div>
           <p className={styles.cardText}>
             Adicione sua chave pessoal da OpenAI ou Google Gemini para continuar usando o assistente
-            de forma ilimitada sem consumir créditos da plataforma.
+            sem consumir créditos da plataforma. Os limites e cobranças do provedor continuam
+            válidos.
           </p>
           <Button
             variant="primary"

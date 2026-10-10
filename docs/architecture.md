@@ -101,7 +101,7 @@ As rotas ficam em `app/routes`, que exporta `routes` (a árvore, montável com `
 
 A rota raiz registra um `errorElement`, então um erro de renderização no layout ou em qualquer rota filha vira uma tela de falha, nunca tela branca. Uma rota curinga (`path: '*'`) atende endereços desconhecidos dentro do layout — mantenha-a como último filho ao acrescentar rotas.
 
-O `ErrorBoundary` de `@vitru/styleguide` não envolve o `<Outlet />`, para não sombrear o `errorElement`. Use-o para isolar um widget arriscado dentro de uma página.
+Um `ErrorBoundary` adicional não envolve o `<Outlet />`, para não sombrear o `errorElement`. Use-o para isolar um widget arriscado dentro de uma página.
 
 ## Configuração de ambiente
 
@@ -109,23 +109,11 @@ Toda leitura de `import.meta.env` passa por `shared/config/env.ts`. As variávei
 
 ## Estilo e identidade visual
 
-Estilização por CSS Modules ([ADR 0005](decisions/0005-css-modules.md)), com os
-valores fornecidos por `@vitru/styleguide/tokens.css`
-([ADR 0011](decisions/0011-design-tokens-and-styleguide.md)). Cor, tipografia,
-espaçamento, raio, sombra e movimento vêm de tokens; nenhum CSS de componente
-declara cor literal. Archivo vem do pacote; os arquivos licenciados da TheMix
-ficam apenas no projeto consumidor, em `public/fonts/`
-([ADR 0013](decisions/0013-official-fonts.md)). O tema padrão é `vitru`, aplicado pelo atributo
-`data-theme` no `index.html`.
-
-As telas são montadas com o kit de `@vitru/styleguide` (cabeçalho, blocos,
-campos, tabela, avisos, modal e os estados de carregando, vazio e erro), que já
-consome os tokens e traz a semântica de acessibilidade esperada
-([ADR 0012](decisions/0012-component-kit-and-visual-guardrails.md)). O subpath
-`@vitru/styleguide/showcase` renderiza tokens e kit em `/styleguide` e serve de
-referência viva para pessoas e agentes. Ícones vêm de `lucide-react`. As regras
-completas estão em [styleguide.md](styleguide.md) e `npm run check:styleguide`
-avisa quando são quebradas.
+A interface usa componentes locais em `src/shared/ui`, Radix UI e Tailwind/CSS
+Modules com tokens semânticos em `src/styles/globals.css`. Há um único
+`ThemeProvider` e três temas (claro, escuro e sépia), mantendo o estúdio de escrita
+caramelo/café aprovado. A rota `/styleguide` é a referência viva. Ícones vêm de
+`lucide-react`; veja [styleguide.md](styleguide.md).
 
 ## Estado
 
@@ -175,14 +163,28 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
 
 - **Autenticação:** O cliente autentica via Firebase Auth SDK; o UID do usuário é utilizado como chave de partição nos dados no Firestore (`users/{uid}` e consultas com filtro `authorId == uid`).
 - **Livros e Lore:** Cada livro é um documento na coleção `books/{bookId}` com subcoleções `chapters` e `lore`. Leituras e gravações passam estritamente por serviços dedicados em cada feature (`services/`).
-- **Cache Offline:** O SDK do Firestore mantém cache local ativo para tolerância a falhas momentâneas de conexão.
+- **Cache Offline:** `initializeFirestore` usa cache persistente multiaba do SDK
+  (fallback em memória quando IndexedDB não está disponível). O editor preserva
+  rascunhos locais por usuário/livro/capítulo, serializa gravações e oferece escolha
+  explícita ao encontrar uma cópia local diferente; nunca escolhe pelo relógio.
+- **Publicação:** originais em `books` e suas subcoleções são privados. Somente
+  projeções permitidas em `publicBooks`, com revisões imutáveis, são lidas sem
+  login. Publicar exige ação explícita e nome público escolhido; editar o rascunho
+  não publica automaticamente. Revogar lore público retira a publicação inteira
+  atomicamente. Veja [publication-security.md](publication-security.md).
 - **Chave BYOK:** Armazenada estritamente em `localStorage` do navegador do cliente através de repositório isolado em `src/features/ai-assistant/services/byokStorage.ts`.
 
 ### Exportações
 
 - **Markdown:** Compilação direta do texto e metadados no cliente para arquivo `.md`.
-- **DOCX:** Conversão client-side gerando arquivo `.docx` para download.
-- **PDF:** Estilização com folha de estilo de impressão limpa (`@media print`) acionada via diálogo nativo do navegador.
+- **DOCX:** OOXML real empacotado client-side com JSZip, com estilos, listas e quebras de capítulo.
+- **PDF:** Documento isolado com folha de impressão limpa (`@media print`), aberto
+  no diálogo nativo para imprimir ou salvar como PDF.
+- **Backup JSON:** exportação privada do livro completo, incluindo capítulos,
+  fichas, notas e relações; não inclui chaves BYOK ou perfil de autenticação.
+- **Conteúdo:** Markdown legado e HTML importado passam pelo mesmo sanitizador;
+  o editor transacional persiste HTML somente após edição. Veja
+  [ADR 0015](decisions/0015-transactional-rich-editor.md).
 
 ### Restrições e trade-offs
 

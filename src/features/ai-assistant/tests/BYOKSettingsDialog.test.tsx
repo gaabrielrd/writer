@@ -7,7 +7,7 @@ vi.mock('../services/byokStorage');
 
 describe('BYOKSettingsDialog component', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     vi.mocked(byokStorageModule.getBYOKConfig).mockReturnValue({
       provider: 'firebase_ai',
     });
@@ -98,5 +98,26 @@ describe('BYOKSettingsDialog component', () => {
     if (form) fireEvent.submit(form);
 
     expect(screen.getByText(/Chave de API da OpenAI é obrigatória/i)).toBeInTheDocument();
+  });
+  it('does not claim success when the browser cannot store or delete credentials', () => {
+    vi.mocked(byokStorageModule.saveBYOKConfig).mockImplementationOnce(() => {
+      throw new Error('Armazenamento bloqueado');
+    });
+    vi.mocked(byokStorageModule.clearBYOKConfig).mockImplementationOnce(() => {
+      throw new Error('Exclusão bloqueada');
+    });
+    const changed = vi.fn();
+    render(<BYOKSettingsDialog open onClose={vi.fn()} onConfigChanged={changed} />);
+    fireEvent.change(screen.getByLabelText(/Provedor de IA/), { target: { value: 'openai_byok' } });
+    fireEvent.change(screen.getByLabelText(/Chave de API da OpenAI/), {
+      target: { value: 'test-key' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Salvar Preferências/ }));
+    expect(screen.getByText('Armazenamento bloqueado')).toBeInTheDocument();
+    expect(screen.queryByText(/Configurações salvas com sucesso/)).not.toBeInTheDocument();
+    expect(changed).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: /Restaurar Padrão/ }));
+    expect(screen.getByText('Exclusão bloqueada')).toBeInTheDocument();
+    expect(changed).not.toHaveBeenCalled();
   });
 });

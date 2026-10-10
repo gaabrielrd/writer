@@ -52,3 +52,12 @@ Implementar a feature `lore` com o compêndio completo de entidades vinculado a 
 ## Riscos
 
 - Performance de regex/matching em textos longos: o `loreMatcher` deve compilar uma árvore de busca ou regex otimizada com limites de palavras (`\b`) para não degradar a digitação.
+
+## Compatibilidade e privacidade
+
+A ficha livre `details` é preservada para livros existentes. Novas seções de
+aparência, personalidade, histórico e notas ficam em `structuredDetails`, sem
+converter ou descartar texto legado. Descrições de relações são editáveis. A
+ficha, relações e notas nunca entram no leitor público. Tornar uma entidade
+pública privada, ou excluí-la, retira a publicação em uma transação antes de
+permitir uma nova versão sem a entidade.

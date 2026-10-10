@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { EditorPage } from '../components/EditorPage';
@@ -14,7 +14,7 @@ vi.mock('@/features/auth', async () => {
     ...actual,
     useAuth: vi.fn(() => ({
       user: {
-        id: 'auth-1',
+        uid: 'auth-1',
         email: 'autor@exemplo.com',
         name: 'Autor',
         tier: 'free',
@@ -23,6 +23,8 @@ vi.mock('@/features/auth', async () => {
         updatedAt: 1000,
       },
       loading: false,
+      updateUserCreditsState: vi.fn(),
+      setPendingEditorOperation: vi.fn(),
     })),
   };
 });
@@ -121,14 +123,16 @@ describe('EditorPage', () => {
     expect(screen.getByText('Salvo')).toBeInTheDocument();
 
     const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
-    expect(textarea).toHaveValue('Arthur caminhava ao entardecer.');
+    expect(textarea).toHaveTextContent('Arthur caminhava ao entardecer.');
   });
 
   it('permite abrir sidebar, criar entidade e navegar para proximo capitulo', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
     vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
-    vi.spyOn(bookService, 'getChapter').mockResolvedValue(mockChapters[0] ?? null);
+    vi.spyOn(bookService, 'getChapter').mockImplementation((_bookId, chapterId) =>
+      Promise.resolve(mockChapters.find((chapter) => chapter.id === chapterId) ?? null),
+    );
     vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue(mockEntities);
     vi.spyOn(loreService, 'createLoreEntity').mockResolvedValue({
       id: 'e-2',
@@ -159,34 +163,86 @@ describe('EditorPage', () => {
     const toggleBtn = screen.getByRole('button', { name: /compêndio/i });
     await user.click(toggleBtn);
 
-    expect(screen.getByRole('heading', { name: 'Compêndio de Lore' })).toBeInTheDocument();
+    const sidebar = screen.getByRole('complementary', {
+      name: 'Painel lateral do Compêndio de Lore',
+    });
+    expect(within(sidebar).getByRole('heading', { name: 'Compêndio de Lore' })).toBeInTheDocument();
 
     // Criar nova entidade via sidebar
     await user.click(screen.getByRole('button', { name: /nova entidade/i }));
-    await user.type(screen.getByLabelText(/nome da entidade/i), 'Guinevere');
-    await user.type(screen.getByLabelText(/resumo curto/i), 'Rainha');
+    const createDialog = await screen.findByRole('dialog', {
+      name: 'Cadastrar Nova Entidade no Compêndio',
+    });
+    await user.click(within(createDialog).getByLabelText(/nome da entidade/i));
+    await user.paste('Guinevere');
+    await user.click(within(createDialog).getByLabelText(/resumo curto/i));
+    await user.paste('Rainha');
     await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
 
+    await waitFor(() => expect(createDialog).not.toBeInTheDocument());
+    expect(await within(sidebar).findByText('Guinevere', { exact: true })).toBeInTheDocument();
     expect(loreService.createLoreEntity).toHaveBeenCalledWith(
       'b-1',
       expect.objectContaining({ name: 'Guinevere' }),
     );
 
     // Editar entidade via sidebar
-    const editBtns = screen.getAllByRole('button', { name: 'Editar' });
-    const editBtn = editBtns[0];
-    if (editBtn) await user.click(editBtn);
-
-    await user.type(screen.getByLabelText(/resumo curto/i), ' de Camelot');
+    const editBtns = within(sidebar).getAllByRole('button', { name: 'Editar' });
+    expect(editBtns).toHaveLength(2);
+    await user.click(editBtns[0]!);
+    const editDialog = await screen.findByRole('dialog', { name: 'Editar Entidade: Arthur' });
+    await user.click(within(editDialog).getByLabelText(/resumo curto/i));
+    await user.keyboard('{End}');
+    await user.paste(' de Camelot');
     await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+    await waitFor(() => expect(editDialog).not.toBeInTheDocument());
+    expect(await within(sidebar).findByText('Herdeiro do trono de Camelot')).toBeInTheDocument();
     expect(loreService.updateLoreEntity).toHaveBeenCalledWith(
       'b-1',
       'e-1',
-      expect.objectContaining({ name: 'Arthur' }),
+      expect.objectContaining({ name: 'Arthur', summary: 'Herdeiro do trono de Camelot' }),
     );
 
     // Navegação entre capítulos
     const nextBtn = screen.getByLabelText('Próximo capítulo');
     await user.click(nextBtn);
+    expect(await screen.findByText('Capítulo 2: A Espada')).toBeInTheDocument();
+    expect(screen.getByLabelText(/área de escrita do capítulo/i)).toHaveTextContent(
+      'A espada brilhava na pedra.',
+    );
   });
+  it.each(['Recuperar texto local', 'Manter versão salva'])(
+    'exige escolha explicita para rascunho divergente: %s',
+    async (choice) => {
+      const user = userEvent.setup({ delay: null });
+      vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+      vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+      vi.spyOn(bookService, 'getChapter').mockResolvedValue(mockChapters[0] ?? null);
+      vi.spyOn(bookService, 'updateChapter').mockResolvedValue();
+      vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue(mockEntities);
+      localStorage.setItem(
+        'writer:draft:auth-1:b-1:c-1',
+        JSON.stringify({ content: 'Texto local preservado', updatedAt: 1 }),
+      );
+      render(
+        <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+          <Routes>
+            <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+      expect(
+        await screen.findByRole('dialog', { name: 'Recuperar rascunho local?' }),
+      ).toBeInTheDocument();
+      expect(bookService.updateChapter).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText(/área de escrita do capítulo/i)).not.toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: choice }));
+      const editor = await screen.findByLabelText(/área de escrita do capítulo/i);
+      expect(editor).toHaveTextContent(
+        choice === 'Recuperar texto local'
+          ? 'Texto local preservado'
+          : 'Arthur caminhava ao entardecer.',
+      );
+    },
+  );
 });

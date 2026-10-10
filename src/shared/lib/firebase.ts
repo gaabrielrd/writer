@@ -1,6 +1,11 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from 'firebase/firestore';
 import {
   initializeAppCheck,
   ReCaptchaV3Provider,
@@ -19,7 +24,11 @@ export function getFirebaseApp(): FirebaseApp {
 
 export const firebaseApp: FirebaseApp = getFirebaseApp();
 export const auth: Auth = getAuth(firebaseApp);
-export const firestore: Firestore = getFirestore(firebaseApp);
+// The SDK falls back to memory when IndexedDB is unavailable. Public reading uses
+// server-only reads and never trusts this authoring cache for publication access.
+export const firestore: Firestore = initializeFirestore(firebaseApp, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+});
 
 export function getAppCheck(): AppCheck | null {
   if (typeof window === 'undefined' || !env.firebase.appCheckKey) {

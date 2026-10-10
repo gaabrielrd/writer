@@ -9,7 +9,7 @@ import {
   CloudOff,
   Loader2,
 } from 'lucide-react';
-import { Button, ErrorState, LoadingState } from '@/shared/ui';
+import { Button, Dialog, ErrorState, LoadingState } from '@/shared/ui';
 import { useAuth, CreditsBadge } from '@/features/auth';
 import { getBook, listChapters, getChapter, type Book, type Chapter } from '@/features/books';
 import {
@@ -20,33 +20,57 @@ import {
   type UpdateLoreEntityInput,
   type LoreEntity,
 } from '@/features/lore';
+import { clearLocalDraft, readLocalDraft } from '../services/localDraftStorage';
 import { useAutoSave } from '../hooks/useAutoSave';
+import { BusyNavigationGuard } from './BusyNavigationGuard';
 import { RichEditor } from './RichEditor';
 import { EditorLoreSidebar } from './EditorLoreSidebar';
+import { ExportButton } from './ExportButton';
 import styles from './EditorPage.module.css';
 
 export function EditorPage() {
+  const { bookId, chapterId } = useParams();
+  const { user } = useAuth();
+  return <EditorSession key={`${user?.uid}:${bookId}:${chapterId}`} />;
+}
+
+function EditorSession() {
   const { bookId, chapterId } = useParams<{
     bookId: string;
     chapterId: string;
   }>();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, updateUserCreditsState, setPendingEditorOperation } = useAuth();
 
   const [book, setBook] = useState<Book | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [loreEntities, setLoreEntities] = useState<LoreEntity[]>([]);
 
+  const [recoveryDraft, setRecoveryDraft] = useState<string | null>(null);
   const [content, setContent] = useState<string>('');
   const [wordCount, setWordCount] = useState<number>(0);
-  const [overrideCredits, setOverrideCredits] = useState<number | null>(null);
-  const currentCredits = overrideCredits ?? user?.credits ?? 0;
+  const currentCredits = user?.credits ?? 0;
 
   const [loading, setLoading] = useState<boolean>(() => Boolean(bookId && chapterId));
   const [error, setError] = useState<string | null>(null);
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [isAcceptingAI, setIsAcceptingAI] = useState(false);
+  const handleBusyChange = useCallback(
+    (busy: boolean) => {
+      setIsAcceptingAI(busy);
+      setPendingEditorOperation(busy);
+    },
+    [setPendingEditorOperation],
+  );
+  useEffect(
+    () => () => {
+      setPendingEditorOperation(false);
+    },
+    [setPendingEditorOperation],
+  );
+  const [createEntityName, setCreateEntityName] = useState<string | null>(null);
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
 
   const handleSaved = useCallback((newCount: number) => {
@@ -57,11 +81,14 @@ export function EditorPage() {
     saveStatus,
     error: saveError,
     resetSavedContent,
+    saveNow,
   } = useAutoSave({
     bookId,
     chapterId,
     content,
     debounceMs: 1000,
+    ownerId: user?.uid,
+    enabled: chapter !== null,
     onSaved: handleSaved,
   });
 
@@ -90,7 +117,9 @@ export function EditorPage() {
         setChapters(chaptersData);
         setChapter(chapterData);
         const initialContent = chapterData.content || '';
+        const recovery = user?.uid ? readLocalDraft(user.uid, bookId, chapterId) : null;
         setContent(initialContent);
+        if (recovery && recovery.content !== initialContent) setRecoveryDraft(recovery.content);
         resetSavedContent(initialContent);
         setWordCount(chapterData.wordCount || 0);
         setLoreEntities(loreData);
@@ -107,7 +136,7 @@ export function EditorPage() {
     return () => {
       active = false;
     };
-  }, [bookId, chapterId, resetSavedContent]);
+  }, [bookId, chapterId, resetSavedContent, user?.uid]);
 
   const handleCreateLoreEntity = async (input: CreateLoreEntityInput) => {
     if (!bookId) return;
@@ -148,6 +177,55 @@ export function EditorPage() {
     );
   }
 
+  if (recoveryDraft !== null) {
+    return (
+      <Dialog
+        open
+        title="Recuperar rascunho local?"
+        onClose={() => {
+          void navigate('/');
+        }}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (user?.uid && bookId && chapterId)
+                  clearLocalDraft(user.uid, bookId, chapterId, recoveryDraft);
+                resetSavedContent(recoveryDraft);
+                void saveNow();
+                setRecoveryDraft(null);
+              }}
+            >
+              Manter versão salva
+            </Button>
+            <Button
+              onClick={() => {
+                setContent(recoveryDraft);
+                setRecoveryDraft(null);
+              }}
+            >
+              Recuperar texto local
+            </Button>
+          </>
+        }
+      >
+        <p>
+          Há uma cópia local não confirmada diferente da versão salva deste capítulo. Escolha qual
+          deseja continuar editando. Fechar mantém a cópia local e volta à biblioteca.
+        </p>
+        <p>
+          <strong>Versão salva:</strong>{' '}
+          {chapter.content.replace(/<[^>]*>/g, '').slice(0, 240) || 'Capítulo vazio'}
+        </p>
+        <p>
+          <strong>Rascunho local:</strong>{' '}
+          {recoveryDraft.replace(/<[^>]*>/g, '').slice(0, 240) || 'Capítulo vazio'}
+        </p>
+      </Dialog>
+    );
+  }
+
   // Encontra capítulo anterior e próximo para navegação sequencial
   const currentIndex = chapters.findIndex((c) => c.id === chapterId);
   const prevChapter = currentIndex > 0 ? chapters[currentIndex - 1] : null;
@@ -156,10 +234,17 @@ export function EditorPage() {
 
   return (
     <div className={styles.pageLayout}>
+      <BusyNavigationGuard busy={isAcceptingAI} />
+      {isAcceptingAI && (
+        <p role="status">Aguarde a sugestão ser incorporada antes de sair do capítulo.</p>
+      )}
       <header className={`${styles.topBar} glass-surface`}>
         <div className={styles.topBarLeft}>
           <Link
             to="/"
+            onClick={(event) => {
+              if (isAcceptingAI) event.preventDefault();
+            }}
             className={styles.backLink}
             title="Voltar para a lista de obras"
             aria-label="Voltar para a lista de obras"
@@ -175,6 +260,7 @@ export function EditorPage() {
         </div>
 
         <div className={styles.topBarRight}>
+          <ExportButton book={book} currentChapter={chapter} currentContent={content} />
           <CreditsBadge credits={currentCredits} tier={user?.tier || 'free'} />
 
           <div className={styles.saveStatusWrapper} aria-live="polite">
@@ -204,6 +290,11 @@ export function EditorPage() {
             )}
           </div>
 
+          {saveError && (
+            <Button variant="secondary" onClick={() => void saveNow()}>
+              Tentar salvar novamente
+            </Button>
+          )}
           <span className={styles.wordCounter}>
             <strong>{wordCount.toLocaleString('pt-BR')}</strong> palavras
           </span>
@@ -212,7 +303,7 @@ export function EditorPage() {
             <button
               type="button"
               className={styles.navBtn}
-              disabled={!prevChapter}
+              disabled={!prevChapter || isAcceptingAI}
               onClick={() => {
                 if (prevChapter) {
                   void navigate(`/books/${bookId}/editor/${prevChapter.id}`);
@@ -226,7 +317,7 @@ export function EditorPage() {
             <button
               type="button"
               className={styles.navBtn}
-              disabled={!nextChapter}
+              disabled={!nextChapter || isAcceptingAI}
               onClick={() => {
                 if (nextChapter) {
                   void navigate(`/books/${bookId}/editor/${nextChapter.id}`);
@@ -243,21 +334,29 @@ export function EditorPage() {
 
       <section className={styles.workspace} aria-label="Espaço de escrita">
         <RichEditor
+          onBusyChange={handleBusyChange}
+          documentId={chapter.id}
           content={content}
           onChange={setContent}
           entities={loreEntities}
           onSelectEntity={handleSelectEntity}
+          onCreateEntity={(name) => {
+            setCreateEntityName(name);
+            setIsSidebarOpen(true);
+          }}
           isSidebarOpen={isSidebarOpen}
           onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
           userId={user?.uid}
           userCredits={currentCredits}
-          onCreditDeducted={(newTotal) => setOverrideCredits(newTotal)}
+          onCreditDeducted={updateUserCreditsState}
         />
 
         <EditorLoreSidebar
           isOpen={isSidebarOpen}
           entities={loreEntities}
           selectedEntityId={selectedEntityId}
+          createEntityName={createEntityName}
+          onCreateRequestHandled={() => setCreateEntityName(null)}
           onClose={() => setIsSidebarOpen(false)}
           onCreateEntity={handleCreateLoreEntity}
           onUpdateEntity={handleUpdateLoreEntity}

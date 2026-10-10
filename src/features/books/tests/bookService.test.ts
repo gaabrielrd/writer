@@ -1,6 +1,21 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import * as firestoreModule from 'firebase/firestore';
 import {
+  beginBookDeletion,
+  finishBookDeletion,
+  deletePublicationRevisions,
+  unpublishBook,
+} from '../services/publicationService';
+
+vi.mock('@/shared/lib', () => ({ firestore: {} }));
+
+vi.mock('../services/publicationService', () => ({
+  unpublishBook: vi.fn(),
+  beginBookDeletion: vi.fn(),
+  finishBookDeletion: vi.fn(),
+  deletePublicationRevisions: vi.fn(),
+}));
+import {
   listBooksByAuthor,
   getBook,
   createBook,
@@ -113,15 +128,36 @@ describe('bookService', () => {
     });
 
     it('atualiza livro no Firestore', async () => {
-      await updateBook('book-1', { title: 'Novo Título', status: 'published' });
+      await updateBook('book-1', { title: 'Novo Título' });
 
       expect(firestoreModule.updateDoc).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ title: 'Novo Título', status: 'published' }),
+        expect.objectContaining({ title: 'Novo Título' }),
       );
     });
 
-    it('exclui livro e todos os seus capitulos associados', async () => {
+    it('impede publicação pelo antigo campo de status', async () => {
+      await expect(updateBook('book-1', { status: 'published' })).rejects.toThrow('publicação');
+      expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+    });
+
+    it('retira a publicação antes de mudar para rascunho', async () => {
+      await updateBook('book-1', { status: 'draft' });
+      expect(unpublishBook).toHaveBeenCalledWith('book-1');
+      expect(firestoreModule.updateDoc).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ status: 'draft' }),
+      );
+    });
+
+    it('não apaga originais se falhar a revogação pública', async () => {
+      vi.mocked(beginBookDeletion).mockRejectedValueOnce(new Error('offline'));
+      await expect(deleteBook('book-1')).rejects.toThrow('offline');
+      expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+      expect(deletePublicationRevisions).not.toHaveBeenCalled();
+    });
+
+    it('exclui livro, lore e todos os seus capitulos associados', async () => {
       vi.mocked(firestoreModule.getDocs).mockResolvedValue({
         docs: [
           {
@@ -133,7 +169,13 @@ describe('bookService', () => {
 
       await deleteBook('book-1');
 
-      expect(firestoreModule.deleteDoc).toHaveBeenCalledTimes(2); // 1 capitulo + 1 livro
+      expect(beginBookDeletion).toHaveBeenCalledWith('book-1');
+      expect(deletePublicationRevisions).toHaveBeenCalledWith('book-1');
+      expect(firestoreModule.deleteDoc).toHaveBeenCalledTimes(2); // capítulo e lore
+      expect(finishBookDeletion).toHaveBeenCalledWith('book-1');
+      expect(vi.mocked(beginBookDeletion).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(firestoreModule.deleteDoc).mock.invocationCallOrder[0]!,
+      );
     });
   });
 

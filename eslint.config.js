@@ -96,7 +96,7 @@ export default tseslint.config(
   {
     // Ferramentas do repositório: rodam no Node, fora do bundle da aplicação.
     // Sem este bloco, `eslint .` aplicaria configuração vazia a scripts/.
-    files: ['scripts/**/*.mjs', '*.config.{js,mjs}'],
+    files: ['scripts/**/*.mjs', 'tests/firestore/**/*.mjs', '*.config.{js,mjs}'],
     extends: [js.configs.recommended],
     languageOptions: {
       ecmaVersion: 2023,

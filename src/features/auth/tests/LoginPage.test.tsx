@@ -16,6 +16,8 @@ function renderLoginPage(authOverrides: Partial<AuthContextValue> = {}) {
     signUpWithEmail: vi.fn(),
     signOut: vi.fn(),
     updateUserCreditsState: vi.fn(),
+    pendingEditorOperation: false,
+    setPendingEditorOperation: vi.fn(),
     ...authOverrides,
   };
 

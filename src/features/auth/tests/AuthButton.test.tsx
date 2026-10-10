@@ -16,6 +16,8 @@ function renderWithAuth(authOverrides: Partial<AuthContextValue> = {}) {
     signUpWithEmail: vi.fn(),
     signOut: vi.fn(),
     updateUserCreditsState: vi.fn(),
+    pendingEditorOperation: false,
+    setPendingEditorOperation: vi.fn(),
     ...authOverrides,
   };
 
@@ -86,5 +88,27 @@ describe('AuthButton', () => {
       'https://exemplo.com/avatar.jpg',
     );
     expect(screen.getByText('Autor')).toBeInTheDocument();
+  });
+  it('disables sign-out until an accepted suggestion has been inserted', async () => {
+    const signOut = vi.fn();
+    renderWithAuth({
+      user: {
+        uid: 'u',
+        email: null,
+        displayName: 'Autora',
+        photoUrl: null,
+        credits: 10,
+        tier: 'free',
+        createdAt: 1,
+        updatedAt: 1,
+      },
+      pendingEditorOperation: true,
+      signOut,
+    });
+    const button = screen.getByRole('button', { name: 'Sair' });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute('title', expect.stringContaining('Aguarde'));
+    await userEvent.click(button);
+    expect(signOut).not.toHaveBeenCalled();
   });
 });

@@ -1,8 +1,8 @@
 .menu {
   position: absolute;
   z-index: 100;
-  width: 320px;
-  max-height: 280px;
+  width: min(320px, calc(100vw - 48px));
+  max-height: min(280px, calc(100vh - 24px));
   display: flex;
   flex-direction: column;
   background-color: var(--surface);

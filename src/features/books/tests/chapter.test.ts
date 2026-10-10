@@ -17,3 +17,11 @@ describe('chapter model & countWords', () => {
     );
   });
 });
+
+it('conta palavras renderizadas sem dividir marcacoes dentro da palavra', () => {
+  expect(countWords('<p>Ar<strong>th</strong>ur</p>')).toBe(1);
+  expect(countWords('<p>A &amp; B &copy;</p>')).toBe(2);
+  expect(countWords('Olá <nome>')).toBe(2);
+  expect(countWords('<p>Ação&nbsp;em <em>português</em></p><p>outro<br>bloco</p>')).toBe(5);
+  expect(countWords('<p>Visível</p><script>texto invisível</script>')).toBe(1);
+});

@@ -7,77 +7,79 @@ import {
 } from './fixtures/data';
 import type { VisualOptions } from './options';
 
-export const test = base.extend<VisualOptions>({
+// Automatic fixtures belong to the extended test type, unlike imported hooks,
+// whose registration can be cached with the first spec loaded in a worker.
+export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
   visualTheme: ['dark', { option: true }],
   authenticated: [true, { option: true }],
   libraryState: ['populated', { option: true }],
+  visualEnvironment: [
+    async (
+      { context, page, baseURL, visualTheme, authenticated, libraryState },
+      runTest,
+      testInfo,
+    ) => {
+      const blockedRequests: string[] = [];
+      const runtimeErrors: string[] = [];
+      page.on('pageerror', (error) => runtimeErrors.push(error.message));
+      // Defense in depth: fixture aliases and a same-origin CSP are also installed by Vite.
+      await context.route('**/*', async (route) => {
+        if (new URL(route.request().url()).origin !== baseURL) {
+          blockedRequests.push(route.request().url());
+          await route.abort('blockedbyclient');
+          return;
+        }
+        await route.continue();
+      });
+      await context.addInitScript(
+        ({ theme, isAuthenticated, sessionKey, dataState, dataStateKey }) => {
+          localStorage.setItem('writer_theme', theme);
+          localStorage.removeItem('writer_byok_config');
+          sessionStorage.setItem(sessionKey, String(isAuthenticated));
+          sessionStorage.setItem(dataStateKey, dataState);
+        },
+        {
+          theme: visualTheme,
+          isAuthenticated: authenticated,
+          sessionKey: FIXTURE_SESSION_KEY,
+          dataState: libraryState,
+          dataStateKey: FIXTURE_LIBRARY_STATE_KEY,
+        },
+      );
+      // Date must keep advancing: editor focus/composition guards compare elapsed time.
+      await page.clock.setSystemTime(new Date(FIXTURE_TIME));
+      await testInfo.attach('contexto-da-previa', {
+        body: JSON.stringify(
+          {
+            label: FIXTURE_LABEL,
+            source:
+              'Componentes e rotas reais; autenticação, livros, capítulos, lore e IA fictícios.',
+            theme: visualTheme,
+            libraryState,
+            viewport: testInfo.project.use.viewport,
+            productionBackend: 'desativado; rede externa bloqueada',
+          },
+          null,
+          2,
+        ),
+        contentType: 'application/json',
+      });
+      testInfo.annotations.push({ type: 'preview', description: FIXTURE_LABEL });
+      try {
+        await runTest();
+      } finally {
+        await testInfo.attach('isolamento-e-erros', {
+          body: JSON.stringify({ blockedRequests, runtimeErrors }, null, 2),
+          contentType: 'application/json',
+        });
+        expect.soft(blockedRequests, 'Nenhuma chamada externa deve ser necessária.').toEqual([]);
+        expect.soft(runtimeErrors, 'A interface deve renderizar sem exceções.').toEqual([]);
+      }
+    },
+    { auto: true },
+  ],
 });
 export { expect };
-
-test.beforeEach(
-  async ({ context, page, baseURL, visualTheme, authenticated, libraryState }, testInfo) => {
-    const blockedRequests: string[] = [];
-    const runtimeErrors: string[] = [];
-    page.on('pageerror', (error) => runtimeErrors.push(error.message));
-    // Defense in depth: fixture aliases and a same-origin CSP are also installed by Vite.
-    await context.route('**/*', async (route) => {
-      if (new URL(route.request().url()).origin !== baseURL) {
-        blockedRequests.push(route.request().url());
-        await route.abort('blockedbyclient');
-        return;
-      }
-      await route.continue();
-    });
-    await context.addInitScript(
-      ({ theme, isAuthenticated, sessionKey, dataState, dataStateKey }) => {
-        localStorage.setItem('writer_theme', theme);
-        localStorage.removeItem('writer_byok_config');
-        sessionStorage.setItem(sessionKey, String(isAuthenticated));
-        sessionStorage.setItem(dataStateKey, dataState);
-      },
-      {
-        theme: visualTheme,
-        isAuthenticated: authenticated,
-        sessionKey: FIXTURE_SESSION_KEY,
-        dataState: libraryState,
-        dataStateKey: FIXTURE_LIBRARY_STATE_KEY,
-      },
-    );
-    await page.clock.setFixedTime(new Date(FIXTURE_TIME));
-    await testInfo.attach('contexto-da-previa', {
-      body: JSON.stringify(
-        {
-          label: FIXTURE_LABEL,
-          source:
-            'Componentes e rotas reais; autenticação, livros, capítulos, lore e IA fictícios.',
-          theme: visualTheme,
-          libraryState,
-          viewport: testInfo.project.use.viewport,
-          productionBackend: 'desativado; rede externa bloqueada',
-        },
-        null,
-        2,
-      ),
-      contentType: 'application/json',
-    });
-    // Arrays are checked in a test-scoped teardown even when an earlier assertion fails.
-    testInfo.annotations.push({ type: 'preview', description: FIXTURE_LABEL });
-    networkEvidence.set(page, { blockedRequests, runtimeErrors });
-  },
-);
-
-const networkEvidence = new WeakMap<Page, { blockedRequests: string[]; runtimeErrors: string[] }>();
-
-test.afterEach(async ({ page }, testInfo) => {
-  const evidence = networkEvidence.get(page);
-  if (!evidence) return;
-  await testInfo.attach('isolamento-e-erros', {
-    body: JSON.stringify(evidence, null, 2),
-    contentType: 'application/json',
-  });
-  expect.soft(evidence.blockedRequests, 'Nenhuma chamada externa deve ser necessária.').toEqual([]);
-  expect.soft(evidence.runtimeErrors, 'A interface deve renderizar sem exceções.').toEqual([]);
-});
 
 export async function capture(page: Page, testInfo: TestInfo, name: string): Promise<void> {
   await page.evaluate(async (label) => {
@@ -105,6 +107,15 @@ export async function expectNoHorizontalOverflow(page: Page, name: string): Prom
     viewport: document.documentElement.clientWidth,
     content: Math.max(document.documentElement.scrollWidth, document.body.scrollWidth),
   }));
+  const requestedViewport = page.viewportSize();
+  expect
+    .soft(requestedViewport, `${name}: a largura solicitada deve estar configurada.`)
+    .not.toBeNull();
+  if (requestedViewport) {
+    expect
+      .soft(overflow.viewport, `${name}: o layout não deve ampliar a largura do dispositivo.`)
+      .toBeLessThanOrEqual(requestedViewport.width + 1);
+  }
   expect
     .soft(overflow.content, `${name}: a página não deve transbordar horizontalmente.`)
     .toBeLessThanOrEqual(overflow.viewport + 1);

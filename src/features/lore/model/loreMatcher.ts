@@ -76,15 +76,22 @@ export function findLoreMatches(text: string, entities: LoreEntity[]): LoreMatch
   const n = rawMatches.length;
   const weights = rawMatches.map((m) => Math.pow(m.endIndex - m.startIndex, 2));
 
-  // Encontra o último intervalo incompatível antes de i
+  // Busca binária do último intervalo compatível: O(n log n), mesmo em capítulos
+  // com milhares de repetições. Os candidatos já estão ordenados pelo fim.
   const p: number[] = new Array<number>(n).fill(-1);
   for (let i = 0; i < n; i++) {
-    for (let j = i - 1; j >= 0; j--) {
-      const prev = rawMatches[j];
-      const curr = rawMatches[i];
-      if (prev && curr && prev.endIndex <= curr.startIndex) {
-        p[i] = j;
-        break;
+    const current = rawMatches[i];
+    if (!current) continue;
+    let low = 0;
+    let high = i - 1;
+    while (low <= high) {
+      const middle = (low + high) >>> 1;
+      const previous = rawMatches[middle];
+      if (previous && previous.endIndex <= current.startIndex) {
+        p[i] = middle;
+        low = middle + 1;
+      } else {
+        high = middle - 1;
       }
     }
   }

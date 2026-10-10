@@ -96,3 +96,23 @@ describe('aiPrompt model', () => {
     });
   });
 });
+
+it('prioritizes lore mentioned by a name or alias over unrelated entities in a large compendium', () => {
+  const unrelated = Array.from({ length: 20 }, (_, index) => ({
+    name: `Pessoa ${index}`,
+    category: 'character',
+    summary: 'Outro personagem',
+  }));
+  const relevant = {
+    name: 'Elena',
+    aliases: ['Leni'],
+    category: 'character',
+    summary: 'Alquimista da cena',
+  };
+  const prompt = buildAutocompletePrompt({
+    textBeforeCursor: 'Leni abriu seu laboratório.',
+    loreEntities: [...unrelated, relevant],
+  });
+  expect(prompt.prompt).toContain('Elena (character): Alquimista da cena');
+  expect(prompt.prompt).not.toContain('Pessoa 19');
+});

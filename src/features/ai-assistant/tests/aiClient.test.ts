@@ -126,8 +126,10 @@ describe('aiClient service', () => {
 
       expect(result).toBe('Resposta direta Gemini.');
       expect(mockFetch).toHaveBeenCalledWith(
-        expect.stringContaining('key=AIzaSy12345'),
-        expect.anything(),
+        expect.stringContaining('/gemini-3.7-flash:generateContent'),
+        expect.objectContaining({
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': 'AIzaSy12345' },
+        }),
       );
     } finally {
       globalThis.fetch = originalFetch;
@@ -156,5 +158,34 @@ describe('aiClient service', () => {
     } finally {
       globalThis.fetch = originalFetch;
     }
+  });
+  it('passes cancellation into Firebase requests and rejects an already cancelled call', async () => {
+    const controller = new AbortController();
+    const generateContent = vi.fn().mockResolvedValue({ response: { text: () => 'Done' } });
+    vi.mocked(firebaseAIModule.getGenerativeModel).mockReturnValueOnce({
+      generateContent,
+    } as unknown as firebaseAIModule.GenerativeModel);
+    await generateAIResponse({
+      prompt: 'test',
+      byokConfig: { provider: 'firebase_ai' },
+      signal: controller.signal,
+    });
+    expect(generateContent).toHaveBeenCalledWith('test', { signal: controller.signal });
+    controller.abort();
+    await expect(
+      generateAIResponse({
+        prompt: 'test',
+        byokConfig: { provider: 'firebase_ai' },
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow();
+    expect(generateContent).toHaveBeenCalledOnce();
+  });
+
+  it('rejects malformed BYOK settings rather than using platform generation without a charge', async () => {
+    await expect(
+      generateAIResponse({ prompt: 'test', byokConfig: { provider: 'openai_byok' } }),
+    ).rejects.toThrow('obrigatória');
+    expect(firebaseAIModule.getGenerativeModel).not.toHaveBeenCalled();
   });
 });

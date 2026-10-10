@@ -199,9 +199,41 @@
   .sidebar {
     width: 100%;
     height: 480px;
+    /* A horizontal entrance expands mobile layout viewports before auto-zoom settles. */
+    animation-name: slideInMobile;
   }
   .closeBtn {
     min-width: 40px;
     min-height: 40px;
+  }
+}
+
+.fullRecord {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-2);
+  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+.fullRecord h4 {
+  margin: var(--space-2) 0;
+  font-weight: 600;
+}
+.fullRecord p {
+  white-space: pre-wrap;
+  margin: var(--space-2) 0;
+}
+.fullRecord ul {
+  padding-left: var(--space-4);
+}
+
+@keyframes slideInMobile {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }

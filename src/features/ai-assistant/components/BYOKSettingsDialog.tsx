@@ -34,14 +34,25 @@ export function BYOKSettingsDialog({ open, onClose, onConfigChanged }: BYOKSetti
       return;
     }
 
-    saveBYOKConfig(config);
-    setSuccess(true);
-    setError(null);
-    onConfigChanged?.(config);
+    try {
+      saveBYOKConfig(config);
+      setSuccess(true);
+      setError(null);
+      onConfigChanged?.(config);
+    } catch (error) {
+      setSuccess(false);
+      setError(error instanceof Error ? error.message : 'Não foi possível salvar as preferências.');
+    }
   };
 
   const handleResetToDefault = () => {
-    clearBYOKConfig();
+    try {
+      clearBYOKConfig();
+    } catch (error) {
+      setSuccess(false);
+      setError(error instanceof Error ? error.message : 'Não foi possível remover a chave.');
+      return;
+    }
     const defaultConfig: BYOKConfig = { provider: 'firebase_ai' };
     setConfig(defaultConfig);
     setSuccess(true);
@@ -54,7 +65,7 @@ export function BYOKSettingsDialog({ open, onClose, onConfigChanged }: BYOKSetti
       <form onSubmit={handleSubmit} className={styles.form}>
         <p className={styles.description}>
           Escolha se deseja usar a cota padrão da plataforma com Gemini 3.7 Flash ou conectar sua
-          própria chave de API (BYOK) para chamadas ilimitadas.
+          própria chave de API (BYOK), sujeita aos limites e cobranças do provedor.
         </p>
 
         {error && <Alert variant="danger">{error}</Alert>}
@@ -76,11 +87,11 @@ export function BYOKSettingsDialog({ open, onClose, onConfigChanged }: BYOKSetti
             },
             {
               value: 'gemini_byok',
-              label: 'Google Gemini API (Chave Própria — BYOK Ilimitado)',
+              label: 'Google Gemini API (Chave Própria — BYOK)',
             },
             {
               value: 'openai_byok',
-              label: 'OpenAI API (Chave Própria — BYOK Ilimitado)',
+              label: 'OpenAI API (Chave Própria — BYOK)',
             },
           ]}
         />
@@ -102,7 +113,7 @@ export function BYOKSettingsDialog({ open, onClose, onConfigChanged }: BYOKSetti
             />
             <Input
               label="Modelo Personalizado (Opcional)"
-              placeholder="gemini-2.5-flash ou gemini-3.7-flash"
+              placeholder="gemini-3.7-flash"
               value={config.customModel || ''}
               onChange={(e) =>
                 setConfig((prev) => ({

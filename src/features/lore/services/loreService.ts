@@ -5,14 +5,15 @@ import {
   getDocs,
   setDoc,
   updateDoc,
-  deleteDoc,
   query,
   orderBy,
+  runTransaction,
 } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
 import type {
   CreateLoreEntityInput,
   LoreCategory,
+  LoreDetails,
   LoreEntity,
   LoreRelation,
   UpdateLoreEntityInput,
@@ -25,6 +26,7 @@ interface StoredLoreDoc {
   category: LoreCategory;
   summary: string;
   details?: string;
+  structuredDetails?: LoreDetails;
   relations?: LoreRelation[];
   isPublic: boolean;
   createdAt: number;
@@ -46,6 +48,7 @@ export async function listLoreEntities(bookId: string): Promise<LoreEntity[]> {
       category: data.category ?? 'other',
       summary: data.summary ?? '',
       details: data.details ?? '',
+      ...(data.structuredDetails ? { structuredDetails: data.structuredDetails } : {}),
       relations: Array.isArray(data.relations) ? data.relations : [],
       isPublic: data.isPublic ?? true,
       createdAt: data.createdAt ?? Date.now(),
@@ -71,6 +74,7 @@ export async function getLoreEntity(bookId: string, entityId: string): Promise<L
     category: data.category ?? 'other',
     summary: data.summary ?? '',
     details: data.details ?? '',
+    ...(data.structuredDetails ? { structuredDetails: data.structuredDetails } : {}),
     relations: Array.isArray(data.relations) ? data.relations : [],
     isPublic: data.isPublic ?? true,
     createdAt: data.createdAt ?? Date.now(),
@@ -93,6 +97,7 @@ export async function createLoreEntity(
     category: input.category,
     summary: input.summary.slice(0, 140).trim(),
     details: input.details?.trim() || '',
+    ...(input.structuredDetails ? { structuredDetails: input.structuredDetails } : {}),
     relations: input.relations || [],
     isPublic: input.isPublic ?? true,
     createdAt: now,
@@ -128,13 +133,44 @@ export async function updateLoreEntity(
   if (input.category !== undefined) updates.category = input.category;
   if (input.summary !== undefined) updates.summary = input.summary.slice(0, 140).trim();
   if (input.details !== undefined) updates.details = input.details.trim();
+  if (input.structuredDetails !== undefined) updates.structuredDetails = input.structuredDetails;
   if (input.relations !== undefined) updates.relations = input.relations;
   if (input.isPublic !== undefined) updates.isPublic = input.isPublic;
 
+  if (input.isPublic === false) {
+    await runTransaction(firestore, async (transaction) => {
+      const current = await transaction.get(entityDocRef);
+      const bookRef = doc(firestore, 'books', bookId);
+      const book = await transaction.get(bookRef);
+      if (current.exists() && current.data().isPublic === true) {
+        transaction.update(doc(firestore, 'books', bookId), {
+          status: 'draft',
+          updatedAt: Date.now(),
+          publicationPrivacyVersion: (Number(book.data()?.publicationPrivacyVersion) || 0) + 1,
+        });
+        transaction.delete(doc(firestore, 'publicBooks', bookId));
+      }
+      transaction.update(entityDocRef, updates);
+    });
+    return;
+  }
   await updateDoc(entityDocRef, updates);
 }
 
 export async function deleteLoreEntity(bookId: string, entityId: string): Promise<void> {
   const entityDocRef = doc(firestore, 'books', bookId, 'lore', entityId);
-  await deleteDoc(entityDocRef);
+  await runTransaction(firestore, async (transaction) => {
+    const current = await transaction.get(entityDocRef);
+    const bookRef = doc(firestore, 'books', bookId);
+    const book = await transaction.get(bookRef);
+    if (current.exists() && current.data().isPublic === true) {
+      transaction.update(doc(firestore, 'books', bookId), {
+        status: 'draft',
+        updatedAt: Date.now(),
+        publicationPrivacyVersion: (Number(book.data()?.publicationPrivacyVersion) || 0) + 1,
+      });
+      transaction.delete(doc(firestore, 'publicBooks', bookId));
+    }
+    transaction.delete(entityDocRef);
+  });
 }

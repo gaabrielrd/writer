@@ -11,6 +11,12 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
+import {
+  beginBookDeletion,
+  deletePublicationRevisions,
+  finishBookDeletion,
+  unpublishBook,
+} from './publicationService';
 import type { Book, CreateBookInput, UpdateBookInput } from '../model/book';
 import {
   countWords,
@@ -109,6 +115,10 @@ export async function createBook(authorId: string, input: CreateBookInput): Prom
 }
 
 export async function updateBook(bookId: string, input: UpdateBookInput): Promise<void> {
+  if (input.status === 'published') {
+    throw new Error('Use a publicação para revisar e disponibilizar uma cópia pública do livro.');
+  }
+  if (input.status === 'draft') await unpublishBook(bookId);
   const bookRef = doc(firestore, 'books', bookId);
   const dataToUpdate: Partial<StoredBookDoc> = {
     ...input,
@@ -118,12 +128,17 @@ export async function updateBook(bookId: string, input: UpdateBookInput): Promis
 }
 
 export async function deleteBook(bookId: string): Promise<void> {
-  // Exclui capítulos do sub-nível primeiro
-  const chapters = await listChapters(bookId);
-  await Promise.all(chapters.map((ch) => deleteChapter(bookId, ch.id)));
-
-  const bookRef = doc(firestore, 'books', bookId);
-  await deleteDoc(bookRef);
+  // Revoke public access first, even if a later cleanup operation fails.
+  await beginBookDeletion(bookId);
+  await deletePublicationRevisions(bookId);
+  const [chapters, lore] = await Promise.all([
+    getDocs(collection(firestore, 'books', bookId, 'chapters')),
+    getDocs(collection(firestore, 'books', bookId, 'lore')),
+  ]);
+  for (const snapshot of [...chapters.docs, ...lore.docs]) {
+    await deleteDoc(snapshot.ref);
+  }
+  await finishBookDeletion(bookId);
 }
 
 export async function listChapters(bookId: string): Promise<Chapter[]> {

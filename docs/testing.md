@@ -131,3 +131,22 @@ binários de navegador implicitamente.
 2. Rode em modo contínuo (`npm run test:watch`) e ajuste até passar.
 3. Se um teste falha após uma mudança de comportamento intencional, atualize o teste para o novo comportamento esperado.
 4. Se a falha for inesperada, corrija o código, não o teste.
+
+## Roadmap Writer e regras reais
+
+A [matriz de aceite](tasks/roadmap-acceptance.md) relaciona as tarefas 01–08 aos
+comportamentos e testes. `npm run test:rules` inicia somente um emulador Firestore
+local e roda as regras reais com identidades fictícias, inclusive anônimo, autor
+e intruso. Requer Java 21; o runner baixa uma versão oficial fixa do emulador e
+verifica SHA-256 antes de executar. Não depende do Firebase CLI nem acessa
+produção. O projeto de teste é sempre `demo-writer-rules`.
+
+A suíte visual estende os cenários existentes com leitor/publicação e exportação
+nos três temas e em desktop/mobile. Ela anexa DOCX, PDF gerado pelo Chromium a
+partir do documento de impressão e imagens para revisão. A confirmação do
+diálogo nativo de impressão continua pertencendo ao navegador/usuário.
+
+`npm run validate` mantém os limites de cobertura; os testes unitários usam dois
+workers para evitar saturação de memória/CPU em máquinas compartilhadas. Não há
+redução de limites, desativação de testes ou regeneração automática das imagens
+de referência para esconder regressões.

@@ -44,7 +44,6 @@ describe('EditorLoreSidebar', () => {
       <EditorLoreSidebar
         isOpen={true}
         entities={mockEntities}
-        selectedEntityId="e-1"
         onClose={onClose}
         onCreateEntity={onCreateEntity}
         onUpdateEntity={onUpdateEntity}
@@ -146,6 +145,42 @@ describe('EditorLoreSidebar', () => {
 
     await user.click(screen.getByRole('button', { name: /editar ficha/i }));
     expect(screen.getByRole('heading', { name: /editar entidade: merlin/i })).toBeInTheDocument();
+  });
+
+  it('exibe ficha completa do termo selecionado mesmo com filtro ativo', async () => {
+    const user = userEvent.setup();
+    const props = {
+      isOpen: true,
+      entities: mockEntities,
+      onClose: vi.fn(),
+      onCreateEntity: vi.fn(),
+      onUpdateEntity: vi.fn(),
+    };
+    const { rerender } = render(<EditorLoreSidebar {...props} />);
+    await user.click(screen.getByRole('button', { name: 'Locais' }));
+    rerender(<EditorLoreSidebar {...props} selectedEntityId="e-1" />);
+    expect(screen.getByRole('region', { name: 'Ficha completa de Merlin' })).toHaveTextContent(
+      'Grande conhecedor dos segredos antigos',
+    );
+  });
+
+  it('abre criação com nome da menção e encerra solicitação ao cancelar', async () => {
+    const user = userEvent.setup();
+    const handled = vi.fn();
+    render(
+      <EditorLoreSidebar
+        isOpen
+        entities={mockEntities}
+        createEntityName="Galahad"
+        onCreateRequestHandled={handled}
+        onClose={vi.fn()}
+        onCreateEntity={vi.fn()}
+        onUpdateEntity={vi.fn()}
+      />,
+    );
+    expect(screen.getByLabelText(/nome da entidade/i)).toHaveValue('Galahad');
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(handled).toHaveBeenCalledOnce();
   });
 
   it('retorna null quando isOpen e falso', () => {

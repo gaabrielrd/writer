@@ -8,6 +8,8 @@ import {
   deleteLoreEntity,
 } from '../services/loreService';
 
+const transaction = vi.hoisted(() => ({ get: vi.fn(), update: vi.fn(), delete: vi.fn() }));
+
 vi.mock('firebase/firestore', () => {
   return {
     collection: vi.fn(),
@@ -19,6 +21,10 @@ vi.mock('firebase/firestore', () => {
     deleteDoc: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
+    runTransaction: vi.fn(
+      (_db: unknown, callback: (value: typeof transaction) => Promise<unknown>) =>
+        callback(transaction),
+    ),
   };
 });
 
@@ -29,6 +35,7 @@ vi.mock('@/shared/lib', () => ({
 describe('loreService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    transaction.get.mockResolvedValue({ exists: () => true, data: () => ({ isPublic: false }) });
   });
 
   it('lista entidades de lore de um livro', async () => {
@@ -123,7 +130,7 @@ describe('loreService', () => {
       isPublic: false,
     });
 
-    expect(firestoreModule.updateDoc).toHaveBeenCalledWith(
+    expect(transaction.update).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
         name: 'Arthur Pendragon',
@@ -137,6 +144,44 @@ describe('loreService', () => {
   it('exclui entidade de lore', async () => {
     await deleteLoreEntity('b-1', 'e-1');
 
-    expect(firestoreModule.deleteDoc).toHaveBeenCalledTimes(1);
+    expect(transaction.delete).toHaveBeenCalledTimes(1);
   });
+});
+
+it('revoga publicacao na mesma transacao ao tornar lore publico privado', async () => {
+  vi.clearAllMocks();
+  transaction.get.mockResolvedValue({ exists: () => true, data: () => ({ isPublic: true }) });
+  await updateLoreEntity('book', 'lore', { isPublic: false });
+  expect(transaction.update).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ status: 'draft' }),
+  );
+  expect(transaction.update).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ isPublic: false }),
+  );
+  expect(transaction.delete).toHaveBeenCalledTimes(1);
+});
+it('remove publicacao antes de excluir entidade anteriormente publica', async () => {
+  vi.clearAllMocks();
+  transaction.get.mockResolvedValue({ exists: () => true, data: () => ({ isPublic: true }) });
+  await deleteLoreEntity('book', 'lore');
+  expect(transaction.update).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ status: 'draft' }),
+  );
+  expect(transaction.delete).toHaveBeenCalledTimes(2);
+});
+it('preserva campos privados estruturados sem mudar publicacao em edicao comum', async () => {
+  vi.clearAllMocks();
+  await updateLoreEntity('book', 'lore', {
+    structuredDetails: { appearance: 'A', personality: 'P', history: 'H', notes: 'segredo' },
+  });
+  expect(firestoreModule.updateDoc).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      structuredDetails: { appearance: 'A', personality: 'P', history: 'H', notes: 'segredo' },
+    }),
+  );
+  expect(transaction.get).not.toHaveBeenCalled();
 });
