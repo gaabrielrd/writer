@@ -1,6 +1,6 @@
-import { LogIn, LogOut, User } from 'lucide-react';
+import { ChevronDown, LogIn, LogOut, User } from 'lucide-react';
 import { Link } from 'react-router';
-import { Button } from '@/shared/ui';
+import { Button, Dropdown, DropdownItem, DropdownLabel } from '@/shared/ui';
 import { useAuth } from '../hooks/useAuth';
 import styles from './AuthButton.module.css';
 
@@ -30,20 +30,26 @@ export function AuthButton() {
   const initial = displayName.charAt(0).toUpperCase();
 
   return (
-    <div className={styles.container}>
-      <div className={styles.profile} title={user.email ?? displayName}>
-        {user.photoUrl ? (
-          <img src={user.photoUrl} alt={`Foto de ${displayName}`} className={styles.avatar} />
-        ) : (
-          <span className={styles.avatarFallback}>
-            {initial || <User className="icon icon-sm" aria-hidden="true" />}
-          </span>
-        )}
-        <span className={styles.name}>{displayName}</span>
-      </div>
-      <Button
-        variant="secondary"
-        onClick={() => {
+    <Dropdown
+      label="Sua conta"
+      align="end"
+      trigger={
+        <Button variant="ghost" className={styles.profile}>
+          {user.photoUrl ? (
+            <img src={user.photoUrl} alt={`Foto de ${displayName}`} className={styles.avatar} />
+          ) : (
+            <span className={styles.avatarFallback}>
+              {initial || <User className="icon icon-sm" aria-hidden="true" />}
+            </span>
+          )}
+          <span className={styles.name}>{displayName}</span>
+          <ChevronDown className="icon icon-sm" aria-hidden="true" />
+        </Button>
+      }
+    >
+      <DropdownLabel>{user.email ?? displayName}</DropdownLabel>
+      <DropdownItem
+        onSelect={() => {
           void Promise.resolve(signOut()).catch(() => {});
         }}
         disabled={pendingEditorOperation}
@@ -55,7 +61,7 @@ export function AuthButton() {
       >
         <LogOut className="icon icon-sm" aria-hidden="true" />
         Sair
-      </Button>
-    </div>
+      </DropdownItem>
+    </Dropdown>
   );
 }

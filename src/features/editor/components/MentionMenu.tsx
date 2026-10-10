@@ -104,6 +104,9 @@ export function MentionMenu({
             >
               <div className={styles.itemHeader}>
                 <strong className={styles.itemName}>{entity.name}</strong>
+                <Badge variant="secondary">
+                  {entity.universeId ? 'Lore global' : 'Lore local'}
+                </Badge>
                 <Badge variant={CATEGORY_BADGES[entity.category]}>
                   {CATEGORY_LABELS[entity.category]}
                 </Badge>

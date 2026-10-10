@@ -139,3 +139,23 @@ informando o nome público. Livros legados com status publicado continuam editá
 projeção; essa compatibilidade não torna seus originais públicos.
 Não se deve manter o antigo acesso público aos
 originais como compatibilidade temporária.
+
+## Consentimento de lore compartilhado
+
+Livros vinculados publicam uma projeção de lore local e global com metadados de
+versão 2. Os originais do universo continuam privados. `sourceEntityId` em uma
+projeção global permite verificar consentimento sem publicar fichas ou notas.
+
+A revisão e o apontador capturam `universeId` e `universePrivacyVersion`. O
+marcador `publicUniversePrivacy/{universeId}` contém apenas versão e estado ativo.
+Excluir lore público global ou torná-lo privado incrementa a versão na transação
+da mutação. Regras recusam apontadores/revisões antigos e o leitor observa o
+marcador para retirar conteúdo exibido. Restaurar um apontador antigo não
+reativa acesso. O status salvo dos livros pode continuar publicado até uma ação
+explícita do autor; a versão decide a disponibilidade real.
+
+Trocar ou remover o universo retira a publicação do livro na própria transação
+do vínculo. A publicação revalida vínculo e versões para evitar preparar uma
+revisão sobre lore alterado em paralelo. Termos locais privados vencem conflitos
+antes da projeção, impedindo tooltips globais alternativos para esses termos.
+Veja [universos](shared-lore.md) e [ADR 0018](decisions/0018-shared-universes-and-lore.md).

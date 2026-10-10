@@ -2,11 +2,13 @@ export type BookStatus = 'draft' | 'published';
 
 export interface Book {
   id: string;
+  universeId?: string | null;
   authorId: string;
   title: string;
   genre?: string;
   synopsis?: string;
   coverUrl?: string | null;
+  coverImageId?: string | null;
   status: BookStatus;
   wordCount: number;
   createdAt: number;
@@ -14,16 +16,22 @@ export interface Book {
 }
 
 export interface CreateBookInput {
+  universeId?: string | null;
+  creationId?: string;
+  coverGenerationId?: string;
   title: string;
   genre?: string;
   synopsis?: string;
   coverUrl?: string | null;
+  coverImageId?: string | null;
 }
 
 export interface UpdateBookInput {
+  universeId?: string | null;
   title?: string;
   genre?: string;
   synopsis?: string;
   coverUrl?: string | null;
+  coverImageId?: string | null;
   status?: BookStatus;
 }

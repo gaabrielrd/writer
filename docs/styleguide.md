@@ -45,12 +45,24 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 - `Select`: Menu de seleção acessível.
 - `Badge`: Pílulas de identificação e status (`default`, `secondary`, `accent`, `success`, `destructive`, `outline`).
 - `Card`: Agrupamento de conteúdo (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`).
+- `Dropdown`, `DropdownItem`, `DropdownLabel`: Menus acessíveis de navegação e conta.
+- `Tooltip`: Dicas por hover, foco e toque.
 - `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog.
 - `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).
 - `LoadingState`, `EmptyState`, `ErrorState`: Estados padrão de ciclo de vida.
 - `PageHeader`: Cabeçalho padrão de páginas com suporte a breadcrumbs e ações.
 - `Table`: Tabelas responsivas estilizadas.
 - `StyleguidePage`: Página viva do catálogo acessível em `/styleguide`.
+
+## Favicon
+
+O favicon em `public/writer-favicon.svg` usa a pena `Feather` do Lucide, o mesmo símbolo
+do cabeçalho, sobre um quadrado bronze com cantos arredondados. As cores fixas do
+asset reproduzem os tokens `--primary` (26 48% 36%) e `--background` (40 20% 97%)
+do tema claro; o SVG independente não herda o CSS da aplicação. O fundo mantém o
+contraste em abas claras e escuras, e os traços reforçados favorecem tamanhos pequenos.
+A referência em `index.html` usa um nome próprio para renovar o cache ao
+substituir a identidade anterior. O asset é servido localmente, sem fontes ou imagens externas.
 
 ## Verificação
 
@@ -80,10 +92,30 @@ Tripo integra o aplicativo.
   `prefers-reduced-transparency` e `prefers-contrast: more` tornam o vidro opaco.
 - **Responsividade:** grades respeitam a largura disponível, barras de ferramentas
   quebram linhas e o compêndio aparece abaixo do manuscrito em telas estreitas.
+  Na biblioteca, cada livro tem largura máxima de 300 px e capa vertical na
+  proporção 2:3, inclusive sem imagem ou quando existe apenas uma obra. Capas
+  usam recorte proporcional sem distorção; os metadados podem quebrar linhas.
 - **Movimento:** entrada breve na apresentação, resposta de hover nos livros e
   abertura do painel contextual. Não há animação contínua atrás do editor.
+- **Criação de livro:** modal em três etapas (Livro, Sinopse, Capa), com progresso, Voltar/Continuar e foco no título da etapa. Sugestões exigem aceite explícito com preço visível. Prévia de capa em 2:3; criação manual disponível em falha da IA.
 
 Os tokens ficam em `src/styles/globals.css`; os três temas e a preferência do
 sistema continuam compartilhando um único provider. A suíte visual usa serviços
 fictícios em configuração exclusiva de teste, nunca um modo de demonstração no
 bundle de produção.
+
+O header usa navegação de bibliotecas à esquerda com breadcrumb do livro nas
+rotas privadas. O saldo mostra somente ícone e número, com detalhes no tooltip.
+Nome/avatar abre email e saída em dropdown. Imagens da biblioteca têm miniaturas
+2:3, carregamento tardio e controles de gerenciamento com rótulos acessíveis.
+
+Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
+
+## Fichas de lore por etapas
+
+Criação e edição de lore local/global usam quatro etapas: Identificação,
+Características, História e notas, Relações e visibilidade. O progresso fica
+visível, o foco acompanha o título da etapa e Voltar preserva campos. O conteúdo
+da etapa pode rolar em janelas pequenas, mantendo ações no rodapé do diálogo.
+Relações são editadas uma por vez; o escopo global é indicado antes dos campos.
+O novo fluxo usa os componentes e tokens existentes e os mesmos três temas.

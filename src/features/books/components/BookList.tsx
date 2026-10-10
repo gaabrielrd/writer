@@ -76,6 +76,7 @@ export function BookList({ authorId }: BookListProps) {
         />
 
         <BookFormDialog
+          key={authorId}
           open={isFormOpen}
           onClose={() => setIsFormOpen(false)}
           onSubmit={handleFormSubmit}
@@ -123,6 +124,7 @@ export function BookList({ authorId }: BookListProps) {
       </div>
 
       <BookFormDialog
+        key={authorId}
         open={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         onSubmit={handleFormSubmit}

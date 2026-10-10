@@ -9,8 +9,10 @@ import {
   query,
   where,
   orderBy,
+  runTransaction,
 } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
+import { createBookWithGeneratedCover, saveBookLibraryCover } from './generatedBookService';
 import {
   beginBookDeletion,
   deletePublicationRevisions,
@@ -26,11 +28,13 @@ import {
 } from '../model/chapter';
 
 interface StoredBookDoc {
+  universeId?: string | null;
   authorId: string;
   title: string;
   genre?: string;
   synopsis?: string;
   coverUrl?: string | null;
+  coverImageId?: string | null;
   status: 'draft' | 'published';
   wordCount: number;
   createdAt: number;
@@ -57,10 +61,12 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
     return {
       id: docSnap.id,
       authorId: data.authorId,
+      ...(data.universeId ? { universeId: data.universeId } : {}),
       title: data.title,
       genre: data.genre ?? '',
       synopsis: data.synopsis ?? '',
       coverUrl: data.coverUrl ?? null,
+      ...(data.coverImageId ? { coverImageId: data.coverImageId } : {}),
       status: data.status ?? 'draft',
       wordCount: data.wordCount ?? 0,
       createdAt: data.createdAt ?? Date.now(),
@@ -81,10 +87,12 @@ export async function getBook(bookId: string): Promise<Book | null> {
   return {
     id: snapshot.id,
     authorId: data.authorId,
+    ...(data.universeId ? { universeId: data.universeId } : {}),
     title: data.title,
     genre: data.genre ?? '',
     synopsis: data.synopsis ?? '',
     coverUrl: data.coverUrl ?? null,
+    ...(data.coverImageId ? { coverImageId: data.coverImageId } : {}),
     status: data.status ?? 'draft',
     wordCount: data.wordCount ?? 0,
     createdAt: data.createdAt ?? Date.now(),
@@ -93,8 +101,15 @@ export async function getBook(bookId: string): Promise<Book | null> {
 }
 
 export async function createBook(authorId: string, input: CreateBookInput): Promise<Book> {
+  if (input.coverGenerationId || input.coverImageId || input.universeId)
+    return createBookWithGeneratedCover({
+      ...input,
+      creationId: input.creationId ?? crypto.randomUUID(),
+    });
   const booksRef = collection(firestore, 'books');
-  const newDocRef = doc(booksRef);
+  if (input.creationId && !/^[a-zA-Z0-9-]{16,80}$/.test(input.creationId))
+    throw new Error('Identificador de criação inválido.');
+  const newDocRef = input.creationId ? doc(booksRef, input.creationId) : doc(booksRef);
   const now = Date.now();
 
   const newBook: Book = {
@@ -110,6 +125,18 @@ export async function createBook(authorId: string, input: CreateBookInput): Prom
     updatedAt: now,
   };
 
+  if (input.creationId) {
+    return runTransaction(firestore, async (transaction) => {
+      const existing = await transaction.get(newDocRef);
+      if (existing.exists()) {
+        const book = existing.data() as Book;
+        if (book.authorId !== authorId) throw new Error('Livro indisponível.');
+        return book;
+      }
+      transaction.set(newDocRef, newBook);
+      return newBook;
+    });
+  }
   await setDoc(newDocRef, newBook);
   return newBook;
 }
@@ -119,6 +146,10 @@ export async function updateBook(bookId: string, input: UpdateBookInput): Promis
     throw new Error('Use a publicação para revisar e disponibilizar uma cópia pública do livro.');
   }
   if (input.status === 'draft') await unpublishBook(bookId);
+  if ('coverImageId' in input || 'universeId' in input) {
+    await saveBookLibraryCover(bookId, input);
+    return;
+  }
   const bookRef = doc(firestore, 'books', bookId);
   const dataToUpdate: Partial<StoredBookDoc> = {
     ...input,

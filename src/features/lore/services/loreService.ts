@@ -8,14 +8,18 @@ import {
   query,
   orderBy,
   runTransaction,
+  onSnapshot,
 } from 'firebase/firestore';
-import { firestore } from '@/shared/lib';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { firestore, getFirebaseApp } from '@/shared/lib';
+import { asLoreScope, loreEntityDocumentId, universeEntityId } from '../model/loreScope';
 import type {
   CreateLoreEntityInput,
   LoreCategory,
   LoreDetails,
   LoreEntity,
   LoreRelation,
+  LoreScope,
   UpdateLoreEntityInput,
 } from '../model/loreEntity';
 
@@ -33,41 +37,14 @@ interface StoredLoreDoc {
   updatedAt: number;
 }
 
-export async function listLoreEntities(bookId: string): Promise<LoreEntity[]> {
-  const loreRef = collection(firestore, 'books', bookId, 'lore');
-  const q = query(loreRef, orderBy('name', 'asc'));
-  const snapshot = await getDocs(q);
-
-  return snapshot.docs.map((docSnap) => {
-    const data = docSnap.data() as StoredLoreDoc;
-    return {
-      id: docSnap.id,
-      bookId,
-      name: data.name ?? '',
-      aliases: Array.isArray(data.aliases) ? data.aliases : [],
-      category: data.category ?? 'other',
-      summary: data.summary ?? '',
-      details: data.details ?? '',
-      ...(data.structuredDetails ? { structuredDetails: data.structuredDetails } : {}),
-      relations: Array.isArray(data.relations) ? data.relations : [],
-      isPublic: data.isPublic ?? true,
-      createdAt: data.createdAt ?? Date.now(),
-      updatedAt: data.updatedAt ?? Date.now(),
-    };
-  });
+function loreCollection(source: string | LoreScope) {
+  const scope = asLoreScope(source);
+  return collection(firestore, scope.kind === 'book' ? 'books' : 'universes', scope.id, 'lore');
 }
 
-export async function getLoreEntity(bookId: string, entityId: string): Promise<LoreEntity | null> {
-  const entityDocRef = doc(firestore, 'books', bookId, 'lore', entityId);
-  const snap = await getDoc(entityDocRef);
-
-  if (!snap.exists()) {
-    return null;
-  }
-
-  const data = snap.data() as StoredLoreDoc;
+function mapLocal(id: string, bookId: string, data: Partial<StoredLoreDoc>): LoreEntity {
   return {
-    id: snap.id,
+    id,
     bookId,
     name: data.name ?? '',
     aliases: Array.isArray(data.aliases) ? data.aliases : [],
@@ -82,12 +59,108 @@ export async function getLoreEntity(bookId: string, entityId: string): Promise<L
   };
 }
 
+function mapGlobal(id: string, universeId: string, data: Partial<StoredLoreDoc>): LoreEntity {
+  return {
+    id: universeEntityId(universeId, id),
+    universeId,
+    name: data.name ?? '',
+    aliases: data.aliases ?? [],
+    category: data.category ?? 'other',
+    summary: data.summary ?? '',
+    details: data.details ?? '',
+    relations: data.relations ?? [],
+    isPublic: data.isPublic === true,
+    ...(data.structuredDetails ? { structuredDetails: data.structuredDetails } : {}),
+    createdAt: data.createdAt ?? 0,
+    updatedAt: data.updatedAt ?? 0,
+  };
+}
+
+async function globalCall<T>(name: string, data: unknown): Promise<T> {
+  try {
+    return (
+      await httpsCallable<unknown, T>(getFunctions(getFirebaseApp(), 'us-central1'), name)(data)
+    ).data;
+  } catch (cause) {
+    throw new Error(
+      cause instanceof Error
+        ? cause.message
+        : 'Não foi possível salvar o lore global. Tente novamente.',
+      { cause },
+    );
+  }
+}
+
+export function subscribeLoreEntities(
+  source: string | LoreScope,
+  onChange: (entities: LoreEntity[]) => void,
+  onError: (error: unknown) => void,
+) {
+  const scope = asLoreScope(source);
+  return onSnapshot(
+    query(loreCollection(source), orderBy('name', 'asc')),
+    (snapshot) => {
+      onChange(
+        snapshot.docs.map((item) =>
+          scope.kind === 'universe'
+            ? mapGlobal(item.id, scope.id, item.data())
+            : mapLocal(item.id, scope.id, item.data()),
+        ),
+      );
+    },
+    onError,
+  );
+}
+
+export async function listLoreEntities(source: string | LoreScope): Promise<LoreEntity[]> {
+  const scope = asLoreScope(source);
+  const bookId = scope.id;
+  const loreRef = loreCollection(source);
+  const q = query(loreRef, orderBy('name', 'asc'));
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((docSnap) => {
+    const data = docSnap.data() as StoredLoreDoc;
+    if (scope.kind === 'universe') return mapGlobal(docSnap.id, scope.id, data);
+    return mapLocal(docSnap.id, bookId, data);
+  });
+}
+
+export async function getLoreEntity(
+  source: string | LoreScope,
+  entityId: string,
+): Promise<LoreEntity | null> {
+  const scope = asLoreScope(source);
+  const bookId = scope.id;
+  const entityDocRef = doc(loreCollection(source), loreEntityDocumentId(scope, entityId));
+  const snap = await getDoc(entityDocRef);
+
+  if (!snap.exists()) {
+    return null;
+  }
+
+  const data = snap.data() as StoredLoreDoc;
+  if (scope.kind === 'universe') return mapGlobal(snap.id, scope.id, data);
+  return mapLocal(snap.id, bookId, data);
+}
+
 export async function createLoreEntity(
-  bookId: string,
+  source: string | LoreScope,
   input: CreateLoreEntityInput,
 ): Promise<LoreEntity> {
+  const scope = asLoreScope(source);
+  const bookId = scope.id;
+  if (scope.kind === 'universe')
+    return globalCall('saveUniverseLore', {
+      universeId: scope.id,
+      id: input.creationId ?? crypto.randomUUID(),
+      create: true,
+      input,
+    });
   const loreRef = collection(firestore, 'books', bookId, 'lore');
-  const newEntityDoc = doc(loreRef);
+  if (input.creationId && !/^[a-zA-Z0-9-]{16,80}$/.test(input.creationId))
+    throw new Error('Identificador de criação inválido.');
+  const newEntityDoc = input.creationId ? doc(loreRef, input.creationId) : doc(loreRef);
   const now = Date.now();
 
   const entityDocData: StoredLoreDoc = {
@@ -104,6 +177,13 @@ export async function createLoreEntity(
     updatedAt: now,
   };
 
+  if (input.creationId)
+    return runTransaction(firestore, async (transaction) => {
+      const existing = await transaction.get(newEntityDoc);
+      if (existing.exists()) return mapLocal(newEntityDoc.id, bookId, existing.data());
+      transaction.set(newEntityDoc, entityDocData);
+      return mapLocal(newEntityDoc.id, bookId, entityDocData);
+    });
   await setDoc(newEntityDoc, entityDocData);
 
   return {
@@ -116,10 +196,22 @@ export async function createLoreEntity(
 }
 
 export async function updateLoreEntity(
-  bookId: string,
+  source: string | LoreScope,
   entityId: string,
   input: UpdateLoreEntityInput,
 ): Promise<void> {
+  const scope = asLoreScope(source);
+  const bookId = scope.id;
+  if (scope.kind === 'universe') {
+    const existing = await getLoreEntity(source, entityId);
+    if (!existing) throw new Error('Entidade indisponível.');
+    await globalCall('saveUniverseLore', {
+      universeId: scope.id,
+      id: loreEntityDocumentId(scope, entityId),
+      input: { ...existing, ...input },
+    });
+    return;
+  }
   const entityDocRef = doc(firestore, 'books', bookId, 'lore', entityId);
 
   const updates: Partial<StoredLoreDoc> = {
@@ -157,7 +249,19 @@ export async function updateLoreEntity(
   await updateDoc(entityDocRef, updates);
 }
 
-export async function deleteLoreEntity(bookId: string, entityId: string): Promise<void> {
+export async function deleteLoreEntity(
+  source: string | LoreScope,
+  entityId: string,
+): Promise<void> {
+  const scope = asLoreScope(source);
+  const bookId = scope.id;
+  if (scope.kind === 'universe') {
+    await globalCall('deleteUniverseLore', {
+      universeId: scope.id,
+      id: loreEntityDocumentId(scope, entityId),
+    });
+    return;
+  }
   const entityDocRef = doc(firestore, 'books', bookId, 'lore', entityId);
   await runTransaction(firestore, async (transaction) => {
     const current = await transaction.get(entityDocRef);

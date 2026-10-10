@@ -10,6 +10,7 @@ import {
   type DocumentReference,
 } from 'firebase/firestore';
 import { firestore, renderRichText } from '@/shared/lib';
+import { preferredLoreTerms, universeEntityId } from '@/features/lore';
 
 const MAX_DOCUMENT_BYTES = 900_000;
 const WRITE_BATCH_SIZE = 400;
@@ -55,6 +56,48 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     getDocsFromServer(collection(firestore, 'books', bookId, 'chapters')),
     getDocsFromServer(collection(firestore, 'books', bookId, 'lore')),
   ]);
+  const universeId = book.universeId as string | undefined;
+  const universeRef = universeId ? doc(firestore, 'universes', universeId) : null;
+  const universe = universeRef ? (await getDocFromServer(universeRef)).data() : null;
+  if (
+    universeRef &&
+    (!universe ||
+      universe.authorId !== book.authorId ||
+      universe.deleting ||
+      !Number.isInteger(universe.privacyVersion) ||
+      !Number.isInteger(universe.loreVersion))
+  )
+    throw new Error('Universo indisponível para publicação.');
+  const globalLore = universeId
+    ? await getDocsFromServer(collection(firestore, 'universes', universeId, 'lore'))
+    : null;
+  const universeMetadata =
+    universeId && universe
+      ? { universeId, universePrivacyVersion: universe.privacyVersion as number }
+      : {};
+  const sources = [
+    ...loreSnapshot.docs.map((entity) => ({
+      id: entity.id,
+      sourceEntityId: undefined as string | undefined,
+      universeId: undefined as string | undefined,
+      data: entity.data(),
+    })),
+    ...(globalLore?.docs ?? []).map((entity) => ({
+      id: universeEntityId(universeId!, entity.id),
+      sourceEntityId: entity.id,
+      universeId,
+      data: entity.data(),
+    })),
+  ];
+  const winners = preferredLoreTerms(
+    sources.map((source) => ({
+      ...source,
+      name: typeof source.data.name === 'string' ? source.data.name : '',
+      aliases: Array.isArray(source.data.aliases)
+        ? source.data.aliases.filter((alias: unknown): alias is string => typeof alias === 'string')
+        : [],
+    })),
+  );
   const rootRef = doc(firestore, 'publicBooks', bookId);
   const revisionRef = doc(collection(rootRef, 'revisions'));
   const writes: { ref: DocumentReference; data: DocumentData }[] = [];
@@ -76,8 +119,8 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   }
 
   let publicLoreCount = 0;
-  for (const entity of loreSnapshot.docs) {
-    const data = entity.data();
+  for (const entity of sources) {
+    const data = entity.data;
     // Legacy/malformed documents without explicit consent remain private.
     if (data.isPublic !== true) continue;
     if (
@@ -90,11 +133,17 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     ) {
       throw new Error('Há uma entidade pública inválida. Revise seu resumo e seus apelidos.');
     }
+    const name = requiredText(data.name, 'O nome da entidade pública', 200);
+    // Never publish a global fallback for a term owned by private local lore.
+    if (winners.get(name.toLocaleLowerCase())?.id !== entity.id) continue;
     const projection = {
-      name: requiredText(data.name, 'O nome da entidade pública', 200),
-      aliases: data.aliases as string[],
+      name,
+      aliases: (data.aliases as string[]).filter(
+        (alias) => winners.get(alias.trim().toLocaleLowerCase())?.id === entity.id,
+      ),
       category: data.category as string,
       summary: data.summary,
+      ...(entity.sourceEntityId ? { sourceEntityId: entity.sourceEntityId } : {}),
     };
     writes.push({ ref: doc(collection(revisionRef, 'lore'), entity.id), data: projection });
     publicLoreCount += 1;
@@ -108,6 +157,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       chapterCount: chapterSnapshot.size,
       loreCount: publicLoreCount,
       privacyVersion,
+      ...universeMetadata,
     },
   });
   // Separate chapter/lore documents avoid the 1 MiB whole-book document limit.
@@ -121,10 +171,17 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
 
   await runTransaction(firestore, async (transaction) => {
     const latestBook = await transaction.get(bookRef);
+    const latestUniverse = universeRef ? (await transaction.get(universeRef)).data() : null;
     if (!latestBook.exists()) throw new Error('Livro não encontrado.');
     // Do not undo a concurrent unpublish or publish a stale manuscript.
     if (
       latestBook.data().updatedAt !== book.updatedAt ||
+      (latestBook.data().universeId ?? null) !== (universeId ?? null) ||
+      (universe &&
+        (!latestUniverse ||
+          latestUniverse.deleting ||
+          latestUniverse.privacyVersion !== universe.privacyVersion ||
+          latestUniverse.loreVersion !== universe.loreVersion)) ||
       latestBook.data().status !== book.status ||
       (latestBook.data().publicationPrivacyVersion ?? 0) !== privacyVersion ||
       latestBook.data().deleting === true
@@ -132,11 +189,12 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       throw new Error('O livro mudou durante a publicação. Revise e tente publicar novamente.');
     }
     transaction.set(rootRef, {
-      schemaVersion: 1,
+      schemaVersion: universeId ? 2 : 1,
       title,
       authorName: byline,
       revisionId: revisionRef.id,
       publishedAt,
+      ...universeMetadata,
     });
     transaction.update(bookRef, { status: 'published', updatedAt: publishedAt });
   });

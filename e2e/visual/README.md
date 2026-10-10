@@ -26,6 +26,8 @@ São seis projetos: desktop de 1440 × 1000 e mobile de 390 × 844, cada um em e
 
 - Landing, login, cadastro e histórico Voltar/Avançar
 - Biblioteca populada, capa fictícia, ausência de capa, título e gênero longos
+- Livros com largura limitada e capas 2:3, incluindo uma única obra e viewport de 320px
+- Wizard em três etapas, geração fictícia de sinopse/capa, aceite com créditos e criação da obra
 - Modal de novo livro com teclado, confinamento de foco, Escape, Cancelar e retorno ao acionador
 - Obra, capítulos longos, compêndio e modal de edição
 - Editor com texto e lore, painel lateral e configurações de IA
@@ -36,7 +38,7 @@ São seis projetos: desktop de 1440 × 1000 e mobile de 390 × 844, cada um em e
 - Percurso adicional de biblioteca, obra, editor, lore e modal na largura mínima de 320px
 - Ausência de exceções JavaScript e de tentativas de chamadas externas
 
-As 16 capturas por projeto recebem a marca **“Prévia visual • dados fictícios”**. O relatório HTML apresenta cada PNG como anexo, junto com tema, viewport e evidência de isolamento. Elas são material de revisão visual; **não são baselines aprovadas nem um teste de comparação pixel a pixel**. As verificações funcionais e geométricas geram falhas reais.
+As 20 capturas por projeto recebem a marca **“Prévia visual • dados fictícios”**. O relatório HTML apresenta cada PNG como anexo, junto com tema, viewport e evidência de isolamento. Elas são material de revisão visual; **não são baselines aprovadas nem um teste de comparação pixel a pixel**. As verificações funcionais e geométricas geram falhas reais.
 
 O CI executa a suíte após o E2E existente, inclusive se esse E2E falhar, e publica `writer-visual-preview` em sucesso ou falha. O artefato contém `visual-playwright-report/` e `visual-test-results/`, com retenção de sete dias. Abra `visual-playwright-report/index.html` ou os PNGs após baixar o artefato. Capturas automáticas e traces adicionais são preservados em falhas.
 

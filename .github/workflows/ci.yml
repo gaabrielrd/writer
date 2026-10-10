@@ -42,6 +42,9 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Instalar dependências do backend
+        run: npm ci --prefix functions
+
       - name: Validar
         run: npm run validate
 
@@ -82,6 +85,9 @@ jobs:
       # trabalho local por indisponibilidade do registry.
       - name: Auditar vulnerabilidades
         run: npm audit --audit-level=high
+
+      - name: Auditar dependências do backend
+        run: npm audit --prefix functions --audit-level=high
 
   e2e:
     name: E2E (Chromium)

@@ -20,9 +20,10 @@ export interface LoreDetails {
   notes: string;
 }
 
-export interface LoreEntity {
+export type LoreScope = { kind: 'book' | 'universe'; id: string };
+
+interface LoreEntityFields {
   id: string;
-  bookId: string;
   name: string;
   aliases: string[];
   category: LoreCategory;
@@ -35,7 +36,11 @@ export interface LoreEntity {
   updatedAt: number;
 }
 
+export type LoreEntity = LoreEntityFields &
+  ({ bookId: string; universeId?: never } | { universeId: string; bookId?: never });
+
 export interface CreateLoreEntityInput {
+  creationId?: string;
   name: string;
   aliases?: string[];
   category: LoreCategory;

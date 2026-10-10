@@ -34,8 +34,8 @@ Exemplo em `.env.example`:
 Tudo que vai para o navegador entra no bundle e é **público**. Qualquer pessoa consegue ler. Por isso:
 
 - Não coloque chaves de API secretas, senhas ou tokens no código nem em variáveis `VITE_`.
-- Segredos só existem em servidores, que este template não inclui.
-- Se uma integração exige um segredo, ela precisa de um backend intermediário — fora do escopo da versão 1.
+- Segredos só existem no servidor. O backend de geração fica em `functions/` e usa Secret Manager; nunca inclua chaves de IA no bundle.
+- Sinopse/capa usam funções autenticadas com App Check, transações e limites no servidor. Veja [criação de livros](book-creation.md).
 
 ## CORS
 

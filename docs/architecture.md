@@ -140,6 +140,7 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
 - **Tipo:** Aplicação Web SPA executada diretamente no navegador, servida estaticamente via Firebase Hosting.
 - **Dispositivos:** Navegadores modernos (Chromium, Firefox, Safari) com layout otimizado para escrita em desktop/laptop e leitura responsiva para qualquer tamanho de tela.
 - **Backend:** Firebase (Firebase Auth para autenticação e Cloud Firestore para persistência em nuvem e sincronização offline).
+- **Geração na criação:** Cloud Functions em `functions/` para IA autenticada, limites e débito idempotente; Storage para capas. Veja [ADR 0016](decisions/0016-book-creation-and-generation.md).
 
 ### Mapa de capacidades para features
 
@@ -188,5 +189,25 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
 
 ### Restrições e trade-offs
 
-- **Sem backend customizado:** Toda a infraestrutura roda no cliente contra o Firebase gerenciado. As regras de acesso e privacidade são asseguradas por regras de segurança do Firestore (`firestore.rules`).
+- **Backend limitado:** O editor mantém a integração no cliente. Sinopse/capa na criação usam servidor com segredo, Auth, App Check e registros privados. A implantação é explícita; veja [criação de livros](book-creation.md).
 - **Consumo de créditos no aceite:** A IA não cobra do saldo do usuário por sugestões descartadas ou falhas de conexão; o débito ocorre somente no evento de confirmação de uso (`Tab` ou clique no botão de aceite).
+  No wizard, sinopse custa 1 crédito e capa 5, controlados pelo servidor. Descartes podem consumir recursos do provedor, tratados com limites de geração.
+
+### Biblioteca de imagens
+
+`src/features/image-library` expõe página privada e seletor reutilizável. O aceite
+insere a capa na biblioteca na transação do débito. Criação e troca de capa
+passam por callables que mantêm `coverImageId`, URL e referências por livro.
+A exclusão explícita exige zero usos; exclusão de livro libera referências via
+trigger sem remover o arquivo. Metadados são privados e mutações de referências
+no browser são proibidas. Migração em lotes preserva capas aceitas antigas
+existentes sem cobrança. Veja [biblioteca](image-library.md) e [ADR 0017](decisions/0017-image-library-and-cover-references.md).
+
+## Universos e lore compartilhado
+
+`src/features/universes` cuida do cadastro, seleção e páginas privadas dos
+universos do autor. `lore` mantém fichas e formulários por escopo; `books` guarda
+o vínculo opcional; `editor` combina entidades para reconhecimento, menções e IA.
+Vínculos e mutações globais passam por functions; regras protegem os originais
+e validam a versão pública de privacidade. Veja [universos](shared-lore.md) e
+[ADR 0018](decisions/0018-shared-universes-and-lore.md).

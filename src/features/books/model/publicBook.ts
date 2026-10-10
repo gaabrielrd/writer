@@ -1,4 +1,6 @@
 export interface PublicBook {
+  universeId?: string;
+  universePrivacyVersion?: number;
   id: string;
   title: string;
   authorName: string;

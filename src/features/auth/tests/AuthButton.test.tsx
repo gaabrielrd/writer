@@ -62,7 +62,9 @@ describe('AuthButton', () => {
     });
 
     expect(screen.getByText('Clarice Lispector')).toBeInTheDocument();
-    const signOutButton = screen.getByRole('button', { name: /sair/i });
+    await user.click(screen.getByRole('button', { name: /Clarice Lispector/i }));
+    expect(screen.getByText('autor@livro.com')).toBeInTheDocument();
+    const signOutButton = screen.getByRole('menuitem', { name: /sair/i });
     expect(signOutButton).toBeInTheDocument();
 
     await user.click(signOutButton);
@@ -105,8 +107,9 @@ describe('AuthButton', () => {
       pendingEditorOperation: true,
       signOut,
     });
-    const button = screen.getByRole('button', { name: 'Sair' });
-    expect(button).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: /Autora/i }));
+    const button = screen.getByRole('menuitem', { name: 'Sair' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
     expect(button).toHaveAttribute('title', expect.stringContaining('Aguarde'));
     await userEvent.click(button);
     expect(signOut).not.toHaveBeenCalled();

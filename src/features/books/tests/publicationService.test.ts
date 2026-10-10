@@ -308,3 +308,87 @@ describe('publicationService', () => {
     ]);
   });
 });
+
+const universeBook = { ...originalBook, universeId: 'world' };
+const universeData = { authorId: originalBook.authorId, privacyVersion: 2, loreVersion: 4 };
+function withUniverse() {
+  mocks.getBook.mockImplementation((ref: { path: string }) =>
+    Promise.resolve(snapshot(ref.path === 'universes/world' ? universeData : universeBook)),
+  );
+  mocks.transactionGet.mockImplementation((ref: { path: string }) =>
+    Promise.resolve(snapshot(ref.path === 'universes/world' ? universeData : universeBook)),
+  );
+  const global = [
+    snapshot(
+      {
+        name: 'Arthur',
+        aliases: ['Rei', 'Segredo'],
+        category: 'character',
+        summary: 'O rei',
+        isPublic: true,
+        details: 'GLOBAL SECRET',
+      },
+      'arthur',
+    ),
+    snapshot(
+      {
+        name: 'Segredo',
+        aliases: [],
+        category: 'other',
+        summary: 'Não pode aparecer',
+        isPublic: true,
+      },
+      'collision',
+    ),
+  ];
+  mocks.getCollection.mockImplementation((ref: { path: string }) => {
+    const docs =
+      ref.path === 'universes/world/lore'
+        ? global
+        : ref.path.endsWith('/chapters')
+          ? chapters
+          : lore;
+    return Promise.resolve({ docs, size: docs.length });
+  });
+}
+it('publica lore global autorizado e protege termos locais privados antes da projeção', async () => {
+  withUniverse();
+  await publishBook('book', 'Autora');
+  const writes = mocks.batches.flat();
+  const globalWrite = writes.find((write) => write.path.endsWith('/universe:world:arthur'));
+  expect(globalWrite?.data).toEqual({
+    name: 'Arthur',
+    aliases: ['Rei'],
+    category: 'character',
+    summary: 'O rei',
+    sourceEntityId: 'arthur',
+  });
+  expect(writes.some((write) => write.path.endsWith('/universe:world:collision'))).toBe(false);
+  expect(JSON.stringify(writes)).not.toContain('GLOBAL SECRET');
+  expect(mocks.transactionSet).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ schemaVersion: 2, universeId: 'world', universePrivacyVersion: 2 }),
+  );
+});
+it('recusa publicação se lore global mudar durante a preparação', async () => {
+  withUniverse();
+  mocks.transactionGet.mockImplementation((ref: { path: string }) =>
+    Promise.resolve(
+      snapshot(ref.path === 'universes/world' ? { ...universeData, loreVersion: 5 } : universeBook),
+    ),
+  );
+  await expect(publishBook('book', 'Autora')).rejects.toThrow('O livro mudou');
+  expect(mocks.transactionSet).not.toHaveBeenCalled();
+});
+it('recusa universo removido ou de outro autor sem gravar projeções', async () => {
+  withUniverse();
+  mocks.getBook.mockImplementation((ref: { path: string }) =>
+    Promise.resolve(
+      snapshot(
+        ref.path === 'universes/world' ? { ...universeData, authorId: 'other' } : universeBook,
+      ),
+    ),
+  );
+  await expect(publishBook('book', 'Autora')).rejects.toThrow('Universo indisponível');
+  expect(mocks.batches).toHaveLength(0);
+});

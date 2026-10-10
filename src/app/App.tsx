@@ -1,6 +1,7 @@
-import { BookOpen, Feather } from 'lucide-react';
+import { Feather } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { AuthProvider, AuthButton, CreditsBadge, useAuth } from '@/features/auth';
+import { BookNavigation } from '@/features/books';
 import { ThemeProvider, ThemeToggle } from '@/shared/theme';
 import styles from './App.module.css';
 
@@ -13,12 +14,15 @@ function AppHeader() {
   return (
     <header className={`${styles.header} glass-surface`}>
       <div className={styles.topBar}>
-        <Link to="/" className={styles.brand} aria-label="Writer Assistant Início">
-          <span className={styles.brandMark}>
-            <Feather className="icon" aria-hidden="true" />
-          </span>
-          <span className={styles.brandText}>{PROJECT_NAME}</span>
-        </Link>
+        <div className={styles.leftBar}>
+          <Link to="/" className={styles.brand} aria-label="Writer Assistant Início">
+            <span className={styles.brandMark}>
+              <Feather className="icon" aria-hidden="true" />
+            </span>
+            <span className={styles.brandText}>{PROJECT_NAME}</span>
+          </Link>
+          <BookNavigation />
+        </div>
         <div className={styles.userBar}>
           {user && !location.pathname.includes('/editor/') && (
             <CreditsBadge credits={user.credits} tier={user.tier} />
@@ -27,18 +31,6 @@ function AppHeader() {
           <AuthButton />
         </div>
       </div>
-      {user && (
-        <nav className={styles.nav} aria-label="Navegação principal">
-          <Link
-            to="/"
-            aria-current={location.pathname === '/' ? 'page' : undefined}
-            className={location.pathname === '/' ? styles.navLinkActive : styles.navLink}
-          >
-            <BookOpen className="icon icon-sm" aria-hidden="true" />
-            <span>Meus Livros</span>
-          </Link>
-        </nav>
-      )}
     </header>
   );
 }

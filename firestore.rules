@@ -25,7 +25,24 @@ service cloud.firestore {
     }
 
     function canReadRevision(bookId, revisionId) {
-      return isBookAuthor(bookId) || (isPublished(bookId) && isCurrentRevision(bookId, revisionId));
+      return isBookAuthor(bookId) || (isPublished(bookId) && isCurrentRevision(bookId, revisionId)
+        && universePublicationCurrent(get(/databases/$(database)/documents/publicBooks/$(bookId)).data));
+    }
+
+    function universePublicationCurrent(data) {
+      let universeId = data.get('universeId', null);
+      return universeId == null || (universeId is string
+        && exists(/databases/$(database)/documents/publicUniversePrivacy/$(universeId))
+        && get(/databases/$(database)/documents/publicUniversePrivacy/$(universeId)).data.active == true
+        && get(/databases/$(database)/documents/publicUniversePrivacy/$(universeId)).data.version == data.get('universePrivacyVersion', -1));
+    }
+
+    function publicationUniverseMatches(bookId, data) {
+      let universeId = get(/databases/$(database)/documents/books/$(bookId)).data.get('universeId', null);
+      return data.get('universeId', null) == universeId
+        && (universeId == null || (universePublicationCurrent(data)
+          && get(/databases/$(database)/documents/universes/$(universeId)).data.authorId == request.auth.uid
+          && get(/databases/$(database)/documents/universes/$(universeId)).data.get('deleting', false) == false));
     }
 
     function nonemptyString(value, maxSize) {
@@ -34,8 +51,10 @@ service cloud.firestore {
 
     function validPublicBook(data) {
       return data.keys().hasAll(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt'])
-        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt'])
-        && data.schemaVersion == 1
+        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion'])
+        && ((data.schemaVersion == 1 && data.get('universeId', null) == null && data.get('universePrivacyVersion', null) == null) || (data.schemaVersion == 2
+          && nonemptyString(data.get('universeId', ''), 128)
+          && data.get('universePrivacyVersion', -1) is int && data.universePrivacyVersion >= 0))
         && nonemptyString(data.title, 300)
         && nonemptyString(data.authorName, 120)
         && nonemptyString(data.revisionId, 128)
@@ -44,7 +63,7 @@ service cloud.firestore {
 
     function validRevision(data) {
       return data.keys().hasAll(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion'])
-        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion'])
+        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion'])
         && data.privacyVersion is int && data.privacyVersion >= 0
         && data.createdAt is int && data.createdAt >= 0
         && data.chapterCount is int && data.chapterCount >= 0
@@ -65,7 +84,8 @@ service cloud.firestore {
 
     function validLore(data) {
       return data.keys().hasAll(['name', 'aliases', 'category', 'summary'])
-        && data.keys().hasOnly(['name', 'aliases', 'category', 'summary'])
+        && data.keys().hasOnly(['name', 'aliases', 'category', 'summary', 'sourceEntityId'])
+        && (data.get('sourceEntityId', null) == null || nonemptyString(data.sourceEntityId, 128))
         && nonemptyString(data.name, 200)
         && data.aliases is list && data.aliases.size() <= 20
         && validAlias(data.aliases, 0) && validAlias(data.aliases, 1)
@@ -135,6 +155,18 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      match /imageLibrary/{imageId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+        match /uses/{bookId} { allow read, write: if false; }
+      }
+      match /imageLibraryMigration/{markerId} { allow read, write: if false; }
+      match /bookGenerations/{generationId} {
+        allow read, write: if false;
+      }
+      match /generationLimits/{limitId} {
+        allow read, write: if false;
+      }
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) && validNewUser(request.resource.data, userId);
       allow update: if isOwner(userId) && validUserUpdate(request.resource.data) && (
@@ -157,16 +189,42 @@ service cloud.firestore {
     }
 
     // Originals are always private, including published books and public lore.
+    match /universes/{universeId} {
+      allow read: if isOwner(resource.data.authorId);
+      allow write: if false;
+      match /lore/{entityId} {
+        allow read: if isOwner(get(/databases/$(database)/documents/universes/$(universeId)).data.authorId)
+          && get(/databases/$(database)/documents/universes/$(universeId)).data.get('deleting', false) == false;
+        allow write: if false;
+      }
+      match /books/{bookId} { allow read, write: if false; }
+    }
+
+    // Minimal public revocation signal, never names, descriptions or author identity.
+    match /publicUniversePrivacy/{universeId} {
+      allow get: if true;
+      allow list, write: if false;
+    }
+
     match /books/{bookId} {
+      // Allow an authenticated creator to read an absent ID before the atomic create.
+      // Existing manuscripts remain restricted to their author.
+      allow get: if isAuthenticated()
+        && !exists(/databases/$(database)/documents/books/$(bookId));
       allow read: if isOwner(resource.data.authorId);
       allow create: if isAuthenticated()
         && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.get('universeId', null) == null
         && request.resource.data.status == 'draft'
+        && request.resource.data.get('coverImageId', null) == null
         && request.resource.data.get('publicationPrivacyVersion', 0) == 0
         && request.resource.data.get('deleting', false) == false
         && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
       allow update: if isOwner(resource.data.authorId)
+        && request.resource.data.get('universeId', null) == resource.data.get('universeId', null)
         && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.get('coverImageId', null) == resource.data.get('coverImageId', null)
+        && (resource.data.get('coverImageId', null) == null || request.resource.data.get('coverUrl', null) == resource.data.get('coverUrl', null))
         && validPublicationState(bookId)
         && request.resource.data.status in ['draft', 'published']
         && (request.resource.data.status == 'draft'
@@ -205,15 +263,19 @@ service cloud.firestore {
     }
 
     match /publicBooks/{bookId} {
-      allow get: if isBookAuthor(bookId) || isPublished(bookId);
+      allow get: if isBookAuthor(bookId) || (isPublished(bookId)
+        && (!exists(/databases/$(database)/documents/publicBooks/$(bookId)) || universePublicationCurrent(resource.data)));
       allow list: if false;
       allow create, update: if isBookAuthor(bookId)
         && validPublicBook(request.resource.data)
+        && publicationUniverseMatches(bookId, request.resource.data)
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'published'
         && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId))
         && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.privacyVersion
-          == getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0);
+          == getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0)
+        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('universeId', null) == request.resource.data.get('universeId', null)
+        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('universePrivacyVersion', null) == request.resource.data.get('universePrivacyVersion', null);
       allow delete: if isBookAuthor(bookId)
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'draft';
 
@@ -222,6 +284,7 @@ service cloud.firestore {
         allow list: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
           && validRevision(request.resource.data)
+          && publicationUniverseMatches(bookId, request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
           && request.resource.data.privacyVersion == get(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0);
         allow update: if false;
@@ -239,11 +302,20 @@ service cloud.firestore {
         }
 
         match /lore/{loreId} {
+          function originalConsent() {
+            let sourceId = request.resource.data.get('sourceEntityId', null);
+            let universeId = getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId)).data.get('universeId', null);
+            return sourceId == null
+              ? get(/databases/$(database)/documents/books/$(bookId)/lore/$(loreId)).data.isPublic == true
+              : (universeId != null
+                && loreId == 'universe:' + universeId + ':' + sourceId
+                && get(/databases/$(database)/documents/universes/$(universeId)/lore/$(sourceId)).data.isPublic == true);
+          }
           allow read: if canReadRevision(bookId, revisionId);
           allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
             && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
             && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId))
-            && get(/databases/$(database)/documents/books/$(bookId)/lore/$(loreId)).data.isPublic == true
+            && originalConsent()
             && validLore(request.resource.data);
           allow update: if false;
           allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId);

@@ -3,6 +3,7 @@ import type {
   CreateLoreEntityInput,
   LoreCategory,
   LoreEntity,
+  LoreScope,
   UpdateLoreEntityInput,
 } from '../model/loreEntity';
 import * as loreService from '../services/loreService';
@@ -22,12 +23,13 @@ export interface UseLoreResult {
   deleteEntity: (entityId: string) => Promise<void>;
 }
 
-export function useLore(bookId?: string | null): UseLoreResult {
+export function useLore(bookId?: string | LoreScope | null): UseLoreResult {
   const [entities, setEntities] = useState<LoreEntity[]>([]);
   const [loading, setLoading] = useState<boolean>(() => Boolean(bookId));
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<LoreCategory | 'all'>('all');
+  const [subscriptionAttempt, setSubscriptionAttempt] = useState(0);
 
   const fetchEntities = useCallback(async () => {
     if (!bookId) {
@@ -38,6 +40,10 @@ export function useLore(bookId?: string | null): UseLoreResult {
 
     setLoading(true);
     setError(null);
+    if (typeof bookId !== 'string' && bookId.kind === 'universe') {
+      setSubscriptionAttempt((attempt) => attempt + 1);
+      return;
+    }
     try {
       const data = await loreService.listLoreEntities(bookId);
       setEntities(data);
@@ -51,6 +57,26 @@ export function useLore(bookId?: string | null): UseLoreResult {
   useEffect(() => {
     let active = true;
     if (!bookId) return;
+    if (typeof bookId !== 'string' && bookId.kind === 'universe') {
+      const stop = loreService.subscribeLoreEntities(
+        bookId,
+        (data) => {
+          if (!active) return;
+          setEntities(data);
+          setLoading(false);
+          setError(null);
+        },
+        (cause) => {
+          if (!active) return;
+          setError(cause instanceof Error ? cause.message : 'Falha ao carregar lore global');
+          setLoading(false);
+        },
+      );
+      return () => {
+        active = false;
+        stop();
+      };
+    }
 
     loreService
       .listLoreEntities(bookId)
@@ -70,13 +96,17 @@ export function useLore(bookId?: string | null): UseLoreResult {
     return () => {
       active = false;
     };
-  }, [bookId]);
+  }, [bookId, subscriptionAttempt]);
 
   const handleCreateEntity = useCallback(
     async (input: CreateLoreEntityInput) => {
       if (!bookId) throw new Error('Livro não selecionado');
       const newEntity = await loreService.createLoreEntity(bookId, input);
-      setEntities((prev) => [...prev, newEntity].sort((a, b) => a.name.localeCompare(b.name)));
+      setEntities((prev) =>
+        [...prev.filter((item) => item.id !== newEntity.id), newEntity].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
+      );
       return newEntity;
     },
     [bookId],

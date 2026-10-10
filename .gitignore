@@ -18,6 +18,9 @@ visual-playwright-report/
 .env
 .env.local
 .env.*.local
+.gemini-api-key
+functions/.env.*
+!functions/.env.example
 
 # Skills geradas (cópias sincronizadas por npm run sync:skills).
 # Só as cópias são ignoradas: assim o projeto pode versionar configurações

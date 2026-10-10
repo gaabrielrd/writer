@@ -130,6 +130,8 @@ describe('LorePage', () => {
 
     await user.type(screen.getByLabelText(/nome da entidade/i), 'Merlin');
     await user.type(screen.getByLabelText(/resumo curto/i), 'Mago supremo');
+    for (let step = 0; step < 3; step++)
+      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
 
     expect(await screen.findByText('Merlin')).toBeInTheDocument();
@@ -205,6 +207,8 @@ describe('LorePage', () => {
     ).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/nome da entidade/i), ' II');
+    for (let step = 0; step < 3; step++)
+      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
 
     expect(loreService.updateLoreEntity).toHaveBeenCalledWith(

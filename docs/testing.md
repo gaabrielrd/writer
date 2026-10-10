@@ -32,6 +32,7 @@ features/minha-feature/
 npm run test          # roda os testes uma vez, com limites de cobertura
 npm run test:unit     # roda apenas Vitest, sem cobertura (mais rápido)
 npm run test:coverage # roda Vitest aplicando os limites de cobertura
+npm run test:book-generation # backend de geração e normalização real de capas
 npm run test:setup    # testa setup e regras arquiteturais em projetos temporários
 npm run test:e2e      # testa o fluxo crítico em um navegador Chromium real
 npm run test:e2e:update # regera as imagens de referência do styleguide
@@ -80,6 +81,8 @@ as dependências de sistema do Chromium e publica trace e screenshot apenas em
 caso de falha.
 
 ## Cobertura
+
+Instale também as dependências do backend com `npm ci --prefix functions`. `npm run test:setup` executa os testes de geração. Os testes de regras cobrem criação manual atômica e isolamento dos registros de geração.
 
 `npm run test` aplica limites mínimos definidos em `vitest.config.ts`: 85% de instruções e linhas, 75% de ramos e 90% de funções. Uma queda abaixo disso falha o `validate` e o CI.
 
@@ -150,3 +153,28 @@ diálogo nativo de impressão continua pertencendo ao navegador/usuário.
 workers para evitar saturação de memória/CPU em máquinas compartilhadas. Não há
 redução de limites, desativação de testes ou regeneração automática das imagens
 de referência para esconder regressões.
+
+## Biblioteca de imagens
+
+Os testes da feature cobrem seleção, gerenciamento, páginas, erros e isolamento
+na troca de conta. Os testes de backend cobrem aceite permanente e idempotente,
+reutilização sem débito, referências, exclusão protegida, migração e paginação.
+As regras no emulador impedem forjar imagens ou referências pelo navegador.
+`e2e/visual/image-library.visual.ts` valida menus por teclado, tooltip, breadcrumb,
+gerenciamento e seleção no wizard nos três temas e em desktop/celular, incluindo
+320 px. Serviços fictícios isolados impedem acesso ao Firebase de produção.
+
+## Universos e lore compartilhado
+
+Testes de componentes cobrem gestão de universos, vínculos, wizard de lore,
+edição separada no editor, atualização global e backup privado de versão 2.
+O backend cobre autoria, retentativas, contadores, referências globais e exclusão
+concorrente. `npm run test:rules` inclui isolamento de universos, proteção de
+metadados, consentimento global e revogação por URLs diretas.
+
+A suíte visual usa serviços fictícios isolados, sem rede externa, em desktop e
+celular nos temas claro, escuro e sépia:
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/universes.visual.ts
+```

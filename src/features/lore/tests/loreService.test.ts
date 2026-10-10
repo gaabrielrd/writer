@@ -8,7 +8,12 @@ import {
   deleteLoreEntity,
 } from '../services/loreService';
 
-const transaction = vi.hoisted(() => ({ get: vi.fn(), update: vi.fn(), delete: vi.fn() }));
+const transaction = vi.hoisted(() => ({
+  get: vi.fn(),
+  set: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+}));
 
 vi.mock('firebase/firestore', () => {
   return {
@@ -184,4 +189,36 @@ it('preserva campos privados estruturados sem mudar publicacao em edicao comum',
     }),
   );
   expect(transaction.get).not.toHaveBeenCalled();
+});
+
+it('reutiliza uma criação local já persistida após resposta perdida', async () => {
+  const input = {
+    creationId: 'stable-lore-0000001',
+    name: 'Arthur',
+    category: 'character' as const,
+    summary: 'Rei',
+  };
+  transaction.get.mockResolvedValueOnce({ exists: () => false }).mockResolvedValueOnce({
+    exists: () => true,
+    data: () => ({
+      bookId: 'book',
+      name: 'Arthur',
+      category: 'character',
+      summary: 'Rei',
+      aliases: [],
+      relations: [],
+      details: '',
+      isPublic: true,
+      createdAt: 1,
+      updatedAt: 1,
+    }),
+  });
+  const initial = await createLoreEntity('book', input);
+  const retry = await createLoreEntity('book', input);
+  expect(initial.id).toBe(retry.id);
+  expect(transaction.set).toHaveBeenCalledOnce();
+  expect(retry.name).toBe('Arthur');
+  await expect(createLoreEntity('book', { ...input, creationId: '../bad' })).rejects.toThrow(
+    'Identificador',
+  );
 });

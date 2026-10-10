@@ -1,7 +1,10 @@
 import { useState, type FormEvent } from 'react';
-import { Button, Dialog, Input, Textarea } from '@/shared/ui';
+import { ImageLibraryPicker } from '@/features/image-library';
+import { UniverseSelect } from '@/features/universes';
+import { Alert, Button, Dialog, Input, Textarea } from '@/shared/ui';
 import type { Book, CreateBookInput } from '../model/book';
 import styles from './BookFormDialog.module.css';
+import { BookCreationWizard } from './BookCreationWizard';
 
 export interface BookFormDialogProps {
   open: boolean;
@@ -19,8 +22,12 @@ interface FormContentProps {
 function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
   const [title, setTitle] = useState(bookToEdit?.title ?? '');
   const [genre, setGenre] = useState(bookToEdit?.genre ?? '');
+  const [universeId, setUniverseId] = useState(bookToEdit?.universeId ?? null);
   const [synopsis, setSynopsis] = useState(bookToEdit?.synopsis ?? '');
   const [coverUrl, setCoverUrl] = useState(bookToEdit?.coverUrl ?? '');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [coverImageId, setCoverImageId] = useState(bookToEdit?.coverImageId ?? null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: FormEvent) => {
@@ -28,15 +35,22 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
     if (!title.trim()) return;
 
     setIsSubmitting(true);
+    setSaveError(null);
     void (async () => {
       try {
         await onSubmit({
           title: title.trim(),
-          genre: genre.trim() || undefined,
-          synopsis: synopsis.trim() || undefined,
+          genre: genre.trim(),
+          ...(universeId !== (bookToEdit?.universeId ?? null) ? { universeId } : {}),
+          synopsis: synopsis.trim(),
           coverUrl: coverUrl.trim() || null,
+          coverImageId,
         });
         onClose();
+      } catch (error) {
+        setSaveError(
+          error instanceof Error ? error.message : 'Não foi possível salvar. Tente novamente.',
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -67,6 +81,18 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
       }
     >
       <form id="book-form" onSubmit={handleSubmit} className={styles.form}>
+        <UniverseSelect
+          value={universeId}
+          onChange={setUniverseId}
+          disabled={isSubmitting}
+          alwaysShow
+        />
+        {universeId !== (bookToEdit?.universeId ?? null) && (
+          <Alert variant="warning">
+            Alterar o universo retira a publicação atual. Capítulos e lore local serão preservados;
+            referências ao universo anterior ficarão indisponíveis.
+          </Alert>
+        )}
         <Input
           label="Título da Obra"
           placeholder="Ex: As Crônicas de Eldoria"
@@ -93,13 +119,33 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
           disabled={isSubmitting}
         />
 
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={isSubmitting}
+          onClick={() => setPickerOpen(true)}
+        >
+          Selecionar da biblioteca
+        </Button>
+        <ImageLibraryPicker
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onSelect={(image) => {
+            setCoverUrl(image.url);
+            setCoverImageId(image.id);
+          }}
+        />
         <Input
           label="URL da Capa (opcional)"
           placeholder="https://exemplo.com/imagem-capa.jpg"
           value={coverUrl}
-          onChange={(e) => setCoverUrl(e.target.value)}
+          onChange={(e) => {
+            setCoverUrl(e.target.value);
+            setCoverImageId(null);
+          }}
           disabled={isSubmitting}
         />
+        {saveError && <Alert variant="destructive">{saveError}</Alert>}
       </form>
     </Dialog>
   );
@@ -107,6 +153,7 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
 
 export function BookFormDialog({ open, bookToEdit, onClose, onSubmit }: BookFormDialogProps) {
   if (!open) return null;
+  if (!bookToEdit) return <BookCreationWizard onClose={onClose} onSubmit={onSubmit} />;
 
   return (
     <BookFormContent

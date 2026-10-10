@@ -2,6 +2,8 @@ export * from './model';
 export * from './services';
 export * as aiClientService from './services';
 export * from './hooks/useAIAutocomplete';
+export * from './hooks/useBookGeneration';
+export * from './services/bookGenerationService';
 export { GhostSuggestion } from './components/GhostSuggestion';
 export type { GhostSuggestionProps } from './components/GhostSuggestion';
 export { AIActionMenu } from './components/AIActionMenu';

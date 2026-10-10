@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import {
   ArrowLeft,
@@ -9,13 +9,15 @@ import {
   CloudOff,
   Loader2,
 } from 'lucide-react';
-import { Button, Dialog, ErrorState, LoadingState } from '@/shared/ui';
+import { Alert, Button, Dialog, ErrorState, LoadingState } from '@/shared/ui';
 import { useAuth, CreditsBadge } from '@/features/auth';
 import { getBook, listChapters, getChapter, type Book, type Chapter } from '@/features/books';
 import {
   listLoreEntities,
   createLoreEntity,
   updateLoreEntity,
+  subscribeLoreEntities,
+  entityScope,
   type CreateLoreEntityInput,
   type UpdateLoreEntityInput,
   type LoreEntity,
@@ -46,6 +48,13 @@ function EditorSession() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [loreEntities, setLoreEntities] = useState<LoreEntity[]>([]);
+  const [globalLoreEntities, setGlobalLoreEntities] = useState<LoreEntity[]>([]);
+  const [globalLoreError, setGlobalLoreError] = useState<string | null>(null);
+  const [loreAttempt, setLoreAttempt] = useState(0);
+  const allLoreEntities = useMemo(
+    () => [...loreEntities, ...globalLoreEntities],
+    [loreEntities, globalLoreEntities],
+  );
 
   const [recoveryDraft, setRecoveryDraft] = useState<string | null>(null);
   const [content, setContent] = useState<string>('');
@@ -105,6 +114,17 @@ function EditorSession() {
         const chaptersData: Chapter[] = await listChapters(bookId);
         const chapterData: Chapter | null = await getChapter(bookId, chapterId);
         const loreData: LoreEntity[] = await listLoreEntities(bookId);
+        const globalData = bookData?.universeId
+          ? await listLoreEntities({ kind: 'universe', id: bookData.universeId }).catch(
+              (cause: unknown) => {
+                if (active)
+                  setGlobalLoreError(
+                    cause instanceof Error ? cause.message : 'Falha ao carregar lore global.',
+                  );
+                return [];
+              },
+            )
+          : [];
 
         if (!active) return;
         if (!bookData || !chapterData) {
@@ -123,6 +143,7 @@ function EditorSession() {
         resetSavedContent(initialContent);
         setWordCount(chapterData.wordCount || 0);
         setLoreEntities(loreData);
+        setGlobalLoreEntities(globalData);
         setLoading(false);
       } catch (err: unknown) {
         if (!active) return;
@@ -138,16 +159,60 @@ function EditorSession() {
     };
   }, [bookId, chapterId, resetSavedContent, user?.uid]);
 
-  const handleCreateLoreEntity = async (input: CreateLoreEntityInput) => {
+  useEffect(() => {
+    if (!book?.universeId) return;
+    let active = true;
+    const failure = (cause: unknown) => {
+      if (active) {
+        setGlobalLoreEntities([]);
+        setGlobalLoreError(cause instanceof Error ? cause.message : 'Falha ao sincronizar o lore.');
+      }
+    };
+    const stopLocal = subscribeLoreEntities(
+      book.id,
+      (entities) => {
+        if (active) setLoreEntities(entities);
+      },
+      failure,
+    );
+    const stopGlobal = subscribeLoreEntities(
+      { kind: 'universe', id: book.universeId },
+      (entities) => {
+        if (active) {
+          setGlobalLoreEntities(entities);
+          setGlobalLoreError(null);
+        }
+      },
+      failure,
+    );
+    return () => {
+      active = false;
+      stopLocal();
+      stopGlobal();
+    };
+  }, [book, loreAttempt]);
+
+  const handleCreateLoreEntity = async (
+    input: CreateLoreEntityInput,
+    scope: 'local' | 'global' = 'local',
+  ) => {
     if (!bookId) return;
-    const newEntity: LoreEntity = await createLoreEntity(bookId, input);
-    setLoreEntities((prev) => [...prev, newEntity]);
+    if (scope === 'global' && !book?.universeId) throw new Error('Este livro não possui universo.');
+    const newEntity: LoreEntity = await createLoreEntity(
+      scope === 'global' ? { kind: 'universe', id: book!.universeId! } : bookId,
+      input,
+    );
+    const setter = scope === 'global' ? setGlobalLoreEntities : setLoreEntities;
+    setter((prev) => [...prev.filter((item) => item.id !== newEntity.id), newEntity]);
   };
 
   const handleUpdateLoreEntity = async (id: string, input: UpdateLoreEntityInput) => {
     if (!bookId) return;
-    await updateLoreEntity(bookId, id, input);
-    setLoreEntities((prev) =>
+    const entity = allLoreEntities.find((item) => item.id === id);
+    if (!entity) throw new Error('Entidade não disponível.');
+    await updateLoreEntity(entity.universeId ? entityScope(entity) : bookId, id, input);
+    const setter = entity.universeId ? setGlobalLoreEntities : setLoreEntities;
+    setter((prev) =>
       prev.map((e) => (e.id === id ? { ...e, ...input, updatedAt: Date.now() } : e)),
     );
   };
@@ -333,12 +398,20 @@ function EditorSession() {
       </header>
 
       <section className={styles.workspace} aria-label="Espaço de escrita">
+        {globalLoreError && (
+          <Alert variant="warning" title="Lore global indisponível">
+            {globalLoreError}
+            <Button variant="secondary" onClick={() => setLoreAttempt((n) => n + 1)}>
+              Tentar novamente
+            </Button>
+          </Alert>
+        )}
         <RichEditor
           onBusyChange={handleBusyChange}
           documentId={chapter.id}
           content={content}
           onChange={setContent}
-          entities={loreEntities}
+          entities={allLoreEntities}
           onSelectEntity={handleSelectEntity}
           onCreateEntity={(name) => {
             setCreateEntityName(name);
@@ -353,7 +426,8 @@ function EditorSession() {
 
         <EditorLoreSidebar
           isOpen={isSidebarOpen}
-          entities={loreEntities}
+          entities={allLoreEntities}
+          universeId={book.universeId}
           selectedEntityId={selectedEntityId}
           createEntityName={createEntityName}
           onCreateRequestHandled={() => setCreateEntityName(null)}

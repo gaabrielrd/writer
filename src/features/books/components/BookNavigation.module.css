@@ -1,0 +1,26 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.title {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+.separator {
+  color: hsl(var(--muted-foreground));
+}
+@media (max-width: 700px) {
+  .nav {
+    width: 100%;
+  }
+  .title {
+    flex: 1;
+  }
+}

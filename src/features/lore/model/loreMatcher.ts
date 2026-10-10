@@ -1,3 +1,4 @@
+import { preferredLoreTerms } from './loreScope';
 import type { LoreEntity } from './loreEntity';
 
 export interface LoreMatch {
@@ -22,18 +23,7 @@ export function findLoreMatches(text: string, entities: LoreEntity[]): LoreMatch
     return [];
   }
 
-  const termMap: { term: string; entity: LoreEntity }[] = [];
-
-  for (const entity of entities) {
-    if (entity.name && entity.name.trim()) {
-      termMap.push({ term: entity.name.trim(), entity });
-    }
-    for (const alias of entity.aliases || []) {
-      if (alias && alias.trim()) {
-        termMap.push({ term: alias.trim(), entity });
-      }
-    }
-  }
+  const termMap = [...preferredLoreTerms(entities)].map(([term, entity]) => ({ term, entity }));
 
   if (termMap.length === 0) {
     return [];

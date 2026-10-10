@@ -64,7 +64,7 @@ export function useBooks(authorId?: string | null): UseBooksResult {
     async (input: CreateBookInput) => {
       if (!authorId) throw new Error('Autor não autenticado');
       const newBook = await bookService.createBook(authorId, input);
-      setBooks((prev) => [newBook, ...prev]);
+      setBooks((prev) => [newBook, ...prev.filter((book) => book.id !== newBook.id)]);
       return newBook;
     },
     [authorId],
