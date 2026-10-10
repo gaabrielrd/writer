@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
   assertCurrentMaster,
+  assertCredentialProject,
   deploymentConfig,
   deploymentPolicy,
   readMasterSha,
@@ -19,8 +20,6 @@ const trusted = {
   GITHUB_SHA: sha,
   DEPLOY_ENABLED: 'true',
   DEPLOY_PROJECT: 'writer-44cd5',
-  WIF_PROVIDER: 'projects/123/locations/global/workloadIdentityPools/writer/providers/github',
-  DEPLOY_SERVICE_ACCOUNT: 'writer-hosting@writer-44cd5.iam.gserviceaccount.com',
   HOSTING_SITE_ID: 'verified-site-fixture',
 };
 const manual = {
@@ -65,10 +64,6 @@ test('rejects absent or malformed destination and identity configuration', () =>
     ['GITHUB_SHA', 'master'],
     ['GITHUB_SHA', ''],
     ['DEPLOY_PROJECT', 'other'],
-    ['WIF_PROVIDER', ''],
-    ['WIF_PROVIDER', 'untrusted'],
-    ['DEPLOY_SERVICE_ACCOUNT', ''],
-    ['DEPLOY_SERVICE_ACCOUNT', 'sa@other.iam.gserviceaccount.com'],
     ['HOSTING_SITE_ID', ''],
     ['HOSTING_SITE_ID', 'site; echo unsafe'],
     ['HOSTING_SITE_ID', 'https://other.example'],
@@ -147,12 +142,10 @@ test('workflow contracts isolate identities and serialize both production entryp
     assert.match(source, /cancel-in-progress: false/);
     assert.doesNotMatch(
       source,
-      /--force|FIREBASE_TOKEN|credentials_json|firebaseServiceAccount|pull_request_target|workflow_run/,
+      /--force|FIREBASE_TOKEN|firebaseServiceAccount|pull_request_target|workflow_run|workload_identity_provider|WIF_PROVIDER|id-token:/,
     );
     assert.match(source, /vars\.FIREBASE_\w+_DEPLOY_ENABLED == 'true'/);
-    assert.equal((source.match(/id-token: write/g) ?? []).length, 1);
     const deploy = source.slice(source.indexOf('\n  deploy:'));
-    assert.match(deploy, /id-token: write/);
     assert.equal((source.match(/google-github-actions\/auth@/g) ?? []).length, 1);
     assert.ok(
       deploy.indexOf('firebase-deploy-guard.mjs') < deploy.indexOf('google-github-actions/auth@'),
@@ -235,5 +228,30 @@ test('missing authorization, API errors and unexpected refs fail closed', async 
       readMasterSha('fixture-token', async () => ({ ok: true, json: async () => ref })),
       /Resposta inválida/,
     );
+  }
+});
+
+test('credential metadata must identify the configured project without reading a key', () => {
+  assert.doesNotThrow(() => assertCredentialProject('writer-44cd5'));
+  for (const project of [undefined, '', 'other', 'writer-44cd5\n']) {
+    assert.throws(() => assertCredentialProject(project), /Credencial Google/);
+  }
+});
+
+test('JSON credentials are consumed only by auth in distinct protected environments', () => {
+  for (const kind of ['hosting', 'firestore']) {
+    const source = workflow(`deploy-${kind}`);
+    const deploy = source.slice(source.indexOf('\n  deploy:'));
+    assert.match(deploy, new RegExp(`environment: firebase-${kind}-production`));
+    const secret = `FIREBASE_${kind.toUpperCase()}_SERVICE_ACCOUNT_JSON`;
+    assert.equal((source.match(new RegExp(secret, 'g')) ?? []).length, 1);
+    assert.ok(source.includes(`credentials_json: \${{ secrets.${secret} }}`));
+    assert.doesNotMatch(source.slice(0, source.indexOf('\n  deploy:')), /secrets\./);
+    assert.doesNotMatch(source, /service_account:|project_id: writer-44cd5|id-token:/);
+    assert.match(deploy, /AUTH_PROJECT_ID: \$\{\{ steps\.google-auth\.outputs\.project_id \}\}/);
+    assert.ok(deploy.includes(`node scripts/firebase-deploy-guard.mjs ${kind} --authenticated`));
+    assert.match(deploy, /cleanup_credentials: true/);
+    assert.ok(deploy.indexOf('Instalar CLI') < deploy.indexOf('credentials_json:'));
+    assert.doesNotMatch(deploy, /upload-artifact@/);
   }
 });

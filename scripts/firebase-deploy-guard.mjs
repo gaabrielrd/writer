@@ -9,7 +9,7 @@ export const FIRESTORE_TARGETS = Object.freeze({
   both: 'firestore:rules,firestore:indexes',
 });
 
-/** Fail closed before obtaining a Google identity. OIDC/IAM must enforce this too. */
+/** Fail closed before obtaining a Google identity. Protected environments and IAM must enforce this too. */
 export function deploymentPolicy(kind, env) {
   if (!['hosting', 'firestore'].includes(kind)) throw new Error('Destino inválido.');
   const expectedEvent = kind === 'hosting' ? 'push' : 'workflow_dispatch';
@@ -25,20 +25,6 @@ export function deploymentPolicy(kind, env) {
   if (!/^[a-f0-9]{40}$/.test(env.GITHUB_SHA ?? '')) throw new Error('SHA inválido.');
   if (env.DEPLOY_ENABLED !== 'true') throw new Error('Deploy desabilitado.');
   if (env.DEPLOY_PROJECT !== PROJECT) throw new Error('Projeto inválido.');
-  if (
-    !/^projects\/\d+\/locations\/global\/workloadIdentityPools\/[\w-]+\/providers\/[\w-]+$/.test(
-      env.WIF_PROVIDER ?? '',
-    )
-  ) {
-    throw new Error('Provider OIDC ausente ou inválido.');
-  }
-  if (
-    !new RegExp(`^[a-z][a-z0-9-]+@${PROJECT}\\.iam\\.gserviceaccount\\.com$`).test(
-      env.DEPLOY_SERVICE_ACCOUNT ?? '',
-    )
-  ) {
-    throw new Error('Conta de deploy ausente ou fora do projeto.');
-  }
   if (kind === 'hosting') {
     if (!/^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$/.test(env.HOSTING_SITE_ID ?? '')) {
       throw new Error('Site Hosting precisa ser verificado e configurado.');
@@ -68,6 +54,11 @@ export function deploymentConfig(kind, source, policy) {
     throw new Error('Revisar caminhos Firestore antes de publicar.');
   }
   return { firestore: source.firestore };
+}
+
+/** Only public metadata returned by the auth action; never inspect the JSON key. */
+export function assertCredentialProject(project) {
+  if (project !== PROJECT) throw new Error('Credencial Google ausente ou de outro projeto.');
 }
 
 export function assertCurrentMaster(sha, head) {
@@ -106,6 +97,7 @@ export async function readMasterSha(token, fetchImplementation = fetch) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const kind = process.argv[2];
   const policy = deploymentPolicy(kind, process.env);
+  if (process.argv[3] === '--authenticated') assertCredentialProject(process.env.AUTH_PROJECT_ID);
   const head = await readMasterSha(process.env.GH_READ_TOKEN);
   assertCurrentMaster(process.env.GITHUB_SHA, head);
   const source = JSON.parse(readFileSync('firebase.json', 'utf8'));

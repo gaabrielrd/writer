@@ -30,7 +30,7 @@ A [matriz de aceite](../tasks/roadmap-acceptance.md) relaciona cada tarefa à ev
 - [x] Regras reais testadas no emulador, incluindo acesso privado, replay e créditos.
 - [x] Validação integrada local verde, sem reduzir limiares de cobertura.
 - [x] DOCX gerado, renderizado em duas páginas e inspecionado visualmente.
-- [ ] CI do SHA publicado, navegador e artefatos PDF/visuais: acompanhar no PR.
+- [x] CI de integração e navegador em `1499337`: 108 cenários verdes e PDF inspecionado; consultar checks do PR para o SHA final.
 
 ## Arquivos alterados
 
@@ -47,11 +47,11 @@ A [matriz de aceite](../tasks/roadmap-acceptance.md) relaciona cada tarefa à ev
 Saída real de `npm run validate` (Node 22, npm 10.6):
 
 ```text
-Test Files  62 passed (62)
-Tests       404 passed (404)
-All files   93.64 statements | 82.64 branches | 91.39 functions | 95.51 lines
-# tests 64
-# pass 64
+Test Files  63 passed (63)
+Tests       406 passed (406)
+All files   93.65 statements | 82.69 branches | 91.41 functions | 95.51 lines
+# tests 66
+# pass 66
 # fail 0
 Smoke test do bundle OK.
 ```
@@ -64,15 +64,15 @@ Smoke test do bundle OK.
 | Auditoria do lockfile                                   | 0 high/critical; 6 moderate                                                              |
 | Descoberta Playwright                                   | 6 testes Chromium e 108 cenários temáticos registrados                                   |
 | DOCX                                                    | Conteúdo Unicode, hierarquia, listas e quebras revisados em duas páginas renderizadas    |
-| Workflows de deploy                                     | 12 testes de guard/contratos, YAML e 23 blocos shell verificados; sem execução de deploy |
+| Workflows de deploy                                     | 14 testes de guard/contratos, YAML e 23 blocos shell verificados; sem execução de deploy |
 
 A descoberta de testes não equivale a execução. Chromium local foi bloqueado pelo
-ambiente; CI precisa produzir as evidências de navegador. O teste de PDF captura o
+ambiente; as evidências de navegador vieram do CI, registradas abaixo. O teste de PDF captura o
 documento isolado e renderiza um PDF real no Chromium, sem operar o diálogo nativo.
 
 ## Fora do escopo
 
-Merge, implantação, publicação de obras reais, IAM/OIDC/secrets, migração de produção,
+Merge, implantação, publicação de obras reais, IAM/chaves/secrets, migração de produção,
 pagamentos e concessão/reconciliação de direitos de usuários reais.
 
 ## Limitações e pendências conhecidas
@@ -84,8 +84,8 @@ pagamentos e concessão/reconciliação de direitos de usuários reais.
   atual client-side; guards cobrem a navegação e saída controladas pela aplicação.
 - Publicação requer rollout coordenado de regras e aplicativo e republicação explícita;
   nenhuma obra antiga vira pública automaticamente.
-- PDF usa impressão/salvar PDF do navegador. Layout final e navegador ficam pendentes
-  de inspeção dos artefatos de CI nesta primeira publicação do PR.
+- PDF usa impressão/salvar PDF do navegador. Layout final e navegador foram inspecionados nos artefatos de CI; o diálogo
+  nativo continua sob controle do usuário.
 - A meta de detecção abaixo de 50 ms não é garantia universal: mediana local aquecida
   de 8,13 ms em 15 mil palavras, com variação sob carga. Veja a matriz de aceite.
 - Build conserva aviso de chunk acima de 500 kB e importação dinâmica ineficaz do
@@ -129,3 +129,27 @@ visual também encontrou contraste insuficiente no aviso de backup privado em
 tema escuro; a correção usa os tokens semânticos existentes, sem alterar a paleta.
 O diálogo nativo de impressão continua simulado no teste, enquanto o PDF é
 produzido pelo renderizador real do navegador.
+
+## Opção de autenticação de deploy escolhida
+
+A preparação foi adaptada, por solicitação posterior, para chaves JSON de duas
+service accounts guardadas em GitHub Environment Secrets separados. OIDC não
+é necessário nesta opção e os jobs não recebem `id-token: write`. A chave só
+é materializada no job protegido depois das validações e verificações de
+SHA/destino; nenhum conteúdo de chave foi criado, recebido ou configurado neste PR.
+Os gates continuam desabilitados e as condições de master, projeto, artefato,
+concorrência e confirmação manual foram preservadas. A documentação detalha
+rotação/revogação e as permissões mínimas a revisar antes de qualquer ativação.
+
+## Resultado da correção de navegador
+
+O [CI de 1499337483a84dc0ad373cb18732e5152c914bb1](https://github.com/gaabrielrd/writer/actions/runs/38075580290)
+passou em Node 22/24, auditoria e navegador: seis testes Chromium básicos e
+**108/108 cenários visuais/produto, sem falhas ou retries**. O workflow separado
+de regras também passou. Os cenários agora verificam contraste real dos três
+avisos de exportação, além de seleção, Escape e viewport mobile corrigidos.
+A validação local consolidada com a opção JSON também passou, com 406 testes
+unitários e 66 de scripts. O resultado dos mesmos gates no SHA final, incluindo a preparação de
+credenciais, fica nos checks do PR; autenticação e deploy reais permanecem
+não executados. Não se deve confundir configuração informada
+pelo usuário com credenciais ou permissões testadas em produção.

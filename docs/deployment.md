@@ -69,48 +69,88 @@ não faça deploy externo em paralelo.
    somente a master. No Firestore, exigir revisor de produção; durante a
    primeira liberação Hosting também deve exigir revisão. Criar/configurar
    esses controles é uma ação separada desta preparação.
-4. Aprovar e configurar OIDC/Workload Identity Federation e contas dedicadas
-   distintas para Hosting e Firestore, sem chave JSON permanente. A confiança
-   deve restringir `repository_id=1339469949`, `repository_owner_id=7004438`,
-   `ref=refs/heads/master`, workflow correto e evento (`push` para Hosting;
-   `workflow_dispatch` para Firestore). Mapear os claims usados nas condições.
-   A permissão `roles/iam.workloadIdentityUser` deve abranger somente a conta
-   correspondente. Não confiar apenas no nome reutilizável do repositório.
-5. Configurar as variables não secretas abaixo; não inserir chaves, tokens ou
-   senhas nelas. Os gates precisam estar no nível do repositório, pois são
-   consultados antes de entrar no environment. As demais podem ficar nos
-   environments correspondentes.
-6. Testar identidade e permissões no contexto aprovado, com rollout inicial
-   supervisionado. Este PR não comprova autenticação real nem sucesso de deploy.
-7. Só então ativar o gate necessário. Ativar Hosting não publica imediatamente
+4. Aprovar contas de serviço dedicadas e **distintas** no projeto `writer-44cd5`,
+   uma para Hosting e outra para Firestore, com os papéis mínimos revisados
+   abaixo. O usuário cria e baixa uma chave JSON de cada conta diretamente no
+   Google Cloud, confere o `project_id` e o `client_email` e cadastra cada chave
+   diretamente no environment correto do GitHub. Não enviar a chave ao chat,
+   anexá-la a uma conversa, comitá-la ou colocá-la em variables. Se a política da
+   organização proibir chaves, parar; não relaxar a política para esta integração.
+5. No repositório GitHub, acessar **Settings → Environments**, abrir/criar cada
+   environment protegido e adicionar seu **Environment secret**:
+   - `firebase-hosting-production`: `FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON`
+   - `firebase-firestore-production`: `FIREBASE_FIRESTORE_SERVICE_ACCOUNT_JSON`
+     Colar o JSON completo da conta correspondente. Não definir esses mesmos
+     nomes como repository/organization secrets: o GitHub permite fallback para
+     escopos mais amplos, e o workflow não consegue provar a origem do secret.
+     Verificar que as duas chaves pertencem às contas corretas e não trocar ou
+     reutilizar uma chave entre environments. Somente o usuário manipula esses
+     arquivos reais; esta entrega não cria, recebe, lê, armazena ou testa chaves.
+6. Configurar as variables não secretas abaixo. Os gates precisam estar no nível
+   do repositório, pois são consultados antes de entrar no environment; o site
+   fica no environment Hosting. Deixar ambos os gates em `false`.
+7. Revisar os advisories da CLI de deploy, testar identidade/permissões no
+   contexto aprovado e realizar rollout inicial supervisionado. Este PR não
+   comprova autenticação real nem sucesso de deploy.
+8. Só então ativar o gate necessário. Ativar Hosting não publica imediatamente
    por si só: requer novo push da master ou reexecução apropriada do workflow
    dessa revisão, sujeita ao guard de HEAD e a todas as validações.
 
-Variables Hosting:
+Variables do repositório:
 
 - `FIREBASE_HOSTING_DEPLOY_ENABLED`: `false` até ativação autorizada
-- `FIREBASE_HOSTING_WIF_PROVIDER`: nome completo do provider OIDC verificado
-- `FIREBASE_HOSTING_SERVICE_ACCOUNT`: conta dedicada no projeto `writer-44cd5`
+- `FIREBASE_FIRESTORE_DEPLOY_ENABLED`: `false` até ativação autorizada
+
+Variable do environment `firebase-hosting-production`:
+
 - `FIREBASE_HOSTING_SITE_ID`: ID do site verificado
 
-Variables Firestore:
+Não são necessários provider/pool OIDC, `id-token: write`, nem variables com
+nomes de contas. A autenticação usa a action Google fixada por SHA, passando o
+secret somente ao input `credentials_json`, depois da validação e instalação
+das ferramentas. A action gera um arquivo ADC local ao runner e o remove no
+post-step (`cleanup_credentials: true`). Esse arquivo contém uma chave
+**duradoura**, mesmo sendo apagado ao final do job; a exclusão do arquivo não
+revoga a chave Google. Não publicar o workspace nem adicionar uploads de
+artefatos depois da autenticação.
 
-- `FIREBASE_FIRESTORE_DEPLOY_ENABLED`: `false` até ativação autorizada
-- `FIREBASE_FIRESTORE_WIF_PROVIDER`: provider com confiança específica manual
-- `FIREBASE_FIRESTORE_SERVICE_ACCOUNT`: conta dedicada Firestore
+O projeto retornado pela action é derivado da chave, sem um input `project_id`
+que sobrescreva essa informação. Antes de publicar, o guard exige que esse
+output seja `writer-44cd5`; a CLI também recebe `--project writer-44cd5` de forma
+explícita. Nosso script não abre a chave, não extrai `private_key`, não registra
+secrets nem tenta validar uma chave real nos testes. A verificação de projeto
+não distingue duas contas do mesmo projeto: conferir o e-mail da conta e seus
+papéis na criação de cada secret continua obrigatório. A separação de
+privilégios IAM impede que uma conta Hosting publique regras, e vice-versa.
 
 As Actions estão fixadas por SHA; atualizar exige revisar o novo código. O
 Firebase CLI também tem versão explícita nos dois workflows (`15.33.0`).
 A auditoria automática acima cobre o lockfile da aplicação, não o grafo
-transitivo dessa CLI instalada separadamente no runner. Revisar também os
-advisories da versão da CLI antes da ativação; não interpretar CI verde como
-auditoria de todas as ferramentas de deploy. Não adicionamos a CLI às
-dependências da aplicação. A instalação e
-os testes acontecem antes de obter credenciais Google. Somente o job `deploy`
-recebe `id-token: write`; os jobs que executam dependências/testes não recebem
-identidade Google. Não há execução privilegiada de PR, fork, `workflow_run`
-ou `pull_request_target`. O guard de código é defesa adicional, não substitui
-as condições OIDC e proteção dos environments.
+transitivo dessa CLI instalada separadamente no runner. A auditoria isolada dessa CLI em 2026-10-10, com Node 22 e npm 10.6, confirmou
+sete nós de dependências classificados como high e quatro moderate: são quatro
+advisories únicos, dos quais dois high, não sete vulnerabilidades high distintas.
+A versão 15.33.0 ainda era a última stable consultada. Os avisos high têm origem em
+`basic-ftp` (GHSA-c475-qrg2-pj4r) e `braces` (GHSA-vfj7-8cjw-p6xm); os moderate em
+OpenTelemetry core (GHSA-8988-4f7v-96qf) e `uuid` (GHSA-w5hq-g745-h8pq). Correções
+transitivas disponíveis exigem atualizações major em dependências intermediárias;
+o aviso de `braces` não tinha correção publicada. Não foram aplicados downgrade,
+`audit fix --force` ou overrides especulativos.
+
+A inspeção estática encontrou caminhos ligados principalmente a emuladores/proxy
+não usados nestes comandos, e uso de UUID v4 no caminho de autenticação, em vez da
+API afetada. Isso **não comprova** que todos os caminhos vulneráveis sejam
+inalcançáveis. A CLI não é incluída em `dist/`; as ferramentas de teste usam o
+emulador oficial diretamente. **A ativação do deploy fica pendente da resolução
+ou revisão explícita desse risco, com nova auditoria antes da ativação.**
+Não interpretar CI verde como auditoria de todas as ferramentas de deploy.
+Não adicionamos a CLI às dependências da aplicação.
+
+Os jobs que executam dependências/testes não recebem o secret Google. Não há
+execução privilegiada de PR, fork, `workflow_run` ou `pull_request_target`.
+O token GitHub continua com `contents: read`; não há permissão OIDC. O guard de
+código é defesa adicional, não substitui proteção dos environments, revisão
+dos workflows e papéis IAM. Quem puder alterar um workflow autorizado a ler
+um environment pode tentar acessar seu secret; proteger a master é essencial.
 
 ### Permissões separadas
 
@@ -123,17 +163,35 @@ Para a conta Firestore, revisar permissões de publicação de rulesets/releases
 de índices (`roles/datastore.indexAdmin`). A escolha `rules/indexes/both`
 restringe o comando, **não altera os privilégios IAM da conta**. Esses papéis
 são mais amplos que uma única operação; um papel customizado pode reduzir o
-escopo. Revisar também permissões de leitura de metadados exigidas pela versão
-da CLI. Não conceder acesso a documentos nem ampliar permissões automaticamente
-para contornar um erro. Validar a combinação efetiva na ativação aprovada.
+escopo. As permissões de leitura de metadados/projeto exigidas pela versão da
+CLI ainda não foram validadas em produção; os papéis citados são uma base para
+revisão, não uma promessa de conjunto completo e mínimo. Não conceder acesso
+a documentos nem ampliar permissões automaticamente para contornar um erro.
+Validar a combinação efetiva na ativação aprovada. A autenticação usa a própria
+conta da chave; não configurar impersonação, Domain-Wide Delegation nem
+`roles/iam.serviceAccountTokenCreator` por conveniência.
 
-A alternativa `firebase init hosting:github` usa chave JSON duradoura e pode
-conceder papéis adicionais para previews/Auth/Functions/Run; não é utilizada.
-Não usar `FIREBASE_TOKEN`. Configuração pública Firebase/Vite (project ID,
-app ID, API key de cliente e site key App Check) acaba no navegador e não é
-credencial de deploy. Nunca colocar chave privada Google ou segredo de IA em
-`VITE_*`. Credenciais temporárias são criadas depois do artefato; somente
-`dist/` é publicado, sem arquivos `gha-creds-*.json`.
+O wizard `firebase init hosting:github` pode conceder papéis adicionais para
+previews/Auth/Functions/Run; não é utilizado. Não usar `FIREBASE_TOKEN`.
+Configuração pública Firebase/Vite (project ID, app ID, API key de cliente e
+site key App Check) acaba no navegador e não é credencial de deploy. Nunca
+colocar chave privada Google ou segredo de IA em `VITE_*`. Somente `dist/` é
+publicado, sem arquivos `gha-creds-*.json`. O JSON bruto não é colocado em
+comandos shell, logs, variáveis de build, caches ou artefatos. Manter a cópia
+local da chave protegida somente pelo tempo necessário à configuração e
+removê-la de Downloads conforme a política da organização.
+
+### Rotação e revogação das chaves
+
+Definir responsável e prazo de rotação para cada conta. O usuário cria a nova
+chave, atualiza somente o environment secret correspondente, verifica a nova
+configuração em execução aprovada e revoga a chave anterior no Google Cloud.
+Nunca registrar os valores das chaves na documentação ou no Git. Se houver
+suspeita de vazamento, revogar a chave afetada no Google Cloud, desligar o gate,
+conferir jobs em andamento e substituir/remover o secret comprometido. Apagar
+apenas o secret GitHub não invalida uma cópia da chave vazada. Desligar um gate
+não revoga a chave nem interrompe necessariamente uma publicação iniciada.
+Todas essas operações exigem autorização própria; não são executadas pelo PR.
 
 ## Executar a atualização manual, depois da ativação
 
@@ -190,7 +248,8 @@ construir e sua exclusão pode afetar consultas. Recuperação de dados/migraç�
 
 - [Firebase CLI e ADC em CI](https://firebase.google.com/docs/cli#cli-ci-systems)
 - [Google GitHub auth](https://github.com/google-github-actions/auth)
-- [Federação para pipelines](https://docs.cloud.google.com/iam/docs/workload-identity-federation-with-deployment-pipelines)
+- [Boas práticas para chaves de contas de serviço](https://docs.cloud.google.com/iam/docs/best-practices-for-managing-service-account-keys)
+- [Secrets por environment no GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/use-secrets)
 - [Papéis Hosting](https://firebase.google.com/docs/projects/iam/roles-predefined-product#firebase-hosting-roles)
 - [Papéis Security Rules](https://docs.cloud.google.com/iam/docs/roles-permissions/firebaserules)
 - [Índices Firestore](https://firebase.google.com/docs/firestore/query-data/indexing)

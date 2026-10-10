@@ -77,11 +77,8 @@ jobs:
     environment: firebase-firestore-production
     permissions:
       contents: read
-      id-token: write
     env:
       DEPLOY_ENABLED: ${{ vars.FIREBASE_FIRESTORE_DEPLOY_ENABLED }}
-      WIF_PROVIDER: ${{ vars.FIREBASE_FIRESTORE_WIF_PROVIDER }}
-      DEPLOY_SERVICE_ACCOUNT: ${{ vars.FIREBASE_FIRESTORE_SERVICE_ACCOUNT }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -97,18 +94,19 @@ jobs:
         env:
           GH_READ_TOKEN: ${{ github.token }}
         run: node scripts/firebase-deploy-guard.mjs firestore
-      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+      - id: google-auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
-          project_id: writer-44cd5
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.FIREBASE_FIRESTORE_SERVICE_ACCOUNT_JSON }}
           create_credentials_file: true
+          cleanup_credentials: true
       - name: Publicar somente os recursos confirmados
         env:
+          AUTH_PROJECT_ID: ${{ steps.google-auth.outputs.project_id }}
           GH_READ_TOKEN: ${{ github.token }}
           FIRESTORE_ONLY: ${{ steps.guard.outputs.only }}
         run: |
-          node scripts/firebase-deploy-guard.mjs firestore
+          node scripts/firebase-deploy-guard.mjs firestore --authenticated
           unset GH_READ_TOKEN
           firebase deploy --only "$FIRESTORE_ONLY" --project "$DEPLOY_PROJECT" --config firebase.deploy.json --non-interactive
           printf 'Comando concluído: %s; projeto %s; commit %s. Verifique propagação de regras e estado READY dos índices no console.\n' \

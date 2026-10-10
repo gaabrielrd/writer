@@ -97,11 +97,8 @@ jobs:
     environment: firebase-hosting-production
     permissions:
       contents: read
-      id-token: write
     env:
       DEPLOY_ENABLED: ${{ vars.FIREBASE_HOSTING_DEPLOY_ENABLED }}
-      WIF_PROVIDER: ${{ vars.FIREBASE_HOSTING_WIF_PROVIDER }}
-      DEPLOY_SERVICE_ACCOUNT: ${{ vars.FIREBASE_HOSTING_SERVICE_ACCOUNT }}
       HOSTING_SITE_ID: ${{ vars.FIREBASE_HOSTING_SITE_ID }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -131,17 +128,18 @@ jobs:
         env:
           GH_READ_TOKEN: ${{ github.token }}
         run: node scripts/firebase-deploy-guard.mjs hosting
-      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+      - id: google-auth
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
-          project_id: writer-44cd5
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.FIREBASE_HOSTING_SERVICE_ACCOUNT_JSON }}
           create_credentials_file: true
+          cleanup_credentials: true
       - name: Publicar somente Hosting
         env:
+          AUTH_PROJECT_ID: ${{ steps.google-auth.outputs.project_id }}
           GH_READ_TOKEN: ${{ github.token }}
         run: |
-          node scripts/firebase-deploy-guard.mjs hosting
+          node scripts/firebase-deploy-guard.mjs hosting --authenticated
           unset GH_READ_TOKEN
           firebase deploy --only hosting --project "$DEPLOY_PROJECT" --config firebase.deploy.json --non-interactive
       - name: Verificar release servida
