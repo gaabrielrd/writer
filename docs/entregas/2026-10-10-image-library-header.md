@@ -92,7 +92,7 @@ e mudanças na geração do editor.
 
 ## Limitações e pendências conhecidas
 
-- Esta entrega não foi implantada nem enviada ao remoto. Produção precisa de funções, índice e regras antes do frontend.
+- Ao concluir a implementação local, a entrega não estava implantada nem enviada ao remoto. A implantação autorizada está registrada abaixo.
 - Não há PR/CI verificado nesta entrega local.
 - Arquivos antigos já excluídos não podem ser recuperados.
 - Liberação de uso após excluir um livro aguarda o trigger assíncrono.
@@ -136,4 +136,45 @@ Chromium (header compacto): 6 passed (27.3s)
 
 Evidências: [desktop](evidencias/2026-10-10-selected-library-header-desktop.png)
 e [celular](evidencias/2026-10-10-selected-library-header-mobile.png).
-Deploy permanece pendente.
+Nesse incremento, o deploy ainda estava pendente.
+
+## Implantação autorizada em 2026-10-10
+
+Deploy pela CLI local Firebase 15.24.0 no projeto `writer-44cd5`, a pedido do
+usuário. Build validado do commit `a34d955`, sem alterações de código nesta
+etapa. O site de destino foi confirmado pela CLI antes de publicar.
+
+Ordem executada:
+
+```text
+firebase deploy --only "functions:book-generation,firestore:indexes" --project writer-44cd5 --non-interactive
+Deploy complete!
+firebase deploy --only firestore:rules --project writer-44cd5 --non-interactive
+Deploy complete!
+firebase deploy --only hosting --project writer-44cd5 --non-interactive
+Deploy complete!
+Hosting URL: https://writer-44cd5.web.app
+```
+
+Verificações reais:
+
+- Doze funções `ACTIVE` em `us-central1`, incluindo `listLibraryImages`, `renameLibraryImage`, `deleteLibraryImage`, `saveBookImage` e `migrateImageLibrary`.
+- Índice `imageLibrary` `CICAgJjF9oIK` chegou a `READY` antes do Hosting.
+- Consulta real com filtro `IN` de estados e ordenação data/ID: HTTP 200, zero documentos em UID fictício; nenhuma gravação.
+- Regras publicadas no ruleset `25133b36-eaa5-48c6-b658-6a2386c8ff9e` correspondem ao arquivo local.
+- As cinco funções novas retornaram HTTP 401 sem Auth/App Check.
+- Release Hosting `a93c72d94e58c774`, `FINALIZED`, em 2026-10-10 às 21:46:54 UTC.
+- Dez arquivos live, incluindo HTML, JS e CSS, correspondem ao inventário SHA-256 do build validado. HTML: `7bc5db5f973b263a99d1de333ae57978ee4754f0f58c155ec5a058ae22ceefad`.
+- Rotas `/` e `/library`: HTTP 200 e HTML correspondente ao build.
+
+As regras anteriores foram preservadas em arquivo temporário local antes da
+troca: ruleset `ae3649eb-a189-4276-9c64-072bffc26fde`. Inventário e verificações
+ficaram em `C:/Users/gaabr/AppData/Local/Temp/writer-library-deploy-2npmux`, sem
+credenciais. A consulta auxiliar precisou corrigir sua inicialização de sessão
+e o formato do corpo HTTP antes de passar; isso não exigiu mudanças no aplicativo.
+
+Não houve geração de IA, novos livros, cobrança ou migração global de dados.
+A verificação completa autenticada com imagens reais não foi repetida. O
+trigger mantém a configuração regional anterior (função `us-central1`, Firestore
+`southamerica-east1`). Storage e segredos não foram alterados. Os gates de CI
+continuam como estavam; o arquivo alheio `skills/plan-feature.zip` foi preservado.

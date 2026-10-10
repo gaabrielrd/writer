@@ -266,3 +266,11 @@ Antes de liberar o frontend da biblioteca, publique as funções do codebase
 O índice deve estar pronto para a consulta paginada. A migração é privada,
 incremental e inicia quando o usuário acessa a biblioteca; nenhum script global
 altera dados automaticamente durante a implementação. Veja [biblioteca de imagens](image-library.md).
+
+Em 2026-10-10, a implantação local da biblioteca e do header foi autorizada e
+concluída em `writer-44cd5.web.app`: funções/índice primeiro, regras em seguida
+e Hosting após o índice atingir `READY`. As doze funções estão `ACTIVE`, as
+regras foram comparadas com a versão local e os dez arquivos publicados foram
+verificados por SHA-256 contra o build validado do commit `a34d955`. Release
+Hosting `a93c72d94e58c774`. Essa publicação não ativou os workflows de CI.
+Evidência em [entrega da biblioteca](entregas/2026-10-10-image-library-header.md).
