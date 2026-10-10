@@ -1,13 +1,31 @@
 import { describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { BookNavigation } from '../components/BookNavigation';
 import { watchBookTitle } from '../services/bookNavigationService';
 const auth: { user: { uid: string } | null } = vi.hoisted(() => ({ user: { uid: 'author' } }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('../services/bookNavigationService', () => ({ watchBookTitle: vi.fn(() => vi.fn()) }));
 describe('book navigation', () => {
+  it('shows the selected library in the dropdown, with a separator before it', async () => {
+    render(
+      <MemoryRouter initialEntries={['/library']}>
+        <Routes>
+          <Route path="*" element={<BookNavigation />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const trigger = screen.getByRole('button', { name: 'Biblioteca de Imagens' });
+    const nav = screen.getByRole('navigation');
+    expect(nav.firstElementChild).toHaveTextContent('/');
+    expect(nav.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+    expect(screen.getAllByText('Biblioteca de Imagens')).toHaveLength(1);
+    await userEvent.click(trigger);
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Meus Livros' }));
+    expect(screen.getByRole('button', { name: 'Meus Livros' })).toBeInTheDocument();
+    expect(screen.queryByText('Biblioteca de Imagens')).not.toBeInTheDocument();
+  });
   it('opens library destinations by keyboard and restores focus on Escape', async () => {
     render(
       <MemoryRouter>

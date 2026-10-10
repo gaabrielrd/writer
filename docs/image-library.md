@@ -42,7 +42,9 @@ tardio das miniaturas.
 
 ## Header
 
-À esquerda, **Meus Livros** abre a navegação para livros e biblioteca. Nas rotas
+À esquerda, a barra separa **Writer Assistant** do dropdown de navegação. O
+dropdown mostra **Biblioteca de Imagens** nessa página e **Meus Livros** nas
+rotas de livros, permitindo alternar entre as bibliotecas. Nas rotas
 privadas de obra, o título acompanha as alterações do documento e é truncado
 quando necessário, com título completo acessível. O contexto é limpo ao trocar
 livro ou conta; rotas de leitura pública não consultam esse título privado.

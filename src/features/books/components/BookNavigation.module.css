@@ -13,6 +13,9 @@
   white-space: nowrap;
   max-width: 260px;
 }
+.separator {
+  color: hsl(var(--muted-foreground));
+}
 @media (max-width: 700px) {
   .nav {
     width: 100%;

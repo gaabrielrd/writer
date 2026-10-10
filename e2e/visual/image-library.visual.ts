@@ -22,6 +22,11 @@ test('header compacto, menus por teclado e gerenciamento da biblioteca', async (
   await page.keyboard.press('Enter');
   await page.getByRole('menuitem', { name: 'Biblioteca de Imagens' }).click();
   await expect(page).toHaveURL(/\/library$/);
+  await expect(page.getByRole('button', { name: 'Biblioteca de Imagens' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Meus Livros' })).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toHaveText(
+    '/Biblioteca de Imagens',
+  );
   await expect(page.getByRole('heading', { name: 'Biblioteca de Imagens' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Excluir Capa em uso' })).toBeDisabled();
   await capture(page, testInfo, 'biblioteca-de-imagens');

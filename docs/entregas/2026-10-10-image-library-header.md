@@ -109,3 +109,31 @@ e mudanças na geração do editor.
 4. Abrir uma obra e verificar o título no header; abrir a conta para email/saída e focar/tocar o saldo para ver o plano.
 
 Operação detalhada em [biblioteca de imagens](../image-library.md).
+
+## Incremento em 2026-10-10: biblioteca selecionada no header
+
+O dropdown passa a mostrar **Biblioteca de Imagens** quando essa página está
+selecionada, com seu ícone correspondente. A barra fica entre **Writer Assistant**
+e o dropdown. O nome da biblioteca deixa de ser repetido no breadcrumb; o título
+da obra continua disponível nas rotas privadas de livros.
+
+`BookNavigation.test.tsx` cobre o valor selecionado, a posição da barra e a troca
+para Meus Livros. A suíte visual verifica o dropdown nos três temas, em desktop
+e celular. O diff foi revisado e `git diff --check` passou.
+
+Validações reais deste incremento:
+
+```text
+npm run validate
+Resultado: verde
+Test Files  70 passed (70)
+     Tests  445 passed (445)
+scripts: tests 66, pass 66, fail 0
+backend: tests 20, pass 20, fail 0
+Smoke test do bundle OK.
+Chromium (header compacto): 6 passed (27.3s)
+```
+
+Evidências: [desktop](evidencias/2026-10-10-selected-library-header-desktop.png)
+e [celular](evidencias/2026-10-10-selected-library-header-mobile.png).
+Deploy permanece pendente.

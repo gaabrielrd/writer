@@ -18,14 +18,19 @@ export function BookNavigation() {
   }, [bookId, user, key]);
   if (!user) return null;
   const current = title?.key === key ? title.text : '';
+  const imageLibrarySelected = pathname === '/library';
+  const SelectedIcon = imageLibrarySelected ? Images : BookOpen;
   return (
     <nav className={styles.nav} aria-label="Navegação principal">
+      <span className={styles.separator} aria-hidden="true">
+        /
+      </span>
       <Dropdown
         label="Suas bibliotecas"
         trigger={
           <Button variant="ghost">
-            <BookOpen className="icon icon-sm" aria-hidden="true" />
-            Meus Livros
+            <SelectedIcon className="icon icon-sm" aria-hidden="true" />
+            {imageLibrarySelected ? 'Biblioteca de Imagens' : 'Meus Livros'}
             <ChevronDown className="icon icon-sm" aria-hidden="true" />
           </Button>
         }
@@ -43,15 +48,11 @@ export function BookNavigation() {
           </Link>
         </DropdownItem>
       </Dropdown>
-      {(current || pathname === '/library') && (
+      {current && (
         <>
           <span aria-hidden="true">/</span>
-          <span
-            className={styles.title}
-            title={current || 'Biblioteca de Imagens'}
-            aria-current="page"
-          >
-            {current || 'Biblioteca de Imagens'}
+          <span className={styles.title} title={current} aria-current="page">
+            {current}
           </span>
         </>
       )}
