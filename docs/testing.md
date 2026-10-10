@@ -51,8 +51,10 @@ O E2E escolhe uma porta efêmera, gera o bundle e serve a aplicação localmente
 
 `e2e/styleguide.spec.ts` protege o styleguide em duas camadas:
 
-1. **Contrato de estilo**: compara os valores realmente aplicados (`--accent`,
-   `--danger`, cor de fundo do botão primário, cor da mensagem de erro). É
+1. **Contrato de estilo**: compara os tokens semânticos (`--background`, `--foreground`,
+   `--primary`, `--destructive`) e as cores aplicadas ao corpo, aos botões e ao
+   alerta de erro nos temas claro, escuro e sépia. Verifica também persistência
+   após recarregar, alternância e acompanhamento do tema do sistema. É
    determinístico em qualquer sistema operacional e a falha diz exatamente qual
    valor mudou. Roda sempre, inclusive no CI.
 2. **Regressão visual**: compara a página `/styleguide` inteira, pixel a pixel,
@@ -110,8 +112,9 @@ A composição da aplicação tem smoke test em `src/app/tests/`: a rota raiz mo
 
 O setup também é comportamento público do template. Seus testes executam dry-run, personalização, repetição idempotente e rollback em pastas temporárias. A persistência testa migração, backup de dados inválidos, conflitos de revisão e sincronização entre abas. O smoke test serve `dist/` em uma porta efêmera e acessa o HTML e seus assets como um navegador faria.
 
-O smoke E2E complementa essas redes executando o React no Chromium: adiciona e
-remove uma nota usando nomes acessíveis e confirma a rota de fallback. Ele fica
+O smoke E2E complementa essas redes executando o React no Chromium: verifica a
+página inicial, os campos e a troca de modo do login, o histórico de navegação e
+o retorno da rota de fallback. Não autentica usuários nem cria contas reais. Ele fica
 em um gate separado de `npm run validate` para que a validação local não baixe
 binários de navegador implicitamente.
 

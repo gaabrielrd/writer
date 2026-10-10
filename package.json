@@ -93,6 +93,9 @@
   "overrides": {
     "eslint-plugin-jsx-a11y": {
       "eslint": "$eslint"
+    },
+    "@firebase/firestore": {
+      "@grpc/grpc-js": "1.13.6"
     }
   },
   "description": "Assistente para escritores de materiais educacionais ou livros"

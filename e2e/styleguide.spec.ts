@@ -16,43 +16,103 @@ import { expect, test } from '@playwright/test';
 const screenshotName = 'styleguide.png';
 const baseline = join('e2e', '__screenshots__', process.platform, screenshotName);
 
-test('mantém o contrato de estilo do tema', async ({ page }) => {
-  await page.goto('/styleguide');
+// O tema do sistema é controlado pelo teste, não pela máquina do CI.
+test.use({ colorScheme: 'light' });
 
-  const root = page.locator('html');
-  await expect(root).toHaveAttribute('data-theme', 'vitru');
-  await expect(root).toHaveCSS('--accent', '#281352');
-  await expect(root).toHaveCSS('--danger', '#a11a2b');
-  await expect(root).toHaveCSS('--week-today-bg', '#ffc20e');
-  // Branco e preto viram #fff e #000 na minificação: compare o valor
-  // realmente aplicado, que não depende do bundler.
-  await expect(page.locator('body')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
-  await expect(page.locator('body')).toHaveCSS('color', 'rgb(0, 0, 0)');
+const themes = [
+  {
+    id: 'light',
+    background: '0 0% 100%',
+    foreground: '222.2 84% 4.9%',
+    primary: '221.2 83.2% 53.3%',
+    destructive: '0 84.2% 60.2%',
+  },
+  {
+    id: 'dark',
+    background: '224 71% 4%',
+    foreground: '213 31% 91%',
+    primary: '217.2 91.2% 59.8%',
+    destructive: '0 62.8% 40.6%',
+  },
+  {
+    id: 'sepia',
+    background: '37 38% 92%',
+    foreground: '24 33% 17%',
+    primary: '27 61% 36%',
+    destructive: '0 65% 45%',
+  },
+];
 
-  // Os componentes precisam consumir os tokens, não apenas declará-los.
-  await expect(page.getByRole('button', { name: 'Ação primária' })).toHaveCSS(
-    'background-color',
-    'rgb(40, 19, 82)',
-  );
-  await expect(page.getByRole('button', { name: 'Ação destrutiva' })).toHaveCSS(
-    'background-color',
-    'rgb(255, 245, 246)',
-  );
-  await expect(page.getByText('Informe um e-mail válido')).toHaveCSS('color', 'rgb(161, 26, 43)');
+for (const theme of themes) {
+  test(`mantém o contrato e persiste o tema ${theme.id}`, async ({ page }) => {
+    await page.goto('/styleguide');
+    await expect(
+      page.getByRole('heading', { name: 'Catálogo do Design System & Temas' }),
+    ).toBeVisible();
+    await page.getByRole('combobox', { name: 'Selecionar tema visual' }).selectOption(theme.id);
+    const root = page.locator('html');
+    await expect(root).toHaveAttribute('data-theme', theme.id);
+    for (const token of ['background', 'foreground', 'primary', 'destructive'] as const) {
+      await expect(root).toHaveCSS(`--${token}`, theme[token]);
+    }
 
-  // Fontes oficiais: título em TheMix, texto em Archivo. Se um arquivo sumir,
-  // o navegador cai na fonte de reserva e isto acusa.
-  await expect(page.getByRole('heading', { name: 'Styleguide' })).toHaveCSS(
-    'font-family',
-    /^TheMix/,
-  );
-  await expect(page.locator('body')).toHaveCSS('font-family', /^Archivo/);
-  const carregadas = await page.evaluate(async () => {
-    await document.fonts.ready;
-    return [...document.fonts].map((face) => `${face.family} ${face.weight} ${face.style}`);
+    // Resolve os valores HSL esperados no próprio navegador. Isso preserva
+    // o contrato sem depender da serialização/minificação de cores do CSS.
+    const colors = await page.evaluate((palette) => {
+      const probe = document.createElement('span');
+      document.body.append(probe);
+      const resolve = (value: string) => {
+        probe.style.color = `hsl(${value})`;
+        return getComputedStyle(probe).color;
+      };
+      const result = {
+        background: resolve(palette.background),
+        foreground: resolve(palette.foreground),
+        primary: resolve(palette.primary),
+        destructive: resolve(palette.destructive),
+      };
+      probe.remove();
+      return result;
+    }, theme);
+    await expect(page.locator('body')).toHaveCSS('background-color', colors.background);
+    await expect(page.locator('body')).toHaveCSS('color', colors.foreground);
+    await expect(page.getByRole('button', { name: 'Primary', exact: true })).toHaveCSS(
+      'background-color',
+      colors.primary,
+    );
+    await expect(page.getByRole('button', { name: 'Destructive', exact: true })).toHaveCSS(
+      'background-color',
+      colors.destructive,
+    );
+    await expect(
+      page
+        .getByRole('alert')
+        .filter({ has: page.getByRole('heading', { name: 'Erro', exact: true }) }),
+    ).toHaveCSS('color', colors.destructive);
+    await expect(page.getByRole('button', { name: 'Disabled', exact: true })).toBeDisabled();
+    await page.reload();
+    await expect(root).toHaveAttribute('data-theme', theme.id);
+    await expect(page.getByRole('combobox', { name: 'Selecionar tema visual' })).toHaveValue(
+      theme.id,
+    );
   });
-  expect(carregadas).toContain('TheMix 700 normal');
-  expect(carregadas).toContain('Archivo 400 normal');
+}
+
+test('acompanha o sistema e permite alternar os três temas', async ({ page }) => {
+  await page.goto('/styleguide');
+  const root = page.locator('html');
+  await page.getByRole('combobox', { name: 'Selecionar tema visual' }).selectOption('system');
+  await expect(root).toHaveAttribute('data-theme', 'light');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(root).toHaveAttribute('data-theme', 'dark');
+  // O cabeçalho global e o catálogo oferecem o mesmo controle.
+  const toggle = page.getByRole('button', { name: /^Alternar tema/ }).first();
+  for (const theme of ['sepia', 'light', 'dark']) {
+    await toggle.click();
+    await expect(root).toHaveAttribute('data-theme', theme);
+  }
+  await page.emulateMedia({ colorScheme: 'light' });
+  await expect(root).toHaveAttribute('data-theme', 'dark');
 });
 
 test('mantém a aparência da página do styleguide', async ({ page }) => {
