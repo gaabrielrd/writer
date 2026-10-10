@@ -32,12 +32,17 @@ e corrigir dependências vulneráveis sem reduzir os gates.
   ser confirmado pelo workflow Chromium existente.
 - Auditoria do lockfile atualizado: 0 críticas, 0 altas, 6 moderadas.
   O gate permanece `npm audit --audit-level=high`, sem alteração.
-- Teste de transporte passou com a versão anterior; confirmação da versão
-  corrigida e validação completa do SHA final ainda pendentes.
+- Teste de transporte passou com gRPC 1.9.16 e, após nova instalação limpa
+  de 550 pacotes, com 1.13.6: 1 teste, 1 passou, 0 falhou.
+- Primeiro CI: auditoria e validação Node 22/24 passaram; E2E passou navegação e
+  três paletas, detectando a duplicação de ThemeProvider no fluxo de sistema.
+  O SHA corrigido ainda precisa de confirmação integral.
 
 ## Limitações e critérios para merge
 
-Nenhuma mudança de produção na interface. TypeScript continua em 6.0.3.
+O bootstrap deixa de montar um segundo ThemeProvider: a duplicação sobrescrevia
+o tema escolhido quando a preferência do sistema mudava. O novo E2E detectou
+a regressão no CI e permanece cobrindo esse comportamento. TypeScript continua em 6.0.3.
 As seis vulnerabilidades moderadas restantes envolvem Vitest e sprintf-js via
 Mammoth; não foram usadas atualizações major ou downgrades sugeridos pelo audit.
 A comparação de screenshot permanece dependente de baseline por plataforma;

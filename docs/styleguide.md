@@ -26,6 +26,8 @@ A aplicação possui suporte nativo e reativo a múltiplos temas, controlados pe
 4. **Sistema (`system`)**: Acompanha a preferência do sistema operacional (`prefers-color-scheme`).
 
 O controle de alternância de tema no cabeçalho é feito via `<ThemeToggle />` ou `<ThemeSelect />`.
+Existe um único `ThemeProvider`, em `App`; não o duplique no bootstrap, pois
+provedores independentes disputam o atributo do tema ao mudar a preferência do sistema.
 
 ## Regras de Interface
 
