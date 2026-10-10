@@ -135,6 +135,12 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      match /imageLibrary/{imageId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+        match /uses/{bookId} { allow read, write: if false; }
+      }
+      match /imageLibraryMigration/{markerId} { allow read, write: if false; }
       match /bookGenerations/{generationId} {
         allow read, write: if false;
       }
@@ -172,11 +178,14 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.status == 'draft'
+        && request.resource.data.get('coverImageId', null) == null
         && request.resource.data.get('publicationPrivacyVersion', 0) == 0
         && request.resource.data.get('deleting', false) == false
         && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
       allow update: if isOwner(resource.data.authorId)
         && request.resource.data.authorId == resource.data.authorId
+        && request.resource.data.get('coverImageId', null) == resource.data.get('coverImageId', null)
+        && (resource.data.get('coverImageId', null) == null || request.resource.data.get('coverUrl', null) == resource.data.get('coverUrl', null))
         && validPublicationState(bookId)
         && request.resource.data.status in ['draft', 'published']
         && (request.resource.data.status == 'draft'

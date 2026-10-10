@@ -1,3 +1,4 @@
+import { imageRef, libraryImage, createImageLibraryService } from './imageLibrary.mjs';
 import { createHash } from 'node:crypto';
 
 export class GenerationError extends Error {
@@ -132,17 +133,30 @@ export function createGenerationService({ db, generator, assets, costs, now = Da
       const ref = requestRef(uid, data.id);
       const result = await db.runTransaction(async (tx) => {
         const userRef = db.doc(`users/${uid}`);
-        const [request, user] = await Promise.all([tx.get(ref), tx.get(userRef)]);
+        const libraryRef = imageRef(db, uid, data.id);
+        const [request, user, image] = await Promise.all([
+          tx.get(ref),
+          tx.get(userRef),
+          tx.get(libraryRef),
+        ]);
         const record = request.data();
         usable(record);
         if (!['ready', 'accepted', 'attached'].includes(record.state))
           fail('failed-precondition', 'Sugestão indisponível.');
         const credits = user.data()?.credits;
         if (!Number.isSafeInteger(credits)) fail('failed-precondition', 'Perfil inválido.');
+        if (record.kind === 'cover' && image.exists && image.data().state !== 'active')
+          fail('not-found', 'Imagem removida da biblioteca.');
+        if (record.kind === 'cover' && !image.exists)
+          tx.create(libraryRef, libraryImage(data.id, record, now()));
         if (record.state === 'ready') {
           if (credits < record.cost) fail('resource-exhausted', 'Saldo de créditos insuficiente.');
           tx.update(userRef, { credits: credits - record.cost, updatedAt: now() });
-          tx.update(ref, { state: 'accepted', acceptedAt: now(), expiresAt: now() + 7 * 86400000 });
+          tx.update(ref, {
+            state: 'accepted',
+            acceptedAt: now(),
+            expiresAt: record.kind === 'cover' ? Number.MAX_SAFE_INTEGER : now() + 7 * 86400000,
+          });
         }
         return {
           id: data.id,
@@ -150,7 +164,7 @@ export function createGenerationService({ db, generator, assets, costs, now = Da
           credits: record.state === 'ready' ? credits - record.cost : credits,
           ...(record.kind === 'synopsis'
             ? { text: record.text }
-            : { coverUrl: record.coverUrl, path: record.path }),
+            : { coverUrl: record.coverUrl, imageId: data.id, path: record.path }),
         };
       });
       // Publish access only after the authoritative debit. Retrying this step does not debit again.
@@ -169,46 +183,7 @@ export function createGenerationService({ db, generator, assets, costs, now = Da
       return { discarded: true };
     },
     async createWithCover(uid, data) {
-      authorize(uid);
-      const bookId = validateId(data.creationId);
-      const ref = requestRef(uid, data.coverGenerationId);
-      const bookRef = db.doc(`books/${bookId}`);
-      const input = {
-        title: text(data.title, 300),
-        genre: text(data.genre, 120),
-        synopsis: text(data.synopsis, 4000, false),
-      };
-      return db.runTransaction(async (tx) => {
-        const [request, book, deleted] = await Promise.all([
-          tx.get(ref),
-          tx.get(bookRef),
-          tx.get(db.doc(`deletedBooks/${bookId}`)),
-        ]);
-        if (deleted.exists) fail('failed-precondition', 'Identificador de livro removido.');
-        if (book.exists) {
-          if (book.data().authorId !== uid) fail('permission-denied', 'Livro indisponível.');
-          if (request.data()?.bookId !== bookId)
-            fail('failed-precondition', 'Identificador já utilizado.');
-          return book.data();
-        }
-        const record = request.data();
-        usable(record);
-        if (record.kind !== 'cover' || record.state !== 'accepted')
-          fail('failed-precondition', 'Selecione uma capa aceita.');
-        const value = {
-          id: bookId,
-          authorId: uid,
-          ...input,
-          coverUrl: record.coverUrl,
-          status: 'draft',
-          wordCount: 0,
-          createdAt: now(),
-          updatedAt: now(),
-        };
-        tx.create(bookRef, value);
-        tx.update(ref, { state: 'attached', bookId, expiresAt: Number.MAX_SAFE_INTEGER });
-        return value;
-      });
+      return createImageLibraryService({ db, assets, now }).saveBook(uid, data);
     },
   };
 }

@@ -45,6 +45,8 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 - `Select`: Menu de seleção acessível.
 - `Badge`: Pílulas de identificação e status (`default`, `secondary`, `accent`, `success`, `destructive`, `outline`).
 - `Card`: Agrupamento de conteúdo (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`).
+- `Dropdown`, `DropdownItem`, `DropdownLabel`: Menus acessíveis de navegação e conta.
+- `Tooltip`: Dicas por hover, foco e toque.
 - `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog.
 - `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).
 - `LoadingState`, `EmptyState`, `ErrorState`: Estados padrão de ciclo de vida.
@@ -101,3 +103,10 @@ Os tokens ficam em `src/styles/globals.css`; os três temas e a preferência do
 sistema continuam compartilhando um único provider. A suíte visual usa serviços
 fictícios em configuração exclusiva de teste, nunca um modo de demonstração no
 bundle de produção.
+
+O header usa navegação de bibliotecas à esquerda com breadcrumb do livro nas
+rotas privadas. O saldo mostra somente ícone e número, com detalhes no tooltip.
+Nome/avatar abre email e saída em dropdown. Imagens da biblioteca têm miniaturas
+2:3, carregamento tardio e controles de gerenciamento com rótulos acessíveis.
+
+Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.

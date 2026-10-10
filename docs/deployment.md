@@ -258,3 +258,11 @@ construir e sua exclusão pode afetar consultas. Recuperação de dados/migraç�
 - [Índices Firestore](https://firebase.google.com/docs/firestore/query-data/indexing)
 - [Concorrência GitHub](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
 - [Versões e rollback Hosting](https://firebase.google.com/docs/hosting/manage-hosting-resources)
+
+## Biblioteca de imagens
+
+Antes de liberar o frontend da biblioteca, publique as funções do codebase
+`book-generation`, o índice composto de `imageLibrary` e as regras Firestore.
+O índice deve estar pronto para a consulta paginada. A migração é privada,
+incremental e inicia quando o usuário acessa a biblioteca; nenhum script global
+altera dados automaticamente durante a implementação. Veja [biblioteca de imagens](image-library.md).

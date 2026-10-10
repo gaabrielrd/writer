@@ -153,3 +153,13 @@ diálogo nativo de impressão continua pertencendo ao navegador/usuário.
 workers para evitar saturação de memória/CPU em máquinas compartilhadas. Não há
 redução de limites, desativação de testes ou regeneração automática das imagens
 de referência para esconder regressões.
+
+## Biblioteca de imagens
+
+Os testes da feature cobrem seleção, gerenciamento, páginas, erros e isolamento
+na troca de conta. Os testes de backend cobrem aceite permanente e idempotente,
+reutilização sem débito, referências, exclusão protegida, migração e paginação.
+As regras no emulador impedem forjar imagens ou referências pelo navegador.
+`e2e/visual/image-library.visual.ts` valida menus por teclado, tooltip, breadcrumb,
+gerenciamento e seleção no wizard nos três temas e em desktop/celular, incluindo
+320 px. Serviços fictícios isolados impedem acesso ao Firebase de produção.

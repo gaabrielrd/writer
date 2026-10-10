@@ -12,7 +12,7 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
-import { createBookWithGeneratedCover } from './generatedBookService';
+import { createBookWithGeneratedCover, saveBookLibraryCover } from './generatedBookService';
 import {
   beginBookDeletion,
   deletePublicationRevisions,
@@ -33,6 +33,7 @@ interface StoredBookDoc {
   genre?: string;
   synopsis?: string;
   coverUrl?: string | null;
+  coverImageId?: string | null;
   status: 'draft' | 'published';
   wordCount: number;
   createdAt: number;
@@ -63,6 +64,7 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
       genre: data.genre ?? '',
       synopsis: data.synopsis ?? '',
       coverUrl: data.coverUrl ?? null,
+      ...(data.coverImageId ? { coverImageId: data.coverImageId } : {}),
       status: data.status ?? 'draft',
       wordCount: data.wordCount ?? 0,
       createdAt: data.createdAt ?? Date.now(),
@@ -87,6 +89,7 @@ export async function getBook(bookId: string): Promise<Book | null> {
     genre: data.genre ?? '',
     synopsis: data.synopsis ?? '',
     coverUrl: data.coverUrl ?? null,
+    ...(data.coverImageId ? { coverImageId: data.coverImageId } : {}),
     status: data.status ?? 'draft',
     wordCount: data.wordCount ?? 0,
     createdAt: data.createdAt ?? Date.now(),
@@ -95,7 +98,7 @@ export async function getBook(bookId: string): Promise<Book | null> {
 }
 
 export async function createBook(authorId: string, input: CreateBookInput): Promise<Book> {
-  if (input.coverGenerationId) return createBookWithGeneratedCover(input);
+  if (input.coverGenerationId || input.coverImageId) return createBookWithGeneratedCover(input);
   const booksRef = collection(firestore, 'books');
   if (input.creationId && !/^[a-zA-Z0-9-]{16,80}$/.test(input.creationId))
     throw new Error('Identificador de criação inválido.');
@@ -136,6 +139,10 @@ export async function updateBook(bookId: string, input: UpdateBookInput): Promis
     throw new Error('Use a publicação para revisar e disponibilizar uma cópia pública do livro.');
   }
   if (input.status === 'draft') await unpublishBook(bookId);
+  if ('coverImageId' in input) {
+    await saveBookLibraryCover(bookId, input);
+    return;
+  }
   const bookRef = doc(firestore, 'books', bookId);
   const dataToUpdate: Partial<StoredBookDoc> = {
     ...input,

@@ -192,3 +192,13 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
 - **Backend limitado:** O editor mantém a integração no cliente. Sinopse/capa na criação usam servidor com segredo, Auth, App Check e registros privados. A implantação é explícita; veja [criação de livros](book-creation.md).
 - **Consumo de créditos no aceite:** A IA não cobra do saldo do usuário por sugestões descartadas ou falhas de conexão; o débito ocorre somente no evento de confirmação de uso (`Tab` ou clique no botão de aceite).
   No wizard, sinopse custa 1 crédito e capa 5, controlados pelo servidor. Descartes podem consumir recursos do provedor, tratados com limites de geração.
+
+### Biblioteca de imagens
+
+`src/features/image-library` expõe página privada e seletor reutilizável. O aceite
+insere a capa na biblioteca na transação do débito. Criação e troca de capa
+passam por callables que mantêm `coverImageId`, URL e referências por livro.
+A exclusão explícita exige zero usos; exclusão de livro libera referências via
+trigger sem remover o arquivo. Metadados são privados e mutações de referências
+no browser são proibidas. Migração em lotes preserva capas aceitas antigas
+existentes sem cobrança. Veja [biblioteca](image-library.md) e [ADR 0017](decisions/0017-image-library-and-cover-references.md).

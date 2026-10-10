@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { BookImage, Sparkles } from 'lucide-react';
+import { ImageLibraryPicker } from '@/features/image-library';
 import { useAuth } from '@/features/auth';
 import { useBookGeneration } from '@/features/ai-assistant';
 import { Alert, Button, Dialog, Input, Textarea } from '@/shared/ui';
@@ -19,6 +20,8 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
   const [genre, setGenre] = useState('');
   const [synopsis, setSynopsis] = useState('');
   const [coverUrl, setCoverUrl] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [coverImageId, setCoverImageId] = useState<string>();
   const [coverGenerationId, setCoverGenerationId] = useState<string>();
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -31,6 +34,7 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
     else {
       setCoverUrl(asset.coverUrl ?? '');
       setCoverGenerationId(asset.id);
+      setCoverImageId(asset.imageId ?? asset.id);
     }
   });
   const accepting = generation.operation === 'accept';
@@ -74,6 +78,7 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
         synopsis: synopsis.trim() || undefined,
         coverUrl: coverUrl.trim() || null,
         creationId,
+        ...(coverImageId ? { coverImageId } : {}),
         ...(coverGenerationId ? { coverGenerationId } : {}),
       });
       onClose();
@@ -186,15 +191,36 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
                 </div>
               )}
             </div>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={locked}
+              onClick={() => {
+                generation.invalidate();
+                setPickerOpen(true);
+              }}
+            >
+              Selecionar da biblioteca
+            </Button>
+            <ImageLibraryPicker
+              open={pickerOpen}
+              onClose={() => setPickerOpen(false)}
+              onSelect={(image) => {
+                setCoverUrl(image.url);
+                setCoverImageId(image.id);
+                setCoverGenerationId(undefined);
+              }}
+            />
             <Input
               label="URL da Capa (opcional)"
               type="url"
-              value={coverGenerationId ? '' : coverUrl}
+              value={coverImageId || coverGenerationId ? '' : coverUrl}
               disabled={locked}
               placeholder="https://exemplo.com/capa.jpg"
               onChange={(event) => {
                 generation.invalidate();
                 setCoverGenerationId(undefined);
+                setCoverImageId(undefined);
                 setCoverUrl(event.target.value);
               }}
             />
@@ -206,6 +232,7 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
                 onClick={() => {
                   setCoverUrl('');
                   setCoverGenerationId(undefined);
+                  setCoverImageId(undefined);
                 }}
               >
                 Remover capa

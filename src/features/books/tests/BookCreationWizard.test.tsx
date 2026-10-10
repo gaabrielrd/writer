@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BookCreationWizard } from '../components/BookCreationWizard';
+import * as library from '@/features/image-library';
 import * as service from '@/features/ai-assistant';
 import type { BookAssetSuggestion } from '@/features/ai-assistant';
 
@@ -15,6 +16,9 @@ vi.mock('@/features/ai-assistant/services/bookGenerationService', () => ({
   generateBookAsset: vi.fn(),
   acceptBookAsset: vi.fn(),
   discardBookAsset: vi.fn(),
+}));
+vi.mock('@/features/image-library/services/imageLibraryService', () => ({
+  listLibraryImages: vi.fn(),
 }));
 const suggestion = {
   id: 'request-0000000001',
@@ -32,6 +36,37 @@ async function start() {
   return user;
 }
 describe('BookCreationWizard', () => {
+  it('reuses a library image in step three without accepting or charging an AI suggestion', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(library.listLibraryImages).mockResolvedValue({
+      images: [
+        {
+          id: 'image-000000000001',
+          name: 'Capa guardada',
+          url: 'https://example.test/cover.png',
+          createdAt: 1,
+          useCount: 0,
+        },
+      ],
+      cursor: null,
+    });
+    render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
+    const user = await start();
+    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: 'Selecionar da biblioteca' }));
+    await user.click(await screen.findByRole('button', { name: 'Selecionar Capa guardada' }));
+    expect(screen.getByAltText('Capa selecionada de Atlas')).toHaveAttribute(
+      'src',
+      'https://example.test/cover.png',
+    );
+    await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({ coverImageId: 'image-000000000001' }),
+    );
+    expect(service.acceptBookAsset).not.toHaveBeenCalled();
+    expect(auth.updateUserCreditsState).not.toHaveBeenCalled();
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     auth.user.credits = 20;

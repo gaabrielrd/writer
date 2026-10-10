@@ -24,6 +24,7 @@ export interface AcceptedBookAsset {
   credits: number;
   text?: string;
   coverUrl?: string;
+  imageId?: string;
 }
 async function call<Input, Output>(name: string, data: Input): Promise<Output> {
   try {

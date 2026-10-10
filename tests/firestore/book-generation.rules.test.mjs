@@ -6,7 +6,7 @@ import {
   assertFails,
   assertSucceeds,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 let environment;
 before(async () => {
   if (!process.env.FIRESTORE_EMULATOR_HOST) throw new Error('Use somente o emulador demo.');
@@ -57,4 +57,45 @@ test('browser cannot read or forge its own generation ledger or rate limits', as
     );
     await assertFails(setDoc(doc(db, `users/${uid}/generationLimits/current`), { count: 0 }));
   }
+});
+
+test('library metadata is owner-readable and all image mutations are server-only', async () => {
+  const path = 'users/author/imageLibrary/image-0000000001';
+  await environment.withSecurityRulesDisabled((context) =>
+    setDoc(doc(context.firestore(), path), { state: 'active', useCount: 1 }),
+  );
+  const author = environment.authenticatedContext('author').firestore();
+  await assertSucceeds(getDoc(doc(author, path)));
+  await assertFails(getDoc(doc(environment.authenticatedContext('other').firestore(), path)));
+  await assertFails(getDoc(doc(environment.unauthenticatedContext().firestore(), path)));
+  await assertFails(setDoc(doc(author, path), { state: 'active', useCount: 0 }));
+  await assertFails(deleteDoc(doc(author, path)));
+  await assertFails(setDoc(doc(author, path + '/uses/book'), { bookId: 'book' }));
+  await assertFails(
+    setDoc(doc(author, 'users/author/imageLibraryMigration/current'), { complete: true }),
+  );
+});
+test('browser cannot attach, unlink or change a managed image to bypass use counts', async () => {
+  const author = environment.authenticatedContext('author').firestore();
+  await environment.withSecurityRulesDisabled((context) =>
+    setDoc(doc(context.firestore(), 'books/managed'), {
+      authorId: 'author',
+      title: 'Atlas',
+      status: 'draft',
+      coverImageId: 'image-0000000001',
+      coverUrl: 'https://example.test/cover.png',
+    }),
+  );
+  await assertFails(
+    setDoc(doc(author, 'books/forged'), {
+      authorId: 'author',
+      status: 'draft',
+      coverImageId: 'image-0000000001',
+    }),
+  );
+  await assertFails(updateDoc(doc(author, 'books/managed'), { coverImageId: null }));
+  await assertFails(
+    updateDoc(doc(author, 'books/managed'), { coverUrl: 'https://example.test/other.png' }),
+  );
+  await assertSucceeds(updateDoc(doc(author, 'books/managed'), { title: 'Novo título' }));
 });

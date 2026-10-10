@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BookFormDialog } from '../components/BookFormDialog';
+import * as library from '@/features/image-library';
 import type { Book } from '../model/book';
 vi.mock('@/features/auth', () => ({
   useAuth: () => ({ user: { uid: 'user-1', credits: 20 }, updateUserCreditsState: vi.fn() }),
@@ -10,7 +11,82 @@ vi.mock('@/features/ai-assistant/services/bookGenerationService', () => ({
   quoteBookGeneration: vi.fn().mockResolvedValue({ synopsis: 1, cover: 5 }),
 }));
 
+vi.mock('@/features/image-library/services/imageLibraryService', () => ({
+  listLibraryImages: vi.fn(),
+}));
 describe('BookFormDialog', () => {
+  it('selects a library cover and removes its association when entering a manual URL', async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(library.listLibraryImages).mockResolvedValue({
+      images: [
+        {
+          id: 'image-000000000001',
+          name: 'Capa',
+          url: 'https://example.test/cover.png',
+          createdAt: 1000,
+          useCount: 0,
+        },
+      ],
+      cursor: null,
+    });
+    render(
+      <BookFormDialog
+        open
+        bookToEdit={{
+          id: 'book',
+          authorId: 'author',
+          title: 'Atlas',
+          status: 'draft',
+          wordCount: 0,
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        onClose={vi.fn()}
+        onSubmit={submit}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Selecionar da biblioteca' }));
+    await user.click(await screen.findByRole('button', { name: 'Selecionar Capa' }));
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+    expect(submit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        coverImageId: 'image-000000000001',
+        coverUrl: 'https://example.test/cover.png',
+      }),
+    );
+    await user.clear(screen.getByLabelText('URL da Capa (opcional)'));
+    await user.type(
+      screen.getByLabelText('URL da Capa (opcional)'),
+      'https://example.test/manual.png',
+    );
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+    expect(submit).toHaveBeenLastCalledWith(
+      expect.objectContaining({ coverImageId: null, coverUrl: 'https://example.test/manual.png' }),
+    );
+  });
+  it('keeps failed edits open and reports the save error', async () => {
+    render(
+      <BookFormDialog
+        open
+        bookToEdit={{
+          id: 'book',
+          authorId: 'author',
+          title: 'Atlas',
+          status: 'draft',
+          wordCount: 0,
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        onClose={vi.fn()}
+        onSubmit={vi.fn().mockRejectedValue(new Error('Sem conexão'))}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('Sem conexão');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
   it('renderiza modo de criacao e submete dados', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);

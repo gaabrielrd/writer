@@ -26,3 +26,6 @@ export { PageHeader, type PageHeaderProps } from './PageHeader';
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';
 export { StyleguidePage } from './StyleguidePage';
 export { buttonVariants, badgeVariants, alertVariants } from './variants';
+
+export { Dropdown, DropdownItem, DropdownLabel } from './Dropdown';
+export { Tooltip } from './Tooltip';

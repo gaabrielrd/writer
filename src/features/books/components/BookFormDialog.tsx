@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Button, Dialog, Input, Textarea } from '@/shared/ui';
+import { ImageLibraryPicker } from '@/features/image-library';
+import { Alert, Button, Dialog, Input, Textarea } from '@/shared/ui';
 import type { Book, CreateBookInput } from '../model/book';
 import styles from './BookFormDialog.module.css';
 import { BookCreationWizard } from './BookCreationWizard';
@@ -22,6 +23,9 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
   const [genre, setGenre] = useState(bookToEdit?.genre ?? '');
   const [synopsis, setSynopsis] = useState(bookToEdit?.synopsis ?? '');
   const [coverUrl, setCoverUrl] = useState(bookToEdit?.coverUrl ?? '');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [coverImageId, setCoverImageId] = useState(bookToEdit?.coverImageId ?? null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = (e: FormEvent) => {
@@ -29,15 +33,21 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
     if (!title.trim()) return;
 
     setIsSubmitting(true);
+    setSaveError(null);
     void (async () => {
       try {
         await onSubmit({
           title: title.trim(),
-          genre: genre.trim() || undefined,
-          synopsis: synopsis.trim() || undefined,
+          genre: genre.trim(),
+          synopsis: synopsis.trim(),
           coverUrl: coverUrl.trim() || null,
+          coverImageId,
         });
         onClose();
+      } catch (error) {
+        setSaveError(
+          error instanceof Error ? error.message : 'Não foi possível salvar. Tente novamente.',
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -94,13 +104,33 @@ function BookFormContent({ bookToEdit, onClose, onSubmit }: FormContentProps) {
           disabled={isSubmitting}
         />
 
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={isSubmitting}
+          onClick={() => setPickerOpen(true)}
+        >
+          Selecionar da biblioteca
+        </Button>
+        <ImageLibraryPicker
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onSelect={(image) => {
+            setCoverUrl(image.url);
+            setCoverImageId(image.id);
+          }}
+        />
         <Input
           label="URL da Capa (opcional)"
           placeholder="https://exemplo.com/imagem-capa.jpg"
           value={coverUrl}
-          onChange={(e) => setCoverUrl(e.target.value)}
+          onChange={(e) => {
+            setCoverUrl(e.target.value);
+            setCoverImageId(null);
+          }}
           disabled={isSubmitting}
         />
+        {saveError && <Alert variant="destructive">{saveError}</Alert>}
       </form>
     </Dialog>
   );

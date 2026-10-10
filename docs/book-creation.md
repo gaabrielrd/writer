@@ -4,7 +4,7 @@
 
 1. **Livro:** título e gênero obrigatórios, com limites de 300 e 120 caracteres.
 2. **Sinopse:** texto editável de até 4000 caracteres ou sugestão baseada em título/gênero. **Usar sinopse** confirma a substituição.
-3. **Capa:** URL opcional ou geração baseada em título, gênero e sinopse. Gerar exige sinopse preenchida. Prévia/listagem em 2:3; PNG de 1200 × 1800.
+3. **Capa:** URL opcional, seleção da biblioteca ou geração baseada em título, gênero e sinopse. Gerar exige sinopse preenchida. Prévia/listagem em 2:3; PNG de 1200 × 1800.
 
 Voltar preserva campos. Alterar contexto descarta sugestões pendentes; conteúdo aceito permanece. **Criar Livro** grava na última etapa, com ID estável em retentativas. Edição e importação preservam seus fluxos.
 
@@ -14,7 +14,7 @@ Custos aprovados: **1 crédito por sinopse aceita** e **5 por capa aceita**. Ace
 
 `functions/src/index.mjs` publica as callables `bookGenerationQuote`, `generateBookAsset`, `acceptBookAsset`, `discardBookAsset` e `createBookWithCover`, em `us-central1`, com Auth e App Check obrigatórios.
 
-Custos, limites e registros são controlados pelo servidor. Até dez gerações por usuário por hora; falhas também contam. Sugestões expiram em uma hora; capas aceitas sem livro em sete dias. `cleanupBookAssets` remove até 100 registros expirados por hora. `cleanupDeletedBookCover` remove capas de livros excluídos. Capas associadas permanecem enquanto o livro existir.
+Custos, limites e registros são controlados pelo servidor. Até dez gerações por usuário por hora; falhas também contam. Sugestões não aceitas expiram em uma hora. Capas aceitas ficam na biblioteca por prazo indefinido, mesmo sem livro. `cleanupBookAssets` remove até 100 sugestões expiradas por hora e recupera capas aceitas legadas. `cleanupDeletedBookCover` libera o vínculo sem excluir a imagem. Veja [biblioteca de imagens](image-library.md).
 
 A prévia retorna sem URL persistente; o link só é entregue no aceite. O token permite acesso a quem o possui. Regras Storage impedem escrita pelo navegador e restringem leitura normal ao dono. Não há publicação automática dessas capas no leitor público.
 
@@ -43,7 +43,7 @@ Nenhum serviço de produção é implantado automaticamente pela implementação
 
 ## Escopo
 
-Sem upload manual, edição avançada, galeria, BYOK no wizard ou alterações do editor. IA produz arte plana sem texto incorporado. Sinopse/capa opcionais na criação manual.
+Sem upload manual, edição avançada, BYOK no wizard ou alterações do editor. IA produz arte plana sem texto incorporado. Sinopse/capa opcionais na criação manual.
 
 ## Verificação no destino em 2026-10-10
 

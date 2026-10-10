@@ -6,6 +6,7 @@ import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import { defineSecret, defineString, defineInt } from 'firebase-functions/params';
+import { createImageLibraryService } from './imageLibrary.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createGenerationService, generationPrompt, GenerationError } from './generation.mjs';
 
@@ -18,6 +19,9 @@ const coverCost = defineInt('BOOK_COVER_CREDITS', { default: 5 });
 const db = getFirestore();
 const bucket = () => getStorage().bucket();
 const assets = {
+  async exists(path) {
+    return (await bucket().file(path).exists())[0];
+  },
   async save(path, bytes) {
     const image = await normalizeCover(bytes);
     const token = randomUUID();
@@ -108,7 +112,8 @@ const callable = (method, secrets = []) =>
     },
     async (request) => {
       try {
-        return await service()[method](request.auth?.uid, request.data);
+        const handler = service()[method] ? service() : createImageLibraryService({ db, assets });
+        return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
         throw new HttpsError(
@@ -123,18 +128,25 @@ export const generateBookAsset = callable('generate', [key]);
 export const acceptBookAsset = callable('accept');
 export const discardBookAsset = callable('discard');
 export const createBookWithCover = callable('createWithCover');
+export const listLibraryImages = callable('list');
+export const renameLibraryImage = callable('rename');
+export const deleteLibraryImage = callable('remove');
+export const saveBookImage = callable('saveBook');
+export const migrateImageLibrary = callable('migrate');
 export const cleanupDeletedBookCover = onDocumentDeleted(
   { document: 'books/{bookId}', region: 'us-central1', retry: true },
   async (event) => {
     const uid = event.data?.data().authorId;
     if (!uid) return;
-    const records = await db
-      .collection(`users/${uid}/bookGenerations`)
-      .where('bookId', '==', event.params.bookId)
-      .get();
-    for (const record of records.docs) {
-      if (record.data().path) await assets.remove(record.data().path);
-      await record.ref.update({ state: 'expired', expiresAt: Date.now() });
+    const library = createImageLibraryService({ db, assets });
+    const id = event.data.data().coverImageId;
+    if (id) await library.detach(uid, event.params.bookId, id);
+    else {
+      const records = await db
+        .collection(`users/${uid}/bookGenerations`)
+        .where('bookId', '==', event.params.bookId)
+        .get();
+      for (const record of records.docs) await library.importAccepted(uid, record.id);
     }
   },
 );
@@ -147,10 +159,24 @@ export const cleanupBookAssets = onSchedule(
       .limit(100)
       .get();
     for (const document of expired.docs) {
+      const previous = document.data();
+      if (previous.kind === 'cover' && ['accepted', 'attached'].includes(previous.state)) {
+        await createImageLibraryService({ db, assets }).importAccepted(
+          document.ref.parent.parent.id,
+          document.id,
+        );
+        continue;
+      }
       // Claim before deleting: an accept racing cleanup must see an expired record.
       const path = await db.runTransaction(async (tx) => {
         const data = (await tx.get(document.ref)).data();
-        if (!data || data.state === 'attached' || data.expiresAt > Date.now()) return null;
+        if (
+          !data ||
+          data.state === 'attached' ||
+          (data.kind === 'cover' && data.state === 'accepted') ||
+          data.expiresAt > Date.now()
+        )
+          return null;
         tx.update(document.ref, { state: 'expired' });
         return data.path ?? `book-covers/${document.ref.parent.parent.id}/${document.id}.png`;
       });

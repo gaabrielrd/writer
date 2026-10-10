@@ -163,3 +163,20 @@ test('mantém a aparência da página do styleguide', async ({ page }) => {
 
   await expect(page).toHaveScreenshot(screenshotName, { fullPage: true });
 });
+
+test('demonstra menu e tooltip dentro do modal do catálogo', async ({ page }) => {
+  await page.goto('/styleguide');
+  await page.getByRole('button', { name: 'Abrir Modal de Demonstração' }).click();
+  const trigger = page.getByRole('button', { name: 'Abrir menu' });
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('menuitem', { name: 'Item do menu', exact: true })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Item indisponível' })).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(trigger).toBeFocused();
+  await page.getByRole('button', { name: 'Mostrar dica' }).focus();
+  await expect(page.getByRole('tooltip')).toContainText('Detalhes disponíveis');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'Confirmar', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});

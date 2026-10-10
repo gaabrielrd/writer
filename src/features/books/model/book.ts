@@ -7,6 +7,7 @@ export interface Book {
   genre?: string;
   synopsis?: string;
   coverUrl?: string | null;
+  coverImageId?: string | null;
   status: BookStatus;
   wordCount: number;
   createdAt: number;
@@ -20,6 +21,7 @@ export interface CreateBookInput {
   genre?: string;
   synopsis?: string;
   coverUrl?: string | null;
+  coverImageId?: string | null;
 }
 
 export interface UpdateBookInput {
@@ -27,5 +29,6 @@ export interface UpdateBookInput {
   genre?: string;
   synopsis?: string;
   coverUrl?: string | null;
+  coverImageId?: string | null;
   status?: BookStatus;
 }

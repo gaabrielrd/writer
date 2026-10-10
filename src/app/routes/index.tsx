@@ -2,6 +2,7 @@ import { createBrowserRouter, type RouteObject } from 'react-router';
 import { StyleguidePage } from '@/shared/ui';
 import { App } from '@/app/App';
 import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallback';
+import { ImageLibraryPage } from '@/features/image-library';
 import { HomePage } from '@/features/home';
 import { LoginPage } from '@/features/auth';
 import { AuthorBookRoute } from '@/app/components/AuthorBookRoute';
@@ -52,6 +53,7 @@ export const routes: RouteObject[] = [
           </AuthorBookRoute>
         ),
       },
+      { path: 'library', element: <ImageLibraryPage /> },
       { path: 'read/:bookId', element: <ReaderView /> },
       {
         // Referência viva fornecida pelo pacote compartilhado.

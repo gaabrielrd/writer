@@ -8,6 +8,9 @@ import {
   Badge,
   Card,
   Dialog,
+  Dropdown,
+  DropdownItem,
+  Tooltip,
   Alert,
   LoadingState,
   EmptyState,
@@ -164,6 +167,21 @@ export function StyleguidePage() {
             <p className="text-sm py-2">
               Este diálogo se adapta automaticamente a qualquer tema (Claro, Escuro ou Sépia).
             </p>
+            <section className="flex flex-col gap-4">
+              <h2 className="text-xl font-bold">Menus e dicas</h2>
+              <div className="flex flex-wrap gap-3">
+                <Dropdown
+                  label="Menu de exemplo"
+                  trigger={<Button variant="secondary">Abrir menu</Button>}
+                >
+                  <DropdownItem>Item do menu</DropdownItem>
+                  <DropdownItem disabled>Item indisponível</DropdownItem>
+                </Dropdown>
+                <Tooltip content="Detalhes disponíveis por foco, toque ou hover">
+                  <Button variant="secondary">Mostrar dica</Button>
+                </Tooltip>
+              </div>
+            </section>
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>
                 Fechar

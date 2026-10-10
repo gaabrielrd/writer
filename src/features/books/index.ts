@@ -18,3 +18,5 @@ export type { ImportBookModalProps } from './components/ImportBookModal';
 export { ReaderView } from './components/ReaderView';
 export { ReaderHeader } from './components/ReaderHeader';
 export { ReaderLoreTooltip } from './components/ReaderLoreTooltip';
+
+export { BookNavigation } from './components/BookNavigation';

@@ -60,6 +60,7 @@
 - Acesso a localStorage em adaptadores/repositórios.
 - Leitura de `import.meta.env` só em `shared/config/env.ts`.
 - Mantenha geração de livros e débitos de créditos em `functions`; configure segredos somente no servidor.
+- Mantenha vínculos e exclusão de imagens da biblioteca no servidor; todo seletor de imagem deve oferecer `ImageLibraryPicker` pela interface pública da feature.
 
 ## Rotas
 

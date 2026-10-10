@@ -9,6 +9,11 @@ test('server entry loads all deployment exports without a provider secret or net
     'acceptBookAsset',
     'discardBookAsset',
     'createBookWithCover',
+    'listLibraryImages',
+    'renameLibraryImage',
+    'deleteLibraryImage',
+    'saveBookImage',
+    'migrateImageLibrary',
     'cleanupBookAssets',
     'cleanupDeletedBookCover',
   ])
