@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Sparkles,
   Feather,
@@ -13,6 +13,7 @@ import {
 import { Alert, Button, Dialog, Input, LoadingState } from '@/shared/ui';
 import { buildActionPrompt, type AIActionType, type LoreContextItem } from '../model/aiPrompt';
 import { getBYOKConfig } from '../services/byokStorage';
+import { usesOwnKey, type BYOKConfig } from '../model/byokConfig';
 import { generateAIResponse } from '../services/aiClient';
 import { deductCredit } from '../services/creditsService';
 import styles from './AIActionMenu.module.css';
@@ -20,19 +21,25 @@ import styles from './AIActionMenu.module.css';
 export interface AIActionMenuProps {
   selectedText?: string;
   onGetSelectedText?: () => string;
+  onGetContextText?: () => string;
+  onCanApplyResult?: () => boolean;
+  onApplyingChange?: (busy: boolean) => void;
   loreEntities?: LoreContextItem[];
   userId?: string | null;
   userCredits?: number;
   onCreditDeducted?: (newCredits: number) => void;
   onShowOutOfCredits?: () => void;
-  onInsertText: (text: string) => void;
-  onReplaceSelection: (text: string) => void;
+  onInsertText: (text: string) => boolean | void;
+  onReplaceSelection: (text: string) => boolean | void;
   onOpenBYOKSettings: () => void;
 }
 
 export function AIActionMenu({
   selectedText = '',
   onGetSelectedText,
+  onGetContextText,
+  onCanApplyResult,
+  onApplyingChange,
   loreEntities = [],
   userId,
   userCredits = 0,
@@ -50,16 +57,43 @@ export function AIActionMenu({
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [capturedSelection, setCapturedSelection] = useState(selectedText);
+  const [isApplying, setIsApplying] = useState(false);
+  const applyingRef = useRef(false);
+  const controllerRef = useRef<AbortController | null>(null);
+  const resultConfigRef = useRef<BYOKConfig | null>(null);
+  const usedResultRef = useRef(false);
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      controllerRef.current?.abort();
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    },
+    [],
+  );
+
+  const handleClose = () => {
+    if (applyingRef.current) return;
+    controllerRef.current?.abort();
+    setResultText(null);
+    setError(null);
+    setIsLoading(false);
+    setIsOpen(false);
+  };
 
   const handleOpen = () => {
     const currentSel = onGetSelectedText ? onGetSelectedText() : selectedText;
     setCapturedSelection(currentSel);
+    setResultText(null);
+    setError(null);
+    setIsLoading(false);
     setIsOpen(true);
   };
 
   const handleExecuteAction = async (actionType: AIActionType) => {
     const byok = getBYOKConfig();
-    const isUsingBYOK = byok.provider !== 'firebase_ai';
+    const isUsingBYOK = usesOwnKey(byok);
+    if (applyingRef.current) return;
 
     if (!isUsingBYOK && userCredits <= 0) {
       setIsOpen(false);
@@ -67,6 +101,15 @@ export function AIActionMenu({
       return;
     }
 
+    if (!isUsingBYOK && !userId) {
+      setError('Entre na sua conta para usar os créditos de IA.');
+      return;
+    }
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+    resultConfigRef.current = null;
+    usedResultRef.current = false;
     setActiveAction(actionType);
     setIsLoading(true);
     setError(null);
@@ -77,7 +120,11 @@ export function AIActionMenu({
       const textToUse =
         capturedSelection ||
         (onGetSelectedText ? onGetSelectedText() : selectedText) ||
-        'Contexto da cena atual';
+        onGetContextText?.().slice(-1500) ||
+        '';
+      if (!textToUse.trim()) {
+        throw new Error('Escreva ou selecione um trecho antes de solicitar uma sugestão.');
+      }
 
       const { prompt, systemInstruction } = buildActionPrompt({
         action: actionType,
@@ -90,23 +137,50 @@ export function AIActionMenu({
         prompt,
         systemInstruction,
         byokConfig: byok,
+        signal: controller.signal,
       });
 
+      if (controller.signal.aborted) return;
+      if (!response.trim()) throw new Error('A IA não retornou uma sugestão. Tente novamente.');
+      resultConfigRef.current = byok;
       setResultText(response);
-
-      // Debita 1 crédito se não BYOK
-      if (!isUsingBYOK && userId) {
-        try {
-          const newTotal = await deductCredit(userId, 1);
-          onCreditDeducted?.(newTotal);
-        } catch {
-          // Erro no débito
-        }
-      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Falha ao executar ação de IA');
+      if (!controller.signal.aborted) {
+        setError(err instanceof Error ? err.message : 'Falha ao executar ação de IA');
+      }
     } finally {
-      setIsLoading(false);
+      if (!controller.signal.aborted) setIsLoading(false);
+    }
+  };
+
+  const handleApply = async () => {
+    const config = resultConfigRef.current;
+    if (!resultText || !config || applyingRef.current || usedResultRef.current) return;
+    if (onCanApplyResult && !onCanApplyResult()) {
+      setError('O trecho mudou. Solicite uma nova sugestão antes de aplicar.');
+      return;
+    }
+    applyingRef.current = true;
+    setIsApplying(true);
+    onApplyingChange?.(true);
+    setError(null);
+    try {
+      if (!usesOwnKey(config)) {
+        if (!userId) throw new Error('Entre na sua conta para usar os créditos de IA.');
+        const newTotal = await deductCredit(userId, 1);
+        onCreditDeducted?.(newTotal);
+      }
+      usedResultRef.current = true;
+      if (capturedSelection.trim()) onReplaceSelection(resultText);
+      else onInsertText(resultText);
+      setResultText(null);
+      setIsOpen(false);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Não foi possível aceitar a sugestão.');
+    } finally {
+      applyingRef.current = false;
+      setIsApplying(false);
+      onApplyingChange?.(false);
     }
   };
 
@@ -115,7 +189,7 @@ export function AIActionMenu({
     try {
       await navigator.clipboard.writeText(resultText);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
     } catch {
       // Falha no clipboard
     }
@@ -126,21 +200,21 @@ export function AIActionMenu({
       <Button
         variant="secondary"
         onClick={handleOpen}
-        title="Assistente Criativo de IA (Gemini 3.7 Flash)"
+        title="Assistente Criativo de IA"
         aria-label="Abrir Assistente Criativo de IA"
       >
         <Sparkles className="icon icon-sm" aria-hidden="true" />
         <span>Assistente IA</span>
       </Button>
 
-      <Dialog open={isOpen} title="Assistente Criativo de IA" onClose={() => setIsOpen(false)}>
+      <Dialog open={isOpen} title="Assistente Criativo de IA" onClose={handleClose}>
         <div className={styles.container}>
           <div className={styles.actionButtons}>
             <button
               type="button"
               className={`${styles.actionCard} ${activeAction === 'continue' ? styles.actionCardActive : ''}`}
               onClick={() => void handleExecuteAction('continue')}
-              disabled={isLoading}
+              disabled={isLoading || isApplying}
             >
               <Wand2 className="icon icon-sm" aria-hidden="true" />
               <div className={styles.actionCardInfo}>
@@ -153,7 +227,7 @@ export function AIActionMenu({
               type="button"
               className={`${styles.actionCard} ${activeAction === 'improve_style' ? styles.actionCardActive : ''}`}
               onClick={() => void handleExecuteAction('improve_style')}
-              disabled={isLoading}
+              disabled={isLoading || isApplying}
             >
               <Feather className="icon icon-sm" aria-hidden="true" />
               <div className={styles.actionCardInfo}>
@@ -166,7 +240,7 @@ export function AIActionMenu({
               type="button"
               className={`${styles.actionCard} ${activeAction === 'check_consistency' ? styles.actionCardActive : ''}`}
               onClick={() => void handleExecuteAction('check_consistency')}
-              disabled={isLoading}
+              disabled={isLoading || isApplying}
             >
               <Search className="icon icon-sm" aria-hidden="true" />
               <div className={styles.actionCardInfo}>
@@ -182,12 +256,12 @@ export function AIActionMenu({
               placeholder="Ex: Torne o diálogo mais irônico, descreva a iluminação..."
               value={customInstruction}
               onChange={(e) => setCustomInstruction(e.target.value)}
-              disabled={isLoading}
+              disabled={isLoading || isApplying}
             />
             <Button
               variant="primary"
               onClick={() => void handleExecuteAction('custom')}
-              disabled={isLoading || !customInstruction.trim()}
+              disabled={isLoading || isApplying || !customInstruction.trim()}
             >
               Executar
             </Button>
@@ -210,17 +284,7 @@ export function AIActionMenu({
               <p className={styles.resultContent}>{resultText}</p>
 
               <div className={styles.resultActions}>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    if (capturedSelection.trim()) {
-                      onReplaceSelection(resultText);
-                    } else {
-                      onInsertText(resultText);
-                    }
-                    setIsOpen(false);
-                  }}
-                >
+                <Button variant="primary" onClick={() => void handleApply()} disabled={isApplying}>
                   {capturedSelection.trim() ? (
                     <>
                       <Replace className="icon icon-sm" aria-hidden="true" />
@@ -234,7 +298,7 @@ export function AIActionMenu({
                   )}
                 </Button>
 
-                <Button variant="secondary" onClick={() => void handleCopy()}>
+                <Button variant="secondary" onClick={() => void handleCopy()} disabled={isApplying}>
                   {copied ? (
                     <>
                       <Check className="icon icon-sm" aria-hidden="true" />
@@ -254,8 +318,9 @@ export function AIActionMenu({
           <div className={styles.footer}>
             <Button
               variant="secondary"
+              disabled={isApplying}
               onClick={() => {
-                setIsOpen(false);
+                handleClose();
                 onOpenBYOKSettings();
               }}
             >

@@ -3,8 +3,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { BookPage } from '../components/BookPage';
+import * as publicationService from '../services/publicationService';
 import * as bookService from '../services/bookService';
 import type { Book } from '../model/book';
+
+vi.mock('@/features/editor', () => ({ ExportButton: () => <button>Exportar</button> }));
 
 vi.mock('@/features/auth', () => ({
   useAuth: () => ({ user: { uid: 'user-1' }, loading: false }),
@@ -95,7 +98,8 @@ describe('BookPage', () => {
   it('permite alternar status de publicacao', async () => {
     const user = userEvent.setup();
     vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
-    vi.spyOn(bookService, 'updateBook').mockResolvedValue();
+    vi.spyOn(publicationService, 'publishBook').mockResolvedValue();
+    vi.spyOn(publicationService, 'unpublishBook').mockResolvedValue();
     vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
 
     renderBookPage();
@@ -105,7 +109,16 @@ describe('BookPage', () => {
     await user.click(screen.getByRole('tab', { name: /publicação/i }));
     await user.click(screen.getByRole('button', { name: /publicar obra/i }));
 
-    expect(bookService.updateBook).toHaveBeenCalledWith('book-1', { status: 'published' });
+    expect(publicationService.publishBook).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText('Nome de autor público'), 'Nome Literário');
+    await user.click(screen.getByRole('button', { name: 'Confirmar publicação' }));
+    expect(publicationService.publishBook).toHaveBeenCalledWith('book-1', 'Nome Literário');
+    expect(await screen.findByRole('link', { name: 'Abrir leitor público' })).toHaveAttribute(
+      'href',
+      '/read/book-1',
+    );
+    await user.click(screen.getByRole('button', { name: 'Reverter para Rascunho' }));
+    expect(publicationService.unpublishBook).toHaveBeenCalledWith('book-1');
   });
 
   it('permite abrir dialogo de edicao e salvar alteracoes', async () => {

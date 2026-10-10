@@ -19,3 +19,31 @@ describe('chapterContentStorage', () => {
     });
   });
 });
+
+it('serializa gravacoes entre sessoes e permite repetir apos falha', async () => {
+  vi.restoreAllMocks();
+  let finish!: () => void;
+  const update = vi
+    .spyOn(bookService, 'updateChapter')
+    .mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+    )
+    .mockResolvedValue(undefined);
+  const first = saveChapterContent('ordered-book', 'chapter', 'old session');
+  const second = saveChapterContent('ordered-book', 'chapter', 'new session');
+  expect(update).toHaveBeenCalledTimes(1);
+  finish();
+  await Promise.all([first, second]);
+  expect(update).toHaveBeenLastCalledWith(
+    'ordered-book',
+    'chapter',
+    expect.objectContaining({ content: 'new session' }),
+  );
+  update.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(undefined);
+  const failed = saveChapterContent('retry-book', 'chapter', 'first');
+  const retry = saveChapterContent('retry-book', 'chapter', 'retry');
+  await expect(failed).rejects.toThrow('offline');
+  await expect(retry).resolves.toEqual({ wordCount: 1 });
+});

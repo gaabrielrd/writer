@@ -11,8 +11,19 @@ import {
   Trash2,
   Upload,
 } from 'lucide-react';
-import { Badge, Button, ErrorState, LoadingState, PageHeader } from '@/shared/ui';
+import {
+  Alert,
+  Badge,
+  Button,
+  Dialog,
+  Input,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+} from '@/shared/ui';
 import { useAuth } from '@/features/auth';
+import { ExportButton } from '@/features/editor';
+import { publishBook, unpublishBook } from '../services/publicationService';
 import { LoreTab } from '@/features/lore';
 import type { Book } from '../model/book';
 import type { CreateBookInput } from '../model/book';
@@ -48,6 +59,10 @@ export function BookPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isPublishOpen, setIsPublishOpen] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [authorName, setAuthorName] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -75,9 +90,16 @@ export function BookPage() {
 
   const refreshBook = () => {
     if (!bookId) return;
-    void bookService.getBook(bookId).then((data) => {
-      if (data) setBook(data);
-    });
+    void bookService
+      .getBook(bookId)
+      .then((data) => {
+        if (data) setBook(data);
+      })
+      .catch((cause: unknown) => {
+        setActionError(
+          cause instanceof Error ? cause.message : 'Não foi possível atualizar a obra.',
+        );
+      });
   };
 
   const handleEditSubmit = async (input: CreateBookInput) => {
@@ -91,21 +113,39 @@ export function BookPage() {
     setIsDeleting(true);
     void (async () => {
       try {
+        setActionError(null);
         await bookService.deleteBook(bookId);
         void navigate('/');
+      } catch (cause) {
+        setActionError(cause instanceof Error ? cause.message : 'Não foi possível excluir a obra.');
       } finally {
         setIsDeleting(false);
       }
     })();
   };
 
-  const handleToggleStatus = () => {
-    if (!bookId || !book) return;
-    const nextStatus = book.status === 'published' ? 'draft' : 'published';
-    void (async () => {
-      await bookService.updateBook(bookId, { status: nextStatus });
-      setBook((prev) => (prev ? { ...prev, status: nextStatus, updatedAt: Date.now() } : prev));
-    })();
+  const handlePublication = async (publish: boolean) => {
+    if (!bookId || !book || isPublishing) return;
+    setIsPublishing(true);
+    setActionError(null);
+    try {
+      if (publish) await publishBook(bookId, authorName.trim());
+      else await unpublishBook(bookId);
+      setBook((previous) =>
+        previous
+          ? { ...previous, status: publish ? 'published' : 'draft', updatedAt: Date.now() }
+          : previous,
+      );
+      setIsPublishOpen(false);
+    } catch (cause) {
+      setActionError(
+        cause instanceof Error
+          ? cause.message
+          : 'Não foi possível atualizar a publicação. Tente novamente.',
+      );
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   if (loading) {
@@ -133,6 +173,11 @@ export function BookPage() {
 
   return (
     <div className={styles.container}>
+      {actionError && (
+        <Alert variant="destructive" title="A ação não foi concluída">
+          {actionError}
+        </Alert>
+      )}
       <div className={styles.backRow}>
         <Link to="/" className={styles.backLink}>
           <ArrowLeft className="icon icon-sm" aria-hidden="true" />
@@ -159,6 +204,7 @@ export function BookPage() {
             actions={
               isOwner ? (
                 <div className={styles.headerActions}>
+                  <ExportButton book={book} />
                   <Button
                     variant="secondary"
                     onClick={() => setIsImportOpen(true)}
@@ -215,7 +261,10 @@ export function BookPage() {
               role="tab"
               aria-selected={isActive}
               className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                refreshBook();
+              }}
             >
               <IconComp className="icon icon-sm" aria-hidden="true" />
               <span>{tab.label}</span>
@@ -253,13 +302,26 @@ export function BookPage() {
               </h3>
               <p className={styles.publicationDescription}>
                 {isPublished
-                  ? 'Sua obra está visível publicamente. Leitores podem acessá-la pelo link de publicação.'
+                  ? 'A versão publicada está disponível no link abaixo. Alterações no rascunho só aparecem após atualizar a publicação.'
                   : 'Sua obra está em modo rascunho e só você pode vê-la. Publique-a para compartilhar com leitores.'}
               </p>
+              {isPublished && <Link to={`/read/${book.id}`}>Abrir leitor público</Link>}
+              {isOwner && isPublished && (
+                <Button
+                  variant="secondary"
+                  disabled={isPublishing}
+                  onClick={() => setIsPublishOpen(true)}
+                >
+                  Atualizar publicação
+                </Button>
+              )}
               {isOwner && (
                 <Button
                   variant={isPublished ? 'secondary' : 'primary'}
-                  onClick={handleToggleStatus}
+                  onClick={() =>
+                    isPublished ? void handlePublication(false) : setIsPublishOpen(true)
+                  }
+                  disabled={isPublishing}
                 >
                   {isPublished ? (
                     <>
@@ -279,6 +341,54 @@ export function BookPage() {
         )}
       </div>
 
+      {isPublishOpen && (
+        <Dialog
+          open
+          title="Publicar versão da obra"
+          onClose={() => {
+            if (!isPublishing) setIsPublishOpen(false);
+          }}
+          footer={
+            <>
+              <Button
+                variant="secondary"
+                disabled={isPublishing}
+                onClick={() => setIsPublishOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                disabled={isPublishing || !authorName.trim()}
+                onClick={() => void handlePublication(true)}
+              >
+                {isPublishing ? 'Publicando...' : 'Confirmar publicação'}
+              </Button>
+            </>
+          }
+        >
+          <p>
+            Qualquer pessoa com o link poderá ler todos os capítulos desta versão, o título e o nome
+            de autor informado abaixo. Apenas nome, apelidos, categoria e resumo das entidades
+            marcadas públicas serão incluídos. Fichas detalhadas, relações e notas ficam privadas.
+          </p>
+          <p>
+            Novas alterações permanecem no rascunho até você atualizar a publicação. Retirar a
+            publicação bloqueia novos acessos, mas não apaga cópias já feitas pelos leitores.
+          </p>
+          <Input
+            label="Nome de autor público"
+            value={authorName}
+            onChange={(event) => setAuthorName(event.target.value)}
+            maxLength={120}
+            disabled={isPublishing}
+          />
+          {actionError && (
+            <Alert variant="destructive" title="Falha na publicação">
+              {actionError}
+            </Alert>
+          )}
+        </Dialog>
+      )}
       {isFormOpen && (
         <BookFormDialog
           open={isFormOpen}

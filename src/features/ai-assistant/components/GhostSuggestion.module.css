@@ -1,6 +1,7 @@
 .wrapper {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background-color: var(--surface-quiet);
@@ -30,7 +31,8 @@
   font-size: var(--text-sm);
   color: var(--ink);
   font-style: italic;
-  flex: 1;
+  flex: 1 1 14rem;
+  overflow-wrap: anywhere;
   line-height: var(--line-height-normal, 1.4);
 }
 
@@ -49,4 +51,10 @@
   border-radius: var(--radius-sm);
   color: var(--ink-quiet);
   font-family: monospace;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrapper {
+    animation: none;
+  }
 }

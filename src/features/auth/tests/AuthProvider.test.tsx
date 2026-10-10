@@ -16,6 +16,8 @@ function TestConsumer() {
     signUpWithEmail,
     signOut,
     updateUserCreditsState,
+    pendingEditorOperation,
+    setPendingEditorOperation,
   } = useAuth();
 
   return (
@@ -24,6 +26,9 @@ function TestConsumer() {
       <div data-testid="user">{user ? (user.displayName ?? user.email) : 'anonimo'}</div>
       <div data-testid="credits">{user ? user.credits : 0}</div>
       <div data-testid="error">{error ?? 'nenhum'}</div>
+      <div data-testid="pending-editor">{String(pendingEditorOperation)}</div>
+      <button onClick={() => setPendingEditorOperation(true)}>Iniciar aceite IA</button>
+      <button onClick={() => setPendingEditorOperation(false)}>Concluir aceite IA</button>
 
       <button
         onClick={() => {
@@ -176,5 +181,38 @@ describe('AuthProvider & useAuth', () => {
 
     await user.click(screen.getByRole('button', { name: /deslogar/i }));
     expect(screen.getByTestId('error').textContent).toBe('Erro ao deslogar');
+  });
+  it('guards programmatic sign-out during acceptance and releases it when insertion finishes', async () => {
+    const profile: UserProfile = {
+      uid: 'author',
+      email: null,
+      displayName: 'Autora',
+      photoUrl: null,
+      credits: 10,
+      tier: 'free',
+      createdAt: 1,
+      updatedAt: 1,
+    };
+    vi.spyOn(authService, 'subscribeToAuthState').mockImplementation((changed) => {
+      changed(profile);
+      return vi.fn();
+    });
+    const signOut = vi.spyOn(authService, 'signOutUser').mockResolvedValue();
+    render(
+      <AuthProvider>
+        <TestConsumer />
+      </AuthProvider>,
+    );
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Iniciar aceite IA' }));
+    expect(screen.getByTestId('pending-editor')).toHaveTextContent('true');
+    await user.click(screen.getByRole('button', { name: 'Deslogar' }));
+    expect(signOut).not.toHaveBeenCalled();
+    expect(screen.getByTestId('user')).toHaveTextContent('Autora');
+    expect(screen.getByTestId('error')).toHaveTextContent('Aguarde a sugestão');
+    await user.click(screen.getByRole('button', { name: 'Concluir aceite IA' }));
+    await user.click(screen.getByRole('button', { name: 'Deslogar' }));
+    expect(signOut).toHaveBeenCalledOnce();
+    expect(screen.getByTestId('user')).toHaveTextContent('anonimo');
   });
 });

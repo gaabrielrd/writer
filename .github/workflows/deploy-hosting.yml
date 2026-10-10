@@ -1,0 +1,160 @@
+name: Deploy Hosting (disabled until configured)
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+# Shared with manual Firestore rollout. Never interrupt a release in progress.
+concurrency:
+  group: firebase-production-writer-44cd5
+  cancel-in-progress: false
+
+env:
+  DEPLOY_PROJECT: writer-44cd5
+  FIREBASE_CLI_VERSION: '15.33.0'
+
+jobs:
+  validate:
+    if: >-
+      github.repository_id == '1339469949' && github.repository_owner_id == '7004438' && github.ref == 'refs/heads/master' && github.event_name == 'push' && vars.FIREBASE_HOSTING_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['22', '24']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - name: Instalar dependências fixadas
+        run: |
+          npm install --global "$(node -p "require('./package.json').packageManager")"
+          npm run check:toolchain
+          npm ci
+      - run: npm run validate
+      - name: Identificar e verificar o artefato de produção
+        if: matrix.node == '22'
+        run: |
+          printf '%s\n' "$GITHUB_SHA" > dist/writer-release.txt
+          npm run smoke:build
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > hosting.sha256
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: matrix.node == '22'
+        with:
+          name: hosting-${{ github.sha }}
+          path: |
+            dist/
+            hosting.sha256
+          include-hidden-files: true
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+
+  integration:
+    if: >-
+      github.repository_id == '1339469949' && github.repository_owner_id == '7004438' && github.ref == 'refs/heads/master' && github.event_name == 'push' && vars.FIREBASE_HOSTING_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Instalar dependências fixadas
+        run: |
+          npm install --global "$(node -p "require('./package.json').packageManager")"
+          npm run check:toolchain
+          npm ci
+      - run: npm audit --audit-level=high
+      - run: npm run test:rules
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - run: npx playwright test -c playwright.visual.config.ts
+
+  deploy:
+    needs: [validate, integration]
+    if: >-
+      github.repository_id == '1339469949' && github.repository_owner_id == '7004438' && github.ref == 'refs/heads/master' && github.event_name == 'push' && vars.FIREBASE_HOSTING_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: firebase-hosting-production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DEPLOY_ENABLED: ${{ vars.FIREBASE_HOSTING_DEPLOY_ENABLED }}
+      WIF_PROVIDER: ${{ vars.FIREBASE_HOSTING_WIF_PROVIDER }}
+      DEPLOY_SERVICE_ACCOUNT: ${{ vars.FIREBASE_HOSTING_SERVICE_ACCOUNT }}
+      HOSTING_SITE_ID: ${{ vars.FIREBASE_HOSTING_SITE_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: hosting-${{ github.sha }}
+          path: verified-build
+      - name: Verificar SHA e integridade sem reconstruir
+        run: |
+          cd verified-build
+          test "$(cat dist/writer-release.txt)" = "$GITHUB_SHA"
+          sha256sum --check hosting.sha256
+          find dist -type f -print0 | sort -z | xargs -0 sha256sum > actual.sha256
+          diff -u hosting.sha256 actual.sha256
+          cd ..
+          test ! -e dist
+          mv verified-build/dist dist
+      - name: Instalar CLI fixada, antes de obter credenciais
+        run: npm install --global "firebase-tools@$FIREBASE_CLI_VERSION"
+      - name: Validar destino, configuração e master atual
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: node scripts/firebase-deploy-guard.mjs hosting
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: writer-44cd5
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+      - name: Publicar somente Hosting
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/firebase-deploy-guard.mjs hosting
+          unset GH_READ_TOKEN
+          firebase deploy --only hosting --project "$DEPLOY_PROJECT" --config firebase.deploy.json --non-interactive
+      - name: Verificar release servida
+        run: |
+          verified=false
+          for attempt in $(seq 1 12); do
+            if curl --fail --silent --show-error --max-time 15 \
+              "https://${HOSTING_SITE_ID}.web.app/writer-release.txt?sha=${GITHUB_SHA}" -o served-release.txt \
+              && test "$(cat served-release.txt)" = "$GITHUB_SHA"; then
+              verified=true
+              break
+            fi
+            sleep 5
+          done
+          test "$verified" = true
+          printf 'Hosting publicado: %s; commit %s\n' "$HOSTING_SITE_ID" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SaveStatus } from '../model/editorState';
 import { saveChapterContent } from '../services/chapterContentStorage';
+import { clearLocalDraft, writeLocalDraft } from '../services/localDraftStorage';
 
 export interface UseAutoSaveOptions {
   bookId?: string | null;
   chapterId?: string | null;
+  ownerId?: string;
+  enabled?: boolean;
   content: string;
   debounceMs?: number;
   onSaved?: (wordCount: number) => void;
 }
-
 export interface UseAutoSaveResult {
   saveStatus: SaveStatus;
   lastSavedAt: number | null;
@@ -21,6 +23,8 @@ export interface UseAutoSaveResult {
 export function useAutoSave({
   bookId,
   chapterId,
+  ownerId,
+  enabled = true,
   content,
   debounceMs = 1000,
   onSaved,
@@ -28,71 +32,128 @@ export function useAutoSave({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const saved = useRef(content);
+  const latest = useRef(content);
+  const pending = useRef<Promise<void> | null>(null);
+  const mounted = useRef(true);
+  const callback = useRef(onSaved);
+  useEffect(() => {
+    callback.current = onSaved;
+  }, [onSaved]);
 
-  const lastSavedContentRef = useRef<string>(content);
-  const currentChapterIdRef = useRef<string | null | undefined>(chapterId);
-
-  const resetSavedContent = useCallback((newSavedContent: string) => {
-    lastSavedContentRef.current = newSavedContent;
+  const resetSavedContent = useCallback((text: string) => {
+    saved.current = text;
     setSaveStatus('saved');
     setError(null);
   }, []);
 
   const performSave = useCallback(
-    async (textToSave: string) => {
-      if (!bookId || !chapterId) return;
-
-      setSaveStatus('saving');
-      setError(null);
-
-      try {
-        const { wordCount } = await saveChapterContent(bookId, chapterId, textToSave);
-        lastSavedContentRef.current = textToSave;
-        setLastSavedAt(Date.now());
-        setSaveStatus('saved');
-        onSaved?.(wordCount);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Falha ao salvar capítulo');
-        setSaveStatus('error');
+    async function saveLatest(): Promise<void> {
+      if (!bookId || !chapterId || !enabled) return;
+      while (pending.current) {
+        await pending.current;
       }
+      if (!mounted.current) return;
+      if (latest.current === saved.current) return;
+      const text = latest.current;
+      if (mounted.current) {
+        setSaveStatus('saving');
+        setError(null);
+      }
+      let succeeded = false;
+      const request = (async () => {
+        try {
+          const result = await saveChapterContent(bookId, chapterId, text);
+          saved.current = text;
+          succeeded = true;
+          if (ownerId) {
+            try {
+              clearLocalDraft(ownerId, bookId, chapterId, text);
+            } catch {
+              /* Retaining an already-saved recovery copy is safe. */
+            }
+          }
+          if (mounted.current) {
+            setLastSavedAt(Date.now());
+            setSaveStatus(latest.current === text ? 'saved' : 'unsaved');
+            if (latest.current === text) callback.current?.(result.wordCount);
+          }
+        } catch (cause) {
+          if (mounted.current) {
+            setError(cause instanceof Error ? cause.message : 'Falha ao salvar capítulo');
+            setSaveStatus('error');
+          }
+        }
+      })();
+      pending.current = request;
+      await request;
+      if (pending.current === request) pending.current = null;
+      if (succeeded && mounted.current && latest.current !== saved.current) await saveLatest();
     },
-    [bookId, chapterId, onSaved],
+    [bookId, chapterId, ownerId, enabled],
   );
 
-  const saveNow = useCallback(async () => {
-    if (content !== lastSavedContentRef.current) {
-      await performSave(content);
-    }
-  }, [content, performSave]);
-
   useEffect(() => {
-    // Quando o ID do capítulo muda, reinicia o snapshot de conteúdo salvo
-    if (currentChapterIdRef.current !== chapterId) {
-      currentChapterIdRef.current = chapterId;
-      lastSavedContentRef.current = content;
+    latest.current = content;
+    if (!enabled || !bookId || !chapterId || (content === saved.current && !pending.current))
       return;
+    let active = true;
+    let backupError: string | null = null;
+    if (ownerId) {
+      try {
+        writeLocalDraft(ownerId, bookId, chapterId, content);
+      } catch {
+        backupError =
+          'Não foi possível preservar a cópia local. Mantenha esta aba aberta até o salvamento concluir.';
+      }
     }
-
-    if (content === lastSavedContentRef.current) {
-      return;
-    }
-
-    setSaveStatus('unsaved');
-
+    // Report the storage result asynchronously, outside the synchronization effect.
+    queueMicrotask(() => {
+      if (!active) return;
+      setSaveStatus('unsaved');
+      if (backupError) setError(backupError);
+    });
     const timer = setTimeout(() => {
-      void performSave(content);
+      void performSave();
     }, debounceMs);
-
     return () => {
+      active = false;
       clearTimeout(timer);
     };
-  }, [chapterId, content, debounceMs, performSave]);
+  }, [content, enabled, bookId, chapterId, ownerId, debounceMs, performSave]);
 
-  return {
-    saveStatus,
-    lastSavedAt,
-    error,
-    saveNow,
-    resetSavedContent,
-  };
+  useEffect(() => {
+    mounted.current = true;
+    const warn = (event: BeforeUnloadEvent) => {
+      if (latest.current !== saved.current || pending.current) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => {
+      mounted.current = false;
+      window.removeEventListener('beforeunload', warn);
+      // Enqueue the final captured text synchronously, before a new route session
+      // can append its edits. Never let an old session's delayed drain run later.
+      if (enabled && bookId && chapterId && (latest.current !== saved.current || pending.current)) {
+        const finalText = latest.current;
+        void saveChapterContent(bookId, chapterId, finalText)
+          .then(() => {
+            if (ownerId) {
+              try {
+                clearLocalDraft(ownerId, bookId, chapterId, finalText);
+              } catch {
+                /* Keep recovery copy. */
+              }
+            }
+          })
+          .catch(() => {
+            /* The private recovery copy survives a failed flush. */
+          });
+      }
+    };
+  }, [performSave, bookId, chapterId, ownerId, enabled]);
+
+  return { saveStatus, lastSavedAt, error, saveNow: performSave, resetSavedContent };
 }

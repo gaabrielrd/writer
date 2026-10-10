@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { Button, Dialog, Input, Select, Textarea } from '@/shared/ui';
+import { Alert, Button, Dialog, Input, Select, Textarea } from '@/shared/ui';
 import {
   LORE_CATEGORIES,
   type CreateLoreEntityInput,
@@ -12,6 +12,7 @@ import styles from './LoreEntityForm.module.css';
 
 export interface LoreEntityFormProps {
   open: boolean;
+  initialName?: string;
   entityToEdit?: LoreEntity | null;
   allEntities: LoreEntity[];
   onClose: () => void;
@@ -19,14 +20,21 @@ export interface LoreEntityFormProps {
 }
 
 interface FormContentProps {
+  initialName?: string;
   entityToEdit?: LoreEntity | null;
   allEntities: LoreEntity[];
   onClose: () => void;
   onSubmit: (input: CreateLoreEntityInput) => Promise<void>;
 }
 
-function LoreEntityFormContent({ entityToEdit, allEntities, onClose, onSubmit }: FormContentProps) {
-  const [name, setName] = useState(entityToEdit?.name ?? '');
+function LoreEntityFormContent({
+  entityToEdit,
+  allEntities,
+  onClose,
+  onSubmit,
+  initialName = '',
+}: FormContentProps) {
+  const [name, setName] = useState(entityToEdit?.name ?? initialName);
   const [category, setCategory] = useState<LoreCategory>(entityToEdit?.category ?? 'character');
   const [aliasesText, setAliasesText] = useState(
     entityToEdit?.aliases ? entityToEdit.aliases.join(', ') : '',
@@ -37,6 +45,10 @@ function LoreEntityFormContent({ entityToEdit, allEntities, onClose, onSubmit }:
   const [relations, setRelations] = useState<LoreRelation[]>(
     entityToEdit?.relations ? [...entityToEdit.relations] : [],
   );
+  const [structuredDetails, setStructuredDetails] = useState(
+    entityToEdit?.structuredDetails ?? { appearance: '', personality: '', history: '', notes: '' },
+  );
+  const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Entidades elegíveis para relação (exclui a própria entidade sendo editada)
@@ -76,6 +88,7 @@ function LoreEntityFormContent({ entityToEdit, allEntities, onClose, onSubmit }:
       .map((a) => a.trim())
       .filter(Boolean);
 
+    setError(null);
     setIsSubmitting(true);
     void (async () => {
       try {
@@ -86,9 +99,16 @@ function LoreEntityFormContent({ entityToEdit, allEntities, onClose, onSubmit }:
           summary: summary.slice(0, 140).trim(),
           details: details.trim(),
           relations,
+          structuredDetails,
           isPublic,
         });
         onClose();
+      } catch (cause) {
+        setError(
+          cause instanceof Error
+            ? cause.message
+            : 'Não foi possível salvar a ficha. Tente novamente.',
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -131,6 +151,11 @@ function LoreEntityFormContent({ entityToEdit, allEntities, onClose, onSubmit }:
       }
     >
       <form id="lore-entity-form" onSubmit={handleSubmit} className={styles.form}>
+        {error && (
+          <Alert variant="destructive" title="Falha ao salvar">
+            {error}
+          </Alert>
+        )}
         <div className={styles.row}>
           <div className={styles.colName}>
             <Input
@@ -185,6 +210,35 @@ function LoreEntityFormContent({ entityToEdit, allEntities, onClose, onSubmit }:
           disabled={isSubmitting}
         />
 
+        {(
+          [
+            ['appearance', 'Aparência'],
+            ['personality', 'Personalidade'],
+            ['history', 'Histórico'],
+            ['notes', 'Notas privadas'],
+          ] as const
+        ).map(([field, label]) => (
+          <Textarea
+            key={field}
+            label={label}
+            value={structuredDetails[field]}
+            onChange={(event) =>
+              setStructuredDetails((previous) => ({ ...previous, [field]: event.target.value }))
+            }
+            rows={3}
+            disabled={isSubmitting}
+          />
+        ))}
+        <p>
+          Somente nome, apelidos, categoria e resumo podem aparecer no leitor público. A ficha
+          detalhada, relações e notas permanecem privadas.
+        </p>
+        {entityToEdit?.isPublic && !isPublic && (
+          <Alert variant="warning" title="A publicação será retirada">
+            Tornar esta entidade privada também retira a publicação atual da obra para revogar o
+            acesso ao resumo. Você poderá publicar uma nova versão sem esta entidade.
+          </Alert>
+        )}
         <div className={styles.visibilityToggle}>
           <label className={styles.checkboxLabel}>
             <input
@@ -250,6 +304,15 @@ function LoreEntityFormContent({ entityToEdit, allEntities, onClose, onSubmit }:
                       disabled={isSubmitting}
                     />
                   </div>
+                  <Textarea
+                    label="Descrição da Relação"
+                    value={rel.description ?? ''}
+                    onChange={(event) =>
+                      handleUpdateRelation(index, 'description', event.target.value)
+                    }
+                    disabled={isSubmitting}
+                    rows={2}
+                  />
                   <div className={styles.relRemove}>
                     <Button
                       type="button"
@@ -274,6 +337,7 @@ function LoreEntityFormContent({ entityToEdit, allEntities, onClose, onSubmit }:
 
 export function LoreEntityForm({
   open,
+  initialName,
   entityToEdit,
   allEntities,
   onClose,
@@ -284,6 +348,7 @@ export function LoreEntityForm({
   return (
     <LoreEntityFormContent
       key={entityToEdit ? entityToEdit.id : 'new-entity'}
+      initialName={initialName}
       entityToEdit={entityToEdit}
       allEntities={allEntities}
       onClose={onClose}

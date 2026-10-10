@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import styles from './AuthButton.module.css';
 
 export function AuthButton() {
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, pendingEditorOperation } = useAuth();
 
   if (loading) {
     return (
@@ -44,9 +44,14 @@ export function AuthButton() {
       <Button
         variant="secondary"
         onClick={() => {
-          void signOut();
+          void Promise.resolve(signOut()).catch(() => {});
         }}
-        title="Encerrar sessão"
+        disabled={pendingEditorOperation}
+        title={
+          pendingEditorOperation
+            ? 'Aguarde a sugestão ser inserida no manuscrito'
+            : 'Encerrar sessão'
+        }
       >
         <LogOut className="icon icon-sm" aria-hidden="true" />
         Sair

@@ -1,6 +1,6 @@
 import { getGenerativeModel } from 'firebase/ai';
 import { getFirebaseAI } from '@/shared/lib';
-import type { BYOKConfig } from '../model/byokConfig';
+import { validateBYOKConfig, type BYOKConfig } from '../model/byokConfig';
 import { getBYOKConfig } from './byokStorage';
 
 export interface GenerateAIOptions {
@@ -16,6 +16,9 @@ export async function generateAIResponse({
   byokConfig = getBYOKConfig(),
   signal,
 }: GenerateAIOptions): Promise<string> {
+  signal?.throwIfAborted();
+  const validation = validateBYOKConfig(byokConfig);
+  if (!validation.isValid) throw new Error(validation.error);
   // 1. Provedor BYOK: OpenAI
   if (byokConfig.provider === 'openai_byok' && byokConfig.openaiApiKey?.trim()) {
     const messages = [];
@@ -40,8 +43,7 @@ export async function generateAIResponse({
     });
 
     if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`Erro na API OpenAI (${response.status}): ${errBody}`);
+      throw new Error(`Erro na API OpenAI (${response.status}). Verifique sua chave e cota.`);
     }
 
     interface OpenAIChoice {
@@ -54,8 +56,8 @@ export async function generateAIResponse({
 
   // 2. Provedor BYOK: Gemini Direto
   if (byokConfig.provider === 'gemini_byok' && byokConfig.geminiApiKey?.trim()) {
-    const modelName = byokConfig.customModel || 'gemini-2.5-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${byokConfig.geminiApiKey.trim()}`;
+    const modelName = byokConfig.customModel || 'gemini-3.7-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
 
     const bodyPayload: {
       contents: Array<{ parts: Array<{ text: string }> }>;
@@ -72,14 +74,16 @@ export async function generateAIResponse({
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-goog-api-key': byokConfig.geminiApiKey.trim(),
+      },
       body: JSON.stringify(bodyPayload),
       signal,
     });
 
     if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`Erro na API Gemini (${response.status}): ${errBody}`);
+      throw new Error(`Erro na API Gemini (${response.status}). Verifique sua chave e cota.`);
     }
 
     interface GeminiCandidate {
@@ -101,7 +105,8 @@ export async function generateAIResponse({
     },
   });
 
-  const result = await generativeModel.generateContent(prompt);
+  const result = await generativeModel.generateContent(prompt, { signal });
+  signal?.throwIfAborted();
   const responseText = result.response.text().trim();
   return responseText;
 }

@@ -11,6 +11,8 @@ export interface AuthContextValue {
   signUpWithEmail: (email: string, password: string, displayName?: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateUserCreditsState: (credits: number) => void;
+  pendingEditorOperation: boolean;
+  setPendingEditorOperation: (pending: boolean) => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);

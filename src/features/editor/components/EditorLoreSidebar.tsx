@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { BookOpen, MapPin, Plus, Search, Tag, User, X } from 'lucide-react';
 import { Badge, Button, Input } from '@/shared/ui';
 import {
@@ -15,6 +15,8 @@ export interface EditorLoreSidebarProps {
   isOpen: boolean;
   entities: LoreEntity[];
   selectedEntityId?: string | null;
+  createEntityName?: string | null;
+  onCreateRequestHandled?: () => void;
   onClose: () => void;
   onCreateEntity: (input: CreateLoreEntityInput) => Promise<void>;
   onUpdateEntity: (id: string, input: UpdateLoreEntityInput) => Promise<void>;
@@ -45,18 +47,28 @@ export function EditorLoreSidebar({
   isOpen,
   entities,
   selectedEntityId,
+  createEntityName,
+  onCreateRequestHandled,
   onClose,
   onCreateEntity,
   onUpdateEntity,
 }: EditorLoreSidebarProps) {
+  const selectedCard = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    selectedCard.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [selectedEntityId, isOpen]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<LoreCategory | 'all'>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [entityToEdit, setEntityToEdit] = useState<LoreEntity | null>(null);
   const [viewingEntity, setViewingEntity] = useState<LoreEntity | null>(null);
 
+  const isCreationRequested = createEntityName !== undefined && createEntityName !== null;
+  const editingEntity = isCreationRequested ? null : entityToEdit;
+
   const filteredEntities = useMemo(() => {
     return entities.filter((entity) => {
+      if (entity.id === selectedEntityId) return true;
       const matchesCategory = selectedCategory === 'all' || entity.category === selectedCategory;
       if (!matchesCategory) return false;
 
@@ -68,7 +80,7 @@ export function EditorLoreSidebar({
 
       return nameMatch || summaryMatch || aliasMatch;
     });
-  }, [entities, selectedCategory, searchQuery]);
+  }, [entities, selectedCategory, searchQuery, selectedEntityId]);
 
   if (!isOpen) return null;
 
@@ -83,8 +95,8 @@ export function EditorLoreSidebar({
   };
 
   const handleFormSubmit = async (input: CreateLoreEntityInput) => {
-    if (entityToEdit) {
-      await onUpdateEntity(entityToEdit.id, input);
+    if (editingEntity) {
+      await onUpdateEntity(editingEntity.id, input);
     } else {
       await onCreateEntity(input);
     }
@@ -173,6 +185,7 @@ export function EditorLoreSidebar({
             return (
               <div
                 key={entity.id}
+                ref={isTarget ? selectedCard : undefined}
                 className={`${styles.entityItem} ${isTarget ? styles.entityItemHighlighted : ''}`}
               >
                 <div className={styles.itemHeader}>
@@ -191,6 +204,62 @@ export function EditorLoreSidebar({
 
                 <p className={styles.itemSummary}>{entity.summary}</p>
 
+                {isTarget && (
+                  <section
+                    className={styles.fullRecord}
+                    aria-label={`Ficha completa de ${entity.name}`}
+                  >
+                    {entity.details && (
+                      <>
+                        <h4>Ficha detalhada</h4>
+                        <p>{entity.details}</p>
+                      </>
+                    )}
+                    {entity.structuredDetails &&
+                      Object.entries(entity.structuredDetails)
+                        .filter(([, value]) => value)
+                        .map(([field, value]) => (
+                          <p key={field}>
+                            <strong>
+                              {(
+                                {
+                                  notes: 'Notas',
+                                  age: 'Idade',
+                                  occupation: 'Ocupação',
+                                  personality: 'Personalidade',
+                                  appearance: 'Aparência',
+                                  history: 'História',
+                                  geography: 'Geografia',
+                                  climate: 'Clima',
+                                  culture: 'Cultura',
+                                  rules: 'Regras',
+                                  origin: 'Origem',
+                                  purpose: 'Propósito',
+                                } as Record<string, string>
+                              )[field] ?? field}
+                              :
+                            </strong>{' '}
+                            {value}
+                          </p>
+                        ))}
+                    {entity.relations.length > 0 && (
+                      <>
+                        <h4>Relações</h4>
+                        <ul>
+                          {entity.relations.map((relation, index) => (
+                            <li key={`${relation.targetEntityId}-${index}`}>
+                              <strong>{relation.relationType}:</strong>{' '}
+                              {entities.find((item) => item.id === relation.targetEntityId)?.name ??
+                                'Entidade não disponível'}
+                              {relation.description ? ` — ${relation.description}` : ''}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                    <p>{entity.isPublic ? 'Público no leitor' : 'Privado (somente autor)'}</p>
+                  </section>
+                )}
                 <div className={styles.itemActions}>
                   <Button variant="secondary" onClick={() => setViewingEntity(entity)}>
                     Ver Ficha
@@ -206,10 +275,14 @@ export function EditorLoreSidebar({
       </div>
 
       <LoreEntityForm
-        open={isFormOpen}
-        entityToEdit={entityToEdit}
+        open={isFormOpen || isCreationRequested}
+        initialName={createEntityName ?? undefined}
+        entityToEdit={editingEntity}
         allEntities={entities}
-        onClose={() => setIsFormOpen(false)}
+        onClose={() => {
+          setIsFormOpen(false);
+          onCreateRequestHandled?.();
+        }}
         onSubmit={handleFormSubmit}
       />
 

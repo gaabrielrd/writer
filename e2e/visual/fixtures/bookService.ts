@@ -60,6 +60,9 @@ export function deleteBook(bookId: string): Promise<void> {
 }
 
 export function listChapters(bookId: string): Promise<Chapter[]> {
+  if (sessionStorage.getItem('writer.visual.export-failure') === 'true') {
+    return Promise.reject(new Error('Falha simulada na exportação. Tente novamente.'));
+  }
   return Promise.resolve(
     structuredClone(
       [...chapterStore.values()]

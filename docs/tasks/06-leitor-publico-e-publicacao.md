@@ -25,22 +25,28 @@ Implementar a rota e os componentes do **Leitor Público** (`/read/:bookId`), pe
 
 ## Critérios de aceite
 
-- [ ] Qualquer visitante sem login pode acessar `/read/:bookId` para um livro com status "Publicado" e ler seus capítulos.
-- [ ] Se o livro estiver com status "Rascunho", um visitante deslogado visualiza uma mensagem amigável informando que a obra é privada.
-- [ ] O leitor pode navegar facilmente entre os capítulos através do sumário lateral ou botões "Anterior" / "Próximo".
-- [ ] Entidades com `isPublic: true` exibem balões de informação (categoria e resumo) ao passar o mouse ou tocar na palavra.
-- [ ] Entidades privadas (segredos/spoilers do autor) não são destacadas nem expostas no leitor público.
-- [ ] Testes cobrem a renderização pública, o bloqueio de rascunhos e a filtragem de lore sensível.
+- [x] Qualquer visitante sem login pode acessar `/read/:bookId` para um livro com status "Publicado" e ler seus capítulos.
+- [x] Se o livro estiver com status "Rascunho", um visitante deslogado visualiza uma mensagem amigável informando que a obra é privada.
+- [x] O leitor pode navegar facilmente entre os capítulos através do sumário lateral ou botões "Anterior" / "Próximo".
+- [x] Entidades com `isPublic: true` exibem balões de informação (categoria e resumo) ao passar o mouse ou tocar na palavra.
+- [x] Entidades privadas (segredos/spoilers do autor) não são destacadas nem expostas no leitor público.
+- [x] Testes cobrem a renderização pública, o bloqueio de rascunhos e a filtragem de lore sensível.
 
 ## Tarefas
 
-- [ ] 1. Implementar o serviço de consulta pública `publicBookService.ts` na feature `books`.
-- [ ] 2. Criar os componentes `ReaderView`, `ReaderHeader` e `ReaderLoreTooltip` com os padrões de tipografia e tokens de `@vitru/styleguide`.
-- [ ] 3. Implementar a navegação de capítulos (sumário lateral e botões de avanço).
-- [ ] 4. Registrar a rota `/read/:bookId` em `src/app/routes/index.tsx`.
-- [ ] 5. Escrever testes de integração e componentes em `src/features/books/tests/`.
-- [ ] 6. Executar `npm run validate` e garantir 100% de sucesso.
+- [x] 1. Implementar o serviço de consulta pública `publicBookService.ts` na feature `books`.
+- [x] 2. Criar os componentes `ReaderView`, `ReaderHeader` e `ReaderLoreTooltip` com os padrões de tipografia e tokens de `@/shared/ui` e tokens semânticos.
+- [x] 3. Implementar a navegação de capítulos (sumário lateral e botões de avanço).
+- [x] 4. Registrar a rota `/read/:bookId` em `src/app/routes/index.tsx`.
+- [x] 5. Escrever testes de integração e componentes em `src/features/books/tests/`.
+- [x] 6. Executar `npm run validate` e garantir 100% de sucesso.
 
 ## Riscos
 
 - Exposição acidental de lore privado: garantir filtragem tanto no serviço quanto na renderização do leitor público.
+
+## Evidência da implementação
+
+Ver a [revisão de aceite 01–08](roadmap-acceptance.md) e a
+[entrega integrada](../entregas/2026-10-10-roadmap-writer.md). A validação local
+está concluída; a evidência de navegador e o estado do CI são acompanhados no PR.

@@ -10,10 +10,13 @@ export async function getUserCredits(userId: string): Promise<number> {
   }
 
   const data = snap.data();
-  return typeof data.credits === 'number' ? data.credits : 0;
+  return typeof data.credits === 'number' && Number.isSafeInteger(data.credits) && data.credits >= 0
+    ? data.credits
+    : 0;
 }
 
 export async function deductCredit(userId: string, amount = 1): Promise<number> {
+  if (amount !== 1) throw new Error('Cada sugestão aceita consome exatamente 1 crédito.');
   const userDocRef = doc(firestore, 'users', userId);
 
   return runTransaction(firestore, async (transaction) => {
@@ -25,7 +28,7 @@ export async function deductCredit(userId: string, amount = 1): Promise<number> 
 
     const currentCredits = (snap.data().credits as number | undefined) ?? 0;
 
-    if (currentCredits < amount) {
+    if (!Number.isSafeInteger(currentCredits) || currentCredits < amount) {
       throw new Error('Saldo de créditos insuficiente.');
     }
 
@@ -35,28 +38,6 @@ export async function deductCredit(userId: string, amount = 1): Promise<number> 
       credits: newCredits,
       updatedAt: Date.now(),
     });
-
-    return newCredits;
-  });
-}
-
-export async function addCredits(userId: string, amount: number): Promise<number> {
-  const userDocRef = doc(firestore, 'users', userId);
-
-  return runTransaction(firestore, async (transaction) => {
-    const snap = await transaction.get(userDocRef);
-    const currentCredits = snap.exists() ? ((snap.data().credits as number | undefined) ?? 0) : 0;
-
-    const newCredits = currentCredits + amount;
-
-    transaction.set(
-      userDocRef,
-      {
-        credits: newCredits,
-        updatedAt: Date.now(),
-      },
-      { merge: true },
-    );
 
     return newCredits;
   });

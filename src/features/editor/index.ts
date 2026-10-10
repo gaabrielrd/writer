@@ -8,3 +8,6 @@ export type { MentionMenuProps } from './components/MentionMenu';
 export { EditorLoreSidebar } from './components/EditorLoreSidebar';
 export type { EditorLoreSidebarProps } from './components/EditorLoreSidebar';
 export { EditorPage } from './components/EditorPage';
+
+export { ExportButton } from './components/ExportButton';
+export type { ExportButtonProps } from './components/ExportButton';

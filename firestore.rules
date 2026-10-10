@@ -2,7 +2,6 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -12,29 +11,243 @@ service cloud.firestore {
     }
 
     function isBookAuthor(bookId) {
-      return isAuthenticated() && (
-        get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid
-      );
+      return isAuthenticated()
+        && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid;
+    }
+
+    function isPublished(bookId) {
+      return get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published';
+    }
+
+    function isCurrentRevision(bookId, revisionId) {
+      return exists(/databases/$(database)/documents/publicBooks/$(bookId))
+        && get(/databases/$(database)/documents/publicBooks/$(bookId)).data.revisionId == revisionId;
+    }
+
+    function canReadRevision(bookId, revisionId) {
+      return isBookAuthor(bookId) || (isPublished(bookId) && isCurrentRevision(bookId, revisionId));
+    }
+
+    function nonemptyString(value, maxSize) {
+      return value is string && value.size() > 0 && value.size() <= maxSize;
+    }
+
+    function validPublicBook(data) {
+      return data.keys().hasAll(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt'])
+        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt'])
+        && data.schemaVersion == 1
+        && nonemptyString(data.title, 300)
+        && nonemptyString(data.authorName, 120)
+        && nonemptyString(data.revisionId, 128)
+        && data.publishedAt is int && data.publishedAt >= 0;
+    }
+
+    function validRevision(data) {
+      return data.keys().hasAll(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion'])
+        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion'])
+        && data.privacyVersion is int && data.privacyVersion >= 0
+        && data.createdAt is int && data.createdAt >= 0
+        && data.chapterCount is int && data.chapterCount >= 0
+        && data.loreCount is int && data.loreCount >= 0;
+    }
+
+    function validChapter(data) {
+      return data.keys().hasAll(['title', 'order', 'content'])
+        && data.keys().hasOnly(['title', 'order', 'content'])
+        && nonemptyString(data.title, 300)
+        && data.order is int && data.order >= 0
+        && data.content is string && data.content.size() <= 900000;
+    }
+
+    function validAlias(aliases, index) {
+      return aliases.size() <= index || (aliases[index] is string && aliases[index].size() <= 200);
+    }
+
+    function validLore(data) {
+      return data.keys().hasAll(['name', 'aliases', 'category', 'summary'])
+        && data.keys().hasOnly(['name', 'aliases', 'category', 'summary'])
+        && nonemptyString(data.name, 200)
+        && data.aliases is list && data.aliases.size() <= 20
+        && validAlias(data.aliases, 0) && validAlias(data.aliases, 1)
+        && validAlias(data.aliases, 2) && validAlias(data.aliases, 3)
+        && validAlias(data.aliases, 4) && validAlias(data.aliases, 5)
+        && validAlias(data.aliases, 6) && validAlias(data.aliases, 7)
+        && validAlias(data.aliases, 8) && validAlias(data.aliases, 9)
+        && validAlias(data.aliases, 10) && validAlias(data.aliases, 11)
+        && validAlias(data.aliases, 12) && validAlias(data.aliases, 13)
+        && validAlias(data.aliases, 14) && validAlias(data.aliases, 15)
+        && validAlias(data.aliases, 16) && validAlias(data.aliases, 17)
+        && validAlias(data.aliases, 18) && validAlias(data.aliases, 19)
+        && data.category in ['character', 'location', 'concept', 'other']
+        && data.summary is string && data.summary.size() <= 140;
+    }
+
+    function validNewUser(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'photoUrl', 'credits', 'tier', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'photoUrl', 'credits', 'tier', 'createdAt', 'updatedAt'])
+        && data.uid == userId && data.tier == 'free' && data.credits is int && data.credits == 100
+        && (data.email == null || data.email is string)
+        && (data.displayName == null || data.displayName is string)
+        && (data.photoUrl == null || data.photoUrl is string)
+        && data.createdAt is int && data.updatedAt is int;
+    }
+
+    function validUserUpdate(data) {
+      return data.credits is int && data.credits >= 0
+        && data.tier == resource.data.tier
+        && data.uid == resource.data.uid
+        && data.createdAt == resource.data.createdAt
+        && (data.email == null || data.email is string)
+        && (data.displayName == null || data.displayName is string)
+        && (data.photoUrl == null || data.photoUrl is string)
+        && data.updatedAt is int;
+    }
+
+    function isMonthlyCreditGrant() {
+      let previous = resource.data.get('creditsRenewedAt', null);
+      return resource.data.tier == 'premium'
+        && exists(/databases/$(database)/documents/creditEntitlements/$(request.auth.uid))
+        && get(/databases/$(database)/documents/creditEntitlements/$(request.auth.uid)).data.tier == 'premium'
+        && get(/databases/$(database)/documents/creditEntitlements/$(request.auth.uid)).data.active == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['credits', 'creditsRenewedAt', 'updatedAt'])
+        && request.resource.data.credits == resource.data.credits + 2000
+        && request.resource.data.creditsRenewedAt == request.time
+        && (previous == null || (previous is timestamp
+          && previous < timestamp.date(request.time.year(), request.time.month(), 1)));
+    }
+
+    // Provisioned only by a trusted administrator, never by the browser.
+    match /creditEntitlements/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
+    function validPublicationState(bookId) {
+      let beforeVersion = resource.data.get('publicationPrivacyVersion', 0);
+      let afterVersion = request.resource.data.get('publicationPrivacyVersion', 0);
+      return beforeVersion is int && afterVersion is int
+        && afterVersion >= beforeVersion && afterVersion <= beforeVersion + 1
+        && (afterVersion == beforeVersion || (request.resource.data.status == 'draft'
+          && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId))))
+        && (resource.data.get('deleting', false) != true || request.resource.data.get('deleting', false) == true)
+        && (request.resource.data.get('deleting', false) != true || (request.resource.data.status == 'draft'
+          && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId))));
     }
 
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && validNewUser(request.resource.data, userId);
+      allow update: if isOwner(userId) && validUserUpdate(request.resource.data) && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'photoUrl', 'email', 'updatedAt'])
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['credits', 'updatedAt'])
+          && request.resource.data.credits == resource.data.credits - 1)
+        || isMonthlyCreditGrant()
+      );
+      // Prevent deleting and recreating a profile to mint the initial grant again.
+      allow delete: if false;
     }
 
+    // Irreversible IDs prevent a deleted book from reattaching orphaned snapshots.
+    match /deletedBooks/{bookId} {
+      allow read, update, delete: if false;
+      allow create: if isBookAuthor(bookId)
+        && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
+        && request.resource.data.keys().hasOnly(['deletedAt'])
+        && request.resource.data.deletedAt == request.time;
+    }
+
+    // Originals are always private, including published books and public lore.
     match /books/{bookId} {
-      allow read: if resource.data.status == 'published' || isOwner(resource.data.authorId);
-      allow create: if isAuthenticated() && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if isOwner(resource.data.authorId);
+      allow read: if isOwner(resource.data.authorId);
+      allow create: if isAuthenticated()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.status == 'draft'
+        && request.resource.data.get('publicationPrivacyVersion', 0) == 0
+        && request.resource.data.get('deleting', false) == false
+        && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
+      allow update: if isOwner(resource.data.authorId)
+        && request.resource.data.authorId == resource.data.authorId
+        && validPublicationState(bookId)
+        && request.resource.data.status in ['draft', 'published']
+        && (request.resource.data.status == 'draft'
+          || resource.data.status == 'published'
+          || existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)));
+      allow delete: if isOwner(resource.data.authorId)
+        && resource.data.get('deleting', false) == true
+        && existsAfter(/databases/$(database)/documents/deletedBooks/$(bookId))
+        && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId));
 
       match /chapters/{chapterId} {
-        allow read: if get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published'
-          || isBookAuthor(bookId);
-        allow create, update, delete: if isBookAuthor(bookId);
+        allow read, delete: if isBookAuthor(bookId);
+        allow create, update: if isBookAuthor(bookId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
       }
 
       match /lore/{loreId} {
-        allow read: if resource.data.isPublic == true || isBookAuthor(bookId);
-        allow create, update, delete: if isBookAuthor(bookId);
+        function publicationRevoked() {
+          return getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'draft'
+            && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId))
+            && (getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
+              || getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0)
+                == get(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0) + 1);
+        }
+        allow read: if isBookAuthor(bookId);
+        allow create: if isBookAuthor(bookId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
+        allow update: if isBookAuthor(bookId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+          && (resource.data.get('isPublic', false) != true
+            || request.resource.data.get('isPublic', false) == true
+            || publicationRevoked());
+        allow delete: if isBookAuthor(bookId)
+          && (resource.data.get('isPublic', false) != true || publicationRevoked());
+      }
+    }
+
+    match /publicBooks/{bookId} {
+      allow get: if isBookAuthor(bookId) || isPublished(bookId);
+      allow list: if false;
+      allow create, update: if isBookAuthor(bookId)
+        && validPublicBook(request.resource.data)
+        && getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+        && getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'published'
+        && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId))
+        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.privacyVersion
+          == getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0);
+      allow delete: if isBookAuthor(bookId)
+        && getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'draft';
+
+      match /revisions/{revisionId} {
+        allow get: if canReadRevision(bookId, revisionId);
+        allow list: if isBookAuthor(bookId);
+        allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+          && validRevision(request.resource.data)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+          && request.resource.data.privacyVersion == get(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0);
+        allow update: if false;
+        allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true;
+
+        match /chapters/{chapterId} {
+          allow read: if canReadRevision(bookId, revisionId);
+          allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+            && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+            && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId))
+            && validChapter(request.resource.data);
+          allow update: if false;
+          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId);
+        }
+
+        match /lore/{loreId} {
+          allow read: if canReadRevision(bookId, revisionId);
+          allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+            && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+            && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId))
+            && get(/databases/$(database)/documents/books/$(bookId)/lore/$(loreId)).data.isPublic == true
+            && validLore(request.resource.data);
+          allow update: if false;
+          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId);
+        }
       }
     }
   }

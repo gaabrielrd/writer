@@ -108,11 +108,14 @@ test('obra, capítulos longos, compêndio e edição', async ({ page }, testInfo
 
 test('editor, painel de lore e configurações de IA', async ({ page }, testInfo) => {
   await page.goto(editorPath);
-  await expect(page.getByRole('heading', { name: chapterTitle, exact: true })).toBeVisible();
-  await expect(page.getByPlaceholder('Comece a escrever seu capítulo aqui...')).toHaveValue(
-    chapters[0].content,
+  await expect(
+    page.getByRole('heading', { name: chapterTitle, exact: true }).first(),
+  ).toBeVisible();
+  await expect(page.getByRole('textbox', { name: 'Área de escrita do capítulo' })).toHaveText(
+    chapters[0].content.replace(/^#{1,6} /gm, ''),
+    { useInnerText: true },
   );
-  const manuscript = page.getByPlaceholder('Comece a escrever seu capítulo aqui...');
+  const manuscript = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
   await manuscript.focus();
   await expect(manuscript).toBeFocused();
   await expect
@@ -154,22 +157,29 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
     await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
     await page.getByRole('button', { name: `Escrever ${chapterTitle}`, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${editorPath}$`));
-    await expect(page.getByRole('heading', { name: chapterTitle, exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: chapterTitle, exact: true }).first(),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Próximo capítulo', exact: true }).click();
     await expect(
       page.getByRole('heading', { name: secondChapterTitle, exact: true }),
     ).toBeVisible();
-    await expect(page.getByPlaceholder('Comece a escrever seu capítulo aqui...')).toHaveValue(
-      chapters[1].content,
+    await expect(page.getByRole('textbox', { name: 'Área de escrita do capítulo' })).toHaveText(
+      chapters[1].content.replace(/^#{1,6} /gm, ''),
+      { useInnerText: true },
     );
     await page.goBack();
-    await expect(page.getByRole('heading', { name: chapterTitle, exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: chapterTitle, exact: true }).first(),
+    ).toBeVisible();
     await page.goForward();
     await expect(
       page.getByRole('heading', { name: secondChapterTitle, exact: true }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'Capítulo anterior', exact: true }).click();
-    await expect(page.getByRole('heading', { name: chapterTitle, exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: chapterTitle, exact: true }).first(),
+    ).toBeVisible();
     await page.getByRole('link', { name: 'Voltar para a lista de obras', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
   }
@@ -278,7 +288,9 @@ test('largura mínima de 320px mantém biblioteca, obra e editor sem transbordam
   await expect(page.getByText(secondChapterTitle, { exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page, 'obra-320px');
   await page.getByRole('button', { name: `Escrever ${chapterTitle}`, exact: true }).click();
-  await expect(page.getByRole('heading', { name: chapterTitle, exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: chapterTitle, exact: true }).first(),
+  ).toBeVisible();
   await expectNoHorizontalOverflow(page, 'editor-320px');
   await page.getByRole('button', { name: /Compêndio/ }).click();
   await expect(
@@ -288,4 +300,61 @@ test('largura mínima de 320px mantém biblioteca, obra e editor sem transbordam
   await page.getByRole('button', { name: 'Configurações de IA e Chaves de API' }).click();
   await expectDialogWithinViewport(page);
   await expectNoHorizontalOverflow(page, 'configuracoes-320px');
+});
+
+test('WYSIWYG preserva seleção, desfaz, salva ao navegar e consulta lore durante escrita', async ({
+  page,
+}) => {
+  await page.goto(editorPath);
+  const manuscript = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+  await manuscript.fill('Lia observa o porto.');
+  await manuscript.press('Control+Home');
+  await manuscript.press('Shift+ArrowRight');
+  await manuscript.press('Shift+ArrowRight');
+  await manuscript.press('Shift+ArrowRight');
+  await page.getByRole('button', { name: 'Negrito', exact: true }).click();
+  await expect(manuscript.locator('strong')).toHaveText('Lia');
+  await expect.poll(() => page.evaluate(() => window.getSelection()?.toString())).toBe('Lia');
+  await page.getByRole('button', { name: 'Desfazer', exact: true }).click();
+  await expect(manuscript.locator('strong')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Refazer', exact: true }).click();
+  await expect(manuscript.locator('strong')).toHaveText('Lia');
+  const term = manuscript.getByRole('button', { name: 'Ver ficha de Lia' });
+  await term.hover();
+  await expect(page.getByRole('tooltip')).toContainText('Cartógrafa');
+  await term.click();
+  const sidebar = page.getByRole('complementary', { name: 'Painel lateral do Compêndio de Lore' });
+  await expect(sidebar.getByRole('region', { name: 'Ficha completa de Lia' })).toBeVisible();
+  await sidebar.getByRole('button', { name: 'Fechar painel de lore' }).click();
+  await expect(manuscript).toBeFocused();
+  await manuscript.press('Control+End');
+  await manuscript.pressSequentially(' Texto final.');
+  // Navigate before the one-second debounce; pending content must be flushed.
+  await page.getByRole('button', { name: 'Próximo capítulo', exact: true }).click();
+  await expect(page.getByRole('heading', { name: secondChapterTitle, exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(manuscript).toHaveText('Lia observa o porto. Texto final.');
+  await expect(manuscript.locator('strong')).toHaveText('Lia');
+  await expect(page.getByRole('button', { name: 'Desfazer', exact: true })).toBeDisabled();
+  await page.goForward();
+  await expect(manuscript).toContainText('Lia e Tomás partiram');
+});
+
+test('menções @ permitem criação cancelável e seleção sem trocar de capítulo', async ({ page }) => {
+  await page.goto(editorPath);
+  const manuscript = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+  await manuscript.fill('@Avalon');
+  await expect(page.getByRole('option', { name: /Criar “Avalon”/ })).toBeVisible();
+  await manuscript.press('Enter');
+  const dialog = page.getByRole('dialog', { name: 'Cadastrar Nova Entidade no Compêndio' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Nome da Entidade')).toHaveValue('Avalon');
+  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(manuscript).toHaveText('@Avalon');
+  await manuscript.fill('@Li');
+  await manuscript.press('Enter');
+  await expect(manuscript).toHaveText('Lia');
+  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(page).toHaveURL(new RegExp(`${editorPath}$`));
 });

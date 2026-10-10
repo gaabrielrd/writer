@@ -1,0 +1,220 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { listChapters } from '@/features/books';
+import { listLoreEntities, type LoreEntity } from '@/features/lore';
+import { exportManuscript } from '../services/exportManuscript';
+import { downloadExport } from '../services/downloadExport';
+import { exportPdf } from '../services/exportPdf';
+import { exportDocx } from '../services/exportDocx';
+import { exportBook, exportChapter, readBlob } from './exportFixtures';
+
+vi.mock('@/features/books', () => ({ listChapters: vi.fn() }));
+vi.mock('@/features/lore', () => ({ listLoreEntities: vi.fn() }));
+vi.mock('../services/downloadExport', () => ({ downloadExport: vi.fn() }));
+vi.mock('../services/exportPdf', () => ({ exportPdf: vi.fn() }));
+vi.mock('../services/exportDocx', () => ({ exportDocx: vi.fn() }));
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(listChapters).mockResolvedValue([exportChapter]);
+  vi.mocked(listLoreEntities).mockResolvedValue([]);
+  vi.mocked(exportPdf).mockResolvedValue();
+  vi.mocked(exportDocx).mockResolvedValue(new Blob(['docx']));
+});
+
+async function downloadedText(): Promise<string> {
+  const blob = vi.mocked(downloadExport).mock.calls.at(-1)?.[0];
+  if (!blob) throw new Error('No downloaded artifact');
+  return new TextDecoder().decode(await readBlob(blob));
+}
+
+describe('exportManuscript', () => {
+  it('exports the unsaved chapter without a remote fetch, including intentionally empty edits', async () => {
+    await exportManuscript({
+      book: exportBook,
+      scope: 'chapter',
+      format: 'markdown',
+      currentChapter: exportChapter,
+      currentContent: '**Nova versão**',
+    });
+    expect(listChapters).not.toHaveBeenCalled();
+    expect(await downloadedText()).toContain('**Nova versão**');
+    expect(downloadExport).toHaveBeenCalledWith(
+      expect.any(Blob),
+      'Crônicas ação & memória - O início.md',
+    );
+    await exportManuscript({
+      book: exportBook,
+      scope: 'chapter',
+      format: 'markdown',
+      currentChapter: exportChapter,
+      currentContent: '',
+    });
+    expect(await downloadedText()).not.toContain('Segunda linha');
+  });
+
+  it('fetches the complete book and replaces its saved current chapter with the draft', async () => {
+    vi.mocked(listChapters).mockResolvedValue([
+      { ...exportChapter, id: 'two', order: 2, title: 'Capítulo 2', content: 'Outro capítulo' },
+      exportChapter,
+    ]);
+    await exportManuscript({
+      book: exportBook,
+      scope: 'book',
+      format: 'markdown',
+      currentChapter: exportChapter,
+      currentContent: 'Não salvo',
+    });
+    expect(listChapters).toHaveBeenCalledWith(exportBook.id);
+    const text = await downloadedText();
+    expect(text).toContain('Não salvo');
+    expect(text).toContain('Outro capítulo');
+    expect(text.indexOf('O início')).toBeLessThan(text.indexOf('Capítulo 2'));
+  });
+
+  it('keeps the open draft when it disappeared from the remote book listing', async () => {
+    vi.mocked(listChapters).mockResolvedValue([]);
+    await exportManuscript({
+      book: exportBook,
+      scope: 'book',
+      format: 'markdown',
+      currentChapter: exportChapter,
+      currentContent: 'Rascunho preservado',
+    });
+    expect(await downloadedText()).toContain('Rascunho preservado');
+  });
+
+  it('uses stored content when no override is supplied and routes DOCX/PDF correctly', async () => {
+    await exportManuscript({ book: exportBook, scope: 'book', format: 'docx' });
+    expect(exportDocx).toHaveBeenCalledWith(
+      expect.objectContaining({ title: exportBook.title }),
+      undefined,
+    );
+    expect(downloadExport).toHaveBeenCalledWith(expect.any(Blob), 'Crônicas ação & memória.docx');
+    vi.mocked(downloadExport).mockClear();
+    await exportManuscript({
+      book: exportBook,
+      scope: 'chapter',
+      format: 'pdf',
+      currentChapter: exportChapter,
+    });
+    expect(exportPdf).toHaveBeenCalledWith(
+      expect.objectContaining({ chapters: [expect.objectContaining({ title: 'O início' })] }),
+      undefined,
+    );
+    expect(downloadExport).not.toHaveBeenCalled();
+  });
+
+  it('rejects missing or mismatched chapters and permits a retry after a load failure', async () => {
+    await expect(
+      exportManuscript({ book: exportBook, scope: 'chapter', format: 'markdown' }),
+    ).rejects.toThrow('Selecione um capítulo');
+    await expect(
+      exportManuscript({
+        book: exportBook,
+        scope: 'chapter',
+        format: 'markdown',
+        currentChapter: { ...exportChapter, bookId: 'other' },
+      }),
+    ).rejects.toThrow('não pertence');
+    vi.mocked(listChapters).mockRejectedValueOnce(new Error('Offline'));
+    await expect(
+      exportManuscript({ book: exportBook, scope: 'book', format: 'markdown' }),
+    ).rejects.toThrow('Offline');
+    expect(downloadExport).not.toHaveBeenCalled();
+    await exportManuscript({ book: exportBook, scope: 'book', format: 'markdown' });
+    expect(downloadExport).toHaveBeenCalledOnce();
+    vi.mocked(listChapters).mockResolvedValue([]);
+    await expect(
+      exportManuscript({ book: exportBook, scope: 'book', format: 'markdown' }),
+    ).rejects.toThrow('Adicione um capítulo');
+  });
+
+  it('prevents downloads after canceling a pending remote load or generated document', async () => {
+    const controller = new AbortController();
+    vi.mocked(listChapters).mockImplementation(() => {
+      controller.abort();
+      return Promise.resolve([exportChapter]);
+    });
+    await expect(
+      exportManuscript({
+        book: exportBook,
+        scope: 'book',
+        format: 'markdown',
+        signal: controller.signal,
+      }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(downloadExport).not.toHaveBeenCalled();
+    const docxController = new AbortController();
+    vi.mocked(exportDocx).mockImplementation(() => {
+      docxController.abort();
+      return Promise.resolve(new Blob());
+    });
+    await expect(
+      exportManuscript({
+        book: exportBook,
+        scope: 'chapter',
+        currentChapter: exportChapter,
+        format: 'docx',
+        signal: docxController.signal,
+      }),
+    ).rejects.toMatchObject({ name: 'AbortError' });
+    expect(downloadExport).not.toHaveBeenCalled();
+  });
+
+  it('backs up private lore, structured details, relations and unsaved prose without account secrets', async () => {
+    const entity: LoreEntity = {
+      id: 'lore-1',
+      bookId: exportBook.id,
+      name: 'Aurora',
+      aliases: ['Auri'],
+      category: 'character',
+      summary: 'Rainha',
+      details: 'Segredo',
+      structuredDetails: {
+        appearance: 'Alta',
+        personality: 'Forte',
+        history: 'Passado',
+        notes: 'Notas privadas',
+      },
+      relations: [{ targetEntityId: 'lore-2', relationType: 'amizade', description: 'Conhecidos' }],
+      isPublic: false,
+      createdAt: 1,
+      updatedAt: 2,
+    };
+    vi.mocked(listLoreEntities).mockResolvedValue([
+      Object.assign(entity, { apiKey: 'must-not-export' }),
+    ]);
+    await exportManuscript({
+      book: exportBook,
+      scope: 'book',
+      format: 'json',
+      currentChapter: exportChapter,
+      currentContent: 'Rascunho atual',
+    });
+    const raw = await downloadedText();
+    expect(JSON.parse(raw)).toMatchObject({
+      format: 'writer-book-backup',
+      version: 1,
+      chapters: [{ content: 'Rascunho atual' }],
+      lore: [
+        {
+          details: 'Segredo',
+          isPublic: false,
+          structuredDetails: { notes: 'Notas privadas' },
+          relations: [{ targetEntityId: 'lore-2' }],
+        },
+      ],
+    });
+    expect(raw).not.toContain('must-not-export');
+    expect(raw).not.toContain(exportBook.authorId);
+    expect(downloadExport).toHaveBeenCalledWith(expect.any(Blob), 'Crônicas ação & memória.json');
+    await expect(
+      exportManuscript({
+        book: exportBook,
+        scope: 'chapter',
+        currentChapter: exportChapter,
+        format: 'json',
+      }),
+    ).rejects.toThrow('livro inteiro');
+  });
+});

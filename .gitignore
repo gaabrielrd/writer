@@ -32,3 +32,14 @@ Thumbs.db
 # IDEs
 .vscode/
 .idea/
+
+# Emuladores locais
+firebase-debug.log*
+firestore-debug.log*
+
+# Temporary deployment files; Google credentials must never be committed.
+gha-creds-*.json
+firebase.deploy.json
+verified-build/
+hosting.sha256
+served-release.txt

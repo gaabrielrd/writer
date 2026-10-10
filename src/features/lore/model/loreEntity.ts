@@ -13,6 +13,13 @@ export interface LoreRelation {
   description?: string;
 }
 
+export interface LoreDetails {
+  appearance: string;
+  personality: string;
+  history: string;
+  notes: string;
+}
+
 export interface LoreEntity {
   id: string;
   bookId: string;
@@ -21,6 +28,7 @@ export interface LoreEntity {
   category: LoreCategory;
   summary: string;
   details: string;
+  structuredDetails?: LoreDetails;
   relations: LoreRelation[];
   isPublic: boolean;
   createdAt: number;
@@ -33,6 +41,7 @@ export interface CreateLoreEntityInput {
   category: LoreCategory;
   summary: string;
   details?: string;
+  structuredDetails?: LoreDetails;
   relations?: LoreRelation[];
   isPublic?: boolean;
 }
@@ -43,6 +52,7 @@ export interface UpdateLoreEntityInput {
   category?: LoreCategory;
   summary?: string;
   details?: string;
+  structuredDetails?: LoreDetails;
   relations?: LoreRelation[];
   isPublic?: boolean;
 }

@@ -8,6 +8,8 @@ const replacements = new Map(
   [
     ['src/features/auth/services/authService.ts', 'authService.ts'],
     ['src/features/books/services/bookService.ts', 'bookService.ts'],
+    ['src/features/books/services/publicBookService.ts', 'publicBookService.ts'],
+    ['src/features/books/services/publicationService.ts', 'publicationService.ts'],
     ['src/features/lore/services/loreService.ts', 'loreService.ts'],
     ['src/features/ai-assistant/services/aiClient.ts', 'aiService.ts'],
     ['src/features/ai-assistant/services/creditsService.ts', 'aiService.ts'],

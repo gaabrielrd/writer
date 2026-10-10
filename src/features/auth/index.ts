@@ -5,4 +5,4 @@ export { AuthButton } from './components/AuthButton';
 export { CreditsBadge } from './components/CreditsBadge';
 export { LoginPage } from './components/LoginPage';
 export * from './model';
-export { updateCredits, signInWithGoogleIdToken } from './services/authService';
+export { signInWithGoogleIdToken } from './services/authService';

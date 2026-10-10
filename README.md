@@ -107,6 +107,12 @@ docs/             # documentação técnica e de produto (prd.md, architecture.m
 
 Detalhes em [docs/architecture.md](docs/architecture.md) e requisitos em [docs/prd.md](docs/prd.md).
 
+## Segurança e testes de regras
+
+Além de `npm run validate` e dos testes Chromium, `npm run test:rules` executa
+as regras reais no emulador local do Firestore, com Java 21. O processo usa
+apenas o projeto fictício `demo-writer-rules`, nunca dados de produção.
+
 ## Como usar agentes
 
 As regras que os agentes devem seguir ficam em dois arquivos na raiz:
@@ -135,4 +141,15 @@ Decisões relevantes de arquitetura ou tecnologia viram um ADR (Architecture Dec
 
 - A autenticação e a persistência em nuvem dependem da configuração das credenciais do Firebase.
 - O autocomplete de IA preditivo depende de conexão ativa e saldo de créditos (ou chave de API BYOK informada).
-- A exportação em PDF utiliza o motor de renderização e diálogo de impressão do navegador.
+- A exportação em PDF utiliza um documento isolado e o diálogo de impressão do navegador (opção Salvar como PDF).
+- A publicação é uma versão explícita, separada do rascunho. Alterações só aparecem após atualizar a publicação; tornar lore público privado retira a versão pública imediatamente. As regras precisam ser implantadas junto da versão antes de uso real. Veja [segurança da publicação](docs/publication-security.md).
+- Livros antigos com status publicado precisam de republicação explícita com nome de autor público. Nenhuma migração/publicação automática é executada.
+- A concessão mensal Premium exige um registro de direito criado por administrador em `creditEntitlements`, separado do perfil legado. Perfis antigos precisam de revisão pelo operador; a aplicação não cria nem reconcilia direitos.
+- Créditos são validados pelas regras do Firestore, mas uma arquitetura de IA exclusivamente no cliente não é um sistema de faturamento à prova de chamadas diretas. Pagamento e backend de cobrança continuam fora do escopo.
+- O cache persistente depende de IndexedDB; rascunhos locais distintos exigem uma escolha de recuperação. Em dispositivos compartilhados, dados locais devem ser tratados como privados.
+
+### Implantação preparada
+
+Os workflows de Hosting e de atualização manual de regras/índices estão
+preparados com gates desabilitados por padrão. A ativação exige destino verificado
+e autorização separada de acesso. Consulte [implantação](docs/deployment.md).

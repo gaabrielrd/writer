@@ -2,12 +2,19 @@ export interface LoreContextItem {
   name: string;
   category: string;
   summary: string;
+  aliases?: readonly string[];
 }
 
-export function buildLoreContext(loreEntities: LoreContextItem[]): string {
+export function buildLoreContext(loreEntities: LoreContextItem[], referenceText = ''): string {
   if (loreEntities.length === 0) return '';
 
-  const entries = loreEntities
+  const normalized = referenceText.toLocaleLowerCase();
+  const isMentioned = (entity: LoreContextItem) =>
+    [entity.name, ...(entity.aliases ?? [])].some(
+      (term) => term.trim() && normalized.includes(term.toLocaleLowerCase()),
+    );
+  const entries = [...loreEntities]
+    .sort((a, b) => Number(isMentioned(b)) - Number(isMentioned(a)))
     .slice(0, 15) // Limita a 15 entidades para manter o prompt conciso e rápido
     .map((e) => `- ${e.name} (${e.category}): ${e.summary}`)
     .join('\n');
@@ -24,7 +31,7 @@ export function buildAutocompletePrompt({
 }): { systemInstruction: string; prompt: string } {
   // Pega até os últimos 1500 caracteres para ter contexto imediato da cena
   const recentText = textBeforeCursor.slice(-1500);
-  const loreBlock = buildLoreContext(loreEntities);
+  const loreBlock = buildLoreContext(loreEntities, recentText);
 
   const systemInstruction =
     'Você é um assistente de escrita de ficção criativa integrado a um editor de romances. ' +
@@ -55,7 +62,7 @@ export function buildActionPrompt({
   loreEntities?: LoreContextItem[];
   customInstruction?: string;
 }): { systemInstruction: string; prompt: string } {
-  const loreBlock = buildLoreContext(loreEntities);
+  const loreBlock = buildLoreContext(loreEntities, selectedText);
 
   const systemInstruction =
     'Você é um coautor e editor literário experiente em ficção narrativa. Responda de forma direta e elegante em língua portuguesa.';

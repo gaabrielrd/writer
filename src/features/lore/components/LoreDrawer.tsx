@@ -108,6 +108,22 @@ export function LoreDrawer({ entity, allEntities, open, onClose, onEdit }: LoreD
           </div>
         )}
 
+        {entity.structuredDetails &&
+          (
+            [
+              ['appearance', 'Aparência'],
+              ['personality', 'Personalidade'],
+              ['history', 'Histórico'],
+              ['notes', 'Notas privadas'],
+            ] as const
+          ).map(([field, label]) =>
+            entity.structuredDetails?.[field] ? (
+              <div className={styles.section} key={field}>
+                <strong className={styles.sectionTitle}>{label}:</strong>
+                <p className={styles.detailsBox}>{entity.structuredDetails[field]}</p>
+              </div>
+            ) : null,
+          )}
         {entity.relations.length > 0 && (
           <div className={styles.section}>
             <strong className={styles.sectionTitle}>Relações Cadastradas:</strong>

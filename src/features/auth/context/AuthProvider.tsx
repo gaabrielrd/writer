@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, type ReactNode } from 'react';
+import { useEffect, useState, useRef, useCallback, type ReactNode } from 'react';
 import type { UserProfile } from '../model/user';
 import {
   subscribeToAuthState,
@@ -18,11 +18,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [pendingEditorOperation, setPendingOperation] = useState(false);
+  const pendingOperationRef = useRef(false);
+  const setPendingEditorOperation = useCallback((pending: boolean) => {
+    pendingOperationRef.current = pending;
+    setPendingOperation(pending);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToAuthState(
       (currentUser) => {
         setUser(currentUser);
+        setError(null);
         setLoading(false);
       },
       (err) => {
@@ -86,6 +93,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   );
 
   const handleSignOut = useCallback(async () => {
+    if (pendingOperationRef.current) {
+      const message = 'Aguarde a sugestão ser inserida no manuscrito antes de sair.';
+      setError(message);
+      throw new Error(message);
+    }
     setError(null);
     try {
       await signOutUser();
@@ -98,6 +110,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   const updateUserCreditsState = useCallback((credits: number) => {
+    if (!Number.isSafeInteger(credits) || credits < 0) return;
     setUser((prev) => (prev ? { ...prev, credits } : null));
   }, []);
 
@@ -113,6 +126,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         signUpWithEmail: handleSignUpEmail,
         signOut: handleSignOut,
         updateUserCreditsState,
+        pendingEditorOperation,
+        setPendingEditorOperation,
       }}
     >
       {children}

@@ -6,9 +6,10 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'jsdom',
+      maxWorkers: 2,
       globals: true,
       setupFiles: './src/test/setup.ts',
-      exclude: [...configDefaults.exclude, 'scripts/**/*.test.mjs', 'e2e/**'],
+      exclude: [...configDefaults.exclude, 'scripts/**/*.test.mjs', 'tests/firestore/**', 'e2e/**'],
       css: true,
       typecheck: {
         tsconfig: './tsconfig.app.json',

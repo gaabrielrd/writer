@@ -1,6 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { getUserCredits, deductCredit, addCredits } from '../services/creditsService';
+import { getUserCredits, deductCredit } from '../services/creditsService';
 import * as firestoreModule from 'firebase/firestore';
+
+vi.mock('@/shared/lib', () => ({ firestore: {} }));
 
 vi.mock('firebase/firestore', async () => {
   const actual = await vi.importActual<typeof firestoreModule>('firebase/firestore');
@@ -94,24 +96,8 @@ describe('creditsService', () => {
     });
   });
 
-  describe('addCredits', () => {
-    it('adiciona creditos atomicamente', async () => {
-      vi.mocked(firestoreModule.runTransaction).mockImplementationOnce((async (
-        _firestore: unknown,
-        updateFn: (t: firestoreModule.Transaction) => Promise<number>,
-      ) => {
-        const fakeTransaction = {
-          get: vi.fn().mockResolvedValue({
-            exists: () => true,
-            data: () => ({ credits: 5 }),
-          }),
-          set: vi.fn(),
-        };
-        return updateFn(fakeTransaction as unknown as firestoreModule.Transaction);
-      }) as unknown as typeof firestoreModule.runTransaction);
-
-      const newTotal = await addCredits('user-1', 50);
-      expect(newTotal).toBe(55);
-    });
+  it.each([0, -1, 2, NaN, Infinity, 0.5])('rejects invalid debit amounts %s', async (amount) => {
+    await expect(deductCredit('user-1', amount)).rejects.toThrow('exatamente 1');
+    expect(firestoreModule.runTransaction).not.toHaveBeenCalled();
   });
 });

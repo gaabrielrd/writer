@@ -20,7 +20,7 @@ describe('LoreEntityForm', () => {
   };
 
   it('renderiza modo de criacao, preenche dados, adiciona relacao e submete', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     const onClose = vi.fn();
 
@@ -37,11 +37,15 @@ describe('LoreEntityForm', () => {
       screen.getByRole('heading', { name: /cadastrar nova entidade no compêndio/i }),
     ).toBeInTheDocument();
 
-    await user.type(screen.getByLabelText(/nome da entidade/i), 'Excalibur');
+    await fill(user, screen.getByLabelText(/nome da entidade/i), 'Excalibur');
     await user.selectOptions(screen.getByLabelText('Categoria'), 'concept');
-    await user.type(screen.getByLabelText(/apelidos \/ aliases/i), 'Espada Sagrada, Caliburn');
-    await user.type(screen.getByLabelText(/resumo curto/i), 'A lendária lâmina forjada em Avalon.');
-    await user.type(screen.getByLabelText(/ficha detalhada/i), 'Concedida pela Dama do Lago.');
+    await fill(user, screen.getByLabelText(/apelidos \/ aliases/i), 'Espada Sagrada, Caliburn');
+    await fill(
+      user,
+      screen.getByLabelText(/resumo curto/i),
+      'A lendária lâmina forjada em Avalon.',
+    );
+    await fill(user, screen.getByLabelText(/ficha detalhada/i), 'Concedida pela Dama do Lago.');
 
     // Adicionar relação
     await user.click(screen.getByRole('button', { name: /adicionar relação/i }));
@@ -49,7 +53,7 @@ describe('LoreEntityForm', () => {
     await user.selectOptions(screen.getByLabelText('Entidade Vinculada'), 'e-target');
     const relationTypeInput = screen.getByLabelText('Tipo de Relação');
     await user.clear(relationTypeInput);
-    await user.type(relationTypeInput, 'Forjada para');
+    await fill(user, relationTypeInput, 'Forjada para');
 
     await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
 
@@ -68,7 +72,7 @@ describe('LoreEntityForm', () => {
   });
 
   it('renderiza modo de edicao, permite remover relacao e alterar visibilidade', async () => {
-    const user = userEvent.setup();
+    const user = userEvent.setup({ delay: null });
     const onSubmit = vi.fn().mockResolvedValue(undefined);
     const onClose = vi.fn();
 
@@ -117,3 +121,79 @@ describe('LoreEntityForm', () => {
     );
   });
 });
+
+it('preserva notas estruturadas privadas e descricao da relacao', async () => {
+  const user = userEvent.setup({ delay: null });
+  const onSubmit = vi.fn().mockResolvedValue(undefined);
+  render(
+    <LoreEntityForm
+      open
+      initialName="Nova"
+      allEntities={[
+        {
+          id: 'b',
+          bookId: 'book',
+          name: 'Aliado',
+          aliases: [],
+          category: 'character',
+          summary: 'Aliado',
+          details: '',
+          relations: [],
+          isPublic: false,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      ]}
+      onClose={vi.fn()}
+      onSubmit={onSubmit}
+    />,
+  );
+  expect(screen.getByLabelText('Nome da Entidade')).toHaveValue('Nova');
+  await fill(user, screen.getByLabelText(/Resumo Curto/), 'Resumo público');
+  await fill(user, screen.getByLabelText('Aparência'), 'Capa azul');
+  await fill(user, screen.getByLabelText('Personalidade'), 'Reservada');
+  await fill(user, screen.getByLabelText('Histórico'), 'Viajante');
+  await fill(user, screen.getByLabelText('Notas privadas'), 'Segredo');
+  await user.click(screen.getByRole('button', { name: 'Adicionar Relação' }));
+  await fill(user, screen.getByLabelText('Descrição da Relação'), 'Vínculo secreto');
+  await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
+  expect(onSubmit).toHaveBeenCalledWith(
+    expect.objectContaining({
+      structuredDetails: {
+        appearance: 'Capa azul',
+        personality: 'Reservada',
+        history: 'Viajante',
+        notes: 'Segredo',
+      },
+      relations: [expect.objectContaining({ description: 'Vínculo secreto' })],
+    }),
+  );
+});
+
+it('mostra erro mantendo dados preenchidos para tentar novamente', async () => {
+  const user = userEvent.setup({ delay: null });
+  const onSubmit = vi
+    .fn()
+    .mockRejectedValueOnce(new Error('Sem conexão'))
+    .mockResolvedValue(undefined);
+  render(
+    <LoreEntityForm
+      open
+      initialName="Nova"
+      allEntities={[]}
+      onClose={vi.fn()}
+      onSubmit={onSubmit}
+    />,
+  );
+  await fill(user, screen.getByLabelText(/Resumo Curto/), 'Resumo');
+  await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
+  expect(await screen.findByText('Sem conexão')).toBeInTheDocument();
+  expect(screen.getByLabelText('Nome da Entidade')).toHaveValue('Nova');
+  await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
+  expect(onSubmit).toHaveBeenCalledTimes(2);
+});
+
+async function fill(user: ReturnType<typeof userEvent.setup>, field: HTMLElement, value: string) {
+  await user.click(field);
+  await user.paste(value);
+}

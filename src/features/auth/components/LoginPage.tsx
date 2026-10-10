@@ -6,7 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useGoogleOneTap } from '../hooks/useGoogleOneTap';
 import styles from './LoginPage.module.css';
 
-export function formatAuthError(err: unknown): string | null {
+function formatAuthError(err: unknown): string | null {
   if (!(err instanceof Error)) return 'Erro ao processar autenticação.';
 
   const msg = err.message || '';

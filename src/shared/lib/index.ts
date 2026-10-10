@@ -10,3 +10,5 @@ export {
   getAppCheck,
 } from './firebase';
 export { cn } from './utils';
+
+export { sanitizeRichText, renderRichText } from './sanitizeRichText';

@@ -4,7 +4,8 @@ import { App } from '@/app/App';
 import { NotFound, RouteErrorFallback } from '@/app/components/RouteErrorFallback';
 import { HomePage } from '@/features/home';
 import { LoginPage } from '@/features/auth';
-import { BookPage } from '@/features/books';
+import { AuthorBookRoute } from '@/app/components/AuthorBookRoute';
+import { BookPage, ReaderView } from '@/features/books';
 import { LorePage } from '@/features/lore';
 import { EditorPage } from '@/features/editor';
 
@@ -29,16 +30,29 @@ export const routes: RouteObject[] = [
       },
       {
         path: 'books/:bookId',
-        element: <BookPage />,
+        element: (
+          <AuthorBookRoute>
+            <BookPage />
+          </AuthorBookRoute>
+        ),
       },
       {
         path: 'books/:bookId/lore',
-        element: <LorePage />,
+        element: (
+          <AuthorBookRoute>
+            <LorePage />
+          </AuthorBookRoute>
+        ),
       },
       {
         path: 'books/:bookId/editor/:chapterId',
-        element: <EditorPage />,
+        element: (
+          <AuthorBookRoute>
+            <EditorPage />
+          </AuthorBookRoute>
+        ),
       },
+      { path: 'read/:bookId', element: <ReaderView /> },
       {
         // Referência viva fornecida pelo pacote compartilhado.
         path: 'styleguide',

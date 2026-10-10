@@ -1,330 +1,371 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { useState } from 'react';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RichEditor } from '../components/RichEditor';
+import { RichEditor, type RichEditorProps } from '../components/RichEditor';
 import type { LoreEntity } from '@/features/lore';
 import * as aiAssistantModule from '@/features/ai-assistant';
+import * as richText from '@/shared/lib/sanitizeRichText';
+
+vi.mock('@/shared/lib/sanitizeRichText', async () => {
+  const actual = await vi.importActual<typeof richText>('@/shared/lib/sanitizeRichText');
+  return { ...actual, renderRichText: vi.fn(actual.renderRichText) };
+});
 
 vi.mock('@/features/ai-assistant', async () => {
   const actual = await vi.importActual<typeof aiAssistantModule>('@/features/ai-assistant');
-  return {
-    ...actual,
-    useAIAutocomplete: vi.fn(() => ({
-      suggestion: 'sugestão mágica de IA',
-      isLoading: false,
-      error: null,
-      acceptSuggestion: vi.fn().mockResolvedValue('sugestão mágica de IA'),
-      discardSuggestion: vi.fn(),
-      triggerManualAutocomplete: vi.fn(),
-    })),
-  };
+  return { ...actual, useAIAutocomplete: vi.fn() };
 });
 
-describe('RichEditor', () => {
-  const mockEntities: LoreEntity[] = [
-    {
-      id: 'e-1',
-      bookId: 'b-1',
-      name: 'Rei Arthur',
-      aliases: ['Arthur', 'Pendragon'],
-      category: 'character',
-      summary: 'Soberano da Bretanha',
-      details: '',
-      relations: [],
-      isPublic: true,
-      createdAt: 1000,
-      updatedAt: 1000,
-    },
-    {
-      id: 'e-2',
-      bookId: 'b-1',
-      name: 'Excalibur',
-      aliases: [],
-      category: 'concept',
-      summary: 'A lâmina lendária',
-      details: '',
-      relations: [],
-      isPublic: true,
-      createdAt: 1000,
-      updatedAt: 1000,
-    },
-  ];
-
-  it('permite digitar texto e usar botoes de formatacao da barra', async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    const onToggleSidebar = vi.fn();
-    const onSelectEntity = vi.fn();
-
-    render(
-      <RichEditor
-        content="Era uma vez"
-        onChange={onChange}
-        entities={mockEntities}
-        onSelectEntity={onSelectEntity}
-        isSidebarOpen={false}
-        onToggleSidebar={onToggleSidebar}
-      />,
-    );
-
-    const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
-    expect(textarea).toHaveValue('Era uma vez');
-
-    // Título Principal
-    await user.click(screen.getByLabelText('Título Principal'));
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('# '));
-
-    // Subtítulo
-    await user.click(screen.getByLabelText('Subtítulo'));
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('## '));
-
-    // Negrito
-    await user.click(screen.getByLabelText('Negrito'));
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('**texto**'));
-
-    // Itálico
-    await user.click(screen.getByLabelText('Itálico'));
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('*texto*'));
-
-    // Citação
-    await user.click(screen.getByLabelText('Citação'));
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('> '));
-
-    // Diálogo
-    await user.click(screen.getByLabelText('Travessão de Diálogo'));
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('— '));
-
-    // Mencionar Lore
-    await user.click(screen.getByLabelText('Mencionar Lore'));
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('@'));
-
-    // Abrir Sidebar
-    await user.click(screen.getByRole('button', { name: /compêndio/i }));
-    expect(onToggleSidebar).toHaveBeenCalled();
+const entities: LoreEntity[] = [
+  {
+    id: 'e-1',
+    bookId: 'b-1',
+    name: 'Rei Arthur',
+    aliases: ['Arthur', 'Pendragon'],
+    category: 'character',
+    summary: 'Soberano da Bretanha',
+    details: '',
+    relations: [],
+    isPublic: true,
+    createdAt: 1,
+    updatedAt: 1,
+  },
+  {
+    id: 'e-2',
+    bookId: 'b-1',
+    name: 'Excalibur',
+    aliases: [],
+    category: 'concept',
+    summary: 'A lâmina lendária',
+    details: '',
+    relations: [],
+    isPublic: true,
+    createdAt: 1,
+    updatedAt: 1,
+  },
+];
+const discard = vi.fn();
+const accept = vi.fn<() => Promise<string | null>>();
+function setup(overrides: Partial<RichEditorProps> = {}) {
+  const onChange = vi.fn();
+  const props: RichEditorProps = {
+    content: 'Era uma vez',
+    onChange,
+    entities,
+    onSelectEntity: vi.fn(),
+    isSidebarOpen: false,
+    onToggleSidebar: vi.fn(),
+    ...overrides,
+  };
+  const result = render(<RichEditor {...props} />);
+  return {
+    ...result,
+    props,
+    onChange,
+    editor: screen.getByRole('textbox', { name: 'Área de escrita do capítulo' }),
+  };
+}
+function selectText(editor: HTMLElement, start = 0, end = editor.textContent?.length ?? 0) {
+  act(() => {
+    editor.focus();
   });
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+  const nodes: Text[] = [];
+  while (walker.nextNode()) {
+    const node = walker.currentNode as Text;
+    if (!node.parentElement?.closest('[contenteditable="false"]')) nodes.push(node);
+  }
+  const locate = (offset: number): [Node, number] => {
+    for (const node of nodes) {
+      if (offset <= node.length) return [node, offset];
+      offset -= node.length;
+    }
+    return [editor, 0];
+  };
+  const range = document.createRange();
+  range.setStart(...locate(start));
+  range.setEnd(...locate(end));
+  window.getSelection()?.removeAllRanges();
+  window.getSelection()?.addRange(range);
+  fireEvent(document, new Event('selectionchange'));
+}
 
-  it('suporta atalhos de teclado Ctrl+B e Ctrl+I', async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-
-    render(
-      <RichEditor
-        content="Texto de teste"
-        onChange={onChange}
-        entities={mockEntities}
-        onSelectEntity={vi.fn()}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
-
-    const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
-    textarea.focus();
-
-    await user.keyboard('{Control>}b{/Control}');
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('**texto**'));
-
-    await user.keyboard('{Control>}i{/Control}');
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('*texto*'));
+beforeAll(() => {
+  // jsdom has no layout; these geometry methods are available in actual browsers.
+  const rect = {
+    left: 0,
+    right: 100,
+    top: 0,
+    bottom: 20,
+    width: 100,
+    height: 20,
+    x: 0,
+    y: 0,
+    toJSON: () => ({}),
+  };
+  if (!Range.prototype.getBoundingClientRect) Range.prototype.getBoundingClientRect = () => rect;
+  if (!Range.prototype.getClientRects)
+    Range.prototype.getClientRects = () => Object.assign([rect], { item: () => rect });
+  window.scrollBy = vi.fn();
+  if (!document.elementFromPoint) document.elementFromPoint = () => document.body;
+});
+beforeEach(() => {
+  vi.clearAllMocks();
+  accept.mockResolvedValue('continuação segura');
+  vi.mocked(aiAssistantModule.useAIAutocomplete).mockReturnValue({
+    suggestion: null,
+    isLoading: false,
+    isAccepting: false,
+    error: null,
+    acceptSuggestion: accept,
+    discardSuggestion: discard,
+    triggerManualAutocomplete: vi.fn(),
   });
+});
 
-  it('alterna para modo de leitura com lore e renderiza headings e tooltips', async () => {
-    const user = userEvent.setup();
-    const onSelectEntity = vi.fn();
-
-    const { rerender } = render(
-      <RichEditor
-        content={`# Capítulo I\n\n## O Início\n\nRei Arthur empunhou a espada Excalibur diante de todos.`}
-        onChange={vi.fn()}
-        entities={mockEntities}
-        onSelectEntity={onSelectEntity}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
-
-    // Clicar no pill do resumo de lore
-    const arthurPill = screen.getByTitle('Clique para abrir a ficha de Rei Arthur');
-    await user.click(arthurPill);
-    expect(onSelectEntity).toHaveBeenCalledWith(mockEntities[0]);
-
-    // Alternar para modo Leitura com Lore
-    await user.click(screen.getByRole('button', { name: /leitura com lore/i }));
-
-    expect(screen.getByText('Capítulo I')).toBeInTheDocument();
-    expect(screen.getByText('O Início')).toBeInTheDocument();
-
-    const arthurBtns = screen.getAllByRole('button', { name: 'Rei Arthur' });
-    const highlightBtn = arthurBtns[arthurBtns.length - 1];
-    if (highlightBtn) await user.click(highlightBtn);
-    expect(onSelectEntity).toHaveBeenCalledWith(mockEntities[0]);
-
-    // Testar visualização vazia
-    rerender(
-      <RichEditor
-        content=""
-        onChange={vi.fn()}
-        entities={mockEntities}
-        onSelectEntity={onSelectEntity}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
-    expect(screen.getByText('Nenhum texto escrito ainda.')).toBeInTheDocument();
-  });
-
-  it('navega no menu de mencao com ArrowDown, ArrowUp, Escape e Enter', async () => {
-    const user = userEvent.setup();
-    let currentContent = 'Conheci @';
-    const onChange = vi.fn((newText: string) => {
-      currentContent = newText;
+describe('RichEditor WYSIWYG', () => {
+  it('abre Markdown legado com formatação real sem gravar migração ao abrir', () => {
+    const { editor, onChange } = setup({
+      content:
+        '# Capítulo I\n\n**Arthur** falou *baixo*.\n\n> Uma citação\n\n- Primeiro\n- Segundo',
     });
+    expect(editor.querySelector('h1')).toHaveTextContent('Capítulo I');
+    expect(editor.querySelector('strong')).toHaveTextContent('Arthur');
+    expect(editor.querySelector('em')).toHaveTextContent('baixo');
+    expect(editor.querySelector('blockquote')).toHaveTextContent('Uma citação');
+    expect(editor.querySelectorAll('li')).toHaveLength(2);
+    expect(editor).toHaveAttribute('contenteditable', 'true');
+    expect(onChange).not.toHaveBeenCalled();
+  });
 
-    const { rerender } = render(
-      <RichEditor
-        content={currentContent}
-        onChange={onChange}
-        entities={mockEntities}
-        onSelectEntity={vi.fn()}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
+  it('abre HTML importado sanitizado e mantém estrutura, sem executar conteúdo ativo', () => {
+    const { editor, onChange } = setup({
+      content:
+        '<h2>Importado</h2><p><strong>Arthur</strong> e <em>Excalibur</em></p><script>bad()</script><img src=x onerror=bad()><a href="javascript:bad()">link</a>',
+    });
+    expect(editor.querySelector('h2')).toHaveTextContent('Importado');
+    expect(editor.querySelector('strong')).toHaveTextContent('Arthur');
+    expect(editor.querySelector('script,img,[onerror],[href^="javascript:"]')).toBeNull();
+    expect(editor).not.toHaveTextContent('bad()');
+    expect(onChange).not.toHaveBeenCalled();
+  });
 
-    const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
-    await user.type(textarea, 'art');
+  it('formata a seleção real, mantém seleção e oferece desfazer/refazer', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { editor, onChange } = setup();
+    selectText(editor, 0, 3);
+    await user.click(screen.getByRole('button', { name: 'Negrito' }));
+    await waitFor(() => expect(editor.querySelector('strong')).toHaveTextContent('Era'));
+    expect(window.getSelection()?.toString()).toBe('Era');
+    expect(onChange).toHaveBeenLastCalledWith('<p><strong>Era</strong> uma vez</p>');
+    await user.click(screen.getByRole('button', { name: 'Desfazer' }));
+    expect(editor.querySelector('strong')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Refazer' }));
+    expect(editor.querySelector('strong')).toHaveTextContent('Era');
+  });
 
-    rerender(
-      <RichEditor
-        content="Conheci @art"
-        onChange={onChange}
-        entities={mockEntities}
-        onSelectEntity={vi.fn()}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
+  it('atalhos Ctrl+B e Ctrl+I geram HTML sem marcadores visíveis', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { editor } = setup();
+    selectText(editor, 0, 3);
+    await user.keyboard('{Control>}b{/Control}');
+    await waitFor(() => expect(editor.querySelector('strong')).toHaveTextContent('Era'));
+    await user.keyboard('{Control>}i{/Control}');
+    expect(editor.querySelector('em')).toHaveTextContent('Era');
+    expect(editor).not.toHaveTextContent('**');
+  });
 
+  it('aplica títulos, citação e travessão sem inserir texto fictício', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { editor } = setup();
+    await user.click(screen.getByLabelText('Título Principal'));
+    expect(editor.querySelector('h1')).toHaveTextContent('Era uma vez');
+    await user.click(screen.getByLabelText('Subtítulo'));
+    expect(editor.querySelector('h2')).toHaveTextContent('Era uma vez');
+    await user.click(screen.getByLabelText('Citação'));
+    expect(editor.querySelector('blockquote')).toHaveTextContent('Era uma vez');
+    await user.click(screen.getByLabelText('Travessão de Diálogo'));
+    expect(editor).toHaveTextContent('— Era uma vez');
+    expect(editor).not.toHaveTextContent('texto');
+  });
+
+  it('destaca nome/apelido enquanto escreve, mostra tooltip e abre ficha sem salvar marcações', async () => {
+    const user = userEvent.setup({ delay: null });
+    const onSelectEntity = vi.fn();
+    const { editor, onChange } = setup({ content: 'Arthur empunhou Excalibur.', onSelectEntity });
+    const term = screen.getByRole('button', { name: 'Ver ficha de Rei Arthur' });
+    await user.hover(term);
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Soberano da Bretanha');
+    expect(screen.getByRole('tooltip')).toHaveTextContent('Personagem');
+    await user.click(term);
+    expect(onSelectEntity).toHaveBeenCalledWith(entities[0]);
+    await user.unhover(term);
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    selectText(editor, 0, 6);
+    await user.click(screen.getByRole('button', { name: 'Negrito' }));
+    expect(onChange).toHaveBeenLastCalledWith('<p><strong>Arthur</strong> empunhou Excalibur.</p>');
+  });
+
+  it('mantém formatação e lore no modo leitura, sem regravar conteúdo', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { editor, onChange } = setup({ content: '**Arthur** escreve.' });
+    await user.click(screen.getByRole('button', { name: /leitura com lore/i }));
+    expect(editor).toHaveAttribute('contenteditable', 'false');
+    expect(editor.querySelector('strong')).toHaveTextContent('Arthur');
+    expect(screen.getByRole('button', { name: 'Ver ficha de Rei Arthur' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Escrita' }));
+    expect(editor).toHaveAttribute('contenteditable', 'true');
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('abre menções, navega por teclado e insere entidade com seleção preservada', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { editor, onChange } = setup({ content: '' });
+    await user.click(screen.getByRole('button', { name: 'Mencionar Lore' }));
+    await waitFor(() => expect(editor).toHaveFocus());
     expect(screen.getByRole('listbox')).toBeInTheDocument();
+    await user.keyboard('{ArrowDown}{ArrowUp}{Enter}');
+    expect(editor).toHaveTextContent('Rei Arthur');
+    expect(onChange).toHaveBeenLastCalledWith('<p>Rei Arthur </p>');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
 
-    // Navegação com setas
-    await user.keyboard('{ArrowDown}');
-    await user.keyboard('{ArrowUp}');
-
-    // Pressiona Enter para inserir menção
+  it('oferece criação de termo desconhecido e Escape fecha até sem resultados', async () => {
+    const user = userEvent.setup({ delay: null });
+    const onCreateEntity = vi.fn();
+    const { editor } = setup({ content: '@Avalon', onCreateEntity });
+    selectText(editor, 7, 7);
+    await waitFor(() => expect(screen.getByRole('option')).toHaveTextContent('Criar “Avalon”'));
     await user.keyboard('{Enter}');
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('Rei Arthur'));
+    expect(onCreateEntity).toHaveBeenCalledWith('Avalon');
+    expect(editor).toHaveTextContent('@Avalon');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
 
-    // Testar Escape para fechar
-    rerender(
-      <RichEditor
-        content="Outro @"
-        onChange={onChange}
-        entities={mockEntities}
-        onSelectEntity={vi.fn()}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
-
-    await user.type(textarea, 'e');
-    rerender(
-      <RichEditor
-        content="Outro @e"
-        onChange={onChange}
-        entities={mockEntities}
-        onSelectEntity={vi.fn()}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
-
+  it('fecha menções vazias com Escape e não intercepta composição IME', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { editor } = setup({ content: '@ninguém' });
+    selectText(editor, 8, 8);
+    await waitFor(() => expect(screen.getByRole('listbox')).toBeInTheDocument());
+    fireEvent.compositionStart(editor);
+    fireEvent.keyDown(editor, { key: 'Enter', keyCode: 229, isComposing: true });
     expect(screen.getByRole('listbox')).toBeInTheDocument();
+    fireEvent.compositionEnd(editor);
+    await new Promise((resolve) => setTimeout(resolve, 550));
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
-  it('permite aceitar sugestao com Tab e abrir configuracoes de IA / BYOK', async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-
-    render(
-      <RichEditor
-        content="Texto de teste para editor"
-        onChange={onChange}
-        entities={mockEntities}
-        onSelectEntity={vi.fn()}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
-
-    expect(screen.getByText('sugestão mágica de IA')).toBeInTheDocument();
-
-    const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
-    textarea.focus();
-    await user.keyboard('{Tab}');
-
-    expect(onChange).toHaveBeenCalledWith(expect.stringContaining('sugestão mágica de IA'));
-
-    const byokBtn = screen.getByRole('button', {
-      name: /configurações de ia e chaves de api/i,
+  it('cola HTML seguro com seleção mantida, removendo scripts e URLs ativas', async () => {
+    const { editor, onChange } = setup({ content: 'Antes depois' });
+    selectText(editor, 6, 6);
+    fireEvent.paste(editor, {
+      clipboardData: {
+        getData: (format: string) =>
+          format === 'text/html'
+            ? '<b>colado</b><script>roubar()</script><a href="javascript:roubar()">link</a>'
+            : format === 'text/plain'
+              ? 'coladolink'
+              : '',
+        files: [],
+        types: ['text/html', 'text/plain'],
+      },
     });
-    await user.click(byokBtn);
-
-    expect(screen.getByText('Configurações de Inteligência Artificial')).toBeInTheDocument();
+    await waitFor(() => expect(editor.querySelector('strong')).toHaveTextContent('colado'));
+    expect(editor).toHaveTextContent('Antes coladolinkdepois');
+    expect(editor.querySelector('script,[href^="javascript:"]')).toBeNull();
+    expect(onChange).toHaveBeenLastCalledWith('<p>Antes <strong>colado</strong>linkdepois</p>');
   });
 
-  it('descarta sugestao com Escape', async () => {
-    const user = userEvent.setup();
-    const discardFn = vi.fn();
-    vi.mocked(aiAssistantModule.useAIAutocomplete).mockReturnValueOnce({
-      suggestion: 'sugestão temporária',
+  it('digitação e eco de autosave preservam o cursor e histórico', async () => {
+    const user = userEvent.setup({ delay: null });
+    const changed = vi.fn();
+    function ControlledEditor() {
+      const [content, setContent] = useState('Um fim');
+      return (
+        <RichEditor
+          content={content}
+          onChange={(value) => {
+            changed(value);
+            setContent(value);
+          }}
+          entities={entities}
+          onSelectEntity={vi.fn()}
+          isSidebarOpen={false}
+          onToggleSidebar={vi.fn()}
+        />
+      );
+    }
+    render(<ControlledEditor />);
+    expect(richText.renderRichText).toHaveBeenCalledTimes(1);
+    const editor = screen.getByRole('textbox');
+    selectText(editor, 3, 3);
+    await user.keyboard('novo ');
+    await waitFor(() => expect(editor).toHaveTextContent('Um novo fim'));
+    expect(changed).toHaveBeenLastCalledWith('<p>Um novo fim</p>');
+    await user.click(screen.getByRole('button', { name: 'Desfazer' }));
+    expect(editor).toHaveTextContent('Um fim');
+    expect(richText.renderRichText).toHaveBeenCalledTimes(1);
+  });
+
+  it('sanitiza novamente uma substituição externa sem repetir a análise nos renders internos', () => {
+    const { props, editor, rerender, onChange } = setup({ content: '# Original' });
+    expect(richText.renderRichText).toHaveBeenCalledTimes(1);
+    rerender(<RichEditor {...props} content="<h2>Texto atualizado</h2><script>bad()</script>" />);
+    expect(editor.querySelector('h2')).toHaveTextContent('Texto atualizado');
+    expect(editor.querySelector('script')).toBeNull();
+    expect(editor).not.toHaveTextContent('bad()');
+    expect(richText.renderRichText).toHaveBeenCalledTimes(2);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('aceita sugestão uma única vez e bloqueia edição enquanto aplica', async () => {
+    let resolve!: (text: string | null) => void;
+    accept.mockImplementation(
+      () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    );
+    vi.mocked(aiAssistantModule.useAIAutocomplete).mockReturnValue({
+      suggestion: 'continuação segura',
       isLoading: false,
+      isAccepting: false,
       error: null,
-      acceptSuggestion: vi.fn(),
-      discardSuggestion: discardFn,
+      acceptSuggestion: accept,
+      discardSuggestion: discard,
       triggerManualAutocomplete: vi.fn(),
     });
-
-    render(
-      <RichEditor
-        content="Era uma noite fria"
-        onChange={vi.fn()}
-        entities={mockEntities}
-        onSelectEntity={vi.fn()}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
-
-    const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
-    textarea.focus();
-    await user.keyboard('{Escape}');
-
-    expect(discardFn).toHaveBeenCalled();
+    const user = userEvent.setup({ delay: null });
+    const onBusyChange = vi.fn();
+    const { editor, onChange } = setup({ onBusyChange });
+    expect(editor.querySelector('.writer-ai-ghost')).toHaveTextContent('continuação segura');
+    expect(onChange).not.toHaveBeenCalled();
+    selectText(editor, 11, 11);
+    await user.keyboard('{Tab}');
+    expect(editor).toHaveAttribute('contenteditable', 'false');
+    await user.click(screen.getByRole('button', { name: /aceitar/i }));
+    expect(accept).toHaveBeenCalledTimes(1);
+    act(() => {
+      resolve('continuação segura');
+    });
+    await waitFor(() => expect(editor).toHaveTextContent('Era uma vez continuação segura'));
+    expect(editor).toHaveAttribute('contenteditable', 'true');
+    expect(onBusyChange).toHaveBeenLastCalledWith(false);
+    expect(onChange).toHaveBeenLastCalledWith('<p>Era uma vez continuação segura</p>');
   });
 
-  it('permite abrir o menu de acoes de IA e inserir texto gerado', async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-
-    render(
-      <RichEditor
-        content="Texto do capitulo"
-        onChange={onChange}
-        entities={mockEntities}
-        onSelectEntity={vi.fn()}
-        isSidebarOpen={false}
-        onToggleSidebar={vi.fn()}
-      />,
-    );
-
-    const aiMenuBtn = screen.getByRole('button', {
-      name: /Abrir Assistente Criativo de IA/i,
-    });
-    await user.click(aiMenuBtn);
-
+  it('abre assistência e configurações de IA e descarta respostas pendentes com Escape', async () => {
+    const user = userEvent.setup({ delay: null });
+    const { editor } = setup();
+    editor.focus();
+    await user.keyboard('{Escape}');
+    expect(discard).toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: /Abrir Assistente Criativo de IA/i }));
     expect(screen.getByRole('heading', { name: 'Assistente Criativo de IA' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    await user.click(screen.getByRole('button', { name: /configurações de ia e chaves de api/i }));
+    expect(screen.getByText('Configurações de Inteligência Artificial')).toBeInTheDocument();
   });
 });

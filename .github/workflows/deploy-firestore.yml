@@ -1,0 +1,115 @@
+name: Deploy Firestore manual (disabled until configured)
+
+on:
+  workflow_dispatch:
+    inputs:
+      resources:
+        description: Recursos revisados para publicar
+        type: choice
+        required: true
+        default: rules
+        options: [rules, indexes, both]
+      confirm_project:
+        description: Digite writer-44cd5 para confirmar o destino de produção
+        type: string
+        required: true
+      confirm_rollout:
+        description: Revisei compatibilidade com o app, concessões premium e publicação legada
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-production-writer-44cd5
+  cancel-in-progress: false
+
+env:
+  DEPLOY_PROJECT: writer-44cd5
+  FIREBASE_CLI_VERSION: '15.33.0'
+  DEPLOY_RESOURCES: ${{ inputs.resources }}
+  CONFIRM_PROJECT: ${{ inputs.confirm_project }}
+  CONFIRM_ROLLOUT: ${{ inputs.confirm_rollout }}
+
+jobs:
+  validate:
+    if: >-
+      github.repository_id == '1339469949' && github.repository_owner_id == '7004438' && github.ref == 'refs/heads/master' && github.event_name == 'workflow_dispatch' && vars.FIREBASE_FIRESTORE_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Instalar dependências fixadas
+        run: |
+          npm install --global "$(node -p "require('./package.json').packageManager")"
+          npm run check:toolchain
+          npm ci
+      - name: Exigir confirmação antes da validação
+        run: |
+          test "$CONFIRM_PROJECT" = "$DEPLOY_PROJECT"
+          test "$CONFIRM_ROLLOUT" = true
+          case "$DEPLOY_RESOURCES" in rules|indexes|both) ;; *) exit 1 ;; esac
+      - run: npm run validate
+      - run: npm audit --audit-level=high
+      - run: npm run test:rules
+      - name: Validar sintaxe dos índices
+        run: node -e "JSON.parse(require('node:fs').readFileSync('firestore.indexes.json', 'utf8'))"
+
+  deploy:
+    needs: [validate]
+    if: >-
+      github.repository_id == '1339469949' && github.repository_owner_id == '7004438' && github.ref == 'refs/heads/master' && github.event_name == 'workflow_dispatch' && vars.FIREBASE_FIRESTORE_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: firebase-firestore-production
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      DEPLOY_ENABLED: ${{ vars.FIREBASE_FIRESTORE_DEPLOY_ENABLED }}
+      WIF_PROVIDER: ${{ vars.FIREBASE_FIRESTORE_WIF_PROVIDER }}
+      DEPLOY_SERVICE_ACCOUNT: ${{ vars.FIREBASE_FIRESTORE_SERVICE_ACCOUNT }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+      - name: Instalar CLI fixada, antes de obter credenciais
+        run: npm install --global "firebase-tools@$FIREBASE_CLI_VERSION"
+      - name: Validar confirmação, destino e master atual
+        id: guard
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+        run: node scripts/firebase-deploy-guard.mjs firestore
+      - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        with:
+          project_id: writer-44cd5
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.DEPLOY_SERVICE_ACCOUNT }}
+          create_credentials_file: true
+      - name: Publicar somente os recursos confirmados
+        env:
+          GH_READ_TOKEN: ${{ github.token }}
+          FIRESTORE_ONLY: ${{ steps.guard.outputs.only }}
+        run: |
+          node scripts/firebase-deploy-guard.mjs firestore
+          unset GH_READ_TOKEN
+          firebase deploy --only "$FIRESTORE_ONLY" --project "$DEPLOY_PROJECT" --config firebase.deploy.json --non-interactive
+          printf 'Comando concluído: %s; projeto %s; commit %s. Verifique propagação de regras e estado READY dos índices no console.\n' \
+            "$FIRESTORE_ONLY" "$DEPLOY_PROJECT" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

@@ -22,6 +22,8 @@ describe('HomePage', () => {
       signUpWithEmail: vi.fn(),
       signOut: vi.fn(),
       updateUserCreditsState: vi.fn(),
+      pendingEditorOperation: false,
+      setPendingEditorOperation: vi.fn(),
     });
 
     render(
@@ -58,6 +60,8 @@ describe('HomePage', () => {
       signUpWithEmail: vi.fn(),
       signOut: vi.fn(),
       updateUserCreditsState: vi.fn(),
+      pendingEditorOperation: false,
+      setPendingEditorOperation: vi.fn(),
     });
 
     render(

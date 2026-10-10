@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { buildAutocompletePrompt, type LoreContextItem } from '../model/aiPrompt';
+import { type BYOKConfig, usesOwnKey } from '../model/byokConfig';
 import { getBYOKConfig } from '../services/byokStorage';
 import { generateAIResponse } from '../services/aiClient';
 import { deductCredit } from '../services/creditsService';
@@ -19,16 +20,25 @@ export interface UseAIAutocompleteOptions {
 export interface UseAIAutocompleteResult {
   suggestion: string | null;
   isLoading: boolean;
+  isAccepting: boolean;
   error: string | null;
-  acceptSuggestion: () => Promise<string | null>;
+  acceptSuggestion: (canApply?: () => boolean) => Promise<string | null>;
   discardSuggestion: () => void;
   triggerManualAutocomplete: () => Promise<void>;
 }
 
+interface Suggestion {
+  text: string;
+  config: BYOKConfig;
+  context: string;
+}
+
+const EMPTY_LORE: LoreContextItem[] = [];
+
 export function useAIAutocomplete({
   content,
   cursorPosition,
-  loreEntities = [],
+  loreEntities = EMPTY_LORE,
   userId,
   userCredits = 0,
   onCreditDeducted,
@@ -36,118 +46,134 @@ export function useAIAutocomplete({
   enabled = true,
   debounceMs = 600,
 }: UseAIAutocompleteOptions): UseAIAutocompleteResult {
-  const [suggestion, setSuggestion] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [response, setResponse] = useState<Suggestion | null>(null);
+  const [loadingContext, setLoadingContext] = useState<string | null>(null);
+  const [isAccepting, setIsAccepting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const controllerRef = useRef<AbortController | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const acceptingRef = useRef(false);
+  const offeredRef = useRef<Suggestion | null>(null);
+  const callbacksRef = useRef({ onCreditDeducted, onShowOutOfCredits });
+  const textBeforeCursor = content.substring(0, cursorPosition);
+  const { prompt, systemInstruction } = buildAutocompletePrompt({ textBeforeCursor, loreEntities });
+  const context = JSON.stringify([content, cursorPosition, prompt, userId, userCredits, enabled]);
+  const contextRef = useRef(context);
 
-  const abortControllerRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    callbacksRef.current = { onCreditDeducted, onShowOutOfCredits };
+  }, [onCreditDeducted, onShowOutOfCredits]);
 
   const discardSuggestion = useCallback(() => {
-    setSuggestion(null);
+    controllerRef.current?.abort();
+    if (timerRef.current) clearTimeout(timerRef.current);
+    offeredRef.current = null;
+    setResponse(null);
+    setLoadingContext(null);
     setError(null);
   }, []);
 
   const fetchSuggestion = useCallback(async () => {
-    const textBeforeCursor = content.substring(0, cursorPosition);
-    if (!textBeforeCursor.trim() || textBeforeCursor.length < 10) {
-      setSuggestion(null);
-      return;
-    }
+    if (!enabled || acceptingRef.current) return;
+    if (textBeforeCursor.trim().length < 10) return;
+    const config = getBYOKConfig();
+    // Exhaustion never opens a focus-trapping dialog while the author is typing.
+    if (!usesOwnKey(config) && (!userId || userCredits <= 0)) return;
 
-    const byok = getBYOKConfig();
-    const isUsingBYOK = byok.provider !== 'firebase_ai';
-
-    // Se não usa chave própria e os créditos acabaram, avisa e cancela
-    if (!isUsingBYOK && userCredits <= 0) {
-      setSuggestion(null);
-      onShowOutOfCredits?.();
-      return;
-    }
-
-    // Cancela requisição anterior em andamento
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
+    controllerRef.current?.abort();
     const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    setIsLoading(true);
+    controllerRef.current = controller;
+    offeredRef.current = null;
+    setResponse(null);
+    setLoadingContext(context);
     setError(null);
-
     try {
-      const { prompt, systemInstruction } = buildAutocompletePrompt({
-        textBeforeCursor,
-        loreEntities,
-      });
-
-      const response = await generateAIResponse({
+      const text = await generateAIResponse({
         prompt,
         systemInstruction,
-        byokConfig: byok,
+        byokConfig: config,
         signal: controller.signal,
       });
-
-      if (!controller.signal.aborted) {
-        setSuggestion(response.trim() || null);
+      if (!controller.signal.aborted && contextRef.current === context && text.trim()) {
+        const next = { text: text.trim(), config, context };
+        offeredRef.current = next;
+        setResponse(next);
       }
-    } catch (err: unknown) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return;
-      }
-      if (!controller.signal.aborted) {
-        setError(err instanceof Error ? err.message : 'Falha na sugestão de IA');
+    } catch (error) {
+      if (!controller.signal.aborted && contextRef.current === context) {
+        setError(error instanceof Error ? error.message : 'Falha na sugestão de IA');
       }
     } finally {
-      if (!controller.signal.aborted) {
-        setIsLoading(false);
-      }
+      if (!controller.signal.aborted && contextRef.current === context) setLoadingContext(null);
     }
-  }, [content, cursorPosition, loreEntities, onShowOutOfCredits, userCredits]);
-
-  const acceptSuggestion = useCallback(async (): Promise<string | null> => {
-    if (!suggestion) return null;
-
-    const acceptedText = suggestion;
-    const byok = getBYOKConfig();
-    const isUsingBYOK = byok.provider !== 'firebase_ai';
-
-    // Só debita créditos se estiver consumindo a cota da plataforma
-    if (!isUsingBYOK && userId) {
-      try {
-        const newTotal = await deductCredit(userId, 1);
-        onCreditDeducted?.(newTotal);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Falha ao debitar crédito.');
-        onShowOutOfCredits?.();
-        return null;
-      }
-    }
-
-    setSuggestion(null);
-    return acceptedText;
-  }, [suggestion, userId, onCreditDeducted, onShowOutOfCredits]);
+  }, [textBeforeCursor, context, enabled, prompt, systemInstruction, userId, userCredits]);
 
   useEffect(() => {
-    if (!enabled) {
+    contextRef.current = context;
+    controllerRef.current?.abort();
+    offeredRef.current = null;
+    if (enabled) {
+      timerRef.current = setTimeout(() => {
+        void fetchSuggestion();
+      }, debounceMs);
+    }
+    return () => {
+      controllerRef.current?.abort();
+      offeredRef.current = null;
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [context, debounceMs, enabled, fetchSuggestion]);
+
+  const acceptSuggestion = useCallback(
+    async (canApply?: () => boolean): Promise<string | null> => {
+      const offered = offeredRef.current;
+      if (
+        !offered ||
+        offered.context !== context ||
+        acceptingRef.current ||
+        (canApply && !canApply())
+      )
+        return null;
+      acceptingRef.current = true;
+      offeredRef.current = null;
+      controllerRef.current?.abort();
+      if (timerRef.current) clearTimeout(timerRef.current);
+      setIsAccepting(true);
+      setResponse(null);
+      try {
+        if (!usesOwnKey(offered.config)) {
+          if (!userId) throw new Error('Entre na sua conta para usar os créditos de IA.');
+          const newTotal = await deductCredit(userId, 1);
+          callbacksRef.current.onCreditDeducted?.(newTotal);
+        }
+        return offered.text;
+      } catch (error) {
+        setError(error instanceof Error ? error.message : 'Falha ao debitar crédito.');
+        callbacksRef.current.onShowOutOfCredits?.();
+        return null;
+      } finally {
+        acceptingRef.current = false;
+        setIsAccepting(false);
+      }
+    },
+    [context, userId],
+  );
+
+  const triggerManualAutocomplete = useCallback(async () => {
+    if (!usesOwnKey(getBYOKConfig()) && userCredits <= 0) {
+      callbacksRef.current.onShowOutOfCredits?.();
       return;
     }
-
-    const timer = setTimeout(() => {
-      void fetchSuggestion();
-    }, debounceMs);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [debounceMs, enabled, fetchSuggestion]);
+    await fetchSuggestion();
+  }, [fetchSuggestion, userCredits]);
 
   return {
-    suggestion,
-    isLoading,
+    suggestion: enabled && response?.context === context ? response.text : null,
+    isLoading: loadingContext === context,
+    isAccepting,
     error,
     acceptSuggestion,
     discardSuggestion,
-    triggerManualAutocomplete: fetchSuggestion,
+    triggerManualAutocomplete,
   };
 }
