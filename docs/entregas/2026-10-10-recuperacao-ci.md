@@ -51,3 +51,20 @@ o baseline Linux continua ausente, como antes desta mudança.
 Não fazer merge antes de confirmar o transporte corrigido e todos os jobs do CI
 no SHA final: validação Node 22/24, auditoria e E2E Chromium. A evidência será
 atualizada com os resultados reais.
+
+## Incremento: consolidação das atualizações de dependências
+
+O PR #13 foi integrado após todos os checks do SHA
+`cea0fe5c938b6edfa0cd4c472b82ef0c10a37abe` passarem. O commit resultante
+`be4da8fc61e147fe752ba826eff9125c90774d9d` também passou validação Node 22/24,
+auditoria e Chromium na branch principal.
+
+As atualizações minor/patch dos PRs #11 e #12 foram combinadas, preservando as
+versões propostas e as correções de segurança, para validar o grafo completo.
+O lockfile combinado passou a verificação de instalação em dry-run e a auditoria
+com limite high (6 moderadas, nenhuma alta/crítica). Instalação limpa, regressão
+gRPC e os quatro jobs do CI devem passar antes da integração deste incremento.
+Dependabot encerrou automaticamente o PR #11 durante a preparação. A consolidação
+segue em PR próprio. O PR #12 só será encerrado como substituído após a integração
+validada desta consolidação. A instalação limpa combinada passou (557 pacotes),
+assim como o teste real de transporte gRPC corrigido (1 teste, 0 falhas).
