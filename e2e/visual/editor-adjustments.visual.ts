@@ -216,14 +216,15 @@ test('seleção parcial por mouse acompanha rolagem e cabe em 320px', async ({ p
     const node = walker.nextNode()!;
     const range = document.createRange();
     range.setStart(node, 3);
-    range.collapse(true);
+    range.setEnd(node, 4);
     const start = range.getBoundingClientRect();
-    range.setStart(node, 9);
-    range.collapse(true);
+    range.setStart(node, 8);
+    range.setEnd(node, 9);
     const end = range.getBoundingClientRect();
+    // Drag inside the first/last glyphs instead of relying on zero-width caret boundaries.
     return {
-      start: { x: start.left, y: (start.top + start.bottom) / 2 },
-      end: { x: end.left, y: (end.top + end.bottom) / 2 },
+      start: { x: start.left + start.width / 4, y: (start.top + start.bottom) / 2 },
+      end: { x: end.right - end.width / 4, y: (end.top + end.bottom) / 2 },
     };
   });
   await page.mouse.move(points.start.x, points.start.y);

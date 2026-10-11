@@ -150,6 +150,12 @@ e intruso. Requer Java 21; o runner baixa uma versão oficial fixa do emulador e
 verifica SHA-256 antes de executar. Não depende do Firebase CLI nem acessa
 produção. O projeto de teste é sempre `demo-writer-rules`.
 
+Antes de executar `npm run test:rules`, instale as dependências da raiz com
+`npm ci` e do backend com `npm ci --prefix functions`. Os testes de análise de
+lore usam o Admin SDK de `functions` para verificar transações reais no emulador.
+Cada job de CI que executa regras precisa fazer ambas as instalações; o contrato
+em `scripts/run-firestore-rules.test.mjs` verifica essa ordem por job.
+
 A suíte visual estende os cenários existentes com leitor/publicação e exportação
 nos três temas e em desktop/mobile. Ela anexa DOCX, PDF gerado pelo Chromium a
 partir do documento de impressão e imagens para revisão. A confirmação do

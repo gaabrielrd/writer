@@ -49,7 +49,10 @@ test('dropdowns com busca, ícones e callbacks se adaptam ao tema e viewport', a
   await page.getByRole('textbox', { name: 'Buscar em Ações com busca' }).fill('exportar');
   await page.getByRole('menuitem', { name: 'Exportar exemplo' }).click();
   await expect(
-    page.getByRole('dialog', { name: 'Modal do Design System' }).getByRole('status'),
+    page
+      .getByRole('dialog', { name: 'Modal do Design System' })
+      .getByRole('status')
+      .filter({ hasText: /^Ação executada:/ }),
   ).toHaveText('Ação executada: Exportar exemplo');
   await expect(actions).toHaveText('Ações com busca');
   const iconOnly = page.getByRole('button', { name: 'Ações somente com ícone' });
@@ -58,7 +61,10 @@ test('dropdowns com busca, ícones e callbacks se adaptam ao tema e viewport', a
   await page.getByRole('menuitem', { name: 'Editar exemplo' }).click();
   await expect(iconOnly).toBeFocused();
   await expect(
-    page.getByRole('dialog', { name: 'Modal do Design System' }).getByRole('status'),
+    page
+      .getByRole('dialog', { name: 'Modal do Design System' })
+      .getByRole('status')
+      .filter({ hasText: /^Ação executada:/ }),
   ).toHaveText('Ação executada: Editar exemplo');
   await expect(page.getByRole('dialog', { name: 'Modal do Design System' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', visualTheme);

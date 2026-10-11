@@ -20,6 +20,25 @@ const fixture = {
   sha256: createHash('sha256').update(bytes).digest('hex'),
 };
 
+test('every rules workflow installs backend dependencies in the same job before testing', async () => {
+  for (const name of ['firestore-rules', 'deploy-hosting', 'deploy-firestore']) {
+    const source = await readFile(
+      new URL(`../.github/workflows/${name}.yml`, import.meta.url),
+      'utf8',
+    );
+    const jobs = source.slice(source.indexOf('\njobs:')).split(/\n {2}[\w-]+:\s*\n/);
+    const rulesJobs = jobs.filter((job) => job.includes('npm run test:rules'));
+    assert.ok(rulesJobs.length > 0, `${name}: missing rules gate`);
+    for (const job of rulesJobs) {
+      const installation = job.indexOf('npm ci --prefix functions');
+      assert.ok(
+        installation >= 0 && installation < job.indexOf('npm run test:rules'),
+        `${name}: install functions dependencies before testing rules`,
+      );
+    }
+  }
+});
+
 async function temporary(testFunction) {
   const path = await mkdtemp(join(tmpdir(), 'writer-rules-runner-'));
   try {
