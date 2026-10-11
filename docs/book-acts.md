@@ -65,8 +65,10 @@ publicações anteriores continuam compatíveis. As regras exigem autoria para o
 originais e restringem leitura pública à revisão ativa. A exclusão do livro limpa
 também atos privados e públicos. Consulte [segurança](publication-security.md).
 
-Não há dependência nova, migração automática, publicação ou implantação realizada
-pela implementação. Antes do uso real, implantar as regras junto da aplicação.
+Não há dependência nova, migração automática ou publicação automática de livros.
+A implantação posterior autorizada está no
+[registro do deploy](entregas/2026-10-11-deploy-atos-servicos.md).
+Regras e aplicação devem permanecer compatíveis em cada implantação.
 
 ## Fora do escopo
 

@@ -274,3 +274,12 @@ regras foram comparadas com a versão local e os dez arquivos publicados foram
 verificados por SHA-256 contra o build validado do commit `a34d955`. Release
 Hosting `a93c72d94e58c774`. Essa publicação não ativou os workflows de CI.
 Evidência em [entrega da biblioteca](entregas/2026-10-10-image-library-header.md).
+
+## Implantação manual de atos e serviços — 2026-10-11
+
+A revisão 6ddddfb da master foi implantada localmente com autorização explícita
+em writer-44cd5: 22 functions ativas, índices prontos, regras de Firestore/Storage
+conferidas e Hosting publicado. Os 15 arquivos coincidem com o build local;
+a abertura anônima e a rota de login passaram no Chromium.
+A implantação não ativa os workflows acima. Consulte o
+[registro e os limites da verificação](entregas/2026-10-11-deploy-atos-servicos.md).

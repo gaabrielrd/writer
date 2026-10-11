@@ -189,3 +189,10 @@ já combinado e validado na worktree de atos.
 - Os commits locais preservam o trabalho de personas, a criação assistida,
   a limpeza de fontes/skills e a implementação original de atos.
 - Nenhum push, pull request ou deploy foi realizado nesta integração.
+
+## Implantação autorizada posterior
+
+Após a integração, o usuário autorizou o deploy de functions, rules e Hosting.
+A versão 6ddddfb foi implantada em writer-44cd5, com backend, regras, índices
+e arquivos publicados verificados. Veja o
+[registro do deploy](2026-10-11-deploy-atos-servicos.md).
