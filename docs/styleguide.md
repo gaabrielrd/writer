@@ -171,6 +171,31 @@ contextual do capítulo usa espaçamento discreto; editor e compêndio usam supe
 opacas, controles compactos e estados ativos discretos. O manuscrito conserva
 Georgia, 18 px e entrelinha 1,85 em escrita e leitura.
 
+A área de escrita não exibe outline, inclusive em foco por teclado. Os demais
+controles preservam foco visível. Selecionar um trecho no modo Edição mostra uma
+barra de ações de IA acima da seleção; quando falta espaço, ela aparece abaixo.
+A barra acompanha rolagem/redimensionamento e desaparece ao limpar a seleção,
+clicar fora, pressionar Escape ou entrar em Preview. Alt+Enter leva o foco às
+ações; as setas laterais navegam e Escape devolve o foco ao manuscrito.
+Em celular, as ações usam ícones com tooltip e nome acessível.
+
+Continuar Cena, Aprimorar Estilo e Coerência com Lore abrem o mesmo assistente
+e geram uma sugestão para o trecho capturado. Instrução personalizada abre o
+campo com foco, sem gerar antes de Executar. O modal não tem footer nem atalho
+para BYOK: opções, campo e Executar ocupam uma coluna. Resultado, Copiar e
+Substituir Seleção/Inserir no Texto ficam no corpo rolável. A escrita só muda
+após aceite explícito; fechar devolve o foco ao editor.
+
+No menu de menções `@`, o item ativo usa `--primary` e `--primary-foreground`,
+borda interna e indicador de confirmação, distinguindo seleção de hover nos
+três temas. Nome e resumo herdam a cor de texto do item selecionado.
+
+O topo do painel lateral reúne Compêndio, Nova, atualizar pelo texto e fechar.
+A atualização usa ícone com tooltip; a busca mantém nome acessível sem rótulo
+visual. Categorias compactas informam o estado por `aria-pressed`; o seletor
+local/global permanece disponível quando o livro pertence a um universo.
+Uma única divisória separa os controles das fichas.
+
 Atualizar compêndio abre análise/revisão/aplicação em um modal. Cada proposta
 mostra status, evidência, destino e campos atuais/propostos editáveis. A seleção
 é acessível por entidade e campo; criações são privadas e o destino global tem

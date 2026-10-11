@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorLoreSidebar } from '../components/EditorLoreSidebar';
 import type { LoreEntity } from '@/features/lore';
+import { chooseDropdown } from '@/test/dropdown';
 
 describe('EditorLoreSidebar', () => {
   const mockEntities: LoreEntity[] = [
@@ -50,7 +51,7 @@ describe('EditorLoreSidebar', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'Compêndio de Lore' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Compêndio' })).toBeInTheDocument();
     expect(screen.getByText('Merlin')).toBeInTheDocument();
     expect(screen.getByText('Avalon')).toBeInTheDocument();
 
@@ -199,5 +200,45 @@ describe('EditorLoreSidebar', () => {
     );
 
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('preserva escopo local/global e a ação de atualizar no topo compacto', async () => {
+    const user = userEvent.setup();
+    const analyze = vi.fn();
+    const globalEntity: LoreEntity = {
+      ...mockEntities[1]!,
+      id: 'global-place',
+      name: 'Ilha global',
+      universeId: 'universe-1',
+      bookId: undefined,
+    };
+    render(
+      <EditorLoreSidebar
+        isOpen
+        universeId="universe-1"
+        entities={[...mockEntities, globalEntity]}
+        onClose={vi.fn()}
+        onCreateEntity={vi.fn()}
+        onUpdateEntity={vi.fn()}
+        onAnalyzeText={analyze}
+      />,
+    );
+    expect(screen.getByText('Merlin')).toBeInTheDocument();
+    expect(screen.queryByText('Ilha global')).not.toBeInTheDocument();
+    await chooseDropdown(
+      user,
+      screen.getByRole('combobox', { name: 'Escopo do lore' }),
+      'Lore global — universo compartilhado',
+    );
+    expect(screen.getByText('Ilha global')).toBeInTheDocument();
+    expect(screen.queryByText('Merlin')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Atualizar compêndio com base no texto' }));
+    expect(analyze).toHaveBeenCalledOnce();
+    await chooseDropdown(
+      user,
+      screen.getByRole('combobox', { name: 'Escopo do lore' }),
+      'Lore local — somente este livro',
+    );
+    expect(screen.getByText('Merlin')).toBeInTheDocument();
   });
 });

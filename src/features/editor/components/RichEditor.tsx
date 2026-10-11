@@ -38,6 +38,7 @@ import {
   plainTextContent,
 } from '../model/richDocument';
 import { MentionMenu } from './MentionMenu';
+import { useSelectionAnchor } from '../hooks/useSelectionAnchor';
 import styles from './RichEditor.module.css';
 
 export interface RichEditorProps {
@@ -99,6 +100,7 @@ export function RichEditor({
   const [mentionDismissed, setMentionDismissed] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [accepting, setAccepting] = useState(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [hover, setHover] = useState<{ entity: LoreEntity; left: number; top: number } | null>(
     null,
   );
@@ -245,6 +247,10 @@ export function RichEditor({
   }, [matches]);
   const mention =
     editor && !mentionDismissed && viewMode === 'write' ? getMentionRange(editor.state) : null;
+  const selectionAnchor = useSelectionAnchor(
+    editor,
+    viewMode === 'write' && !accepting && !isAssistantOpen && !mention,
+  );
   const candidates = mention ? mentionCandidates(entities, mention.query) : [];
   const activeGhost = viewMode === 'write' && !mention && !accepting ? suggestion : null;
   useEffect(() => {
@@ -578,6 +584,11 @@ export function RichEditor({
         </div>
         <div className={styles.toolGroup}>
           <AIActionMenu
+            selectionAnchor={selectionAnchor}
+            onOpenChange={setIsAssistantOpen}
+            onReturnFocus={() => {
+              if (editor && !editor.isDestroyed) editor.view.focus();
+            }}
             onGetSelectedText={captureSelection}
             onGetContextText={() => text}
             onCanApplyResult={() => !acceptingRef.current && canApplyResult()}
@@ -589,7 +600,6 @@ export function RichEditor({
             onShowOutOfCredits={() => setIsOutOfCreditsOpen(true)}
             onInsertText={(value) => applyGeneratedText(value, false)}
             onReplaceSelection={(value) => applyGeneratedText(value, true)}
-            onOpenBYOKSettings={openAISettings}
           />
           <div className={styles.modeSwitch} role="group" aria-label="Modo do editor">
             <Button
@@ -651,13 +661,28 @@ export function RichEditor({
           </div>
         </div>
       )}
-      <div className={styles.editorBody}>
+      <div className={styles.editorBody} data-editor-scroll-area>
         <div className={styles.writeContainer}>
           {viewMode === 'preview' && editor?.isEmpty && (
             <p className={styles.emptyPreview}>Nenhum texto escrito ainda.</p>
           )}
           <EditorContent
             editor={editor}
+            onKeyDownCapture={(event) => {
+              if (
+                event.altKey &&
+                event.key === 'Enter' &&
+                selectionAnchor &&
+                !event.nativeEvent.isComposing &&
+                !editor?.view.composing
+              ) {
+                document
+                  .querySelector<HTMLButtonElement>('[data-editor-selection-actions] button')
+                  ?.focus();
+                event.preventDefault();
+                event.stopPropagation();
+              }
+            }}
             className={viewMode === 'preview' ? styles.previewContainer : undefined}
             aria-busy={accepting}
           />

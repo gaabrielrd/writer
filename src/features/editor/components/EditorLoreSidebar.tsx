@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { BookOpen, MapPin, Plus, Search, Tag, User, X } from 'lucide-react';
-import { Badge, Button, Input, Dropdown } from '@/shared/ui';
+import { BookOpen, MapPin, Plus, Search, Sparkles, Tag, User, X } from 'lucide-react';
+import { Badge, Button, Input, Dropdown, Tooltip } from '@/shared/ui';
 import {
   type CreateLoreEntityInput,
   type LoreCategory,
@@ -122,57 +122,59 @@ export function EditorLoreSidebar({
     <aside className={styles.sidebar} aria-label="Painel lateral do Compêndio de Lore">
       <div className={styles.header}>
         <div className={styles.headerTitleRow}>
-          <h3 className={styles.title}>Compêndio de Lore</h3>
-          <button
-            type="button"
-            className={styles.closeBtn}
-            onClick={onClose}
-            aria-label="Fechar painel de lore"
-          >
-            <X className="icon icon-sm" aria-hidden="true" />
-          </button>
+          <h3 className={styles.title}>Compêndio</h3>
+          <div className={styles.headerActions}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleOpenCreate}
+              aria-label="Nova Entidade"
+            >
+              <Plus className="icon icon-sm" aria-hidden="true" />
+              Nova
+            </Button>
+            {onAnalyzeText && (
+              <Tooltip content="Atualizar compêndio com base no texto">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={styles.iconAction}
+                  onClick={onAnalyzeText}
+                  aria-label="Atualizar compêndio com base no texto"
+                >
+                  <Sparkles className="icon icon-sm" aria-hidden="true" />
+                </Button>
+              </Tooltip>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className={styles.iconAction}
+              onClick={onClose}
+              aria-label="Fechar painel de lore"
+            >
+              <X className="icon icon-sm" aria-hidden="true" />
+            </Button>
+          </div>
         </div>
-        <p className={styles.description}>
-          Consulte e gerencie fichas do universo sem sair do editor.
-        </p>
       </div>
 
       <div className={styles.controls}>
-        {onAnalyzeText && (
-          <Button variant="secondary" onClick={onAnalyzeText}>
-            Atualizar compêndio com base no texto
-          </Button>
-        )}
-        {universeId && (
-          <Dropdown
-            mode="select"
-            label="Escopo do lore"
-            value={selectedScope}
-            onValueChange={(nextValue) =>
-              setScopeChoice({
-                target: selectedEntityId,
-                value: nextValue as 'local' | 'global',
-              })
-            }
-            options={[
-              { value: 'local', label: 'Lore local — somente este livro' },
-              { value: 'global', label: 'Lore global — universo compartilhado' },
-            ]}
-          />
-        )}
         <Input
-          label="Buscar no compêndio"
+          aria-label="Buscar no compêndio"
+          leftIcon={<Search className="icon icon-sm" aria-hidden="true" />}
           placeholder="Buscar personagem, local, item..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
 
         <div className={styles.actionsRow}>
-          <div className={styles.categoryFilters}>
+          <div className={styles.categoryFilters} role="group" aria-label="Categorias do compêndio">
             <button
               type="button"
               className={`${styles.filterChip} ${selectedCategory === 'all' ? styles.filterChipActive : ''}`}
               onClick={() => setSelectedCategory('all')}
+              aria-pressed={selectedCategory === 'all'}
             >
               Todos
             </button>
@@ -180,6 +182,7 @@ export function EditorLoreSidebar({
               type="button"
               className={`${styles.filterChip} ${selectedCategory === 'character' ? styles.filterChipActive : ''}`}
               onClick={() => setSelectedCategory('character')}
+              aria-pressed={selectedCategory === 'character'}
             >
               Personagens
             </button>
@@ -187,6 +190,7 @@ export function EditorLoreSidebar({
               type="button"
               className={`${styles.filterChip} ${selectedCategory === 'location' ? styles.filterChipActive : ''}`}
               onClick={() => setSelectedCategory('location')}
+              aria-pressed={selectedCategory === 'location'}
             >
               Locais
             </button>
@@ -194,16 +198,27 @@ export function EditorLoreSidebar({
               type="button"
               className={`${styles.filterChip} ${selectedCategory === 'concept' ? styles.filterChipActive : ''}`}
               onClick={() => setSelectedCategory('concept')}
+              aria-pressed={selectedCategory === 'concept'}
             >
               Conceitos
             </button>
           </div>
-
-          <Button variant="secondary" onClick={handleOpenCreate}>
-            <Plus className="icon icon-sm" aria-hidden="true" />
-            Nova Entidade
-          </Button>
         </div>
+        {universeId && (
+          <Dropdown
+            mode="select"
+            aria-label="Escopo do lore"
+            size="sm"
+            value={selectedScope}
+            onValueChange={(nextValue) =>
+              setScopeChoice({ target: selectedEntityId, value: nextValue as 'local' | 'global' })
+            }
+            options={[
+              { value: 'local', label: 'Lore local — somente este livro' },
+              { value: 'global', label: 'Lore global — universo compartilhado' },
+            ]}
+          />
+        )}
       </div>
 
       <div className={styles.entityList}>

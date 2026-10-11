@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { chooseDropdown } from '../dropdown';
 import { author, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
-import { capture, expect, test } from './support';
+import { capture, expect, expectDialogWithinViewport, test } from './support';
 
 async function checkScroll(page: Page, dialog: Locator) {
   await expect(dialog).toBeVisible();
@@ -100,20 +100,32 @@ test('preferências de IA em 320px enviam o formulário pelo footer fixo', async
   await capture(page, testInfo, 'modal-ia-footer-visivel');
 });
 
-test('assistente de IA mantém a ação do footer inteira em 320px', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 320, height: 640 });
+test('assistente de IA sem footer mantém Executar inteiro no corpo em 320px', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 480 });
   await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
   await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
   const dialog = page.getByRole('dialog', { name: 'Assistente Criativo de IA' });
-  await checkScroll(page, dialog);
+  await expectDialogWithinViewport(page);
+  await expect(dialog.locator('[data-slot="dialog-footer"]')).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: /BYOK/ })).toHaveCount(0);
+  const body = dialog.locator('[data-slot="dialog-body"]');
+  await expect(body).toHaveCSS('overflow-y', 'auto');
+  await expect(dialog).toHaveCSS('overflow-y', 'hidden');
+  const header = dialog.locator('[data-slot="dialog-header"]');
+  const headerTop = (await header.boundingBox())!.y;
+  await dialog.getByLabel('Ou dê uma instrução personalizada à IA').fill('Descreva o cenário');
   const bounds = (await dialog.boundingBox())!;
-  const action = dialog.getByRole('button', { name: 'Configurar Chave Própria (BYOK)' });
+  const action = dialog.getByRole('button', { name: 'Executar', exact: true });
+  await action.scrollIntoViewIfNeeded();
+  await expect(action).toBeInViewport();
   const actionBounds = (await action.boundingBox())!;
   expect(actionBounds.x).toBeGreaterThanOrEqual(bounds.x);
   expect(actionBounds.x + actionBounds.width).toBeLessThanOrEqual(bounds.x + bounds.width);
+  expect(actionBounds.y + actionBounds.height).toBeLessThanOrEqual(bounds.y + bounds.height);
+  expect((await header.boundingBox())!.y).toBeCloseTo(headerTop, 1);
   await capture(page, testInfo, 'modal-assistente-ia-320px');
-  await action.click();
-  await expect(
-    page.getByRole('dialog', { name: 'Configurações de Inteligência Artificial' }),
-  ).toBeVisible();
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await expect(page.getByLabel('Área de escrita do capítulo')).toBeFocused();
 });

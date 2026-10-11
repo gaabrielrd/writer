@@ -21,55 +21,45 @@
 }
 
 .header {
-  padding: var(--space-4);
-  border-bottom: 1px solid var(--line);
-  background-color: var(--surface-quiet);
+  padding: var(--space-3) var(--space-3) 0;
+  background-color: hsl(var(--card));
 }
 
 .headerTitleRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-2);
 }
 
 .title {
   font-family: var(--font-display);
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--ink);
   margin: 0;
 }
 
-.closeBtn {
-  display: inline-flex;
+.headerActions {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  color: var(--ink-quiet);
-  cursor: pointer;
-  padding: var(--space-1);
-  transition: all var(--transition-fast);
+  gap: var(--space-1);
 }
 
-.closeBtn:hover {
-  color: var(--ink);
-  background-color: hsl(var(--primary-foreground));
-  border-color: var(--line);
+.headerActions button {
+  min-height: 36px;
 }
 
-.description {
-  font-size: var(--text-xs);
-  color: var(--ink-quiet);
-  margin: var(--space-1) 0 0 0;
+.iconAction {
+  width: 36px;
+  height: 36px;
 }
 
 .controls {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-2);
   border-bottom: 1px solid var(--line);
 }
 
@@ -90,8 +80,9 @@
 .filterChip {
   font-size: var(--text-xs);
   padding: var(--space-1) var(--space-2);
+  min-height: 32px;
   border: 1px solid var(--line);
-  background-color: hsl(var(--primary-foreground));
+  background-color: hsl(var(--card));
   border-radius: var(--radius-sm);
   color: var(--ink-quiet);
   cursor: pointer;
@@ -204,7 +195,7 @@
     /* A horizontal entrance expands mobile layout viewports before auto-zoom settles. */
     animation-name: slideInMobile;
   }
-  .closeBtn {
+  .headerActions button {
     min-width: 40px;
     min-height: 40px;
   }

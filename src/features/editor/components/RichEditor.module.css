@@ -243,9 +243,7 @@
 }
 
 .richText:focus-visible {
-  outline: 2px solid hsl(var(--ring) / 0.65);
-  outline-offset: 8px;
-  border-radius: var(--radius-sm);
+  outline: none;
 }
 
 .renderedParagraph {

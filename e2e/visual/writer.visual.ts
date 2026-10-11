@@ -193,14 +193,7 @@ test('editor, painel de lore e configurações de IA', async ({ page }, testInfo
   const manuscript = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
   await manuscript.focus();
   await expect(manuscript).toBeFocused();
-  await expect
-    .poll(() =>
-      manuscript.evaluate((element) => {
-        const style = getComputedStyle(element);
-        return style.outlineStyle !== 'none' && Number.parseFloat(style.outlineWidth) > 0;
-      }),
-    )
-    .toBe(true);
+  await expect(manuscript).toHaveCSS('outline-style', 'none');
   await capture(page, testInfo, '09-editor');
 
   await page.getByRole('button', { name: /Compêndio/ }).click();

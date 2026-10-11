@@ -125,6 +125,37 @@ beforeEach(() => {
 });
 
 describe('RichEditor WYSIWYG', () => {
+  it('mostra ações para a seleção, fecha por Escape e só reaparece após nova seleção', async () => {
+    const { editor, onChange } = setup();
+    expect(
+      screen.queryByRole('toolbar', { name: 'Assistente IA para o texto selecionado' }),
+    ).not.toBeInTheDocument();
+    selectText(editor, 0, 3);
+    await screen.findByRole('toolbar', { name: 'Assistente IA para o texto selecionado' });
+    fireEvent.keyDown(editor, { key: 'Enter', altKey: true });
+    expect(screen.getByRole('button', { name: 'Continuar Cena' })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('toolbar', { name: 'Assistente IA para o texto selecionado' }),
+      ).not.toBeInTheDocument(),
+    );
+    await waitFor(() => expect(editor).toHaveFocus());
+    selectText(editor, 3, 3);
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('toolbar', { name: 'Assistente IA para o texto selecionado' }),
+      ).not.toBeInTheDocument(),
+    );
+    selectText(editor, 0, 3);
+    await screen.findByRole('toolbar', { name: 'Assistente IA para o texto selecionado' });
+    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+    expect(
+      screen.queryByRole('toolbar', { name: 'Assistente IA para o texto selecionado' }),
+    ).not.toBeInTheDocument();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('abre Markdown legado com formatação real sem gravar migração ao abrir', () => {
     const { editor, onChange } = setup({
       content:

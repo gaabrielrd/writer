@@ -171,7 +171,7 @@ describe('EditorPage', () => {
     const sidebar = screen.getByRole('complementary', {
       name: 'Painel lateral do Compêndio de Lore',
     });
-    expect(within(sidebar).getByRole('heading', { name: 'Compêndio de Lore' })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('heading', { name: 'Compêndio' })).toBeInTheDocument();
 
     // Criar nova entidade via sidebar
     await user.click(screen.getByRole('button', { name: /nova entidade/i }));

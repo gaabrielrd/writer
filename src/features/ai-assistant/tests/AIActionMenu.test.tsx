@@ -37,7 +37,6 @@ describe('AIActionMenu component', () => {
         onInsertText={onInsertText}
         onReplaceSelection={onReplaceSelection}
         onCreditDeducted={onCreditDeducted}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
 
@@ -83,7 +82,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={onInsertText}
         onReplaceSelection={onReplaceSelection}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
 
@@ -123,7 +121,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={vi.fn()}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
 
@@ -161,7 +158,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={vi.fn()}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
 
@@ -199,7 +195,6 @@ describe('AIActionMenu component', () => {
         onShowOutOfCredits={onShowOutOfCredits}
         onInsertText={vi.fn()}
         onReplaceSelection={vi.fn()}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
 
@@ -218,9 +213,7 @@ describe('AIActionMenu component', () => {
     expect(onShowOutOfCredits).toHaveBeenCalled();
   });
 
-  it('permite abrir configuracoes BYOK pelo rodape', () => {
-    const onOpenBYOKSettings = vi.fn();
-
+  it('abre o assistente sem footer nem acesso a BYOK', () => {
     render(
       <AIActionMenu
         selectedText="Texto"
@@ -228,7 +221,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={vi.fn()}
-        onOpenBYOKSettings={onOpenBYOKSettings}
       />,
     );
 
@@ -238,13 +230,8 @@ describe('AIActionMenu component', () => {
       }),
     );
 
-    fireEvent.click(
-      screen.getByRole('button', {
-        name: /Configurar Chave Própria \(BYOK\)/i,
-      }),
-    );
-
-    expect(onOpenBYOKSettings).toHaveBeenCalled();
+    expect(screen.getByRole('dialog').querySelector('[data-slot="dialog-footer"]')).toBeNull();
+    expect(screen.queryByRole('button', { name: /BYOK/i })).not.toBeInTheDocument();
   });
 
   it('exibe mensagem de erro quando a chamada de IA falha', async () => {
@@ -259,7 +246,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={vi.fn()}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
 
@@ -286,7 +272,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={vi.fn()}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /Abrir Assistente/ }));
@@ -313,7 +298,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={vi.fn()}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /Abrir Assistente/ }));
@@ -346,7 +330,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={replace}
-        onOpenBYOKSettings={vi.fn()}
         onApplyingChange={applying}
       />,
     );
@@ -378,7 +361,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={replace}
-        onOpenBYOKSettings={vi.fn()}
         onCanApplyResult={() => false}
       />,
     );
@@ -408,7 +390,6 @@ describe('AIActionMenu component', () => {
         userCredits={10}
         onInsertText={vi.fn()}
         onReplaceSelection={replace}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /Abrir Assistente/ }));
@@ -433,7 +414,6 @@ describe('AIActionMenu component', () => {
         userCredits={0}
         onInsertText={vi.fn()}
         onReplaceSelection={replace}
-        onOpenBYOKSettings={vi.fn()}
       />,
     );
     fireEvent.click(screen.getByRole('button', { name: /Abrir Assistente/ }));
@@ -451,7 +431,6 @@ describe('AIActionMenu component', () => {
       userCredits: 10,
       onInsertText: vi.fn(),
       onReplaceSelection: vi.fn(),
-      onOpenBYOKSettings: vi.fn(),
     };
     const { rerender } = render(<AIActionMenu {...props} />);
     fireEvent.click(screen.getByRole('button', { name: /Abrir Assistente/ }));
@@ -466,6 +445,66 @@ describe('AIActionMenu component', () => {
     await screen.findByText('Gerado');
     expect(vi.mocked(aiClientModule.generateAIResponse).mock.calls[0]?.[0].prompt).toContain(
       'Seleção capturada',
+    );
+  });
+
+  it.each([
+    ['Continuar Cena', 'Continue a cena'],
+    ['Aprimorar Estilo', 'Reescreva o trecho'],
+    ['Coerência com Lore', 'Analise o trecho'],
+  ])('executa %s pela seleção e exige aceite antes de substituir', async (label, instruction) => {
+    vi.mocked(aiClientModule.generateAIResponse).mockResolvedValue('Nova sugestão');
+    const replace = vi.fn();
+    const openChanged = vi.fn();
+    render(
+      <AIActionMenu
+        selectedText="Seleção antiga"
+        onGetSelectedText={() => 'Seleção atual'}
+        selectionAnchor={{ top: 120, bottom: 140, left: 80, right: 180 }}
+        userId="author"
+        userCredits={10}
+        onInsertText={vi.fn()}
+        onReplaceSelection={replace}
+        onOpenChange={openChanged}
+      />,
+    );
+    expect(aiClientModule.generateAIResponse).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: label }));
+    await screen.findByText('Nova sugestão');
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+    const request = vi.mocked(aiClientModule.generateAIResponse).mock.calls[0]?.[0];
+    expect(request?.prompt).toContain('Seleção atual');
+    expect(request?.prompt).toContain(instruction);
+    expect(request?.prompt).not.toContain('Seleção antiga');
+    expect(replace).not.toHaveBeenCalled();
+    expect(creditsServiceModule.deductCredit).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Substituir Seleção' }));
+    await waitFor(() => expect(replace).toHaveBeenCalledExactlyOnceWith('Nova sugestão'));
+    expect(openChanged.mock.calls).toEqual([[true], [false]]);
+  });
+
+  it('abre instrução personalizada pela seleção sem gerar antes de Executar', async () => {
+    vi.mocked(aiClientModule.generateAIResponse).mockResolvedValue('Resposta personalizada');
+    render(
+      <AIActionMenu
+        onGetSelectedText={() => 'Trecho escolhido'}
+        selectionAnchor={{ top: 120, bottom: 140, left: 80, right: 180 }}
+        userId="author"
+        userCredits={10}
+        onInsertText={vi.fn()}
+        onReplaceSelection={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Instrução personalizada' }));
+    expect(aiClientModule.generateAIResponse).not.toHaveBeenCalled();
+    const input = screen.getByLabelText(/instrução personalizada à IA/);
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(screen.getByRole('button', { name: 'Executar' })).toBeDisabled();
+    fireEvent.change(input, { target: { value: 'Aumente a tensão' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Executar' }));
+    await screen.findByText('Resposta personalizada');
+    expect(vi.mocked(aiClientModule.generateAIResponse).mock.calls[0]?.[0].prompt).toContain(
+      'Aumente a tensão',
     );
   });
 });

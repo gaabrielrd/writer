@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { Check } from 'lucide-react';
 import { Badge } from '@/shared/ui';
 import type { LoreCategory, LoreEntity } from '@/features/lore';
 import styles from './MentionMenu.module.css';
@@ -83,7 +84,10 @@ export function MentionMenu({
             onMouseDown={(event) => event.preventDefault()}
             onClick={onCreate}
           >
-            <strong className={styles.itemName}>Criar “{query.trim()}” no compêndio</strong>
+            <strong className={styles.itemName}>
+              <Check className="icon icon-sm" aria-hidden="true" />
+              Criar “{query.trim()}” no compêndio
+            </strong>
             <span className={styles.itemSummary}>Preencha a ficha antes de cadastrar.</span>
           </button>
         )}
@@ -103,7 +107,10 @@ export function MentionMenu({
               onClick={() => onSelect(entity)}
             >
               <div className={styles.itemHeader}>
-                <strong className={styles.itemName}>{entity.name}</strong>
+                <strong className={styles.itemName}>
+                  {isSelected && <Check className="icon icon-sm" aria-hidden="true" />}
+                  {entity.name}
+                </strong>
                 <Badge variant="secondary">
                   {entity.universeId ? 'Lore global' : 'Lore local'}
                 </Badge>

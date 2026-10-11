@@ -143,6 +143,7 @@ export interface DialogProps {
   children: React.ReactNode;
   maxWidthClass?: string;
   className?: string;
+  onCloseAutoFocus?: (event: Event) => void;
 }
 
 export function Dialog({
@@ -155,6 +156,7 @@ export function Dialog({
   children,
   maxWidthClass = 'max-w-lg',
   className = '',
+  onCloseAutoFocus,
 }: DialogProps) {
   return (
     <DialogRoot
@@ -163,7 +165,7 @@ export function Dialog({
         if (!isOpen) onClose();
       }}
     >
-      <DialogContent className={cn(maxWidthClass, className)}>
+      <DialogContent className={cn(maxWidthClass, className)} onCloseAutoFocus={onCloseAutoFocus}>
         {title && (
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>

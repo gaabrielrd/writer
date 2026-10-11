@@ -203,3 +203,14 @@ barra e modais nos três temas, incluindo a largura de 320 px:
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/compendium.visual.ts
 ```
+
+`e2e/visual/editor-adjustments.visual.ts` verifica o topo compacto do compêndio,
+busca e filtros, o assistente sem footer em uma coluna, ações acima da seleção,
+aceite explícito, foco por teclado e contraste do item ativo em `@`. Cobre os
+três temas, desktop/celular e 320 px. A medição anterior ao ajuste foi 313 px
+entre o topo do painel e a lista em 1440 × 1000; o novo limite é 70% dessa altura.
+As respostas de IA são fictícias e a configuração visual bloqueia rede externa.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts
+```

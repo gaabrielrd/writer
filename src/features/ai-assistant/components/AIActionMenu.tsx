@@ -1,15 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  Sparkles,
-  Feather,
-  Search,
-  Wand2,
-  Copy,
-  Plus,
-  Replace,
-  Settings,
-  Check,
-} from 'lucide-react';
+import { Sparkles, Feather, Search, Wand2, Copy, Plus, Replace, Check } from 'lucide-react';
 import { Alert, Button, Dialog, Input, LoadingState } from '@/shared/ui';
 import { buildActionPrompt, type AIActionType, type LoreContextItem } from '../model/aiPrompt';
 import { getBYOKConfig, subscribeBYOKConfig } from '../services/byokStorage';
@@ -17,6 +7,7 @@ import { usesOwnKey, type BYOKConfig } from '../model/byokConfig';
 import { generateAIResponse } from '../services/aiClient';
 import { deductCredit } from '../services/creditsService';
 import styles from './AIActionMenu.module.css';
+import { AISelectionToolbar } from './AISelectionToolbar';
 
 export interface AIActionMenuProps {
   selectedText?: string;
@@ -31,7 +22,9 @@ export interface AIActionMenuProps {
   onShowOutOfCredits?: () => void;
   onInsertText: (text: string) => boolean | void;
   onReplaceSelection: (text: string) => boolean | void;
-  onOpenBYOKSettings: () => void;
+  selectionAnchor?: { top: number; bottom: number; left: number; right: number } | null;
+  onOpenChange?: (open: boolean) => void;
+  onReturnFocus?: () => void;
 }
 
 export function AIActionMenu({
@@ -47,7 +40,9 @@ export function AIActionMenu({
   onShowOutOfCredits,
   onInsertText,
   onReplaceSelection,
-  onOpenBYOKSettings,
+  selectionAnchor,
+  onOpenChange,
+  onReturnFocus,
 }: AIActionMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeAction, setActiveAction] = useState<AIActionType>('continue');
@@ -63,6 +58,13 @@ export function AIActionMenu({
   const resultConfigRef = useRef<BYOKConfig | null>(null);
   const usedResultRef = useRef(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const instructionRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!isOpen || activeAction !== 'custom') return;
+    const frame = requestAnimationFrame(() => instructionRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [isOpen, activeAction]);
   useEffect(
     () =>
       subscribeBYOKConfig(() => {
@@ -82,31 +84,40 @@ export function AIActionMenu({
     [],
   );
 
+  const closeDialog = () => {
+    setIsOpen(false);
+    onOpenChange?.(false);
+  };
+
   const handleClose = () => {
     if (applyingRef.current) return;
     controllerRef.current?.abort();
     setResultText(null);
     setError(null);
     setIsLoading(false);
-    setIsOpen(false);
+    closeDialog();
   };
 
-  const handleOpen = () => {
+  const handleOpen = (action?: AIActionType) => {
     const currentSel = onGetSelectedText ? onGetSelectedText() : selectedText;
     setCapturedSelection(currentSel);
     setResultText(null);
     setError(null);
     setIsLoading(false);
+    setCopied(false);
+    setActiveAction(action ?? 'continue');
     setIsOpen(true);
+    onOpenChange?.(true);
+    if (action && action !== 'custom') void handleExecuteAction(action, currentSel);
   };
 
-  const handleExecuteAction = async (actionType: AIActionType) => {
+  const handleExecuteAction = async (actionType: AIActionType, selection = capturedSelection) => {
     const byok = getBYOKConfig();
     const isUsingBYOK = usesOwnKey(byok);
     if (applyingRef.current) return;
 
     if (!isUsingBYOK && userCredits <= 0) {
-      setIsOpen(false);
+      closeDialog();
       onShowOutOfCredits?.();
       return;
     }
@@ -128,7 +139,7 @@ export function AIActionMenu({
 
     try {
       const textToUse =
-        capturedSelection ||
+        selection ||
         (onGetSelectedText ? onGetSelectedText() : selectedText) ||
         onGetContextText?.().slice(-1500) ||
         '';
@@ -184,7 +195,7 @@ export function AIActionMenu({
       if (capturedSelection.trim()) onReplaceSelection(resultText);
       else onInsertText(resultText);
       setResultText(null);
-      setIsOpen(false);
+      closeDialog();
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Não foi possível aceitar a sugestão.');
     } finally {
@@ -208,8 +219,9 @@ export function AIActionMenu({
   return (
     <>
       <Button
+        ref={triggerRef}
         variant="secondary"
-        onClick={handleOpen}
+        onClick={() => handleOpen()}
         title="Assistente Criativo de IA"
         aria-label="Abrir Assistente Criativo de IA"
       >
@@ -217,25 +229,19 @@ export function AIActionMenu({
         <span>Assistente IA</span>
       </Button>
 
+      {selectionAnchor && !isOpen && (
+        <AISelectionToolbar anchor={selectionAnchor} onAction={handleOpen} />
+      )}
+
       <Dialog
         open={isOpen}
         title="Assistente Criativo de IA"
         onClose={handleClose}
-        footer={
-          <div className={styles.footer}>
-            <Button
-              variant="secondary"
-              disabled={isApplying}
-              onClick={() => {
-                handleClose();
-                onOpenBYOKSettings();
-              }}
-            >
-              <Settings className="icon icon-sm" aria-hidden="true" />
-              Configurar Chave Própria (BYOK)
-            </Button>
-          </div>
-        }
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          if (onReturnFocus) onReturnFocus();
+          else triggerRef.current?.focus();
+        }}
       >
         <div className={styles.container}>
           <div className={styles.actionButtons}>
@@ -281,6 +287,7 @@ export function AIActionMenu({
 
           <div className={styles.customPromptRow}>
             <Input
+              ref={instructionRef}
               label="Ou dê uma instrução personalizada à IA"
               placeholder="Ex: Torne o diálogo mais irônico, descreva a iluminação..."
               value={customInstruction}

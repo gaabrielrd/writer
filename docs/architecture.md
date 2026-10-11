@@ -131,6 +131,13 @@ Veja [atualização do compêndio](lore-analysis.md).
 
 O estado é local aos componentes ou às features. Não usamos gerenciador global de estado por padrão. Se, no futuro, a complexidade justificar, a decisão deve ser registrada em um ADR.
 
+No editor, `useSelectionAnchor` observa seleção, foco, rolagem e redimensionamento
+e fornece somente coordenadas de viewport ao `AIActionMenu`, pela interface
+pública de `ai-assistant`. A barra flutuante e o botão fixo compartilham uma única
+instância do assistente. O editor captura documento/intervalo antes da abertura
+e recusa aplicar respostas se o documento mudou; selecionar texto não inicia
+geração. Configuração BYOK continua no menu do usuário, sem footer no assistente.
+
 ## Testes
 
 Os testes ficam colocalizados dentro da feature, na pasta `tests/`. Testam o
