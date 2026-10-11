@@ -1,5 +1,25 @@
 # Detalhes do livro e navegação compactos
 
+## Correção do CI — 2026-10-10
+
+O CI de `f93d944` falhou no cenário visual de universos: a consulta imediata
+`count()` podia acontecer antes de os detalhes do livro carregarem e selecionar
+o fluxo antigo de edição. O teste agora aguarda Opções do livro e acessa Editar
+pelo menu atual, sem fallback para o botão removido.
+
+- Arquivo corrigido: `e2e/visual/universes.visual.ts`.
+- Cenário de universos com `CI=true`: `6 passed (20.4s)`.
+- Suíte visual completa com `CI=true`: `138 passed (3.1m)`.
+- `npm run validate`: verde, com 74 arquivos e 483 testes Vitest aprovados,
+  cobertura preservada, setup/backend, typecheck, build e smoke aprovados.
+- Revisão: mudança restrita à sincronização e navegação observável do teste;
+  sem aumento de timeout, supressão de cenários ou alteração da interface.
+- A normalização local de CRLF para LF não gerou mudanças adicionais no diff.
+
+Os jobs de validação em Node 22/24, auditoria e regras do Firestore já estavam
+verdes na execução anterior; a falha visual também bloqueou a integração do
+workflow de Hosting. A confirmação remota pertence à nova execução após o push.
+
 - **Data**: 2026-10-10
 - **Branch de entrega**: `master` (local)
 - **Plano de origem**: ajustes do header e dos detalhes do livro solicitados na conversa.

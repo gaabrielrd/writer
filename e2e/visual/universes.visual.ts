@@ -58,12 +58,9 @@ test('universo, lore por etapas e vínculo compartilhado entre livros', async ({
   await page.getByRole('menuitem', { name: 'Meus Livros' }).click();
   await page.getByRole('link', { name: new RegExp(books[0].title) }).click();
   const bookOptions = page.getByRole('button', { name: 'Opções do livro', exact: true });
-  if (await bookOptions.count()) {
-    await bookOptions.click();
-    await page.getByRole('menuitem', { name: 'Editar', exact: true }).click();
-  } else {
-    await page.getByRole('button', { name: 'Editar', exact: true }).first().click();
-  }
+  await expect(bookOptions).toBeVisible();
+  await bookOptions.click();
+  await page.getByRole('menuitem', { name: 'Editar', exact: true }).click();
   await page.getByLabel('Universo compartilhado').selectOption({ label: 'Universo das Marés' });
   await page.getByRole('button', { name: 'Salvar Alterações' }).click();
   await page.getByRole('tab', { name: 'Compêndio', exact: true }).click();
