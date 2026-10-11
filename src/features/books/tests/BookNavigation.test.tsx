@@ -8,6 +8,16 @@ const auth: { user: { uid: string } | null } = vi.hoisted(() => ({ user: { uid: 
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('../services/bookNavigationService', () => ({ watchBookTitle: vi.fn(() => vi.fn()) }));
 describe('book navigation', () => {
+  it('does not fetch a book title for the assisted creation route', () => {
+    vi.mocked(watchBookTitle).mockClear();
+    render(
+      <MemoryRouter initialEntries={['/books/new/assisted']}>
+        <BookNavigation />
+      </MemoryRouter>,
+    );
+    expect(watchBookTitle).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Meus Livros' })).toBeInTheDocument();
+  });
   it('shows the selected library in the dropdown, with a separator before it', async () => {
     render(
       <MemoryRouter initialEntries={['/library']}>

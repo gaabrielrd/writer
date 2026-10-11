@@ -1,5 +1,9 @@
 # Criação de livros e geração por IA
 
+A biblioteca também oferece [criação assistida por conversa](assisted-book-creation.md),
+com briefing, metadados, capa e compêndio inicial. O fluxo abaixo continua sendo
+a criação manual com sugestões opcionais.
+
 ## Fluxo
 
 1. **Livro:** título e gênero obrigatórios, com limites de 300 e 120 caracteres.

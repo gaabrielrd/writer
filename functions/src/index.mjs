@@ -9,6 +9,7 @@ import { defineSecret, defineString, defineInt } from 'firebase-functions/params
 import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
+import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createGenerationService, generationPrompt, GenerationError } from './generation.mjs';
 
@@ -18,7 +19,37 @@ const textModel = defineString('BOOK_SYNOPSIS_MODEL', { default: 'gemini-3.7-fla
 const imageModel = defineString('BOOK_COVER_MODEL', { default: 'gemini-3.1-flash-image' });
 const synopsisCost = defineInt('BOOK_SYNOPSIS_CREDITS', { default: 1 });
 const coverCost = defineInt('BOOK_COVER_CREDITS', { default: 5 });
+const assistedCost = defineInt('BOOK_ASSISTED_CREDITS', { default: 2 });
 const db = getFirestore();
+async function assistedGenerator(context) {
+  if (context.mode === 'cover') return generator(context);
+  const model = textModel.value();
+  if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Modelo inválido.');
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key.value() },
+      signal: AbortSignal.timeout(90000),
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: assistedInstruction(context.mode) }] },
+        contents: [{ parts: [{ text: JSON.stringify(context) }] }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          maxOutputTokens: context.mode === 'proposal' ? 24000 : 8000,
+          temperature: 0.7,
+          thinkingConfig: { thinkingLevel: 'low' },
+        },
+      }),
+    },
+  );
+  if (!response.ok) throw new Error('Falha no provedor.');
+  const result = await response.json();
+  if (result.candidates?.[0]?.finishReason !== 'STOP') throw new Error('Geração incompleta.');
+  return JSON.parse(
+    (result.candidates[0].content?.parts ?? []).map((part) => part.text ?? '').join(''),
+  );
+}
 async function loreGenerator(context) {
   const model = textModel.value();
   if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Modelo inválido.');
@@ -147,13 +178,21 @@ const callable = (method, secrets = []) =>
       try {
         const universeService = createUniverseService({ db });
         const loreAnalysis = createLoreAnalysisService({ db, generator: loreGenerator });
-        const handler = loreAnalysis[method]
-          ? loreAnalysis
-          : universeService[method]
-            ? universeService
-            : service()[method]
-              ? service()
-              : createImageLibraryService({ db, assets });
+        const assisted = createAssistedBookService({
+          db,
+          assets,
+          generator: assistedGenerator,
+          costs: { text: assistedCost.value(), cover: coverCost.value() },
+        });
+        const handler = assisted[method]
+          ? assisted
+          : loreAnalysis[method]
+            ? loreAnalysis
+            : universeService[method]
+              ? universeService
+              : service()[method]
+                ? service()
+                : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
@@ -182,6 +221,18 @@ export const deleteUniverseLore = callable('deleteUniverseLore');
 export const analyzeChapterLore = callable('analyzeChapterLore', [key]);
 export const prepareBYOKLore = callable('prepareBYOKLore');
 export const applyLoreAnalysis = callable('applyLoreAnalysis');
+export const assistedBook = callable('assistedBook', [key]);
+export const cleanupAssistedSessions = onSchedule(
+  { schedule: 'every 60 minutes', region: 'us-central1', maxInstances: 1 },
+  async () => {
+    const expired = await db
+      .collectionGroup('assistedSessions')
+      .where('expiresAt', '<=', Date.now())
+      .limit(100)
+      .get();
+    for (const session of expired.docs) await db.recursiveDelete(session.ref);
+  },
+);
 export const cleanupDeletedBookCover = onDocumentDeleted(
   { document: 'books/{bookId}', region: 'us-central1', retry: true },
   async (event) => {

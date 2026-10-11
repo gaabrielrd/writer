@@ -6,6 +6,8 @@
        sem a lib DOM, `document` e `window` ficam sem tipo. */
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "module": "ESNext",
+    "jsx": "react-jsx",
+    "paths": { "@/*": ["./src/*"] },
     "skipLibCheck": true,
 
     /* Bundler mode */
@@ -22,7 +24,7 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
-    "types": ["node"]
+    "types": ["node", "vite/client"]
   },
   "include": ["e2e"]
 }

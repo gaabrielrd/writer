@@ -16,6 +16,9 @@ const bookStore = new Map(initialBooks.map((book) => [book.id, structuredClone(b
 const chapterStore = new Map(chapters.map((chapter) => [chapter.id, structuredClone(chapter)]));
 const bindingListeners = new Set<() => void>();
 let sequence = 0;
+export function seedAssistedBook(book: Book) {
+  bookStore.set(book.id, book);
+}
 
 export function listBooksByAuthor(authorId: string): Promise<Book[]> {
   if (sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'error') {

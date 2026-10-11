@@ -169,6 +169,13 @@ celular, viewport baixo e largura de 320 px, incluindo envio pelo footer.
 
 ## Biblioteca de imagens
 
+Criação assistida: `AssistedBookPage.test.tsx` cobre entrevista, briefing,
+revisão, lore privado, capa, saldo, retomada e recuperação de resposta incerta.
+`assistedBookService.test.ts` verifica a callable e os erros definitivos/incertos.
+`functions/test/assistedBook.test.mjs` cobre autorização, limites, expiração,
+relações, regeneração e confirmação transacional com débitos idempotentes.
+As regras de geração também bloqueiam acesso direto a sessões e recibos.
+
 Os testes da feature cobrem seleção, gerenciamento, páginas, erros e isolamento
 na troca de conta. Os testes de backend cobrem aceite permanente e idempotente,
 reutilização sem débito, referências, exclusão protegida, migração e paginação.

@@ -1,0 +1,86 @@
+.page {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  display: grid;
+  gap: var(--space-4);
+  overflow-wrap: anywhere;
+}
+.steps ol {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  list-style: none;
+  padding: 0;
+}
+.steps li {
+  padding: var(--space-2) var(--space-3);
+  border-radius: 16px;
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+}
+.steps li[aria-current='step'] {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+}
+.content {
+  display: grid;
+  gap: var(--space-4);
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 0;
+}
+.messages {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 55vh;
+  overflow: auto;
+}
+.messages li {
+  border-left: 2px solid hsl(var(--border));
+  padding-left: var(--space-3);
+  white-space: pre-wrap;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.entities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.prose {
+  white-space: pre-wrap;
+}
+.cover {
+  width: min(240px, 100%);
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 16px;
+}
+@media (max-width: 700px) {
+  .columns,
+  .entities {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .actions > * {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
