@@ -351,4 +351,26 @@ describe('ReaderView', () => {
     expect(router.state.location.search).toBe('?chapter=one');
     window.getSelection()?.removeAllRanges();
   });
+
+  it('agrupa sumário por ato e navega entre atos mantendo links diretos', async () => {
+    vi.mocked(service.getPublicBookContent).mockResolvedValue({
+      ...content,
+      acts: [
+        { id: 'a', name: 'I', order: 1 },
+        { id: 'b', name: 'Virada', order: 2 },
+      ],
+      chapters: content.chapters.map((chapter, index) => ({
+        ...chapter,
+        actId: index ? 'b' : 'a',
+      })),
+    });
+    const { user, router } = mount();
+    expect(await screen.findByRole('heading', { name: 'I', level: 3 })).toBeInTheDocument();
+    expect(screen.getByText('Ato I')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Próximo' }));
+    expect(screen.getByText('Ato Virada')).toBeInTheDocument();
+    expect(router.state.location.search).toBe('?chapter=two');
+    await user.click(screen.getByRole('button', { name: 'Anterior' }));
+    expect(screen.getByText('Ato I')).toBeInTheDocument();
+  });
 });

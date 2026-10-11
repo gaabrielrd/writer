@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 import type { VisualOptions } from './e2e/visual/options';
 
-const port = 4177;
+const port = Number(process.env.WRITER_VISUAL_PORT ?? 4177);
 const baseURL = `http://127.0.0.1:${port}`;
 const themes = ['dark', 'light', 'sepia'] as const;
 

@@ -1,3 +1,5 @@
+import { actName, groupChapters } from '../../../src/features/books/model/act';
+import { listActs } from './bookService';
 import { getBook, listChapters, updateBook } from './bookService';
 import { listLoreEntities } from './loreService';
 import { setFixturePublication } from './publicBookService';
@@ -9,22 +11,32 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   const book = await getBook(bookId);
   if (!book) throw new Error('Livro fictício não encontrado.');
   const [chapters, lore] = await Promise.all([listChapters(bookId), listLoreEntities(bookId)]);
+  const acts = await listActs(bookId);
+  const ordered = groupChapters(chapters, acts).filter((group) => group.chapters.length > 0);
+  const publicActs = ordered.flatMap((group) =>
+    group.act ? [{ ...group.act, name: actName(group.act) }] : [],
+  );
   await updateBook(bookId, { status: 'published' });
   setFixturePublication(bookId, {
     book: {
       id: bookId,
       title: book.title,
+      ...(publicActs.length ? { hasActs: true } : {}),
       authorName: authorName.trim(),
       revisionId: `fixture-revision-${++sequence}`,
       publishedAt: FIXTURE_TIME,
     },
     content: {
-      chapters: chapters.map(({ id, title, order, content }) => ({
-        id,
-        title,
-        order,
-        content: renderRichText(content),
-      })),
+      acts: publicActs,
+      chapters: ordered
+        .flatMap((group) => group.chapters)
+        .map(({ id, title, content, actId }, index) => ({
+          ...(actId ? { actId } : {}),
+          id,
+          title,
+          order: index + 1,
+          content: renderRichText(content),
+        })),
       lore: lore
         .filter((entity) => entity.isPublic)
         .map(({ id, name, aliases, category, summary }) => ({

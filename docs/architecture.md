@@ -239,3 +239,9 @@ o vínculo opcional; `editor` combina entidades para reconhecimento, menções e
 Vínculos e mutações globais passam por functions; regras protegem os originais
 e validam a versão pública de privacidade. Veja [universos](shared-lore.md) e
 [ADR 0018](decisions/0018-shared-universes-and-lore.md).
+
+## Atos
+
+A feature books inclui atos, vínculos de capítulos e ordem de leitura por grupos.
+Criação e ações em lote usam transações; publicação e exportações preservam a
+mesma sequência. Veja [atos](book-acts.md) e [ADR 0021](decisions/0021-book-acts.md).

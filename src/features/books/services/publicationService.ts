@@ -10,6 +10,8 @@ import {
   type DocumentReference,
 } from 'firebase/firestore';
 import { firestore, renderRichText } from '@/shared/lib';
+import { actName, groupChapters } from '../model/act';
+import { listActs } from './chapterOrganizationService';
 import { preferredLoreTerms, universeEntityId } from '@/features/lore';
 
 const MAX_DOCUMENT_BYTES = 900_000;
@@ -56,6 +58,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     getDocsFromServer(collection(firestore, 'books', bookId, 'chapters')),
     getDocsFromServer(collection(firestore, 'books', bookId, 'lore')),
   ]);
+  const acts = await listActs(bookId);
   const universeId = book.universeId as string | undefined;
   const universeRef = universeId ? doc(firestore, 'universes', universeId) : null;
   const universe = universeRef ? (await getDocFromServer(universeRef)).data() : null;
@@ -102,7 +105,29 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   const revisionRef = doc(collection(rootRef, 'revisions'));
   const writes: { ref: DocumentReference; data: DocumentData }[] = [];
 
-  for (const chapter of chapterSnapshot.docs) {
+  const sourceChapters = chapterSnapshot.docs.map((snapshot) => ({
+    id: snapshot.id,
+    order: snapshot.data().order as number,
+    actId: snapshot.data().actId as string | undefined,
+    snapshot,
+  }));
+  if (
+    sourceChapters.some((chapter) => chapter.actId && !acts.some((act) => act.id === chapter.actId))
+  )
+    throw new Error('Há um capítulo vinculado a um ato inexistente.');
+  const publicGroups = groupChapters(sourceChapters, acts).filter(
+    (group) => group.chapters.length > 0,
+  );
+  const publicActs = publicGroups.flatMap((group) => (group.act ? [group.act] : []));
+  for (const act of publicActs) {
+    writes.push({
+      ref: doc(collection(revisionRef, 'acts'), act.id),
+      data: { name: requiredText(actName(act), 'O nome do ato', 300), order: act.order },
+    });
+  }
+  let readingOrder = 0;
+  for (const chapterEntry of publicGroups.flatMap((group) => group.chapters)) {
+    const chapter = chapterEntry.snapshot;
     const data = chapter.data();
     if (typeof data.content !== 'string' || !Number.isInteger(data.order) || data.order < 0) {
       throw new Error(
@@ -111,7 +136,8 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     }
     const projection = {
       title: requiredText(data.title, 'O título do capítulo', 300),
-      order: data.order as number,
+      order: ++readingOrder,
+      ...(data.actId ? { actId: data.actId as string } : {}),
       content: renderRichText(data.content),
     };
     assertDocumentSize(projection);
@@ -155,6 +181,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     data: {
       createdAt: publishedAt,
       chapterCount: chapterSnapshot.size,
+      ...(publicActs.length ? { actCount: publicActs.length } : {}),
       loreCount: publicLoreCount,
       privacyVersion,
       ...universeMetadata,
@@ -190,6 +217,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     }
     transaction.set(rootRef, {
       schemaVersion: universeId ? 2 : 1,
+      ...(publicActs.length ? { hasActs: true } : {}),
       title,
       authorName: byline,
       revisionId: revisionRef.id,
@@ -233,11 +261,14 @@ export async function deletePublicationRevisions(bookId: string): Promise<void> 
     collection(firestore, 'publicBooks', bookId, 'revisions'),
   );
   for (const revision of revisions.docs) {
-    const [chapters, lore] = await Promise.all([
+    const [chapters, lore, acts] = await Promise.all([
       getDocsFromServer(collection(revision.ref, 'chapters')),
       getDocsFromServer(collection(revision.ref, 'lore')),
+      getDocsFromServer(collection(revision.ref, 'acts')),
     ]);
-    const refs = [...chapters.docs, ...lore.docs, revision].map((snapshot) => snapshot.ref);
+    const refs = [...chapters.docs, ...lore.docs, ...acts.docs, revision].map(
+      (snapshot) => snapshot.ref,
+    );
     for (let offset = 0; offset < refs.length; offset += WRITE_BATCH_SIZE) {
       const batch = writeBatch(firestore);
       for (const ref of refs.slice(offset, offset + WRITE_BATCH_SIZE)) batch.delete(ref);

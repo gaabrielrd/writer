@@ -1,4 +1,6 @@
+import type { ActHeading } from './act';
 export interface PublicBook {
+  hasActs?: true;
   universeId?: string;
   universePrivacyVersion?: number;
   id: string;
@@ -8,6 +10,7 @@ export interface PublicBook {
   publishedAt: number;
 }
 export interface PublicChapter {
+  actId?: string;
   id: string;
   title: string;
   order: number;
@@ -22,6 +25,7 @@ export interface PublicLoreEntity {
   isPublic: true;
 }
 export interface PublicBookContent {
+  acts?: ActHeading[];
   chapters: PublicChapter[];
   lore: PublicLoreEntity[];
 }

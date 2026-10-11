@@ -1,3 +1,12 @@
+vi.mock('../services/chapterOrganizationService', async () => ({
+  ...(await vi.importActual<typeof import('../services/chapterOrganizationService')>(
+    '../services/chapterOrganizationService',
+  )),
+  listActs: vi.fn(() => Promise.resolve([])),
+  createAct: vi.fn(),
+  moveChaptersToAct: vi.fn(),
+  deleteChapters: vi.fn(),
+}));
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

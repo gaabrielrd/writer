@@ -214,3 +214,14 @@ As respostas de IA são fictícias e a configuração visual bloqueia rede exter
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts
 ```
+
+## Atos
+
+Os testes de atos cobrem numerais, grupos, busca, seleção, modais, conflitos,
+contagens, publicação e exportações. A suíte de regras inclui autoria, vínculos
+entre livros, projeções mínimas, imutabilidade e revogação.
+O cenário visual captura modais e grupos nos três temas, desktop/celular e
+320 px, mede a busca ao lado de Novo capítulo e anexa DOCX e PDF reais.
+A variável WRITER_VISUAL_PORT permite testar uma worktree em porta separada.
+
+Veja [atos](book-acts.md).

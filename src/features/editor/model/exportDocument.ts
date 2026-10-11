@@ -1,4 +1,4 @@
-import type { Book, Chapter } from '@/features/books';
+import { groupChapters, actName, type ActHeading, type Book, type Chapter } from '@/features/books';
 import { renderRichText } from '@/shared/lib/sanitizeRichText';
 
 export type ExportFormat = 'markdown' | 'docx' | 'pdf' | 'json';
@@ -22,6 +22,8 @@ export interface ExportBlock {
 }
 
 export interface ExportChapter {
+  actTitle?: string;
+  inAct?: true;
   title: string;
   html: string;
   blocks: ExportBlock[];
@@ -115,18 +117,29 @@ export function parseExportBlocks(html: string): ExportBlock[] {
   return walk(body);
 }
 
-export function createExportDocument(book: Book, chapters: Chapter[]): ExportDocument {
+export function createExportDocument(
+  book: Book,
+  chapters: Chapter[],
+  acts: ActHeading[] = [],
+): ExportDocument {
   if (chapters.length === 0) throw new Error('Adicione um capítulo antes de exportar o livro.');
   return {
     title: book.title,
     genre: book.genre ?? '',
     synopsis: book.synopsis ?? '',
-    chapters: [...chapters]
-      .sort((left, right) => left.order - right.order || left.id.localeCompare(right.id))
-      .map((chapter) => {
+    chapters: groupChapters(chapters, acts).flatMap((group) =>
+      group.chapters.map((chapter, index) => {
         const html = renderRichText(chapter.content);
-        return { title: chapter.title, html, blocks: parseExportBlocks(html) };
+        return {
+          title: chapter.title,
+          html,
+          blocks: parseExportBlocks(html),
+          ...(group.act
+            ? { inAct: true as const, ...(index === 0 ? { actTitle: actName(group.act) } : {}) }
+            : {}),
+        };
       }),
+    ),
   };
 }
 

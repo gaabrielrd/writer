@@ -1,3 +1,4 @@
+import { groupChapters, type Act } from '../../../src/features/books/model/act';
 import type {
   Book,
   CreateBookInput,
@@ -15,6 +16,7 @@ const initialBooks = sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'empt
 const bookStore = new Map(initialBooks.map((book) => [book.id, structuredClone(book)]));
 const chapterStore = new Map(chapters.map((chapter) => [chapter.id, structuredClone(chapter)]));
 let sequence = 0;
+const actStore = new Map<string, Act[]>();
 
 export function listBooksByAuthor(authorId: string): Promise<Book[]> {
   if (sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'error') {
@@ -53,6 +55,7 @@ export function updateBook(bookId: string, input: UpdateBookInput): Promise<void
 
 export function deleteBook(bookId: string): Promise<void> {
   bookStore.delete(bookId);
+  actStore.delete(bookId);
   chapterStore.forEach((chapter) => {
     if (chapter.bookId === bookId) chapterStore.delete(chapter.id);
   });
@@ -65,9 +68,10 @@ export function listChapters(bookId: string): Promise<Chapter[]> {
   }
   return Promise.resolve(
     structuredClone(
-      [...chapterStore.values()]
-        .filter((chapter) => chapter.bookId === bookId)
-        .sort((a, b) => a.order - b.order),
+      groupChapters(
+        [...chapterStore.values()].filter((chapter) => chapter.bookId === bookId),
+        actStore.get(bookId) ?? [],
+      ).flatMap((group) => group.chapters),
     ),
   );
 }
@@ -82,6 +86,7 @@ export function createChapter(bookId: string, input: CreateChapterInput): Promis
     id: `visual-created-chapter-${++sequence}`,
     bookId,
     title: input.title,
+    ...(input.actId ? { actId: input.actId } : {}),
     order: input.order ?? chapterStore.size + 1,
     content: input.content ?? '',
     wordCount: countWords(input.content ?? ''),
@@ -128,4 +133,48 @@ export function recalculateBookWordCount(bookId: string): Promise<number> {
   const book = bookStore.get(bookId);
   if (book) bookStore.set(bookId, { ...book, wordCount: total });
   return Promise.resolve(total);
+}
+
+export const MAX_CHAPTER_SELECTION = 200;
+export function listActs(bookId: string): Promise<Act[]> {
+  return Promise.resolve(structuredClone(actStore.get(bookId) ?? []));
+}
+export function createAct(bookId: string, name: string): Promise<Act> {
+  if (!bookStore.has(bookId)) throw new Error('Livro fictício não encontrado.');
+  const acts = actStore.get(bookId) ?? [];
+  const act: Act = {
+    id: 'visual-act-' + ++sequence,
+    name: name.trim() || null,
+    order: acts.length + 1,
+    createdAt: FIXTURE_TIME,
+    updatedAt: FIXTURE_TIME,
+  };
+  actStore.set(bookId, [...acts, act]);
+  return Promise.resolve(structuredClone(act));
+}
+export async function moveChaptersToAct(
+  bookId: string,
+  selected: readonly Chapter[],
+  actId: string | null,
+): Promise<void> {
+  if (sessionStorage.getItem('writer.visual.acts-failure') === 'true')
+    throw new Error('Falha simulada na movimentação.');
+  const ids = new Set(selected.map((chapter) => chapter.id));
+  const chapters = await listChapters(bookId);
+  const nextOrder = Math.max(
+    0,
+    ...chapters
+      .filter((chapter) => (chapter.actId ?? null) === actId)
+      .map((chapter) => chapter.order),
+  );
+  groupChapters(chapters, await listActs(bookId))
+    .flatMap((group) => group.chapters)
+    .filter((chapter) => ids.has(chapter.id) && (chapter.actId ?? null) !== actId)
+    .forEach((chapter, index) =>
+      chapterStore.set(chapter.id, { ...chapter, actId, order: nextOrder + index + 1 }),
+    );
+}
+export async function deleteChapters(bookId: string, selected: readonly Chapter[]): Promise<void> {
+  for (const chapter of selected) await deleteChapter(bookId, chapter.id);
+  await recalculateBookWordCount(bookId);
 }

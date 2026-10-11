@@ -207,3 +207,12 @@ Os modos **Edição** e **Preview** formam um controle dividido (split button),
 com a mesma altura, tipografia e superfície dos botões secundários vizinhos,
 extremidades arredondadas, divisória única e estado ativo acessível. A seta de
 voltar ao livro não possui borda. Não há divisória entre o header do capítulo e o editor.
+
+## Atos e seleção de capítulos
+
+Novo ato e Novo capítulo usam modais. A busca quase sem borda fica ao lado de
+Novo capítulo e conserva contraste e foco visível. Cabeçalhos de ato separam
+linhas compactas; checkboxes individuais e Selecionar exibidos identificam a
+seleção, incluindo estado intermediário. As ações em lote aparecem próximas
+à lista, quebram linha em celular e exigem confirmação com quantidade e títulos.
+Veja [contrato de atos](book-acts.md).

@@ -121,7 +121,7 @@ beforeEach(() => {
     snapshot({ name: 'Legado sem consentimento' }, 'lore-legacy'),
   ];
   mocks.getCollection.mockImplementation((ref: { path: string }) => {
-    const docs = ref.path.endsWith('/chapters') ? chapters : lore;
+    const docs = ref.path.endsWith('/chapters') ? chapters : ref.path.endsWith('/acts') ? [] : lore;
     return Promise.resolve({ docs, size: docs.length });
   });
 });
@@ -303,6 +303,7 @@ describe('publicationService', () => {
       [
         { operation: 'delete', path: 'revision-old/chapters/child' },
         { operation: 'delete', path: 'revision-old/lore/child' },
+        { operation: 'delete', path: 'revision-old/acts/child' },
         { operation: 'delete', path: 'revision-old' },
       ],
     ]);
@@ -347,7 +348,9 @@ function withUniverse() {
         ? global
         : ref.path.endsWith('/chapters')
           ? chapters
-          : lore;
+          : ref.path.endsWith('/acts')
+            ? []
+            : lore;
     return Promise.resolve({ docs, size: docs.length });
   });
 }
@@ -390,5 +393,49 @@ it('recusa universo removido ou de outro autor sem gravar projeções', async ()
     ),
   );
   await expect(publishBook('book', 'Autora')).rejects.toThrow('Universo indisponível');
+  expect(mocks.batches).toHaveLength(0);
+});
+
+it('publica atos não vazios e vínculos na mesma ordem de leitura, sem metadados privados', async () => {
+  const acts = [
+    snapshot({ name: null, order: 1, createdAt: 1, updatedAt: 1, secret: 'ACT SECRET' }, 'a'),
+    snapshot({ name: 'Virada', order: 2, createdAt: 1, updatedAt: 1 }, 'b'),
+    snapshot({ name: null, order: 3, createdAt: 1, updatedAt: 1 }, 'empty'),
+  ];
+  chapters = [
+    snapshot({ title: 'Livre', order: 1, content: 'Livre' }, 'free'),
+    snapshot({ title: 'Segundo', order: 1, content: 'Segundo', actId: 'b' }, 'second'),
+    snapshot({ title: 'Primeiro', order: 3, content: 'Primeiro', actId: 'a' }, 'first'),
+  ];
+  mocks.getCollection.mockImplementation((ref: { path: string }) => {
+    const docs = ref.path.endsWith('/acts') ? acts : ref.path.endsWith('/chapters') ? chapters : [];
+    return Promise.resolve({ docs, size: docs.length });
+  });
+  await publishBook('book', 'Autora');
+  const writes = mocks.batches.flat();
+  expect(
+    writes.filter((write) => write.path.includes('/acts/')).map((write) => write.data),
+  ).toEqual([
+    { name: 'I', order: 1 },
+    { name: 'Virada', order: 2 },
+  ]);
+  expect(
+    writes
+      .filter((write) => write.path.includes('/chapters/'))
+      .map((write) => [write.data?.title, write.data?.order]),
+  ).toEqual([
+    ['Primeiro', 1],
+    ['Segundo', 2],
+    ['Livre', 3],
+  ]);
+  expect(JSON.stringify(writes)).not.toContain('ACT SECRET');
+  expect(mocks.transactionSet).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ hasActs: true }),
+  );
+});
+it('recusa publicação de capítulo com ato órfão antes de gravar a revisão', async () => {
+  chapters = [snapshot({ title: 'X', order: 1, content: 'X', actId: 'missing' }, 'chapter')];
+  await expect(publishBook('book', 'Autora')).rejects.toThrow('inexistente');
   expect(mocks.batches).toHaveLength(0);
 });

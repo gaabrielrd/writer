@@ -48,12 +48,12 @@ function paragraph(runs: ExportRun[], properties = '', links?: Map<string, strin
   return `<w:p><w:pPr>${properties}</w:pPr>${runs.map((run) => runXml(run, run.href ? links?.get(run.href) : undefined)).join('')}</w:p>`;
 }
 
-function blockXml(block: ExportBlock, links: Map<string, string>): string {
+function blockXml(block: ExportBlock, links: Map<string, string>, headingOffset = 1): string {
   switch (block.kind) {
     case 'heading':
       return paragraph(
         block.runs,
-        `<w:pStyle w:val="Heading${Math.min(6, (block.level ?? 1) + 1)}"/>`,
+        `<w:pStyle w:val="Heading${Math.min(6, (block.level ?? 1) + headingOffset)}"/>`,
         links,
       );
     case 'quote':
@@ -107,13 +107,23 @@ export async function exportDocx(document: ExportDocument, signal?: AbortSignal)
   if (document.genre) body.push(paragraph([{ text: document.genre, italic: true }]));
   if (document.synopsis) body.push(paragraph([{ text: document.synopsis }]));
   document.chapters.forEach((chapter, index) => {
+    if (chapter.actTitle)
+      body.push(
+        paragraph(
+          [{ text: chapter.actTitle }],
+          '<w:pStyle w:val="Heading1"/>' + (index > 0 ? '<w:pageBreakBefore/>' : ''),
+        ),
+      );
     body.push(
       paragraph(
         [{ text: chapter.title }],
-        `<w:pStyle w:val="Heading1"/>${index > 0 ? '<w:pageBreakBefore/>' : ''}`,
+        '<w:pStyle w:val="' +
+          (chapter.inAct ? 'Heading2' : 'Heading1') +
+          '"/>' +
+          (index > 0 && !chapter.actTitle ? '<w:pageBreakBefore/>' : ''),
       ),
     );
-    body.push(...chapter.blocks.map((block) => blockXml(block, links)));
+    body.push(...chapter.blocks.map((block) => blockXml(block, links, chapter.inAct ? 2 : 1)));
   });
   zip.file(
     '[Content_Types].xml',

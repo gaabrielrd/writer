@@ -159,3 +159,14 @@ do vínculo. A publicação revalida vínculo e versões para evitar preparar um
 revisão sobre lore alterado em paralelo. Termos locais privados vencem conflitos
 antes da projeção, impedindo tooltips globais alternativos para esses termos.
 Veja [universos](shared-lore.md) e [ADR 0018](decisions/0018-shared-universes-and-lore.md).
+
+## Atos na revisão
+
+O apontador pode incluir hasActs e a revisão actCount. Cada documento de acts
+contém somente name e order; capítulos podem incluir actId. Apenas atos com
+capítulos são projetados. Regras validam vínculo à mesma revisão, origem privada
+do ato e ausência de campos extras. Atos publicados são imutáveis e ficam
+inacessíveis para leitores após troca ou revogação da revisão.
+A preparação segue a ordem de atos/capítulos; capítulos públicos recebem uma
+ordem global. A exclusão de livro limpa também as coleções de atos.
+Veja [atos](book-acts.md).

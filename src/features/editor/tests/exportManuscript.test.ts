@@ -1,7 +1,7 @@
 import { getUniverse } from '@/features/universes';
 vi.mock('@/features/universes', () => ({ getUniverse: vi.fn() }));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { listChapters } from '@/features/books';
+import { listChapters, listActs } from '@/features/books';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
 import { exportManuscript } from '../services/exportManuscript';
 import { downloadExport } from '../services/downloadExport';
@@ -9,7 +9,11 @@ import { exportPdf } from '../services/exportPdf';
 import { exportDocx } from '../services/exportDocx';
 import { exportBook, exportChapter, readBlob } from './exportFixtures';
 
-vi.mock('@/features/books', () => ({ listChapters: vi.fn() }));
+vi.mock('@/features/books', async () => ({
+  ...(await vi.importActual('../../books/model/act')),
+  listChapters: vi.fn(),
+  listActs: vi.fn(),
+}));
 vi.mock('@/features/lore', () => ({ listLoreEntities: vi.fn() }));
 vi.mock('../services/downloadExport', () => ({ downloadExport: vi.fn() }));
 vi.mock('../services/exportPdf', () => ({ exportPdf: vi.fn() }));
@@ -18,6 +22,7 @@ vi.mock('../services/exportDocx', () => ({ exportDocx: vi.fn() }));
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(listChapters).mockResolvedValue([exportChapter]);
+  vi.mocked(listActs).mockResolvedValue([]);
   vi.mocked(listLoreEntities).mockResolvedValue([]);
   vi.mocked(exportPdf).mockResolvedValue();
   vi.mocked(exportDocx).mockResolvedValue(new Blob(['docx']));
@@ -269,4 +274,17 @@ it('inclui cópia separada do universo no backup privado, sem identidade de cont
       format: 'json',
     }),
   ).rejects.toThrow('Universo indisponível');
+});
+
+it('inclui atos e vínculos no backup 4 sem perder o formato dos livros antigos', async () => {
+  vi.mocked(listActs).mockResolvedValue([
+    { id: 'act', name: null, order: 1, createdAt: 1, updatedAt: 1 },
+  ]);
+  vi.mocked(listChapters).mockResolvedValue([{ ...exportChapter, actId: 'act' }]);
+  await exportManuscript({ book: exportBook, scope: 'book', format: 'json' });
+  expect(JSON.parse(await downloadedText())).toMatchObject({
+    version: 4,
+    acts: [{ id: 'act', name: null }],
+    chapters: [{ actId: 'act' }],
+  });
 });

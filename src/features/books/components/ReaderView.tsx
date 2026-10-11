@@ -13,6 +13,7 @@ import {
   type PublicBook,
   type PublicBookContent,
 } from '../services/publicBookService';
+import { actName, groupChapters } from '../model/act';
 import styles from './ReaderView.module.css';
 
 type ReaderState =
@@ -159,7 +160,7 @@ function ReaderSession({ bookId, onRetry }: { bookId: string; onRetry: () => voi
   if (state.kind !== 'ready') return null;
   const {
     book,
-    content: { chapters, lore },
+    content: { chapters, lore, acts = [] },
   } = state;
   const index = chapters.findIndex((chapter) => chapter.id === currentChapter?.id);
   const previous = chapters[index - 1];
@@ -184,22 +185,41 @@ function ReaderSession({ bookId, onRetry }: { bookId: string; onRetry: () => voi
           <aside className={styles.sidebar}>
             <nav aria-label="Sumário">
               <h2>Sumário</h2>
-              <ol className={styles.chapterList}>
-                {chapters.map((chapter) => (
-                  <li key={chapter.id}>
-                    <Link
-                      to={publicReadingPath(book.id, chapter.id)}
-                      className={styles.chapterLink}
-                      aria-current={chapter.id === currentChapter.id ? 'page' : undefined}
-                    >
-                      {chapter.title}
-                    </Link>
-                  </li>
+              {groupChapters(chapters, acts)
+                .filter((group) => group.chapters.length > 0)
+                .map((group) => (
+                  <section
+                    key={group.act?.id ?? 'unassigned'}
+                    aria-label={group.act ? 'Ato ' + actName(group.act) : 'Sem ato'}
+                  >
+                    {acts.length > 0 && (
+                      <h3 className={styles.actHeading}>
+                        {group.act ? actName(group.act) : 'Sem ato'}
+                      </h3>
+                    )}
+                    <ol className={styles.chapterList}>
+                      {group.chapters.map((chapter) => (
+                        <li key={chapter.id}>
+                          <Link
+                            to={publicReadingPath(book.id, chapter.id)}
+                            className={styles.chapterLink}
+                            aria-current={chapter.id === currentChapter.id ? 'page' : undefined}
+                          >
+                            {chapter.title}
+                          </Link>
+                        </li>
+                      ))}
+                    </ol>
+                  </section>
                 ))}
-              </ol>
             </nav>
           </aside>
           <article className={styles.article} aria-labelledby="reader-chapter-title">
+            {currentChapter.actId && (
+              <p className={styles.currentAct}>
+                Ato {actName(acts.find((act) => act.id === currentChapter.actId)!)}
+              </p>
+            )}
             <p className={styles.eyebrow}>
               Capítulo {index + 1} de {chapters.length}
             </p>

@@ -1,6 +1,7 @@
 import { renderRichText } from '../../../shared/lib/sanitizeRichText';
 
 export interface Chapter {
+  actId?: string | null;
   id: string;
   bookId: string;
   title: string;
@@ -12,6 +13,7 @@ export interface Chapter {
 }
 
 export interface CreateChapterInput {
+  actId?: string | null;
   title: string;
   order?: number;
   content?: string;

@@ -1,4 +1,4 @@
-import { listChapters, type Book, type Chapter } from '@/features/books';
+import { listActs, groupChapters, listChapters, type Book, type Chapter } from '@/features/books';
 import { listLoreEntities } from '@/features/lore';
 import { getUniverse } from '@/features/universes';
 import {
@@ -37,6 +37,7 @@ export async function exportManuscript({
     throw new Error('O backup JSON inclui o livro inteiro.');
   const source =
     scope === 'chapter' && currentChapter ? [currentChapter] : await listChapters(book.id);
+  const acts = scope === 'chapter' && !currentChapter?.actId ? [] : await listActs(book.id);
   signal?.throwIfAborted();
   // A chapter removed remotely must not silently discard the draft still open in the editor.
   const available =
@@ -59,7 +60,8 @@ export async function exportManuscript({
     signal?.throwIfAborted();
     const backup = {
       format: 'writer-book-backup',
-      version: universe ? 2 : 1,
+      version: acts.length ? 4 : universe ? 2 : 1,
+      ...(acts.length ? { acts } : {}),
       ...(universe
         ? {
             universe: {
@@ -93,9 +95,10 @@ export async function exportManuscript({
         createdAt: book.createdAt,
         updatedAt: book.updatedAt,
       },
-      chapters: [...chapters]
-        .sort((a, b) => a.order - b.order)
-        .map(({ id, title, order, content, createdAt, updatedAt }) => ({
+      chapters: groupChapters(chapters, acts)
+        .flatMap((group) => group.chapters)
+        .map(({ id, title, order, content, createdAt, updatedAt, actId }) => ({
+          ...(actId ? { actId } : {}),
           id,
           title,
           order,
@@ -150,7 +153,7 @@ export async function exportManuscript({
     );
     return;
   }
-  const manuscript = createExportDocument(book, chapters);
+  const manuscript = createExportDocument(book, chapters, acts);
   if (format === 'pdf') {
     await exportPdf(manuscript, signal);
     return;

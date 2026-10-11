@@ -29,11 +29,11 @@ function renderRun(run: ExportRun): string {
   return `${leading}${text}${trailing}`.replace(/(?<! {2})\n/g, '  \n');
 }
 
-function renderBlock(block: ExportBlock): string {
+function renderBlock(block: ExportBlock, headingOffset = 2): string {
   const text = block.runs.map(renderRun).join('');
   switch (block.kind) {
     case 'heading':
-      return `${'#'.repeat(Math.min(6, (block.level ?? 1) + 2))} ${text}`;
+      return `${'#'.repeat(Math.min(6, (block.level ?? 1) + headingOffset))} ${text}`;
     case 'quote':
       return text
         .split('\n')
@@ -62,8 +62,11 @@ export function exportMarkdown(document: ExportDocument): string {
   const opening = [`---\n${metadata.join('\n')}\n---`, `# ${escapeText(document.title)}`];
   if (document.synopsis) opening.push(escapeText(document.synopsis));
   for (const chapter of document.chapters) {
-    opening.push(`## ${escapeText(chapter.title)}`);
-    opening.push(chapter.blocks.map(renderBlock).join('\n\n'));
+    if (chapter.actTitle) opening.push('## ' + escapeText(chapter.actTitle));
+    opening.push((chapter.inAct ? '### ' : '## ') + escapeText(chapter.title));
+    opening.push(
+      chapter.blocks.map((block) => renderBlock(block, chapter.inAct ? 3 : 2)).join('\n\n'),
+    );
   }
   return `${opening.join('\n\n').trim()}\n`;
 }

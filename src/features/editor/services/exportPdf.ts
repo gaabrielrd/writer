@@ -14,13 +14,19 @@ export function buildPrintDocument(manuscript: ExportDocument): string {
   const chapters = manuscript.chapters
     .map(
       (chapter) =>
-        `<section class="chapter"><h2>${escapeHtml(chapter.title)}</h2>${sanitizeRichText(chapter.html)}</section>`,
+        '<section class="chapter">' +
+        (chapter.actTitle ? '<h2>' + escapeHtml(chapter.actTitle) + '</h2>' : '') +
+        (chapter.inAct ? '<h3 class="chapter-title">' : '<h2>') +
+        escapeHtml(chapter.title) +
+        (chapter.inAct ? '</h3>' : '</h2>') +
+        sanitizeRichText(chapter.html) +
+        '</section>',
     )
     .join('');
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'"><title>${escapeHtml(manuscript.title)}</title><style>
     :root { color-scheme: light; }
     body { color: CanvasText; background: Canvas; font: 12pt/1.6 Georgia, serif; overflow-wrap: anywhere; margin: 0 auto; max-width: 170mm; }
-    h1 { font-size: 26pt; line-height: 1.2; } h2 { font-size: 20pt; } h3,h4,h5,h6 { line-height: 1.3; }
+    h1 { font-size: 26pt; line-height: 1.2; } h2 { font-size: 20pt; } h3,h4,h5,h6 { line-height: 1.3; } .chapter-title { font-size: 20pt; }
     h1,h2,h3,h4,h5,h6 { break-after: avoid; } p { orphans: 3; widows: 3; }
     blockquote { margin-inline: 1.5em; font-style: italic; } pre { white-space: pre-wrap; } a { color: inherit; }
     .chapter + .chapter { break-before: page; } .synopsis { white-space: pre-wrap; }

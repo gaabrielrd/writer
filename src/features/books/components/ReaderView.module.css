@@ -244,3 +244,15 @@
     max-height: 15rem;
   }
 }
+
+.actHeading {
+  margin: var(--space-4) 0 var(--space-2);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.currentAct {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}

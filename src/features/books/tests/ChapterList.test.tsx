@@ -1,3 +1,13 @@
+import * as organization from '../services/chapterOrganizationService';
+vi.mock('../services/chapterOrganizationService', async () => ({
+  ...(await vi.importActual<typeof import('../services/chapterOrganizationService')>(
+    '../services/chapterOrganizationService',
+  )),
+  listActs: vi.fn(() => Promise.resolve([])),
+  createAct: vi.fn(),
+  moveChaptersToAct: vi.fn(),
+  deleteChapters: vi.fn(),
+}));
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -46,6 +56,7 @@ describe('ChapterList', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(organization.listActs).mockResolvedValue([]);
   });
 
   it('lista capitulos do livro com contagem de palavras e total', async () => {
@@ -182,7 +193,7 @@ describe('ChapterList', () => {
   it('permite excluir capitulo', async () => {
     const user = userEvent.setup();
     vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
-    vi.spyOn(bookService, 'deleteChapter').mockResolvedValue();
+    vi.mocked(organization.deleteChapters).mockResolvedValue();
 
     render(
       <MemoryRouter>
@@ -194,7 +205,10 @@ describe('ChapterList', () => {
 
     await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
     await user.click(screen.getByRole('menuitem', { name: 'Excluir' }));
-    expect(screen.queryByText('Capítulo 1')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Excluir capítulos' }));
+    await waitFor(() =>
+      expect(organization.deleteChapters).toHaveBeenCalledWith('b-1', [mockChapters[0]]),
+    );
   });
 
   it('cancela a criação, descarta o título e devolve foco ao botão', async () => {
@@ -240,5 +254,155 @@ describe('ChapterList', () => {
     await user.click(screen.getByRole('button', { name: 'Criar capítulo' }));
     expect(await screen.findByText('Novo início')).toBeInTheDocument();
     expect(create).toHaveBeenCalledTimes(2);
+  });
+
+  function mountInline() {
+    const user = userEvent.setup();
+    const result = render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open onClose={vi.fn()} mode="inline" />
+      </MemoryRouter>,
+    );
+    return { ...result, user };
+  }
+  it('filtra títulos sem acentos e seleciona apenas resultados exibidos', async () => {
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([
+      { ...mockChapters[0]!, title: 'Prólogo da ação' },
+      mockChapters[1]!,
+    ]);
+    const { user } = mountInline();
+    await screen.findByText('Prólogo da ação');
+    const first = screen.getByRole('checkbox', { name: 'Selecionar Prólogo da ação' });
+    const all = screen.getByRole('checkbox', { name: 'Selecionar todos os capítulos exibidos' });
+    await user.click(first);
+    expect(all).toBePartiallyChecked();
+    await user.type(screen.getByRole('textbox', { name: 'Filtrar capítulos por nome' }), 'ACAO');
+    expect(screen.queryByText('Capítulo 2')).not.toBeInTheDocument();
+    expect(first).not.toBeChecked();
+    await user.click(all);
+    expect(screen.getByRole('status')).toHaveTextContent('1 selecionado');
+    await user.click(screen.getByRole('button', { name: 'Excluir seleção' }));
+    const dialog = screen.getByRole('dialog', { name: 'Excluir capítulos' });
+    expect(within(dialog).getByText('Prólogo da ação')).toBeInTheDocument();
+    expect(within(dialog).queryByText('Capítulo 2')).not.toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: 'Cancelar' }));
+    expect(first).toBeChecked();
+    await user.clear(screen.getByRole('textbox', { name: 'Filtrar capítulos por nome' }));
+    await user.type(
+      screen.getByRole('textbox', { name: 'Filtrar capítulos por nome' }),
+      'inexistente',
+    );
+    expect(screen.getByText('Nenhum capítulo encontrado')).toBeInTheDocument();
+  });
+  it('cria atos sem nome, conserva dados em falha e permite criar capítulo no ato', async () => {
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+    vi.mocked(organization.createAct)
+      .mockRejectedValueOnce(new Error('Sem conexão'))
+      .mockResolvedValue({
+        id: 'act',
+        name: null,
+        order: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      });
+    const { user } = mountInline();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Novo ato' })).toBeEnabled());
+    await user.click(screen.getByRole('button', { name: 'Novo ato' }));
+    await user.click(screen.getByRole('button', { name: 'Criar ato' }));
+    expect(await screen.findByText('Sem conexão')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Criar ato' }));
+    expect(await screen.findByRole('heading', { name: 'I' })).toBeInTheDocument();
+    expect(organization.createAct).toHaveBeenCalledWith('b-1', '');
+    vi.spyOn(bookService, 'createChapter').mockResolvedValue({ ...mockChapters[0]!, actId: 'act' });
+    await user.click(screen.getByRole('button', { name: 'Novo capítulo' }));
+    await user.type(screen.getByLabelText('Título do capítulo'), 'Primeiro');
+    await user.click(screen.getByRole('combobox', { name: 'Ato do capítulo' }));
+    await user.click(screen.getByRole('option', { name: 'I' }));
+    await user.click(screen.getByRole('button', { name: 'Criar capítulo' }));
+    await waitFor(() =>
+      expect(bookService.createChapter).toHaveBeenCalledWith('b-1', {
+        title: 'Primeiro',
+        actId: 'act',
+      }),
+    );
+  });
+  it('move seleção com confirmação, preserva seleção ao cancelar e evita confirmação duplicada', async () => {
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    vi.mocked(organization.listActs).mockResolvedValue([
+      { id: 'act', name: 'Virada', order: 1, createdAt: 1, updatedAt: 1 },
+    ]);
+    let resolve!: () => void;
+    vi.mocked(organization.moveChaptersToAct).mockImplementation(
+      () =>
+        new Promise<void>((done) => {
+          resolve = done;
+        }),
+    );
+    const { user } = mountInline();
+    await screen.findByText('Capítulo 1');
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Selecionar todos os capítulos exibidos' }),
+    );
+    const trigger = screen.getByRole('button', { name: 'Mover para ato' });
+    await user.click(trigger);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.getByRole('status')).toHaveTextContent('2 selecionado');
+    await user.click(trigger);
+    await user.click(screen.getByRole('combobox', { name: 'Ato de destino' }));
+    await user.click(screen.getByRole('option', { name: 'Virada' }));
+    await user.click(screen.getByRole('button', { name: 'Mover capítulos' }));
+    expect(screen.getByRole('button', { name: 'Processando...' })).toBeDisabled();
+    expect(organization.moveChaptersToAct).toHaveBeenCalledTimes(1);
+    expect(organization.moveChaptersToAct).toHaveBeenCalledWith('b-1', mockChapters, 'act');
+    resolve();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(screen.queryByRole('group', { name: 'Ações da seleção' })).not.toBeInTheDocument();
+  });
+  it('preserva a seleção quando excluir falha e permite retentativa', async () => {
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    vi.mocked(organization.deleteChapters)
+      .mockRejectedValueOnce(new Error('Operação recusada'))
+      .mockResolvedValue();
+    const { user } = mountInline();
+    await screen.findByText('Capítulo 1');
+    await user.click(screen.getByRole('checkbox', { name: 'Selecionar Capítulo 1' }));
+    await user.click(screen.getByRole('button', { name: 'Excluir seleção' }));
+    await user.click(screen.getByRole('button', { name: 'Excluir capítulos' }));
+    expect(await screen.findByText('Operação recusada')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toHaveTextContent('Capítulo 1');
+    await user.click(screen.getByRole('button', { name: 'Excluir capítulos' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(organization.deleteChapters).toHaveBeenCalledTimes(2);
+  });
+  it('a busca não transforma vizinhos filtrados na ordem real do ato', async () => {
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    const reorder = vi.spyOn(bookService, 'reorderChapters').mockResolvedValue();
+    const { user } = mountInline();
+    await screen.findByText('Capítulo 1');
+    await user.type(screen.getByRole('textbox', { name: 'Filtrar capítulos por nome' }), '2');
+    await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 2' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Mover para cima' }));
+    expect(reorder).toHaveBeenCalledWith('b-1', ['c-2', 'c-1']);
+  });
+  it('informa o impacto na publicação ao confirmar ações sobre o rascunho', async () => {
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ChapterList
+          book={{ ...mockBook, status: 'published' }}
+          open
+          onClose={vi.fn()}
+          mode="inline"
+        />
+      </MemoryRouter>,
+    );
+    await screen.findByText('Capítulo 1');
+    await user.click(screen.getByRole('checkbox', { name: 'Selecionar Capítulo 1' }));
+    await user.click(screen.getByRole('button', { name: 'Excluir seleção' }));
+    expect(screen.getByRole('dialog')).toHaveTextContent('atualize ou retire a publicação');
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(organization.deleteChapters).not.toHaveBeenCalled();
   });
 });

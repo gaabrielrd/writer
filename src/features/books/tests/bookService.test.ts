@@ -39,6 +39,8 @@ vi.mock('firebase/firestore', () => ({
     pathSegments,
   })),
   getDoc: vi.fn(),
+  getDocFromServer: vi.fn(),
+  getDocsFromServer: vi.fn(),
   getDocs: vi.fn(),
   setDoc: vi.fn(),
   updateDoc: vi.fn(),
@@ -52,7 +54,28 @@ vi.mock('firebase/firestore', () => ({
 
 describe('bookService', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
+    const storedBook = { updatedAt: 100, wordCount: 0 };
+    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValue({
+      exists: () => true,
+      data: () => storedBook,
+    } as unknown as firestoreModule.DocumentSnapshot);
+    vi.mocked(firestoreModule.getDocsFromServer).mockResolvedValue({
+      docs: [],
+    } as unknown as firestoreModule.QuerySnapshot);
+    vi.mocked(firestoreModule.runTransaction).mockImplementation(async (_db, callback) =>
+      callback({
+        get: (ref: { pathSegments?: string[] }) =>
+          Promise.resolve({
+            exists: () => true,
+            data: () => (ref.pathSegments?.includes('chapters') ? { wordCount: 0 } : storedBook),
+            ref,
+          }),
+        set: firestoreModule.setDoc,
+        update: firestoreModule.updateDoc,
+        delete: firestoreModule.deleteDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
   });
 
   describe('Books CRUD', () => {
@@ -205,6 +228,9 @@ describe('bookService', () => {
         ],
       } as unknown as firestoreModule.QuerySnapshot);
 
+      vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+        docs: [],
+      } as unknown as firestoreModule.QuerySnapshot);
       await deleteBook('book-1');
 
       expect(beginBookDeletion).toHaveBeenCalledWith('book-1');
@@ -307,7 +333,7 @@ describe('bookService', () => {
     it('reordena lista de capitulos', async () => {
       await reorderChapters('book-1', ['ch-2', 'ch-1']);
 
-      expect(firestoreModule.updateDoc).toHaveBeenCalledTimes(2);
+      expect(firestoreModule.updateDoc).toHaveBeenCalledTimes(3);
       expect(firestoreModule.updateDoc).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ order: 1 }),
@@ -333,5 +359,55 @@ describe('bookService', () => {
         expect.objectContaining({ wordCount: 500 }),
       );
     });
+  });
+  it('incrementa a versão do capítulo mesmo com duas edições no mesmo milissegundo', async () => {
+    const clock = vi.spyOn(Date, 'now').mockReturnValue(1000);
+    const book = { wordCount: 4, updatedAt: 1000 };
+    const chapter = { wordCount: 4, updatedAt: 1000 };
+    const writes = vi.fn();
+    vi.mocked(firestoreModule.runTransaction).mockImplementation(async (_db, callback) =>
+      callback({
+        get: (ref: { pathSegments: string[] }) =>
+          Promise.resolve({
+            exists: () => true,
+            data: () => (ref.pathSegments.includes('chapters') ? chapter : book),
+            ref,
+          }),
+        update: (ref: { pathSegments: string[] }, data: Partial<typeof chapter>) => {
+          writes(ref, data);
+          Object.assign(ref.pathSegments.includes('chapters') ? chapter : book, data);
+        },
+      } as unknown as firestoreModule.Transaction),
+    );
+    try {
+      await updateChapter('book-1', 'ch-1', { title: 'Primeira edição' });
+      expect(chapter.updatedAt).toBe(1001);
+      await updateChapter('book-1', 'ch-1', { title: 'Segunda edição' });
+      expect(chapter.updatedAt).toBe(1002);
+      expect(book.updatedAt).toBe(1002);
+      expect(book.wordCount).toBe(4);
+    } finally {
+      clock.mockRestore();
+    }
+  });
+  it('entrega a mesma sequência de atos a todos os consumidores de capítulos', async () => {
+    vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+      docs: [
+        { id: 'free', data: () => ({ title: 'Livre', order: 1 }) },
+        { id: 'second', data: () => ({ title: 'Segundo', order: 1, actId: 'b' }) },
+        { id: 'first', data: () => ({ title: 'Primeiro', order: 8, actId: 'a' }) },
+      ],
+    } as unknown as firestoreModule.QuerySnapshot);
+    vi.mocked(firestoreModule.getDocsFromServer).mockResolvedValueOnce({
+      docs: [
+        { id: 'b', data: () => ({ name: 'Virada', order: 2, createdAt: 1, updatedAt: 1 }) },
+        { id: 'a', data: () => ({ name: null, order: 1, createdAt: 1, updatedAt: 1 }) },
+      ],
+    } as unknown as firestoreModule.QuerySnapshot);
+    expect((await listChapters('book-1')).map((chapter) => chapter.title)).toEqual([
+      'Primeiro',
+      'Segundo',
+      'Livre',
+    ]);
   });
 });

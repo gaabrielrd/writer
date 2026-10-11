@@ -51,10 +51,11 @@ service cloud.firestore {
 
     function validPublicBook(data) {
       return data.keys().hasAll(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt'])
-        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion'])
+        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion', 'hasActs'])
         && ((data.schemaVersion == 1 && data.get('universeId', null) == null && data.get('universePrivacyVersion', null) == null) || (data.schemaVersion == 2
           && nonemptyString(data.get('universeId', ''), 128)
           && data.get('universePrivacyVersion', -1) is int && data.universePrivacyVersion >= 0))
+        && data.get('hasActs', false) is bool
         && nonemptyString(data.title, 300)
         && nonemptyString(data.authorName, 120)
         && nonemptyString(data.revisionId, 128)
@@ -63,19 +64,41 @@ service cloud.firestore {
 
     function validRevision(data) {
       return data.keys().hasAll(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion'])
-        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion'])
+        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion', 'actCount'])
         && data.privacyVersion is int && data.privacyVersion >= 0
         && data.createdAt is int && data.createdAt >= 0
         && data.chapterCount is int && data.chapterCount >= 0
-        && data.loreCount is int && data.loreCount >= 0;
+        && data.loreCount is int && data.loreCount >= 0
+        && data.get('actCount', 0) is int && data.get('actCount', 0) >= 0;
     }
 
     function validChapter(data) {
       return data.keys().hasAll(['title', 'order', 'content'])
-        && data.keys().hasOnly(['title', 'order', 'content'])
+        && data.keys().hasOnly(['title', 'order', 'content', 'actId'])
         && nonemptyString(data.title, 300)
         && data.order is int && data.order >= 0
-        && data.content is string && data.content.size() <= 900000;
+        && data.content is string && data.content.size() <= 900000
+        && (data.get('actId', null) == null || nonemptyString(data.actId, 128));
+    }
+
+    function validAct(data) {
+      return data.keys().hasAll(['name', 'order', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['name', 'order', 'createdAt', 'updatedAt'])
+        && (data.name == null || nonemptyString(data.name, 300))
+        && data.order is int && data.order > 0 && data.order <= 3999
+        && data.createdAt is int && data.createdAt >= 0
+        && data.updatedAt is int && data.updatedAt >= data.createdAt;
+    }
+    function validActLink(bookId, data) {
+      let actId = data.get('actId', null);
+      return actId == null || (nonemptyString(actId, 128)
+        && exists(/databases/$(database)/documents/books/$(bookId)/acts/$(actId)));
+    }
+    function validPublicAct(data) {
+      return data.keys().hasAll(['name', 'order'])
+        && data.keys().hasOnly(['name', 'order'])
+        && nonemptyString(data.name, 300)
+        && data.order is int && data.order > 0 && data.order <= 3999;
     }
 
     function validAlias(aliases, index) {
@@ -237,9 +260,19 @@ service cloud.firestore {
         && existsAfter(/databases/$(database)/documents/deletedBooks/$(bookId))
         && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId));
 
+      match /acts/{actId} {
+        allow read: if isBookAuthor(bookId);
+        allow create: if isBookAuthor(bookId) && validAct(request.resource.data)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == false
+          && getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('actCount', 0) == request.resource.data.order;
+        allow update: if false;
+        allow delete: if isBookAuthor(bookId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true;
+      }
       match /chapters/{chapterId} {
         allow read, delete: if isBookAuthor(bookId);
         allow create, update: if isBookAuthor(bookId)
+          && validActLink(bookId, request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
       }
 
@@ -293,12 +326,25 @@ service cloud.firestore {
         allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true;
 
+        match /acts/{actId} {
+          allow read: if canReadRevision(bookId, revisionId);
+          allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+            && validPublicAct(request.resource.data)
+            && exists(/databases/$(database)/documents/books/$(bookId)/acts/$(actId))
+            && get(/databases/$(database)/documents/books/$(bookId)/acts/$(actId)).data.order == request.resource.data.order
+            && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == false;
+          allow update: if false;
+          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId);
+        }
+
         match /chapters/{chapterId} {
           allow read: if canReadRevision(bookId, revisionId);
           allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
             && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
             && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId))
-            && validChapter(request.resource.data);
+            && validChapter(request.resource.data)
+            && (request.resource.data.get('actId', null) == null
+              || existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId)/acts/$(request.resource.data.actId)));
           allow update: if false;
           allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId);
         }

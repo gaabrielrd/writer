@@ -291,3 +291,47 @@ it('ignora sinal de privacidade atrasado de uma revisão substituída', () => {
   rootArgs[2]({ exists: () => false, metadata: { fromCache: false } } as db.DocumentSnapshot);
   stop();
 });
+
+it('lê atos apenas nas revisões que anunciam o agrupamento e valida os vínculos', async () => {
+  vi.mocked(db.getDocsFromServer)
+    .mockResolvedValueOnce(
+      querySnapshot([
+        {
+          id: 'chapter',
+          data: () => ({ title: 'Primeiro', content: 'Texto', order: 1, actId: 'act' }),
+        },
+      ]),
+    )
+    .mockResolvedValueOnce(querySnapshot([]))
+    .mockResolvedValueOnce(
+      querySnapshot([{ id: 'act', data: () => ({ name: 'I', order: 1, secret: 'PRIVATE' }) }]),
+    );
+  expect(await getPublicBookContent({ ...book, hasActs: true })).toMatchObject({
+    acts: [{ id: 'act', name: 'I', order: 1 }],
+    chapters: [{ id: 'chapter', actId: 'act' }],
+  });
+  vi.mocked(db.getDocsFromServer)
+    .mockResolvedValueOnce(
+      querySnapshot([
+        { id: 'chapter', data: () => ({ title: 'X', content: 'X', order: 1, actId: 'missing' }) },
+      ]),
+    )
+    .mockResolvedValueOnce(querySnapshot([]))
+    .mockResolvedValueOnce(querySnapshot([]));
+  await expect(getPublicBookContent({ ...book, hasActs: true })).rejects.toThrow(
+    'Publicação inválida',
+  );
+});
+it('recusa ato público malformado e preserva hasActs na leitura do apontador', async () => {
+  vi.mocked(db.getDocFromServer).mockResolvedValue(
+    snapshot({ ...book, schemaVersion: 1, hasActs: true }),
+  );
+  expect(await getPublicBook(book.id)).toMatchObject({ hasActs: true });
+  vi.mocked(db.getDocsFromServer)
+    .mockResolvedValueOnce(querySnapshot([]))
+    .mockResolvedValueOnce(querySnapshot([]))
+    .mockResolvedValueOnce(querySnapshot([{ id: 'act', data: () => ({ name: '', order: 1 }) }]));
+  await expect(getPublicBookContent({ ...book, hasActs: true })).rejects.toThrow(
+    'Publicação inválida',
+  );
+});

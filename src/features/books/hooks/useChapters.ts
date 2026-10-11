@@ -97,12 +97,13 @@ export function useChapters(bookId?: string | null): UseChaptersResult {
       await bookService.reorderChapters(bookId, orderedIds);
       setChapters((prev) => {
         const map = new Map(prev.map((c) => [c.id, c]));
-        return orderedIds
+        const reordered = orderedIds
           .map((id, index) => {
             const ch = map.get(id);
             return ch ? { ...ch, order: index + 1 } : null;
           })
           .filter((c): c is Chapter => c !== null);
+        return [...prev.filter((chapter) => !orderedIds.includes(chapter.id)), ...reordered];
       });
     },
     [bookId],

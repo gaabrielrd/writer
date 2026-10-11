@@ -12,6 +12,11 @@ import {
   runTransaction,
 } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
+import {
+  createOrganizedChapter,
+  MAX_CHAPTER_SELECTION,
+  listActs,
+} from './chapterOrganizationService';
 import { createBookWithGeneratedCover, saveBookLibraryCover } from './generatedBookService';
 import {
   beginBookDeletion,
@@ -19,6 +24,7 @@ import {
   finishBookDeletion,
   unpublishBook,
 } from './publicationService';
+import { groupChapters } from '../model/act';
 import type { Book, CreateBookInput, UpdateBookInput } from '../model/book';
 import {
   countWords,
@@ -42,6 +48,7 @@ interface StoredBookDoc {
 }
 
 interface StoredChapterDoc {
+  actId?: string | null;
   bookId: string;
   title: string;
   order: number;
@@ -162,11 +169,12 @@ export async function deleteBook(bookId: string): Promise<void> {
   // Revoke public access first, even if a later cleanup operation fails.
   await beginBookDeletion(bookId);
   await deletePublicationRevisions(bookId);
-  const [chapters, lore] = await Promise.all([
+  const [chapters, lore, acts] = await Promise.all([
     getDocs(collection(firestore, 'books', bookId, 'chapters')),
     getDocs(collection(firestore, 'books', bookId, 'lore')),
+    getDocs(collection(firestore, 'books', bookId, 'acts')),
   ]);
-  for (const snapshot of [...chapters.docs, ...lore.docs]) {
+  for (const snapshot of [...chapters.docs, ...lore.docs, ...acts.docs]) {
     await deleteDoc(snapshot.ref);
   }
   await finishBookDeletion(bookId);
@@ -177,11 +185,12 @@ export async function listChapters(bookId: string): Promise<Chapter[]> {
   const q = query(chaptersRef, orderBy('order', 'asc'));
   const snapshot = await getDocs(q);
 
-  return snapshot.docs.map((docSnap) => {
+  const chapters = snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as StoredChapterDoc;
     return {
       id: docSnap.id,
       bookId,
+      ...(data.actId ? { actId: data.actId } : {}),
       title: data.title,
       order: data.order ?? 0,
       wordCount: data.wordCount ?? 0,
@@ -190,6 +199,7 @@ export async function listChapters(bookId: string): Promise<Chapter[]> {
       updatedAt: data.updatedAt ?? Date.now(),
     };
   });
+  return groupChapters(chapters, await listActs(bookId)).flatMap((group) => group.chapters);
 }
 
 export async function getChapter(bookId: string, chapterId: string): Promise<Chapter | null> {
@@ -202,6 +212,7 @@ export async function getChapter(bookId: string, chapterId: string): Promise<Cha
   return {
     id: snapshot.id,
     bookId,
+    ...(data.actId ? { actId: data.actId } : {}),
     title: data.title,
     order: data.order ?? 0,
     wordCount: data.wordCount ?? 0,
@@ -212,34 +223,7 @@ export async function getChapter(bookId: string, chapterId: string): Promise<Cha
 }
 
 export async function createChapter(bookId: string, input: CreateChapterInput): Promise<Chapter> {
-  const existingChapters = await listChapters(bookId);
-  const nextOrder =
-    typeof input.order === 'number'
-      ? input.order
-      : existingChapters.length > 0
-        ? Math.max(...existingChapters.map((c) => c.order)) + 1
-        : 1;
-
-  const chaptersRef = collection(firestore, 'books', bookId, 'chapters');
-  const newDocRef = doc(chaptersRef);
-  const now = Date.now();
-  const content = input.content ?? '';
-  const wordCount = countWords(content);
-
-  const newChapter: Chapter = {
-    id: newDocRef.id,
-    bookId,
-    title: input.title.trim() || `Capítulo ${nextOrder}`,
-    order: nextOrder,
-    wordCount,
-    content,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  await setDoc(newDocRef, newChapter);
-  await recalculateBookWordCount(bookId);
-  return newChapter;
+  return createOrganizedChapter(bookId, input);
 }
 
 export async function updateChapter(
@@ -262,11 +246,34 @@ export async function updateChapter(
     updatedAt: Date.now(),
   };
 
-  await updateDoc(chapterRef, updateData);
-
-  if (wordCount !== undefined) {
-    await recalculateBookWordCount(bookId);
-  }
+  const bookRef = doc(firestore, 'books', bookId);
+  await runTransaction(firestore, async (transaction) => {
+    const [book, chapter] = await Promise.all([
+      transaction.get(bookRef),
+      transaction.get(chapterRef),
+    ]);
+    if (!book.exists() || book.data().deleting || !chapter.exists())
+      throw new Error('Capítulo indisponível.');
+    const now = Math.max(
+      Date.now(),
+      ((book.data().updatedAt as number) ?? 0) + 1,
+      ((chapter.data().updatedAt as number) ?? 0) + 1,
+    );
+    transaction.update(chapterRef, { ...updateData, updatedAt: now });
+    transaction.update(bookRef, {
+      updatedAt: now,
+      ...(wordCount !== undefined
+        ? {
+            wordCount: Math.max(
+              0,
+              ((book.data().wordCount as number) ?? 0) +
+                wordCount -
+                ((chapter.data().wordCount as number) ?? 0),
+            ),
+          }
+        : {}),
+    });
+  });
 }
 
 export async function deleteChapter(bookId: string, chapterId: string): Promise<void> {
@@ -276,12 +283,29 @@ export async function deleteChapter(bookId: string, chapterId: string): Promise<
 }
 
 export async function reorderChapters(bookId: string, orderedChapterIds: string[]): Promise<void> {
-  await Promise.all(
-    orderedChapterIds.map((chapterId, index) => {
-      const chapterRef = doc(firestore, 'books', bookId, 'chapters', chapterId);
-      return updateDoc(chapterRef, { order: index + 1, updatedAt: Date.now() });
-    }),
-  );
+  if (!orderedChapterIds.length) return;
+  if (
+    orderedChapterIds.length > MAX_CHAPTER_SELECTION ||
+    new Set(orderedChapterIds).size !== orderedChapterIds.length
+  )
+    throw new Error('Reordene no máximo 200 capítulos por operação.');
+  const bookRef = doc(firestore, 'books', bookId);
+  await runTransaction(firestore, async (transaction) => {
+    const book = await transaction.get(bookRef);
+    const chapters = await Promise.all(
+      orderedChapterIds.map((id) => transaction.get(doc(bookRef, 'chapters', id))),
+    );
+    if (!book.exists() || book.data().deleting || chapters.some((chapter) => !chapter.exists()))
+      throw new Error('Capítulo indisponível.');
+    const actId = (chapters[0]!.data()!.actId as string | null | undefined) ?? null;
+    if (chapters.some((chapter) => (chapter.data()!.actId ?? null) !== actId))
+      throw new Error('Reordene capítulos dentro do mesmo ato.');
+    const now = Math.max(Date.now(), (book.data().updatedAt as number) + 1);
+    chapters.forEach((chapter, index) =>
+      transaction.update(chapter.ref, { order: index + 1, updatedAt: now }),
+    );
+    transaction.update(bookRef, { updatedAt: now });
+  });
 }
 
 export async function recalculateBookWordCount(bookId: string): Promise<number> {

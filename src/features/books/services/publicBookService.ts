@@ -7,6 +7,7 @@ import {
   type DocumentSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
+import { groupChapters, type ActHeading } from '../model/act';
 import { firestore, renderRichText } from '@/shared/lib';
 
 import type {
@@ -52,6 +53,7 @@ function mapBook(snapshot: DocumentSnapshot): PublicBook | null {
     return null;
   return {
     id: snapshot.id,
+    ...(data.hasActs === true ? { hasActs: true as const } : {}),
     title: data.title,
     authorName: data.authorName,
     revisionId: data.revisionId,
@@ -153,6 +155,22 @@ export async function getPublicBookContent(book: PublicBook): Promise<PublicBook
     getDocsFromServer(collection(firestore, ...path, 'chapters')),
     getDocsFromServer(collection(firestore, ...path, 'lore')),
   ]);
+  const acts: ActHeading[] = [];
+  if (book.hasActs) {
+    const actSnapshot = await getDocsFromServer(collection(firestore, ...path, 'acts'));
+    for (const snapshot of actSnapshot.docs) {
+      const data = snapshot.data();
+      if (
+        typeof data.name !== 'string' ||
+        !data.name.trim() ||
+        data.name.length > 300 ||
+        !Number.isSafeInteger(data.order) ||
+        data.order < 1
+      )
+        throw new Error('Publicação inválida.');
+      acts.push({ id: snapshot.id, name: data.name, order: data.order as number });
+    }
+  }
   const chapters = chapterSnapshot.docs
     .map((snapshot): PublicChapter => {
       const data: Record<string, unknown> = snapshot.data();
@@ -168,6 +186,7 @@ export async function getPublicBookContent(book: PublicBook): Promise<PublicBook
         id: snapshot.id,
         title: data.title,
         order: data.order,
+        ...(typeof data.actId === 'string' ? { actId: data.actId } : {}),
         content: renderRichText(data.content),
       };
     })
@@ -197,7 +216,13 @@ export async function getPublicBookContent(book: PublicBook): Promise<PublicBook
       },
     ];
   });
-  return { chapters, lore };
+  if (chapters.some((chapter) => chapter.actId && !acts.some((act) => act.id === chapter.actId)))
+    throw new Error('Publicação inválida.');
+  return {
+    chapters: groupChapters(chapters, acts).flatMap((group) => group.chapters),
+    lore,
+    ...(book.hasActs ? { acts } : {}),
+  };
 }
 
 export function publicReadingPath(bookId: string, chapterId?: string): string {
