@@ -3,7 +3,13 @@ import { CheckSquare, FileText, Square, Upload, X } from 'lucide-react';
 import { Alert, Badge, Button, Dialog, Input, LoadingState, Textarea } from '@/shared/ui';
 import type { Book } from '../model/book';
 import * as bookService from '../services/bookService';
-import { parseDocumentFile, type ParsedChapter } from '../services/documentParserService';
+import {
+  DOCUMENT_EXTENSIONS,
+  DOCUMENT_FORMAT_LABEL,
+  isSupportedDocument,
+  parseDocumentFile,
+  type ParsedChapter,
+} from '../services/documentParserService';
 import styles from './ImportBookModal.module.css';
 
 export interface ImportBookModalProps {
@@ -57,12 +63,8 @@ export function ImportBookModal({
   };
 
   const handleProcessFile = async (file: File) => {
-    const validExtensions = ['.docx', '.pdf'];
-    const fileName = file.name.toLowerCase();
-    const isValid = validExtensions.some((ext) => fileName.endsWith(ext));
-
-    if (!isValid) {
-      setParseError('Por favor, selecione um arquivo válido no formato .docx ou .pdf.');
+    if (!isSupportedDocument(file.name)) {
+      setParseError(`Por favor, selecione um arquivo válido: ${DOCUMENT_FORMAT_LABEL}.`);
       return;
     }
 
@@ -236,13 +238,14 @@ export function ImportBookModal({
             <input
               ref={fileInputRef}
               type="file"
-              accept=".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf"
+              accept={DOCUMENT_EXTENSIONS.join(',')}
+              aria-label="Arquivo do manuscrito"
               className={styles.fileInputHidden}
               onChange={handleFileInputChange}
             />
             <Upload className={`icon ${styles.dropzoneIcon}`} aria-hidden="true" />
             <p className={styles.dropzoneTitle}>
-              Clique ou arraste um arquivo <strong>.docx</strong> ou <strong>.pdf</strong>
+              Clique ou arraste um arquivo DOCX, PDF, Markdown, texto ou HTML
             </p>
             <p className={styles.dropzoneSubtitle}>
               Os capítulos e conteúdos serão identificados e divididos automaticamente
@@ -334,26 +337,30 @@ export function ImportBookModal({
                   className={`${styles.chapterCard} ${ch.selected ? styles.chapterCardSelected : ''}`}
                 >
                   <div className={styles.chapterHeader}>
-                    <label className={styles.chapterCheckboxLabel}>
-                      <input
-                        type="checkbox"
-                        checked={ch.selected}
-                        onChange={() => handleToggleChapter(ch.id)}
-                        disabled={isImporting}
-                        className={styles.checkbox}
-                      />
-                      <span className="font-semibold text-sm text-[hsl(var(--muted-foreground))]">
-                        {idx + 1}.
-                      </span>
+                    <div className={styles.chapterCheckboxLabel}>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          aria-label={`Selecionar capítulo ${idx + 1}`}
+                          checked={ch.selected}
+                          onChange={() => handleToggleChapter(ch.id)}
+                          disabled={isImporting}
+                          className={styles.checkbox}
+                        />
+                        <span className="font-semibold text-sm text-[hsl(var(--muted-foreground))]">
+                          {idx + 1}.
+                        </span>
+                      </label>
                       <div className={styles.chapterTitleInput}>
                         <Input
                           value={ch.title}
+                          aria-label={`Título do capítulo ${idx + 1}`}
                           onChange={(e) => handleChapterTitleChange(ch.id, e.target.value)}
                           disabled={!ch.selected || isImporting}
                           placeholder="Título do capítulo"
                         />
                       </div>
-                    </label>
+                    </div>
                     <Badge variant={ch.selected ? 'highlight' : 'neutral'}>
                       {ch.wordCount.toLocaleString('pt-BR')} palavras
                     </Badge>

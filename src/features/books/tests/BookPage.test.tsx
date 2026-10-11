@@ -177,7 +177,7 @@ describe('BookPage', () => {
     await screen.findByText('A Jornada do Herói');
 
     await user.click(screen.getByRole('button', { name: 'Opções do livro' }));
-    const importBtn = screen.getByRole('menuitem', { name: /importar docx\/pdf/i });
+    const importBtn = screen.getByRole('menuitem', { name: 'Importar documento' });
     await user.click(importBtn);
 
     expect(

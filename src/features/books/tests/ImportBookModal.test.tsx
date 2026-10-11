@@ -30,6 +30,50 @@ describe('ImportBookModal', () => {
     vi.restoreAllMocks();
   });
 
+  it.each(['md', 'markdown', 'txt', 'text', 'html', 'htm'])(
+    'aceita %s na seleção e no arrastar/soltar',
+    async (extension) => {
+      const parser = vi
+        .spyOn(documentParserService, 'parseDocumentFile')
+        .mockResolvedValue({ title: 'Documento', chapters: mockChapters, totalWords: 370 });
+      const user = userEvent.setup();
+      render(
+        <ImportBookModal open={true} onClose={vi.fn()} authorId="user-1" onSuccess={vi.fn()} />,
+      );
+      const input = screen.getByLabelText('Arquivo do manuscrito');
+      expect(input).toHaveAttribute('accept', documentParserService.DOCUMENT_EXTENSIONS.join(','));
+      const file = new File(['texto'], 'documento.' + extension, { type: '' });
+      await user.upload(input, file);
+      expect(await screen.findByDisplayValue('Documento')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: /trocar/i }));
+      fireEvent.drop(
+        screen.getByText(/Clique ou arraste um arquivo/i).closest('[role="button"]')!,
+        { dataTransfer: { files: [file] } },
+      );
+      expect(await screen.findByDisplayValue('Documento')).toBeInTheDocument();
+      expect(parser).toHaveBeenCalledTimes(2);
+      expect(parser).toHaveBeenLastCalledWith(file);
+    },
+  );
+
+  it('permite selecionar outro arquivo depois de um erro de conteúdo vazio', async () => {
+    const parser = vi
+      .spyOn(documentParserService, 'parseDocumentFile')
+      .mockRejectedValueOnce(new Error('O documento está vazio ou não contém texto para importar.'))
+      .mockResolvedValueOnce({ title: 'Recuperado', chapters: mockChapters, totalWords: 370 });
+    render(<ImportBookModal open={true} onClose={vi.fn()} authorId="user-1" onSuccess={vi.fn()} />);
+    fireEvent.change(screen.getByLabelText('Arquivo do manuscrito'), {
+      target: { files: [new File([], 'vazio.txt')] },
+    });
+    expect(await screen.findByText(/O documento está vazio/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Importar \d/ })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Arquivo do manuscrito'), {
+      target: { files: [new File(['texto'], 'novo.md')] },
+    });
+    expect(await screen.findByDisplayValue('Recuperado')).toBeInTheDocument();
+    expect(parser).toHaveBeenCalledTimes(2);
+  });
+
   it('nao renderiza nada quando open e false', () => {
     const { container } = render(
       <ImportBookModal open={false} onClose={vi.fn()} authorId="user-1" onSuccess={vi.fn()} />,
@@ -154,7 +198,7 @@ describe('ImportBookModal', () => {
     fireEvent.change(fileInput, { target: { files: [file] } });
 
     expect(
-      await screen.findByText(/Por favor, selecione um arquivo válido no formato .docx ou .pdf/i),
+      await screen.findByText(/Por favor, selecione um arquivo válido: DOCX, PDF, Markdown/i),
     ).toBeInTheDocument();
   });
 

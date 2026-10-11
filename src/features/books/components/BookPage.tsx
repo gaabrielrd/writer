@@ -237,7 +237,7 @@ export function BookPage() {
                   </DropdownItem>
                   <DropdownItem onSelect={() => setIsImportOpen(true)}>
                     <Upload className="icon icon-sm" aria-hidden="true" />
-                    Importar DOCX/PDF
+                    Importar documento
                   </DropdownItem>
                   <DropdownItem onSelect={() => setIsFormOpen(true)}>
                     <Edit2 className="icon icon-sm" aria-hidden="true" />

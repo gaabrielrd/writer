@@ -175,7 +175,16 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
   atomicamente. Veja [publication-security.md](publication-security.md).
 - **Chave BYOK:** Armazenada estritamente em `localStorage` do navegador do cliente através de repositório isolado em `src/features/ai-assistant/services/byokStorage.ts`.
 
-### Exportações
+### Importação de manuscritos
+
+A feature `books` analisa DOCX, PDF, Markdown, texto simples e HTML no cliente,
+através de `documentParserService`. A extração PDF usa o worker local do PDF.js
+e `pdfTextExtraction` para linhas, títulos e margens recorrentes. Os formatos
+estruturados reutilizam o sanitizador de prosa compartilhado. A revisão ocorre
+antes de chamar os serviços de criação de livro/capítulos. Consulte
+[importação de manuscritos](document-import.md) para formatos e limites.
+
+### Exportações de manuscritos
 
 - **Markdown:** Compilação direta do texto e metadados no cliente para arquivo `.md`.
 - **DOCX:** OOXML real empacotado client-side com JSZip, com estilos, listas e quebras de capítulo.

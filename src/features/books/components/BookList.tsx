@@ -69,7 +69,7 @@ export function BookList({ authorId }: BookListProps) {
               </Button>
               <Button variant="secondary" onClick={handleOpenImport}>
                 <Upload className="icon icon-sm" aria-hidden="true" />
-                Importar Documento (.docx, .pdf)
+                Importar Documento
               </Button>
             </div>
           }
@@ -105,7 +105,7 @@ export function BookList({ authorId }: BookListProps) {
           <Button
             variant="secondary"
             onClick={handleOpenImport}
-            title="Importar livro de arquivo .docx ou .pdf"
+            title="Importar livro de DOCX, PDF, Markdown, texto ou HTML"
           >
             <Upload className="icon icon-sm" aria-hidden="true" />
             Importar Documento

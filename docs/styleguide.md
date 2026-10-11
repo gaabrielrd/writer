@@ -119,7 +119,7 @@ Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
 
 A sinopse começa limitada a duas linhas. O controle discreto “Mais” expande o
 texto completo; “Menos” recolhe novamente e informa o estado por `aria-expanded`.
-As ações de exportar, importar DOCX/PDF, editar e excluir ficam no menu `...`
+As ações de exportar, importar documento, editar e excluir ficam no menu `...`
 rotulado “Opções do livro”. Fechar um diálogo aberto por esse menu devolve o foco
 ao botão de opções.
 
