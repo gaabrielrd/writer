@@ -8,6 +8,20 @@ import { lore, FIXTURE_TIME } from './data';
 
 const store = new Map(lore.map((entity) => [entity.id, structuredClone(entity)]));
 let sequence = 0;
+export function seedAssistedLore(
+  bookId: string,
+  entities: Omit<LoreEntity, 'bookId' | 'isPublic' | 'createdAt' | 'updatedAt'>[],
+) {
+  for (const entity of entities)
+    store.set(entity.id, {
+      ...entity,
+      bookId,
+      isPublic: false,
+      createdAt: FIXTURE_TIME,
+      updatedAt: FIXTURE_TIME,
+    } as LoreEntity);
+  emit();
+}
 const listeners = new Set<{
   scope: string | LoreScope;
   changed: (entities: LoreEntity[]) => void;

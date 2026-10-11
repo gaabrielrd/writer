@@ -123,6 +123,13 @@ Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
 
 ## Detalhes do livro
 
+A criação assistida usa página própria com progresso em cinco etapas, conversa
+e resumo lado a lado em telas largas, empilhados no celular. Revisão e fichas
+usam cards; edição reutiliza o formulário de lore por etapas, com visibilidade
+privada fixa. A capa conserva 2:3. A mudança de etapa move o foco ao título;
+durante operações, campos ficam bloqueados e o status é anunciado. Preços,
+expiração e recuperação de respostas incertas aparecem junto das ações.
+
 A sinopse começa limitada a duas linhas. O controle discreto “Mais” expande o
 texto completo; “Menos” recolhe novamente e informa o estado por `aria-expanded`.
 As ações de exportar, importar documento, editar e excluir ficam no menu `...`

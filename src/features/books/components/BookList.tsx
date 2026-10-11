@@ -67,6 +67,9 @@ export function BookList({ authorId }: BookListProps) {
                 <Plus className="icon icon-sm" aria-hidden="true" />
                 Criar Primeiro Livro
               </Button>
+              <Button variant="secondary" onClick={() => void navigate('/books/new/assisted')}>
+                Criar com IA
+              </Button>
               <Button variant="secondary" onClick={handleOpenImport}>
                 <Upload className="icon icon-sm" aria-hidden="true" />
                 Importar Documento
@@ -113,6 +116,9 @@ export function BookList({ authorId }: BookListProps) {
           <Button variant="primary" onClick={handleOpenCreate}>
             <Plus className="icon icon-sm" aria-hidden="true" />
             Novo Livro
+          </Button>
+          <Button variant="secondary" onClick={() => void navigate('/books/new/assisted')}>
+            Criar com IA
           </Button>
         </div>
       </div>

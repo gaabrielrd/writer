@@ -9,7 +9,10 @@ import styles from './BookNavigation.module.css';
 export function BookNavigation() {
   const { user } = useAuth();
   const { pathname } = useLocation();
-  const bookId = /^\/books\/([^/]+)(?:\/|$)/.exec(pathname)?.[1];
+  const bookId =
+    pathname === '/books/new/assisted'
+      ? undefined
+      : /^\/books\/([^/]+)(?:\/|$)/.exec(pathname)?.[1];
   const key = `${user?.uid ?? ''}:${bookId ?? ''}`;
   const [title, setTitle] = useState<{ key: string; text: string }>();
   useEffect(() => {

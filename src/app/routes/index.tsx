@@ -7,7 +7,7 @@ import { ImageLibraryPage } from '@/features/image-library';
 import { HomePage } from '@/features/home';
 import { LoginPage } from '@/features/auth';
 import { AuthorBookRoute } from '@/app/components/AuthorBookRoute';
-import { BookPage, ReaderView } from '@/features/books';
+import { AssistedBookPage, BookPage, ReaderView } from '@/features/books';
 import { LorePage } from '@/features/lore';
 import { EditorPage } from '@/features/editor';
 import { AISettingsPage } from '@/features/ai-assistant';
@@ -57,6 +57,7 @@ export const routes: RouteObject[] = [
       },
       { path: 'library', element: <ImageLibraryPage /> },
       { path: 'settings/ai', element: <AISettingsPage /> },
+      { path: 'books/new/assisted', element: <AssistedBookPage /> },
       { path: 'universes', element: <UniversePage /> },
       { path: 'universes/:universeId/lore', element: <UniverseLorePage /> },
       { path: 'read/:bookId', element: <ReaderView /> },

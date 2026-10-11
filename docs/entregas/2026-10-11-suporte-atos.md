@@ -132,7 +132,7 @@ reconhecimento automático de atos na importação; restauração de backup JSON
 - O diálogo final de salvar/imprimir PDF pertence ao navegador.
 - Build conserva avisos de tamanho de bundle e importação dinâmica ineficaz,
   sem falha dos gates; otimização de bundle fica fora do escopo.
-- Integração, pull request e CI remoto permanecem pendentes desta entrega local.
+- Pull request e CI remoto permanecem pendentes desta entrega local.
 - Aplicação e regras novas devem ser implantadas juntas antes de uso real.
   Nenhuma regra ou dado de produção foi alterado nesta execução.
 
@@ -154,7 +154,7 @@ valida a persona complementar na API pública e persiste seu vínculo junto do a
 O backup v4 mantém atos, sequência, personas utilizadas e seus vínculos;
 livros sem atos conservam a seleção das versões anteriores.
 
-- npm run validate: passou, 91 arquivos / 649 testes de frontend,
+- `npm run validate`: passou, 91 arquivos / 649 testes de frontend,
   68 testes de setup e 46 testes de backend.
 - Cobertura: 93,05% statements, 86,39% branches, 91,49% functions,
   95,02% lines, acima dos limites.
@@ -168,3 +168,24 @@ livros sem atos conservam a seleção das versões anteriores.
 
 A validação foi repetida após corrigir a tipagem de um teste e o isolamento
 dos mocks. Os logs anteriores não representam o estado final.
+
+## Integração na master
+
+O estado final combina atos/personas com a master 79f498e, que já contém
+o checkout ativo e a criação assistida. O único conflito desta combinação,
+na fixture de livros do navegador, preserva tanto atos quanto o seed da
+criação assistida. A transferência para master usa avanço direto do estado
+já combinado e validado na worktree de atos.
+
+- `npm run validate`: passou, 93 arquivos / 660 testes de frontend,
+  68 testes de setup e 63 testes de backend.
+- Cobertura: 93,04% statements, 86,21% branches, 91,51% functions,
+  95,06% lines.
+- Regras finais: 46 testes passaram no emulador local.
+- Navegador final: 30 cenários de atos/criação assistida passaram nos três
+  temas e em desktop/celular; a validação anterior de atos/personas permanece
+  registrada acima.
+- Revisão do diff e `git diff --check`: sem problemas.
+- Os commits locais preservam o trabalho de personas, a criação assistida,
+  a limpeza de fontes/skills e a implementação original de atos.
+- Nenhum push, pull request ou deploy foi realizado nesta integração.

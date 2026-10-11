@@ -59,6 +59,29 @@ test('browser cannot read or forge its own generation ledger or rate limits', as
   }
 });
 
+test('assisted sessions, operations, limits and receipts are server-only', async () => {
+  for (const suffix of [
+    'assistedSessions/session-1',
+    'assistedSessions/session-1/operations/op-1',
+    'assistedLimits/current',
+    'assistedCurrent/current',
+    'assistedReceipts/receipt-1',
+  ]) {
+    const path = `users/author/${suffix}`;
+    await environment.withSecurityRulesDisabled((context) =>
+      setDoc(doc(context.firestore(), path), { private: 'idea' }),
+    );
+    for (const context of [
+      environment.authenticatedContext('author'),
+      environment.authenticatedContext('other'),
+      environment.unauthenticatedContext(),
+    ]) {
+      await assertFails(getDoc(doc(context.firestore(), path)));
+      await assertFails(setDoc(doc(context.firestore(), path), { private: 'forged' }));
+    }
+  }
+});
+
 test('library metadata is owner-readable and all image mutations are server-only', async () => {
   const path = 'users/author/imageLibrary/image-0000000001';
   await environment.withSecurityRulesDisabled((context) =>

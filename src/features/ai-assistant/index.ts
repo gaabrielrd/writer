@@ -22,3 +22,5 @@ export type { OutOfCreditsDialogProps } from './components/OutOfCreditsDialog';
 export { BYOKSettingsDialog } from './components/BYOKSettingsDialog';
 export type { BYOKSettingsDialogProps } from './components/BYOKSettingsDialog';
 export { analyzeLoreWithBYOK } from './services/loreAnalysisClient';
+export * from './model/assistedBook';
+export * from './services/assistedBookService';
