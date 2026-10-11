@@ -27,6 +27,7 @@ import {
   LoadingState,
   PageHeader,
 } from '@/shared/ui';
+import { PersonaBindingDialog } from '@/features/ai-assistant';
 import { useAuth } from '@/features/auth';
 import { ExportDialog } from '@/features/editor';
 import { publishBook, unpublishBook } from '../services/publicationService';
@@ -62,6 +63,7 @@ export function BookPage() {
   const [loading, setLoading] = useState<boolean>(() => Boolean(bookId));
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('chapters');
+  const [isPersonaOpen, setIsPersonaOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [expandedSynopsisBookId, setExpandedSynopsisBookId] = useState<string | null>(null);
@@ -99,6 +101,19 @@ export function BookPage() {
       active = false;
     };
   }, [bookId]);
+  useEffect(() => {
+    if (!bookId || !user?.uid || !book?.id) return;
+    return bookService.subscribeWritingBindings(
+      bookId,
+      null,
+      (settings) => {
+        setBook((previous) =>
+          previous ? { ...previous, personaId: settings.personaId } : previous,
+        );
+      },
+      (cause) => setActionError(cause.message),
+    );
+  }, [bookId, user?.uid, book?.id]);
 
   const refreshBook = () => {
     if (!bookId) return;
@@ -236,6 +251,7 @@ export function BookPage() {
                     <Upload className="icon icon-sm" aria-hidden="true" />
                     Importar documento
                   </DropdownItem>
+                  <DropdownItem onSelect={() => setIsPersonaOpen(true)}>Persona de IA</DropdownItem>
                   <DropdownItem onSelect={() => setIsFormOpen(true)}>
                     <Edit2 className="icon icon-sm" aria-hidden="true" />
                     Editar
@@ -439,6 +455,21 @@ export function BookPage() {
             </Alert>
           )}
         </Dialog>
+      )}
+      {isPersonaOpen && user && (
+        <PersonaBindingDialog
+          ownerId={user.uid}
+          bookPersonaId={book.personaId}
+          mode="book"
+          onClose={() => {
+            setIsPersonaOpen(false);
+            restoreBookOptionsFocus();
+          }}
+          onSave={async (personaId) => {
+            await bookService.updateBook(book.id, { personaId });
+            setBook((previous) => (previous ? { ...previous, personaId } : previous));
+          }}
+        />
       )}
       {isExportOpen && (
         <ExportDialog

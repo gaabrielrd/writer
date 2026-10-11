@@ -26,6 +26,7 @@ import {
   OutOfCreditsDialog,
   useAISettings,
   useAIConfig,
+  type WritingPersonaContext,
 } from '@/features/ai-assistant';
 import { renderRichText, sanitizeRichText } from '@/shared/lib/sanitizeRichText';
 import {
@@ -42,6 +43,8 @@ import { useSelectionAnchor } from '../hooks/useSelectionAnchor';
 import styles from './RichEditor.module.css';
 
 export interface RichEditorProps {
+  writingPersona?: WritingPersonaContext;
+  aiUnavailableReason?: string | null;
   documentId?: string;
   content: string;
   onChange: (content: string) => void;
@@ -77,6 +80,8 @@ interface SelectionTarget {
 
 export function RichEditor({
   documentId,
+  writingPersona,
+  aiUnavailableReason,
   content,
   onChange,
   entities,
@@ -197,6 +202,7 @@ export function RichEditor({
     editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
   const isUsingBYOK = config.provider !== 'firebase_ai';
   const { suggestion, acceptSuggestion, discardSuggestion } = useAIAutocomplete({
+    writingPersona,
     typingRevision,
     content: text,
     cursorPosition,
@@ -205,7 +211,11 @@ export function RichEditor({
     userCredits,
     onCreditDeducted,
     onShowOutOfCredits: () => setIsOutOfCreditsOpen(true),
-    enabled: viewMode === 'write' && !accepting && Boolean(editor?.state.selection.empty),
+    enabled:
+      !aiUnavailableReason &&
+      viewMode === 'write' &&
+      !accepting &&
+      Boolean(editor?.state.selection.empty),
   });
 
   useEffect(() => {
@@ -584,6 +594,8 @@ export function RichEditor({
         </div>
         <div className={styles.toolGroup}>
           <AIActionMenu
+            writingPersona={writingPersona}
+            aiUnavailableReason={aiUnavailableReason}
             selectionAnchor={selectionAnchor}
             onOpenChange={setIsAssistantOpen}
             onReturnFocus={() => {

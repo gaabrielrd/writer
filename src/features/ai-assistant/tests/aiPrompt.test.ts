@@ -72,7 +72,19 @@ describe('aiPrompt model', () => {
       });
 
       expect(prompt).toContain('Reescreva o trecho selecionado');
+      expect(prompt).toContain('a riqueza sensorial, a musicalidade da prosa');
       expect(prompt).toContain('Ele andou até a porta e abriu.');
+    });
+
+    it('aprimora segundo a persona sem forçar sensorialidade', () => {
+      const { systemInstruction, prompt } = buildActionPrompt({
+        action: 'improve_style',
+        selectedText: 'Ele andou até a porta e abriu.',
+        writingPersona: { instruction: 'Use verbos fortes e prosa econômica.', version: '1' },
+      });
+      expect(systemInstruction).toContain('Use verbos fortes e prosa econômica.');
+      expect(prompt).toContain('atributos efetivos da persona');
+      expect(prompt).not.toContain('riqueza sensorial');
     });
 
     it('constroi prompt para checar coerencia com lore', () => {

@@ -188,3 +188,23 @@ describe('persistência de atos e ações em lote', () => {
     expect(mocks.update).not.toHaveBeenCalled();
   });
 });
+
+it('preserva a persona complementar ao criar capítulo dentro de um ato', async () => {
+  const personaComplement = {
+    personaId: 'preset-unsettling',
+    overrides: [{ traitId: 'tension', value: 0 }],
+  };
+  const created = await createOrganizedChapter('book', {
+    title: 'Cena',
+    actId: 'act',
+    personaComplement,
+  });
+  expect(created).toMatchObject({ actId: 'act', personaComplement });
+  expect(mocks.set).toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({
+      actId: 'act',
+      personaComplement,
+    }),
+  );
+});

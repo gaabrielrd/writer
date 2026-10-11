@@ -1,13 +1,17 @@
-import { useState, type ReactNode } from 'react';
-import { BYOKSettingsDialog } from './BYOKSettingsDialog';
+import { type ReactNode } from 'react';
+import { useNavigate, useLocation } from 'react-router';
 import { AISettingsContext } from '../hooks/useAISettings';
 
 export function AISettingsProvider({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   return (
-    <AISettingsContext.Provider value={() => setOpen(true)}>
+    <AISettingsContext.Provider
+      value={() => {
+        void navigate('/settings/ai', { state: { returnTo: location.pathname + location.search } });
+      }}
+    >
       {children}
-      {open && <BYOKSettingsDialog open onClose={() => setOpen(false)} />}
     </AISettingsContext.Provider>
   );
 }

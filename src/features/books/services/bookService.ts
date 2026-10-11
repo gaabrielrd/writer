@@ -1,3 +1,4 @@
+import { validateComplement, type PersonaComplement } from '@/features/ai-assistant';
 import {
   collection,
   doc,
@@ -10,6 +11,7 @@ import {
   where,
   orderBy,
   runTransaction,
+  onSnapshot,
 } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
 import {
@@ -35,6 +37,7 @@ import {
 
 interface StoredBookDoc {
   universeId?: string | null;
+  personaId?: string | null;
   authorId: string;
   title: string;
   genre?: string;
@@ -49,6 +52,7 @@ interface StoredBookDoc {
 
 interface StoredChapterDoc {
   actId?: string | null;
+  personaComplement?: PersonaComplement | null;
   bookId: string;
   title: string;
   order: number;
@@ -68,6 +72,7 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
     return {
       id: docSnap.id,
       authorId: data.authorId,
+      ...(data.personaId ? { personaId: data.personaId } : {}),
       ...(data.universeId ? { universeId: data.universeId } : {}),
       title: data.title,
       genre: data.genre ?? '',
@@ -94,6 +99,7 @@ export async function getBook(bookId: string): Promise<Book | null> {
   return {
     id: snapshot.id,
     authorId: data.authorId,
+    ...(data.personaId ? { personaId: data.personaId } : {}),
     ...(data.universeId ? { universeId: data.universeId } : {}),
     title: data.title,
     genre: data.genre ?? '',
@@ -191,6 +197,9 @@ export async function listChapters(bookId: string): Promise<Chapter[]> {
       id: docSnap.id,
       bookId,
       ...(data.actId ? { actId: data.actId } : {}),
+      ...(data.personaComplement
+        ? { personaComplement: validateComplement(data.personaComplement) }
+        : {}),
       title: data.title,
       order: data.order ?? 0,
       wordCount: data.wordCount ?? 0,
@@ -213,6 +222,9 @@ export async function getChapter(bookId: string, chapterId: string): Promise<Cha
     id: snapshot.id,
     bookId,
     ...(data.actId ? { actId: data.actId } : {}),
+    ...(data.personaComplement
+      ? { personaComplement: validateComplement(data.personaComplement) }
+      : {}),
     title: data.title,
     order: data.order ?? 0,
     wordCount: data.wordCount ?? 0,
@@ -223,7 +235,12 @@ export async function getChapter(bookId: string, chapterId: string): Promise<Cha
 }
 
 export async function createChapter(bookId: string, input: CreateChapterInput): Promise<Chapter> {
-  return createOrganizedChapter(bookId, input);
+  return createOrganizedChapter(bookId, {
+    ...input,
+    ...(input.personaComplement
+      ? { personaComplement: validateComplement(input.personaComplement) }
+      : {}),
+  });
 }
 
 export async function updateChapter(
@@ -231,6 +248,8 @@ export async function updateChapter(
   chapterId: string,
   input: UpdateChapterInput,
 ): Promise<void> {
+  if ('personaComplement' in input)
+    input = { ...input, personaComplement: validateComplement(input.personaComplement) };
   const chapterRef = doc(firestore, 'books', bookId, 'chapters', chapterId);
   const content = input.content;
   const wordCount =
@@ -316,4 +335,60 @@ export async function recalculateBookWordCount(bookId: string): Promise<number> 
   await updateDoc(bookRef, { wordCount: totalWords, updatedAt: Date.now() });
 
   return totalWords;
+}
+export function subscribeWritingBindings(
+  bookId: string,
+  chapterId: string | null,
+  onChange: (settings: {
+    personaId?: string | null;
+    personaComplement?: PersonaComplement | null;
+  }) => void,
+  onError: (error: Error) => void,
+): () => void {
+  let bookReady = false;
+  let chapterReady = chapterId === null;
+  let failed = false;
+  let personaId: string | null = null;
+  let personaComplement: PersonaComplement | null = null;
+  const failure = (error: Error) => {
+    failed = true;
+    onError(error);
+  };
+  const notify = () => {
+    if (!failed && bookReady && chapterReady)
+      onChange(chapterId ? { personaId, personaComplement } : { personaId });
+  };
+  const stopBook = onSnapshot(
+    doc(firestore, 'books', bookId),
+    (snapshot) => {
+      if (!snapshot.exists()) {
+        failure(new Error('Livro indisponível.'));
+        return;
+      }
+      personaId = (snapshot.data() as StoredBookDoc).personaId ?? null;
+      bookReady = true;
+      notify();
+    },
+    failure,
+  );
+  const stopChapter = chapterId
+    ? onSnapshot(
+        doc(firestore, 'books', bookId, 'chapters', chapterId),
+        (snapshot) => {
+          try {
+            if (!snapshot.exists()) throw new Error('Capítulo indisponível.');
+            personaComplement = validateComplement(snapshot.data().personaComplement);
+            chapterReady = true;
+            notify();
+          } catch (error) {
+            failure(error instanceof Error ? error : new Error('Vínculo inválido.'));
+          }
+        },
+        failure,
+      )
+    : () => undefined;
+  return () => {
+    stopBook();
+    stopChapter();
+  };
 }

@@ -4,6 +4,7 @@ import { AIActionMenu } from '../components/AIActionMenu';
 import * as aiClientModule from '../services/aiClient';
 import * as creditsServiceModule from '../services/creditsService';
 import * as byokStorageModule from '../services/byokStorage';
+import { DEFAULT_PERSONAS, resolveWritingPersona } from '../model/persona';
 
 vi.mock('../services/aiClient');
 vi.mock('../services/creditsService');
@@ -16,6 +17,60 @@ describe('AIActionMenu component', () => {
     vi.mocked(byokStorageModule.getBYOKConfig).mockReturnValue({
       provider: 'firebase_ai',
     });
+  });
+
+  it('aplica persona às ações e invalida o resultado ao mudar a configuração, sem débito', async () => {
+    const insert = vi.fn();
+    vi.mocked(aiClientModule.generateAIResponse).mockResolvedValue('Resposta antiga.');
+    const props = {
+      selectedText: 'Texto selecionado.',
+      userId: 'author',
+      userCredits: 10,
+      onInsertText: insert,
+      onReplaceSelection: insert,
+    };
+    const view = render(
+      <AIActionMenu
+        {...props}
+        writingPersona={resolveWritingPersona(DEFAULT_PERSONAS, 'preset-incisive')}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }));
+    fireEvent.click(screen.getByRole('button', { name: /Aprimorar Estilo/ }));
+    await screen.findByText('Resposta antiga.');
+    expect(aiClientModule.generateAIResponse).toHaveBeenCalledWith(
+      expect.objectContaining({
+        systemInstruction: expect.stringContaining('Concisão: 95/100') as string,
+      }),
+    );
+    view.rerender(
+      <AIActionMenu
+        {...props}
+        writingPersona={resolveWritingPersona(DEFAULT_PERSONAS, 'preset-intimate')}
+      />,
+    );
+    expect(screen.queryByText('Resposta antiga.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Substituir Seleção' })).not.toBeInTheDocument();
+    const initialPersona = resolveWritingPersona(DEFAULT_PERSONAS, 'preset-incisive');
+    view.rerender(<AIActionMenu {...props} writingPersona={initialPersona} />);
+    expect(screen.queryByText('Resposta antiga.')).not.toBeInTheDocument();
+    expect(aiClientModule.generateAIResponse).toHaveBeenCalledTimes(1);
+    vi.mocked(aiClientModule.generateAIResponse).mockResolvedValue('Resposta nova.');
+    fireEvent.click(screen.getByRole('button', { name: /Aprimorar Estilo/ }));
+    await screen.findByText('Resposta nova.');
+    view.rerender(
+      <AIActionMenu
+        {...props}
+        writingPersona={initialPersona}
+        aiUnavailableReason="Falha de leitura"
+      />,
+    );
+    expect(screen.queryByText('Resposta nova.')).not.toBeInTheDocument();
+    view.rerender(<AIActionMenu {...props} writingPersona={initialPersona} />);
+    expect(screen.queryByText('Resposta nova.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Substituir Seleção' })).not.toBeInTheDocument();
+    expect(creditsServiceModule.deductCredit).not.toHaveBeenCalled();
+    expect(insert).not.toHaveBeenCalled();
   });
 
   it('abre o menu, executa acao de continuar cena e insere no texto', async () => {

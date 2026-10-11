@@ -42,7 +42,7 @@ PDF, DOCX e Markdown usam a mesma sequência e um cabeçalho por ato preenchido,
 com capítulos subordinados. Exportar um capítulo vinculado inclui seu ato.
 Capítulos sem ato não recebem um cabeçalho fictício de ato na exportação.
 O backup JSON com atos usa versão 4 e guarda também atos vazios, datas e vínculos.
-Livros sem atos conservam as versões anteriores. A aplicação não oferece
+A versão 4 preserva também as personas utilizadas e os vínculos do livro e dos capítulos.\nLivros sem atos conservam as versões anteriores (v3 quando usam personas). A aplicação não oferece
 restauração de backup JSON; reconhecimento de atos na importação fica fora do escopo.
 
 ## Persistência e limites

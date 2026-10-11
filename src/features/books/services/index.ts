@@ -1,5 +1,11 @@
 export * from './bookService';
-export * from './chapterOrganizationService';
+export {
+  listActs,
+  createAct,
+  moveChaptersToAct,
+  deleteChapters,
+  MAX_CHAPTER_SELECTION,
+} from './chapterOrganizationService';
 export * from './documentParserService';
 
 export * from './publicBookService';

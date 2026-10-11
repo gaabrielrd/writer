@@ -4,7 +4,12 @@ import { fixtureDetections } from './loreAnalysisService';
 let credits = author.credits;
 
 // Keep autocomplete quiet and deterministic; the production hook and menus still render.
-export function generateAIResponse(options?: { json?: boolean; prompt?: string }): Promise<string> {
+export function generateAIResponse(options?: {
+  json?: boolean;
+  prompt?: string;
+  systemInstruction?: string;
+}): Promise<string> {
+  sessionStorage.setItem('writer_fixture_ai_system', options?.systemInstruction ?? '');
   if (
     options?.prompt?.includes('[INSTRUÇÃO]:') &&
     sessionStorage.getItem('writer_fixture_ai_actions') === 'true'

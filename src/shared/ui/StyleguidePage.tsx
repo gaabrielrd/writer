@@ -4,6 +4,7 @@ import {
   Button,
   Input,
   Textarea,
+  Slider,
   Badge,
   Card,
   Dialog,
@@ -29,6 +30,7 @@ export function StyleguidePage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [lastAction, setLastAction] = useState('');
+  const [sliderValue, setSliderValue] = useState(50);
 
   return (
     <div className="flex flex-col gap-8 pb-16">
@@ -191,6 +193,14 @@ export function StyleguidePage() {
             <p className="text-sm py-2">
               Este diálogo se adapta automaticamente a qualquer tema (Claro, Escuro ou Sépia).
             </p>
+            <Slider
+              label="Intensidade de exemplo"
+              value={sliderValue}
+              onValueChange={setSliderValue}
+              low="Discreta"
+              high="Marcante"
+              description="Controle acessível de 0 a 100, operável por teclado."
+            />
             <section className="flex flex-col gap-4">
               <h2 className="text-xl font-bold">Menus e dicas</h2>
               <div className="flex flex-wrap gap-3">

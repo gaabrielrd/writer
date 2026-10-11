@@ -171,6 +171,13 @@ test('mantém a aparência da página do styleguide', async ({ page }) => {
 test('demonstra menu e tooltip dentro do modal do catálogo', async ({ page }) => {
   await page.goto('/styleguide');
   await page.getByRole('button', { name: 'Abrir Modal de Demonstração' }).click();
+  const slider = page.getByRole('slider', { name: 'Intensidade de exemplo' });
+  await expect(slider).toHaveValue('50');
+  await slider.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(slider).toHaveValue('51');
+  await page.keyboard.press('End');
+  await expect(slider).toHaveValue('100');
   const trigger = page.getByRole('button', { name: 'Abrir menu' });
   await trigger.focus();
   await page.keyboard.press('Enter');

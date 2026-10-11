@@ -1,8 +1,7 @@
 import * as organization from '../services/chapterOrganizationService';
-vi.mock('../services/chapterOrganizationService', async () => ({
-  ...(await vi.importActual<typeof import('../services/chapterOrganizationService')>(
-    '../services/chapterOrganizationService',
-  )),
+vi.mock('../services/chapterOrganizationService', () => ({
+  MAX_CHAPTER_SELECTION: 200,
+  createOrganizedChapter: vi.fn(),
   listActs: vi.fn(() => Promise.resolve([])),
   createAct: vi.fn(),
   moveChaptersToAct: vi.fn(),

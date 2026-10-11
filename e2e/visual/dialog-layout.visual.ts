@@ -1,7 +1,13 @@
 import type { Locator, Page } from '@playwright/test';
 import { chooseDropdown } from '../dropdown';
 import { author, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
-import { capture, expect, expectDialogWithinViewport, test } from './support';
+import {
+  capture,
+  expect,
+  expectDialogWithinViewport,
+  expectNoHorizontalOverflow,
+  test,
+} from './support';
 
 async function checkScroll(page: Page, dialog: Locator) {
   await expect(dialog).toBeVisible();
@@ -81,23 +87,31 @@ test('importação extensa usa uma única área de rolagem', async ({ page }, te
   await capture(page, testInfo, 'modal-importacao-ultimo-capitulo');
 });
 
-test('preferências de IA em 320px enviam o formulário pelo footer fixo', async ({
-  page,
-}, testInfo) => {
+test('preferências de IA na página com abas salvam em 320px', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto('/');
   await page.getByRole('button', { name: new RegExp(author.displayName!) }).click();
   await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
+  await page.getByRole('tab', { name: 'Provedor', exact: true }).click();
+  await expect(page).toHaveURL(/settings\/ai\?tab=provider/);
   await chooseDropdown(
     page.getByRole('combobox', { name: 'Provedor de IA' }),
     'OpenAI API (Chave Própria — BYOK)',
   );
   await page.getByLabel('Chave de API da OpenAI').fill('chave-ficticia');
-  const dialog = page.getByRole('dialog', { name: 'Configurações de Inteligência Artificial' });
-  await checkScroll(page, dialog);
+  const dialog = page.getByRole('tabpanel', { name: 'Provedor', exact: true });
+  await expectNoHorizontalOverflow(page, 'configuração de IA');
+  await dialog.getByRole('button', { name: 'Salvar Preferências' }).scrollIntoViewIfNeeded();
   await dialog.getByRole('button', { name: 'Salvar Preferências' }).click();
   await expect(dialog.getByText('Configurações salvas com sucesso!')).toBeVisible();
-  await capture(page, testInfo, 'modal-ia-footer-visivel');
+  await page.reload();
+  await expect(page.getByRole('tab', { name: 'Provedor', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(page.getByRole('combobox', { name: 'Provedor de IA' })).toContainText('OpenAI');
+  await expect(page.getByLabel('Chave de API da OpenAI')).toHaveValue('chave-ficticia');
+  await capture(page, testInfo, 'pagina-ia-abas-provedor');
 });
 
 test('assistente de IA sem footer mantém Executar inteiro no corpo em 320px', async ({

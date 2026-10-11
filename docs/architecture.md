@@ -245,3 +245,16 @@ e validam a versão pública de privacidade. Veja [universos](shared-lore.md) e
 A feature books inclui atos, vínculos de capítulos e ordem de leitura por grupos.
 Criação e ações em lote usam transações; publicação e exportações preservam a
 mesma sequência. Veja [atos](book-acts.md) e [ADR 0021](decisions/0021-book-acts.md).
+
+## Personas de escrita
+
+`ai-assistant` mantém catálogo, biblioteca privada, validação, resolução de
+instruções e formulários. A interface pública fornece tipos, resolver, biblioteca
+e seletor de vínculos. `AISettingsProvider` navega para `/settings/ai`;
+`AISettingsPage` mantém abas na URL, e a biblioteca abre detalhes/edição por linha.
+`books` persiste os vínculos e observa metadados; `editor`
+compõe a base/complementar e envia o contexto ao autocomplete e às ações.
+`shared/ui/Slider` permanece neutro em relação ao domínio. Personas usam revisões
+transacionais; alterações invalidam respostas antigas. Os originais e prompts
+permanecem privados e são preservados somente no backup JSON v3. Veja
+[personas de escrita](ai-personas.md).

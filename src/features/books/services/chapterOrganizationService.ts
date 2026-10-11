@@ -114,6 +114,7 @@ export async function createOrganizedChapter(
       title: input.title.trim() || 'Capítulo ' + order,
       order,
       ...(actId ? { actId } : {}),
+      ...(input.personaComplement ? { personaComplement: input.personaComplement } : {}),
       content,
       wordCount: countWords(content),
       createdAt: now,

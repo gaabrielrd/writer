@@ -1,3 +1,4 @@
+import { DEFAULT_PERSONAS, listPersonas, validatePersona } from '@/features/ai-assistant';
 import { listActs, groupChapters, listChapters, type Book, type Chapter } from '@/features/books';
 import { listLoreEntities } from '@/features/lore';
 import { getUniverse } from '@/features/universes';
@@ -58,10 +59,29 @@ export async function exportManuscript({
       ? await listLoreEntities({ kind: 'universe', id: book.universeId })
       : [];
     signal?.throwIfAborted();
+    const personaIds = new Set(
+      [book.personaId, ...chapters.map((chapter) => chapter.personaComplement?.personaId)].filter(
+        (id): id is string => Boolean(id),
+      ),
+    );
+    const customNeeded = [...personaIds].some(
+      (id) => !DEFAULT_PERSONAS.some((persona) => persona.id === id),
+    );
+    const library = [
+      ...DEFAULT_PERSONAS,
+      ...(customNeeded ? await listPersonas(book.authorId) : []),
+    ];
+    const personas = [...personaIds].map((id) => {
+      const persona = library.find((item) => item.id === id);
+      if (!persona) throw new Error('Uma persona utilizada está indisponível para backup.');
+      return validatePersona(persona);
+    });
+    signal?.throwIfAborted();
     const backup = {
       format: 'writer-book-backup',
-      version: acts.length ? 4 : universe ? 2 : 1,
+      version: acts.length ? 4 : personaIds.size ? 3 : universe ? 2 : 1,
       ...(acts.length ? { acts } : {}),
+      ...(personaIds.size ? { personas } : {}),
       ...(universe
         ? {
             universe: {
@@ -86,6 +106,7 @@ export async function exportManuscript({
         : {}),
       book: {
         id: book.id,
+        ...(book.personaId ? { personaId: book.personaId } : {}),
         ...(book.universeId ? { universeId: book.universeId } : {}),
         title: book.title,
         genre: book.genre ?? '',
@@ -97,8 +118,9 @@ export async function exportManuscript({
       },
       chapters: groupChapters(chapters, acts)
         .flatMap((group) => group.chapters)
-        .map(({ id, title, order, content, createdAt, updatedAt, actId }) => ({
+        .map(({ id, title, order, content, createdAt, updatedAt, actId, personaComplement }) => ({
           ...(actId ? { actId } : {}),
+          ...(personaComplement ? { personaComplement } : {}),
           id,
           title,
           order,

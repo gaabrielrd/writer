@@ -34,7 +34,7 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
       await context.addInitScript(
         ({ theme, isAuthenticated, sessionKey, dataState, dataStateKey }) => {
           localStorage.setItem('writer_theme', theme);
-          localStorage.removeItem('writer_byok_config');
+          // Each test has a fresh browser context; preserve saved preferences on reload.
           sessionStorage.setItem(sessionKey, String(isAuthenticated));
           sessionStorage.setItem(dataStateKey, dataState);
         },

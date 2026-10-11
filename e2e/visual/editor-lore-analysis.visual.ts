@@ -62,15 +62,9 @@ test('editor discreto, configurações no usuário e revisão do compêndio por 
   ).toHaveCount(0);
   await page.getByRole('button', { name: new RegExp(author.displayName!) }).click();
   await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
-  await expect(
-    page.getByRole('heading', { name: 'Configurações de Inteligência Artificial' }),
-  ).toBeVisible();
-  await expectDialogWithinViewport(page);
-  await page
-    .getByRole('dialog')
-    .locator('[data-slot="dialog-footer"]')
-    .getByRole('button', { name: 'Fechar', exact: true })
-    .click();
+  await expect(page.getByRole('heading', { name: 'Inteligência artificial' })).toBeVisible();
+  await page.getByRole('link', { name: 'Voltar ao editor' }).click();
+  await expect(editor).toBeVisible();
   await editor.fill('Nara encontra o Farol do Norte.');
   await page.getByRole('button', { name: 'Compêndio', exact: true }).click();
   await capture(page, testInfo, 'editor-profissional');

@@ -1,5 +1,11 @@
 export * from './model';
+export * from './model/persona';
+export { PersonaBindingDialog } from './components/PersonaBindingDialog';
+export { ChapterPersonaDialog } from './components/ChapterPersonaDialog';
+export { usePersonaLibrary } from './hooks/usePersonaLibrary';
+export { listPersonas, savePersona } from './services/personaService';
 export { AISettingsProvider } from './components/AISettingsProvider';
+export { AISettingsPage } from './components/AISettingsPage';
 export { useAISettings } from './hooks/useAISettings';
 export { useAIConfig } from './hooks/useAIConfig';
 export * from './services';

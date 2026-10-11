@@ -145,3 +145,26 @@ reconhecimento automático de atos na importação; restauração de backup JSON
 5. Publicar explicitamente e conferir sumário e navegação entre atos.
 6. Exportar PDF, DOCX e Markdown; conferir cabeçalhos e sequência.
 7. Conferir o backup JSON e repetir a interface em 320 px e nos três temas.
+
+## Compatibilidade com o checkout ativo
+
+A preparação da integração recebeu o estado 237b63d do checkout ativo,
+preservando personas e a limpeza de fontes/skills. Criação de capítulos
+valida a persona complementar na API pública e persiste seu vínculo junto do ato.
+O backup v4 mantém atos, sequência, personas utilizadas e seus vínculos;
+livros sem atos conservam a seleção das versões anteriores.
+
+- npm run validate: passou, 91 arquivos / 649 testes de frontend,
+  68 testes de setup e 46 testes de backend.
+- Cobertura: 93,05% statements, 86,39% branches, 91,49% functions,
+  95,02% lines, acima dos limites.
+- Regras combinadas com personas: 45 testes passaram no emulador local.
+- Navegador: 36 cenários de atos/personas passaram nos três temas,
+  desktop/celular, incluindo 320 px, publicação, PDF e DOCX.
+- Novos testes verificam criação com persona e ato, rejeição de persona
+  inválida antes da persistência e backup v4 com ambos os recursos.
+- Mocks de organização nos testes de interface foram isolados para evitar
+  carregar serviços reais durante a preparação do mock.
+
+A validação foi repetida após corrigir a tipagem de um teste e o isolamento
+dos mocks. Os logs anteriores não representam o estado final.

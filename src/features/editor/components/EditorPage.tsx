@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import {
   ArrowLeft,
@@ -11,7 +11,16 @@ import {
 } from 'lucide-react';
 import { Alert, Button, Dialog, ErrorState, LoadingState } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
-import { getBook, listChapters, getChapter, type Book, type Chapter } from '@/features/books';
+import {
+  getBook,
+  listChapters,
+  getChapter,
+  updateChapter,
+  updateBook,
+  subscribeWritingBindings,
+  type Book,
+  type Chapter,
+} from '@/features/books';
 import {
   listLoreEntities,
   createLoreEntity,
@@ -22,6 +31,11 @@ import {
   type UpdateLoreEntityInput,
   type LoreEntity,
 } from '@/features/lore';
+import {
+  ChapterPersonaDialog,
+  resolveWritingPersona,
+  usePersonaLibrary,
+} from '@/features/ai-assistant';
 import { clearLocalDraft, readLocalDraft } from '../services/localDraftStorage';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { BusyNavigationGuard } from './BusyNavigationGuard';
@@ -48,6 +62,25 @@ function EditorSession() {
   const [book, setBook] = useState<Book | null>(null);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [chapter, setChapter] = useState<Chapter | null>(null);
+  const [personaDialog, setPersonaDialog] = useState(false);
+  const personaButton = useRef<HTMLButtonElement | null>(null);
+  const [bindingError, setBindingError] = useState<string | null>(null);
+  const [bindingAttempt, setBindingAttempt] = useState(0);
+  const hasPersona = Boolean(book?.personaId || chapter?.personaComplement);
+  const library = usePersonaLibrary(hasPersona ? user?.uid : null);
+  let personaError = bindingError;
+  let writingPersona = { instruction: '', version: '' };
+  try {
+    writingPersona = resolveWritingPersona(
+      library.personas,
+      book?.personaId,
+      chapter?.personaComplement,
+    );
+  } catch (cause) {
+    personaError = cause instanceof Error ? cause.message : 'Persona indisponível.';
+  }
+  if (hasPersona && library.loading) personaError = 'Carregando a configuração de personas...';
+  else if (hasPersona && library.error) personaError = library.error;
   const [loreEntities, setLoreEntities] = useState<LoreEntity[]>([]);
   const [globalLoreEntities, setGlobalLoreEntities] = useState<LoreEntity[]>([]);
   const [globalLoreError, setGlobalLoreError] = useState<string | null>(null);
@@ -103,6 +136,39 @@ function EditorSession() {
     enabled: chapter !== null,
     onSaved: handleSaved,
   });
+  useEffect(() => {
+    if (!bookId || !chapterId || !user?.uid || !book?.id || !chapter?.id) return;
+    let active = true;
+    const stop = subscribeWritingBindings(
+      bookId,
+      chapterId,
+      (settings) => {
+        if (!active) return;
+        if ('personaId' in settings)
+          setBook((previous) =>
+            previous && previous.personaId !== settings.personaId
+              ? { ...previous, personaId: settings.personaId }
+              : previous,
+          );
+        if ('personaComplement' in settings)
+          setChapter((previous) =>
+            previous &&
+            JSON.stringify(previous.personaComplement) !==
+              JSON.stringify(settings.personaComplement)
+              ? { ...previous, personaComplement: settings.personaComplement }
+              : previous,
+          );
+        setBindingError(null);
+      },
+      (cause) => {
+        if (active) setBindingError(cause.message);
+      },
+    );
+    return () => {
+      active = false;
+      stop();
+    };
+  }, [bookId, chapterId, user?.uid, book?.id, chapter?.id, bindingAttempt]);
 
   useEffect(() => {
     let active = true;
@@ -345,6 +411,15 @@ function EditorSession() {
         </div>
 
         <div className={styles.topBarRight}>
+          <Button
+            variant="secondary"
+            disabled={isAcceptingAI}
+            ref={personaButton}
+            title={personaError ?? 'Configurar personas de escrita'}
+            onClick={() => setPersonaDialog(true)}
+          >
+            Persona
+          </Button>
           <ExportButton book={book} currentChapter={chapter} currentContent={content} />
 
           <div className={styles.saveStatusWrapper} aria-live="polite">
@@ -415,7 +490,6 @@ function EditorSession() {
           </div>
         </div>
       </header>
-
       <section className={styles.workspace} aria-label="Espaço de escrita">
         {loreRefreshError && (
           <Alert variant="warning">
@@ -434,6 +508,8 @@ function EditorSession() {
           </Alert>
         )}
         <RichEditor
+          writingPersona={writingPersona}
+          aiUnavailableReason={personaError}
           onBusyChange={handleBusyChange}
           documentId={chapter.id}
           content={content}
@@ -464,6 +540,31 @@ function EditorSession() {
           onUpdateEntity={handleUpdateLoreEntity}
         />
       </section>
+      {personaDialog && user && (
+        <ChapterPersonaDialog
+          ownerId={user.uid}
+          bookPersonaId={book.personaId}
+          complement={chapter.personaComplement}
+          error={personaError}
+          instruction={writingPersona.instruction}
+          onRetry={() => {
+            library.retry();
+            setBindingAttempt((value) => value + 1);
+          }}
+          onClose={() => {
+            setPersonaDialog(false);
+            requestAnimationFrame(() => personaButton.current?.focus());
+          }}
+          onSaveBook={async (personaId) => {
+            await updateBook(book.id, { personaId });
+            setBook((previous) => (previous ? { ...previous, personaId } : previous));
+          }}
+          onSaveChapter={async (personaComplement) => {
+            await updateChapter(book.id, chapter.id, { personaComplement });
+            setChapter((previous) => (previous ? { ...previous, personaComplement } : previous));
+          }}
+        />
+      )}
       {isAnalysisOpen && (
         <LoreAnalysisDialog
           bookId={book.id}

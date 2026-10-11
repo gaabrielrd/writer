@@ -1,4 +1,6 @@
 import { getUniverse } from '@/features/universes';
+import { DEFAULT_PERSONAS, listPersonas } from '@/features/ai-assistant';
+import * as personaAPI from '@/features/ai-assistant';
 vi.mock('@/features/universes', () => ({ getUniverse: vi.fn() }));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { listChapters, listActs } from '@/features/books';
@@ -21,11 +23,61 @@ vi.mock('../services/exportDocx', () => ({ exportDocx: vi.fn() }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.spyOn(personaAPI, 'listPersonas').mockResolvedValue([]);
   vi.mocked(listChapters).mockResolvedValue([exportChapter]);
   vi.mocked(listActs).mockResolvedValue([]);
   vi.mocked(listLoreEntities).mockResolvedValue([]);
   vi.mocked(exportPdf).mockResolvedValue();
   vi.mocked(exportDocx).mockResolvedValue(new Blob(['docx']));
+});
+
+it('preserva personas e vínculos no backup v3 sem exportar segredos ou a biblioteca inteira', async () => {
+  const custom = { ...DEFAULT_PERSONAS[1]!, id: 'custom-test', name: 'Minha voz' };
+  vi.mocked(listPersonas).mockResolvedValue([
+    { ...custom, apiKey: 'never-export' } as typeof custom,
+    { ...custom, id: 'custom-unused' },
+  ]);
+  vi.mocked(listChapters).mockResolvedValue([
+    {
+      ...exportChapter,
+      personaComplement: {
+        personaId: 'preset-unsettling',
+        overrides: [{ traitId: 'tension', value: 0 }],
+      },
+    },
+  ]);
+  await exportManuscript({
+    book: { ...exportBook, personaId: custom.id },
+    scope: 'book',
+    format: 'json',
+  });
+  const raw = await downloadedText();
+  expect(JSON.parse(raw)).toMatchObject({
+    version: 3,
+    book: { personaId: 'custom-test' },
+    chapters: [
+      {
+        personaComplement: {
+          personaId: 'preset-unsettling',
+          overrides: [{ traitId: 'tension', value: 0 }],
+        },
+      },
+    ],
+    personas: [
+      { id: 'custom-test', instructions: custom.instructions },
+      { id: 'preset-unsettling' },
+    ],
+  });
+  expect(raw).not.toContain('never-export');
+  expect(raw).not.toContain('custom-unused');
+  vi.mocked(listPersonas).mockResolvedValue([]);
+  await expect(
+    exportManuscript({
+      book: { ...exportBook, personaId: 'custom-test' },
+      scope: 'book',
+      format: 'json',
+    }),
+  ).rejects.toThrow('indisponível');
 });
 
 async function downloadedText(): Promise<string> {
@@ -286,5 +338,26 @@ it('inclui atos e vínculos no backup 4 sem perder o formato dos livros antigos'
     version: 4,
     acts: [{ id: 'act', name: null }],
     chapters: [{ actId: 'act' }],
+  });
+});
+
+it('preserva atos, sequência e personas utilizadas juntos no backup v4', async () => {
+  const personaId = DEFAULT_PERSONAS[0]!.id;
+  const personaComplement = { personaId: DEFAULT_PERSONAS[1]!.id, overrides: [] };
+  vi.mocked(listActs).mockResolvedValue([
+    { id: 'act', name: null, order: 1, createdAt: 1, updatedAt: 1 },
+  ]);
+  vi.mocked(listChapters).mockResolvedValue([
+    { ...exportChapter, id: 'unassigned', order: 1 },
+    { ...exportChapter, id: 'assigned', order: 5, actId: 'act', personaComplement },
+  ]);
+  await exportManuscript({ book: { ...exportBook, personaId }, scope: 'book', format: 'json' });
+  const backup: unknown = JSON.parse(await downloadedText());
+  expect(backup).toMatchObject({
+    version: 4,
+    book: { personaId },
+    acts: [{ id: 'act' }],
+    chapters: [{ id: 'assigned', actId: 'act', personaComplement }, { id: 'unassigned' }],
+    personas: [{ id: personaId }, { id: personaComplement.personaId }],
   });
 });

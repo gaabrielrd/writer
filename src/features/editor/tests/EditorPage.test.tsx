@@ -8,6 +8,7 @@ import * as bookService from '@/features/books';
 import * as loreService from '@/features/lore';
 import type { Book, Chapter } from '@/features/books';
 import type { LoreEntity } from '@/features/lore';
+import * as personaAPI from '@/features/ai-assistant';
 
 vi.mock('@/features/auth', async () => {
   const actual = await vi.importActual<typeof import('@/features/auth')>('@/features/auth');
@@ -85,6 +86,106 @@ describe('EditorPage', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(bookService, 'subscribeWritingBindings').mockReturnValue(() => undefined);
+  });
+
+  it('sincroniza personas sem substituir o texto e salva vínculos pelo editor, com retry de configuração', async () => {
+    const user = userEvent.setup({ delay: null });
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    vi.spyOn(bookService, 'getChapter').mockResolvedValue(mockChapters[0] ?? null);
+    vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue(mockEntities);
+    const updateBook = vi.spyOn(bookService, 'updateBook').mockResolvedValue();
+    const updateChapter = vi.spyOn(bookService, 'updateChapter').mockResolvedValue();
+    const retry = vi.fn();
+    vi.spyOn(personaAPI, 'usePersonaLibrary').mockReturnValue({
+      personas: personaAPI.DEFAULT_PERSONAS,
+      loading: false,
+      error: null,
+      retry,
+    });
+    vi.spyOn(personaAPI, 'ChapterPersonaDialog').mockImplementation((props) => (
+      <div role="dialog" aria-label="Persona">
+        <p>Livro definido: {props.bookPersonaId}</p>
+        <p>Complemento definido: {props.complement?.personaId}</p>
+        <button onClick={() => void props.onSaveBook('preset-incisive').then(props.onClose)}>
+          Salvar persona do livro
+        </button>
+        <button
+          onClick={() =>
+            void props
+              .onSaveChapter({
+                personaId: 'preset-unsettling',
+                overrides: [{ traitId: 'tension', value: 100 }],
+              })
+              .then(props.onClose)
+          }
+        >
+          Salvar persona do capítulo
+        </button>
+        {props.error && (
+          <>
+            <p>{props.error}</p>
+            <button onClick={props.onRetry}>Tentar novamente</button>
+          </>
+        )}
+        <button onClick={props.onClose}>Fechar persona</button>
+      </div>
+    ));
+    let changed: Parameters<typeof bookService.subscribeWritingBindings>[2] = () => undefined;
+    let failed: (error: Error) => void = () => undefined;
+    vi.mocked(bookService.subscribeWritingBindings).mockImplementation(
+      (_book, _chapter, callback, error) => {
+        changed = callback;
+        failed = error;
+        return vi.fn();
+      },
+    );
+    render(
+      <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+        <Routes>
+          <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const editor = await screen.findByLabelText('Área de escrita do capítulo');
+    const original = editor.textContent;
+    act(() =>
+      changed({
+        personaId: 'preset-atmospheric',
+        personaComplement: { personaId: 'preset-intimate', overrides: [] },
+      }),
+    );
+    expect(screen.queryByText('Capítulo: O Íntimo')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Gerenciar personas' })).not.toBeInTheDocument();
+    expect(editor.textContent).toBe(original);
+    await user.click(screen.getByRole('button', { name: 'Persona' }));
+    expect(screen.getByText('Livro definido: preset-atmospheric')).toBeVisible();
+    expect(screen.getByText('Complemento definido: preset-intimate')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Salvar persona do livro' }));
+    await waitFor(() =>
+      expect(updateBook).toHaveBeenCalledWith('b-1', { personaId: 'preset-incisive' }),
+    );
+    await user.click(screen.getByRole('button', { name: 'Persona' }));
+    await user.click(screen.getByRole('button', { name: 'Salvar persona do capítulo' }));
+    await waitFor(() =>
+      expect(updateChapter).toHaveBeenCalledWith('b-1', 'c-1', {
+        personaComplement: {
+          personaId: 'preset-unsettling',
+          overrides: [{ traitId: 'tension', value: 100 }],
+        },
+      }),
+    );
+    act(() => failed(new Error('Configuração indisponível')));
+    expect(screen.getByRole('button', { name: 'Abrir Assistente Criativo de IA' })).toBeDisabled();
+    expect(editor.textContent).toBe(original);
+    expect(screen.queryByText('Configuração indisponível')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Persona' }));
+    expect(screen.getByText('Configuração indisponível')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    expect(retry).toHaveBeenCalledOnce();
+    act(() => changed({ personaId: 'preset-incisive', personaComplement: null }));
+    expect(screen.getByRole('button', { name: 'Abrir Assistente Criativo de IA' })).toBeEnabled();
   });
 
   it('exibe tela de erro quando livro ou capitulo nao sao encontrados', async () => {
