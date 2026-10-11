@@ -223,6 +223,14 @@ antes de chamar os serviços de criação de livro/capítulos. Consulte
 
 ### Biblioteca de imagens
 
+A criação assistida tem uma página na feature `books`; contratos e cliente
+da callable ficam em `ai-assistant`, com dependências públicas de `lore`.
+`functions/src/assistedBook.mjs` mantém sessões privadas de sete dias e propostas
+de uma hora. A confirmação transacional grava livro, fichas privadas, referências
+da capa, recibo e débito de 2 créditos mais a capa. Geração de conteúdo novo
+usa contrato separado da análise com evidências de capítulos. Veja
+[criação assistida](assisted-book-creation.md).
+
 `src/features/image-library` expõe página privada e seletor reutilizável. O aceite
 insere a capa na biblioteca na transação do débito. Criação e troca de capa
 passam por callables que mantêm `coverImageId`, URL e referências por livro.

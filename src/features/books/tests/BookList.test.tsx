@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { BookList } from '../components/BookList';
 import * as bookService from '../services/bookService';
 import type { Book } from '../model/book';
@@ -13,6 +13,39 @@ vi.mock('@/features/ai-assistant/services/bookGenerationService', () => ({
 }));
 
 describe('BookList', () => {
+  it.each([false, true])(
+    'opens assisted creation with an empty or populated library (%s)',
+    async (populated) => {
+      vi.spyOn(bookService, 'listBooksByAuthor').mockResolvedValue(
+        populated
+          ? [
+              {
+                id: 'book',
+                authorId: 'auth-1',
+                title: 'Atlas',
+                genre: 'Aventura',
+                synopsis: '',
+                coverUrl: null,
+                status: 'draft',
+                wordCount: 0,
+                createdAt: 0,
+                updatedAt: 0,
+              },
+            ]
+          : [],
+      );
+      render(
+        <MemoryRouter>
+          <Routes>
+            <Route path="/" element={<BookList authorId="auth-1" />} />
+            <Route path="/books/new/assisted" element={<h1>Criação assistida</h1>} />
+          </Routes>
+        </MemoryRouter>,
+      );
+      await userEvent.click(await screen.findByRole('button', { name: 'Criar com IA' }));
+      expect(screen.getByRole('heading', { name: 'Criação assistida' })).toBeInTheDocument();
+    },
+  );
   beforeEach(() => {
     vi.restoreAllMocks();
   });

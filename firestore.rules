@@ -155,6 +155,13 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
+      match /assistedSessions/{sessionId} {
+        allow read, write: if false;
+        match /operations/{operationId} { allow read, write: if false; }
+      }
+      match /assistedCurrent/{id} { allow read, write: if false; }
+      match /assistedLimits/{id} { allow read, write: if false; }
+      match /assistedReceipts/{id} { allow read, write: if false; }
       match /imageLibrary/{imageId} {
         allow read: if isOwner(userId);
         allow write: if false;

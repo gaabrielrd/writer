@@ -53,6 +53,11 @@
   ],
   "fieldOverrides": [
     {
+      "collectionGroup": "assistedSessions",
+      "fieldPath": "expiresAt",
+      "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }]
+    },
+    {
       "collectionGroup": "bookGenerations",
       "fieldPath": "expiresAt",
       "indexes": [

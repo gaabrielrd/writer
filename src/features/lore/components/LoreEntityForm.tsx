@@ -16,6 +16,7 @@ export interface LoreEntityFormProps {
   entityToEdit?: LoreEntity | null;
   allEntities: LoreEntity[];
   global?: boolean;
+  privateOnly?: boolean;
   onClose: () => void;
   onSubmit: (input: CreateLoreEntityInput) => Promise<void>;
 }
@@ -28,6 +29,7 @@ function LoreEntityFormContent({
   onSubmit,
   initialName = '',
   global = false,
+  privateOnly = false,
 }: Omit<LoreEntityFormProps, 'open'>) {
   const [step, setStep] = useState(0);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -114,7 +116,7 @@ function LoreEntityFormContent({
         details: details.trim(),
         structuredDetails,
         relations,
-        isPublic,
+        isPublic: privateOnly ? false : isPublic,
       });
       onClose();
     } catch (cause) {
@@ -278,16 +280,20 @@ function LoreEntityFormContent({
                   : 'A publicação atual da obra será retirada para revogar o acesso ao resumo. Você poderá publicar uma nova versão sem esta entidade.'}
               </Alert>
             )}
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={isPublic}
-                onChange={(event) => setIsPublic(event.target.checked)}
-                disabled={isSubmitting}
-                className={styles.checkbox}
-              />
-              <span>Tornar visível no leitor público da obra</span>
-            </label>
+            {privateOnly ? (
+              <p>Esta ficha será criada como lore privado do livro.</p>
+            ) : (
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={isPublic}
+                  onChange={(event) => setIsPublic(event.target.checked)}
+                  disabled={isSubmitting}
+                  className={styles.checkbox}
+                />
+                <span>Tornar visível no leitor público da obra</span>
+              </label>
+            )}
             <div className={styles.relationsHeader}>
               <strong>Relações com Outras Entidades</strong>
               <Button

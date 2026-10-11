@@ -147,6 +147,10 @@ usam etapas. A liberação depende das functions e regras correspondentes; veja
 
 ## Limitações conhecidas
 
+- A [criação assistida por conversa](docs/assisted-book-creation.md) entrega metadados,
+  capa e lore local privado. O pacote textual custa 2 créditos e a capa 5, no
+  aceite final. Exige implantação da callable, limpeza, regras e índice.
+
 - A criação usa três etapas, com sinopse/capa opcionais por IA (1 e 5 créditos no aceite). A geração exige configurar e implantar backend/Storage; veja [criação de livros](docs/book-creation.md). Criação manual funciona sem IA.
 
 - A autenticação e a persistência em nuvem dependem da configuração das credenciais do Firebase.
