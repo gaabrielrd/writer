@@ -177,6 +177,16 @@ export function StyleguidePage() {
             title="Modal do Design System"
             description="Exemplo de diálogo totalmente integrado aos temas."
             onClose={() => setIsDialogOpen(false)}
+            footer={
+              <>
+                <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>
+                  Fechar
+                </Button>
+                <Button variant="primary" onClick={() => setIsDialogOpen(false)}>
+                  Confirmar
+                </Button>
+              </>
+            }
           >
             <p className="text-sm py-2">
               Este diálogo se adapta automaticamente a qualquer tema (Claro, Escuro ou Sépia).
@@ -231,14 +241,6 @@ export function StyleguidePage() {
               </div>
               {lastAction && <p role="status">Ação executada: {lastAction}</p>}
             </section>
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>
-                Fechar
-              </Button>
-              <Button variant="primary" onClick={() => setIsDialogOpen(false)}>
-                Confirmar
-              </Button>
-            </div>
           </Dialog>
         </div>
       </section>

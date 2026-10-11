@@ -53,7 +53,7 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 - `Card`: Agrupamento de conteúdo (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`).
 - `DropdownItem`, `DropdownLabel`: Composição dos menus de navegação e conta, preservando links e gatilhos personalizados.
 - `Tooltip`: Dicas por hover, foco e toque.
-- `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog.
+- `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog, com altura máxima de `80vh`. Header e footer ficam visíveis; apenas `DialogBody` rola. Passe ações finais por `footer`/`actions`; botões de envio fora do formulário usam `form={id}`. Na API de composição, coloque o conteúdo entre `DialogHeader`, `DialogBody` e `DialogFooter`.
 - `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).
 - `LoadingState`, `EmptyState`, `ErrorState`: Estados padrão de ciclo de vida.
 - `PageHeader`: Cabeçalho padrão de páginas com suporte a breadcrumbs e ações.

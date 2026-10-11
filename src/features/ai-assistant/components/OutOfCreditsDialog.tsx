@@ -10,7 +10,18 @@ export interface OutOfCreditsDialogProps {
 
 export function OutOfCreditsDialog({ open, onClose, onOpenBYOKSettings }: OutOfCreditsDialogProps) {
   return (
-    <Dialog open={open} title="Seus créditos de IA acabaram" onClose={onClose}>
+    <Dialog
+      open={open}
+      title="Seus créditos de IA acabaram"
+      onClose={onClose}
+      footer={
+        <div className={styles.footerActions}>
+          <Button variant="secondary" onClick={onClose}>
+            Continuar escrevendo sem IA
+          </Button>
+        </div>
+      }
+    >
       <div className={styles.content}>
         <div className={styles.iconWrapper}>
           <AlertCircle className={`icon ${styles.alertIcon}`} aria-hidden="true" />
@@ -39,12 +50,6 @@ export function OutOfCreditsDialog({ open, onClose, onOpenBYOKSettings }: OutOfC
           >
             <Sparkles className="icon icon-sm" aria-hidden="true" />
             Configurar Chave de API
-          </Button>
-        </div>
-
-        <div className={styles.footerActions}>
-          <Button variant="secondary" onClick={onClose}>
-            Continuar escrevendo sem IA
           </Button>
         </div>
       </div>

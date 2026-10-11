@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
 import { Alert, Button, Dialog, Input, Dropdown } from '@/shared/ui';
 import type { AIProvider, BYOKConfig } from '../model/byokConfig';
@@ -13,6 +13,7 @@ export interface BYOKSettingsDialogProps {
 }
 
 export function BYOKSettingsDialog({ open, onClose, onConfigChanged }: BYOKSettingsDialogProps) {
+  const formId = useId();
   const [config, setConfig] = useState<BYOKConfig>(() => getBYOKConfig());
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -61,8 +62,36 @@ export function BYOKSettingsDialog({ open, onClose, onConfigChanged }: BYOKSetti
   };
 
   return (
-    <Dialog open={open} title="Configurações de Inteligência Artificial" onClose={onClose}>
-      <form onSubmit={handleSubmit} className={styles.form}>
+    <Dialog
+      open={open}
+      title="Configurações de Inteligência Artificial"
+      onClose={onClose}
+      footer={
+        <div className={styles.actions}>
+          {config.provider !== 'firebase_ai' && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleResetToDefault}
+              title="Voltar a usar a cota de créditos do sistema"
+            >
+              <Trash2 className="icon icon-sm" aria-hidden="true" />
+              Restaurar Padrão
+            </Button>
+          )}
+          <div className={styles.rightActions}>
+            <Button type="button" variant="secondary" onClick={onClose}>
+              Fechar
+            </Button>
+            <Button type="submit" form={formId} variant="primary">
+              <Sparkles className="icon icon-sm" aria-hidden="true" />
+              Salvar Preferências
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <form id={formId} onSubmit={handleSubmit} className={styles.form}>
         <p className={styles.description}>
           Escolha se deseja usar a cota padrão da plataforma com Gemini 3.7 Flash ou conectar sua
           própria chave de API (BYOK), sujeita aos limites e cobranças do provedor.
@@ -154,29 +183,6 @@ export function BYOKSettingsDialog({ open, onClose, onConfigChanged }: BYOKSetti
             />
           </div>
         )}
-
-        <div className={styles.actions}>
-          {config.provider !== 'firebase_ai' && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleResetToDefault}
-              title="Voltar a usar a cota de créditos do sistema"
-            >
-              <Trash2 className="icon icon-sm" aria-hidden="true" />
-              Restaurar Padrão
-            </Button>
-          )}
-          <div className={styles.rightActions}>
-            <Button type="button" variant="secondary" onClick={onClose}>
-              Fechar
-            </Button>
-            <Button type="submit" variant="primary">
-              <Sparkles className="icon icon-sm" aria-hidden="true" />
-              Salvar Preferências
-            </Button>
-          </div>
-        </div>
       </form>
     </Dialog>
   );

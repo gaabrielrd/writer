@@ -43,7 +43,7 @@ test('barras de rolagem seguem o tema em página, campo, portal e editor', async
   await chooseDropdown(themeSelect, themeLabels[visualTheme]);
   await expect(page.locator('html')).toHaveAttribute('data-theme', visualTheme);
   await page.getByRole('button', { name: 'Abrir Modal de Demonstração' }).click();
-  await check('[role="dialog"]');
+  await check('[data-slot="dialog-body"]');
   await page.keyboard.press('Escape');
 
   await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);

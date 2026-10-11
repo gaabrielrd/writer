@@ -68,7 +68,7 @@ test('editor discreto, configurações no usuário e revisão do compêndio por 
   await expectDialogWithinViewport(page);
   await page
     .getByRole('dialog')
-    .locator('form')
+    .locator('[data-slot="dialog-footer"]')
     .getByRole('button', { name: 'Fechar', exact: true })
     .click();
   await editor.fill('Nara encontra o Farol do Norte.');

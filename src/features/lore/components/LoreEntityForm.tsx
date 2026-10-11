@@ -137,7 +137,6 @@ function LoreEntityFormContent({
       title={title}
       description={`Etapa ${step + 1} de 4 • ${globalScope ? 'Lore global' : 'Lore local'}`}
       onClose={close}
-      className={styles.dialog}
       footer={
         <div className={styles.footer}>
           <Button type="button" variant="secondary" onClick={close} disabled={isSubmitting}>

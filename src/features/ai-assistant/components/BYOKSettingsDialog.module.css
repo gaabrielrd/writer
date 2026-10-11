@@ -23,6 +23,7 @@
 }
 
 .actions {
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -36,4 +37,6 @@
   align-items: center;
   gap: var(--space-2);
   margin-left: auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }

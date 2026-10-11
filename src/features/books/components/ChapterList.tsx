@@ -179,7 +179,10 @@ export function ChapterList({
           )}
         </div>
       ) : (
-        <ol className={styles.chapterList} aria-label="Capítulos">
+        <ol
+          className={`${styles.chapterList} ${mode === 'dialog' ? styles.modalList : ''}`}
+          aria-label="Capítulos"
+        >
           {chapters.map((ch, index) => (
             <li key={ch.id} className={styles.chapterItem}>
               <div className={styles.chapterInfo}>

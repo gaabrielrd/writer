@@ -160,6 +160,13 @@ workers para evitar saturação de memória/CPU em máquinas compartilhadas. Nã
 redução de limites, desativação de testes ou regeneração automática das imagens
 de referência para esconder regressões.
 
+## Modais
+
+`e2e/visual/dialog-layout.visual.ts` mede o limite de `80vh` e confirma que
+header/footer mantêm suas posições ao rolar o conteúdo em edição de livro,
+importação extensa e configurações de IA. Cobre os três temas, desktop,
+celular, viewport baixo e largura de 320 px, incluindo envio pelo footer.
+
 ## Biblioteca de imagens
 
 Os testes da feature cobrem seleção, gerenciamento, páginas, erros e isolamento

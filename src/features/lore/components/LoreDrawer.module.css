@@ -59,8 +59,6 @@
   border: 1px solid var(--line-subtle);
   border-radius: var(--radius-sm);
   padding: var(--space-md);
-  max-height: 250px;
-  overflow-y: auto;
 }
 
 .detailLine {

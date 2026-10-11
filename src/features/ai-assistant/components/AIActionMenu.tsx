@@ -217,7 +217,26 @@ export function AIActionMenu({
         <span>Assistente IA</span>
       </Button>
 
-      <Dialog open={isOpen} title="Assistente Criativo de IA" onClose={handleClose}>
+      <Dialog
+        open={isOpen}
+        title="Assistente Criativo de IA"
+        onClose={handleClose}
+        footer={
+          <div className={styles.footer}>
+            <Button
+              variant="secondary"
+              disabled={isApplying}
+              onClick={() => {
+                handleClose();
+                onOpenBYOKSettings();
+              }}
+            >
+              <Settings className="icon icon-sm" aria-hidden="true" />
+              Configurar Chave Própria (BYOK)
+            </Button>
+          </div>
+        }
+      >
         <div className={styles.container}>
           <div className={styles.actionButtons}>
             <button
@@ -324,20 +343,6 @@ export function AIActionMenu({
               </div>
             </div>
           )}
-
-          <div className={styles.footer}>
-            <Button
-              variant="secondary"
-              disabled={isApplying}
-              onClick={() => {
-                handleClose();
-                onOpenBYOKSettings();
-              }}
-            >
-              <Settings className="icon icon-sm" aria-hidden="true" />
-              Configurar Chave Própria (BYOK)
-            </Button>
-          </div>
         </div>
       </Dialog>
     </>
