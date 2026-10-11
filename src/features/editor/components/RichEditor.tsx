@@ -12,8 +12,6 @@ import {
   MessageSquare,
   AtSign,
   BookOpen,
-  Eye,
-  Edit3,
   Undo2,
   Redo2,
 } from 'lucide-react';
@@ -100,7 +98,6 @@ export function RichEditor({
   // Initial parsing is intentionally lazy: transaction-driven renders must not
   // sanitize the whole chapter again. Real external replacements use the effect below.
   const [initialHtml] = useState(() => renderRichText(content));
-  const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
   const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
   const openAISettings = useAISettings();
   const config = useAIConfig();
@@ -215,11 +212,7 @@ export function RichEditor({
     userCredits,
     onCreditDeducted,
     onShowOutOfCredits: () => setIsOutOfCreditsOpen(true),
-    enabled:
-      !aiUnavailableReason &&
-      viewMode === 'write' &&
-      !accepting &&
-      Boolean(editor?.state.selection.empty),
+    enabled: !aiUnavailableReason && !accepting && Boolean(editor?.state.selection.empty),
   });
 
   useEffect(() => {
@@ -240,14 +233,14 @@ export function RichEditor({
     editor.commands.setContent(renderRichText(content), { emitUpdate: false });
   }, [content, editor]);
   useEffect(() => {
-    editor?.setEditable(viewMode === 'write' && !accepting, false);
-    editor?.view.dom.setAttribute('aria-readonly', String(viewMode !== 'write' || accepting));
-  }, [editor, viewMode, accepting]);
+    editor?.setEditable(!accepting, false);
+    editor?.view.dom.setAttribute('aria-readonly', String(accepting));
+  }, [editor, accepting]);
   useEffect(() => {
-    if (previousSidebar.current && !isSidebarOpen && viewMode === 'write')
+    if (previousSidebar.current && !isSidebarOpen)
       editor?.commands.focus(undefined, { scrollIntoView: false });
     previousSidebar.current = isSidebarOpen;
-  }, [isSidebarOpen, editor, viewMode]);
+  }, [isSidebarOpen, editor]);
 
   const matches = useMemo(() => findLoreMatches(text, entities), [text, entities]);
   const mentionedEntities = useMemo(() => {
@@ -259,14 +252,10 @@ export function RichEditor({
     }
     return Array.from(map.values());
   }, [matches]);
-  const mention =
-    editor && !mentionDismissed && viewMode === 'write' ? getMentionRange(editor.state) : null;
-  const selectionAnchor = useSelectionAnchor(
-    editor,
-    viewMode === 'write' && !accepting && !isAssistantOpen && !mention,
-  );
+  const mention = editor && !mentionDismissed ? getMentionRange(editor.state) : null;
+  const selectionAnchor = useSelectionAnchor(editor, !accepting && !isAssistantOpen && !mention);
   const candidates = mention ? mentionCandidates(entities, mention.query) : [];
-  const activeGhost = viewMode === 'write' && !mention && !accepting ? suggestion : null;
+  const activeGhost = !mention && !accepting ? suggestion : null;
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     const position = editor.state.selection.from;
@@ -304,7 +293,7 @@ export function RichEditor({
   const setApplying = (busy: boolean) => {
     acceptingRef.current = busy;
     setAccepting(busy);
-    editor?.setEditable(viewMode === 'write' && !busy, false);
+    editor?.setEditable(!busy, false);
     onBusyChange?.(busy);
   };
   const handleAcceptGhost = async () => {
@@ -453,7 +442,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview'}
+            disabled={accepting}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -469,7 +458,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview'}
+            disabled={accepting}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -485,7 +474,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview'}
+            disabled={accepting}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -501,7 +490,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview'}
+            disabled={accepting}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -517,7 +506,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview'}
+            disabled={accepting}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -537,7 +526,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview'}
+            disabled={accepting}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -553,7 +542,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview'}
+            disabled={accepting}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -568,7 +557,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview' || !editor?.can().undo()}
+            disabled={accepting || !editor?.can().undo()}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -583,7 +572,7 @@ export function RichEditor({
           <button
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || viewMode === 'preview' || !editor?.can().redo()}
+            disabled={accepting || !editor?.can().redo()}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -617,31 +606,6 @@ export function RichEditor({
             onInsertText={(value) => applyGeneratedText(value, false)}
             onReplaceSelection={(value) => applyGeneratedText(value, true)}
           />
-          <div className={styles.modeSwitch} role="group" aria-label="Modo do editor">
-            <Button
-              variant="secondary"
-              disabled={accepting}
-              className={`${styles.modeBtn} ${viewMode === 'write' ? styles.modeBtnActive : ''}`}
-              aria-pressed={viewMode === 'write'}
-              onClick={() => setViewMode('write')}
-            >
-              <Edit3 className="icon icon-sm" aria-hidden="true" />
-              <span>Edição</span>
-            </Button>
-            <Button
-              variant="secondary"
-              disabled={accepting}
-              className={`${styles.modeBtn} ${viewMode === 'preview' ? styles.modeBtnActive : ''}`}
-              aria-pressed={viewMode === 'preview'}
-              onClick={() => {
-                discardSuggestion();
-                setViewMode('preview');
-              }}
-            >
-              <Eye className="icon icon-sm" aria-hidden="true" />
-              <span>Preview</span>
-            </Button>
-          </div>
           <Button
             variant="ghost"
             aria-pressed={isSidebarOpen}
@@ -685,9 +649,6 @@ export function RichEditor({
         />
         <div className={styles.editorBody} data-editor-scroll-area ref={scrollArea}>
           <div className={styles.writeContainer}>
-            {viewMode === 'preview' && editor?.isEmpty && (
-              <p className={styles.emptyPreview}>Nenhum texto escrito ainda.</p>
-            )}
             <EditorContent
               editor={editor}
               onKeyDownCapture={(event) => {
@@ -705,10 +666,9 @@ export function RichEditor({
                   event.stopPropagation();
                 }
               }}
-              className={viewMode === 'preview' ? styles.previewContainer : undefined}
               aria-busy={accepting}
             />
-            {viewMode === 'write' && suggestion && (
+            {suggestion && (
               <GhostSuggestion
                 compact
                 suggestion={suggestion}

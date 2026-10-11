@@ -248,8 +248,11 @@ npx playwright test --config playwright.visual.config.ts e2e/visual/chapter-mini
 
 A suíte usa os componentes reais e serviços fictícios em seis projetos
 (desktop/celular × claro/escuro/sépia). Mede o destaque no início, meio e fim,
-preserva seleção e HTML durante cliques, verifica Edição/Preview, compêndio
-aberto, 320 px e ausência de transbordamento horizontal. Capturas incluem a
+preserva seleção e HTML durante cliques, verifica escrita contínua, compêndio
+aberto, 320 px e ausência de transbordamento horizontal. Compara também as cores
+das quatro categorias com as tags reais, nos esquemas do sistema claro/escuro,
+e confirma traços de 1 px com contorno de 2 px sem escala do SVG e intervalo
+mínimo de 1 px entre marcas em capítulos densos. Capturas incluem a
 viewport de 320 px para revisar a faixa aderente sem reduzir o capítulo inteiro.
 
 ## Personas de escrita

@@ -53,27 +53,6 @@
   transform: translateY(1px);
 }
 
-.modeSwitch {
-  display: inline-flex;
-  flex-shrink: 0;
-}
-.modeSwitch .modeBtn {
-  border-radius: 0;
-}
-.modeSwitch .modeBtn:first-child {
-  border-start-start-radius: var(--radius-pill);
-  border-end-start-radius: var(--radius-pill);
-}
-.modeSwitch .modeBtn:last-child {
-  border-start-end-radius: var(--radius-pill);
-  border-end-end-radius: var(--radius-pill);
-  margin-left: -1px;
-}
-.modeSwitch .modeBtnActive {
-  background-color: hsl(var(--accent));
-  color: hsl(var(--accent-foreground));
-}
-
 .loreSummaryBar {
   display: flex;
   align-items: center;
@@ -169,15 +148,6 @@
   z-index: 50;
 }
 
-.previewContainer {
-  width: 100%;
-  height: 100%;
-  font-family: var(--font-reading);
-  font-size: var(--text-lg);
-  line-height: 1.85;
-  color: var(--ink);
-}
-
 .renderedParagraphs {
   display: flex;
   flex-direction: column;
@@ -224,11 +194,6 @@
 .loreHighlightBtn:hover {
   background-color: var(--surface-quiet);
   color: hsl(var(--primary));
-}
-
-.emptyPreview {
-  color: var(--ink-quiet);
-  font-style: italic;
 }
 
 @media (max-width: 760px) {
@@ -342,9 +307,6 @@
 }
 .inlineTooltip small {
   color: var(--ink-quiet);
-}
-.previewContainer .richText {
-  outline: none;
 }
 
 .richText :global(.writer-ai-ghost) {

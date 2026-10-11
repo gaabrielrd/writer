@@ -155,7 +155,7 @@ test('seleção abre ações acima do trecho e aplica somente após aceite', asy
   await toolbar.getByRole('button', { name: 'Instrução personalizada' }).click();
   await expect(dialog.getByLabel('Ou dê uma instrução personalizada à IA')).toBeFocused();
   await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
-  await page.getByRole('button', { name: 'Preview', exact: true }).click();
+  await page.getByRole('link', { name: 'Voltar para o livro' }).focus();
   await expect(toolbar).toHaveCount(0);
 });
 

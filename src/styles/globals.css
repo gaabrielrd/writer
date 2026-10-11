@@ -48,8 +48,16 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+    --badge-success-background: var(--color-emerald-600);
     --leading-tight: 1.25;
     --leading-normal: 1.5;
+  }
+
+  /* Match the existing Badge success variant, including its dark media variant. */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --badge-success-background: var(--color-emerald-500);
+    }
   }
 
   :root,

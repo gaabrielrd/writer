@@ -1,7 +1,75 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
+import { chooseDropdown } from '../dropdown';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
-test('minimapa navega, acompanha viewport e preserva manuscrito em edição e preview', async ({
+test('indicadores do minimapa usam as mesmas cores das tags de lore', async ({
+  page,
+}, testInfo) => {
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  const editor = page.getByLabel('Área de escrita do capítulo');
+  await expect(editor).toBeVisible();
+  await page.getByRole('button', { name: /^Compêndio(?: \d+)?$/ }).click();
+  await page.getByRole('button', { name: 'Nova Entidade', exact: true }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Nome da Entidade').fill('Maré Fantasma');
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Categoria' }), 'Outro');
+  await dialog
+    .getByLabel('Resumo Curto (exibido nos tooltips de leitura e edição)')
+    .fill('Fenômeno fictício');
+  await dialog.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Cadastrar Entidade', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole('button', { name: 'Fechar painel de lore' }).click();
+  await editor.fill(
+    'Lia consultou o Atlas das Marés.\n\nPorto das Lanternas avistou a Maré Fantasma.\n\n' +
+      'Lia voltou ao porto.\n\n'.repeat(400),
+  );
+  const categories = [
+    ['character', 'Lia'],
+    ['location', 'Porto das Lanternas'],
+    ['concept', 'Atlas das Marés'],
+    ['other', 'Maré Fantasma'],
+  ];
+  for (const colorScheme of ['light', 'dark'] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const [category, name] of categories) {
+      const marker = page.locator(`[data-minimap-category="${category}"]`);
+      await expect(marker).toHaveAttribute('d', /M/);
+      await expect(marker).toHaveCSS('stroke-width', '1px');
+      await expect(marker).toHaveCSS('vector-effect', 'non-scaling-stroke');
+      await expect(marker.locator('..').locator('path').first()).toHaveCSS('stroke-width', '2px');
+      const tag = page
+        .getByRole('button', { name: new RegExp(`^${name}(?: \\(|$)`) })
+        .locator('span')
+        .first();
+      await expect(tag).toBeVisible();
+      expect(await marker.evaluate((element) => getComputedStyle(element).stroke)).toBe(
+        await tag.evaluate((element) => getComputedStyle(element).backgroundColor),
+      );
+    }
+  }
+  const markerGaps = await page
+    .locator('[data-minimap-category="character"]')
+    .evaluate((element) => {
+      const height = element.closest('svg')!.getBoundingClientRect().height;
+      const rows = [...element.getAttribute('d')!.matchAll(/M[\d.]+ ([\d.]+)h/g)].map(
+        (match) => (Number(match[1]) / 500) * height,
+      );
+      return rows.slice(1).map((row, index) => row - rows[index]);
+    });
+  expect(markerGaps.length).toBeGreaterThan(0);
+  expect(Math.min(...markerGaps)).toBeGreaterThanOrEqual(2.99);
+  const screenshot = testInfo.outputPath('minimapa-cores-das-tags.png');
+  await page.screenshot({ path: screenshot, animations: 'disabled', caret: 'hide' });
+  await testInfo.attach('minimapa com ocorrências densas', {
+    path: screenshot,
+    contentType: 'image/png',
+  });
+});
+
+test('minimapa navega, acompanha viewport e preserva manuscrito na escrita contínua', async ({
   page,
 }, testInfo) => {
   await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
@@ -85,13 +153,9 @@ test('minimapa navega, acompanha viewport e preserva manuscrito em edição e pr
   await expect.poll(expectedHighlight).toBeLessThan(0.01);
   expect(await editor.innerHTML()).toBe(original);
   await capture(page, testInfo, 'minimapa-meio-do-capitulo');
-  await page.getByRole('button', { name: 'Preview', exact: true }).click();
-  await map.focus();
-  await map.press('End');
-  await map.press('Enter');
-  await expect(editor.locator('p').last()).toBeInViewport();
-  await expect(editor).toHaveAttribute('contenteditable', 'false');
-  await page.getByRole('button', { name: 'Edição', exact: true }).click();
+  await expect(editor).toHaveAttribute('contenteditable', 'true');
+  await expect(page.getByRole('button', { name: 'Preview', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edição', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: /^Compêndio(?: \d+)?$/ }).click();
   await page.setViewportSize({ width: 320, height: 640 });
   await map.focus();

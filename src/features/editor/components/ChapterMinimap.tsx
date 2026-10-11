@@ -1,4 +1,4 @@
-import { useId, useMemo, useState, type MouseEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { Tooltip } from '@/shared/ui';
 import type { LoreCategory } from '@/features/lore';
 import type { MeasuredMinimapDestination } from '../hooks/useChapterMinimap';
@@ -18,19 +18,36 @@ export function ChapterMinimap({ destinations, viewport, onNavigate }: ChapterMi
   const id = useId();
   const [selected, setSelected] = useState(0);
   const [hovered, setHovered] = useState<number | null>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const [mapHeight, setMapHeight] = useState(500);
+  useEffect(() => {
+    const element = mapRef.current;
+    if (!element || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(([entry]) => {
+      if (entry) setMapHeight(Math.max(1, entry.contentRect.height));
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const activeIndex = Math.min(selected, Math.max(0, destinations.length - 1));
   const active = destinations[activeIndex];
   const tooltip = destinations[hovered ?? activeIndex]?.label ?? 'Capítulo vazio';
   const paths = useMemo(() => {
     const lines = new Set<string>();
     const headings: string[] = [];
+    // Reserve one pixel between the two-pixel marker outlines.
+    const markerRows = Math.max(1, Math.floor(mapHeight / 3));
+    const occupiedRows = new Map<number, Set<LoreCategory>>();
     const markers = Object.fromEntries(
       categories.map((category) => [category, new Set<string>()]),
     ) as Record<LoreCategory, Set<string>>;
     for (const entry of destinations) {
       const y = Math.round(entry.start * 500);
       if (entry.kind === 'entity' && entry.category) {
-        markers[entry.category].add(`M80 ${y}h12`);
+        const row = Math.min(markerRows - 1, Math.floor(entry.start * markerRows));
+        const occupied = occupiedRows.get(row) ?? new Set<LoreCategory>();
+        occupied.add(entry.category);
+        occupiedRows.set(row, occupied);
       } else if (entry.kind === 'heading') {
         headings.push(`M8 ${y}h${Math.max(32, 68 - entry.level * 6)}`);
       } else {
@@ -40,8 +57,17 @@ export function ChapterMinimap({ destinations, viewport, onNavigate }: ChapterMi
         }
       }
     }
+    for (const [row, occupied] of occupiedRows) {
+      const present = categories.filter((category) => occupied.has(category));
+      const width = 12 / present.length;
+      present.forEach((category, index) => {
+        markers[category].add(
+          `M${80 + index * width} ${((row + 0.5) / markerRows) * 500}h${width}`,
+        );
+      });
+    }
     return { lines: [...lines].join(''), headings: headings.join(''), markers };
-  }, [destinations]);
+  }, [destinations, mapHeight]);
 
   const targetAtPointer = (
     event: Pick<MouseEvent<HTMLDivElement>, 'currentTarget' | 'clientX' | 'clientY'>,
@@ -69,6 +95,7 @@ export function ChapterMinimap({ destinations, viewport, onNavigate }: ChapterMi
       </span>
       <Tooltip content={tooltip}>
         <div
+          ref={mapRef}
           className={styles.map}
           role="listbox"
           aria-label="Trechos do capítulo"
@@ -125,11 +152,17 @@ export function ChapterMinimap({ destinations, viewport, onNavigate }: ChapterMi
                 <path d={paths.lines} className={styles.paragraphs} />
                 <path d={paths.headings} className={styles.headings} />
                 {categories.map((category) => (
-                  <path
-                    key={category}
-                    d={[...paths.markers[category]].join('')}
-                    className={styles[category]}
-                  />
+                  <g key={category}>
+                    <path
+                      d={[...paths.markers[category]].join('')}
+                      className={styles.markerOutline}
+                    />
+                    <path
+                      d={[...paths.markers[category]].join('')}
+                      className={styles[category]}
+                      data-minimap-category={category}
+                    />
+                  </g>
                 ))}
               </svg>
               <span

@@ -175,10 +175,12 @@ describe('RichEditor WYSIWYG', () => {
     );
     selectText(editor, 0, 3);
     await screen.findByRole('toolbar', { name: 'Assistente IA para o texto selecionado' });
-    fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
-    expect(
-      screen.queryByRole('toolbar', { name: 'Assistente IA para o texto selecionado' }),
-    ).not.toBeInTheDocument();
+    selectText(editor, 3, 3);
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('toolbar', { name: 'Assistente IA para o texto selecionado' }),
+      ).not.toBeInTheDocument(),
+    );
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -264,14 +266,14 @@ describe('RichEditor WYSIWYG', () => {
     expect(onChange).toHaveBeenLastCalledWith('<p><strong>Arthur</strong> empunhou Excalibur.</p>');
   });
 
-  it('mantém formatação e lore no modo leitura, sem regravar conteúdo', async () => {
-    const user = userEvent.setup({ delay: null });
+  it('mantém escrita, formatação e lore disponíveis sem seletor de modos nem gravação ao abrir', () => {
     const { editor, onChange } = setup({ content: '**Arthur** escreve.' });
-    await user.click(screen.getByRole('button', { name: 'Preview' }));
-    expect(editor).toHaveAttribute('contenteditable', 'false');
+    expect(screen.queryByRole('group', { name: 'Modo do editor' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Preview' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edição' })).not.toBeInTheDocument();
+    expect(editor).toHaveAttribute('aria-readonly', 'false');
     expect(editor.querySelector('strong')).toHaveTextContent('Arthur');
     expect(screen.getByRole('button', { name: 'Ver ficha de Rei Arthur' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Edição' }));
     expect(editor).toHaveAttribute('contenteditable', 'true');
     expect(onChange).not.toHaveBeenCalled();
   });

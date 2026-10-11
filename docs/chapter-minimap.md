@@ -2,7 +2,8 @@
 
 O editor mostra uma visão gráfica do capítulo à esquerda do manuscrito, entre
 a borda do editor e o texto. O mapa permanece visível durante a rolagem, abaixo
-da barra de ferramentas e do resumo de lore, em Edição e Preview.
+da barra de ferramentas e do resumo de lore. O capítulo permanece editável,
+sem seletor Edição/Preview.
 
 ## Representação e navegação
 
@@ -10,6 +11,12 @@ da barra de ferramentas e do resumo de lore, em Edição e Preview.
   do texto renderizado. Títulos têm traços mais fortes e largura distinta por nível.
 - Ocorrências de entidades aparecem na margem direita do mapa. Personagens usam
   traço arredondado, locais tracejado, conceitos pontilhado e outros um traço neutro.
+  As cores correspondem ao fundo das tags de lore: `accent` para personagens,
+  verde das tags `success` para locais, `primary` para conceitos e `secondary`
+  para outros. A linha colorida tem 1 px e o contorno 2 px, sem engrossar com a
+  escala do SVG. Cada marca reserva 1 px livre até a próxima. Ocorrências na
+  mesma faixa de 3 px compartilham uma marca;
+  categorias diferentes dividem sua largura, com cores lado a lado.
   O tooltip informa categoria, entidade e termo reconhecido.
 - O retângulo com borda e fundo discreto representa a parte do manuscrito visível.
 - Clicar no mapa rola até a região correspondente. Clicar junto a uma marca

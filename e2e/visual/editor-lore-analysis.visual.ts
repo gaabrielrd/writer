@@ -21,33 +21,11 @@ test('editor discreto, configurações no usuário e revisão do compêndio por 
       .getByRole('button', { name: `${author.credits} créditos de IA, plano free` }),
   ).toBeVisible();
   await expect(credits).toHaveCount(1);
-  const modes = page.getByRole('group', { name: 'Modo do editor' });
-  await expect(modes.getByRole('button', { name: 'Edição', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  await modes.getByRole('button', { name: 'Preview', exact: true }).click();
-  await expect(editor).toHaveAttribute('contenteditable', 'false');
-  await modes.getByRole('button', { name: 'Edição', exact: true }).click();
+  await expect(page.getByRole('group', { name: 'Modo do editor' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Preview', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edição', exact: true })).toHaveCount(0);
   await expect(editor).toHaveAttribute('contenteditable', 'true');
-  const geometry = await modes.evaluate((group) => {
-    const buttons = [...group.querySelectorAll('button')];
-    const first = buttons[0].getBoundingClientRect();
-    const second = buttons[1].getBoundingClientRect();
-    const neighbor = group.previousElementSibling!.getBoundingClientRect();
-    return {
-      first: first.height,
-      second: second.height,
-      neighbor: neighbor.height,
-      gap: second.left - first.right,
-      font: getComputedStyle(buttons[0]).fontSize,
-      neighborFont: getComputedStyle(group.previousElementSibling!).fontSize,
-    };
-  });
-  expect(geometry.first).toBe(geometry.second);
-  expect(geometry.first).toBe(geometry.neighbor);
-  expect(Math.abs(geometry.gap)).toBeLessThanOrEqual(1);
-  expect(geometry.font).toBe(geometry.neighborFont);
+  await expect(editor).toHaveAttribute('aria-readonly', 'false');
   expect(
     await page
       .getByRole('link', { name: 'Voltar para o livro' })

@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChapterMinimap } from '../components/ChapterMinimap';
 import type { MeasuredMinimapDestination } from '../hooks/useChapterMinimap';
 
@@ -69,6 +69,41 @@ function setup(destinations = entries) {
 }
 
 describe('navegação no minimapa', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('agrupa ocorrências densas mantendo espaço entre as marcas e suas categorias', () => {
+    let resize: ResizeObserverCallback = () => undefined;
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          resize = callback;
+        }
+        observe() {}
+        disconnect = disconnect;
+      },
+    );
+    const dense = [
+      { ...entries[2]!, start: 0.42 },
+      { ...entries[2]!, start: 0.43, position: 14, category: 'location' as const },
+      { ...entries[2]!, start: 0.44, position: 16, category: 'concept' as const },
+      { ...entries[2]!, start: 0.46, position: 18 },
+    ];
+    const { container, map, unmount } = setup(dense);
+    act(() =>
+      resize([{ contentRect: { height: 50 } } as ResizeObserverEntry], {} as ResizeObserver),
+    );
+    const marker = (category: string) =>
+      container.querySelector(`[data-minimap-category="${category}"]`)!.getAttribute('d');
+    expect(marker('character')).toBe('M80 203.125h6M80 234.375h6');
+    expect(marker('location')).toBe('M86 203.125h6');
+    expect(marker('concept')).toBe('M86 234.375h6');
+    expect(map.querySelector('[role="option"]')).toHaveAttribute('aria-setsize', '4');
+    unmount();
+    expect(disconnect).toHaveBeenCalled();
+  });
+
   it('oferece destinos pelo teclado sem navegar antes do aceite', () => {
     const { map, onNavigate, rerender } = setup();
     fireEvent.keyDown(map, { key: 'ArrowDown' });

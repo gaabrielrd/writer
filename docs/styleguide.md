@@ -179,10 +179,10 @@ opacas, controles compactos e estados ativos discretos. O manuscrito conserva
 Georgia, 18 px e entrelinha 1,85 em escrita e leitura.
 
 A área de escrita não exibe outline, inclusive em foco por teclado. Os demais
-controles preservam foco visível. Selecionar um trecho no modo Edição mostra uma
+controles preservam foco visível. Selecionar um trecho mostra uma
 barra de ações de IA acima da seleção; quando falta espaço, ela aparece abaixo.
 A barra acompanha rolagem/redimensionamento e desaparece ao limpar a seleção,
-clicar fora, pressionar Escape ou entrar em Preview. Alt+Enter leva o foco às
+clicar fora ou pressionar Escape. Alt+Enter leva o foco às
 ações; as setas laterais navegam e Escape devolve o foco ao manuscrito.
 Em celular, as ações usam ícones com tooltip e nome acessível.
 
@@ -210,9 +210,8 @@ aviso de alcance. Preço visível: 1 crédito por lote aplicado; BYOK sem crédi
 da plataforma. Veja [atualização do compêndio](lore-analysis.md).
 
 O contador de créditos fica sempre no header principal, inclusive no editor.
-Os modos **Edição** e **Preview** formam um controle dividido (split button),
-com a mesma altura, tipografia e superfície dos botões secundários vizinhos,
-extremidades arredondadas, divisória única e estado ativo acessível. A seta de
+O capítulo permanece editável, sem seletor Edição/Preview na barra. Apenas a
+aplicação de sugestões de IA bloqueia temporariamente a escrita. A seta de
 voltar ao livro não possui borda. Não há divisória entre o header do capítulo e o editor.
 
 ## Atos e seleção de capítulos
@@ -227,7 +226,13 @@ Veja [contrato de atos](book-acts.md).
 O minimapa ocupa uma faixa interna à esquerda do manuscrito: 88 px no desktop,
 40 px até 760 px, abaixo das ferramentas e do resumo de lore. Parágrafos usam
 linhas discretas; títulos têm traço forte; entidades têm marcas por categoria.
-Um retângulo com borda e fundo semântico indica o trecho visível. O controle
+Os indicadores usam o fundo das tags correspondentes (`accent`, `success`,
+`primary`, `secondary`), com linha de 1 px e contorno de 2 px sem escala de traço.
+Marcas reservam 1 px de intervalo; ocorrências próximas são agrupadas, com
+categorias lado a lado para evitar sobreposição de cores.
+`--badge-success-background` acompanha o verde da variante `success` do Badge,
+incluindo sua preferência de esquema de cor do sistema. Um retângulo com borda
+e fundo semântico indica o trecho visível. O controle
 mantém foco visível, rótulos de destino e tooltip pelo componente compartilhado.
 Em celular, a faixa acompanha a viewport durante a rolagem da página, sem
 sobrepor o texto. Veja [minimapa do capítulo](chapter-minimap.md).

@@ -145,3 +145,66 @@ rolando para o compêndio. A navegação mantém o fim do texto e o mapa na view
 5. Editar, formatar e desfazer/refazer; conferir a atualização do mapa.
 6. Alternar Preview e os três temas. Em 320 px, navegar ao início e ao fim com
    o compêndio aberto e confirmar que a faixa não cobre o texto.
+
+## Incremento de 2026-10-11 — indicadores e escrita contínua
+
+Solicitação aprovada na conversa: igualar as cores às tags de lore, reduzir
+os indicadores para 1–2 px, evitar sobreposição e remover Edição/Preview.
+
+- As quatro categorias usam as mesmas cores de fundo das tags existentes.
+  O token semântico `--badge-success-background` acompanha o verde do Badge
+  nos esquemas claro/escuro do sistema, sem alterar as tags.
+- Indicadores têm linha colorida de 1 px, contorno de 2 px e pelo menos 1 px
+  de espaço até a próxima marca. O SVG não escala a espessura.
+- Ocorrências na mesma faixa de 3 px são agrupadas; categorias diferentes
+  dividem a largura da marca. O agrupamento acompanha a altura real do mapa
+  via ResizeObserver, com limpeza na desmontagem, e preserva os destinos
+  originais para navegação pelo teclado.
+- O capítulo permanece editável, sem seletor Edição/Preview. Formatação,
+  lore, seleção, sugestões e o bloqueio temporário durante aplicação de IA
+  continuam disponíveis.
+
+Arquivos deste incremento: componentes e testes de `ChapterMinimap` e
+`RichEditor`, `src/styles/globals.css`, três suítes visuais do editor e os
+documentos de minimapa, styleguide e testes.
+
+### Verificação do incremento
+
+Os testes de navegador comparam as cores computadas das quatro categorias
+às tags reais nos esquemas claro/escuro do sistema e nos três temas da aplicação.
+Um capítulo com mais de 400 ocorrências verifica espaçamento entre centros
+de pelo menos 3 px. As demais verificações cobrem navegação, seleção preservada,
+viewport, ausência do seletor e escrita contínua em desktop/celular e em 320 px.
+
+O teste de componente reduz a altura do mapa, verifica agrupamento, divisão
+por categoria, preservação dos destinos e desconexão do observador.
+
+| Validação                                                 | Resultado real                                                                                                                  |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `npm ci --prefix functions`                               | Instalado; auditoria sem vulnerabilidades.                                                                                      |
+| `npm run validate`                                        | Skills, arquitetura, documentação e styleguide verdes; interrompido por formatação preexistente em 32 arquivos fora deste diff. |
+| Vitest com cobertura, versão final                        | 96 arquivos / 671 testes verdes; limites de cobertura preservados.                                                              |
+| `npm run test:setup`                                      | 68 testes de infraestrutura e 63 de backend verdes; sintaxe de functions validada.                                              |
+| Playwright: minimapa, ajustes do editor e análise de lore | 54 cenários verdes nos seis projetos.                                                                                           |
+| Playwright: minimapa após o espaçamento final             | 12 cenários verdes nos seis projetos, incluindo marcas densas e 320 px.                                                         |
+| `npm run lint`                                            | Verde.                                                                                                                          |
+| `npm run build`                                           | Typecheck, bundle e smoke verdes; avisos existentes de tamanho de chunk e importação dinâmica.                                  |
+| Prettier no diff e `git diff --check`                     | Verdes.                                                                                                                         |
+
+A primeira execução de `npm run test` falhou por timeout em Personas e porque
+o espaçamento do minimapa foi ajustado durante a execução: o processo carregou
+o componente antigo e a expectativa nova. A repetição com o código estabilizado
+passou, incluindo Personas e o agrupamento do minimapa. Não houve alteração
+nos testes ou no código de Personas.
+
+O gate global continua bloqueado pela formatação preexistente de 32 arquivos
+fora deste diff; esse incremento não declara a definição de concluído global
+atendida. CI permanece pendente; o commit local deste incremento foi autorizado.
+
+Para revisar manualmente, abrir um capítulo com várias entidades próximas,
+conferir as cores com as tags e o intervalo entre marcas, redimensionar a tela
+e navegar por clique/teclado. A barra de ferramentas não deve oferecer Preview
+nem Edição. A instrução de alternar Preview acima descreve a entrega inicial
+e foi substituída por este incremento.
+
+Este incremento fica registrado em commit local, sem push ou deploy.
