@@ -26,6 +26,11 @@ A aplicação possui suporte nativo e reativo a múltiplos temas, controlados pe
 4. **Sistema (`system`)**: Acompanha a preferência do sistema operacional (`prefers-color-scheme`).
 
 O controle de alternância de tema no cabeçalho é feito via `<ThemeToggle />` ou `<ThemeSelect />`.
+As barras de rolagem de toda a aplicação usam `--muted-foreground` no controle
+e `--background` no trilho, incluindo editor, campos, painéis e diálogos em portal.
+A regra global preserva largura e interação nativas e acompanha a troca de tema
+sem recarregar a página. Navegadores sem `scrollbar-color` recebem fallback
+WebKit; no modo de cores forçadas, prevalecem as cores de acessibilidade do sistema.
 Existe um único `ThemeProvider`, em `App`; não o duplique no bootstrap, pois
 provedores independentes disputam o atributo do tema ao mudar a preferência do sistema.
 
