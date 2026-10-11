@@ -210,7 +210,9 @@ test('seleção parcial por mouse acompanha rolagem e cabe em 320px', async ({ p
       '\n\n' +
       Array.from({ length: 50 }, () => 'A escrita continua em outro parágrafo.').join('\n\n'),
   );
-  await editor.evaluate((element) => element.scrollIntoView({ block: 'start' }));
+  // Settle the editor's caret scrolling before measuring the mouse drag target.
+  await editor.press('Control+Home');
+  await editor.getByText(manuscript, { exact: true }).scrollIntoViewIfNeeded();
   const points = await editor.evaluate((element) => {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     const node = walker.nextNode()!;

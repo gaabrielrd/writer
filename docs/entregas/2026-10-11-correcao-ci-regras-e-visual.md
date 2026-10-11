@@ -99,3 +99,39 @@ O build mantém os avisos existentes sobre tamanho de chunks e importação DOCX
 2. Com Java disponível, execute `npm run test:rules`.
 3. Execute a suíte visual de dropdown e ajustes do editor nos seis projetos.
 4. Verifique o resultado dos workflows no commit publicado na `master`.
+
+## Complemento: estabilização da rolagem e duração do gate
+
+O [run da primeira correção](https://github.com/gaabrielrd/writer/actions/runs/38166285574)
+confirmou regras (46 testes), auditoria, Node 22/24 e E2E de produção. A suíte
+visual atingiu o limite de 15 minutos durante o cenário 264 de 324.
+A [integração do Hosting](https://github.com/gaabrielrd/writer/actions/runs/38166285474)
+terminou em 17,3 minutos com 317 testes aprovados, um aprovado na retentativa
+e seis falhas de seleção por mouse. O dropdown passou nos seis projetos.
+
+O trace mostrou coordenadas do arrasto em `y=259,5`, enquanto o texto ficou
+abaixo dessa posição após o editor ajustar a rolagem. Medir apenas os caracteres
+não corrigiu esse movimento. A preparação agora posiciona o cursor no início
+com `Control+Home` e aguarda o texto visível pelo Playwright antes da medição.
+A asserção continua exigindo exatamente `trecho` com arrasto real por mouse.
+
+O limite do job E2E em `.github/workflows/ci.yml` passou para 25 minutos para
+comportar a suíte completa e os artefatos. Os 324 cenários, a cobertura,
+retentativas e timeout individual de 45 segundos permanecem iguais.
+`docs/testing.md` documenta a preparação e o limite do gate.
+
+Validações após o complemento:
+
+```text
+npx playwright test -c playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts --grep 'seleção parcial'
+6 passed (27.3s)
+
+npm run validate
+Test Files  96 passed (96)
+Tests       672 passed (672)
+Ferramentas: tests 69; pass 69; fail 0
+Backend: tests 63; pass 63; fail 0
+Smoke test do bundle OK.
+```
+
+A confirmação da preparação final no Linux será realizada no próximo run.
