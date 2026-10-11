@@ -1,0 +1,44 @@
+.field {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-weight: 600;
+}
+.field p,
+.scale {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.field input {
+  width: 100%;
+  min-height: 32px;
+  accent-color: hsl(var(--primary));
+  cursor: pointer;
+}
+.field input:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+  border-radius: var(--radius);
+}
+.field input:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+.scale {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.scale span {
+  flex: 1;
+}
+.scale span:last-child {
+  text-align: right;
+}

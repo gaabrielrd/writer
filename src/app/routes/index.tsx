@@ -10,6 +10,7 @@ import { AuthorBookRoute } from '@/app/components/AuthorBookRoute';
 import { BookPage, ReaderView } from '@/features/books';
 import { LorePage } from '@/features/lore';
 import { EditorPage } from '@/features/editor';
+import { AISettingsPage } from '@/features/ai-assistant';
 
 /**
  * Definicao das rotas, separada do router para permitir montar a mesma
@@ -55,6 +56,7 @@ export const routes: RouteObject[] = [
         ),
       },
       { path: 'library', element: <ImageLibraryPage /> },
+      { path: 'settings/ai', element: <AISettingsPage /> },
       { path: 'universes', element: <UniversePage /> },
       { path: 'universes/:universeId/lore', element: <UniverseLorePage /> },
       { path: 'read/:bookId', element: <ReaderView /> },

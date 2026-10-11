@@ -2,6 +2,8 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { generateAIResponse } from '../services/aiClient';
 import * as firebaseAIModule from 'firebase/ai';
 import * as sharedLibModule from '@/shared/lib';
+import { DEFAULT_PERSONAS, resolveWritingPersona } from '../model/persona';
+import { buildAutocompletePrompt } from '../model/aiPrompt';
 
 vi.mock('firebase/ai', async () => {
   const actual = await vi.importActual<typeof firebaseAIModule>('firebase/ai');
@@ -20,6 +22,49 @@ vi.mock('@/shared/lib', async () => {
 });
 
 describe('aiClient service', () => {
+  it('preserva as mesmas orientações de persona nos três provedores', async () => {
+    const prompt = buildAutocompletePrompt({
+      textBeforeCursor: 'Ela entrou na sala.',
+      writingPersona: resolveWritingPersona(DEFAULT_PERSONAS, 'preset-incisive'),
+    });
+    vi.mocked(firebaseAIModule.getGenerativeModel).mockReturnValue({
+      generateContent: vi.fn().mockResolvedValue({ response: { text: () => 'Continuação.' } }),
+    } as unknown as firebaseAIModule.GenerativeModel);
+    await generateAIResponse({ ...prompt, byokConfig: { provider: 'firebase_ai' } });
+    expect(firebaseAIModule.getGenerativeModel).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ systemInstruction: prompt.systemInstruction }),
+    );
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          choices: [{ message: { content: 'Continuação.' } }],
+          candidates: [{ content: { parts: [{ text: 'Continuação.' }] } }],
+        }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      await generateAIResponse({
+        ...prompt,
+        byokConfig: { provider: 'openai_byok', openaiApiKey: 'test' },
+      });
+      const openai = JSON.parse((fetchMock.mock.calls[0]![1] as RequestInit).body as string) as {
+        messages: { role: string; content: string }[];
+      };
+      expect(openai.messages[0]).toEqual({ role: 'system', content: prompt.systemInstruction });
+      await generateAIResponse({
+        ...prompt,
+        byokConfig: { provider: 'gemini_byok', geminiApiKey: 'test' },
+      });
+      const gemini = JSON.parse((fetchMock.mock.calls[1]![1] as RequestInit).body as string) as {
+        systemInstruction: { parts: { text: string }[] };
+      };
+      expect(gemini.systemInstruction.parts[0]!.text).toBe(prompt.systemInstruction);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   it('requests structured BYOK JSON and rejects truncated output', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

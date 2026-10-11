@@ -208,13 +208,11 @@ test('editor, painel de lore e configurações de IA', async ({ page }, testInfo
   const settings = page.getByRole('button', { name: new RegExp(author.displayName!) });
   await settings.click();
   await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Configurações de Inteligência Artificial' });
-  await expect(dialog).toBeVisible();
+  await expect(page).toHaveURL(/settings\/ai$/);
+  await expect(page.getByRole('heading', { name: 'Inteligência artificial' })).toBeVisible();
   await capture(page, testInfo, '11-configuracoes-ia');
-  await expectDialogWithinViewport(page);
-  await page.keyboard.press('Escape');
-  await expect(dialog).toHaveCount(0);
-  await expect(settings).toBeFocused();
+  await page.getByRole('link', { name: 'Voltar ao editor' }).click();
+  await expect(page).toHaveURL(new RegExp(`${editorPath}$`));
 });
 
 test('navegação repetida entre biblioteca, obra e capítulos com voltar e avançar', async ({
@@ -424,7 +422,8 @@ test('largura mínima de 320px mantém biblioteca, obra e editor sem transbordam
   await capture(page, testInfo, '16-editor-lore-320px');
   await page.getByRole('button', { name: new RegExp(author.displayName!) }).click();
   await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
-  await expectDialogWithinViewport(page);
+  await expect(page.getByRole('tablist')).toBeVisible();
+  await expect(page.getByRole('list', { name: 'Personas disponíveis' })).toBeVisible();
   await expectNoHorizontalOverflow(page, 'configuracoes-320px');
 });
 

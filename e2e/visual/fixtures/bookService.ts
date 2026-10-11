@@ -14,6 +14,7 @@ import { author, books, chapters, FIXTURE_LIBRARY_STATE_KEY, FIXTURE_TIME } from
 const initialBooks = sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'empty' ? [] : books;
 const bookStore = new Map(initialBooks.map((book) => [book.id, structuredClone(book)]));
 const chapterStore = new Map(chapters.map((chapter) => [chapter.id, structuredClone(chapter)]));
+const bindingListeners = new Set<() => void>();
 let sequence = 0;
 
 export function listBooksByAuthor(authorId: string): Promise<Book[]> {
@@ -48,6 +49,7 @@ export function updateBook(bookId: string, input: UpdateBookInput): Promise<void
   const book = bookStore.get(bookId);
   if (!book) throw new Error('Livro fictício não encontrado.');
   bookStore.set(bookId, { ...book, ...input, updatedAt: FIXTURE_TIME });
+  bindingListeners.forEach((notify) => notify());
   return Promise.resolve();
 }
 
@@ -105,6 +107,7 @@ export function updateChapter(
     wordCount: input.wordCount ?? countWords(input.content ?? chapter.content),
     updatedAt: FIXTURE_TIME,
   });
+  bindingListeners.forEach((notify) => notify());
   return Promise.resolve();
 }
 
@@ -128,4 +131,24 @@ export function recalculateBookWordCount(bookId: string): Promise<number> {
   const book = bookStore.get(bookId);
   if (book) bookStore.set(bookId, { ...book, wordCount: total });
   return Promise.resolve(total);
+}
+
+export function subscribeWritingBindings(
+  bookId: string,
+  chapterId: string | null,
+  callback: (settings: {
+    personaId?: Book['personaId'];
+    personaComplement?: Chapter['personaComplement'];
+  }) => void,
+): () => void {
+  const notify = () => {
+    callback({ personaId: bookStore.get(bookId)?.personaId ?? null });
+    if (chapterId)
+      callback({ personaComplement: chapterStore.get(chapterId)?.personaComplement ?? null });
+  };
+  bindingListeners.add(notify);
+  notify();
+  return () => {
+    bindingListeners.delete(notify);
+  };
 }

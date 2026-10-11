@@ -207,3 +207,19 @@ Os modos **Edição** e **Preview** formam um controle dividido (split button),
 com a mesma altura, tipografia e superfície dos botões secundários vizinhos,
 extremidades arredondadas, divisória única e estado ativo acessível. A seta de
 voltar ao livro não possui borda. Não há divisória entre o header do capítulo e o editor.
+
+## Personas e sliders
+
+`Slider` de `@/shared/ui` envolve um controle nativo de 0 a 100, com nome,
+valor visível, significado dos extremos e foco por teclado. Ele usa tokens de
+tema e está demonstrado em `/styleguide`. Personas reutilizam `Input`,
+`Textarea`, `Dropdown`, `Card` e `Dialog`. A configuração e a biblioteca ocupam
+uma página com abas em `/settings/ai`, seguindo os detalhes de livro. Personas
+aparecem em lista de linhas clicáveis; detalhes e edição ocupam um único modal
+ativo, com header/footer fixos e corpo rolável até 80vh. O mapa de personalidade
+usa ícones Lucide, barras nativas de progresso, hierarquia de valores e extremos,
+em duas colunas no desktop e uma no celular.
+O capítulo permite herdar cada atributo ou definir seu valor. O botão **Persona**
+concentra base, complementar, biblioteca e orientações efetivas em um único modal;
+a área de escrita não contém uma faixa extra de gerenciamento. No celular,
+ações dos detalhes se organizam em duas colunas para preservar espaço de leitura.

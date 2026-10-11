@@ -4,6 +4,7 @@ import { useAIAutocomplete, type UseAIAutocompleteOptions } from '../hooks/useAI
 import * as ai from '../services/aiClient';
 import * as credits from '../services/creditsService';
 import * as storage from '../services/byokStorage';
+import { DEFAULT_PERSONAS, resolveWritingPersona } from '../model/persona';
 
 vi.mock('../services/aiClient');
 vi.mock('../services/creditsService');
@@ -31,6 +32,50 @@ beforeEach(() => {
 });
 afterEach(() => {
   vi.useRealTimers();
+});
+
+it('cancela respostas de personas antigas sem gerar de novo até outra digitação', async () => {
+  const writingPersona = resolveWritingPersona(DEFAULT_PERSONAS, 'preset-incisive');
+  const props = { ...options, writingPersona };
+  let complete: (text: string) => void = () => undefined;
+  vi.mocked(ai.generateAIResponse).mockReturnValueOnce(
+    new Promise((resolve) => {
+      complete = resolve;
+    }),
+  );
+  const { result, rerender } = renderHook(
+    (value: UseAIAutocompleteOptions) => useAIAutocomplete(value),
+    { initialProps: props },
+  );
+  rerender({ ...props, typingRevision: 1 });
+  await tick();
+  expect(ai.generateAIResponse).toHaveBeenCalledWith(
+    expect.objectContaining({
+      systemInstruction: expect.stringContaining('Concisão: 95/100') as string,
+    }),
+  );
+  const changed = {
+    ...props,
+    typingRevision: 1,
+    writingPersona: resolveWritingPersona(DEFAULT_PERSONAS, 'preset-intimate'),
+  };
+  rerender(changed);
+  await act(async () => {
+    complete('Resposta antiga.');
+    await Promise.resolve();
+  });
+  expect(result.current.suggestion).toBeNull();
+  expect(await result.current.acceptSuggestion()).toBeNull();
+  expect(credits.deductCredit).not.toHaveBeenCalled();
+  await tick();
+  expect(ai.generateAIResponse).toHaveBeenCalledOnce();
+  rerender({ ...changed, typingRevision: 2 });
+  await tick();
+  expect(ai.generateAIResponse).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      systemInstruction: expect.stringContaining('Introspecção: 95/100') as string,
+    }),
+  );
 });
 
 describe('autocomplete acceptance contract', () => {

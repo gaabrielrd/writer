@@ -68,6 +68,7 @@ describe('BookPage', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(bookService, 'subscribeWritingBindings').mockReturnValue(() => undefined);
   });
 
   it('renderiza dados do livro e abas', async () => {
@@ -256,7 +257,13 @@ describe('BookPage', () => {
     expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Importar Arquivo' })).not.toBeInTheDocument();
     await user.click(options);
-    expect(screen.getAllByRole('menuitem')).toHaveLength(4);
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Exportar',
+      'Importar documento',
+      'Persona de IA',
+      'Editar',
+      'Excluir',
+    ]);
     await user.click(screen.getByRole('menuitem', { name: 'Exportar' }));
     expect(screen.getByRole('dialog', { name: 'Exportar manuscrito' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Fechar exportação' }));

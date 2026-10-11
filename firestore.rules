@@ -154,7 +154,78 @@ service cloud.firestore {
           && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId))));
     }
 
+    function validPersonaTraitAt(traits, index) {
+      let trait = traits.size() > index ? traits[index] : null;
+      return traits.size() <= index || (trait is map && trait.value is int && trait.value >= 0 && trait.value <= 100);
+    }
+    function validAIPersona(data, personaId) {
+      return data.keys().hasOnly(['id', 'schemaVersion', 'name', 'description', 'instructions', 'traits', 'revision', 'archived', 'createdAt', 'updatedAt'])
+        && data.id == personaId && personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$')
+        && data.schemaVersion == 1
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 80
+        && data.description is string && data.description.size() <= 500
+        && data.instructions is string && data.instructions.size() > 0 && data.instructions.size() <= 6000
+        && data.revision is int && data.revision >= 1
+        && data.archived is bool && data.createdAt is int && data.updatedAt is int
+        && data.traits is list && data.traits.size() >= 8 && data.traits.size() <= 16
+        && validPersonaTraitAt(data.traits, 0)
+        && validPersonaTraitAt(data.traits, 1)
+        && validPersonaTraitAt(data.traits, 2)
+        && validPersonaTraitAt(data.traits, 3)
+        && validPersonaTraitAt(data.traits, 4)
+        && validPersonaTraitAt(data.traits, 5)
+        && validPersonaTraitAt(data.traits, 6)
+        && validPersonaTraitAt(data.traits, 7)
+        && validPersonaTraitAt(data.traits, 8)
+        && validPersonaTraitAt(data.traits, 9)
+        && validPersonaTraitAt(data.traits, 10)
+        && validPersonaTraitAt(data.traits, 11)
+        && validPersonaTraitAt(data.traits, 12)
+        && validPersonaTraitAt(data.traits, 13)
+        && validPersonaTraitAt(data.traits, 14)
+        && validPersonaTraitAt(data.traits, 15);
+    }
+    function validPersonaReference(personaId) {
+      return personaId == null || (personaId is string && (personaId in ['preset-atmospheric', 'preset-incisive', 'preset-intimate', 'preset-ironic', 'preset-epic', 'preset-unsettling']
+        || (personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$') && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid)/aiPersonas/$(personaId)))));
+    }
+    function validPersonaOverrideAt(overrides, index) {
+      return overrides.size() <= index || (overrides[index] is map
+        && overrides[index].keys().hasOnly(['traitId', 'value'])
+        && overrides[index].traitId is string && overrides[index].traitId.matches('^[a-zA-Z0-9-]{1,100}$')
+        && overrides[index].value is int && overrides[index].value >= 0 && overrides[index].value <= 100);
+    }
+    function validPersonaComplement(data) {
+      return data == null || (data is map && data.keys().hasOnly(['personaId', 'overrides'])
+        && data.personaId != null && validPersonaReference(data.personaId)
+        && data.overrides is list && data.overrides.size() <= 16
+        && validPersonaOverrideAt(data.overrides, 0)
+        && validPersonaOverrideAt(data.overrides, 1)
+        && validPersonaOverrideAt(data.overrides, 2)
+        && validPersonaOverrideAt(data.overrides, 3)
+        && validPersonaOverrideAt(data.overrides, 4)
+        && validPersonaOverrideAt(data.overrides, 5)
+        && validPersonaOverrideAt(data.overrides, 6)
+        && validPersonaOverrideAt(data.overrides, 7)
+        && validPersonaOverrideAt(data.overrides, 8)
+        && validPersonaOverrideAt(data.overrides, 9)
+        && validPersonaOverrideAt(data.overrides, 10)
+        && validPersonaOverrideAt(data.overrides, 11)
+        && validPersonaOverrideAt(data.overrides, 12)
+        && validPersonaOverrideAt(data.overrides, 13)
+        && validPersonaOverrideAt(data.overrides, 14)
+        && validPersonaOverrideAt(data.overrides, 15));
+    }
     match /users/{userId} {
+      match /aiPersonas/{personaId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && validAIPersona(request.resource.data, personaId)
+          && (request.method == 'create' ? request.resource.data.revision == 1
+            : request.resource.data.revision == resource.data.revision + 1
+              && request.resource.data.createdAt == resource.data.createdAt);
+        allow delete: if false;
+      }
+
       match /imageLibrary/{imageId} {
         allow read: if isOwner(userId);
         allow write: if false;
@@ -218,11 +289,13 @@ service cloud.firestore {
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.get('universeId', null) == null
         && request.resource.data.status == 'draft'
+        && validPersonaReference(request.resource.data.get('personaId', null))
         && request.resource.data.get('coverImageId', null) == null
         && request.resource.data.get('publicationPrivacyVersion', 0) == 0
         && request.resource.data.get('deleting', false) == false
         && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
       allow update: if isOwner(resource.data.authorId)
+        && validPersonaReference(request.resource.data.get('personaId', null))
         && request.resource.data.get('universeId', null) == resource.data.get('universeId', null)
         && request.resource.data.authorId == resource.data.authorId
         && request.resource.data.get('coverImageId', null) == resource.data.get('coverImageId', null)
@@ -240,6 +313,7 @@ service cloud.firestore {
       match /chapters/{chapterId} {
         allow read, delete: if isBookAuthor(bookId);
         allow create, update: if isBookAuthor(bookId)
+          && validPersonaComplement(request.resource.data.get('personaComplement', null))
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
       }
 

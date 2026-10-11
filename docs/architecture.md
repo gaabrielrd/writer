@@ -239,3 +239,16 @@ o vínculo opcional; `editor` combina entidades para reconhecimento, menções e
 Vínculos e mutações globais passam por functions; regras protegem os originais
 e validam a versão pública de privacidade. Veja [universos](shared-lore.md) e
 [ADR 0018](decisions/0018-shared-universes-and-lore.md).
+
+## Personas de escrita
+
+`ai-assistant` mantém catálogo, biblioteca privada, validação, resolução de
+instruções e formulários. A interface pública fornece tipos, resolver, biblioteca
+e seletor de vínculos. `AISettingsProvider` navega para `/settings/ai`;
+`AISettingsPage` mantém abas na URL, e a biblioteca abre detalhes/edição por linha.
+`books` persiste os vínculos e observa metadados; `editor`
+compõe a base/complementar e envia o contexto ao autocomplete e às ações.
+`shared/ui/Slider` permanece neutro em relação ao domínio. Personas usam revisões
+transacionais; alterações invalidam respostas antigas. Os originais e prompts
+permanecem privados e são preservados somente no backup JSON v3. Veja
+[personas de escrita](ai-personas.md).

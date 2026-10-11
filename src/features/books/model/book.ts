@@ -3,6 +3,7 @@ export type BookStatus = 'draft' | 'published';
 export interface Book {
   id: string;
   universeId?: string | null;
+  personaId?: string | null;
   authorId: string;
   title: string;
   genre?: string;
@@ -28,6 +29,7 @@ export interface CreateBookInput {
 
 export interface UpdateBookInput {
   universeId?: string | null;
+  personaId?: string | null;
   title?: string;
   genre?: string;
   synopsis?: string;

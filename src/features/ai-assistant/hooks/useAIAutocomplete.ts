@@ -1,3 +1,4 @@
+import type { WritingPersonaContext } from '../model/persona';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { buildAutocompletePrompt, type LoreContextItem } from '../model/aiPrompt';
 import { type BYOKConfig, usesOwnKey } from '../model/byokConfig';
@@ -8,6 +9,7 @@ import { useAIConfig } from './useAIConfig';
 
 export interface UseAIAutocompleteOptions {
   typingRevision: number;
+  writingPersona?: WritingPersonaContext;
   content: string;
   cursorPosition: number;
   loreEntities?: LoreContextItem[];
@@ -39,6 +41,7 @@ const EMPTY_LORE: LoreContextItem[] = [];
 
 export function useAIAutocomplete({
   typingRevision,
+  writingPersona,
   content,
   cursorPosition,
   loreEntities = EMPTY_LORE,
@@ -60,7 +63,11 @@ export function useAIAutocomplete({
   const offeredRef = useRef<Suggestion | null>(null);
   const callbacksRef = useRef({ onCreditDeducted, onShowOutOfCredits });
   const textBeforeCursor = content.substring(0, cursorPosition);
-  const { prompt, systemInstruction } = buildAutocompletePrompt({ textBeforeCursor, loreEntities });
+  const { prompt, systemInstruction } = buildAutocompletePrompt({
+    textBeforeCursor,
+    loreEntities,
+    writingPersona,
+  });
   const context = JSON.stringify([
     content,
     cursorPosition,
@@ -69,6 +76,8 @@ export function useAIAutocomplete({
     userCredits,
     enabled,
     configVersion,
+    systemInstruction,
+    writingPersona?.version,
   ]);
   const contextRef = useRef(context);
   const lastTypingRevision = useRef(typingRevision);

@@ -1,3 +1,4 @@
+import type { WritingPersonaContext } from './persona';
 export interface LoreContextItem {
   name: string;
   category: string;
@@ -25,20 +26,24 @@ export function buildLoreContext(loreEntities: LoreContextItem[], referenceText 
 export function buildAutocompletePrompt({
   textBeforeCursor,
   loreEntities = [],
+  writingPersona,
 }: {
   textBeforeCursor: string;
   loreEntities?: LoreContextItem[];
+  writingPersona?: WritingPersonaContext;
 }): { systemInstruction: string; prompt: string } {
   // Pega até os últimos 1500 caracteres para ter contexto imediato da cena
   const recentText = textBeforeCursor.slice(-1500);
   const loreBlock = buildLoreContext(loreEntities, recentText);
 
-  const systemInstruction =
+  let systemInstruction =
     'Você é um assistente de escrita de ficção criativa integrado a um editor de romances. ' +
     'Sua missão é sugerir a continuação imediata da frase ou parágrafo atual, mantendo o tom, ' +
     'o estilo narrativo e a consistência estrita com as entidades de lore do universo fornecido. ' +
     'Responda APENAS com o texto de continuação (de 1 a 3 frases curtas e fluidas), sem comentários, ' +
     'sem aspas ao redor e sem repetir o texto já escrito pelo autor.';
+
+  if (writingPersona?.instruction) systemInstruction += `\n${writingPersona.instruction}`;
 
   const prompt = `${loreBlock}
 [TEXTO RECENTE DO AUTOR]:
@@ -55,16 +60,18 @@ export function buildActionPrompt({
   action,
   selectedText,
   loreEntities = [],
+  writingPersona,
   customInstruction = '',
 }: {
   action: AIActionType;
   selectedText: string;
   loreEntities?: LoreContextItem[];
+  writingPersona?: WritingPersonaContext;
   customInstruction?: string;
 }): { systemInstruction: string; prompt: string } {
   const loreBlock = buildLoreContext(loreEntities, selectedText);
 
-  const systemInstruction =
+  let systemInstruction =
     'Você é um coautor e editor literário experiente em ficção narrativa. Responda de forma direta e elegante em língua portuguesa.';
 
   let actionInstruction = '';
@@ -75,8 +82,9 @@ export function buildActionPrompt({
         'Continue a cena a partir do trecho selecionado, desenvolvendo a ação, os diálogos e a tensão narrativa de forma orgânica (1 a 2 parágrafos).';
       break;
     case 'improve_style':
-      actionInstruction =
-        'Reescreva o trecho selecionado aprimorando a riqueza sensorial, a musicalidade da prosa e a expressividade descritiva, eliminando clichês sem desvirtuar o sentido original.';
+      actionInstruction = writingPersona?.instruction
+        ? 'Reescreva o trecho selecionado aprimorando clareza, ritmo e expressividade segundo as orientações de escrita e os atributos efetivos da persona. Elimine clichês sem desvirtuar o sentido original.'
+        : 'Reescreva o trecho selecionado aprimorando a riqueza sensorial, a musicalidade da prosa e a expressividade descritiva, eliminando clichês sem desvirtuar o sentido original.';
       break;
     case 'check_consistency':
       actionInstruction =
@@ -86,6 +94,8 @@ export function buildActionPrompt({
       actionInstruction = customInstruction.trim() || 'Aprimore o texto selecionado.';
       break;
   }
+
+  if (writingPersona?.instruction) systemInstruction += `\n${writingPersona.instruction}`;
 
   const prompt = `${loreBlock}
 [INSTRUÇÃO]:

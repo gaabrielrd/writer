@@ -28,6 +28,7 @@ import {
   deleteChapter,
   reorderChapters,
   recalculateBookWordCount,
+  subscribeWritingBindings,
 } from '../services/bookService';
 import * as generatedService from '../services/generatedBookService';
 import type { Book } from '../model/book';
@@ -48,7 +49,73 @@ vi.mock('firebase/firestore', () => ({
   orderBy: vi.fn(),
   getFirestore: vi.fn(() => ({})),
   runTransaction: vi.fn(),
+  onSnapshot: vi.fn(),
 }));
+
+it('observa vínculos sem sobrescrever prosa e libera as duas assinaturas ao sair', () => {
+  const callbacks: ((snapshot: unknown) => void)[] = [];
+  const stop = vi.fn();
+  vi.mocked(firestoreModule.onSnapshot).mockImplementation((_reference, callback) => {
+    callbacks.push(callback as unknown as (snapshot: unknown) => void);
+    return stop;
+  });
+  const changed = vi.fn();
+  const failed = vi.fn();
+  const unsubscribe = subscribeWritingBindings('book', 'chapter', changed, failed);
+  callbacks[0]!({
+    exists: () => true,
+    data: () => ({
+      personaId: 'preset-incisive',
+      title: 'Livro',
+      content: 'Não deve ser propagado',
+    }),
+  });
+  callbacks[1]!({
+    exists: () => true,
+    data: () => ({
+      personaComplement: {
+        personaId: 'preset-unsettling',
+        overrides: [{ traitId: 'tension', value: 0 }],
+      },
+      content: 'Outra prosa',
+    }),
+  });
+  expect(changed).toHaveBeenLastCalledWith({
+    personaId: 'preset-incisive',
+    personaComplement: {
+      personaId: 'preset-unsettling',
+      overrides: [{ traitId: 'tension', value: 0 }],
+    },
+  });
+  callbacks[1]!({
+    exists: () => true,
+    data: () => ({
+      personaComplement: {
+        personaId: 'preset-incisive',
+        overrides: [{ traitId: 'tension', value: 101 }],
+      },
+    }),
+  });
+  expect(failed).toHaveBeenCalledWith(expect.any(Error));
+  unsubscribe();
+  expect(stop).toHaveBeenCalledTimes(2);
+});
+
+it('observa somente o livro e relata remoções remotas sem fabricar configuração', () => {
+  const callbacks: ((snapshot: unknown) => void)[] = [];
+  vi.mocked(firestoreModule.onSnapshot).mockImplementation((_reference, callback) => {
+    callbacks.push(callback as unknown as (snapshot: unknown) => void);
+    return vi.fn();
+  });
+  const changed = vi.fn();
+  const failed = vi.fn();
+  const stop = subscribeWritingBindings('book', null, changed, failed);
+  callbacks[0]!({ exists: () => true, data: () => ({}) });
+  expect(changed).toHaveBeenCalledWith({ personaId: null });
+  callbacks[0]!({ exists: () => false });
+  expect(failed).toHaveBeenCalledWith(expect.objectContaining({ message: 'Livro indisponível.' }));
+  stop();
+});
 
 describe('bookService', () => {
   beforeEach(() => {

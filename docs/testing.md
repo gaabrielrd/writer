@@ -214,3 +214,29 @@ As respostas de IA são fictícias e a configuração visual bloqueia rede exter
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts
 ```
+
+## Personas de escrita
+
+Os testes de `ai-assistant` cobrem os seis padrões, atributos personalizados,
+precedência, referências indisponíveis, revisões concorrentes, formulários,
+falhas e retry. Autocomplete e ações invalidam respostas antigas sem inserir
+texto nem cobrar; os três adaptadores recebem as mesmas instruções. O backup
+v3 preserva apenas personas utilizadas e seus vínculos, sem credenciais.
+`tests/firestore/personas.rules.test.mjs` cobre isolamento, revisões, limites,
+16 atributos e vínculos próprios.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/personas.visual.ts
+```
+
+A suíte cobre os três temas em desktop/celular, com edição em 320 px, sliders
+por teclado, ações fixas, arquivamento/reativação e composição enviada às
+chamadas de escrita. As respostas são fictícias; não avalia qualidade literária
+do modelo nem faz chamadas de produção. Veja [personas](ai-personas.md).
+
+`AISettingsPage.test.tsx` verifica a navegação para `/settings/ai`, as abas com
+setas/Home/End, abertura de detalhes gráficos e retorno do foco à linha da lista.
+Os testes visuais confirmam os avatares, barras de intensidade, layout em uma
+coluna em 320 px e retorno ao editor. A aba do provedor persiste na URL e as
+preferências são mantidas ao recarregar. Cada teste tem um contexto de navegador
+novo; a preparação da prévia não limpa configurações durante um reload.

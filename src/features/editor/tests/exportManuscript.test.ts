@@ -1,4 +1,6 @@
 import { getUniverse } from '@/features/universes';
+import { DEFAULT_PERSONAS, listPersonas } from '@/features/ai-assistant';
+import * as personaAPI from '@/features/ai-assistant';
 vi.mock('@/features/universes', () => ({ getUniverse: vi.fn() }));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { listChapters } from '@/features/books';
@@ -17,10 +19,60 @@ vi.mock('../services/exportDocx', () => ({ exportDocx: vi.fn() }));
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.spyOn(personaAPI, 'listPersonas').mockResolvedValue([]);
   vi.mocked(listChapters).mockResolvedValue([exportChapter]);
   vi.mocked(listLoreEntities).mockResolvedValue([]);
   vi.mocked(exportPdf).mockResolvedValue();
   vi.mocked(exportDocx).mockResolvedValue(new Blob(['docx']));
+});
+
+it('preserva personas e vínculos no backup v3 sem exportar segredos ou a biblioteca inteira', async () => {
+  const custom = { ...DEFAULT_PERSONAS[1]!, id: 'custom-test', name: 'Minha voz' };
+  vi.mocked(listPersonas).mockResolvedValue([
+    { ...custom, apiKey: 'never-export' } as typeof custom,
+    { ...custom, id: 'custom-unused' },
+  ]);
+  vi.mocked(listChapters).mockResolvedValue([
+    {
+      ...exportChapter,
+      personaComplement: {
+        personaId: 'preset-unsettling',
+        overrides: [{ traitId: 'tension', value: 0 }],
+      },
+    },
+  ]);
+  await exportManuscript({
+    book: { ...exportBook, personaId: custom.id },
+    scope: 'book',
+    format: 'json',
+  });
+  const raw = await downloadedText();
+  expect(JSON.parse(raw)).toMatchObject({
+    version: 3,
+    book: { personaId: 'custom-test' },
+    chapters: [
+      {
+        personaComplement: {
+          personaId: 'preset-unsettling',
+          overrides: [{ traitId: 'tension', value: 0 }],
+        },
+      },
+    ],
+    personas: [
+      { id: 'custom-test', instructions: custom.instructions },
+      { id: 'preset-unsettling' },
+    ],
+  });
+  expect(raw).not.toContain('never-export');
+  expect(raw).not.toContain('custom-unused');
+  vi.mocked(listPersonas).mockResolvedValue([]);
+  await expect(
+    exportManuscript({
+      book: { ...exportBook, personaId: 'custom-test' },
+      scope: 'book',
+      format: 'json',
+    }),
+  ).rejects.toThrow('indisponível');
 });
 
 async function downloadedText(): Promise<string> {

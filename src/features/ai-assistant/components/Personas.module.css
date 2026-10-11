@@ -1,0 +1,350 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.stack h2,
+.stack h3,
+.stack p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.stack h2 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+.actions > div > p {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+}
+.detailActions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  width: 100%;
+  gap: var(--space-2);
+}
+.card,
+.trait {
+  padding: var(--space-4);
+}
+.trait {
+  display: grid;
+  gap: var(--space-3);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.actions button {
+  white-space: normal;
+}
+.summary {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+}
+.stack summary {
+  cursor: pointer;
+  color: hsl(var(--foreground));
+}
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.identity h3,
+.identity p {
+  min-width: 0;
+}
+.avatar {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
+}
+.settingsPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: var(--layout-max);
+  margin: 0 auto;
+  padding: var(--space-4);
+  box-sizing: border-box;
+}
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  text-decoration: none;
+  align-self: flex-start;
+}
+.tabBar {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  max-width: 100%;
+  align-self: flex-start;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-full);
+  background: hsl(var(--card) / var(--panel-opacity));
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 0;
+  border-radius: var(--radius-full);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+.tabActive {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  font-weight: 700;
+}
+.modalNavigation {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--space-4);
+  min-width: 0;
+}
+.modalTabs .tab {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+}
+.tab:focus-visible,
+.backLink:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+}
+.providerCard {
+  max-width: 760px;
+  padding: var(--space-6);
+}
+.providerCard h2 {
+  margin: 0 0 var(--space-3);
+}
+.personaList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  background: hsl(var(--card));
+  overflow: hidden;
+}
+.libraryEmpty {
+  padding: 0;
+  margin: 0;
+  max-width: none;
+  border: 0;
+  background: transparent;
+  align-items: flex-start;
+  gap: var(--space-1);
+  text-align: left;
+}
+.libraryEmpty > div:first-child {
+  display: none;
+}
+.libraryEmpty p {
+  max-width: none;
+}
+.personaList li + li {
+  border-top: 1px solid hsl(var(--border));
+}
+.personaRow {
+  display: flex;
+  justify-content: flex-start;
+  width: 100%;
+  height: auto;
+  padding: var(--space-4);
+  border-radius: 0;
+  gap: var(--space-4);
+  text-align: left;
+  white-space: normal;
+}
+.personaRow > svg {
+  flex-shrink: 0;
+  color: hsl(var(--muted-foreground));
+}
+.rowCopy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.rowCopy strong {
+  font-size: var(--text-lg);
+  color: hsl(var(--foreground));
+}
+.rowCopy > span {
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+.rowCopy .rowMeta {
+  font-size: var(--text-xs);
+  color: hsl(var(--primary));
+}
+.detailHero .avatar,
+.detailHero .avatarFallback {
+  width: 112px;
+  height: 112px;
+}
+.detailHero > div {
+  display: grid;
+  gap: var(--space-3);
+}
+.instructions {
+  padding: var(--space-4);
+  border-left: 3px solid hsl(var(--primary));
+  border-radius: var(--radius-md);
+  background: hsl(var(--primary) / 0.06);
+}
+.instructions p {
+  white-space: pre-wrap;
+  line-height: var(--leading-normal);
+  margin-top: var(--space-2);
+}
+.traitGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+.visualTrait {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid hsl(var(--border));
+  background: linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(var(--card)));
+}
+.traitHeading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.traitHeading h3 {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.traitSymbol,
+.avatarFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-radius: var(--radius-md);
+  width: 36px;
+  height: 36px;
+}
+.avatarFallback {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-lg);
+}
+.traitValue {
+  font-size: var(--text-xl);
+  color: hsl(var(--primary));
+}
+.traitValue small {
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+.visualTrait p,
+.traitScale {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-xs);
+}
+.visualTrait progress {
+  appearance: none;
+  border: 0;
+  width: 100%;
+  height: 8px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: hsl(var(--muted));
+  accent-color: hsl(var(--primary));
+}
+.visualTrait progress::-webkit-progress-bar {
+  background: hsl(var(--muted));
+}
+.visualTrait progress::-webkit-progress-value {
+  background: hsl(var(--primary));
+  border-radius: var(--radius-full);
+}
+.visualTrait progress::-moz-progress-bar {
+  background: hsl(var(--primary));
+  border-radius: var(--radius-full);
+}
+.traitScale {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.traitScale > span {
+  flex: 1;
+}
+.traitScale > span:last-child {
+  text-align: right;
+}
+.traitEyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: hsl(var(--primary));
+  font-size: var(--text-xs);
+}
+@media (max-width: 600px) {
+  .detailActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .detailActions button {
+    white-space: normal;
+    height: auto;
+    min-height: 40px;
+    font-size: var(--text-xs);
+  }
+  .detailHero .avatar,
+  .detailHero .avatarFallback {
+    width: 80px;
+    height: 80px;
+  }
+  .traitGrid {
+    grid-template-columns: 1fr;
+  }
+  .detailHero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .personaRow {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+  .personaRow .avatar,
+  .personaRow .avatarFallback {
+    width: 56px;
+    height: 56px;
+  }
+}

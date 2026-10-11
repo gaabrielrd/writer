@@ -1,8 +1,13 @@
+export interface ChapterPersonaComplement {
+  personaId: string;
+  overrides: { traitId: string; value: number }[];
+}
 import { renderRichText } from '../../../shared/lib/sanitizeRichText';
 
 export interface Chapter {
   id: string;
   bookId: string;
+  personaComplement?: ChapterPersonaComplement | null;
   title: string;
   order: number;
   wordCount: number;
@@ -12,12 +17,14 @@ export interface Chapter {
 }
 
 export interface CreateChapterInput {
+  personaComplement?: ChapterPersonaComplement | null;
   title: string;
   order?: number;
   content?: string;
 }
 
 export interface UpdateChapterInput {
+  personaComplement?: ChapterPersonaComplement | null;
   title?: string;
   order?: number;
   content?: string;

@@ -1,3 +1,4 @@
+import type { WritingPersonaContext } from '../model/persona';
 import { useEffect, useRef, useState } from 'react';
 import { Sparkles, Feather, Search, Wand2, Copy, Plus, Replace, Check } from 'lucide-react';
 import { Alert, Button, Dialog, Input, LoadingState } from '@/shared/ui';
@@ -10,6 +11,8 @@ import styles from './AIActionMenu.module.css';
 import { AISelectionToolbar } from './AISelectionToolbar';
 
 export interface AIActionMenuProps {
+  writingPersona?: WritingPersonaContext;
+  aiUnavailableReason?: string | null;
   selectedText?: string;
   onGetSelectedText?: () => string;
   onGetContextText?: () => string;
@@ -29,6 +32,8 @@ export interface AIActionMenuProps {
 
 export function AIActionMenu({
   selectedText = '',
+  writingPersona,
+  aiUnavailableReason,
   onGetSelectedText,
   onGetContextText,
   onCanApplyResult,
@@ -44,20 +49,37 @@ export function AIActionMenu({
   onOpenChange,
   onReturnFocus,
 }: AIActionMenuProps) {
+  const personaVersion = writingPersona?.version ?? '';
+  const [requestVersion, setRequestVersion] = useState(personaVersion);
   const [isOpen, setIsOpen] = useState(false);
   const [activeAction, setActiveAction] = useState<AIActionType>('continue');
   const [customInstruction, setCustomInstruction] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [resultText, setResultText] = useState<string | null>(null);
+  const [rawIsLoading, setIsLoading] = useState(false);
+  const [rawResultText, setResultText] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [capturedSelection, setCapturedSelection] = useState(selectedText);
   const [isApplying, setIsApplying] = useState(false);
+  const contextVersion = JSON.stringify([personaVersion, aiUnavailableReason ?? null]);
+  const [previousContext, setPreviousContext] = useState(contextVersion);
+  if (previousContext !== contextVersion) {
+    setPreviousContext(contextVersion);
+    setResultText(null);
+    setIsLoading(false);
+    setError(null);
+  }
   const applyingRef = useRef(false);
   const controllerRef = useRef<AbortController | null>(null);
   const resultConfigRef = useRef<BYOKConfig | null>(null);
   const usedResultRef = useRef(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultText =
+    requestVersion === personaVersion && !aiUnavailableReason ? rawResultText : null;
+  const isLoading = requestVersion === personaVersion && !aiUnavailableReason && rawIsLoading;
+  useEffect(() => {
+    controllerRef.current?.abort();
+    resultConfigRef.current = null;
+  }, [personaVersion, aiUnavailableReason]);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const instructionRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -115,6 +137,10 @@ export function AIActionMenu({
     const byok = getBYOKConfig();
     const isUsingBYOK = usesOwnKey(byok);
     if (applyingRef.current) return;
+    if (aiUnavailableReason) {
+      setError(aiUnavailableReason);
+      return;
+    }
 
     if (!isUsingBYOK && userCredits <= 0) {
       closeDialog();
@@ -131,6 +157,7 @@ export function AIActionMenu({
     controllerRef.current = controller;
     resultConfigRef.current = null;
     usedResultRef.current = false;
+    setRequestVersion(personaVersion);
     setActiveAction(actionType);
     setIsLoading(true);
     setError(null);
@@ -152,6 +179,7 @@ export function AIActionMenu({
         selectedText: textToUse,
         loreEntities,
         customInstruction,
+        writingPersona,
       });
 
       const response = await generateAIResponse({
@@ -176,6 +204,7 @@ export function AIActionMenu({
 
   const handleApply = async () => {
     const config = resultConfigRef.current;
+    if (aiUnavailableReason) return;
     if (!resultText || !config || applyingRef.current || usedResultRef.current) return;
     if (onCanApplyResult && !onCanApplyResult()) {
       setError('O trecho mudou. Solicite uma nova sugestão antes de aplicar.');
@@ -223,13 +252,14 @@ export function AIActionMenu({
         variant="secondary"
         onClick={() => handleOpen()}
         title="Assistente Criativo de IA"
+        disabled={Boolean(aiUnavailableReason)}
         aria-label="Abrir Assistente Criativo de IA"
       >
         <Sparkles className="icon icon-sm" aria-hidden="true" />
         <span>Assistente IA</span>
       </Button>
 
-      {selectionAnchor && !isOpen && (
+      {selectionAnchor && !isOpen && !aiUnavailableReason && (
         <AISelectionToolbar anchor={selectionAnchor} onAction={handleOpen} />
       )}
 
@@ -267,7 +297,7 @@ export function AIActionMenu({
               <Feather className="icon icon-sm" aria-hidden="true" />
               <div className={styles.actionCardInfo}>
                 <strong>Aprimorar Estilo</strong>
-                <span>Enriquece sensorialidade e ritmo da prosa</span>
+                <span>Aprimora a prosa conforme a persona de escrita</span>
               </div>
             </button>
 
