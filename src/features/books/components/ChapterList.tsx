@@ -1,7 +1,16 @@
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
-import { ArrowDown, ArrowUp, Edit2, PenLine, Plus, Trash2, Upload } from 'lucide-react';
-import { Alert, Button, Dialog, Input, LoadingState } from '@/shared/ui';
+import {
+  ArrowDown,
+  ArrowUp,
+  Edit2,
+  MoreHorizontal,
+  PenLine,
+  Plus,
+  Trash2,
+  Upload,
+} from 'lucide-react';
+import { Alert, Button, Dialog, Dropdown, DropdownItem, Input, LoadingState } from '@/shared/ui';
 import type { Book } from '../model/book';
 import type { Chapter } from '../model/chapter';
 import { useChapters } from '../hooks/useChapters';
@@ -31,20 +40,29 @@ export function ChapterList({
     useChapters(mode === 'inline' ? book.id : open ? book.id : null);
 
   const [newTitle, setNewTitle] = useState('');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [creationError, setCreationError] = useState<string | null>(null);
+  const createFormId = useId();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleAddChapter = (e: FormEvent) => {
     e.preventDefault();
-    if (!newTitle.trim()) return;
+    if (isProcessing || !newTitle.trim()) return;
 
     setIsProcessing(true);
+    setCreationError(null);
     void (async () => {
       try {
         await createChapter({ title: newTitle.trim() });
         setNewTitle('');
+        setIsCreateOpen(false);
         onChapterCountChanged?.();
+      } catch (cause) {
+        setCreationError(
+          cause instanceof Error ? cause.message : 'Não foi possível criar o capítulo.',
+        );
       } finally {
         setIsProcessing(false);
       }
@@ -101,15 +119,42 @@ export function ChapterList({
 
   const totalWords = chapters.reduce((sum, ch) => sum + (ch.wordCount || 0), 0);
 
+  const closeCreateChapter = () => {
+    if (isProcessing) return;
+    setIsCreateOpen(false);
+    setNewTitle('');
+    setCreationError(null);
+  };
+
   const content = (
     <div className={styles.container}>
       <div className={styles.summary}>
-        <span>
-          <strong>{chapters.length}</strong> capítulo(s)
-        </span>
-        <span>
-          Total: <strong>{totalWords.toLocaleString('pt-BR')}</strong> palavras
-        </span>
+        <div className={styles.counts}>
+          <span>
+            <strong>{chapters.length}</strong> capítulo(s)
+          </span>
+          <span>
+            <strong>{totalWords.toLocaleString('pt-BR')}</strong> palavras
+          </span>
+        </div>
+        <div className={styles.summaryActions}>
+          <Button
+            size="sm"
+            className={styles.newChapterButton}
+            aria-label="Novo capítulo"
+            disabled={loading || isProcessing}
+            onClick={() => setIsCreateOpen(true)}
+          >
+            <Plus className="icon icon-sm" aria-hidden="true" />
+            <span className={styles.actionLabel}>Novo capítulo</span>
+          </Button>
+          {onOpenImport && (
+            <Button variant="secondary" size="sm" onClick={onOpenImport} disabled={isProcessing}>
+              <Upload className="icon icon-sm" aria-hidden="true" />
+              Importar Arquivo
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -118,46 +163,13 @@ export function ChapterList({
         </Alert>
       )}
 
-      <form onSubmit={handleAddChapter} className={styles.addForm}>
-        <div className={styles.addInput}>
-          <Input
-            label="Novo Capítulo"
-            placeholder="Ex: Capítulo 1: O Despertar"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            disabled={isProcessing}
-          />
-        </div>
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={isProcessing || !newTitle.trim()}
-          title="Adicionar capítulo"
-        >
-          <Plus className="icon icon-sm" aria-hidden="true" />
-          Adicionar
-        </Button>
-        {onOpenImport && (
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onOpenImport}
-            disabled={isProcessing}
-            title="Importar capítulos de arquivo .docx ou .pdf"
-          >
-            <Upload className="icon icon-sm" aria-hidden="true" />
-            Importar Arquivo
-          </Button>
-        )}
-      </form>
-
       {loading ? (
         <LoadingState label="Carregando capítulos..." />
       ) : chapters.length === 0 ? (
         <div className={styles.emptyChapters}>
           <p className="mb-3">
-            Nenhum capítulo criado ainda. Adicione o primeiro capítulo acima ou importe de um
-            arquivo (.docx / .pdf).
+            Nenhum capítulo criado ainda. Use “Novo capítulo” para começar
+            {onOpenImport ? ' ou importe um arquivo (.docx / .pdf).' : '.'}
           </p>
           {onOpenImport && (
             <Button variant="secondary" onClick={onOpenImport}>
@@ -167,33 +179,43 @@ export function ChapterList({
           )}
         </div>
       ) : (
-        <div className={styles.chapterList}>
+        <ol className={styles.chapterList} aria-label="Capítulos">
           {chapters.map((ch, index) => (
-            <div key={ch.id} className={styles.chapterItem}>
+            <li key={ch.id} className={styles.chapterItem}>
               <div className={styles.chapterInfo}>
                 <span className={styles.chapterOrder}>{ch.order}.</span>
                 {editingId === ch.id ? (
-                  <Input
-                    label="Título do capítulo"
-                    value={editingTitle}
-                    onChange={(e) => setEditingTitle(e.target.value)}
-                    onBlur={() => handleSaveRename(ch.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveRename(ch.id);
-                      if (e.key === 'Escape') setEditingId(null);
-                    }}
-                  />
+                  <div className={styles.renameField}>
+                    <Input
+                      label="Título do capítulo"
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onBlur={() => handleSaveRename(ch.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveRename(ch.id);
+                        if (e.key === 'Escape') setEditingId(null);
+                      }}
+                    />
+                  </div>
                 ) : (
-                  <span className={styles.chapterTitle}>{ch.title}</span>
+                  <span className={styles.chapterTitle} title={ch.title}>
+                    {ch.title}
+                  </span>
                 )}
-                <span className={styles.chapterWords}>
-                  ({ch.wordCount.toLocaleString('pt-BR')} palavras)
-                </span>
               </div>
 
+              <span
+                className={styles.chapterWords}
+                aria-label={`${ch.wordCount.toLocaleString('pt-BR')} palavras`}
+              >
+                {ch.wordCount.toLocaleString('pt-BR')}
+                <span className={styles.wordsLabel}> palavras</span>
+              </span>
               <div className={styles.chapterActions}>
                 <Button
                   variant="primary"
+                  size="sm"
+                  className={styles.writeButton}
                   onClick={() => void navigate(`/books/${book.id}/editor/${ch.id}`)}
                   title="Abrir no editor de escrita"
                   aria-label={`Escrever ${ch.title}`}
@@ -201,50 +223,90 @@ export function ChapterList({
                   <PenLine className="icon icon-sm" aria-hidden="true" />
                   <span className={styles.actionLabel}>Escrever</span>
                 </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleMove(index, 'up')}
-                  disabled={index === 0 || isProcessing}
-                  title="Mover para cima"
-                  aria-label={`Mover ${ch.title} para cima`}
+                <Dropdown
+                  label={`Opções de ${ch.title}`}
+                  align="end"
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={styles.chapterMenuButton}
+                      aria-label={`Opções de ${ch.title}`}
+                      disabled={isProcessing}
+                    >
+                      <MoreHorizontal className="icon icon-sm" aria-hidden="true" />
+                    </Button>
+                  }
                 >
-                  <ArrowUp className="icon icon-sm" aria-hidden="true" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleMove(index, 'down')}
-                  disabled={index === chapters.length - 1 || isProcessing}
-                  title="Mover para baixo"
-                  aria-label={`Mover ${ch.title} para baixo`}
-                >
-                  <ArrowDown className="icon icon-sm" aria-hidden="true" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  onClick={() => handleStartRename(ch)}
-                  title="Renomear capítulo"
-                  aria-label={`Renomear ${ch.title}`}
-                >
-                  <Edit2 className="icon icon-sm" aria-hidden="true" />
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={() => handleDelete(ch.id)}
-                  title="Excluir capítulo"
-                  aria-label={`Excluir ${ch.title}`}
-                >
-                  <Trash2 className="icon icon-sm" aria-hidden="true" />
-                </Button>
+                  <DropdownItem onSelect={() => handleStartRename(ch)}>
+                    <Edit2 className="icon icon-sm" aria-hidden="true" />
+                    Renomear {ch.title}
+                  </DropdownItem>
+                  <DropdownItem onSelect={() => handleMove(index, 'up')} disabled={index === 0}>
+                    <ArrowUp className="icon icon-sm" aria-hidden="true" />
+                    Mover {ch.title} para cima
+                  </DropdownItem>
+                  <DropdownItem
+                    onSelect={() => handleMove(index, 'down')}
+                    disabled={index === chapters.length - 1}
+                  >
+                    <ArrowDown className="icon icon-sm" aria-hidden="true" />
+                    Mover {ch.title} para baixo
+                  </DropdownItem>
+                  <DropdownItem onSelect={() => handleDelete(ch.id)}>
+                    <Trash2 className="icon icon-sm" aria-hidden="true" />
+                    Excluir {ch.title}
+                  </DropdownItem>
+                </Dropdown>
               </div>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       )}
     </div>
   );
 
+  const createDialog = isCreateOpen && (
+    <Dialog
+      open
+      title="Novo capítulo"
+      description="Dê um título ao capítulo para começar a escrever."
+      onClose={closeCreateChapter}
+      footer={
+        <>
+          <Button variant="secondary" onClick={closeCreateChapter} disabled={isProcessing}>
+            Cancelar
+          </Button>
+          <Button type="submit" form={createFormId} disabled={isProcessing || !newTitle.trim()}>
+            {isProcessing ? 'Criando...' : 'Criar capítulo'}
+          </Button>
+        </>
+      }
+    >
+      <form id={createFormId} onSubmit={handleAddChapter}>
+        <Input
+          label="Título do capítulo"
+          placeholder="Ex: Capítulo 1: O Despertar"
+          value={newTitle}
+          onChange={(e) => setNewTitle(e.target.value)}
+          disabled={isProcessing}
+        />
+      </form>
+      {creationError && (
+        <Alert variant="destructive" title="Não foi possível criar o capítulo">
+          {creationError}
+        </Alert>
+      )}
+    </Dialog>
+  );
+
   if (mode === 'inline') {
-    return content;
+    return (
+      <>
+        {content}
+        {createDialog}
+      </>
+    );
   }
 
   return (
@@ -259,6 +321,7 @@ export function ChapterList({
       }
     >
       {content}
+      {createDialog}
     </Dialog>
   );
 }

@@ -108,15 +108,16 @@
 }
 
 .leftBar {
+  --header-nav-gap: var(--space-4);
   display: flex;
   align-items: center;
-  gap: var(--space-4);
+  gap: var(--header-nav-gap);
   min-width: 0;
 }
 @media (max-width: 900px) {
   .leftBar {
+    --header-nav-gap: var(--space-2);
     flex-wrap: wrap;
-    gap: var(--space-2);
   }
 }
 @media (max-width: 700px) {

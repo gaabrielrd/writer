@@ -9,23 +9,26 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  gap: var(--space-3);
   background-color: var(--surface-quiet);
   border-radius: var(--radius-md);
   font-size: var(--text-sm);
   color: var(--ink);
 }
 
-.addForm {
+.counts {
   display: flex;
-  gap: var(--space-2);
-  align-items: flex-end;
-  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  white-space: nowrap;
 }
 
-.addInput {
-  flex: 1;
-  min-width: 200px;
+.summaryActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
 }
 
 .chapterList {
@@ -34,6 +37,9 @@
   gap: var(--space-2);
   max-height: 480px;
   overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .chapterItem {
@@ -41,11 +47,10 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-3);
   border: var(--border-width) solid var(--line);
   border-radius: var(--radius-md);
   background-color: var(--surface);
-  flex-wrap: wrap;
 }
 
 .chapterInfo {
@@ -59,10 +64,12 @@
 .chapterOrder {
   font-weight: 700;
   color: var(--ink-soft);
-  min-width: 24px;
+  flex-shrink: 0;
 }
 
 .chapterTitle {
+  flex: 1;
+  min-width: 0;
   font-weight: 500;
   color: var(--ink);
   white-space: nowrap;
@@ -71,6 +78,7 @@
 }
 
 .chapterWords {
+  flex-shrink: 0;
   font-size: var(--text-xs);
   color: var(--ink-soft);
   white-space: nowrap;
@@ -80,7 +88,24 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.renameField {
+  flex: 1;
+  min-width: 0;
+}
+
+.writeButton,
+.newChapterButton,
+.chapterMenuButton {
+  min-height: var(--space-7);
+}
+
+.chapterMenuButton {
+  width: var(--space-7);
+  height: var(--space-7);
+  padding: 0;
 }
 
 .actionLabel {
@@ -88,13 +113,31 @@
 }
 
 @media (max-width: 600px) {
-  .actionLabel {
+  .actionLabel,
+  .wordsLabel {
     display: none;
   }
 
-  .chapterActions {
-    width: 100%;
-    justify-content: flex-end;
+  .summary {
+    padding: var(--space-2);
+    font-size: var(--text-xs);
+    gap: var(--space-2);
+  }
+
+  .counts {
+    gap: var(--space-2);
+  }
+
+  .chapterItem,
+  .chapterInfo {
+    gap: var(--space-2);
+  }
+
+  .writeButton,
+  .newChapterButton {
+    width: var(--space-7);
+    height: var(--space-7);
+    padding: 0;
   }
 }
 

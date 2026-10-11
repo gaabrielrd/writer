@@ -112,13 +112,48 @@ test('obra, capítulos longos, compêndio e edição', async ({ page }, testInfo
   await page.goto(bookPath);
   await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
   await expect(page.getByText(secondChapterTitle, { exact: true })).toBeVisible();
+  const expand = page.getByRole('button', { name: 'Expandir sinopse' });
+  await expect(expand).toHaveAttribute('aria-expanded', 'false');
+  const synopsisId = await expand.getAttribute('aria-controls');
+  const synopsis = page.locator(`[id="${synopsisId}"]`);
+  const collapsed = await synopsis.evaluate((element) => ({
+    height: element.getBoundingClientRect().height,
+    lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+  }));
+  expect(collapsed.height).toBeLessThanOrEqual(collapsed.lineHeight * 2 + 1);
   await capture(page, testInfo, '06-obra-capitulos');
+  await expand.click();
+  await expect(page.getByRole('button', { name: 'Recolher sinopse' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  );
+  await page.getByRole('button', { name: 'Recolher sinopse' }).click();
+
+  const newChapter = page.getByRole('button', { name: 'Novo capítulo', exact: true });
+  await newChapter.click();
+  const chapterDialog = page.getByRole('dialog', { name: 'Novo capítulo', exact: true });
+  await expect(chapterDialog.getByLabel('Título do capítulo')).toBeFocused();
+  await expect(chapterDialog.getByRole('button', { name: 'Criar capítulo' })).toBeDisabled();
+  await expectDialogWithinViewport(page);
+  await capture(page, testInfo, 'modal-novo-capitulo');
+  await page.keyboard.press('Escape');
+  await expect(newChapter).toBeFocused();
+  await newChapter.click();
+  await chapterDialog.getByLabel('Título do capítulo').fill('Um novo começo');
+  await chapterDialog.getByRole('button', { name: 'Criar capítulo' }).click();
+  await expect(
+    page.getByRole('list', { name: 'Capítulos' }).getByText('Um novo começo'),
+  ).toBeVisible();
+  await expect(chapterDialog).toHaveCount(0);
+  await expect(newChapter).toBeFocused();
 
   await page.getByRole('tab', { name: 'Compêndio', exact: true }).click();
   await expect(page.getByText('Porto das Lanternas', { exact: true })).toBeVisible();
   await capture(page, testInfo, '07-obra-compendio');
 
-  const edit = page.getByRole('button', { name: 'Editar', exact: true }).first();
+  const options = page.getByRole('button', { name: 'Opções do livro', exact: true });
+  await options.click();
+  const edit = page.getByRole('menuitem', { name: 'Editar', exact: true });
   await edit.click();
   const dialog = page.getByRole('dialog', { name: 'Editar Obra' });
   await expect(dialog).toBeVisible();
@@ -127,8 +162,22 @@ test('obra, capítulos longos, compêndio e edição', async ({ page }, testInfo
   await expectDialogWithinViewport(page);
   await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(edit).toBeFocused();
+  await expect(options).toBeFocused();
   await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: 'Capítulos', exact: true }).click();
+  await page.setViewportSize({ width: 320, height: 740 });
+  await expectNoHorizontalOverflow(page, 'detalhes-do-livro-320px');
+  const chapterRows = page.getByRole('list', { name: 'Capítulos' }).getByRole('listitem');
+  for (const row of await chapterRows.all()) {
+    const centers = await row.evaluate((element) =>
+      Array.from(element.children).map((child) => {
+        const bounds = child.getBoundingClientRect();
+        return bounds.y + bounds.height / 2;
+      }),
+    );
+    expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(1);
+  }
+  await capture(page, testInfo, 'detalhes-do-livro-320px');
 });
 
 test('editor, painel de lore e configurações de IA', async ({ page }, testInfo) => {

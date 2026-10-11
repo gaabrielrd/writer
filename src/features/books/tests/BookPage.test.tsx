@@ -7,7 +7,13 @@ import * as publicationService from '../services/publicationService';
 import * as bookService from '../services/bookService';
 import type { Book } from '../model/book';
 
-vi.mock('@/features/editor', () => ({ ExportButton: () => <button>Exportar</button> }));
+vi.mock('@/features/editor', () => ({
+  ExportDialog: ({ onClose }: { onClose: () => void }) => (
+    <div role="dialog" aria-label="Exportar manuscrito">
+      <button onClick={onClose}>Fechar exportação</button>
+    </div>
+  ),
+}));
 
 vi.mock('@/features/auth', () => ({
   useAuth: () => ({ user: { uid: 'user-1' }, loading: false }),
@@ -131,7 +137,8 @@ describe('BookPage', () => {
 
     await screen.findByText('A Jornada do Herói');
 
-    await user.click(screen.getByRole('button', { name: /editar/i }));
+    await user.click(screen.getByRole('button', { name: 'Opções do livro' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Editar' }));
     expect(screen.getByRole('heading', { name: 'Editar Obra' })).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/título da obra/i), ' Final');
@@ -153,7 +160,8 @@ describe('BookPage', () => {
 
     await screen.findByText('A Jornada do Herói');
 
-    const deleteBtn = screen.getByRole('button', { name: 'Excluir' });
+    await user.click(screen.getByRole('button', { name: 'Opções do livro' }));
+    const deleteBtn = screen.getByRole('menuitem', { name: 'Excluir' });
     await user.click(deleteBtn);
 
     expect(bookService.deleteBook).toHaveBeenCalledWith('book-1');
@@ -168,11 +176,56 @@ describe('BookPage', () => {
 
     await screen.findByText('A Jornada do Herói');
 
-    const importBtn = screen.getByRole('button', { name: /importar docx\/pdf/i });
+    await user.click(screen.getByRole('button', { name: 'Opções do livro' }));
+    const importBtn = screen.getByRole('menuitem', { name: /importar docx\/pdf/i });
     await user.click(importBtn);
 
     expect(
       screen.getByRole('heading', { name: 'Importar Capítulos — A Jornada do Herói' }),
     ).toBeInTheDocument();
+  });
+
+  it('expande e recolhe a sinopse por um controle acessível', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+    renderBookPage();
+    const expand = await screen.findByRole('button', { name: 'Expandir sinopse' });
+    expect(expand).toHaveAttribute('aria-expanded', 'false');
+    expect(document.getElementById(expand.getAttribute('aria-controls')!)).toHaveTextContent(
+      mockBook.synopsis!,
+    );
+    await user.click(expand);
+    const collapse = screen.getByRole('button', { name: 'Recolher sinopse' });
+    expect(collapse).toHaveAttribute('aria-expanded', 'true');
+    await user.click(collapse);
+    expect(screen.getByRole('button', { name: 'Expandir sinopse' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
+  it('não mostra o controle da sinopse quando ela está vazia', async () => {
+    vi.spyOn(bookService, 'getBook').mockResolvedValue({ ...mockBook, synopsis: '' });
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+    renderBookPage();
+    await screen.findByText(mockBook.title);
+    expect(screen.queryByRole('button', { name: 'Expandir sinopse' })).not.toBeInTheDocument();
+  });
+
+  it('concentra ações no menu e abre a exportação', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+    renderBookPage();
+    const options = await screen.findByRole('button', { name: 'Opções do livro' });
+    expect(screen.queryByRole('button', { name: 'Editar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Importar Arquivo' })).not.toBeInTheDocument();
+    await user.click(options);
+    expect(screen.getAllByRole('menuitem')).toHaveLength(4);
+    await user.click(screen.getByRole('menuitem', { name: 'Exportar' }));
+    expect(screen.getByRole('dialog', { name: 'Exportar manuscrito' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Fechar exportação' }));
+    expect(screen.queryByRole('dialog', { name: 'Exportar manuscrito' })).not.toBeInTheDocument();
   });
 });

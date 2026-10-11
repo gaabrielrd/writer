@@ -105,11 +105,31 @@ fictícios em configuração exclusiva de teste, nunca um modo de demonstração
 bundle de produção.
 
 O header usa navegação de bibliotecas à esquerda com breadcrumb do livro nas
-rotas privadas. O saldo mostra somente ícone e número, com detalhes no tooltip.
+rotas privadas. Marca, separadores, menu e título ficam centralizados verticalmente,
+com intervalos horizontais uniformes de `--space-4` no desktop e `--space-2`
+até 900 px. Os dois separadores compartilham o mesmo estilo; o menu mantém
+altura de interação e não acrescenta padding horizontal ao intervalo.
+O saldo mostra somente ícone e número, com detalhes no tooltip.
 Nome/avatar abre email e saída em dropdown. Imagens da biblioteca têm miniaturas
 2:3, carregamento tardio e controles de gerenciamento com rótulos acessíveis.
 
 Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
+
+## Detalhes do livro
+
+A sinopse começa limitada a duas linhas. O controle discreto “Mais” expande o
+texto completo; “Menos” recolhe novamente e informa o estado por `aria-expanded`.
+As ações de exportar, importar DOCX/PDF, editar e excluir ficam no menu `...`
+rotulado “Opções do livro”. Fechar um diálogo aberto por esse menu devolve o foco
+ao botão de opções.
+
+A barra de capítulos reúne quantidade, total de palavras e “Novo capítulo”.
+A criação acontece em um modal com título, Cancelar e Criar capítulo; falhas
+preservam o texto para uma nova tentativa. Cada capítulo ocupa uma linha com
+ordem, título, palavras, escrita e menu de renomear, mover e excluir. Títulos
+longos usam reticências e mantêm o texto completo no atributo `title`. Em telas
+pequenas, as ações usam ícones com rótulos acessíveis e as contagens permanecem
+visíveis, sem transbordamento horizontal.
 
 ## Fichas de lore por etapas
 

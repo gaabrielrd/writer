@@ -90,7 +90,8 @@ test('exportação preserva a versão atual, reabre o diálogo e baixa Markdown'
 
 test('exporta o livro inteiro como DOCX real e backup JSON privado', async ({ page }, testInfo) => {
   await page.goto(bookPath);
-  await page.getByRole('button', { name: 'Exportar', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções do livro', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Exportar', exact: true }).click();
   await page.getByLabel('Formato do arquivo').selectOption('docx');
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'exportar-livro-docx');
@@ -141,7 +142,8 @@ test('falha de carregamento mantém diálogo aberto e permite tentar novamente',
   page,
 }, testInfo) => {
   await page.goto(bookPath);
-  await page.getByRole('button', { name: 'Exportar', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções do livro', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Exportar', exact: true }).click();
   await page.evaluate(() => sessionStorage.setItem('writer.visual.export-failure', 'true'));
   await page.getByRole('button', { name: 'Baixar arquivo' }).click();
   await expect(page.getByRole('alert')).toContainText('Falha simulada na exportação');
@@ -193,7 +195,8 @@ test('PDF usa um documento isolado sem a interface do aplicativo', async ({ page
     };
   });
   await page.goto(bookPath);
-  await page.getByRole('button', { name: 'Exportar', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções do livro', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Exportar', exact: true }).click();
   await page.getByLabel('Formato do arquivo').selectOption('pdf');
   await capture(page, testInfo, 'exportar-pdf');
   await page.getByRole('button', { name: 'Abrir impressão' }).click();

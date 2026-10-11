@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { ChapterList } from '../components/ChapterList';
@@ -97,10 +97,16 @@ describe('ChapterList', () => {
 
     await screen.findByText('Capítulo 1');
 
-    await user.type(screen.getByLabelText(/novo capítulo/i), 'Capítulo 3');
-    await user.click(screen.getByRole('button', { name: 'Adicionar' }));
+    expect(screen.queryByLabelText('Título do capítulo')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Novo capítulo' }));
+    const dialog = screen.getByRole('dialog', { name: 'Novo capítulo' });
+    expect(within(dialog).getByRole('button', { name: 'Criar capítulo' })).toBeDisabled();
+    await user.type(within(dialog).getByLabelText('Título do capítulo'), '  Capítulo 3  ');
+    await user.click(within(dialog).getByRole('button', { name: 'Criar capítulo' }));
 
     expect(await screen.findByText('Capítulo 3')).toBeInTheDocument();
+    expect(bookService.createChapter).toHaveBeenCalledWith('b-1', { title: 'Capítulo 3' });
+    expect(screen.queryByRole('dialog', { name: 'Novo capítulo' })).not.toBeInTheDocument();
   });
 
   it('permite renomear capitulo via input inline e cancelar com Escape ou texto vazio', async () => {
@@ -117,20 +123,23 @@ describe('ChapterList', () => {
     await screen.findByText('Capítulo 1');
 
     // Cancelar com Escape
-    await user.click(screen.getByLabelText('Renomear Capítulo 1'));
+    await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Renomear Capítulo 1' }));
     const input = screen.getByDisplayValue('Capítulo 1');
     await user.type(input, '{escape}');
     expect(screen.getByText('Capítulo 1')).toBeInTheDocument();
 
     // Cancelar com texto vazio
-    await user.click(screen.getByLabelText('Renomear Capítulo 1'));
+    await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Renomear Capítulo 1' }));
     const inputEmpty = screen.getByDisplayValue('Capítulo 1');
     await user.clear(inputEmpty);
     await user.tab(); // trigger onBlur
     expect(screen.getByText('Capítulo 1')).toBeInTheDocument();
 
     // Renomear com sucesso
-    await user.click(screen.getByLabelText('Renomear Capítulo 1'));
+    await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Renomear Capítulo 1' }));
     const inputSuccess = screen.getByDisplayValue('Capítulo 1');
     await user.clear(inputSuccess);
     await user.type(inputSuccess, 'Prólogo{enter}');
@@ -152,11 +161,13 @@ describe('ChapterList', () => {
     await screen.findByText('Capítulo 1');
 
     // Mover Capítulo 2 para cima
-    await user.click(screen.getByLabelText('Mover Capítulo 2 para cima'));
+    await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 2' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Mover Capítulo 2 para cima' }));
     expect(bookService.reorderChapters).toHaveBeenCalledWith('b-1', ['c-2', 'c-1']);
 
     // Mover Capítulo 1 para baixo
-    await user.click(screen.getByLabelText('Mover Capítulo 1 para baixo'));
+    await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Mover Capítulo 1 para baixo' }));
     expect(bookService.reorderChapters).toHaveBeenCalledWith('b-1', ['c-2', 'c-1']);
   });
 
@@ -173,7 +184,53 @@ describe('ChapterList', () => {
 
     await screen.findByText('Capítulo 1');
 
-    await user.click(screen.getByLabelText('Excluir Capítulo 1'));
+    await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Excluir Capítulo 1' }));
     expect(screen.queryByText('Capítulo 1')).not.toBeInTheDocument();
+  });
+
+  it('cancela a criação, descarta o título e devolve foco ao botão', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    const create = vi.spyOn(bookService, 'createChapter');
+    render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open onClose={vi.fn()} mode="inline" />
+      </MemoryRouter>,
+    );
+    await screen.findByText('Capítulo 1');
+    const trigger = screen.getByRole('button', { name: 'Novo capítulo' });
+    await user.click(trigger);
+    await user.type(screen.getByLabelText('Título do capítulo'), 'Rascunho descartado');
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(create).not.toHaveBeenCalled();
+    await waitFor(() => expect(trigger).toHaveFocus());
+    await user.click(trigger);
+    expect(screen.getByLabelText('Título do capítulo')).toHaveValue('');
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('preserva o título e permite tentar novamente quando criar falha', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    const create = vi
+      .spyOn(bookService, 'createChapter')
+      .mockRejectedValueOnce(new Error('Sem conexão'))
+      .mockResolvedValue({ ...mockChapters[0]!, id: 'c-3', title: 'Novo início', order: 3 });
+    render(
+      <MemoryRouter>
+        <ChapterList book={mockBook} open onClose={vi.fn()} mode="inline" />
+      </MemoryRouter>,
+    );
+    await screen.findByText('Capítulo 1');
+    await user.click(screen.getByRole('button', { name: 'Novo capítulo' }));
+    await user.type(screen.getByLabelText('Título do capítulo'), 'Novo início');
+    await user.click(screen.getByRole('button', { name: 'Criar capítulo' }));
+    expect(await screen.findByText('Sem conexão')).toBeInTheDocument();
+    expect(screen.getByLabelText('Título do capítulo')).toHaveValue('Novo início');
+    await user.click(screen.getByRole('button', { name: 'Criar capítulo' }));
+    expect(await screen.findByText('Novo início')).toBeInTheDocument();
+    expect(create).toHaveBeenCalledTimes(2);
   });
 });

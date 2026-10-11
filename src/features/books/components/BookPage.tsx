@@ -1,12 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import {
   ArrowLeft,
   Book as BookIcon,
+  ChevronDown,
+  ChevronUp,
+  Download,
   Edit2,
   FileText,
   Globe,
   Lock,
+  MoreHorizontal,
   Scroll,
   Trash2,
   Upload,
@@ -16,13 +20,15 @@ import {
   Badge,
   Button,
   Dialog,
+  Dropdown,
+  DropdownItem,
   Input,
   ErrorState,
   LoadingState,
   PageHeader,
 } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
-import { ExportButton } from '@/features/editor';
+import { ExportDialog } from '@/features/editor';
 import { publishBook, unpublishBook } from '../services/publicationService';
 import { LoreTab } from '@/features/lore';
 import type { Book } from '../model/book';
@@ -57,6 +63,10 @@ export function BookPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('chapters');
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [expandedSynopsisBookId, setExpandedSynopsisBookId] = useState<string | null>(null);
+  const synopsisId = useId();
+  const bookOptionsRef = useRef<HTMLButtonElement>(null);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
@@ -170,6 +180,10 @@ export function BookPage() {
 
   const isOwner = user?.uid === book.authorId;
   const isPublished = book.status === 'published';
+  const isSynopsisExpanded = expandedSynopsisBookId === book.id;
+  const restoreBookOptionsFocus = () => {
+    requestAnimationFrame(() => bookOptionsRef.current?.focus());
+  };
 
   return (
     <div className={styles.container}>
@@ -200,40 +214,70 @@ export function BookPage() {
         <div className={styles.bookInfo}>
           <PageHeader
             title={book.title}
-            description={book.synopsis || undefined}
+            className={styles.detailsHeading}
             actions={
               isOwner ? (
-                <div className={styles.headerActions}>
-                  <ExportButton book={book} />
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsImportOpen(true)}
-                    title="Importar capítulos de documento"
-                  >
+                <Dropdown
+                  label="Opções do livro"
+                  align="end"
+                  trigger={
+                    <Button
+                      ref={bookOptionsRef}
+                      variant="ghost"
+                      size="icon"
+                      aria-label="Opções do livro"
+                    >
+                      <MoreHorizontal className="icon" aria-hidden="true" />
+                    </Button>
+                  }
+                >
+                  <DropdownItem onSelect={() => setIsExportOpen(true)}>
+                    <Download className="icon icon-sm" aria-hidden="true" />
+                    Exportar
+                  </DropdownItem>
+                  <DropdownItem onSelect={() => setIsImportOpen(true)}>
                     <Upload className="icon icon-sm" aria-hidden="true" />
                     Importar DOCX/PDF
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={() => setIsFormOpen(true)}
-                    title="Editar dados da obra"
-                  >
+                  </DropdownItem>
+                  <DropdownItem onSelect={() => setIsFormOpen(true)}>
                     <Edit2 className="icon icon-sm" aria-hidden="true" />
                     Editar
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                    title="Excluir livro"
-                  >
+                  </DropdownItem>
+                  <DropdownItem onSelect={handleDelete} disabled={isDeleting}>
                     <Trash2 className="icon icon-sm" aria-hidden="true" />
                     Excluir
-                  </Button>
-                </div>
+                  </DropdownItem>
+                </Dropdown>
               ) : undefined
             }
           />
+
+          {book.synopsis && (
+            <div className={styles.synopsisBlock}>
+              <p
+                id={synopsisId}
+                className={`${styles.synopsis} ${isSynopsisExpanded ? '' : styles.synopsisCollapsed}`}
+              >
+                {book.synopsis}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={styles.synopsisToggle}
+                aria-expanded={isSynopsisExpanded}
+                aria-controls={synopsisId}
+                aria-label={isSynopsisExpanded ? 'Recolher sinopse' : 'Expandir sinopse'}
+                onClick={() => setExpandedSynopsisBookId(isSynopsisExpanded ? null : book.id)}
+              >
+                {isSynopsisExpanded ? 'Menos' : 'Mais'}
+                {isSynopsisExpanded ? (
+                  <ChevronUp className="icon icon-sm" aria-hidden="true" />
+                ) : (
+                  <ChevronDown className="icon icon-sm" aria-hidden="true" />
+                )}
+              </Button>
+            </div>
+          )}
 
           <div className={styles.bookMeta}>
             {book.genre && <Badge variant="neutral">{book.genre}</Badge>}
@@ -281,7 +325,6 @@ export function BookPage() {
             onClose={() => {}}
             onChapterCountChanged={refreshBook}
             mode="inline"
-            onOpenImport={isOwner ? () => setIsImportOpen(true) : undefined}
           />
         )}
 
@@ -389,11 +432,23 @@ export function BookPage() {
           )}
         </Dialog>
       )}
+      {isExportOpen && (
+        <ExportDialog
+          book={book}
+          onClose={() => {
+            setIsExportOpen(false);
+            restoreBookOptionsFocus();
+          }}
+        />
+      )}
       {isFormOpen && (
         <BookFormDialog
           open={isFormOpen}
           bookToEdit={book}
-          onClose={() => setIsFormOpen(false)}
+          onClose={() => {
+            setIsFormOpen(false);
+            restoreBookOptionsFocus();
+          }}
           onSubmit={handleEditSubmit}
         />
       )}
@@ -403,7 +458,10 @@ export function BookPage() {
           open={isImportOpen}
           targetBook={book}
           authorId={book.authorId}
-          onClose={() => setIsImportOpen(false)}
+          onClose={() => {
+            setIsImportOpen(false);
+            restoreBookOptionsFocus();
+          }}
           onSuccess={() => {
             refreshBook();
           }}

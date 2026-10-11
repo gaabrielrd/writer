@@ -1,8 +1,12 @@
 .nav {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--header-nav-gap, var(--space-4));
   min-width: 0;
+}
+.libraryTrigger {
+  flex-shrink: 0;
+  padding-inline: 0;
 }
 .title {
   color: hsl(var(--muted-foreground));
@@ -14,6 +18,10 @@
   max-width: 260px;
 }
 .separator {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 1;
   color: hsl(var(--muted-foreground));
 }
 @media (max-width: 700px) {

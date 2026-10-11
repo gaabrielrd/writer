@@ -11,3 +11,4 @@ export { EditorPage } from './components/EditorPage';
 
 export { ExportButton } from './components/ExportButton';
 export type { ExportButtonProps } from './components/ExportButton';
+export { ExportDialog } from './components/ExportDialog';

@@ -29,7 +29,7 @@ export function BookNavigation() {
       <Dropdown
         label="Suas bibliotecas"
         trigger={
-          <Button variant="ghost">
+          <Button variant="ghost" className={styles.libraryTrigger}>
             <SelectedIcon className="icon icon-sm" aria-hidden="true" />
             {loreLibrarySelected
               ? 'Lore compartilhado'
@@ -61,7 +61,9 @@ export function BookNavigation() {
       </Dropdown>
       {current && (
         <>
-          <span aria-hidden="true">/</span>
+          <span className={styles.separator} aria-hidden="true">
+            /
+          </span>
           <span className={styles.title} title={current} aria-current="page">
             {current}
           </span>
