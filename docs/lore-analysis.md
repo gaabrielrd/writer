@@ -36,6 +36,14 @@ Chaves BYOK nunca são enviadas às functions ou gravadas no registro da anális
 
 Todo o capítulo é percorrido em partes de 12 mil caracteres com 300 de
 sobreposição. Resultado incompleto/inválido falha por inteiro, sem lote parcial.
+Evidências são conferidas no capítulo completo para permitir consolidação entre
+partes. Diferenças apenas de espaços/quebras de linha são reconhecidas, e o trecho
+original do capítulo é preservado no resultado. Pontuação, palavras e continuidade
+do trecho continuam obrigatórias: paráfrases e trechos inventados são rejeitados.
+Uma resposta fora do formato ou com evidência inválida recebe uma única tentativa
+automática de correção por parte, dentro da mesma análise/quota e sem débito de
+créditos da plataforma. Persistindo a falha, o lote inteiro é recusado com mensagem
+de falha da IA; erros de transporte não acionam essa tentativa.
 Limites: 120 mil caracteres de texto, 50 entidades por análise, 500 fichas de
 contexto, contexto armazenado de até 300 mil caracteres e 10 análises/hora/autor.
 No BYOK, o contexto enviado ao provedor tem limite de 200 mil caracteres.

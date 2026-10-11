@@ -9,6 +9,24 @@ const item = {
   evidence: 'Arthur chegou.',
 };
 describe('análise estruturada', () => {
+  it('preserves original whitespace and treats punctuation as literal evidence', () => {
+    const source = 'Arthur (rei)\u00a0chegou\r\n\r\nao porto.';
+    expect(
+      parseDetectedLore(
+        JSON.stringify({ entities: [{ ...item, evidence: ' Arthur (rei) chegou ao porto. ' }] }),
+        source,
+      )[0]?.evidence,
+    ).toBe(source);
+    for (const evidence of [
+      'Arthur rei chegou ao porto.',
+      'Arthur (rei) foi ao porto.',
+      'Arthur (rei).*porto.',
+      'Arthur (rei) chegou... ao porto.',
+    ])
+      expect(() =>
+        parseDetectedLore(JSON.stringify({ entities: [{ ...item, evidence }] }), source),
+      ).toThrow();
+  });
   it('validates evidence and schema including empty results', () => {
     expect(
       parseDetectedLore(

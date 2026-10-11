@@ -18,8 +18,14 @@ export function validateDetectedLore(items, source) {
   return items.map((item) => {
     if (!item || !categories.includes(item.category))
       fail('invalid-argument', 'Categoria inválida.');
-    const evidence = text(item.evidence, 1000);
-    if (!source.includes(evidence)) fail('invalid-argument', 'Evidência ausente no capítulo.');
+    const quote = text(item.evidence, 1000).trim();
+    const pattern = quote
+      .split(/\s+/u)
+      .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('\\s+');
+    const evidence = source.includes(quote) ? quote : source.match(new RegExp(pattern, 'u'))?.[0];
+    if (!evidence || evidence.length > 1000)
+      fail('invalid-argument', 'Evidência ausente no capítulo.');
     return {
       name: text(item.name, 200),
       category: item.category,
@@ -170,12 +176,31 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       else {
         for (let start = 0; start < source.length; start += 12000) {
           const part = source.slice(Math.max(0, start - 300), start + 12000);
-          const response = await generator({
-            text: part,
-            lore: record.context,
-            alreadyDetected: results,
-          });
-          const found = validateDetectedLore(JSON.parse(response).entities, part);
+          let found;
+          for (let attempt = 0; attempt < 2; attempt++) {
+            const response = await generator({
+              text: part,
+              lore: record.context,
+              alreadyDetected: results,
+              ...(attempt
+                ? {
+                    validationFeedback:
+                      'A resposta anterior não passou na validação. Confira os limites dos campos e copie evidências literais de text.',
+                  }
+                : {}),
+            });
+            try {
+              found = validateDetectedLore(JSON.parse(response)?.entities, source);
+              break;
+            } catch (cause) {
+              if (!(cause instanceof SyntaxError || cause instanceof GenerationError)) throw cause;
+              if (attempt === 1)
+                fail(
+                  'unavailable',
+                  'A IA retornou sugestões sem evidências válidas ou fora do formato esperado. Nenhuma alteração ou cobrança ocorreu. Tente novamente.',
+                );
+            }
+          }
           for (const item of found) {
             const index = results.findIndex(
               (old) => old.name.toLocaleLowerCase('pt-BR') === item.name.toLocaleLowerCase('pt-BR'),

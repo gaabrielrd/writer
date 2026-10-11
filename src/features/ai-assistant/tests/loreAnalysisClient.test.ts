@@ -13,6 +13,47 @@ const entity = {
 };
 beforeEach(() => vi.resetAllMocks());
 describe('análise BYOK', () => {
+  it('accepts original evidence retained from an earlier chunk', async () => {
+    vi.mocked(generateAIResponse).mockResolvedValue(JSON.stringify({ entities: [entity] }));
+    const result = await analyzeLoreWithBYOK(
+      'Arthur chegou.' + 'x'.repeat(13000),
+      [],
+      config,
+      new AbortController().signal,
+    );
+    expect(result[0]?.evidence).toBe('Arthur chegou.');
+    expect(generateAIResponse).toHaveBeenCalledTimes(2);
+  });
+  it('repairs one invalid result and keeps original chapter whitespace', async () => {
+    vi.mocked(generateAIResponse)
+      .mockResolvedValueOnce(JSON.stringify({ entities: [{ ...entity, evidence: 'inventado' }] }))
+      .mockResolvedValueOnce(JSON.stringify({ entities: [entity] }));
+    const result = await analyzeLoreWithBYOK(
+      'Arthur\n\nchegou.',
+      [],
+      config,
+      new AbortController().signal,
+    );
+    expect(result[0]?.evidence).toBe('Arthur\n\nchegou.');
+    expect(generateAIResponse).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(generateAIResponse).mock.calls[1]![0].prompt).toContain(
+      '"validationFeedback":',
+    );
+  });
+  it('rejects repeated fabricated evidence and never retries a provider transport failure', async () => {
+    vi.mocked(generateAIResponse).mockResolvedValue(
+      JSON.stringify({ entities: [{ ...entity, evidence: 'inventado' }] }),
+    );
+    await expect(
+      analyzeLoreWithBYOK('Arthur chegou.', [], config, new AbortController().signal),
+    ).rejects.toThrow('Nenhuma alteração ou cobrança');
+    expect(generateAIResponse).toHaveBeenCalledTimes(2);
+    vi.mocked(generateAIResponse).mockReset().mockRejectedValue(new Error('timeout'));
+    await expect(
+      analyzeLoreWithBYOK('Arthur chegou.', [], config, new AbortController().signal),
+    ).rejects.toThrow('timeout');
+    expect(generateAIResponse).toHaveBeenCalledTimes(1);
+  });
   it('cannot generate through the platform while preparing a BYOK batch', async () => {
     await expect(
       analyzeLoreWithBYOK('texto', [], { provider: 'firebase_ai' }, new AbortController().signal),

@@ -60,18 +60,25 @@ export function parseDetectedLore(text: string, source: string): DetectedLoreEnt
       ) ||
       typeof item.evidence !== 'string' ||
       !item.evidence.trim() ||
-      item.evidence.length > 1000 ||
-      !source.includes(item.evidence)
+      item.evidence.length > 1000
     ) {
       throw new Error('A análise contém dados ou evidências inválidas. Tente novamente.');
     }
+    const quote = item.evidence.trim();
+    const pattern = quote
+      .split(/\s+/u)
+      .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('\\s+');
+    const evidence = source.includes(quote) ? quote : source.match(new RegExp(pattern, 'u'))?.[0];
+    if (!evidence || evidence.length > 1000)
+      throw new Error('A análise contém evidências ausentes no capítulo. Tente novamente.');
     return {
       name: item.name.trim(),
       category: item.category,
       summary: item.summary.trim(),
       details: item.details,
       aliases: item.aliases,
-      evidence: item.evidence,
+      evidence,
     };
   });
 }

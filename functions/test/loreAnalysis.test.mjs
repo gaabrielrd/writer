@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createLoreAnalysisService } from '../src/loreAnalysis.mjs';
+import { createLoreAnalysisService, validateDetectedLore } from '../src/loreAnalysis.mjs';
 
 const detected = {
   name: 'Arthur',
@@ -10,6 +10,61 @@ const detected = {
   aliases: [],
   evidence: 'Arthur chegou ao porto.',
 };
+
+test('evidence tolerates whitespace only and returns the exact original chapter excerpt', () => {
+  const source = 'Arthur (rei)\u00a0chegou\r\n\r\nao porto.';
+  const [item] = validateDetectedLore(
+    [{ ...detected, evidence: ' Arthur (rei) chegou ao porto. ' }],
+    source,
+  );
+  assert.equal(item.evidence, source);
+  for (const evidence of [
+    'Arthur rei chegou ao porto.',
+    'Arthur (rei) foi ao porto.',
+    'Arthur (rei).*porto.',
+    'Arthur (rei) chegou... ao porto.',
+  ])
+    assert.throws(() => validateDetectedLore([{ ...detected, evidence }], source), {
+      code: 'invalid-argument',
+    });
+});
+
+test('consolidation can retain valid evidence from an earlier chapter chunk', async () => {
+  const { service, records } = fixture();
+  const source = detected.evidence + 'x'.repeat(13000);
+  const result = await service.analyzeChapterLore('author', { ...request, text: source });
+  assert.equal(result.entities[0].evidence, detected.evidence);
+  assert.equal(records.get('users/author').credits, 5);
+});
+
+test('invalid AI evidence is repaired once without extra quota or credit debit', async () => {
+  const calls = [];
+  const { service, records } = fixture(async (context) => {
+    calls.push(context);
+    return JSON.stringify({
+      entities: [{ ...detected, evidence: calls.length === 1 ? 'inventado' : detected.evidence }],
+    });
+  });
+  const result = await service.analyzeChapterLore('author', request);
+  assert.equal(result.entities[0].evidence, detected.evidence);
+  assert.equal(calls.length, 2);
+  assert.ok(calls[1].validationFeedback);
+  assert.equal(records.get('users/author/loreAnalysisLimits/current').count, 1);
+  assert.equal(records.get('users/author').credits, 5);
+});
+
+test('persistent fabricated AI evidence rejects the whole batch as a provider failure', async () => {
+  let calls = 0;
+  const { service, records } = fixture(async () => {
+    calls++;
+    return JSON.stringify({ entities: [{ ...detected, evidence: 'inventado' }] });
+  });
+  await assert.rejects(service.analyzeChapterLore('author', request), { code: 'unavailable' });
+  assert.equal(calls, 2);
+  assert.equal(records.get('users/author').credits, 5);
+  assert.equal(records.get(`users/author/loreAnalyses/${request.requestId}`).state, 'failed');
+  await assert.rejects(apply(service), { code: 'failed-precondition' });
+});
 const input = {
   name: detected.name,
   category: detected.category,
