@@ -141,11 +141,13 @@ dimensões e integração com modal ficam em `e2e/visual/dropdown.visual.ts`.
 3. Se um teste falha após uma mudança de comportamento intencional, atualize o teste para o novo comportamento esperado.
 4. Se a falha for inesperada, corrija o código, não o teste.
 
-O cenário visual de seleção parcial posiciona o cursor no início e espera o
-texto visível estabilizar antes de calcular as coordenadas do arrasto. Isso
-evita medir uma posição que muda quando o editor ajusta a rolagem. O gate E2E
-do CI tem limite de 25 minutos para acomodar os 324 cenários visuais e publicar
-os artefatos; o timeout individual dos testes visuais permanece em 45 segundos.
+O cenário visual de seleção parcial posiciona o cursor no início, zera a
+rolagem do contêiner e da página e aguarda dois frames antes de medir o arrasto.
+No celular, a distância para ocultar o trecho é calculada pela posição real
+dele. O CI executa primeiro esses seis cenários como verificação rápida no
+Linux; quando passam, executa a suíte visual completa de 324 cenários.
+O gate E2E tem limite de 25 minutos para os testes e artefatos; o timeout
+individual dos testes visuais permanece em 45 segundos.
 
 ## Roadmap Writer e regras reais
 

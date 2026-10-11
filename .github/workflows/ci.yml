@@ -118,8 +118,13 @@ jobs:
       - name: Testar no navegador
         run: npm run test:e2e
 
-      - name: Testar prévia visual com dados fictícios
+      - name: Verificar seleção por mouse no Linux
+        id: selection-smoke
         if: ${{ !cancelled() }}
+        run: npx playwright test -c playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts --grep 'seleção parcial'
+
+      - name: Testar prévia visual com dados fictícios
+        if: ${{ !cancelled() && steps.selection-smoke.outcome == 'success' }}
         run: npx playwright test -c playwright.visual.config.ts
 
       - name: Publicar prévia visual para revisão

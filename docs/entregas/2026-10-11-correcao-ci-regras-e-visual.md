@@ -135,3 +135,35 @@ Smoke test do bundle OK.
 ```
 
 A confirmação da preparação final no Linux será realizada no próximo run.
+
+## Complemento: origem da rolagem e verificação rápida no Linux
+
+O [run seguinte](https://github.com/gaabrielrd/writer/actions/runs/38168124889)
+concluiu a suíte dentro do limite (12,8 minutos), mas continuou com seis falhas
+de seleção, 317 aprovações diretas e uma aprovação na retentativa. O novo trace
+mostrou `scrollTop=60` antes do gesto e retorno para zero durante o arrasto.
+Posicionar o cursor e aguardar o texto visível ainda mantinha essa origem
+deslocada. A preparação agora zera explicitamente a rolagem do contêiner e
+da página, aguarda dois frames e inclui a geometria na mensagem de falha.
+
+No celular, o deslocamento para ocultar a seleção usa a posição real do trecho,
+preservando a asserção de ocultação e retorno da barra. O workflow executa os
+seis cenários de seleção antes da suíte completa; se falharem, o job falha e
+publica seus artefatos sem aguardar os demais cenários. A suíte completa continua
+obrigatória quando essa verificação passa.
+
+Validação local após o ajuste:
+
+```text
+npx playwright test -c playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts --grep 'seleção parcial'
+6 passed (25.2s)
+
+npm run validate
+Test Files  96 passed (96)
+Tests       672 passed (672)
+Ferramentas: tests 69; pass 69; fail 0
+Backend: tests 63; pass 63; fail 0
+Smoke test do bundle OK.
+```
+
+A confirmação remota ocorrerá no novo gate de seleção e na suíte completa.

@@ -210,9 +210,19 @@ test('seleção parcial por mouse acompanha rolagem e cabe em 320px', async ({ p
       '\n\n' +
       Array.from({ length: 50 }, () => 'A escrita continua em outro parágrafo.').join('\n\n'),
   );
-  // Settle the editor's caret scrolling before measuring the mouse drag target.
+  // Begin at the natural top of both scroll containers before measuring the drag.
   await editor.press('Control+Home');
-  await editor.getByText(manuscript, { exact: true }).scrollIntoViewIfNeeded();
+  await editor.evaluate((element) => {
+    const area = element.closest('[data-editor-scroll-area]');
+    if (area) area.scrollTop = 0;
+    window.scrollTo(0, 0);
+  });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   const points = await editor.evaluate((element) => {
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
     const node = walker.nextNode()!;
@@ -227,18 +237,23 @@ test('seleção parcial por mouse acompanha rolagem e cabe em 320px', async ({ p
     return {
       start: { x: start.left + start.width / 4, y: (start.top + start.bottom) / 2 },
       end: { x: end.right - end.width / 4, y: (end.top + end.bottom) / 2 },
+      scrollTop: element.closest('[data-editor-scroll-area]')?.scrollTop,
+      windowScrollY: window.scrollY,
     };
   });
   await page.mouse.move(points.start.x, points.start.y);
   await page.mouse.down();
   await page.mouse.move(points.end.x, points.end.y, { steps: 8 });
   await page.mouse.up();
-  expect(await page.evaluate(() => window.getSelection()?.toString())).toBe('trecho');
+  expect(
+    await page.evaluate(() => window.getSelection()?.toString()),
+    `Geometria inicial do arrasto: ${JSON.stringify(points)}`,
+  ).toBe('trecho');
   const toolbar = page.getByRole('toolbar', { name: selectionToolbarName });
   await expect(toolbar).toBeVisible();
   const scrollArea = page.locator('[data-editor-scroll-area]');
   if (testInfo.project.name.startsWith('mobile')) {
-    await page.evaluate(() => window.scrollBy(0, 300));
+    await page.evaluate((distance) => window.scrollBy(0, distance), points.end.y + 100);
   } else {
     await scrollArea.evaluate((element) => {
       element.scrollTop = 300;
@@ -246,7 +261,7 @@ test('seleção parcial por mouse acompanha rolagem e cabe em 320px', async ({ p
   }
   await expect(toolbar).toHaveCount(0);
   if (testInfo.project.name.startsWith('mobile')) {
-    await page.evaluate(() => window.scrollBy(0, -300));
+    await page.evaluate(() => window.scrollTo(0, 0));
   } else {
     await scrollArea.evaluate((element) => {
       element.scrollTop = 0;
