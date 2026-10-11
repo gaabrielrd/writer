@@ -67,6 +67,8 @@ export function BookPage() {
   const [expandedSynopsisBookId, setExpandedSynopsisBookId] = useState<string | null>(null);
   const synopsisId = useId();
   const bookOptionsRef = useRef<HTMLButtonElement>(null);
+  const [compendiumActions, setCompendiumActions] = useState<HTMLDivElement | null>(null);
+  const [compendiumBusy, setCompendiumBusy] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
@@ -294,27 +296,31 @@ export function BookPage() {
         </div>
       </div>
 
-      <div className={styles.tabBar} role="tablist">
-        {TABS.map((tab) => {
-          const isActive = activeTab === tab.id;
-          const IconComp = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
-              onClick={() => {
-                setActiveTab(tab.id);
-                refreshBook();
-              }}
-            >
-              <IconComp className="icon icon-sm" aria-hidden="true" />
-              <span>{tab.label}</span>
-            </button>
-          );
-        })}
+      <div className={styles.tabsHeader}>
+        <div className={styles.tabBar} role="tablist">
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.id;
+            const IconComp = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                disabled={compendiumBusy}
+                aria-selected={isActive}
+                className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  refreshBook();
+                }}
+              >
+                <IconComp className="icon icon-sm" aria-hidden="true" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div ref={setCompendiumActions} className={styles.tabActions} />
       </div>
 
       <div className={styles.tabContent} role="tabpanel">
@@ -328,7 +334,14 @@ export function BookPage() {
           />
         )}
 
-        {activeTab === 'compendium' && <LoreTab book={book} />}
+        {activeTab === 'compendium' && (
+          <LoreTab
+            book={book}
+            actionsContainer={compendiumActions}
+            onEntitiesChanged={refreshBook}
+            onBusyChange={setCompendiumBusy}
+          />
+        )}
 
         {activeTab === 'publication' && (
           <div className={styles.publicationTab}>

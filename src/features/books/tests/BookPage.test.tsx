@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createPortal } from 'react-dom';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { BookPage } from '../components/BookPage';
 import * as publicationService from '../services/publicationService';
@@ -20,8 +21,23 @@ vi.mock('@/features/auth', () => ({
 }));
 
 vi.mock('@/features/lore', () => ({
-  LoreTab: ({ book }: { book: Book }) => (
-    <div data-testid="lore-tab">Compêndio de {book.title}</div>
+  LoreTab: ({
+    book,
+    actionsContainer,
+    onEntitiesChanged,
+  }: {
+    book: Book;
+    actionsContainer?: HTMLElement | null;
+    onEntitiesChanged?: () => void;
+  }) => (
+    <>
+      <div data-testid="lore-tab">Compêndio de {book.title}</div>
+      {actionsContainer &&
+        createPortal(
+          <button onClick={onEntitiesChanged}>Concluir ação de lore</button>,
+          actionsContainer,
+        )}
+    </>
   ),
 }));
 
@@ -99,6 +115,24 @@ describe('BookPage', () => {
     // Volta para Capítulos
     await user.click(screen.getByRole('tab', { name: /capítulos/i }));
     expect(screen.getByText(/capítulo\(s\)/)).toBeInTheDocument();
+  });
+
+  it('atualiza o status após uma ação de lore e retira os controles ao sair da aba', async () => {
+    const user = userEvent.setup();
+    const getBook = vi
+      .spyOn(bookService, 'getBook')
+      .mockResolvedValue({ ...mockBook, status: 'published' });
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+    renderBookPage();
+    await screen.findByText('Publicado');
+    await user.click(screen.getByRole('tab', { name: 'Compêndio' }));
+    const action = screen.getByRole('button', { name: 'Concluir ação de lore' });
+    expect(action.closest('[role="tablist"]')).toBeNull();
+    getBook.mockResolvedValue(mockBook);
+    await user.click(action);
+    await screen.findByText('Rascunho');
+    await user.click(screen.getByRole('tab', { name: 'Capítulos' }));
+    expect(screen.queryByRole('button', { name: 'Concluir ação de lore' })).not.toBeInTheDocument();
   });
 
   it('permite alternar status de publicacao', async () => {

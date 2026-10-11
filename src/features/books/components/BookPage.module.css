@@ -150,6 +150,24 @@
 
 /* ---------- Tab bar ---------- */
 
+.tabsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.tabActions:empty {
+  display: none;
+}
+
+.tabActions {
+  margin-left: auto;
+  max-width: 100%;
+}
+
 .tabBar {
   display: flex;
   gap: var(--space-1);

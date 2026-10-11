@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
-import { BookOpen, MapPin, Plus, Tag, User, X } from 'lucide-react';
+import { useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { BookOpen, LayoutGrid, List, MapPin, Plus, Search, Tag, User, X } from 'lucide-react';
 import {
   Alert,
   Button,
@@ -21,23 +22,41 @@ import { useLore } from '../hooks/useLore';
 import { LoreEntityCard } from './LoreEntityCard';
 import { LoreEntityForm } from './LoreEntityForm';
 import { LoreDrawer } from './LoreDrawer';
+import { LoreEntityList } from './LoreEntityList';
+import { LoreBulkActions } from './LoreBulkActions';
 import styles from './LorePage.module.css';
 
 export interface LoreTabProps {
   book: Book;
+  actionsContainer?: HTMLElement | null;
+  onEntitiesChanged?: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }
 
 /**
  * Conteúdo do compêndio de lore reutilizável.
  * Usado inline no BookPage (aba Compêndio) e no LorePage standalone.
  */
-export function LoreTab({ book }: LoreTabProps) {
+export function LoreTab({ book, ...props }: LoreTabProps) {
   return (
-    <BookLoreScopes key={`${book.authorId}:${book.id}:${book.universeId ?? ''}`} book={book} />
+    <BookLoreScopes
+      key={`${book.authorId}:${book.id}:${book.universeId ?? ''}`}
+      book={book}
+      {...props}
+    />
   );
 }
-function BookLoreScopes({ book }: LoreTabProps) {
+function BookLoreScopes({ book, actionsContainer, onEntitiesChanged, onBusyChange }: LoreTabProps) {
   const [selected, setSelected] = useState('local');
+  const [busy, setBusy] = useState(false);
+  const collectionProps = {
+    actionsContainer,
+    onEntitiesChanged,
+    onBusyChange: (value: boolean) => {
+      setBusy(value);
+      onBusyChange?.(value);
+    },
+  };
   const globalScope = useMemo(
     () => (book.universeId ? { kind: 'universe' as const, id: book.universeId } : null),
     [book.universeId],
@@ -49,6 +68,7 @@ function BookLoreScopes({ book }: LoreTabProps) {
         <Select
           label="Escopo do compêndio"
           value={selected}
+          disabled={busy}
           onChange={(event) => setSelected(event.target.value)}
           options={[
             { value: 'local', label: 'Lore local — somente este livro' },
@@ -66,9 +86,14 @@ function BookLoreScopes({ book }: LoreTabProps) {
         />
       )}
       {selected === 'global' && globalScope ? (
-        <LoreCollection key="global" scope={globalScope} />
+        <LoreCollection key="global" scope={globalScope} {...collectionProps} />
       ) : (
-        <LoreCollection key="local" scope={book.id} relatedEntities={globalLore.entities} />
+        <LoreCollection
+          key="local"
+          scope={book.id}
+          relatedEntities={globalLore.entities}
+          {...collectionProps}
+        />
       )}
     </>
   );
@@ -76,9 +101,15 @@ function BookLoreScopes({ book }: LoreTabProps) {
 export function LoreCollection({
   scope,
   relatedEntities = [],
+  actionsContainer,
+  onEntitiesChanged,
+  onBusyChange,
 }: {
   scope: string | LoreScope;
   relatedEntities?: LoreEntity[];
+  actionsContainer?: HTMLElement | null;
+  onEntitiesChanged?: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const global = typeof scope !== 'string' && scope.kind === 'universe';
   const {
@@ -102,6 +133,25 @@ export function LoreCollection({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingEntity, setEditingEntity] = useState<LoreEntity | null>(null);
   const [viewingEntity, setViewingEntity] = useState<LoreEntity | null>(null);
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [busy, setBusy] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ message: string; failed: boolean } | null>(null);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+  const listViewRef = useRef<HTMLButtonElement>(null);
+  const [selection, setSelection] = useState({
+    entities: filteredEntities,
+    ids: new Set<string>(),
+  });
+  // Reconcile removed entities before rendering selection controls.
+  if (selection.entities !== filteredEntities) {
+    const visibleIds = new Set(filteredEntities.map((entity) => entity.id));
+    setSelection({
+      entities: filteredEntities,
+      ids: new Set([...selection.ids].filter((id) => visibleIds.has(id))),
+    });
+  }
+  const selectedEntities = filteredEntities.filter((entity) => selection.ids.has(entity.id));
+  const clearSelection = () => setSelection({ entities: filteredEntities, ids: new Set<string>() });
 
   const handleOpenCreate = () => {
     setEditingEntity(null);
@@ -119,6 +169,7 @@ export function LoreCollection({
     } else {
       await createEntity(input);
     }
+    onEntitiesChanged?.();
   };
 
   async function remove(entityId: string) {
@@ -127,6 +178,7 @@ export function LoreCollection({
     try {
       await deleteEntity(entityId);
       setDeletingEntity(null);
+      onEntitiesChanged?.();
     } catch (cause) {
       setActionError(
         cause instanceof Error ? cause.message : 'Não foi possível excluir a entidade.',
@@ -176,8 +228,58 @@ export function LoreCollection({
     { value: 'other', label: 'Outros', icon: Tag },
   ];
 
+  const controls = (
+    <div className={styles.loreTabHeader}>
+      <div className={styles.viewSwitch} role="group" aria-label="Visualização do compêndio">
+        <Button
+          ref={listViewRef}
+          variant="ghost"
+          size="sm"
+          aria-label="Visualização em lista"
+          aria-pressed={view === 'list'}
+          disabled={busy}
+          onClick={() => {
+            clearSelection();
+            setView('list');
+          }}
+        >
+          <List className="icon icon-sm" aria-hidden="true" />
+          Lista
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          aria-label="Visualização em grid"
+          aria-pressed={view === 'grid'}
+          disabled={busy}
+          onClick={() => {
+            clearSelection();
+            setView('grid');
+          }}
+        >
+          <LayoutGrid className="icon icon-sm" aria-hidden="true" />
+          Grid
+        </Button>
+      </div>
+      <Button variant="primary" disabled={busy} onClick={handleOpenCreate}>
+        <Plus className="icon icon-sm" aria-hidden="true" />
+        Nova Entidade
+      </Button>
+    </div>
+  );
+
   return (
-    <div className={styles.loreTabContainer}>
+    <div
+      className={`${styles.loreTabContainer} ${selectedEntities.length ? styles.withSelection : ''}`}
+    >
+      {bulkResult &&
+        (bulkResult.failed ? (
+          <Alert variant="destructive" title="Ação parcialmente concluída">
+            {bulkResult.message}
+          </Alert>
+        ) : (
+          <p role="status">{bulkResult.message}</p>
+        ))}
       {loreError && (
         <Alert variant="warning" title="Falha ao sincronizar o lore">
           {loreError}
@@ -225,20 +327,20 @@ export function LoreCollection({
           {actionError && <Alert variant="destructive">{actionError}</Alert>}
         </Dialog>
       )}
-      <div className={styles.loreTabHeader}>
-        <Button variant="primary" onClick={handleOpenCreate}>
-          <Plus className="icon icon-sm" aria-hidden="true" />
-          Nova Entidade
-        </Button>
-      </div>
+      {actionsContainer ? createPortal(controls, actionsContainer) : controls}
 
       <div className={styles.filterSection}>
         <div className={styles.searchBar}>
           <Input
-            label="Buscar no compêndio"
+            aria-label="Buscar no compêndio"
+            leftIcon={<Search className="icon icon-sm" aria-hidden="true" />}
             placeholder="Buscar por nome, apelido ou resumo..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            disabled={busy}
+            onChange={(e) => {
+              clearSelection();
+              setSearchQuery(e.target.value);
+            }}
           />
         </div>
 
@@ -254,8 +356,12 @@ export function LoreCollection({
                 type="button"
                 role="tab"
                 aria-selected={isSelected}
+                disabled={busy}
                 className={`${styles.tabButton} ${isSelected ? styles.tabActive : ''}`}
-                onClick={() => setCategoryFilter(tab.value)}
+                onClick={() => {
+                  clearSelection();
+                  setCategoryFilter(tab.value);
+                }}
               >
                 <IconComp className="icon icon-sm" aria-hidden="true" />
                 <span>{tab.label}</span>
@@ -285,6 +391,7 @@ export function LoreCollection({
             <Button
               variant="secondary"
               onClick={() => {
+                clearSelection();
                 setSearchQuery('');
                 setCategoryFilter('all');
               }}
@@ -293,6 +400,35 @@ export function LoreCollection({
               Limpar Filtros
             </Button>
           }
+        />
+      ) : view === 'list' ? (
+        <LoreEntityList
+          entities={filteredEntities}
+          selectedIds={selection.ids}
+          disabled={busy}
+          selectAllRef={(element) => {
+            selectAllRef.current = element;
+          }}
+          onSelect={(id) => {
+            const ids = new Set(selection.ids);
+            if (ids.has(id)) ids.delete(id);
+            else ids.add(id);
+            setSelection({ entities: filteredEntities, ids });
+            setBulkResult(null);
+          }}
+          onSelectAll={() => {
+            setSelection({
+              entities: filteredEntities,
+              ids:
+                selectedEntities.length === filteredEntities.length
+                  ? new Set<string>()
+                  : new Set(filteredEntities.map((entity) => entity.id)),
+            });
+            setBulkResult(null);
+          }}
+          onView={setViewingEntity}
+          onEdit={handleOpenEdit}
+          onDelete={handleDelete}
         />
       ) : (
         <div className={styles.grid}>
@@ -307,6 +443,28 @@ export function LoreCollection({
           ))}
         </div>
       )}
+
+      <LoreBulkActions
+        entities={selectedEntities}
+        global={global}
+        onUpdate={updateEntity}
+        onDelete={deleteEntity}
+        onClear={clearSelection}
+        onBusyChange={(value) => {
+          setBusy(value);
+          onBusyChange?.(value);
+        }}
+        onCompleted={(succeeded, message, failed) => {
+          setSelection((previous) => ({
+            ...previous,
+            ids: new Set([...previous.ids].filter((id) => !succeeded.includes(id))),
+          }));
+          setBulkResult({ message, failed });
+          if (succeeded.length) onEntitiesChanged?.();
+          if (!failed)
+            requestAnimationFrame(() => (selectAllRef.current ?? listViewRef.current)?.focus());
+        }}
+      />
 
       <LoreEntityForm
         open={isFormOpen}

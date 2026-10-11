@@ -10,24 +10,21 @@
 
 .filterSection {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  background-color: hsl(var(--card) / var(--panel-opacity));
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
 .searchBar {
-  max-width: 500px;
+  flex: 1 1 240px;
+  min-width: 0;
+  max-width: 420px;
 }
 
 .tabsRow {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
-  border-top: 1px solid var(--line-subtle);
-  padding-top: var(--space-sm);
 }
 
 .tabButton {
@@ -90,5 +87,201 @@
 
 .loreTabHeader {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
   justify-content: flex-end;
+}
+
+.viewSwitch {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-full);
+  padding: var(--space-1);
+  background: hsl(var(--card));
+}
+
+.viewSwitch button[aria-pressed='true'] {
+  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.12);
+}
+
+.entityTable {
+  table-layout: fixed;
+}
+
+.entityTable th,
+.entityTable td {
+  padding: var(--space-3);
+}
+
+.entityTable .selectionCell {
+  width: 44px;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  accent-color: hsl(var(--primary));
+  cursor: pointer;
+}
+
+.entityInfo {
+  min-width: 0;
+}
+
+.entityName {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entitySummary {
+  margin: var(--space-1) 0 0;
+  color: hsl(var(--muted-foreground));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.categoryCell {
+  width: 170px;
+}
+
+.visibilityCell {
+  width: 115px;
+}
+
+.visibility,
+.rowActionButtons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.visibility {
+  font-size: var(--text-sm);
+  color: hsl(var(--muted-foreground));
+}
+
+.rowActions {
+  width: 112px;
+}
+
+.withSelection {
+  padding-bottom: 140px;
+}
+
+.bulkBar {
+  position: fixed;
+  bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  width: max-content;
+  max-width: calc(100% - 2 * var(--space-4));
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 8px 24px hsl(var(--shadow-color) / 0.2);
+}
+
+.bulkButtons {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.confirmationEntities {
+  max-height: 160px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  padding-left: var(--space-5);
+}
+
+.privacyWarning {
+  color: hsl(var(--foreground));
+}
+
+@media (max-width: 700px) {
+  .searchBar {
+    max-width: none;
+    flex-basis: 100%;
+  }
+
+  .entityTable,
+  .entityTable thead,
+  .entityTable tbody {
+    display: block;
+  }
+
+  .entityTable tr {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+    padding-right: var(--space-2);
+  }
+
+  .entityTable th:not(.selectionCell) {
+    display: none;
+  }
+
+  .entityTable td {
+    min-width: 0;
+    width: auto;
+  }
+
+  .entityInfo {
+    grid-column: 2 / 4;
+  }
+
+  .entityTable td.selectionCell {
+    grid-row: 1 / 4;
+    width: auto;
+  }
+
+  .categoryCell,
+  .rowActions {
+    grid-column: 2;
+  }
+
+  .entityTable td.categoryCell,
+  .entityTable td.visibilityCell,
+  .entityTable td.rowActions {
+    padding-top: 0;
+  }
+
+  .entityTable td.visibilityCell {
+    padding-left: 0;
+  }
+
+  .bulkBar {
+    width: calc(100% - 2 * var(--space-4));
+    padding: var(--space-3);
+  }
+
+  .bulkButtons {
+    gap: var(--space-1);
+  }
+
+  .bulkButtons button {
+    font-size: var(--text-xs);
+    padding-inline: var(--space-2);
+  }
 }

@@ -139,6 +139,20 @@ Títulos longos usam reticências e mantêm o texto completo no atributo `title`
 pequenas, as ações usam ícones com rótulos acessíveis e as contagens permanecem
 visíveis, sem transbordamento horizontal.
 
+O Compêndio reúne “Lista / Grid” e “Nova Entidade” ao lado das abas do livro
+quando há largura. As ações ficam fora do `tablist`; páginas independentes
+mantêm os controles locais. Busca e categorias compartilham uma linha em telas
+grandes, sem rótulo visual de busca, mantendo nome acessível.
+
+O Grid preserva os cards. A Lista permite selecionar entidades individualmente
+ou todos os resultados exibidos, com checkbox intermediário. Busca, categoria,
+modo, escopo, livro e saída da aba limpam a seleção. Uma barra fixa no rodapé
+mostra quantidade, visibilidade, exclusão e limpar seleção; o conteúdo reserva
+espaço para ela. Visibilidade e exclusão em lote exigem modal com confirmação
+explícita, identificação da seleção e aviso de impacto na publicação/escopo.
+Falhas preservam somente as entidades pendentes para retentativa. Em celular,
+linhas, controles e barra se reorganizam sem ampliar a largura da página.
+
 ## Fichas de lore por etapas
 
 Criação e edição de lore local/global usam quatro etapas: Identificação,

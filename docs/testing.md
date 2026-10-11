@@ -178,3 +178,15 @@ celular nos temas claro, escuro e sépia:
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/universes.visual.ts
 ```
+
+`LoreCollection.test.tsx` cobre lista/grid, seleção individual e de resultados
+filtrados, cancelamento/confirmação, foco, progresso, falhas parciais, escopos e
+remoções recebidas por sincronização. Os testes de serviços existentes continuam
+verificando revogação local e mutações globais no servidor.
+`e2e/visual/compendium.visual.ts` mede alinhamento das ações com as abas e da
+busca com categorias, verifica seleção/visibilidade/exclusão e captura lista,
+barra e modais nos três temas, incluindo a largura de 320 px:
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/compendium.visual.ts
+```

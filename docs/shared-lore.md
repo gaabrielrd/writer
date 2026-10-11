@@ -28,6 +28,24 @@ locais podem apontar para o lore local ou para o universo vinculado.
 
 ## Fichas por etapas
 
+Nos detalhes do livro, o Compêndio alterna entre Grid (padrão) e Lista. A Lista
+permite selecionar entidades do escopo ativo e ajustar visibilidade ou excluir
+após confirmação. “Selecionar todas” inclui somente resultados exibidos da
+busca/categoria atual. A seleção é descartada ao trocar filtros, visualização,
+escopo, livro ou sair da aba, e acompanha remoções recebidas por sincronização.
+
+O modal global informa que as alterações atingem o original compartilhado em
+todos os livros do universo. Tornar público autoriza a próxima publicação, sem
+publicar automaticamente; tornar público privado ou excluir lore público mantém
+a revogação por versão existente. Após operações locais, os detalhes do livro
+atualizam o status de publicação.
+
+As operações em lote reutilizam as mutações individuais, sequencialmente; não
+são uma transação única para toda a seleção. Cada entidade preserva suas
+garantias de privacidade. O resultado informa sucessos e erros, mantendo somente
+as falhas selecionadas para nova tentativa. Durante a execução, o modal permanece
+aberto e os controles de seleção/filtros/escopo/abas ficam bloqueados.
+
 Criação e edição compartilham quatro etapas em todos os pontos de entrada:
 
 1. Identificação: nome, categoria, apelidos e resumo de até 140 caracteres.
