@@ -164,7 +164,7 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
    - **Responsabilidade:** Editor de texto rico (WYSIWYG), integração com menção rápida via `@`, visualização contextual com tooltips e integração com exportadores (Markdown, DOCX, PDF).
    - **Público:** `RichEditor`, `MentionMenu`, `ExportActions`.
 5. `src/features/ai-assistant`
-   - **Responsabilidade:** Comunicação com provedores de IA (Gemini / OpenAI), controle de debounce para autocomplete preditivo contínuo, menu de ações contextuais de escrita e orquestração de consumo de créditos.
+   - **Responsabilidade:** Comunicação com provedores de IA (Gemini / OpenAI), controle de debounce para autocomplete após uma pausa de 600 ms na digitação, menu de ações contextuais de escrita e orquestração de consumo de créditos. Geração automática exige uma alteração de texto originada pela digitação; abrir/focar o editor, selecionar texto, mover o cursor, formatar ou carregar conteúdo não inicia uma geração. Seleção e mudanças de contexto cancelam sugestões pendentes; inserções de IA não rearmam o autocomplete.
    - **Público:** `useAIAutocomplete`, `AIContextMenu`, `BYOKSettings`.
 
 ### Fluxo de dados e persistência

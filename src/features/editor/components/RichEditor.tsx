@@ -104,6 +104,8 @@ export function RichEditor({
   );
   const menuId = useId();
   const lastContent = useRef(content);
+  const typedInput = useRef(false);
+  const [typingRevision, setTypingRevision] = useState(0);
   const keyHandler = useRef<(event: KeyboardEvent) => boolean>(() => false);
   const discardRef = useRef<() => void>(() => undefined);
   const acceptingRef = useRef(false);
@@ -154,8 +156,23 @@ export function RichEditor({
         },
         transformPastedHTML: sanitizeRichText,
         handleKeyDown: (_view, event) => keyHandler.current(event),
+        handleTextInput: () => {
+          typedInput.current = true;
+          return false;
+        },
+        handleDOMEvents: {
+          beforeinput: (_view, event) => {
+            typedInput.current =
+              /^(insertText|insertCompositionText|insertParagraph|insertLineBreak|deleteContentBackward|deleteContentForward)$/.test(
+                event.inputType,
+              );
+            return false;
+          },
+        },
       },
       onUpdate: ({ editor: activeEditor }) => {
+        if (typedInput.current) setTypingRevision((value) => value + 1);
+        typedInput.current = false;
         lastContent.current = activeEditor.getHTML();
         onChange(lastContent.current);
         setMentionDismissed(false);
@@ -163,7 +180,9 @@ export function RichEditor({
         setHover(null);
         discardRef.current();
       },
-      onSelectionUpdate: () => {
+      onSelectionUpdate: ({ transaction }) => {
+        if (transaction.docChanged) return;
+        typedInput.current = false;
         setMentionDismissed(false);
         setSelectedIndex(0);
         discardRef.current();
@@ -176,6 +195,7 @@ export function RichEditor({
     editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
   const isUsingBYOK = config.provider !== 'firebase_ai';
   const { suggestion, acceptSuggestion, discardSuggestion } = useAIAutocomplete({
+    typingRevision,
     content: text,
     cursorPosition,
     loreEntities: entities,

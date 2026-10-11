@@ -10,6 +10,7 @@ vi.mock('../services/creditsService');
 vi.mock('../services/byokStorage');
 
 const options: UseAIAutocompleteOptions = {
+  typingRevision: 0,
   content: 'O vento uivava através das árvores antigas.',
   cursorPosition: 43,
   userId: 'author',
@@ -34,7 +35,7 @@ afterEach(() => {
 
 describe('autocomplete acceptance contract', () => {
   it('requests once after 600ms with context but never charges on generation', async () => {
-    const { result } = renderHook(() => useAIAutocomplete(options));
+    const { result } = renderAfterTyping();
     await act(async () => {
       await vi.advanceTimersByTimeAsync(599);
     });
@@ -55,9 +56,7 @@ describe('autocomplete acceptance contract', () => {
       { userCredits: 0 },
     ]) {
       const dialog = vi.fn();
-      const { unmount } = renderHook(() =>
-        useAIAutocomplete({ ...options, ...extra, onShowOutOfCredits: dialog }),
-      );
+      const { unmount } = renderAfterTyping({ ...extra, onShowOutOfCredits: dialog });
       await tick();
       expect(dialog).not.toHaveBeenCalled();
       unmount();
@@ -66,9 +65,7 @@ describe('autocomplete acceptance contract', () => {
   });
   it('offers the exhaustion dialog only when manually requested', async () => {
     const dialog = vi.fn();
-    const { result } = renderHook(() =>
-      useAIAutocomplete({ ...options, userCredits: 0, onShowOutOfCredits: dialog }),
-    );
+    const { result } = renderAfterTyping({ userCredits: 0, onShowOutOfCredits: dialog });
     await act(async () => {
       await result.current.triggerManualAutocomplete();
     });
@@ -83,7 +80,7 @@ describe('autocomplete acceptance contract', () => {
       }),
     );
     const onCreditDeducted = vi.fn();
-    const { result } = renderHook(() => useAIAutocomplete({ ...options, onCreditDeducted }));
+    const { result } = renderAfterTyping({ onCreditDeducted });
     await tick();
     let first!: Promise<string | null>;
     await act(async () => {
@@ -102,7 +99,7 @@ describe('autocomplete acceptance contract', () => {
     expect(await result.current.acceptSuggestion()).toBeNull();
   });
   it('does not charge when the target changed before acceptance', async () => {
-    const { result } = renderHook(() => useAIAutocomplete(options));
+    const { result } = renderAfterTyping();
     await tick();
     await act(async () => {
       expect(await result.current.acceptSuggestion(() => false)).toBeNull();
@@ -113,7 +110,7 @@ describe('autocomplete acceptance contract', () => {
     vi.mocked(credits.deductCredit).mockRejectedValueOnce(
       new Error('Saldo de créditos insuficiente.'),
     );
-    const { result } = renderHook(() => useAIAutocomplete(options));
+    const { result } = renderAfterTyping();
     await tick();
     await act(async () => {
       expect(await result.current.acceptSuggestion()).toBeNull();
@@ -123,7 +120,7 @@ describe('autocomplete acceptance contract', () => {
     expect(credits.deductCredit).toHaveBeenCalledOnce();
   });
   it('uses the provider of the generated suggestion even if settings change before acceptance', async () => {
-    const { result } = renderHook(() => useAIAutocomplete(options));
+    const { result } = renderAfterTyping();
     await tick();
     vi.mocked(storage.getBYOKConfig).mockReturnValue({
       provider: 'openai_byok',
@@ -139,7 +136,7 @@ describe('autocomplete acceptance contract', () => {
       provider: 'gemini_byok',
       geminiApiKey: 'test-key',
     });
-    const { result } = renderHook(() => useAIAutocomplete({ ...options, userCredits: 0 }));
+    const { result } = renderAfterTyping({ userCredits: 0 });
     await tick();
     await act(async () => {
       expect(await result.current.acceptSuggestion()).toBe('A floresta silenciou.');
@@ -150,10 +147,7 @@ describe('autocomplete acceptance contract', () => {
 
 describe('request cancellation', () => {
   it('continued typing immediately hides the old suggestion without charging', async () => {
-    const { result, rerender } = renderHook(
-      (value: UseAIAutocompleteOptions) => useAIAutocomplete(value),
-      { initialProps: options },
-    );
+    const { result, rerender } = renderAfterTyping();
     await tick();
     rerender({ ...options, content: options.content + ' E', cursorPosition: 45 });
     expect(result.current.suggestion).toBeNull();
@@ -169,10 +163,7 @@ describe('request cancellation', () => {
           finish = resolve;
         }),
       );
-      const { result, rerender, unmount } = renderHook(
-        (value: UseAIAutocompleteOptions) => useAIAutocomplete(value),
-        { initialProps: options },
-      );
+      const { result, rerender, unmount } = renderAfterTyping();
       await tick();
       const signal = vi.mocked(ai.generateAIResponse).mock.calls[0]?.[0].signal;
       if (reason === 'discard') act(() => result.current.discardSuggestion());
@@ -190,15 +181,13 @@ describe('request cancellation', () => {
     },
   );
   it('Escape also cancels the pending debounce before any call', async () => {
-    const { result } = renderHook(() => useAIAutocomplete(options));
+    const { result } = renderAfterTyping();
     act(() => result.current.discardSuggestion());
     await tick();
     expect(ai.generateAIResponse).not.toHaveBeenCalled();
   });
   it('does not restart the debounce on unrelated callback identities or an equivalent lore array', async () => {
-    const { result } = renderHook(() =>
-      useAIAutocomplete({ ...options, loreEntities: [], onShowOutOfCredits: () => {} }),
-    );
+    const { result } = renderAfterTyping({ loreEntities: [], onShowOutOfCredits: () => {} });
     await tick();
     expect(result.current.suggestion).toBe('A floresta silenciou.');
     await tick();
@@ -206,7 +195,7 @@ describe('request cancellation', () => {
   });
   it('exposes a network failure without charging or blocking a new request', async () => {
     vi.mocked(ai.generateAIResponse).mockRejectedValueOnce(new Error('Rede indisponível'));
-    const { result } = renderHook(() => useAIAutocomplete(options));
+    const { result } = renderAfterTyping();
     await tick();
     expect(result.current.error).toBe('Rede indisponível');
     await act(async () => {
@@ -214,5 +203,66 @@ describe('request cancellation', () => {
     });
     expect(result.current.suggestion).toBe('A floresta silenciou.');
     expect(credits.deductCredit).not.toHaveBeenCalled();
+  });
+});
+
+// Existing acceptance/cancellation scenarios begin after an explicit typing event.
+function renderAfterTyping(extra: Partial<UseAIAutocompleteOptions> = {}) {
+  const initialProps = { ...options, ...extra };
+  const hook = renderHook((value: UseAIAutocompleteOptions) => useAIAutocomplete(value), {
+    initialProps,
+  });
+  hook.rerender({ ...initialProps, typingRevision: 1 });
+  return hook;
+}
+
+describe('typing-only automatic generation', () => {
+  it('never generates on mount, cursor moves, selection changes, or loaded content', async () => {
+    const { rerender } = renderHook((value: UseAIAutocompleteOptions) => useAIAutocomplete(value), {
+      initialProps: options,
+    });
+    await tick();
+    rerender({ ...options, cursorPosition: 20 });
+    await tick();
+    rerender({ ...options, enabled: false });
+    await tick();
+    rerender({ ...options, enabled: true });
+    await tick();
+    rerender({ ...options, content: options.content + ' Texto carregado.' });
+    await tick();
+    expect(ai.generateAIResponse).not.toHaveBeenCalled();
+  });
+  it('waits for the pause after the last typing event and generates once', async () => {
+    const { rerender } = renderHook((value: UseAIAutocompleteOptions) => useAIAutocomplete(value), {
+      initialProps: options,
+    });
+    rerender({ ...options, content: options.content + ' A', typingRevision: 1 });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+    rerender({ ...options, content: options.content + ' As', typingRevision: 2 });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(599);
+    });
+    expect(ai.generateAIResponse).not.toHaveBeenCalled();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1);
+    });
+    expect(ai.generateAIResponse).toHaveBeenCalledOnce();
+    await tick();
+    expect(ai.generateAIResponse).toHaveBeenCalledOnce();
+  });
+  it('selection cancels a typing debounce without restarting on a collapsed cursor', async () => {
+    const { rerender } = renderHook((value: UseAIAutocompleteOptions) => useAIAutocomplete(value), {
+      initialProps: options,
+    });
+    rerender({ ...options, typingRevision: 1 });
+    rerender({ ...options, typingRevision: 1, enabled: false });
+    rerender({ ...options, typingRevision: 1, enabled: true, cursorPosition: 20 });
+    await tick();
+    expect(ai.generateAIResponse).not.toHaveBeenCalled();
+    rerender({ ...options, typingRevision: 2 });
+    await tick();
+    expect(ai.generateAIResponse).toHaveBeenCalledOnce();
   });
 });

@@ -5,6 +5,11 @@ let credits = author.credits;
 
 // Keep autocomplete quiet and deterministic; the production hook and menus still render.
 export function generateAIResponse(options?: { json?: boolean }): Promise<string> {
+  if (!options?.json && sessionStorage.getItem('writer_fixture_autocomplete') === 'true') {
+    const count = Number(sessionStorage.getItem('writer_fixture_autocomplete_calls') ?? 0);
+    sessionStorage.setItem('writer_fixture_autocomplete_calls', String(count + 1));
+    return Promise.resolve('A noite trouxe uma nova descoberta.');
+  }
   return Promise.resolve(options?.json ? JSON.stringify({ entities: fixtureDetections }) : '');
 }
 

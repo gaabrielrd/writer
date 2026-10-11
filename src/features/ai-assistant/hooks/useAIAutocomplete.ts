@@ -7,6 +7,7 @@ import { deductCredit } from '../services/creditsService';
 import { useAIConfig } from './useAIConfig';
 
 export interface UseAIAutocompleteOptions {
+  typingRevision: number;
   content: string;
   cursorPosition: number;
   loreEntities?: LoreContextItem[];
@@ -37,6 +38,7 @@ interface Suggestion {
 const EMPTY_LORE: LoreContextItem[] = [];
 
 export function useAIAutocomplete({
+  typingRevision,
   content,
   cursorPosition,
   loreEntities = EMPTY_LORE,
@@ -69,6 +71,7 @@ export function useAIAutocomplete({
     configVersion,
   ]);
   const contextRef = useRef(context);
+  const lastTypingRevision = useRef(typingRevision);
 
   useEffect(() => {
     callbacksRef.current = { onCreditDeducted, onShowOutOfCredits };
@@ -130,10 +133,12 @@ export function useAIAutocomplete({
   ]);
 
   useEffect(() => {
+    const typed = lastTypingRevision.current !== typingRevision;
+    lastTypingRevision.current = typingRevision;
     contextRef.current = context;
     controllerRef.current?.abort();
     offeredRef.current = null;
-    if (enabled) {
+    if (enabled && typed) {
       timerRef.current = setTimeout(() => {
         void fetchSuggestion();
       }, debounceMs);
@@ -143,7 +148,7 @@ export function useAIAutocomplete({
       offeredRef.current = null;
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [context, debounceMs, enabled, fetchSuggestion]);
+  }, [context, debounceMs, enabled, fetchSuggestion, typingRevision]);
 
   const acceptSuggestion = useCallback(
     async (canApply?: () => boolean): Promise<string | null> => {
