@@ -1,3 +1,4 @@
+import { chooseDropdown } from '../dropdown';
 import { readFile } from 'node:fs/promises';
 import type { Locator } from '@playwright/test';
 import JSZip from 'jszip';
@@ -92,7 +93,7 @@ test('exporta o livro inteiro como DOCX real e backup JSON privado', async ({ pa
   await page.goto(bookPath);
   await page.getByRole('button', { name: 'Opções do livro', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Exportar', exact: true }).click();
-  await page.getByLabel('Formato do arquivo').selectOption('docx');
+  await chooseDropdown(page.getByLabel('Formato do arquivo'), 'Word (.docx)');
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'exportar-livro-docx');
   const [docxDownload] = await Promise.all([
@@ -111,7 +112,7 @@ test('exporta o livro inteiro como DOCX real e backup JSON privado', async ({ pa
   expect(xml).toContain('w:pageBreakBefore');
   expect(xml).toContain('w:pStyle w:val="Heading1"');
   expect(await zip.file('word/styles.xml')!.async('string')).toContain('Georgia');
-  await page.getByLabel('Formato do arquivo').selectOption('json');
+  await chooseDropdown(page.getByLabel('Formato do arquivo'), 'Backup completo (.json)');
   await expect(page.getByLabel('Conteúdo da exportação')).toBeDisabled();
   await expect(page.getByText(/fichas de lore privadas/)).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCSS(
@@ -197,7 +198,7 @@ test('PDF usa um documento isolado sem a interface do aplicativo', async ({ page
   await page.goto(bookPath);
   await page.getByRole('button', { name: 'Opções do livro', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Exportar', exact: true }).click();
-  await page.getByLabel('Formato do arquivo').selectOption('pdf');
+  await chooseDropdown(page.getByLabel('Formato do arquivo'), 'PDF (impressão)');
   await capture(page, testInfo, 'exportar-pdf');
   await page.getByRole('button', { name: 'Abrir impressão' }).click();
   await expect

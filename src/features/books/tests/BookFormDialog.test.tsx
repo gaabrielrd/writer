@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { listUniverses } from '@/features/universes';
 vi.mock('@/features/universes/services/universeService', () => ({
   listUniverses: vi.fn().mockResolvedValue([]),
@@ -170,7 +171,11 @@ it('desvincula um livro existente sem copiar ou remover o lore local', async () 
   };
   render(<BookFormDialog open bookToEdit={book} onClose={vi.fn()} onSubmit={submit} />);
   const user = userEvent.setup();
-  await user.selectOptions(await screen.findByLabelText('Universo compartilhado'), '');
+  await chooseDropdown(
+    user,
+    await screen.findByLabelText('Universo compartilhado'),
+    'Sem universo',
+  );
   expect(screen.getByText(/Capítulos e lore local serão preservados/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
   expect(submit).toHaveBeenCalledWith(

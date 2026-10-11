@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -107,7 +108,11 @@ describe('revisão do compêndio', () => {
     await analyze(user);
     expect(screen.getByText('Revisar conflito')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Aplicar 0 alterações' })).toBeDisabled();
-    await user.selectOptions(screen.getByLabelText('Destino da sugestão'), global.id);
+    await chooseDropdown(
+      user,
+      screen.getByLabelText('Destino da sugestão'),
+      'Atualizar Arthur — global',
+    );
     expect(screen.getByText(/afeta todos os livros/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Aplicar 1 alteração' }));
     expect(lore.applyLoreAnalysis).toHaveBeenCalledWith('ticket', detected.evidence, [
@@ -130,8 +135,14 @@ describe('revisão do compêndio', () => {
   it('makes new global destination explicit and keeps local as default', async () => {
     const { user } = setup({ universeId: 'world' });
     await analyze(user);
-    expect(screen.getByLabelText('Destino da sugestão')).toHaveValue('new:local');
-    await user.selectOptions(screen.getByLabelText('Destino da sugestão'), 'new:global');
+    expect(screen.getByLabelText('Destino da sugestão')).toHaveTextContent(
+      'Criar no lore local deste livro',
+    );
+    await chooseDropdown(
+      user,
+      screen.getByLabelText('Destino da sugestão'),
+      'Criar no lore global do universo',
+    );
     expect(screen.getByText(/nova entidade será privada/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Aplicar 1 alteração' }));
     expect(vi.mocked(lore.applyLoreAnalysis).mock.calls[0]?.[2][0]?.scope).toBe('global');

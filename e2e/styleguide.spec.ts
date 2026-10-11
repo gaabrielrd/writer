@@ -1,3 +1,4 @@
+import { chooseDropdown, themeLabels } from './dropdown';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -49,7 +50,10 @@ for (const theme of themes) {
     await expect(
       page.getByRole('heading', { name: 'Catálogo do Design System & Temas' }),
     ).toBeVisible();
-    await page.getByRole('combobox', { name: 'Selecionar tema visual' }).selectOption(theme.id);
+    await chooseDropdown(
+      page.getByRole('combobox', { name: 'Selecionar tema visual' }),
+      themeLabels[theme.id],
+    );
     const root = page.locator('html');
     await expect(root).toHaveAttribute('data-theme', theme.id);
     await expect(root).toHaveCSS('filter', 'none');
@@ -123,8 +127,8 @@ for (const theme of themes) {
     await page.reload();
     await expect(root).toHaveAttribute('data-theme', theme.id);
     await expect(root).toHaveCSS('filter', 'none');
-    await expect(page.getByRole('combobox', { name: 'Selecionar tema visual' })).toHaveValue(
-      theme.id,
+    await expect(page.getByRole('combobox', { name: 'Selecionar tema visual' })).toHaveText(
+      themeLabels[theme.id],
     );
   });
 }
@@ -132,7 +136,7 @@ for (const theme of themes) {
 test('acompanha o sistema e permite alternar os três temas', async ({ page }) => {
   await page.goto('/styleguide');
   const root = page.locator('html');
-  await page.getByRole('combobox', { name: 'Selecionar tema visual' }).selectOption('system');
+  await chooseDropdown(page.getByRole('combobox', { name: 'Selecionar tema visual' }), 'Sistema');
   await expect(root).toHaveAttribute('data-theme', 'light');
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(root).toHaveAttribute('data-theme', 'dark');

@@ -115,6 +115,11 @@ Modules com tokens semânticos em `src/styles/globals.css`. Há um único
 caramelo/café aprovado. A rota `/styleguide` é a referência viva. Ícones vêm de
 `lucide-react`; veja [styleguide.md](styleguide.md).
 
+Seleções e menus de ações compartilham `Dropdown` e os mesmos tokens, itens e
+portal. Os modos discriminados preservam callbacks de valor e ações sem valor;
+busca é opcional. Veja [ADR 0020](decisions/0020-shared-dropdown.md) e
+[API do dropdown](dropdown.md).
+
 ## Estado
 
 As configurações de IA são compostas por `AISettingsProvider` no layout e abertas

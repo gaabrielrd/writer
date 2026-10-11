@@ -24,6 +24,7 @@ Para trabalho com vários arquivos ou ambíguo:
 Não expanda o escopo, não adicione dependências, não exponha
 segredos e não altere a arquitetura sem antes explicar a necessidade.
 
-Em interface: use os tokens de `@vitru/styleguide/tokens.css` (nunca cor
-literal), ícones de `lucide-react` e o kit de `@vitru/styleguide`. O
-styleguide continua valendo depois da inicialização do repositório.
+Em interface: use os tokens de `src/styles/globals.css` (nunca cor
+literal), ícones de `lucide-react` e o kit de `@/shared/ui`. Use `Dropdown`
+nos modos `select` e `action`, conforme `docs/dropdown.md`. O styleguide
+continua valendo depois da inicialização do repositório.

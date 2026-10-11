@@ -224,19 +224,14 @@ export function ChapterList({
                   <span className={styles.actionLabel}>Escrever</span>
                 </Button>
                 <Dropdown
+                  mode="action"
                   label={`Opções de ${ch.title}`}
                   align="end"
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={styles.chapterMenuButton}
-                      aria-label={`Opções de ${ch.title}`}
-                      disabled={isProcessing}
-                    >
-                      <MoreHorizontal className="icon icon-sm" aria-hidden="true" />
-                    </Button>
-                  }
+                  variant="ghost"
+                  iconOnly
+                  className={styles.chapterMenuButton}
+                  disabled={isProcessing}
+                  icon={<MoreHorizontal className="icon icon-sm" aria-hidden="true" />}
                 >
                   <DropdownItem onSelect={() => handleStartRename(ch)}>
                     <Edit2 className="icon icon-sm" aria-hidden="true" />
@@ -253,7 +248,7 @@ export function ChapterList({
                     <ArrowDown className="icon icon-sm" aria-hidden="true" />
                     Mover para baixo
                   </DropdownItem>
-                  <DropdownItem onSelect={() => handleDelete(ch.id)}>
+                  <DropdownItem onSelect={() => handleDelete(ch.id)} variant="destructive">
                     <Trash2 className="icon icon-sm" aria-hidden="true" />
                     Excluir
                   </DropdownItem>

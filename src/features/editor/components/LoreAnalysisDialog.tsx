@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Dialog, Input, Select, Textarea, LoadingState } from '@/shared/ui';
+import { Alert, Button, Dialog, Input, Dropdown, Textarea, LoadingState } from '@/shared/ui';
 import { analyzeLoreWithBYOK, useAIConfig, usesOwnKey } from '@/features/ai-assistant';
 import {
   analyzeChapterLore,
@@ -287,8 +287,10 @@ export function LoreAnalysisDialog({
                   <span>{status}</span>
                 </div>
                 <blockquote className={styles.evidence}>{proposal.detected.evidence}</blockquote>
-                <Select
+                <Dropdown
+                  mode="select"
                   id={`target-${index}`}
+                  searchable
                   label="Destino da sugestão"
                   value={proposal.target}
                   disabled={locked}
@@ -303,8 +305,8 @@ export function LoreAnalysisDialog({
                       label: `Atualizar ${entity.name} — ${entity.universeId ? 'global' : 'local'}`,
                     })),
                   ]}
-                  onChange={(event) => {
-                    const target = event.target.value;
+                  onValueChange={(nextValue) => {
+                    const target = nextValue;
                     const fields = differentFields(
                       proposal.detected,
                       entities.find((entity) => entity.id === target),
@@ -356,16 +358,17 @@ export function LoreAnalysisDialog({
                           </p>
                         )}
                         {field === 'category' ? (
-                          <Select
+                          <Dropdown
+                            mode="select"
                             aria-label={`Categoria proposta para ${proposal.detected.name}`}
                             value={proposal.detected.category}
                             options={categories}
                             disabled={locked}
-                            onChange={(event) =>
+                            onValueChange={(nextValue) =>
                               edit(index, {
                                 detected: {
                                   ...proposal.detected,
-                                  category: event.target.value as DetectedLoreEntity['category'],
+                                  category: nextValue as DetectedLoreEntity['category'],
                                 },
                               })
                             }

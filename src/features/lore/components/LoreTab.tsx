@@ -9,7 +9,7 @@ import {
   ErrorState,
   Input,
   LoadingState,
-  Select,
+  Dropdown,
 } from '@/shared/ui';
 import type { Book } from '@/features/books';
 import {
@@ -65,11 +65,12 @@ function BookLoreScopes({ book, actionsContainer, onEntitiesChanged, onBusyChang
   return (
     <>
       {book.universeId && (
-        <Select
+        <Dropdown
+          mode="select"
           label="Escopo do compêndio"
           value={selected}
           disabled={busy}
-          onChange={(event) => setSelected(event.target.value)}
+          onValueChange={(nextValue) => setSelected(nextValue)}
           options={[
             { value: 'local', label: 'Lore local — somente este livro' },
             { value: 'global', label: 'Lore global — universo compartilhado' },

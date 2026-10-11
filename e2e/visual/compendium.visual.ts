@@ -1,3 +1,4 @@
+import { chooseDropdown } from '../dropdown';
 import { capture, expect, expectDialogWithinViewport, test } from './support';
 import { FIXTURE_BOOK_ID, lore } from './fixtures/data';
 
@@ -43,13 +44,13 @@ test('compêndio compacto com lista, seleção e confirmação de ações', asyn
   if (bounds) expect(bounds.y + bounds.height).toBeLessThanOrEqual(page.viewportSize()!.height);
   await bar.getByRole('button', { name: 'Alterar visibilidade' }).click();
   await expect(page.getByRole('button', { name: 'Confirmar visibilidade' })).toBeDisabled();
-  await page.getByLabel('Nova visibilidade').selectOption('private');
+  await chooseDropdown(page.getByLabel('Nova visibilidade'), 'Privado');
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'compendio-confirmar-visibilidade');
   await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
   await expect(check).toBeChecked();
   await bar.getByRole('button', { name: 'Alterar visibilidade' }).click();
-  await page.getByLabel('Nova visibilidade').selectOption('private');
+  await chooseDropdown(page.getByLabel('Nova visibilidade'), 'Privado');
   await page.getByRole('button', { name: 'Confirmar visibilidade' }).click();
   await expect(page.getByText('1 de 1 entidade atualizada.', { exact: true })).toBeVisible();
   await expect(check).not.toBeChecked();

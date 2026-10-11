@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { Alert, Button, Dialog, Input, Select, Textarea } from '@/shared/ui';
+import { Alert, Button, Dialog, Input, Dropdown, Textarea } from '@/shared/ui';
 import {
   LORE_CATEGORIES,
   type CreateLoreEntityInput,
@@ -200,10 +200,11 @@ function LoreEntityFormContent({
               required
               disabled={isSubmitting}
             />
-            <Select
+            <Dropdown
+              mode="select"
               label="Categoria"
               value={category}
-              onChange={(event) => setCategory(event.target.value as LoreCategory)}
+              onValueChange={(nextValue) => setCategory(nextValue as LoreCategory)}
               options={LORE_CATEGORIES}
               disabled={isSubmitting}
             />
@@ -321,10 +322,11 @@ function LoreEntityFormContent({
             {relation && (
               <>
                 {relations.length > 1 && (
-                  <Select
+                  <Dropdown
+                    mode="select"
                     label="Relação em edição"
                     value={relationIndex}
-                    onChange={(event) => setRelationIndex(Number(event.target.value))}
+                    onValueChange={(nextValue) => setRelationIndex(Number(nextValue))}
                     options={relations.map((item, index) => ({
                       value: index,
                       label: `${index + 1}. ${available.find((target) => target.id === item.targetEntityId)?.name ?? 'Entidade não disponível'}`,
@@ -332,10 +334,12 @@ function LoreEntityFormContent({
                     disabled={isSubmitting}
                   />
                 )}
-                <Select
+                <Dropdown
+                  mode="select"
+                  searchable
                   label="Entidade Vinculada"
                   value={relation.targetEntityId}
-                  onChange={(event) => updateRelation('targetEntityId', event.target.value)}
+                  onValueChange={(nextValue) => updateRelation('targetEntityId', nextValue)}
                   options={[
                     ...available.map((item) => ({
                       value: item.id,

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
-import { Alert, Button, Dialog, Input, Select } from '@/shared/ui';
+import { Alert, Button, Dialog, Input, Dropdown } from '@/shared/ui';
 import type { AIProvider, BYOKConfig } from '../model/byokConfig';
 import { validateBYOKConfig } from '../model/byokConfig';
 import { getBYOKConfig, saveBYOKConfig, clearBYOKConfig } from '../services/byokStorage';
@@ -76,10 +76,11 @@ export function BYOKSettingsDialog({ open, onClose, onConfigChanged }: BYOKSetti
           </Alert>
         )}
 
-        <Select
+        <Dropdown
+          mode="select"
           label="Provedor de IA"
           value={config.provider}
-          onChange={(e) => handleProviderChange(e.target.value as AIProvider)}
+          onValueChange={(nextValue) => handleProviderChange(nextValue as AIProvider)}
           options={[
             {
               value: 'firebase_ai',

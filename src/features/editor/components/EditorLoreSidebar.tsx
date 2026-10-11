@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { BookOpen, MapPin, Plus, Search, Tag, User, X } from 'lucide-react';
-import { Badge, Button, Input, Select } from '@/shared/ui';
+import { Badge, Button, Input, Dropdown } from '@/shared/ui';
 import {
   type CreateLoreEntityInput,
   type LoreCategory,
@@ -144,13 +144,14 @@ export function EditorLoreSidebar({
           </Button>
         )}
         {universeId && (
-          <Select
+          <Dropdown
+            mode="select"
             label="Escopo do lore"
             value={selectedScope}
-            onChange={(event) =>
+            onValueChange={(nextValue) =>
               setScopeChoice({
                 target: selectedEntityId,
-                value: event.target.value as 'local' | 'global',
+                value: nextValue as 'local' | 'global',
               })
             }
             options={[

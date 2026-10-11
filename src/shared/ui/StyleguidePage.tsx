@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Sparkles, BookOpen, Feather } from 'lucide-react';
+import { Sparkles, BookOpen, Feather, MapPin, MoreHorizontal } from 'lucide-react';
 import {
   Button,
   Input,
   Textarea,
-  Select,
   Badge,
   Card,
   Dialog,
@@ -29,6 +28,7 @@ export function StyleguidePage() {
   const { theme, resolvedTheme } = useTheme();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [lastAction, setLastAction] = useState('');
 
   return (
     <div className="flex flex-col gap-8 pb-16">
@@ -117,12 +117,26 @@ export function StyleguidePage() {
             onChange={(e) => setInputValue(e.target.value)}
             hint="Nome que aparecerá na capa"
           />
-          <Select
+          <Dropdown
+            mode="select"
+            searchable
             label="Categoria de Lore"
             options={[
-              { value: 'character', label: 'Personagem' },
-              { value: 'location', label: 'Local' },
-              { value: 'concept', label: 'Conceito / Magia' },
+              {
+                value: 'character',
+                label: 'Personagem',
+                icon: <Feather className="icon icon-sm" aria-hidden="true" />,
+              },
+              {
+                value: 'location',
+                label: 'Local',
+                icon: <MapPin className="icon icon-sm" aria-hidden="true" />,
+              },
+              {
+                value: 'concept',
+                label: 'Conceito / Magia',
+                icon: <Sparkles className="icon icon-sm" aria-hidden="true" />,
+              },
             ]}
           />
           <div className="sm:col-span-2">
@@ -177,10 +191,45 @@ export function StyleguidePage() {
                   <DropdownItem>Item do menu</DropdownItem>
                   <DropdownItem disabled>Item indisponível</DropdownItem>
                 </Dropdown>
+                <Dropdown
+                  mode="action"
+                  label="Ações com busca"
+                  searchable
+                  icon={<Feather className="icon icon-sm" aria-hidden="true" />}
+                  variant="outline"
+                  options={[
+                    {
+                      value: 'export',
+                      label: 'Exportar exemplo',
+                      icon: <BookOpen className="icon icon-sm" aria-hidden="true" />,
+                      onSelect: () => setLastAction('Exportar exemplo'),
+                    },
+                    {
+                      value: 'edit',
+                      label: 'Editar exemplo',
+                      onSelect: () => setLastAction('Editar exemplo'),
+                    },
+                  ]}
+                />
+                <Dropdown
+                  mode="action"
+                  label="Ações somente com ícone"
+                  iconOnly
+                  icon={<MoreHorizontal className="icon" aria-hidden="true" />}
+                  variant="ghost"
+                  options={[
+                    {
+                      value: 'edit',
+                      label: 'Editar exemplo',
+                      onSelect: () => setLastAction('Editar exemplo'),
+                    },
+                  ]}
+                />
                 <Tooltip content="Detalhes disponíveis por foco, toque ou hover">
                   <Button variant="secondary">Mostrar dica</Button>
                 </Tooltip>
               </div>
+              {lastAction && <p role="status">Ação executada: {lastAction}</p>}
             </section>
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="secondary" onClick={() => setIsDialogOpen(false)}>

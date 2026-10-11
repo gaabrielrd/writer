@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Download, Printer } from 'lucide-react';
 import type { Book, Chapter } from '@/features/books';
-import { Alert, Button, Dialog, Select } from '@/shared/ui';
+import { Alert, Button, Dialog, Dropdown } from '@/shared/ui';
 import type { ExportFormat, ExportScope } from '../model/exportDocument';
 import { exportManuscript } from '../services/exportManuscript';
 
@@ -85,12 +85,13 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
       }
     >
       <div className="flex flex-col gap-4" aria-busy={pending}>
-        <Select
+        <Dropdown
+          mode="select"
           label="Conteúdo da exportação"
           value={scope}
           disabled={pending || format === 'json'}
-          onChange={(event) => {
-            setScope(event.target.value as ExportScope);
+          onValueChange={(nextValue) => {
+            setScope(nextValue as ExportScope);
             setResult(null);
           }}
           options={[
@@ -100,12 +101,13 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
             { value: 'book', label: 'Livro inteiro' },
           ]}
         />
-        <Select
+        <Dropdown
+          mode="select"
           label="Formato do arquivo"
           value={format}
           disabled={pending}
-          onChange={(event) => {
-            const next = event.target.value as ExportFormat;
+          onValueChange={(nextValue) => {
+            const next = nextValue as ExportFormat;
             setFormat(next);
             if (next === 'json') setScope('book');
             setResult(null);

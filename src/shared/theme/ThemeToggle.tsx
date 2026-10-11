@@ -1,4 +1,5 @@
-import { Sun, Moon, BookOpen } from 'lucide-react';
+import { Sun, Moon, BookOpen, Monitor } from 'lucide-react';
+import { Dropdown } from '../ui/Dropdown';
 import { useTheme } from './useTheme';
 import { type Theme } from './themeConfig';
 
@@ -53,16 +54,36 @@ export function ThemeSelect({ className = '' }: { className?: string }) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <select
-      value={theme}
-      onChange={(e) => setTheme(e.target.value as Theme)}
-      className={`px-3 py-1.5 rounded-full text-sm bg-transparent border border-black/15 dark:border-white/20 transition-colors ${className}`}
-      aria-label="Selecionar tema visual"
-    >
-      <option value="light">Claro</option>
-      <option value="dark">Escuro</option>
-      <option value="sepia">Sépia (Pergaminho)</option>
-      <option value="system">Sistema</option>
-    </select>
+    <div className="shrink-0">
+      <Dropdown
+        mode="select"
+        value={theme}
+        onValueChange={(value) => setTheme(value as Theme)}
+        className={className}
+        aria-label="Selecionar tema visual"
+        options={[
+          {
+            value: 'light',
+            label: 'Claro',
+            icon: <Sun className="icon icon-sm" aria-hidden="true" />,
+          },
+          {
+            value: 'dark',
+            label: 'Escuro',
+            icon: <Moon className="icon icon-sm" aria-hidden="true" />,
+          },
+          {
+            value: 'sepia',
+            label: 'Sépia (Pergaminho)',
+            icon: <BookOpen className="icon icon-sm" aria-hidden="true" />,
+          },
+          {
+            value: 'system',
+            label: 'Sistema',
+            icon: <Monitor className="icon icon-sm" aria-hidden="true" />,
+          },
+        ]}
+      />
+    </div>
   );
 }

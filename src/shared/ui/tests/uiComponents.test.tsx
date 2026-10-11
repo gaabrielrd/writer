@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { useState } from 'react';
 import userEvent from '@testing-library/user-event';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -60,7 +61,7 @@ describe('UI Design System Components', () => {
     expect(screen.getByText('Muito curto')).toBeInTheDocument();
   });
 
-  it('renderiza Select com opções e dispara evento onChange', () => {
+  it('renderiza Select com opções e dispara evento onChange', async () => {
     const handleChange = vi.fn();
     render(
       <Select
@@ -69,13 +70,13 @@ describe('UI Design System Components', () => {
           { value: 'cat1', label: 'Categoria 1' },
           { value: 'cat2', label: 'Categoria 2' },
         ]}
-        onChange={handleChange}
+        onValueChange={handleChange}
       />,
     );
 
     const select = screen.getByLabelText('Categoria');
     expect(select).toBeInTheDocument();
-    fireEvent.change(select, { target: { value: 'cat2' } });
+    await chooseDropdown(userEvent, select, 'Categoria 2');
     expect(handleChange).toHaveBeenCalled();
   });
 

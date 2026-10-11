@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { act, renderWithProviders, screen, waitFor, within } from '@/test/render';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LoreCollection, LoreTab } from '../components/LoreTab';
@@ -131,7 +132,7 @@ describe('Compêndio em lista e ações em lote', () => {
     expect(deleteButton).toHaveFocus();
     await user.click(within(selectionBar()).getByRole('button', { name: 'Alterar visibilidade' }));
     expect(screen.getByRole('button', { name: 'Confirmar visibilidade' })).toBeDisabled();
-    await user.selectOptions(screen.getByLabelText('Nova visibilidade'), 'private');
+    await chooseDropdown(user, screen.getByLabelText('Nova visibilidade'), 'Privado');
     await user.keyboard('{Escape}');
     expect(service.updateLoreEntity).not.toHaveBeenCalled();
     expect(service.deleteLoreEntity).not.toHaveBeenCalled();
@@ -149,8 +150,14 @@ describe('Compêndio em lista e ações em lote', () => {
       await user.click(
         within(selectionBar()).getByRole('button', { name: 'Alterar visibilidade' }),
       );
-      expect(screen.getByLabelText('Nova visibilidade')).toHaveValue('');
-      await user.selectOptions(screen.getByLabelText('Nova visibilidade'), visibility);
+      expect(screen.getByLabelText('Nova visibilidade')).toHaveTextContent(
+        'Escolha a visibilidade',
+      );
+      await chooseDropdown(
+        user,
+        screen.getByLabelText('Nova visibilidade'),
+        visibility === 'public' ? 'Público' : 'Privado',
+      );
       if (visibility === 'public')
         expect(screen.getByRole('dialog')).toHaveTextContent('não publica automaticamente');
       else expect(screen.getByRole('dialog')).toHaveTextContent('publicação atual');
@@ -209,7 +216,7 @@ describe('Compêndio em lista e ações em lote', () => {
           }),
         );
         if (action !== 'delete')
-          await user.selectOptions(screen.getByLabelText('Nova visibilidade'), 'private');
+          await chooseDropdown(user, screen.getByLabelText('Nova visibilidade'), 'Privado');
         await user.click(
           screen.getByRole('button', {
             name: action === 'delete' ? 'Confirmar exclusão' : 'Confirmar visibilidade',
@@ -241,7 +248,7 @@ describe('Compêndio em lista e ações em lote', () => {
     const { user } = await showList({ onBusyChange: busy });
     await user.click(screen.getByRole('checkbox', { name: 'Selecionar Arthur' }));
     await user.click(within(selectionBar()).getByRole('button', { name: 'Alterar visibilidade' }));
-    await user.selectOptions(screen.getByLabelText('Nova visibilidade'), 'private');
+    await chooseDropdown(user, screen.getByLabelText('Nova visibilidade'), 'Privado');
     await user.click(screen.getByRole('button', { name: 'Confirmar visibilidade' }));
     expect(screen.getByRole('button', { name: 'Aplicando...' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
@@ -299,9 +306,17 @@ describe('Compêndio em lista e ações em lote', () => {
     expect(within(slot).getByRole('button', { name: 'Nova Entidade' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Visualização em lista' }));
     await user.click(screen.getByRole('checkbox', { name: 'Selecionar Arthur' }));
-    await user.selectOptions(screen.getByLabelText('Escopo do compêndio'), 'global');
+    await chooseDropdown(
+      user,
+      screen.getByLabelText('Escopo do compêndio'),
+      'Lore global — universo compartilhado',
+    );
     expect(screen.queryByRole('region', { name: 'Ações da seleção' })).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Escopo do compêndio'), 'local');
+    await chooseDropdown(
+      user,
+      screen.getByLabelText('Escopo do compêndio'),
+      'Lore local — somente este livro',
+    );
     await screen.findByText('Arthur');
     await user.click(screen.getByRole('button', { name: 'Visualização em lista' }));
     await user.click(screen.getByRole('checkbox', { name: 'Selecionar Arthur' }));

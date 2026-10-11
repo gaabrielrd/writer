@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -257,7 +258,9 @@ describe('EditorPage', () => {
     await screen.findByLabelText(/área de escrita do capítulo/i);
     act(() => screen.getByRole('button', { name: 'Ver ficha de Sábia' }).focus());
     await user.keyboard('{Enter}');
-    expect(screen.getByLabelText('Escopo do lore')).toHaveValue('global');
+    expect(screen.getByLabelText('Escopo do lore')).toHaveTextContent(
+      'Lore global — universo compartilhado',
+    );
     await user.click(screen.getByRole('button', { name: 'Editar' }));
     for (let step = 0; step < 3; step++)
       await user.click(screen.getByRole('button', { name: 'Continuar' }));
@@ -274,7 +277,11 @@ describe('EditorPage', () => {
       ]);
     });
     expect(screen.getByText('Resumo atualizado globalmente')).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Escopo do lore'), 'local');
+    await chooseDropdown(
+      user,
+      screen.getByLabelText('Escopo do lore'),
+      'Lore local — somente este livro',
+    );
     expect(
       within(screen.getByRole('complementary', { name: /Painel lateral/ })).getByText(
         mockEntities[0]!.name,

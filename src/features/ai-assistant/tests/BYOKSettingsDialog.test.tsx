@@ -1,3 +1,5 @@
+import { chooseDropdown } from '@/test/dropdown';
+import userEvent from '@testing-library/user-event';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { BYOKSettingsDialog } from '../components/BYOKSettingsDialog';
@@ -13,14 +15,14 @@ describe('BYOKSettingsDialog component', () => {
     });
   });
 
-  it('renderiza e permite trocar de provedor para Gemini e salvar', () => {
+  it('renderiza e permite trocar de provedor para Gemini e salvar', async () => {
     const onConfigChanged = vi.fn();
     render(<BYOKSettingsDialog open={true} onClose={vi.fn()} onConfigChanged={onConfigChanged} />);
 
     expect(screen.getByText('Configurações de Inteligência Artificial')).toBeInTheDocument();
 
     const select = screen.getByLabelText(/Provedor de IA/i);
-    fireEvent.change(select, { target: { value: 'gemini_byok' } });
+    await chooseDropdown(userEvent, select, 'Google Gemini API (Chave Própria — BYOK)');
 
     const keyInput = screen.getByLabelText(/Chave de API do Google Gemini/i);
     fireEvent.change(keyInput, { target: { value: 'AIzaSy123456' } });
@@ -43,12 +45,12 @@ describe('BYOKSettingsDialog component', () => {
     expect(screen.getByText(/Configurações salvas com sucesso/i)).toBeInTheDocument();
   });
 
-  it('permite trocar de provedor para OpenAI e salvar', () => {
+  it('permite trocar de provedor para OpenAI e salvar', async () => {
     const onConfigChanged = vi.fn();
     render(<BYOKSettingsDialog open={true} onClose={vi.fn()} onConfigChanged={onConfigChanged} />);
 
     const select = screen.getByLabelText(/Provedor de IA/i);
-    fireEvent.change(select, { target: { value: 'openai_byok' } });
+    await chooseDropdown(userEvent, select, 'OpenAI API (Chave Própria — BYOK)');
 
     const keyInput = screen.getByLabelText(/Chave de API da OpenAI/i);
     fireEvent.change(keyInput, { target: { value: 'sk-abcdef12345' } });
@@ -88,18 +90,18 @@ describe('BYOKSettingsDialog component', () => {
     expect(onConfigChanged).toHaveBeenCalledWith({ provider: 'firebase_ai' });
   });
 
-  it('exibe erro ao tentar salvar sem chave obrigatoria', () => {
+  it('exibe erro ao tentar salvar sem chave obrigatoria', async () => {
     render(<BYOKSettingsDialog open={true} onClose={vi.fn()} />);
 
     const select = screen.getByLabelText(/Provedor de IA/i);
-    fireEvent.change(select, { target: { value: 'openai_byok' } });
+    await chooseDropdown(userEvent, select, 'OpenAI API (Chave Própria — BYOK)');
 
     const form = screen.getByRole('dialog').querySelector('form');
     if (form) fireEvent.submit(form);
 
     expect(screen.getByText(/Chave de API da OpenAI é obrigatória/i)).toBeInTheDocument();
   });
-  it('does not claim success when the browser cannot store or delete credentials', () => {
+  it('does not claim success when the browser cannot store or delete credentials', async () => {
     vi.mocked(byokStorageModule.saveBYOKConfig).mockImplementationOnce(() => {
       throw new Error('Armazenamento bloqueado');
     });
@@ -108,7 +110,11 @@ describe('BYOKSettingsDialog component', () => {
     });
     const changed = vi.fn();
     render(<BYOKSettingsDialog open onClose={vi.fn()} onConfigChanged={changed} />);
-    fireEvent.change(screen.getByLabelText(/Provedor de IA/), { target: { value: 'openai_byok' } });
+    await chooseDropdown(
+      userEvent,
+      screen.getByLabelText(/Provedor de IA/),
+      'OpenAI API (Chave Própria — BYOK)',
+    );
     fireEvent.change(screen.getByLabelText(/Chave de API da OpenAI/), {
       target: { value: 'test-key' },
     });

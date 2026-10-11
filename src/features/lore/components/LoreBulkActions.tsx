@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Eye, Trash2, X } from 'lucide-react';
-import { Alert, Button, Dialog, Select } from '@/shared/ui';
+import { Alert, Button, Dialog, Dropdown } from '@/shared/ui';
 import type { LoreEntity } from '../model/loreEntity';
 import styles from './LorePage.module.css';
 
@@ -141,11 +141,12 @@ export function LoreBulkActions({
           }
         >
           {pending.action === 'visibility' ? (
-            <Select
+            <Dropdown
+              mode="select"
               label="Nova visibilidade"
               value={visibility}
               disabled={busy}
-              onChange={(event) => setVisibility(event.target.value)}
+              onValueChange={(nextValue) => setVisibility(nextValue)}
               options={[
                 { value: '', label: 'Escolha a visibilidade' },
                 { value: 'public', label: 'Público' },

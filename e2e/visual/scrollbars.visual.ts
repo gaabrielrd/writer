@@ -1,3 +1,4 @@
+import { chooseDropdown, themeLabels } from '../dropdown';
 import { capture, expect, test } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
@@ -31,7 +32,7 @@ test('barras de rolagem seguem o tema em página, campo, portal e editor', async
   await textarea.fill('Uma linha do manuscrito.\n'.repeat(40));
   await expect(textarea).toHaveCSS('scrollbar-color', await expectedColors());
   const originalColors = await expectedColors();
-  await themeSelect.selectOption(visualTheme === 'dark' ? 'light' : 'dark');
+  await chooseDropdown(themeSelect, themeLabels[visualTheme === 'dark' ? 'light' : 'dark']);
   await expect(page.locator('html')).toHaveAttribute(
     'data-theme',
     visualTheme === 'dark' ? 'light' : 'dark',
@@ -39,7 +40,7 @@ test('barras de rolagem seguem o tema em página, campo, portal e editor', async
   await check('html');
   await expect(textarea).toHaveCSS('scrollbar-color', await expectedColors());
   expect(await expectedColors()).not.toBe(originalColors);
-  await themeSelect.selectOption(visualTheme);
+  await chooseDropdown(themeSelect, themeLabels[visualTheme]);
   await expect(page.locator('html')).toHaveAttribute('data-theme', visualTheme);
   await page.getByRole('button', { name: 'Abrir Modal de Demonstração' }).click();
   await check('[role="dialog"]');

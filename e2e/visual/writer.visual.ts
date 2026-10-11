@@ -1,5 +1,6 @@
 import {
   books,
+  author,
   chapters,
   FIXTURE_BOOK_ID,
   FIXTURE_CHAPTER_ID,
@@ -211,8 +212,9 @@ test('editor, painel de lore e configurações de IA', async ({ page }, testInfo
   await expect(sidebar.getByText('Lia', { exact: true })).toBeVisible();
   await sidebar.getByLabel('Buscar no compêndio').fill('');
 
-  const settings = page.getByRole('button', { name: 'Configurações de IA e Chaves de API' });
+  const settings = page.getByRole('button', { name: new RegExp(author.displayName!) });
   await settings.click();
+  await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
   const dialog = page.getByRole('dialog', { name: 'Configurações de Inteligência Artificial' });
   await expect(dialog).toBeVisible();
   await capture(page, testInfo, '11-configuracoes-ia');
@@ -254,7 +256,10 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
     await expect(
       page.getByRole('heading', { name: chapterTitle, exact: true }).first(),
     ).toBeVisible();
-    await page.getByRole('link', { name: 'Voltar para a lista de obras', exact: true }).click();
+    await page.getByRole('link', { name: 'Voltar para o livro', exact: true }).click();
+    await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Meus Livros', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Meus Livros', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
   }
 });
@@ -301,7 +306,7 @@ test.describe('Biblioteca vazia', () => {
     await expect(page.getByRole('heading', { name: 'Nenhum livro cadastrado' })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Criar Primeiro Livro' })).toBeEnabled();
     await expect(
-      page.getByRole('button', { name: 'Importar Documento (.docx, .pdf)' }),
+      page.getByRole('button', { name: 'Importar Documento', exact: true }),
     ).toBeEnabled();
     await capture(page, testInfo, '12-biblioteca-vazia');
   });
@@ -424,7 +429,8 @@ test('largura mínima de 320px mantém biblioteca, obra e editor sem transbordam
     page.getByRole('complementary', { name: 'Painel lateral do Compêndio de Lore' }),
   ).toBeVisible();
   await capture(page, testInfo, '16-editor-lore-320px');
-  await page.getByRole('button', { name: 'Configurações de IA e Chaves de API' }).click();
+  await page.getByRole('button', { name: new RegExp(author.displayName!) }).click();
+  await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
   await expectDialogWithinViewport(page);
   await expectNoHorizontalOverflow(page, 'configuracoes-320px');
 });

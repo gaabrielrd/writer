@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -232,11 +233,11 @@ it('seleciona universo, permite remover vínculo indisponível e recupera falha 
     .mockResolvedValue([world]);
   const view = render(<UniverseSelect value={null} onChange={changed} />);
   await userEvent.click(await screen.findByRole('button', { name: 'Tentar novamente' }));
-  await userEvent.selectOptions(await screen.findByLabelText('Universo compartilhado'), 'world');
+  await chooseDropdown(userEvent, await screen.findByLabelText('Universo compartilhado'), 'Atlas');
   expect(changed).toHaveBeenLastCalledWith('world');
   view.rerender(<UniverseSelect value="missing" onChange={changed} />);
   expect(screen.getByText(/Universo indisponível/)).toBeInTheDocument();
-  await userEvent.selectOptions(screen.getByLabelText('Universo compartilhado'), '');
+  await chooseDropdown(userEvent, screen.getByLabelText('Universo compartilhado'), 'Sem universo');
   expect(changed).toHaveBeenLastCalledWith(null);
 });
 it('descarta resposta atrasada de outra conta e esconde diálogo aberto', async () => {

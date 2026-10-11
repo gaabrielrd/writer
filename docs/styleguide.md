@@ -38,7 +38,7 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 
 1. **Tokens Semânticos**: Cores e superfícies vêm das variáveis CSS (`--background`, `--foreground`, `--primary`, `--card`, `--border`, `--muted`, `--accent`, etc.) definidas em `src/styles/globals.css`.
 2. **Ícones**: Biblioteca oficial `lucide-react` com a classe `icon` (`icon-sm` para dimensões menores).
-3. **Componentes Padrão**: Campos utilizam `Input`, `Textarea` ou `Select` de `@/shared/ui`.
+3. **Componentes Padrão**: Campos utilizam `Input`, `Textarea` ou `Dropdown mode="select"` de `@/shared/ui`; menus de ação utilizam o modo `action` do mesmo componente.
 4. **Resiliência Visual**: Toda tela com busca assíncrona cobre estados de carregamento (`LoadingState`), lista vazia (`EmptyState`), erro com retry (`ErrorState`) e sucesso.
 5. **Acessibilidade (a11y)**: Primitivos do Radix UI apoiam os padrões WAI-ARIA (fechamento por tecla `Esc`, armadilhas de foco, navegação por teclado e rótulos de leitor de tela).
 
@@ -47,10 +47,11 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 - `Button`: Variantes (`primary`, `secondary`, `outline`, `destructive`, `ghost`, `link`) e tamanhos (`sm`, `md`, `lg`, `icon`).
 - `Input`: Entrada de texto com suporte a labels flutuantes, ícones, helpers e erros.
 - `Textarea`: Área de texto redimensionável com feedback de validação.
-- `Select`: Menu de seleção acessível.
+- `Dropdown`: Seleção acessível (`mode="select"`) e ações (`mode="action"`), com ícones, busca opcional e tokens de tema. Veja [API e exemplos](dropdown.md).
+- `Select`: Alias compatível do modo de seleção de `Dropdown`, com `onValueChange`.
 - `Badge`: Pílulas de identificação e status (`default`, `secondary`, `accent`, `success`, `destructive`, `outline`).
 - `Card`: Agrupamento de conteúdo (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`).
-- `Dropdown`, `DropdownItem`, `DropdownLabel`: Menus acessíveis de navegação e conta.
+- `DropdownItem`, `DropdownLabel`: Composição dos menus de navegação e conta, preservando links e gatilhos personalizados.
 - `Tooltip`: Dicas por hover, foco e toque.
 - `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog.
 - `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).

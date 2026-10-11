@@ -1,3 +1,5 @@
+import { chooseDropdown } from '@/test/dropdown';
+import userEvent from '@testing-library/user-event';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, beforeEach } from 'vitest';
 import { ThemeProvider, useTheme, ThemeToggle, ThemeSelect } from '../index';
@@ -76,7 +78,7 @@ describe('ThemeProvider & Theme Hooks', () => {
     expect(screen.getByTestId('resolved')).toHaveTextContent('light');
   });
 
-  it('renderiza ThemeToggle e ThemeSelect sem erros', () => {
+  it('renderiza ThemeToggle e ThemeSelect sem erros', async () => {
     render(
       <ThemeProvider defaultTheme="light">
         <ThemeConsumer />
@@ -93,7 +95,7 @@ describe('ThemeProvider & Theme Hooks', () => {
       name: /Selecionar tema visual/i,
     });
     expect(select).toBeInTheDocument();
-    fireEvent.change(select, { target: { value: 'sepia' } });
+    await chooseDropdown(userEvent, select, 'Sépia (Pergaminho)');
     expect(screen.getByTestId('resolved')).toHaveTextContent('sepia');
   });
 });

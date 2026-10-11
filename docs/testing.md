@@ -130,6 +130,12 @@ binários de navegador implicitamente.
 
 ## Investigar falhas
 
+Dropdowns são testados abrindo o controle e escolhendo a opção pelo label visível;
+não use `selectOptions`/`selectOption` de selects nativos. `src/test/dropdown.ts`
+e `e2e/dropdown.ts` ajudam nesses fluxos. Os contratos de busca, seleção, ações,
+teclado e feedback ficam em `src/shared/ui/tests/Dropdown.test.tsx`; os temas,
+dimensões e integração com modal ficam em `e2e/visual/dropdown.visual.ts`.
+
 1. Leia a mensagem de erro: ela costuma indicar o que era esperado e o que aconteceu.
 2. Rode em modo contínuo (`npm run test:watch`) e ajuste até passar.
 3. Se um teste falha após uma mudança de comportamento intencional, atualize o teste para o novo comportamento esperado.

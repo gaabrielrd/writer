@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/features/auth';
-import { Button, ErrorState, LoadingState, Select } from '@/shared/ui';
+import { Button, Dropdown, ErrorState, LoadingState } from '@/shared/ui';
 import { listUniverses } from '../services/universeService';
 import type { Universe } from '../model/universe';
 
@@ -55,11 +55,13 @@ export function UniverseSelect({
   const worlds = result.universes.filter((world) => !world.deleting);
   if (!worlds.length && !value && !alwaysShow) return null;
   return (
-    <Select
+    <Dropdown
+      mode="select"
+      searchable
       label="Universo compartilhado"
       value={value ?? ''}
       disabled={disabled}
-      onChange={(event) => onChange(event.target.value || null)}
+      onValueChange={(value) => onChange(value || null)}
       hint="O lore global fica disponível em todos os livros vinculados."
       options={[
         { value: '', label: 'Sem universo' },

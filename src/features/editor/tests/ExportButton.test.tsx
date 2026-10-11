@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderWithProviders, screen, waitFor } from '@/test/render';
 import { ExportButton } from '../components/ExportButton';
@@ -23,7 +24,7 @@ describe('ExportButton', () => {
     const trigger = screen.getByRole('button', { name: 'Exportar' });
     await user.click(trigger);
     expect(screen.getByRole('dialog', { name: 'Exportar manuscrito' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Conteúdo da exportação')).toHaveValue('chapter');
+    expect(screen.getByLabelText('Conteúdo da exportação')).toHaveTextContent('Capítulo atual:');
     expect(screen.getByText(/mesmo antes do salvamento/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Baixar arquivo' }));
     expect(exportManuscript).toHaveBeenCalledWith(
@@ -42,9 +43,9 @@ describe('ExportButton', () => {
   it('offers full-book export at the book panel and explains the native PDF save step', async () => {
     const { user } = renderWithProviders(<ExportButton book={exportBook} />);
     await user.click(screen.getByRole('button', { name: 'Exportar' }));
-    expect(screen.getByLabelText('Conteúdo da exportação')).toHaveValue('book');
+    expect(screen.getByLabelText('Conteúdo da exportação')).toHaveTextContent('Livro inteiro');
     expect(screen.queryByRole('option', { name: /Capítulo atual/ })).not.toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Formato do arquivo'), 'pdf');
+    await chooseDropdown(user, screen.getByLabelText('Formato do arquivo'), 'PDF (impressão)');
     expect(screen.getByText(/desative cabeçalhos/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Abrir impressão' }));
     expect(await screen.findByRole('status')).toHaveTextContent('Impressão aberta');
@@ -62,8 +63,8 @@ describe('ExportButton', () => {
     await user.click(screen.getByRole('button', { name: 'Baixar arquivo' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Sem conexão');
     expect(screen.getByRole('button', { name: 'Baixar arquivo' })).toBeEnabled();
-    await user.selectOptions(screen.getByLabelText('Formato do arquivo'), 'docx');
-    await user.selectOptions(screen.getByLabelText('Conteúdo da exportação'), 'book');
+    await chooseDropdown(user, screen.getByLabelText('Formato do arquivo'), 'Word (.docx)');
+    await chooseDropdown(user, screen.getByLabelText('Conteúdo da exportação'), 'Livro inteiro');
     await user.click(screen.getByRole('button', { name: 'Baixar arquivo' }));
     expect(await screen.findByRole('status')).toBeInTheDocument();
     expect(screen.queryByText('Sem conexão')).not.toBeInTheDocument();
@@ -130,9 +131,13 @@ describe('ExportButton', () => {
     expect(
       await screen.findByText('Não foi possível exportar. Tente novamente.'),
     ).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Formato do arquivo'), 'json');
+    await chooseDropdown(
+      user,
+      screen.getByLabelText('Formato do arquivo'),
+      'Backup completo (.json)',
+    );
     expect(screen.getByLabelText('Conteúdo da exportação')).toBeDisabled();
-    expect(screen.getByLabelText('Conteúdo da exportação')).toHaveValue('book');
+    expect(screen.getByLabelText('Conteúdo da exportação')).toHaveTextContent('Livro inteiro');
     expect(screen.getByText(/fichas de lore privadas/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Baixar arquivo' }));
     expect(exportManuscript).toHaveBeenLastCalledWith(

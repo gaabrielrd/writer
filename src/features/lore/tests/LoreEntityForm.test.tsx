@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -38,7 +39,7 @@ describe('LoreEntityForm', () => {
     ).toBeInTheDocument();
 
     await fill(user, screen.getByLabelText(/nome da entidade/i), 'Excalibur');
-    await user.selectOptions(screen.getByLabelText('Categoria'), 'concept');
+    await chooseDropdown(user, screen.getByLabelText('Categoria'), 'Conceito / Item');
     await fill(user, screen.getByLabelText(/apelidos \/ aliases/i), 'Espada Sagrada, Caliburn');
     await fill(
       user,
@@ -53,7 +54,11 @@ describe('LoreEntityForm', () => {
     // Adicionar relação
     await user.click(screen.getByRole('button', { name: /adicionar relação/i }));
     expect(screen.getByLabelText('Entidade Vinculada')).toBeInTheDocument();
-    await user.selectOptions(screen.getByLabelText('Entidade Vinculada'), 'e-target');
+    await chooseDropdown(
+      user,
+      screen.getByLabelText('Entidade Vinculada'),
+      'Reino de Logres (Local)',
+    );
     const relationTypeInput = screen.getByLabelText('Tipo de Relação');
     await user.clear(relationTypeInput);
     await fill(user, relationTypeInput, 'Forjada para');

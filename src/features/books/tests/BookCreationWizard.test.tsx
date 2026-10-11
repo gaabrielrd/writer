@@ -1,3 +1,4 @@
+import { chooseDropdown } from '@/test/dropdown';
 import { listUniverses } from '@/features/universes';
 vi.mock('@/features/universes/services/universeService', () => ({
   listUniverses: vi.fn().mockResolvedValue([]),
@@ -287,10 +288,10 @@ it('permite selecionar um universo na primeira etapa e preserva a escolha ao vol
   const submit = vi.fn().mockResolvedValue(undefined);
   render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
   const user = userEvent.setup();
-  await user.selectOptions(await screen.findByLabelText('Universo compartilhado'), 'world');
+  await chooseDropdown(user, await screen.findByLabelText('Universo compartilhado'), 'Atlas');
   await start();
   await user.click(screen.getByRole('button', { name: 'Voltar' }));
-  expect(await screen.findByLabelText('Universo compartilhado')).toHaveValue('world');
+  expect(await screen.findByLabelText('Universo compartilhado')).toHaveTextContent('Atlas');
   await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByRole('button', { name: 'Criar Livro' }));

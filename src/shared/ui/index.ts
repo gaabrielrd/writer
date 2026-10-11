@@ -27,5 +27,13 @@ export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '.
 export { StyleguidePage } from './StyleguidePage';
 export { buttonVariants, badgeVariants, alertVariants } from './variants';
 
-export { Dropdown, DropdownItem, DropdownLabel } from './Dropdown';
+export {
+  Dropdown,
+  DropdownItem,
+  DropdownLabel,
+  type DropdownProps,
+  type DropdownSelectProps,
+  type DropdownActionProps,
+  type DropdownOption,
+} from './Dropdown';
 export { Tooltip } from './Tooltip';

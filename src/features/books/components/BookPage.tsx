@@ -220,18 +220,13 @@ export function BookPage() {
             actions={
               isOwner ? (
                 <Dropdown
+                  mode="action"
                   label="Opções do livro"
                   align="end"
-                  trigger={
-                    <Button
-                      ref={bookOptionsRef}
-                      variant="ghost"
-                      size="icon"
-                      aria-label="Opções do livro"
-                    >
-                      <MoreHorizontal className="icon" aria-hidden="true" />
-                    </Button>
-                  }
+                  ref={bookOptionsRef}
+                  variant="ghost"
+                  iconOnly
+                  icon={<MoreHorizontal className="icon" aria-hidden="true" />}
                 >
                   <DropdownItem onSelect={() => setIsExportOpen(true)}>
                     <Download className="icon icon-sm" aria-hidden="true" />
@@ -245,7 +240,7 @@ export function BookPage() {
                     <Edit2 className="icon icon-sm" aria-hidden="true" />
                     Editar
                   </DropdownItem>
-                  <DropdownItem onSelect={handleDelete} disabled={isDeleting}>
+                  <DropdownItem onSelect={handleDelete} disabled={isDeleting} variant="destructive">
                     <Trash2 className="icon icon-sm" aria-hidden="true" />
                     Excluir
                   </DropdownItem>
