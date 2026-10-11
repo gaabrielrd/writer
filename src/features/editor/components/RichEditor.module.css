@@ -113,8 +113,16 @@
   transform: translateY(-1px);
 }
 
+.bodyLayout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
 .editorBody {
   flex: 1;
+  min-width: 0;
   position: relative;
   overflow-y: auto;
   padding: var(--space-8) clamp(1.25rem, 5vw, 4.5rem);
@@ -227,6 +235,7 @@
   .container {
     flex: none;
     min-height: 600px;
+    overflow: visible;
   }
   .toolbar {
     padding: var(--space-3);
@@ -236,6 +245,7 @@
   }
   .editorBody {
     padding: var(--space-6) var(--space-4);
+    overflow-y: visible;
   }
   .richText {
     min-height: 420px;

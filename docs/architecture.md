@@ -138,6 +138,12 @@ instância do assistente. O editor captura documento/intervalo antes da abertura
 e recusa aplicar respostas se o documento mudou; selecionar texto não inicia
 geração. Configuração BYOK continua no menu do usuário, sem footer no assistente.
 
+O minimapa é interno à feature `editor`: o modelo deriva blocos e ocorrências do
+documento ProseMirror, reutilizando o motor público de lore; um hook mede a
+geometria e acompanha rolagem/redimensionamento. A navegação altera somente a
+rolagem, sem transação de seleção ou conteúdo. O desenho agrupa marcas densas,
+preservando todos os destinos pelo teclado. Veja [minimapa](chapter-minimap.md).
+
 ## Testes
 
 Os testes ficam colocalizados dentro da feature, na pasta `tests/`. Testam o

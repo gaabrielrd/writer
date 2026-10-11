@@ -40,6 +40,8 @@ import {
 } from '../model/richDocument';
 import { MentionMenu } from './MentionMenu';
 import { useSelectionAnchor } from '../hooks/useSelectionAnchor';
+import { useChapterMinimap } from '../hooks/useChapterMinimap';
+import { ChapterMinimap } from './ChapterMinimap';
 import styles from './RichEditor.module.css';
 
 export interface RichEditorProps {
@@ -118,6 +120,7 @@ export function RichEditor({
   const acceptingRef = useRef(false);
   const aiTarget = useRef<SelectionTarget | null>(null);
   const previousSidebar = useRef(isSidebarOpen);
+  const scrollArea = useRef<HTMLDivElement>(null);
   const [menuPosition, setMenuPosition] = useState({ top: 40, left: 0 });
   const [loreOptions] = useState(() => ({
     getEntities: () => entities,
@@ -198,6 +201,7 @@ export function RichEditor({
     [documentId],
   );
   const text = editor?.getText({ blockSeparator: '\n' }) ?? '';
+  const minimap = useChapterMinimap(editor, entities, scrollArea);
   const cursorPosition =
     editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
   const isUsingBYOK = config.provider !== 'firebase_ai';
@@ -673,55 +677,62 @@ export function RichEditor({
           </div>
         </div>
       )}
-      <div className={styles.editorBody} data-editor-scroll-area>
-        <div className={styles.writeContainer}>
-          {viewMode === 'preview' && editor?.isEmpty && (
-            <p className={styles.emptyPreview}>Nenhum texto escrito ainda.</p>
-          )}
-          <EditorContent
-            editor={editor}
-            onKeyDownCapture={(event) => {
-              if (
-                event.altKey &&
-                event.key === 'Enter' &&
-                selectionAnchor &&
-                !event.nativeEvent.isComposing &&
-                !editor?.view.composing
-              ) {
-                document
-                  .querySelector<HTMLButtonElement>('[data-editor-selection-actions] button')
-                  ?.focus();
-                event.preventDefault();
-                event.stopPropagation();
-              }
-            }}
-            className={viewMode === 'preview' ? styles.previewContainer : undefined}
-            aria-busy={accepting}
-          />
-          {viewMode === 'write' && suggestion && (
-            <GhostSuggestion
-              compact
-              suggestion={suggestion}
-              onAccept={() => void handleAcceptGhost()}
-              onDiscard={discardSuggestion}
-              isUsingBYOK={isUsingBYOK}
-            />
-          )}
-          {mention &&
-            createPortal(
-              <div className={styles.mentionMenuWrapper} style={menuPosition}>
-                <MentionMenu
-                  id={menuId}
-                  entities={candidates}
-                  query={mention.query}
-                  selectedIndex={activeIndex}
-                  onSelect={selectMention}
-                  onHoverIndex={setSelectedIndex}
-                  onCreate={canCreate ? createMention : undefined}
-                />
-              </div>,
-              document.body,
+      <div className={styles.bodyLayout}>
+        <ChapterMinimap
+          destinations={minimap.destinations}
+          viewport={minimap.viewport}
+          onNavigate={minimap.navigate}
+        />
+        <div className={styles.editorBody} data-editor-scroll-area ref={scrollArea}>
+          <div className={styles.writeContainer}>
+            {viewMode === 'preview' && editor?.isEmpty && (
+              <p className={styles.emptyPreview}>Nenhum texto escrito ainda.</p>
             )}
+            <EditorContent
+              editor={editor}
+              onKeyDownCapture={(event) => {
+                if (
+                  event.altKey &&
+                  event.key === 'Enter' &&
+                  selectionAnchor &&
+                  !event.nativeEvent.isComposing &&
+                  !editor?.view.composing
+                ) {
+                  document
+                    .querySelector<HTMLButtonElement>('[data-editor-selection-actions] button')
+                    ?.focus();
+                  event.preventDefault();
+                  event.stopPropagation();
+                }
+              }}
+              className={viewMode === 'preview' ? styles.previewContainer : undefined}
+              aria-busy={accepting}
+            />
+            {viewMode === 'write' && suggestion && (
+              <GhostSuggestion
+                compact
+                suggestion={suggestion}
+                onAccept={() => void handleAcceptGhost()}
+                onDiscard={discardSuggestion}
+                isUsingBYOK={isUsingBYOK}
+              />
+            )}
+            {mention &&
+              createPortal(
+                <div className={styles.mentionMenuWrapper} style={menuPosition}>
+                  <MentionMenu
+                    id={menuId}
+                    entities={candidates}
+                    query={mention.query}
+                    selectedIndex={activeIndex}
+                    onSelect={selectMention}
+                    onHoverIndex={setSelectedIndex}
+                    onCreate={canCreate ? createMention : undefined}
+                  />
+                </div>,
+                document.body,
+              )}
+          </div>
         </div>
       </div>
       {hover &&

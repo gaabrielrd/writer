@@ -233,6 +233,25 @@ A variável WRITER_VISUAL_PORT permite testar uma worktree em porta separada.
 
 Veja [atos](book-acts.md).
 
+## Minimapa do capítulo
+
+`chapterMinimapModel.test.ts` cobre títulos, parágrafos, listas/citações, aliases,
+formatação inline, exclusão de código, vazio e 15 mil palavras. Os testes de
+`ChapterMinimap` verificam escolha/aceite por teclado, clique por posição,
+ocorrência e gesto de toque. `useChapterMinimap.test.tsx` cobre geometria,
+scroll/resize, atualização de documento/lore, preservação da seleção e limpeza.
+`RichEditor.test.tsx` verifica substituição externa e atualização ao formatar.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/chapter-minimap.visual.ts
+```
+
+A suíte usa os componentes reais e serviços fictícios em seis projetos
+(desktop/celular × claro/escuro/sépia). Mede o destaque no início, meio e fim,
+preserva seleção e HTML durante cliques, verifica Edição/Preview, compêndio
+aberto, 320 px e ausência de transbordamento horizontal. Capturas incluem a
+viewport de 320 px para revisar a faixa aderente sem reduzir o capítulo inteiro.
+
 ## Personas de escrita
 
 Os testes de `ai-assistant` cobrem os seis padrões, atributos personalizados,

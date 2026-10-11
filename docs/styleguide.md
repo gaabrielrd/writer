@@ -224,6 +224,14 @@ seleção, incluindo estado intermediário. As ações em lote aparecem próxima
 à lista, quebram linha em celular e exigem confirmação com quantidade e títulos.
 Veja [contrato de atos](book-acts.md).
 
+O minimapa ocupa uma faixa interna à esquerda do manuscrito: 88 px no desktop,
+40 px até 760 px, abaixo das ferramentas e do resumo de lore. Parágrafos usam
+linhas discretas; títulos têm traço forte; entidades têm marcas por categoria.
+Um retângulo com borda e fundo semântico indica o trecho visível. O controle
+mantém foco visível, rótulos de destino e tooltip pelo componente compartilhado.
+Em celular, a faixa acompanha a viewport durante a rolagem da página, sem
+sobrepor o texto. Veja [minimapa do capítulo](chapter-minimap.md).
+
 ## Personas e sliders
 
 `Slider` de `@/shared/ui` envolve um controle nativo de 0 a 100, com nome,

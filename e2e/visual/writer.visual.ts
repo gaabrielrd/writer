@@ -496,6 +496,8 @@ test('menções @ permitem criação cancelável e seleção sem trocar de capí
   await manuscript.fill('@Li');
   await manuscript.press('Enter');
   await expect(manuscript).toHaveText('Lia');
-  await expect(page.getByRole('listbox')).toHaveCount(0);
+  await expect(page.getByRole('listbox', { name: 'Sugestões de menção do compêndio' })).toHaveCount(
+    0,
+  );
   await expect(page).toHaveURL(new RegExp(`${editorPath}$`));
 });

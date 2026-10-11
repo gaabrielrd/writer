@@ -125,6 +125,32 @@ beforeEach(() => {
 });
 
 describe('RichEditor WYSIWYG', () => {
+  it('atualiza o minimapa após substituição externa, troca de lore e edição sem salvar ao navegar', async () => {
+    const { props, rerender, onChange, editor } = setup({ content: '# Início\n\nArthur voltou.' });
+    const map = screen.getByRole('listbox', { name: 'Trechos do capítulo' });
+    await waitFor(() =>
+      expect(map.querySelector('[role="option"]')).toHaveAttribute('aria-setsize', '3'),
+    );
+    fireEvent.keyDown(map, { key: 'End' });
+    expect(map.querySelector('[role="option"]')).toHaveTextContent('Personagem: Rei Arthur');
+    rerender(<RichEditor {...props} entities={[]} content="<h2>Outro capítulo</h2>" />);
+    await waitFor(() =>
+      expect(map.querySelector('[role="option"]')).toHaveAttribute('aria-setsize', '1'),
+    );
+    fireEvent.keyDown(map, { key: 'Home' });
+    expect(map.querySelector('[role="option"]')).toHaveTextContent(
+      'Título nível 2: Outro capítulo',
+    );
+    expect(onChange).not.toHaveBeenCalled();
+    await userEvent.setup().click(screen.getByLabelText('Título Principal'));
+    expect(editor.querySelector('h1')).toHaveTextContent('Outro capítulo');
+    await waitFor(() =>
+      expect(map.querySelector('[role="option"]')).toHaveTextContent(
+        'Título nível 1: Outro capítulo',
+      ),
+    );
+  });
+
   it('mostra ações para a seleção, fecha por Escape e só reaparece após nova seleção', async () => {
     const { editor, onChange } = setup();
     expect(
@@ -255,11 +281,15 @@ describe('RichEditor WYSIWYG', () => {
     const { editor, onChange } = setup({ content: '' });
     await user.click(screen.getByRole('button', { name: 'Mencionar Lore' }));
     await waitFor(() => expect(editor).toHaveFocus());
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(
+      screen.getByRole('listbox', { name: 'Sugestões de menção do compêndio' }),
+    ).toBeInTheDocument();
     await user.keyboard('{ArrowDown}{ArrowUp}{Enter}');
     expect(editor).toHaveTextContent('Rei Arthur');
     expect(onChange).toHaveBeenLastCalledWith('<p>Rei Arthur </p>');
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('listbox', { name: 'Sugestões de menção do compêndio' }),
+    ).not.toBeInTheDocument();
   });
 
   it('oferece criação de termo desconhecido e Escape fecha até sem resultados', async () => {
@@ -267,25 +297,39 @@ describe('RichEditor WYSIWYG', () => {
     const onCreateEntity = vi.fn();
     const { editor } = setup({ content: '@Avalon', onCreateEntity });
     selectText(editor, 7, 7);
-    await waitFor(() => expect(screen.getByRole('option')).toHaveTextContent('Criar “Avalon”'));
+    await waitFor(() =>
+      expect(screen.getByRole('option', { name: /Criar “Avalon”/ })).toHaveTextContent(
+        'Criar “Avalon”',
+      ),
+    );
     await user.keyboard('{Enter}');
     expect(onCreateEntity).toHaveBeenCalledWith('Avalon');
     expect(editor).toHaveTextContent('@Avalon');
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('listbox', { name: 'Sugestões de menção do compêndio' }),
+    ).not.toBeInTheDocument();
   });
 
   it('fecha menções vazias com Escape e não intercepta composição IME', async () => {
     const user = userEvent.setup({ delay: null });
     const { editor } = setup({ content: '@ninguém' });
     selectText(editor, 8, 8);
-    await waitFor(() => expect(screen.getByRole('listbox')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(
+        screen.getByRole('listbox', { name: 'Sugestões de menção do compêndio' }),
+      ).toBeInTheDocument(),
+    );
     fireEvent.compositionStart(editor);
     fireEvent.keyDown(editor, { key: 'Enter', keyCode: 229, isComposing: true });
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(
+      screen.getByRole('listbox', { name: 'Sugestões de menção do compêndio' }),
+    ).toBeInTheDocument();
     fireEvent.compositionEnd(editor);
     await new Promise((resolve) => setTimeout(resolve, 550));
     await user.keyboard('{Escape}');
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('listbox', { name: 'Sugestões de menção do compêndio' }),
+    ).not.toBeInTheDocument();
   });
 
   it('cola HTML seguro com seleção mantida, removendo scripts e URLs ativas', async () => {
