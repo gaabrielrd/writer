@@ -27,6 +27,16 @@ O agente lê os arquivos persistentes automaticamente. Use o prompt para a taref
 
 As skills canônicas ficam em `/skills`; as cópias em `.claude/skills` e `.agents/skills` são geradas por `npm run sync:skills`.
 
+Para remover uma skill do projeto, remova sua pasta em `skills/` e execute
+`npm run sync:skills`. Apagar apenas uma cópia gerada não basta: a sincronização
+recria todas as skills presentes na fonte. A `frontend-skill` foi removida da
+fonte deste projeto.
+
+O `npm run validate` usa `npm run check:skills` apenas para verificar as cópias;
+ele não instala nem recria skills. A sincronização também roda no `prepare`
+durante a instalação de dependências e respeita o conteúdo atual de `skills/`.
+Esses comandos não alteram as skills globais do usuário.
+
 ## Como definir o produto
 
 Use `plan-app` quando ainda existe uma ideia, mas não um produto completamente decidido. A skill faz perguntas curtas, explica escolhas sem exigir conhecimento técnico e não começa a implementação. Quando não restar nenhuma decisão necessária em aberto, ela pede a aprovação do resumo, cria `docs/prd.md` e atualiza `docs/architecture.md`.
