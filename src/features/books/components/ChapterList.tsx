@@ -21,6 +21,12 @@ import {
   Input,
   LoadingState,
   EmptyState,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/shared/ui';
 import type { Book } from '../model/book';
 import type { Chapter } from '../model/chapter';
@@ -83,7 +89,6 @@ function ChapterListSession({
   const summaryRef = useRef<HTMLDivElement>(null);
   const actTriggerRef = useRef<HTMLButtonElement>(null);
   const chapterTriggerRef = useRef<HTMLButtonElement>(null);
-  const selectAllId = useId();
   const groups = groupChapters(chapters, actsState.acts);
   const ordered = groups.flatMap((group) => group.chapters);
   const chapterNumbers = new Map(ordered.map((chapter, index) => [chapter.id, index + 1]));
@@ -304,56 +309,33 @@ function ChapterListSession({
       {actionError && !bulkAction && !isActOpen && (
         <Alert variant="destructive">{actionError}</Alert>
       )}
-      {!loading && displayed.length > 0 && (
-        <div className={styles.selectionControls}>
-          <label className={styles.selectAll} htmlFor={selectAllId}>
-            <Input
-              ref={(node) => {
-                if (node) node.indeterminate = selectedCount > 0 && !allSelected;
-              }}
-              id={selectAllId}
-              type="checkbox"
-              className={styles.checkbox}
-              aria-label="Selecionar todos os capítulos exibidos"
-              checked={allSelected}
-              disabled={isProcessing}
-              onChange={() =>
-                setSelectedIds(
-                  allSelected ? new Set() : new Set(displayed.map((chapter) => chapter.id)),
-                )
-              }
-            />
-            Selecionar exibidos
-          </label>
-          {selectedCount > 0 && (
-            <div className={styles.bulkToolbar} role="group" aria-label="Ações da seleção">
-              <span role="status">{selectedCount} selecionado(s)</span>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={isProcessing}
-                onClick={() => openBulk('move')}
-              >
-                Mover para ato
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                disabled={isProcessing}
-                onClick={() => openBulk('delete')}
-              >
-                Excluir seleção
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={isProcessing}
-                onClick={() => setSelectedIds(new Set())}
-              >
-                Limpar seleção
-              </Button>
-            </div>
-          )}
+      {!loading && selectedCount > 0 && (
+        <div className={styles.bulkToolbar} role="group" aria-label="Ações da seleção">
+          <span role="status">{selectedCount} selecionado(s)</span>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={isProcessing}
+            onClick={() => openBulk('move')}
+          >
+            Mover para ato
+          </Button>
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={isProcessing}
+            onClick={() => openBulk('delete')}
+          >
+            Excluir seleção
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            disabled={isProcessing}
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Limpar seleção
+          </Button>
         </div>
       )}
       {loading ? (
@@ -371,11 +353,38 @@ function ChapterListSession({
             </Button>
           )}
         </div>
+      ) : query.trim() && displayed.length === 0 ? (
+        <EmptyState title="Nenhum capítulo encontrado" description="Tente outro nome." />
       ) : (
-        <div className={styles.groups}>
-          {query.trim() && displayed.length === 0 && (
-            <EmptyState title="Nenhum capítulo encontrado" description="Tente outro nome." />
-          )}
+        <Table className={styles.chapterTable} aria-label="Capítulos">
+          <TableHeader>
+            <TableRow>
+              <TableHead className={styles.selectionCell} scope="col">
+                <Input
+                  ref={(node) => {
+                    if (node) node.indeterminate = selectedCount > 0 && !allSelected;
+                  }}
+                  type="checkbox"
+                  className={styles.checkbox}
+                  aria-label="Selecionar todos os capítulos exibidos"
+                  checked={allSelected}
+                  disabled={isProcessing || displayed.length === 0}
+                  onChange={() =>
+                    setSelectedIds(
+                      allSelected ? new Set() : new Set(displayed.map((chapter) => chapter.id)),
+                    )
+                  }
+                />
+              </TableHead>
+              <TableHead scope="col">Capítulo</TableHead>
+              <TableHead className={styles.wordsCell} scope="col">
+                Palavras
+              </TableHead>
+              <TableHead className={styles.actionsCell} scope="col">
+                Ações
+              </TableHead>
+            </TableRow>
+          </TableHeader>
           {groups.map((group) => {
             const visible = group.chapters.filter((chapter) =>
               filterChapterTitle(chapter.title, query),
@@ -383,125 +392,147 @@ function ChapterListSession({
             if (query.trim() && !visible.length) return null;
             if (!group.act && !visible.length) return null;
             return (
-              <section
+              <TableBody
                 key={group.act?.id ?? 'unassigned'}
                 aria-label={group.act ? 'Ato ' + actName(group.act) : 'Sem ato'}
               >
                 {actsState.acts.length > 0 && (
-                  <h3 className={styles.actHeading}>
-                    {group.act ? actName(group.act) : 'Sem ato'}
-                  </h3>
+                  <TableRow className={styles.actRow}>
+                    <TableHead colSpan={4} scope="rowgroup">
+                      <h3 className={styles.actHeading}>
+                        {group.act ? actName(group.act) : 'Sem ato'}
+                      </h3>
+                    </TableHead>
+                  </TableRow>
                 )}
                 {!visible.length ? (
-                  <p className={styles.emptyAct}>Este ato ainda não tem capítulos.</p>
+                  <TableRow>
+                    <TableCell colSpan={4} className={styles.emptyAct}>
+                      Este ato ainda não tem capítulos.
+                    </TableCell>
+                  </TableRow>
                 ) : (
-                  <ol
-                    className={styles.chapterList}
-                    aria-label={group.act ? 'Capítulos do ato ' + actName(group.act) : 'Capítulos'}
-                  >
+                  <>
                     {visible.map((ch) => (
-                      <li key={ch.id} className={styles.chapterItem}>
-                        <Input
-                          type="checkbox"
-                          className={styles.checkbox}
-                          aria-label={'Selecionar ' + ch.title}
-                          checked={selectedIds.has(ch.id)}
-                          disabled={isProcessing}
-                          onChange={() =>
-                            setSelectedIds((previous) => {
-                              const next = new Set(previous);
-                              if (next.has(ch.id)) next.delete(ch.id);
-                              else next.add(ch.id);
-                              return next;
-                            })
-                          }
-                        />
-                        <div className={styles.chapterInfo}>
-                          <span className={styles.chapterOrder}>{chapterNumbers.get(ch.id)}.</span>
-                          {editingId === ch.id ? (
-                            <div className={styles.renameField}>
-                              <Input
-                                label="Título do capítulo"
-                                value={editingTitle}
-                                onChange={(e) => setEditingTitle(e.target.value)}
-                                onBlur={() => handleSaveRename(ch.id)}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter') handleSaveRename(ch.id);
-                                  if (e.key === 'Escape') setEditingId(null);
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <span className={styles.chapterTitle} title={ch.title}>
-                              {ch.title}
-                            </span>
-                          )}
-                        </div>
-
-                        <span
-                          className={styles.chapterWords}
-                          aria-label={`${ch.wordCount.toLocaleString('pt-BR')} palavras`}
-                        >
-                          {ch.wordCount.toLocaleString('pt-BR')}
-                          <span className={styles.wordsLabel}> palavras</span>
-                        </span>
-                        <div className={styles.chapterActions}>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            className={styles.writeButton}
-                            onClick={() => void navigate(`/books/${book.id}/editor/${ch.id}`)}
-                            title="Abrir no editor de escrita"
-                            aria-label={`Escrever ${ch.title}`}
-                          >
-                            <PenLine className="icon icon-sm" aria-hidden="true" />
-                            <span className={styles.actionLabel}>Escrever</span>
-                          </Button>
-                          <Dropdown
-                            mode="action"
-                            label={`Opções de ${ch.title}`}
-                            align="end"
-                            variant="ghost"
-                            iconOnly
-                            className={styles.chapterMenuButton}
+                      <TableRow
+                        key={ch.id}
+                        className={styles.chapterItem}
+                        data-state={selectedIds.has(ch.id) ? 'selected' : undefined}
+                      >
+                        <TableCell className={styles.selectionCell}>
+                          <Input
+                            type="checkbox"
+                            className={styles.checkbox}
+                            aria-label={'Selecionar ' + ch.title}
+                            checked={selectedIds.has(ch.id)}
                             disabled={isProcessing}
-                            icon={<MoreHorizontal className="icon icon-sm" aria-hidden="true" />}
+                            onChange={() =>
+                              setSelectedIds((previous) => {
+                                const next = new Set(previous);
+                                if (next.has(ch.id)) next.delete(ch.id);
+                                else next.add(ch.id);
+                                return next;
+                              })
+                            }
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <div className={styles.chapterInfo}>
+                            <span className={styles.chapterOrder}>
+                              {chapterNumbers.get(ch.id)}.
+                            </span>
+                            {editingId === ch.id ? (
+                              <div className={styles.renameField}>
+                                <Input
+                                  label="Título do capítulo"
+                                  value={editingTitle}
+                                  onChange={(e) => setEditingTitle(e.target.value)}
+                                  onBlur={() => handleSaveRename(ch.id)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleSaveRename(ch.id);
+                                    if (e.key === 'Escape') setEditingId(null);
+                                  }}
+                                />
+                              </div>
+                            ) : (
+                              <Button
+                                variant="link"
+                                className={styles.chapterTitle}
+                                title={ch.title}
+                                aria-label={`Abrir capítulo ${ch.title}`}
+                                onClick={() => void navigate(`/books/${book.id}/editor/${ch.id}`)}
+                              >
+                                {ch.title}
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className={styles.wordsCell}>
+                          <span
+                            className={styles.chapterWords}
+                            aria-label={`${ch.wordCount.toLocaleString('pt-BR')} palavras`}
                           >
-                            <DropdownItem onSelect={() => handleStartRename(ch)}>
-                              <Edit2 className="icon icon-sm" aria-hidden="true" />
-                              Renomear
-                            </DropdownItem>
-                            <DropdownItem
-                              onSelect={() => handleMove(ch, 'up')}
-                              disabled={group.chapters[0]?.id === ch.id}
+                            {ch.wordCount.toLocaleString('pt-BR')}
+                          </span>
+                        </TableCell>
+                        <TableCell className={styles.actionsCell}>
+                          <div className={styles.chapterActions}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className={styles.writeButton}
+                              onClick={() => void navigate(`/books/${book.id}/editor/${ch.id}`)}
+                              title="Abrir no editor de escrita"
+                              aria-label={`Escrever ${ch.title}`}
                             >
-                              <ArrowUp className="icon icon-sm" aria-hidden="true" />
-                              Mover para cima
-                            </DropdownItem>
-                            <DropdownItem
-                              onSelect={() => handleMove(ch, 'down')}
-                              disabled={group.chapters.at(-1)?.id === ch.id}
+                              <PenLine className="icon icon-sm" aria-hidden="true" />
+                            </Button>
+                            <Dropdown
+                              mode="action"
+                              label={`Opções de ${ch.title}`}
+                              align="end"
+                              variant="ghost"
+                              iconOnly
+                              className={styles.chapterMenuButton}
+                              disabled={isProcessing}
+                              icon={<MoreHorizontal className="icon icon-sm" aria-hidden="true" />}
                             >
-                              <ArrowDown className="icon icon-sm" aria-hidden="true" />
-                              Mover para baixo
-                            </DropdownItem>
-                            <DropdownItem
-                              onSelect={() => openBulk('delete', [ch])}
-                              variant="destructive"
-                            >
-                              <Trash2 className="icon icon-sm" aria-hidden="true" />
-                              Excluir
-                            </DropdownItem>
-                          </Dropdown>
-                        </div>
-                      </li>
+                              <DropdownItem onSelect={() => handleStartRename(ch)}>
+                                <Edit2 className="icon icon-sm" aria-hidden="true" />
+                                Renomear
+                              </DropdownItem>
+                              <DropdownItem
+                                onSelect={() => handleMove(ch, 'up')}
+                                disabled={group.chapters[0]?.id === ch.id}
+                              >
+                                <ArrowUp className="icon icon-sm" aria-hidden="true" />
+                                Mover para cima
+                              </DropdownItem>
+                              <DropdownItem
+                                onSelect={() => handleMove(ch, 'down')}
+                                disabled={group.chapters.at(-1)?.id === ch.id}
+                              >
+                                <ArrowDown className="icon icon-sm" aria-hidden="true" />
+                                Mover para baixo
+                              </DropdownItem>
+                              <DropdownItem
+                                onSelect={() => openBulk('delete', [ch])}
+                                variant="destructive"
+                              >
+                                <Trash2 className="icon icon-sm" aria-hidden="true" />
+                                Excluir
+                              </DropdownItem>
+                            </Dropdown>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </ol>
+                  </>
                 )}
-              </section>
+              </TableBody>
             );
           })}
-        </div>
+        </Table>
       )}
     </div>
   );

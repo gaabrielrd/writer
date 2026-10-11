@@ -233,6 +233,17 @@ A variável WRITER_VISUAL_PORT permite testar uma worktree em porta separada.
 
 Veja [atos](book-acts.md).
 
+`e2e/visual/chapters.visual.ts` compara a borda, raio, superfície do cabeçalho,
+divisórias, padding e tipografia da tabela de capítulos com a lista do compêndio
+no desktop. Nos três temas e em celular, cobre seleção por teclado, estado
+intermediário, destaque de linha e abertura do editor pelo título. Em 320 px,
+verifica títulos completos acessíveis, contagens, ações e ausência de rolagem
+horizontal na página e dentro da tabela.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/chapters.visual.ts
+```
+
 ## Personas de escrita
 
 Os testes de `ai-assistant` cobrem os seis padrões, atributos personalizados,
