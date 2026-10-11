@@ -117,6 +117,13 @@ caramelo/café aprovado. A rota `/styleguide` é a referência viva. Ícones vê
 
 ## Estado
 
+As configurações de IA são compostas por `AISettingsProvider` no layout e abertas
+por callback no menu de usuário. `useAIConfig` observa alterações no adaptador
+BYOK para invalidar sugestões anteriores. A análise/revisão do compêndio fica no
+editor, a API pública/tipos em lore e a geração BYOK no serviço de IA. Registro,
+autorização, aplicação e débito atômico ficam em `functions/src/loreAnalysis.mjs`.
+Veja [atualização do compêndio](lore-analysis.md).
+
 O estado é local aos componentes ou às features. Não usamos gerenciador global de estado por padrão. Se, no futuro, a complexidade justificar, a decisão deve ser registrada em um ADR.
 
 ## Testes

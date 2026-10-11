@@ -1,10 +1,11 @@
 import { author } from './data';
+import { fixtureDetections } from './loreAnalysisService';
 
 let credits = author.credits;
 
 // Keep autocomplete quiet and deterministic; the production hook and menus still render.
-export function generateAIResponse(): Promise<string> {
-  return Promise.resolve('');
+export function generateAIResponse(options?: { json?: boolean }): Promise<string> {
+  return Promise.resolve(options?.json ? JSON.stringify({ entities: fixtureDetections }) : '');
 }
 
 export function getUserCredits(): Promise<number> {

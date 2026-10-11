@@ -14,7 +14,6 @@ import {
   BookOpen,
   Eye,
   Edit3,
-  KeyRound,
   Undo2,
   Redo2,
 } from 'lucide-react';
@@ -25,8 +24,8 @@ import {
   GhostSuggestion,
   AIActionMenu,
   OutOfCreditsDialog,
-  BYOKSettingsDialog,
-  getBYOKConfig,
+  useAISettings,
+  useAIConfig,
 } from '@/features/ai-assistant';
 import { renderRichText, sanitizeRichText } from '@/shared/lib/sanitizeRichText';
 import {
@@ -95,7 +94,8 @@ export function RichEditor({
   const [initialHtml] = useState(() => renderRichText(content));
   const [viewMode, setViewMode] = useState<'write' | 'preview'>('write');
   const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
-  const [isBYOKSettingsOpen, setIsBYOKSettingsOpen] = useState(false);
+  const openAISettings = useAISettings();
+  const config = useAIConfig();
   const [mentionDismissed, setMentionDismissed] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [accepting, setAccepting] = useState(false);
@@ -174,7 +174,7 @@ export function RichEditor({
   const text = editor?.getText({ blockSeparator: '\n' }) ?? '';
   const cursorPosition =
     editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
-  const isUsingBYOK = getBYOKConfig().provider !== 'firebase_ai';
+  const isUsingBYOK = config.provider !== 'firebase_ai';
   const { suggestion, acceptSuggestion, discardSuggestion } = useAIAutocomplete({
     content: text,
     cursorPosition,
@@ -569,41 +569,36 @@ export function RichEditor({
             onShowOutOfCredits={() => setIsOutOfCreditsOpen(true)}
             onInsertText={(value) => applyGeneratedText(value, false)}
             onReplaceSelection={(value) => applyGeneratedText(value, true)}
-            onOpenBYOKSettings={() => setIsBYOKSettingsOpen(true)}
+            onOpenBYOKSettings={openAISettings}
           />
+          <div className={styles.modeSwitch} role="group" aria-label="Modo do editor">
+            <Button
+              variant="secondary"
+              disabled={accepting}
+              className={`${styles.modeBtn} ${viewMode === 'write' ? styles.modeBtnActive : ''}`}
+              aria-pressed={viewMode === 'write'}
+              onClick={() => setViewMode('write')}
+            >
+              <Edit3 className="icon icon-sm" aria-hidden="true" />
+              <span>Edição</span>
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={accepting}
+              className={`${styles.modeBtn} ${viewMode === 'preview' ? styles.modeBtnActive : ''}`}
+              aria-pressed={viewMode === 'preview'}
+              onClick={() => {
+                discardSuggestion();
+                setViewMode('preview');
+              }}
+            >
+              <Eye className="icon icon-sm" aria-hidden="true" />
+              <span>Preview</span>
+            </Button>
+          </div>
           <Button
-            variant="secondary"
-            onClick={() => setIsBYOKSettingsOpen(true)}
-            title="Configurações de IA e Chaves de API (BYOK)"
-            aria-label="Configurações de IA e Chaves de API"
-          >
-            <KeyRound className="icon icon-sm" aria-hidden="true" />
-          </Button>
-          <button
-            type="button"
-            disabled={accepting}
-            className={`${styles.modeBtn} ${viewMode === 'write' ? styles.modeBtnActive : ''}`}
-            aria-pressed={viewMode === 'write'}
-            onClick={() => setViewMode('write')}
-          >
-            <Edit3 className="icon icon-sm" aria-hidden="true" />
-            <span>Escrita</span>
-          </button>
-          <button
-            type="button"
-            disabled={accepting}
-            className={`${styles.modeBtn} ${viewMode === 'preview' ? styles.modeBtnActive : ''}`}
-            aria-pressed={viewMode === 'preview'}
-            onClick={() => {
-              discardSuggestion();
-              setViewMode('preview');
-            }}
-          >
-            <Eye className="icon icon-sm" aria-hidden="true" />
-            <span>Leitura com Lore</span>
-          </button>
-          <Button
-            variant={isSidebarOpen ? 'primary' : 'secondary'}
+            variant="ghost"
+            aria-pressed={isSidebarOpen}
             onClick={onToggleSidebar}
             title="Abrir painel lateral de Lore"
           >
@@ -695,10 +690,9 @@ export function RichEditor({
         onClose={() => setIsOutOfCreditsOpen(false)}
         onOpenBYOKSettings={() => {
           setIsOutOfCreditsOpen(false);
-          setIsBYOKSettingsOpen(true);
+          openAISettings();
         }}
       />
-      <BYOKSettingsDialog open={isBYOKSettingsOpen} onClose={() => setIsBYOKSettingsOpen(false)} />
     </div>
   );
 }

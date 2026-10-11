@@ -1,0 +1,52 @@
+.cost,
+.before {
+  font-size: var(--text-sm);
+  color: var(--ink-quiet);
+  overflow-wrap: anywhere;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.proposal {
+  border-top: 1px solid var(--line);
+  padding-top: var(--space-4);
+  min-width: 0;
+}
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  overflow-wrap: anywhere;
+}
+.row > div {
+  width: auto;
+  flex-shrink: 0;
+}
+.row > span {
+  font-size: var(--text-xs);
+  color: var(--ink-quiet);
+}
+.checkbox {
+  width: 18px;
+  height: 18px;
+}
+.evidence {
+  margin: var(--space-3) 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--line);
+  color: var(--ink-quiet);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.fields {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.proposal summary {
+  cursor: pointer;
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+}

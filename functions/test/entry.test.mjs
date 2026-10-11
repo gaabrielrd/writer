@@ -16,6 +16,9 @@ test('server entry loads all deployment exports without a provider secret or net
     'migrateImageLibrary',
     'cleanupBookAssets',
     'cleanupDeletedBookCover',
+    'analyzeChapterLore',
+    'prepareBYOKLore',
+    'applyLoreAnalysis',
   ])
     assert.equal(typeof entry[name], 'function');
 });

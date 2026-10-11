@@ -1,4 +1,7 @@
 export * from './model';
+export { AISettingsProvider } from './components/AISettingsProvider';
+export { useAISettings } from './hooks/useAISettings';
+export { useAIConfig } from './hooks/useAIConfig';
 export * from './services';
 export * as aiClientService from './services';
 export * from './hooks/useAIAutocomplete';
@@ -12,3 +15,4 @@ export { OutOfCreditsDialog } from './components/OutOfCreditsDialog';
 export type { OutOfCreditsDialogProps } from './components/OutOfCreditsDialog';
 export { BYOKSettingsDialog } from './components/BYOKSettingsDialog';
 export type { BYOKSettingsDialogProps } from './components/BYOKSettingsDialog';
+export { analyzeLoreWithBYOK } from './services/loreAnalysisClient';

@@ -5,7 +5,10 @@ import { MemoryRouter } from 'react-router';
 import { AuthButton } from '../components/AuthButton';
 import { AuthContext, type AuthContextValue } from '../context/AuthContext';
 
-function renderWithAuth(authOverrides: Partial<AuthContextValue> = {}) {
+function renderWithAuth(
+  authOverrides: Partial<AuthContextValue> = {},
+  onOpenAISettings?: () => void,
+) {
   const defaultAuth: AuthContextValue = {
     user: null,
     loading: false,
@@ -25,7 +28,7 @@ function renderWithAuth(authOverrides: Partial<AuthContextValue> = {}) {
     ...render(
       <MemoryRouter>
         <AuthContext.Provider value={defaultAuth}>
-          <AuthButton />
+          <AuthButton onOpenAISettings={onOpenAISettings} />
         </AuthContext.Provider>
       </MemoryRouter>,
     ),
@@ -34,6 +37,33 @@ function renderWithAuth(authOverrides: Partial<AuthContextValue> = {}) {
 }
 
 describe('AuthButton', () => {
+  it('opens AI settings from the user dropdown and respects pending operations', async () => {
+    const open = vi.fn();
+    const auth = {
+      user: {
+        uid: 'u',
+        email: null,
+        displayName: 'Autora',
+        photoUrl: null,
+        credits: 0,
+        tier: 'free' as const,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    };
+    const first = renderWithAuth(auth, open);
+    await userEvent.click(screen.getByRole('button', { name: /Autora/i }));
+    await userEvent.click(
+      screen.getByRole('menuitem', { name: 'Configurar inteligência artificial' }),
+    );
+    expect(open).toHaveBeenCalledOnce();
+    first.unmount();
+    renderWithAuth({ ...auth, pendingEditorOperation: true }, open);
+    await userEvent.click(screen.getByRole('button', { name: /Autora/i }));
+    expect(
+      screen.getByRole('menuitem', { name: 'Configurar inteligência artificial' }),
+    ).toHaveAttribute('aria-disabled', 'true');
+  });
   it('exibe estado de carregamento quando loading e true', () => {
     renderWithAuth({ loading: true });
     expect(screen.getByText(/carregando/i)).toBeInTheDocument();

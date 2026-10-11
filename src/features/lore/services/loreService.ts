@@ -54,8 +54,8 @@ function mapLocal(id: string, bookId: string, data: Partial<StoredLoreDoc>): Lor
     ...(data.structuredDetails ? { structuredDetails: data.structuredDetails } : {}),
     relations: Array.isArray(data.relations) ? data.relations : [],
     isPublic: data.isPublic ?? true,
-    createdAt: data.createdAt ?? Date.now(),
-    updatedAt: data.updatedAt ?? Date.now(),
+    createdAt: data.createdAt ?? 0,
+    updatedAt: data.updatedAt ?? 0,
   };
 }
 

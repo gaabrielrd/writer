@@ -240,22 +240,22 @@ export function ChapterList({
                 >
                   <DropdownItem onSelect={() => handleStartRename(ch)}>
                     <Edit2 className="icon icon-sm" aria-hidden="true" />
-                    Renomear {ch.title}
+                    Renomear
                   </DropdownItem>
                   <DropdownItem onSelect={() => handleMove(index, 'up')} disabled={index === 0}>
                     <ArrowUp className="icon icon-sm" aria-hidden="true" />
-                    Mover {ch.title} para cima
+                    Mover para cima
                   </DropdownItem>
                   <DropdownItem
                     onSelect={() => handleMove(index, 'down')}
                     disabled={index === chapters.length - 1}
                   >
                     <ArrowDown className="icon icon-sm" aria-hidden="true" />
-                    Mover {ch.title} para baixo
+                    Mover para baixo
                   </DropdownItem>
                   <DropdownItem onSelect={() => handleDelete(ch.id)}>
                     <Trash2 className="icon icon-sm" aria-hidden="true" />
-                    Excluir {ch.title}
+                    Excluir
                   </DropdownItem>
                 </Dropdown>
               </div>

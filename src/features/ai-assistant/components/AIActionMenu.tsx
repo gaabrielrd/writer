@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { Alert, Button, Dialog, Input, LoadingState } from '@/shared/ui';
 import { buildActionPrompt, type AIActionType, type LoreContextItem } from '../model/aiPrompt';
-import { getBYOKConfig } from '../services/byokStorage';
+import { getBYOKConfig, subscribeBYOKConfig } from '../services/byokStorage';
 import { usesOwnKey, type BYOKConfig } from '../model/byokConfig';
 import { generateAIResponse } from '../services/aiClient';
 import { deductCredit } from '../services/creditsService';
@@ -63,6 +63,16 @@ export function AIActionMenu({
   const resultConfigRef = useRef<BYOKConfig | null>(null);
   const usedResultRef = useRef(false);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () =>
+      subscribeBYOKConfig(() => {
+        controllerRef.current?.abort();
+        resultConfigRef.current = null;
+        setResultText(null);
+        setIsLoading(false);
+      }),
+    [],
+  );
 
   useEffect(
     () => () => {

@@ -10,7 +10,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Alert, Button, Dialog, ErrorState, LoadingState } from '@/shared/ui';
-import { useAuth, CreditsBadge } from '@/features/auth';
+import { useAuth } from '@/features/auth';
 import { getBook, listChapters, getChapter, type Book, type Chapter } from '@/features/books';
 import {
   listLoreEntities,
@@ -28,6 +28,7 @@ import { BusyNavigationGuard } from './BusyNavigationGuard';
 import { RichEditor } from './RichEditor';
 import { EditorLoreSidebar } from './EditorLoreSidebar';
 import { ExportButton } from './ExportButton';
+import { LoreAnalysisDialog } from './LoreAnalysisDialog';
 import styles from './EditorPage.module.css';
 
 export function EditorPage() {
@@ -66,6 +67,8 @@ function EditorSession() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isAcceptingAI, setIsAcceptingAI] = useState(false);
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
+  const [loreRefreshError, setLoreRefreshError] = useState<string | null>(null);
   const handleBusyChange = useCallback(
     (busy: boolean) => {
       setIsAcceptingAI(busy);
@@ -222,6 +225,23 @@ function EditorSession() {
     setIsSidebarOpen(true);
   };
 
+  const refreshLore = async () => {
+    if (!book) return;
+    try {
+      const [local, global] = await Promise.all([
+        listLoreEntities(book.id),
+        book.universeId
+          ? listLoreEntities({ kind: 'universe', id: book.universeId })
+          : Promise.resolve([]),
+      ]);
+      setLoreEntities(local);
+      setGlobalLoreEntities(global);
+      setLoreRefreshError(null);
+    } catch {
+      setLoreRefreshError('O lote foi aplicado, mas não foi possível recarregar o compêndio.');
+    }
+  };
+
   if (loading) {
     return <LoadingState label="Carregando área de escrita..." />;
   }
@@ -301,18 +321,18 @@ function EditorSession() {
     <div className={styles.pageLayout}>
       <BusyNavigationGuard busy={isAcceptingAI} />
       {isAcceptingAI && (
-        <p role="status">Aguarde a sugestão ser incorporada antes de sair do capítulo.</p>
+        <p role="status">Aguarde a aplicação terminar antes de sair do capítulo.</p>
       )}
-      <header className={`${styles.topBar} glass-surface`}>
+      <header className={styles.topBar}>
         <div className={styles.topBarLeft}>
           <Link
-            to="/"
+            to={`/books/${bookId}`}
             onClick={(event) => {
               if (isAcceptingAI) event.preventDefault();
             }}
             className={styles.backLink}
-            title="Voltar para a lista de obras"
-            aria-label="Voltar para a lista de obras"
+            title="Voltar para o livro"
+            aria-label="Voltar para o livro"
           >
             <ArrowLeft className="icon icon-sm" aria-hidden="true" />
           </Link>
@@ -326,7 +346,6 @@ function EditorSession() {
 
         <div className={styles.topBarRight}>
           <ExportButton book={book} currentChapter={chapter} currentContent={content} />
-          <CreditsBadge credits={currentCredits} tier={user?.tier || 'free'} />
 
           <div className={styles.saveStatusWrapper} aria-live="polite">
             {saveStatus === 'saving' && (
@@ -398,6 +417,14 @@ function EditorSession() {
       </header>
 
       <section className={styles.workspace} aria-label="Espaço de escrita">
+        {loreRefreshError && (
+          <Alert variant="warning">
+            {loreRefreshError}
+            <Button variant="secondary" onClick={() => void refreshLore()}>
+              Recarregar compêndio
+            </Button>
+          </Alert>
+        )}
         {globalLoreError && (
           <Alert variant="warning" title="Lore global indisponível">
             {globalLoreError}
@@ -425,6 +452,7 @@ function EditorSession() {
         />
 
         <EditorLoreSidebar
+          onAnalyzeText={globalLoreError ? undefined : () => setIsAnalysisOpen(true)}
           isOpen={isSidebarOpen}
           entities={allLoreEntities}
           universeId={book.universeId}
@@ -436,6 +464,21 @@ function EditorSession() {
           onUpdateEntity={handleUpdateLoreEntity}
         />
       </section>
+      {isAnalysisOpen && (
+        <LoreAnalysisDialog
+          bookId={book.id}
+          chapterId={chapter.id}
+          content={content}
+          entities={allLoreEntities}
+          universeId={book.universeId}
+          onClose={() => setIsAnalysisOpen(false)}
+          onBusyChange={handleBusyChange}
+          onApplied={(credits) => {
+            updateUserCreditsState(credits);
+            void refreshLore();
+          }}
+        />
+      )}
     </div>
   );
 }

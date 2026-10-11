@@ -21,6 +21,7 @@ export interface EditorLoreSidebarProps {
   onClose: () => void;
   onCreateEntity: (input: CreateLoreEntityInput, scope?: 'local' | 'global') => Promise<void>;
   onUpdateEntity: (id: string, input: UpdateLoreEntityInput) => Promise<void>;
+  onAnalyzeText?: () => void;
 }
 
 const CATEGORY_BADGES: Record<LoreCategory, 'default' | 'accent' | 'success' | 'secondary'> = {
@@ -54,6 +55,7 @@ export function EditorLoreSidebar({
   onClose,
   onCreateEntity,
   onUpdateEntity,
+  onAnalyzeText,
 }: EditorLoreSidebarProps) {
   const [scopeChoice, setScopeChoice] = useState<{
     target?: string | null;
@@ -117,10 +119,7 @@ export function EditorLoreSidebar({
   };
 
   return (
-    <aside
-      className={`${styles.sidebar} glass-surface`}
-      aria-label="Painel lateral do Compêndio de Lore"
-    >
+    <aside className={styles.sidebar} aria-label="Painel lateral do Compêndio de Lore">
       <div className={styles.header}>
         <div className={styles.headerTitleRow}>
           <h3 className={styles.title}>Compêndio de Lore</h3>
@@ -139,6 +138,11 @@ export function EditorLoreSidebar({
       </div>
 
       <div className={styles.controls}>
+        {onAnalyzeText && (
+          <Button variant="secondary" onClick={onAnalyzeText}>
+            Atualizar compêndio com base no texto
+          </Button>
+        )}
         {universeId && (
           <Select
             label="Escopo do lore"
@@ -194,7 +198,7 @@ export function EditorLoreSidebar({
             </button>
           </div>
 
-          <Button variant="primary" onClick={handleOpenCreate}>
+          <Button variant="secondary" onClick={handleOpenCreate}>
             <Plus className="icon icon-sm" aria-hidden="true" />
             Nova Entidade
           </Button>

@@ -38,6 +38,15 @@ vi.mock('@/shared/lib', () => ({
 }));
 
 describe('loreService', () => {
+  it('uses stable versions for legacy records with no timestamps', async () => {
+    vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ name: 'Legado', category: 'character', summary: 'Ficha antiga' }),
+    } as unknown as firestoreModule.DocumentSnapshot);
+    const first = await getLoreEntity('b-1', 'legacy');
+    expect(first?.updatedAt).toBe(0);
+    expect(first?.createdAt).toBe(0);
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     transaction.get.mockResolvedValue({ exists: () => true, data: () => ({ isPublic: false }) });

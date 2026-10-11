@@ -1,8 +1,25 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest';
-import { getBYOKConfig, saveBYOKConfig, clearBYOKConfig } from '../services/byokStorage';
+import {
+  getBYOKConfig,
+  saveBYOKConfig,
+  clearBYOKConfig,
+  subscribeBYOKConfig,
+} from '../services/byokStorage';
 import type { BYOKConfig } from '../model/byokConfig';
 
 describe('byokStorage service', () => {
+  it('notifies same-tab changes, cross-tab updates and removes subscriptions', () => {
+    const listener = vi.fn();
+    const stop = subscribeBYOKConfig(listener);
+    saveBYOKConfig({ provider: 'openai_byok', openaiApiKey: 'test' });
+    clearBYOKConfig();
+    window.dispatchEvent(new StorageEvent('storage', { key: 'writer_byok_config' }));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'unrelated' }));
+    expect(listener).toHaveBeenCalledTimes(3);
+    stop();
+    clearBYOKConfig();
+    expect(listener).toHaveBeenCalledTimes(3);
+  });
   afterEach(() => {
     vi.restoreAllMocks();
   });

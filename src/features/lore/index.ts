@@ -13,3 +13,5 @@ export type { LoreDrawerProps } from './components/LoreDrawer';
 export { LorePage } from './components/LorePage';
 export { LoreTab, LoreCollection } from './components/LoreTab';
 export type { LoreTabProps } from './components/LoreTab';
+export * from './model/loreAnalysis';
+export * from './services/loreAnalysisService';

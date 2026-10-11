@@ -124,6 +124,10 @@ describe('EditorPage', () => {
 
     const textarea = screen.getByLabelText(/área de escrita do capítulo/i);
     expect(textarea).toHaveTextContent('Arthur caminhava ao entardecer.');
+    expect(screen.getByRole('link', { name: 'Voltar para o livro' })).toHaveAttribute(
+      'href',
+      '/books/b-1',
+    );
   });
 
   it('permite abrir sidebar, criar entidade e navegar para proximo capitulo', async () => {

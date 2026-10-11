@@ -126,8 +126,11 @@ ao botão de opções.
 A barra de capítulos reúne quantidade, total de palavras e “Novo capítulo”.
 A criação acontece em um modal com título, Cancelar e Criar capítulo; falhas
 preservam o texto para uma nova tentativa. Cada capítulo ocupa uma linha com
-ordem, título, palavras, escrita e menu de renomear, mover e excluir. Títulos
-longos usam reticências e mantêm o texto completo no atributo `title`. Em telas
+ordem, título, palavras, escrita e menu de renomear, mover e excluir.
+As opções desse menu são “Renomear”, “Mover para cima”, “Mover para baixo” e
+“Excluir”, sem repetir o título do capítulo; o botão que abre o menu mantém
+o título no rótulo acessível para identificar a linha.
+Títulos longos usam reticências e mantêm o texto completo no atributo `title`. Em telas
 pequenas, as ações usam ícones com rótulos acessíveis e as contagens permanecem
 visíveis, sem transbordamento horizontal.
 
@@ -139,3 +142,23 @@ visível, o foco acompanha o título da etapa e Voltar preserva campos. O conte�
 da etapa pode rolar em janelas pequenas, mantendo ações no rodapé do diálogo.
 Relações são editadas uma por vez; o escopo global é indicado antes dos campos.
 O novo fluxo usa os componentes e tokens existentes e os mesmos três temas.
+
+## Editor de capítulos e revisão do lore
+
+O retorno abre o livro atual. Configurar inteligência artificial fica no menu
+do usuário do header e reutiliza o mesmo diálogo em todas as páginas. A barra
+contextual do capítulo usa espaçamento discreto; editor e compêndio usam superfícies
+opacas, controles compactos e estados ativos discretos. O manuscrito conserva
+Georgia, 18 px e entrelinha 1,85 em escrita e leitura.
+
+Atualizar compêndio abre análise/revisão/aplicação em um modal. Cada proposta
+mostra status, evidência, destino e campos atuais/propostos editáveis. A seleção
+é acessível por entidade e campo; criações são privadas e o destino global tem
+aviso de alcance. Preço visível: 1 crédito por lote aplicado; BYOK sem créditos
+da plataforma. Veja [atualização do compêndio](lore-analysis.md).
+
+O contador de créditos fica sempre no header principal, inclusive no editor.
+Os modos **Edição** e **Preview** formam um controle dividido (split button),
+com a mesma altura, tipografia e superfície dos botões secundários vizinhos,
+extremidades arredondadas, divisória única e estado ativo acessível. A seta de
+voltar ao livro não possui borda. Não há divisória entre o header do capítulo e o editor.

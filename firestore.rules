@@ -167,6 +167,8 @@ service cloud.firestore {
       match /generationLimits/{limitId} {
         allow read, write: if false;
       }
+      match /loreAnalyses/{analysisId} { allow read, write: if false; }
+      match /loreAnalysisLimits/{limitId} { allow read, write: if false; }
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) && validNewUser(request.resource.data, userId);
       allow update: if isOwner(userId) && validUserUpdate(request.resource.data) && (

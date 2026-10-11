@@ -4,6 +4,7 @@ import { type BYOKConfig, usesOwnKey } from '../model/byokConfig';
 import { getBYOKConfig } from '../services/byokStorage';
 import { generateAIResponse } from '../services/aiClient';
 import { deductCredit } from '../services/creditsService';
+import { useAIConfig } from './useAIConfig';
 
 export interface UseAIAutocompleteOptions {
   content: string;
@@ -46,6 +47,7 @@ export function useAIAutocomplete({
   enabled = true,
   debounceMs = 600,
 }: UseAIAutocompleteOptions): UseAIAutocompleteResult {
+  const configVersion = JSON.stringify(useAIConfig());
   const [response, setResponse] = useState<Suggestion | null>(null);
   const [loadingContext, setLoadingContext] = useState<string | null>(null);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -57,7 +59,15 @@ export function useAIAutocomplete({
   const callbacksRef = useRef({ onCreditDeducted, onShowOutOfCredits });
   const textBeforeCursor = content.substring(0, cursorPosition);
   const { prompt, systemInstruction } = buildAutocompletePrompt({ textBeforeCursor, loreEntities });
-  const context = JSON.stringify([content, cursorPosition, prompt, userId, userCredits, enabled]);
+  const context = JSON.stringify([
+    content,
+    cursorPosition,
+    prompt,
+    userId,
+    userCredits,
+    enabled,
+    configVersion,
+  ]);
   const contextRef = useRef(context);
 
   useEffect(() => {
@@ -71,7 +81,7 @@ export function useAIAutocomplete({
     setResponse(null);
     setLoadingContext(null);
     setError(null);
-  }, []);
+  }, [setResponse, setLoadingContext, setError]);
 
   const fetchSuggestion = useCallback(async () => {
     if (!enabled || acceptingRef.current) return;
@@ -106,7 +116,18 @@ export function useAIAutocomplete({
     } finally {
       if (!controller.signal.aborted && contextRef.current === context) setLoadingContext(null);
     }
-  }, [textBeforeCursor, context, enabled, prompt, systemInstruction, userId, userCredits]);
+  }, [
+    textBeforeCursor,
+    context,
+    enabled,
+    prompt,
+    systemInstruction,
+    userId,
+    userCredits,
+    setResponse,
+    setLoadingContext,
+    setError,
+  ]);
 
   useEffect(() => {
     contextRef.current = context;
@@ -156,7 +177,7 @@ export function useAIAutocomplete({
         setIsAccepting(false);
       }
     },
-    [context, userId],
+    [context, userId, setResponse, setError, setIsAccepting],
   );
 
   const triggerManualAutocomplete = useCallback(async () => {

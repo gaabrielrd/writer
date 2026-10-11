@@ -49,6 +49,7 @@ describe('ChapterList', () => {
   });
 
   it('lista capitulos do livro com contagem de palavras e total', async () => {
+    const user = userEvent.setup();
     vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
 
     render(
@@ -61,6 +62,13 @@ describe('ChapterList', () => {
     expect(screen.getByText('Capítulo 2')).toBeInTheDocument();
     expect(screen.getByText(/1\.500/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Escrever Capítulo 1' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Renomear',
+      'Mover para cima',
+      'Mover para baixo',
+      'Excluir',
+    ]);
   });
 
   it('exibe alerta quando ocorre erro ao carregar', async () => {
@@ -124,14 +132,14 @@ describe('ChapterList', () => {
 
     // Cancelar com Escape
     await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Renomear Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Renomear' }));
     const input = screen.getByDisplayValue('Capítulo 1');
     await user.type(input, '{escape}');
     expect(screen.getByText('Capítulo 1')).toBeInTheDocument();
 
     // Cancelar com texto vazio
     await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Renomear Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Renomear' }));
     const inputEmpty = screen.getByDisplayValue('Capítulo 1');
     await user.clear(inputEmpty);
     await user.tab(); // trigger onBlur
@@ -139,7 +147,7 @@ describe('ChapterList', () => {
 
     // Renomear com sucesso
     await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Renomear Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Renomear' }));
     const inputSuccess = screen.getByDisplayValue('Capítulo 1');
     await user.clear(inputSuccess);
     await user.type(inputSuccess, 'Prólogo{enter}');
@@ -160,14 +168,14 @@ describe('ChapterList', () => {
 
     await screen.findByText('Capítulo 1');
 
-    // Mover Capítulo 2 para cima
+    // Mover para cima
     await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 2' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Mover Capítulo 2 para cima' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Mover para cima' }));
     expect(bookService.reorderChapters).toHaveBeenCalledWith('b-1', ['c-2', 'c-1']);
 
-    // Mover Capítulo 1 para baixo
+    // Mover para baixo
     await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Mover Capítulo 1 para baixo' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Mover para baixo' }));
     expect(bookService.reorderChapters).toHaveBeenCalledWith('b-1', ['c-2', 'c-1']);
   });
 
@@ -185,7 +193,7 @@ describe('ChapterList', () => {
     await screen.findByText('Capítulo 1');
 
     await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Excluir Capítulo 1' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Excluir' }));
     expect(screen.queryByText('Capítulo 1')).not.toBeInTheDocument();
   });
 

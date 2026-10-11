@@ -8,6 +8,8 @@ export interface GenerateAIOptions {
   systemInstruction?: string;
   byokConfig?: BYOKConfig;
   signal?: AbortSignal;
+  maxOutputTokens?: number;
+  json?: boolean;
 }
 
 export async function generateAIResponse({
@@ -15,6 +17,8 @@ export async function generateAIResponse({
   systemInstruction,
   byokConfig = getBYOKConfig(),
   signal,
+  maxOutputTokens,
+  json = false,
 }: GenerateAIOptions): Promise<string> {
   signal?.throwIfAborted();
   const validation = validateBYOKConfig(byokConfig);
@@ -37,7 +41,8 @@ export async function generateAIResponse({
         model: byokConfig.customModel || 'gpt-4o-mini',
         messages,
         temperature: 0.7,
-        max_tokens: 500,
+        max_tokens: maxOutputTokens ?? 500,
+        ...(json ? { response_format: { type: 'json_object' } } : {}),
       }),
       signal,
     });
@@ -49,7 +54,11 @@ export async function generateAIResponse({
     interface OpenAIChoice {
       message?: { content?: string };
     }
-    const data = (await response.json()) as { choices?: OpenAIChoice[] };
+    const data = (await response.json()) as {
+      choices?: (OpenAIChoice & { finish_reason?: string })[];
+    };
+    if (json && data.choices?.[0]?.finish_reason !== 'stop')
+      throw new Error('Análise interrompida pelo provedor. Nenhuma alteração foi aplicada.');
     const content = data.choices?.[0]?.message?.content?.trim() || '';
     return content;
   }
@@ -62,9 +71,15 @@ export async function generateAIResponse({
     const bodyPayload: {
       contents: Array<{ parts: Array<{ text: string }> }>;
       systemInstruction?: { parts: Array<{ text: string }> };
+      generationConfig?: { maxOutputTokens: number; responseMimeType: string };
     } = {
       contents: [{ parts: [{ text: prompt }] }],
     };
+    if (json)
+      bodyPayload.generationConfig = {
+        maxOutputTokens: maxOutputTokens ?? 12000,
+        responseMimeType: 'application/json',
+      };
 
     if (systemInstruction) {
       bodyPayload.systemInstruction = {
@@ -89,7 +104,11 @@ export async function generateAIResponse({
     interface GeminiCandidate {
       content?: { parts?: Array<{ text?: string }> };
     }
-    const data = (await response.json()) as { candidates?: GeminiCandidate[] };
+    const data = (await response.json()) as {
+      candidates?: (GeminiCandidate & { finishReason?: string })[];
+    };
+    if (json && data.candidates?.[0]?.finishReason !== 'STOP')
+      throw new Error('Análise interrompida pelo provedor. Nenhuma alteração foi aplicada.');
     const textPart = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
     return textPart;
   }
@@ -101,7 +120,7 @@ export async function generateAIResponse({
     systemInstruction,
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 600,
+      maxOutputTokens: maxOutputTokens ?? 600,
     },
   });
 

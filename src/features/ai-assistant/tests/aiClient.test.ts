@@ -20,6 +20,58 @@ vi.mock('@/shared/lib', async () => {
 });
 
 describe('aiClient service', () => {
+  it('requests structured BYOK JSON and rejects truncated output', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            choices: [{ finish_reason: 'stop', message: { content: '{"entities":[]}' } }],
+          }),
+      });
+      const options = {
+        prompt: 'texto',
+        json: true,
+        maxOutputTokens: 12000,
+        byokConfig: { provider: 'openai_byok' as const, openaiApiKey: 'test' },
+      };
+      expect(await generateAIResponse(options)).toBe('{"entities":[]}');
+      const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+      expect(JSON.parse(request.body as string)).toMatchObject({
+        max_tokens: 12000,
+        response_format: { type: 'json_object' },
+      });
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({ choices: [{ finish_reason: 'length', message: { content: '{}' } }] }),
+      });
+      await expect(generateAIResponse(options)).rejects.toThrow('interrompida');
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            candidates: [
+              { finishReason: 'STOP', content: { parts: [{ text: '{"entities":[]}' }] } },
+            ],
+          }),
+      });
+      const gemini = {
+        ...options,
+        byokConfig: { provider: 'gemini_byok' as const, geminiApiKey: 'test' },
+      };
+      expect(await generateAIResponse(gemini)).toBe('{"entities":[]}');
+      fetchMock.mockResolvedValue({
+        ok: true,
+        json: () => Promise.resolve({ candidates: [{ finishReason: 'MAX_TOKENS' }] }),
+      });
+      await expect(generateAIResponse(gemini)).rejects.toThrow('interrompida');
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });

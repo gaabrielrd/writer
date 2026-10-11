@@ -111,3 +111,9 @@ Esta implementação não executa deploy, migração nem republicação automát
 
 Veja [ADR 0018](decisions/0018-shared-universes-and-lore.md) e
 [segurança da publicação](publication-security.md).
+
+## Sugestões a partir do capítulo
+
+O editor permite [atualizar o compêndio com base no texto](lore-analysis.md),
+com revisão e escolha explícita do destino local/global. Novas fichas são
+privadas; visibilidade, relações e notas estruturadas não são alteradas pelo lote.

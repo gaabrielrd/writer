@@ -1,6 +1,24 @@
 import { validateBYOKConfig, type BYOKConfig } from '../model/byokConfig';
 
 const STORAGE_KEY = 'writer_byok_config';
+let revision = 0;
+const listeners = new Set<() => void>();
+const changed = () => {
+  revision++;
+  listeners.forEach((listener) => listener());
+};
+export const getBYOKRevision = () => revision;
+export function subscribeBYOKConfig(listener: () => void) {
+  listeners.add(listener);
+  const storageChanged = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEY || event.key === null) changed();
+  };
+  window.addEventListener('storage', storageChanged);
+  return () => {
+    listeners.delete(listener);
+    window.removeEventListener('storage', storageChanged);
+  };
+}
 
 export function getBYOKConfig(): BYOKConfig {
   if (typeof localStorage === 'undefined') {
@@ -36,6 +54,7 @@ export function saveBYOKConfig(config: BYOKConfig): void {
       'Não foi possível salvar a chave neste navegador. Verifique o armazenamento local.',
     );
   }
+  changed();
 }
 
 export function clearBYOKConfig(): void {
@@ -46,4 +65,5 @@ export function clearBYOKConfig(): void {
   } catch {
     throw new Error('Não foi possível remover a chave deste navegador.');
   }
+  changed();
 }

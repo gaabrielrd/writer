@@ -210,11 +210,11 @@ describe('RichEditor WYSIWYG', () => {
   it('mantém formatação e lore no modo leitura, sem regravar conteúdo', async () => {
     const user = userEvent.setup({ delay: null });
     const { editor, onChange } = setup({ content: '**Arthur** escreve.' });
-    await user.click(screen.getByRole('button', { name: /leitura com lore/i }));
+    await user.click(screen.getByRole('button', { name: 'Preview' }));
     expect(editor).toHaveAttribute('contenteditable', 'false');
     expect(editor.querySelector('strong')).toHaveTextContent('Arthur');
     expect(screen.getByRole('button', { name: 'Ver ficha de Rei Arthur' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Escrita' }));
+    await user.click(screen.getByRole('button', { name: 'Edição' }));
     expect(editor).toHaveAttribute('contenteditable', 'true');
     expect(onChange).not.toHaveBeenCalled();
   });
@@ -356,7 +356,7 @@ describe('RichEditor WYSIWYG', () => {
     expect(onChange).toHaveBeenLastCalledWith('<p>Era uma vez continuação segura</p>');
   });
 
-  it('abre assistência e configurações de IA e descarta respostas pendentes com Escape', async () => {
+  it('abre assistência, remove configurações da barra e descarta respostas com Escape', async () => {
     const user = userEvent.setup({ delay: null });
     const { editor } = setup();
     editor.focus();
@@ -365,7 +365,8 @@ describe('RichEditor WYSIWYG', () => {
     await user.click(screen.getByRole('button', { name: /Abrir Assistente Criativo de IA/i }));
     expect(screen.getByRole('heading', { name: 'Assistente Criativo de IA' })).toBeInTheDocument();
     await user.keyboard('{Escape}');
-    await user.click(screen.getByRole('button', { name: /configurações de ia e chaves de api/i }));
-    expect(screen.getByText('Configurações de Inteligência Artificial')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: /configurações de ia e chaves de api/i }),
+    ).not.toBeInTheDocument();
   });
 });
