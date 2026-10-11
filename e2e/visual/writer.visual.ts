@@ -143,7 +143,7 @@ test('obra, capítulos longos, compêndio e edição', async ({ page }, testInfo
   await chapterDialog.getByLabel('Título do capítulo').fill('Um novo começo');
   await chapterDialog.getByRole('button', { name: 'Criar capítulo' }).click();
   await expect(
-    page.getByRole('list', { name: 'Capítulos' }).getByText('Um novo começo'),
+    page.getByRole('table', { name: 'Capítulos' }).getByText('Um novo começo'),
   ).toBeVisible();
   await expect(chapterDialog).toHaveCount(0);
   await expect(newChapter).toBeFocused();
@@ -168,7 +168,10 @@ test('obra, capítulos longos, compêndio e edição', async ({ page }, testInfo
   await page.getByRole('tab', { name: 'Capítulos', exact: true }).click();
   await page.setViewportSize({ width: 320, height: 740 });
   await expectNoHorizontalOverflow(page, 'detalhes-do-livro-320px');
-  const chapterRows = page.getByRole('list', { name: 'Capítulos' }).getByRole('listitem');
+  const chapterRows = page
+    .getByRole('table', { name: 'Capítulos' })
+    .locator('tbody tr')
+    .filter({ has: page.getByRole('checkbox') });
   for (const row of await chapterRows.all()) {
     const centers = await row.evaluate((element) =>
       Array.from(element.children).map((child) => {

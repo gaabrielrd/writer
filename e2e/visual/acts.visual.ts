@@ -59,7 +59,7 @@ test('atos, busca, seleção e confirmação nos três temas', async ({ page }, 
   await page.getByRole('button', { name: 'Mover capítulos', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await filter.fill('');
-  const group = page.getByRole('region', { name: 'Ato I', exact: true });
+  const group = page.getByRole('rowgroup', { name: 'Ato I', exact: true });
   await expect(group.getByText(title, { exact: true })).toBeVisible();
   await capture(page, testInfo, 'atos-lista-agrupada');
   await page.getByRole('checkbox', { name: 'Selecionar ' + title, exact: true }).check();
@@ -75,7 +75,7 @@ test('atos, busca, seleção e confirmação nos três temas', async ({ page }, 
   await expect(
     page.getByRole('checkbox', { name: 'Selecionar ' + title, exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByRole('region', { name: 'Ato I', exact: true })).toContainText(
+  await expect(page.getByRole('rowgroup', { name: 'Ato I', exact: true })).toContainText(
     'Este ato ainda não tem capítulos',
   );
 });

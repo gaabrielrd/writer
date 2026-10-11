@@ -138,13 +138,18 @@ ao botão de opções.
 
 A barra de capítulos reúne quantidade, total de palavras e “Novo capítulo”.
 A criação acontece em um modal com título, Cancelar e Criar capítulo; falhas
-preservam o texto para uma nova tentativa. Cada capítulo ocupa uma linha com
-ordem, título, palavras, escrita e menu de renomear, mover e excluir.
+preservam o texto para uma nova tentativa. A listagem reutiliza a tabela do
+Compêndio: superfície contínua com borda arredondada, cabeçalho de colunas
+Capítulo, Palavras e Ações e divisórias entre linhas. O checkbox de selecionar
+todos os resultados exibidos fica no cabeçalho, com estado intermediário.
+Cada capítulo ocupa uma linha com ordem, título na cor primária que abre o editor,
+contagem alinhada e ações discretas por ícone. Atos formam grupos de linhas com
+cabeçalhos internos; atos vazios conservam sua mensagem. A seleção destaca a linha.
 As opções desse menu são “Renomear”, “Mover para cima”, “Mover para baixo” e
 “Excluir”, sem repetir o título do capítulo; o botão que abre o menu mantém
 o título no rótulo acessível para identificar a linha.
 Títulos longos usam reticências e mantêm o texto completo no atributo `title`. Em telas
-pequenas, as ações usam ícones com rótulos acessíveis e as contagens permanecem
+pequenas, títulos, contagens e ações permanecem na mesma linha e as contagens ficam
 visíveis, sem transbordamento horizontal.
 
 O Compêndio reúne “Lista / Grid” e “Nova Entidade” ao lado das abas do livro

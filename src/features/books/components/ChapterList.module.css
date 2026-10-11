@@ -32,29 +32,29 @@
   min-width: 0;
 }
 
-.chapterList {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.chapterTable {
+  table-layout: fixed;
 }
 
-.modalList {
-  max-height: none;
-  overflow-y: visible;
+.chapterTable th,
+.chapterTable td {
+  padding: var(--space-3);
+}
+
+.selectionCell {
+  width: 44px;
+}
+
+.wordsCell {
+  width: 112px;
+}
+
+.actionsCell {
+  width: 112px;
 }
 
 .chapterItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: var(--border-width) solid var(--line);
-  border-radius: var(--radius-md);
-  background-color: var(--surface);
+  height: 64px;
 }
 
 .chapterInfo {
@@ -74,8 +74,13 @@
 .chapterTitle {
   flex: 1;
   min-width: 0;
-  font-weight: 500;
-  color: var(--ink);
+  display: block;
+  max-width: 100%;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -83,15 +88,16 @@
 
 .chapterWords {
   flex-shrink: 0;
-  font-size: var(--text-xs);
-  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  color: hsl(var(--muted-foreground));
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .chapterActions {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
   flex-shrink: 0;
 }
 
@@ -117,8 +123,7 @@
 }
 
 @media (max-width: 600px) {
-  .actionLabel,
-  .wordsLabel {
+  .actionLabel {
     display: none;
   }
 
@@ -130,11 +135,6 @@
   }
 
   .counts {
-    gap: var(--space-2);
-  }
-
-  .chapterItem,
-  .chapterInfo {
     gap: var(--space-2);
   }
 
@@ -155,15 +155,13 @@
   border-radius: var(--radius-md);
 }
 
-.groups {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+.actRow {
+  background: hsl(var(--muted) / 0.5);
 }
 .actHeading {
   font-size: var(--text-base);
   font-weight: 600;
-  margin-bottom: var(--space-2);
+  margin: 0;
   overflow-wrap: anywhere;
 }
 .emptyAct {
@@ -183,34 +181,23 @@
 .filterInput:focus-visible {
   border-color: hsl(var(--border));
 }
-.chapterItem > div:has(> div > .checkbox) {
+.selectionCell > div {
   width: auto;
   flex-shrink: 0;
 }
 .checkbox {
-  width: var(--space-4);
-  height: var(--space-4);
+  width: 18px;
+  height: 18px;
   padding: 0;
+  cursor: pointer;
   accent-color: hsl(var(--primary));
   border-radius: var(--radius-sm);
 }
-.selectAll {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-sm);
-}
-.selectAll > div {
-  width: auto;
-}
-.selectionControls,
 .bulkToolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-}
-.bulkToolbar {
   padding: var(--space-2);
   border-radius: var(--radius-md);
   background: hsl(var(--secondary));
@@ -229,8 +216,23 @@
     width: auto;
     min-width: 8rem;
   }
-  .chapterItem {
+  .chapterTable th,
+  .chapterTable td {
     padding: var(--space-2);
+  }
+  .chapterTable .selectionCell {
+    width: 34px;
+  }
+  .chapterTable .wordsCell {
+    width: 70px;
+  }
+  .chapterTable .actionsCell {
+    width: 84px;
+  }
+  .chapterActions {
+    gap: var(--space-1);
+  }
+  .chapterInfo {
     gap: var(--space-1);
   }
 }

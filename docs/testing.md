@@ -255,6 +255,19 @@ e confirma traços de 1 px com contorno de 2 px sem escala do SVG e intervalo
 mínimo de 1 px entre marcas em capítulos densos. Capturas incluem a
 viewport de 320 px para revisar a faixa aderente sem reduzir o capítulo inteiro.
 
+## Listagem de capítulos
+
+`e2e/visual/chapters.visual.ts` compara a borda, raio, superfície do cabeçalho,
+divisórias, padding e tipografia da tabela de capítulos com a lista do compêndio
+no desktop. Nos três temas e em celular, cobre seleção por teclado, estado
+intermediário, destaque de linha e abertura do editor pelo título. Em 320 px,
+verifica títulos completos acessíveis, contagens, ações e ausência de rolagem
+horizontal na página e dentro da tabela.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/chapters.visual.ts
+```
+
 ## Personas de escrita
 
 Os testes de `ai-assistant` cobrem os seis padrões, atributos personalizados,

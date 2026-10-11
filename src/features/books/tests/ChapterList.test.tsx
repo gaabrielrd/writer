@@ -10,7 +10,7 @@ vi.mock('../services/chapterOrganizationService', () => ({
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { ChapterList } from '../components/ChapterList';
 import * as bookService from '../services/bookService';
 import type { Book } from '../model/book';
@@ -72,6 +72,13 @@ describe('ChapterList', () => {
     expect(screen.getByText('Capítulo 2')).toBeInTheDocument();
     expect(screen.getByText(/1\.500/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Escrever Capítulo 1' })).toBeInTheDocument();
+    const table = screen.getByRole('table', { name: 'Capítulos' });
+    expect(within(table).getByRole('columnheader', { name: 'Capítulo' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Palavras' })).toBeInTheDocument();
+    expect(within(table).getByRole('columnheader', { name: 'Ações' })).toBeInTheDocument();
+    expect(
+      within(table).getByRole('columnheader', { name: 'Selecionar todos os capítulos exibidos' }),
+    ).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Opções de Capítulo 1' }));
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
       'Renomear',
@@ -79,6 +86,29 @@ describe('ChapterList', () => {
       'Mover para baixo',
       'Excluir',
     ]);
+  });
+
+  it('abre o editor pelo título do capítulo e conserva o título completo', async () => {
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={<ChapterList book={mockBook} open onClose={vi.fn()} mode="inline" />}
+          />
+          <Route path="/books/b-1/editor/c-1" element={<h1>Editor do primeiro capítulo</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    const title = await screen.findByRole('button', { name: 'Abrir capítulo Capítulo 1' });
+    expect(title).toHaveAttribute('title', 'Capítulo 1');
+    title.focus();
+    await user.keyboard('{Enter}');
+    expect(
+      await screen.findByRole('heading', { name: 'Editor do primeiro capítulo' }),
+    ).toBeInTheDocument();
   });
 
   it('exibe alerta quando ocorre erro ao carregar', async () => {
