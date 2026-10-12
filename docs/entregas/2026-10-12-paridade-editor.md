@@ -263,3 +263,47 @@ Arquitetura, styleguide, contratos e testes foram realinhados.
 Este incremento entrega contrato e persistência. A ligação real dos parâmetros
 aos provedores, histórico e retries é a tarefa 10 e continua necessária antes de
 liberar o seletor. Restam as tarefas 10–12. Nenhum push ou deploy deste incremento.
+
+## Incremento de 2026-10-12 — tarefa 10
+
+Callable e BYOK recebem parâmetros reais de raciocínio por API. OpenAI usa
+reasoning_effort/max_completion_tokens nos modelos reconhecidos; Gemini usa
+thinkingConfig.thinkingLevel. Auto e modelos sem contrato conservam fallback
+seguro. Snapshots públicos normalizados são capturados antes da espera de envio,
+com origem/modelo/raciocínio; nenhuma chave entra em callable, mensagens ou
+recuperação. O servidor escolhe o modelo da plataforma e registra a configuração
+solicitada/efetiva, consultável em cada resposta. O timeout do provedor é 90 s;
+Máximo mantém teto de 4000 tokens e a cota existente. Conversa continua gratuita.
+
+Retry reutiliza a identidade, parâmetros efetivos e histórico capturado,
+conservando a cronologia original. Regenerar cria outro pedido com a escolha
+atual; respostas antigas mantêm seus metadados. Resultado BYOK salvo é recuperável
+sem a chave, e uma nova tentativa de geração exige a chave do provedor original.
+Pendências continuam recuperáveis após mudar preferências. Cancelamento libera
+o stream; HTTP/truncamento/falhas não produzem sugestão aplicável. Pensamentos
+internos são filtrados. Aceite, saldo zero, BYOK/reaplicação e histórico privado
+continuam passando nos testes.
+
+```text
+Test Files 114 passed (114)
+Tests 822 passed (822)
+All files: statements 92.75%, branches 86.16%, functions 91.11%, lines 94.86%
+scripts: pass 69; fail 0
+functions: pass 87; fail 0
+Smoke test do bundle OK.
+Testes dirigidos: 47 passed
+Backend dirigido: 24 passed
+Matriz de workspace/chat: 66 passed (3.9m)
+```
+
+Os testes inspecionam o corpo HTTP do transporte real, com respostas/streams
+fictícios e sem chamadas externas. A auditoria comprovou que retries incorporavam
+mensagens posteriores e mudavam timestamps; a correção congela histórico e ordem,
+com regressão de pedido antigo após novos turnos. Fingerprint e histórico internos
+são omitidos das mensagens públicas da callable. Uma nova regressão de recuperação
+segura foi incluída depois da rodada dirigida e passou no gate completo.
+Tipo/lint foram conferidos antes do gate. Captura de 320 px foi inspecionada e
+preservada; arquitetura, contrato, ADR, styleguide e testes foram atualizados.
+
+Restam a validação integrada/auditoria e a revisão/entrega final, tarefas 11–12.
+Nenhum push ou deploy deste incremento.

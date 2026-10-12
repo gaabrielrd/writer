@@ -125,3 +125,9 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
   de 60 cenários (3,6 min) passaram. `npm run validate` verde com 808 testes,
   69 de scripts, 78 de backend e build/smoke. A ligação dos parâmetros de geração
   pertence à tarefa 10.
+- Tarefa 10: parâmetros reais em callable/OpenAI/Gemini BYOK, snapshots sem
+  chaves e metadados solicitados/efetivos por resposta. Retry conserva modelo,
+  raciocínio, histórico e cronologia; regenerar usa nova escolha/identidade.
+  47 testes dirigidos, 24 de backend dirigidos e 66 cenários visuais (3,9 min)
+  passaram. `npm run validate` verde com 822 testes da aplicação, 69 de scripts,
+  87 de backend e build/smoke.

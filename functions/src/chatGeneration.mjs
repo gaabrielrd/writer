@@ -53,3 +53,61 @@ export function resolveChatReasoning(requested, capabilities) {
   const supported = capabilities.levels.includes(choice) ? choice : 'auto';
   return supported === 'auto' ? capabilities.defaultReasoning : supported;
 }
+
+export function normalizeChatGenerationRequest(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (
+    Object.keys(value).some((key) => !['version', 'provider', 'model', 'reasoning'].includes(key))
+  )
+    return null;
+  if (
+    value.version !== 1 ||
+    !['platform', 'gemini_byok', 'openai_byok'].includes(value.provider) ||
+    !isChatReasoning(value.reasoning)
+  )
+    return null;
+  const model = typeof value.model === 'string' ? value.model.trim() : null;
+  if (model !== null && !/^[a-zA-Z0-9._:-]{1,120}$/.test(model)) return null;
+  if (value.provider !== 'platform' && !model) return null;
+  if (value.model !== null && typeof value.model !== 'string') return null;
+  return { version: 1, provider: value.provider, model, reasoning: value.reasoning };
+}
+
+export function resolveChatGeneration(value, platformModel = 'gemini-3.7-flash') {
+  const requested = normalizeChatGenerationRequest(value);
+  if (!requested) throw new Error('Configuração de geração inválida.');
+  const provider = requested.provider === 'openai_byok' ? 'openai' : 'gemini';
+  const model = requested.provider === 'platform' ? platformModel : requested.model;
+  if (typeof model !== 'string' || !/^[a-zA-Z0-9._:-]{1,120}$/.test(model))
+    throw new Error('Modelo de geração inválido.');
+  const capabilities = getChatModelCapabilities(provider, model);
+  return {
+    version: 1,
+    requested,
+    effective: {
+      provider,
+      model: capabilities.model,
+      reasoning: resolveChatReasoning(requested.reasoning, capabilities),
+      api: capabilities.api,
+      ...CHAT_GENERATION_LIMITS,
+    },
+  };
+}
+
+export function chatProviderGenerationOptions(generation) {
+  const effective = generation.effective;
+  const reasoning = effective.reasoning === 'auto' ? null : effective.reasoning;
+  if (effective.provider === 'openai')
+    return effective.api === 'openai-chat'
+      ? {
+          max_completion_tokens: CHAT_GENERATION_LIMITS.maxOutputTokens,
+          ...(reasoning ? { reasoning_effort: reasoning } : {}),
+        }
+      : { max_tokens: CHAT_GENERATION_LIMITS.maxOutputTokens };
+  return {
+    maxOutputTokens: CHAT_GENERATION_LIMITS.maxOutputTokens,
+    ...(effective.api === 'gemini-content' && reasoning
+      ? { thinkingConfig: { thinkingLevel: reasoning, includeThoughts: false } }
+      : {}),
+  };
+}

@@ -248,7 +248,7 @@ export function ChapterChatPanel({
           variant="ghost"
           size="icon"
           aria-label="Nova conversa"
-          disabled={running || applying}
+          disabled={running || applying || chat.preferencesSaving}
           onClick={() => void chat.selectConversation()}
         >
           <Plus className="icon icon-sm" aria-hidden="true" />
@@ -277,7 +277,7 @@ export function ChapterChatPanel({
             label: conversation.title,
           }))}
           onValueChange={(id) => void chat.selectConversation(id)}
-          disabled={running || applying}
+          disabled={running || applying || chat.preferencesSaving}
         />
         <Dropdown
           mode="action"
@@ -338,6 +338,25 @@ export function ChapterChatPanel({
                 ),
               }}
             />
+            {message.role === 'assistant' && (
+              <details>
+                <summary>Modelo e raciocínio</summary>
+                {message.generation ? (
+                  <>
+                    <p>
+                      Solicitado: {message.generation.requested.model || 'Modelo da plataforma'} ·{' '}
+                      {CHAT_REASONING_LABELS[message.generation.requested.reasoning]}
+                    </p>
+                    <p>
+                      Usado: {message.generation.effective.model} ·{' '}
+                      {CHAT_REASONING_LABELS[message.generation.effective.reasoning]}
+                    </p>
+                  </>
+                ) : (
+                  <p>Conversa anterior: Auto; modelo não registrado.</p>
+                )}
+              </details>
+            )}
             {message.role === 'user' && (
               <details>
                 <summary>{CHAT_CONTEXT_LABELS[message.context.source]}</summary>
@@ -402,7 +421,7 @@ export function ChapterChatPanel({
                 <Button
                   variant="ghost"
                   size="sm"
-                  disabled={running || applying}
+                  disabled={running || applying || chat.preferencesSaving}
                   onClick={() => setConfirmation(message)}
                 >
                   Editar pedido
@@ -410,8 +429,9 @@ export function ChapterChatPanel({
                 <Button
                   variant="ghost"
                   size="sm"
-                  disabled={running || applying || Boolean(unavailable)}
+                  disabled={running || applying || chat.preferencesSaving || Boolean(unavailable)}
                   onClick={() => void chat.send(message.context, message.text)}
+                  title="Gerar uma nova resposta com o modelo e raciocínio selecionados"
                 >
                   Regenerar resposta
                 </Button>
@@ -449,14 +469,15 @@ export function ChapterChatPanel({
         </Button>
       )}
       <footer className={styles.composer}>
-        {chat.error && (
-          <Alert variant="danger">
-            {chat.error}
+        {(chat.error || (chat.request.current && !running)) && (
+          <Alert variant={chat.error ? 'danger' : 'warning'}>
+            {chat.error || 'Pedido pendente. Repetir conserva a configuração original.'}
             <div className={styles.actions}>
               {chat.request.current && !running && (
                 <Button
                   variant="secondary"
                   size="sm"
+                  disabled={chat.preferencesSaving || applying}
                   onClick={() => {
                     const pending = chat.request.current!;
                     void chat.send(pending.context, pending.text, true);
@@ -624,7 +645,7 @@ export function ChapterChatPanel({
             className={styles.modelControl}
             aria-label="Configurar modelo do assistente"
             title={modelLabel}
-            disabled={running || applying}
+            disabled={running || applying || chat.preferencesSaving}
             onClick={() => openAISettings('provider')}
           >
             <Cpu className="icon icon-sm" aria-hidden="true" />

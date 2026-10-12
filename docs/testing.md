@@ -270,6 +270,15 @@ local versionado em `chatReasoningStorage.test.ts`. A interface testa Auto
 legado, níveis desabilitados por modelo, falhas e ausência de geração/débito;
 o navegador testa retomada, alternância de conversas e padrão de novas conversas.
 
+A geração verifica o corpo HTTP real para todos os níveis OpenAI disponíveis
+e Auto/Baixo/Médio/Alto Gemini, modelo/provedor congelados, limites, ausência
+de credenciais em callable/recuperação e filtragem de pensamentos. Backend testa
+fingerprint, configuração efetiva do servidor e retry após mudança de modelo,
+histórico e cronologia. `functions/test/chapterChatProvider.test.mjs` cobre
+o transporte da plataforma, truncamento, HTTP indisponível e cancelamento da
+leitura pendente. O navegador retoma detalhes de modelo/raciocínio e regenera
+com outra escolha sem alterar os parâmetros das respostas anteriores.
+
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts
 ```

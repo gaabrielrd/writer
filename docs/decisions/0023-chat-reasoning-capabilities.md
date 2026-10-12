@@ -37,8 +37,19 @@ nem consomem cota de geração. Conversas antigas sem campo usam Auto.
 Novas conversas recebem o padrão versionado por usuário/navegador, através de
 adaptador local. Falha local não desfaz uma escolha salva no servidor; falha
 no servidor conserva a escolha anterior. Nenhuma chave entra nessa preferência.
-A integração dos parâmetros e a identidade imutável dos pedidos pertencem
-à tarefa 10 do plano aprovado.
+A configuração pública é congelada antes de qualquer espera de criação/envio.
+O servidor registra solicitada/efetiva e inclui a solicitação normalizada no
+fingerprint. Retry reutiliza a configuração efetiva e o histórico capturado,
+mesmo após mudar o modelo no servidor, conservando timestamps das mensagens.
+Pedidos antigos sem configuração conservam a forma anterior do fingerprint.
+Regenerar usa nova identidade com a escolha explícita atual.
+
+Snapshots/recuperação têm whitelist de campos e nunca incluem chaves. BYOK
+recupera resultados salvos antes de exigir a chave original para gerar de novo.
+O transporte Gemini da plataforma fica em `chapterChatProvider.mjs`, com teste
+do corpo HTTP e SSE; sua entrada recebe o segredo apenas no servidor. Histórico
+interno/fingerprint são omitidos das mensagens públicas da callable; BYOK
+recebe o histórico capturado na entrada necessária à geração local.
 
 ## Fontes e consequências
 
@@ -54,7 +65,7 @@ Gemini 3.7 é um alias que o provedor encaminha para 3.8; o identificador config
 no Writer permanece preservado. Identificador de requisição e versão física
 servida pelo provedor são conceitos distintos.
 
-O transporte futuro deve usar `thinkingConfig.thinkingLevel` em generateContent
+O transporte usa `thinkingConfig.thinkingLevel` em generateContent
 e `reasoning_effort` em Chat Completions, sem copiar nomes de parâmetros entre APIs.
 O controle é compatível com o histórico antigo e exige liberação coordenada de
 frontend/callable. Veja [plano](../tasks/paridade-editor-gerador-temas.md) e

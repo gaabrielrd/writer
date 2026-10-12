@@ -12,6 +12,12 @@ vi.mock('../services/chapterChatService', () => ({
   createChapterChat: vi.fn(),
   sendChapterChat: vi.fn(),
   chapterChatCall: vi.fn(),
+  captureChatGeneration: vi.fn(() => ({
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-3.7-flash',
+    reasoning: 'auto',
+  })),
 }));
 vi.mock('../hooks/useAIConfig', () => ({ useAIConfig: () => ({ provider: 'firebase_ai' }) }));
 const context: ChatContext = {
@@ -61,6 +67,12 @@ beforeEach(() => {
   );
   vi.mocked(service.createChapterChat).mockResolvedValue({ id: 'new-chat' });
   vi.mocked(service.chapterChatCall).mockResolvedValue({});
+  vi.mocked(service.captureChatGeneration).mockImplementation((reasoning = 'auto', model) => ({
+    version: 1,
+    provider: 'platform',
+    model: model ?? null,
+    reasoning,
+  }));
   vi.mocked(service.sendChapterChat).mockImplementation((_identity, request, chunk) => {
     chunk('Parcial');
     const message = { ...assistantMessage, id: request.requestId };
@@ -431,9 +443,19 @@ describe('chat do capítulo', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
     await screen.findByText('Falha de rede');
     const requestId = vi.mocked(service.sendChapterChat).mock.calls[0]![1].requestId;
+    const firstRequest = structuredClone(vi.mocked(service.sendChapterChat).mock.calls[0]![1]);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Raciocínio do assistente' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'Alto' }));
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Raciocínio do assistente' })).toHaveTextContent(
+        'Alto',
+      ),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
     await screen.findByText('Novo trecho.');
     expect(vi.mocked(service.sendChapterChat).mock.calls[1]![1].requestId).toBe(requestId);
+    expect(vi.mocked(service.sendChapterChat).mock.calls[1]![1]).toEqual(firstRequest);
+    expect(service.captureChatGeneration).toHaveBeenCalledTimes(1);
   });
   it('oferece novo destino com prévia e mantém falha de aplicação sem marcar como paga', async () => {
     page.messages = [authorMessage, assistantMessage];

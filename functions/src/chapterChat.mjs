@@ -1,6 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { GenerationError } from './generation.mjs';
-import { isChatReasoning } from './chatGeneration.mjs';
+import {
+  isChatReasoning,
+  normalizeChatGenerationRequest,
+  resolveChatGeneration,
+} from './chatGeneration.mjs';
 
 function validateId(value) {
   if (typeof value !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(value))
@@ -12,6 +16,13 @@ const fail = (code, message) => {
   throw new GenerationError(code, message);
 };
 const hash = (text) => createHash('sha256').update(text).digest('hex');
+const publicMessage = (message) => {
+  if (!message) return message;
+  const { fingerprint, history, ...visible } = message;
+  void fingerprint;
+  void history;
+  return visible;
+};
 function text(value, max, required = false) {
   if (typeof value !== 'string' || value.length > max || (required && !value.trim()))
     fail('invalid-argument', 'Texto vazio ou acima do limite.');
@@ -124,7 +135,7 @@ export function createChapterChatService({
     const page = await messages.limit(31).get();
     const result = page.docs
       .slice(0, 30)
-      .map((item) => ({ ...item.data(), id: item.id }))
+      .map((item) => publicMessage({ ...item.data(), id: item.id }))
       .reverse();
     return {
       conversations,
@@ -162,7 +173,23 @@ export function createChapterChatService({
     )
       fail('invalid-argument', 'Comando desconhecido.');
     const context = validateChatContext(data.context);
-    const fingerprint = hash(JSON.stringify({ prompt, context, mode: data.mode }));
+    if (data.mode !== undefined && !['platform', 'byok'].includes(data.mode))
+      fail('invalid-argument', 'Provedor inválido.');
+    const requested =
+      data.generation === undefined ? undefined : normalizeChatGenerationRequest(data.generation);
+    if (
+      requested === null ||
+      (requested && (data.mode === 'byok') === (requested.provider === 'platform'))
+    )
+      fail('invalid-argument', 'Configuração de geração inválida.');
+    const fingerprint = hash(
+      JSON.stringify({
+        prompt,
+        context,
+        mode: data.mode,
+        ...(requested ? { generation: requested } : {}),
+      }),
+    );
     const message = messageRef(ref, requestId);
     const quotaRef = db.doc(`users/${uid}/chapterChatLimits/current`);
     const claimed = await db.runTransaction(async (tx) => {
@@ -180,7 +207,20 @@ export function createChapterChatService({
         fail('aborted', 'Aguarde ou interrompa a resposta atual.');
       const count = quota.data()?.hour === Math.floor(now() / 3600000) ? quota.data().count : 0;
       if (count >= 60) fail('resource-exhausted', 'Limite de 60 pedidos por hora atingido.');
-      const createdAt = Math.max(now(), session.data().updatedAt + 1);
+      const createdAt = existing
+        ? existing.createdAt - 1
+        : Math.max(now(), session.data().updatedAt + 1);
+      let generation = existing?.generation;
+      if (!generation && (requested || data.mode !== 'byok')) {
+        try {
+          generation = resolveChatGeneration(
+            requested ?? { version: 1, provider: 'platform', model: null, reasoning: 'auto' },
+            platformModel,
+          );
+        } catch {
+          fail('invalid-argument', 'Configuração de geração inválida.');
+        }
+      }
       const assistant = {
         id: requestId,
         role: 'assistant',
@@ -190,6 +230,8 @@ export function createChapterChatService({
         context,
         provider: data.mode === 'byok' ? 'byok' : 'platform',
         fingerprint,
+        ...(generation ? { generation } : {}),
+        ...(existing?.history ? { history: existing.history } : {}),
       };
       tx.set(message, assistant);
       tx.set(messageRef(ref, `${requestId}-user`), {
@@ -199,45 +241,63 @@ export function createChapterChatService({
         context,
         state: 'done',
         createdAt,
+        ...(generation ? { generation } : {}),
       });
       tx.update(ref, {
         title:
           session.data().title === 'Nova conversa' ? prompt.slice(0, 120) : session.data().title,
         busy: requestId,
         until: now() + 120000,
-        updatedAt: createdAt + 1,
+        updatedAt: Math.max(now(), session.data().updatedAt + 1, createdAt + 1),
         draft: '',
       });
       tx.set(quotaRef, { hour: Math.floor(now() / 3600000), count: count + 1 });
       return { assistant };
     });
     if (claimed.existing) return claimed.existing;
-    const recent = await db
-      .collection(`${ref.path}/messages`)
-      .orderBy('createdAt', 'desc')
-      .limit(20)
-      .get();
-    let budget = 32000;
-    const records = recent.docs.map((item) => item.data());
-    const completedTurns = new Set(
-      records
-        .filter((item) => item.role === 'assistant' && item.state === 'done')
-        .map((item) => item.id),
-    );
-    const history = [];
-    for (const item of records) {
-      if (item.id === requestId || item.id === `${requestId}-user` || item.state !== 'done')
-        continue;
-      if (item.role === 'user' && !completedTurns.has(item.id.slice(0, -5))) continue;
-      const content = item.suggestion
-        ? `${item.text}\n[[SUGESTAO]]${item.suggestion}[[/SUGESTAO]]`
-        : item.text;
-      if (content.length > budget) break;
-      budget -= content.length;
-      history.unshift({ role: item.role, text: content });
+    let history = claimed.assistant.history;
+    if (!history) {
+      const recent = await db
+        .collection(`${ref.path}/messages`)
+        .orderBy('createdAt', 'desc')
+        .limit(20)
+        .get();
+      let budget = 32000;
+      const records = recent.docs.map((item) => item.data());
+      const completedTurns = new Set(
+        records
+          .filter((item) => item.role === 'assistant' && item.state === 'done')
+          .map((item) => item.id),
+      );
+      history = [];
+      for (const item of records) {
+        if (item.id === requestId || item.id === `${requestId}-user` || item.state !== 'done')
+          continue;
+        if (item.role === 'user' && !completedTurns.has(item.id.slice(0, -5))) continue;
+        const content = item.suggestion
+          ? `${item.text}\n[[SUGESTAO]]${item.suggestion}[[/SUGESTAO]]`
+          : item.text;
+        if (content.length > budget) break;
+        budget -= content.length;
+        history.unshift({ role: item.role, text: content });
+      }
+      while (history[0]?.role === 'assistant') history.shift();
+      const stopped = await db.runTransaction(async (tx) => {
+        const snapshot = await tx.get(message);
+        if (!snapshot.exists) fail('not-found', 'Conversa indisponível.');
+        if (snapshot.data().state !== 'running') return snapshot.data();
+        tx.update(message, { history });
+        return null;
+      });
+      if (stopped) return stopped;
     }
-    while (history[0]?.role === 'assistant') history.shift();
-    const input = { context, history, text: prompt, systemInstruction: chatInstruction };
+    const input = {
+      context,
+      history,
+      text: prompt,
+      systemInstruction: chatInstruction,
+      ...(claimed.assistant.generation ? { generation: claimed.assistant.generation } : {}),
+    };
     if (data.mode === 'byok') return { ...claimed.assistant, input };
     let partial = '';
     try {
@@ -370,7 +430,7 @@ export function createChapterChatService({
       if (data.action === 'apply') return apply(uid, data);
       const ref = conversationRef(uid, data);
       if (!(await ref.get()).exists) fail('not-found', 'Conversa indisponível.');
-      if (data.action === 'send') return send(uid, data, stream);
+      if (data.action === 'send') return publicMessage(await send(uid, data, stream));
       if (data.action === 'preferences') {
         const preference = reasoning(data.reasoning);
         await db.runTransaction(async (tx) => {
@@ -391,20 +451,26 @@ export function createChapterChatService({
         return {};
       }
       if (data.action === 'stop')
-        return finish(ref, data.requestId, { text: text(data.partial ?? '', 24000) }, 'stopped');
+        return publicMessage(
+          await finish(ref, data.requestId, { text: text(data.partial ?? '', 24000) }, 'stopped'),
+        );
       if (data.action === 'completeBYOK') {
         const previous = (await messageRef(ref, data.requestId).get()).data();
         if (previous?.provider !== 'byok') fail('permission-denied', 'Operação BYOK inválida.');
-        return finish(ref, data.requestId, splitChatAnswer(data.output), 'done');
+        return publicMessage(
+          await finish(ref, data.requestId, splitChatAnswer(data.output), 'done'),
+        );
       }
       if (data.action === 'failBYOK') {
         const previous = (await messageRef(ref, data.requestId).get()).data();
         if (previous?.provider !== 'byok') fail('permission-denied', 'Operação BYOK inválida.');
-        return finish(
-          ref,
-          data.requestId,
-          { error: 'O provedor BYOK não concluiu a resposta. Tente novamente.' },
-          'error',
+        return publicMessage(
+          await finish(
+            ref,
+            data.requestId,
+            { error: 'O provedor BYOK não concluiu a resposta. Tente novamente.' },
+            'error',
+          ),
         );
       }
       if (data.action === 'edit') {

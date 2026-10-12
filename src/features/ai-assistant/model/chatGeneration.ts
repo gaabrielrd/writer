@@ -6,6 +6,11 @@ export {
   isChatReasoning,
   normalizeChatReasoning,
   resolveChatReasoning,
+  normalizeChatGenerationRequest,
+  resolveChatGeneration,
+  chatProviderGenerationOptions,
+  type ChatGenerationRequest,
+  type ChatGeneration,
   type ChatReasoningLevel,
   type ChatModelCapabilities,
 } from '../../../../functions/src/chatGeneration.mjs';

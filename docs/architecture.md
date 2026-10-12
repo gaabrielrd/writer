@@ -299,3 +299,10 @@ evita diferenças entre o controle no navegador e a validação no servidor.
 A callable informa o modelo da plataforma e persiste preferências em conversas
 privadas; o padrão local versionado fica atrás de um serviço da feature.
 Veja [ADR 0023](decisions/0023-chat-reasoning-capabilities.md).
+
+A configuração pública é capturada no serviço antes da espera de criação/envio
+e acompanha o pedido recuperável. A callable normaliza a solicitação, controla
+o modelo da plataforma e registra a configuração efetiva; reutiliza snapshots
+de parâmetros/histórico em retries. `chapterChatProvider.mjs` contém o transporte
+Gemini do servidor, e `chapterChatService.ts` mantém BYOK no navegador. Credenciais
+entram somente nos headers do provedor, fora do histórico e da callable.

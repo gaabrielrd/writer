@@ -324,3 +324,9 @@ truncar com tooltip, conservando o ícone e o seletor. Raciocínio usa
 `Dropdown mode="select"`, com nome acessível, escolha retomada por conversa e
 opções incompatíveis desabilitadas pela matriz do modelo. Auto permanece
 disponível. Uma preferência incompatível conserva seu nome e informa o fallback.
+
+Respostas do assistente têm detalhes nativos de **Modelo e raciocínio**, com
+parâmetros solicitados/usados legíveis e quebra de linha. Conversas antigas
+identificam Auto e modelo não registrado. Não mostre chaves nem pensamentos
+internos. Retry conserva acesso após mudar preferências; regenerar indica
+que usa a configuração atual.

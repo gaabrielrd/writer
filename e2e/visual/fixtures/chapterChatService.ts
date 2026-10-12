@@ -8,7 +8,14 @@ import { chapterChatKey, type ChatIdentity } from './chapterChatStore';
 import { getChapter, updateChapter } from './bookService';
 import { deductCredit, getUserCredits } from './aiService';
 import { author } from './data';
-import type { ChatReasoningLevel } from '../../../src/features/ai-assistant/model/chatGeneration';
+import {
+  DEFAULT_BYOK_CHAT_MODELS,
+  normalizeChatGenerationRequest,
+  resolveChatGeneration,
+  type ChatGenerationRequest,
+  type ChatReasoningLevel,
+} from '../../../src/features/ai-assistant/model/chatGeneration';
+import { getBYOKConfig } from '../../../src/features/ai-assistant/services/byokStorage';
 export interface Store {
   conversations: ChatConversation[];
   messages: Record<string, ChatMessage[]>;
@@ -20,6 +27,21 @@ const read = (identity: ChatIdentity): Store =>
 const write = (identity: ChatIdentity, store: Store) =>
   localStorage.setItem(chapterChatKey(identity), JSON.stringify(store));
 export type { ChatIdentity } from './chapterChatStore';
+export function captureChatGeneration(
+  reasoning: ChatReasoningLevel = 'auto',
+  platformModel?: string,
+): ChatGenerationRequest {
+  const config = getBYOKConfig();
+  return normalizeChatGenerationRequest({
+    version: 1,
+    provider: config.provider === 'firebase_ai' ? 'platform' : config.provider,
+    model:
+      config.provider === 'firebase_ai'
+        ? (platformModel ?? null)
+        : config.customModel || DEFAULT_BYOK_CHAT_MODELS[config.provider],
+    reasoning,
+  })!;
+}
 export class ChapterChatError extends Error {
   readonly uncertain = false;
 }
@@ -103,7 +125,10 @@ export async function chapterChatCall<T>(
   }
   if (data.action === 'apply') {
     const message = store.messages[id].find((item) => item.id === data.messageId)!;
-    const credits = message.paid ? await getUserCredits() : await deductCredit(author.uid);
+    const credits =
+      message.paid || message.provider === 'byok'
+        ? await getUserCredits()
+        : await deductCredit(author.uid);
     message.paid = true;
     await updateChapter(identity.bookId, identity.chapterId, { content: data.after! });
     write(identity, store);
@@ -115,13 +140,19 @@ export async function chapterChatCall<T>(
 }
 export async function sendChapterChat(
   identity: ChatIdentity,
-  request: { requestId: string; text: string; context: ChatContext },
+  request: {
+    requestId: string;
+    text: string;
+    context: ChatContext;
+    generation?: ChatGenerationRequest;
+  },
   onChunk: (text: string) => void,
   signal: AbortSignal,
 ): Promise<ChatMessage> {
   let store = read(identity);
   const id = identity.conversationId!;
   const createdAt = Date.now();
+  const generation = resolveChatGeneration(request.generation ?? captureChatGeneration());
   store.messages[id] ??= [];
   store.messages[id] = store.messages[id].filter(
     (item) => item.id !== request.requestId && item.id !== `${request.requestId}-user`,
@@ -133,6 +164,7 @@ export async function sendChapterChat(
     context: request.context,
     state: 'done',
     createdAt,
+    generation,
   });
   const message: ChatMessage = {
     id: request.requestId,
@@ -141,7 +173,8 @@ export async function sendChapterChat(
     context: request.context,
     state: 'running',
     createdAt: createdAt + 1,
-    provider: 'platform',
+    provider: generation.requested.provider === 'platform' ? 'platform' : 'byok',
+    generation,
   };
   store.messages[id].push(message);
   store.conversations.find((item) => item.id === id)!.draft = '';
@@ -149,6 +182,7 @@ export async function sendChapterChat(
   sessionStorage.setItem('writer_fixture_ai_system', request.context.persona.instruction);
   sessionStorage.setItem('writer_fixture_ai_action_prompt', request.context.text);
   sessionStorage.setItem('writer_fixture_chat_context', JSON.stringify(request.context));
+  sessionStorage.setItem('writer_fixture_chat_generation', JSON.stringify(generation));
   sessionStorage.setItem(
     'writer_fixture_ai_action_calls',
     String(Number(sessionStorage.getItem('writer_fixture_ai_action_calls') ?? 0) + 1),

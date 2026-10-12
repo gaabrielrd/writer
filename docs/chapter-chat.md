@@ -102,9 +102,27 @@ Falha de sincronização conserva a escolha anterior; falha ao salvar o padrão
 local não desfaz a escolha da conversa. Preferências não debitam nem geram texto.
 
 A matriz e os limites são descritos na
-[ADR 0023](decisions/0023-chat-reasoning-capabilities.md). O contrato/persistência
-pertence à tarefa 9; a ligação efetiva aos provedores e ao histórico de pedidos
-é a tarefa 10 da fase, necessária antes de liberar este controle.
+[ADR 0023](decisions/0023-chat-reasoning-capabilities.md). Gemini recebe
+`thinkingConfig.thinkingLevel`; modelos OpenAI de raciocínio recebem
+`reasoning_effort` e `max_completion_tokens`. Modelos desconhecidos usam
+Auto sem parâmetros de raciocínio inferidos. O teto é 4000 tokens de
+saída/completion e 90 segundos no provedor; tokens internos podem consumir
+o limite. Máximo conserva esses tetos e a cota de 60 pedidos/hora.
+
+Cada pedido guarda configuração solicitada e efetiva, contexto e histórico
+utilizado. O modelo da plataforma é escolhido pelo servidor. Retry conserva
+identidade, cronologia, histórico e parâmetros originais mesmo após mudanças
+de preferência/modelo; regenerar cria outro pedido com a escolha atual. Detalhes
+`Modelo e raciocínio` permitem consultar os parâmetros de cada resposta.
+Conversas anteriores sem metadados indicam Auto e modelo não registrado.
+
+As configurações do pedido/recuperação contêm somente versão, origem, modelo
+e nível público. BYOK escolhe a chave local do provedor original somente quando
+precisa gerar; recuperar um resultado já salvo não exige a chave. Nenhuma chave
+vai para a callable, rascunho de recuperação ou mensagens. Pensamentos internos
+do provedor são filtrados. Falhas, timeouts e cancelamento não tornam saída
+parcial aplicável. Um pedido pendente conserva a opção de retry após mudar
+preferências. Frontend/callable devem ser liberados juntos.
 
 `functions/src/chapterChat.mjs` controla autoria, estados, origem do provedor,
 limites, persistência e aceite. A callable `chapterChat` usa Auth/App Check,

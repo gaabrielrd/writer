@@ -1,6 +1,58 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
+test('geração registra parâmetros solicitados e usados e regeneração usa a nova escolha', async ({
+  page,
+}, testInfo) => {
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  await expect(page.getByLabel('Área de escrita do capítulo')).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  const chat = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });
+  const reasoning = chat.getByRole('combobox', { name: 'Raciocínio do assistente' });
+  await reasoning.click();
+  await page.getByRole('option', { name: 'Alto', exact: true }).click();
+  await expect(reasoning).toHaveText('Alto');
+  const composer = chat.getByLabel('Mensagem para o Assistente IA');
+  await composer.fill('Analise a passagem com cuidado');
+  await composer.press('Enter');
+  const replies = chat.getByRole('article', { name: 'Resposta do assistente', exact: true });
+  await expect(replies).toHaveCount(1);
+  await expect(
+    replies.first().getByText('Analisei a passagem atual.', { exact: true }),
+  ).toBeVisible();
+  await replies.first().getByText('Modelo e raciocínio', { exact: true }).click();
+  await expect(replies.first()).toContainText('Solicitado: gemini-3.7-flash · Alto');
+  await expect(replies.first()).toContainText('Usado: gemini-3.7-flash · Alto');
+  const original = await page.evaluate(
+    () =>
+      JSON.parse(sessionStorage.getItem('writer_fixture_chat_generation')!) as {
+        requested: { reasoning: string };
+        effective: { reasoning: string };
+      },
+  );
+  expect(original.requested.reasoning).toBe('high');
+  expect(original.effective.reasoning).toBe('high');
+  await reasoning.click();
+  await page.getByRole('option', { name: 'Baixo', exact: true }).click();
+  await expect(reasoning).toHaveText('Baixo');
+  await chat.getByRole('button', { name: 'Regenerar resposta', exact: true }).click();
+  await expect(replies).toHaveCount(2);
+  await expect(
+    replies.last().getByText('Analisei a passagem atual.', { exact: true }),
+  ).toBeVisible();
+  await replies.last().getByText('Modelo e raciocínio', { exact: true }).click();
+  await expect(replies.last()).toContainText('Usado: gemini-3.7-flash · Baixo');
+  await expect(replies.first()).toContainText('Usado: gemini-3.7-flash · Alto');
+  await page.reload();
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  await expect(reasoning).toHaveText('Baixo');
+  await replies.first().getByText('Modelo e raciocínio', { exact: true }).click();
+  await expect(replies.first()).toContainText('Usado: gemini-3.7-flash · Alto');
+  await page.setViewportSize({ width: 320, height: 480 });
+  await expectNoHorizontalOverflow(page, 'metadados da geração em 320px');
+  await capture(page, testInfo, 'geracao-raciocinio-320');
+});
+
 test('raciocínio privado retoma por conversa e fornece o padrão das novas', async ({
   page,
 }, testInfo) => {

@@ -28,3 +28,29 @@ export function resolveChatReasoning(
   requested: unknown,
   capabilities: ChatModelCapabilities,
 ): ChatReasoningLevel;
+
+export interface ChatGenerationRequest {
+  version: 1;
+  provider: 'platform' | 'gemini_byok' | 'openai_byok';
+  model: string | null;
+  reasoning: ChatReasoningLevel;
+}
+export interface ChatGeneration {
+  version: 1;
+  requested: ChatGenerationRequest;
+  effective: Omit<ChatModelCapabilities, 'version' | 'levels' | 'defaultReasoning'> & {
+    reasoning: ChatReasoningLevel;
+  };
+}
+export function normalizeChatGenerationRequest(value: unknown): ChatGenerationRequest | null;
+export function resolveChatGeneration(
+  value: ChatGenerationRequest,
+  platformModel?: string,
+): ChatGeneration;
+export function chatProviderGenerationOptions(generation: ChatGeneration): {
+  max_tokens?: number;
+  max_completion_tokens?: number;
+  reasoning_effort?: ChatReasoningLevel;
+  maxOutputTokens?: number;
+  thinkingConfig?: { thinkingLevel: ChatReasoningLevel; includeThoughts: false };
+};

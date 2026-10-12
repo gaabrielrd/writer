@@ -12,7 +12,8 @@ import { createUniverseService } from './universes.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
-import { createChapterChatService, chatInstruction } from './chapterChat.mjs';
+import { createChapterChatService } from './chapterChat.mjs';
+import { generatePlatformChat } from './chapterChatProvider.mjs';
 import { createGenerationService, generationPrompt, GenerationError } from './generation.mjs';
 
 initializeApp();
@@ -24,64 +25,7 @@ const coverCost = defineInt('BOOK_COVER_CREDITS', { default: 5 });
 const assistedCost = defineInt('BOOK_ASSISTED_CREDITS', { default: 2 });
 const db = getFirestore();
 async function chapterChatGenerator(input, onChunk, signal) {
-  const model = textModel.value();
-  if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Modelo inválido.');
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
-    {
-      method: 'POST',
-      signal: AbortSignal.any([AbortSignal.timeout(90000), ...(signal ? [signal] : [])]),
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key.value() },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{ text: `${chatInstruction}\n${input.context.persona.instruction}` }],
-        },
-        contents: [
-          ...input.history.map((message) => ({
-            role: message.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: message.text }],
-          })),
-          {
-            role: 'user',
-            parts: [{ text: JSON.stringify({ context: input.context, request: input.text }) }],
-          },
-        ],
-        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 },
-      }),
-    },
-  );
-  if (!response.ok || !response.body) throw new Error('Provedor indisponível.');
-  let buffer = '',
-    output = '',
-    finish = '';
-  const decoder = new TextDecoder();
-  const consume = async (line) => {
-    if (!line.startsWith('data:')) return;
-    const result = JSON.parse(line.slice(5).trim());
-    const candidate = result.candidates?.[0];
-    if (candidate?.finishReason) finish = candidate.finishReason;
-    const chunk = (candidate?.content?.parts ?? [])
-      .filter((part) => !part.thought)
-      .map((part) => part.text ?? '')
-      .join('');
-    if (chunk) {
-      output += chunk;
-      await onChunk(chunk);
-    }
-  };
-  for await (const bytes of response.body) {
-    buffer += decoder.decode(bytes, { stream: true });
-    let end;
-    while ((end = buffer.indexOf('\n')) >= 0) {
-      const line = buffer.slice(0, end).trimEnd();
-      buffer = buffer.slice(end + 1);
-      await consume(line);
-    }
-  }
-  buffer += decoder.decode();
-  if (buffer.trim()) await consume(buffer.trim());
-  if (finish !== 'STOP') throw new Error('Resposta incompleta.');
-  return output;
+  return generatePlatformChat(input, onChunk, { apiKey: key.value(), signal });
 }
 export const chapterChat = onCall(
   {

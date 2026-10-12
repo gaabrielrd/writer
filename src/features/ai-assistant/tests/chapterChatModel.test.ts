@@ -5,6 +5,7 @@ import {
   chatDocumentHash,
   parseChatCommand,
   relevantChatLore,
+  type ChatContext,
 } from '../model/chapterChat';
 import {
   readChatRecovery,
@@ -17,6 +18,48 @@ afterEach(() => {
   localStorage.clear();
 });
 describe('contexto e comandos do chat', () => {
+  it('conserva snapshot público e legado na recuperação, sem gravar credenciais acidentais', () => {
+    const context: ChatContext = {
+      source: 'cursor',
+      text: '',
+      surrounding: '',
+      title: '',
+      bookTitle: '',
+      target: null,
+      truncated: false,
+      persona: { instruction: '', version: '' },
+      lore: [],
+    };
+    const generation = {
+      version: 1,
+      provider: 'openai_byok',
+      model: 'gpt-6-luna',
+      reasoning: 'max',
+    } as const;
+    const request = { requestId: 'pending', text: 'Pedido', context, generation };
+    const extended = { ...request, apiKey: 'fake-private-key' };
+    writeChatRecovery('author', 'book', 'chapter', 'conversation', {
+      draft: 'Rascunho',
+      request: extended,
+    });
+    const storageKey = 'writer:chapter-chat:author:book:chapter:conversation';
+    expect(localStorage.getItem(storageKey)).not.toContain('fake-private-key');
+    expect(readChatRecovery('author', 'book', 'chapter', 'conversation')?.request).toEqual(request);
+    const invalid = { ...request, generation: { ...generation, apiKey: 'fake-key' } };
+    expect(() =>
+      writeChatRecovery('author', 'book', 'chapter', 'conversation', {
+        draft: '',
+        request: invalid,
+      }),
+    ).toThrow('recuperação inválida');
+    localStorage.setItem(storageKey, JSON.stringify({ draft: 'Conservar', request: invalid }));
+    expect(readChatRecovery('author', 'book', 'chapter', 'conversation')).toEqual({
+      draft: 'Conservar',
+    });
+    const legacy = { requestId: 'old', text: 'Pedido antigo', context };
+    writeChatRecovery('author', 'book', 'chapter', 'conversation', { draft: '', request: legacy });
+    expect(readChatRecovery('author', 'book', 'chapter', 'conversation')?.request).toEqual(legacy);
+  });
   it('resolve todos os comandos e preserva pedidos livres e parâmetros', () => {
     for (const command of CHAT_COMMANDS)
       expect(parseChatCommand(`/${command.name} minhas orientações`)).toEqual({

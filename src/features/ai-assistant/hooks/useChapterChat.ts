@@ -4,6 +4,7 @@ import {
   createChapterChat,
   loadChapterChat,
   sendChapterChat,
+  captureChatGeneration,
   type ChatIdentity,
 } from '../services/chapterChatService';
 import {
@@ -200,12 +201,22 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
     setPartial('');
     partialRef.current = '';
     try {
-      const identity = await ensureConversation(value);
-      if (abort.signal.aborted || !mounted.current) return;
       const pending =
         retry && request.current
           ? request.current
-          : { requestId: crypto.randomUUID(), text: value.trim(), context };
+          : {
+              requestId: crypto.randomUUID(),
+              text: value.trim(),
+              context,
+              generation: captureChatGeneration(
+                page.conversation
+                  ? normalizeChatReasoning(page.conversation.reasoning)
+                  : readChatReasoningDefault(uid),
+                page.platformModel,
+              ),
+            };
+      const identity = await ensureConversation(value);
+      if (abort.signal.aborted || !mounted.current) return;
       request.current = pending;
       writeChatRecovery(uid, bookId, chapterId, identity.conversationId!, {
         draft: '',
