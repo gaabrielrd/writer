@@ -47,6 +47,7 @@ import { useChatEditorBridge } from '../hooks/useChatEditorBridge';
 import styles from './RichEditor.module.css';
 
 export interface RichEditorProps {
+  workspaceExpanded?: boolean;
   chatOpen?: boolean;
   onOpenChat?: (action?: AIActionType) => void;
   onChatBridge?: (bridge: ChatEditorBridge | null) => void;
@@ -88,6 +89,7 @@ interface SelectionTarget {
 }
 
 export function RichEditor({
+  workspaceExpanded = false,
   chatOpen = false,
   onOpenChat,
   onChatBridge,
@@ -127,6 +129,7 @@ export function RichEditor({
   const typedInput = useRef(false);
   const [typingRevision, setTypingRevision] = useState(0);
   const keyHandler = useRef<(event: KeyboardEvent) => boolean>(() => false);
+  const expandedRef = useRef(workspaceExpanded);
   const discardRef = useRef<() => void>(() => undefined);
   const acceptingRef = useRef(false);
   const aiTarget = useRef<SelectionTarget | null>(null);
@@ -182,6 +185,13 @@ export function RichEditor({
           return false;
         },
         handleDOMEvents: {
+          keydown: (_view, event) => {
+            if (!expandedRef.current || event.key !== 'Escape' || event.isComposing) return false;
+            // ProseMirror captures idle Escape itself. Handle the DOM event so an
+            // idle key can reach the workspace; active editor overlays still consume it.
+            if (keyHandler.current(event)) event.preventDefault();
+            return true;
+          },
           beforeinput: (_view, event) => {
             typedInput.current =
               /^(insertText|insertCompositionText|insertParagraph|insertLineBreak|deleteContentBackward|deleteContentForward)$/.test(
@@ -353,6 +363,7 @@ export function RichEditor({
   };
 
   useEffect(() => {
+    expandedRef.current = workspaceExpanded;
     keyHandler.current = (event) => {
       if (event.isComposing || editor?.view.composing) return false;
       if (acceptingRef.current) return true;
@@ -385,7 +396,7 @@ export function RichEditor({
       if (event.key === 'Escape') {
         discardSuggestion();
         setHover(null);
-        return true;
+        return Boolean(suggestion || hover);
       }
       return false; // StarterKit owns formatting, history and platform keyboard conventions.
     };
@@ -465,7 +476,7 @@ export function RichEditor({
   }, [editor, mention, menuId, optionCount, activeIndex]);
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-workspace-expanded={workspaceExpanded}>
       <div className={styles.toolbar} role="toolbar" aria-label="Ferramentas de escrita">
         <div className={styles.toolGroup}>
           <button

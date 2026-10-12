@@ -1,6 +1,110 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
+test('tela cheia usa toda a largura sem remontar texto, seleção, undo ou chat', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 2160, height: 900 });
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  const editor = page.getByLabel('Área de escrita do capítulo');
+  await editor.fill('Lia observa o porto.');
+  await editor.press('End');
+  await editor.press('Space');
+  await editor.press('X');
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  const draft = page.getByLabel('Mensagem para o Assistente IA');
+  await draft.fill('Rascunho antes de expandir');
+  await editor.press('Control+A');
+  const selected = await page.evaluate(() => window.getSelection()!.toString());
+  const normalWidth = (await page.locator('#main-content').boundingBox())!.width;
+  expect(normalWidth).toBeLessThanOrEqual(1440);
+  await editor.evaluate((element) => {
+    element.setAttribute('data-original-editor', 'true');
+  });
+  await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
+  await expect(page.getByRole('button', { name: 'Sair da tela cheia' })).toBeVisible();
+  expect((await page.locator('#main-content').boundingBox())!.width).toBeGreaterThan(2100);
+  await expect(editor).toHaveAttribute('data-original-editor', 'true');
+  expect(await page.evaluate(() => window.getSelection()!.toString())).toBe(selected);
+  await expect(draft).toHaveValue('Rascunho antes de expandir');
+  const area = page.locator('[data-editor-scroll-area]');
+  expect(await area.evaluate((element) => getComputedStyle(element).maxWidth)).toBe('none');
+  expect((await area.boundingBox())!.width).toBeGreaterThan(860);
+  await expect(page.getByRole('button', { name: 'Persona', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Persona', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Sair da tela cheia' })).toBeVisible();
+  await editor.press('Control+z');
+  await expect(editor).not.toHaveText(/X$/);
+  await editor.press('ArrowRight');
+  await page.mouse.move(4, 4);
+  await expect(page.locator('[data-editor-selection-actions]')).toHaveCount(0);
+  await capture(page, testInfo, 'editor-tela-cheia');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Entrar em tela cheia' })).toBeVisible();
+  await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
+  await page.setViewportSize({ width: 320, height: 480 });
+  await expectNoHorizontalOverflow(page, 'tela cheia em 320px e altura baixa');
+  await expect(page.getByRole('separator', { name: 'Largura do painel lateral' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Sair da tela cheia' }).scrollIntoViewIfNeeded();
+  await page.getByRole('button', { name: 'Sair da tela cheia' }).click();
+  await expect(draft).toHaveValue('Rascunho antes de expandir');
+});
+
+test('tela cheia conserva o trecho visível e restaura o shell ao sair da edição', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1700, height: 750 });
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  const editor = page.getByLabel('Área de escrita do capítulo');
+  await editor.fill('');
+  for (let index = 0; index < 20; index += 1) {
+    await page.keyboard.insertText(
+      `Passagem ${index + 1}. ${'Lia caminha pelo porto e observa as marés. '.repeat(12)}`,
+    );
+    await page.keyboard.press('Enter');
+  }
+  const area = page.locator('[data-editor-scroll-area]');
+  const passage = await area.evaluate((element) => {
+    element.scrollTop = element.scrollHeight / 2;
+    const top = element.getBoundingClientRect().top;
+    const blocks = Array.from(element.querySelectorAll('[contenteditable] > p'));
+    const block = blocks.find((candidate) => candidate.getBoundingClientRect().bottom > top)!;
+    return {
+      index: blocks.indexOf(block),
+      text: block.textContent,
+      offset: block.getBoundingClientRect().top - top,
+    };
+  });
+  await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
+  await expect
+    .poll(async () =>
+      area.evaluate((element, index) => {
+        const block = element.querySelectorAll('[contenteditable] > p')[index];
+        return block.getBoundingClientRect().top - element.getBoundingClientRect().top;
+      }, passage.index),
+    )
+    .toBeCloseTo(passage.offset, 0);
+  await expect(editor.locator(':scope > p').nth(passage.index)).toHaveText(passage.text);
+  await expect(page.getByRole('navigation', { name: 'Minimapa do capítulo' })).toBeVisible();
+  await page.getByRole('button', { name: 'Próximo capítulo' }).click();
+  await expect(page.getByRole('button', { name: 'Sair da tela cheia' })).toBeVisible();
+  await editor.press('Control+A');
+  await expect(page.locator('[data-editor-selection-actions]')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('[data-editor-selection-actions]')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Sair da tela cheia' })).toBeVisible();
+  await page.getByRole('link', { name: 'Voltar para o livro' }).click();
+  await expect(page.locator('#main-content')).not.toHaveAttribute(
+    'data-workspace-expanded',
+    'true',
+  );
+  expect((await page.locator('#main-content').boundingBox())!.width).toBeLessThanOrEqual(1440);
+  await capture(page, testInfo, 'shell-restaurado');
+});
+
 test('divisor do styleguide responde a drag, teclado e restauração', async ({ page }, testInfo) => {
   await page.goto('/styleguide');
   const handle = page.getByRole('separator', { name: 'Largura do painel de demonstração' });

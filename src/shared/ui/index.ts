@@ -41,3 +41,5 @@ export {
 export { Tooltip } from './Tooltip';
 export { FormSection, type FormSectionProps } from './FormSection';
 export { ResizeHandle, type ResizeHandleProps } from './ResizeHandle';
+export { WorkspaceLayoutProvider } from './WorkspaceLayoutProvider';
+export { useWorkspaceLayout } from '../hooks/useWorkspaceLayout';

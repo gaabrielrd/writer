@@ -94,3 +94,38 @@ Os mesmos cenários de navegador passaram na worktree, sem mudança nos testes d
 Após estabilizar a correção do limite, o gate completo foi repetido e passou.
 
 Neste ponto restam as tarefas 5–12. Nenhum push ou deploy deste incremento.
+
+## Incremento de 2026-10-12 — tarefa 5
+
+Tela cheia agora ocupa o viewport do aplicativo e remove os limites de 1440 px
+do shell e 860 px do manuscrito. Mantém créditos, tema, conta, status, ferramentas,
+minimapa e painéis. A instância de edição permanece estável; a alternância conserva
+seleção, undo, rascunho do chat e o trecho visível. O modo acompanha a navegação
+entre capítulos e é encerrado ao sair da rota de edição.
+
+Escape fecha primeiro menus/diálogos/barra de seleção/sugestões e, depois, o modo.
+O handler DOM permite que Escape ocioso atravesse a captura interna do ProseMirror;
+o estado atual chega por referência para conservar a instância do editor.
+O minimapa permanente não é tratado como lista sobreposta. O Escape da barra de
+seleção registra que foi consumido mesmo quando a barra é removida durante o evento.
+
+```text
+Test Files 110 passed (110)
+Tests 784 passed (784)
+All files: statements 92.67%, branches 86.07%, functions 91.12%, lines 94.76%
+scripts: pass 69; fail 0
+functions: pass 73; fail 0
+Smoke test do bundle OK.
+Testes dirigidos: 26 passed
+Navegador: 12 passed (52.1s)
+```
+
+O navegador comprovou largura superior a 2100 px em monitor de 2160 px, ausência
+do limite do texto, seleção/undo/rascunho preservados, trecho visível na mesma
+posição, Escape em diálogo e barra de seleção, 320 px/altura de 480 px e restauração
+da rota. Captura de tela cheia foi inspecionada e preservada nos artefatos desta
+conversa. O teste de trecho visível mede elementos existentes sem alterar seus
+atributos: mutar o DOM controlado pelo ProseMirror causava normalização do parágrafo.
+As duas asserções de tipo redundantes apontadas pelo lint foram removidas.
+
+Neste ponto restam as tarefas 6–12. Nenhum push ou deploy deste incremento.

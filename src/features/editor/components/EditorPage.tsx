@@ -8,8 +8,10 @@ import {
   Cloud,
   CloudOff,
   Loader2,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
-import { Alert, Button, Dialog, ErrorState, LoadingState } from '@/shared/ui';
+import { Alert, Button, Dialog, ErrorState, LoadingState, useWorkspaceLayout } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
 import {
   getBook,
@@ -51,6 +53,7 @@ import {
 import { clearLocalDraft, readLocalDraft } from '../services/localDraftStorage';
 import { runChapterOperation } from '../services/chapterContentStorage';
 import { useAutoSave } from '../hooks/useAutoSave';
+import { useEditorFullscreen } from '../hooks/useEditorFullscreen';
 import { BusyNavigationGuard } from './BusyNavigationGuard';
 import { RichEditor } from './RichEditor';
 import { ResizableEditorWorkspace } from './ResizableEditorWorkspace';
@@ -62,10 +65,13 @@ import styles from './EditorPage.module.css';
 export function EditorPage() {
   const { bookId, chapterId } = useParams();
   const { user } = useAuth();
+  const { setExpanded } = useWorkspaceLayout();
+  useEffect(() => () => setExpanded(false), [setExpanded]);
   return <EditorSession key={`${user?.uid}:${bookId}:${chapterId}`} />;
 }
 
 function EditorSession() {
+  const { expanded, toggle: toggleFullscreen } = useEditorFullscreen();
   const { bookId, chapterId } = useParams<{
     bookId: string;
     chapterId: string;
@@ -553,7 +559,7 @@ function EditorSession() {
     currentIndex !== -1 && currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
 
   return (
-    <div className={styles.pageLayout}>
+    <div className={styles.pageLayout} data-workspace-expanded={expanded}>
       <BusyNavigationGuard busy={isAcceptingAI} />
       {isAcceptingAI && (
         <p role="status">Aguarde a aplicação terminar antes de sair do capítulo.</p>
@@ -580,6 +586,22 @@ function EditorSession() {
         </div>
 
         <div className={styles.topBarRight}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={expanded ? 'Sair da tela cheia' : 'Entrar em tela cheia'}
+            title={expanded ? 'Sair da tela cheia (Escape)' : 'Entrar em tela cheia'}
+            aria-pressed={expanded}
+            disabled={isAcceptingAI}
+            onPointerDown={(event) => event.preventDefault()}
+            onClick={toggleFullscreen}
+          >
+            {expanded ? (
+              <Minimize2 className="icon icon-sm" aria-hidden="true" />
+            ) : (
+              <Maximize2 className="icon icon-sm" aria-hidden="true" />
+            )}
+          </Button>
           <Button
             variant="secondary"
             disabled={isAcceptingAI}
@@ -729,6 +751,7 @@ function EditorSession() {
           </Alert>
         )}
         <RichEditor
+          workspaceExpanded={expanded}
           chatOpen={activePanel === 'chat'}
           onOpenChat={(action) => {
             void openChat(action);

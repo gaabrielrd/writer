@@ -101,3 +101,8 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
   navegador passaram (2,5 min); `npm run validate` verde com 775 testes.
   Execução isolada na worktree `editor-paridade`, branch
   `codex/editor-paridade-workspace`, para preservar o trabalho paralelo.
+- Tarefa 5: tela cheia remove os dois limites de largura e conserva instância,
+  seleção, undo, rascunho e trecho visível. Escape respeita sobreposições e funciona
+  com foco no editor; navegação entre capítulos conserva o modo e saída restaura
+  o shell. 26 testes dirigidos e 12 cenários de navegador passaram (52,1 s).
+  `npm run validate` verde com 784 testes, 69 de scripts, 73 de backend e build/smoke.

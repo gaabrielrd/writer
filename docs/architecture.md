@@ -122,6 +122,13 @@ busca é opcional. Veja [ADR 0020](decisions/0020-shared-dropdown.md) e
 
 ## Estado
 
+`WorkspaceLayoutProvider`, público em shared/ui, guarda apenas o estado neutro
+de expansão do layout. O shell observa esse estado sem remontar o Outlet.
+O editor controla entrada/Escape, conserva o trecho visível após o reflow e
+restaura o layout ao deixar a rota. O workspace redimensionável mantém uma
+árvore estável para manuscrito e painéis; a largura passa pelo adaptador local
+versionado e isolado por usuário, com fallback seguro de armazenamento.
+
 As configurações de IA são compostas por `AISettingsProvider` no layout e abertas
 por callback no menu de usuário. `useAIConfig` observa alterações no adaptador
 BYOK para invalidar sugestões anteriores. A análise/revisão do compêndio fica no

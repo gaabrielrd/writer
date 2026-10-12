@@ -10,6 +10,14 @@ não couberem, ambos ficam empilhados, com largura disponível e 480 px de altur
 Falhas ao salvar a preferência conservam a largura da sessão e oferecem retry.
 O manuscrito continua editável durante a geração.
 
+**Tela cheia** ocupa a viewport do aplicativo e remove os limites de largura
+do shell (1440 px) e do manuscrito (860 px). Créditos, tema, conta, ferramentas,
+minimapa e painéis continuam disponíveis. Alternar conserva a instância de
+edição, seleção, undo, trecho visível e rascunho do chat. Escape fecha primeiro
+menus, diálogos, barra de seleção ou sugestão; sem sobreposição, sai do modo,
+inclusive com foco no texto. Navegar entre capítulos conserva o modo; voltar
+ao livro restaura o shell. Em telas estreitas, o conteúdo empilhado rola no main.
+
 ## Conversa e comandos
 
 Enter envia; Shift+Enter insere uma linha. Composição IME não envia. Digitar `/`
