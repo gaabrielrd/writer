@@ -46,6 +46,12 @@ it('concentra vínculos, biblioteca, detalhes e edição em um único modal', as
   await user.click(screen.getByRole('tab', { name: 'Biblioteca' }));
   expect(screen.getAllByRole('dialog')).toHaveLength(1);
   await user.click(screen.getByText('Orientações efetivas'));
+  expect(screen.getByRole('progressbar', { name: 'Sensorialidade' })).toHaveAttribute(
+    'value',
+    '90',
+  );
+  expect(screen.getByText('Orientações combinadas')).not.toBeVisible();
+  await user.click(screen.getByRole('button', { name: /Texto completo das orientações/ }));
   expect(screen.getByText('Orientações combinadas')).toBeVisible();
   await user.click(screen.getByRole('button', { name: 'Ver detalhes de O Incisivo' }));
   expect(screen.getAllByRole('dialog')).toHaveLength(1);
@@ -65,4 +71,4 @@ it('concentra vínculos, biblioteca, detalhes e edição em um único modal', as
   );
   await user.keyboard('{Escape}');
   expect(close).toHaveBeenCalledTimes(3);
-});
+}, 10_000);

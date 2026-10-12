@@ -2,7 +2,7 @@ import { webcrypto } from 'node:crypto';
 import { Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { TextSelection } from '@tiptap/pm/state';
-import { act, renderHook, waitFor } from '@testing-library/react';
+import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatEditorBridge } from '../hooks/useChatEditorBridge';
 import type { ChatEditorBridge } from '@/features/ai-assistant';
@@ -46,6 +46,8 @@ beforeEach(() => {
   });
 });
 afterEach(() => {
+  // Cancel bridge subscriptions and animation frames while the editor view still exists.
+  cleanup();
   editor.destroy();
   document.body.innerHTML = '';
   vi.restoreAllMocks();
