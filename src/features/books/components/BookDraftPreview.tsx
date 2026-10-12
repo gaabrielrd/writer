@@ -39,10 +39,6 @@ export function BookDraftPreview({ title, genre, synopsis, coverUrl }: Props) {
 
   return (
     <aside className={styles.preview} aria-label="Prévia do livro">
-      <div className={styles.previewHeading}>
-        <h3>Prévia do livro</h3>
-        <p>Acompanhe sua obra enquanto preenche.</p>
-      </div>
       <Card className={styles.previewCard}>
         <div className={bookStyles.cardWrapper}>
           <div className={bookStyles.coverContainer}>
@@ -50,9 +46,9 @@ export function BookDraftPreview({ title, genre, synopsis, coverUrl }: Props) {
           </div>
           <div className={bookStyles.content}>
             <div className={bookStyles.header}>
-              <h4 className={bookStyles.title} title={title.trim() || undefined}>
+              <h3 className={bookStyles.title} title={title.trim() || undefined}>
                 {title.trim() || 'Título da sua obra'}
-              </h4>
+              </h3>
               <Badge variant="outline" className={styles.previewGenre}>
                 {genre.trim() || 'Gênero literário'}
               </Badge>
