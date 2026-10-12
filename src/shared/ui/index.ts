@@ -40,3 +40,4 @@ export {
 } from './Dropdown';
 export { Tooltip } from './Tooltip';
 export { FormSection, type FormSectionProps } from './FormSection';
+export { ResizeHandle, type ResizeHandleProps } from './ResizeHandle';
