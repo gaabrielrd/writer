@@ -96,3 +96,8 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
 - Tarefa 3: divisor acessível disponível no styleguide; oito testes dirigidos e
   seis cenários reais de navegador passaram (19,2 s). `npm run validate` verde
   com 764 testes; cobertura 92,62%/86,04%/91,13%/94,71%; demais gates aprovados.
+- Tarefa 4: workspace único integrado aos dois painéis, com limites, persistência,
+  estado preservado e fallback empilhado. Onze testes dirigidos e 24 cenários de
+  navegador passaram (2,5 min); `npm run validate` verde com 775 testes.
+  Execução isolada na worktree `editor-paridade`, branch
+  `codex/editor-paridade-workspace`, para preservar o trabalho paralelo.

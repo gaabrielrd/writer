@@ -53,6 +53,7 @@ import { runChapterOperation } from '../services/chapterContentStorage';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { BusyNavigationGuard } from './BusyNavigationGuard';
 import { RichEditor } from './RichEditor';
+import { ResizableEditorWorkspace } from './ResizableEditorWorkspace';
 import { EditorLoreSidebar } from './EditorLoreSidebar';
 import { ExportButton } from './ExportButton';
 import { LoreAnalysisDialog } from './LoreAnalysisDialog';
@@ -677,7 +678,40 @@ function EditorSession() {
           </Button>
         </Alert>
       )}
-      <section className={styles.workspace} aria-label="Espaço de escrita">
+      <ResizableEditorWorkspace
+        uid={user?.uid ?? ''}
+        panelOpen={activePanel !== null}
+        panel={
+          <>
+            {chatMounted && user && (
+              <ChapterChatPanel
+                open={activePanel === 'chat'}
+                uid={user.uid}
+                bookId={book.id}
+                chapterId={chapter.id}
+                bridge={chatBridge}
+                initialPrompt={chatPrompt}
+                contextVersion={writingPersona.version}
+                unavailable={personaError}
+                onClose={() => setActivePanel(null)}
+                onApply={applyChat}
+              />
+            )}
+            <EditorLoreSidebar
+              onAnalyzeText={globalLoreError ? undefined : () => setIsAnalysisOpen(true)}
+              isOpen={isSidebarOpen}
+              entities={allLoreEntities}
+              universeId={book.universeId}
+              selectedEntityId={selectedEntityId}
+              createEntityName={createEntityName}
+              onCreateRequestHandled={() => setCreateEntityName(null)}
+              onClose={() => setIsSidebarOpen(false)}
+              onCreateEntity={handleCreateLoreEntity}
+              onUpdateEntity={handleUpdateLoreEntity}
+            />
+          </>
+        }
+      >
         {loreRefreshError && (
           <Alert variant="warning">
             {loreRefreshError}
@@ -722,34 +756,7 @@ function EditorSession() {
           userCredits={currentCredits}
           onCreditDeducted={updateUserCreditsState}
         />
-        {chatMounted && user && (
-          <ChapterChatPanel
-            open={activePanel === 'chat'}
-            uid={user.uid}
-            bookId={book.id}
-            chapterId={chapter.id}
-            bridge={chatBridge}
-            initialPrompt={chatPrompt}
-            contextVersion={writingPersona.version}
-            unavailable={personaError}
-            onClose={() => setActivePanel(null)}
-            onApply={applyChat}
-          />
-        )}
-
-        <EditorLoreSidebar
-          onAnalyzeText={globalLoreError ? undefined : () => setIsAnalysisOpen(true)}
-          isOpen={isSidebarOpen}
-          entities={allLoreEntities}
-          universeId={book.universeId}
-          selectedEntityId={selectedEntityId}
-          createEntityName={createEntityName}
-          onCreateRequestHandled={() => setCreateEntityName(null)}
-          onClose={() => setIsSidebarOpen(false)}
-          onCreateEntity={handleCreateLoreEntity}
-          onUpdateEntity={handleUpdateLoreEntity}
-        />
-      </section>
+      </ResizableEditorWorkspace>
       {personaDialog && user && (
         <ChapterPersonaDialog
           ownerId={user.uid}

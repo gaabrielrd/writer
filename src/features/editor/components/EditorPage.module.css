@@ -164,13 +164,10 @@
   cursor: not-allowed;
 }
 
-.workspace {
-  display: flex;
-  gap: var(--space-3);
+.pageLayout:has([data-editor-workspace][data-stacked='true']) {
+  height: auto;
   min-height: 0;
-  flex: 1;
-  overflow: hidden;
-  position: relative;
+  overflow: visible;
 }
 
 @media (max-width: 760px) {
@@ -199,9 +196,5 @@
   }
   .chapterNavigation {
     margin-left: auto;
-  }
-  .workspace {
-    flex-direction: column;
-    overflow: visible;
   }
 }

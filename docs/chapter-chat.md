@@ -1,9 +1,14 @@
 # Chat do Assistente IA no capítulo
 
 **Assistente IA** abre um painel no mesmo espaço do **Compêndio**. Alternar ou
-fechar conserva a conversa e o rascunho. No desktop a largura é
-`clamp(280px, 28vw, 360px)`; até 760 px ambos ocupam a largura disponível e
-480 px de altura. O manuscrito continua editável durante a geração.
+fechar conserva a conversa e o rascunho. No desktop ambos usam a largura
+redimensionável do workspace: inicialmente 40%, faixa de 20–70%, painel mínimo
+de 280 px e manuscrito mínimo de 400 px. Arraste o divisor ou use setas,
+Shift+setas, Home/End; duplo clique restaura 40%. A proporção é salva por
+usuário/navegador e conservada ao alternar. Até 760 px ou quando os mínimos
+não couberem, ambos ficam empilhados, com largura disponível e 480 px de altura.
+Falhas ao salvar a preferência conservam a largura da sessão e oferecem retry.
+O manuscrito continua editável durante a geração.
 
 ## Conversa e comandos
 

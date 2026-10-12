@@ -1,9 +1,9 @@
 .sidebar {
-  width: clamp(280px, 28vw, 360px);
+  width: var(--editor-panel-width, clamp(280px, 28vw, 360px));
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: var(--editor-panel-height, 100%);
   border-radius: var(--radius-sm);
   background: var(--surface);
   border: 1px solid var(--line);

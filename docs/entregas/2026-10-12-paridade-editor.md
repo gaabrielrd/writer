@@ -1,7 +1,7 @@
 # Paridade do espaço de escrita — execução incremental
 
 - **Data**: 2026-10-12
-- **Branch**: `codex/editor-paridade`
+- **Branch atual**: `codex/editor-paridade-workspace`
 - **Plano de origem**: [fase em 12 tarefas](../tasks/paridade-editor-gerador-temas.md)
 
 ## Objetivo
@@ -62,3 +62,35 @@ fora das alterações e conserva o hash previamente registrado.
 1. Abra `/styleguide` e localize “Painéis redimensionáveis”.
 2. Arraste o divisor ou use setas, Shift e Home/End; dê duplo clique para restaurar.
 3. Troque entre claro, escuro e sépia; confira foco e ausência de transbordamento.
+
+## Incremento de 2026-10-12 — tarefa 4
+
+Assistente e Compêndio agora compartilham um único espaço redimensionável,
+com largura persistida, mínimos de painel/manuscrito e apresentação empilhada
+quando necessário. Fechar/alternar conserva árvores de edição e rascunho;
+falhas de persistência conservam a largura da sessão e permitem retentativa.
+ResizeObserver acompanha mudanças do espaço, com fallback para resize da janela.
+O limite de arredondamento foi corrigido para não inverter mínimo/máximo.
+
+Onze testes dirigidos passaram; os testes existentes de EditorPage e aceite
+continuaram passando. O navegador comprovou drag real, seleção preservada,
+mesma largura/altura dos painéis, retomada de largura/rascunho e 320 px.
+
+```text
+Test Files 109 passed (109)
+Tests 775 passed (775)
+scripts: pass 69; fail 0
+functions: pass 73; fail 0
+Smoke test do bundle OK.
+Navegador: 24 passed (2.5m)
+```
+
+O gate geral no checkout compartilhado encontrou uma falha de lint em um arquivo
+da criação de livros alterado em paralelo. A fase foi transferida para a worktree
+isolada `C:/Users/gaabr/.codex/worktrees/editor-paridade/writer`; apenas seus próprios
+arquivos foram transferidos/conferidos por hash e retirados do checkout compartilhado.
+Todas as alterações paralelas de livros e documentação foram preservadas.
+Os mesmos cenários de navegador passaram na worktree, sem mudança nos testes de drag.
+Após estabilizar a correção do limite, o gate completo foi repetido e passou.
+
+Neste ponto restam as tarefas 5–12. Nenhum push ou deploy deste incremento.
