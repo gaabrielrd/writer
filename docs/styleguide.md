@@ -292,3 +292,10 @@ O capítulo permite herdar cada atributo ou definir seu valor. O botão **Person
 concentra base, complementar, biblioteca e orientações efetivas em um único modal;
 a área de escrita não contém uma faixa extra de gerenciamento. No celular,
 ações dos detalhes se organizam em duas colunas para preservar espaço de leitura.
+
+O modal contextual identifica base e complemento em cards com avatar e função.
+Barras mostram valores efetivos e badges de origem; ajustes locais ficam junto
+do atributo. Orientações completas usam `FormSection`, recolhidas inicialmente.
+No desktop acima de 900 px, o modal usa até 960 px. A biblioteca do modal
+apresenta cards com três indicadores de personalidade, duas colunas no desktop
+e uma até 600 px, preservando os modelos em uso identificados e o rodapé fixo.

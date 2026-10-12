@@ -49,6 +49,22 @@ criação e edição. Não há uma faixa de personas na área de escrita e esse 
 mantém o usuário no capítulo. A página `/settings/ai` continua acessível pelo menu
 geral de configuração de IA.
 
+No desktop acima de 900 px, os modais de persona têm até 960 px. Livro e
+capítulo mostram a composição da voz em cards com avatar, nome, descrição e
+função. O perfil apresenta os valores efetivos em barras com ícones e extremos,
+identificando a origem: **Livro**, **Complemento** ou **Ajuste do capítulo**.
+As barras acompanham as alterações ainda não salvas, incluindo valor zero.
+Sem base no livro, o seletor informa **Usar valor da persona**. Atributos próprios
+herdados que não pertencem ao complemento continuam visíveis, sem ajuste local.
+
+A biblioteca do modal usa cards em duas colunas no desktop e uma até 600 px.
+Cada card mostra avatar, descrição, origem e três atributos mais distantes do
+ponto médio da escala; personas em uso recebem identificação de base/complemento.
+O texto completo das orientações fica recolhido em seções opcionais. Na
+biblioteca, primeiro é possível consultar o perfil gráfico e depois o texto
+completo. Navegação por setas/Home/End move o foco entre abas; fechar devolve o
+foco ao botão Persona. Header e ações permanecem visíveis enquanto o corpo rola.
+
 As instruções da complementar se somam às do livro e prevalecem em conflitos de
 estilo. Os atributos do livro são herdados; cada atributo da complementar pode
 ser configurado em **Definir no capítulo**. Sem uma base, os valores da

@@ -244,3 +244,83 @@ test('gerencia livro, capítulo e biblioteca pelo botão Persona, sem sair do ed
   await page.getByRole('dialog').press('Escape');
   await capture(page, testInfo, 'editor-sem-faixa-de-personas');
 });
+
+test('persona contextual mostra composição, origem dos valores e biblioteca visual em 320px', async ({
+  page,
+}, testInfo) => {
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  const trigger = page.getByRole('button', { name: 'Persona', exact: true });
+  await trigger.click();
+  await page.getByRole('tab', { name: 'Livro', exact: true }).click();
+  await chooseDropdown(page.getByLabel('Persona base', { exact: true }), 'O Atmosférico');
+  await page.getByRole('button', { name: 'Salvar vínculo' }).click();
+  await trigger.click();
+  let dialog = page.getByRole('dialog', { name: 'Persona', exact: true });
+  await chooseDropdown(dialog.getByLabel('Persona complementar', { exact: true }), 'O Inquietante');
+  const inherited = dialog.getByRole('progressbar', { name: 'Tensão', exact: true });
+  await expect(inherited).toHaveAttribute('value', '40');
+  await expect(dialog.getByRole('heading', { name: 'O Atmosférico', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'O Inquietante', exact: true })).toBeVisible();
+  await expect(dialog.getByRole('button', { name: /^Orientações efetivas/ })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
+  await dialog.locator('[data-slot="dialog-body"]').evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await capture(page, testInfo, 'persona-vozes-e-atributos');
+  await chooseDropdown(
+    dialog.getByLabel('Aplicação de Tensão', { exact: true }),
+    'Definir no capítulo',
+  );
+  const tension = dialog.getByRole('slider', { name: 'Tensão', exact: true });
+  await tension.focus();
+  await tension.press('Home');
+  await expect(tension).toHaveValue('0');
+  await expect(tension.locator('xpath=ancestor::article')).toContainText('Ajuste do capítulo');
+  await page.getByRole('button', { name: 'Salvar vínculo' }).click();
+  await trigger.click();
+  const chapterTab = page.getByRole('tab', { name: 'Capítulo', exact: true });
+  await chapterTab.focus();
+  await chapterTab.press('End');
+  await expect(page.getByRole('tab', { name: 'Biblioteca', exact: true })).toBeFocused();
+  dialog = page.getByRole('dialog', { name: 'Persona', exact: true });
+  const library = dialog.getByRole('list', { name: 'Personas disponíveis' });
+  await expect(
+    library.getByRole('button', { name: 'Ver detalhes de O Atmosférico', exact: true }),
+  ).toContainText('Base do livro');
+  await expect(
+    library.getByRole('button', { name: 'Ver detalhes de O Inquietante', exact: true }),
+  ).toContainText('Complemento do capítulo');
+  await expect(library.getByRole('progressbar')).toHaveCount(18);
+  await dialog.locator('[data-slot="dialog-body"]').evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await capture(page, testInfo, 'persona-biblioteca-visual');
+  const orientation = dialog.getByRole('button', { name: /^Orientações efetivas/ });
+  await orientation.click();
+  await expect(dialog.getByRole('progressbar', { name: 'Tensão', exact: true })).toHaveAttribute(
+    'value',
+    '0',
+  );
+  await dialog.getByRole('button', { name: /^Texto completo das orientações/ }).click();
+  await expect(dialog).toContainText('Tensão: 0/100');
+  await orientation.click();
+  await page.setViewportSize({ width: 320, height: 640 });
+  await dialog.locator('[data-slot="dialog-body"]').evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expectDialogWithinViewport(page);
+  await expectNoHorizontalOverflow(page, 'persona-visual-320');
+  await expect(
+    dialog.getByRole('button', { name: 'Fechar', exact: true }).first(),
+  ).toBeInViewport();
+  const first = await library.getByRole('listitem').nth(0).boundingBox();
+  const second = await library.getByRole('listitem').nth(1).boundingBox();
+  expect(first!.x).toBeCloseTo(second!.x);
+  expect(second!.y).toBeGreaterThan(first!.y);
+  await capture(page, testInfo, 'persona-biblioteca-320');
+  await dialog.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});

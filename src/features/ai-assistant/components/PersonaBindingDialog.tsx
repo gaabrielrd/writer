@@ -2,16 +2,23 @@ import { useState, type ReactNode } from 'react';
 import {
   Alert,
   Button,
-  Card,
   Dialog,
   Dropdown,
   ErrorState,
   LoadingState,
   Slider,
+  FormSection,
 } from '@/shared/ui';
 import { usePersonaLibrary } from '../hooks/usePersonaLibrary';
-import { resolveWritingPersona, type PersonaComplement } from '../model/persona';
-import { PersonaAvatar } from './PersonaAvatar';
+import {
+  resolveWritingPersona,
+  resolvePersonaProfile,
+  PERSONA_SOURCE_LABELS,
+  type PersonaComplement,
+  type ResolvedPersonaProfile,
+} from '../model/persona';
+import { PersonaComposition } from './PersonaComposition';
+import { PersonaTraits, PersonaTraitMeter } from './PersonaTraits';
 import styles from './Personas.module.css';
 
 export function PersonaBindingDialog({
@@ -44,8 +51,14 @@ export function PersonaBindingDialog({
   const resolvedComplement =
     mode === 'chapter' && selected !== 'none' ? { personaId: selected, overrides } : null;
   let summary = '';
+  let profile: ResolvedPersonaProfile | null = null;
   let invalid: string | null = null;
   try {
+    profile = resolvePersonaProfile(
+      personas,
+      mode === 'book' ? (selected === 'none' ? null : selected) : bookPersonaId,
+      resolvedComplement,
+    );
     summary = resolveWritingPersona(
       personas,
       mode === 'book' ? (selected === 'none' ? null : selected) : bookPersonaId,
@@ -58,7 +71,9 @@ export function PersonaBindingDialog({
     <Dialog
       open
       title={title ?? (mode === 'book' ? 'Persona do livro' : 'Persona complementar do capítulo')}
-      maxWidthClass={navigation ? 'max-w-3xl' : 'max-w-lg'}
+      maxWidthClass={
+        navigation ? 'max-w-3xl min-[901px]:max-w-[960px]' : 'max-w-lg min-[901px]:max-w-[960px]'
+      }
       onClose={() => {
         if (!busy) onClose();
       }}
@@ -132,70 +147,112 @@ export function PersonaBindingDialog({
                   })),
               ]}
             />
-            {persona && (
-              <div className={styles.identity}>
-                <PersonaAvatar persona={persona} />
-                <p>{persona.description}</p>
-              </div>
-            )}
-            {mode === 'chapter' && persona && (
+            {profile && (
               <>
-                <p>
-                  As instruções complementam as do livro. Os atributos herdam o livro; escolha
-                  “Definir no capítulo” para aplicar um valor específico. Sem persona no livro, os
-                  valores da complementar são usados.
+                <PersonaComposition profile={profile} showChapter={mode === 'chapter'} />
+                <p className={styles.bindingHelp}>
+                  {mode === 'book'
+                    ? 'A base orienta a escrita de todos os capítulos. Complementos podem ajustar o estilo de cada capítulo.'
+                    : profile.chapter
+                      ? 'O complemento prevalece em conflitos de estilo. Os valores abaixo mostram o que a IA usará; você pode definir ajustes para este capítulo.'
+                      : profile.base
+                        ? 'Este capítulo herda a voz e os atributos do livro. Escolha um complemento para ajustar seu estilo.'
+                        : 'Escolha uma base na aba Livro ou uma persona complementar para este capítulo.'}
                 </p>
-                {persona.traits.map((trait) => {
-                  const override = overrides.find((item) => item.traitId === trait.id);
-                  return (
-                    <Card key={trait.id} className={styles.trait}>
-                      <Dropdown
-                        mode="select"
-                        label={`Aplicação de ${trait.name}`}
-                        value={override ? 'override' : 'inherit'}
-                        disabled={busy}
-                        options={[
-                          { value: 'inherit', label: 'Herdar do livro' },
-                          { value: 'override', label: 'Definir no capítulo' },
-                        ]}
-                        onValueChange={(value) =>
-                          setOverrides((previous) =>
-                            value === 'inherit'
-                              ? previous.filter((item) => item.traitId !== trait.id)
-                              : [
-                                  ...previous.filter((item) => item.traitId !== trait.id),
-                                  { traitId: trait.id, value: trait.value },
-                                ],
-                          )
-                        }
-                      />
-                      {override && (
-                        <Slider
-                          label={trait.name}
-                          low={trait.low}
-                          high={trait.high}
-                          description={trait.description}
-                          value={override.value}
-                          disabled={busy}
-                          onValueChange={(value) =>
-                            setOverrides((previous) =>
-                              previous.map((item) =>
-                                item.traitId === trait.id ? { ...item, value } : item,
-                              ),
-                            )
-                          }
-                        />
+                {profile.traits.length > 0 && (
+                  <section className={styles.stack} aria-label="Perfil de escrita efetivo">
+                    <div className={styles.profileHeading}>
+                      <h3>Atributos efetivos</h3>
+                      <span>
+                        {profile.traits.length} atributos
+                        {mode === 'chapter' &&
+                          ` · ${overrides.length} ${overrides.length === 1 ? 'ajuste' : 'ajustes'} do capítulo`}
+                      </span>
+                    </div>
+                    <PersonaTraits
+                      traits={profile.traits}
+                      sources={Object.fromEntries(
+                        Object.entries(profile.sources).map(([id, source]) => [
+                          id,
+                          PERSONA_SOURCE_LABELS[source],
+                        ]),
                       )}
-                    </Card>
-                  );
-                })}
+                      controls={
+                        mode === 'chapter' && persona
+                          ? (trait) => {
+                              const definition = persona.traits.find(
+                                (item) => item.id === trait.id,
+                              );
+                              if (!definition) return null;
+                              const override = overrides.find((item) => item.traitId === trait.id);
+                              return (
+                                <>
+                                  {!override && <PersonaTraitMeter trait={trait} />}
+                                  <Dropdown
+                                    mode="select"
+                                    label={`Aplicação de ${trait.name}`}
+                                    value={override ? 'override' : 'inherit'}
+                                    disabled={busy}
+                                    options={[
+                                      {
+                                        value: 'inherit',
+                                        label: profile.base?.traits.some(
+                                          (item) => item.id === trait.id,
+                                        )
+                                          ? 'Herdar do livro'
+                                          : 'Usar valor da persona',
+                                      },
+                                      { value: 'override', label: 'Definir no capítulo' },
+                                    ]}
+                                    onValueChange={(value) =>
+                                      setOverrides((previous) =>
+                                        value === 'inherit'
+                                          ? previous.filter((item) => item.traitId !== trait.id)
+                                          : [
+                                              ...previous.filter(
+                                                (item) => item.traitId !== trait.id,
+                                              ),
+                                              { traitId: trait.id, value: definition.value },
+                                            ],
+                                      )
+                                    }
+                                  />
+                                  {override && (
+                                    <Slider
+                                      label={trait.name}
+                                      low={trait.low}
+                                      high={trait.high}
+                                      value={override.value}
+                                      disabled={busy}
+                                      onValueChange={(value) =>
+                                        setOverrides((previous) =>
+                                          previous.map((item) =>
+                                            item.traitId === trait.id ? { ...item, value } : item,
+                                          ),
+                                        )
+                                      }
+                                    />
+                                  )}
+                                </>
+                              );
+                            }
+                          : undefined
+                      }
+                    />
+                  </section>
+                )}
               </>
             )}
             {invalid && <Alert variant="danger">{invalid}</Alert>}
-            <details className={styles.summary}>
-              <summary>Orientações efetivas</summary>
-              <p>{summary || 'Sem persona: a IA mantém as orientações atuais da operação.'}</p>
-            </details>
+            <FormSection
+              title="Orientações efetivas"
+              description="Texto completo enviado à IA · consulta opcional"
+              disabled={busy}
+            >
+              <p className={styles.promptText}>
+                {summary || 'Sem persona: a IA mantém as orientações atuais da operação.'}
+              </p>
+            </FormSection>
           </>
         )}
         {failure && <Alert variant="danger">{failure}</Alert>}

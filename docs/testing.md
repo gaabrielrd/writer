@@ -314,6 +314,14 @@ npx playwright test --config playwright.visual.config.ts e2e/visual/chapters.vis
 
 ## Personas de escrita
 
+`personaProfile.test.ts` compara os valores visuais com as instruções reais,
+incluindo atributos próprios das duas personas, herança e ajuste explícito zero.
+Os testes de vínculo verificam origem, valor inicial herdado, recuperação de
+herança sem base, falha e retry. O modal contextual mantém as orientações completas
+recolhidas, com consulta do perfil gráfico antes do texto na biblioteca.
+O cenário visual de composição cobre os cards ativos, indicadores do catálogo,
+ajuste zero, persistência, abas por teclado, retorno do foco e 320 px nos três temas.
+
 Os testes de `ai-assistant` cobrem os seis padrões, atributos personalizados,
 precedência, referências indisponíveis, revisões concorrentes, formulários,
 falhas e retry. Autocomplete e ações invalidam respostas antigas sem inserir

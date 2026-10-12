@@ -1,4 +1,5 @@
 import { useState, useId } from 'react';
+import { BookOpen, NotebookPen, LibraryBig } from 'lucide-react';
 import { Alert, Button } from '@/shared/ui';
 import type { PersonaComplement } from '../model/persona';
 import { PersonaManager } from './PersonaManager';
@@ -6,9 +7,9 @@ import { PersonaBindingDialog } from './PersonaBindingDialog';
 import styles from './Personas.module.css';
 
 const tabs = [
-  { id: 'chapter', label: 'Capítulo' },
-  { id: 'book', label: 'Livro' },
-  { id: 'library', label: 'Biblioteca' },
+  { id: 'chapter', label: 'Capítulo', icon: NotebookPen },
+  { id: 'book', label: 'Livro', icon: BookOpen },
+  { id: 'library', label: 'Biblioteca', icon: LibraryBig },
 ] as const;
 export function ChapterPersonaDialog({
   ownerId,
@@ -32,6 +33,15 @@ export function ChapterPersonaDialog({
   onClose: () => void;
 }) {
   const [view, setView] = useState<(typeof tabs)[number]['id']>('chapter');
+  const [opener] = useState(() =>
+    document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  );
+  const close = () => {
+    onClose();
+    requestAnimationFrame(() => {
+      if (opener?.isConnected) opener.focus();
+    });
+  };
   const id = useId();
   const navigation = (
     <div className={styles.stack}>
@@ -60,8 +70,12 @@ export function ChapterPersonaDialog({
                     ? tabs.length - 1
                     : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
               setView(tabs[next]!.id);
+              requestAnimationFrame(() =>
+                document.getElementById(`${id}-${tabs[next]!.id}`)?.focus(),
+              );
             }}
           >
+            <tab.icon className="icon icon-sm" aria-hidden="true" />
             {tab.label}
           </button>
         ))}
@@ -74,16 +88,16 @@ export function ChapterPersonaDialog({
           </Button>
         </Alert>
       )}
-      {view === 'library' && (
-        <details className={styles.summary}>
-          <summary>Orientações efetivas</summary>
-          <p>{instruction || 'Orientações padrão da operação.'}</p>
-        </details>
-      )}
     </div>
   );
   return view === 'library' ? (
-    <PersonaManager ownerId={ownerId} modal navigation={navigation} onClose={onClose} />
+    <PersonaManager
+      ownerId={ownerId}
+      modal
+      navigation={navigation}
+      bindingContext={{ bookPersonaId, complement, instruction }}
+      onClose={close}
+    />
   ) : (
     <PersonaBindingDialog
       key={view}
@@ -93,7 +107,7 @@ export function ChapterPersonaDialog({
       complement={complement}
       navigation={navigation}
       title="Persona"
-      onClose={onClose}
+      onClose={close}
       onSave={async (personaId, personaComplement) => {
         if (view === 'book') await onSaveBook(personaId);
         else await onSaveChapter(personaComplement);
