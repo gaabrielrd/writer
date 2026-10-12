@@ -17,12 +17,96 @@ function setup() {
 }
 
 afterEach(() => {
+  window.getSelection()?.removeAllRanges();
   cleanup();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   document.body.innerHTML = '';
 });
 
 describe('tela cheia do editor', () => {
+  it('ancora o caret visível no parágrafo longo mesmo durante reflow sem overflow', () => {
+    let resized: () => void = () => undefined;
+    const disconnect = vi.fn();
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          resized = callback;
+        }
+        observe() {}
+        disconnect = disconnect;
+      },
+    );
+    const callbacks: FrameRequestCallback[] = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callbacks.push(callback);
+      return callbacks.length;
+    });
+    const area = document.createElement('div');
+    area.setAttribute('data-editor-scroll-area', '');
+    area.style.overflowY = 'auto';
+    // A altura de conteúdo pode coincidir temporariamente com a viewport no reflow.
+    Object.defineProperties(area, { scrollHeight: { value: 500 }, clientHeight: { value: 500 } });
+    area.innerHTML =
+      '<div contenteditable="true"><p>Um parágrafo longo com cursor no meio</p></div>';
+    document.body.append(area);
+    vi.spyOn(area, 'getBoundingClientRect').mockReturnValue({ top: 100 } as DOMRect);
+    vi.spyOn(area.querySelector('p')!, 'getBoundingClientRect').mockReturnValue({
+      top: -1000,
+      bottom: 1000,
+    } as DOMRect);
+    const selection = window.getSelection()!;
+    const original = document.createRange();
+    original.setStart(area.querySelector('p')!.firstChild!, 12);
+    original.collapse(true);
+    selection.addRange(original);
+    const caret = document.createRange();
+    const caretRect = vi.fn().mockReturnValue({ top: 140, bottom: 160, height: 20 });
+    Object.assign(caret, {
+      getBoundingClientRect: caretRect,
+    });
+    vi.spyOn(document, 'createRange').mockReturnValue(caret);
+    setup();
+    fireEvent.click(screen.getByRole('button'));
+    caretRect.mockReturnValue({
+      top: 190,
+      bottom: 210,
+      height: 20,
+    });
+    act(() => {
+      callbacks.shift()!(0);
+      callbacks.shift()!(0);
+    });
+    expect(area.scrollTop).toBe(50);
+    expect(selection.focusOffset).toBe(12);
+    expect(selection.focusNode).toBe(original.startContainer);
+    // Um commit posterior do ResizeObserver ainda pode mudar a linha do caret.
+    caretRect.mockReturnValue({
+      top: 240,
+      bottom: 260,
+      height: 20,
+    });
+    act(() => callbacks.shift()!(0));
+    expect(area.scrollTop).toBe(150);
+    caretRect.mockReturnValue({
+      top: 140,
+      bottom: 160,
+      height: 20,
+    });
+    act(() => callbacks.shift()!(0));
+    expect(area.scrollTop).toBe(150);
+    expect(callbacks).toHaveLength(0);
+    caretRect.mockReturnValue({ top: 170, bottom: 190, height: 20 });
+    act(resized);
+    act(() => callbacks.shift()!(0));
+    expect(area.scrollTop).toBe(180);
+    fireEvent.wheel(area);
+    expect(disconnect).toHaveBeenCalledOnce();
+    act(resized);
+    expect(callbacks).toHaveLength(0);
+  });
+
   it('alterna no mesmo workspace e sai com Escape', () => {
     setup();
     const button = screen.getByRole('button');

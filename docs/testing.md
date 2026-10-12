@@ -279,6 +279,18 @@ o transporte da plataforma, truncamento, HTTP indisponível e cancelamento da
 leitura pendente. O navegador retoma detalhes de modelo/raciocínio e regenera
 com outra escolha sem alterar os parâmetros das respostas anteriores.
 
+A auditoria integrada combina workspace, chat, minimapa, seleção, personas e
+exportação em desktop/celular nos três temas, incluindo 320 px, 440 px de altura
+e 2160 px de largura. O workspace verifica Escape durante drag com foco no
+manuscrito, cancelamento com preferência temporariamente limitada e caret
+visível em parágrafo longo ao entrar/sair da tela cheia. A restauração aguarda
+o reflow inicial e os commits seguintes de ResizeObserver, sem mover seleção.
+O acompanhamento termina em 500 ms ou na primeira interação do autor; testes
+cobrem reflow tardio, interrupção e limpeza. Um gesto real de toque no Chromium
+verifica o alvo de 44 px, foco, texto e largura após autosave/reload nos três temas.
+Os testes dirigidos também conservam a largura da sessão se o armazenamento
+falhar. Use uma porta visual exclusiva ao executar em paralelo com outro checkout.
+
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts
 ```

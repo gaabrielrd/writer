@@ -131,3 +131,10 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
   47 testes dirigidos, 24 de backend dirigidos e 66 cenários visuais (3,9 min)
   passaram. `npm run validate` verde com 822 testes da aplicação, 69 de scripts,
   87 de backend e build/smoke.
+- Tarefa 11: auditoria integrada de seleção, minimapa, chat, personas e exportação.
+  A matriz ampla teve 167/168 aprovações; a falha intermitente de reflow foi
+  corrigida e o workspace passou nos 54 cenários afetados. O caso de caret
+  passou em 60 repetições, dez por tema/dispositivo; três gestos reais de toque
+  passaram (17,2 s), além de 31 testes dirigidos e 48 de regras no emulador.
+  Gate definitivo verde: 826 testes da aplicação, 69 de scripts, 87 de backend
+  e build/smoke. Resta a tarefa 12, incluindo fechamento do CI no PR.

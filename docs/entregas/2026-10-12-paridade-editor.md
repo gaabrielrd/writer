@@ -307,3 +307,43 @@ preservada; arquitetura, contrato, ADR, styleguide e testes foram atualizados.
 
 Restam a validação integrada/auditoria e a revisão/entrega final, tarefas 11–12.
 Nenhum push ou deploy deste incremento.
+
+## Incremento de 2026-10-12 — tarefa 11
+
+A auditoria integrada protege chat, seleção, minimapa, personas, exportação,
+largura compartilhada e tela cheia nos três temas, desktop/celular, 320 px,
+440 px de altura e 2160 px de largura. Foram corrigidos Escape durante drag com
+foco no manuscrito, cancelamento sob limites temporários e deslocamento do caret
+em parágrafo longo. A transição conclui o commit do shell e acompanha reflow por
+até 500 ms, cedendo imediatamente a uma interação do autor e limpando frames,
+observador e listeners ao sair. Texto, seleção e undo conservam suas instâncias.
+
+```text
+Gate definitivo: npm run validate verde
+Test Files 114 passed (114); Tests 826 passed (826)
+Cobertura: statements 92.76%, branches 86.15%, functions 91.17%, lines 94.84%
+scripts: pass 69; fail 0
+functions: pass 87; fail 0
+Build e smoke aprovados
+Testes dirigidos: 31 passed
+Regras: 48 passed (emulador demo, porta aleatória)
+Matriz ampla: 167 passed; 1 failed (reflow)
+Após correção: 54 cenários de workspace passed
+Estabilidade de caret: 60 passed (2.6m)
+Gesto real de toque nos três temas: 3 passed (17.2s)
+```
+
+A falha da matriz ampla foi reproduzida em repetições e corrigida antes do gate
+definitivo. Os outros 114 cenários dessa matriz passaram; a alteração final
+ficou restrita ao workspace, novamente verificado. O teste de toque confirmou
+o alvo de 44 px fora da faixa visível, conservação de foco/texto e preferência
+após recarregar. Sua primeira versão recarregava antes de confirmar autosave;
+a preparação foi corrigida para aguardar Salvo. Um gate simultâneo à recriação
+do relatório visual falhou por ENOENT no ESLint; o gate definitivo rodou depois
+da suíte visual. Nenhum snapshot foi regenerado.
+
+Capturas de claro, escuro e sépia foram inspecionadas e preservadas. Contratos
+e testes foram realinhados. Logs definitivos: tarefa-11-validate-definitivo.log,
+tarefa-11-caret-observador-final.log e tarefa-11-toque-final.log. Nenhuma chamada
+de geração externa, débito real ou edição de capítulo de produção foi feita.
+As alterações paralelas continuam no checkout original. Resta a tarefa 12.

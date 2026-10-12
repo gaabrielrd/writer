@@ -96,7 +96,13 @@ export function ResizableEditorWorkspace({
           min={bounds.min}
           max={bounds.max}
           defaultValue={DEFAULT_PANEL_PERCENT}
-          onValueChange={(value) => setLocal({ uid, value, stored })}
+          onValueChange={(value) =>
+            setLocal(
+              value === Math.min(bounds.max, Math.max(bounds.min, stored))
+                ? undefined
+                : { uid, value, stored },
+            )
+          }
           onValueCommit={commit}
         />
       )}

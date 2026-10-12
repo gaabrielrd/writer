@@ -1,4 +1,4 @@
-import { useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import styles from './ResizeHandle.module.css';
 
 // WAI-ARIA defines a focusable separator with aria-valuenow as an interactive window splitter.
@@ -44,13 +44,24 @@ export function ResizeHandle({
     onValueChange(bounded);
     onValueCommit?.(bounded);
   };
-  const cancel = () => {
+  const cancel = useCallback(() => {
     const current = drag.current;
     if (!current) return;
     drag.current = null;
     setDragging(false);
     onValueChange(current.initial);
-  };
+  }, [onValueChange]);
+  useEffect(() => {
+    if (!dragging) return;
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.isComposing || !drag.current) return;
+      event.preventDefault();
+      event.stopPropagation();
+      cancel();
+    };
+    document.addEventListener('keydown', escape, true);
+    return () => document.removeEventListener('keydown', escape, true);
+  }, [dragging, cancel]);
 
   return (
     <div

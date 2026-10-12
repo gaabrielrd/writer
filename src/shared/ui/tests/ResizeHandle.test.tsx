@@ -62,6 +62,37 @@ afterEach(() => {
 });
 
 describe('divisor redimensionável', () => {
+  it('Escape no manuscrito cancela drag antes dos atalhos globais e libera o atalho depois', () => {
+    const { handle } = setup();
+    const text = screen.getByRole('textbox');
+    text.focus();
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    const globalEscape = vi.fn();
+    document.addEventListener('keydown', globalEscape);
+    try {
+      fireEvent.pointerDown(handle, { clientX: 600, button: 0 });
+      fireEvent.pointerMove(handle, { clientX: 500 });
+      fireEvent.keyDown(text, { key: 'Escape', isComposing: true });
+      expect(handle).toHaveAttribute('data-dragging', 'true');
+      globalEscape.mockClear();
+      fireEvent.keyDown(text, { key: 'Escape' });
+      expect(handle).toHaveAttribute('aria-valuenow', '40');
+      expect(handle).not.toHaveAttribute('data-dragging');
+      expect(globalEscape).not.toHaveBeenCalled();
+      expect(committed).not.toHaveBeenCalled();
+      expect(text).toHaveFocus();
+      expect(window.getSelection()!.toString()).toBe('Meu texto');
+      fireEvent.pointerUp(handle, { clientX: 500 });
+      fireEvent.keyDown(text, { key: 'Escape' });
+      expect(globalEscape).toHaveBeenCalledOnce();
+    } finally {
+      document.removeEventListener('keydown', globalEscape);
+    }
+  });
+
   it('expõe orientação, valor, limites e painel controlado', () => {
     const { handle } = setup();
     expect(handle).toHaveAttribute('aria-orientation', 'vertical');

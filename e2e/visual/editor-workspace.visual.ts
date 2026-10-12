@@ -1,5 +1,162 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
-import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
+import { author, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
+
+test('Escape cancela drag com foco no manuscrito antes de sair da tela cheia', async ({ page }) => {
+  await page.setViewportSize({ width: 2160, height: 900 });
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  const editor = page.getByLabel('Área de escrita do capítulo');
+  await editor.fill('Texto para conferir drag e foco.');
+  await editor.press('End');
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  await expect(page.getByLabel('Mensagem para o Assistente IA')).toBeEnabled();
+  await editor.focus();
+  await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
+  const handle = page.getByRole('separator', { name: 'Largura do painel lateral' });
+  await expect(handle).toHaveAttribute('aria-valuenow', '40');
+  const before = await page.evaluate(
+    (uid) => localStorage.getItem(`writer:editor-workspace:${encodeURIComponent(uid)}`),
+    author.uid,
+  );
+  const rect = (await handle.boundingBox())!;
+  await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await page.mouse.down();
+  try {
+    await expect(handle).toHaveAttribute('data-dragging', 'true');
+    await page.mouse.move(rect.x - 100, rect.y + rect.height / 2, { steps: 5 });
+    await expect(editor).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('button', { name: 'Sair da tela cheia' })).toBeVisible();
+    await expect(handle).not.toHaveAttribute('data-dragging', 'true');
+    await expect(handle).toHaveAttribute('aria-valuenow', '40');
+    await expect(editor).toBeFocused();
+  } finally {
+    await page.mouse.up();
+  }
+  expect(
+    await page.evaluate(
+      (uid) => localStorage.getItem(`writer:editor-workspace:${encodeURIComponent(uid)}`),
+      author.uid,
+    ),
+  ).toBe(before);
+  await expect(editor).toHaveText('Texto para conferir drag e foco.');
+});
+
+test('cancelar drag sob limite temporário restaura a proporção preferida ao ampliar', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 2160, height: 900 });
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
+  const handle = page.getByRole('separator', { name: 'Largura do painel lateral' });
+  await handle.focus();
+  await handle.press('End');
+  await expect(handle).toHaveAttribute('aria-valuenow', '70');
+  await page.setViewportSize({ width: 900, height: 900 });
+  await expect
+    .poll(async () => Number(await handle.getAttribute('aria-valuenow')))
+    .toBeLessThan(70);
+  await handle.focus();
+  const constrained = await handle.getAttribute('aria-valuenow');
+  const rect = (await handle.boundingBox())!;
+  await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
+  await page.mouse.down();
+  try {
+    await expect(handle).toHaveAttribute('data-dragging', 'true');
+    await page.mouse.move(rect.x + 40, rect.y + rect.height / 2, { steps: 4 });
+    await page.keyboard.press('Escape');
+    await expect(handle).toHaveAttribute('aria-valuenow', constrained!);
+  } finally {
+    await page.mouse.up();
+  }
+  await page.setViewportSize({ width: 2160, height: 900 });
+  await expect(handle).toHaveAttribute('aria-valuenow', '70');
+  const stored = await page.evaluate(
+    (uid) =>
+      JSON.parse(localStorage.getItem(`writer:editor-workspace:${encodeURIComponent(uid)}`)!) as {
+        panelPercent: number;
+      },
+    author.uid,
+  );
+  expect(stored.panelPercent).toBe(70);
+});
+
+test('tela cheia mantém caret visível dentro de um único parágrafo longo', async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 720 });
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  const editor = page.getByLabel('Área de escrita do capítulo');
+  await editor.fill(
+    'Uma passagem extensa muda de linha quando a largura disponível aumenta. '.repeat(600),
+  );
+  await editor.focus();
+  const offset = await editor.evaluate((element) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const node = walker.nextNode()!;
+    const position = Math.floor(node.textContent!.length * 0.6);
+    const range = document.createRange();
+    range.setStart(node, position);
+    range.collapse(true);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.dispatchEvent(new Event('selectionchange'));
+    return position;
+  });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
+  await editor.evaluate((element) => {
+    let owner: HTMLElement | null = element as HTMLElement;
+    while (
+      owner &&
+      !(
+        /auto|scroll/.test(getComputedStyle(owner).overflowY) &&
+        owner.scrollHeight > owner.clientHeight + 1
+      )
+    )
+      owner = owner.parentElement;
+    owner ??= document.scrollingElement as HTMLElement;
+    const range = window.getSelection()!.getRangeAt(0);
+    const top = owner === document.scrollingElement ? 0 : owner.getBoundingClientRect().top;
+    owner.scrollTop += range.getBoundingClientRect().top - top - owner.clientHeight / 2;
+  });
+  const caretVisible = () =>
+    editor.evaluate((element) => {
+      const selection = window.getSelection()!;
+      const range = document.createRange();
+      range.setStart(selection.focusNode!, selection.focusOffset);
+      range.collapse(true);
+      let owner: HTMLElement | null = element as HTMLElement;
+      while (
+        owner &&
+        !(
+          /auto|scroll/.test(getComputedStyle(owner).overflowY) &&
+          owner.scrollHeight > owner.clientHeight + 1
+        )
+      )
+        owner = owner.parentElement;
+      owner ??= document.scrollingElement as HTMLElement;
+      const top = owner === document.scrollingElement ? 0 : owner.getBoundingClientRect().top;
+      const caret = range.getBoundingClientRect();
+      return {
+        visible: caret.top >= top && caret.bottom <= top + owner.clientHeight,
+        offset: selection.focusOffset,
+      };
+    });
+  await expect.poll(async () => (await caretVisible()).visible).toBe(true);
+  expect((await caretVisible()).offset).toBe(offset);
+  await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
+  await expect.poll(async () => (await caretVisible()).visible).toBe(true);
+  expect((await caretVisible()).offset).toBe(offset);
+  // Escape alterna sem o scroll automático do Playwright até o botão no cabeçalho.
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Entrar em tela cheia' })).toBeVisible();
+  await expect.poll(async () => (await caretVisible()).visible).toBe(true);
+  expect((await caretVisible()).offset).toBe(offset);
+});
 
 test('painéis mantêm cabeçalhos consistentes, filtros e leitura em altura baixa', async ({
   page,

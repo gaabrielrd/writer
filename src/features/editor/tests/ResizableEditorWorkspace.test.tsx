@@ -9,6 +9,9 @@ import {
 import { workspaceGeometry } from '../model/workspaceGeometry';
 
 let width = 1000;
+class TestPointerEvent extends MouseEvent {
+  readonly pointerId = 1;
+}
 let resized: () => void = () => undefined;
 const disconnected = vi.fn();
 const mounted = vi.fn();
@@ -33,6 +36,7 @@ const tree = (uid = 'author', panelOpen = true) => (
 );
 
 beforeEach(() => {
+  vi.stubGlobal('PointerEvent', TestPointerEvent);
   width = 1000;
   mounted.mockClear();
   disconnected.mockClear();
@@ -59,6 +63,43 @@ afterEach(() => {
 });
 
 describe('espaço lateral compartilhado', () => {
+  it('cancelar drag limitado temporariamente conserva a preferência e a árvore', () => {
+    saveWorkspacePreferences('author', { panelPercent: 70 });
+    render(tree());
+    const manuscript = screen.getByRole('textbox', { name: 'Manuscrito' });
+    const handle = screen.getByRole('separator');
+    Object.assign(handle, { setPointerCapture: vi.fn(), releasePointerCapture: vi.fn() });
+    const constrained = handle.getAttribute('aria-valuenow');
+    fireEvent.pointerDown(handle, { clientX: 600, button: 0 });
+    fireEvent.pointerMove(handle, { clientX: 700 });
+    fireEvent.keyDown(manuscript, { key: 'Escape' });
+    expect(handle).toHaveAttribute('aria-valuenow', constrained!);
+    fireEvent.pointerUp(handle, { clientX: 700 });
+    width = 1800;
+    act(resized);
+    expect(handle).toHaveAttribute('aria-valuenow', '70');
+    expect(readWorkspacePreferences('author').panelPercent).toBe(70);
+    expect(screen.getByRole('textbox', { name: 'Manuscrito' })).toBe(manuscript);
+    expect(mounted).toHaveBeenCalledOnce();
+  });
+
+  it('cancelar drag conserva a largura da sessão quando a gravação anterior falhou', () => {
+    render(tree());
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('sem espaço');
+    });
+    const handle = screen.getByRole('separator');
+    Object.assign(handle, { setPointerCapture: vi.fn(), releasePointerCapture: vi.fn() });
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    fireEvent.pointerDown(handle, { clientX: 600, button: 0 });
+    fireEvent.pointerMove(handle, { clientX: 500 });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    fireEvent.pointerUp(handle, { clientX: 500 });
+    expect(handle).toHaveAttribute('aria-valuenow', '42');
+    expect(readWorkspacePreferences('author').panelPercent).toBe(40);
+    expect(screen.getByText('Preferência de largura não salva')).toBeVisible();
+  });
+
   it('aplica/persiste a largura e conserva as árvores de manuscrito e painel ao fechar', () => {
     const { rerender } = render(tree());
     const manuscript = screen.getByRole('textbox', { name: 'Manuscrito' });
