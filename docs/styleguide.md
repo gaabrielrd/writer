@@ -144,7 +144,14 @@ Carregamento anuncia a operação; vazio explica como começar; erro preserva
 rascunho e oferece retry; sucesso só aparece após a gravação. Erros de
 formulário recebem foco e não desaparecem ao abrir uma seção. A importação
 mantém o arquivo escolhido e a seleção dos capítulos durante a revisão;
-metadados opcionais ficam em “Sobre a obra”. Criação assistida conserva
+metadados opcionais ficam em “Sobre a obra”.
+
+O PDF permite expandir a prévia para texto e página original em duas colunas no
+desktop, empilhadas até 760 px. A prévia textual é somente leitura e acessível
+por teclado. Avisos identificam páginas sem texto, imagens e estrutura ambígua;
+as ações de dividir/unir seguem o kit compartilhado e preservam a revisão.
+
+Criação assistida conserva
 entrevista/briefing/revisão/capa, com progresso discreto e badges de categoria
 sem ocupar a largura inteira do card. O manuscrito e os padrões recentes de
 capítulos, atos, minimapa e personas permanecem intactos.

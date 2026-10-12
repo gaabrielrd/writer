@@ -204,7 +204,11 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
 
 A feature `books` analisa DOCX, PDF, Markdown, texto simples e HTML no cliente,
 através de `documentParserService`. A extração PDF usa o worker local do PDF.js
-e `pdfTextExtraction` para linhas, títulos e margens recorrentes. Os formatos
+e `pdfDocumentService` para páginas/fontes/regiões; `pdfLayoutExtraction`
+reconstrói duas colunas, seções, caixas e tabelas como blocos de prosa com
+origem por página. `pdfTextExtraction` conserva a representação legada de texto.
+Os tipos e ajustes de divisão/união ficam em `books/model/documentImport`;
+metadados de revisão não são gravados como conteúdo do livro. Os formatos
 estruturados reutilizam o sanitizador de prosa compartilhado. A revisão ocorre
 antes de chamar os serviços de criação de livro/capítulos. Consulte
 [importação de manuscritos](document-import.md) para formatos e limites.

@@ -52,7 +52,9 @@ describe('ImportBookModal', () => {
       );
       expect(await screen.findByDisplayValue('Documento')).toBeInTheDocument();
       expect(parser).toHaveBeenCalledTimes(2);
-      expect(parser).toHaveBeenLastCalledWith(file);
+      expect(parser.mock.calls.at(-1)?.[0]).toBe(file);
+      expect(parser.mock.calls.at(-1)?.[1]?.signal).toBeInstanceOf(AbortSignal);
+      expect(typeof parser.mock.calls.at(-1)?.[1]?.onProgress).toBe('function');
     },
   );
 

@@ -15,6 +15,7 @@ vi.mock('mammoth', () => ({
 }));
 
 vi.mock('pdfjs-dist', () => ({
+  OPS: {},
   getDocument: vi.fn(),
   GlobalWorkerOptions: { workerSrc: '' },
   version: '4.0.0',

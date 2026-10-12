@@ -1,4 +1,4 @@
-import { useState, useRef, type ChangeEvent, type DragEvent } from 'react';
+import { useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react';
 import { CheckSquare, FileText, Square, Upload, X } from 'lucide-react';
 import {
   Alert,
@@ -20,6 +20,12 @@ import {
   type ParsedChapter,
 } from '../services/documentParserService';
 import styles from './ImportBookModal.module.css';
+import {
+  mergeImportedChapters,
+  splitImportedChapter,
+  type ImportWarning,
+} from '../model/documentImport';
+import { ImportChapterReview } from './ImportChapterReview';
 
 export interface ImportBookModalProps {
   open: boolean;
@@ -37,6 +43,11 @@ export function ImportBookModal({
   onSuccess,
 }: ImportBookModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const parseController = useRef<AbortController | null>(null);
+  const importRunning = useRef(false);
+  const importedBookId = useRef<string | null>(null);
+  const savedChapterIds = useRef(new Set<string>());
+  useEffect(() => () => parseController.current?.abort(), [open]);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -51,10 +62,21 @@ export function ImportBookModal({
 
   // Capítulos detectados
   const [chapters, setChapters] = useState<ParsedChapter[]>([]);
+  const [warnings, setWarnings] = useState<ImportWarning[]>([]);
+  const [pageCount, setPageCount] = useState<number>();
+  const [progress, setProgress] = useState('');
+  const [expandedChapter, setExpandedChapter] = useState<string | null>(null);
+  const [reviewPage, setReviewPage] = useState(1);
+  const [savedCount, setSavedCount] = useState(0);
+  const [importStarted, setImportStarted] = useState(false);
 
   const isCreatingNewBook = !targetBook;
 
   const handleReset = () => {
+    parseController.current?.abort();
+    parseController.current = null;
+    importedBookId.current = null;
+    savedChapterIds.current.clear();
     setSelectedFile(null);
     setParseError(null);
     setIsParsing(false);
@@ -63,6 +85,12 @@ export function ImportBookModal({
     setBookGenre('');
     setBookSynopsis('');
     setChapters([]);
+    setWarnings([]);
+    setPageCount(undefined);
+    setProgress('');
+    setExpandedChapter(null);
+    setSavedCount(0);
+    setImportStarted(false);
   };
 
   const handleClose = () => {
@@ -72,24 +100,42 @@ export function ImportBookModal({
   };
 
   const handleProcessFile = async (file: File) => {
+    if (importRunning.current || importedBookId.current) return;
     if (!isSupportedDocument(file.name)) {
       setParseError(`Por favor, selecione um arquivo válido: ${DOCUMENT_FORMAT_LABEL}.`);
       return;
     }
 
+    parseController.current?.abort();
+    const controller = new AbortController();
+    parseController.current = controller;
+    setChapters([]);
+    setWarnings([]);
+    setPageCount(undefined);
+    setExpandedChapter(null);
+    setProgress('');
     setSelectedFile(file);
     setIsParsing(true);
     setParseError(null);
 
     try {
-      const result = await parseDocumentFile(file);
+      const result = await parseDocumentFile(file, {
+        signal: controller.signal,
+        onProgress: (current, total) => {
+          if (!controller.signal.aborted) setProgress(`Página ${current} de ${total}`);
+        },
+      });
+      if (controller.signal.aborted) return;
       setBookTitle(result.title);
       setChapters(result.chapters);
+      setWarnings(result.warnings ?? []);
+      setPageCount(result.pageCount);
     } catch (err) {
+      if (controller.signal.aborted) return;
       setParseError(err instanceof Error ? err.message : 'Falha ao processar arquivo');
       setSelectedFile(null);
     } finally {
-      setIsParsing(false);
+      if (parseController.current === controller) setIsParsing(false);
     }
   };
 
@@ -141,17 +187,19 @@ export function ImportBookModal({
   const allSelected = chapters.length > 0 && chapters.every((ch) => ch.selected);
 
   const handleImport = async () => {
+    if (importRunning.current) return;
     if (selectedChapters.length === 0) return;
     if (isCreatingNewBook && !bookTitle.trim()) return;
 
     setIsImporting(true);
+    importRunning.current = true;
     setParseError(null);
 
     try {
-      let activeBookId = targetBook ? targetBook.id : '';
+      let activeBookId = importedBookId.current ?? targetBook?.id ?? '';
 
       // Se for um novo livro, cria o livro primeiro
-      if (isCreatingNewBook) {
+      if (isCreatingNewBook && !activeBookId) {
         const newBook = await bookService.createBook(authorId, {
           title: bookTitle.trim(),
           genre: bookGenre.trim() || undefined,
@@ -159,24 +207,31 @@ export function ImportBookModal({
         });
         activeBookId = newBook.id;
       }
+      importedBookId.current = activeBookId;
+      setImportStarted(true);
 
       // Cria cada capítulo selecionado sequencialmente para manter a ordem
       for (const ch of selectedChapters) {
+        if (savedChapterIds.current.has(ch.id)) continue;
         await bookService.createChapter(activeBookId, {
           title: ch.title.trim() || 'Capítulo',
           content: ch.content,
         });
+        savedChapterIds.current.add(ch.id);
+        setSavedCount(savedChapterIds.current.size);
       }
 
       // Recalcula o wordCount total do livro
       await bookService.recalculateBookWordCount(activeBookId);
 
       onSuccess(activeBookId);
-      handleClose();
+      handleReset();
+      onClose();
     } catch (err) {
       setParseError(err instanceof Error ? err.message : 'Falha ao importar capítulos');
     } finally {
       setIsImporting(false);
+      importRunning.current = false;
     }
   };
 
@@ -192,7 +247,7 @@ export function ImportBookModal({
       title={dialogTitle}
       description="Escolha um documento, confira os capítulos e importe quando estiver pronto."
       onClose={handleClose}
-      maxWidthClass="max-w-2xl"
+      maxWidthClass={expandedChapter && pageCount ? 'max-w-5xl' : 'max-w-2xl'}
       footer={
         <div className={styles.footerActions}>
           <Button variant="secondary" onClick={handleClose} disabled={isImporting}>
@@ -228,6 +283,12 @@ export function ImportBookModal({
         {parseError && (
           <Alert variant="danger" title="Erro no documento">
             {parseError}
+          </Alert>
+        )}
+        {savedCount > 0 && (
+          <Alert variant="info" title="Capítulos já gravados">
+            {savedCount} capítulo(s) salvo(s). Uma nova tentativa continua pelos capítulos
+            pendentes.
           </Alert>
         )}
 
@@ -272,7 +333,7 @@ export function ImportBookModal({
               variant="secondary"
               size="sm"
               onClick={handleReset}
-              disabled={isParsing || isImporting}
+              disabled={isImporting || importStarted}
               title="Trocar arquivo"
             >
               <X className="icon icon-sm" aria-hidden="true" />
@@ -282,7 +343,46 @@ export function ImportBookModal({
         )}
 
         {/* Etapa 2: Carregando Análise */}
-        {isParsing && <LoadingState label="Analisando documento e detectando capítulos..." />}
+        {isParsing && (
+          <div role="status">
+            <LoadingState label="Analisando documento e detectando capítulos..." />
+            {progress}
+          </div>
+        )}
+        {!isParsing && warnings.length > 0 && (
+          <div className={styles.warnings}>
+            {warnings.map((warning) => (
+              <Alert
+                key={`${warning.code}-${warning.message}`}
+                variant="warning"
+                title="Conferência do PDF"
+              >
+                <p>{warning.message}</p>
+                <div className={styles.pageLinks}>
+                  {warning.pages.map((number) => (
+                    <Button
+                      key={number}
+                      variant="ghost"
+                      size="sm"
+                      disabled={isImporting}
+                      onClick={() => {
+                        const chapter =
+                          chapters.find((chapter) => chapter.sourcePages?.includes(number)) ??
+                          chapters[0];
+                        if (chapter) {
+                          setExpandedChapter(chapter.id);
+                          setReviewPage(number);
+                        }
+                      }}
+                    >
+                      Página {number}
+                    </Button>
+                  ))}
+                </div>
+              </Alert>
+            ))}
+          </div>
+        )}
 
         {/* Etapa 3: Revisão e Configuração dos Capítulos */}
         {!isParsing && selectedFile && chapters.length > 0 && (
@@ -295,7 +395,7 @@ export function ImportBookModal({
                   value={bookTitle}
                   onChange={(e) => setBookTitle(e.target.value)}
                   required
-                  disabled={isImporting}
+                  disabled={isImporting || importStarted}
                 />
                 <FormSection
                   title="Sobre a obra"
@@ -330,7 +430,7 @@ export function ImportBookModal({
                 variant="secondary"
                 size="sm"
                 onClick={handleToggleAll}
-                disabled={isImporting}
+                disabled={isImporting || savedCount > 0}
               >
                 {allSelected ? (
                   <>
@@ -360,7 +460,7 @@ export function ImportBookModal({
                           aria-label={`Selecionar capítulo ${idx + 1}`}
                           checked={ch.selected}
                           onChange={() => handleToggleChapter(ch.id)}
-                          disabled={isImporting}
+                          disabled={isImporting || savedCount > 0}
                           className={styles.checkbox}
                         />
                         <span className="font-semibold text-sm text-[hsl(var(--muted-foreground))]">
@@ -372,7 +472,7 @@ export function ImportBookModal({
                           value={ch.title}
                           aria-label={`Título do capítulo ${idx + 1}`}
                           onChange={(e) => handleChapterTitleChange(ch.id, e.target.value)}
-                          disabled={!ch.selected || isImporting}
+                          disabled={!ch.selected || isImporting || savedCount > 0}
                           placeholder="Título do capítulo"
                         />
                       </div>
@@ -383,6 +483,56 @@ export function ImportBookModal({
                   </div>
 
                   {ch.preview && <p className={styles.chapterPreview}>{ch.preview}</p>}
+                  {ch.sourcePages && (
+                    <p className={styles.summaryStats}>
+                      Páginas de origem: {ch.sourcePages.join(', ')}
+                    </p>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-expanded={expandedChapter === ch.id}
+                    aria-controls={`review-${ch.id}`}
+                    onClick={() => {
+                      setExpandedChapter(expandedChapter === ch.id ? null : ch.id);
+                      setReviewPage(ch.sourcePages?.[0] ?? 1);
+                    }}
+                  >
+                    {' '}
+                    {expandedChapter === ch.id ? 'Recolher prévia' : 'Conferir conteúdo'}
+                  </Button>
+                  {expandedChapter === ch.id && selectedFile && (
+                    <div id={`review-${ch.id}`}>
+                      <ImportChapterReview
+                        key={`${ch.id}-${reviewPage}-${ch.blocks?.length}`}
+                        chapter={ch}
+                        file={selectedFile}
+                        pageCount={pageCount}
+                        initialPage={reviewPage}
+                        disabled={isImporting || savedCount > 0}
+                        canMerge={idx < chapters.length - 1}
+                        onSplit={(at) => {
+                          setChapters((current) =>
+                            current.flatMap((chapter) =>
+                              chapter.id === ch.id ? splitImportedChapter(chapter, at) : [chapter],
+                            ),
+                          );
+                        }}
+                        onMerge={() => {
+                          setChapters((current) => {
+                            const at = current.findIndex((chapter) => chapter.id === ch.id);
+                            const next = current[at + 1];
+                            if (!next) return current;
+                            return [
+                              ...current.slice(0, at),
+                              mergeImportedChapters(current[at]!, next),
+                              ...current.slice(at + 2),
+                            ];
+                          });
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

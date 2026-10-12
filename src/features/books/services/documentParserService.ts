@@ -1,22 +1,13 @@
-import { countWords } from '../model/chapter';
 import { renderRichText, sanitizeRichText } from '@/shared/lib/sanitizeRichText';
-import pdfWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-import { extractPdfText, type PdfTextPage } from './pdfTextExtraction';
-
-export interface ParsedChapter {
-  id: string;
-  title: string;
-  content: string;
-  wordCount: number;
-  selected: boolean;
-  preview: string;
-}
-
-export interface DocumentParseResult {
-  title: string;
-  chapters: ParsedChapter[];
-  totalWords: number;
-}
+import {
+  createParsedChapter,
+  type ParsedChapter,
+  type DocumentParseResult,
+  type ParseOptions,
+} from '../model/documentImport';
+import { parsePdfLayout, throwIfAborted } from './pdfDocumentService';
+export type { ParsedChapter, DocumentParseResult } from '../model/documentImport';
+export { parsePdfFile } from './pdfDocumentService';
 
 export const DOCUMENT_EXTENSIONS = [
   '.docx',
@@ -68,25 +59,6 @@ export async function parseDocxFile(file: File): Promise<string> {
   return sanitizeRichText(result.value);
 }
 
-export async function parsePdfFile(file: File): Promise<string> {
-  const pdfjs = await import('pdfjs-dist');
-  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
-  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
-  const pdf = await loadingTask.promise;
-  try {
-    const pages: PdfTextPage[] = [];
-    for (let number = 1; number <= pdf.numPages; number++) {
-      const page = await pdf.getPage(number);
-      const text = await page.getTextContent();
-      pages.push({ number, height: page.getViewport({ scale: 1 }).height, items: text.items });
-      page.cleanup();
-    }
-    return extractPdfText(pages);
-  } finally {
-    await loadingTask.destroy();
-  }
-}
-
 function decodeText(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   const encoding =
@@ -109,18 +81,6 @@ function decodeText(buffer: ArrayBuffer): string {
   )
     throw new Error('O arquivo contém dados binários. Selecione um documento de texto.');
   return text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
-}
-
-function createParsedChapter(title: string, content: string, index: number): ParsedChapter {
-  const plain = extractPlainText(renderRichText(content));
-  return {
-    id: 'chapter-' + (index + 1),
-    title: title.trim() || 'Capítulo sem título',
-    content: content.trim(),
-    wordCount: countWords(content),
-    selected: true,
-    preview: plain.length > 180 ? plain.slice(0, 180) + '...' : plain,
-  };
 }
 
 export function splitIntoChapters(
@@ -263,15 +223,41 @@ function plainTextHtml(text: string): string {
     .join('');
 }
 
-export async function parseDocumentFile(file: File): Promise<DocumentParseResult> {
+export async function parseDocumentFile(
+  file: File,
+  options: ParseOptions = {},
+): Promise<DocumentParseResult> {
+  throwIfAborted(options.signal);
   const extension = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
   if (!isSupportedDocument(file.name))
     throw new Error(
       'Formato de arquivo não suportado (' + extension + '). Use ' + DOCUMENT_FORMAT_LABEL + '.',
     );
   let content: string;
+  if (extension === '.pdf') {
+    const result = await parsePdfLayout(file, options);
+    const chapters = result.sections.map((section, index) => ({
+      ...createParsedChapter(
+        section.title,
+        section.blocks.map((block) => block.html).join(''),
+        index,
+        section.blocks,
+      ),
+      sourcePages: section.pages,
+    }));
+    if (!chapters.some((chapter) => chapter.wordCount > 0))
+      throw new Error(
+        'Não foi encontrado texto no PDF. PDFs digitalizados precisam de OCR antes da importação.',
+      );
+    return {
+      title: file.name.replace(/\.[^/.]+$/, '').trim() || 'Obra Importada',
+      chapters,
+      totalWords: chapters.reduce((sum, chapter) => sum + chapter.wordCount, 0),
+      warnings: result.warnings,
+      pageCount: result.pageCount,
+    };
+  }
   if (extension === '.docx') content = await parseDocxFile(file);
-  else if (extension === '.pdf') content = await parsePdfFile(file);
   else {
     const text = decodeText(await file.arrayBuffer());
     content = ['.md', '.markdown'].includes(extension)
@@ -280,18 +266,15 @@ export async function parseDocumentFile(file: File): Promise<DocumentParseResult
         ? sanitizeRichText(text)
         : text;
   }
-  const isPlainText = ['.pdf', '.txt', '.text'].includes(extension);
+  throwIfAborted(options.signal);
+  const isPlainText = ['.txt', '.text'].includes(extension);
   const chapters = isPlainText
     ? splitPlainTextIntoChapters(content, 'Capítulo 1').map((chapter, index) =>
         createParsedChapter(chapter.title, plainTextHtml(chapter.content), index),
       )
     : splitIntoChapters(content);
   if (!chapters.length || !chapters.some((chapter) => chapter.wordCount > 0))
-    throw new Error(
-      extension === '.pdf'
-        ? 'Não foi encontrado texto no PDF. PDFs digitalizados precisam de OCR antes da importação.'
-        : 'O documento está vazio ou não contém texto para importar.',
-    );
+    throw new Error('O documento está vazio ou não contém texto para importar.');
   return {
     title: file.name.replace(/\.[^/.]+$/, '').trim() || 'Obra Importada',
     chapters,

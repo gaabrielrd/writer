@@ -174,7 +174,25 @@ workers para evitar saturação de memória/CPU em máquinas compartilhadas. Nã
 redução de limites, desativação de testes ou regeneração automática das imagens
 de referência para esconder regressões.
 
-## Modais
+## Importação de aventuras PDF
+
+`pdfLayoutExtraction.test.ts` cobre duas colunas, títulos entre faixas, sumário
+sem marcador, partes/apêndices, caixas, atributos, tabelas simples e estruturas
+ambíguas. Os testes de serviço verificam fontes/geometria, worker local,
+cancelamento e liberação de páginas/documentos. Revisão/modelo cobrem páginas
+de origem, dividir/unir, seleção, progresso, respostas tardias e falha parcial.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/import-campaigns.visual.ts e2e/visual/import-documents.visual.ts
+```
+
+A aventura sintética de duas colunas e as regressões de nove capítulos/Markdown
+usam os três temas, desktop/celular, teclado e 320 px. O Phandelver real é um
+teste local opcional, habilitado por `WRITER_IMPORT_PDF` com o caminho do arquivo;
+esse PDF não é versionado. Serviços fictícios e bloqueio de rede externa mantêm
+os testes isolados. Veja [importação](document-import.md).
+
+## Modais de importação e edição
 
 `e2e/visual/dialog-layout.visual.ts` mede o limite de `80vh` e confirma que
 header/footer mantêm suas posições ao rolar o conteúdo em edição de livro,
