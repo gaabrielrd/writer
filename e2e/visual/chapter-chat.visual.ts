@@ -59,7 +59,30 @@ test('cursor fora da passagem visível usa viewport e geração pode ser interro
       (_, i) => `Parágrafo ${i}: Lia observa o horizonte e pensa na viagem.`,
     ).join('\n\n'),
   );
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   await editor.press('Control+Home');
+  await expect
+    .poll(() =>
+      editor.evaluate((element) => {
+        const selection = window.getSelection()!;
+        const before = selection.getRangeAt(0).cloneRange();
+        before.selectNodeContents(element);
+        before.setEnd(selection.anchorNode!, selection.anchorOffset);
+        return before.toString().length;
+      }),
+    )
+    .toBe(0);
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   await page.evaluate(() => {
     const area = document.querySelector('[data-editor-scroll-area]')!;
     if (
@@ -69,6 +92,12 @@ test('cursor fora da passagem visível usa viewport e geração pode ser interro
       area.scrollTop = area.scrollHeight / 2;
     else window.scrollTo(0, document.scrollingElement!.scrollHeight / 2);
   });
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+      ),
+  );
   // Capture before opening: the panel resize must preserve the working passage.
   await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
   const chat = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });

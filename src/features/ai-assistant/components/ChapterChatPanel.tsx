@@ -26,6 +26,8 @@ import {
 import type { ChatIdentity } from '../services/chapterChatService';
 import styles from './ChapterChatPanel.module.css';
 
+const visibleReplyText = (text: string) => text.replace(/\[\[\/?SUGESTAO\]\]/g, '');
+
 export interface ChatApplyInput {
   identity: ChatIdentity;
   message: ChatMessage;
@@ -209,7 +211,7 @@ export function ChapterChatPanel({
   }
   async function copy(message: ChatMessage) {
     try {
-      await navigator.clipboard.writeText(message.suggestion ?? message.text);
+      await navigator.clipboard.writeText(message.suggestion ?? visibleReplyText(message.text));
       setCopied(message.id);
     } catch {
       chat.setError('Não foi possível copiar. Selecione o texto para copiar manualmente.');
@@ -305,7 +307,11 @@ export function ChapterChatPanel({
             <strong>{message.role === 'user' ? 'Você' : 'Assistente IA'}</strong>
             <div
               className={styles.response}
-              dangerouslySetInnerHTML={{ __html: renderRichText(message.text) }}
+              dangerouslySetInnerHTML={{
+                __html: renderRichText(
+                  message.role === 'assistant' ? visibleReplyText(message.text) : message.text,
+                ),
+              }}
             />
             {message.role === 'user' && (
               <details>
@@ -391,7 +397,7 @@ export function ChapterChatPanel({
         {chat.generating && (
           <article className={styles.message} aria-label="Resposta em andamento">
             <strong>Assistente IA</strong>
-            <p>{chat.partial || 'Preparando resposta...'}</p>
+            <p>{visibleReplyText(chat.partial) || 'Preparando resposta...'}</p>
           </article>
         )}
       </div>

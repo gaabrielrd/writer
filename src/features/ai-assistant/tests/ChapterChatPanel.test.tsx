@@ -105,6 +105,34 @@ async function setup(overrides: Partial<React.ComponentProps<typeof ChapterChatP
   };
 }
 describe('chat do capítulo', () => {
+  it('oculta marcadores internos em texto parcial, resposta interrompida e cópia', async () => {
+    page.messages = [
+      {
+        ...assistantMessage,
+        state: 'stopped',
+        suggestion: undefined,
+        text: 'Explicação.\n[[SUGESTAO]]Cena gerada.[[/SUGESTAO]]',
+      },
+    ];
+    const clipboardWrite = vi.fn().mockResolvedValue(undefined);
+    Object.assign(navigator, { clipboard: { writeText: clipboardWrite } });
+    const ui = await setup();
+    expect(ui.container).toHaveTextContent('Cena gerada.');
+    expect(ui.container).not.toHaveTextContent('[[SUGESTAO]]');
+    expect(ui.container).not.toHaveTextContent('[[/SUGESTAO]]');
+    fireEvent.click(screen.getByRole('button', { name: 'Copiar' }));
+    await screen.findByRole('button', { name: 'Copiado' });
+    expect(clipboardWrite).toHaveBeenCalledWith('Explicação.\nCena gerada.');
+    vi.mocked(service.sendChapterChat).mockImplementation((_identity, _request, chunk) => {
+      chunk('[[SUGESTAO]]Resposta em preparação.[[/SUGESTAO]]');
+      return new Promise(() => undefined);
+    });
+    fireEvent.change(ui.input, { target: { value: 'Continuar' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
+    await screen.findByText('Resposta em preparação.');
+    expect(ui.container).not.toHaveTextContent('[[SUGESTAO]]');
+    expect(ui.container).not.toHaveTextContent('[[/SUGESTAO]]');
+  });
   it('permite escolher contexto, desfazer a fixação e navegar no catálogo com setas e Tab', async () => {
     const ui = await setup();
     await userEvent.click(screen.getByRole('combobox', { name: 'Origem do contexto' }));

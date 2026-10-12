@@ -74,6 +74,8 @@ permite conversar. A primeira aplicação de uma sugestão da plataforma custa
 **1 crédito**, informado na sugestão. BYOK e reaplicação de uma sugestão já paga
 não debitam. Limite de 60 pedidos por autor/hora, incluindo falhas; uma geração
 por conversa de cada vez. Cancelar mantém texto parcial sem tornar a saída aplicável.
+Respostas parciais, mensagens interrompidas e suas cópias ocultam os marcadores
+internos do protocolo de sugestão.
 
 A prosa sugerida fica separada da explicação e entra no editor como texto seguro.
 Seleção/cursor conservam hash SHA-256 e intervalo; viewport/capítulo exigem
