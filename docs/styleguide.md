@@ -108,6 +108,9 @@ Tripo integra o aplicativo.
 - **Movimento:** entrada breve na apresentação, resposta de hover nos livros e
   abertura do painel contextual. Não há animação contínua atrás do editor.
 - **Criação de livro:** título/gênero diretamente acessíveis, sinopse/capa em seções opcionais, salvamento disponível pelos dados essenciais. Sugestões exigem aceite explícito com preço visível. Biblioteca e prévia de capa em 2:3 têm prioridade; URL é secundária. Criação manual disponível em falha da IA.
+  Acima de 900 px, o modal manual tem até 960 px e prévia lateral com a mesma
+  capa, fonte editorial do título, badge de gênero e sinopse dos cards da biblioteca.
+  A prévia acompanha apenas os dados preenchidos/aceitos e fica oculta em telas menores.
 
 Os tokens ficam em `src/styles/globals.css`; os três temas e a preferência do
 sistema continuam compartilhando um único provider. A suíte visual usa serviços

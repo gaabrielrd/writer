@@ -1,3 +1,53 @@
+.layout {
+  min-width: 0;
+}
+.preview {
+  display: none;
+}
+.previewHeading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.previewHeading h3 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.previewHeading p {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+.previewCard {
+  width: 100%;
+  max-width: 200px;
+  margin-inline: auto;
+  overflow: hidden;
+}
+.previewGenre {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 901px) {
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    align-items: start;
+    gap: var(--space-6);
+  }
+  .preview {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+    padding-left: var(--space-6);
+    border-left: var(--border-width) solid hsl(var(--border));
+  }
+}
 .form {
   display: flex;
   flex-direction: column;
