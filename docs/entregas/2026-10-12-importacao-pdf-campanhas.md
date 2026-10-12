@@ -162,3 +162,58 @@ essa base mantém os 21 arquivos do importador e sua documentação.
 O envio de `master` foi autorizado na conversa. O estado anterior sem push
 refere-se à entrega isolada; os resultados de CI remoto desta integração ainda
 não estavam disponíveis ao registrar esta seção.
+
+## Incremento: hierarquia de títulos e subtítulos — 2026-10-12
+
+A revisão identificou que todos os títulos internos eram convertidos em `h2`
+e que títulos longos podiam ficar fragmentados em vários blocos. O incremento
+preserva níveis pela tipografia observada dentro da seção e recompõe títulos
+em linhas próximas da mesma coluna. Usa a posição original do texto mesmo
+quando a abertura precisa preceder a coluna oposta na ordem de leitura.
+
+- [x] Níveis distintos na Parte 1: Esconderijo Dentefino (`h2`), Características
+      Gerais (`h3`) e Conduzindo a Carroça (`h4`).
+- [x] Vulnerabilidades, Resistências e Imunidades em um título único.
+- [x] Marcadores separados de capítulos, partes e apêndices recompostos.
+- [x] Sete seções do Phandelver e nove capítulos do PDF de regressão preservados,
+      com correspondência de sumário após a recomposição.
+- [x] Capitulares, ênfase inline e frases em negrito permanecem como prosa;
+      negrito do tamanho da prosa exige espaço acima e abaixo para ser subtítulo.
+- [x] Prévia com estilos dos níveis, teclado, temas, desktop/celular e 320 px.
+
+Arquivos do incremento: extrator `pdfLayoutExtraction.ts`, seus testes,
+`ImportBookModal.module.css`, cenário `import-campaigns.visual.ts` e documentos
+sobre importação, arquitetura, testes, plano e esta entrega. Sem dependências
+novas e sem mudanças no processamento de DOCX/Markdown/HTML/texto.
+
+Foram acrescentados 13 casos de regressão no extrator. A suíte Chromium verifica
+níveis semânticos nas prévias sintética e real, além da ordem, caixas, atributos,
+original e divisão/união. Screenshots de revisão foram conferidos localmente.
+
+Saída real da validação:
+
+```text
+Test Files  106 passed (106)
+     Tests  756 passed (756)
+All files          |   92.62 |    86.01 |   91.11 |   94.71 |
+ℹ tests 69
+ℹ pass 69
+ℹ fail 0
+ℹ tests 73
+ℹ pass 73
+ℹ fail 0
+Smoke test do bundle OK.
+24 passed (2.7m)
+```
+
+`npm ci --prefix functions`, `npm run validate` e os dois cenários de importação
+no Playwright foram executados. Logs locais: `test-results/pdf-heading-validate.log`
+e `test-results/pdf-heading-browser-final.log`. A primeira suíte visual detectou
+uma regressão na identificação do sumário após juntar número e título; a
+correspondência foi corrigida e recebeu teste antes da execução final verde.
+
+Os níveis são inferidos por tamanho e isolamento do texto, não por semântica
+editorial garantida. Títulos com tipografia igual para níveis distintos ou sem
+destaque suficiente ainda exigem revisão. O PDF e dados de auditoria permanecem
+locais e fora do versionamento. Este incremento foi validado e registrado na
+worktree; não foi integrado em `master`, enviado ao remoto ou publicado.

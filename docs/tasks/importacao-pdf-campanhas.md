@@ -44,3 +44,21 @@ mais colunas/texto rotacionado são sinalizados, sem reconstrução garantida.
 OCR, importação de mapas/imagens, reprodução da diagramação, lore por IA e
 interpretação automática de atos ficam fora desta entrega. O PDF do usuário
 é lido localmente e não é versionado.
+
+## Incremento: títulos e subtítulos — 2026-10-12
+
+Solicitado na conversa após a integração inicial. Corrigir o achatamento dos
+subtítulos como `h2` e títulos quebrados em linhas, preservando seções e prosa.
+
+1. Comparar a extração com páginas renderizadas do Phandelver.
+2. Inferir os níveis internos pela tipografia, recompor linhas próximas e evitar
+   que capitulares, ênfase inline e frases em negrito virem títulos.
+3. Manter a correspondência do sumário após recompor marcadores/títulos.
+4. Exibir a hierarquia na revisão, testar sintéticos/arquivo real e regressões
+   de formatos, executar a validação e registrar a evidência.
+
+Aceite: sete seções do Phandelver; níveis distintos para Esconderijo Dentefino,
+Características Gerais e Conduzindo a Carroça; título Vulnerabilidades,
+Resistências e Imunidades em um bloco; PDF de nove capítulos sem capa/sumário;
+revisão nos três temas, desktop/celular e 320 px. Mesmo limite de extração local
+por heurísticas, sem OCR ou interpretação por IA.

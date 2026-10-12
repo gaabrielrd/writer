@@ -28,6 +28,7 @@ export interface LayoutPage {
 }
 
 interface Fragment extends LayoutItem {
+  baselineY: number;
   x: number;
   y: number;
   height: number;
@@ -36,10 +37,13 @@ interface Fragment extends LayoutItem {
 interface Line {
   text: string;
   html: string;
+  baselineY: number;
   x: number;
   y: number;
   right: number;
   height: number;
+  bold: boolean;
+  isolated?: boolean;
   page: number;
   box?: number;
   cells?: string[];
@@ -55,7 +59,9 @@ export interface PdfLayoutResult {
 }
 
 const PRIMARY =
-  /^(?:(?:cap[íi]tulo|chapter|parte|part|ato|act|livro|book)\s+(?:\d+|[ivxlcdm]+)|(?:ap[êe]ndice|appendix)\s+[a-z\d]+)(?:\s*[:\-–—]\s*.+)?$/i;
+  /^(?:(?:cap[íi]tulo|chapter|parte|part|ato|act|livro|book)\s+(?:\d+|[ivxlcdm]+)|(?:ap[êe]ndice|appendix)\s+[a-z\d]+)(?:\s*[:\-–—]\s*.*)?$/i;
+const PRIMARY_LABEL =
+  /^(?:(?:cap[íi]tulo|chapter|parte|part|ato|act|livro|book)\s+(?:\d+|[ivxlcdm]+)|(?:ap[êe]ndice|appendix)\s+[a-z\d]+)\s*[:\-–—]?$/i;
 const SPECIAL =
   /^(?:introdu[çc][ãa]o|introduction|pr[óo]logo|prologue|ep[íi]logo|epilogue|pref[áa]cio|posf[áa]cio)$/i;
 const CONTENTS = /^(?:sum[áa]rio|[íi]ndice(?:\s+geral)?|contents|table of contents)$/i;
@@ -78,6 +84,7 @@ function fragments(page: LayoutPage): Fragment[] {
         ...item,
         x: item.transform?.[4] ?? 0,
         y,
+        baselineY: y,
         height,
         width: item.width ?? item.str.length * height * 0.45,
       },
@@ -146,8 +153,15 @@ function makeLines(items: Fragment[], page: LayoutPage): Line[] {
       cells: [...cells, cell.trim()],
       x,
       y,
+      baselineY: median(row.map((item) => item.baselineY)),
       right: right ?? x,
-      height: Math.max(...row.map((item) => item.height)),
+      // A decorative initial or one oversized fragment does not make its whole line a title.
+      height: median(row.flatMap((item) => Array.from(item.str.trim(), () => item.height))),
+      bold:
+        row
+          .filter((item) => item.bold)
+          .reduce((total, item) => total + item.str.trim().length, 0) >=
+        row.reduce((total, item) => total + item.str.trim().length, 0) * 0.9,
       page: page.number,
       ...(box !== undefined && box >= 0 ? { box } : {}),
     };
@@ -235,9 +249,92 @@ function isHeading(line: Line, bodyHeight: number): boolean {
   );
 }
 
+function isInternalHeading(line: Line, bodyHeight: number, continuation = false): boolean {
+  return (
+    line.box === undefined &&
+    line.text.length <= 160 &&
+    !ENTRY.test(line.text) &&
+    (continuation || !/[.!?;]$/.test(line.text)) &&
+    !/^(?:[•●▪]|\d+\s*$)/.test(line.text) &&
+    (line.cells?.length ?? 1) === 1 &&
+    (line.height > bodyHeight * 1.3 || (line.bold && !!line.isolated))
+  );
+}
+
+function mergeHeadingLines(lines: Line[], bodyHeight: number): Line[] {
+  const merged: Line[] = [];
+  lines = lines.map((line, index) => {
+    const previous = lines[index - 1];
+    const next = lines[index + 1];
+    const isolated =
+      (!previous || previous.y <= line.y || previous.y - line.y > bodyHeight * 1.7) &&
+      (!next || next.y >= line.y || line.y - next.y > bodyHeight * 1.7);
+    return { ...line, isolated };
+  });
+  for (let index = 0; index < lines.length; index++) {
+    let line = lines[index]!;
+    if (
+      SPECIAL.test(line.text) ||
+      (!isHeading(line, bodyHeight) && !isInternalHeading(line, bodyHeight))
+    ) {
+      merged.push(line);
+      continue;
+    }
+    let previous = line;
+
+    while (index + 1 < lines.length) {
+      const next = lines[index + 1]!;
+      const completingLabel = PRIMARY_LABEL.test(line.text);
+      const gap = previous.baselineY - next.baselineY;
+      const sameColumn = Math.abs(line.x - next.x) <= Math.max(line.height, next.height) * 2;
+      const sameStyle =
+        Math.abs(previous.height - next.height) <= previous.height * 0.06 &&
+        previous.bold === next.bold;
+      if (
+        !sameColumn ||
+        next.page !== line.page ||
+        gap <= 0 ||
+        gap > Math.max(previous.height, next.height) * (completingLabel ? 2.8 : 1.55) ||
+        isHeading(next, bodyHeight) ||
+        !isInternalHeading(next, bodyHeight, !completingLabel) ||
+        (!completingLabel && !sameStyle) ||
+        (completingLabel &&
+          (next.height < previous.height * 0.9 || next.height <= bodyHeight * 1.15)) ||
+        line.text.length + next.text.length > 200
+      )
+        break;
+      const separator = completingLabel ? ': ' : ' ';
+      line = {
+        ...line,
+        text:
+          line.text.replace(completingLabel ? /\s*[:\-–—]\s*$/ : /$/u, '') + separator + next.text,
+        html: line.html + separator + next.html,
+        right: Math.max(line.right, next.right),
+        height: Math.max(line.height, next.height),
+      };
+      previous = next;
+      index++;
+    }
+    merged.push(line);
+  }
+  return merged;
+}
+
+function headingSizes(lines: Line[], bodyHeight: number): number[] {
+  const sizes: number[] = [];
+  for (const line of lines
+    .filter((line) => isInternalHeading(line, bodyHeight))
+    .sort((a, b) => b.height - a.height)) {
+    if (!sizes.some((height) => Math.abs(height - line.height) <= height * 0.06))
+      sizes.push(line.height);
+  }
+  return sizes;
+}
+
 function proseBlocks(lines: Line[], bodyHeight: number, warnings: ImportWarning[]): ImportBlock[] {
   const blocks: ImportBlock[] = [];
   let group: Line[] = [];
+  const sizes = headingSizes(lines, bodyHeight);
   const flush = () => {
     if (!group.length) return;
     const first = group[0]!;
@@ -309,11 +406,15 @@ function proseBlocks(lines: Line[], bodyHeight: number, warnings: ImportWarning[
       blocks.push({ html: '<p>' + escape(text) + '</p>', text, page: line.page });
       continue;
     }
-    const heading =
-      line.height > bodyHeight * 1.3 && line.text.length <= 160 && line.box === undefined;
-    if (heading) {
+    if (isInternalHeading(line, bodyHeight)) {
       flush();
-      blocks.push({ html: '<h2>' + line.html + '</h2>', text: line.text, page: line.page });
+      const rank = sizes.findIndex((height) => Math.abs(height - line.height) <= height * 0.06);
+      const level = Math.min(6, Math.max(0, rank) + 2);
+      blocks.push({
+        html: '<h' + level + '>' + line.html + '</h' + level + '>',
+        text: line.text,
+        page: line.page,
+      });
       continue;
     }
     if (
@@ -340,8 +441,22 @@ function proseBlocks(lines: Line[], bodyHeight: number, warnings: ImportWarning[
   return blocks;
 }
 
+function contentsTitle(text: string): string {
+  const title = text
+    .replace(/(?:\.\s*){2,}\s*\d+\s*$/, '')
+    .replace(/^\d+\s+/, '')
+    .trim();
+  const colon = title.indexOf(':');
+  return (
+    colon >= 0 && PRIMARY_LABEL.test(title.slice(0, colon)) ? title.slice(colon + 1).trim() : title
+  ).toLocaleLowerCase();
+}
+
 export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
-  const layouts = pages.map(pageLines);
+  const layouts = pages.map((page) => {
+    const layout = pageLines(page);
+    return { ...layout, lines: mergeHeadingLines(layout.lines, layout.bodyHeight) };
+  });
   const repeated = new Map<string, number>();
   pages.forEach((page, index) => {
     for (const text of new Set(
@@ -372,17 +487,11 @@ export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
     const entries = lines.filter((line) => ENTRY.test(line.text));
     const containsTitle = lines.some((line) => CONTENTS.test(line.text));
     // Only remove a TOC page when entries point to real later headings. No hard-coded page numbers.
-    const entryTitles = entries.map((line) =>
-      line.text
-        .replace(/(?:\.\s*){2,}\s*\d+\s*$/, '')
-        .replace(/^\d+\s+/, '')
-        .trim()
-        .toLocaleLowerCase(),
-    );
+    const entryTitles = entries.map((line) => contentsTitle(line.text));
     const matches = entryTitles.filter((entry) =>
       layouts
         .slice(pageIndex + 1)
-        .some((later) => later.lines.some((line) => line.text.toLocaleLowerCase() === entry)),
+        .some((later) => later.lines.some((line) => contentsTitle(line.text) === entry)),
     ).length;
     const contentsPage =
       entries.length >= 3 &&
@@ -427,16 +536,6 @@ export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
         flush();
         title = line.text;
         sectionPages.push(page.number);
-        const next = lines[index + 1];
-        if (
-          /^(?:cap[íi]tulo|chapter)\s+(?:\d+|[ivxlcdm]+)$/i.test(title) &&
-          next &&
-          next.height > layout.bodyHeight * 1.15 &&
-          !isHeading(next, layout.bodyHeight)
-        ) {
-          title += ': ' + next.text;
-          index++;
-        }
       } else pending.push(line);
       sectionPages.push(page.number);
     }

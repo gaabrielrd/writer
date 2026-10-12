@@ -23,7 +23,7 @@ test('aventura em duas colunas conserva estrutura, caixas, atributos e revisão'
 }, testInfo) => {
   const source = await context.newPage();
   await source.setContent(
-    '<style>@page {size:A5; margin:35px} body{font:12px Georgia} section{break-after:page} h1{font-size:24px;margin:0 0 20px} h2{font-size:18px} .columns{display:grid;grid-template-columns:1fr 1fr;gap:25px} p{margin:0 0 10px} blockquote{background:#ffefcf;border-left:2px solid #471f20;padding:10px;margin:10px 0} .map{height:300px;background:#eedcaa;border:3px solid #471f20}</style>' +
+    '<style>@page {size:A5; margin:35px} body{font:12px Georgia} section{break-after:page} h1{font-size:24px;margin:0 0 20px} h2{font-size:18px} h3{font-size:16px} .columns{display:grid;grid-template-columns:1fr 1fr;gap:25px} p{margin:0 0 10px} blockquote{background:#ffefcf;border-left:2px solid #471f20;padding:10px;margin:10px 0} .map{height:300px;background:#eedcaa;border:3px solid #471f20}</style>' +
       '<section>' +
       titles.map((title, i) => '<p>' + title + ' ........ ' + (i + 2) + '</p>').join('') +
       '</section>' +
@@ -52,7 +52,7 @@ test('aventura em duas colunas conserva estrutura, caixas, atributos e revisão'
                 n +
                 ': o mestre descreve os encontros e tesouros da aventura.</p>',
             ).join('') +
-            '<p>Pontos de Vida 26 (4d10 + 4)</p><p>FOR DES CON INT SAB CAR</p><p>14 (+2) 16 (+3) 12 (+1) 2 (-4) 11 (+0) 4 (-3)</p><p>CD 15; 200 XP; alcance 1,5 m.</p></div></div></section>' +
+            '<h3>Tesouro da entrada</h3><p>Uma moeda está escondida.</p><p>Pontos de Vida 26 (4d10 + 4)</p><p>FOR DES CON INT SAB CAR</p><p>14 (+2) 16 (+3) 12 (+1) 2 (-4) 11 (+0) 4 (-3)</p><p>CD 15; 200 XP; alcance 1,5 m.</p></div></div></section>' +
             (i === 1 ? '<section><div class="map"></div></section>' : ''),
         )
         .join(''),
@@ -80,6 +80,12 @@ test('aventura em duas colunas conserva estrutura, caixas, atributos e revisão'
   await expect(preview).toContainText('Pontos de Vida 26 (4d10 + 4)');
   await expect(preview).toContainText('FOR: 14 (+2); DES: 16 (+3)');
   await expect(preview.locator('blockquote')).toContainText('Vocês veem uma torre antiga.');
+  await expect(
+    preview.getByRole('heading', { name: '1. Entrada da Caverna', level: 2 }),
+  ).toBeVisible();
+  await expect(
+    preview.getByRole('heading', { name: 'Tesouro da entrada', level: 3 }),
+  ).toBeVisible();
   const text = await preview.textContent();
   expect(text!.indexOf('Esquerda 1-4')).toBeLessThan(text!.indexOf('Direita 1-0'));
   await expect(page.getByRole('img', { name: /Página original 3 do PDF/ })).toBeVisible();
@@ -133,6 +139,15 @@ test('arquivo real de Phandelver recupera sete seções e identifica os três ma
     name: 'Texto importado de Parte 1: Flechas de Goblin',
     exact: true,
   });
+  await expect(
+    preview.getByRole('heading', { name: 'Esconderijo Dentefino', level: 2 }),
+  ).toBeVisible();
+  await expect(
+    preview.getByRole('heading', { name: 'Características Gerais', level: 3 }),
+  ).toBeVisible();
+  await expect(
+    preview.getByRole('heading', { name: 'Conduzindo a Carroça', level: 4 }),
+  ).toBeVisible();
   await expect(preview).toContainText('A aventura inicia com os personagens escoltando uma');
   await expect(preview.locator('blockquote').first()).toContainText('Gundren');
   await expect(page.getByRole('img', { name: /Página original 6 do PDF/ })).toBeVisible();
@@ -143,6 +158,12 @@ test('arquivo real de Phandelver recupera sete seções e identifica os três ma
     name: 'Texto importado de Apêndice B: Monstros',
     exact: true,
   });
+  await expect(
+    monsters.getByRole('heading', {
+      name: 'Vulnerabilidades, Resistências e Imunidades',
+      level: 3,
+    }),
+  ).toBeVisible();
   await expect(monsters).toContainText('Pontos de Vida 26 (4d10 + 4)');
   await expect(monsters).toContainText(
     'FOR: 14 (+2); DES: 16 (+3); CON: 12 (+1); INT: 2 (-4); SAB: 11 (+0); CAR: 4 (-3)',

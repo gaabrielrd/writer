@@ -178,7 +178,10 @@ de referência para esconder regressões.
 
 `pdfLayoutExtraction.test.ts` cobre duas colunas, títulos entre faixas, sumário
 sem marcador, partes/apêndices, caixas, atributos, tabelas simples e estruturas
-ambíguas. Os testes de serviço verificam fontes/geometria, worker local,
+ambíguas. Também cobre níveis de subtítulos, títulos quebrados, marcadores
+separados, sumário após recomposição e falsos positivos de negrito/capitulares.
+Os cenários de aventuras no Chromium verificam os níveis semânticos na prévia
+sintética e no Phandelver real. Os testes de serviço verificam fontes/geometria, worker local,
 cancelamento e liberação de páginas/documentos. Revisão/modelo cobrem páginas
 de origem, dividir/unir, seleção, progresso, respostas tardias e falha parcial.
 

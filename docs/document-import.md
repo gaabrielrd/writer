@@ -30,6 +30,19 @@ O extrator ordena fragmentos pela posição e separa duas colunas por faixas,
 respeitando títulos largos e títulos de seção no topo. A ordem de pintura do
 PDF não determina a ordem de leitura. Títulos internos e salas numeradas ficam
 dentro da seção. Número e título separados de um capítulo podem ser combinados.
+Títulos quebrados em linhas próximas da mesma coluna e com tipografia compatível
+são recompostos. Marcadores de capítulos, partes e apêndices podem ser combinados
+com o título da linha seguinte. A conferência de sumário aceita os nomes com ou
+sem esses marcadores após a recomposição.
+
+Os títulos internos são organizados de `h2` até `h6` pela ordem dos tamanhos
+observados dentro de cada seção; pequenas variações de tamanho são agrupadas.
+Subtítulos em negrito do tamanho da prosa exigem espaço acima e abaixo. Frases
+com pontuação final, ênfase inline, iniciais decorativas e caixas não são
+promovidas a títulos. A prévia distingue visualmente os níveis preservados.
+Essa hierarquia é inferida: tipografia igual para níveis diferentes ou títulos
+sem destaque suficiente ainda precisam de conferência no original.
+
 Fragmentos de fonte na mesma palavra não recebem espaços extras. Números nas
 margens e texto recorrente nas margens são removidos. Para remover um cabeçalho
 ou rodapé textual, ele precisa aparecer em pelo menos três páginas e em 40%

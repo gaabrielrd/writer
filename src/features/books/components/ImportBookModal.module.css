@@ -232,10 +232,32 @@
 }
 
 .fullPreview p,
-.fullPreview h2,
+.fullPreview :is(h2, h3, h4, h5, h6),
 .fullPreview ul,
 .fullPreview blockquote {
   margin-block: var(--space-3);
+}
+
+.fullPreview :is(h2, h3, h4, h5, h6) {
+  font-family: var(--font-display);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.fullPreview h2 {
+  font-size: var(--text-xl);
+}
+
+.fullPreview h3 {
+  font-size: var(--text-lg);
+}
+
+.fullPreview h4 {
+  font-size: var(--text-base);
+}
+
+.fullPreview :is(h5, h6) {
+  font-size: var(--text-sm);
 }
 
 .fullPreview:focus-visible {
