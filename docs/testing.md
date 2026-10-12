@@ -244,11 +244,20 @@ npx playwright test --config playwright.visual.config.ts e2e/visual/compendium.v
 ```
 
 `e2e/visual/editor-adjustments.visual.ts` verifica o topo compacto do compêndio,
-busca e filtros, o assistente sem footer em uma coluna, ações acima da seleção,
+busca e filtros, o assistente lateral com campo/envio acessíveis, ações acima da seleção,
 aceite explícito, foco por teclado e contraste do item ativo em `@`. Cobre os
 três temas, desktop/celular e 320 px. A medição anterior ao ajuste foi 313 px
 entre o topo do painel e a lista em 1440 × 1000; o novo limite é 70% dessa altura.
 As respostas de IA são fictícias e a configuração visual bloqueia rede externa.
+
+O chat tem contratos/modelos/serviços em `chapterChatModel.test.ts` e
+`chapterChatService.test.ts`, interface e ciclo da conversa em
+`ChapterChatPanel.test.tsx`, captura real/seleção/viewport/transação em
+`chatEditorBridge.test.tsx` e backend em `functions/test/chapterChat.test.mjs`.
+`tests/firestore/chapter-chat.rules.test.mjs` bloqueia leitura/forja por dono,
+intruso e anônimo e executa aceite concorrente com transações reais no emulador.
+`e2e/visual/chapter-chat.visual.ts` mede espaço compartilhado, testa comandos,
+aceite/desfazer, retomada, viewport e cancelamento nos seis projetos de tema/dispositivo.
 
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts

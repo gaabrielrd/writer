@@ -147,6 +147,11 @@ usam seções opcionais com salvamento direto. A liberação depende das functio
 
 ## Limitações conhecidas
 
+- O [chat do Assistente IA no capítulo](docs/chapter-chat.md) tem histórico privado,
+  comandos e contexto por seleção/cursor/viewport. Conversa não debita; a primeira
+  aplicação de uma sugestão da plataforma custa 1 crédito. Exige callable, regras
+  e limpeza implantadas; BYOK conserva as chaves no navegador.
+
 - A [criação assistida por conversa](docs/assisted-book-creation.md) entrega metadados,
   capa e lore local privado. O pacote textual custa 2 créditos e a capa 5, no
   aceite final. Exige implantação da callable, limpeza, regras e índice.

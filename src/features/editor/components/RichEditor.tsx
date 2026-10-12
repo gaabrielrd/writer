@@ -21,10 +21,13 @@ import {
   useAIAutocomplete,
   GhostSuggestion,
   AIActionMenu,
+  AIChatLauncher,
   OutOfCreditsDialog,
   useAISettings,
   useAIConfig,
   type WritingPersonaContext,
+  type ChatEditorBridge,
+  type AIActionType,
 } from '@/features/ai-assistant';
 import { renderRichText, sanitizeRichText } from '@/shared/lib/sanitizeRichText';
 import {
@@ -40,9 +43,15 @@ import { MentionMenu } from './MentionMenu';
 import { useSelectionAnchor } from '../hooks/useSelectionAnchor';
 import { useChapterMinimap } from '../hooks/useChapterMinimap';
 import { ChapterMinimap } from './ChapterMinimap';
+import { useChatEditorBridge } from '../hooks/useChatEditorBridge';
 import styles from './RichEditor.module.css';
 
 export interface RichEditorProps {
+  chatOpen?: boolean;
+  onOpenChat?: (action?: AIActionType) => void;
+  onChatBridge?: (bridge: ChatEditorBridge | null) => void;
+  chapterTitle?: string;
+  bookTitle?: string;
   writingPersona?: WritingPersonaContext;
   aiUnavailableReason?: string | null;
   documentId?: string;
@@ -79,6 +88,11 @@ interface SelectionTarget {
 }
 
 export function RichEditor({
+  chatOpen = false,
+  onOpenChat,
+  onChatBridge,
+  chapterTitle = '',
+  bookTitle = '',
   documentId,
   writingPersona,
   aiUnavailableReason,
@@ -199,6 +213,18 @@ export function RichEditor({
   );
   const text = editor?.getText({ blockSeparator: '\n' }) ?? '';
   const minimap = useChapterMinimap(editor, entities, scrollArea);
+  useChatEditorBridge(editor, scrollArea, {
+    title: chapterTitle,
+    bookTitle,
+    persona: writingPersona ?? { instruction: '', version: '' },
+    entities,
+    setBusy: (busy) => {
+      acceptingRef.current = busy;
+      setAccepting(busy);
+      onBusyChange?.(busy);
+    },
+    onReady: onChatBridge,
+  });
   const cursorPosition =
     editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
   const isUsingBYOK = config.provider !== 'firebase_ai';
@@ -253,7 +279,10 @@ export function RichEditor({
     return Array.from(map.values());
   }, [matches]);
   const mention = editor && !mentionDismissed ? getMentionRange(editor.state) : null;
-  const selectionAnchor = useSelectionAnchor(editor, !accepting && !isAssistantOpen && !mention);
+  const selectionAnchor = useSelectionAnchor(
+    editor,
+    !accepting && !isAssistantOpen && !chatOpen && !mention,
+  );
   const candidates = mention ? mentionCandidates(entities, mention.query) : [];
   const activeGhost = !mention && !accepting ? suggestion : null;
   useEffect(() => {
@@ -586,26 +615,35 @@ export function RichEditor({
           </button>
         </div>
         <div className={styles.toolGroup}>
-          <AIActionMenu
-            writingPersona={writingPersona}
-            aiUnavailableReason={aiUnavailableReason}
-            selectionAnchor={selectionAnchor}
-            onOpenChange={setIsAssistantOpen}
-            onReturnFocus={() => {
-              if (editor && !editor.isDestroyed) editor.view.focus();
-            }}
-            onGetSelectedText={captureSelection}
-            onGetContextText={() => text}
-            onCanApplyResult={() => !acceptingRef.current && canApplyResult()}
-            onApplyingChange={setApplying}
-            loreEntities={entities}
-            userId={userId}
-            userCredits={userCredits}
-            onCreditDeducted={onCreditDeducted}
-            onShowOutOfCredits={() => setIsOutOfCreditsOpen(true)}
-            onInsertText={(value) => applyGeneratedText(value, false)}
-            onReplaceSelection={(value) => applyGeneratedText(value, true)}
-          />
+          {onOpenChat ? (
+            <AIChatLauncher
+              disabled={Boolean(aiUnavailableReason)}
+              open={chatOpen}
+              onOpen={onOpenChat}
+              anchor={selectionAnchor}
+            />
+          ) : (
+            <AIActionMenu
+              writingPersona={writingPersona}
+              aiUnavailableReason={aiUnavailableReason}
+              selectionAnchor={selectionAnchor}
+              onOpenChange={setIsAssistantOpen}
+              onReturnFocus={() => {
+                if (editor && !editor.isDestroyed) editor.view.focus();
+              }}
+              onGetSelectedText={captureSelection}
+              onGetContextText={() => text}
+              onCanApplyResult={() => !acceptingRef.current && canApplyResult()}
+              onApplyingChange={setApplying}
+              loreEntities={entities}
+              userId={userId}
+              userCredits={userCredits}
+              onCreditDeducted={onCreditDeducted}
+              onShowOutOfCredits={() => setIsOutOfCreditsOpen(true)}
+              onInsertText={(value) => applyGeneratedText(value, false)}
+              onReplaceSelection={(value) => applyGeneratedText(value, true)}
+            />
+          )}
           <Button
             variant="ghost"
             aria-pressed={isSidebarOpen}

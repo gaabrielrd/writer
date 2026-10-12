@@ -141,3 +141,24 @@ versionado nem enviado a servidores.
 4. Expanda a Parte 1 e o Apêndice B, conferindo abertura, caixas e atributos.
 5. Divida antes de um trecho e una novamente. Selecione/renomeie antes de confirmar.
 6. Troque os temas e reduza a largura para 320 px; confira revisão e controles.
+
+## Integração na principal — 2026-10-12
+
+Integração sem conflitos com `master`, incluindo o chat de capítulos e sua
+correção `02dd187`. O avanço posterior `033244b` acrescentou apenas o registro
+de deploy do chat; o código validado permaneceu igual. Revisão do diff contra
+essa base mantém os 21 arquivos do importador e sua documentação.
+
+- `npm run validate`: verde; 106 arquivos e 743 testes da aplicação, 69 de
+  infraestrutura e 73 de backend. Build e smoke passaram.
+- Cobertura: 92,54% statements, 85,9% branches, 91,04% functions, 94,64% lines.
+- Os quatro cenários de importação no projeto `desktop-light` passaram em
+  19,5 s, com Phandelver real habilitado e revisão em 320 px.
+- A primeira execução visual falhou no carregamento dinâmico de `pdfjs-dist`
+  pelo Vite. A repetição passou sem mudanças ou redução das verificações.
+- Logs locais: `test-results/pdf-main-validate.log`,
+  `test-results/pdf-main-browser.log` e `test-results/pdf-main-browser-final.log`.
+
+O envio de `master` foi autorizado na conversa. O estado anterior sem push
+refere-se à entrega isolada; os resultados de CI remoto desta integração ainda
+não estavam disponíveis ao registrar esta seção.

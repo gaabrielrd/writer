@@ -132,11 +132,17 @@ Veja [atualização do compêndio](lore-analysis.md).
 O estado é local aos componentes ou às features. Não usamos gerenciador global de estado por padrão. Se, no futuro, a complexidade justificar, a decisão deve ser registrada em um ADR.
 
 No editor, `useSelectionAnchor` observa seleção, foco, rolagem e redimensionamento
-e fornece somente coordenadas de viewport ao `AIActionMenu`, pela interface
-pública de `ai-assistant`. A barra flutuante e o botão fixo compartilham uma única
-instância do assistente. O editor captura documento/intervalo antes da abertura
-e recusa aplicar respostas se o documento mudou; selecionar texto não inicia
-geração. Configuração BYOK continua no menu do usuário, sem footer no assistente.
+e fornece coordenadas ao `AIChatLauncher`, pela interface pública de
+`ai-assistant`. Barra flutuante e botão fixo abrem a mesma conversa lateral,
+no espaço compartilhado com o compêndio. `useChatEditorBridge` captura
+seleção/cursor/viewport e prepara uma transação de texto segura. A feature
+`ai-assistant` mantém UI, comandos, histórico e serviços; `functions/src/chapterChat.mjs`
+controla autoria, limites, geração da plataforma e aceite transacional.
+Autosave e aceite compartilham a fila por capítulo. Texto, saldo e recibo são
+persistidos juntos; uma resposta incerta é recuperada pelo mesmo recibo.
+Selecionar/focar/rolar não gera respostas. Conversa é gratuita e privada por
+capítulo; cobrança ocorre no primeiro aceite da sugestão da plataforma.
+Veja [chat do capítulo](chapter-chat.md) e [ADR 0022](decisions/0022-chapter-chat-and-atomic-acceptance.md).
 
 O minimapa é interno à feature `editor`: o modelo deriva blocos e ocorrências do
 documento ProseMirror, reutilizando o motor público de lore; um hook mede a

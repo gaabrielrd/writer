@@ -35,8 +35,21 @@ import {
   ChapterPersonaDialog,
   resolveWritingPersona,
   usePersonaLibrary,
+  ChapterChatPanel,
+  chapterChatCall,
+  chatDocumentHash,
+  relevantChatLore,
+  ChapterChatError,
+  readChatApplyRecovery,
+  writeChatApplyRecovery,
+  clearChatApplyRecovery,
+  type AIActionType,
+  type ChatEditorBridge,
+  type ChatContext,
+  type ChatApplyInput,
 } from '@/features/ai-assistant';
 import { clearLocalDraft, readLocalDraft } from '../services/localDraftStorage';
+import { runChapterOperation } from '../services/chapterContentStorage';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { BusyNavigationGuard } from './BusyNavigationGuard';
 import { RichEditor } from './RichEditor';
@@ -98,7 +111,22 @@ function EditorSession() {
   const [loading, setLoading] = useState<boolean>(() => Boolean(bookId && chapterId));
   const [error, setError] = useState<string | null>(null);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [activePanel, setActivePanel] = useState<'lore' | 'chat' | null>(null);
+  const isSidebarOpen = activePanel === 'lore';
+  const setIsSidebarOpen = (open: boolean) => setActivePanel(open ? 'lore' : null);
+  const [chatMounted, setChatMounted] = useState(false);
+  const [chatBridge, setChatBridge] = useState<ChatEditorBridge | null>(null);
+  const [chatPrompt, setChatPrompt] = useState<{
+    id: number;
+    text: string;
+    context: ChatContext | null;
+  }>();
+  const [chatApplyRecovery, setChatApplyRecovery] = useState(() =>
+    user?.uid && bookId && chapterId ? readChatApplyRecovery(user.uid, bookId, chapterId) : null,
+  );
+  const [chatRecoveryError, setChatRecoveryError] = useState<string | null>(null);
+  const chatSequence = useRef(0);
+  const chatOpening = useRef(false);
   const [isAcceptingAI, setIsAcceptingAI] = useState(false);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [loreRefreshError, setLoreRefreshError] = useState<string | null>(null);
@@ -127,6 +155,7 @@ function EditorSession() {
     error: saveError,
     resetSavedContent,
     saveNow,
+    getSavedContent,
   } = useAutoSave({
     bookId,
     chapterId,
@@ -229,7 +258,7 @@ function EditorSession() {
   }, [bookId, chapterId, resetSavedContent, user?.uid]);
 
   useEffect(() => {
-    if (!book?.universeId) return;
+    if (!book) return;
     let active = true;
     const failure = (cause: unknown) => {
       if (active) {
@@ -240,20 +269,25 @@ function EditorSession() {
     const stopLocal = subscribeLoreEntities(
       book.id,
       (entities) => {
-        if (active) setLoreEntities(entities);
-      },
-      failure,
-    );
-    const stopGlobal = subscribeLoreEntities(
-      { kind: 'universe', id: book.universeId },
-      (entities) => {
         if (active) {
-          setGlobalLoreEntities(entities);
-          setGlobalLoreError(null);
+          setLoreEntities(entities);
+          if (!book.universeId) setGlobalLoreError(null);
         }
       },
       failure,
     );
+    const stopGlobal = book.universeId
+      ? subscribeLoreEntities(
+          { kind: 'universe', id: book.universeId },
+          (entities) => {
+            if (active) {
+              setGlobalLoreEntities(entities);
+              setGlobalLoreError(null);
+            }
+          },
+          failure,
+        )
+      : () => undefined;
     return () => {
       active = false;
       stopLocal();
@@ -289,6 +323,140 @@ function EditorSession() {
   const handleSelectEntity = (entity: LoreEntity) => {
     setSelectedEntityId(entity.id);
     setIsSidebarOpen(true);
+  };
+  const openChat = async (action?: AIActionType) => {
+    if (chatOpening.current) return;
+    chatOpening.current = true;
+    try {
+      const captured = await chatBridge?.capture('auto');
+      if (action) {
+        const prompt = {
+          continue: '/continuar ',
+          improve_style: '/estilo ',
+          check_consistency: '/coerencia ',
+          custom: '',
+        }[action];
+        setChatPrompt({ id: ++chatSequence.current, text: prompt, context: captured ?? null });
+      }
+      setChatMounted(true);
+      setActivePanel((previous) => (previous === 'chat' && !action ? null : 'chat'));
+    } finally {
+      chatOpening.current = false;
+    }
+  };
+  const applyChat = async (input: ChatApplyInput) => {
+    if (!chatBridge || !bookId || !chapterId || personaError)
+      throw new Error(personaError || 'Editor indisponível.');
+    if (input.message.context.persona.version !== (await chatDocumentHash(writingPersona.version)))
+      throw new Error('A persona mudou. Gere uma nova sugestão.');
+    if (globalLoreError) throw new Error('Recarregue o lore antes de aplicar.');
+    const loreSnapshot = (items: ChatContext['lore']) =>
+      JSON.stringify(
+        items.map((item) => [
+          item.name,
+          item.category,
+          item.summary,
+          item.aliases,
+          item.scope,
+          item.details,
+        ]),
+      );
+    if (
+      loreSnapshot(relevantChatLore(allLoreEntities, input.message.context.text)) !==
+      loreSnapshot(input.message.context.lore)
+    )
+      throw new Error('O lore utilizado mudou. Gere uma nova sugestão.');
+    if (chatApplyRecovery)
+      throw new Error('Recupere o aceite pendente antes de aplicar outra sugestão.');
+    chatBridge.setBusy(true);
+    try {
+      const prepared = await chatBridge.prepare(
+        input.target,
+        input.message.suggestion!,
+        input.replace,
+      );
+      await saveNow();
+      await runChapterOperation(bookId, chapterId, async () => {
+        const persisted = await getChapter(bookId, chapterId);
+        if (!persisted || persisted.content !== getSavedContent())
+          throw new Error(
+            'O capítulo mudou em outra sessão ou não foi salvo. Resolva o salvamento antes de aplicar.',
+          );
+        const recovery = {
+          identity: input.identity,
+          messageId: input.message.id,
+          requestId: input.requestId,
+          expectedHash: await chatDocumentHash(persisted.content),
+          sourceHash: input.target.hash,
+          after: prepared.after,
+          retarget: input.retarget,
+        };
+        writeChatApplyRecovery(user!.uid, recovery);
+        setChatRecoveryError(null);
+        setChatApplyRecovery(recovery);
+        let result: { content: string; credits: number; wordCount: number };
+        try {
+          result = await chapterChatCall<{
+            content: string;
+            credits: number;
+            wordCount: number;
+          }>(input.identity, {
+            action: 'apply',
+            ...recovery,
+          });
+        } catch (cause) {
+          if (cause instanceof ChapterChatError && !cause.uncertain) {
+            clearChatApplyRecovery(user!.uid, bookId, chapterId);
+            setChatApplyRecovery(null);
+          }
+          throw cause;
+        }
+        prepared.commit();
+        resetSavedContent(result.content);
+        setContent(result.content);
+        setWordCount(result.wordCount);
+        updateUserCreditsState(result.credits);
+        clearChatApplyRecovery(user!.uid, bookId, chapterId);
+        setChatApplyRecovery(null);
+        if (user?.uid) clearLocalDraft(user.uid, bookId, chapterId, result.content);
+      });
+    } finally {
+      chatBridge.setBusy(false);
+      chatBridge.focus();
+    }
+  };
+  const recoverChatApply = async () => {
+    if (!chatApplyRecovery || !user || !bookId || !chapterId || !chatBridge) return;
+    setChatRecoveryError(null);
+    chatBridge.setBusy(true);
+    try {
+      await runChapterOperation(bookId, chapterId, async () => {
+        const result = await chapterChatCall<{
+          content: string;
+          credits: number;
+          wordCount: number;
+        }>(chatApplyRecovery.identity, { action: 'apply', ...chatApplyRecovery });
+        const latest = await getChapter(bookId, chapterId);
+        if (!latest) throw new Error('Capítulo indisponível.');
+        // Preserve edits made since the uncertain acceptance. Never restore an old receipt over them.
+        if (content === getSavedContent()) {
+          resetSavedContent(latest.content);
+          setContent(latest.content);
+          setWordCount(latest.wordCount);
+        }
+        updateUserCreditsState(result.credits);
+        clearChatApplyRecovery(user.uid, bookId, chapterId);
+        setChatApplyRecovery(null);
+      });
+    } catch (cause) {
+      if (cause instanceof ChapterChatError && !cause.uncertain) {
+        clearChatApplyRecovery(user.uid, bookId, chapterId);
+        setChatApplyRecovery(null);
+      }
+      setChatRecoveryError((cause as Error).message);
+    } finally {
+      chatBridge.setBusy(false);
+    }
   };
 
   const refreshLore = async () => {
@@ -490,6 +658,25 @@ function EditorSession() {
           </div>
         </div>
       </header>
+      {chatRecoveryError && !chatApplyRecovery && (
+        <Alert variant="danger" title="Aceite não aplicado">
+          {chatRecoveryError}
+        </Alert>
+      )}
+      {chatApplyRecovery && (
+        <Alert variant="warning" title="Aceite aguardando confirmação">
+          {chatRecoveryError ??
+            'Recupere a operação antes de aplicar outra sugestão. O mesmo recibo impede um segundo débito.'}
+          <Button
+            variant="secondary"
+            onClick={() => {
+              void recoverChatApply();
+            }}
+          >
+            Recuperar aceite
+          </Button>
+        </Alert>
+      )}
       <section className={styles.workspace} aria-label="Espaço de escrita">
         {loreRefreshError && (
           <Alert variant="warning">
@@ -508,6 +695,13 @@ function EditorSession() {
           </Alert>
         )}
         <RichEditor
+          chatOpen={activePanel === 'chat'}
+          onOpenChat={(action) => {
+            void openChat(action);
+          }}
+          onChatBridge={setChatBridge}
+          chapterTitle={chapter.title}
+          bookTitle={book.title}
           writingPersona={writingPersona}
           aiUnavailableReason={personaError}
           onBusyChange={handleBusyChange}
@@ -521,11 +715,27 @@ function EditorSession() {
             setIsSidebarOpen(true);
           }}
           isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+          onToggleSidebar={() =>
+            setActivePanel((previous) => (previous === 'lore' ? null : 'lore'))
+          }
           userId={user?.uid}
           userCredits={currentCredits}
           onCreditDeducted={updateUserCreditsState}
         />
+        {chatMounted && user && (
+          <ChapterChatPanel
+            open={activePanel === 'chat'}
+            uid={user.uid}
+            bookId={book.id}
+            chapterId={chapter.id}
+            bridge={chatBridge}
+            initialPrompt={chatPrompt}
+            contextVersion={writingPersona.version}
+            unavailable={personaError}
+            onClose={() => setActivePanel(null)}
+            onApply={applyChat}
+          />
+        )}
 
         <EditorLoreSidebar
           onAnalyzeText={globalLoreError ? undefined : () => setIsAnalysisOpen(true)}

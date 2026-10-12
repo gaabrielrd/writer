@@ -164,14 +164,15 @@ test('combina livro e capítulo, envia a persona nas ações e autocomplete, sem
     sessionStorage.setItem('writer_fixture_autocomplete', 'true');
   });
   await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
-  await page.getByRole('button', { name: /Aprimorar Estilo/ }).click();
+  await page.getByLabel('Mensagem para o Assistente IA').fill('/estilo ');
+  await page.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(page.getByText('O trecho ganhou novos detalhes.', { exact: true })).toBeVisible();
   const system = await page.evaluate(() => sessionStorage.getItem('writer_fixture_ai_system'));
   expect(system).toContain('Persona do livro: O Atmosférico');
   expect(system).toContain('Complemento do capítulo: O Inquietante');
   expect(system).toContain('Tensão: 100/100');
   await expect(editor).toHaveText(original, { useInnerText: true });
-  await page.getByRole('dialog').press('Escape');
+  await page.getByRole('button', { name: 'Fechar painel de IA' }).click();
   await editor.click();
   await editor.press('Control+End');
   await editor.pressSequentially(' Nova descoberta.');
