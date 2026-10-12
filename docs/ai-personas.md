@@ -62,8 +62,8 @@ persona não implica reescrever texto existente.
 
 ## Chamadas e persistência
 
-Autocomplete, Continuar Cena, Aprimorar Estilo, Coerência com Lore e Instrução
-personalizada usam a mesma composição. Aprimorar Estilo respeita a persona em
+Autocomplete e o chat do capítulo, incluindo Continuar Cena, Aprimorar Estilo,
+Coerência com Lore e Instrução personalizada, usam a mesma composição. Aprimorar Estilo respeita a persona em
 vez de exigir sempre uma prosa mais sensorial. A análise estruturada do compêndio,
 sinopse e capa continuam com seus contratos próprios.
 

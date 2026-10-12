@@ -5,12 +5,14 @@ import { getStorage } from 'firebase-admin/storage';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import * as functionsV1 from 'firebase-functions/v1';
 import { defineSecret, defineString, defineInt } from 'firebase-functions/params';
 import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
+import { createChapterChatService, chatInstruction } from './chapterChat.mjs';
 import { createGenerationService, generationPrompt, GenerationError } from './generation.mjs';
 
 initializeApp();
@@ -21,6 +23,118 @@ const synopsisCost = defineInt('BOOK_SYNOPSIS_CREDITS', { default: 1 });
 const coverCost = defineInt('BOOK_COVER_CREDITS', { default: 5 });
 const assistedCost = defineInt('BOOK_ASSISTED_CREDITS', { default: 2 });
 const db = getFirestore();
+async function chapterChatGenerator(input, onChunk, signal) {
+  const model = textModel.value();
+  if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Modelo inválido.');
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`,
+    {
+      method: 'POST',
+      signal: AbortSignal.any([AbortSignal.timeout(90000), ...(signal ? [signal] : [])]),
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key.value() },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{ text: `${chatInstruction}\n${input.context.persona.instruction}` }],
+        },
+        contents: [
+          ...input.history.map((message) => ({
+            role: message.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: message.text }],
+          })),
+          {
+            role: 'user',
+            parts: [{ text: JSON.stringify({ context: input.context, request: input.text }) }],
+          },
+        ],
+        generationConfig: { maxOutputTokens: 4000, temperature: 0.7 },
+      }),
+    },
+  );
+  if (!response.ok || !response.body) throw new Error('Provedor indisponível.');
+  let buffer = '',
+    output = '',
+    finish = '';
+  const decoder = new TextDecoder();
+  const consume = async (line) => {
+    if (!line.startsWith('data:')) return;
+    const result = JSON.parse(line.slice(5).trim());
+    const candidate = result.candidates?.[0];
+    if (candidate?.finishReason) finish = candidate.finishReason;
+    const chunk = (candidate?.content?.parts ?? [])
+      .filter((part) => !part.thought)
+      .map((part) => part.text ?? '')
+      .join('');
+    if (chunk) {
+      output += chunk;
+      await onChunk(chunk);
+    }
+  };
+  for await (const bytes of response.body) {
+    buffer += decoder.decode(bytes, { stream: true });
+    let end;
+    while ((end = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, end).trimEnd();
+      buffer = buffer.slice(end + 1);
+      await consume(line);
+    }
+  }
+  buffer += decoder.decode();
+  if (buffer.trim()) await consume(buffer.trim());
+  if (finish !== 'STOP') throw new Error('Resposta incompleta.');
+  return output;
+}
+export const chapterChat = onCall(
+  {
+    region: 'us-central1',
+    enforceAppCheck: true,
+    timeoutSeconds: 120,
+    maxInstances: 5,
+    memory: '512MiB',
+    secrets: [key],
+  },
+  async (request, response) => {
+    try {
+      return await createChapterChatService({
+        db,
+        generator: (input, chunk) => chapterChatGenerator(input, chunk, response?.signal),
+      }).chapterChat(
+        request.auth?.uid,
+        request.data,
+        response ? (text) => response.sendChunk({ text }) : undefined,
+      );
+    } catch (error) {
+      if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
+      throw new HttpsError('unavailable', 'Não foi possível concluir a conversa. Tente novamente.');
+    }
+  },
+);
+export const cleanupDeletedChapterChat = onDocumentDeleted(
+  { document: 'books/{bookId}/chapters/{chapterId}', region: 'us-central1', retry: true },
+  async (event) => {
+    const book = (await db.doc(`books/${event.params.bookId}`).get()).data();
+    if (book?.authorId)
+      await db.recursiveDelete(
+        db.doc(
+          `users/${book.authorId}/chapterChats/${event.params.bookId}/chapters/${event.params.chapterId}`,
+        ),
+      );
+  },
+);
+export const cleanupDeletedUserChat = onDocumentDeleted(
+  { document: 'users/{uid}', region: 'us-central1', retry: true },
+  async (event) => {
+    await db.recursiveDelete(db.collection(`users/${event.params.uid}/chapterChats`));
+    await db.recursiveDelete(db.collection(`users/${event.params.uid}/chapterChatLimits`));
+  },
+);
+export const cleanupDeletedAccountChat = functionsV1
+  .region('us-central1')
+  .runWith({ timeoutSeconds: 540, memory: '512MB', failurePolicy: true })
+  .auth.user()
+  .onDelete(async (user) => {
+    await db.recursiveDelete(db.collection(`users/${user.uid}/chapterChats`));
+    await db.recursiveDelete(db.collection(`users/${user.uid}/chapterChatLimits`));
+  });
 async function assistedGenerator(context) {
   if (context.mode === 'cover') return generator(context);
   const model = textModel.value();
@@ -238,6 +352,7 @@ export const cleanupDeletedBookCover = onDocumentDeleted(
   async (event) => {
     const uid = event.data?.data().authorId;
     if (!uid) return;
+    await db.recursiveDelete(db.doc(`users/${uid}/chapterChats/${event.params.bookId}`));
     if (event.data.data().universeId)
       await createUniverseService({ db }).detachUniverse(
         uid,

@@ -62,6 +62,7 @@
 - Acesso a localStorage em adaptadores/repositórios.
 - Leitura de `import.meta.env` só em `shared/config/env.ts`.
 - Mantenha geração de livros e débitos de créditos em `functions`; configure segredos somente no servidor.
+- Mantenha conversas de capítulo privadas e sem débito; aplique sugestões com manuscrito, crédito e recibo atômicos em `functions`.
 - Na criação assistida, mantenha sessões, entrevista, validação e confirmação do livro/lore/capa com débito atômico em `functions`.
 - Mantenha vínculos e exclusão de imagens da biblioteca no servidor; todo seletor de imagem deve oferecer `ImageLibraryPicker` pela interface pública da feature.
 - Mantenha universos, vínculos de livros e mutações de lore global em `functions`.

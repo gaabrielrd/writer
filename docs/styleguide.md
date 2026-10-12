@@ -214,12 +214,14 @@ clicar fora ou pressionar Escape. Alt+Enter leva o foco às
 ações; as setas laterais navegam e Escape devolve o foco ao manuscrito.
 Em celular, as ações usam ícones com tooltip e nome acessível.
 
-Continuar Cena, Aprimorar Estilo e Coerência com Lore abrem o mesmo assistente
-e geram uma sugestão para o trecho capturado. Instrução personalizada abre o
-campo com foco, sem gerar antes de Executar. O modal não tem footer nem atalho
-para BYOK: opções, campo e Executar ocupam uma coluna. Resultado, Copiar e
-Substituir Seleção/Inserir no Texto ficam no corpo rolável. A escrita só muda
-após aceite explícito; fechar devolve o foco ao editor.
+Continuar Cena, Aprimorar Estilo, Coerência com Lore e Instrução personalizada
+abrem o mesmo chat lateral com o trecho capturado e campo focado. As ações
+preparam o pedido; Enviar confirma a geração. Assistente e Compêndio compartilham
+posição e dimensões, com um painel ativo. Histórico rola independentemente e o
+campo de envio permanece na base. Respostas separam explicação de prosa aplicável;
+a escrita muda apenas no aceite explícito. Fechar ou aplicar devolve o foco ao
+editor. Comandos `/` usam lista pesquisável por teclado; contexto mostra origem,
+prévia e opção de fixar. Veja [chat do capítulo](chapter-chat.md).
 
 No menu de menções `@`, o item ativo usa `--primary` e `--primary-foreground`,
 borda interna e indicador de confirmação, distinguindo seleção de hover nos

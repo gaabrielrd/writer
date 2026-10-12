@@ -240,6 +240,9 @@ service cloud.firestore {
         && validPersonaOverrideAt(data.overrides, 15));
     }
     match /users/{userId} {
+      // Conversations, provider origin and debit receipts are server controlled.
+      match /chapterChats/{document=**} { allow read, write: if false; }
+      match /chapterChatLimits/{id} { allow read, write: if false; }
       match /aiPersonas/{personaId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && validAIPersona(request.resource.data, personaId)

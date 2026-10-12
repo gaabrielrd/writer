@@ -18,6 +18,7 @@ export interface UseAutoSaveResult {
   error: string | null;
   saveNow: () => Promise<void>;
   resetSavedContent: (newSavedContent: string) => void;
+  getSavedContent: () => string;
 }
 
 export function useAutoSave({
@@ -155,5 +156,12 @@ export function useAutoSave({
     };
   }, [performSave, bookId, chapterId, ownerId, enabled]);
 
-  return { saveStatus, lastSavedAt, error, saveNow: performSave, resetSavedContent };
+  return {
+    saveStatus,
+    lastSavedAt,
+    error,
+    saveNow: performSave,
+    resetSavedContent,
+    getSavedContent: () => saved.current,
+  };
 }

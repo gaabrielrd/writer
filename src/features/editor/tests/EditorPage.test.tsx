@@ -87,6 +87,7 @@ describe('EditorPage', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.spyOn(bookService, 'subscribeWritingBindings').mockReturnValue(() => undefined);
+    vi.spyOn(loreService, 'subscribeLoreEntities').mockReturnValue(() => undefined);
   });
 
   it('sincroniza personas sem substituir o texto e salva vínculos pelo editor, com retry de configuração', async () => {

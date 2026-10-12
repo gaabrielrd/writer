@@ -69,37 +69,22 @@ test('compêndio compacto mantém busca, filtros e ações nos três temas', asy
   await expect(panel).toHaveCount(0);
 });
 
-test('assistente sem footer usa opções, campo e botão em uma coluna', async ({
-  page,
-}, testInfo) => {
+test('assistente lateral mantém campo e envio acessíveis em 320px', async ({ page }, testInfo) => {
   await openEditor(page);
   await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Assistente Criativo de IA' });
-  await expectDialogWithinViewport(page);
-  await expect(dialog.locator('[data-slot="dialog-footer"]')).toHaveCount(0);
+  const dialog = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });
+  await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('button', { name: /BYOK/ })).toHaveCount(0);
-  const controls = [
-    dialog.getByRole('button', { name: /^Continuar Cena/ }),
-    dialog.getByRole('button', { name: /^Aprimorar Estilo/ }),
-    dialog.getByRole('button', { name: /^Coerência com Lore/ }),
-    dialog.getByLabel('Ou dê uma instrução personalizada à IA'),
-    dialog.getByRole('button', { name: 'Executar', exact: true }),
-  ];
-  const boxes = await Promise.all(controls.map((control) => control.boundingBox()));
-  for (let i = 1; i < boxes.length; i++) {
-    expect(boxes[i]!.y).toBeGreaterThanOrEqual(boxes[i - 1]!.y + boxes[i - 1]!.height);
-    expect(boxes[i]!.x).toBeCloseTo(boxes[0]!.x, 0);
-    expect(boxes[i]!.width).toBeCloseTo(boxes[0]!.width, 0);
-  }
-  await capture(page, testInfo, 'assistente-em-coluna');
+  const field = dialog.getByLabel('Mensagem para o Assistente IA');
+  const send = dialog.getByRole('button', { name: 'Enviar', exact: true });
+  await capture(page, testInfo, 'assistente-lateral');
   await resize(page, 320, 480);
-  await expectDialogWithinViewport(page);
-  await controls[3].fill('Descreva o cenário');
-  await expect(controls[4]).toBeEnabled();
-  await controls[4].scrollIntoViewIfNeeded();
-  await expect(controls[4]).toBeInViewport();
+  await field.fill('Descreva o cenário');
+  await expect(send).toBeEnabled();
+  await send.scrollIntoViewIfNeeded();
+  await expect(send).toBeInViewport();
   await expectNoHorizontalOverflow(page, 'assistente em 320px');
-  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Fechar painel de IA', exact: true }).click();
   await expect(page.getByLabel('Área de escrita do capítulo')).toBeFocused();
 });
 
@@ -129,15 +114,18 @@ test('seleção abre ações acima do trecho e aplica somente após aceite', asy
   ).toBeNull();
   await capture(page, testInfo, 'acoes-acima-da-selecao');
   await toolbar.getByRole('button', { name: 'Aprimorar Estilo', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Assistente Criativo de IA' });
+  const dialog = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });
+  await expect(dialog.getByLabel('Mensagem para o Assistente IA')).toHaveValue('/estilo ');
+  await dialog.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(dialog.getByText('O trecho ganhou novos detalhes.', { exact: true })).toBeVisible();
   await expect(editor).toHaveText(manuscript);
   expect(
     await page.evaluate(() => sessionStorage.getItem('writer_fixture_ai_action_prompt')),
   ).toContain(manuscript);
-  await dialog.getByRole('button', { name: 'Substituir Seleção' }).click();
+  await dialog.getByRole('button', { name: 'Substituir trecho' }).click();
   await expect(editor).toHaveText('O trecho ganhou novos detalhes.');
   await expect(editor).toBeFocused();
+  await dialog.getByRole('button', { name: 'Fechar painel de IA' }).click();
   await editor.fill(manuscript);
   await selectManuscript(editor);
   await expect(toolbar).toBeVisible();
@@ -153,8 +141,8 @@ test('seleção abre ações acima do trecho e aplica somente após aceite', asy
   await selectManuscript(editor);
   await expect(toolbar).toBeVisible();
   await toolbar.getByRole('button', { name: 'Instrução personalizada' }).click();
-  await expect(dialog.getByLabel('Ou dê uma instrução personalizada à IA')).toBeFocused();
-  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await expect(dialog.getByLabel('Mensagem para o Assistente IA')).toBeFocused();
+  await dialog.getByRole('button', { name: 'Fechar painel de IA', exact: true }).click();
   await page.getByRole('link', { name: 'Voltar para o livro' }).focus();
   await expect(toolbar).toHaveCount(0);
 });
