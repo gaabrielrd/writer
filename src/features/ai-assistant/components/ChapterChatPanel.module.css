@@ -101,16 +101,61 @@
   overflow-y: auto;
 }
 .composer textarea {
-  min-height: 80px;
+  min-height: 110px;
   max-height: 180px;
+  padding-bottom: calc(var(--space-8) + var(--space-4));
   resize: vertical;
 }
+.inputWell {
+  position: relative;
+  min-width: 0;
+  flex-shrink: 0;
+}
 .send {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  justify-content: flex-end;
+}
+.modelControl {
+  max-width: 100%;
+  min-width: 0;
+}
+.modelControl span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inspect {
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: hsl(var(--card));
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  font-size: var(--text-xs);
+}
+.inspect p {
+  white-space: pre-wrap;
+  margin: var(--space-2) 0;
+}
+.inspect ul {
+  padding-left: var(--space-4);
+  margin: var(--space-2) 0;
+}
+.inspectHeader {
+  display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
 }
 .context > :first-child {
   flex: 1;
   min-width: 0;
+}
+.context {
+  flex-shrink: 0;
 }
 .commands {
   max-height: 150px;

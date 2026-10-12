@@ -259,6 +259,11 @@ intruso e anônimo e executa aceite concorrente com transações reais no emulad
 `e2e/visual/chapter-chat.visual.ts` mede espaço compartilhado, testa comandos,
 aceite/desfazer, retomada, viewport e cancelamento nos seis projetos de tema/dispositivo.
 
+O compositor também verifica posição de enviar dentro do campo, Shift+Enter,
+contexto expansível legível em 320 px, prioridade de Escape, catálogo de comandos
+e ida/volta à aba Provedor com rascunho intacto. `AISettingsProvider.test.tsx`
+cobre seleção explícita da aba e compatibilidade do gatilho de configuração geral.
+
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts
 ```

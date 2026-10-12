@@ -4,6 +4,8 @@ import { ChapterChatPanel } from '../components/ChapterChatPanel';
 import type { ChatContext, ChatEditorBridge, ChatMessage, ChatPage } from '../model/chapterChat';
 import * as service from '../services/chapterChatService';
 import userEvent from '@testing-library/user-event';
+import * as settingsAPI from '../hooks/useAISettings';
+import * as configAPI from '../hooks/useAIConfig';
 
 vi.mock('../services/chapterChatService', () => ({
   loadChapterChat: vi.fn(),
@@ -44,6 +46,7 @@ const assistantMessage: ChatMessage = {
 let page: ChatPage;
 const scrollTo = vi.fn();
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   localStorage.clear();
   page = {
@@ -105,6 +108,55 @@ async function setup(overrides: Partial<React.ComponentProps<typeof ChapterChatP
   };
 }
 describe('chat do capítulo', () => {
+  it('mantém enviar no campo e recolhe o contexto por Escape sem fechar o painel', async () => {
+    const ui = await setup();
+    const field = ui.input.closest<HTMLElement>('[data-chat-input-well]')!;
+    expect(within(field).getByRole('button', { name: 'Enviar' })).toBeDisabled();
+    const toggle = screen.getByRole('button', { name: 'Seleção' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    const details = await screen.findByRole('region', { name: 'Contexto e comandos' });
+    expect(toggle).toHaveAttribute('aria-controls', details.id);
+    fireEvent.keyDown(within(details).getByRole('button', { name: 'Fixar contexto' }), {
+      key: 'Escape',
+    });
+    expect(screen.queryByRole('region', { name: 'Contexto e comandos' })).toBeNull();
+    expect(ui.onClose).not.toHaveBeenCalled();
+    expect(ui.input).toHaveFocus();
+    fireEvent.click(toggle);
+    fireEvent.keyDown(ui.input, { key: 'Escape' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(ui.onClose).not.toHaveBeenCalled();
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole('button', { name: 'Recolher detalhes do contexto' }));
+    expect(ui.input).toHaveFocus();
+  });
+  it.each([
+    ['gemini_byok', 'gemini-3.7-flash'],
+    ['openai_byok', 'gpt-4o-mini'],
+  ] as const)(
+    'mostra o modelo de %s e abre sua configuração sem expor chaves',
+    async (provider, model) => {
+      const config = {
+        provider,
+        geminiApiKey: 'chave-privada-de-teste',
+        openaiApiKey: 'outra-chave-de-teste',
+      };
+      const configHook = vi.spyOn(configAPI, 'useAIConfig').mockReturnValue(config);
+      const open = vi.fn();
+      vi.spyOn(settingsAPI, 'useAISettings').mockReturnValue(open);
+      const ui = await setup();
+      const control = screen.getByRole('button', { name: 'Configurar modelo do assistente' });
+      expect(control).toHaveTextContent(model);
+      expect(ui.container).not.toHaveTextContent(config.geminiApiKey);
+      expect(ui.container).not.toHaveTextContent(config.openaiApiKey);
+      fireEvent.click(control);
+      expect(open).toHaveBeenCalledExactlyOnceWith('provider');
+      configHook.mockReturnValue({ ...config, customModel: 'modelo-personalizado' });
+      ui.rerender(<ChapterChatPanel {...ui.props} />);
+      expect(control).toHaveTextContent('modelo-personalizado');
+    },
+  );
   it('oculta marcadores internos em texto parcial, resposta interrompida e cópia', async () => {
     page.messages = [
       {
@@ -142,9 +194,11 @@ describe('chat do capítulo', () => {
     await screen.findByText('Novo trecho.');
     expect(ui.bridge.capture).toHaveBeenCalledWith('chapter');
     fireEvent.click(screen.getByRole('button', { name: 'Seleção' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Contexto e comandos' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Usar contexto atual' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    const details = await screen.findByRole('region', { name: 'Contexto e comandos' });
+    fireEvent.click(within(details).getByRole('button', { name: 'Usar contexto atual' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Contexto e comandos' })).toBeNull(),
+    );
     fireEvent.change(ui.input, { target: { value: '/' } });
     fireEvent.keyDown(ui.input, { key: 'ArrowDown' });
     fireEvent.keyDown(ui.input, { key: 'ArrowUp' });
@@ -263,10 +317,12 @@ describe('chat do capítulo', () => {
     await waitFor(() => expect(ui.input).toHaveValue(''));
     fireEvent.change(ui.input, { target: { value: '/ajuda ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
-    await screen.findByRole('dialog', { name: 'Contexto e comandos' });
+    await screen.findByRole('region', { name: 'Contexto e comandos' });
     expect(service.sendChapterChat).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Fixar contexto' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Contexto e comandos' })).toBeNull(),
+    );
     expect(screen.getByRole('button', { name: 'Contexto fixado' })).toBeVisible();
   });
   it('mostra comando inválido e respeita Shift+Enter e composição IME', async () => {

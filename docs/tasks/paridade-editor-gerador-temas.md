@@ -115,3 +115,7 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
   42 testes dirigidos, 48 cenários de workspace/chat (2,5 min) e seis cenários do
   refinamento final de estado vazio (21,9 s) passaram. `npm run validate` verde
   com 789 testes; scripts/backend/build/smoke aprovados.
+- Tarefa 8: enviar/parar integrados ao campo, contexto expansível legível,
+  controles abaixo e acesso direto à aba Provedor com retorno/rascunho intactos.
+  27 testes dirigidos e 54 cenários de navegador passaram (2,9 min).
+  `npm run validate` verde com 795 testes; demais gates aprovados.

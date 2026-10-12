@@ -2,6 +2,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseApp } from '@/shared/lib';
 import { getBYOKConfig } from './byokStorage';
 import { validateBYOKConfig } from '../model/byokConfig';
+import { DEFAULT_BYOK_CHAT_MODELS } from '../model/chatGeneration';
 import type { ChatContext, ChatMessage, ChatPage } from '../model/chapterChat';
 
 export interface ChatIdentity {
@@ -157,7 +158,8 @@ export async function sendChapterChat(
   const system = `${input.systemInstruction}\n${input.context.persona.instruction}`;
   const user = JSON.stringify({ context: input.context, request: input.text });
   const openai = config.provider === 'openai_byok';
-  const model = config.customModel || (openai ? 'gpt-4o-mini' : 'gemini-3.7-flash');
+  const model =
+    config.customModel || DEFAULT_BYOK_CHAT_MODELS[openai ? 'openai_byok' : 'gemini_byok'];
   try {
     const response = await fetch(
       openai

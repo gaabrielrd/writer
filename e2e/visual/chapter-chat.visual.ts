@@ -1,6 +1,62 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
+test('compositor mantém controles no campo, contexto expansível e acesso ao modelo', async ({
+  page,
+}, testInfo) => {
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  await expect(page.getByLabel('Área de escrita do capítulo')).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  const chat = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });
+  const composer = chat.getByLabel('Mensagem para o Assistente IA');
+  await composer.fill('Pedido ainda não enviado');
+  await composer.press('Shift+Enter');
+  await expect(composer).toHaveValue('Pedido ainda não enviado\n');
+  const inputBox = (await composer.boundingBox())!;
+  const sendBox = (await chat.getByRole('button', { name: 'Enviar', exact: true }).boundingBox())!;
+  expect(sendBox.x).toBeGreaterThan(inputBox.x);
+  expect(sendBox.y).toBeGreaterThan(inputBox.y);
+  expect(sendBox.x + sendBox.width).toBeLessThan(inputBox.x + inputBox.width);
+  expect(sendBox.y + sendBox.height).toBeLessThan(inputBox.y + inputBox.height);
+  const model = chat.getByRole('button', { name: 'Configurar modelo do assistente' });
+  expect((await model.boundingBox())!.y).toBeGreaterThanOrEqual(inputBox.y + inputBox.height);
+  const toggle = chat.locator('button[aria-controls][aria-expanded]');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  await toggle.click();
+  const details = chat.getByRole('region', { name: 'Contexto e comandos' });
+  await expect(details).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await details.getByRole('button', { name: 'Fixar contexto', exact: true }).focus();
+  await page.keyboard.press('Escape');
+  await expect(details).toHaveCount(0);
+  await expect(composer).toBeFocused();
+  await expect(chat).toBeVisible();
+  await model.click();
+  await expect(page).toHaveURL(/\/settings\/ai\?tab=provider$/);
+  await expect(page.getByRole('tab', { name: 'Provedor' })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.getByRole('link', { name: 'Voltar ao editor' }).click();
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  await expect(composer).toHaveValue('Pedido ainda não enviado\n');
+  await page.setViewportSize({ width: 320, height: 480 });
+  await toggle.click();
+  await expect(details).toBeVisible();
+  await expect.poll(async () => (await details.boundingBox())!.height).toBeGreaterThan(96);
+  await details.scrollIntoViewIfNeeded();
+  await expect(details.getByText('Contexto e comandos', { exact: true })).toBeInViewport();
+  await expectNoHorizontalOverflow(page, 'compositor com contexto em 320px');
+  await capture(page, testInfo, 'compositor-contexto-320');
+  await details.getByRole('button', { name: 'Recolher detalhes do contexto' }).click();
+  await expect(composer).toBeFocused();
+  await composer.fill('/');
+  await expect(chat.getByRole('listbox', { name: 'Comandos do assistente' })).toBeVisible();
+  await composer.press('Escape');
+  await expect(chat.getByRole('listbox', { name: 'Comandos do assistente' })).toHaveCount(0);
+  await expect(chat).toBeVisible();
+});
+
 test('chat compartilha espaço, prepara comandos, mantém histórico e aplica com aceite', async ({
   page,
 }, testInfo) => {

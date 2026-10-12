@@ -194,3 +194,34 @@ Filtros, rascunho, foco, seleção, minimapa, comandos, histórico e aceite cont
 passando. Captura final em 440 px de altura foi inspecionada e preservada nos artefatos.
 
 Neste ponto restam as tarefas 8–12. Nenhum push ou deploy deste incremento.
+
+## Incremento de 2026-10-12 — tarefa 8
+
+Enviar/parar fica dentro do campo, com padding reservado para o texto. Origem,
+prévia expansível e modelo ficam abaixo; detalhes de contexto/comandos usam
+região nomeada no composer, com rolagem e altura legível. Escape recolhe detalhes
+antes de fechar o chat e restaura foco. A configuração do modelo abre Provedor
+diretamente, conserva a origem e retoma o rascunho ao retornar. Nomes BYOK vêm
+da configuração atual; chaves não aparecem na interface. Enter, Shift+Enter,
+composição IME, catálogo de comandos, streaming e cancelamento são preservados.
+
+```text
+Test Files 113 passed (113)
+Tests 795 passed (795)
+All files: statements 92.73%, branches 86.15%, functions 91.16%, lines 94.81%
+scripts: pass 69; fail 0
+functions: pass 73; fail 0
+Smoke test do bundle OK.
+Testes dirigidos: 27 passed
+Matriz final de workspace/chat: 54 passed (2.9m)
+```
+
+A revisão da imagem em 320 px revelou que o conteúdo expandido encolhia;
+o CSS agora preserva a altura dos detalhes e dos controles, e o teste exige
+altura legível e título dentro do viewport após rolar. A matriz foi repetida.
+O teste de drag do styleguide também aguarda estabilização do layout e confirma
+captura do ponteiro antes de medir o resultado. O gate completo foi repetido
+após as correções, sem reduzir limites de cobertura. Captura final inspecionada
+e preservada nos artefatos; contratos/styleguide/testes documentados.
+
+Neste ponto restam as tarefas 9–12. Nenhum push ou deploy deste incremento.

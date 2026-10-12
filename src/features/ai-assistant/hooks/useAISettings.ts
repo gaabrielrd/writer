@@ -1,3 +1,7 @@
 import { createContext, useContext } from 'react';
-export const AISettingsContext = createContext<() => void>(() => undefined);
+interface OpenAISettings {
+  (): void;
+  (tab: 'personas' | 'provider'): void;
+}
+export const AISettingsContext = createContext<OpenAISettings>(() => undefined);
 export const useAISettings = () => useContext(AISettingsContext);

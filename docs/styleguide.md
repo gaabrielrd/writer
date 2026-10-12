@@ -312,3 +312,9 @@ do cabeçalho e o corpo rola independentemente. O chat reserva espaço de leitur
 ao limitar a altura do composer, que tem sua própria rolagem. Em viewports baixos,
 o estado vazio reduz decoração para manter o título visível. Ações e estados
 conservam nomes acessíveis ao usar apenas ícones.
+
+O composer usa um campo com enviar/parar no canto inferior e reserva padding
+para o texto. Origem, prévia do contexto e modelo ficam abaixo. Detalhes se
+expandem em região nomeada, com rolagem própria e sem encolher até desaparecer;
+Escape recolhe a região antes de fechar o chat. O acesso ao modelo abre a aba
+Provedor da configuração de IA e conserva a origem para retorno ao editor.

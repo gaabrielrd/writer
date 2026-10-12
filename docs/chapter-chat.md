@@ -30,6 +30,12 @@ em alturas baixas. O estado vazio usa apresentação compacta até 650 px de alt
 
 ## Conversa e comandos
 
+O campo reúne **Enviar/Parar** no canto inferior. Abaixo ficam origem do contexto,
+prévia expansível e acesso à configuração do modelo, com retorno ao editor e
+rascunho preservado. Os detalhes do contexto são uma região rolável no próprio
+composer; Escape os recolhe antes de fechar o chat e devolve foco ao campo.
+O nome do modelo BYOK usa a configuração atual; chaves não são exibidas.
+
 Enter envia; Shift+Enter insere uma linha. Composição IME não envia. Digitar `/`
 abre busca por comandos, navegável com setas, Enter/Tab e Escape. Escolher um
 comando somente prepara o pedido; o envio permanece explícito.
