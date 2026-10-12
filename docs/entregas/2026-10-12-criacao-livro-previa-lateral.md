@@ -108,3 +108,18 @@ O build conserva avisos de chunks acima de 500 kB e importação dinâmica/está
 2. Preencha título, gênero e sinopse; confira a prévia lateral enquanto edita.
 3. Selecione uma capa da biblioteca, recolha a seção e confira o resultado na prévia.
 4. Reduza a viewport a 320 px: somente o formulário deve permanecer, com ações visíveis e sem transbordamento.
+
+## Incremento em 2026-10-12: prévia sem textos auxiliares
+
+Removidos os textos visíveis “Prévia do livro” e “Acompanhe sua obra enquanto
+preenche.” e o CSS correspondente. A lateral exibe apenas o card, com nome
+acessível preservado e título da obra em h3.
+
+- Componentes: `Test Files 2 passed (2)` e `Tests 18 passed (18)`.
+- Chromium nos três temas de desktop, incluindo viewport baixa e 320 px: `6 passed (17.9s)`; captura do desktop escuro inspecionada.
+- ESLint dos arquivos afetados, Prettier e `git diff --check` passaram.
+- `npm run build` passou, incluindo typecheck e `Smoke test do bundle OK.`.
+- `npm run validate` foi executado e parou em `check:docs`: nove links inexistentes em `docs/tasks/writer-v2/README.md`, criado em paralelo e fora deste incremento. Uma segunda execução de `check:docs` confirmou a mesma pendência. A documentação paralela foi preservada.
+
+A validação verde acima corresponde à entrega inicial; o gate global deste
+incremento depende da conclusão da documentação paralela. Sem push ou deploy.
