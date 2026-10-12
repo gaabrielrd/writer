@@ -119,3 +119,9 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
   controles abaixo e acesso direto à aba Provedor com retorno/rascunho intactos.
   27 testes dirigidos e 54 cenários de navegador passaram (2,9 min).
   `npm run validate` verde com 795 testes; demais gates aprovados.
+- Tarefa 9: matriz única de capacidades, níveis incompatíveis desabilitados,
+  Auto legado e preferência privada por conversa/padrão versionado por autor.
+  34 testes dirigidos iniciais, 15 de backend dirigidos e a matriz visual final
+  de 60 cenários (3,6 min) passaram. `npm run validate` verde com 808 testes,
+  69 de scripts, 78 de backend e build/smoke. A ligação dos parâmetros de geração
+  pertence à tarefa 10.

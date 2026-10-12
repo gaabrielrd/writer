@@ -50,6 +50,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
   page = {
+    platformModel: 'gemini-3.7-flash',
     conversation: { id: 'chat', title: 'Conversa', draft: '', updatedAt: 1 },
     conversations: [{ id: 'chat', title: 'Conversa', draft: '', updatedAt: 1 }],
     messages: [],
@@ -108,6 +109,91 @@ async function setup(overrides: Partial<React.ComponentProps<typeof ChapterChatP
   };
 }
 describe('chat do capítulo', () => {
+  it.each([
+    ['gpt-6-luna', true],
+    ['gpt-6.1-sol', false],
+    ['modelo-desconhecido', false],
+  ] as const)('oferece apenas os níveis comprovados de %s', async (customModel, supportsNone) => {
+    vi.spyOn(configAPI, 'useAIConfig').mockReturnValue({
+      provider: 'openai_byok',
+      customModel,
+      openaiApiKey: 'chave-ficticia',
+    });
+    await setup();
+    await userEvent.click(screen.getByRole('combobox', { name: 'Raciocínio do assistente' }));
+    const none = await screen.findByRole('option', { name: 'Nenhum' });
+    if (supportsNone) expect(none).not.toHaveAttribute('aria-disabled', 'true');
+    else expect(none).toHaveAttribute('aria-disabled', 'true');
+    const max = screen.getByRole('option', { name: 'Máximo' });
+    if (customModel === 'modelo-desconhecido') expect(max).toHaveAttribute('aria-disabled', 'true');
+    else expect(max).not.toHaveAttribute('aria-disabled', 'true');
+  });
+  it('retoma conversa antiga em Auto e salva a escolha privada sem enviar ou debitar', async () => {
+    localStorage.setItem(
+      'writer:chat-reasoning:author',
+      JSON.stringify({ version: 1, reasoning: 'max' }),
+    );
+    await setup();
+    const choice = screen.getByRole('combobox', { name: 'Raciocínio do assistente' });
+    expect(choice).toHaveTextContent('Auto');
+    await userEvent.click(choice);
+    expect(await screen.findByRole('option', { name: 'Máximo' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('option', { name: 'Nenhum' })).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.click(screen.getByRole('option', { name: 'Alto' }));
+    await waitFor(() => expect(choice).toHaveTextContent('Alto'));
+    expect(service.chapterChatCall).toHaveBeenCalledWith(
+      expect.objectContaining({ conversationId: 'chat' }),
+      { action: 'preferences', reasoning: 'high' },
+    );
+    expect(service.sendChapterChat).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem('writer:chat-reasoning:author')!)).toEqual({
+      version: 1,
+      reasoning: 'high',
+    });
+  });
+  it('novas conversas usam o padrão do autor e escolhas incompatíveis preservam preferência com Auto efetivo', async () => {
+    localStorage.setItem(
+      'writer:chat-reasoning:author',
+      JSON.stringify({ version: 1, reasoning: 'max' }),
+    );
+    page.conversation = null;
+    page.conversations = [];
+    const ui = await setup();
+    expect(screen.getByRole('combobox', { name: 'Raciocínio do assistente' })).toHaveTextContent(
+      'Máximo',
+    );
+    expect(screen.getByText(/Máximo não é suportado/)).toBeVisible();
+    fireEvent.change(ui.input, { target: { value: 'Pedido para nova conversa' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
+    await waitFor(() =>
+      expect(service.createChapterChat).toHaveBeenCalledWith(
+        { bookId: 'book', chapterId: 'chapter' },
+        'Pedido para nova conversa',
+        'max',
+      ),
+    );
+  });
+  it('conserva a preferência da conversa quando falha a sincronização ou o armazenamento do padrão', async () => {
+    const ui = await setup();
+    vi.mocked(service.chapterChatCall).mockRejectedValueOnce(new Error('Serviço indisponível'));
+    const choice = screen.getByRole('combobox', { name: 'Raciocínio do assistente' });
+    await userEvent.click(choice);
+    await userEvent.click(await screen.findByRole('option', { name: 'Alto' }));
+    await screen.findByText('Serviço indisponível');
+    expect(choice).toHaveTextContent('Auto');
+    const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('Quota');
+    });
+    await userEvent.click(choice);
+    await userEvent.click(await screen.findByRole('option', { name: 'Baixo' }));
+    await screen.findByText(/Escolha salva na conversa/);
+    expect(choice).toHaveTextContent('Baixo');
+    set.mockRestore();
+    ui.unmount();
+  });
   it('mantém enviar no campo e recolhe o contexto por Escape sem fechar o painel', async () => {
     const ui = await setup();
     const field = ui.input.closest<HTMLElement>('[data-chat-input-well]')!;

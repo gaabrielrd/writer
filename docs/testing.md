@@ -264,6 +264,12 @@ contexto expansível legível em 320 px, prioridade de Escape, catálogo de coma
 e ida/volta à aba Provedor com rascunho intacto. `AISettingsProvider.test.tsx`
 cobre seleção explícita da aba e compatibilidade do gatilho de configuração geral.
 
+O raciocínio tem contrato puro em `functions/test/chatGeneration.test.mjs`,
+preferências autenticadas em `functions/test/chapterChat.test.mjs` e padrão
+local versionado em `chatReasoningStorage.test.ts`. A interface testa Auto
+legado, níveis desabilitados por modelo, falhas e ausência de geração/débito;
+o navegador testa retomada, alternância de conversas e padrão de novas conversas.
+
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts
 ```

@@ -2,7 +2,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseApp } from '@/shared/lib';
 import { getBYOKConfig } from './byokStorage';
 import { validateBYOKConfig } from '../model/byokConfig';
-import { DEFAULT_BYOK_CHAT_MODELS } from '../model/chatGeneration';
+import { DEFAULT_BYOK_CHAT_MODELS, type ChatReasoningLevel } from '../model/chatGeneration';
 import type { ChatContext, ChatMessage, ChatPage } from '../model/chapterChat';
 
 export interface ChatIdentity {
@@ -39,11 +39,16 @@ export const loadChapterChat = (
   identity: ChatIdentity,
   pagination: { before?: number; conversationsBefore?: number } = {},
 ) => chapterChatCall<ChatPage>(identity, { action: 'load', ...pagination });
-export const createChapterChat = (identity: ChatIdentity, title: string) =>
+export const createChapterChat = (
+  identity: ChatIdentity,
+  title: string,
+  reasoning: ChatReasoningLevel = 'auto',
+) =>
   chapterChatCall<{ id: string }>(identity, {
     action: 'create',
     conversationId: crypto.randomUUID(),
     title: title.slice(0, 120) || 'Nova conversa',
+    reasoning,
   });
 
 export async function readProviderStream(

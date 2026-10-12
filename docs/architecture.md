@@ -289,3 +289,13 @@ compõe a base/complementar e envia o contexto ao autocomplete e às ações.
 transacionais; alterações invalidam respostas antigas. Os originais e prompts
 permanecem privados e são preservados somente no backup JSON v3. Veja
 [personas de escrita](ai-personas.md).
+
+## Capacidades de raciocínio do chat
+
+O modelo de `ai-assistant` reexporta o contrato puro
+`functions/src/chatGeneration.mjs` e seus tipos `.d.mts`. Esse módulo não
+importa infraestrutura, credenciais, rede ou armazenamento. Compartilhar a matriz
+evita diferenças entre o controle no navegador e a validação no servidor.
+A callable informa o modelo da plataforma e persiste preferências em conversas
+privadas; o padrão local versionado fica atrás de um serviço da feature.
+Veja [ADR 0023](decisions/0023-chat-reasoning-capabilities.md).

@@ -35,6 +35,39 @@ test('histórico conserva pedidos e prosa sugerida, excluindo turnos incompletos
   );
   assert.match(inputs[1].history[1].text, /Prosa anterior/);
 });
+test('preferência de raciocínio é privada, não debita e conserva o modelo informado pelo serviço', async () => {
+  const f = fixture();
+  await f.call({ action: 'create', reasoning: 'high' });
+  let loaded = await f.call({ action: 'load' });
+  assert.equal(loaded.conversation.reasoning, 'high');
+  assert.equal(loaded.platformModel, 'gemini-3.7-flash');
+  await assert.rejects(f.call({ action: 'preferences', reasoning: 'low' }, 'intruder'), {
+    code: 'permission-denied',
+  });
+  await f.call({ action: 'preferences', reasoning: 'low' });
+  loaded = await f.call({ action: 'load' });
+  assert.equal(loaded.conversation.reasoning, 'low');
+  assert.equal(f.records.get('users/author').credits, 5);
+  assert.equal(f.records.has('users/author/chapterChatLimits/current'), false);
+});
+test('preferências recusam níveis inválidos e alterações durante geração', async () => {
+  const f = fixture();
+  await assert.rejects(f.call({ action: 'create', reasoning: 'extreme' }), {
+    code: 'invalid-argument',
+  });
+  await f.create();
+  await assert.rejects(f.call({ action: 'preferences', reasoning: null }), {
+    code: 'invalid-argument',
+  });
+  const path = 'users/author/chapterChats/book/chapters/chapter/conversations/conversation';
+  const record = f.records.get(path);
+  assert.equal(record.reasoning, 'auto');
+  f.records.set(path, { ...record, busy: 'request', until: 999999 });
+  await assert.rejects(f.call({ action: 'preferences', reasoning: 'max' }), {
+    code: 'failed-precondition',
+  });
+  assert.equal(f.records.get(path).reasoning, 'auto');
+});
 function fixture(
   generator = async (_input, chunk) => {
     await chunk('Uma análise.');

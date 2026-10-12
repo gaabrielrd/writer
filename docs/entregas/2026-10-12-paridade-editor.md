@@ -225,3 +225,41 @@ após as correções, sem reduzir limites de cobertura. Captura final inspeciona
 e preservada nos artefatos; contratos/styleguide/testes documentados.
 
 Neste ponto restam as tarefas 9–12. Nenhum push ou deploy deste incremento.
+
+## Incremento de 2026-10-12 — tarefa 9
+
+O controle de raciocínio usa a matriz pura compartilhada entre navegador e
+servidor, com enumeração validada, níveis incompatíveis desabilitados e Auto
+seguro para modelos desconhecidos. Preferências ficam na conversa privada e
+o padrão de novas conversas é versionado por usuário/navegador. Conversas antigas
+sem campo usam Auto; falhas locais não desfazem a escolha salva no servidor.
+Autoria, busy e ausência de débito/cota na mudança de preferência são testados.
+O load informa o modelo configurado da plataforma. Modelo/raciocínio usam uma
+linha compacta mesmo em 320 px, com nome truncável e tooltip.
+
+```text
+Test Files 114 passed (114)
+Tests 808 passed (808)
+All files: statements 92.72%, branches 86.11%, functions 91.20%, lines 94.84%
+scripts: pass 69; fail 0
+functions: pass 78; fail 0
+Smoke test do bundle OK.
+Testes dirigidos iniciais: 34 passed
+Backend dirigido: 15 passed
+Matriz final de workspace/chat: 60 passed (3.6m)
+```
+
+A matriz foi verificada em documentação primária e registrada na ADR 0023,
+incluindo a diferença entre o alias Gemini 3.7 configurado e a versão física
+servida pelo provedor. Auto conserva o padrão do provedor quando não há padrão
+documentado; Máximo mantém limites. A inspeção visual levou à organização de
+modelo/raciocínio na mesma linha; o teste mede essa geometria. Foram adicionados
+três casos de disponibilidade OpenAI depois da primeira rodada dirigida, todos
+cobertos pelo gate final. Dois seletores de teste usavam uma opção de Playwright
+inexistente na Testing Library; o typecheck apontou o problema, corrigido antes
+de repetir todo o gate. A captura final foi inspecionada e preservada.
+Arquitetura, styleguide, contratos e testes foram realinhados.
+
+Este incremento entrega contrato e persistência. A ligação real dos parâmetros
+aos provedores, histórico e retries é a tarefa 10 e continua necessária antes de
+liberar o seletor. Restam as tarefas 10–12. Nenhum push ou deploy deste incremento.

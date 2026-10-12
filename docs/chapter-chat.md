@@ -91,6 +91,21 @@ de conversa nem em requisições da callable.
 
 ## Provedores, falhas e créditos
 
+### Contrato de raciocínio
+
+O seletor abaixo do campo conserva a escolha por conversa privada. Novas
+conversas recebem o padrão versionado por usuário/navegador; conversas antigas
+sem preferência usam Auto. A configuração informa o modelo da plataforma;
+BYOK usa o modelo do navegador. Níveis sem suporte ficam desabilitados. Trocar
+modelo conserva a preferência e informa quando ela exige fallback para Auto.
+Falha de sincronização conserva a escolha anterior; falha ao salvar o padrão
+local não desfaz a escolha da conversa. Preferências não debitam nem geram texto.
+
+A matriz e os limites são descritos na
+[ADR 0023](decisions/0023-chat-reasoning-capabilities.md). O contrato/persistência
+pertence à tarefa 9; a ligação efetiva aos provedores e ao histórico de pedidos
+é a tarefa 10 da fase, necessária antes de liberar este controle.
+
 `functions/src/chapterChat.mjs` controla autoria, estados, origem do provedor,
 limites, persistência e aceite. A callable `chapterChat` usa Auth/App Check,
 `us-central1`, timeout de 120 segundos e o segredo existente

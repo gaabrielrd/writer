@@ -96,6 +96,7 @@ export const chapterChat = onCall(
     try {
       return await createChapterChatService({
         db,
+        platformModel: textModel.value(),
         generator: (input, chunk) => chapterChatGenerator(input, chunk, response?.signal),
       }).chapterChat(
         request.auth?.uid,

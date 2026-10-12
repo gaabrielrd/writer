@@ -318,3 +318,9 @@ para o texto. Origem, prévia do contexto e modelo ficam abaixo. Detalhes se
 expandem em região nomeada, com rolagem própria e sem encolher até desaparecer;
 Escape recolhe a região antes de fechar o chat. O acesso ao modelo abre a aba
 Provedor da configuração de IA e conserva a origem para retorno ao editor.
+
+Modelo e raciocínio compartilham uma linha compacta; o nome do modelo pode
+truncar com tooltip, conservando o ícone e o seletor. Raciocínio usa
+`Dropdown mode="select"`, com nome acessível, escolha retomada por conversa e
+opções incompatíveis desabilitadas pela matriz do modelo. Auto permanece
+disponível. Uma preferência incompatível conserva seu nome e informa o fallback.

@@ -157,6 +157,23 @@
 .context {
   flex-shrink: 0;
 }
+.generationControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex-shrink: 0;
+}
+.generationControls > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+.generationControls > :last-child {
+  flex: 0 0 136px;
+  max-width: 100%;
+  min-width: 0;
+}
 .commands {
   max-height: 150px;
   overflow-y: auto;

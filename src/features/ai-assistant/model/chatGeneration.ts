@@ -1,6 +1,22 @@
-import type { AIProvider } from './byokConfig';
+export {
+  CHAT_REASONING_LEVELS,
+  CHAT_GENERATION_LIMITS,
+  DEFAULT_BYOK_CHAT_MODELS,
+  getChatModelCapabilities,
+  isChatReasoning,
+  normalizeChatReasoning,
+  resolveChatReasoning,
+  type ChatReasoningLevel,
+  type ChatModelCapabilities,
+} from '../../../../functions/src/chatGeneration.mjs';
 
-export const DEFAULT_BYOK_CHAT_MODELS: Record<Exclude<AIProvider, 'firebase_ai'>, string> = {
-  openai_byok: 'gpt-4o-mini',
-  gemini_byok: 'gemini-3.7-flash',
+import type { ChatReasoningLevel } from '../../../../functions/src/chatGeneration.mjs';
+export const CHAT_REASONING_LABELS: Record<ChatReasoningLevel, string> = {
+  auto: 'Auto',
+  none: 'Nenhum',
+  low: 'Baixo',
+  medium: 'Médio',
+  high: 'Alto',
+  xhigh: 'Muito alto',
+  max: 'Máximo',
 };

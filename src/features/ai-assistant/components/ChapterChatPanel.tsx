@@ -14,7 +14,13 @@ import {
 import { useChapterChat } from '../hooks/useChapterChat';
 import { useAIConfig } from '../hooks/useAIConfig';
 import { useAISettings } from '../hooks/useAISettings';
-import { DEFAULT_BYOK_CHAT_MODELS } from '../model/chatGeneration';
+import {
+  DEFAULT_BYOK_CHAT_MODELS,
+  CHAT_REASONING_LABELS,
+  CHAT_REASONING_LEVELS,
+  getChatModelCapabilities,
+  type ChatReasoningLevel,
+} from '../model/chatGeneration';
 import { renderRichText } from '@/shared/lib/sanitizeRichText';
 import {
   CHAT_COMMANDS,
@@ -69,8 +75,13 @@ export function ChapterChatPanel({
   const hintId = useId();
   const modelLabel =
     config.provider === 'firebase_ai'
-      ? 'Modelo da plataforma'
+      ? chat.page.platformModel || 'Modelo da plataforma'
       : config.customModel || DEFAULT_BYOK_CHAT_MODELS[config.provider];
+  const capabilities = getChatModelCapabilities(
+    config.provider === 'openai_byok' ? 'openai' : 'gemini',
+    config.provider === 'firebase_ai' ? chat.page.platformModel : modelLabel,
+  );
+  const reasoningUnavailable = !capabilities.levels.includes(chat.reasoning);
   const [source, setSource] = useState<ChatContextSource>('auto');
   const [pinned, setPinned] = useState<ChatContext | null>(null);
   const [inspect, setInspect] = useState(false);
@@ -564,7 +575,13 @@ export function ChapterChatPanel({
                 size="icon"
                 aria-label="Enviar"
                 title="Enviar mensagem (Enter)"
-                disabled={!chat.draft.trim() || applying || chat.loading || Boolean(unavailable)}
+                disabled={
+                  !chat.draft.trim() ||
+                  applying ||
+                  chat.loading ||
+                  chat.preferencesSaving ||
+                  Boolean(unavailable)
+                }
                 onClick={() => void submit()}
               >
                 <Send className="icon icon-sm" aria-hidden="true" />
@@ -599,6 +616,8 @@ export function ChapterChatPanel({
                 ? CHAT_CONTEXT_LABELS[preview.source]
                 : 'Contexto'}
           </Button>
+        </div>
+        <div className={styles.generationControls}>
           <Button
             variant="ghost"
             size="sm"
@@ -611,7 +630,26 @@ export function ChapterChatPanel({
             <Cpu className="icon icon-sm" aria-hidden="true" />
             <span>{modelLabel}</span>
           </Button>
+          <Dropdown
+            mode="select"
+            size="sm"
+            aria-label="Raciocínio do assistente"
+            value={chat.reasoning}
+            disabled={running || applying || chat.loading || chat.preferencesSaving}
+            options={CHAT_REASONING_LEVELS.map((value) => ({
+              value,
+              label: CHAT_REASONING_LABELS[value],
+              disabled: !capabilities.levels.includes(value),
+            }))}
+            onValueChange={(value) => void chat.changeReasoning(value as ChatReasoningLevel)}
+          />
         </div>
+        {reasoningUnavailable && (
+          <small>
+            {CHAT_REASONING_LABELS[chat.reasoning]} não é suportado por este modelo; o próximo envio
+            usará Auto.
+          </small>
+        )}
         {inspect && (
           <section
             id={inspectorId}

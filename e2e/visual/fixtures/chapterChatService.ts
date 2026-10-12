@@ -8,6 +8,7 @@ import { chapterChatKey, type ChatIdentity } from './chapterChatStore';
 import { getChapter, updateChapter } from './bookService';
 import { deductCredit, getUserCredits } from './aiService';
 import { author } from './data';
+import type { ChatReasoningLevel } from '../../../src/features/ai-assistant/model/chatGeneration';
 export interface Store {
   conversations: ChatConversation[];
   messages: Record<string, ChatMessage[]>;
@@ -41,12 +42,23 @@ export function loadChapterChat(
     conversation,
     messages: messages.slice(-30),
     before: messages.length > 30 ? messages.at(-30)!.createdAt : null,
+    platformModel: 'gemini-3.7-flash',
   });
 }
-export function createChapterChat(identity: ChatIdentity, title: string) {
+export function createChapterChat(
+  identity: ChatIdentity,
+  title: string,
+  reasoning: ChatReasoningLevel = 'auto',
+) {
   const store = read(identity),
     id = crypto.randomUUID();
-  store.conversations.unshift({ id, title: title.slice(0, 120), draft: '', updatedAt: Date.now() });
+  store.conversations.unshift({
+    id,
+    title: title.slice(0, 120),
+    draft: '',
+    updatedAt: Date.now(),
+    reasoning,
+  });
   store.messages[id] = [];
   write(identity, store);
   return Promise.resolve({ id });
@@ -61,10 +73,15 @@ export async function chapterChatCall<T>(
     after?: string;
     before?: number;
     partial?: string;
+    reasoning?: ChatReasoningLevel;
   },
 ): Promise<T> {
   const store = read(identity),
     id = identity.conversationId!;
+  if (data.action === 'preferences') {
+    const conversation = store.conversations.find((item) => item.id === id);
+    if (conversation) conversation.reasoning = data.reasoning ?? 'auto';
+  }
   if (data.action === 'draft') {
     const conversation = store.conversations.find((item) => item.id === id);
     if (conversation) conversation.draft = data.draft ?? '';

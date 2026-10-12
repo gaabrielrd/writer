@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { GenerationError } from './generation.mjs';
+import { isChatReasoning } from './chatGeneration.mjs';
 
 function validateId(value) {
   if (typeof value !== 'string' || !/^[a-zA-Z0-9_-]{1,128}$/.test(value))
@@ -70,7 +71,16 @@ export function splitChatAnswer(raw) {
     ...(match ? { suggestion: text(match[1].trim(), 16000, true) } : {}),
   };
 }
-export function createChapterChatService({ db, generator, now = Date.now }) {
+export function createChapterChatService({
+  db,
+  generator,
+  now = Date.now,
+  platformModel = 'gemini-3.7-flash',
+}) {
+  const reasoning = (value = 'auto') => {
+    if (!isChatReasoning(value)) fail('invalid-argument', 'Nível de raciocínio inválido.');
+    return value;
+  };
   const root = (uid, data) =>
     `users/${validateId(uid)}/chapterChats/${validateId(data.bookId)}/chapters/${validateId(data.chapterId)}`;
   const conversationRef = (uid, data) =>
@@ -107,6 +117,7 @@ export function createChapterChatService({ db, generator, now = Date.now }) {
         messages: [],
         before: null,
         moreConversations: list.docs.length > 20,
+        platformModel,
       };
     let messages = db.collection(`${ref.path}/messages`).orderBy('createdAt', 'desc');
     if (data.before) messages = messages.startAfter(data.before);
@@ -121,6 +132,7 @@ export function createChapterChatService({ db, generator, now = Date.now }) {
       messages: result,
       before: page.docs.length > 30 ? result[0].createdAt : null,
       moreConversations: list.docs.length > 20,
+      platformModel,
     };
   }
   async function finish(ref, requestId, result, state) {
@@ -339,6 +351,7 @@ export function createChapterChatService({ db, generator, now = Date.now }) {
       await authorize(uid, data);
       if (data.action === 'load') return load(uid, data);
       if (data.action === 'create') {
+        const preference = reasoning(data.reasoning);
         const id = data.conversationId ? validateId(data.conversationId) : randomUUID();
         const ref = conversationRef(uid, { ...data, conversationId: id });
         await db.runTransaction(async (tx) => {
@@ -349,6 +362,7 @@ export function createChapterChatService({ db, generator, now = Date.now }) {
               draft: '',
               updatedAt: now(),
               busy: null,
+              reasoning: preference,
             });
         });
         return { id };
@@ -357,6 +371,17 @@ export function createChapterChatService({ db, generator, now = Date.now }) {
       const ref = conversationRef(uid, data);
       if (!(await ref.get()).exists) fail('not-found', 'Conversa indisponível.');
       if (data.action === 'send') return send(uid, data, stream);
+      if (data.action === 'preferences') {
+        const preference = reasoning(data.reasoning);
+        await db.runTransaction(async (tx) => {
+          const session = await tx.get(ref);
+          if (!session.exists) fail('not-found', 'Conversa indisponível.');
+          if (session.data().busy && session.data().until > now())
+            fail('failed-precondition', 'Interrompa a resposta antes de trocar o raciocínio.');
+          tx.update(ref, { reasoning: preference });
+        });
+        return { reasoning: preference };
+      }
       if (data.action === 'draft') {
         await ref.update({ draft: text(data.draft, 4000) });
         return {};

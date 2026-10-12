@@ -1,6 +1,61 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
+test('raciocínio privado retoma por conversa e fornece o padrão das novas', async ({
+  page,
+}, testInfo) => {
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  await expect(page.getByLabel('Área de escrita do capítulo')).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  const chat = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });
+  const reasoning = chat.getByRole('combobox', { name: 'Raciocínio do assistente' });
+  await expect(reasoning).toHaveText('Auto');
+  await reasoning.click();
+  await expect(page.getByRole('option', { name: 'Máximo', exact: true })).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
+  await expect(page.getByRole('option', { name: 'Nenhum', exact: true })).toHaveAttribute(
+    'aria-disabled',
+    'true',
+  );
+  await page.getByRole('option', { name: 'Alto', exact: true }).click();
+  await expect(reasoning).toHaveText('Alto');
+  await chat.getByLabel('Mensagem para o Assistente IA').fill('Rascunho com raciocínio alto');
+  await page.reload();
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  await expect(reasoning).toHaveText('Alto');
+  await expect(chat.getByLabel('Mensagem para o Assistente IA')).toHaveValue(
+    'Rascunho com raciocínio alto',
+  );
+  await chat.getByRole('button', { name: 'Nova conversa', exact: true }).click();
+  await expect(reasoning).toHaveText('Alto');
+  await reasoning.click();
+  await page.getByRole('option', { name: 'Baixo', exact: true }).click();
+  await expect(reasoning).toHaveText('Baixo');
+  await chat.getByRole('combobox', { name: 'Conversas deste capítulo' }).click();
+  await page.getByRole('option', { name: 'Nova conversa', exact: true }).nth(1).click();
+  await expect(reasoning).toHaveText('Alto');
+  await expect(chat.getByLabel('Mensagem para o Assistente IA')).toHaveValue(
+    'Rascunho com raciocínio alto',
+  );
+  await chat.getByRole('button', { name: 'Nova conversa', exact: true }).click();
+  await expect(reasoning).toHaveText('Baixo');
+  await page.setViewportSize({ width: 320, height: 480 });
+  await reasoning.scrollIntoViewIfNeeded();
+  const modelBox = (await chat
+    .getByRole('button', { name: 'Configurar modelo do assistente' })
+    .boundingBox())!;
+  const reasoningBox = (await reasoning.boundingBox())!;
+  expect(Math.abs(modelBox.y - reasoningBox.y)).toBeLessThan(1);
+  await reasoning.click();
+  await expect(page.getByRole('option', { name: 'Médio', exact: true })).toBeInViewport();
+  await expectNoHorizontalOverflow(page, 'raciocínio em 320px');
+  await capture(page, testInfo, 'raciocinio-320');
+  await page.keyboard.press('Escape');
+  await expect(chat).toBeVisible();
+});
+
 test('compositor mantém controles no campo, contexto expansível e acesso ao modelo', async ({
   page,
 }, testInfo) => {
