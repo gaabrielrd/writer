@@ -23,6 +23,11 @@ exportação ficam em **Opções do capítulo**; o menu conserva acesso por tecl
 e o diálogo devolve foco ao gatilho do menu. Autosave, contagem e navegação
 continuam diretamente visíveis no cabeçalho.
 
+Os painéis usam o mesmo cabeçalho compacto, com título, criar e fechar. Filtros,
+histórico e mensagens conservam estado ao alternar. Cabeçalho e controles ficam
+fora da rolagem do corpo; o composer rola separadamente e reserva área de leitura
+em alturas baixas. O estado vazio usa apresentação compacta até 650 px de altura.
+
 ## Conversa e comandos
 
 Enter envia; Shift+Enter insere uma linha. Composição IME não envia. Digitar `/`

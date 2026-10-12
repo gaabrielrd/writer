@@ -160,3 +160,37 @@ Captura das ferramentas em 320 px foi inspecionada e preservada nos artefatos.
 Contratos do chat, personas e styleguide foram atualizados e check:docs passou.
 
 Neste ponto restam as tarefas 7–12. Nenhum push ou deploy deste incremento.
+
+## Incremento de 2026-10-12 — tarefa 7
+
+Assistente e Compêndio usam `SidePanelHeader`, com títulos nível 2, grupos de
+ações nomeados e controles de 36 px/44 px em toque. Há demonstração no styleguide.
+O histórico usa menu de ícone; filtros do Compêndio usam Button e o estado vazio
+usa EmptyState. Cabeçalho/controles não encolhem, os corpos rolam de forma independente
+e o composer limita sua altura para conservar leitura em viewport baixo.
+O estado vazio do chat reduz decoração até 650 px de altura para manter título
+visível. A barra de escrita usa menos padding até 420 px.
+
+```text
+Test Files 112 passed (112)
+Tests 789 passed (789)
+All files: statements 92.66%, branches 86.07%, functions 91.09%, lines 94.75%
+scripts: pass 69; fail 0
+functions: pass 73; fail 0
+Smoke test do bundle OK.
+Testes dirigidos: 42 passed
+Matriz de workspace/chat: 48 passed (2.5m)
+Refinamento final de estado vazio: 6 passed (21.9s)
+```
+
+A regressão de drag levou à confirmação da posição também no pointerup, com
+teste de último movimento ausente. Os testes de navegador aguardam a porcentagem
+final/encerramento de drag antes de comparar larguras; medir um frame intermediário
+produzia diferenças transitórias. A matriz de 48 cenários passou após esse ajuste.
+A inspeção de imagem revelou decoração escondendo o título vazio em altura baixa;
+os seis cenários foram repetidos após compactá-lo, com título, cabeçalho e envio
+comprovadamente dentro do viewport. O gate completo foi repetido no estado final.
+Filtros, rascunho, foco, seleção, minimapa, comandos, histórico e aceite continuaram
+passando. Captura final em 440 px de altura foi inspecionada e preservada nos artefatos.
+
+Neste ponto restam as tarefas 8–12. Nenhum push ou deploy deste incremento.

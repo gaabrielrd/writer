@@ -1,6 +1,42 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
+test('painéis mantêm cabeçalhos consistentes, filtros e leitura em altura baixa', async ({
+  page,
+}, testInfo) => {
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  await page.getByRole('button', { name: /^Compêndio(?: \d+)?$/ }).click();
+  const lore = page.getByRole('complementary', { name: 'Painel lateral do Compêndio de Lore' });
+  await expect(lore.getByRole('heading', { level: 2, name: 'Compêndio' })).toBeVisible();
+  const loreHeader = await lore.locator('[data-side-panel-header]').boundingBox();
+  await lore.getByLabel('Buscar no compêndio').fill('zzz-sem-entidade');
+  await expect(lore.getByText('Nenhuma entidade encontrada.')).toBeVisible();
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  const chat = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });
+  const chatHeader = await chat.locator('[data-side-panel-header]').boundingBox();
+  expect(chatHeader!.height).toBeCloseTo(loreHeader!.height, 0);
+  await expect(chat.getByRole('group', { name: 'Ações de Assistente IA' })).toBeVisible();
+  await chat.getByLabel('Mensagem para o Assistente IA').fill('Conservar ao fechar');
+  await chat.getByRole('button', { name: 'Fechar painel de IA' }).click();
+  await expect(page.getByLabel('Área de escrita do capítulo')).toBeFocused();
+  await page.getByRole('button', { name: /^Compêndio(?: \d+)?$/ }).click();
+  await expect(lore.getByLabel('Buscar no compêndio')).toHaveValue('zzz-sem-entidade');
+  await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
+  await expect(chat.getByLabel('Mensagem para o Assistente IA')).toHaveValue('Conservar ao fechar');
+  await page.setViewportSize({ width: 1440, height: 440 });
+  await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
+  const messages = chat.getByRole('region', { name: 'Mensagens da conversa' });
+  await expect.poll(async () => (await messages.boundingBox())!.height).toBeGreaterThan(40);
+  await chat.getByRole('button', { name: 'Enviar', exact: true }).scrollIntoViewIfNeeded();
+  await expect(chat.getByRole('button', { name: 'Enviar', exact: true })).toBeInViewport();
+  await expect(chat.getByRole('heading', { name: 'Assistente IA', exact: true })).toBeInViewport();
+  await expect(
+    chat.getByRole('heading', { name: 'Converse sobre este capítulo', exact: true }),
+  ).toBeInViewport();
+  await expectNoHorizontalOverflow(page, 'painéis em altura baixa');
+  await capture(page, testInfo, 'paineis-altura-baixa');
+});
+
 test('ferramentas agrupadas e opções do capítulo mantêm ações e foco', async ({
   page,
 }, testInfo) => {
@@ -181,11 +217,21 @@ test('painéis compartilham largura persistida e preservam seleção, texto e ra
     const selection = await page.evaluate(() => window.getSelection()!.toString());
     expect(selection).toBe('Lia observa o porto.');
     const rect = await handle.boundingBox();
+    const initialPercent = Number(await handle.getAttribute('aria-valuenow'));
+    const workspaceWidth = await page
+      .locator('[data-editor-workspace]')
+      .evaluate((element) => element.getBoundingClientRect().width);
+    const finalPercent =
+      Math.round((initialPercent + ((100 + rect!.width / 2) / workspaceWidth) * 100) * 10) / 10;
     await page.mouse.move(rect!.x + rect!.width / 2, rect!.y + rect!.height / 2);
     await page.mouse.down();
     await page.mouse.move(rect!.x - 100, rect!.y + rect!.height / 2, { steps: 8 });
     await page.mouse.up();
-    expect((await lore.boundingBox())!.width).toBeGreaterThan(before!.width + 80);
+    await expect(handle).toHaveAttribute('aria-valuenow', String(finalPercent));
+    await expect(handle).not.toHaveAttribute('data-dragging');
+    await expect
+      .poll(async () => (await lore.boundingBox())!.width)
+      .toBeGreaterThan(before!.width + 80);
     expect(await page.evaluate(() => window.getSelection()!.toString())).toBe(selection);
   } else {
     await expect(handle).toHaveCount(0);

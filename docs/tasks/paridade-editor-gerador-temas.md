@@ -110,3 +110,8 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
   nomeada no cabeçalho e Persona/exportação em Opções do capítulo, com foco
   restaurado ao gatilho. 29 testes dirigidos e 42 cenários de navegador passaram
   (2,6 min). `npm run validate` verde com 787 testes e demais gates aprovados.
+- Tarefa 7: cabeçalhos comuns, ações compactas, filtros por Button e estado vazio
+  compartilhado; corpos roláveis e área de leitura preservada em altura baixa.
+  42 testes dirigidos, 48 cenários de workspace/chat (2,5 min) e seis cenários do
+  refinamento final de estado vazio (21,9 s) passaram. `npm run validate` verde
+  com 789 testes; scripts/backend/build/smoke aprovados.

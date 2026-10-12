@@ -94,8 +94,12 @@ export function ResizeHandle({
       onPointerUp={(event) => {
         const current = drag.current;
         if (!current || current.pointerId !== event.pointerId) return;
+        current.value = clamp(
+          current.initial + ((current.x - event.clientX) / current.width) * 100,
+        );
         drag.current = null;
         setDragging(false);
+        onValueChange(current.value);
         onValueCommit?.(current.value);
         event.currentTarget.releasePointerCapture(event.pointerId);
       }}

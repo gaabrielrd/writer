@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Copy, Plus, Send, Square, X } from 'lucide-react';
+import { Copy, MoreHorizontal, Plus, Send, Square, X } from 'lucide-react';
 import {
   Alert,
   Badge,
@@ -9,6 +9,7 @@ import {
   EmptyState,
   LoadingState,
   Textarea,
+  SidePanelHeader,
 } from '@/shared/ui';
 import { useChapterChat } from '../hooks/useChapterChat';
 import { useAIConfig } from '../hooks/useAIConfig';
@@ -220,32 +221,29 @@ export function ChapterChatPanel({
   if (!open) return null;
   return (
     <aside className={styles.panel} aria-label="Painel lateral do Assistente IA">
-      <header className={styles.header}>
-        <h2>Assistente IA</h2>
-        <div className={styles.actions}>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Nova conversa"
-            disabled={running || applying}
-            onClick={() => void chat.selectConversation()}
-          >
-            <Plus className="icon icon-sm" aria-hidden="true" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Fechar painel de IA"
-            disabled={applying}
-            onClick={() => {
-              onClose();
-              bridge?.focus();
-            }}
-          >
-            <X className="icon icon-sm" aria-hidden="true" />
-          </Button>
-        </div>
-      </header>
+      <SidePanelHeader title="Assistente IA">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Nova conversa"
+          disabled={running || applying}
+          onClick={() => void chat.selectConversation()}
+        >
+          <Plus className="icon icon-sm" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Fechar painel de IA"
+          disabled={applying}
+          onClick={() => {
+            onClose();
+            bridge?.focus();
+          }}
+        >
+          <X className="icon icon-sm" aria-hidden="true" />
+        </Button>
+      </SidePanelHeader>
       <div className={styles.history}>
         <Dropdown
           mode="select"
@@ -262,7 +260,11 @@ export function ChapterChatPanel({
         <Dropdown
           mode="action"
           aria-label="Opções da conversa"
-          label="Opções"
+          label="Opções da conversa"
+          iconOnly
+          icon={<MoreHorizontal className="icon icon-sm" aria-hidden="true" />}
+          variant="ghost"
+          size="icon"
           disabled={!chat.page.conversation || running || applying}
           options={[{ value: 'delete', label: 'Excluir conversa', variant: 'destructive' }]}
           onAction={() => setConfirmation('delete')}
@@ -289,6 +291,7 @@ export function ChapterChatPanel({
         {chat.loading && <LoadingState label="Carregando conversas..." />}
         {!chat.loading && !chat.page.messages.length && (
           <EmptyState
+            className={styles.emptyMessage}
             title="Converse sobre este capítulo"
             description="Peça ideias, revise uma passagem ou digite / para escolher um comando."
           />

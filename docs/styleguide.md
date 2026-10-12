@@ -57,6 +57,9 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 - `Card`: Agrupamento de conteúdo (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`).
 - `DropdownItem`, `DropdownLabel`: Composição dos menus de navegação e conta, preservando links e gatilhos personalizados.
 - `Tooltip`: Dicas por hover, foco e toque.
+- `SidePanelHeader`: Cabeçalho comum de painéis, com título nível 2, grupo nomeado
+  de ações, tokens semânticos e controles de 36 px (44 px em ponteiro de toque).
+  Demonstração no painel redimensionável do styleguide.
 - `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog, com altura máxima de `80vh`. Header e footer ficam visíveis; apenas `DialogBody` rola. Passe ações finais por `footer`/`actions`; botões de envio fora do formulário usam `form={id}`. Na API de composição, coloque o conteúdo entre `DialogHeader`, `DialogBody` e `DialogFooter`.
 - `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).
 - `LoadingState`, `EmptyState`, `ErrorState`: Estados padrão de ciclo de vida.
@@ -303,3 +306,9 @@ Navegação entre capítulos fica em grupo próprio no cabeçalho, ao lado de st
 contagem e tela cheia. Persona e exportação ficam em `Dropdown mode="action"`
 sob **Opções do capítulo**, com abertura de diálogo após fechar o menu e restaurar
 foco ao gatilho persistente. Todos os recursos continuam acessíveis por teclado.
+
+Assistente e Compêndio reutilizam `SidePanelHeader`; filtros/histórico ficam abaixo
+do cabeçalho e o corpo rola independentemente. O chat reserva espaço de leitura
+ao limitar a altura do composer, que tem sua própria rolagem. Em viewports baixos,
+o estado vazio reduz decoração para manter o título visível. Ações e estados
+conservam nomes acessíveis ao usar apenas ícones.

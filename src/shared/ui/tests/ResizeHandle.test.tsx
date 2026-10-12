@@ -107,7 +107,7 @@ describe('divisor redimensionável', () => {
     expect(committed).not.toHaveBeenCalled();
     fireEvent.pointerMove(handle, { pointerId: 2, clientX: 0 });
     expect(handle).toHaveAttribute('aria-valuenow', '60');
-    fireEvent.pointerUp(handle, { pointerId: 2 });
+    fireEvent.pointerUp(handle, { pointerId: 2, clientX: 0 });
     expect(capture).toHaveBeenCalledWith(2);
     expect(release).toHaveBeenCalledWith(2);
     expect(committed).toHaveBeenCalledExactlyOnceWith(60);
@@ -147,8 +147,17 @@ describe('divisor redimensionável', () => {
     expect(capture).toHaveBeenCalledTimes(1);
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 700 });
     expect(handle).toHaveAttribute('aria-valuenow', '30');
-    fireEvent.pointerUp(handle, { pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 700 });
     expect(committed).toHaveBeenCalledExactlyOnceWith(30);
+  });
+
+  it('confirma a posição final mesmo se o último movimento não for entregue', () => {
+    const { handle } = setup();
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 600, button: 0 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 550 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 500 });
+    expect(handle).toHaveAttribute('aria-valuenow', '50');
+    expect(committed).toHaveBeenCalledExactlyOnceWith(50);
   });
 
   it('ignora drag quando a largura ainda não pode ser medida', () => {

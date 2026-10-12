@@ -53,6 +53,12 @@
   border-color: hsl(var(--primary) / 0.3);
 }
 
+@media (max-width: 420px) {
+  .toolbar {
+    padding: var(--space-2);
+  }
+}
+
 .toolBtn {
   display: inline-flex;
   align-items: center;
