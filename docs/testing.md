@@ -195,12 +195,12 @@ na troca de conta. Os testes de backend cobrem aceite permanente e idempotente,
 reutilização sem débito, referências, exclusão protegida, migração e paginação.
 As regras no emulador impedem forjar imagens ou referências pelo navegador.
 `e2e/visual/image-library.visual.ts` valida menus por teclado, tooltip, breadcrumb,
-gerenciamento e seleção no wizard nos três temas e em desktop/celular, incluindo
+gerenciamento e seleção no formulário nos três temas e em desktop/celular, incluindo
 320 px. Serviços fictícios isolados impedem acesso ao Firebase de produção.
 
 ## Universos e lore compartilhado
 
-Testes de componentes cobrem gestão de universos, vínculos, wizard de lore,
+Testes de componentes cobrem gestão de universos, vínculos, seções de lore,
 edição separada no editor, atualização global e backup privado de versão 2.
 O backend cobre autoria, retentativas, contadores, referências globais e exclusão
 concorrente. `npm run test:rules` inclui isolamento de universos, proteção de
@@ -307,3 +307,20 @@ Os testes visuais confirmam os avatares, barras de intensidade, layout em uma
 coluna em 320 px e retorno ao editor. A aba do provedor persiste na URL e as
 preferências são mantidas ao recarregar. Cada teste tem um contexto de navegador
 novo; a preparação da prévia não limpa configurações durante um reload.
+
+## Formulários do estúdio
+
+`FormSection.test.tsx` cobre teclado, abertura controlada e preservação ao recolher.
+Testes de livros/lore cobrem salvamento pelos dados essenciais, edição direta,
+visibilidade, relações incompletas em seções fechadas, IDs estáveis de retry,
+URL inválida, busy e aceite explícito de IA. Campos compartilhados verificam
+IDs únicos e hints/erros associados por ARIA.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/studio-forms.visual.ts
+```
+
+O cenário usa somente fixtures, cobre desktop/celular nos três temas, teclado,
+retorno do foco, aviso de publicação e 320 px. A suíte visual completa continua
+protegendo capas 2:3, livro único, títulos longos, capítulos, minimapa, personas,
+importação, universos e IA. Nenhum snapshot é regenerado automaticamente.

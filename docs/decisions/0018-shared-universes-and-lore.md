@@ -24,8 +24,10 @@ Manter universos, vínculos e mutações globais no servidor, com Auth e App Che
 Contagens e registros de uso acompanham criação, troca e exclusão de livros.
 Bloquear novos vínculos antes de excluir recursivamente universos sem livros.
 
-Usar quatro etapas para criar e editar lore. Relações são editadas uma por vez;
-campos e ID de criação permanecem disponíveis nas retentativas.
+A decisão inicial de quatro etapas foi revisada em 2026-10-12: identificação e
+visibilidade ficam acessíveis diretamente, com salvamento pelos dados essenciais
+e seções opcionais que preservam o preenchimento. Relações continuam editadas
+uma por vez; campos e ID de criação permanecem disponíveis nas retentativas.
 
 Resolver termos locais antes dos globais, independentemente da visibilidade.
 Projetar somente entidades consentidas e campos permitidos. Publicações com

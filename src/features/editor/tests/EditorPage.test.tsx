@@ -283,8 +283,6 @@ describe('EditorPage', () => {
     await user.paste('Guinevere');
     await user.click(within(createDialog).getByLabelText(/resumo curto/i));
     await user.paste('Rainha');
-    for (let step = 0; step < 3; step++)
-      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
 
     await waitFor(() => expect(createDialog).not.toBeInTheDocument());
@@ -302,8 +300,6 @@ describe('EditorPage', () => {
     await user.click(within(editDialog).getByLabelText(/resumo curto/i));
     await user.keyboard('{End}');
     await user.paste(' de Camelot');
-    for (let step = 0; step < 3; step++)
-      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
     await waitFor(() => expect(editDialog).not.toBeInTheDocument());
     expect(await within(sidebar).findByText('Herdeiro do trono de Camelot')).toBeInTheDocument();
@@ -363,8 +359,6 @@ describe('EditorPage', () => {
       'Lore global — universo compartilhado',
     );
     await user.click(screen.getByRole('button', { name: 'Editar' }));
-    for (let step = 0; step < 3; step++)
-      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByLabelText(/Tornar visível/));
     await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
     expect(update).toHaveBeenCalledWith(

@@ -20,9 +20,6 @@ test('ideia, entrevista, revisão privada, capa e compêndio criado', async ({ p
   await expect(page.getByLabel('Título do livro')).toHaveValue('O último mar');
   await page.getByRole('button', { name: 'Editar Marina', exact: true }).click();
   await page.getByLabel('Nome da Entidade').fill('Marina do Norte');
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await expect(page.getByText('Esta ficha será criada como lore privado do livro.')).toBeVisible();
   await expectDialogWithinViewport(page);
   await page.getByRole('button', { name: 'Salvar Alterações' }).click();

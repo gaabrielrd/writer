@@ -32,6 +32,18 @@ import {
 import { ThemeProvider } from '@/shared/theme';
 
 describe('UI Design System Components', () => {
+  it('keeps repeated field labels uniquely associated with their own feedback', () => {
+    render(
+      <>
+        <Input label="Nome" hint="Primeiro formulário" />
+        <Input label="Nome" hint="Segundo formulário" />
+      </>,
+    );
+    const fields = screen.getAllByLabelText('Nome');
+    expect(fields[0]!.id).not.toBe(fields[1]!.id);
+    expect(fields[0]).toHaveAccessibleDescription('Primeiro formulário');
+    expect(fields[1]).toHaveAccessibleDescription('Segundo formulário');
+  });
   it('renderiza Button com variantes e lida com clique', () => {
     const handleClick = vi.fn();
     render(
@@ -50,15 +62,26 @@ describe('UI Design System Components', () => {
     const { rerender } = render(<Input label="Título" hint="Preencha o título" />);
     expect(screen.getByLabelText('Título')).toBeInTheDocument();
     expect(screen.getByText('Preencha o título')).toBeInTheDocument();
+    expect(screen.getByLabelText('Título')).toHaveAccessibleDescription('Preencha o título');
 
     rerender(<Input label="Título" error="Campo obrigatório" />);
     expect(screen.getByText('Campo obrigatório')).toBeInTheDocument();
+    expect(screen.getByLabelText('Título')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('Título')).toHaveAccessibleDescription('Campo obrigatório');
   });
 
   it('renderiza Textarea com label e erro', () => {
-    render(<Textarea label="Descrição" error="Muito curto" />);
+    render(
+      <>
+        <p id="description-context">Contexto adicional</p>
+        <Textarea label="Descrição" error="Muito curto" aria-describedby="description-context" />
+      </>,
+    );
     expect(screen.getByLabelText('Descrição')).toBeInTheDocument();
     expect(screen.getByText('Muito curto')).toBeInTheDocument();
+    expect(screen.getByLabelText('Descrição')).toHaveAccessibleDescription(
+      'Contexto adicional Muito curto',
+    );
   });
 
   it('renderiza Select com opções e dispara evento onChange', async () => {

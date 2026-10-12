@@ -194,19 +194,15 @@ it('recusa universo de outro autor e permite tentar abrir novamente', async () =
   await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
   expect(await screen.findByRole('heading', { name: 'Atlas' })).toBeInTheDocument();
 });
-it('cria, edita e exclui entidades globais através das etapas', async () => {
+it('cria, edita e exclui entidades globais com salvamento direto', async () => {
   page('/universes/world/lore');
   const user = userEvent.setup();
   await user.click(await screen.findByRole('button', { name: 'Nova Entidade' }));
   await user.type(screen.getByLabelText('Nome da Entidade'), 'Arthur');
   await user.type(screen.getByLabelText(/Resumo Curto/), 'O rei');
-  for (let step = 0; step < 3; step++)
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
   expect(await screen.findByRole('heading', { name: 'Arthur' })).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: /Editar Arthur/ }));
-  for (let step = 0; step < 3; step++)
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByLabelText(/Tornar visível/));
   expect(screen.getByText(/As publicações dos livros deste universo/)).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));

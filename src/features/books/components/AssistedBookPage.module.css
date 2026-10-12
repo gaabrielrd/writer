@@ -14,13 +14,13 @@
 }
 .steps li {
   padding: var(--space-2) var(--space-3);
-  border-radius: 16px;
-  background: hsl(var(--secondary));
-  color: hsl(var(--secondary-foreground));
+  border-bottom: 2px solid hsl(var(--border));
+  color: hsl(var(--muted-foreground));
 }
 .steps li[aria-current='step'] {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  border-color: hsl(var(--primary));
+  color: hsl(var(--foreground));
+  font-weight: 600;
 }
 .content {
   display: grid;
@@ -83,4 +83,13 @@
     max-width: 100%;
     white-space: normal;
   }
+}
+
+.panel > span {
+  justify-self: start;
+}
+.meta {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
 }

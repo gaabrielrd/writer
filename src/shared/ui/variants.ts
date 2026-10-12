@@ -65,16 +65,16 @@ export const alertVariants = cva(
   {
     variants: {
       variant: {
-        info: 'border-blue-500/30 bg-blue-500/10 text-blue-900 dark:text-blue-200 [&>svg]:text-blue-500',
+        info: 'border-[hsl(var(--border))] bg-[hsl(var(--muted))]/50 text-[hsl(var(--foreground))] [&>svg]:text-[hsl(var(--primary))]',
         default: 'border-[hsl(var(--border))] bg-[hsl(var(--card))] text-[hsl(var(--foreground))]',
         destructive:
           'border-[hsl(var(--destructive))]/40 bg-[hsl(var(--destructive))]/10 text-[hsl(var(--destructive))] [&>svg]:text-[hsl(var(--destructive))]',
         danger:
           'border-[hsl(var(--destructive))]/40 bg-[hsl(var(--destructive))]/10 text-[hsl(var(--destructive))] [&>svg]:text-[hsl(var(--destructive))]',
         success:
-          'border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 [&>svg]:text-emerald-500',
+          'border-[hsl(var(--success))]/40 bg-[hsl(var(--success))]/10 text-[hsl(var(--foreground))] [&>svg]:text-[hsl(var(--success))]',
         warning:
-          'border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-200 [&>svg]:text-amber-500',
+          'border-[hsl(var(--warning))]/40 bg-[hsl(var(--warning))]/10 text-[hsl(var(--foreground))] [&>svg]:text-[hsl(var(--warning))]',
       },
     },
     defaultVariants: {

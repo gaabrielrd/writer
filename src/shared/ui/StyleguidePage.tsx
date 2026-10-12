@@ -3,6 +3,7 @@ import { Sparkles, BookOpen, Feather, MapPin, MoreHorizontal } from 'lucide-reac
 import {
   Button,
   Input,
+  FormSection,
   Textarea,
   Slider,
   Badge,
@@ -46,6 +47,27 @@ export function StyleguidePage() {
       />
 
       {/* Seção de Temas */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-bold">Formulários no seu ritmo</h2>
+        <Card className="p-6 flex flex-col gap-4">
+          <p className="text-sm text-[hsl(var(--muted-foreground))]">
+            Dados essenciais primeiro. Detalhes abrem quando necessários e preservam seu
+            preenchimento. Uma ação principal por contexto; avisos de alcance e publicação sempre
+            visíveis.
+          </p>
+          <Input
+            label="Nome do projeto"
+            hint="Campo essencial; detalhes podem ser preenchidos depois."
+          />
+          <FormSection title="Anotações" description="Detalhes opcionais · preservados ao recolher">
+            <Textarea label="Notas do projeto" rows={3} />
+          </FormSection>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="secondary">Cancelar</Button>
+            <Button>Salvar projeto</Button>
+          </div>
+        </Card>
+      </section>
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-bold">1. Paletas e Temas Ativos</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

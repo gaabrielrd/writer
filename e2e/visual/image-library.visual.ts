@@ -52,8 +52,7 @@ test('wizard seleciona capa da biblioteca sem consumir créditos', async ({ page
   await page.getByRole('button', { name: 'Novo Livro', exact: true }).click();
   await page.getByLabel('Título da Obra').fill('Minha obra');
   await page.getByLabel('Gênero Literário').fill('Fantasia');
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^Capa/ }).click();
   await page.getByRole('button', { name: 'Selecionar da biblioteca' }).click();
   await page.getByRole('button', { name: 'Selecionar Capa do Atlas' }).click();
   await expect(page.getByAltText('Capa selecionada de Minha obra')).toBeVisible();

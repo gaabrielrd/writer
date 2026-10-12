@@ -36,11 +36,45 @@ async function start() {
   const user = userEvent.setup();
   await user.type(screen.getByLabelText('Título da Obra'), 'Atlas');
   await user.type(screen.getByLabelText('Gênero Literário'), 'Fantasia');
-  await user.click(screen.getByRole('button', { name: 'Continuar' }));
+  await user.click(screen.getByRole('button', { name: /^Sinopse/ }));
   await screen.findByRole('button', { name: 'Gerar sinopse com IA' });
   return user;
 }
 describe('BookCreationWizard', () => {
+  it('creates immediately with essential fields, without opening optional sections', async () => {
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText('Título da Obra'), 'Atlas');
+    expect(screen.getByRole('button', { name: 'Criar Livro' })).toBeDisabled();
+    await user.type(screen.getByLabelText('Gênero Literário'), 'Fantasia');
+    expect(screen.getByLabelText('Sinopse / Premissa')).not.toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Atlas',
+        genre: 'Fantasia',
+        synopsis: undefined,
+        coverUrl: null,
+      }),
+    );
+    expect(service.generateBookAsset).not.toHaveBeenCalled();
+  });
+
+  it('reveals an invalid cover URL even when collapsed and preserves the draft', async () => {
+    const submit = vi.fn();
+    render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
+    const user = await start();
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
+    await user.click(screen.getByRole('button', { name: /^Usar URL de imagem/ }));
+    await user.type(screen.getByLabelText('URL da Capa (opcional)'), 'invalid');
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
+    await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
+    expect(screen.getByLabelText('URL da Capa (opcional)')).toBeVisible();
+    expect(screen.getByLabelText('URL da Capa (opcional)')).toHaveValue('invalid');
+    expect(screen.getByRole('alert')).toHaveFocus();
+    expect(submit).not.toHaveBeenCalled();
+  });
   it('reuses a library image in step three without accepting or charging an AI suggestion', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     vi.mocked(library.listLibraryImages).mockResolvedValue({
@@ -57,7 +91,7 @@ describe('BookCreationWizard', () => {
     });
     render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
     const user = await start();
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
     await user.click(screen.getByRole('button', { name: 'Selecionar da biblioteca' }));
     await user.click(await screen.findByRole('button', { name: 'Selecionar Capa guardada' }));
     expect(screen.getByAltText('Capa selecionada de Atlas')).toHaveAttribute(
@@ -80,18 +114,18 @@ describe('BookCreationWizard', () => {
     vi.mocked(service.acceptBookAsset).mockResolvedValue({ ...suggestion, credits: 19 });
     vi.mocked(service.discardBookAsset).mockResolvedValue({ discarded: true });
   });
-  it('requires title and genre, preserves values on Back and creates only at the last step', async () => {
+  it('requires title and genre and preserves optional fields when sections collapse', async () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
-    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Criar Livro' })).toBeDisabled();
     const user = await start();
     await user.type(screen.getByLabelText('Sinopse / Premissa'), 'Meu texto');
-    await user.click(screen.getByRole('button', { name: 'Voltar' }));
+    await user.click(screen.getByRole('button', { name: /^Sinopse/ }));
     expect(screen.getByLabelText('Título da Obra')).toHaveValue('Atlas');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Sinopse/ }));
     expect(screen.getByLabelText('Sinopse / Premissa')).toHaveValue('Meu texto');
     expect(submit).not.toHaveBeenCalled();
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
     await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
     expect(submit).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -159,11 +193,11 @@ describe('BookCreationWizard', () => {
     const submit = vi.fn().mockResolvedValue(undefined);
     render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
     const user = await start();
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
     expect(screen.getByRole('button', { name: 'Gerar capa com IA' })).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: 'Voltar' }));
+    await user.click(screen.getByRole('button', { name: /^Sinopse/ }));
     await user.type(screen.getByLabelText('Sinopse / Premissa'), 'Premissa');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
     await user.click(screen.getByRole('button', { name: 'Gerar capa com IA' }));
     await screen.findByAltText('Sugestão de capa de Atlas');
     expect(service.generateBookAsset).toHaveBeenCalledWith(
@@ -189,7 +223,7 @@ describe('BookCreationWizard', () => {
     render(<BookCreationWizard onClose={vi.fn()} onSubmit={vi.fn()} />);
     const user = await start();
     expect(screen.getByRole('button', { name: 'Gerar sinopse com IA' })).toBeDisabled();
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
     expect(screen.getByRole('button', { name: 'Criar Livro' })).toBeEnabled();
   });
   it('preserves the availability error across steps and allows manual saving', async () => {
@@ -198,7 +232,7 @@ describe('BookCreationWizard', () => {
     render(<BookCreationWizard onClose={vi.fn()} onSubmit={submit} />);
     const user = await start();
     await screen.findByText('A IA está indisponível. Você pode criar o livro manualmente.');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
     expect(
       screen.getByText('A IA está indisponível. Você pode criar o livro manualmente.'),
     ).toBeInTheDocument();
@@ -213,7 +247,8 @@ describe('BookCreationWizard', () => {
     const close = vi.fn();
     render(<BookCreationWizard onClose={close} onSubmit={submit} />);
     const user = await start();
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
+    await user.click(screen.getByRole('button', { name: /^Usar URL de imagem/ }));
     await user.type(
       screen.getByLabelText('URL da Capa (opcional)'),
       'https://example.test/manual.png',
@@ -290,10 +325,9 @@ it('permite selecionar um universo na primeira etapa e preserva a escolha ao vol
   const user = userEvent.setup();
   await chooseDropdown(user, await screen.findByLabelText('Universo compartilhado'), 'Atlas');
   await start();
-  await user.click(screen.getByRole('button', { name: 'Voltar' }));
+  await user.click(screen.getByRole('button', { name: /^Sinopse/ }));
   expect(await screen.findByLabelText('Universo compartilhado')).toHaveTextContent('Atlas');
-  await user.click(screen.getByRole('button', { name: 'Continuar' }));
-  await user.click(screen.getByRole('button', { name: 'Continuar' }));
+
   await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
   expect(submit).toHaveBeenCalledWith(expect.objectContaining({ universeId: 'world' }));
 });

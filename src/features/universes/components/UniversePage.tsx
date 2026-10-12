@@ -179,7 +179,7 @@ export function UniversePage() {
                   <Globe className="icon" aria-hidden="true" /> {world.name}
                 </h2>
                 <p>{world.description}</p>
-                <Badge>
+                <Badge variant="secondary">
                   {world.bookCount}{' '}
                   {world.bookCount === 1 ? 'livro vinculado' : 'livros vinculados'}
                 </Badge>
@@ -193,13 +193,13 @@ export function UniversePage() {
                     <Link to={`/universes/${encodeURIComponent(world.id)}/lore`}>
                       <Button variant="secondary">Abrir lore</Button>
                     </Link>
-                    <Button variant="secondary" onClick={() => setForm({ key, world })}>
+                    <Button variant="ghost" onClick={() => setForm({ key, world })}>
                       Editar universo
                     </Button>
                   </>
                 )}
                 <Button
-                  variant="danger"
+                  variant="ghost"
                   onClick={() => {
                     setRemoving({ key, world });
                     setActionError('');

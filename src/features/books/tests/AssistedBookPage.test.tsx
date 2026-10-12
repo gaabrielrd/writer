@@ -207,9 +207,6 @@ describe('AssistedBookPage', () => {
     const user = userEvent.setup();
     await user.click(await screen.findByRole('button', { name: 'Editar Ficha 0' }));
     fireEvent.change(screen.getByLabelText('Nome da Entidade'), { target: { value: 'Marina' } });
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
     expect(screen.queryByText('Tornar visível no leitor público da obra')).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
     await screen.findByRole('heading', { name: 'Marina' });

@@ -59,10 +59,10 @@
 .selectTrigger {
   width: 100%;
   justify-content: flex-start;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
 }
 .selectHeight {
-  height: 44px;
+  height: var(--control-height);
 }
 .selectDefault {
   background: hsl(var(--card));
@@ -83,10 +83,8 @@
   min-width: 0;
 }
 .fieldLabel {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: var(--text-sm);
+  font-weight: 500;
 }
 .feedback,
 .label,

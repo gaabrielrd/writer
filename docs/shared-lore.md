@@ -6,8 +6,8 @@ pode criar universos com nome e descrição e gerenciar suas entidades em
 
 ## Livros e escopos
 
-Um livro pertence a zero ou um universo. O seletor aparece na primeira etapa
-**Livro**, quando existem universos, mantendo as três etapas de criação.
+Um livro pertence a zero ou um universo. O seletor aparece junto dos dados essenciais
+do livro, quando existem universos, sem etapas obrigatórias para sinopse ou capa.
 **Sem universo** mantém o fluxo independente. As configurações permitem
 vincular, trocar ou desvincular universos em livros existentes.
 
@@ -26,7 +26,7 @@ ordem determinística. Termos mais longos continuam seguindo o matcher existente
 Relações globais apontam somente para entidades do mesmo universo; relações
 locais podem apontar para o lore local ou para o universo vinculado.
 
-## Fichas por etapas
+## Fichas por seções
 
 Nos detalhes do livro, o Compêndio alterna entre Grid (padrão) e Lista. A Lista
 permite selecionar entidades do escopo ativo e ajustar visibilidade ou excluir
@@ -46,17 +46,9 @@ garantias de privacidade. O resultado informa sucessos e erros, mantendo somente
 as falhas selecionadas para nova tentativa. Durante a execução, o modal permanece
 aberto e os controles de seleção/filtros/escopo/abas ficam bloqueados.
 
-Criação e edição compartilham quatro etapas em todos os pontos de entrada:
+Criação e edição mostram identificação e visibilidade diretamente em todos os pontos de entrada, inclusive sidebar e criação assistida. Nome e resumo válidos permitem salvar imediatamente. Características, história/notas e relações abrem de forma independente pelo componente compartilhado `FormSection`. Recolher uma seção mantém os campos montados e preserva valores.
 
-1. Identificação: nome, categoria, apelidos e resumo de até 140 caracteres.
-2. Características: aparência e personalidade.
-3. História e notas: ficha detalhada, histórico e notas privadas.
-4. Relações e visibilidade: edição de uma relação por vez e consentimento público.
-
-Voltar preserva os campos. Somente a etapa final grava dados. Falhas preservam
-valores e permitem retentativa; criações usam IDs estáveis. O diálogo mantém
-progresso e ações acessíveis, com rolagem somente no conteúdo da etapa quando
-necessária. A edição global avisa que a ficha é compartilhada com outros livros.
+A visibilidade informa quais campos podem aparecer no leitor; alterações de público para privado mantêm o aviso de revogação antes do salvamento, inclusive alcance global. Relações continuam editadas uma por vez. Relação incompleta abre a seção e impede salvar. Falhas mantêm preenchimento e ID de criação para retry. O rodapé permanece visível enquanto somente o corpo do diálogo rola.
 
 ## Persistência e operações
 

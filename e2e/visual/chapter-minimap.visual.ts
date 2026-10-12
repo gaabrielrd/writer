@@ -13,12 +13,7 @@ test('indicadores do minimapa usam as mesmas cores das tags de lore', async ({
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome da Entidade').fill('Maré Fantasma');
   await chooseDropdown(dialog.getByRole('combobox', { name: 'Categoria' }), 'Outro');
-  await dialog
-    .getByLabel('Resumo Curto (exibido nos tooltips de leitura e edição)')
-    .fill('Fenômeno fictício');
-  await dialog.getByRole('button', { name: 'Continuar', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Continuar', exact: true }).click();
-  await dialog.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await dialog.getByLabel('Resumo Curto').fill('Fenômeno fictício');
   await dialog.getByRole('button', { name: 'Cadastrar Entidade', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await page.getByRole('button', { name: 'Fechar painel de lore' }).click();

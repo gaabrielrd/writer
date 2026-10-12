@@ -92,7 +92,9 @@ export function useSelectionAnchor(editor: Editor | null, enabled: boolean) {
     editor.on('transaction', scheduleUpdate);
     editor.on('focus', scheduleUpdate);
     editor.on('blur', scheduleUpdate);
-    document.addEventListener('keydown', dismiss);
+    // Capture Escape before a tooltip consumes it, so dismissal also returns
+    // focus to the manuscript when an action has a keyboard tooltip open.
+    document.addEventListener('keydown', dismiss, true);
     document.addEventListener('pointerdown', outside);
     window.addEventListener('scroll', update, true);
     window.addEventListener('resize', update);
@@ -102,7 +104,7 @@ export function useSelectionAnchor(editor: Editor | null, enabled: boolean) {
       editor.off('transaction', scheduleUpdate);
       editor.off('focus', scheduleUpdate);
       editor.off('blur', scheduleUpdate);
-      document.removeEventListener('keydown', dismiss);
+      document.removeEventListener('keydown', dismiss, true);
       document.removeEventListener('pointerdown', outside);
       window.removeEventListener('scroll', update, true);
       window.removeEventListener('resize', update);

@@ -1,6 +1,15 @@
 import { useState, useRef, type ChangeEvent, type DragEvent } from 'react';
 import { CheckSquare, FileText, Square, Upload, X } from 'lucide-react';
-import { Alert, Badge, Button, Dialog, Input, LoadingState, Textarea } from '@/shared/ui';
+import {
+  Alert,
+  Badge,
+  Button,
+  Dialog,
+  FormSection,
+  Input,
+  LoadingState,
+  Textarea,
+} from '@/shared/ui';
 import type { Book } from '../model/book';
 import * as bookService from '../services/bookService';
 import {
@@ -181,6 +190,7 @@ export function ImportBookModal({
     <Dialog
       open={open}
       title={dialogTitle}
+      description="Escolha um documento, confira os capítulos e importe quando estiver pronto."
       onClose={handleClose}
       maxWidthClass="max-w-2xl"
       footer={
@@ -287,21 +297,27 @@ export function ImportBookModal({
                   required
                   disabled={isImporting}
                 />
-                <Input
-                  label="Gênero Literário (opcional)"
-                  placeholder="Ex: Fantasia Épica, Ficção Científica"
-                  value={bookGenre}
-                  onChange={(e) => setBookGenre(e.target.value)}
+                <FormSection
+                  title="Sobre a obra"
+                  description="Gênero e sinopse · opcionais"
                   disabled={isImporting}
-                />
-                <Textarea
-                  label="Sinopse (opcional)"
-                  placeholder="Breve descrição da história..."
-                  value={bookSynopsis}
-                  onChange={(e) => setBookSynopsis(e.target.value)}
-                  rows={2}
-                  disabled={isImporting}
-                />
+                >
+                  <Input
+                    label="Gênero Literário (opcional)"
+                    placeholder="Ex: Fantasia Épica, Ficção Científica"
+                    value={bookGenre}
+                    onChange={(e) => setBookGenre(e.target.value)}
+                    disabled={isImporting}
+                  />
+                  <Textarea
+                    label="Sinopse (opcional)"
+                    placeholder="Breve descrição da história..."
+                    value={bookSynopsis}
+                    onChange={(e) => setBookSynopsis(e.target.value)}
+                    rows={2}
+                    disabled={isImporting}
+                  />
+                </FormSection>
               </div>
             )}
 

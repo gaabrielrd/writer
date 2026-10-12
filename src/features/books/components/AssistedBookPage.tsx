@@ -247,7 +247,7 @@ function AssistedCreation() {
         </Alert>
       )}
       {costs && (
-        <p>
+        <p className={styles.meta}>
           Pacote textual: {costs.text} créditos. Capa gerada: {costs.cover} créditos. Cobrança
           somente ao criar o livro.
         </p>
@@ -350,8 +350,8 @@ function AssistedCreation() {
             <Card className={styles.panel}>
               <h3>Decisões até agora</h3>
               <p className={styles.prose}>{session.brief}</p>
-              {session.ready && <Badge>Pronto para gerar</Badge>}
-              <Button onClick={() => setPhase('brief')}>
+              {session.ready && <Badge variant="secondary">Pronto para gerar</Badge>}
+              <Button variant="secondary" onClick={() => setPhase('brief')}>
                 Revisar briefing e encerrar entrevista
               </Button>
               <p>Sessão disponível até {date(session.expiresAt)}.</p>
@@ -431,7 +431,7 @@ function AssistedCreation() {
               {proposal.entities.map((entity) => (
                 <Card key={entity.id} className={styles.panel}>
                   <h4>{entity.name}</h4>
-                  <Badge>
+                  <Badge variant="secondary">
                     {entity.category === 'character'
                       ? 'Personagem'
                       : entity.category === 'location'

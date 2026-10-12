@@ -3,9 +3,59 @@ import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LoreEntityForm } from '../components/LoreEntityForm';
-import type { LoreEntity } from '../model/loreEntity';
+import type { CreateLoreEntityInput, LoreEntity } from '../model/loreEntity';
 
 describe('LoreEntityForm', () => {
+  it('creates with only name and summary without visiting optional sections', async () => {
+    const user = userEvent.setup();
+    const submit = vi.fn().mockResolvedValue(undefined);
+    render(<LoreEntityForm open allEntities={[]} onClose={vi.fn()} onSubmit={submit} />);
+    await user.type(screen.getByLabelText('Nome da Entidade'), 'Lia');
+    await user.type(screen.getByLabelText(/Resumo Curto/), 'Cartógrafa');
+    expect(screen.getByLabelText('Notas privadas')).not.toBeVisible();
+    expect(screen.getByLabelText(/Tornar visível/)).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
+    expect(submit).toHaveBeenCalledWith(
+      expect.objectContaining({ name: 'Lia', summary: 'Cartógrafa', relations: [] }),
+    );
+  });
+
+  it('opens an invalid relation and prevents saving a collapsed incomplete field', async () => {
+    const user = userEvent.setup();
+    const submit = vi
+      .fn<(input: CreateLoreEntityInput) => Promise<void>>()
+      .mockResolvedValue(undefined);
+    render(
+      <LoreEntityForm
+        open
+        entityToEdit={{
+          id: 'lia',
+          bookId: 'book',
+          name: 'Lia',
+          aliases: [],
+          category: 'character',
+          summary: 'Cartógrafa',
+          details: 'História preservada',
+          structuredDetails: { appearance: '', personality: '', history: '', notes: 'Privado' },
+          relations: [{ targetEntityId: 'target', relationType: '' }],
+          isPublic: true,
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        allEntities={[]}
+        onClose={vi.fn()}
+        onSubmit={submit}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+    expect(screen.getByLabelText('Tipo de Relação')).toBeVisible();
+    expect(screen.getByRole('alert')).toHaveFocus();
+    expect(submit).not.toHaveBeenCalled();
+    await user.type(screen.getByLabelText('Tipo de Relação'), 'Aliada');
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+    expect(submit.mock.calls[0]?.[0].details).toBe('História preservada');
+    expect(submit.mock.calls[0]?.[0].structuredDetails?.notes).toBe('Privado');
+  });
   const otherEntity: LoreEntity = {
     id: 'e-target',
     bookId: 'b-1',
@@ -46,11 +96,10 @@ describe('LoreEntityForm', () => {
       screen.getByLabelText(/resumo curto/i),
       'A lendária lâmina forjada em Avalon.',
     );
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^História e notas/ }));
     await fill(user, screen.getByLabelText(/ficha detalhada/i), 'Concedida pela Dama do Lago.');
 
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Relações/ }));
     // Adicionar relação
     await user.click(screen.getByRole('button', { name: /adicionar relação/i }));
     expect(screen.getByLabelText('Entidade Vinculada')).toBeInTheDocument();
@@ -111,8 +160,7 @@ describe('LoreEntityForm', () => {
     expect(screen.getByRole('heading', { name: 'Editar Entidade: Arthur' })).toBeInTheDocument();
     expect(screen.getByDisplayValue('Arthur')).toBeInTheDocument();
 
-    for (let step = 0; step < 3; step++)
-      await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Relações/ }));
     // Alternar visibilidade
     const checkbox = screen.getByLabelText(/tornar visível no leitor público/i);
     await user.click(checkbox);
@@ -160,13 +208,13 @@ it('preserva notas estruturadas privadas e descricao da relacao', async () => {
   );
   expect(screen.getByLabelText('Nome da Entidade')).toHaveValue('Nova');
   await fill(user, screen.getByLabelText(/Resumo Curto/), 'Resumo público');
-  await user.click(screen.getByRole('button', { name: 'Continuar' }));
+  await user.click(screen.getByRole('button', { name: /^Características/ }));
   await fill(user, screen.getByLabelText('Aparência'), 'Capa azul');
   await fill(user, screen.getByLabelText('Personalidade'), 'Reservada');
-  await user.click(screen.getByRole('button', { name: 'Continuar' }));
+  await user.click(screen.getByRole('button', { name: /^História e notas/ }));
   await fill(user, screen.getByLabelText('Histórico'), 'Viajante');
   await fill(user, screen.getByLabelText('Notas privadas'), 'Segredo');
-  await user.click(screen.getByRole('button', { name: 'Continuar' }));
+  await user.click(screen.getByRole('button', { name: /^Relações/ }));
   await user.click(screen.getByRole('button', { name: 'Adicionar Relação' }));
   await fill(user, screen.getByLabelText('Descrição da Relação'), 'Vínculo secreto');
   await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
@@ -199,17 +247,12 @@ it('mostra erro mantendo dados preenchidos para tentar novamente', async () => {
     />,
   );
   await fill(user, screen.getByLabelText(/Resumo Curto/), 'Resumo');
-  for (let step = 0; step < 3; step++)
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
   expect(await screen.findByText('Sem conexão')).toBeInTheDocument();
-  for (let step = 0; step < 3; step++)
-    await user.click(screen.getByRole('button', { name: 'Voltar' }));
   expect(screen.getByLabelText('Nome da Entidade')).toHaveValue('Nova');
-  for (let step = 0; step < 3; step++)
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
   await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
   expect(onSubmit).toHaveBeenCalledTimes(2);
+  expect(onSubmit.mock.calls[0]).toEqual(onSubmit.mock.calls[1]);
 });
 
 async function fill(user: ReturnType<typeof userEvent.setup>, field: HTMLElement, value: string) {

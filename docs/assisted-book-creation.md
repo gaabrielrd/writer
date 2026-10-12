@@ -12,7 +12,7 @@ continua disponível. O fluxo exige login e backend implantado.
 3. Confira o briefing de até 6000 caracteres, inclusive as sugestões e limites
    criativos. **Salvar briefing** preserva a revisão; **Gerar proposta do livro**
    produz título, gênero, sinopse e 12–20 fichas com atributos e relações.
-4. Edite os metadados e as fichas. Regenerar uma ficha preserva seus campos
+4. Edite os metadados e as fichas. As fichas usam identificação direta e seções opcionais: altere um campo e salve sem percorrer etapas. Regenerar uma ficha preserva seus campos
    modificados manualmente, inclusive após salvar a revisão. Excluir exige
    confirmação e remove também as relações que apontam para a ficha.
    **Salvar revisão** e **Continuar para capa** persistem as alterações.

@@ -142,7 +142,7 @@ Decisões relevantes de arquitetura ou tecnologia viram um ADR (Architecture Dec
 
 A opção **Lore compartilhado** no header permite gerenciar universos e reutilizar
 fichas entre livros, mantendo o lore local separado. Criação e edição de lore
-usam etapas. A liberação depende das functions e regras correspondentes; veja
+usam seções opcionais com salvamento direto. A liberação depende das functions e regras correspondentes; veja
 [universos e lore compartilhado](docs/shared-lore.md).
 
 ## Limitações conhecidas
@@ -151,7 +151,7 @@ usam etapas. A liberação depende das functions e regras correspondentes; veja
   capa e lore local privado. O pacote textual custa 2 créditos e a capa 5, no
   aceite final. Exige implantação da callable, limpeza, regras e índice.
 
-- A criação usa três etapas, com sinopse/capa opcionais por IA (1 e 5 créditos no aceite). A geração exige configurar e implantar backend/Storage; veja [criação de livros](docs/book-creation.md). Criação manual funciona sem IA.
+- A criação permite começar com título e gênero, com sinopse/capa opcionais por IA (1 e 5 créditos no aceite). A geração exige configurar e implantar backend/Storage; veja [criação de livros](docs/book-creation.md). Criação manual funciona sem IA.
 
 - A autenticação e a persistência em nuvem dependem da configuração das credenciais do Firebase.
 - O autocomplete de IA preditivo depende de conexão ativa e saldo de créditos (ou chave de API BYOK informada).

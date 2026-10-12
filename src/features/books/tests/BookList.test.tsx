@@ -79,8 +79,6 @@ describe('BookList', () => {
 
     await user.type(screen.getByLabelText(/título da obra/i), 'Primeiro Livro');
     await user.type(screen.getByLabelText(/gênero literário/i), 'Aventura');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
 
     expect(await screen.findByText('Primeiro Livro')).toBeInTheDocument();

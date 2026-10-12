@@ -6,11 +6,11 @@ a criação manual com sugestões opcionais.
 
 ## Fluxo
 
-1. **Livro:** título e gênero obrigatórios, com limites de 300 e 120 caracteres.
-2. **Sinopse:** texto editável de até 4000 caracteres ou sugestão baseada em título/gênero. **Usar sinopse** confirma a substituição.
-3. **Capa:** URL opcional, seleção da biblioteca ou geração baseada em título, gênero e sinopse. Gerar exige sinopse preenchida. Prévia/listagem em 2:3; PNG de 1200 × 1800.
+1. **Dados essenciais:** título e gênero obrigatórios, com limites de 300 e 120 caracteres.
+2. **Sinopse opcional, aberta no contexto:** texto editável de até 4000 caracteres ou sugestão baseada em título/gênero. **Usar sinopse** confirma a substituição.
+3. **Capa opcional, aberta no contexto:** seleção da biblioteca e prévia vertical têm prioridade; URL fica como alternativa secundária. Geração baseada em título, gênero e sinopse. Gerar exige sinopse preenchida. Prévia/listagem em 2:3; PNG de 1200 × 1800.
 
-Voltar preserva campos. Alterar contexto descarta sugestões pendentes; conteúdo aceito permanece. **Criar Livro** grava na última etapa, com ID estável em retentativas. Edição e importação preservam seus fluxos.
+**Criar Livro** está disponível assim que título e gênero estão preenchidos, sem atravessar sinopse ou capa. Recolher ou trocar seções preserva campos. Alterar contexto descarta sugestões pendentes; conteúdo aceito permanece. Retentativas usam ID estável. Edição usa as mesmas seções e prévia de capa; mantém gênero opcional para livros legados. Importação conserva análise e revisão e oferece metadados opcionais sob demanda.
 
 Custos aprovados: **1 crédito por sinopse aceita** e **5 por capa aceita**. Aceite repetido do mesmo ID não debita novamente. Cancelar o livro/remover resultado aceito não devolve créditos. Criação manual funciona em falha da IA ou saldo insuficiente.
 
@@ -47,7 +47,7 @@ Nenhum serviço de produção é implantado automaticamente pela implementação
 
 ## Escopo
 
-Sem upload manual, edição avançada, BYOK no wizard ou alterações do editor. IA produz arte plana sem texto incorporado. Sinopse/capa opcionais na criação manual.
+Sem upload manual, edição avançada, BYOK no formulário ou alterações do editor. IA produz arte plana sem texto incorporado. Sinopse/capa opcionais na criação manual.
 
 ## Verificação no destino em 2026-10-10
 
@@ -73,10 +73,10 @@ Após o teste no aplicativo, a consulta de disponibilidade retornou 401: os logs
 
 `shared/lib/firebase.ts` passou a inicializar diretamente `ReCaptchaEnterpriseProvider`. O Hosting foi republicado após validação completa. A sessão autenticada no navegador mostrou preço e botão de sinopse habilitado; os logs confirmaram HTTP 200, Auth `VALID` e App Check `VALID`. A verificação usou uma aba separada e foi cancelada sem criar livro ou debitar créditos. A exigência de App Check nas funções permanece ativa.
 
-## Universo na primeira etapa
+## Universo nos dados essenciais
 
-Quando o autor tem universos, a etapa **Livro** oferece **Universo compartilhado**
-e a opção **Sem universo**. Voltar preserva a seleção, e as três etapas continuam
-as mesmas. A criação vinculada é validada no servidor, com ou sem capa.
+Quando o autor tem universos, os dados essenciais oferecem **Universo compartilhado**
+e a opção **Sem universo**. Abrir ou recolher sinopse/capa preserva a seleção.
+A criação vinculada é validada no servidor, com ou sem capa.
 Configurações de livros existentes permitem trocar ou remover o vínculo sem
 apagar capítulos ou lore local. Veja [universos](shared-lore.md).

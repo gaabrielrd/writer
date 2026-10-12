@@ -45,8 +45,9 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 ## Kit de Componentes (`src/shared/ui`)
 
 - `Button`: Variantes (`primary`, `secondary`, `outline`, `destructive`, `ghost`, `link`) e tamanhos (`sm`, `md`, `lg`, `icon`).
-- `Input`: Entrada de texto com suporte a labels flutuantes, ícones, helpers e erros.
-- `Textarea`: Área de texto redimensionável com feedback de validação.
+- `Input`: Entrada de texto com rótulo persistente, ícones, hints/erros associados por ARIA e IDs únicos.
+- `Textarea`: Área de texto redimensionável com feedback de validação associado por ARIA.
+- `FormSection`: Seção opcional acessível por botão, Enter/Espaço e `aria-expanded`/`aria-controls`. Mantém os campos montados ao recolher; aceita abertura controlada, descrição e bloqueio durante operações.
 - `Dropdown`: Seleção acessível (`mode="select"`) e ações (`mode="action"`), com ícones, busca opcional e tokens de tema. Veja [API e exemplos](dropdown.md).
 - `Select`: Alias compatível do modo de seleção de `Dropdown`, com `onValueChange`.
 - `Badge`: Pílulas de identificação e status (`default`, `secondary`, `accent`, `success`, `destructive`, `outline`).
@@ -103,7 +104,7 @@ Tripo integra o aplicativo.
   usam recorte proporcional sem distorção; os metadados podem quebrar linhas.
 - **Movimento:** entrada breve na apresentação, resposta de hover nos livros e
   abertura do painel contextual. Não há animação contínua atrás do editor.
-- **Criação de livro:** modal em três etapas (Livro, Sinopse, Capa), com progresso, Voltar/Continuar e foco no título da etapa. Sugestões exigem aceite explícito com preço visível. Prévia de capa em 2:3; criação manual disponível em falha da IA.
+- **Criação de livro:** título/gênero diretamente acessíveis, sinopse/capa em seções opcionais, salvamento disponível pelos dados essenciais. Sugestões exigem aceite explícito com preço visível. Biblioteca e prévia de capa em 2:3 têm prioridade; URL é secundária. Criação manual disponível em falha da IA.
 
 Os tokens ficam em `src/styles/globals.css`; os três temas e a preferência do
 sistema continuam compartilhando um único provider. A suíte visual usa serviços
@@ -121,11 +122,38 @@ Nome/avatar abre email e saída em dropdown. Imagens da biblioteca têm miniatur
 
 Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
 
+## Hierarquia e continuidade
+
+Os controles de campo compartilham `--control-height` (44 px), raio
+`--radius-sm`, rótulos de 14 px em caixa normal e feedback discreto. Formulários
+usam intervalos de `--space-4`; seções opcionais têm borda fina e superfície
+`--card`, sem competir com a ação principal. Botões preservam área de toque,
+menus usam estados discretos e confirmação destrutiva recebe destaque apenas
+no contexto de confirmação. Avisos informativos usam superfícies neutras;
+sucesso e atenção usam tokens semânticos nos três temas.
+
+| Contexto                                                            | Composição                                              |
+| ------------------------------------------------------------------- | ------------------------------------------------------- |
+| Trabalho prolongado, conversa, biblioteca, revisão de muitas fichas | Página com contexto e navegação persistentes            |
+| Consulta durante escrita                                            | Painel lateral de lore; mantém manuscrito e capítulo    |
+| Criação/edição breve ou confirmação                                 | Modal com header/footer fixos e corpo rolável           |
+| Campos opcionais de um mesmo registro                               | `FormSection`, sem sequência obrigatória                |
+| Dependências reais de arquivo ou IA                                 | Fases contínuas com contexto, preços e aceite explícito |
+
+Carregamento anuncia a operação; vazio explica como começar; erro preserva
+rascunho e oferece retry; sucesso só aparece após a gravação. Erros de
+formulário recebem foco e não desaparecem ao abrir uma seção. A importação
+mantém o arquivo escolhido e a seleção dos capítulos durante a revisão;
+metadados opcionais ficam em “Sobre a obra”. Criação assistida conserva
+entrevista/briefing/revisão/capa, com progresso discreto e badges de categoria
+sem ocupar a largura inteira do card. O manuscrito e os padrões recentes de
+capítulos, atos, minimapa e personas permanecem intactos.
+
 ## Detalhes do livro
 
 A criação assistida usa página própria com progresso em cinco etapas, conversa
 e resumo lado a lado em telas largas, empilhados no celular. Revisão e fichas
-usam cards; edição reutiliza o formulário de lore por etapas, com visibilidade
+usam cards; edição reutiliza o formulário de lore por seções, com visibilidade
 privada fixa. A capa conserva 2:3. A mudança de etapa move o foco ao título;
 durante operações, campos ficam bloqueados e o status é anunciado. Preços,
 expiração e recuperação de respostas incertas aparecem junto das ações.
@@ -166,14 +194,9 @@ explícita, identificação da seleção e aviso de impacto na publicação/esco
 Falhas preservam somente as entidades pendentes para retentativa. Em celular,
 linhas, controles e barra se reorganizam sem ampliar a largura da página.
 
-## Fichas de lore por etapas
+## Fichas de lore por seções
 
-Criação e edição de lore local/global usam quatro etapas: Identificação,
-Características, História e notas, Relações e visibilidade. O progresso fica
-visível, o foco acompanha o título da etapa e Voltar preserva campos. O conteúdo
-da etapa pode rolar em janelas pequenas, mantendo ações no rodapé do diálogo.
-Relações são editadas uma por vez; o escopo global é indicado antes dos campos.
-O novo fluxo usa os componentes e tokens existentes e os mesmos três temas.
+Identificação e visibilidade permanecem disponíveis em criação e edição local/global. Nome e resumo válidos permitem salvar diretamente. Características, história/notas e relações usam `FormSection`, abertas conforme necessidade, sem perder dados ao recolher. No desktop, nome e categoria compartilham uma linha; no celular, ficam empilhados. O diálogo usa até 80vh, com rodapé fixo e corpo rolável. Campos privados, aliases, relações e limites permanecem iguais. Alcance global e impacto na publicação são informados antes de salvar; falhas preservam o rascunho e permitem retry.
 
 ## Editor de capítulos e revisão do lore
 

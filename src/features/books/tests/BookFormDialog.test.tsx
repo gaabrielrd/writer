@@ -4,7 +4,7 @@ vi.mock('@/features/universes/services/universeService', () => ({
   listUniverses: vi.fn().mockResolvedValue([]),
 }));
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BookFormDialog } from '../components/BookFormDialog';
 import * as library from '@/features/image-library';
@@ -20,6 +20,47 @@ vi.mock('@/features/image-library/services/imageLibraryService', () => ({
   listLibraryImages: vi.fn(),
 }));
 describe('BookFormDialog', () => {
+  it('keeps a pending edit open and prevents duplicate submissions', async () => {
+    let finish!: () => void;
+    const submit = vi.fn().mockImplementation(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const close = vi.fn();
+    render(
+      <BookFormDialog
+        open
+        bookToEdit={{
+          id: 'book',
+          authorId: 'author',
+          title: 'Atlas',
+          status: 'draft',
+          wordCount: 0,
+          createdAt: 1,
+          updatedAt: 1,
+        }}
+        onClose={close}
+        onSubmit={submit}
+      />,
+    );
+    const user = userEvent.setup();
+
+    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
+
+    fireEvent.submit(document.getElementById('book-form')!);
+
+    await user.keyboard('{Escape}');
+
+    expect(screen.getByRole('dialog')).toBeVisible();
+    expect(screen.getByLabelText('Título da Obra')).toBeDisabled();
+    expect(close).not.toHaveBeenCalled();
+    expect(submit).toHaveBeenCalledOnce();
+
+    finish();
+    await waitFor(() => expect(close).toHaveBeenCalledOnce());
+  });
   it('selects a library cover and removes its association when entering a manual URL', async () => {
     const user = userEvent.setup();
     const submit = vi.fn().mockResolvedValue(undefined);
@@ -51,6 +92,7 @@ describe('BookFormDialog', () => {
         onSubmit={submit}
       />,
     );
+    await user.click(screen.getByRole('button', { name: /^Capa/ }));
     await user.click(screen.getByRole('button', { name: 'Selecionar da biblioteca' }));
     await user.click(await screen.findByRole('button', { name: 'Selecionar Capa' }));
     await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
@@ -60,6 +102,7 @@ describe('BookFormDialog', () => {
         coverUrl: 'https://example.test/cover.png',
       }),
     );
+    await user.click(screen.getByRole('button', { name: /^Usar URL de imagem/ }));
     await user.clear(screen.getByLabelText('URL da Capa (opcional)'));
     await user.type(
       screen.getByLabelText('URL da Capa (opcional)'),
@@ -89,6 +132,7 @@ describe('BookFormDialog', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Sem conexão');
+    expect(screen.getByRole('alert')).toHaveFocus();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
@@ -103,9 +147,8 @@ describe('BookFormDialog', () => {
 
     await user.type(screen.getByLabelText(/título da obra/i), 'O Senhor dos Aneis');
     await user.type(screen.getByLabelText(/gênero literário/i), 'Alta Fantasia');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
+    await user.click(screen.getByRole('button', { name: /^Sinopse/ }));
     await user.type(screen.getByLabelText(/sinopse/i), 'A jornada do anel.');
-    await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Criar Livro' }));
 
     expect(onSubmit).toHaveBeenCalledWith(

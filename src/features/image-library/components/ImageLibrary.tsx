@@ -270,7 +270,7 @@ export function ImageLibraryPage() {
     <section>
       <PageHeader
         title="Biblioteca de Imagens"
-        description="Suas imagens aceitas da IA, prontas para reutilizar."
+        description="Suas imagens aceitas da IA. Reutilize nas capas e fichas sem consumir novos créditos."
       />
       <ImageGrid key={user.uid} />
     </section>

@@ -102,8 +102,6 @@ describe('EditorLoreSidebar', () => {
 
     await user.type(screen.getByLabelText(/nome da entidade/i), 'Galahad');
     await user.type(screen.getByLabelText(/resumo curto/i), 'Cavaleiro puro');
-    for (let step = 0; step < 3; step++)
-      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
 
     expect(onCreateEntity).toHaveBeenCalledWith(
@@ -135,8 +133,6 @@ describe('EditorLoreSidebar', () => {
 
     expect(screen.getByRole('heading', { name: /editar entidade: merlin/i })).toBeInTheDocument();
     await user.type(screen.getByLabelText(/resumo curto/i), ' atualizado');
-    for (let step = 0; step < 3; step++)
-      await user.click(screen.getByRole('button', { name: 'Continuar' }));
     await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
 
     expect(onUpdateEntity).toHaveBeenCalledWith('e-1', expect.objectContaining({ name: 'Merlin' }));

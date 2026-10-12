@@ -39,3 +39,4 @@ export {
   type DropdownOption,
 } from './Dropdown';
 export { Tooltip } from './Tooltip';
+export { FormSection, type FormSectionProps } from './FormSection';

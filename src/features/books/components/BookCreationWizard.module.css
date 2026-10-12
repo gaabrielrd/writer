@@ -4,35 +4,6 @@
   gap: var(--space-4);
   min-width: 0;
 }
-.stepTitle {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-}
-.steps {
-  display: flex;
-  gap: var(--space-3);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-.steps li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex: 1;
-  color: hsl(var(--muted-foreground));
-  font-size: var(--text-sm);
-}
-.steps li[aria-current] {
-  color: hsl(var(--primary));
-  font-weight: 600;
-}
-.steps span {
-  border: var(--border-width) solid hsl(var(--border));
-  border-radius: var(--radius-full);
-  padding: var(--space-1) var(--space-2);
-}
 .footer {
   display: flex;
   flex-wrap: wrap;
@@ -60,7 +31,7 @@
 }
 .cover {
   position: relative;
-  width: min(100%, 240px);
+  width: min(100%, 180px);
   aspect-ratio: 2 / 3;
   margin-inline: auto;
   overflow: hidden;

@@ -27,7 +27,7 @@ São seis projetos: desktop de 1440 × 1000 e mobile de 390 × 844, cada um em e
 - Landing, login, cadastro e histórico Voltar/Avançar
 - Biblioteca populada, capa fictícia, ausência de capa, título e gênero longos
 - Livros com largura limitada e capas 2:3, incluindo uma única obra e viewport de 320px
-- Wizard em três etapas, geração fictícia de sinopse/capa, aceite com créditos e criação da obra
+- Formulário com dados essenciais e seções opcionais, geração fictícia de sinopse/capa, aceite com créditos e criação da obra
 - Modal de novo livro com teclado, confinamento de foco, Escape, Cancelar e retorno ao acionador
 - Obra, capítulos longos, compêndio e modal de edição
 - Editor com texto e lore, painel lateral e configurações de IA

@@ -2,7 +2,7 @@ import { chooseDropdown } from '../dropdown';
 import { capture, expect, expectDialogWithinViewport, test } from './support';
 import { books, chapters } from './fixtures/data';
 
-test('universo, lore por etapas e vínculo compartilhado entre livros', async ({
+test('universo, lore por seções e vínculo compartilhado entre livros', async ({
   page,
 }, testInfo) => {
   await page.goto('/');
@@ -19,20 +19,20 @@ test('universo, lore por etapas e vínculo compartilhado entre livros', async ({
   await page.getByRole('button', { name: 'Nova Entidade' }).click();
   await page.getByLabel('Nome da Entidade').fill('Guardião das Marés');
   await page.getByLabel(/Resumo Curto/).fill('Guarda os caminhos entre as ilhas.');
-  await expect(page.getByLabel('Notas privadas')).toHaveCount(0);
+  await expect(page.getByLabel('Notas privadas')).not.toBeVisible();
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'universo-lore-identificacao');
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^Características/ }).click();
   await page.getByLabel('Aparência').fill('Manto azul e bússola de bronze.');
   await page.getByLabel('Personalidade').fill('Reservado e paciente.');
   await expectDialogWithinViewport(page);
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^História e notas/ }).click();
   await page.getByLabel('Notas privadas').fill('Identidade secreta do guardião.');
-  await page.getByRole('button', { name: 'Voltar', exact: true }).click();
+  await page.getByRole('button', { name: /^História e notas/ }).click();
   await expect(page.getByLabel('Aparência')).toHaveValue('Manto azul e bússola de bronze.');
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^História e notas/ }).click();
   await expect(page.getByLabel('Notas privadas')).toHaveValue('Identidade secreta do guardião.');
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^Relações/ }).click();
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'universo-lore-relacoes');
   await page.getByRole('button', { name: 'Cadastrar Entidade' }).click();
@@ -45,8 +45,7 @@ test('universo, lore por etapas e vínculo compartilhado entre livros', async ({
   await page.getByLabel('Gênero Literário').fill('Fantasia');
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'universo-criacao-livro');
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+
   await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
   await page.getByRole('link', { name: /Histórias do Guardião/ }).click();
   await page.getByRole('tab', { name: 'Compêndio', exact: true }).click();

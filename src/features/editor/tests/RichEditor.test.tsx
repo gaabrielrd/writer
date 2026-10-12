@@ -160,6 +160,10 @@ describe('RichEditor WYSIWYG', () => {
     await screen.findByRole('toolbar', { name: 'Assistente IA para o texto selecionado' });
     fireEvent.keyDown(editor, { key: 'Enter', altKey: true });
     expect(screen.getByRole('button', { name: 'Continuar Cena' })).toHaveFocus();
+    // Tooltips can consume the bubbling Escape; selection dismissal must still run.
+    document.activeElement!.addEventListener('keydown', (event) => event.stopPropagation(), {
+      once: true,
+    });
     fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
     await waitFor(() =>
       expect(

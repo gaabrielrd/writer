@@ -4,7 +4,7 @@ import { ImageLibraryPicker } from '@/features/image-library';
 import { useAuth } from '@/features/auth';
 import { UniverseSelect } from '@/features/universes';
 import { useBookGeneration } from '@/features/ai-assistant';
-import { Alert, Button, Dialog, Input, Textarea } from '@/shared/ui';
+import { Alert, Button, Dialog, FormSection, Input, Textarea } from '@/shared/ui';
 import type { CreateBookInput } from '../model/book';
 import styles from './BookCreationWizard.module.css';
 
@@ -12,7 +12,6 @@ interface Props {
   onClose: () => void;
   onSubmit: (input: CreateBookInput) => Promise<void>;
 }
-const steps = ['Livro', 'Sinopse', 'Capa'];
 
 export function BookCreationWizard({ onClose, onSubmit }: Props) {
   const { user, updateUserCreditsState } = useAuth();
@@ -29,7 +28,8 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [creationId] = useState(() => crypto.randomUUID());
   const submitLock = useRef(false);
-  const heading = useRef<HTMLHeadingElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+  const [urlOpen, setUrlOpen] = useState(false);
   const generation = useBookGeneration({ title, genre, synopsis }, user?.credits ?? 0, (asset) => {
     updateUserCreditsState(asset.credits);
     if (asset.kind === 'synopsis') setSynopsis(asset.text ?? '');
@@ -43,13 +43,15 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
   const locked = saving || accepting;
   const kind = step === 1 ? 'synopsis' : 'cover';
   const cost = generation.quote?.[kind];
-  const validFirstStep = Boolean(title.trim() && genre.trim());
+  const validFirstStep = Boolean(
+    title.trim() && genre.trim() && title.length <= 300 && genre.length <= 120,
+  );
   const canGenerate = Boolean(
     user && cost && user.credits >= cost && validFirstStep && (step === 1 || synopsis.trim()),
   );
   useEffect(() => {
-    heading.current?.focus();
-  }, [step]);
+    if (saveError) errorRef.current?.focus();
+  }, [saveError]);
 
   function close() {
     if (!locked && !submitLock.current) {
@@ -60,16 +62,22 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
   function navigate(next: number) {
     generation.invalidate();
     setStep(next);
-    setSaveError(null);
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
     if (locked || submitLock.current || generation.operation) return;
-    if (step < 2) {
-      if (validFirstStep) navigate(step + 1);
-      return;
-    }
     if (!validFirstStep) return;
+    if (coverUrl.trim() && !coverImageId && !coverGenerationId) {
+      try {
+        const url = new URL(coverUrl.trim());
+        if (!['https:', 'http:'].includes(url.protocol)) throw new Error();
+      } catch {
+        navigate(2);
+        setUrlOpen(true);
+        setSaveError('Informe uma URL de capa válida, iniciada por https:// ou http://.');
+        return;
+      }
+    }
     submitLock.current = true;
     setSaving(true);
     setSaveError(null);
@@ -95,54 +103,102 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
     }
   }
 
+  const generationPanel = (
+    <div className={styles.generation}>
+      <p>
+        {cost
+          ? `Ao usar ${kind === 'synopsis' ? 'a sinopse' : 'a capa'}: ${cost} ${cost === 1 ? 'crédito' : 'créditos'}.`
+          : generation.error
+            ? 'IA indisponível.'
+            : 'Consultando disponibilidade da IA...'}{' '}
+        {user && `Saldo: ${user.credits} créditos.`}
+      </p>
+      {step === 2 && !synopsis.trim() && <p>Preencha a sinopse para gerar uma capa.</p>}
+      {cost && user && user.credits < cost && (
+        <p>Saldo insuficiente para esta geração. Você pode continuar manualmente.</p>
+      )}
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={!canGenerate || locked || Boolean(generation.operation)}
+        onClick={() => void generation.generate(kind)}
+      >
+        <Sparkles className="icon icon-sm" aria-hidden="true" />
+        {generation.operation === 'generate'
+          ? 'Gerando...'
+          : generation.suggestion
+            ? 'Gerar outra'
+            : step === 1
+              ? 'Gerar sinopse com IA'
+              : 'Gerar capa com IA'}
+      </Button>
+      {generation.operation && (
+        <p role="status">
+          {accepting ? 'Confirmando uso e créditos...' : 'A IA está preparando sua sugestão...'}
+        </p>
+      )}
+      {generation.suggestion && (
+        <div className={styles.suggestion} aria-label="Sugestão de IA">
+          {generation.suggestion.text && <p>{generation.suggestion.text}</p>}
+          {generation.suggestion.previewUrl && (
+            <div className={styles.cover}>
+              <img src={generation.suggestion.previewUrl} alt={`Sugestão de capa de ${title}`} />
+            </div>
+          )}
+          <div className={styles.footer}>
+            <Button
+              type="button"
+              variant="secondary"
+              disabled={locked}
+              onClick={generation.invalidate}
+            >
+              Descartar
+            </Button>
+            <Button type="button" disabled={locked} onClick={() => void generation.accept()}>
+              {step === 1 ? 'Usar sinopse' : 'Usar capa'} ({generation.suggestion.cost}{' '}
+              {generation.suggestion.cost === 1 ? 'crédito' : 'créditos'})
+            </Button>
+          </div>
+        </div>
+      )}
+      {generation.error && <Alert variant="destructive">{generation.error}</Alert>}
+    </div>
+  );
+
   return (
     <Dialog
       open
       title="Criar Novo Livro"
-      description={`Etapa ${step + 1} de 3`}
+      description="Comece pelo título e gênero. Sinopse e capa são opcionais e podem ser preenchidas depois."
       onClose={close}
       footer={
         <div className={styles.footer}>
           <Button type="button" variant="secondary" onClick={close} disabled={locked}>
             Cancelar
           </Button>
-          {step > 0 && (
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => navigate(step - 1)}
-              disabled={locked}
-            >
-              Voltar
-            </Button>
-          )}
           <Button
             type="submit"
             form="create-book-wizard"
             disabled={!validFirstStep || locked || Boolean(generation.operation)}
           >
-            {saving ? 'Criando livro...' : step < 2 ? 'Continuar' : 'Criar Livro'}
+            {saving ? 'Criando livro...' : 'Criar Livro'}
           </Button>
         </div>
       }
     >
-      <ol className={styles.steps} aria-label="Etapas da criação">
-        {steps.map((label, index) => (
-          <li key={label} aria-current={index === step ? 'step' : undefined}>
-            <span>{index + 1}</span>
-            {label}
-          </li>
-        ))}
-      </ol>
       <form
         id="create-book-wizard"
         className={styles.form}
+        noValidate
+        aria-busy={saving || Boolean(generation.operation)}
         onSubmit={(event) => void submit(event)}
       >
-        <h3 ref={heading} tabIndex={-1} className={styles.stepTitle}>
-          {steps[step]}
-        </h3>
-        {step === 0 && (
+        {saveError && (
+          <Alert ref={errorRef} tabIndex={-1} variant="destructive">
+            {saveError}
+          </Alert>
+        )}
+        {
           <>
             <UniverseSelect value={universeId} onChange={setUniverseId} disabled={locked} />
             <Input
@@ -168,149 +224,115 @@ export function BookCreationWizard({ onClose, onSubmit }: Props) {
               }}
             />
           </>
-        )}
-        {step === 1 && (
-          <Textarea
-            label="Sinopse / Premissa"
-            value={synopsis}
-            maxLength={4000}
-            rows={6}
-            disabled={locked}
-            placeholder="Escreva a premissa ou gere uma sugestão com IA."
-            onChange={(event) => {
-              generation.invalidate();
-              setSynopsis(event.target.value);
-            }}
-          />
-        )}
-        {step === 2 && (
-          <>
-            <div className={styles.cover}>
-              {coverUrl ? (
-                <img src={coverUrl} alt={`Capa selecionada de ${title}`} />
-              ) : (
-                <div className={styles.placeholder}>
-                  <BookImage className="icon" aria-hidden="true" />
-                  <span>Sem capa</span>
-                </div>
-              )}
-            </div>
-            <Button
-              type="button"
-              variant="secondary"
+        }
+        <FormSection
+          title="Sinopse"
+          description={
+            synopsis.trim() ? 'Premissa preenchida · opcional' : 'Apresente sua história · opcional'
+          }
+          open={step === 1}
+          onOpenChange={(open) => navigate(open ? 1 : 0)}
+          disabled={locked}
+        >
+          {
+            <Textarea
+              label="Sinopse / Premissa"
+              value={synopsis}
+              maxLength={4000}
+              rows={6}
               disabled={locked}
-              onClick={() => {
-                generation.invalidate();
-                setPickerOpen(true);
-              }}
-            >
-              Selecionar da biblioteca
-            </Button>
-            <ImageLibraryPicker
-              open={pickerOpen}
-              onClose={() => setPickerOpen(false)}
-              onSelect={(image) => {
-                setCoverUrl(image.url);
-                setCoverImageId(image.id);
-                setCoverGenerationId(undefined);
-              }}
-            />
-            <Input
-              label="URL da Capa (opcional)"
-              type="url"
-              value={coverImageId || coverGenerationId ? '' : coverUrl}
-              disabled={locked}
-              placeholder="https://exemplo.com/capa.jpg"
+              placeholder="Escreva a premissa ou gere uma sugestão com IA."
               onChange={(event) => {
                 generation.invalidate();
-                setCoverGenerationId(undefined);
-                setCoverImageId(undefined);
-                setCoverUrl(event.target.value);
+                setSynopsis(event.target.value);
               }}
             />
-            {coverUrl && (
+          }
+          {step === 1 && generationPanel}
+        </FormSection>
+        <FormSection
+          title="Capa"
+          description={
+            coverUrl
+              ? 'Capa selecionada · opcional'
+              : 'Imagem da biblioteca ou sugestão de IA · opcional'
+          }
+          open={step === 2}
+          onOpenChange={(open) => navigate(open ? 2 : 0)}
+          disabled={locked}
+        >
+          {
+            <>
+              <div className={styles.cover}>
+                {coverUrl ? (
+                  <img src={coverUrl} alt={`Capa selecionada de ${title}`} />
+                ) : (
+                  <div className={styles.placeholder}>
+                    <BookImage className="icon" aria-hidden="true" />
+                    <span>Sem capa</span>
+                  </div>
+                )}
+              </div>
               <Button
                 type="button"
                 variant="secondary"
                 disabled={locked}
                 onClick={() => {
-                  setCoverUrl('');
-                  setCoverGenerationId(undefined);
-                  setCoverImageId(undefined);
+                  generation.invalidate();
+                  setPickerOpen(true);
                 }}
               >
-                Remover capa
+                Selecionar da biblioteca
               </Button>
-            )}
-          </>
-        )}
-        {step > 0 && (
-          <div className={styles.generation}>
-            <p>
-              {cost
-                ? `Ao usar ${kind === 'synopsis' ? 'a sinopse' : 'a capa'}: ${cost} ${cost === 1 ? 'crédito' : 'créditos'}.`
-                : generation.error
-                  ? 'IA indisponível.'
-                  : 'Consultando disponibilidade da IA...'}{' '}
-              {user && `Saldo: ${user.credits} créditos.`}
-            </p>
-            {step === 2 && !synopsis.trim() && <p>Preencha a sinopse para gerar uma capa.</p>}
-            {cost && user && user.credits < cost && (
-              <p>Saldo insuficiente para esta geração. Você pode continuar manualmente.</p>
-            )}
-            <Button
-              type="button"
-              variant="secondary"
-              disabled={!canGenerate || locked || Boolean(generation.operation)}
-              onClick={() => void generation.generate(kind)}
-            >
-              <Sparkles className="icon icon-sm" aria-hidden="true" />
-              {generation.operation === 'generate'
-                ? 'Gerando...'
-                : generation.suggestion
-                  ? 'Gerar outra'
-                  : step === 1
-                    ? 'Gerar sinopse com IA'
-                    : 'Gerar capa com IA'}
-            </Button>
-            {generation.operation && (
-              <p role="status">
-                {accepting
-                  ? 'Confirmando uso e créditos...'
-                  : 'A IA está preparando sua sugestão...'}
-              </p>
-            )}
-            {generation.suggestion && (
-              <div className={styles.suggestion} aria-label="Sugestão de IA">
-                {generation.suggestion.text && <p>{generation.suggestion.text}</p>}
-                {generation.suggestion.previewUrl && (
-                  <div className={styles.cover}>
-                    <img
-                      src={generation.suggestion.previewUrl}
-                      alt={`Sugestão de capa de ${title}`}
-                    />
-                  </div>
-                )}
-                <div className={styles.footer}>
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    disabled={locked}
-                    onClick={generation.invalidate}
-                  >
-                    Descartar
-                  </Button>
-                  <Button type="button" disabled={locked} onClick={() => void generation.accept()}>
-                    {step === 1 ? 'Usar sinopse' : 'Usar capa'} ({generation.suggestion.cost}{' '}
-                    {generation.suggestion.cost === 1 ? 'crédito' : 'créditos'})
-                  </Button>
-                </div>
-              </div>
-            )}
-            {generation.error && <Alert variant="destructive">{generation.error}</Alert>}
-          </div>
-        )}
-        {saveError && <Alert variant="destructive">{saveError}</Alert>}
+              <ImageLibraryPicker
+                open={pickerOpen}
+                onClose={() => setPickerOpen(false)}
+                onSelect={(image) => {
+                  setCoverUrl(image.url);
+                  setCoverImageId(image.id);
+                  setCoverGenerationId(undefined);
+                }}
+              />
+              <FormSection
+                title="Usar URL de imagem"
+                description="Alternativa à biblioteca"
+                open={urlOpen}
+                onOpenChange={setUrlOpen}
+                disabled={locked}
+              >
+                <Input
+                  label="URL da Capa (opcional)"
+                  type="url"
+                  value={coverImageId || coverGenerationId ? '' : coverUrl}
+                  disabled={locked}
+                  placeholder="https://exemplo.com/capa.jpg"
+                  onChange={(event) => {
+                    generation.invalidate();
+                    setCoverGenerationId(undefined);
+                    setCoverImageId(undefined);
+                    setCoverUrl(event.target.value);
+                  }}
+                />
+              </FormSection>
+              {coverUrl && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={locked}
+                  onClick={() => {
+                    setCoverUrl('');
+                    setCoverGenerationId(undefined);
+                    setCoverImageId(undefined);
+                  }}
+                >
+                  Remover capa
+                </Button>
+              )}
+            </>
+          }
+          {step === 2 && generationPanel}
+        </FormSection>
+        {saving && <p role="status">Criando seu livro...</p>}
       </form>
     </Dialog>
   );

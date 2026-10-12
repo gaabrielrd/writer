@@ -87,7 +87,7 @@ test('biblioteca populada, modal por teclado e devolução de foco', async ({ pa
   await expect(dialog).toBeVisible();
   await page.getByLabel('Título da Obra').fill(books[1].title);
   await page.getByLabel('Gênero Literário').fill('Fantasia');
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^Sinopse/ }).click();
   await page.getByLabel('Sinopse / Premissa').fill(books[0].synopsis ?? '');
   await capture(page, testInfo, '05-modal-novo-livro');
   await expectDialogWithinViewport(page);
@@ -269,13 +269,13 @@ test.describe('Biblioteca vazia', () => {
     await page.getByLabel('Título da Obra').fill('Atlas de Outono');
     await page.getByLabel('Gênero Literário').fill('Fantasia');
     await capture(page, testInfo, '18-criacao-livro');
-    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: /^Sinopse/ }).click();
     await page.getByRole('button', { name: 'Gerar sinopse com IA' }).click();
     await expect(page.getByLabel('Sinopse / Premissa')).toHaveValue('');
     await page.getByRole('button', { name: /Usar sinopse/ }).click();
     await expect(page.getByLabel('Sinopse / Premissa')).toHaveValue(/Atlas de Outono/);
     await capture(page, testInfo, '19-criacao-sinopse');
-    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+    await page.getByRole('button', { name: /^Capa/ }).click();
     await page.getByRole('button', { name: 'Gerar capa com IA' }).click();
     const image = page.getByAltText('Sugestão de capa de Atlas de Outono');
     await expect(image).toBeVisible();
@@ -312,8 +312,7 @@ test.describe('Biblioteca vazia', () => {
     await page.getByRole('button', { name: 'Criar Primeiro Livro' }).click();
     await page.getByLabel('Título da Obra').fill('Livro vertical');
     await page.getByLabel('Gênero Literário').fill('Fantasia');
-    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
-    await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+
     await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Livro vertical', exact: true })).toBeVisible();
@@ -472,6 +471,18 @@ test('WYSIWYG preserva seleção, desfaz, salva ao navegar e consulta lore duran
   await sidebar.getByRole('button', { name: 'Fechar painel de lore' }).click();
   await expect(manuscript).toBeFocused();
   await manuscript.press('Control+End');
+  await expect
+    .poll(() =>
+      manuscript.evaluate((element) => {
+        const selection = window.getSelection();
+        if (!selection?.anchorNode || !element.contains(selection.anchorNode)) return null;
+        const beforeCaret = document.createRange();
+        beforeCaret.selectNodeContents(element);
+        beforeCaret.setEnd(selection.anchorNode, selection.anchorOffset);
+        return { collapsed: selection.isCollapsed, before: beforeCaret.toString() };
+      }),
+    )
+    .toEqual({ collapsed: true, before: 'Lia observa o porto.' });
   await manuscript.pressSequentially(' Texto final.');
   // Navigate before the one-second debounce; pending content must be flushed.
   await page.getByRole('button', { name: 'Próximo capítulo', exact: true }).click();

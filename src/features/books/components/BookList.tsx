@@ -105,6 +105,10 @@ export function BookList({ authorId }: BookListProps) {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="primary" onClick={handleOpenCreate}>
+            <Plus className="icon icon-sm" aria-hidden="true" />
+            Novo Livro
+          </Button>
           <Button
             variant="secondary"
             onClick={handleOpenImport}
@@ -112,10 +116,6 @@ export function BookList({ authorId }: BookListProps) {
           >
             <Upload className="icon icon-sm" aria-hidden="true" />
             Importar Documento
-          </Button>
-          <Button variant="primary" onClick={handleOpenCreate}>
-            <Plus className="icon icon-sm" aria-hidden="true" />
-            Novo Livro
           </Button>
           <Button variant="secondary" onClick={() => void navigate('/books/new/assisted')}>
             Criar com IA
