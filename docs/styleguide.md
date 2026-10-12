@@ -288,7 +288,18 @@ aparecem em lista de linhas clicáveis; detalhes e edição ocupam um único mod
 ativo, com header/footer fixos e corpo rolável até 80vh. O mapa de personalidade
 usa ícones Lucide, barras nativas de progresso, hierarquia de valores e extremos,
 em duas colunas no desktop e uma no celular.
-O capítulo permite herdar cada atributo ou definir seu valor. O botão **Persona**
+O capítulo permite herdar cada atributo ou definir seu valor. **Opções do capítulo → Persona**
 concentra base, complementar, biblioteca e orientações efetivas em um único modal;
 a área de escrita não contém uma faixa extra de gerenciamento. No celular,
 ações dos detalhes se organizam em duas colunas para preservar espaço de leitura.
+
+## Ferramentas do editor
+
+A barra do manuscrito organiza controles em grupos nomeados de formatação,
+histórico de edição e painéis. Use `Button` compartilhado, ícones Lucide,
+estado `aria-pressed`, tokens de tema e foco visível; mantenha seleção durante
+ações de formatação por ponteiro. Grupos quebram linhas quando necessário.
+Navegação entre capítulos fica em grupo próprio no cabeçalho, ao lado de status,
+contagem e tela cheia. Persona e exportação ficam em `Dropdown mode="action"`
+sob **Opções do capítulo**, com abertura de diálogo após fechar o menu e restaurar
+foco ao gatilho persistente. Todos os recursos continuam acessíveis por teclado.

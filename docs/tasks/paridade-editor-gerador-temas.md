@@ -106,3 +106,7 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
   com foco no editor; navegação entre capítulos conserva o modo e saída restaura
   o shell. 26 testes dirigidos e 12 cenários de navegador passaram (52,1 s).
   `npm run validate` verde com 784 testes, 69 de scripts, 73 de backend e build/smoke.
+- Tarefa 6: ferramentas divididas em formatação, histórico e painéis; navegação
+  nomeada no cabeçalho e Persona/exportação em Opções do capítulo, com foco
+  restaurado ao gatilho. 29 testes dirigidos e 42 cenários de navegador passaram
+  (2,6 min). `npm run validate` verde com 787 testes e demais gates aprovados.

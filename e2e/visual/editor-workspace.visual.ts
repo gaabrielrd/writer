@@ -1,6 +1,38 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
+test('ferramentas agrupadas e opções do capítulo mantêm ações e foco', async ({
+  page,
+}, testInfo) => {
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  const toolbar = page.getByRole('toolbar', { name: 'Ferramentas de escrita' });
+  await expect(toolbar.getByRole('group', { name: 'Formatação' }).getByRole('button')).toHaveCount(
+    7,
+  );
+  await expect(
+    toolbar.getByRole('group', { name: 'Histórico de edição' }).getByRole('button'),
+  ).toHaveCount(2);
+  await expect(toolbar.getByRole('group', { name: 'Painéis do editor' })).toBeVisible();
+  const editor = page.getByLabel('Área de escrita do capítulo');
+  await editor.fill('Uma passagem em edição.');
+  await editor.press('Control+A');
+  await toolbar.getByRole('button', { name: 'Negrito', exact: true }).click();
+  await expect(editor.locator('strong')).toHaveText('Uma passagem em edição.');
+  const options = page.getByRole('button', { name: 'Opções do capítulo' });
+  await options.focus();
+  await options.press('Enter');
+  await expect(page.getByRole('menuitem', { name: 'Persona' })).toBeVisible();
+  await expect(page.getByRole('menuitem', { name: 'Exportar' })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(options).toBeFocused();
+  await expect(editor).toHaveText('Uma passagem em edição.');
+  await capture(page, testInfo, 'ferramentas-compactas');
+  await page.setViewportSize({ width: 320, height: 480 });
+  await expectNoHorizontalOverflow(page, 'ferramentas compactas em 320px');
+  await capture(page, testInfo, 'ferramentas-compactas-320');
+});
+
 test('tela cheia usa toda a largura sem remontar texto, seleção, undo ou chat', async ({
   page,
 }, testInfo) => {
@@ -30,11 +62,12 @@ test('tela cheia usa toda a largura sem remontar texto, seleção, undo ou chat'
   const area = page.locator('[data-editor-scroll-area]');
   expect(await area.evaluate((element) => getComputedStyle(element).maxWidth)).toBe('none');
   expect((await area.boundingBox())!.width).toBeGreaterThan(860);
-  await expect(page.getByRole('button', { name: 'Persona', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Persona', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções do capítulo', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Persona', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Opções do capítulo' })).toBeFocused();
   await expect(page.getByRole('button', { name: 'Sair da tela cheia' })).toBeVisible();
   await editor.press('Control+z');
   await expect(editor).not.toHaveText(/X$/);

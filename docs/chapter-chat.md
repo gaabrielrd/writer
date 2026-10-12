@@ -18,6 +18,11 @@ menus, diálogos, barra de seleção ou sugestão; sem sobreposição, sai do mo
 inclusive com foco no texto. Navegar entre capítulos conserva o modo; voltar
 ao livro restaura o shell. Em telas estreitas, o conteúdo empilhado rola no main.
 
+A barra de escrita tem grupos de formatação, histórico e painéis. Persona e
+exportação ficam em **Opções do capítulo**; o menu conserva acesso por teclado
+e o diálogo devolve foco ao gatilho do menu. Autosave, contagem e navegação
+continuam diretamente visíveis no cabeçalho.
+
 ## Conversa e comandos
 
 Enter envia; Shift+Enter insere uma linha. Composição IME não envia. Digitar `/`

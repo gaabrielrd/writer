@@ -129,3 +129,34 @@ atributos: mutar o DOM controlado pelo ProseMirror causava normalização do par
 As duas asserções de tipo redundantes apontadas pelo lint foram removidas.
 
 Neste ponto restam as tarefas 6–12. Nenhum push ou deploy deste incremento.
+
+## Incremento de 2026-10-12 — tarefa 6
+
+A barra do manuscrito agora tem grupos nomeados de formatação, histórico de
+edição e painéis, com botões compartilhados e estado ativo por tokens semânticos.
+Navegação entre capítulos usa Button e grupo próprio no cabeçalho compacto.
+Persona e exportação ficam no menu **Opções do capítulo**, com ícones Lucide,
+acesso por teclado e abertura de diálogo após o fechamento/restauração de foco.
+Os recursos existentes e a exportação do texto atual continuam disponíveis.
+
+```text
+Test Files 111 passed (111)
+Tests 787 passed (787)
+All files: statements 92.67%, branches 86.07%, functions 91.14%, lines 94.76%
+scripts: pass 69; fail 0
+functions: pass 73; fail 0
+Smoke test do bundle OK.
+Testes dirigidos: 29 passed
+Navegador: 42 passed (2.6m)
+```
+
+Os cenários de navegador cobriram os grupos, formatação real, menu por teclado,
+retorno de foco, Markdown com a versão atual, gestão de personas/base/complementar,
+autocomplete contextual, tela cheia e 320 px nos três temas. Uma corrida no teste
+de undo após fechar Persona foi corrigida aguardando o foco no gatilho persistente;
+o produto já restaura esse foco em requestAnimationFrame. O lint foi repetido
+nos testes ajustados, e a matriz visual completa foi repetida e passou.
+Captura das ferramentas em 320 px foi inspecionada e preservada nos artefatos.
+Contratos do chat, personas e styleguide foram atualizados e check:docs passou.
+
+Neste ponto restam as tarefas 7–12. Nenhum push ou deploy deste incremento.

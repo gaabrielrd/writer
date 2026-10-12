@@ -478,8 +478,10 @@ export function RichEditor({
   return (
     <div className={styles.container} data-workspace-expanded={workspaceExpanded}>
       <div className={styles.toolbar} role="toolbar" aria-label="Ferramentas de escrita">
-        <div className={styles.toolGroup}>
-          <button
+        <div className={styles.toolGroup} role="group" aria-label="Formatação">
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting}
@@ -494,8 +496,10 @@ export function RichEditor({
             aria-pressed={editor?.isActive('heading', { level: 1 }) ?? false}
           >
             <Heading1 className="icon icon-sm" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting}
@@ -510,8 +514,10 @@ export function RichEditor({
             aria-pressed={editor?.isActive('heading', { level: 2 }) ?? false}
           >
             <Heading2 className="icon icon-sm" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting}
@@ -526,8 +532,10 @@ export function RichEditor({
             aria-pressed={editor?.isActive('bold') ?? false}
           >
             <Bold className="icon icon-sm" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting}
@@ -542,8 +550,10 @@ export function RichEditor({
             aria-pressed={editor?.isActive('italic') ?? false}
           >
             <Italic className="icon icon-sm" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting}
@@ -562,8 +572,10 @@ export function RichEditor({
             aria-label="Travessão de Diálogo"
           >
             <MessageSquare className="icon icon-sm" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting}
@@ -578,8 +590,10 @@ export function RichEditor({
             aria-pressed={editor?.isActive('blockquote') ?? false}
           >
             <Quote className="icon icon-sm" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting}
@@ -593,8 +607,12 @@ export function RichEditor({
             aria-label="Mencionar Lore"
           >
             <AtSign className="icon icon-sm" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+        </div>
+        <div className={styles.historyTools} role="group" aria-label="Histórico de edição">
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting || !editor?.can().undo()}
@@ -608,8 +626,10 @@ export function RichEditor({
             aria-label="Desfazer"
           >
             <Undo2 className="icon icon-sm" aria-hidden="true" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             className={styles.toolBtn}
             disabled={accepting || !editor?.can().redo()}
@@ -623,9 +643,13 @@ export function RichEditor({
             aria-label="Refazer"
           >
             <Redo2 className="icon icon-sm" aria-hidden="true" />
-          </button>
+          </Button>
         </div>
-        <div className={styles.toolGroup}>
+        <div
+          className={`${styles.toolGroup} ${styles.panelTools}`}
+          role="group"
+          aria-label="Painéis do editor"
+        >
           {onOpenChat ? (
             <AIChatLauncher
               disabled={Boolean(aiUnavailableReason)}

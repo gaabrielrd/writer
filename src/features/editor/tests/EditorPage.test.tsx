@@ -160,14 +160,18 @@ describe('EditorPage', () => {
     expect(screen.queryByText('Capítulo: O Íntimo')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Gerenciar personas' })).not.toBeInTheDocument();
     expect(editor.textContent).toBe(original);
-    await user.click(screen.getByRole('button', { name: 'Persona' }));
+    await user.click(screen.getByRole('button', { name: 'Opções do capítulo' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Persona' }));
+    await screen.findByRole('dialog', { name: 'Persona' });
     expect(screen.getByText('Livro definido: preset-atmospheric')).toBeVisible();
     expect(screen.getByText('Complemento definido: preset-intimate')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Salvar persona do livro' }));
     await waitFor(() =>
       expect(updateBook).toHaveBeenCalledWith('b-1', { personaId: 'preset-incisive' }),
     );
-    await user.click(screen.getByRole('button', { name: 'Persona' }));
+    await user.click(screen.getByRole('button', { name: 'Opções do capítulo' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Persona' }));
+    await screen.findByRole('dialog', { name: 'Persona' });
     await user.click(screen.getByRole('button', { name: 'Salvar persona do capítulo' }));
     await waitFor(() =>
       expect(updateChapter).toHaveBeenCalledWith('b-1', 'c-1', {
@@ -181,7 +185,9 @@ describe('EditorPage', () => {
     expect(screen.getByRole('button', { name: 'Abrir Assistente Criativo de IA' })).toBeDisabled();
     expect(editor.textContent).toBe(original);
     expect(screen.queryByText('Configuração indisponível')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Persona' }));
+    await user.click(screen.getByRole('button', { name: 'Opções do capítulo' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Persona' }));
+    await screen.findByRole('dialog', { name: 'Persona' });
     expect(screen.getByText('Configuração indisponível')).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
     expect(retry).toHaveBeenCalledOnce();

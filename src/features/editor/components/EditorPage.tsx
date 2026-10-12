@@ -58,7 +58,7 @@ import { BusyNavigationGuard } from './BusyNavigationGuard';
 import { RichEditor } from './RichEditor';
 import { ResizableEditorWorkspace } from './ResizableEditorWorkspace';
 import { EditorLoreSidebar } from './EditorLoreSidebar';
-import { ExportButton } from './ExportButton';
+import { EditorOptionsMenu } from './EditorOptionsMenu';
 import { LoreAnalysisDialog } from './LoreAnalysisDialog';
 import styles from './EditorPage.module.css';
 
@@ -602,16 +602,15 @@ function EditorSession() {
               <Maximize2 className="icon icon-sm" aria-hidden="true" />
             )}
           </Button>
-          <Button
-            variant="secondary"
+          <EditorOptionsMenu
+            book={book}
+            currentChapter={chapter}
+            currentContent={content}
             disabled={isAcceptingAI}
-            ref={personaButton}
-            title={personaError ?? 'Configurar personas de escrita'}
-            onClick={() => setPersonaDialog(true)}
-          >
-            Persona
-          </Button>
-          <ExportButton book={book} currentChapter={chapter} currentContent={content} />
+            triggerRef={personaButton}
+            personaError={personaError}
+            onPersona={() => setPersonaDialog(true)}
+          />
 
           <div className={styles.saveStatusWrapper} aria-live="polite">
             {saveStatus === 'saving' && (
@@ -649,8 +648,14 @@ function EditorSession() {
             <strong>{wordCount.toLocaleString('pt-BR')}</strong> palavras
           </span>
 
-          <div className={styles.chapterNavigation}>
-            <button
+          <div
+            className={styles.chapterNavigation}
+            role="group"
+            aria-label="Navegação entre capítulos"
+          >
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               className={styles.navBtn}
               disabled={!prevChapter || isAcceptingAI}
@@ -663,8 +668,10 @@ function EditorSession() {
               aria-label="Capítulo anterior"
             >
               <ChevronLeft className="icon icon-sm" aria-hidden="true" />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               className={styles.navBtn}
               disabled={!nextChapter || isAcceptingAI}
@@ -677,7 +684,7 @@ function EditorSession() {
               aria-label="Próximo capítulo"
             >
               <ChevronRight className="icon icon-sm" aria-hidden="true" />
-            </button>
+            </Button>
           </div>
         </div>
       </header>
