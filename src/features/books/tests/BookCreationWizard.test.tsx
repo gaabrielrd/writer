@@ -4,7 +4,7 @@ vi.mock('@/features/universes/services/universeService', () => ({
   listUniverses: vi.fn().mockResolvedValue([]),
 }));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BookCreationWizard } from '../components/BookCreationWizard';
 import * as library from '@/features/image-library';
@@ -143,6 +143,9 @@ describe('BookCreationWizard', () => {
     await user.click(screen.getByRole('button', { name: 'Gerar sinopse com IA' }));
     await screen.findByText(suggestion.text);
     expect(screen.getByLabelText('Sinopse / Premissa')).toHaveValue('Texto original');
+    const preview = within(screen.getByLabelText('Prévia do livro'));
+    expect(preview.getByText('Texto original')).toBeInTheDocument();
+    expect(preview.queryByText(suggestion.text)).not.toBeInTheDocument();
     expect(service.acceptBookAsset).not.toHaveBeenCalled();
     expect(service.generateBookAsset).toHaveBeenCalledWith(
       { title: 'Atlas', genre: 'Fantasia', synopsis: 'Texto original' },
@@ -151,6 +154,7 @@ describe('BookCreationWizard', () => {
     );
     await user.click(screen.getByRole('button', { name: /Usar sinopse/ }));
     expect(screen.getByLabelText('Sinopse / Premissa')).toHaveValue(suggestion.text);
+    expect(preview.getByText(suggestion.text)).toBeInTheDocument();
     expect(auth.updateUserCreditsState).toHaveBeenCalledWith(19);
     await user.type(screen.getByLabelText('Sinopse / Premissa'), ' Editada.');
     expect(screen.getByLabelText('Sinopse / Premissa')).toHaveValue(`${suggestion.text} Editada.`);

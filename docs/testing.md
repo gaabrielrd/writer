@@ -340,6 +340,17 @@ novo; a preparação da prévia não limpa configurações durante um reload.
 
 ## Formulários do estúdio
 
+`BookDraftPreview.test.tsx` verifica placeholders, atualização de metadados,
+troca/remoção da capa e recuperação de imagem indisponível. O teste da criação
+confirma que a prévia só recebe a sinopse gerada após o aceite explícito.
+`e2e/visual/book-creation-preview.visual.ts` compara a tipografia com a biblioteca,
+mede largura de 960 px, colunas e capa 2:3, cobre os limites de 900/901 px,
+rolagem única com ações fixas, textos longos, teclado e 320 px nos três temas.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/book-creation-preview.visual.ts
+```
+
 `FormSection.test.tsx` cobre teclado, abertura controlada e preservação ao recolher.
 Testes de livros/lore cobrem salvamento pelos dados essenciais, edição direta,
 visibilidade, relações incompletas em seções fechadas, IDs estáveis de retry,
