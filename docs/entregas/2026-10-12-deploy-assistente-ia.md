@@ -124,8 +124,7 @@ commits e conserva SHA-256
   foram acessadas; OpenAI/Gemini BYOK permanecem cobertos pelos testes locais.
 - Não foram excluídos perfis ou contas reais para testar os respectivos triggers.
 - O aceite da fixture consumiu um único crédito. Reembolso e remoção exclusiva
-  dos dados sintéticos aguardam autorização do usuário; a revisão automática
-  bloqueou a alteração do saldo fora da autorização original de validação.
+  dos dados sintéticos foram autorizados e concluídos, conforme o registro abaixo.
 - O rollout em produção foi verificado diretamente; este registro não afirma
   resultado de CI remoto que não tenha sido consultado.
 - Abas que já estavam abertas precisam recarregar para usar o frontend final.
@@ -137,3 +136,28 @@ commits e conserva SHA-256
 3. Envie um pedido, confira contexto/histórico e pare uma resposta em andamento.
 4. Aceite uma sugestão somente quando desejar modificar o capítulo; o primeiro
    aceite da plataforma custa 1 crédito, e a reaplicação da mesma sugestão é gratuita.
+
+## Encerramento da validação — 2026-10-12
+
+O usuário autorizou explicitamente o reembolso de 1 crédito e a remoção exclusiva
+do livro privado de validação, seus capítulos, lore e conversas. A restrição da
+revisão automática sobre a alteração do saldo foi resolvida por essa autorização.
+
+- Reembolso atômico de exatamente 1 crédito, com marcação no recibo para evitar
+  duplicação e incremento que preserva alterações concorrentes do saldo.
+- Saldo observado após o reembolso e na conferência final: **92 créditos**.
+- Remoção restrita aos quatro documentos criados nesta validação: livro, dois
+  capítulos e uma ficha de lore. Os documentos retornaram HTTP 404 na conferência.
+- A exclusão do primeiro capítulo acionou a rotina publicada, que removeu suas
+  conversas e recibos antes da exclusão do livro.
+- Conferência final: zero capítulos, lore, conversas, mensagens e recibos nos
+  caminhos da fixture; sem documentos de capítulos no histórico privado do livro.
+- Hash do manuscrito original igual ao registrado antes da validação. O arquivo
+  paralelo conserva o SHA-256 descrito acima e continua fora dos commits.
+- A aba criada para validação foi fechada antes da exclusão, evitando autosave
+  posterior; a aba original do usuário não foi alterada.
+
+Conclusão da limpeza: `2026-10-12T19:23:02.430Z` (16:23 em São Paulo).
+Conferência final: `2026-10-12T19:23:44.524Z`.
+Evidências adicionais no diretório já indicado: `refund.json`, `cleanup.json`
+e `cleanup-verification.json`.
