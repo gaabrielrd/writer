@@ -640,7 +640,7 @@ function EditorSession() {
           </div>
 
           {saveError && (
-            <Button variant="secondary" onClick={() => void saveNow()}>
+            <Button className={styles.saveRetry} variant="secondary" onClick={() => void saveNow()}>
               Tentar salvar novamente
             </Button>
           )}

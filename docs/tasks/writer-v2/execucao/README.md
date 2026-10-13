@@ -10,6 +10,13 @@ Após a consolidação `01f9b55`, `master 522ccaa` foi incorporada sem conflitos
 [evidência da nova integração](../../../entregas/2026-10-13-writer-v2-sincronizacao-master.md).
 CI remoto, condições comerciais e pilotos humanos continuam pendentes.
 
+O envio foi autorizado e o [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21)
+foi aberto. O primeiro CI de `ea9a449` detectou deslocamento do manuscrito no
+autosave móvel. A correção tem validate verde e 30 repetições de regressão;
+o novo head ainda precisa de CI verde. Veja a
+[evidência da correção e do PR](../../../entregas/2026-10-13-writer-v2-ci.md).
+Isso não libera merge, deploy nem encerra condições comerciais/humanas da fase 1.
+
 | Tarefa      | Estado                                                                  | Evidência                                                                         | Próxima condição                                                   |
 | ----------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | W2-F1-01    | Jornadas revisadas; validate local verde; corpus inventariado           | [Jornadas e inventário](01-jornadas-e-escopo.md)                                  | CI pendente; importação/piloto nas tarefas próprias                |

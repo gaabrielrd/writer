@@ -13,9 +13,10 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
   visualTheme: ['dark', { option: true }],
   authenticated: [true, { option: true }],
   libraryState: ['populated', { option: true }],
+  controlledClock: [false, { option: true }],
   visualEnvironment: [
     async (
-      { context, page, baseURL, visualTheme, authenticated, libraryState },
+      { context, page, baseURL, visualTheme, authenticated, libraryState, controlledClock },
       runTest,
       testInfo,
     ) => {
@@ -46,8 +47,9 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
           dataStateKey: FIXTURE_LIBRARY_STATE_KEY,
         },
       );
-      // Date must keep advancing: editor focus/composition guards compare elapsed time.
-      await page.clock.setSystemTime(new Date(FIXTURE_TIME));
+      // Advance naturally by default; controlled scenarios explicitly tick/resume timers.
+      if (controlledClock) await page.clock.install({ time: new Date(FIXTURE_TIME) });
+      else await page.clock.setSystemTime(new Date(FIXTURE_TIME));
       await testInfo.attach('contexto-da-previa', {
         body: JSON.stringify(
           {
@@ -56,6 +58,7 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
               'Componentes e rotas reais; autenticação, livros, capítulos, lore e IA fictícios.',
             theme: visualTheme,
             libraryState,
+            clockMode: controlledClock ? 'controlado pelo cenário' : 'avança naturalmente',
             viewport: testInfo.project.use.viewport,
             productionBackend: 'desativado; rede externa bloqueada',
           },

@@ -178,13 +178,21 @@ dimensões e integração com modal ficam em `e2e/visual/dropdown.visual.ts`.
 3. Se um teste falha após uma mudança de comportamento intencional, atualize o teste para o novo comportamento esperado.
 4. Se a falha for inesperada, corrija o código, não o teste.
 
-O cenário visual de seleção parcial posiciona o cursor no início, zera a
-rolagem do contêiner e da página e aguarda dois frames antes de medir o arrasto.
-No celular, a distância para ocultar o trecho é calculada pela posição real
-dele. O CI executa primeiro esses seis cenários como verificação rápida no
-Linux; quando passam, executa a suíte visual completa de 324 cenários.
-O gate E2E tem limite de 25 minutos para os testes e artefatos; o timeout
-individual dos testes visuais permanece em 45 segundos.
+O cenário visual de seleção parcial posiciona o cursor no primeiro bloco,
+confirma o título, zera a rolagem e mede os glifos antes do arrasto real.
+Somente esse cenário usa `controlledClock: true`: instala o relógio antes de
+abrir a aplicação, pausa após o primeiro salvamento e avança o autosave enquanto
+o botão do mouse está pressionado. Exige a transição de “Não salvo” para “Salvo”,
+o contador atualizado, o título na mesma posição e a seleção exata `trecho`.
+Depois retoma o relógio para testar rolagem, ações em 320 px e foco por teclado.
+Os demais cenários mantêm o tempo avançando naturalmente. A opção usa a
+[API Clock do Playwright](https://playwright.dev/docs/clock).
+
+No celular, a distância para ocultar o trecho vem de sua posição real. Os seis
+projetos desse cenário pertencem à suíte completa, distribuída nos três shards
+do CI. O timeout individual permanece em 45 segundos; os limites dos jobs estão
+no workflow. Não aceitar um teste passando só porque o salvamento terminou
+antes da seleção: a transição durante o gesto faz parte da regressão protegida.
 
 ## Roadmap Writer e regras reais
 
