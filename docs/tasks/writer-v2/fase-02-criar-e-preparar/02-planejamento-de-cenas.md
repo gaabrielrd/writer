@@ -1,6 +1,6 @@
 # W2-F2-02 — Planejar cenas e organizar a escrita
 
-**Estado:** Implementado e validado localmente; conclusão técnica exige CI verde no head do PR.
+**Estado:** Concluído tecnicamente em `f4449a5`; validações locais, CI completo e regras verdes. Confirmação remota registrada na entrega.
 **Evidência:** [Entrega de cenas](../../../entregas/2026-10-13-writer-v2-cenas.md).
 **Dependências:** [W2-F2-01](../fase-02-criar-e-preparar/01-projetos-e-navegacao.md)
 **Áreas:** scenes, books, editor e adventures. [Contrato executável](../execucao/08-planejamento-de-cenas.md).

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useLocation } from 'react-router';
 import { useAuth } from '@/features/auth';
 import { RichEditor } from '@/features/editor';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
@@ -80,6 +80,7 @@ function SceneEditorLoader({
 function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocument }) {
   const { user, setPendingEditorOperation } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const autosave = useSceneAutosave(uid, initial);
   const [sidebar, setSidebar] = useState(false);
   const [entities, setEntities] = useState<LoreEntity[]>([]);
@@ -91,7 +92,18 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   const active = useRef(true);
   const doc = autosave.document;
   const target = { kind: initial.project.kind, id: initial.project.id };
-  const returnUrl = `/${target.kind === 'book' ? 'books' : 'adventures'}/${encodeURIComponent(target.id)}`;
+  const projectUrl = `/${target.kind === 'book' ? 'books' : 'adventures'}/${encodeURIComponent(target.id)}`;
+  const navigationState: unknown = location.state;
+  const requestedReturn =
+    typeof navigationState === 'object' && navigationState !== null && 'returnTo' in navigationState
+      ? navigationState.returnTo
+      : undefined;
+  const returnUrl =
+    typeof requestedReturn === 'string' &&
+    requestedReturn.startsWith(projectUrl + '?') &&
+    !/[\r\n\\]/.test(requestedReturn)
+      ? requestedReturn
+      : projectUrl;
   useEffect(() => {
     active.current = true;
     return () => {
@@ -239,7 +251,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         <Dialog
           open
           title={selected.name}
-          description="Lore autorizado para este projeto."
+          description="Menção textual no trecho aberto. Encontrar este nome não cria vínculo explícito nem confirma participação na história."
           onClose={() => setSelected(null)}
         >
           <p>{selected.summary}</p>

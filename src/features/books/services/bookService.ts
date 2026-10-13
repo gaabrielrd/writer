@@ -42,6 +42,8 @@ interface StoredBookDoc {
   deleting?: boolean;
   hasSceneResources?: boolean;
   sceneRevision?: number;
+  hasNarrativeResources?: boolean;
+  narrativeRevision?: number;
   universeId?: string | null;
   personaId?: string | null;
   authorId: string;
@@ -95,6 +97,9 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
         ? { hasSceneResources: true, sceneRevision: data.sceneRevision ?? 0 }
         : {}),
       ...(data.deleting ? { deleting: true } : {}),
+      ...(data.hasNarrativeResources
+        ? { hasNarrativeResources: true, narrativeRevision: data.narrativeRevision ?? 0 }
+        : {}),
       createdAt: data.createdAt ?? Date.now(),
       updatedAt: data.updatedAt ?? Date.now(),
     };
@@ -131,6 +136,9 @@ export async function getBook(
       ? { hasSceneResources: true, sceneRevision: data.sceneRevision ?? 0 }
       : {}),
     ...(data.deleting ? { deleting: true } : {}),
+    ...(data.hasNarrativeResources
+      ? { hasNarrativeResources: true, narrativeRevision: data.narrativeRevision ?? 0 }
+      : {}),
     createdAt: data.createdAt ?? Date.now(),
     updatedAt: data.updatedAt ?? Date.now(),
   };
@@ -198,7 +206,7 @@ export async function deleteBook(bookId: string): Promise<void> {
   // Revoke public access first, even if a later cleanup operation fails.
   await beginBookDeletion(bookId);
   const parent = await getDocFromServer(doc(firestore, 'books', bookId));
-  if (parent.exists() && parent.data().hasSceneResources) {
+  if (parent.exists() && (parent.data().hasSceneResources || parent.data().hasNarrativeResources)) {
     const request = {
       target: { kind: 'book' as const, id: bookId },
       operationId: crypto.randomUUID(),

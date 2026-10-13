@@ -259,20 +259,29 @@ export function addSceneJobs(api, helpers) {
       delete state.fingerprint;
       if (state.complete) return progress(state);
       let deleted = [];
-      if (state.phase === 'scenes' || state.phase === 'revisions') {
+      if (state.phase === 'scenes' || state.phase === 'revisions' || state.phase === 'arcs') {
         const base =
           state.phase === 'scenes'
             ? `${context.path}/scenes`
-            : `publicBooks/${context.target.id}/revisions`;
+            : state.phase === 'arcs'
+              ? `${context.path}/arcs`
+              : `publicBooks/${context.target.id}/revisions`;
         const parent = (await tx.get(db.collection(base).orderBy('__name__').limit(1))).docs[0];
         if (!parent) {
-          state.phase = state.phase === 'scenes' ? 'revisions' : 'chapters';
+          state.phase =
+            state.phase === 'scenes'
+              ? 'revisions'
+              : state.phase === 'revisions'
+                ? 'arcs'
+                : 'chapters';
           state.childPhase = 0;
         } else {
           const children =
             state.phase === 'scenes'
               ? ['references', 'body', 'planning']
-              : ['chapters', 'lore', 'acts'];
+              : state.phase === 'arcs'
+                ? ['milestones']
+                : ['chapters', 'lore', 'acts'];
           const childPhase = state.childPhase ?? 0;
           if (childPhase < children.length) {
             const page = await tx.get(
@@ -289,7 +298,19 @@ export function addSceneJobs(api, helpers) {
           }
         }
       } else {
-        const phases = ['chapters', 'lore', 'acts', 'sceneControls', 'sceneSources', 'sceneJobs'];
+        const phases = [
+          'chapters',
+          'lore',
+          'acts',
+          'sceneControls',
+          'sceneSources',
+          'sceneJobs',
+          'timelineEvents',
+          'narrativeLinks',
+          'sceneLoreLinks',
+          'narrativeControls',
+          'narrativeJobs',
+        ];
         const at = phases.indexOf(state.phase);
         if (at >= 0) {
           const page = await tx.get(

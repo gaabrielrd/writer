@@ -5,6 +5,7 @@ import type {
   ScenePlanning,
   SceneProject,
   SceneReferenceView,
+  SceneReference,
   SceneSummary,
 } from '../../../src/features/scenes/model/scene';
 import { countWords, type Chapter } from '../../../src/features/books/model/chapter';
@@ -40,6 +41,9 @@ export interface FixtureSceneState {
   >;
   jobs: Record<string, { job: SceneJob; ids: string[]; groupIds: string[] }>;
   removedGroupIds?: string[];
+  sceneLoreLinks?: Record<string, { sceneId: string; reference: SceneReference }>;
+  sceneLoreIndexReady?: boolean;
+  sceneLoreIndexOperationId?: string;
 }
 const storageKey = 'writer.visual.scenes';
 const states = new Map<string, FixtureSceneState>();
@@ -117,7 +121,7 @@ export function fixtureSceneState(target: SceneProject): Promise<FixtureSceneSta
 async function loadFixtureSceneState(target: SceneProject): Promise<FixtureSceneState> {
   const project = target.kind === 'book' ? await getBook(target.id) : await getAdventure(target.id);
   const ownerId = project && ('authorId' in project ? project.authorId : project.ownerId);
-  if (!project || ownerId !== fixtureOwner())
+  if (!project || ownerId !== fixtureOwner() || ('deleting' in project && project.deleting))
     throw Object.assign(new Error('Projeto indisponível.'), {
       code: 'functions/permission-denied',
     });
@@ -141,6 +145,7 @@ async function loadFixtureSceneState(target: SceneProject): Promise<FixtureScene
     };
     states.set(key, state);
   }
+  state.universeId = project.universeId ?? null;
   if (target.kind === 'book') {
     for (const chapter of fixtureReadChapters(target.id)) {
       if (!state.groups[chapter.id]) state.groups[chapter.id] = fixtureChapterGroup(chapter);
@@ -197,6 +202,13 @@ async function loadFixtureSceneState(target: SceneProject): Promise<FixtureScene
         pointOfView: 'Lia',
       };
       state.references[sceneId] = [];
+      if (
+        target.kind === 'book' &&
+        sessionStorage.getItem('writer.visual.narrative-legacy-index') === 'true'
+      ) {
+        const reference = { kind: 'book' as const, scopeId: target.id, entityId: 'visual-lia' };
+        state.references[sceneId] = [{ id: fixtureHash(reference), reference, available: true }];
+      }
       state.groups[id].wordCount += body.wordCount;
     }
     state.revision = 1;
@@ -245,6 +257,17 @@ export function fixtureSyncSceneBook(state: FixtureSceneState) {
 }
 export function fixtureSaveScenes() {
   sessionStorage.setItem(storageKey, JSON.stringify([...states.entries()]));
+}
+export function fixtureSceneLoreLink(
+  state: FixtureSceneState,
+  sceneId: string,
+  reference: SceneReference,
+  remove = false,
+) {
+  state.sceneLoreLinks ??= {};
+  const id = fixtureHash({ sceneId, reference });
+  if (remove) delete state.sceneLoreLinks[id];
+  else state.sceneLoreLinks[id] = { sceneId, reference: structuredClone(reference) };
 }
 export function fixtureGroup(state: FixtureSceneState, parentId: string | null): SceneGroup {
   const group = state.groups[groupKey(parentId)];

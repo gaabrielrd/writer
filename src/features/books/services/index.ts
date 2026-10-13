@@ -11,3 +11,4 @@ export * from './documentParserService';
 export * from './publicBookService';
 export * from './publicationService';
 export * from './chapterCompositionService';
+export * from './narrativeBackupService';

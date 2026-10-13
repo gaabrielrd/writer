@@ -391,3 +391,25 @@ Ordenação e exclusão usam checkpoints limitados; remover agrupador desvincula
 cenas. Ver [ADR 0026](decisions/0026-scenes-and-manuscript-assembly.md) e
 [contrato F2-02](tasks/writer-v2/execucao/08-planejamento-de-cenas.md), cujos gates
 registram a validação vigente deste incremento.
+
+## Arcos e cronologia básica
+
+`features/narrative-planning` fornece `NarrativePlanner`, modelos e serviços pela
+interface pública, dentro das abas de livros/aventuras. Arcos, marcos e eventos
+possuem texto de planejamento privado e sequências independentes. Ordem manual e
+data textual livre não alteram a ordem nem a prosa do manuscrito.
+
+As mutações e consultas vivem em `functions/src/narrativePlanning.mjs`, com contratos
+e jobs limitados em módulos próprios. `narrativeLinks` mantém referências por
+identidade; `sceneLoreLinks` é um índice derivado das referências explícitas das
+cenas, atualizado atomicamente e preparado por lotes para dados anteriores.
+Listas são resumos paginados e detalhes são carregados sob demanda. A autorização
+confere o pai e a origem atual, inclusive durante troca de universo e exclusão.
+
+Marcadores `hasNarrativeResources/narrativeRevision` são protegidos; `deleteSceneBook`
+incorpora filhos narrativos antes de remover o pai. `narrativeBackupService.ts` captura
+arcos/marcos/eventos/referências no JSON v6, sem UID/jobs/índice, e confere revisões
+e identidade antes/depois. Publicação/PDF/DOCX/Markdown conservam a projeção da prosa.
+Ver [ADR 0027](decisions/0027-narrative-arcs-and-timeline.md) e
+[contrato F2-03](tasks/writer-v2/execucao/09-arcos-e-cronologia.md). Implementação em
+validação; os gates do incremento e a implantação conservam estados próprios.

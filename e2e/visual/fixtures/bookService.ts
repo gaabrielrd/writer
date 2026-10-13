@@ -12,10 +12,14 @@ import {
 } from '../../../src/features/books/model/chapter';
 import { author, books, chapters, FIXTURE_LIBRARY_STATE_KEY, FIXTURE_TIME } from './data';
 import type { FixtureSceneState } from './sceneStore';
+import type { FixtureNarrativeState } from './narrativeStore';
 import { resolveChapterContent } from '../../../src/features/books/services/chapterCompositionService';
 
 const initialBooks = sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'empty' ? [] : books;
 const bookStore = new Map(initialBooks.map((book) => [book.id, structuredClone(book)]));
+export function fixtureReadBook(bookId: string): Book | null {
+  return structuredClone(bookStore.get(bookId) ?? null);
+}
 export function fixtureStudioBooks(authorId: string): Book[] {
   return structuredClone([...bookStore.values()].filter((book) => book.authorId === authorId));
 }
@@ -29,8 +33,31 @@ export function fixtureWriteChapter(chapter: Chapter): void {
 }
 export function fixtureWriteBook(bookId: string, patch: Partial<Book>): void {
   const book = bookStore.get(bookId);
-  if (book) bookStore.set(bookId, { ...book, ...structuredClone(patch) });
+  if (book)
+    bookStore.set(bookId, {
+      ...book,
+      ...structuredClone(patch),
+      updatedAt: Math.max(book.updatedAt, patch.updatedAt ?? book.updatedAt),
+    });
   bindingListeners.forEach((notify) => notify());
+}
+const savedNarrativeStates = sessionStorage.getItem('writer.visual.narrative');
+if (savedNarrativeStates) {
+  for (const [, state] of JSON.parse(savedNarrativeStates) as [string, FixtureNarrativeState][]) {
+    if (state.target.kind !== 'book' || state.revision === 0) continue;
+    const book = bookStore.get(state.target.id);
+    if (book?.authorId !== state.ownerId) continue;
+    const patch = {
+      hasNarrativeResources: true,
+      narrativeRevision: state.revision,
+      updatedAt: state.updatedAt,
+    };
+    bookStore.set(book.id, {
+      ...book,
+      ...patch,
+      updatedAt: Math.max(book.updatedAt, state.updatedAt),
+    });
+  }
 }
 export function fixtureRemoveChapter(bookId: string, chapterId: string): void {
   if (chapterStore.get(chapterId)?.bookId === bookId) chapterStore.delete(chapterId);
@@ -73,7 +100,7 @@ if (savedSceneStates) {
         .reduce((total, chapter) => total + chapter.wordCount, 0),
       sceneRevision: state.revision,
       hasSceneResources: true,
-      updatedAt: FIXTURE_TIME + state.revision,
+      updatedAt: Math.max(book.updatedAt, FIXTURE_TIME + state.revision),
     });
   }
 }
@@ -112,18 +139,27 @@ export function createBook(authorId: string, input: CreateBookInput): Promise<Bo
 export function updateBook(bookId: string, input: UpdateBookInput): Promise<void> {
   const book = bookStore.get(bookId);
   if (!book) throw new Error('Livro fictício não encontrado.');
-  bookStore.set(bookId, { ...book, ...input, updatedAt: FIXTURE_TIME });
-  bindingListeners.forEach((notify) => notify());
+  fixtureWriteBook(bookId, { ...input, updatedAt: FIXTURE_TIME });
   return Promise.resolve();
 }
 
-export function deleteBook(bookId: string): Promise<void> {
+export async function deleteBook(bookId: string): Promise<void> {
+  const book = bookStore.get(bookId);
+  if (
+    book?.hasSceneResources ||
+    (book && 'hasNarrativeResources' in book && book.hasNarrativeResources)
+  ) {
+    const { deleteSceneBook } = await import('./sceneService');
+    await deleteSceneBook({
+      target: { kind: 'book', id: bookId },
+      operationId: `delete-book:${bookId}`,
+    });
+  }
   bookStore.delete(bookId);
   actStore.delete(bookId);
   chapterStore.forEach((chapter) => {
     if (chapter.bookId === bookId) chapterStore.delete(chapter.id);
   });
-  return Promise.resolve();
 }
 
 export function listChapters(

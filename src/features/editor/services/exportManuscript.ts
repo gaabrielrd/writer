@@ -5,6 +5,7 @@ import {
   listChapters,
   resolveChapterContent,
   captureSceneBookBackup,
+  captureNarrativeBookBackup,
   assertSceneBookRevision,
   getBook,
   type Book,
@@ -74,6 +75,10 @@ export async function exportManuscript({
   if (hasScenes && snapshotBook.updatedAt !== book.updatedAt)
     throw new Error('O livro mudou. Atualize seus dados antes de exportar.');
   const sourceSceneRevision = snapshotBook.sceneRevision ?? 0;
+  const sourceNarrativeRevision = snapshotBook.narrativeRevision ?? 0;
+  const hasNarrative = Boolean(snapshotBook.hasNarrativeResources);
+  if (hasNarrative && snapshotBook.updatedAt !== book.updatedAt)
+    throw new Error('O livro mudou. Atualize seus dados antes de exportar.');
   const assertCapture = async () => {
     if (hasScenes) await assertSceneBookRevision(book.id, sourceSceneRevision);
     const latest = await getBook(book.id, { source: 'server' });
@@ -81,8 +86,10 @@ export async function exportManuscript({
       !latest ||
       latest.deleting ||
       (latest.sceneRevision ?? 0) !== sourceSceneRevision ||
+      (latest.narrativeRevision ?? 0) !== sourceNarrativeRevision ||
+      Boolean(latest.hasNarrativeResources) !== hasNarrative ||
       Boolean(latest.hasSceneResources) !== Boolean(snapshotBook.hasSceneResources) ||
-      (hasScenes && latest.updatedAt !== snapshotBook.updatedAt)
+      ((hasScenes || hasNarrative) && latest.updatedAt !== snapshotBook.updatedAt)
     )
       throw new Error('O livro mudou durante a exportação. Atualize e tente novamente.');
     signal?.throwIfAborted();
@@ -115,9 +122,28 @@ export async function exportManuscript({
     });
     signal?.throwIfAborted();
     const scenes = hasScenes ? await captureSceneBookBackup(book.id, sourceSceneRevision) : null;
+    const narrative = hasNarrative
+      ? await captureNarrativeBookBackup(
+          book.id,
+          sourceNarrativeRevision,
+          sourceSceneRevision,
+          signal,
+        )
+      : null;
     const backup = {
       format: 'writer-book-backup',
-      version: scenes ? 5 : acts.length ? 4 : personaIds.size ? 3 : universe ? 2 : 1,
+      version: narrative
+        ? 6
+        : scenes
+          ? 5
+          : acts.length
+            ? 4
+            : personaIds.size
+              ? 3
+              : universe
+                ? 2
+                : 1,
+      ...(narrative ? { narrative } : {}),
       ...(scenes ? { scenes } : {}),
       ...(acts.length ? { acts } : {}),
       ...(personaIds.size ? { personas } : {}),

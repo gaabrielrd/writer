@@ -39,6 +39,7 @@ import {
   fixtureSceneDocument,
   fixtureSceneError,
   fixtureSceneState,
+  fixtureSceneLoreLink,
   fixtureSyncSceneBook,
   fixtureUpdateCounts,
   type FixtureSceneState,
@@ -331,6 +332,7 @@ export async function setSceneReference(input: SceneReferenceInput): Promise<Sce
   if (!input.remove)
     refs.push({ id, reference: structuredClone(input.reference), available: true });
   state.references[scene.id] = refs;
+  fixtureSceneLoreLink(state, scene.id, input.reference, input.remove);
   scene.revision += 1;
   state.receipts[input.operationId] = {
     fingerprint: previous.fingerprint,
@@ -338,6 +340,8 @@ export async function setSceneReference(input: SceneReferenceInput): Promise<Sce
     revision: scene.revision,
   };
   fixtureUpdateCounts(state, [scene.parentId]);
+  const { fixtureNarrativeState, fixtureNarrativeChanged } = await import('./narrativeStore');
+  await fixtureNarrativeChanged(await fixtureNarrativeState(input.target));
   return summaryResult(state, scene.id, [scene.parentId]);
 }
 export async function listSceneReferences(input: {
@@ -543,6 +547,9 @@ export async function deleteSceneBook(input: SceneJobInput): Promise<SceneJobPro
   state.bodies = {};
   state.planning = {};
   state.references = {};
+  state.sceneLoreLinks = {};
+  const { fixtureDeleteNarrativeProject } = await import('./narrativeStore');
+  fixtureDeleteNarrativeProject(input.target);
   fixtureSaveScenes();
   return { complete: true, processed };
 }

@@ -14,6 +14,8 @@ export interface Book {
   wordCount: number;
   hasSceneResources?: boolean;
   sceneRevision?: number;
+  hasNarrativeResources?: boolean;
+  narrativeRevision?: number;
   deleting?: boolean;
   createdAt: number;
   updatedAt: number;

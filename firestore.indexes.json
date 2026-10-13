@@ -313,6 +313,62 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "narrativeLinks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sourceKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "narrativeLinks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "sourceArcId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "narrativeLinks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "loreKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "sceneLoreLinks",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "loreKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -344,6 +400,36 @@
     {
       "collectionGroup": "sceneSources",
       "fieldPath": "original",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "arcs",
+      "fieldPath": "initialState",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "arcs",
+      "fieldPath": "objective",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "arcs",
+      "fieldPath": "plannedOutcome",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "timelineEvents",
+      "fieldPath": "description",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "timelineEvents",
+      "fieldPath": "dateLabel",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "milestones",
+      "fieldPath": "notes",
       "indexes": []
     }
   ]

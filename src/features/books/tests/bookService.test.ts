@@ -147,27 +147,30 @@ describe('bookService', () => {
     );
   });
 
-  it('livro com cenas revoga acesso e limpa no servidor com o mesmo pedido em todas as páginas', async () => {
-    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ hasSceneResources: true, deleting: true }),
-    } as unknown as firestoreModule.DocumentSnapshot);
-    vi.mocked(deleteSceneBook)
-      .mockResolvedValueOnce({ complete: false, processed: 50 })
-      .mockResolvedValueOnce({ complete: true, processed: 51 });
-    await deleteBook('book-scenes');
-    expect(beginBookDeletion).toHaveBeenCalledWith('book-scenes');
-    expect(deleteSceneBook).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(deleteSceneBook).mock.calls[1]?.[0]).toEqual(
-      vi.mocked(deleteSceneBook).mock.calls[0]?.[0],
-    );
-    expect(vi.mocked(beginBookDeletion).mock.invocationCallOrder[0]).toBeLessThan(
-      vi.mocked(deleteSceneBook).mock.invocationCallOrder[0]!,
-    );
-    expect(deletePublicationRevisions).not.toHaveBeenCalled();
-    expect(finishBookDeletion).not.toHaveBeenCalled();
-    expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
-  });
+  it.each([{ hasSceneResources: true }, { hasNarrativeResources: true }])(
+    'livro com recursos %j revoga acesso e limpa no servidor com o mesmo pedido em todas as páginas',
+    async (resources) => {
+      vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ ...resources, deleting: true }),
+      } as unknown as firestoreModule.DocumentSnapshot);
+      vi.mocked(deleteSceneBook)
+        .mockResolvedValueOnce({ complete: false, processed: 50 })
+        .mockResolvedValueOnce({ complete: true, processed: 51 });
+      await deleteBook('book-scenes');
+      expect(beginBookDeletion).toHaveBeenCalledWith('book-scenes');
+      expect(deleteSceneBook).toHaveBeenCalledTimes(2);
+      expect(vi.mocked(deleteSceneBook).mock.calls[1]?.[0]).toEqual(
+        vi.mocked(deleteSceneBook).mock.calls[0]?.[0],
+      );
+      expect(vi.mocked(beginBookDeletion).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(deleteSceneBook).mock.invocationCallOrder[0]!,
+      );
+      expect(deletePublicationRevisions).not.toHaveBeenCalled();
+      expect(finishBookDeletion).not.toHaveBeenCalled();
+      expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+    },
+  );
   it('falha de limpeza das cenas não executa finish legado nem apaga capítulos por cliente', async () => {
     vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
       exists: () => true,
@@ -392,6 +395,33 @@ describe('bookService', () => {
 
       const book = await getBook('inexistente');
       expect(book).toBeNull();
+    });
+
+    it('preserva marcadores e revisão narrativa na leitura e listagem de livros', async () => {
+      const stored = {
+        authorId: 'author',
+        title: 'Com narrativa',
+        wordCount: 0,
+        hasNarrativeResources: true,
+        narrativeRevision: 7,
+        createdAt: 100,
+        updatedAt: 200,
+      };
+      const snapshot = { id: 'book-narrative', exists: () => true, data: () => stored };
+      vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce(
+        snapshot as unknown as firestoreModule.DocumentSnapshot,
+      );
+      vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+        docs: [snapshot],
+      } as unknown as firestoreModule.QuerySnapshot);
+      expect(await getBook('book-narrative')).toMatchObject({
+        hasNarrativeResources: true,
+        narrativeRevision: 7,
+      });
+      expect(await listBooksByAuthor('author')).toEqual([
+        expect.objectContaining({ hasNarrativeResources: true, narrativeRevision: 7 }),
+      ]);
+      expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
     });
 
     it('cria novo livro no Firestore com status draft e wordCount zero', async () => {

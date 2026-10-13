@@ -511,3 +511,113 @@ it('aceita rótulo contextual de cena preservando prosa formatada sem gravar ao 
   expect(area).toHaveTextContent('observa o farol');
   expect(onChange).not.toHaveBeenCalled();
 });
+
+it('restaura cursor e preserva digitação ao fechar lore antes do frame atrasado de foco', async () => {
+  const originalGlobalFrame = globalThis.requestAnimationFrame;
+  const originalWindowFrame = Object.getOwnPropertyDescriptor(window, 'requestAnimationFrame');
+  const originalGlobalCancel = globalThis.cancelAnimationFrame;
+  const originalWindowCancel = Object.getOwnPropertyDescriptor(window, 'cancelAnimationFrame');
+  const frames = new Map<number, FrameRequestCallback>();
+  let frameId = 0;
+  const queueFrame = (callback: FrameRequestCallback) => {
+    frames.set(++frameId, callback);
+    return frameId;
+  };
+  const cancelFrame = (id: number) => {
+    frames.delete(id);
+  };
+  const mobile = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 Android');
+  const changed = vi.fn();
+  const initial = '<p><strong>Arthur</strong> observa o cais.</p>';
+  function LoreWorkspace() {
+    const [sidebar, setSidebar] = useState(false);
+    const [content, setContent] = useState(initial);
+    return (
+      <>
+        <RichEditor
+          content={content}
+          onChange={(value) => {
+            changed(value);
+            setContent(value);
+          }}
+          entities={entities}
+          onSelectEntity={() => setSidebar(true)}
+          isSidebarOpen={sidebar}
+          onToggleSidebar={() => setSidebar((value) => !value)}
+          aiUnavailableReason="A assistência de IA ainda não está disponível para cenas."
+        />
+        {sidebar && (
+          <aside aria-label="Ficha de lore">
+            <p>Texto da ficha de Arthur</p>
+            <button onClick={() => setSidebar(false)}>Fechar lore</button>
+          </aside>
+        )}
+      </>
+    );
+  }
+  let mounted: ReturnType<typeof render> | undefined;
+  try {
+    mounted = render(<LoreWorkspace />);
+    const area = screen.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+    const user = userEvent.setup({ delay: null });
+    selectText(area, 3, 3);
+    await user.click(screen.getByRole('button', { name: 'Ver ficha de Rei Arthur' }));
+    // jsdom does not implement native ControlEnd. A DOM range represents the
+    // user's text selection in the lore panel, which is then removed on close.
+    const panelText = screen.getByText('Texto da ficha de Arthur');
+    const range = document.createRange();
+    range.selectNodeContents(panelText);
+    const selection = window.getSelection();
+    if (!selection) throw new Error('Seleção DOM indisponível');
+    selection.removeAllRanges();
+    selection.addRange(range);
+    globalThis.requestAnimationFrame = window.requestAnimationFrame = queueFrame;
+    globalThis.cancelAnimationFrame = window.cancelAnimationFrame = cancelFrame;
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar lore' }));
+    expect(screen.queryByRole('complementary', { name: 'Ficha de lore' })).not.toBeInTheDocument();
+    expect(area).toHaveFocus();
+    expect(area.contains(selection.anchorNode)).toBe(true);
+    expect(selection.isCollapsed).toBe(true);
+    expect(changed).not.toHaveBeenCalled();
+    // Simulate the native caret move before the browser delivers selectionchange.
+    // No ProseMirror transaction is dispatched: this is the pending-event window
+    // of the real gesture, not a claim that jsdom implements native ControlEnd.
+    const walker = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
+    let endNode: Text | null = null;
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node instanceof Text && !node.parentElement?.closest('[contenteditable="false"]'))
+        endNode = node;
+    }
+    if (!endNode) throw new Error('Prosa final indisponível');
+    selection.collapse(endNode, endNode.length);
+    act(() => {
+      const pending = [...frames.values()];
+      frames.clear();
+      for (const callback of pending) callback(performance.now());
+    });
+    expect(selection.focusNode).toBe(endNode);
+    expect(selection.focusOffset).toBe(endNode.length);
+    fireEvent(document, new Event('selectionchange'));
+    await user.keyboard('LUZ');
+    await waitFor(() => expect(area).toHaveTextContent('Arthur observa o cais.LUZ'));
+    expect(area.querySelector('strong')).toHaveTextContent('Arthur');
+    expect(changed).toHaveBeenLastCalledWith('<p><strong>Arthur</strong> observa o cais.LUZ</p>');
+    await user.click(screen.getByRole('button', { name: 'Desfazer' }));
+    expect(area).toHaveTextContent('Arthur observa o cais.');
+    expect(area.querySelector('strong')).toHaveTextContent('Arthur');
+  } finally {
+    mounted?.unmount();
+    frames.clear();
+    globalThis.requestAnimationFrame = originalGlobalFrame;
+    if (originalWindowFrame)
+      Object.defineProperty(window, 'requestAnimationFrame', originalWindowFrame);
+    else Reflect.deleteProperty(window, 'requestAnimationFrame');
+    globalThis.cancelAnimationFrame = originalGlobalCancel;
+    if (originalWindowCancel)
+      Object.defineProperty(window, 'cancelAnimationFrame', originalWindowCancel);
+    else Reflect.deleteProperty(window, 'cancelAnimationFrame');
+    mobile.mockRestore();
+    window.getSelection()?.removeAllRanges();
+  }
+});

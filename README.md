@@ -15,6 +15,10 @@ Livros e aventuras recebem planejamento e texto próprio por cena no incremento
 F2-02, com arquivo/restauração, composição de capítulos/partes e backup privado v5.
 O [contrato e estado dos gates](docs/tasks/writer-v2/execucao/08-planejamento-de-cenas.md)
 registra a validação deste incremento; comércio e sessões conservam tarefas próprias.
+F2-03 acrescenta arcos, marcos e cronologia de ordem manual com datas textuais livres,
+vínculos explícitos a cenas/entidades e backup privado v6. A interface fica nas abas
+dos livros e aventuras. Este incremento está em validação; acompanhe os gates no
+[contrato de arcos e cronologia](docs/tasks/writer-v2/execucao/09-arcos-e-cronologia.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).

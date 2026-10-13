@@ -326,3 +326,35 @@ it('bloqueia saída sem rascunho local e conserva texto na página', async () =>
   await userEvent.setup().click(screen.getByRole('button', { name: 'Liberar editor' }));
   vi.restoreAllMocks();
 });
+
+it('retorno contextual conserva arco e visão do próprio projeto', async () => {
+  const returnTo =
+    '/books/book?tab=narrative&narrativeView=arcs&narrativeArc=arc&narrativeItem=milestone';
+  render(
+    <MemoryRouter initialEntries={[{ pathname: '/books/book/scenes/scene', state: { returnTo } }]}>
+      <Routes>
+        <Route path="/books/:bookId/scenes/:sceneId" element={<SceneEditorPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  const back = await screen.findByRole('link', { name: 'Voltar ao planejamento' });
+  expect(back).toHaveAttribute('href', returnTo);
+});
+it.each([
+  'https://example.com',
+  '/books/other?tab=narrative',
+  '//example.com',
+  '/books/book/scenes/private?tab=narrative',
+])('retorno %s não permite sair para origem externa/alheia', async (returnTo) => {
+  render(
+    <MemoryRouter initialEntries={[{ pathname: '/books/book/scenes/scene', state: { returnTo } }]}>
+      <Routes>
+        <Route path="/books/:bookId/scenes/:sceneId" element={<SceneEditorPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+  expect(await screen.findByRole('link', { name: 'Voltar ao planejamento' })).toHaveAttribute(
+    'href',
+    '/books/book',
+  );
+});

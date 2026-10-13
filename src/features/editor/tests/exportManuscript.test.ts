@@ -9,6 +9,7 @@ import {
   getBook,
   resolveChapterContent,
   captureSceneBookBackup,
+  captureNarrativeBookBackup,
   assertSceneBookRevision,
 } from '@/features/books';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
@@ -25,6 +26,7 @@ vi.mock('@/features/books', async () => ({
   getBook: vi.fn(),
   resolveChapterContent: vi.fn(),
   captureSceneBookBackup: vi.fn(),
+  captureNarrativeBookBackup: vi.fn(),
   assertSceneBookRevision: vi.fn(),
 }));
 vi.mock('@/features/lore', () => ({ listLoreEntities: vi.fn() }));
@@ -78,6 +80,113 @@ it('backup v5 inclui captura privada e fonte de agrupador removido', async () =>
   expect(captureSceneBookBackup).toHaveBeenCalledWith(book.id, 9);
   expect(assertSceneBookRevision).toHaveBeenCalledWith(book.id, 9);
 });
+
+it('backup v6 inclui narrativa privada mesmo em livro sem cenas, sem alterar o manuscrito', async () => {
+  const book = { ...exportBook, hasNarrativeResources: true, narrativeRevision: 8 };
+  vi.mocked(getBook).mockResolvedValue(book);
+  const narrative = {
+    schemaVersion: 1 as const,
+    projectRevision: 8,
+    sceneRevision: 0,
+    arcs: [],
+    milestones: [],
+    events: [],
+  };
+  vi.mocked(captureNarrativeBookBackup).mockResolvedValue(narrative);
+  await exportManuscript({ book, scope: 'book', format: 'json' });
+  expect(JSON.parse(await downloadedText())).toMatchObject({
+    version: 6,
+    narrative,
+    chapters: [{ content: exportChapter.content }],
+  });
+  expect(captureNarrativeBookBackup).toHaveBeenCalledWith(book.id, 8, 0, undefined);
+  expect(captureSceneBookBackup).not.toHaveBeenCalled();
+});
+
+it('backup v6 conserva captura de cenas junto dos arcos e acontecimentos', async () => {
+  const book = {
+    ...exportBook,
+    hasNarrativeResources: true,
+    narrativeRevision: 8,
+    hasSceneResources: true,
+    sceneRevision: 9,
+  };
+  vi.mocked(getBook).mockResolvedValue(book);
+  const scenes = {
+    schemaVersion: 1 as const,
+    projectRevision: 9,
+    groups: [],
+    scenes: [],
+    sources: [],
+  };
+  const narrative = {
+    schemaVersion: 1 as const,
+    projectRevision: 8,
+    sceneRevision: 9,
+    arcs: [],
+    milestones: [],
+    events: [],
+  };
+  vi.mocked(captureNarrativeBookBackup).mockResolvedValue(narrative);
+  vi.mocked(captureSceneBookBackup).mockResolvedValue(scenes);
+  await exportManuscript({ book, scope: 'book', format: 'json' });
+  expect(JSON.parse(await downloadedText())).toMatchObject({ version: 6, scenes, narrative });
+});
+
+it('criação de narrativa durante exportação legada impede baixar backup que omitiria os itens', async () => {
+  vi.mocked(getBook)
+    .mockResolvedValueOnce(exportBook)
+    .mockResolvedValueOnce({ ...exportBook, hasNarrativeResources: true, narrativeRevision: 1 });
+  await expect(
+    exportManuscript({ book: exportBook, scope: 'book', format: 'json' }),
+  ).rejects.toThrow(/mudou durante/);
+  expect(downloadExport).not.toHaveBeenCalled();
+});
+
+it('revisão narrativa alterada durante captura impede download mesmo com data igual', async () => {
+  const book = { ...exportBook, hasNarrativeResources: true, narrativeRevision: 8 };
+  vi.mocked(getBook)
+    .mockResolvedValueOnce(book)
+    .mockResolvedValueOnce({ ...book, narrativeRevision: 9 });
+  vi.mocked(captureNarrativeBookBackup).mockResolvedValue({
+    schemaVersion: 1,
+    projectRevision: 8,
+    sceneRevision: 0,
+    arcs: [],
+    milestones: [],
+    events: [],
+  });
+  await expect(exportManuscript({ book, scope: 'book', format: 'json' })).rejects.toThrow(
+    /mudou durante/,
+  );
+  expect(downloadExport).not.toHaveBeenCalled();
+});
+
+it('narrativa nova após abrir o livro exige atualizar dados antes do backup', async () => {
+  vi.mocked(getBook).mockResolvedValueOnce({
+    ...exportBook,
+    updatedAt: exportBook.updatedAt + 1,
+    hasNarrativeResources: true,
+    narrativeRevision: 1,
+  });
+  await expect(
+    exportManuscript({ book: exportBook, scope: 'book', format: 'json' }),
+  ).rejects.toThrow(/livro mudou/);
+  expect(downloadExport).not.toHaveBeenCalled();
+});
+
+it.each(['markdown', 'docx', 'pdf'] as const)(
+  'exportação %s não captura ou acrescenta planejamento privado',
+  async (format) => {
+    const book = { ...exportBook, hasNarrativeResources: true, narrativeRevision: 8 };
+    vi.mocked(getBook).mockResolvedValue(book);
+    await exportManuscript({ book, scope: 'book', format });
+    expect(captureNarrativeBookBackup).not.toHaveBeenCalled();
+    if (format === 'markdown')
+      expect(await downloadedText()).not.toMatch(/narrativeRevision|arcs|timelineEvents/);
+    else expect(format === 'pdf' ? exportPdf : exportDocx).toHaveBeenCalled();
+  },
+);
 
 it('não baixa backup parcial quando a revisão final das cenas mudou', async () => {
   const book = { ...exportBook, hasSceneResources: true, sceneRevision: 9 };

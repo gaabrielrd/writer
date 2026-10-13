@@ -18,6 +18,7 @@ import {
   decodeSceneCursor,
 } from './sceneContracts.mjs';
 import { sceneRankBetween, validSceneRank } from './sceneRanks.mjs';
+import { writeSceneLoreIndex } from './sceneLoreIndex.mjs';
 
 const stages = ['planned', 'writing', 'review', 'done'];
 const domains = {
@@ -473,6 +474,7 @@ export function createScenesService({ db, now = Date.now }) {
       }
       assertSceneEnvelope(value);
       if (body) assertSceneEnvelope(body);
+      if (referenceRef) sceneRevision((p.narrativeRevision ?? 0) + 1);
       const projectRevision = writeProject(
         tx,
         context,
@@ -485,8 +487,13 @@ export function createScenesService({ db, now = Date.now }) {
       if (body) tx.set(db.doc(`${ref.path}/body/current`), body);
       if (plan) tx.set(db.doc(`${ref.path}/planning/current`), plan);
       if (referenceRef) {
+        tx.update(context.ref, {
+          hasNarrativeResources: true,
+          narrativeRevision: (p.narrativeRevision ?? 0) + 1,
+        });
         if (data.remove) tx.delete(referenceRef);
         else tx.set(referenceRef, reference);
+        writeSceneLoreIndex(tx, db, context.path, value.id, reference, Boolean(data.remove));
       }
       for (const [id, groupValue] of next) writeGroup(tx, entries.get(id), groupValue);
       writeReceipt(tx, op, { sceneId: value.id, revision: value.revision, createdAt: timestamp });

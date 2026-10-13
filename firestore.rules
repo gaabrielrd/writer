@@ -294,6 +294,7 @@ service cloud.firestore {
       match /studioOperations/{operationId} { allow read, write: if false; }
       match /studioPreparation/{preparationId} { allow read, write: if false; }
       match /sceneOperations/{operationId} { allow read, write: if false; }
+      match /narrativeOperations/{operationId} { allow read, write: if false; }
       match /imageLibrary/{imageId} {
         allow read: if isOwner(userId);
         allow write: if false;
@@ -365,6 +366,31 @@ service cloud.firestore {
       }
       match /sceneControls/{id} { allow read, write: if false; }
       match /sceneJobs/{id} { allow read, write: if false; }
+      match /arcs/{arcId} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+        match /milestones/{id} {
+          allow get: if sceneAdventureReadable(adventureId)
+            && get(/databases/$(database)/documents/adventures/$(adventureId)/arcs/$(arcId)).data.get('deleting', false) != true;
+          allow list: if sceneAdventureReadable(adventureId) && boundedSceneList()
+            && get(/databases/$(database)/documents/adventures/$(adventureId)/arcs/$(arcId)).data.get('deleting', false) != true;
+          allow write: if false;
+        }
+      }
+      match /timelineEvents/{id} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /narrativeLinks/{id} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /{privateCollection}/{id} {
+        allow read, write: if false;
+      }
     }
 
     match /campaigns/{campaignId} {
@@ -390,6 +416,8 @@ service cloud.firestore {
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.get('hasSceneResources', false) == false
         && request.resource.data.get('sceneRevision', 0) == 0
+        && request.resource.data.get('hasNarrativeResources', false) == false
+        && request.resource.data.get('narrativeRevision', 0) == 0
         && request.resource.data.get('sceneDeletionOperationId', null) == null
         && validStudioDate(request.resource.data.get('createdAt', null))
         && validStudioDate(request.resource.data.get('updatedAt', null))
@@ -404,6 +432,8 @@ service cloud.firestore {
         && preserveBookDates()
         && request.resource.data.get('hasSceneResources', false) == resource.data.get('hasSceneResources', false)
         && request.resource.data.get('sceneRevision', 0) == resource.data.get('sceneRevision', 0)
+        && request.resource.data.get('hasNarrativeResources', false) == resource.data.get('hasNarrativeResources', false)
+        && request.resource.data.get('narrativeRevision', 0) == resource.data.get('narrativeRevision', 0)
         && request.resource.data.get('sceneDeletionOperationId', null) == resource.data.get('sceneDeletionOperationId', null)
         && validPersonaReference(request.resource.data.get('personaId', null))
         && request.resource.data.get('universeId', null) == resource.data.get('universeId', null)
@@ -417,6 +447,7 @@ service cloud.firestore {
           || existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)));
       allow delete: if isOwner(resource.data.authorId)
         && resource.data.get('hasSceneResources', false) != true
+        && resource.data.get('hasNarrativeResources', false) != true
         && resource.data.get('deleting', false) == true
         && existsAfter(/databases/$(database)/documents/deletedBooks/$(bookId))
         && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId));
@@ -464,6 +495,31 @@ service cloud.firestore {
       match /sceneControls/{id} { allow read, write: if false; }
       match /sceneJobs/{id} { allow read, write: if false; }
       match /sceneSources/{id} { allow read, write: if false; }
+      match /arcs/{arcId} {
+        allow get: if sceneBookReadable(bookId);
+        allow list: if sceneBookReadable(bookId) && boundedSceneList();
+        allow write: if false;
+        match /milestones/{id} {
+          allow get: if sceneBookReadable(bookId)
+            && get(/databases/$(database)/documents/books/$(bookId)/arcs/$(arcId)).data.get('deleting', false) != true;
+          allow list: if sceneBookReadable(bookId) && boundedSceneList()
+            && get(/databases/$(database)/documents/books/$(bookId)/arcs/$(arcId)).data.get('deleting', false) != true;
+          allow write: if false;
+        }
+      }
+      match /timelineEvents/{id} {
+        allow get: if sceneBookReadable(bookId);
+        allow list: if sceneBookReadable(bookId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /narrativeLinks/{id} {
+        allow get: if sceneBookReadable(bookId);
+        allow list: if sceneBookReadable(bookId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /narrativeControls/{id} { allow read, write: if false; }
+      match /narrativeJobs/{id} { allow read, write: if false; }
+      match /sceneLoreLinks/{id} { allow read, write: if false; }
 
       match /lore/{loreId} {
         function publicationRevoked() {

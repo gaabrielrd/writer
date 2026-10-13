@@ -5,7 +5,7 @@
 - **Plano de origem**: [F2-02 executável](../tasks/writer-v2/execucao/08-planejamento-de-cenas.md)
 - **Decisão**: [ADR 0026](../decisions/0026-scenes-and-manuscript-assembly.md)
 - **PR**: [21, em rascunho para master](https://github.com/gaabrielrd/writer/pull/21)
-- **Estado**: implementado e validado localmente; CI do novo head pendente
+- **Estado**: concluído tecnicamente em `f4449a5`; confirmação remota abaixo preserva o histórico das verificações locais
 
 ## Objetivo
 
@@ -40,7 +40,7 @@ retira da composição sem apagar conteúdo, conforme as escolhas do operador.
 - [x] Publicação não copia notas de planejamento; backup privado conserva os recursos.
 - [x] Regras reais impedem acesso alheio, writes diretos e alterações de clientes antigos.
 - [x] Validate completo verde e revisão independente sem bloqueadores.
-- [ ] CI verde no SHA deste incremento; conferir checks do PR antes de concluir tecnicamente.
+- [x] CI verde no SHA `f4449a5`; validate Node 22/24, auditoria, produção, visuais, gate E2E e regras aprovados.
 
 ## Arquivos alterados
 
@@ -140,7 +140,7 @@ aventura são agrupadores mínimos; não são sessões nem uma engine de regras.
 
 ## Limitações e pendências conhecidas
 
-- CI do incremento ainda precisa terminar antes da conclusão técnica.
+- A pendência de CI deste checkpoint foi resolvida na confirmação remota abaixo.
 - Uso real exige implantação autorizada de functions, regras e índices; não houve deploy ou merge.
 - Fonte e backup são preservados; restauração completa pertence à tarefa própria.
 - Composição que excede o orçamento público pede divisão e preserva a publicação anterior.
@@ -156,3 +156,23 @@ aventura são agrupadores mínimos; não são sessões nem uma engine de regras.
 6. Criar parte de aventura e cena própria; conferir referência global removida como indisponível.
 7. Exportar Markdown/DOCX/PDF, publicar e verificar ausência de notas; JSON v5 inclui os recursos privados.
 8. Usar claro/escuro/sépia em 320 px, abrindo editor, formulário e menus somente pelo teclado.
+
+## Confirmação remota — 2026-10-13
+
+Commit `f4449a5a64a7f082cf93d2faa6a70180f6fe0809`, no
+[PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21):
+[CI completo aprovado](https://github.com/gaabrielrd/writer/actions/runs/38431179149) e
+[regras Firestore aprovadas](https://github.com/gaabrielrd/writer/actions/runs/38431178957).
+Validate Node 22/24, auditoria, navegador de produção, três shards e gate E2E
+terminaram com sucesso. Produção executou os sete casos, todos aprovados, em 18,1 s.
+
+Dos 648 casos visuais, 635 passaram diretamente, um legado passou após retry e
+12 foram pulados conforme condições preexistentes. Os 96 novos casos de cenas
+passaram sem retry. O caso legado `desktop-dark/autocomplete-trigger.visual.ts:4`
+recebeu duas chamadas onde esperava uma; retry passou. Esta evidência não comprova
+correção dessa intermitência. Shards: 211 diretos/1 retry/4 skips em 11,9 min;
+212/4 skips em 13,8 min; 212/4 skips em 12,8 min.
+
+Os dois timeouts de recursos Google na execução local permanecem como histórico
+real. O resultado remoto conclui o portão de produção sem mudar timeout, ambiente,
+assertivas ou interceptar a rede. Não houve merge, deploy ou habilitação comercial.

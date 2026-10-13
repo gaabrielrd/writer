@@ -1,6 +1,6 @@
 # ADR 0026 — Texto próprio das cenas e composição do manuscrito
 
-- **Status:** Aceito; implementado e validado localmente, CI do incremento pendente
+- **Status:** Aceito; implementado e concluído tecnicamente em `f4449a5`, com CI e regras verdes
 - **Data:** 2026-10-13
 
 ## Contexto

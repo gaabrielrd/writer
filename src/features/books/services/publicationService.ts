@@ -274,6 +274,9 @@ export async function beginBookDeletion(bookId: string): Promise<void> {
 
 /** Retain a private ID tombstone so orphaned revisions can never be reattached. */
 export async function finishBookDeletion(bookId: string): Promise<void> {
+  const parent = await getDocFromServer(doc(firestore, 'books', bookId));
+  if (parent.exists() && (parent.data().hasSceneResources || parent.data().hasNarrativeResources))
+    throw new Error('Conclua a limpeza dos recursos do projeto no servidor.');
   const batch = writeBatch(firestore);
   batch.set(doc(firestore, 'deletedBooks', bookId), { deletedAt: serverTimestamp() });
   batch.delete(doc(firestore, 'books', bookId));

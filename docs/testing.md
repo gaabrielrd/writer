@@ -60,14 +60,14 @@ npm run test:coverage -- --maxWorkers=2
 
 A CI mantém o `validate` completo nos dois ambientes Node 22 e 24. O navegador
 de produção e a suíte visual executam em jobs separados. A suíte visual inteira
-é distribuída por três shards em paralelo, com dois workers por runner, incluindo
+é distribuída por seis shards em paralelo, com dois workers por runner, incluindo
 desktop/celular e claro/escuro/sépia. Os testes de seleção parcial pertencem à
 mesma suíte e passam a executar uma vez por projeto.
 
 Para reproduzir um dos shards, substitua o número antes da barra:
 
 ```bash
-npx playwright test -c playwright.visual.config.ts --shard=1/3
+npx playwright test -c playwright.visual.config.ts --shard=1/6
 ```
 
 Cada shard publica um blob e suas capturas/traces com nome próprio.
@@ -189,7 +189,7 @@ Os demais cenários mantêm o tempo avançando naturalmente. A opção usa a
 [API Clock do Playwright](https://playwright.dev/docs/clock).
 
 No celular, a distância para ocultar o trecho vem de sua posição real. Os seis
-projetos desse cenário pertencem à suíte completa, distribuída nos três shards
+projetos desse cenário pertencem à suíte completa, distribuída nos seis shards
 do CI. O timeout individual permanece em 45 segundos; os limites dos jobs estão
 no workflow. Não aceitar um teste passando só porque o salvamento terminou
 antes da seleção: a transição durante o gesto faz parte da regressão protegida.
@@ -213,6 +213,24 @@ isolamento, controles protegidos, orçamento e clientes antigos. A suíte visual
 `e2e/visual/scenes.visual.ts` cobre autor e criador de aventura nos três temas e
 320 px. Seus adaptadores simulam persistência e transporte; os resultados reais
 e limitações ficam no [contrato em execução](tasks/writer-v2/execucao/08-planejamento-de-cenas.md).
+
+Arcos e cronologia têm testes colocalizados em `narrative-planning`, com integração
+em livros/editor/aventuras. Cobrem campos privados, datas textuais, sequências
+independentes, vínculos paginados, CAS, comparação/retry e respostas tardias de
+outra conta. Os testes de backup conferem identidade, contagem de referências,
+revisões de narrativa/cenas, exclusão em andamento e projeção portátil sem UID/jobs.
+Troca local de universo invalida o painel antigo e preserva o arco na URL; isso
+não comprova atualização remota em tempo real sem refresh.
+
+`functions/test/narrativePlanning.test.mjs` cobre APIs/jobs e índices explícitos;
+`tests/firestore/narrativePlanning.rules.test.mjs` usa SDK Admin/regras reais,
+incluindo corrida de revisões e preparação com remoção/adição concorrentes.
+`e2e/visual/narrative-planning.visual.ts` define 16 jornadas em seis projetos:
+autor/mestre, edição, ordenação, múltiplos vínculos, entidades explícitas versus
+menção textual, exclusão/preparação/rebalance retomáveis, backup JSON v6,
+Markdown e leitor publicado sem notas privadas, teclado e 320 px.
+Adaptadores visuais continuam fictícios; autorização real é conferida no emulador.
+Resultados e limitações ficam no [contrato F2-03](tasks/writer-v2/execucao/09-arcos-e-cronologia.md).
 
 `e2e/visual/studio.visual.ts` roda oito cenários em seis projetos: três temas,
 desktop/celular, navegação/teclado em 320 px, projetos independentes, persistência

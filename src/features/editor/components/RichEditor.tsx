@@ -275,8 +275,10 @@ export function RichEditor({
     editor?.view.dom.setAttribute('aria-readonly', String(accepting));
   }, [editor, accepting]);
   useEffect(() => {
-    if (previousSidebar.current && !isSidebarOpen)
-      editor?.commands.focus(undefined, { scrollIntoView: false });
+    // This effect runs after the panel is removed. Restore focus once now:
+    // a later focus frame could overwrite the user's next native caret move.
+    if (previousSidebar.current && !isSidebarOpen && editor && !editor.isDestroyed)
+      editor.view.focus();
     previousSidebar.current = isSidebarOpen;
   }, [isSidebarOpen, editor]);
 

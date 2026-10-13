@@ -76,7 +76,11 @@
 - Vínculo de universo e criação do projeto são atômicos; exclusão confere contadores e referências de livros, aventuras e campanhas.
 - Mantenha cenas, conversão, contagens e jobs em `functions`; compare revisões observadas e preserve prosa ao remover agrupadores.
 - Componha capítulos em modo cenas somente pela prosa ativa ordenada; preserve a fonte legada e não exponha planos privados na publicação.
-- Capture revisões de cena na publicação e no backup; bloqueie escrita legada e exportação durante exclusão do projeto.
+- Capture revisões de cena na publicação e de cenas/narrativa no backup; bloqueie escrita legada e exportação durante exclusão do projeto.
+- Mantenha arcos, marcos, cronologia e jobs em `functions`; revalide a origem das referências em cada consulta.
+- Ordene arcos, marcos e eventos independentemente da composição do manuscrito.
+- Atualize referências explícitas de cenas e o índice de entidades atomicamente; não crie vínculos por detecção textual.
+- Preserve os marcadores narrativos e limpe seus filhos pelo protocolo `deleteSceneBook` antes de remover o livro.
 
 ## Rotas
 

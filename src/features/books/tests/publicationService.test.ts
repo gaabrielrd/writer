@@ -317,6 +317,16 @@ describe('publicationService', () => {
     expect(mocks.commit).toHaveBeenCalledTimes(1);
   });
 
+  it.each([{ hasSceneResources: true }, { hasNarrativeResources: true }])(
+    'finish antigo não apaga pai com recursos %j',
+    async (resources) => {
+      mocks.getBook.mockResolvedValue(snapshot({ ...originalBook, ...resources, deleting: true }));
+      await expect(finishBookDeletion('book')).rejects.toThrow(/limpeza/);
+      expect(mocks.batches).toEqual([]);
+      expect(mocks.commit).not.toHaveBeenCalled();
+    },
+  );
+
   it('marca exclusão irreversível e depois retém somente o ID apagado', async () => {
     await beginBookDeletion('book');
     await finishBookDeletion('book');

@@ -12,6 +12,13 @@ const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } =
 }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('../services/adventureService', () => ({ getAdventure: vi.fn() }));
+vi.mock('@/features/narrative-planning', () => ({
+  NarrativePlanner: ({ target }: { target: { kind: string; id: string } }) => (
+    <h2>
+      Planejamento de {target.kind}/{target.id}
+    </h2>
+  ),
+}));
 const resource: Adventure = {
   id: 'project',
   ownerId: 'owner',
@@ -32,9 +39,9 @@ beforeEach(() => {
   auth.loading = false;
   vi.mocked(getAdventure).mockResolvedValue(resource);
 });
-function tree() {
+function tree(search = '') {
   return (
-    <MemoryRouter initialEntries={['/adventures/project']}>
+    <MemoryRouter initialEntries={['/adventures/project' + search]}>
       <Routes>
         <Route path="/adventures/:adventureId" element={<AdventurePage />} />
         <Route path="/login" element={<p>Entrar na conta</p>} />
@@ -43,6 +50,25 @@ function tree() {
     </MemoryRouter>
   );
 }
+it('abre narrativa contextual da aventura e alterna por teclado sem trocar o projeto', async () => {
+  render(tree('?tab=narrative&narrativeView=timeline'));
+  expect(
+    await screen.findByRole('heading', { name: 'Planejamento de adventure/project' }),
+  ).toBeInTheDocument();
+  const narrative = screen.getByRole('tab', { name: 'Arcos e cronologia' });
+  expect(narrative).toHaveAttribute('aria-selected', 'true');
+  narrative.focus();
+  await userEvent.keyboard('{Home}');
+  expect(screen.getByRole('tab', { name: 'Cenas' })).toHaveFocus();
+  expect(
+    screen.queryByRole('heading', { name: 'Planejamento de adventure/project' }),
+  ).not.toBeInTheDocument();
+  await userEvent.keyboard('{End}');
+  expect(screen.getByRole('tab', { name: 'Arcos e cronologia' })).toHaveFocus();
+  expect(
+    screen.getByRole('heading', { name: 'Planejamento de adventure/project' }),
+  ).toBeInTheDocument();
+});
 it('abre metadados persistidos, mantém privacidade e permite retornar ao Estúdio', async () => {
   render(tree());
   expect(screen.getByText('Carregando aventura...')).toBeInTheDocument();

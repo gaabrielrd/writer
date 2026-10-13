@@ -11,6 +11,7 @@ import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createStudioService } from './studio.mjs';
 import { createScenesService } from './scenes.mjs';
+import { createNarrativePlanningService } from './narrativePlanning.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
@@ -240,6 +241,7 @@ const callable = (method, secrets = []) =>
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
         const scenes = createScenesService({ db });
+        const narrative = createNarrativePlanningService({ db });
         const loreAnalysis = createLoreAnalysisService({ db, generator: loreGenerator });
         const assisted = createAssistedBookService({
           db,
@@ -247,19 +249,21 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = scenes[method]
-          ? scenes
-          : studio[method]
-            ? studio
-            : assisted[method]
-              ? assisted
-              : loreAnalysis[method]
-                ? loreAnalysis
-                : universeService[method]
-                  ? universeService
-                  : service()[method]
-                    ? service()
-                    : createImageLibraryService({ db, assets });
+        const handler = narrative[method]
+          ? narrative
+          : scenes[method]
+            ? scenes
+            : studio[method]
+              ? studio
+              : assisted[method]
+                ? assisted
+                : loreAnalysis[method]
+                  ? loreAnalysis
+                  : universeService[method]
+                    ? universeService
+                    : service()[method]
+                      ? service()
+                      : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError)
@@ -309,6 +313,21 @@ export const deleteSceneGroup = callable('deleteSceneGroup');
 export const deleteSceneGroups = callable('deleteSceneGroups');
 export const deleteSceneBook = callable('deleteSceneBook');
 export const getSceneJob = callable('getSceneJob');
+export const getNarrativeContext = callable('getNarrativeContext');
+export const createNarrativeItem = callable('createNarrativeItem');
+export const updateNarrativeItem = callable('updateNarrativeItem');
+export const getNarrativeItem = callable('getNarrativeItem');
+export const listNarrativeItems = callable('listNarrativeItems');
+export const moveNarrativeItem = callable('moveNarrativeItem');
+export const deleteNarrativeItem = callable('deleteNarrativeItem');
+export const setNarrativeReference = callable('setNarrativeReference');
+export const listNarrativeReferences = callable('listNarrativeReferences');
+export const listNarrativeLoreOptions = callable('listNarrativeLoreOptions');
+export const listEntityScenes = callable('listEntityScenes');
+export const listEntityNarrativeItems = callable('listEntityNarrativeItems');
+export const prepareEntitySceneIndex = callable('prepareEntitySceneIndex');
+export const rebalanceNarrativeRanks = callable('rebalanceNarrativeRanks');
+export const getNarrativeJob = callable('getNarrativeJob');
 export const saveUniverseLore = callable('saveUniverseLore');
 export const deleteUniverseLore = callable('deleteUniverseLore');
 export const analyzeChapterLore = callable('analyzeChapterLore', [key]);

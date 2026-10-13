@@ -50,3 +50,14 @@ limites. Os workflows de publicação mantêm seus portões e autorizações pr�
 Não foram adicionadas dependências ou alterações de runtime do produto.
 
 Referência: [sharding e consolidação de relatórios do Playwright](https://playwright.dev/docs/test-sharding).
+
+## Revisão para F2-03 — 2026-10-13
+
+F2-02 ampliou a suíte para 648 casos; o maior dos três shards aprovados levou
+13,8 min, próximo do limite de 15 min/job. A execução de F2-03 distribui a mesma
+suíte completa em seis shards. Preserva dois workers, timeout individual de 45 s,
+limite de 15 min/job, uma retentativa, uploads isolados e gate agregado requerido.
+O benchmark histórico de três runners acima continua como evidência daquela base.
+Medir a distribuição dos novos casos e a duração remota antes de encerrar F2-03.
+O workflow Hosting conserva seu portão próprio; seu integration sem sharding em
+30 min é um risco separado e não é resolvido por esta alteração do CI.

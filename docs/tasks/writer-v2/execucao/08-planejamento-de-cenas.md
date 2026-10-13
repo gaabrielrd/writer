@@ -1,6 +1,6 @@
 # W2-F2-02 — Cenas e composição de manuscrito
 
-**Base:** `15cd417`, 2026-10-13. **Estado:** implementado e validado localmente; CI do novo head pendente.
+**Base:** `15cd417`, 2026-10-13. **Estado:** concluído tecnicamente em `f4449a5`; CI e regras verdes.
 **Dependência:** F2-01 passou no [CI completo](https://github.com/gaabrielrd/writer/actions/runs/38411066845)
 e nas [regras reais](https://github.com/gaabrielrd/writer/actions/runs/38411067039).
 **Tarefa:** [planejamento de cenas](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md).
@@ -216,3 +216,14 @@ Registro detalhado: [entrega de cenas](../../../entregas/2026-10-13-writer-v2-ce
 O [PR 21](https://github.com/gaabrielrd/writer/pull/21) conserva o incremento em
 rascunho; seus checks pertinentes condicionam a conclusão técnica. Não antecipar
 merge, deploy, piloto humano ou habilitação comercial.
+
+## Confirmação remota — 2026-10-13
+
+O SHA `f4449a5a64a7f082cf93d2faa6a70180f6fe0809` passou no
+[CI completo](https://github.com/gaabrielrd/writer/actions/runs/38431179149) e nas
+[regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/38431178957).
+Produção Chromium: 7/7. Suite visual: 635 aprovados diretamente, 1 legado de
+autocomplete aprovado após retry e 12 skips preexistentes; os 96 casos novos de
+cenas passaram sem retry. A intermitência legada continua sem correção comprovada.
+F2-02 concluído tecnicamente; os timeouts locais e as condições externas acima
+permanecem registrados, sem impedir o próximo incremento autorizado.

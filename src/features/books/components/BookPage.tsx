@@ -1,5 +1,5 @@
 import { useState, useEffect, useId, useRef } from 'react';
-import { useParams, Link, useNavigate } from 'react-router';
+import { useParams, Link, useNavigate, useSearchParams } from 'react-router';
 import {
   ArrowLeft,
   Book as BookIcon,
@@ -31,6 +31,7 @@ import { PersonaBindingDialog } from '@/features/ai-assistant';
 import { useAuth } from '@/features/auth';
 import { ExportDialog } from '@/features/editor';
 import { ScenePlanner } from '@/features/scenes';
+import { NarrativePlanner } from '@/features/narrative-planning';
 import { publishBook, unpublishBook } from '../services/publicationService';
 import { LoreTab } from '@/features/lore';
 import type { Book } from '../model/book';
@@ -41,7 +42,7 @@ import { BookFormDialog } from './BookFormDialog';
 import { ImportBookModal } from './ImportBookModal';
 import styles from './BookPage.module.css';
 
-type TabId = 'chapters' | 'scenes' | 'compendium' | 'publication';
+type TabId = 'chapters' | 'scenes' | 'narrative' | 'compendium' | 'publication';
 
 interface TabDef {
   id: TabId;
@@ -52,11 +53,12 @@ interface TabDef {
 const TABS: TabDef[] = [
   { id: 'chapters', label: 'Capítulos', icon: FileText },
   { id: 'scenes', label: 'Cenas', icon: Scroll },
+  { id: 'narrative', label: 'Arcos e cronologia', icon: Scroll },
   { id: 'compendium', label: 'Compêndio', icon: Scroll },
   { id: 'publication', label: 'Publicação', icon: Globe },
 ];
 
-export function BookPage() {
+function BookDetail() {
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -64,7 +66,15 @@ export function BookPage() {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState<boolean>(() => Boolean(bookId));
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>('chapters');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('tab');
+  const activeTab = TABS.find((tab) => tab.id === requestedTab)?.id ?? 'chapters';
+  const setActiveTab = (tab: TabId) =>
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set('tab', tab);
+      return next;
+    });
   const [isPersonaOpen, setIsPersonaOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -88,7 +98,7 @@ export function BookPage() {
       .getBook(bookId)
       .then((data) => {
         if (active) {
-          setBook(data);
+          setBook(data?.id === bookId && data.authorId === user?.uid ? data : null);
           setLoading(false);
         }
       })
@@ -102,7 +112,7 @@ export function BookPage() {
     return () => {
       active = false;
     };
-  }, [bookId]);
+  }, [bookId, user?.uid]);
   useEffect(() => {
     if (!bookId || !user?.uid || !book?.id) return;
     return bookService.subscribeWritingBindings(
@@ -122,7 +132,7 @@ export function BookPage() {
     void bookService
       .getBook(bookId)
       .then((data) => {
-        if (data) setBook(data);
+        setBook(data?.id === bookId && data.authorId === user?.uid ? data : null);
       })
       .catch((cause: unknown) => {
         setActionError(
@@ -181,7 +191,7 @@ export function BookPage() {
     return <LoadingState label="Carregando livro..." />;
   }
 
-  if (error || !book) {
+  if (error || !book || book.id !== bookId || book.authorId !== user?.uid) {
     return (
       <div className={styles.container}>
         <ErrorState
@@ -319,12 +329,34 @@ export function BookPage() {
                 key={tab.id}
                 type="button"
                 role="tab"
+                id={'book-tab-' + tab.id}
+                aria-controls="book-tab-panel"
+                tabIndex={isActive ? 0 : -1}
                 disabled={compendiumBusy}
                 aria-selected={isActive}
                 className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
                 onClick={() => {
                   setActiveTab(tab.id);
                   refreshBook();
+                }}
+                onKeyDown={(event) => {
+                  const index = TABS.findIndex((item) => item.id === tab.id);
+                  const next =
+                    event.key === 'ArrowRight'
+                      ? (index + 1) % TABS.length
+                      : event.key === 'ArrowLeft'
+                        ? (index + TABS.length - 1) % TABS.length
+                        : event.key === 'Home'
+                          ? 0
+                          : event.key === 'End'
+                            ? TABS.length - 1
+                            : null;
+                  if (next === null) return;
+                  event.preventDefault();
+                  const nextTab = TABS[next]!;
+                  setActiveTab(nextTab.id);
+                  refreshBook();
+                  document.getElementById('book-tab-' + nextTab.id)?.focus();
                 }}
               >
                 <IconComp className="icon icon-sm" aria-hidden="true" />
@@ -336,7 +368,19 @@ export function BookPage() {
         <div ref={setCompendiumActions} className={styles.tabActions} />
       </div>
 
-      <div className={styles.tabContent} role="tabpanel">
+      <div
+        className={styles.tabContent}
+        role="tabpanel"
+        id="book-tab-panel"
+        aria-labelledby={'book-tab-' + activeTab}
+      >
+        {activeTab === 'narrative' && user && (
+          <NarrativePlanner
+            key={user.uid + ':' + book.id + ':' + (book.universeId ?? 'none')}
+            target={{ kind: 'book', id: book.id }}
+            onProjectChange={refreshBook}
+          />
+        )}
         {activeTab === 'scenes' && user && (
           <ScenePlanner
             key={user.uid + ':' + book.id}
@@ -518,4 +562,10 @@ export function BookPage() {
       )}
     </div>
   );
+}
+
+export function BookPage() {
+  const { bookId } = useParams<{ bookId: string }>();
+  const { user } = useAuth();
+  return <BookDetail key={(user?.uid ?? 'anonymous') + ':' + bookId} />;
 }
