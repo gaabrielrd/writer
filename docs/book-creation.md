@@ -12,6 +12,14 @@ a criação manual com sugestões opcionais.
 
 **Criar Livro** está disponível assim que título e gênero estão preenchidos, sem atravessar sinopse ou capa. Recolher ou trocar seções preserva campos. Alterar contexto descarta sugestões pendentes; conteúdo aceito permanece. Retentativas usam ID estável. Edição usa as mesmas seções e prévia de capa; mantém gênero opcional para livros legados. Importação conserva análise e revisão e oferece metadados opcionais sob demanda.
 
+No desktop (acima de 900 px), o modal de criação usa até 960 px e apresenta
+uma prévia lateral que acompanha título, gênero, sinopse e capa. A prévia
+reutiliza a tipografia e a hierarquia dos cards da biblioteca, com capa 2:3,
+título editorial e textos limitados a três linhas. Campos vazios e imagens
+indisponíveis mostram placeholders. Sugestões de IA só entram na prévia após
+o aceite. O cabeçalho e as ações ficam visíveis enquanto o corpo rola; em telas
+menores, a prévia lateral fica oculta e o formulário conserva uma coluna.
+
 Custos aprovados: **1 crédito por sinopse aceita** e **5 por capa aceita**. Aceite repetido do mesmo ID não debita novamente. Cancelar o livro/remover resultado aceito não devolve créditos. Criação manual funciona em falha da IA ou saldo insuficiente.
 
 ## Backend e retenção

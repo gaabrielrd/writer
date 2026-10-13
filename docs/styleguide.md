@@ -46,6 +46,11 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 
 - `Button`: Variantes (`primary`, `secondary`, `outline`, `destructive`, `ghost`, `link`) e tamanhos (`sm`, `md`, `lg`, `icon`).
 - `Input`: Entrada de texto com rótulo persistente, ícones, hints/erros associados por ARIA e IDs únicos.
+- `ResizeHandle`: Divisor vertical com drag por mouse/toque, limites percentuais,
+  setas/Shift/Home/End e duplo clique para restaurar. O separador focável informa
+  valor e painel controlado por ARIA; a demonstração está em `/styleguide`.
+  Escape cancela um drag com foco no manuscrito, antes dos atalhos globais, sem
+  salvar largura parcial. Limites temporários não substituem a preferência.
 - `Textarea`: Área de texto redimensionável com feedback de validação associado por ARIA.
 - `FormSection`: Seção opcional acessível por botão, Enter/Espaço e `aria-expanded`/`aria-controls`. Mantém os campos montados ao recolher; aceita abertura controlada, descrição e bloqueio durante operações.
 - `Dropdown`: Seleção acessível (`mode="select"`) e ações (`mode="action"`), com ícones, busca opcional e tokens de tema. Veja [API e exemplos](dropdown.md).
@@ -54,6 +59,9 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 - `Card`: Agrupamento de conteúdo (`CardHeader`, `CardTitle`, `CardDescription`, `CardContent`, `CardFooter`).
 - `DropdownItem`, `DropdownLabel`: Composição dos menus de navegação e conta, preservando links e gatilhos personalizados.
 - `Tooltip`: Dicas por hover, foco e toque.
+- `SidePanelHeader`: Cabeçalho comum de painéis, com título nível 2, grupo nomeado
+  de ações, tokens semânticos e controles de 36 px (44 px em ponteiro de toque).
+  Demonstração no painel redimensionável do styleguide.
 - `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog, com altura máxima de `80vh`. Header e footer ficam visíveis; apenas `DialogBody` rola. Passe ações finais por `footer`/`actions`; botões de envio fora do formulário usam `form={id}`. Na API de composição, coloque o conteúdo entre `DialogHeader`, `DialogBody` e `DialogFooter`.
 - `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).
 - `LoadingState`, `EmptyState`, `ErrorState`: Estados padrão de ciclo de vida.
@@ -105,6 +113,9 @@ Tripo integra o aplicativo.
 - **Movimento:** entrada breve na apresentação, resposta de hover nos livros e
   abertura do painel contextual. Não há animação contínua atrás do editor.
 - **Criação de livro:** título/gênero diretamente acessíveis, sinopse/capa em seções opcionais, salvamento disponível pelos dados essenciais. Sugestões exigem aceite explícito com preço visível. Biblioteca e prévia de capa em 2:3 têm prioridade; URL é secundária. Criação manual disponível em falha da IA.
+  Acima de 900 px, o modal manual tem até 960 px e prévia lateral com a mesma
+  capa, fonte editorial do título, badge de gênero e sinopse dos cards da biblioteca.
+  A prévia acompanha apenas os dados preenchidos/aceitos e fica oculta em telas menores.
 
 Os tokens ficam em `src/styles/globals.css`; os três temas e a preferência do
 sistema continuam compartilhando um único provider. A suíte visual usa serviços
@@ -285,7 +296,53 @@ aparecem em lista de linhas clicáveis; detalhes e edição ocupam um único mod
 ativo, com header/footer fixos e corpo rolável até 80vh. O mapa de personalidade
 usa ícones Lucide, barras nativas de progresso, hierarquia de valores e extremos,
 em duas colunas no desktop e uma no celular.
-O capítulo permite herdar cada atributo ou definir seu valor. O botão **Persona**
+O capítulo permite herdar cada atributo ou definir seu valor. **Opções do capítulo → Persona**
 concentra base, complementar, biblioteca e orientações efetivas em um único modal;
 a área de escrita não contém uma faixa extra de gerenciamento. No celular,
 ações dos detalhes se organizam em duas colunas para preservar espaço de leitura.
+
+O modal contextual identifica base e complemento em cards com avatar e função.
+Barras mostram valores efetivos e badges de origem; ajustes locais ficam junto
+do atributo. Orientações completas usam `FormSection`, recolhidas inicialmente.
+No desktop acima de 900 px, o modal usa até 960 px. A biblioteca do modal
+apresenta cards com três indicadores de personalidade, duas colunas no desktop
+e uma até 600 px, preservando os modelos em uso identificados e o rodapé fixo.
+
+## Ferramentas do editor
+
+A barra do manuscrito organiza controles em grupos nomeados de formatação,
+histórico de edição e painéis. Use `Button` compartilhado, ícones Lucide,
+estado `aria-pressed`, tokens de tema e foco visível; mantenha seleção durante
+ações de formatação por ponteiro. Grupos quebram linhas quando necessário.
+Navegação entre capítulos fica em grupo próprio no cabeçalho, ao lado de status,
+contagem e tela cheia. Persona e exportação ficam em `Dropdown mode="action"`
+sob **Opções do capítulo**, com abertura de diálogo após fechar o menu e restaurar
+foco ao gatilho persistente. Todos os recursos continuam acessíveis por teclado.
+
+Assistente e Compêndio reutilizam `SidePanelHeader`; filtros/histórico ficam abaixo
+do cabeçalho e o corpo rola independentemente. O chat reserva espaço de leitura
+ao limitar a altura do composer, que tem sua própria rolagem. Em viewports baixos,
+o estado vazio reduz decoração para manter o título visível. Ações e estados
+conservam nomes acessíveis ao usar apenas ícones.
+
+O composer usa um campo com enviar/parar no canto inferior e reserva padding
+para o texto. Origem, prévia do contexto e modelo ficam abaixo. Detalhes se
+expandem em região nomeada, com rolagem própria e sem encolher até desaparecer;
+Escape recolhe a região antes de fechar o chat. O acesso ao modelo abre a aba
+Provedor da configuração de IA e conserva a origem para retorno ao editor.
+
+Modelo e raciocínio compartilham uma linha compacta; o nome do modelo pode
+truncar com tooltip, conservando o ícone e o seletor. Raciocínio usa
+`Dropdown mode="select"`, com nome acessível, escolha retomada por conversa e
+opções incompatíveis desabilitadas pela matriz do modelo. Auto permanece
+disponível. Uma preferência incompatível conserva seu nome e informa o fallback.
+
+Explique a incompatibilidade por descrição acessível e tooltip do seletor.
+Um gesto no divisor que retorna à largura inicial não altera a preferência;
+limites temporários de viewport não substituem a proporção salva.
+
+Respostas do assistente têm detalhes nativos de **Modelo e raciocínio**, com
+parâmetros solicitados/usados legíveis e quebra de linha. Conversas antigas
+identificam Auto e modelo não registrado. Não mostre chaves nem pensamentos
+internos. Retry conserva acesso após mudar preferências; regenerar indica
+que usa a configuração atual.

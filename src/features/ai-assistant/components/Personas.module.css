@@ -4,6 +4,145 @@
   gap: var(--space-4);
   min-width: 0;
 }
+.composition {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: var(--space-3);
+  min-width: 0;
+}
+.voiceCard {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 0;
+  background: hsl(var(--primary) / 0.04);
+}
+.voiceRole {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+.voiceCopy {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.voiceCopy h3 {
+  font-size: var(--text-lg);
+  font-family: var(--font-reading);
+  font-weight: 500;
+}
+.voiceCopy p,
+.bindingHelp {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+.compositionCompact .avatar,
+.compositionCompact .avatarFallback {
+  width: 40px;
+  height: 40px;
+}
+.compositionCompact .voiceCard {
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+.compositionCompact .voiceCopy h3 {
+  font-size: var(--text-base);
+}
+.profileHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.profileHeading h3 {
+  font-size: var(--text-base);
+}
+.profileHeading > span {
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+.traitSource,
+.activeVoiceBadge {
+  justify-self: start;
+  align-self: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.promptText {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+.personaList.modalPersonaList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  border: 0;
+  background: transparent;
+  overflow: visible;
+}
+.modalPersonaList li {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  background: hsl(var(--card));
+}
+.modalPersonaList .personaRow {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 16px;
+  height: 100%;
+  align-items: start;
+  gap: var(--space-3);
+}
+.modalPersonaList .avatar,
+.modalPersonaList .avatarFallback {
+  width: 56px;
+  height: 56px;
+}
+.modalPersonaList .rowCopy > span:not(.rowMeta):not(.activeVoiceBadge) {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--text-xs);
+}
+.miniProfile {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid hsl(var(--border));
+  min-width: 0;
+  width: 100%;
+}
+.miniProfile > span {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(40px, 0.65fr) 24px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+.miniProfile > span > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.miniProfile strong {
+  text-align: right;
+  color: hsl(var(--primary));
+}
 .stack h2,
 .stack h3,
 .stack p {
@@ -276,7 +415,8 @@
   color: hsl(var(--muted-foreground));
   font-size: var(--text-xs);
 }
-.visualTrait progress {
+.visualTrait progress,
+.miniProfile progress {
   appearance: none;
   border: 0;
   width: 100%;
@@ -286,14 +426,17 @@
   background: hsl(var(--muted));
   accent-color: hsl(var(--primary));
 }
-.visualTrait progress::-webkit-progress-bar {
+.visualTrait progress::-webkit-progress-bar,
+.miniProfile progress::-webkit-progress-bar {
   background: hsl(var(--muted));
 }
-.visualTrait progress::-webkit-progress-value {
+.visualTrait progress::-webkit-progress-value,
+.miniProfile progress::-webkit-progress-value {
   background: hsl(var(--primary));
   border-radius: var(--radius-full);
 }
-.visualTrait progress::-moz-progress-bar {
+.visualTrait progress::-moz-progress-bar,
+.miniProfile progress::-moz-progress-bar {
   background: hsl(var(--primary));
   border-radius: var(--radius-full);
 }
@@ -304,6 +447,8 @@
 }
 .traitScale > span {
   flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .traitScale > span:last-child {
   text-align: right;
@@ -316,6 +461,12 @@
   font-size: var(--text-xs);
 }
 @media (max-width: 600px) {
+  .personaList.modalPersonaList {
+    grid-template-columns: 1fr;
+  }
+  .modalTabs svg {
+    display: none;
+  }
   .detailActions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

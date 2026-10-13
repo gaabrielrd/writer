@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Copy, Plus, Send, Square, X } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Copy, Cpu, MoreHorizontal, Plus, Send, Square, X } from 'lucide-react';
 import {
   Alert,
   Badge,
@@ -9,9 +9,18 @@ import {
   EmptyState,
   LoadingState,
   Textarea,
+  SidePanelHeader,
 } from '@/shared/ui';
 import { useChapterChat } from '../hooks/useChapterChat';
 import { useAIConfig } from '../hooks/useAIConfig';
+import { useAISettings } from '../hooks/useAISettings';
+import {
+  DEFAULT_BYOK_CHAT_MODELS,
+  CHAT_REASONING_LABELS,
+  CHAT_REASONING_LEVELS,
+  getChatModelCapabilities,
+  type ChatReasoningLevel,
+} from '../model/chatGeneration';
 import { renderRichText } from '@/shared/lib/sanitizeRichText';
 import {
   CHAT_COMMANDS,
@@ -61,6 +70,19 @@ export function ChapterChatPanel({
 }) {
   const chat = useChapterChat(uid, bookId, chapterId);
   const config = useAIConfig();
+  const openAISettings = useAISettings();
+  const inspectorId = useId();
+  const hintId = useId();
+  const reasoningHintId = hintId + '-reasoning';
+  const modelLabel =
+    config.provider === 'firebase_ai'
+      ? chat.page.platformModel || 'Modelo da plataforma'
+      : config.customModel || DEFAULT_BYOK_CHAT_MODELS[config.provider];
+  const capabilities = getChatModelCapabilities(
+    config.provider === 'openai_byok' ? 'openai' : 'gemini',
+    config.provider === 'firebase_ai' ? chat.page.platformModel : modelLabel,
+  );
+  const reasoningUnavailable = !capabilities.levels.includes(chat.reasoning);
   const [source, setSource] = useState<ChatContextSource>('auto');
   const [pinned, setPinned] = useState<ChatContext | null>(null);
   const [inspect, setInspect] = useState(false);
@@ -159,7 +181,9 @@ export function ChapterChatPanel({
         chat.changeDraft('');
         return;
       }
-      await chat.send(await capture());
+      const context = await capture();
+      composer.current?.focus();
+      await chat.send(context);
     } catch (cause) {
       chat.setError((cause as Error).message);
     }
@@ -220,32 +244,29 @@ export function ChapterChatPanel({
   if (!open) return null;
   return (
     <aside className={styles.panel} aria-label="Painel lateral do Assistente IA">
-      <header className={styles.header}>
-        <h2>Assistente IA</h2>
-        <div className={styles.actions}>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Nova conversa"
-            disabled={running || applying}
-            onClick={() => void chat.selectConversation()}
-          >
-            <Plus className="icon icon-sm" aria-hidden="true" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Fechar painel de IA"
-            disabled={applying}
-            onClick={() => {
-              onClose();
-              bridge?.focus();
-            }}
-          >
-            <X className="icon icon-sm" aria-hidden="true" />
-          </Button>
-        </div>
-      </header>
+      <SidePanelHeader title="Assistente IA">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Nova conversa"
+          disabled={running || applying || chat.preferencesSaving}
+          onClick={() => void chat.selectConversation()}
+        >
+          <Plus className="icon icon-sm" aria-hidden="true" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Fechar painel de IA"
+          disabled={applying}
+          onClick={() => {
+            onClose();
+            bridge?.focus();
+          }}
+        >
+          <X className="icon icon-sm" aria-hidden="true" />
+        </Button>
+      </SidePanelHeader>
       <div className={styles.history}>
         <Dropdown
           mode="select"
@@ -257,12 +278,16 @@ export function ChapterChatPanel({
             label: conversation.title,
           }))}
           onValueChange={(id) => void chat.selectConversation(id)}
-          disabled={running || applying}
+          disabled={running || applying || chat.preferencesSaving}
         />
         <Dropdown
           mode="action"
           aria-label="Opções da conversa"
-          label="Opções"
+          label="Opções da conversa"
+          iconOnly
+          icon={<MoreHorizontal className="icon icon-sm" aria-hidden="true" />}
+          variant="ghost"
+          size="icon"
           disabled={!chat.page.conversation || running || applying}
           options={[{ value: 'delete', label: 'Excluir conversa', variant: 'destructive' }]}
           onAction={() => setConfirmation('delete')}
@@ -289,6 +314,7 @@ export function ChapterChatPanel({
         {chat.loading && <LoadingState label="Carregando conversas..." />}
         {!chat.loading && !chat.page.messages.length && (
           <EmptyState
+            className={styles.emptyMessage}
             title="Converse sobre este capítulo"
             description="Peça ideias, revise uma passagem ou digite / para escolher um comando."
           />
@@ -313,6 +339,25 @@ export function ChapterChatPanel({
                 ),
               }}
             />
+            {message.role === 'assistant' && (
+              <details>
+                <summary>Modelo e raciocínio</summary>
+                {message.generation ? (
+                  <>
+                    <p>
+                      Solicitado: {message.generation.requested.model || 'Modelo da plataforma'} ·{' '}
+                      {CHAT_REASONING_LABELS[message.generation.requested.reasoning]}
+                    </p>
+                    <p>
+                      Usado: {message.generation.effective.model} ·{' '}
+                      {CHAT_REASONING_LABELS[message.generation.effective.reasoning]}
+                    </p>
+                  </>
+                ) : (
+                  <p>Conversa anterior: Auto; modelo não registrado.</p>
+                )}
+              </details>
+            )}
             {message.role === 'user' && (
               <details>
                 <summary>{CHAT_CONTEXT_LABELS[message.context.source]}</summary>
@@ -377,7 +422,7 @@ export function ChapterChatPanel({
                 <Button
                   variant="ghost"
                   size="sm"
-                  disabled={running || applying}
+                  disabled={running || applying || chat.preferencesSaving}
                   onClick={() => setConfirmation(message)}
                 >
                   Editar pedido
@@ -385,8 +430,9 @@ export function ChapterChatPanel({
                 <Button
                   variant="ghost"
                   size="sm"
-                  disabled={running || applying || Boolean(unavailable)}
+                  disabled={running || applying || chat.preferencesSaving || Boolean(unavailable)}
                   onClick={() => void chat.send(message.context, message.text)}
+                  title="Gerar uma nova resposta com o modelo e raciocínio selecionados"
                 >
                   Regenerar resposta
                 </Button>
@@ -424,14 +470,15 @@ export function ChapterChatPanel({
         </Button>
       )}
       <footer className={styles.composer}>
-        {chat.error && (
-          <Alert variant="danger">
-            {chat.error}
+        {(chat.error || (chat.request.current && !running)) && (
+          <Alert variant={chat.error ? 'danger' : 'warning'}>
+            {chat.error || 'Pedido pendente. Repetir conserva a configuração original.'}
             <div className={styles.actions}>
               {chat.request.current && !running && (
                 <Button
                   variant="secondary"
                   size="sm"
+                  disabled={chat.preferencesSaving || applying}
                   onClick={() => {
                     const pending = chat.request.current!;
                     void chat.send(pending.context, pending.text, true);
@@ -447,28 +494,6 @@ export function ChapterChatPanel({
           </Alert>
         )}
         {unavailable && <Alert variant="warning">{unavailable}</Alert>}
-        <div className={styles.context}>
-          <Dropdown
-            mode="select"
-            aria-label="Origem do contexto"
-            value={source}
-            options={Object.entries(CHAT_CONTEXT_LABELS).map(([value, label]) => ({
-              value,
-              label,
-            }))}
-            onValueChange={(value) => {
-              setSource(value as ChatContextSource);
-              setPinned(null);
-            }}
-          />
-          <Button variant="ghost" size="sm" onClick={() => setInspect(true)}>
-            {pinned
-              ? 'Contexto fixado'
-              : preview
-                ? CHAT_CONTEXT_LABELS[preview.source]
-                : 'Contexto'}
-          </Button>
-        </div>
         {commands.length > 0 && (
           <div
             role="listbox"
@@ -496,116 +521,232 @@ export function ChapterChatPanel({
             ))}
           </div>
         )}
-        <Textarea
-          ref={composer}
-          label="Mensagem para o Assistente IA"
-          value={chat.draft}
-          maxLength={4000}
-          rows={3}
-          disabled={applying || chat.loading}
-          aria-controls={commands.length ? 'chapter-chat-commands' : undefined}
-          aria-activedescendant={
-            commands.length ? `chapter-chat-command-${commandIndex % commands.length}` : undefined
-          }
-          onChange={(event) => {
-            chat.changeDraft(event.target.value);
-            setDismissCommands(false);
-            setCommandIndex(0);
-          }}
-          onKeyDown={(event) => {
-            if (event.nativeEvent.isComposing) return;
-            if (commands.length && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
-              event.preventDefault();
-              setCommandIndex(
-                (value) =>
-                  (value + (event.key === 'ArrowDown' ? 1 : -1) + commands.length) %
-                  commands.length,
-              );
-              return;
+        <div className={styles.inputWell} data-chat-input-well>
+          <Textarea
+            ref={composer}
+            aria-label="Mensagem para o Assistente IA"
+            aria-describedby={hintId}
+            placeholder="Escreva uma mensagem ou digite /"
+            value={chat.draft}
+            maxLength={4000}
+            rows={3}
+            disabled={applying || chat.loading}
+            aria-controls={commands.length ? 'chapter-chat-commands' : undefined}
+            aria-activedescendant={
+              commands.length ? `chapter-chat-command-${commandIndex % commands.length}` : undefined
             }
-            if (commands.length && event.key === 'Escape') {
+            onChange={(event) => {
+              chat.changeDraft(event.target.value);
+              setDismissCommands(false);
+              setCommandIndex(0);
+            }}
+            onKeyDown={(event) => {
+              if (event.nativeEvent.isComposing) return;
+              if (commands.length && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+                event.preventDefault();
+                setCommandIndex(
+                  (value) =>
+                    (value + (event.key === 'ArrowDown' ? 1 : -1) + commands.length) %
+                    commands.length,
+                );
+                return;
+              }
+              if (commands.length && event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                setDismissCommands(true);
+                return;
+              }
+              if (event.key === 'Escape' && inspect) {
+                event.preventDefault();
+                event.stopPropagation();
+                setInspect(false);
+                return;
+              }
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                onClose();
+                bridge?.focus();
+                return;
+              }
+              if (commands.length && (event.key === 'Tab' || event.key === 'Enter')) {
+                event.preventDefault();
+                chat.changeDraft(`/${commands[commandIndex % commands.length]!.name} `);
+                setDismissCommands(true);
+                return;
+              }
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                void submit();
+              }
+            }}
+          />
+          <div className={styles.send}>
+            {running ? (
+              <Button
+                variant="secondary"
+                size="icon"
+                aria-label="Parar"
+                title="Parar geração"
+                onClick={() => void chat.stop()}
+              >
+                <Square className="icon icon-sm" aria-hidden="true" />
+              </Button>
+            ) : (
+              <Button
+                size="icon"
+                aria-label="Enviar"
+                title="Enviar mensagem (Enter)"
+                disabled={
+                  !chat.draft.trim() ||
+                  applying ||
+                  chat.loading ||
+                  chat.preferencesSaving ||
+                  Boolean(unavailable)
+                }
+                onClick={() => void submit()}
+              >
+                <Send className="icon icon-sm" aria-hidden="true" />
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className={styles.context}>
+          <Dropdown
+            mode="select"
+            aria-label="Origem do contexto"
+            value={source}
+            options={Object.entries(CHAT_CONTEXT_LABELS).map(([value, label]) => ({
+              value,
+              label,
+            }))}
+            onValueChange={(value) => {
+              setSource(value as ChatContextSource);
+              setPinned(null);
+            }}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setInspect((value) => !value)}
+            aria-expanded={inspect}
+            aria-controls={inspectorId}
+          >
+            {pinned
+              ? 'Contexto fixado'
+              : preview
+                ? CHAT_CONTEXT_LABELS[preview.source]
+                : 'Contexto'}
+          </Button>
+        </div>
+        <div className={styles.generationControls}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={styles.modelControl}
+            aria-label="Configurar modelo do assistente"
+            title={modelLabel}
+            disabled={running || applying || chat.preferencesSaving}
+            onClick={() => openAISettings('provider')}
+          >
+            <Cpu className="icon icon-sm" aria-hidden="true" />
+            <span>{modelLabel}</span>
+          </Button>
+          <Dropdown
+            mode="select"
+            size="sm"
+            aria-label="Raciocínio do assistente"
+            aria-describedby={reasoningHintId}
+            title="Níveis desabilitados são incompatíveis com o modelo selecionado."
+            value={chat.reasoning}
+            disabled={running || applying || chat.loading || chat.preferencesSaving}
+            options={CHAT_REASONING_LEVELS.map((value) => ({
+              value,
+              label: CHAT_REASONING_LABELS[value],
+              disabled: !capabilities.levels.includes(value),
+            }))}
+            onValueChange={(value) => void chat.changeReasoning(value as ChatReasoningLevel)}
+          />
+        </div>
+        <p id={reasoningHintId} className="sr-only">
+          Níveis desabilitados são incompatíveis com o modelo selecionado.
+        </p>
+        {reasoningUnavailable && (
+          <small>
+            {CHAT_REASONING_LABELS[chat.reasoning]} não é suportado por este modelo; o próximo envio
+            usará Auto.
+          </small>
+        )}
+        {inspect && (
+          <section
+            id={inspectorId}
+            className={styles.inspect}
+            aria-label="Contexto e comandos"
+            onKeyDownCapture={(event) => {
+              if (event.key !== 'Escape' || event.nativeEvent.isComposing) return;
               event.preventDefault();
               event.stopPropagation();
-              setDismissCommands(true);
-              return;
-            }
-            if (event.key === 'Escape') {
-              event.preventDefault();
-              onClose();
-              bridge?.focus();
-              return;
-            }
-            if (commands.length && (event.key === 'Tab' || event.key === 'Enter')) {
-              event.preventDefault();
-              chat.changeDraft(`/${commands[commandIndex % commands.length]!.name} `);
-              setDismissCommands(true);
-              return;
-            }
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              void submit();
-            }
-          }}
-        />
-        <div className={styles.send}>
-          <small>Conversa sem débito · {chat.draft.length}/4000</small>
-          {running ? (
-            <Button variant="secondary" onClick={() => void chat.stop()}>
-              <Square className="icon icon-sm" aria-hidden="true" />
-              Parar
-            </Button>
-          ) : (
-            <Button
-              disabled={!chat.draft.trim() || applying || chat.loading || Boolean(unavailable)}
-              onClick={() => void submit()}
-            >
-              <Send className="icon icon-sm" aria-hidden="true" />
-              Enviar
-            </Button>
-          )}
-        </div>
+              setInspect(false);
+              composer.current?.focus();
+            }}
+          >
+            <div className={styles.inspectHeader}>
+              <strong>Contexto e comandos</strong>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Recolher detalhes do contexto"
+                onClick={() => {
+                  setInspect(false);
+                  composer.current?.focus();
+                }}
+              >
+                <X className="icon icon-sm" aria-hidden="true" />
+              </Button>
+            </div>
+            <p>
+              {preview?.text || 'O capítulo está vazio. Você pode conversar sobre como começar.'}
+            </p>
+            {pinned?.truncated && <p>Contexto reduzido ao limite de 18 mil caracteres.</p>}
+            <p>
+              O envio inclui persona e lore relevante. Cada mensagem guarda a passagem utilizada.
+            </p>
+            <ul>
+              {CHAT_COMMANDS.map((command) => (
+                <li key={command.name}>
+                  <strong>/{command.name}</strong>: {command.description}
+                </li>
+              ))}
+            </ul>
+            <div className={styles.actions}>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setPinned(null);
+                  setInspect(false);
+                }}
+              >
+                Usar contexto atual
+              </Button>
+              <Button
+                onClick={() => {
+                  void capture()
+                    .then((context) => {
+                      setPinned(context);
+                      setInspect(false);
+                    })
+                    .catch((cause: Error) => chat.setError(cause.message));
+                }}
+              >
+                Fixar contexto
+              </Button>
+            </div>
+          </section>
+        )}
+        <small id={hintId}>
+          Conversa sem débito · {chat.draft.length}/4000 · Enter envia; Shift+Enter quebra linha
+        </small>
       </footer>
-      <Dialog
-        open={inspect}
-        title="Contexto e comandos"
-        onClose={() => setInspect(false)}
-        footer={
-          <>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setPinned(null);
-                setInspect(false);
-              }}
-            >
-              Usar contexto atual
-            </Button>
-            <Button
-              onClick={() => {
-                void capture()
-                  .then((context) => {
-                    setPinned(context);
-                    setInspect(false);
-                  })
-                  .catch((cause: Error) => chat.setError(cause.message));
-              }}
-            >
-              Fixar contexto
-            </Button>
-          </>
-        }
-      >
-        <p>{preview?.text || 'O capítulo está vazio. Você pode conversar sobre como começar.'}</p>
-        {pinned?.truncated && <p>Contexto reduzido ao limite de 18 mil caracteres.</p>}
-        <p>O envio inclui persona e lore relevante. Cada mensagem guarda a passagem utilizada.</p>
-        <ul>
-          {CHAT_COMMANDS.map((command) => (
-            <li key={command.name}>
-              <strong>/{command.name}</strong>: {command.description}
-            </li>
-          ))}
-        </ul>
-      </Dialog>
       <Dialog
         open={Boolean(confirmation)}
         title={confirmation === 'delete' ? 'Excluir conversa?' : 'Editar pedido?'}

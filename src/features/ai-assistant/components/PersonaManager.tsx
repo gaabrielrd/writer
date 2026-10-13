@@ -12,18 +12,25 @@ import {
   LoadingState,
   Slider,
   Textarea,
+  FormSection,
 } from '@/shared/ui';
 import {
   STANDARD_TRAITS,
   isDefaultPersona,
   validatePersona,
+  resolvePersonaProfile,
+  resolveWritingPersona,
+  PERSONA_SOURCE_LABELS,
   type AIPersona,
   type PersonaTrait,
+  type PersonaComplement,
+  type ResolvedPersonaProfile,
 } from '../model/persona';
 import { usePersonaLibrary } from '../hooks/usePersonaLibrary';
 import { savePersona } from '../services/personaService';
 import { PersonaTraitIcon, PersonaTraits } from './PersonaTraits';
 import { PersonaAvatar } from './PersonaAvatar';
+import { PersonaComposition } from './PersonaComposition';
 import styles from './Personas.module.css';
 
 export function PersonaManager({
@@ -31,11 +38,17 @@ export function PersonaManager({
   modal = false,
   onClose,
   navigation,
+  bindingContext,
 }: {
   ownerId?: string | null;
   modal?: boolean;
   onClose?: () => void;
   navigation?: ReactNode;
+  bindingContext?: {
+    bookPersonaId?: string | null;
+    complement?: PersonaComplement | null;
+    instruction: string;
+  };
 }) {
   const [selected, setSelected] = useState<AIPersona | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
@@ -105,6 +118,20 @@ export function PersonaManager({
     }
   };
   const items = personas.filter((persona) => showArchived || !persona.archived);
+  let activeProfile: ResolvedPersonaProfile | null = null;
+  let profileError: string | null = null;
+  if (bindingContext && !loading && !error) {
+    try {
+      activeProfile = resolvePersonaProfile(
+        personas,
+        bindingContext.bookPersonaId,
+        bindingContext.complement,
+      );
+    } catch (cause) {
+      profileError =
+        cause instanceof Error ? cause.message : 'Não foi possível carregar a voz deste capítulo.';
+    }
+  }
   const libraryContent = (
     <div className={styles.stack}>
       <div className={styles.actions}>
@@ -124,6 +151,8 @@ export function PersonaManager({
           Nova persona
         </Button>
       </div>
+      {activeProfile && <PersonaComposition profile={activeProfile} compact />}
+      {profileError && <Alert variant="danger">{profileError}</Alert>}
       {!ownerId && (
         <Alert variant="info">
           Entre na sua conta para criar e editar personas. Os modelos padrão estão disponíveis para
@@ -137,14 +166,17 @@ export function PersonaManager({
           action={<Button onClick={retry}>Tentar novamente</Button>}
         />
       )}
-      {ownerId && !loading && !error && personas.length === 6 && (
+      {!modal && ownerId && !loading && !error && personas.length === 6 && (
         <EmptyState
           className={styles.libraryEmpty}
           title="Você ainda não criou personas"
           description="Explore um modelo abaixo e personalize para criar sua própria voz."
         />
       )}
-      <ul className={styles.personaList} aria-label="Personas disponíveis">
+      <ul
+        className={`${styles.personaList} ${modal ? styles.modalPersonaList : ''}`}
+        aria-label="Personas disponíveis"
+      >
         {items.map((persona) => (
           <li key={persona.id}>
             <Button
@@ -170,12 +202,76 @@ export function PersonaManager({
                       : 'Sua persona'}{' '}
                   · {persona.traits.length} atributos
                 </span>
+                {activeProfile?.base?.id === persona.id && (
+                  <Badge variant="secondary" className={styles.activeVoiceBadge}>
+                    Base do livro
+                  </Badge>
+                )}
+                {activeProfile?.chapter?.id === persona.id && (
+                  <Badge variant="secondary" className={styles.activeVoiceBadge}>
+                    Complemento do capítulo
+                  </Badge>
+                )}
               </span>
               <ChevronRight className="icon icon-sm" aria-hidden="true" />
+              {modal && (
+                <span className={styles.miniProfile}>
+                  {[...persona.traits]
+                    .sort((a, b) => Math.abs(b.value - 50) - Math.abs(a.value - 50))
+                    .slice(0, 3)
+                    .map((trait) => (
+                      <span key={trait.id}>
+                        <span title={trait.name}>{trait.name}</span>
+                        <progress
+                          max={100}
+                          value={trait.value}
+                          aria-label={`${persona.name}: ${trait.name}`}
+                        />
+                        <strong>{trait.value}</strong>
+                      </span>
+                    ))}
+                </span>
+              )}
             </Button>
           </li>
         ))}
       </ul>
+      {modal && ownerId && !loading && !error && personas.length === 6 && (
+        <p className={styles.bindingHelp}>
+          Explore um modelo e personalize para criar sua própria voz.
+        </p>
+      )}
+      {activeProfile && (
+        <FormSection
+          title="Orientações efetivas"
+          description="Perfil em uso neste capítulo · consulta opcional"
+          disabled={busy}
+        >
+          <PersonaTraits
+            traits={activeProfile.traits}
+            sources={Object.fromEntries(
+              Object.entries(activeProfile.sources).map(([id, source]) => [
+                id,
+                PERSONA_SOURCE_LABELS[source],
+              ]),
+            )}
+          />
+          <FormSection
+            title="Texto completo das orientações"
+            description="Instruções enviadas à IA"
+          >
+            <p className={styles.promptText}>
+              {bindingContext?.instruction ||
+                resolveWritingPersona(
+                  personas,
+                  bindingContext?.bookPersonaId,
+                  bindingContext?.complement,
+                ).instruction ||
+                'Orientações padrão da operação.'}
+            </p>
+          </FormSection>
+        </FormSection>
+      )}
       <Button
         type="button"
         variant="ghost"
@@ -192,7 +288,7 @@ export function PersonaManager({
       <Dialog
         open={modal || Boolean(draft || selected)}
         title={draft ? 'Editar persona de IA' : (selected?.name ?? 'Persona')}
-        maxWidthClass="max-w-3xl"
+        maxWidthClass="max-w-3xl min-[901px]:max-w-[960px]"
         onClose={() => {
           if (!busy) {
             if (!draft && !selected) onClose?.();

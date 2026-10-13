@@ -2,12 +2,40 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseApp } from '@/shared/lib';
 import { getBYOKConfig } from './byokStorage';
 import { validateBYOKConfig } from '../model/byokConfig';
+import {
+  DEFAULT_BYOK_CHAT_MODELS,
+  normalizeChatGenerationRequest,
+  resolveChatGeneration,
+  chatProviderGenerationOptions,
+  CHAT_GENERATION_LIMITS,
+  type ChatReasoningLevel,
+  type ChatGenerationRequest,
+} from '../model/chatGeneration';
 import type { ChatContext, ChatMessage, ChatPage } from '../model/chapterChat';
 
 export interface ChatIdentity {
   bookId: string;
   chapterId: string;
   conversationId?: string;
+}
+export function captureChatGeneration(
+  reasoning: ChatReasoningLevel = 'auto',
+  platformModel?: string,
+): ChatGenerationRequest {
+  const config = getBYOKConfig();
+  const validation = validateBYOKConfig(config);
+  if (!validation.isValid) throw new Error(validation.error);
+  const request = normalizeChatGenerationRequest({
+    version: 1,
+    provider: config.provider === 'firebase_ai' ? 'platform' : config.provider,
+    model:
+      config.provider === 'firebase_ai'
+        ? (platformModel ?? null)
+        : config.customModel || DEFAULT_BYOK_CHAT_MODELS[config.provider],
+    reasoning,
+  });
+  if (!request) throw new Error('Configuração de geração inválida.');
+  return request;
 }
 export class ChapterChatError extends Error {
   readonly uncertain: boolean;
@@ -38,11 +66,16 @@ export const loadChapterChat = (
   identity: ChatIdentity,
   pagination: { before?: number; conversationsBefore?: number } = {},
 ) => chapterChatCall<ChatPage>(identity, { action: 'load', ...pagination });
-export const createChapterChat = (identity: ChatIdentity, title: string) =>
+export const createChapterChat = (
+  identity: ChatIdentity,
+  title: string,
+  reasoning: ChatReasoningLevel = 'auto',
+) =>
   chapterChatCall<{ id: string }>(identity, {
     action: 'create',
     conversationId: crypto.randomUUID(),
     title: title.slice(0, 120) || 'Nova conversa',
+    reasoning,
   });
 
 export async function readProviderStream(
@@ -55,6 +88,10 @@ export async function readProviderStream(
     throw new Error(`Provedor indisponível (${response.status}). Verifique a chave e a cota.`);
   const reader = response.body.getReader(),
     decoder = new TextDecoder();
+  const cancel = () => {
+    void reader.cancel().catch(() => undefined);
+  };
+  signal.addEventListener('abort', cancel, { once: true });
   let buffer = '',
     output = '',
     completed = false;
@@ -95,6 +132,7 @@ export async function readProviderStream(
     while (true) {
       signal.throwIfAborted();
       const { done, value } = await reader.read();
+      signal.throwIfAborted();
       if (done) break;
       buffer += decoder.decode(value, { stream: true });
       let end;
@@ -109,6 +147,7 @@ export async function readProviderStream(
       throw new Error('A resposta não foi concluída. Tente novamente.');
     return output;
   } finally {
+    signal.removeEventListener('abort', cancel);
     await reader.cancel().catch(() => undefined);
     reader.releaseLock();
   }
@@ -121,21 +160,34 @@ interface ChatInput {
 }
 export async function sendChapterChat(
   identity: ChatIdentity,
-  request: { requestId: string; text: string; context: ChatContext },
+  request: {
+    requestId: string;
+    text: string;
+    context: ChatContext;
+    generation?: ChatGenerationRequest;
+  },
   onChunk: (text: string) => void,
   signal: AbortSignal,
 ): Promise<ChatMessage> {
-  const config = getBYOKConfig();
-  const validation = validateBYOKConfig(config);
-  if (!validation.isValid) throw new Error(validation.error);
-  if (config.provider === 'firebase_ai') {
+  const requested = request.generation ? normalizeChatGenerationRequest(request.generation) : null;
+  if (request.generation && !requested) throw new Error('Configuração de geração inválida.');
+  const legacyProvider = requested ? null : getBYOKConfig().provider;
+  const provider =
+    requested?.provider ?? (legacyProvider === 'firebase_ai' ? 'platform' : legacyProvider);
+  const wireRequest = {
+    requestId: request.requestId,
+    text: request.text,
+    context: request.context,
+    ...(requested ? { generation: requested } : {}),
+  };
+  if (provider === 'platform') {
     const call = httpsCallable<object, ChatMessage, { text: string }>(
       getFunctions(getFirebaseApp(), 'us-central1'),
       'chapterChat',
       { timeout: 120000 },
     );
     const result = await call.stream(
-      { ...identity, ...request, action: 'send', mode: 'platform' },
+      { ...identity, ...wireRequest, action: 'send', mode: 'platform' },
       { signal },
     );
     // Consume the final promise from the outset, including stream failures.
@@ -148,7 +200,7 @@ export async function sendChapterChat(
     return final;
   }
   const started = await chapterChatCall<ChatMessage & { input?: ChatInput }>(identity, {
-    ...request,
+    ...wireRequest,
     action: 'send',
     mode: 'byok',
   });
@@ -156,16 +208,44 @@ export async function sendChapterChat(
   const { input } = started;
   const system = `${input.systemInstruction}\n${input.context.persona.instruction}`;
   const user = JSON.stringify({ context: input.context, request: input.text });
-  const openai = config.provider === 'openai_byok';
-  const model = config.customModel || (openai ? 'gpt-4o-mini' : 'gemini-3.7-flash');
+  const config = getBYOKConfig();
+  const openai = provider === 'openai_byok';
+  const model =
+    requested?.model ||
+    config.customModel ||
+    DEFAULT_BYOK_CHAT_MODELS[openai ? 'openai_byok' : 'gemini_byok'];
+  const generation =
+    started.generation ??
+    resolveChatGeneration(
+      requested ?? {
+        version: 1,
+        provider: openai ? 'openai_byok' : 'gemini_byok',
+        model,
+        reasoning: 'auto',
+      },
+    );
+  const boundedSignal = AbortSignal.any([
+    signal,
+    AbortSignal.timeout(CHAT_GENERATION_LIMITS.providerTimeoutMs),
+  ]);
   try {
+    const validation = validateBYOKConfig({
+      ...config,
+      provider: openai ? 'openai_byok' : 'gemini_byok',
+      customModel: generation.effective.model,
+    });
+    if (!validation.isValid)
+      throw new Error(
+        `Para retomar esta resposta, restaure a chave do provedor original. ${validation.error}`,
+      );
+    boundedSignal.throwIfAborted();
     const response = await fetch(
       openai
         ? 'https://api.openai.com/v1/chat/completions'
-        : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`,
+        : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(generation.effective.model)}:streamGenerateContent?alt=sse`,
       {
         method: 'POST',
-        signal,
+        signal: boundedSignal,
         headers: openai
           ? {
               'Content-Type': 'application/json',
@@ -175,9 +255,9 @@ export async function sendChapterChat(
         body: JSON.stringify(
           openai
             ? {
-                model,
+                model: generation.effective.model,
                 stream: true,
-                max_tokens: 4000,
+                ...chatProviderGenerationOptions(generation),
                 messages: [
                   { role: 'system', content: system },
                   ...input.history.map((item) => ({ role: item.role, content: item.text })),
@@ -193,7 +273,7 @@ export async function sendChapterChat(
                   })),
                   { role: 'user', parts: [{ text: user }] },
                 ],
-                generationConfig: { maxOutputTokens: 4000 },
+                generationConfig: chatProviderGenerationOptions(generation),
               },
         ),
       },
@@ -202,7 +282,7 @@ export async function sendChapterChat(
       response,
       openai ? 'openai' : 'gemini',
       onChunk,
-      signal,
+      boundedSignal,
     );
     return chapterChatCall<ChatMessage>(identity, {
       action: 'completeBYOK',
@@ -214,6 +294,8 @@ export async function sendChapterChat(
       await chapterChatCall(identity, { action: 'failBYOK', requestId: request.requestId }).catch(
         () => undefined,
       );
+    if (boundedSignal.aborted && !signal.aborted)
+      throw new Error('O provedor excedeu o limite de 90 segundos. Tente novamente.', { cause });
     throw cause;
   }
 }

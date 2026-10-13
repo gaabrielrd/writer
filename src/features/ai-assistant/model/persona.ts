@@ -267,11 +267,24 @@ export function validateComplement(value: unknown): PersonaComplement | null {
   return { personaId: complement.personaId, overrides };
 }
 
-export function resolveWritingPersona(
+export const PERSONA_SOURCE_LABELS = {
+  book: 'Livro',
+  chapter: 'Complemento',
+  override: 'Ajuste do capítulo',
+} as const;
+
+export interface ResolvedPersonaProfile {
+  base: AIPersona | null;
+  chapter: AIPersona | null;
+  traits: PersonaTrait[];
+  sources: Record<string, 'book' | 'chapter' | 'override'>;
+}
+
+export function resolvePersonaProfile(
   personas: AIPersona[],
   bookPersonaId?: string | null,
   chapterComplement?: PersonaComplement | null,
-): WritingPersonaContext {
+): ResolvedPersonaProfile {
   const find = (id: string) => {
     const persona = personas.find((item) => item.id === id);
     if (!persona)
@@ -283,21 +296,42 @@ export function resolveWritingPersona(
   const base = bookPersonaId ? find(bookPersonaId) : null;
   const complement = validateComplement(chapterComplement);
   const chapter = complement ? find(complement.personaId) : null;
-  if (!base && !chapter) return { instruction: '', version: '' };
   const traits = new Map((base?.traits ?? []).map((trait) => [trait.id, trait]));
+  const sources: ResolvedPersonaProfile['sources'] = Object.fromEntries(
+    (base?.traits ?? []).map((trait) => [trait.id, 'book']),
+  );
   if (chapter) {
     // Standard traits inherit; chapter-only custom attributes start at the complement's value.
     chapter.traits.forEach((trait) => {
-      if (!traits.has(trait.id)) traits.set(trait.id, trait);
+      if (!traits.has(trait.id)) {
+        traits.set(trait.id, trait);
+        sources[trait.id] = 'chapter';
+      }
     });
     complement!.overrides.forEach((override) => {
       const definition = chapter.traits.find((trait) => trait.id === override.traitId);
       if (!definition)
         throw new Error('Um atributo do capítulo foi removido da persona. Revise os ajustes.');
       traits.set(definition.id, { ...definition, value: override.value });
+      sources[definition.id] = 'override';
     });
   }
-  const profile = [...traits.values()]
+  return { base, chapter, traits: [...traits.values()], sources };
+}
+
+export function resolveWritingPersona(
+  personas: AIPersona[],
+  bookPersonaId?: string | null,
+  chapterComplement?: PersonaComplement | null,
+): WritingPersonaContext {
+  const { base, chapter, traits } = resolvePersonaProfile(
+    personas,
+    bookPersonaId,
+    chapterComplement,
+  );
+  const complement = validateComplement(chapterComplement);
+  if (!base && !chapter) return { instruction: '', version: '' };
+  const profile = traits
     .map(
       (trait) =>
         `- ${trait.name}: ${trait.value}/100. Significado: ${trait.description} Escala: 0 = ${trait.low}; 100 = ${trait.high}.`,
