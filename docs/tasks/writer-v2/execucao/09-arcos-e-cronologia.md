@@ -213,3 +213,30 @@ caso ficou não executado por timeout. Configuração/rede preservadas, processo
 próprios encerrados. CI do SHA novo precisa comprovar todos os checks Linux.
 A [entrega](../../../entregas/2026-10-13-writer-v2-arcos.md) registra resultados e
 pendências reais; não declarar CI ou conclusão técnica antes dos respectivos gates.
+
+## Primeiro CI e ajuste dirigido — 2026-10-13
+
+Commit `3b79591` enviado com hooks verdes. Regras, auditoria, validate Node 24 e
+produção 7/7 passaram remotamente. No [CI](https://github.com/gaabrielrd/writer/actions/runs/38450534231),
+Node 22 falhou em duas interações de PersonaManager: timeout de 5 s e possível
+digitação pendente no teste seguinte. A origem exata do caractere extra não é
+comprovada; o mecanismo de Promise não cancelada/foco atual existe no runner.
+
+O formulário não depende de pausa entre teclas. Ajuste restrito aos cinco setups
+de user-event (`delay: null`) remove macrotarefas artificiais, mantendo ações,
+assertions, timeout, runtime, cobertura e configuração global. Baseline/candidato
+passaram 5/5 em Node 24; não há reprodução local Node 22. Revisão independente
+sem bloqueadores. Repetir validate integral, documentar, registrar o ajuste no Git
+e exigir novo CI do SHA pertinente antes de avançar F2-04.
+
+Primeiro CI encerrado: seis shards e agregado verdes, 728 aprovações diretas,
+quatro após retry e 12 skips preexistentes. Três retries eram reorganização
+narrativa: captura instantânea da ordem retornou vazio antes do carregamento.
+Pré-condição de 25 itens adicionada antes da captura, sem mudar comparação final,
+dados, timeout ou retry. O quarto retry foi autocomplete legado ainda não corrigido.
+
+Validate integral após ajuste de personas verde (142 arquivos/1.196 frontend,
+77 scripts, 133 backend; cobertura 93,18/86,71/91,90/95,35). Pré-condição E2E com
+lint/formato dirigidos; 18/18 focais passaram em 43,190 s, dois workers, sem retry,
+skip ou flaky. Processos próprios encerrados.
+Não há mudança de produto. Registrar resultados e exigir CI do novo SHA.

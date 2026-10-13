@@ -172,6 +172,62 @@ conforme `retain-on-failure`. Relatórios em `writer-v2-arcos-qa/production-fina
 Processos próprios identificados encerrados e nenhum novo listener restante.
 O CI do SHA novo ainda precisa comprovar os checks Linux, inclusive o screenshot.
 
+## Primeiro CI e ajuste dirigido dos testes — 2026-10-13
+
+O incremento foi registrado/enviado em `3b79591ee95e85345f13c3e76890be3d81a31c5f`,
+com hooks ativos (pre-push: 142 arquivos/1.196 testes, typecheck verde). O
+[CI desse SHA](https://github.com/gaabrielrd/writer/actions/runs/38450534231) aprovou
+validate Node 24, auditoria e produção 7/7 em 17,3 s; as
+[regras](https://github.com/gaabrielrd/writer/actions/runs/38450533850) passaram.
+Node 22 falhou em dois testes de `PersonaManager.test.tsx`: o primeiro excedeu
+5.000 ms e o seguinte recebeu `lVoz nova` em vez de `Voz nova` (141 arquivos/
+1.194 testes aprovados, dois testes falhos). Outros shards ainda executavam
+quando esse checkpoint foi registrado; o incremento não está concluído.
+
+A implementação instalada de user-event agenda `setTimeout(0)` entre teclas.
+O formulário de personas usa campos controlados sem debounce nem contrato de
+intervalo entre caracteres. O timeout do runner rejeita o teste sem cancelar sua
+Promise de digitação, e cada tecla usa o elemento focado naquele instante. Esse
+mecanismo permite contaminação do teste seguinte; a atribuição exata do `l` do
+log permanece inferência, sem trace de input.
+
+Os cinco casos passaram a usar `userEvent.setup({ delay: null })`, conservando
+ações, teclado/slider, asserções e timeout de 5 s. Não mudou produto, configuração
+global, cobertura, skips ou retries. Baseline e candidato dirigidos passaram
+5/5 em Node 24; isso não reproduz nem comprova Node 22. Lint, formato e revisão
+independente verdes, sem P0–P2. Validate integral e novo CI ainda necessários.
+Logs externos: `writer-v2-arcos-ci-node22.log`,
+`writer-v2-persona-timers-before.log` e `writer-v2-persona-timers-after.log`.
+
+### Fechamento do primeiro CI e correções — 2026-10-13
+
+O primeiro CI terminou com falha exclusivamente no validate Node 22. Os seis
+shards e o check E2E agregado passaram: 728 visuais diretamente aprovados,
+quatro após retry e 12 skips preexistentes, totalizando os 744 casos. O maior
+shard levou 11,4 min de testes e 12 min 42 s de job, dentro dos 15 min preservados.
+
+Um retry foi o autocomplete legado desktop-dark (esperava uma chamada, recebeu
+duas), ainda sem correção comprovada. Os outros três foram a mesma jornada nova
+de reorganização em desktop-dark, desktop-light e mobile-sepia. Os logs mostram
+`Expected Array []` e os 25 eventos corretos recebidos: `allTextContents()`
+capturava a lista antes de carregar. O roteiro passou a exigir 25 itens antes
+da captura; comparação exata da ordem/data, checkpoint, lock, recarga e retomada
+permanecem. Não houve mudança de produto, timeout, retry ou dados esperados.
+Lint e formato dirigidos passaram. Rodada focal: 18/18 em 43,190 s, seis projetos
+com três repetições, dois workers, sem skips/falhas/flaky/retries. Porta e processos
+próprios confirmados encerrados. Relatórios em
+`writer-v2-arcos-qa/narrative-rebalance-ci-correction-18/`.
+
+O validate integral após o ajuste de personas terminou com exit 0: 142 arquivos/
+1.196 testes frontend, 77 scripts, 133 backend; cobertura 93,18/86,71/91,90/95,35.
+Frontend levou 130,77 s; build 2,08 s, smoke verde. A linha de pré-condição E2E
+recebeu lint/formato dirigidos depois de aplicada; o próximo CI valida o snapshot
+completo. Log: `writer-v2-arcos-ci-correction-validate.log`.
+
+As correções não alteram o produto validado pelos 312 percursos locais anteriores.
+Não repetimos as suítes de browser/regras sem mudança de produto; verificações
+dirigidas e novo CI são necessários para encerrar as falhas dos testes.
+
 ## Fora do escopo
 
 Campanhas jogáveis, calendário avançado, análise por IA, restauração integral,

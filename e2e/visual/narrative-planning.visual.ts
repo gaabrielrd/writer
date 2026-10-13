@@ -545,6 +545,7 @@ test('reorganização interrompida retoma após recarregar e mantém ordem e dat
   const planner = await openPlanner(page, adventurePath);
   await view(planner, 'Cronologia');
   const events = sequence(planner, 'evento');
+  await expect(events.locator('ol > li strong')).toHaveCount(25);
   const titles = await events.locator('ol > li strong').allTextContents();
   await page.evaluate(() =>
     sessionStorage.setItem('writer.visual.narrative-job-interrupted', 'rebalance'),
