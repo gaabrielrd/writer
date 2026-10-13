@@ -85,6 +85,26 @@ benchmarks da mesma suíte e cobertura sem processos de testes concorrentes;
 execuções com cobertura no mesmo checkout compartilham o diretório `coverage`.
 Veja a [ADR de paralelismo e sharding](decisions/0024-test-pipeline-sharding.md).
 
+## Autocomplete e navegação rápida
+
+`ai-assistant/tests/AutocompleteNavigation.test.tsx` integra editor e hook reais
+com serviços de IA/crédito simulados. Verifica que navegar após 50 ms ou no mesmo
+batch da digitação cancela a espera, conserva prosa/formatação/cursor e não debita
+crédito. Uma nova digitação gera exatamente uma sugestão. JSDOM não implementa
+esses gestos nativos: o teste entrega entrada, alteração DOM e uma notificação
+de seleção agrupada, sem comandos internos do editor. Geometria e relógio locais
+são restaurados após desmontar o componente.
+
+Escape no mesmo batch também cancela a intenção anterior, sem impedir uma nova
+digitação; composição e navegação consumida pelo menu de menções mantêm suas gates.
+
+O teste do hook também invalida uma oferta ao receber revisão nula e verifica
+que um pedido manual posterior continua disponível. O roteiro visual original
+`autocomplete-trigger.visual.ts` mantém contagens e relógio de 600 ms; suas
+repetições e o controle causal com gesto nativo são registrados na
+[entrega de arcos](entregas/2026-10-13-writer-v2-arcos.md). Um controle aprovado
+isolado não demonstra a correção de intermitência nem substitui o CI do SHA novo.
+
 ## Identidade visual
 
 `e2e/styleguide.spec.ts` protege o styleguide em duas camadas:

@@ -8,7 +8,8 @@ import { deductCredit } from '../services/creditsService';
 import { useAIConfig } from './useAIConfig';
 
 export interface UseAIAutocompleteOptions {
-  typingRevision: number;
+  // null records canceled typing; a manual request remains available.
+  typingRevision: number | null;
   writingPersona?: WritingPersonaContext;
   content: string;
   cursorPosition: number;
@@ -69,6 +70,7 @@ export function useAIAutocomplete({
     writingPersona,
   });
   const context = JSON.stringify([
+    typingRevision,
     content,
     cursorPosition,
     prompt,
@@ -142,7 +144,7 @@ export function useAIAutocomplete({
   ]);
 
   useEffect(() => {
-    const typed = lastTypingRevision.current !== typingRevision;
+    const typed = typingRevision !== null && lastTypingRevision.current !== typingRevision;
     lastTypingRevision.current = typingRevision;
     contextRef.current = context;
     controllerRef.current?.abort();

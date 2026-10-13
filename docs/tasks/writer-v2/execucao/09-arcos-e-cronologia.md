@@ -1,6 +1,6 @@
 # W2-F2-03 — Arcos e cronologia básica
 
-**Base:** `f4449a5`, 2026-10-13. **Estado:** implementado; QA completo, regras reais, validate integral final e produção local aprovados. Git e CI do incremento pendentes.
+**Base:** `f4449a5`, 2026-10-13. **Estado:** implementado; QA, regras reais, produção e validate locais aprovados. Correção de autocomplete validada localmente; CI do snapshot corrigido pendente.
 **Dependência:** F2-02 passou no [CI completo](https://github.com/gaabrielrd/writer/actions/runs/38431179149)
 e nas [regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/38431178957).
 **Tarefa:** [arcos e cronologia](../fase-02-criar-e-preparar/03-arcos-e-cronologia-basica.md).
@@ -240,3 +240,53 @@ Validate integral após ajuste de personas verde (142 arquivos/1.196 frontend,
 lint/formato dirigidos; 18/18 focais passaram em 43,190 s, dois workers, sem retry,
 skip ou flaky. Processos próprios encerrados.
 Não há mudança de produto. Registrar resultados e exigir CI do novo SHA.
+
+## Segundo CI e cancelamento de autocomplete — 2026-10-13
+
+O commit `47fe51c` passou no validate Node 22/24, auditoria, produção (7/7)
+e regras Firestore (74/74). Os 96 casos novos de planejamento narrativo passaram
+diretamente, sem retry. O [CI](https://github.com/gaabrielrd/writer/actions/runs/38453828337)
+terminou com 729 visuais diretos, dois flaky legados e 12 skips preexistentes;
+um caso legado de autocomplete desktop-sepia falhou também na repetição.
+O agregado permaneceu vermelho: F2-04 não começa antes de resolver esse gate.
+
+O pedido extra ocorreu depois da segunda digitação, seleção rápida e recolhimento
+do cursor. Os traces confirmam relógio pausado durante a digitação e só 50 ms
+virtuais antes das setas; não comprovam sozinhos o estado intermediário do editor.
+O cancelamento atual depende de uma notificação de seleção. A investigação deve
+separar seleção agrupada pelo navegador de efeito de digitação ainda pendente.
+
+Correção limitada ao contrato existente: navegação por setas/Home/End/PageUp/PageDown
+cancela a intenção de autocomplete, inclusive na borda do texto, sem consumir
+o comando nativo. Preservar composição, menu de menções e aceitação por Tab.
+Representar intenção cancelada por revisão nula, manter contador de digitação
+monotônico e impedir que efeitos posteriores rearmem uma intenção cancelada.
+Nova digitação continua gerando após 600 ms; pedidos manuais são independentes.
+
+Arquivos de implementação previstos: `RichEditor.tsx`, `useAIAutocomplete.ts`
+e testes em `ai-assistant/tests/AutocompleteNavigation.test.tsx` e
+`ai-assistant/tests/useAIAutocomplete.test.ts`.
+Manter o cenário visual original, seus tempos, contagens, retries e configuração.
+Exigir controle negativo/positivo observável, prova de gesto nativo, revisão,
+validate integral e CI do SHA corrigido. Registrar resultados reais em testing
+e na entrega deste incremento; não declarar a causa ou a correção comprovadas
+apenas por uma repetição aprovada.
+
+O controle causal nativo reprovou antes e passou depois da correção com o mesmo
+script, sem mudar dados ou asserções. Os 23 testes dirigidos também passaram;
+três regressões novas falharam antes de forma observável. Revisão identificou
+a mesma intenção pendente no Escape, que só descartava o timer atual. Incluir
+revisão nula nesse ramo e teste de Escape no mesmo batch, preservando as gates
+de composição/menções. O negativo de Escape reprovou com pedido 1, esperado 0;
+o candidato passou nos 49 testes dirigidos de editor/hook/regressões em 7,80 s.
+Revisão independente final sem P0–P2. O roteiro visual principal intacto passou
+18/18 em 58,085 s, seis projetos com três repetições, dois workers, sem retry,
+skip, flaky ou falha. Portas/processos próprios encerrados. Validate integral,
+Git e CI do SHA corrigido continuam pendentes.
+
+Validate integral do candidato final passou com exit 0: 143 arquivos/1.200 testes
+frontend, 77 scripts e 133 backend, todos sem falhas/skips. Cobertura
+93,21/86,74/91,90/95,38, limites preservados; frontend 122,46 s, build 3,36 s,
+lint/tipos/arquitetura/docs/styleguide/formato e smoke verdes. Log externo
+`writer-v2-arcos-autocomplete-validate.log`. Documentação final recebeu checagens
+dirigidas após registrar esses resultados. Registrar o candidato e exigir novo CI.

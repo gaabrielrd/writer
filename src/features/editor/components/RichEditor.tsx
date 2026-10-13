@@ -129,7 +129,8 @@ export function RichEditor({
   const menuId = useId();
   const lastContent = useRef(content);
   const typedInput = useRef(false);
-  const [typingRevision, setTypingRevision] = useState(0);
+  const typingSequence = useRef(0);
+  const [typingRevision, setTypingRevision] = useState<number | null>(null);
   const keyHandler = useRef<(event: KeyboardEvent) => boolean>(() => false);
   const expandedRef = useRef(workspaceExpanded);
   const discardRef = useRef<() => void>(() => undefined);
@@ -204,7 +205,7 @@ export function RichEditor({
         },
       },
       onUpdate: ({ editor: activeEditor }) => {
-        if (typedInput.current) setTypingRevision((value) => value + 1);
+        if (typedInput.current) setTypingRevision(++typingSequence.current);
         typedInput.current = false;
         lastContent.current = activeEditor.getHTML();
         onChange(lastContent.current);
@@ -216,6 +217,7 @@ export function RichEditor({
       onSelectionUpdate: ({ transaction }) => {
         if (transaction.docChanged) return;
         typedInput.current = false;
+        setTypingRevision(null);
         setMentionDismissed(false);
         setSelectedIndex(0);
         discardRef.current();
@@ -398,9 +400,16 @@ export function RichEditor({
         return true;
       }
       if (event.key === 'Escape') {
+        setTypingRevision(null);
         discardSuggestion();
         setHover(null);
         return Boolean(suggestion || hover);
+      }
+      if (/^(ArrowLeft|ArrowRight|ArrowUp|ArrowDown|Home|End|PageUp|PageDown)$/.test(event.key)) {
+        // Native selection notifications can coalesce a quick move out and back.
+        // Cancel the intent too, so a pending typing effect cannot rearm the timer.
+        setTypingRevision(null);
+        discardSuggestion();
       }
       return false; // StarterKit owns formatting, history and platform keyboard conventions.
     };

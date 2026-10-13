@@ -228,6 +228,72 @@ As correções não alteram o produto validado pelos 312 percursos locais anteri
 Não repetimos as suítes de browser/regras sem mudança de produto; verificações
 dirigidas e novo CI são necessários para encerrar as falhas dos testes.
 
+### Segundo CI e diagnóstico de autocomplete — 2026-10-13
+
+O snapshot `47fe51c` passou remotamente no validate Node 22/24, auditoria,
+produção (7/7 em 18,2 s) e regras Firestore (74/74, zero falhas/skips).
+Os 96 cenários narrativos passaram diretamente, sem retry. O CI completo
+falhou: 729 visuais diretos, dois flaky legados de autocomplete desktop-dark/light,
+12 skips preexistentes e autocomplete desktop-sepia reprovado nas duas tentativas.
+[Execução](https://github.com/gaabrielrd/writer/actions/runs/38453828337).
+O gate continua pendente e F2-04 não começou.
+
+Os traces mostram o relógio pausado durante a segunda digitação, 50 ms virtuais
+antes das setas e pedido extra depois de avançar 850 ms. Não registram seleção PM
+ou efeitos React; a origem exata no CI não pode ser atribuída apenas pelos traces.
+
+Diagnóstico externo conservou gestos nativos, dados, asserções e tempos do roteiro.
+Controle observador sem intervenção passou 3/3 em desktop-sepia. Controle causal
+agrupou somente a entrega de `selectionchange` enquanto o DOM selecionava “.”
+e voltava ao mesmo cursor; não alterou DOM, estado PM, pedidos ou timers.
+PM permaneceu colapsado no mesmo ponto e o debounce sobrevivente fez o pedido 2
+550 ms depois, reproduzindo a mesma asserção reprovada. Isso demonstra um mecanismo
+compatível com a falha remota, sem comprovar que todos os retries tiveram essa causa.
+Evidências externas em `writer-v2-arcos-qa/autocomplete-native-diagnostic/`,
+incluindo logs, traces e `coalesced-baseline/events.json`. O primeiro bootstrap
+externo falhou antes de executar testes por cwd incorreto; seu log foi preservado.
+Portas e processos próprios dos controles foram confirmados encerrados.
+
+O candidato cancela imediatamente a intenção de navegação e registra revisão nula,
+com contador monotônico para uma nova digitação. A revisão participa do contexto
+da oferta, impedindo aceite antigo; pedido manual posterior continua permitido.
+O mesmo controle causal passou 1/1 em 15,3 s, com script SHA256
+`C4E9AC561EC265AB4AE2100159DC9C38AE6FDAEDC4CA2B50B0100FE4DC2263CE`
+inalterado. O log demonstra timer cancelado no keydown antes da seleção DOM.
+Preservar distinção entre intervenção controlada e trace remoto sem estado PM.
+
+Baseline unitário limpo teve três regressões novas reprovadas de forma observável
+e 20 casos antigos verdes: navegação após 50 ms, navegação no mesmo batch antes
+dos efeitos passivos e invalidação da oferta com revisão nula. O candidato passou
+23/23. Revisão identificou a mesma janela no Escape; teste adicional reprovou
+antes com pedido 1, esperado 0, preservando prosa/cursor. Registrar revisão nula
+também no Escape corrigiu o caso. Rodada final passou 49/49 em quatro arquivos,
+7,80 s, incluindo editor/adapter e todas as novas regressões, sem warnings/exceções.
+Os testes simulam eventos/alteração DOM em JSDOM sem comandos internos PM;
+comprovação nativa tem evidência separada. Logs em `writer-v2-arcos-qa/`:
+`autocomplete-navigation-unit-negative-clean.log`, `autocomplete-escape-unit-negative.log`
+e `autocomplete-navigation-unit-final.log`. Tentativas anteriores de suporte
+JSDOM com geometria ausente/drain de timer e warnings foram preservadas, mas não
+contam como negativos limpos nem validação final.
+
+O roteiro visual principal, seus tempos/contagens e configuração continuam intactos.
+Rodada intacta final passou 18/18 em 58,085 s: seis projetos, três repetições,
+dois workers, retries 0, zero falhas/skips/flaky. Hash do roteiro preservado:
+`252718521CA3F0DF3DE863477A2B15E264FA6FB97BC013632BFE95D40CBC8216`.
+Relatório em `writer-v2-arcos-qa/autocomplete-final-intact-18/`.
+O bootstrap de uma rodada interrompida antes de executar casos foi preservado
+separadamente e não conta no total. Portas/processos próprios confirmados encerrados.
+Revisão final independente sem P0–P2 remanescentes. Validate integral e CI do SHA
+corrigido ainda pendentes neste checkpoint; limites, retries e timeouts preservados.
+
+Validate integral do candidato final terminou com exit 0: 143 arquivos/1.200 testes
+frontend, 77 scripts e 133 backend, sem falhas/skips. Cobertura
+93,21% statements, 86,74% branches, 91,90% functions e 95,38% linhas, limites
+mantidos. Frontend 122,46 s; build 3,36 s; arquitetura, docs, styleguide, formato,
+lint, tipos e smoke verdes. Log externo `writer-v2-arcos-autocomplete-validate.log`.
+Avisos preexistentes de bundle/importação dinâmica permanecem. A atualização final
+de evidência recebeu checagens dirigidas; Git e CI do candidato ainda necessários.
+
 ## Fora do escopo
 
 Campanhas jogáveis, calendário avançado, análise por IA, restauração integral,
@@ -238,9 +304,9 @@ pagamentos, merge e deploy. Condições humanas e comerciais permanecem nas tare
 - Fixtures comprovam interface e transporte simulado; autorização, regras e atomicidade têm evidência separada de backend/SDK.
 - Invalidação após troca de universo depende do refresh dos metadados locais; não promete atualização remota em tempo real entre abas.
 - Novas funções, regras e índices precisam de implantação autorizada para uso real.
-- CI deste incremento ainda pendente neste checkpoint; E2E local tem um skip legado por ausência da referência Windows.
+- CI `47fe51c` falhou no autocomplete legado; novo CI do candidato corrigido ainda pendente. E2E local anterior tem um skip legado por ausência da referência Windows.
 - Node local 24 com engine 22 de functions produziu aviso; validação passou. Avisos preexistentes de bundle grande/importação dinâmica permanecem.
-- Intermitência legada de autocomplete registrada em F2-02 permanece sem correção comprovada. Hosting sem sharding continua um risco separado.
+- Falha de autocomplete reproduzida em controle causal e corrigida localmente, com regressões e roteiro intacto verdes; aguarda confirmação no CI. Hosting sem sharding continua um risco separado.
 
 ## Como verificar manualmente
 
