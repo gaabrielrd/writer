@@ -4,12 +4,20 @@ import { ChapterChatPanel } from '../components/ChapterChatPanel';
 import type { ChatContext, ChatEditorBridge, ChatMessage, ChatPage } from '../model/chapterChat';
 import * as service from '../services/chapterChatService';
 import userEvent from '@testing-library/user-event';
+import * as settingsAPI from '../hooks/useAISettings';
+import * as configAPI from '../hooks/useAIConfig';
 
 vi.mock('../services/chapterChatService', () => ({
   loadChapterChat: vi.fn(),
   createChapterChat: vi.fn(),
   sendChapterChat: vi.fn(),
   chapterChatCall: vi.fn(),
+  captureChatGeneration: vi.fn(() => ({
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-3.7-flash',
+    reasoning: 'auto',
+  })),
 }));
 vi.mock('../hooks/useAIConfig', () => ({ useAIConfig: () => ({ provider: 'firebase_ai' }) }));
 const context: ChatContext = {
@@ -44,9 +52,11 @@ const assistantMessage: ChatMessage = {
 let page: ChatPage;
 const scrollTo = vi.fn();
 beforeEach(() => {
+  vi.restoreAllMocks();
   vi.clearAllMocks();
   localStorage.clear();
   page = {
+    platformModel: 'gemini-3.7-flash',
     conversation: { id: 'chat', title: 'Conversa', draft: '', updatedAt: 1 },
     conversations: [{ id: 'chat', title: 'Conversa', draft: '', updatedAt: 1 }],
     messages: [],
@@ -57,6 +67,12 @@ beforeEach(() => {
   );
   vi.mocked(service.createChapterChat).mockResolvedValue({ id: 'new-chat' });
   vi.mocked(service.chapterChatCall).mockResolvedValue({});
+  vi.mocked(service.captureChatGeneration).mockImplementation((reasoning = 'auto', model) => ({
+    version: 1,
+    provider: 'platform',
+    model: model ?? null,
+    reasoning,
+  }));
   vi.mocked(service.sendChapterChat).mockImplementation((_identity, request, chunk) => {
     chunk('Parcial');
     const message = { ...assistantMessage, id: request.requestId };
@@ -105,6 +121,190 @@ async function setup(overrides: Partial<React.ComponentProps<typeof ChapterChatP
   };
 }
 describe('chat do capítulo', () => {
+  it('retry antigo conserva a ordem do pedido enquanto a resposta está em andamento', async () => {
+    page.messages = [
+      { ...authorMessage, text: 'Pedido anterior' },
+      { ...assistantMessage, state: 'error', error: 'Falha anterior', suggestion: undefined },
+      { ...authorMessage, id: 'future-user', text: 'Pedido posterior', createdAt: 3 },
+      { ...assistantMessage, id: 'future', text: 'Resposta posterior', createdAt: 4 },
+    ];
+    localStorage.setItem(
+      'writer:chapter-chat:author:book:chapter:chat',
+      JSON.stringify({
+        draft: '',
+        request: {
+          requestId: 'request',
+          text: 'Pedido anterior',
+          context,
+          generation: {
+            version: 1,
+            provider: 'platform',
+            model: 'gemini-3.7-flash',
+            reasoning: 'auto',
+          },
+        },
+      }),
+    );
+    let finish!: (message: ChatMessage) => void;
+    vi.mocked(service.sendChapterChat).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const ui = await setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    await waitFor(() => expect(service.sendChapterChat).toHaveBeenCalledOnce());
+    const authors = screen.getAllByRole('article', { name: 'Mensagem do autor' });
+    expect(within(authors[0]!).getByText('Pedido anterior')).toBeVisible();
+    expect(within(authors[1]!).getByText('Pedido posterior')).toBeVisible();
+    expect(service.captureChatGeneration).not.toHaveBeenCalled();
+    ui.unmount();
+    await act(async () => {
+      finish(assistantMessage);
+      await Promise.resolve();
+    });
+  });
+
+  it.each([
+    ['gpt-6-luna', true],
+    ['gpt-6.1-sol', false],
+    ['modelo-desconhecido', false],
+  ] as const)('oferece apenas os níveis comprovados de %s', async (customModel, supportsNone) => {
+    vi.spyOn(configAPI, 'useAIConfig').mockReturnValue({
+      provider: 'openai_byok',
+      customModel,
+      openaiApiKey: 'chave-ficticia',
+    });
+    await setup();
+    expect(
+      screen.getByRole('combobox', { name: 'Raciocínio do assistente' }),
+    ).toHaveAccessibleDescription(
+      'Níveis desabilitados são incompatíveis com o modelo selecionado.',
+    );
+    await userEvent.click(screen.getByRole('combobox', { name: 'Raciocínio do assistente' }));
+    const none = await screen.findByRole('option', { name: 'Nenhum' });
+    if (supportsNone) expect(none).not.toHaveAttribute('aria-disabled', 'true');
+    else expect(none).toHaveAttribute('aria-disabled', 'true');
+    const max = screen.getByRole('option', { name: 'Máximo' });
+    if (customModel === 'modelo-desconhecido') expect(max).toHaveAttribute('aria-disabled', 'true');
+    else expect(max).not.toHaveAttribute('aria-disabled', 'true');
+  });
+  it('retoma conversa antiga em Auto e salva a escolha privada sem enviar ou debitar', async () => {
+    localStorage.setItem(
+      'writer:chat-reasoning:author',
+      JSON.stringify({ version: 1, reasoning: 'max' }),
+    );
+    await setup();
+    const choice = screen.getByRole('combobox', { name: 'Raciocínio do assistente' });
+    expect(choice).toHaveTextContent('Auto');
+    await userEvent.click(choice);
+    expect(await screen.findByRole('option', { name: 'Máximo' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('option', { name: 'Nenhum' })).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.click(screen.getByRole('option', { name: 'Alto' }));
+    await waitFor(() => expect(choice).toHaveTextContent('Alto'));
+    expect(service.chapterChatCall).toHaveBeenCalledWith(
+      expect.objectContaining({ conversationId: 'chat' }),
+      { action: 'preferences', reasoning: 'high' },
+    );
+    expect(service.sendChapterChat).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem('writer:chat-reasoning:author')!)).toEqual({
+      version: 1,
+      reasoning: 'high',
+    });
+  });
+  it('novas conversas usam o padrão do autor e escolhas incompatíveis preservam preferência com Auto efetivo', async () => {
+    localStorage.setItem(
+      'writer:chat-reasoning:author',
+      JSON.stringify({ version: 1, reasoning: 'max' }),
+    );
+    page.conversation = null;
+    page.conversations = [];
+    const ui = await setup();
+    expect(screen.getByRole('combobox', { name: 'Raciocínio do assistente' })).toHaveTextContent(
+      'Máximo',
+    );
+    expect(screen.getByText(/Máximo não é suportado/)).toBeVisible();
+    fireEvent.change(ui.input, { target: { value: 'Pedido para nova conversa' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
+    await waitFor(() =>
+      expect(service.createChapterChat).toHaveBeenCalledWith(
+        { bookId: 'book', chapterId: 'chapter' },
+        'Pedido para nova conversa',
+        'max',
+      ),
+    );
+  });
+  it('conserva a preferência da conversa quando falha a sincronização ou o armazenamento do padrão', async () => {
+    const ui = await setup();
+    vi.mocked(service.chapterChatCall).mockRejectedValueOnce(new Error('Serviço indisponível'));
+    const choice = screen.getByRole('combobox', { name: 'Raciocínio do assistente' });
+    await userEvent.click(choice);
+    await userEvent.click(await screen.findByRole('option', { name: 'Alto' }));
+    await screen.findByText('Serviço indisponível');
+    expect(choice).toHaveTextContent('Auto');
+    const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('Quota');
+    });
+    await userEvent.click(choice);
+    await userEvent.click(await screen.findByRole('option', { name: 'Baixo' }));
+    await screen.findByText(/Escolha salva na conversa/);
+    expect(choice).toHaveTextContent('Baixo');
+    set.mockRestore();
+    ui.unmount();
+  });
+  it('mantém enviar no campo e recolhe o contexto por Escape sem fechar o painel', async () => {
+    const ui = await setup();
+    const field = ui.input.closest<HTMLElement>('[data-chat-input-well]')!;
+    expect(within(field).getByRole('button', { name: 'Enviar' })).toBeDisabled();
+    const toggle = screen.getByRole('button', { name: 'Seleção' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    const details = await screen.findByRole('region', { name: 'Contexto e comandos' });
+    expect(toggle).toHaveAttribute('aria-controls', details.id);
+    fireEvent.keyDown(within(details).getByRole('button', { name: 'Fixar contexto' }), {
+      key: 'Escape',
+    });
+    expect(screen.queryByRole('region', { name: 'Contexto e comandos' })).toBeNull();
+    expect(ui.onClose).not.toHaveBeenCalled();
+    expect(ui.input).toHaveFocus();
+    fireEvent.click(toggle);
+    fireEvent.keyDown(ui.input, { key: 'Escape' });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(ui.onClose).not.toHaveBeenCalled();
+    fireEvent.click(toggle);
+    fireEvent.click(screen.getByRole('button', { name: 'Recolher detalhes do contexto' }));
+    expect(ui.input).toHaveFocus();
+  });
+  it.each([
+    ['gemini_byok', 'gemini-3.7-flash'],
+    ['openai_byok', 'gpt-4o-mini'],
+  ] as const)(
+    'mostra o modelo de %s e abre sua configuração sem expor chaves',
+    async (provider, model) => {
+      const config = {
+        provider,
+        geminiApiKey: 'chave-privada-de-teste',
+        openaiApiKey: 'outra-chave-de-teste',
+      };
+      const configHook = vi.spyOn(configAPI, 'useAIConfig').mockReturnValue(config);
+      const open = vi.fn();
+      vi.spyOn(settingsAPI, 'useAISettings').mockReturnValue(open);
+      const ui = await setup();
+      const control = screen.getByRole('button', { name: 'Configurar modelo do assistente' });
+      expect(control).toHaveTextContent(model);
+      expect(ui.container).not.toHaveTextContent(config.geminiApiKey);
+      expect(ui.container).not.toHaveTextContent(config.openaiApiKey);
+      fireEvent.click(control);
+      expect(open).toHaveBeenCalledExactlyOnceWith('provider');
+      configHook.mockReturnValue({ ...config, customModel: 'modelo-personalizado' });
+      ui.rerender(<ChapterChatPanel {...ui.props} />);
+      expect(control).toHaveTextContent('modelo-personalizado');
+    },
+  );
   it('oculta marcadores internos em texto parcial, resposta interrompida e cópia', async () => {
     page.messages = [
       {
@@ -142,9 +342,11 @@ describe('chat do capítulo', () => {
     await screen.findByText('Novo trecho.');
     expect(ui.bridge.capture).toHaveBeenCalledWith('chapter');
     fireEvent.click(screen.getByRole('button', { name: 'Seleção' }));
-    const dialog = await screen.findByRole('dialog', { name: 'Contexto e comandos' });
-    fireEvent.click(within(dialog).getByRole('button', { name: 'Usar contexto atual' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    const details = await screen.findByRole('region', { name: 'Contexto e comandos' });
+    fireEvent.click(within(details).getByRole('button', { name: 'Usar contexto atual' }));
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Contexto e comandos' })).toBeNull(),
+    );
     fireEvent.change(ui.input, { target: { value: '/' } });
     fireEvent.keyDown(ui.input, { key: 'ArrowDown' });
     fireEvent.keyDown(ui.input, { key: 'ArrowUp' });
@@ -263,10 +465,12 @@ describe('chat do capítulo', () => {
     await waitFor(() => expect(ui.input).toHaveValue(''));
     fireEvent.change(ui.input, { target: { value: '/ajuda ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
-    await screen.findByRole('dialog', { name: 'Contexto e comandos' });
+    await screen.findByRole('region', { name: 'Contexto e comandos' });
     expect(service.sendChapterChat).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Fixar contexto' }));
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() =>
+      expect(screen.queryByRole('region', { name: 'Contexto e comandos' })).toBeNull(),
+    );
     expect(screen.getByRole('button', { name: 'Contexto fixado' })).toBeVisible();
   });
   it('mostra comando inválido e respeita Shift+Enter e composição IME', async () => {
@@ -289,9 +493,19 @@ describe('chat do capítulo', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
     await screen.findByText('Falha de rede');
     const requestId = vi.mocked(service.sendChapterChat).mock.calls[0]![1].requestId;
+    const firstRequest = structuredClone(vi.mocked(service.sendChapterChat).mock.calls[0]![1]);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Raciocínio do assistente' }));
+    await userEvent.click(await screen.findByRole('option', { name: 'Alto' }));
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Raciocínio do assistente' })).toHaveTextContent(
+        'Alto',
+      ),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
     await screen.findByText('Novo trecho.');
     expect(vi.mocked(service.sendChapterChat).mock.calls[1]![1].requestId).toBe(requestId);
+    expect(vi.mocked(service.sendChapterChat).mock.calls[1]![1]).toEqual(firstRequest);
+    expect(service.captureChatGeneration).toHaveBeenCalledTimes(1);
   });
   it('oferece novo destino com prévia e mantém falha de aplicação sem marcar como paga', async () => {
     page.messages = [authorMessage, assistantMessage];

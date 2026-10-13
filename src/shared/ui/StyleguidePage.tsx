@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Sparkles, BookOpen, Feather, MapPin, MoreHorizontal } from 'lucide-react';
+import { Sparkles, BookOpen, Feather, MapPin, MoreHorizontal, X } from 'lucide-react';
 import {
   Button,
   Input,
@@ -24,6 +24,7 @@ import {
   TableHead,
   TableCell,
   ResizeHandle,
+  SidePanelHeader,
 } from './index';
 import { useTheme, ThemeToggle, ThemeSelect } from '../theme';
 
@@ -114,10 +115,20 @@ export function StyleguidePage() {
               onValueChange={setPanelPercent}
             />
             <div
-              className="min-w-0 p-3 bg-[hsl(var(--secondary))] rounded-lg"
+              className="min-w-0 bg-[hsl(var(--secondary))] rounded-lg"
               style={{ width: `${panelPercent}%` }}
             >
-              Painel · {panelPercent}%
+              <SidePanelHeader title="Painel">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Fechar painel de demonstração"
+                  onClick={() => setLastAction('Fechar painel de demonstração')}
+                >
+                  <X className="icon icon-sm" aria-hidden="true" />
+                </Button>
+              </SidePanelHeader>
+              <p className="p-3">Painel · {panelPercent}%</p>
             </div>
           </div>
         </Card>

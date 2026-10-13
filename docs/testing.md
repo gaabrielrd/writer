@@ -262,6 +262,38 @@ intruso e anônimo e executa aceite concorrente com transações reais no emulad
 `e2e/visual/chapter-chat.visual.ts` mede espaço compartilhado, testa comandos,
 aceite/desfazer, retomada, viewport e cancelamento nos seis projetos de tema/dispositivo.
 
+O compositor também verifica posição de enviar dentro do campo, Shift+Enter,
+contexto expansível legível em 320 px, prioridade de Escape, catálogo de comandos
+e ida/volta à aba Provedor com rascunho intacto. `AISettingsProvider.test.tsx`
+cobre seleção explícita da aba e compatibilidade do gatilho de configuração geral.
+
+O raciocínio tem contrato puro em `functions/test/chatGeneration.test.mjs`,
+preferências autenticadas em `functions/test/chapterChat.test.mjs` e padrão
+local versionado em `chatReasoningStorage.test.ts`. A interface testa Auto
+legado, níveis desabilitados por modelo, falhas e ausência de geração/débito;
+o navegador testa retomada, alternância de conversas e padrão de novas conversas.
+
+A geração verifica o corpo HTTP real para todos os níveis OpenAI disponíveis
+e Auto/Baixo/Médio/Alto Gemini, modelo/provedor congelados, limites, ausência
+de credenciais em callable/recuperação e filtragem de pensamentos. Backend testa
+fingerprint, configuração efetiva do servidor e retry após mudança de modelo,
+histórico e cronologia. `functions/test/chapterChatProvider.test.mjs` cobre
+o transporte da plataforma, truncamento, HTTP indisponível e cancelamento da
+leitura pendente. O navegador retoma detalhes de modelo/raciocínio e regenera
+com outra escolha sem alterar os parâmetros das respostas anteriores.
+
+A auditoria integrada combina workspace, chat, minimapa, seleção, personas e
+exportação em desktop/celular nos três temas, incluindo 320 px, 440 px de altura
+e 2160 px de largura. O workspace verifica Escape durante drag com foco no
+manuscrito, cancelamento com preferência temporariamente limitada e caret
+visível em parágrafo longo ao entrar/sair da tela cheia. A restauração aguarda
+o reflow inicial e os commits seguintes de ResizeObserver, sem mover seleção.
+O acompanhamento termina em 500 ms ou na primeira interação do autor; testes
+cobrem reflow tardio, interrupção e limpeza. Um gesto real de toque no Chromium
+verifica o alvo de 44 px, foco, texto e largura após autosave/reload nos três temas.
+Os testes dirigidos também conservam a largura da sessão se o armazenamento
+falhar. Use uma porta visual exclusiva ao executar em paralelo com outro checkout.
+
 ```bash
 npx playwright test --config playwright.visual.config.ts e2e/visual/editor-adjustments.visual.ts
 ```
@@ -373,3 +405,13 @@ O cenário usa somente fixtures, cobre desktop/celular nos três temas, teclado,
 retorno do foco, aviso de publicação e 320 px. A suíte visual completa continua
 protegendo capas 2:3, livro único, títulos longos, capítulos, minimapa, personas,
 importação, universos e IA. Nenhum snapshot é regenerado automaticamente.
+
+`editor-reading-position.visual.ts` verifica a passagem lida em um parágrafo
+maior que a viewport com cursor fora da área visível, na entrada e saída de tela
+cheia. Os testes do hook cobrem as APIs padrão e legada de posição textual sem
+alterar a seleção. Retry mantém a cronologia também durante a resposta otimista;
+tap e drag sem mudança conservam a preferência de largura.
+
+Relatórios e resultados gerados pelo Playwright são ignorados pelo ESLint para
+evitar leitura de arquivos temporários durante execuções paralelas. As regras
+de lint do código-fonte e os limites de cobertura permanecem os mesmos.

@@ -39,7 +39,8 @@ fora do escopo. Nenhuma dependência nova é prevista.
 - Raciocínio: Auto, Nenhum, Baixo, Médio, Alto, Muito alto e Máximo, condicionado
   às capacidades verificadas do modelo. Opções incompatíveis têm explicação.
   Máximo respeita quotas, timeout e limite de tokens da aplicação.
-- Auto resolve conforme pedido/comando e capacidades, sem trocar silenciosamente
+- Auto usa o padrão documentado do modelo ou o padrão do provedor, sem trocar
+  silenciosamente
   o modelo/provedor. Escolhas afetam o próximo envio. Cada mensagem conserva a
   configuração solicitada/efetiva. Retries preservam identidade/configuração;
   regeneração permite uma nova configuração explícita.
@@ -96,3 +97,55 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
 - Tarefa 3: divisor acessível disponível no styleguide; oito testes dirigidos e
   seis cenários reais de navegador passaram (19,2 s). `npm run validate` verde
   com 764 testes; cobertura 92,62%/86,04%/91,13%/94,71%; demais gates aprovados.
+- Tarefa 4: workspace único integrado aos dois painéis, com limites, persistência,
+  estado preservado e fallback empilhado. Onze testes dirigidos e 24 cenários de
+  navegador passaram (2,5 min); `npm run validate` verde com 775 testes.
+  Execução isolada na worktree `editor-paridade`, branch
+  `codex/editor-paridade-workspace`, para preservar o trabalho paralelo.
+- Tarefa 5: tela cheia remove os dois limites de largura e conserva instância,
+  seleção, undo, rascunho e trecho visível. Escape respeita sobreposições e funciona
+  com foco no editor; navegação entre capítulos conserva o modo e saída restaura
+  o shell. 26 testes dirigidos e 12 cenários de navegador passaram (52,1 s).
+  `npm run validate` verde com 784 testes, 69 de scripts, 73 de backend e build/smoke.
+- Tarefa 6: ferramentas divididas em formatação, histórico e painéis; navegação
+  nomeada no cabeçalho e Persona/exportação em Opções do capítulo, com foco
+  restaurado ao gatilho. 29 testes dirigidos e 42 cenários de navegador passaram
+  (2,6 min). `npm run validate` verde com 787 testes e demais gates aprovados.
+- Tarefa 7: cabeçalhos comuns, ações compactas, filtros por Button e estado vazio
+  compartilhado; corpos roláveis e área de leitura preservada em altura baixa.
+  42 testes dirigidos, 48 cenários de workspace/chat (2,5 min) e seis cenários do
+  refinamento final de estado vazio (21,9 s) passaram. `npm run validate` verde
+  com 789 testes; scripts/backend/build/smoke aprovados.
+- Tarefa 8: enviar/parar integrados ao campo, contexto expansível legível,
+  controles abaixo e acesso direto à aba Provedor com retorno/rascunho intactos.
+  27 testes dirigidos e 54 cenários de navegador passaram (2,9 min).
+  `npm run validate` verde com 795 testes; demais gates aprovados.
+- Tarefa 9: matriz única de capacidades, níveis incompatíveis desabilitados,
+  Auto legado e preferência privada por conversa/padrão versionado por autor.
+  34 testes dirigidos iniciais, 15 de backend dirigidos e a matriz visual final
+  de 60 cenários (3,6 min) passaram. `npm run validate` verde com 808 testes,
+  69 de scripts, 78 de backend e build/smoke. A ligação dos parâmetros de geração
+  pertence à tarefa 10.
+- Tarefa 10: parâmetros reais em callable/OpenAI/Gemini BYOK, snapshots sem
+  chaves e metadados solicitados/efetivos por resposta. Retry conserva modelo,
+  raciocínio, histórico e cronologia; regenerar usa nova escolha/identidade.
+  47 testes dirigidos, 24 de backend dirigidos e 66 cenários visuais (3,9 min)
+  passaram. `npm run validate` verde com 822 testes da aplicação, 69 de scripts,
+  87 de backend e build/smoke.
+- Tarefa 11: auditoria integrada de seleção, minimapa, chat, personas e exportação.
+  A matriz ampla teve 167/168 aprovações; a falha intermitente de reflow foi
+  corrigida e o workspace passou nos 54 cenários afetados. O caso de caret
+  passou em 60 repetições, dez por tema/dispositivo; três gestos reais de toque
+  passaram (17,2 s), além de 31 testes dirigidos e 48 de regras no emulador.
+  Gate definitivo verde: 826 testes da aplicação, 69 de scripts, 87 de backend
+  e build/smoke.
+- Tarefa 12: revisão final, documentação/ADR e regras do projeto realinhadas.
+  Corrigidos retry otimista fora de ordem, gesto sem mudança que substituía
+  preferência sob limite temporário e leitura com cursor fora da viewport em
+  parágrafo longo. 46 testes dirigidos e 93 cenários finais passaram (5,4 min);
+  três casos de toque foram ignorados somente nos projetos desktop. Referência
+  Linux do styleguide revisada e atualizada; sete E2E Linux passaram (20,2 s).
+  `npm run validate` verde: 831 testes da aplicação, 69 de scripts, 87 de backend,
+  cobertura 92,78%/86,26%/91,18%/94,86%, build/smoke/tipos/lint/docs aprovados.
+  Commits e PR ficam na branch isolada `codex/editor-paridade-workspace`;
+  o CI do PR confere o commit publicado. Integração e deploy são ações separadas.

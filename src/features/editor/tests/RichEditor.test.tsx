@@ -437,6 +437,46 @@ describe('RichEditor WYSIWYG', () => {
     expect(onChange).toHaveBeenLastCalledWith('<p>Era uma vez continuação segura</p>');
   });
 
+  it('libera Escape ocioso para o workspace após alternar tela cheia sem remontagem', () => {
+    const view = setup();
+    const original = view.editor;
+    view.rerender(<RichEditor {...view.props} workspaceExpanded />);
+    act(() => original.focus());
+    const idle = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      keyCode: 27,
+      bubbles: true,
+      cancelable: true,
+    });
+    fireEvent(original, idle);
+    expect(idle.defaultPrevented).toBe(false);
+    expect(screen.getByLabelText('Área de escrita do capítulo')).toBe(original);
+    expect(discard).toHaveBeenCalled();
+  });
+
+  it('consome Escape quando uma sugestão está aberta na tela cheia', () => {
+    vi.mocked(aiAssistantModule.useAIAutocomplete).mockReturnValue({
+      suggestion: 'continuação segura',
+      isLoading: false,
+      isAccepting: false,
+      error: null,
+      triggerManualAutocomplete: vi.fn(),
+      acceptSuggestion: accept,
+      discardSuggestion: discard,
+    });
+    const { editor } = setup({ workspaceExpanded: true });
+    act(() => editor.focus());
+    const key = new KeyboardEvent('keydown', {
+      key: 'Escape',
+      keyCode: 27,
+      bubbles: true,
+      cancelable: true,
+    });
+    fireEvent(editor, key);
+    expect(key.defaultPrevented).toBe(true);
+    expect(discard).toHaveBeenCalled();
+  });
+
   it('abre assistência, remove configurações da barra e descarta respostas com Escape', async () => {
     const user = userEvent.setup({ delay: null });
     const { editor } = setup();

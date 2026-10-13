@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { BookOpen, MapPin, Plus, Search, Sparkles, Tag, User, X } from 'lucide-react';
-import { Badge, Button, Input, Dropdown, Tooltip } from '@/shared/ui';
+import { Badge, Button, Input, Dropdown, Tooltip, SidePanelHeader, EmptyState } from '@/shared/ui';
 import {
   type CreateLoreEntityInput,
   type LoreCategory,
@@ -120,44 +120,33 @@ export function EditorLoreSidebar({
 
   return (
     <aside className={styles.sidebar} aria-label="Painel lateral do Compêndio de Lore">
-      <div className={styles.header}>
-        <div className={styles.headerTitleRow}>
-          <h3 className={styles.title}>Compêndio</h3>
-          <div className={styles.headerActions}>
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleOpenCreate}
-              aria-label="Nova Entidade"
-            >
-              <Plus className="icon icon-sm" aria-hidden="true" />
-              Nova
-            </Button>
-            {onAnalyzeText && (
-              <Tooltip content="Atualizar compêndio com base no texto">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={styles.iconAction}
-                  onClick={onAnalyzeText}
-                  aria-label="Atualizar compêndio com base no texto"
-                >
-                  <Sparkles className="icon icon-sm" aria-hidden="true" />
-                </Button>
-              </Tooltip>
-            )}
+      <SidePanelHeader title="Compêndio">
+        <Button variant="ghost" size="icon" onClick={handleOpenCreate} aria-label="Nova Entidade">
+          <Plus className="icon icon-sm" aria-hidden="true" />
+        </Button>
+        {onAnalyzeText && (
+          <Tooltip content="Atualizar compêndio com base no texto">
             <Button
               variant="ghost"
               size="icon"
-              className={styles.iconAction}
-              onClick={onClose}
-              aria-label="Fechar painel de lore"
+
+              onClick={onAnalyzeText}
+              aria-label="Atualizar compêndio com base no texto"
             >
-              <X className="icon icon-sm" aria-hidden="true" />
+              <Sparkles className="icon icon-sm" aria-hidden="true" />
             </Button>
-          </div>
-        </div>
-      </div>
+          </Tooltip>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+
+          onClick={onClose}
+          aria-label="Fechar painel de lore"
+        >
+          <X className="icon icon-sm" aria-hidden="true" />
+        </Button>
+      </SidePanelHeader>
 
       <div className={styles.controls}>
         <Input
@@ -170,38 +159,46 @@ export function EditorLoreSidebar({
 
         <div className={styles.actionsRow}>
           <div className={styles.categoryFilters} role="group" aria-label="Categorias do compêndio">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
               className={`${styles.filterChip} ${selectedCategory === 'all' ? styles.filterChipActive : ''}`}
               onClick={() => setSelectedCategory('all')}
               aria-pressed={selectedCategory === 'all'}
             >
               Todos
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
               className={`${styles.filterChip} ${selectedCategory === 'character' ? styles.filterChipActive : ''}`}
               onClick={() => setSelectedCategory('character')}
               aria-pressed={selectedCategory === 'character'}
             >
               Personagens
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
               className={`${styles.filterChip} ${selectedCategory === 'location' ? styles.filterChipActive : ''}`}
               onClick={() => setSelectedCategory('location')}
               aria-pressed={selectedCategory === 'location'}
             >
               Locais
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
               className={`${styles.filterChip} ${selectedCategory === 'concept' ? styles.filterChipActive : ''}`}
               onClick={() => setSelectedCategory('concept')}
               aria-pressed={selectedCategory === 'concept'}
             >
               Conceitos
-            </button>
+            </Button>
           </div>
         </div>
         {universeId && (
@@ -223,10 +220,11 @@ export function EditorLoreSidebar({
 
       <div className={styles.entityList}>
         {filteredEntities.length === 0 ? (
-          <div className={styles.emptyState}>
-            <Search className="icon" aria-hidden="true" />
-            <p className={styles.emptyText}>Nenhuma entidade encontrada.</p>
-          </div>
+          <EmptyState
+            title="Nenhuma entidade encontrada."
+            description="Ajuste a busca ou crie uma entidade para o compêndio."
+            icon={<Search className="icon" aria-hidden="true" />}
+          />
         ) : (
           filteredEntities.map((entity) => {
             const isTarget = entity.id === selectedEntityId;

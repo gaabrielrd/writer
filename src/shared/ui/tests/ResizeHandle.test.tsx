@@ -62,6 +62,49 @@ afterEach(() => {
 });
 
 describe('divisor redimensionável', () => {
+  it.each([false, true])(
+    'um gesto sem alteração final não grava a largura (movimento: %s)',
+    (move) => {
+      const { handle } = setup();
+      fireEvent.pointerDown(handle, { clientX: 600, button: 0 });
+      if (move) fireEvent.pointerMove(handle, { clientX: 500 });
+      fireEvent.pointerUp(handle, { clientX: 600 });
+      expect(handle).toHaveAttribute('aria-valuenow', '40');
+      expect(committed).not.toHaveBeenCalled();
+    },
+  );
+
+  it('Escape no manuscrito cancela drag antes dos atalhos globais e libera o atalho depois', () => {
+    const { handle } = setup();
+    const text = screen.getByRole('textbox');
+    text.focus();
+    const range = document.createRange();
+    range.selectNodeContents(text);
+    window.getSelection()!.removeAllRanges();
+    window.getSelection()!.addRange(range);
+    const globalEscape = vi.fn();
+    document.addEventListener('keydown', globalEscape);
+    try {
+      fireEvent.pointerDown(handle, { clientX: 600, button: 0 });
+      fireEvent.pointerMove(handle, { clientX: 500 });
+      fireEvent.keyDown(text, { key: 'Escape', isComposing: true });
+      expect(handle).toHaveAttribute('data-dragging', 'true');
+      globalEscape.mockClear();
+      fireEvent.keyDown(text, { key: 'Escape' });
+      expect(handle).toHaveAttribute('aria-valuenow', '40');
+      expect(handle).not.toHaveAttribute('data-dragging');
+      expect(globalEscape).not.toHaveBeenCalled();
+      expect(committed).not.toHaveBeenCalled();
+      expect(text).toHaveFocus();
+      expect(window.getSelection()!.toString()).toBe('Meu texto');
+      fireEvent.pointerUp(handle, { clientX: 500 });
+      fireEvent.keyDown(text, { key: 'Escape' });
+      expect(globalEscape).toHaveBeenCalledOnce();
+    } finally {
+      document.removeEventListener('keydown', globalEscape);
+    }
+  });
+
   it('expõe orientação, valor, limites e painel controlado', () => {
     const { handle } = setup();
     expect(handle).toHaveAttribute('aria-orientation', 'vertical');
@@ -107,7 +150,7 @@ describe('divisor redimensionável', () => {
     expect(committed).not.toHaveBeenCalled();
     fireEvent.pointerMove(handle, { pointerId: 2, clientX: 0 });
     expect(handle).toHaveAttribute('aria-valuenow', '60');
-    fireEvent.pointerUp(handle, { pointerId: 2 });
+    fireEvent.pointerUp(handle, { pointerId: 2, clientX: 0 });
     expect(capture).toHaveBeenCalledWith(2);
     expect(release).toHaveBeenCalledWith(2);
     expect(committed).toHaveBeenCalledExactlyOnceWith(60);
@@ -147,8 +190,17 @@ describe('divisor redimensionável', () => {
     expect(capture).toHaveBeenCalledTimes(1);
     fireEvent.pointerMove(handle, { pointerId: 1, clientX: 700 });
     expect(handle).toHaveAttribute('aria-valuenow', '30');
-    fireEvent.pointerUp(handle, { pointerId: 1 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 700 });
     expect(committed).toHaveBeenCalledExactlyOnceWith(30);
+  });
+
+  it('confirma a posição final mesmo se o último movimento não for entregue', () => {
+    const { handle } = setup();
+    fireEvent.pointerDown(handle, { pointerId: 1, clientX: 600, button: 0 });
+    fireEvent.pointerMove(handle, { pointerId: 1, clientX: 550 });
+    fireEvent.pointerUp(handle, { pointerId: 1, clientX: 500 });
+    expect(handle).toHaveAttribute('aria-valuenow', '50');
+    expect(committed).toHaveBeenCalledExactlyOnceWith(50);
   });
 
   it('ignora drag quando a largura ainda não pode ser medida', () => {

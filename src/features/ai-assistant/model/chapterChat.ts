@@ -1,5 +1,6 @@
 import type { LoreContextItem } from './aiPrompt';
 import type { WritingPersonaContext } from './persona';
+import type { ChatReasoningLevel, ChatGeneration } from './chatGeneration';
 
 export type ChatContextSource = 'auto' | 'selection' | 'cursor' | 'viewport' | 'chapter';
 export interface ChatTarget {
@@ -29,12 +30,14 @@ export interface ChatMessage {
   provider?: 'platform' | 'byok';
   paid?: boolean;
   error?: string;
+  generation?: ChatGeneration;
 }
 export interface ChatConversation {
   id: string;
   title: string;
   updatedAt: number;
   draft: string;
+  reasoning?: ChatReasoningLevel;
 }
 export interface ChatPage {
   conversations: ChatConversation[];
@@ -42,6 +45,7 @@ export interface ChatPage {
   conversation: ChatConversation | null;
   before: number | null;
   moreConversations?: boolean;
+  platformModel?: string;
 }
 export interface ChatEditorBridge {
   capture(this: void, source: ChatContextSource): Promise<ChatContext>;

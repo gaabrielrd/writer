@@ -35,6 +35,39 @@ test('histórico conserva pedidos e prosa sugerida, excluindo turnos incompletos
   );
   assert.match(inputs[1].history[1].text, /Prosa anterior/);
 });
+test('preferência de raciocínio é privada, não debita e conserva o modelo informado pelo serviço', async () => {
+  const f = fixture();
+  await f.call({ action: 'create', reasoning: 'high' });
+  let loaded = await f.call({ action: 'load' });
+  assert.equal(loaded.conversation.reasoning, 'high');
+  assert.equal(loaded.platformModel, 'gemini-3.7-flash');
+  await assert.rejects(f.call({ action: 'preferences', reasoning: 'low' }, 'intruder'), {
+    code: 'permission-denied',
+  });
+  await f.call({ action: 'preferences', reasoning: 'low' });
+  loaded = await f.call({ action: 'load' });
+  assert.equal(loaded.conversation.reasoning, 'low');
+  assert.equal(f.records.get('users/author').credits, 5);
+  assert.equal(f.records.has('users/author/chapterChatLimits/current'), false);
+});
+test('preferências recusam níveis inválidos e alterações durante geração', async () => {
+  const f = fixture();
+  await assert.rejects(f.call({ action: 'create', reasoning: 'extreme' }), {
+    code: 'invalid-argument',
+  });
+  await f.create();
+  await assert.rejects(f.call({ action: 'preferences', reasoning: null }), {
+    code: 'invalid-argument',
+  });
+  const path = 'users/author/chapterChats/book/chapters/chapter/conversations/conversation';
+  const record = f.records.get(path);
+  assert.equal(record.reasoning, 'auto');
+  f.records.set(path, { ...record, busy: 'request', until: 999999 });
+  await assert.rejects(f.call({ action: 'preferences', reasoning: 'max' }), {
+    code: 'failed-precondition',
+  });
+  assert.equal(f.records.get(path).reasoning, 'auto');
+});
 function fixture(
   generator = async (_input, chunk) => {
     await chunk('Uma análise.');
@@ -117,7 +150,7 @@ function fixture(
       return result;
     },
   };
-  const service = createChapterChatService({ db, generator, now: () => time++ });
+  let service = createChapterChatService({ db, generator, now: () => time++ });
   const call = (data, uid = 'author', chunk) =>
     service.chapterChat(uid, { ...identity, ...data }, chunk);
   const send = (extra = {}) =>
@@ -138,8 +171,120 @@ function fixture(
       after: '<p>Novo texto</p>',
       ...extra,
     });
-  return { records, call, send, apply, create: () => call({ action: 'create' }) };
+  return {
+    records,
+    call,
+    send,
+    apply,
+    create: () => call({ action: 'create' }),
+    setModel: (model) => {
+      service = createChapterChatService({
+        db,
+        generator,
+        now: () => time++,
+        platformModel: model,
+      });
+    },
+  };
 }
+test('pedido congela raciocínio e modelo efetivo, sem permitir que o cliente escolha o modelo da plataforma', async () => {
+  const inputs = [];
+  const f = fixture(async (input) => {
+    inputs.push(input);
+    return 'Análise';
+  });
+  await f.create();
+  const generation = {
+    version: 1,
+    provider: 'platform',
+    model: 'modelo-enviado-pelo-cliente',
+    reasoning: 'high',
+  };
+  const first = await f.send({ mode: 'platform', generation });
+  assert.equal(inputs[0].generation.effective.model, 'gemini-3.7-flash');
+  assert.equal(inputs[0].generation.effective.reasoning, 'high');
+  assert.deepEqual(first.generation.requested, generation);
+  f.setModel('gemini-3.8-flash');
+  await f.call({ action: 'preferences', reasoning: 'low' });
+  assert.deepEqual(await f.send({ mode: 'platform', generation }), first);
+  assert.equal(inputs.length, 1);
+  await assert.rejects(
+    f.send({ mode: 'platform', generation: { ...generation, reasoning: 'low' } }),
+    { code: 'invalid-argument' },
+  );
+  assert.equal(f.records.get('users/author').credits, 5);
+  const loaded = await f.call({ action: 'load' });
+  assert.deepEqual(loaded.messages[0].generation, first.generation);
+});
+test('retry após falha mantém parâmetros originais mesmo após alteração do modelo no servidor', async () => {
+  const inputs = [];
+  let failed = true;
+  const f = fixture(async (input) => {
+    inputs.push(input);
+    if (failed) throw new Error('Provedor indisponível');
+    return 'Análise';
+  });
+  await f.create();
+  const generation = {
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-3.7-flash',
+    reasoning: 'high',
+  };
+  await assert.rejects(f.send({ mode: 'platform', generation }), { code: 'unavailable' });
+  f.setModel('gemini-3.8-flash');
+  await f.call({ action: 'preferences', reasoning: 'low' });
+  failed = false;
+  await f.send({ mode: 'platform', generation });
+  assert.deepEqual(inputs[1].generation, inputs[0].generation);
+  const next = await f.send({
+    requestId: 'next',
+    mode: 'platform',
+    generation: { ...generation, reasoning: 'low' },
+  });
+  assert.equal(next.generation.effective.model, 'gemini-3.8-flash');
+  assert.equal(next.generation.effective.reasoning, 'low');
+  assert.equal(f.records.get('users/author').credits, 5);
+});
+test('configuração inválida e troca de origem não registram mensagem nem consomem quota', async () => {
+  const f = fixture();
+  await f.create();
+  const generation = { version: 1, provider: 'platform', model: null, reasoning: 'high' };
+  for (const extra of [
+    { mode: 'byok' },
+    { mode: 'unknown' },
+    { generation: { ...generation, apiKey: 'private-key' } },
+    { generation: { ...generation, reasoning: 'unbounded' } },
+  ])
+    await assert.rejects(f.send({ mode: 'platform', generation, ...extra }), {
+      code: 'invalid-argument',
+    });
+  assert.equal(f.records.has('users/author/chapterChatLimits/current'), false);
+  assert.equal((await f.call({ action: 'load' })).messages.length, 0);
+  assert.equal(f.records.get('users/author').credits, 5);
+});
+test('retry conserva histórico capturado e posição cronológica do pedido original', async () => {
+  const inputs = [];
+  let failed = false;
+  const f = fixture(async (input) => {
+    inputs.push(structuredClone(input));
+    if (input.text === '/reescrever' && !failed) {
+      failed = true;
+      throw new Error('Rede');
+    }
+    return 'Análise';
+  });
+  await f.create();
+  await f.send({ requestId: 'prior', text: 'Pedido anterior' });
+  await assert.rejects(f.send(), { code: 'unavailable' });
+  const path =
+    'users/author/chapterChats/book/chapters/chapter/conversations/conversation/messages/request';
+  const originalDate = f.records.get(path).createdAt;
+  await f.send({ requestId: 'future', text: 'Pedido posterior' });
+  await f.send();
+  assert.deepEqual(inputs[3].history, inputs[1].history);
+  assert.equal(f.records.get(path).createdAt, originalDate);
+});
 test('conversa é privada, verifica autoria e recusa capítulos excluídos', async () => {
   const f = fixture();
   await assert.rejects(f.call({ action: 'load' }, null), { code: 'unauthenticated' });

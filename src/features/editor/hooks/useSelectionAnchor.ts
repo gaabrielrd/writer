@@ -70,6 +70,16 @@ export function useSelectionAnchor(editor: Editor | null, enabled: boolean) {
         }
         return;
       }
+      const toolbar = document.querySelector('[data-editor-selection-actions]');
+      if (
+        toolbar &&
+        event.target instanceof Node &&
+        (editor.view.dom.contains(event.target) || toolbar.contains(event.target))
+      ) {
+        // The selection toolbar owns this Escape even if React removes it before
+        // the workspace's bubbling listener runs.
+        event.preventDefault();
+      }
       dismissedSelection = selectionKey();
       setAnchor(null);
       if (document.activeElement?.closest('[data-editor-selection-actions]')) {

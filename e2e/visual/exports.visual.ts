@@ -61,14 +61,16 @@ test('exportação preserva a versão atual, reabre o diálogo e baixa Markdown'
   const manuscript = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
   await expect(manuscript).toBeVisible();
   await manuscript.fill('Versão atual com ação, memória e café.');
-  const trigger = page.getByRole('button', { name: 'Exportar', exact: true });
+  const trigger = page.getByRole('button', { name: 'Opções do capítulo', exact: true });
   await trigger.click();
+  await page.getByRole('menuitem', { name: 'Exportar', exact: true }).click();
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'exportar-capitulo');
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await trigger.click();
+  await page.getByRole('menuitem', { name: 'Exportar', exact: true }).click();
   const [download] = await Promise.all([
     page.waitForEvent('download'),
     page.getByRole('button', { name: 'Baixar arquivo' }).click(),

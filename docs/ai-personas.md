@@ -42,7 +42,7 @@ consultar e reativar arquivadas. Não existe exclusão física pela interface.
 ## Livro e capítulo
 
 Em **Opções do livro → Persona de IA**, selecione uma base ou **Sem persona**.
-No editor, o botão **Persona** abre um único modal com as abas **Capítulo**,
+No editor, **Opções do capítulo → Persona** abre um único modal com as abas **Capítulo**,
 **Livro** e **Biblioteca**. Ele concentra seleção da complementar, ajustes da
 base, consulta das orientações efetivas e gerenciamento da biblioteca, incluindo
 criação e edição. Não há uma faixa de personas na área de escrita e esse fluxo
@@ -62,8 +62,11 @@ Cada card mostra avatar, descrição, origem e três atributos mais distantes do
 ponto médio da escala; personas em uso recebem identificação de base/complemento.
 O texto completo das orientações fica recolhido em seções opcionais. Na
 biblioteca, primeiro é possível consultar o perfil gráfico e depois o texto
-completo. Navegação por setas/Home/End move o foco entre abas; fechar devolve o
-foco ao botão Persona. Header e ações permanecem visíveis enquanto o corpo rola.
+completo. Navegação por setas/Home/End move o foco entre abas. Header e ações
+permanecem visíveis enquanto o corpo rola.
+
+Fechar o modal devolve o foco ao gatilho estável **Opções do capítulo**, depois
+de encerrar o menu; o manuscrito e seus vínculos continuam na mesma rota.
 
 As instruções da complementar se somam às do livro e prevalecem em conflitos de
 estilo. Os atributos do livro são herdados; cada atributo da complementar pode

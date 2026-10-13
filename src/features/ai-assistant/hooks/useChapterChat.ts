@@ -4,6 +4,7 @@ import {
   createChapterChat,
   loadChapterChat,
   sendChapterChat,
+  captureChatGeneration,
   type ChatIdentity,
 } from '../services/chapterChatService';
 import {
@@ -18,6 +19,11 @@ import {
   type ChatMessage,
   type ChatPage,
 } from '../model/chapterChat';
+import { normalizeChatReasoning, type ChatReasoningLevel } from '../model/chatGeneration';
+import {
+  readChatReasoningDefault,
+  writeChatReasoningDefault,
+} from '../services/chatReasoningStorage';
 
 const empty: ChatPage = { conversations: [], conversation: null, messages: [], before: null };
 export function useChapterChat(uid: string, bookId: string, chapterId: string) {
@@ -28,11 +34,12 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
   const [generating, setGenerating] = useState(false);
   const [partial, setPartial] = useState('');
   const [attempt, setAttempt] = useState(0);
+  const [preferencesSaving, setPreferencesSaving] = useState(false);
   const mounted = useRef(true);
   const selected = useRef<ChatIdentity>({ bookId, chapterId });
   const controller = useRef<AbortController | null>(null);
   const request = useRef<ChatPendingRequest | null>(null);
-  const creating = useRef<Promise<string> | null>(null);
+  const creating = useRef<Promise<{ id: string; reasoning: ChatReasoningLevel }> | null>(null);
   const partialRef = useRef('');
   const draftRef = useRef('');
   const changing = useRef(false);
@@ -86,24 +93,58 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
   }, [uid, bookId, chapterId, attempt]);
   async function ensureConversation(title = 'Nova conversa') {
     if (selected.current.conversationId) return selected.current;
-    creating.current ??= createChapterChat({ bookId, chapterId }, title)
-      .then(({ id }) => id)
-      .finally(() => {
-        creating.current = null;
-      });
-    const id = await creating.current;
+    if (!creating.current) {
+      const reasoning = readChatReasoningDefault(uid);
+      creating.current = createChapterChat({ bookId, chapterId }, title, reasoning)
+        .then(({ id }) => ({ id, reasoning }))
+        .finally(() => {
+          creating.current = null;
+        });
+    }
+    const { id, reasoning } = await creating.current;
     selected.current = { bookId, chapterId, conversationId: id };
     clearChatRecovery(uid, bookId, chapterId, 'pending');
     if (mounted.current)
       setPage((previous) => ({
         ...previous,
-        conversation: { id, title: title.slice(0, 120), draft: '', updatedAt: Date.now() },
+        conversation: {
+          id,
+          title: title.slice(0, 120),
+          draft: '',
+          updatedAt: Date.now(),
+          reasoning,
+        },
         conversations: [
-          { id, title: title.slice(0, 120), draft: '', updatedAt: Date.now() },
-          ...previous.conversations,
+          { id, title: title.slice(0, 120), draft: '', updatedAt: Date.now(), reasoning },
+          ...previous.conversations.filter((item) => item.id !== id),
         ],
       }));
     return selected.current;
+  }
+  async function changeReasoning(reasoning: ChatReasoningLevel) {
+    if (loading || changing.current || controller.current) return;
+    changing.current = true;
+    setPreferencesSaving(true);
+    setError(null);
+    try {
+      const identity = await ensureConversation();
+      await chapterChatCall(identity, { action: 'preferences', reasoning });
+      if (!mounted.current) return;
+      setPage((previous) => ({
+        ...previous,
+        conversation: previous.conversation ? { ...previous.conversation, reasoning } : null,
+        conversations: previous.conversations.map((item) =>
+          item.id === identity.conversationId ? { ...item, reasoning } : item,
+        ),
+      }));
+      if (!writeChatReasoningDefault(uid, reasoning))
+        setError('Escolha salva na conversa; não foi possível salvar o padrão deste navegador.');
+    } catch (cause) {
+      if (mounted.current) setError((cause as Error).message);
+    } finally {
+      changing.current = false;
+      if (mounted.current) setPreferencesSaving(false);
+    }
   }
   async function persistDraft(text: string) {
     const identity = await ensureConversation();
@@ -160,18 +201,31 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
     setPartial('');
     partialRef.current = '';
     try {
-      const identity = await ensureConversation(value);
-      if (abort.signal.aborted || !mounted.current) return;
       const pending =
         retry && request.current
           ? request.current
-          : { requestId: crypto.randomUUID(), text: value.trim(), context };
+          : {
+              requestId: crypto.randomUUID(),
+              text: value.trim(),
+              context,
+              generation: captureChatGeneration(
+                page.conversation
+                  ? normalizeChatReasoning(page.conversation.reasoning)
+                  : readChatReasoningDefault(uid),
+                page.platformModel,
+              ),
+            };
+      const identity = await ensureConversation(value);
+      if (abort.signal.aborted || !mounted.current) return;
       request.current = pending;
       writeChatRecovery(uid, bookId, chapterId, identity.conversationId!, {
         draft: '',
         request: pending,
       });
-      const createdAt = Date.now();
+      const createdAt =
+        page.messages.find(
+          (message) => message.role === 'user' && message.id === pending.requestId + '-user',
+        )?.createdAt ?? Date.now();
       mergeMessage({
         id: `${pending.requestId}-user`,
         role: 'user',
@@ -327,6 +381,11 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
     error,
     draft,
     generating,
+    preferencesSaving,
+    reasoning: page.conversation
+      ? normalizeChatReasoning(page.conversation.reasoning)
+      : readChatReasoningDefault(uid),
+    changeReasoning,
     partial,
     changeDraft,
     send,
