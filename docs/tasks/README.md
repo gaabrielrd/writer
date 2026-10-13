@@ -4,6 +4,13 @@ Esta pasta guarda o planejamento de funcionalidades e tarefas. Cada arquivo desc
 
 Isso ajuda você e os agentes a manterem o foco e o escopo controlado.
 
+## Evolução do Writer
+
+O [planejamento do Writer V2](writer-v2/README.md) detalha o estúdio de livros e
+campanhas, publicação, distribuição e venda por criadores convidados, em fases
+sequenciais. A pasta distingue tarefas da primeira versão pública e candidatos
+posteriores; os documentos não representam funcionalidades já implementadas.
+
 ## Como usar
 
 - Crie um arquivo por funcionalidade ou tarefa (ex.: `cadastro-de-clientes.md`).
