@@ -1,6 +1,6 @@
 # W2-F2-01 — Contrato executável do Estúdio
 
-**Base:** `079d4e9`, 2026-10-13. **Estado:** implementado e validado localmente; o CI do head no PR condiciona a conclusão técnica.
+**Base:** `079d4e9`, 2026-10-13. **Estado:** concluído tecnicamente em `15cd417`; CI e regras verdes.
 **Autorização:** operador escolheu “Implementar o Estúdio; manter as condições
 humanas e comerciais pendentes”. Ver [registro do portão](06-contratos-e-replanejamento.md).
 **Tarefa:** [F2-01](../fase-02-criar-e-preparar/01-projetos-e-navegacao.md).
@@ -155,3 +155,11 @@ Evidência: [entrega do Estúdio](../../../entregas/2026-10-13-writer-v2-estudio
 O [PR 21](https://github.com/gaabrielrd/writer/pull/21) identifica o head e seus
 checks; o CI de `079d4e9` é somente a base anterior. Este registro local não
 antecipa aprovação remota, merge, deploy, participação humana ou comércio live.
+
+### Confirmação posterior do portão remoto
+
+O SHA `15cd4173172aaae6dea92388977a8f0df0babe39` passou no
+[CI completo](https://github.com/gaabrielrd/writer/actions/runs/38411066845)
+e nas [regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/38411067039).
+Foram 540 testes visuais aprovados, 12 skips preexistentes e nenhum retry. F2-01
+está concluído tecnicamente; PR em rascunho e condições humanas/comerciais continuam.

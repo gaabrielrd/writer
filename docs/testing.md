@@ -204,6 +204,16 @@ cursores e preparação legada; `tests/firestore/studio.rules.test.mjs` usa as r
 e o Admin SDK reais, com datas de snapshot, concorrência e proteção dos vínculos.
 Os testes de personas/livros existentes permanecem parte do gate integral.
 
+Cenas acrescentam testes colocalizados de serviços, autosave CAS, rascunho tipado,
+planejamento e composição em `scenes`/`books`/`editor`. Protegem fonte legada,
+arquivo/restauração, páginas de prosa, sanitização, hashes, backup v5 e captura
+de revisão na publicação. `functions/test/scenes.test.mjs` testa mutações e jobs;
+`tests/firestore/scenes.rules.test.mjs` verifica SDK Admin/regras reais, concorrência,
+isolamento, controles protegidos, orçamento e clientes antigos. A suíte visual
+`e2e/visual/scenes.visual.ts` cobre autor e criador de aventura nos três temas e
+320 px. Seus adaptadores simulam persistência e transporte; os resultados reais
+e limitações ficam no [contrato em execução](tasks/writer-v2/execucao/08-planejamento-de-cenas.md).
+
 `e2e/visual/studio.visual.ts` roda oito cenários em seis projetos: três temas,
 desktop/celular, navegação/teclado em 320 px, projetos independentes, persistência
 simulada, resposta perdida, troca de conta, erro parcial, preparação e paginação.

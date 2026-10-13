@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { BookOpen, Globe } from 'lucide-react';
 import { useAuth } from '@/features/auth';
+import { ScenePlanner } from '@/features/scenes';
 import {
   Badge,
   Button,
@@ -112,6 +113,10 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
       ) : (
         <p>Projeto independente, sem universo vinculado.</p>
       )}
+      <ScenePlanner
+        target={{ kind: 'adventure', id: adventure.id }}
+        projectTitle={adventure.title}
+      />
     </div>
   );
 }

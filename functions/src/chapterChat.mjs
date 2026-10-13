@@ -360,6 +360,13 @@ export function createChapterChatService({
         tx.get(bookRef),
         tx.get(userRef),
       ]);
+      if (!book.exists || book.data().authorId !== uid || book.data().deleting || !chapter.exists)
+        fail('not-found', 'Capítulo indisponível.');
+      if (chapter.data().contentMode === 'scenes')
+        fail(
+          'failed-precondition',
+          'Este capítulo é composto por cenas. Abra uma cena para editar seu texto.',
+        );
       if (previous.exists) {
         if (previous.data().fingerprint !== fingerprint)
           fail('invalid-argument', 'Aceite usado com outro conteúdo.');
@@ -367,8 +374,6 @@ export function createChapterChatService({
       }
       if (!suggestion.exists || suggestion.data().state !== 'done' || !suggestion.data().suggestion)
         fail('failed-precondition', 'Sugestão indisponível.');
-      if (!book.exists || book.data().authorId !== uid || book.data().deleting || !chapter.exists)
-        fail('not-found', 'Capítulo indisponível.');
       if (hash(chapter.data().content) !== expectedHash)
         fail(
           'failed-precondition',

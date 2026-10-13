@@ -325,7 +325,11 @@ Os contratos normativos são formalizados no [ADR 0025](decisions/0025-writer-v2
 
 O Estúdio F2-01 implementa navegação, listagem e criação privada persistida, sem
 converter aventura/campanha em livro. Seus metadados têm detalhes próprios;
-estrutura narrativa, revisão, sessões e comércio permanecem nas tarefas seguintes.
+cenas/partes de aventura são acrescentadas pelo incremento F2-02; revisão, sessões
+e comércio permanecem nas tarefas seguintes. Cenas têm texto próprio e planejamento
+privado; arquivar retira da composição e preserva restauração. Conversão de capítulo
+é explícita e conserva fonte. Consulte o [contrato de cenas](tasks/writer-v2/execucao/08-planejamento-de-cenas.md)
+para limites, compatibilidade e estado real dos gates.
 Publicações, Catálogo e Biblioteca mostram disponibilidade futura. A autorização
 explícita de implementação conserva condições humanas/comerciais nos próprios
 aceites, sem concluir integralmente a fase 1.

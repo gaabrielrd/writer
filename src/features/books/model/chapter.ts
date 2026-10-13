@@ -13,6 +13,10 @@ export interface Chapter {
   order: number;
   wordCount: number;
   content: string;
+  contentMode?: 'legacy' | 'scenes';
+  assemblyRevision?: number;
+  structureRevision?: number;
+  deleting?: boolean;
   createdAt: number;
   updatedAt: number;
 }

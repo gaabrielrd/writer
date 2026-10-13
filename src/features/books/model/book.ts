@@ -12,6 +12,9 @@ export interface Book {
   coverImageId?: string | null;
   status: BookStatus;
   wordCount: number;
+  hasSceneResources?: boolean;
+  sceneRevision?: number;
+  deleting?: boolean;
   createdAt: number;
   updatedAt: number;
 }

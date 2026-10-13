@@ -26,6 +26,24 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid;
     }
 
+    function boundedSceneList() {
+      return request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;
+    }
+    function sceneBookReadable(bookId) {
+      return isBookAuthor(bookId)
+        && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
+    }
+    function sceneAdventureReadable(adventureId) {
+      return isOwner(get(/databases/$(database)/documents/adventures/$(adventureId)).data.ownerId)
+        && get(/databases/$(database)/documents/adventures/$(adventureId)).data.get('deleting', false) != true;
+    }
+    function publicationSceneMatches(bookId, data) {
+      let book = get(/databases/$(database)/documents/books/$(bookId)).data;
+      return book.get('hasSceneResources', false) != true
+        || (data.get('sourceSceneRevision', -1) is int
+          && data.get('sourceSceneRevision', -1) == book.get('sceneRevision', 0));
+    }
+
     function isPublished(bookId) {
       return get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published';
     }
@@ -62,7 +80,8 @@ service cloud.firestore {
 
     function validPublicBook(data) {
       return data.keys().hasAll(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt'])
-        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion', 'hasActs'])
+        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion', 'hasActs', 'sourceSceneRevision'])
+        && data.get('sourceSceneRevision', 0) is int && data.get('sourceSceneRevision', 0) >= 0
         && ((data.schemaVersion == 1 && data.get('universeId', null) == null && data.get('universePrivacyVersion', null) == null) || (data.schemaVersion == 2
           && nonemptyString(data.get('universeId', ''), 128)
           && data.get('universePrivacyVersion', -1) is int && data.universePrivacyVersion >= 0))
@@ -75,7 +94,8 @@ service cloud.firestore {
 
     function validRevision(data) {
       return data.keys().hasAll(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion'])
-        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion', 'actCount'])
+        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion', 'actCount', 'sourceSceneRevision'])
+        && data.get('sourceSceneRevision', 0) is int && data.get('sourceSceneRevision', 0) >= 0
         && data.privacyVersion is int && data.privacyVersion >= 0
         && data.createdAt is int && data.createdAt >= 0
         && data.chapterCount is int && data.chapterCount >= 0
@@ -223,32 +243,33 @@ service cloud.firestore {
       return personaId == null || (personaId is string && (personaId in ['preset-atmospheric', 'preset-incisive', 'preset-intimate', 'preset-ironic', 'preset-epic', 'preset-unsettling']
         || (personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$') && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid)/aiPersonas/$(personaId)))));
     }
-    function validPersonaOverrideAt(overrides, index) {
-      return overrides.size() <= index || (overrides[index] is map
-        && overrides[index].keys().hasOnly(['traitId', 'value'])
-        && overrides[index].traitId is string && overrides[index].traitId.matches('^[a-zA-Z0-9-]{1,100}$')
-        && overrides[index].value is int && overrides[index].value >= 0 && overrides[index].value <= 100);
+    function validPersonaOverride(item) {
+      return item.keys().hasOnly(['traitId', 'value'])
+        && item.traitId.matches('^[a-zA-Z0-9-]{1,100}$')
+        && item.value is int && item.value >= 0 && item.value <= 100;
     }
     function validPersonaComplement(data) {
-      return data == null || (data is map && data.keys().hasOnly(['personaId', 'overrides'])
+      let overrides = data is map ? data.get('overrides', []) : [];
+      let size = overrides is list ? overrides.size() : -1;
+      return data == null ? true : (data is map && data.keys().hasOnly(['personaId', 'overrides'])
         && data.personaId != null && validPersonaReference(data.personaId)
-        && data.overrides is list && data.overrides.size() <= 16
-        && validPersonaOverrideAt(data.overrides, 0)
-        && validPersonaOverrideAt(data.overrides, 1)
-        && validPersonaOverrideAt(data.overrides, 2)
-        && validPersonaOverrideAt(data.overrides, 3)
-        && validPersonaOverrideAt(data.overrides, 4)
-        && validPersonaOverrideAt(data.overrides, 5)
-        && validPersonaOverrideAt(data.overrides, 6)
-        && validPersonaOverrideAt(data.overrides, 7)
-        && validPersonaOverrideAt(data.overrides, 8)
-        && validPersonaOverrideAt(data.overrides, 9)
-        && validPersonaOverrideAt(data.overrides, 10)
-        && validPersonaOverrideAt(data.overrides, 11)
-        && validPersonaOverrideAt(data.overrides, 12)
-        && validPersonaOverrideAt(data.overrides, 13)
-        && validPersonaOverrideAt(data.overrides, 14)
-        && validPersonaOverrideAt(data.overrides, 15));
+        && data.keys().hasAll(['overrides']) && size >= 0 && size <= 16
+        && (size <= 0 ? true : validPersonaOverride(overrides[0]))
+        && (size <= 1 ? true : validPersonaOverride(overrides[1]))
+        && (size <= 2 ? true : validPersonaOverride(overrides[2]))
+        && (size <= 3 ? true : validPersonaOverride(overrides[3]))
+        && (size <= 4 ? true : validPersonaOverride(overrides[4]))
+        && (size <= 5 ? true : validPersonaOverride(overrides[5]))
+        && (size <= 6 ? true : validPersonaOverride(overrides[6]))
+        && (size <= 7 ? true : validPersonaOverride(overrides[7]))
+        && (size <= 8 ? true : validPersonaOverride(overrides[8]))
+        && (size <= 9 ? true : validPersonaOverride(overrides[9]))
+        && (size <= 10 ? true : validPersonaOverride(overrides[10]))
+        && (size <= 11 ? true : validPersonaOverride(overrides[11]))
+        && (size <= 12 ? true : validPersonaOverride(overrides[12]))
+        && (size <= 13 ? true : validPersonaOverride(overrides[13]))
+        && (size <= 14 ? true : validPersonaOverride(overrides[14]))
+        && (size <= 15 ? true : validPersonaOverride(overrides[15])));
     }
     match /users/{userId} {
       // Conversations, provider origin and debit receipts are server controlled.
@@ -272,6 +293,7 @@ service cloud.firestore {
       match /assistedReceipts/{id} { allow read, write: if false; }
       match /studioOperations/{operationId} { allow read, write: if false; }
       match /studioPreparation/{preparationId} { allow read, write: if false; }
+      match /sceneOperations/{operationId} { allow read, write: if false; }
       match /imageLibrary/{imageId} {
         allow read: if isOwner(userId);
         allow write: if false;
@@ -326,6 +348,23 @@ service cloud.firestore {
       allow list: if isOwner(resource.data.ownerId)
         && request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;
       allow write: if false;
+      match /parts/{partId} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /scenes/{sceneId} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+        match /{child}/{childId} {
+          allow get: if child in ['body', 'planning', 'references'] && sceneAdventureReadable(adventureId);
+          allow list: if child == 'references' && sceneAdventureReadable(adventureId) && boundedSceneList();
+          allow write: if false;
+        }
+      }
+      match /sceneControls/{id} { allow read, write: if false; }
+      match /sceneJobs/{id} { allow read, write: if false; }
     }
 
     match /campaigns/{campaignId} {
@@ -349,6 +388,9 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.authorId);
       allow create: if isAuthenticated()
         && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.get('hasSceneResources', false) == false
+        && request.resource.data.get('sceneRevision', 0) == 0
+        && request.resource.data.get('sceneDeletionOperationId', null) == null
         && validStudioDate(request.resource.data.get('createdAt', null))
         && validStudioDate(request.resource.data.get('updatedAt', null))
         && request.resource.data.get('universeId', null) == null
@@ -360,6 +402,9 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
       allow update: if isOwner(resource.data.authorId)
         && preserveBookDates()
+        && request.resource.data.get('hasSceneResources', false) == resource.data.get('hasSceneResources', false)
+        && request.resource.data.get('sceneRevision', 0) == resource.data.get('sceneRevision', 0)
+        && request.resource.data.get('sceneDeletionOperationId', null) == resource.data.get('sceneDeletionOperationId', null)
         && validPersonaReference(request.resource.data.get('personaId', null))
         && request.resource.data.get('universeId', null) == resource.data.get('universeId', null)
         && request.resource.data.authorId == resource.data.authorId
@@ -371,6 +416,7 @@ service cloud.firestore {
           || resource.data.status == 'published'
           || existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)));
       allow delete: if isOwner(resource.data.authorId)
+        && resource.data.get('hasSceneResources', false) != true
         && resource.data.get('deleting', false) == true
         && existsAfter(/databases/$(database)/documents/deletedBooks/$(bookId))
         && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId));
@@ -385,12 +431,39 @@ service cloud.firestore {
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true;
       }
       match /chapters/{chapterId} {
-        allow read, delete: if isBookAuthor(bookId);
-        allow create, update: if isBookAuthor(bookId)
+        allow read: if isBookAuthor(bookId);
+        allow delete: if isBookAuthor(bookId)
+          && resource.data.get('contentMode', 'legacy') != 'scenes'
+          && resource.data.get('deleting', false) != true;
+        allow create: if isBookAuthor(bookId)
+          && request.resource.data.get('contentMode', 'legacy') == 'legacy'
+          && validActLink(bookId, request.resource.data)
+          && validPersonaComplement(request.resource.data.get('personaComplement', null))
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
+        allow update: if isBookAuthor(bookId)
+          && resource.data.get('deleting', false) != true
+          && (resource.data.get('contentMode', 'legacy') == 'legacy'
+            ? request.resource.data.get('contentMode', 'legacy') == 'legacy'
+            : (resource.data.get('contentMode', 'legacy') == 'scenes'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'actId', 'order', 'personaComplement', 'updatedAt'])))
           && validActLink(bookId, request.resource.data)
           && validPersonaComplement(request.resource.data.get('personaComplement', null))
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
       }
+
+      match /scenes/{sceneId} {
+        allow get: if sceneBookReadable(bookId);
+        allow list: if sceneBookReadable(bookId) && boundedSceneList();
+        allow write: if false;
+        match /{child}/{childId} {
+          allow get: if child in ['body', 'planning', 'references'] && sceneBookReadable(bookId);
+          allow list: if child == 'references' && sceneBookReadable(bookId) && boundedSceneList();
+          allow write: if false;
+        }
+      }
+      match /sceneControls/{id} { allow read, write: if false; }
+      match /sceneJobs/{id} { allow read, write: if false; }
+      match /sceneSources/{id} { allow read, write: if false; }
 
       match /lore/{loreId} {
         function publicationRevoked() {
@@ -419,6 +492,7 @@ service cloud.firestore {
       allow list: if false;
       allow create, update: if isBookAuthor(bookId)
         && validPublicBook(request.resource.data)
+        && publicationSceneMatches(bookId, request.resource.data)
         && publicationUniverseMatches(bookId, request.resource.data)
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'published'
@@ -426,7 +500,8 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.privacyVersion
           == getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0)
         && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('universeId', null) == request.resource.data.get('universeId', null)
-        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('universePrivacyVersion', null) == request.resource.data.get('universePrivacyVersion', null);
+        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('universePrivacyVersion', null) == request.resource.data.get('universePrivacyVersion', null)
+        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('sourceSceneRevision', null) == request.resource.data.get('sourceSceneRevision', null);
       allow delete: if isBookAuthor(bookId)
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'draft';
 
@@ -435,6 +510,7 @@ service cloud.firestore {
         allow list: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
           && validRevision(request.resource.data)
+          && publicationSceneMatches(bookId, request.resource.data)
           && publicationUniverseMatches(bookId, request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
           && request.resource.data.privacyVersion == get(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0);

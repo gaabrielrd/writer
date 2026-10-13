@@ -1,8 +1,9 @@
 # W2-F2-02 — Planejar cenas e organizar a escrita
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Implementado e validado localmente; conclusão técnica exige CI verde no head do PR.
+**Evidência:** [Entrega de cenas](../../../entregas/2026-10-13-writer-v2-cenas.md).
 **Dependências:** [W2-F2-01](../fase-02-criar-e-preparar/01-projetos-e-navegacao.md)
-**Áreas propostas:** books e editor; proposta adventures. Nomes novos são propostas, sujeitos à fase 1.
+**Áreas:** scenes, books, editor e adventures. [Contrato executável](../execucao/08-planejamento-de-cenas.md).
 
 ## Contexto e objetivo
 
@@ -21,17 +22,17 @@ Entradas: capítulo/parte, título, objetivo, conflito, ponto de vista e referê
 
 ## Passos de execução
 
-- [ ] Definir contrato da cena e compatibilidade com capítulo sem cenas.
-- [ ] Implementar persistência e operações de ordem/movimentação.
-- [ ] Integrar planejamento e abertura contextual do editor.
-- [ ] Cobrir remoção/movimentação concorrente e referências indisponíveis.
+- [x] Definir contrato da cena e compatibilidade com capítulo sem cenas.
+- [x] Implementar persistência e operações de ordem/movimentação.
+- [x] Integrar planejamento e abertura contextual do editor.
+- [x] Cobrir remoção/movimentação concorrente e referências indisponíveis.
 
 ## Critérios de aceite
 
-- [ ] Mover uma cena preserva seu texto e referências.
-- [ ] Livro legado sem cenas mantém leitura e exportação atuais.
-- [ ] Quadro é operável por teclado e revela falha sem perder preenchimento.
-- [ ] Notas de planejamento não aparecem na publicação por padrão.
+- [x] Mover uma cena preserva seu texto e referências.
+- [x] Livro legado sem cenas mantém leitura e exportação atuais.
+- [x] Quadro é operável por teclado e revela falha sem perder preenchimento.
+- [x] Notas de planejamento não aparecem na publicação por padrão.
 
 ## Validação
 
@@ -42,7 +43,8 @@ Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md
 
 ## Riscos e decisões necessárias
 
-- D-01 deve definir se cena é segmento de texto ou documento; não escolher implicitamente na implementação.
+- Operador definiu cena como documento com texto próprio; capítulo/parte reúne cenas ordenadas.
+- Arquivo retira a cena da composição e preserva texto/restauração, conforme escolha explícita.
 - Concatenação pode introduzir perda de formatação; testar conteúdo rico existente.
 
 ## Não escopo

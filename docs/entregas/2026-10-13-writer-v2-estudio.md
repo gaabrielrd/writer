@@ -146,3 +146,12 @@ convites, marketplace, checkout, repasses e deploy. Não adicionar dependências
 As capturas locais do Estúdio foram preservadas fora do checkout em
 `C:/Users/gaabr/.codex/visualizations/2026/10/12/01a131c1-057d-7721-88fb-d2454dec09b9/writer-v2-estudio-qa`.
 Esse diretório é evidência visual local com dados fictícios, sem conteúdo real de usuários.
+
+## Confirmação de CI — 2026-10-13
+
+O incremento F2-01 foi registrado em `15cd4173172aaae6dea92388977a8f0df0babe39`.
+O [CI completo](https://github.com/gaabrielrd/writer/actions/runs/38411066845)
+e as [regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/38411067039)
+passaram nesse SHA. A suíte visual remota teve 540 testes aprovados, 12 skips
+preexistentes e nenhum retry. Isso confirma a conclusão técnica; o PR continua
+em rascunho e os aceites humanos/comerciais continuam pendentes.

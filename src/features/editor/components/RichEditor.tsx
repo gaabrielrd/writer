@@ -47,6 +47,7 @@ import { useChatEditorBridge } from '../hooks/useChatEditorBridge';
 import styles from './RichEditor.module.css';
 
 export interface RichEditorProps {
+  ariaLabel?: string;
   workspaceExpanded?: boolean;
   chatOpen?: boolean;
   onOpenChat?: (action?: AIActionType) => void;
@@ -89,6 +90,7 @@ interface SelectionTarget {
 }
 
 export function RichEditor({
+  ariaLabel = 'Área de escrita do capítulo',
   workspaceExpanded = false,
   chatOpen = false,
   onOpenChat,
@@ -174,7 +176,7 @@ export function RichEditor({
           class: styles.richText ?? '',
           role: 'textbox',
           'aria-multiline': 'true',
-          'aria-label': 'Área de escrita do capítulo',
+          'aria-label': ariaLabel,
           spellcheck: 'true',
           'data-placeholder': placeholder,
         },

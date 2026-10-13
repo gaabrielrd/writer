@@ -30,6 +30,7 @@ import {
 import { PersonaBindingDialog } from '@/features/ai-assistant';
 import { useAuth } from '@/features/auth';
 import { ExportDialog } from '@/features/editor';
+import { ScenePlanner } from '@/features/scenes';
 import { publishBook, unpublishBook } from '../services/publicationService';
 import { LoreTab } from '@/features/lore';
 import type { Book } from '../model/book';
@@ -40,7 +41,7 @@ import { BookFormDialog } from './BookFormDialog';
 import { ImportBookModal } from './ImportBookModal';
 import styles from './BookPage.module.css';
 
-type TabId = 'chapters' | 'compendium' | 'publication';
+type TabId = 'chapters' | 'scenes' | 'compendium' | 'publication';
 
 interface TabDef {
   id: TabId;
@@ -50,6 +51,7 @@ interface TabDef {
 
 const TABS: TabDef[] = [
   { id: 'chapters', label: 'Capítulos', icon: FileText },
+  { id: 'scenes', label: 'Cenas', icon: Scroll },
   { id: 'compendium', label: 'Compêndio', icon: Scroll },
   { id: 'publication', label: 'Publicação', icon: Globe },
 ];
@@ -335,6 +337,14 @@ export function BookPage() {
       </div>
 
       <div className={styles.tabContent} role="tabpanel">
+        {activeTab === 'scenes' && user && (
+          <ScenePlanner
+            key={user.uid + ':' + book.id}
+            target={{ kind: 'book', id: book.id }}
+            projectTitle={book.title}
+            onManuscriptChange={refreshBook}
+          />
+        )}
         {activeTab === 'chapters' && (
           <ChapterList
             book={book}

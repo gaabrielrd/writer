@@ -13,6 +13,7 @@ import { EditorPage } from '@/features/editor';
 import { AISettingsPage } from '@/features/ai-assistant';
 import { StudioPage } from '@/features/studio';
 import { AdventurePage } from '@/features/adventures';
+import { SceneEditorPage } from '@/features/scenes';
 import { CampaignPage } from '@/features/campaigns';
 import { SignedInRoute } from '@/app/components/SignedInRoute';
 import { FutureSpacePage } from '@/app/components/FutureSpacePage';
@@ -58,6 +59,22 @@ export const routes: RouteObject[] = [
           <SignedInRoute>
             <CampaignPage />
           </SignedInRoute>
+        ),
+      },
+      {
+        path: 'adventures/:adventureId/scenes/:sceneId',
+        element: (
+          <SignedInRoute>
+            <SceneEditorPage />
+          </SignedInRoute>
+        ),
+      },
+      {
+        path: 'books/:bookId/scenes/:sceneId',
+        element: (
+          <AuthorBookRoute>
+            <SceneEditorPage />
+          </AuthorBookRoute>
         ),
       },
       {

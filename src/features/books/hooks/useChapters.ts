@@ -28,7 +28,7 @@ export function useChapters(bookId?: string | null): UseChaptersResult {
     setLoading(true);
     setError(null);
     try {
-      const data = await bookService.listChapters(bookId);
+      const data = await bookService.listChapters(bookId, { includeContent: false });
       setChapters(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Falha ao carregar capítulos');
@@ -42,7 +42,7 @@ export function useChapters(bookId?: string | null): UseChaptersResult {
     if (!bookId) return;
 
     bookService
-      .listChapters(bookId)
+      .listChapters(bookId, { includeContent: false })
       .then((data) => {
         if (active) {
           setChapters(data);
@@ -85,10 +85,11 @@ export function useChapters(bookId?: string | null): UseChaptersResult {
   const handleDeleteChapter = useCallback(
     async (chapterId: string) => {
       if (!bookId) return;
-      await bookService.deleteChapter(bookId, chapterId);
+      const observed = chapters.find((chapter) => chapter.id === chapterId);
+      await bookService.deleteChapter(bookId, chapterId, observed?.updatedAt);
       setChapters((prev) => prev.filter((c) => c.id !== chapterId));
     },
-    [bookId],
+    [bookId, chapters],
   );
 
   const handleReorderChapters = useCallback(

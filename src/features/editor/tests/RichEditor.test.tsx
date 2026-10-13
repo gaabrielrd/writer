@@ -491,3 +491,23 @@ describe('RichEditor WYSIWYG', () => {
     ).not.toBeInTheDocument();
   });
 });
+
+it('aceita rótulo contextual de cena preservando prosa formatada sem gravar ao abrir', () => {
+  const onChange = vi.fn();
+  render(
+    <RichEditor
+      ariaLabel="Área de escrita da cena"
+      content="<p><strong>Lia</strong> observa o farol.</p>"
+      onChange={onChange}
+      entities={[]}
+      onSelectEntity={vi.fn()}
+      isSidebarOpen={false}
+      onToggleSidebar={vi.fn()}
+      aiUnavailableReason="A assistência de IA ainda não está disponível para cenas."
+    />,
+  );
+  const area = screen.getByRole('textbox', { name: 'Área de escrita da cena' });
+  expect(area.querySelector('strong')).toHaveTextContent('Lia');
+  expect(area).toHaveTextContent('observa o farol');
+  expect(onChange).not.toHaveBeenCalled();
+});

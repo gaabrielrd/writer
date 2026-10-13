@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import * as firestoreModule from 'firebase/firestore';
+import { deleteSceneBook, deleteSceneGroup } from '@/features/scenes';
 import {
   beginBookDeletion,
   finishBookDeletion,
@@ -8,6 +9,7 @@ import {
 } from '../services/publicationService';
 
 vi.mock('@/shared/lib', () => ({ firestore: {} }));
+vi.mock('@/features/scenes', () => ({ deleteSceneBook: vi.fn(), deleteSceneGroup: vi.fn() }));
 
 vi.mock('../services/publicationService', () => ({
   unpublishBook: vi.fn(),
@@ -143,6 +145,157 @@ describe('bookService', () => {
         delete: firestoreModule.deleteDoc,
       } as unknown as firestoreModule.Transaction),
     );
+  });
+
+  it('livro com cenas revoga acesso e limpa no servidor com o mesmo pedido em todas as páginas', async () => {
+    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ hasSceneResources: true, deleting: true }),
+    } as unknown as firestoreModule.DocumentSnapshot);
+    vi.mocked(deleteSceneBook)
+      .mockResolvedValueOnce({ complete: false, processed: 50 })
+      .mockResolvedValueOnce({ complete: true, processed: 51 });
+    await deleteBook('book-scenes');
+    expect(beginBookDeletion).toHaveBeenCalledWith('book-scenes');
+    expect(deleteSceneBook).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(deleteSceneBook).mock.calls[1]?.[0]).toEqual(
+      vi.mocked(deleteSceneBook).mock.calls[0]?.[0],
+    );
+    expect(vi.mocked(beginBookDeletion).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deleteSceneBook).mock.invocationCallOrder[0]!,
+    );
+    expect(deletePublicationRevisions).not.toHaveBeenCalled();
+    expect(finishBookDeletion).not.toHaveBeenCalled();
+    expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+  });
+  it('falha de limpeza das cenas não executa finish legado nem apaga capítulos por cliente', async () => {
+    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ hasSceneResources: true }),
+    } as unknown as firestoreModule.DocumentSnapshot);
+    vi.mocked(deleteSceneBook).mockRejectedValueOnce(new Error('Retome a limpeza'));
+    await expect(deleteBook('book-scenes')).rejects.toThrow(/Retome/);
+    expect(finishBookDeletion).not.toHaveBeenCalled();
+    expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+  });
+  it('excluir agrupador composto desvincula por servidor sem apagar suas cenas', async () => {
+    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ contentMode: 'scenes', updatedAt: 42 }),
+    } as unknown as firestoreModule.DocumentSnapshot);
+    vi.mocked(deleteSceneGroup)
+      .mockResolvedValueOnce({ complete: false, processed: 50 })
+      .mockResolvedValueOnce({ complete: true, processed: 52 });
+    await deleteChapter('book', 'chapter', 42);
+    expect(deleteSceneGroup).toHaveBeenCalledWith(
+      expect.objectContaining({ parentId: 'chapter', expectedUpdatedAt: 42 }),
+    );
+    expect(vi.mocked(deleteSceneGroup).mock.calls[1]?.[0]).toEqual(
+      vi.mocked(deleteSceneGroup).mock.calls[0]?.[0],
+    );
+    expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+  });
+  it('lista de planejamento não carrega prosa congelada de capítulos compostos', async () => {
+    vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+      docs: [
+        {
+          id: 'chapter',
+          data: () => ({
+            title: 'Capítulo',
+            order: 1,
+            contentMode: 'scenes',
+            assemblyRevision: 3,
+            content: 'Fonte privada',
+            createdAt: 1,
+            updatedAt: 2,
+          }),
+        },
+      ],
+    } as unknown as firestoreModule.QuerySnapshot);
+    const result = await listChapters('book', { includeContent: false });
+    expect(result[0]).toMatchObject({ contentMode: 'scenes', assemblyRevision: 3, content: '' });
+  });
+  it.each([undefined, 41])(
+    'remoção de capítulo composto exige a versão observada, sem adotar a atual (%s)',
+    async (expectedUpdatedAt) => {
+      vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ contentMode: 'scenes', updatedAt: 42 }),
+      } as unknown as firestoreModule.DocumentSnapshot);
+      await expect(deleteChapter('book', 'chapter', expectedUpdatedAt)).rejects.toThrow(
+        /confirm.*novamente/,
+      );
+      expect(deleteSceneGroup).not.toHaveBeenCalled();
+      expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+    },
+  );
+  it('remoção legada aplica delta à contagem atual, preservando edição concorrente de cena', async () => {
+    vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+      callback({
+        get: (ref: { pathSegments: string[] }) =>
+          Promise.resolve({
+            exists: () => true,
+            data: () =>
+              ref.pathSegments.includes('chapters')
+                ? { wordCount: 4, updatedAt: 42 }
+                : { wordCount: 20, sceneRevision: 9, updatedAt: 50 },
+          }),
+        delete: firestoreModule.deleteDoc,
+        update: firestoreModule.updateDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
+    await deleteChapter('book', 'legacy', 42);
+    expect(firestoreModule.updateDoc).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ wordCount: 16 }),
+    );
+    expect(firestoreModule.getDocs).not.toHaveBeenCalled();
+  });
+  it('recálculo recusa captura antiga sem sobrescrever a contagem das cenas', async () => {
+    vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+      docs: [],
+    } as unknown as firestoreModule.QuerySnapshot);
+    vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+      callback({
+        get: () =>
+          Promise.resolve({
+            exists: () => true,
+            data: () => ({ updatedAt: 101, sceneRevision: 1, wordCount: 20 }),
+          }),
+        update: firestoreModule.updateDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
+    await expect(recalculateBookWordCount('book')).rejects.toThrow(/mudou durante/);
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+  });
+  it('versão ausente no capítulo legado é estável e não cria gravação durante a leitura', async () => {
+    vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+      id: 'chapter',
+      exists: () => true,
+      data: () => ({ title: 'Legado', content: 'Prosa', order: 1 }),
+    } as unknown as firestoreModule.DocumentSnapshot);
+    expect((await getChapter('book', 'chapter'))?.updatedAt).toBe(0);
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+    expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+  });
+  it('escritor legado não salva prosa em capítulo convertido mesmo após corrida de leitura', async () => {
+    vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+      callback({
+        get: (ref: { pathSegments: string[] }) =>
+          Promise.resolve({
+            exists: () => true,
+            data: () =>
+              ref.pathSegments.includes('chapters')
+                ? { contentMode: 'scenes', updatedAt: 2 }
+                : { updatedAt: 2 },
+          }),
+        update: firestoreModule.updateDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
+    await expect(
+      updateChapter('book', 'chapter', { content: 'Sobrescrita legada' }),
+    ).rejects.toThrow(/reúne cenas/);
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
   });
 
   describe('Books CRUD', () => {

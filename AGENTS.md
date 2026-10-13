@@ -74,6 +74,9 @@
 - Mantenha aventuras/campanhas, recibos de criação e preparação do Estúdio no servidor; use paginação por tipo/dono e preserve identidade/conteúdo dos livros legados.
 - Datas válidas de livros não podem ser removidas ou invalidadas, inclusive por mutações Admin; preparação usa metadados reais do snapshot, sem inventar datas.
 - Vínculo de universo e criação do projeto são atômicos; exclusão confere contadores e referências de livros, aventuras e campanhas.
+- Mantenha cenas, conversão, contagens e jobs em `functions`; compare revisões observadas e preserve prosa ao remover agrupadores.
+- Componha capítulos em modo cenas somente pela prosa ativa ordenada; preserve a fonte legada e não exponha planos privados na publicação.
+- Capture revisões de cena na publicação e no backup; bloqueie escrita legada e exportação durante exclusão do projeto.
 
 ## Rotas
 

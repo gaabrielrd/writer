@@ -316,8 +316,8 @@ entram somente nos headers do provedor, fora do histórico e da callable.
 
 ## Contratos da evolução Writer V2
 
-A implementação começa pelo Estúdio F2-01, descrito abaixo. As demais capacidades
-do V2 conservam seus contratos futuros e aceites próprios.
+A implementação iniciou pelo Estúdio F2-01 e segue com cenas F2-02, descritos
+abaixo. As demais capacidades do V2 conservam seus contratos futuros e aceites próprios.
 
 O [ADR 0025](decisions/0025-writer-v2-contracts.md) fixa separação entre livro
 legado, aventura autoral, campanha particular, edição e acesso. Preservar IDs/URLs
@@ -348,9 +348,9 @@ continua sendo a biblioteca de imagens.
 
 `features/studio` compõe APIs públicas de `books`, `adventures`, `campaigns` e
 `universes`. Livro conserva identidade, capítulos, editor e fluxos existentes;
-aventura autoral e campanha independente têm coleções e páginas próprias. Neste
-incremento, seus detalhes exibem metadados privados; sessões e estrutura narrativa
-não são criadas implicitamente. Cada tipo possui consulta, estado, filtro e cursor
+aventura autoral e campanha independente têm coleções e páginas próprias. O Estúdio
+cria metadados privados; cenas/partes são acrescentadas pelo incremento F2-02,
+sem criar sessões implicitamente. Cada tipo possui consulta, estado, filtro e cursor
 independentes. Troca de conta remonta a sessão e descarta respostas anteriores.
 
 `functions/src/studio.mjs` fornece `createAdventure`, `createCampaign`,
@@ -367,3 +367,27 @@ Admin respeitam a mesma condição. Valores devem caber no intervalo de `Date`.
 As referências de universo distinguem livros, aventuras e campanhas; exclusão
 confere os três contadores e referências antes de bloquear novos vínculos.
 Ver [contrato executável](tasks/writer-v2/execucao/07-estudio-projetos.md).
+
+## Cenas e composição de manuscrito
+
+`features/scenes` fornece modelos, serviços callables, planejamento em lista/quadro
+e editor rico privado para livros e aventuras. `books` resolve capítulos compostos
+por sua interface pública; listas de capítulos podem pedir somente metadados.
+A rota histórica do editor do capítulo composto mostra prosa e planejamento,
+enquanto cada cena tem rota própria. Capítulos legados mantêm seu editor.
+
+`functions/src/scenes.mjs` e `sceneJobs.mjs` centralizam mutações, autorização,
+revisões, recibos em `users/{uid}/sceneOperations` e trabalhos retomáveis. Corpos,
+planos e referências são filhos de cada cena. `sceneSources` conserva a fonte da
+conversão mesmo se o capítulo for removido; `sceneControls/unassigned` organiza
+conteúdo sem agrupador. O marcador `hasSceneResources` impede finish legado de
+deixar filhos órfãos. Controles e fontes não aceitam writes do navegador.
+
+`chapterCompositionService.ts` lê páginas de prosa ativa, confere hash/revisão,
+sanitiza blocos e revalida ao terminar. Não usa a fonte congelada como fallback.
+Publicação prepara somente campos públicos e captura `sourceSceneRevision`;
+backup v5 inclui os recursos privados sem confundir plano com prosa exportável.
+Ordenação e exclusão usam checkpoints limitados; remover agrupador desvincula
+cenas. Ver [ADR 0026](decisions/0026-scenes-and-manuscript-assembly.md) e
+[contrato F2-02](tasks/writer-v2/execucao/08-planejamento-de-cenas.md), cujos gates
+registram a validação vigente deste incremento.

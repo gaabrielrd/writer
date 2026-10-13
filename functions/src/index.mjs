@@ -10,6 +10,7 @@ import { defineSecret, defineString, defineInt } from 'firebase-functions/params
 import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createStudioService } from './studio.mjs';
+import { createScenesService } from './scenes.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
@@ -238,6 +239,7 @@ const callable = (method, secrets = []) =>
       try {
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
+        const scenes = createScenesService({ db });
         const loreAnalysis = createLoreAnalysisService({ db, generator: loreGenerator });
         const assisted = createAssistedBookService({
           db,
@@ -245,20 +247,23 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = studio[method]
-          ? studio
-          : assisted[method]
-            ? assisted
-            : loreAnalysis[method]
-              ? loreAnalysis
-              : universeService[method]
-                ? universeService
-                : service()[method]
-                  ? service()
-                  : createImageLibraryService({ db, assets });
+        const handler = scenes[method]
+          ? scenes
+          : studio[method]
+            ? studio
+            : assisted[method]
+              ? assisted
+              : loreAnalysis[method]
+                ? loreAnalysis
+                : universeService[method]
+                  ? universeService
+                  : service()[method]
+                    ? service()
+                    : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
-        if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
+        if (error instanceof GenerationError)
+          throw new HttpsError(error.code, error.message, error.details);
         throw new HttpsError(
           'unavailable',
           'Serviço temporariamente indisponível. Tente novamente.',
@@ -285,6 +290,25 @@ export const getAdventure = callable('getAdventure');
 export const getCampaign = callable('getCampaign');
 export const prepareStudioBooks = callable('prepareStudioBooks');
 export const listStudioProjects = callable('listStudioProjects');
+export const createScene = callable('createScene');
+export const updateScene = callable('updateScene');
+export const moveScene = callable('moveScene');
+export const archiveScene = callable('archiveScene');
+export const getScene = callable('getScene');
+export const listScenes = callable('listScenes');
+export const listSceneGroups = callable('listSceneGroups');
+export const getSceneGroup = callable('getSceneGroup');
+export const createSceneGroup = callable('createSceneGroup');
+export const convertChapterToScenes = callable('convertChapterToScenes');
+export const setSceneReference = callable('setSceneReference');
+export const listSceneReferences = callable('listSceneReferences');
+export const listSceneSources = callable('listSceneSources');
+export const readSceneAssembly = callable('readSceneAssembly');
+export const rebalanceSceneRanks = callable('rebalanceSceneRanks');
+export const deleteSceneGroup = callable('deleteSceneGroup');
+export const deleteSceneGroups = callable('deleteSceneGroups');
+export const deleteSceneBook = callable('deleteSceneBook');
+export const getSceneJob = callable('getSceneJob');
 export const saveUniverseLore = callable('saveUniverseLore');
 export const deleteUniverseLore = callable('deleteUniverseLore');
 export const analyzeChapterLore = callable('analyzeChapterLore', [key]);

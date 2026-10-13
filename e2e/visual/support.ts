@@ -55,7 +55,7 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
           {
             label: FIXTURE_LABEL,
             source:
-              'Componentes e rotas reais; autenticação, livros, aventuras, campanhas, universos, capítulos, lore e IA fictícios.',
+              'Componentes e rotas reais; autenticação, livros, aventuras, campanhas, universos, capítulos, cenas, lore e IA fictícios.',
             theme: visualTheme,
             libraryState,
             clockMode: controlledClock ? 'controlado pelo cenário' : 'avança naturalmente',

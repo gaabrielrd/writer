@@ -11,6 +11,8 @@ import {
   type UpdateChapterInput,
 } from '../../../src/features/books/model/chapter';
 import { author, books, chapters, FIXTURE_LIBRARY_STATE_KEY, FIXTURE_TIME } from './data';
+import type { FixtureSceneState } from './sceneStore';
+import { resolveChapterContent } from '../../../src/features/books/services/chapterCompositionService';
 
 const initialBooks = sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'empty' ? [] : books;
 const bookStore = new Map(initialBooks.map((book) => [book.id, structuredClone(book)]));
@@ -18,9 +20,63 @@ export function fixtureStudioBooks(authorId: string): Book[] {
   return structuredClone([...bookStore.values()].filter((book) => book.authorId === authorId));
 }
 const chapterStore = new Map(chapters.map((chapter) => [chapter.id, structuredClone(chapter)]));
+export function fixtureReadChapters(bookId: string): Chapter[] {
+  return structuredClone([...chapterStore.values()].filter((chapter) => chapter.bookId === bookId));
+}
+export function fixtureWriteChapter(chapter: Chapter): void {
+  chapterStore.set(chapter.id, structuredClone(chapter));
+  bindingListeners.forEach((notify) => notify());
+}
+export function fixtureWriteBook(bookId: string, patch: Partial<Book>): void {
+  const book = bookStore.get(bookId);
+  if (book) bookStore.set(bookId, { ...book, ...structuredClone(patch) });
+  bindingListeners.forEach((notify) => notify());
+}
+export function fixtureRemoveChapter(bookId: string, chapterId: string): void {
+  if (chapterStore.get(chapterId)?.bookId === bookId) chapterStore.delete(chapterId);
+}
 const bindingListeners = new Set<() => void>();
 let sequence = 0;
 const actStore = new Map<string, Act[]>();
+// Only fictional server data is persisted across reloads in this isolated preview.
+const savedSceneStates = sessionStorage.getItem('writer.visual.scenes');
+if (savedSceneStates) {
+  for (const [, state] of JSON.parse(savedSceneStates) as [string, FixtureSceneState][]) {
+    if (state.target.kind !== 'book' || state.revision === 0) continue;
+    const book = bookStore.get(state.target.id);
+    if (!book || book.authorId !== state.ownerId) continue;
+    for (const id of state.removedGroupIds ?? []) chapterStore.delete(id);
+    for (const group of Object.values(state.groups)) {
+      if (group.kind !== 'chapter' || group.id === null || group.contentMode !== 'scenes') continue;
+      const chapter = {
+        ...(chapterStore.get(group.id) ?? {
+          id: group.id,
+          bookId: state.target.id,
+          createdAt: FIXTURE_TIME,
+          content: state.sources[group.id]?.content ?? '',
+        }),
+        title: group.title,
+        order: group.order,
+        contentMode: 'scenes' as const,
+        assemblyRevision: group.assemblyRevision,
+        structureRevision: group.structureRevision,
+        deleting: group.deleting,
+        wordCount: group.wordCount,
+        updatedAt: group.updatedAt,
+      };
+      chapterStore.set(group.id, chapter);
+    }
+    bookStore.set(book.id, {
+      ...book,
+      wordCount: [...chapterStore.values()]
+        .filter((chapter) => chapter.bookId === book.id)
+        .reduce((total, chapter) => total + chapter.wordCount, 0),
+      sceneRevision: state.revision,
+      hasSceneResources: true,
+      updatedAt: FIXTURE_TIME + state.revision,
+    });
+  }
+}
 export function seedAssistedBook(book: Book) {
   bookStore.set(book.id, book);
 }
@@ -70,23 +126,29 @@ export function deleteBook(bookId: string): Promise<void> {
   return Promise.resolve();
 }
 
-export function listChapters(bookId: string): Promise<Chapter[]> {
+export function listChapters(
+  bookId: string,
+  options: { includeContent?: boolean } = {},
+): Promise<Chapter[]> {
   if (sessionStorage.getItem('writer.visual.export-failure') === 'true') {
     return Promise.reject(new Error('Falha simulada na exportação. Tente novamente.'));
   }
-  return Promise.resolve(
-    structuredClone(
-      groupChapters(
-        [...chapterStore.values()].filter((chapter) => chapter.bookId === bookId),
-        actStore.get(bookId) ?? [],
-      ).flatMap((group) => group.chapters),
-    ),
+  const ordered = structuredClone(
+    groupChapters(
+      [...chapterStore.values()].filter((chapter) => chapter.bookId === bookId),
+      actStore.get(bookId) ?? [],
+    ).flatMap((group) => group.chapters),
   );
+  return options.includeContent === false
+    ? Promise.resolve(ordered.map((chapter) => ({ ...chapter, content: '' })))
+    : Promise.all(ordered.map((chapter) => resolveChapterContent(bookId, chapter)));
 }
 
-export function getChapter(bookId: string, chapterId: string): Promise<Chapter | null> {
+export async function getChapter(bookId: string, chapterId: string): Promise<Chapter | null> {
   const chapter = chapterStore.get(chapterId);
-  return Promise.resolve(structuredClone(chapter?.bookId === bookId ? chapter : null));
+  if (chapter?.bookId !== bookId) return null;
+  const current = structuredClone(chapter);
+  return current.contentMode === 'scenes' ? await resolveChapterContent(bookId, current) : current;
 }
 
 export function createChapter(bookId: string, input: CreateChapterInput): Promise<Chapter> {

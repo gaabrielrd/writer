@@ -5,12 +5,16 @@ import { listLoreEntities } from './loreService';
 import { setFixturePublication } from './publicBookService';
 import { renderRichText } from '../../../src/shared/lib/sanitizeRichText';
 import { FIXTURE_TIME } from './data';
+import { resolveChapterContent } from '../../../src/features/books/services/chapterCompositionService';
 let sequence = 1;
 export async function publishBook(bookId: string, authorName: string): Promise<void> {
   if (!authorName.trim()) throw new Error('Informe o nome público do autor.');
   const book = await getBook(bookId);
   if (!book) throw new Error('Livro fictício não encontrado.');
-  const [chapters, lore] = await Promise.all([listChapters(bookId), listLoreEntities(bookId)]);
+  const [rawChapters, lore] = await Promise.all([listChapters(bookId), listLoreEntities(bookId)]);
+  const chapters = await Promise.all(
+    rawChapters.map((chapter) => resolveChapterContent(bookId, chapter)),
+  );
   const acts = await listActs(bookId);
   const ordered = groupChapters(chapters, acts).filter((group) => group.chapters.length > 0);
   const publicActs = ordered.flatMap((group) =>

@@ -1,5 +1,15 @@
 import { DEFAULT_PERSONAS, listPersonas, validatePersona } from '@/features/ai-assistant';
-import { listActs, groupChapters, listChapters, type Book, type Chapter } from '@/features/books';
+import {
+  listActs,
+  groupChapters,
+  listChapters,
+  resolveChapterContent,
+  captureSceneBookBackup,
+  assertSceneBookRevision,
+  getBook,
+  type Book,
+  type Chapter,
+} from '@/features/books';
 import { listLoreEntities } from '@/features/lore';
 import { getUniverse } from '@/features/universes';
 import {
@@ -36,6 +46,9 @@ export async function exportManuscript({
     throw new Error('Selecione um capítulo para exportar.');
   if (format === 'json' && scope !== 'book')
     throw new Error('O backup JSON inclui o livro inteiro.');
+  const snapshotBook = await getBook(book.id, { source: 'server' });
+  if (!snapshotBook || snapshotBook.deleting)
+    throw new Error('Livro indisponível para exportação.');
   const source =
     scope === 'chapter' && currentChapter ? [currentChapter] : await listChapters(book.id);
   const acts = scope === 'chapter' && !currentChapter?.actId ? [] : await listActs(book.id);
@@ -45,11 +58,35 @@ export async function exportManuscript({
     currentChapter && !source.some((chapter) => chapter.id === currentChapter.id)
       ? [...source, currentChapter]
       : source;
-  const chapters = available.map((chapter) =>
-    chapter.id === currentChapter?.id && currentContent !== undefined
-      ? { ...chapter, content: currentContent }
-      : chapter,
+  const chapters = await Promise.all(
+    available.map(async (chapter) =>
+      chapter.contentMode === 'scenes'
+        ? await resolveChapterContent(book.id, chapter)
+        : chapter.id === currentChapter?.id && currentContent !== undefined
+          ? { ...chapter, content: currentContent }
+          : chapter,
+    ),
   );
+  const hasScenes =
+    snapshotBook.hasSceneResources ||
+    book.hasSceneResources ||
+    chapters.some((chapter) => chapter.contentMode === 'scenes');
+  if (hasScenes && snapshotBook.updatedAt !== book.updatedAt)
+    throw new Error('O livro mudou. Atualize seus dados antes de exportar.');
+  const sourceSceneRevision = snapshotBook.sceneRevision ?? 0;
+  const assertCapture = async () => {
+    if (hasScenes) await assertSceneBookRevision(book.id, sourceSceneRevision);
+    const latest = await getBook(book.id, { source: 'server' });
+    if (
+      !latest ||
+      latest.deleting ||
+      (latest.sceneRevision ?? 0) !== sourceSceneRevision ||
+      Boolean(latest.hasSceneResources) !== Boolean(snapshotBook.hasSceneResources) ||
+      (hasScenes && latest.updatedAt !== snapshotBook.updatedAt)
+    )
+      throw new Error('O livro mudou durante a exportação. Atualize e tente novamente.');
+    signal?.throwIfAborted();
+  };
   if (format === 'json') {
     const lore = await listLoreEntities(book.id);
     const universe = book.universeId ? await getUniverse(book.universeId) : null;
@@ -77,9 +114,11 @@ export async function exportManuscript({
       return validatePersona(persona);
     });
     signal?.throwIfAborted();
+    const scenes = hasScenes ? await captureSceneBookBackup(book.id, sourceSceneRevision) : null;
     const backup = {
       format: 'writer-book-backup',
-      version: acts.length ? 4 : personaIds.size ? 3 : universe ? 2 : 1,
+      version: scenes ? 5 : acts.length ? 4 : personaIds.size ? 3 : universe ? 2 : 1,
+      ...(scenes ? { scenes } : {}),
       ...(acts.length ? { acts } : {}),
       ...(personaIds.size ? { personas } : {}),
       ...(universe
@@ -118,16 +157,33 @@ export async function exportManuscript({
       },
       chapters: groupChapters(chapters, acts)
         .flatMap((group) => group.chapters)
-        .map(({ id, title, order, content, createdAt, updatedAt, actId, personaComplement }) => ({
-          ...(actId ? { actId } : {}),
-          ...(personaComplement ? { personaComplement } : {}),
-          id,
-          title,
-          order,
-          content,
-          createdAt,
-          updatedAt,
-        })),
+        .map(
+          ({
+            id,
+            title,
+            order,
+            content,
+            createdAt,
+            updatedAt,
+            actId,
+            personaComplement,
+            contentMode,
+            assemblyRevision,
+            structureRevision,
+          }) => ({
+            ...(contentMode === 'scenes'
+              ? { contentMode, assemblyRevision, structureRevision }
+              : {}),
+            ...(actId ? { actId } : {}),
+            ...(personaComplement ? { personaComplement } : {}),
+            id,
+            title,
+            order,
+            content,
+            createdAt,
+            updatedAt,
+          }),
+        ),
       lore: lore.map(
         ({
           id,
@@ -169,6 +225,7 @@ export async function exportManuscript({
         }),
       ),
     };
+    await assertCapture();
     downloadExport(
       new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' }),
       exportFileName(book.title, 'json'),
@@ -176,6 +233,7 @@ export async function exportManuscript({
     return;
   }
   const manuscript = createExportDocument(book, chapters, acts);
+  await assertCapture();
   if (format === 'pdf') {
     await exportPdf(manuscript, signal);
     return;

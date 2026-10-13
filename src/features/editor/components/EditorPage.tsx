@@ -22,6 +22,7 @@ import {
   subscribeWritingBindings,
   type Book,
   type Chapter,
+  SceneChapterView,
 } from '@/features/books';
 import {
   listLoreEntities,
@@ -169,7 +170,7 @@ function EditorSession() {
     content,
     debounceMs: 1000,
     ownerId: user?.uid,
-    enabled: chapter !== null,
+    enabled: chapter !== null && chapter.contentMode !== 'scenes',
     onSaved: handleSaved,
   });
   useEffect(() => {
@@ -216,7 +217,7 @@ function EditorSession() {
     const loadData = async () => {
       try {
         const bookData: Book | null = await getBook(bookId);
-        const chaptersData: Chapter[] = await listChapters(bookId);
+        const chaptersData: Chapter[] = await listChapters(bookId, { includeContent: false });
         const chapterData: Chapter | null = await getChapter(bookId, chapterId);
         const loreData: LoreEntity[] = await listLoreEntities(bookId);
         const globalData = bookData?.universeId
@@ -502,6 +503,9 @@ function EditorSession() {
       </div>
     );
   }
+
+  if (chapter.contentMode === 'scenes')
+    return <SceneChapterView book={book} chapter={chapter} legacyDraft={recoveryDraft} />;
 
   if (recoveryDraft !== null) {
     return (

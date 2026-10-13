@@ -1,6 +1,6 @@
 # W2-F2-01 — Organizar projetos e navegação do estúdio
 
-**Estado:** Implementado e validado localmente; conclusão técnica exige CI verde no head do PR.
+**Estado:** Concluído tecnicamente em `15cd417`, com CI e regras verdes; aceites humanos/comerciais permanecem nas entregas próprias.
 **Evidência de planejamento/autorização:** [Estúdio e projetos](../execucao/07-estudio-projetos.md).
 **Evidência da implementação:** [Entrega do Estúdio](../../../entregas/2026-10-13-writer-v2-estudio.md).
 **Dependências:** [W2-F1-06](../fase-01-direcao-e-fundamentos/06-contratos-e-replanejamento.md)

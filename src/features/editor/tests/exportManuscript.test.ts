@@ -3,7 +3,14 @@ import { DEFAULT_PERSONAS, listPersonas } from '@/features/ai-assistant';
 import * as personaAPI from '@/features/ai-assistant';
 vi.mock('@/features/universes', () => ({ getUniverse: vi.fn() }));
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { listChapters, listActs } from '@/features/books';
+import {
+  listChapters,
+  listActs,
+  getBook,
+  resolveChapterContent,
+  captureSceneBookBackup,
+  assertSceneBookRevision,
+} from '@/features/books';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
 import { exportManuscript } from '../services/exportManuscript';
 import { downloadExport } from '../services/downloadExport';
@@ -15,6 +22,10 @@ vi.mock('@/features/books', async () => ({
   ...(await vi.importActual('../../books/model/act')),
   listChapters: vi.fn(),
   listActs: vi.fn(),
+  getBook: vi.fn(),
+  resolveChapterContent: vi.fn(),
+  captureSceneBookBackup: vi.fn(),
+  assertSceneBookRevision: vi.fn(),
 }));
 vi.mock('@/features/lore', () => ({ listLoreEntities: vi.fn() }));
 vi.mock('../services/downloadExport', () => ({ downloadExport: vi.fn() }));
@@ -25,10 +36,120 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.spyOn(personaAPI, 'listPersonas').mockResolvedValue([]);
   vi.mocked(listChapters).mockResolvedValue([exportChapter]);
+  vi.mocked(getBook).mockResolvedValue(exportBook);
+  vi.mocked(resolveChapterContent).mockImplementation((_bookId, chapter) =>
+    Promise.resolve(chapter),
+  );
+  vi.mocked(assertSceneBookRevision).mockResolvedValue();
   vi.mocked(listActs).mockResolvedValue([]);
   vi.mocked(listLoreEntities).mockResolvedValue([]);
   vi.mocked(exportPdf).mockResolvedValue();
   vi.mocked(exportDocx).mockResolvedValue(new Blob(['docx']));
+});
+
+it('backup v5 inclui captura privada e fonte de agrupador removido', async () => {
+  const book = { ...exportBook, hasSceneResources: true, sceneRevision: 9 };
+  vi.mocked(getBook).mockResolvedValue(book);
+  vi.mocked(listChapters).mockResolvedValue([
+    { ...exportChapter, contentMode: 'scenes', assemblyRevision: 4, content: 'Prosa atual' },
+  ]);
+  const sceneBackup = {
+    schemaVersion: 1 as const,
+    projectRevision: 9,
+    groups: [],
+    scenes: [],
+    sources: [
+      {
+        id: 'removed-chapter',
+        content: 'Fonte preservada',
+        hash: 'hash',
+        original: { title: 'Original' },
+      },
+    ],
+  };
+  vi.mocked(captureSceneBookBackup).mockResolvedValue(sceneBackup);
+  await exportManuscript({ book, scope: 'book', format: 'json' });
+  const backup: unknown = JSON.parse(await downloadedText());
+  expect(backup).toMatchObject({
+    version: 5,
+    scenes: sceneBackup,
+    chapters: [{ contentMode: 'scenes', assemblyRevision: 4, content: 'Prosa atual' }],
+  });
+  expect(captureSceneBookBackup).toHaveBeenCalledWith(book.id, 9);
+  expect(assertSceneBookRevision).toHaveBeenCalledWith(book.id, 9);
+});
+
+it('não baixa backup parcial quando a revisão final das cenas mudou', async () => {
+  const book = { ...exportBook, hasSceneResources: true, sceneRevision: 9 };
+  vi.mocked(getBook).mockResolvedValue(book);
+  vi.mocked(captureSceneBookBackup).mockResolvedValue({
+    schemaVersion: 1,
+    projectRevision: 9,
+    groups: [],
+    scenes: [],
+    sources: [],
+  });
+  vi.mocked(assertSceneBookRevision).mockRejectedValueOnce(new Error('As cenas mudaram'));
+  await expect(exportManuscript({ book, scope: 'book', format: 'json' })).rejects.toThrow(
+    /mudaram/,
+  );
+  expect(downloadExport).not.toHaveBeenCalled();
+});
+
+it('cena sem capítulo criada depois de abrir o livro não é omitida por flag antiga', async () => {
+  vi.mocked(getBook).mockResolvedValueOnce({
+    ...exportBook,
+    updatedAt: exportBook.updatedAt + 1,
+    hasSceneResources: true,
+    sceneRevision: 1,
+  });
+  await expect(
+    exportManuscript({ book: exportBook, scope: 'book', format: 'json' }),
+  ).rejects.toThrow(/livro mudou/);
+  expect(getBook).toHaveBeenCalledWith(exportBook.id, { source: 'server' });
+  expect(downloadExport).not.toHaveBeenCalled();
+});
+it('exclusão em andamento impede baixar um backup parcial', async () => {
+  vi.mocked(getBook).mockResolvedValueOnce({ ...exportBook, deleting: true });
+  await expect(
+    exportManuscript({ book: exportBook, scope: 'book', format: 'json' }),
+  ).rejects.toThrow(/indisponível/);
+  expect(downloadExport).not.toHaveBeenCalled();
+});
+
+it('cena criada durante exportação legada invalida captura antes de baixar', async () => {
+  vi.mocked(getBook)
+    .mockResolvedValueOnce(exportBook)
+    .mockResolvedValueOnce({
+      ...exportBook,
+      updatedAt: exportBook.updatedAt + 1,
+      hasSceneResources: true,
+      sceneRevision: 1,
+    });
+  await expect(
+    exportManuscript({ book: exportBook, scope: 'book', format: 'json' }),
+  ).rejects.toThrow(/mudou durante/);
+  expect(downloadExport).not.toHaveBeenCalled();
+});
+
+it('exportação de capítulo composto usa a composição e não um rascunho do editor antigo', async () => {
+  const book = { ...exportBook, hasSceneResources: true, sceneRevision: 9 };
+  const chapter = { ...exportChapter, contentMode: 'scenes' as const, assemblyRevision: 4 };
+  vi.mocked(getBook).mockResolvedValue(book);
+  vi.mocked(resolveChapterContent).mockResolvedValue({
+    ...chapter,
+    content: '<p>Prosa das cenas</p>',
+  });
+  await exportManuscript({
+    book,
+    scope: 'chapter',
+    format: 'markdown',
+    currentChapter: chapter,
+    currentContent: 'Fonte congelada antiga',
+  });
+  const text = await downloadedText();
+  expect(text).toContain('Prosa das cenas');
+  expect(text).not.toContain('Fonte congelada antiga');
 });
 
 it('preserva personas e vínculos no backup v3 sem exportar segredos ou a biblioteca inteira', async () => {

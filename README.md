@@ -11,6 +11,10 @@ O Estúdio (`/studio`) reúne livros existentes e a criação privada de aventur
 campanhas independentes, com universo opcional, filtros e paginação. A navegação
 oferece Universos, Estúdio, Publicações, Catálogo e Biblioteca; os três últimos
 ainda exibem disponibilidade futura. A biblioteca de imagens mantém `/library`.
+Livros e aventuras recebem planejamento e texto próprio por cena no incremento
+F2-02, com arquivo/restauração, composição de capítulos/partes e backup privado v5.
+O [contrato e estado dos gates](docs/tasks/writer-v2/execucao/08-planejamento-de-cenas.md)
+registra a validação deste incremento; comércio e sessões conservam tarefas próprias.
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).
@@ -158,9 +162,11 @@ usam seções opcionais com salvamento direto. A liberação depende das functio
 
 - O Estúdio exige implantação conjunta das seis callables, regras e índices antes
   de uso em produção. A preparação de livros legados corrige somente datas/estado,
-  em lotes retomáveis; aventuras e campanhas oferecem metadados privados neste
-  incremento. Estrutura narrativa, variantes e sessões permanecem nas próximas
-  tarefas. Veja [contrato do Estúdio](docs/tasks/writer-v2/execucao/07-estudio-projetos.md).
+  em lotes retomáveis. Cenas acrescentam callables, controles e índices próprios;
+  a implantação conjunta ainda exige autorização. Variantes, sessões e assistência
+  de IA especializada de cena permanecem nas próximas tarefas. Veja
+  [contrato do Estúdio](docs/tasks/writer-v2/execucao/07-estudio-projetos.md) e
+  [cenas](docs/tasks/writer-v2/execucao/08-planejamento-de-cenas.md).
 
 - O [chat do Assistente IA no capítulo](docs/chapter-chat.md) tem histórico privado,
   comandos e contexto por seleção/cursor/viewport. Conversa não debita; a primeira

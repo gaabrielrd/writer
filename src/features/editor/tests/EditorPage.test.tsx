@@ -9,6 +9,7 @@ import * as loreService from '@/features/lore';
 import type { Book, Chapter } from '@/features/books';
 import type { LoreEntity } from '@/features/lore';
 import * as personaAPI from '@/features/ai-assistant';
+import { writeLocalDraft, readLocalDraft } from '../services/localDraftStorage';
 
 vi.mock('@/features/auth', async () => {
   const actual = await vi.importActual<typeof import('@/features/auth')>('@/features/auth');
@@ -90,6 +91,34 @@ describe('EditorPage', () => {
     vi.spyOn(loreService, 'subscribeLoreEntities').mockReturnValue(() => undefined);
   });
 
+  it('rota composta oferece rascunho legado preservado e não inicia edição do corpo congelado', async () => {
+    writeLocalDraft('auth-1', 'b-1', 'c-1', '<p>Rascunho anterior</p>');
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    vi.spyOn(bookService, 'getChapter').mockResolvedValue({
+      ...mockChapters[0]!,
+      contentMode: 'scenes',
+      content: '<p>Composição atual</p>',
+    });
+    vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue([]);
+    const update = vi.spyOn(bookService, 'updateChapter').mockResolvedValue();
+    vi.spyOn(bookService, 'SceneChapterView').mockImplementation(({ legacyDraft }) => (
+      <section aria-label="Composição de cenas">{legacyDraft}</section>
+    ));
+    render(
+      <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+        <Routes>
+          <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole('region', { name: 'Composição de cenas' })).toHaveTextContent(
+      '<p>Rascunho anterior</p>',
+    );
+    expect(readLocalDraft('auth-1', 'b-1', 'c-1')?.content).toBe('<p>Rascunho anterior</p>');
+    expect(screen.queryByRole('textbox', { name: 'Área de escrita' })).not.toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+  });
   it('sincroniza personas sem substituir o texto e salva vínculos pelo editor, com retry de configuração', async () => {
     const user = userEvent.setup({ delay: null });
     vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);

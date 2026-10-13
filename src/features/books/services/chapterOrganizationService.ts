@@ -7,6 +7,7 @@ import {
   type DocumentSnapshot,
 } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
+import { deleteSceneGroups } from '@/features/scenes';
 import { countWords, type Chapter, type CreateChapterInput } from '../model/chapter';
 import { type Act, groupChapters } from '../model/act';
 
@@ -157,7 +158,7 @@ export async function moveChaptersToAct(
     assertUnchanged(current, book);
     snapshots.forEach((snapshot, index) => {
       const expected = selected[index]!;
-      if (!snapshot.exists() || snapshot.data().updatedAt !== expected.updatedAt)
+      if (!snapshot.exists() || (snapshot.data().updatedAt ?? 0) !== expected.updatedAt)
         throw new Error('Um capítulo mudou. Atualize a lista antes de tentar novamente.');
     });
     const now = nextTimestamp(current.updatedAt as number);
@@ -174,6 +175,18 @@ export async function moveChaptersToAct(
 
 export async function deleteChapters(bookId: string, selected: readonly Chapter[]): Promise<void> {
   selectionIds(bookId, selected);
+  if (selected.some((chapter) => chapter.contentMode === 'scenes' || chapter.deleting)) {
+    const request = {
+      target: { kind: 'book' as const, id: bookId },
+      operationId: crypto.randomUUID(),
+      groups: selected.map((chapter) => ({ id: chapter.id, expectedUpdatedAt: chapter.updatedAt })),
+      limit: 50,
+    };
+    while (!(await deleteSceneGroups(request)).complete) {
+      /* Initial marking covers the entire mixed selection atomically. */
+    }
+    return;
+  }
   const bookRef = doc(firestore, 'books', bookId);
   await runTransaction(firestore, async (transaction) => {
     const current = editableBook(await transaction.get(bookRef));
@@ -182,7 +195,7 @@ export async function deleteChapters(bookId: string, selected: readonly Chapter[
     );
     let removedWords = 0;
     snapshots.forEach((snapshot, index) => {
-      if (!snapshot.exists() || snapshot.data().updatedAt !== selected[index]!.updatedAt)
+      if (!snapshot.exists() || (snapshot.data().updatedAt ?? 0) !== selected[index]!.updatedAt)
         throw new Error('Um capítulo mudou. Atualize a lista antes de tentar novamente.');
       removedWords += (snapshot.data().wordCount as number) || 0;
     });
