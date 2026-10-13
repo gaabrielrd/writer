@@ -79,6 +79,37 @@
   background: hsl(var(--primary));
   color: hsl(var(--primary-foreground));
 }
+
+.appWrapper[data-workspace-expanded='true'] {
+  max-width: none;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  gap: 0;
+}
+
+.header[data-workspace-expanded='true'] {
+  border-radius: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--surface);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: none;
+}
+
+.header[data-workspace-expanded='true'] .leftBar {
+  display: none;
+}
+
+.header[data-workspace-expanded='true'] .topBar {
+  justify-content: flex-end;
+}
+
+.mainContent[data-workspace-expanded='true'] {
+  min-height: 0;
+  overflow: auto;
+}
 .skipLink:focus {
   transform: translateY(0);
 }

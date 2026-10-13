@@ -1,11 +1,40 @@
 # Chat do Assistente IA no capítulo
 
 **Assistente IA** abre um painel no mesmo espaço do **Compêndio**. Alternar ou
-fechar conserva a conversa e o rascunho. No desktop a largura é
-`clamp(280px, 28vw, 360px)`; até 760 px ambos ocupam a largura disponível e
-480 px de altura. O manuscrito continua editável durante a geração.
+fechar conserva a conversa e o rascunho. No desktop ambos usam a largura
+redimensionável do workspace: inicialmente 40%, faixa de 20–70%, painel mínimo
+de 280 px e manuscrito mínimo de 400 px. Arraste o divisor ou use setas,
+Shift+setas, Home/End; duplo clique restaura 40%. A proporção é salva por
+usuário/navegador e conservada ao alternar. Até 760 px ou quando os mínimos
+não couberem, ambos ficam empilhados, com largura disponível e 480 px de altura.
+Falhas ao salvar a preferência conservam a largura da sessão e oferecem retry.
+O manuscrito continua editável durante a geração.
+
+**Tela cheia** ocupa a viewport do aplicativo e remove os limites de largura
+do shell (1440 px) e do manuscrito (860 px). Créditos, tema, conta, ferramentas,
+minimapa e painéis continuam disponíveis. Alternar conserva a instância de
+edição, seleção, undo, trecho visível e rascunho do chat. Escape fecha primeiro
+menus, diálogos, barra de seleção ou sugestão; sem sobreposição, sai do modo,
+inclusive com foco no texto. Navegar entre capítulos conserva o modo; voltar
+ao livro restaura o shell. Em telas estreitas, o conteúdo empilhado rola no main.
+
+A barra de escrita tem grupos de formatação, histórico e painéis. Persona e
+exportação ficam em **Opções do capítulo**; o menu conserva acesso por teclado
+e o diálogo devolve foco ao gatilho do menu. Autosave, contagem e navegação
+continuam diretamente visíveis no cabeçalho.
+
+Os painéis usam o mesmo cabeçalho compacto, com título, criar e fechar. Filtros,
+histórico e mensagens conservam estado ao alternar. Cabeçalho e controles ficam
+fora da rolagem do corpo; o composer rola separadamente e reserva área de leitura
+em alturas baixas. O estado vazio usa apresentação compacta até 650 px de altura.
 
 ## Conversa e comandos
+
+O campo reúne **Enviar/Parar** no canto inferior. Abaixo ficam origem do contexto,
+prévia expansível e acesso à configuração do modelo, com retorno ao editor e
+rascunho preservado. Os detalhes do contexto são uma região rolável no próprio
+composer; Escape os recolhe antes de fechar o chat e devolve foco ao campo.
+O nome do modelo BYOK usa a configuração atual; chaves não são exibidas.
 
 Enter envia; Shift+Enter insere uma linha. Composição IME não envia. Digitar `/`
 abre busca por comandos, navegável com setas, Enter/Tab e Escape. Escolher um
@@ -61,6 +90,39 @@ conservam esses dados no perfil do navegador. Chaves BYOK não entram em registr
 de conversa nem em requisições da callable.
 
 ## Provedores, falhas e créditos
+
+### Contrato de raciocínio
+
+O seletor abaixo do campo conserva a escolha por conversa privada. Novas
+conversas recebem o padrão versionado por usuário/navegador; conversas antigas
+sem preferência usam Auto. A configuração informa o modelo da plataforma;
+BYOK usa o modelo do navegador. Níveis sem suporte ficam desabilitados. Trocar
+modelo conserva a preferência e informa quando ela exige fallback para Auto.
+Falha de sincronização conserva a escolha anterior; falha ao salvar o padrão
+local não desfaz a escolha da conversa. Preferências não debitam nem geram texto.
+
+A matriz e os limites são descritos na
+[ADR 0023](decisions/0023-chat-reasoning-capabilities.md). Gemini recebe
+`thinkingConfig.thinkingLevel`; modelos OpenAI de raciocínio recebem
+`reasoning_effort` e `max_completion_tokens`. Modelos desconhecidos usam
+Auto sem parâmetros de raciocínio inferidos. O teto é 4000 tokens de
+saída/completion e 90 segundos no provedor; tokens internos podem consumir
+o limite. Máximo conserva esses tetos e a cota de 60 pedidos/hora.
+
+Cada pedido guarda configuração solicitada e efetiva, contexto e histórico
+utilizado. O modelo da plataforma é escolhido pelo servidor. Retry conserva
+identidade, cronologia, histórico e parâmetros originais mesmo após mudanças
+de preferência/modelo; regenerar cria outro pedido com a escolha atual. Detalhes
+`Modelo e raciocínio` permitem consultar os parâmetros de cada resposta.
+Conversas anteriores sem metadados indicam Auto e modelo não registrado.
+
+As configurações do pedido/recuperação contêm somente versão, origem, modelo
+e nível público. BYOK escolhe a chave local do provedor original somente quando
+precisa gerar; recuperar um resultado já salvo não exige a chave. Nenhuma chave
+vai para a callable, rascunho de recuperação ou mensagens. Pensamentos internos
+do provedor são filtrados. Falhas, timeouts e cancelamento não tornam saída
+parcial aplicável. Um pedido pendente conserva a opção de retry após mudar
+preferências. Frontend/callable devem ser liberados juntos.
 
 `functions/src/chapterChat.mjs` controla autoria, estados, origem do provedor,
 limites, persistência e aceite. A callable `chapterChat` usa Auth/App Check,

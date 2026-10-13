@@ -7,8 +7,10 @@ export function AISettingsProvider({ children }: { children: ReactNode }) {
   const location = useLocation();
   return (
     <AISettingsContext.Provider
-      value={() => {
-        void navigate('/settings/ai', { state: { returnTo: location.pathname + location.search } });
+      value={(tab?: 'personas' | 'provider') => {
+        const path =
+          tab === 'provider' || tab === 'personas' ? `/settings/ai?tab=${tab}` : '/settings/ai';
+        void navigate(path, { state: { returnTo: location.pathname + location.search } });
       }}
     >
       {children}

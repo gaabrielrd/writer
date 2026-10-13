@@ -122,6 +122,18 @@ busca é opcional. Veja [ADR 0020](decisions/0020-shared-dropdown.md) e
 
 ## Estado
 
+`WorkspaceLayoutProvider`, público em shared/ui, guarda apenas o estado neutro
+de expansão do layout. O shell observa esse estado sem remontar o Outlet.
+O editor controla entrada/Escape, conserva o trecho visível após o reflow e
+restaura o layout ao deixar a rota. O workspace redimensionável mantém uma
+árvore estável para manuscrito e painéis; a largura passa pelo adaptador local
+versionado e isolado por usuário, com fallback seguro de armazenamento.
+
+A passagem é ancorada pelo caret visível ou pelo primeiro bloco visível. Quando
+o cursor está fora da viewport e o bloco excede sua altura, uma Range virtual
+obtida pela posição textual da viewport conserva a leitura sem mover a seleção.
+O acompanhamento de reflow dura até 500 ms e termina na primeira interação.
+
 As configurações de IA são compostas por `AISettingsProvider` no layout e abertas
 por callback no menu de usuário. `useAIConfig` observa alterações no adaptador
 BYOK para invalidar sugestões anteriores. A análise/revisão do compêndio fica no
@@ -282,3 +294,20 @@ compõe a base/complementar e envia o contexto ao autocomplete e às ações.
 transacionais; alterações invalidam respostas antigas. Os originais e prompts
 permanecem privados e são preservados somente no backup JSON v3. Veja
 [personas de escrita](ai-personas.md).
+
+## Capacidades de raciocínio do chat
+
+O modelo de `ai-assistant` reexporta o contrato puro
+`functions/src/chatGeneration.mjs` e seus tipos `.d.mts`. Esse módulo não
+importa infraestrutura, credenciais, rede ou armazenamento. Compartilhar a matriz
+evita diferenças entre o controle no navegador e a validação no servidor.
+A callable informa o modelo da plataforma e persiste preferências em conversas
+privadas; o padrão local versionado fica atrás de um serviço da feature.
+Veja [ADR 0023](decisions/0023-chat-reasoning-capabilities.md).
+
+A configuração pública é capturada no serviço antes da espera de criação/envio
+e acompanha o pedido recuperável. A callable normaliza a solicitação, controla
+o modelo da plataforma e registra a configuração efetiva; reutiliza snapshots
+de parâmetros/histórico em retries. `chapterChatProvider.mjs` contém o transporte
+Gemini do servidor, e `chapterChatService.ts` mantém BYOK no navegador. Credenciais
+entram somente nos headers do provedor, fora do histórico e da callable.

@@ -5,9 +5,11 @@ import {
   loadChapterChat,
   readProviderStream,
   sendChapterChat,
+  captureChatGeneration,
 } from '../services/chapterChatService';
 import * as byok from '../services/byokStorage';
 import type { ChatContext } from '../model/chapterChat';
+import { resolveChatGeneration, type ChatGenerationRequest } from '../model/chatGeneration';
 
 const mocks = vi.hoisted(() => ({ call: vi.fn(), stream: vi.fn() }));
 vi.mock('firebase/functions', () => ({
@@ -39,12 +41,163 @@ function response(events: string, chunkSize = 7) {
     }),
   );
 }
+function requestBody(options: RequestInit): Record<string, unknown> {
+  if (typeof options.body !== 'string') throw new Error('O corpo HTTP deve ser JSON serializado.');
+  return JSON.parse(options.body) as Record<string, unknown>;
+}
 beforeEach(() => {
   vi.restoreAllMocks();
   mocks.call.mockReset();
   mocks.stream.mockReset();
 });
 describe('serviço do chat', () => {
+  it('captura somente parâmetros públicos, sem incluir chaves na configuração', () => {
+    vi.spyOn(byok, 'getBYOKConfig').mockReturnValue({
+      provider: 'openai_byok',
+      customModel: 'gpt-6-luna',
+      openaiApiKey: 'fake-private-key',
+    });
+    const generation = captureChatGeneration('max');
+    expect(generation).toEqual({
+      version: 1,
+      provider: 'openai_byok',
+      model: 'gpt-6-luna',
+      reasoning: 'max',
+    });
+    expect(JSON.stringify(generation)).not.toContain('fake-private-key');
+  });
+  it.each(['auto', 'none', 'low', 'medium', 'high', 'xhigh', 'max'] as const)(
+    'envia esforço OpenAI %s com teto e snapshot preservado após trocar de provedor',
+    async (reasoning) => {
+      vi.spyOn(byok, 'getBYOKConfig').mockReturnValue({
+        provider: 'gemini_byok',
+        customModel: 'modelo-atual-diferente',
+        geminiApiKey: 'fake-gemini-key',
+        openaiApiKey: 'fake-original-openai-key',
+      });
+      const generation: ChatGenerationRequest = {
+        version: 1,
+        provider: 'openai_byok',
+        model: 'gpt-6-luna',
+        reasoning,
+      };
+      mocks.call
+        .mockResolvedValueOnce({
+          data: {
+            generation: resolveChatGeneration(generation),
+            input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] },
+          },
+        })
+        .mockResolvedValueOnce({ data: { state: 'done' } });
+      const fetch = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          response('data: {"choices":[{"delta":{"content":"Cena"},"finish_reason":"stop"}]}\n'),
+        );
+      await sendChapterChat(
+        identity,
+        { requestId: 'frozen', text: 'Pedido', context, generation },
+        vi.fn(),
+        new AbortController().signal,
+      );
+      expect(fetch.mock.calls[0]![0]).toBe('https://api.openai.com/v1/chat/completions');
+      const options = fetch.mock.calls[0]![1]!;
+      expect(requestBody(options)).toMatchObject({
+        model: 'gpt-6-luna',
+        max_completion_tokens: 4000,
+        reasoning_effort: reasoning === 'auto' ? 'medium' : reasoning,
+      });
+      expect(options.headers).toMatchObject({ Authorization: 'Bearer fake-original-openai-key' });
+      expect(JSON.stringify(mocks.call.mock.calls)).not.toContain('fake-original-openai-key');
+      expect(JSON.stringify(mocks.call.mock.calls)).not.toContain('fake-gemini-key');
+    },
+  );
+  it.each(['auto', 'low', 'medium', 'high'] as const)(
+    'envia pensamento Gemini %s e filtra partes privadas',
+    async (reasoning) => {
+      vi.spyOn(byok, 'getBYOKConfig').mockReturnValue({
+        provider: 'gemini_byok',
+        geminiApiKey: 'fake-key',
+      });
+      const generation: ChatGenerationRequest = {
+        version: 1,
+        provider: 'gemini_byok',
+        model: 'gemini-3.7-flash',
+        reasoning,
+      };
+      mocks.call
+        .mockResolvedValueOnce({
+          data: {
+            generation: resolveChatGeneration(generation),
+            input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] },
+          },
+        })
+        .mockResolvedValueOnce({ data: { state: 'done' } });
+      const fetch = vi
+        .spyOn(globalThis, 'fetch')
+        .mockResolvedValue(
+          response(
+            'data: {"candidates":[{"content":{"parts":[{"thought":true,"text":"privado"},{"text":"Cena"}]},"finishReason":"STOP"}]}\n',
+          ),
+        );
+      const chunks = vi.fn();
+      await sendChapterChat(
+        identity,
+        { requestId: 'frozen', text: 'Pedido', context, generation },
+        chunks,
+        new AbortController().signal,
+      );
+      expect(requestBody(fetch.mock.calls[0]![1]!).generationConfig).toEqual({
+        maxOutputTokens: 4000,
+        thinkingConfig: {
+          thinkingLevel: reasoning === 'auto' ? 'medium' : reasoning,
+          includeThoughts: false,
+        },
+      });
+      expect(chunks).toHaveBeenCalledExactlyOnceWith('Cena');
+      expect(JSON.stringify(mocks.call.mock.calls)).not.toContain('privado');
+      expect(JSON.stringify(mocks.call.mock.calls)).not.toContain('fake-key');
+    },
+  );
+  it('recupera BYOK concluído sem chave e recusa novo transporte sem a chave original', async () => {
+    vi.spyOn(byok, 'getBYOKConfig').mockReturnValue({ provider: 'firebase_ai' });
+    const generation: ChatGenerationRequest = {
+      version: 1,
+      provider: 'openai_byok',
+      model: 'gpt-6-luna',
+      reasoning: 'high',
+    };
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    mocks.call.mockResolvedValueOnce({ data: { state: 'done', text: 'Resposta salva' } });
+    expect(
+      await sendChapterChat(
+        identity,
+        { requestId: 'saved', text: 'Pedido', context, generation },
+        vi.fn(),
+        new AbortController().signal,
+      ),
+    ).toMatchObject({ text: 'Resposta salva' });
+    expect(fetch).not.toHaveBeenCalled();
+    mocks.call
+      .mockResolvedValueOnce({
+        data: { input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] } },
+      })
+      .mockResolvedValueOnce({ data: {} });
+    await expect(
+      sendChapterChat(
+        identity,
+        { requestId: 'pending', text: 'Pedido', context, generation },
+        vi.fn(),
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow('provedor original');
+    expect(fetch).not.toHaveBeenCalled();
+    expect(mocks.call).toHaveBeenLastCalledWith({
+      ...identity,
+      action: 'failBYOK',
+      requestId: 'pending',
+    });
+  });
   it('carrega, cria e encaminha identidade para a callable', async () => {
     mocks.call.mockResolvedValue({ data: { id: 'created' } });
     await loadChapterChat(identity, { before: 4 });

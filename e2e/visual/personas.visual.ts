@@ -136,7 +136,8 @@ test('combina livro e capítulo, envia a persona nas ações e autocomplete, sem
     .first()
     .click();
   await expect(page).toHaveURL(new RegExp(`/editor/${FIXTURE_CHAPTER_ID}`));
-  await page.getByRole('button', { name: 'Persona', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções do capítulo', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Persona', exact: true }).click();
   await chooseDropdown(page.getByLabel('Persona complementar', { exact: true }), 'O Inquietante');
   await expect(page.getByRole('img', { name: 'Avatar de O Inquietante' })).toBeVisible();
   await chooseDropdown(
@@ -184,22 +185,24 @@ test('combina livro e capítulo, envia a persona nas ações e autocomplete, sem
   expect(await page.evaluate(() => sessionStorage.getItem('writer_fixture_ai_system'))).toContain(
     'Tensão: 100/100',
   );
-  await page.getByRole('button', { name: 'Persona', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções do capítulo', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Persona', exact: true }).click();
   await chooseDropdown(
     page.getByLabel('Persona complementar', { exact: true }),
     'Somente a persona do livro',
   );
   await page.getByRole('button', { name: 'Salvar vínculo' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Persona', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções do capítulo', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Persona', exact: true }).click();
   await expect(page.getByLabel('Persona complementar', { exact: true })).toContainText(
     'Somente a persona do livro',
   );
   await page.getByRole('dialog').press('Escape');
-  await expect(page.getByRole('button', { name: 'Persona', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Opções do capítulo', exact: true })).toBeFocused();
 });
 
-test('gerencia livro, capítulo e biblioteca pelo botão Persona, sem sair do editor ou aninhar modais', async ({
+test('gerencia livro, capítulo e biblioteca pelo menu do capítulo, sem sair do editor ou aninhar modais', async ({
   page,
 }, testInfo) => {
   const path = `/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`;
@@ -207,16 +210,18 @@ test('gerencia livro, capítulo e biblioteca pelo botão Persona, sem sair do ed
   const editor = page.getByLabel('Área de escrita do capítulo');
   await expect(editor).toBeVisible();
   const original = await editor.innerText();
-  const trigger = page.getByRole('button', { name: 'Persona', exact: true });
+  const trigger = page.getByRole('button', { name: 'Opções do capítulo', exact: true });
   await expect(page.getByRole('button', { name: 'Gerenciar personas' })).toHaveCount(0);
   await expect(page.getByText('Livro: Sem persona', { exact: true })).toHaveCount(0);
   await expect(page.getByText('Orientações efetivas', { exact: true })).toHaveCount(0);
   await trigger.click();
+  await page.getByRole('menuitem', { name: 'Persona', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(1);
   await page.getByRole('tab', { name: 'Livro', exact: true }).click();
   await chooseDropdown(page.getByLabel('Persona base'), 'O Épico');
   await page.getByRole('button', { name: 'Salvar vínculo' }).click();
   await trigger.click();
+  await page.getByRole('menuitem', { name: 'Persona', exact: true }).click();
   await page.getByRole('tab', { name: 'Biblioteca', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(1);
   await page.getByRole('button', { name: 'Ver detalhes de O Incisivo' }).click();
@@ -235,6 +240,7 @@ test('gerencia livro, capítulo e biblioteca pelo botão Persona, sem sair do ed
   await expect(trigger).toBeFocused();
   await expect(editor).toHaveText(original, { useInnerText: true });
   await trigger.click();
+  await page.getByRole('menuitem', { name: 'Persona', exact: true }).click();
   await expect(page.getByLabel('Persona complementar')).toContainText('Voz contextual');
   await page.getByRole('tab', { name: 'Livro', exact: true }).click();
   await expect(page.getByLabel('Persona base')).toContainText('O Épico');

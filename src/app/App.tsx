@@ -4,16 +4,18 @@ import { AuthProvider, AuthButton, CreditsBadge, useAuth } from '@/features/auth
 import { BookNavigation } from '@/features/books';
 import { ThemeProvider, ThemeToggle } from '@/shared/theme';
 import { AISettingsProvider, useAISettings } from '@/features/ai-assistant';
+import { WorkspaceLayoutProvider, useWorkspaceLayout } from '@/shared/ui';
 import styles from './App.module.css';
 
 const PROJECT_NAME = 'Writer Assistant';
 
 function AppHeader() {
   const { user } = useAuth();
+  const { expanded } = useWorkspaceLayout();
   const openAISettings = useAISettings();
 
   return (
-    <header className={`${styles.header} glass-surface`}>
+    <header className={`${styles.header} glass-surface`} data-workspace-expanded={expanded}>
       <div className={styles.topBar}>
         <div className={styles.leftBar}>
           <Link to="/" className={styles.brand} aria-label="Writer Assistant Início">
@@ -34,23 +36,37 @@ function AppHeader() {
   );
 }
 
+function AppWorkspace() {
+  const { expanded } = useWorkspaceLayout();
+  return (
+    <div className={styles.appBackdrop}>
+      <div className={styles.appWrapper} data-workspace-expanded={expanded}>
+        <a href="#main-content" className={styles.skipLink}>
+          Pular para o conteúdo
+        </a>
+        <AppHeader />
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className={styles.mainContent}
+          data-workspace-expanded={expanded}
+        >
+          <Outlet />
+        </main>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <AISettingsProvider>
-          <div className={styles.appBackdrop}>
-            <div className={styles.appWrapper}>
-              <a href="#main-content" className={styles.skipLink}>
-                Pular para o conteúdo
-              </a>
-              <AppHeader />
-              <main id="main-content" tabIndex={-1} className={styles.mainContent}>
-                <Outlet />
-              </main>
-            </div>
-          </div>
-        </AISettingsProvider>
+        <WorkspaceLayoutProvider>
+          <AISettingsProvider>
+            <AppWorkspace />
+          </AISettingsProvider>
+        </WorkspaceLayoutProvider>
       </AuthProvider>
     </ThemeProvider>
   );

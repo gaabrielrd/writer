@@ -42,12 +42,15 @@ consultar e reativar arquivadas. Não existe exclusão física pela interface.
 ## Livro e capítulo
 
 Em **Opções do livro → Persona de IA**, selecione uma base ou **Sem persona**.
-No editor, o botão **Persona** abre um único modal com as abas **Capítulo**,
+No editor, **Opções do capítulo → Persona** abre um único modal com as abas **Capítulo**,
 **Livro** e **Biblioteca**. Ele concentra seleção da complementar, ajustes da
 base, consulta das orientações efetivas e gerenciamento da biblioteca, incluindo
 criação e edição. Não há uma faixa de personas na área de escrita e esse fluxo
 mantém o usuário no capítulo. A página `/settings/ai` continua acessível pelo menu
 geral de configuração de IA.
+
+Fechar o modal devolve o foco ao gatilho estável **Opções do capítulo**, depois
+de encerrar o menu; o manuscrito e seus vínculos continuam na mesma rota.
 
 As instruções da complementar se somam às do livro e prevalecem em conflitos de
 estilo. Os atributos do livro são herdados; cada atributo da complementar pode

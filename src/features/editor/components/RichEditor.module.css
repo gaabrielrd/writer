@@ -14,7 +14,7 @@
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: var(--space-2) var(--space-4);
   background-color: hsl(var(--card));
   border-bottom: 1px solid var(--line);
@@ -27,6 +27,36 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-1);
+}
+
+.historyTools {
+  display: flex;
+  gap: var(--space-1);
+  padding-left: var(--space-2);
+  border-left: 1px solid var(--line);
+}
+
+.panelTools {
+  margin-left: auto;
+}
+
+.panelTools > button {
+  min-height: 36px;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.toolBtn[aria-pressed='true'] {
+  background: hsl(var(--primary) / 0.12);
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--primary) / 0.3);
+}
+
+@media (max-width: 420px) {
+  .toolbar {
+    padding: var(--space-2);
+  }
 }
 
 .toolBtn {
@@ -116,6 +146,11 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.container[data-workspace-expanded='true'] .editorBody {
+  max-width: none;
+  margin: 0;
 }
 
 .richText {

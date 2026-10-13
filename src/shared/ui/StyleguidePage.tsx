@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Sparkles, BookOpen, Feather, MapPin, MoreHorizontal } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Sparkles, BookOpen, Feather, MapPin, MoreHorizontal, X } from 'lucide-react';
 import {
   Button,
   Input,
@@ -23,6 +23,8 @@ import {
   TableRow,
   TableHead,
   TableCell,
+  ResizeHandle,
+  SidePanelHeader,
 } from './index';
 import { useTheme, ThemeToggle, ThemeSelect } from '../theme';
 
@@ -32,6 +34,8 @@ export function StyleguidePage() {
   const [inputValue, setInputValue] = useState('');
   const [lastAction, setLastAction] = useState('');
   const [sliderValue, setSliderValue] = useState(50);
+  const resizeDemo = useRef<HTMLDivElement>(null);
+  const [panelPercent, setPanelPercent] = useState(40);
 
   return (
     <div className="flex flex-col gap-8 pb-16">
@@ -93,6 +97,42 @@ export function StyleguidePage() {
       </section>
 
       {/* Seção de Botões */}
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-bold">Painéis redimensionáveis</h2>
+        <Card className="p-4">
+          <p className="text-sm mb-4">
+            Arraste o divisor, use as setas ou dê duplo clique para restaurar.
+          </p>
+          <div ref={resizeDemo} className="flex min-h-32 gap-2">
+            <div className="flex-1 min-w-0 p-3">Área de trabalho</div>
+            <ResizeHandle
+              label="Largura do painel de demonstração"
+              containerRef={resizeDemo}
+              value={panelPercent}
+              min={20}
+              max={70}
+              defaultValue={40}
+              onValueChange={setPanelPercent}
+            />
+            <div
+              className="min-w-0 bg-[hsl(var(--secondary))] rounded-lg"
+              style={{ width: `${panelPercent}%` }}
+            >
+              <SidePanelHeader title="Painel">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Fechar painel de demonstração"
+                  onClick={() => setLastAction('Fechar painel de demonstração')}
+                >
+                  <X className="icon icon-sm" aria-hidden="true" />
+                </Button>
+              </SidePanelHeader>
+              <p className="p-3">Painel · {panelPercent}%</p>
+            </div>
+          </div>
+        </Card>
+      </section>
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-bold">2. Botões (Button)</h2>
         <Card className="p-6">

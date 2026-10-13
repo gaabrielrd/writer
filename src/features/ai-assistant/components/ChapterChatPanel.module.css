@@ -1,9 +1,9 @@
 .panel {
-  width: clamp(280px, 28vw, 360px);
+  width: var(--editor-panel-width, clamp(280px, 28vw, 360px));
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: var(--editor-panel-height, 100%);
   min-height: 0;
   border-radius: var(--radius-sm);
   background: var(--surface);
@@ -11,7 +11,6 @@
   overflow: hidden;
   color: hsl(var(--foreground));
 }
-.header,
 .history,
 .context,
 .send,
@@ -22,16 +21,9 @@
   flex-wrap: wrap;
   min-width: 0;
 }
-.header {
-  padding: var(--space-3);
-  justify-content: space-between;
-}
-.header h2 {
-  font-size: var(--text-sm);
-  font-weight: 700;
-}
 .history {
-  padding: 0 var(--space-3) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  flex-shrink: 0;
   border-bottom: 1px solid var(--line);
 }
 .history > :first-child {
@@ -40,9 +32,20 @@
 }
 .messages {
   flex: 1;
-  min-height: 100px;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-3);
+}
+
+@media (max-height: 650px) {
+  .emptyMessage {
+    margin: 0;
+    padding: var(--space-2);
+  }
+  .emptyMessage > div:first-child {
+    display: none;
+  }
 }
 .message,
 .userMessage {
@@ -94,19 +97,81 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  max-height: 65%;
+  max-height: min(65%, max(96px, calc(100% - 180px)));
   overflow-y: auto;
 }
 .composer textarea {
-  min-height: 80px;
+  min-height: 110px;
   max-height: 180px;
+  padding-bottom: calc(var(--space-8) + var(--space-4));
   resize: vertical;
 }
+.inputWell {
+  position: relative;
+  min-width: 0;
+  flex-shrink: 0;
+}
 .send {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  justify-content: flex-end;
+}
+.modelControl {
+  max-width: 100%;
+  min-width: 0;
+}
+.modelControl span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.inspect {
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  background: hsl(var(--card));
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  font-size: var(--text-xs);
+}
+.inspect p {
+  white-space: pre-wrap;
+  margin: var(--space-2) 0;
+}
+.inspect ul {
+  padding-left: var(--space-4);
+  margin: var(--space-2) 0;
+}
+.inspectHeader {
+  display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
 }
 .context > :first-child {
   flex: 1;
+  min-width: 0;
+}
+.context {
+  flex-shrink: 0;
+}
+.generationControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  flex-shrink: 0;
+}
+.generationControls > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+.generationControls > :last-child {
+  flex: 0 0 136px;
+  max-width: 100%;
   min-width: 0;
 }
 .commands {

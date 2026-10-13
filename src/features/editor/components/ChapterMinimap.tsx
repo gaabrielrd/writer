@@ -98,6 +98,7 @@ export function ChapterMinimap({ destinations, viewport, onNavigate }: ChapterMi
           ref={mapRef}
           className={styles.map}
           role="listbox"
+          data-editor-minimap-list
           aria-label="Trechos do capítulo"
           aria-describedby={`${id}-help`}
           aria-activedescendant={active ? `${id}-option-${activeIndex}` : undefined}

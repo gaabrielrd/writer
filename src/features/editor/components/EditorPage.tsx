@@ -8,8 +8,10 @@ import {
   Cloud,
   CloudOff,
   Loader2,
+  Maximize2,
+  Minimize2,
 } from 'lucide-react';
-import { Alert, Button, Dialog, ErrorState, LoadingState } from '@/shared/ui';
+import { Alert, Button, Dialog, ErrorState, LoadingState, useWorkspaceLayout } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
 import {
   getBook,
@@ -51,20 +53,25 @@ import {
 import { clearLocalDraft, readLocalDraft } from '../services/localDraftStorage';
 import { runChapterOperation } from '../services/chapterContentStorage';
 import { useAutoSave } from '../hooks/useAutoSave';
+import { useEditorFullscreen } from '../hooks/useEditorFullscreen';
 import { BusyNavigationGuard } from './BusyNavigationGuard';
 import { RichEditor } from './RichEditor';
+import { ResizableEditorWorkspace } from './ResizableEditorWorkspace';
 import { EditorLoreSidebar } from './EditorLoreSidebar';
-import { ExportButton } from './ExportButton';
+import { EditorOptionsMenu } from './EditorOptionsMenu';
 import { LoreAnalysisDialog } from './LoreAnalysisDialog';
 import styles from './EditorPage.module.css';
 
 export function EditorPage() {
   const { bookId, chapterId } = useParams();
   const { user } = useAuth();
+  const { setExpanded } = useWorkspaceLayout();
+  useEffect(() => () => setExpanded(false), [setExpanded]);
   return <EditorSession key={`${user?.uid}:${bookId}:${chapterId}`} />;
 }
 
 function EditorSession() {
+  const { expanded, toggle: toggleFullscreen } = useEditorFullscreen();
   const { bookId, chapterId } = useParams<{
     bookId: string;
     chapterId: string;
@@ -552,7 +559,7 @@ function EditorSession() {
     currentIndex !== -1 && currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
 
   return (
-    <div className={styles.pageLayout}>
+    <div className={styles.pageLayout} data-workspace-expanded={expanded}>
       <BusyNavigationGuard busy={isAcceptingAI} />
       {isAcceptingAI && (
         <p role="status">Aguarde a aplicação terminar antes de sair do capítulo.</p>
@@ -580,15 +587,30 @@ function EditorSession() {
 
         <div className={styles.topBarRight}>
           <Button
-            variant="secondary"
+            variant="ghost"
+            size="icon"
+            aria-label={expanded ? 'Sair da tela cheia' : 'Entrar em tela cheia'}
+            title={expanded ? 'Sair da tela cheia (Escape)' : 'Entrar em tela cheia'}
+            aria-pressed={expanded}
             disabled={isAcceptingAI}
-            ref={personaButton}
-            title={personaError ?? 'Configurar personas de escrita'}
-            onClick={() => setPersonaDialog(true)}
+            onPointerDown={(event) => event.preventDefault()}
+            onClick={toggleFullscreen}
           >
-            Persona
+            {expanded ? (
+              <Minimize2 className="icon icon-sm" aria-hidden="true" />
+            ) : (
+              <Maximize2 className="icon icon-sm" aria-hidden="true" />
+            )}
           </Button>
-          <ExportButton book={book} currentChapter={chapter} currentContent={content} />
+          <EditorOptionsMenu
+            book={book}
+            currentChapter={chapter}
+            currentContent={content}
+            disabled={isAcceptingAI}
+            triggerRef={personaButton}
+            personaError={personaError}
+            onPersona={() => setPersonaDialog(true)}
+          />
 
           <div className={styles.saveStatusWrapper} aria-live="polite">
             {saveStatus === 'saving' && (
@@ -626,8 +648,14 @@ function EditorSession() {
             <strong>{wordCount.toLocaleString('pt-BR')}</strong> palavras
           </span>
 
-          <div className={styles.chapterNavigation}>
-            <button
+          <div
+            className={styles.chapterNavigation}
+            role="group"
+            aria-label="Navegação entre capítulos"
+          >
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               className={styles.navBtn}
               disabled={!prevChapter || isAcceptingAI}
@@ -640,8 +668,10 @@ function EditorSession() {
               aria-label="Capítulo anterior"
             >
               <ChevronLeft className="icon icon-sm" aria-hidden="true" />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               className={styles.navBtn}
               disabled={!nextChapter || isAcceptingAI}
@@ -654,7 +684,7 @@ function EditorSession() {
               aria-label="Próximo capítulo"
             >
               <ChevronRight className="icon icon-sm" aria-hidden="true" />
-            </button>
+            </Button>
           </div>
         </div>
       </header>
@@ -677,7 +707,40 @@ function EditorSession() {
           </Button>
         </Alert>
       )}
-      <section className={styles.workspace} aria-label="Espaço de escrita">
+      <ResizableEditorWorkspace
+        uid={user?.uid ?? ''}
+        panelOpen={activePanel !== null}
+        panel={
+          <>
+            {chatMounted && user && (
+              <ChapterChatPanel
+                open={activePanel === 'chat'}
+                uid={user.uid}
+                bookId={book.id}
+                chapterId={chapter.id}
+                bridge={chatBridge}
+                initialPrompt={chatPrompt}
+                contextVersion={writingPersona.version}
+                unavailable={personaError}
+                onClose={() => setActivePanel(null)}
+                onApply={applyChat}
+              />
+            )}
+            <EditorLoreSidebar
+              onAnalyzeText={globalLoreError ? undefined : () => setIsAnalysisOpen(true)}
+              isOpen={isSidebarOpen}
+              entities={allLoreEntities}
+              universeId={book.universeId}
+              selectedEntityId={selectedEntityId}
+              createEntityName={createEntityName}
+              onCreateRequestHandled={() => setCreateEntityName(null)}
+              onClose={() => setIsSidebarOpen(false)}
+              onCreateEntity={handleCreateLoreEntity}
+              onUpdateEntity={handleUpdateLoreEntity}
+            />
+          </>
+        }
+      >
         {loreRefreshError && (
           <Alert variant="warning">
             {loreRefreshError}
@@ -695,6 +758,7 @@ function EditorSession() {
           </Alert>
         )}
         <RichEditor
+          workspaceExpanded={expanded}
           chatOpen={activePanel === 'chat'}
           onOpenChat={(action) => {
             void openChat(action);
@@ -722,34 +786,7 @@ function EditorSession() {
           userCredits={currentCredits}
           onCreditDeducted={updateUserCreditsState}
         />
-        {chatMounted && user && (
-          <ChapterChatPanel
-            open={activePanel === 'chat'}
-            uid={user.uid}
-            bookId={book.id}
-            chapterId={chapter.id}
-            bridge={chatBridge}
-            initialPrompt={chatPrompt}
-            contextVersion={writingPersona.version}
-            unavailable={personaError}
-            onClose={() => setActivePanel(null)}
-            onApply={applyChat}
-          />
-        )}
-
-        <EditorLoreSidebar
-          onAnalyzeText={globalLoreError ? undefined : () => setIsAnalysisOpen(true)}
-          isOpen={isSidebarOpen}
-          entities={allLoreEntities}
-          universeId={book.universeId}
-          selectedEntityId={selectedEntityId}
-          createEntityName={createEntityName}
-          onCreateRequestHandled={() => setCreateEntityName(null)}
-          onClose={() => setIsSidebarOpen(false)}
-          onCreateEntity={handleCreateLoreEntity}
-          onUpdateEntity={handleUpdateLoreEntity}
-        />
-      </section>
+      </ResizableEditorWorkspace>
       {personaDialog && user && (
         <ChapterPersonaDialog
           ownerId={user.uid}
