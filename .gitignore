@@ -13,6 +13,8 @@ playwright-report/
 test-results/
 visual-test-results/
 visual-playwright-report/
+blob-report/
+all-blob-reports/
 
 # Segredos e variáveis locais
 .env

@@ -1,3 +1,4 @@
+import { availableParallelism } from 'node:os';
 import { configDefaults, defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config.ts';
 
@@ -6,7 +7,8 @@ export default mergeConfig(
   defineConfig({
     test: {
       environment: 'jsdom',
-      maxWorkers: 2,
+      // Usa melhor a máquina sem criar workers além dos CPUs ou perder isolamento.
+      maxWorkers: Math.min(4, availableParallelism()),
       globals: true,
       setupFiles: './src/test/setup.ts',
       exclude: [

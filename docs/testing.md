@@ -48,6 +48,43 @@ npx playwright install chromium
 
 O E2E escolhe uma porta efêmera, gera o bundle e serve a aplicação localmente.
 
+## Tempo de execução e CI
+
+Vitest usa até quatro workers, limitados pelos CPUs disponíveis. O isolamento
+por arquivo, o `jsdom`, a instrumentação V8 e os limites de cobertura continuam
+ativos. Para limitar recursos durante outra tarefa, use a opção do Vitest:
+
+```bash
+npm run test:coverage -- --maxWorkers=2
+```
+
+A CI mantém o `validate` completo nos dois ambientes Node 22 e 24. O navegador
+de produção e a suíte visual executam em jobs separados. A suíte visual inteira
+é distribuída por três shards em paralelo, com dois workers por runner, incluindo
+desktop/celular e claro/escuro/sépia. Os testes de seleção parcial pertencem à
+mesma suíte e passam a executar uma vez por projeto.
+
+Para reproduzir um dos shards, substitua o número antes da barra:
+
+```bash
+npx playwright test -c playwright.visual.config.ts --shard=1/3
+```
+
+Cada shard publica um blob e suas capturas/traces com nome próprio.
+Os uploads substituem apenas o artefato do próprio job em uma repetição,
+preservando os resultados dos outros shards e evitando colisões de nomes.
+O job final consolida os blobs em um relatório HTML único, no artefato **writer-visual-preview**,
+com os resultados JSON de cada shard. A execução local completa conserva seu
+relatório HTML/JSON habitual. O check **E2E (Chromium)** permanece com o mesmo
+nome e exige sucesso do navegador de produção e de todos os shards; falha,
+cancelamento ou job pulado impedem sua aprovação.
+
+`scripts/ci-contracts.test.mjs` executa o gate real com esses estados e verifica
+a preservação dos limites, dos dois ambientes Node e das evidências. Compare
+benchmarks da mesma suíte e cobertura sem processos de testes concorrentes;
+execuções com cobertura no mesmo checkout compartilham o diretório `coverage`.
+Veja a [ADR de paralelismo e sharding](decisions/0024-test-pipeline-sharding.md).
+
 ## Identidade visual
 
 `e2e/styleguide.spec.ts` protege o styleguide em duas camadas:
