@@ -14,6 +14,8 @@ export default tseslint.config(
       'test-results',
       'visual-playwright-report',
       'visual-test-results',
+      'blob-report',
+      'all-blob-reports',
     ],
   },
   {
