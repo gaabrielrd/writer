@@ -21,3 +21,5 @@ export { ReaderLoreTooltip } from './components/ReaderLoreTooltip';
 
 export { BookNavigation } from './components/BookNavigation';
 export { AssistedBookPage } from './components/AssistedBookPage';
+
+export * from './services/studioBookService';

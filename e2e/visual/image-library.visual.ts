@@ -1,4 +1,4 @@
-import { test, expect, capture, expectNoHorizontalOverflow } from './support';
+import { test, expect, capture, expectNoHorizontalOverflow, openBookCreation } from './support';
 import { books, FIXTURE_BOOK_ID } from './fixtures/data';
 
 test('header compacto, menus por teclado e gerenciamento da biblioteca', async ({
@@ -17,13 +17,13 @@ test('header compacto, menus por teclado e gerenciamento da biblioteca', async (
   await expect(page.getByRole('menuitem', { name: 'Sair' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(account).toBeFocused();
-  const nav = page.getByRole('button', { name: 'Meus Livros' });
+  const nav = page.getByRole('button', { name: 'Estúdio', exact: true });
   await nav.focus();
   await page.keyboard.press('Enter');
   await page.getByRole('menuitem', { name: 'Biblioteca de Imagens' }).click();
   await expect(page).toHaveURL(/\/library$/);
   await expect(page.getByRole('button', { name: 'Biblioteca de Imagens' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Meus Livros' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Estúdio', exact: true })).toHaveCount(0);
   await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toHaveText(
     '/Biblioteca de Imagens',
   );
@@ -40,16 +40,14 @@ test('header compacto, menus por teclado e gerenciamento da biblioteca', async (
   await page.getByRole('button', { name: 'Confirmar exclusão' }).click();
   await expect(page.getByText('Marés', { exact: true })).toHaveCount(0);
   await page.goto(`/books/${FIXTURE_BOOK_ID}`);
-  await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toContainText(
-    books[0].title,
-  );
+  await expect(page.getByLabel('Livro atual', { exact: true })).toContainText(books[0].title);
   await page.setViewportSize({ width: 320, height: 844 });
   await expectNoHorizontalOverflow(page, 'header 320px');
 });
 
 test('wizard seleciona capa da biblioteca sem consumir créditos', async ({ page }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Novo Livro', exact: true }).click();
+  await openBookCreation(page);
   await page.getByLabel('Título da Obra').fill('Minha obra');
   await page.getByLabel('Gênero Literário').fill('Fantasia');
   await page.getByRole('button', { name: /^Capa/ }).click();

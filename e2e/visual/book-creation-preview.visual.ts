@@ -3,6 +3,7 @@ import {
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
+  openBookCreation,
   test,
 } from './support';
 
@@ -21,8 +22,8 @@ test('prévia acompanha os campos e a capa com a hierarquia da biblioteca', asyn
       lineHeight: css.lineHeight,
     };
   });
-  const trigger = page.getByRole('button', { name: 'Novo Livro', exact: true });
-  await trigger.click();
+  const trigger = page.getByRole('button', { name: 'Novo projeto', exact: true });
+  await openBookCreation(page);
   const dialog = page.getByRole('dialog', { name: 'Criar Novo Livro' });
   const preview = dialog.getByRole('complementary', { name: 'Prévia do livro' });
   await expect(preview.getByRole('heading', { name: 'Título da sua obra' })).toBeVisible();
@@ -81,7 +82,7 @@ test('prévia acompanha os campos e a capa com a hierarquia da biblioteca', asyn
 test('modal conserva ações, uma rolagem e layout compacto em 320px', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1100, height: 600 });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Novo Livro', exact: true }).click();
+  await openBookCreation(page);
   const dialog = page.getByRole('dialog', { name: 'Criar Novo Livro' });
   await dialog.getByLabel('Título da Obra').fill('UmaHistória'.repeat(27));
   await dialog.getByLabel('Gênero Literário').fill('UmGênero'.repeat(15));

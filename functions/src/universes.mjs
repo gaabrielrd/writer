@@ -24,6 +24,26 @@ function text(value, label, max, required = false) {
 
 /** Read everything before returning the write phase, so callers can compose cover transactions. */
 export async function prepareUniverseLink(tx, db, uid, bookId, before, after, now = Date.now) {
+  return prepareUniverseProjectLink(tx, db, uid, { kind: 'book', id: bookId }, before, after, now);
+}
+
+export async function prepareUniverseProjectLink(
+  tx,
+  db,
+  uid,
+  project,
+  before,
+  after,
+  now = Date.now,
+) {
+  const types = {
+    book: { collection: 'books', counter: 'bookCount', field: 'bookId' },
+    adventure: { collection: 'adventures', counter: 'adventureCount', field: 'adventureId' },
+    campaign: { collection: 'campaigns', counter: 'campaignCount', field: 'campaignId' },
+  };
+  const type = Object.hasOwn(types, project.kind) ? types[project.kind] : null;
+  if (!type || typeof project.id !== 'string' || !project.id || project.id.includes('/'))
+    fail('invalid-argument', 'Vínculo de projeto inválido.');
   const previous = before ?? null;
   const next = after ?? null;
   if (after != null) universeDocumentId(after);
@@ -31,7 +51,7 @@ export async function prepareUniverseLink(tx, db, uid, bookId, before, after, no
   const refs = [previous, next].filter(Boolean).map((id) => ({
     id,
     ref: db.doc(`universes/${id}`),
-    use: db.doc(`universes/${id}/books/${bookId}`),
+    use: db.doc(`universes/${id}/${type.collection}/${project.id}`),
   }));
   const records = await Promise.all(
     refs.map(async (item) => ({
@@ -47,13 +67,16 @@ export async function prepareUniverseLink(tx, db, uid, bookId, before, after, no
     commit() {
       for (const item of records) {
         if (item.id === next && !item.usage.exists) {
-          tx.set(item.use, { bookId });
-          tx.update(item.ref, { bookCount: (item.record.bookCount ?? 0) + 1, updatedAt: now() });
+          tx.set(item.use, { [type.field]: project.id });
+          tx.update(item.ref, {
+            [type.counter]: (item.record[type.counter] ?? 0) + 1,
+            updatedAt: now(),
+          });
         } else if (item.id === previous && item.usage.exists) {
           tx.delete(item.use);
           if (item.record)
             tx.update(item.ref, {
-              bookCount: Math.max(0, (item.record.bookCount ?? 0) - 1),
+              [type.counter]: Math.max(0, (item.record[type.counter] ?? 0) - 1),
               updatedAt: now(),
             });
         }
@@ -83,6 +106,8 @@ export function createUniverseService({ db, now = Date.now }) {
           name,
           description,
           bookCount: 0,
+          adventureCount: 0,
+          campaignCount: 0,
           privacyVersion: 0,
           loreVersion: 0,
           createdAt: now(),
@@ -117,8 +142,19 @@ export function createUniverseService({ db, now = Date.now }) {
         const record = (await tx.get(ref)).data();
         if (!record) return false;
         owned(record, uid, true);
-        if (record.bookCount > 0)
-          fail('failed-precondition', 'Desvincule todos os livros antes de excluir o universo.');
+        const references = await Promise.all(
+          ['books', 'adventures', 'campaigns'].map((kind) =>
+            tx.get(db.collection(`universes/${id}/${kind}`).limit(1)),
+          ),
+        );
+        if (
+          ['bookCount', 'adventureCount', 'campaignCount'].some((key) => (record[key] ?? 0) > 0) ||
+          references.some((reference) => reference.docs.length > 0)
+        )
+          fail(
+            'failed-precondition',
+            'Desvincule todos os livros, aventuras e campanhas antes de excluir o universo.',
+          );
         if (!record.deleting) {
           tx.update(ref, {
             deleting: true,

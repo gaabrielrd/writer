@@ -52,13 +52,16 @@ Para tarefas implementadas, aplicar [validação transversal](../validacao-e-ace
 O planejamento desta fase não é evidência de entrega do produto.
 Usar [decisões e riscos](../decisoes-e-riscos.md) para hipóteses e
 [timeline](../timeline.md) para reestimativa.
-A fase seguinte de implementação só avança após o portão; estudo preparatório não equivale a aceite.
+Estudo preparatório não equivale a aceite. Em 2026-10-13, o operador autorizou
+implementar F2-01 com os contratos técnicos aprovados, mantendo pendentes as
+condições humanas e comerciais. O [registro da mudança de sequência](../execucao/06-contratos-e-replanejamento.md)
+substitui o bloqueio integral desse incremento sem declarar concluídos os critérios acima.
 
 A [matriz de condições](../execucao/06-contratos-e-replanejamento.md) especifica
 qual incremento depende de cada pendência. Histórico F2-05, portabilidade F2-09,
 capacidade comercial e participantes não se tornam critérios concluídos por
-aprovar a navegação. O aceite integral da fase 1 não está declarado; revisão/CI
-e os critérios comerciais/humanos pertinentes continuam visíveis.
+aprovar a navegação. O aceite integral da fase 1 não está declarado. Revisão/CI
+passaram em `079d4e9`; os critérios comerciais/humanos pertinentes continuam visíveis.
 
 ## Demonstração e evidência
 

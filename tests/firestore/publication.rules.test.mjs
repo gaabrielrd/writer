@@ -25,7 +25,13 @@ const bookId = 'book-1';
 const bookPath = `books/${bookId}`;
 const rootPath = `publicBooks/${bookId}`;
 const revisionPath = `${rootPath}/revisions/rev-1`;
-const privateBook = { authorId: 'author', title: 'Livro', status: 'published', updatedAt: 100 };
+const privateBook = {
+  authorId: 'author',
+  title: 'Livro',
+  status: 'published',
+  createdAt: 100,
+  updatedAt: 100,
+};
 const root = {
   schemaVersion: 1,
   title: 'Livro',

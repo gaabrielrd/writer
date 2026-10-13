@@ -196,6 +196,21 @@ antes da seleção: a transição durante o gesto faz parte da regressão proteg
 
 ## Roadmap Writer e regras reais
 
+O Estúdio tem testes de frontend colocalizados em `studio`, `adventures`,
+`campaigns` e no serviço público de livros. Protegem criação/retry com a mesma
+operação, resposta incerta, troca de conta, datas, filtros, paginação e falhas
+parciais. `functions/test/studio.test.mjs` verifica autoria, recibos, limites,
+cursores e preparação legada; `tests/firestore/studio.rules.test.mjs` usa as regras
+e o Admin SDK reais, com datas de snapshot, concorrência e proteção dos vínculos.
+Os testes de personas/livros existentes permanecem parte do gate integral.
+
+`e2e/visual/studio.visual.ts` roda oito cenários em seis projetos: três temas,
+desktop/celular, navegação/teclado em 320 px, projetos independentes, persistência
+simulada, resposta perdida, troca de conta, erro parcial, preparação e paginação.
+As fixtures nunca comprovam autorização ou persistência real; esse contrato é
+verificado separadamente no emulador. Produção exige implantação explícita de
+functions/regras/índices e não é acionada pelos testes.
+
 A [matriz de aceite](tasks/roadmap-acceptance.md) relaciona as tarefas 01–08 aos
 comportamentos e testes. `npm run test:rules` inicia somente um emulador Firestore
 local e roda as regras reais com identidades fictícias, inclusive anônimo, autor

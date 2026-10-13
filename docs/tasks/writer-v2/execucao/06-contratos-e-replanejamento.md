@@ -57,16 +57,21 @@ compra para uma campanha independente.
   ID/retry, versões, paginação, compatibilidade, UI e navegação estão definidos.
 - **Contrato executável F2-01:** ainda deve fixar campos mínimos/tetos, filtros,
   ordenação/cursor entre tipos, rotas e criação persistida. É parte do plano desse incremento.
-- **Consolidação F1-06:** artefatos revisados e gate local verde; CI/aceite integral seguem pendentes.
-- **CI/PR:** pendente. Gate local não substitui a definição de concluído.
+- **Consolidação F1-06:** artefatos revisados e gates técnicos verdes em `079d4e9`; aceite integral segue pendente.
+- **CI/PR:** [PR 21](https://github.com/gaabrielrd/writer/pull/21), [CI](https://github.com/gaabrielrd/writer/actions/runs/38401236217) e [regras](https://github.com/gaabrielrd/writer/actions/runs/38401236138) verdes em `079d4e9`; conferir novamente cada head posterior. Um caso de autocomplete passou após retry, registrado no PR.
 - **Aceite integral da fase 1:** não declarado. F1-04/F1-05 conservam condições comerciais/humanas.
 - **Ativação pública V2:** não liberada; depende das fases 2–5 completas e seus aceites.
 
 O portão separa a decisão técnica do próximo incremento do aceite integral da fase.
 Esta tarefa não remove critérios existentes nem declara as tarefas financeiras/humanas
-concluídas. Liberação de implementação de F2-01 precisa do portão pertinente da
-fase 1 e da revisão/CI registrados, além destes contratos; estudos preparatórios
-podem continuar. Este registro não concede uma exceção à execução fase a fase.
+concluídas. A regra anterior condicionava a implementação seguinte ao portão
+integral. Em 2026-10-13, após a pergunta sobre essa sequência, o operador autorizou
+explicitamente: **“Implementar o Estúdio; manter as condições humanas e comerciais
+pendentes”**. F2-01 pode avançar após seu contrato executável e os gates técnicos;
+piloto humano e capacidade comercial continuam obrigatórios nos respectivos
+aceites, sem serem presumidos ou removidos. Essa mudança de sequência é explícita
+e não constitui aprovação de implantação, operação financeira ou lançamento V2.
+O [plano executável F2-01](07-estudio-projetos.md) registra contratos e validações.
 
 ## Estimativas e baseline
 

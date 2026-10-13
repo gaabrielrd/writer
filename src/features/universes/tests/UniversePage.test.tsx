@@ -283,3 +283,42 @@ it('mantém a ficha aberta em falha de sincronização e retoma a assinatura ap�
   expect(await screen.findByRole('heading', { name: 'Arthur' })).toBeInTheDocument();
   expect(stop).toHaveBeenCalled();
 });
+
+it.each([
+  { adventureCount: 1, campaignCount: 0 },
+  { adventureCount: 0, campaignCount: 2 },
+])('mostra novos vínculos e impede exclusão do universo (%j)', async (counts) => {
+  vi.mocked(service.listUniverses).mockResolvedValue([{ ...world, ...counts }]);
+  page();
+  expect(
+    await screen.findByText(
+      counts.adventureCount === 1 ? '1 aventura vinculada' : '0 aventuras vinculadas',
+    ),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(
+      counts.campaignCount === 2 ? '2 campanhas vinculadas' : '0 campanhas vinculadas',
+    ),
+  ).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir universo' }));
+  expect(screen.getByRole('button', { name: 'Confirmar exclusão' })).toBeDisabled();
+  expect(screen.getByRole('link', { name: 'Abrir Estúdio' })).toHaveAttribute('href', '/studio');
+  expect(service.deleteUniverse).not.toHaveBeenCalled();
+});
+it('mantém universos antigos sem novos contadores com contagem zero', async () => {
+  page();
+  expect(await screen.findByText('0 aventuras vinculadas')).toBeInTheDocument();
+  expect(screen.getByText('0 campanhas vinculadas')).toBeInTheDocument();
+});
+it('permite texto contextual do seletor sem mudar seu rótulo nem seleção', async () => {
+  render(
+    <UniverseSelect
+      value={null}
+      onChange={vi.fn()}
+      alwaysShow
+      hint="A campanha continua independente."
+    />,
+  );
+  expect(await screen.findByText('A campanha continua independente.')).toBeInTheDocument();
+  expect(screen.getByLabelText('Universo compartilhado')).toBeInTheDocument();
+});

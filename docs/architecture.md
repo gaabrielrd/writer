@@ -316,9 +316,8 @@ entram somente nos headers do provedor, fora do histórico e da callable.
 
 ## Contratos da evolução Writer V2
 
-Esta seção orienta implementação futura; as features descritas acima continuam
-sendo a base vigente. A navegação de cinco espaços foi aprovada em protótipo
-isolado em `e2e/visual`, sem rotas ou serviços novos no bundle produtivo.
+A implementação começa pelo Estúdio F2-01, descrito abaixo. As demais capacidades
+do V2 conservam seus contratos futuros e aceites próprios.
 
 O [ADR 0025](decisions/0025-writer-v2-contracts.md) fixa separação entre livro
 legado, aventura autoral, campanha particular, edição e acesso. Preservar IDs/URLs
@@ -338,3 +337,33 @@ implementado. Contratos detalhados/condições por incremento estão na
 Comércio fica separado de créditos IA e exige capacidades Stripe reais, eventos
 verificados e conciliação no servidor. Nenhuma configuração Connect, migração,
 regra nova ou operação financeira é aplicada por esta documentação.
+
+## Estúdio e projetos privados
+
+`app` compõe os cinco espaços e a proteção das rotas autenticadas. `/` conserva
+a landing anônima e redireciona a conta autenticada para `/studio`. A navegação
+global independe de livros; o título do livro permanece no contexto privado.
+Publicações, Catálogo e Biblioteca informam disponibilidade futura; `/library`
+continua sendo a biblioteca de imagens.
+
+`features/studio` compõe APIs públicas de `books`, `adventures`, `campaigns` e
+`universes`. Livro conserva identidade, capítulos, editor e fluxos existentes;
+aventura autoral e campanha independente têm coleções e páginas próprias. Neste
+incremento, seus detalhes exibem metadados privados; sessões e estrutura narrativa
+não são criadas implicitamente. Cada tipo possui consulta, estado, filtro e cursor
+independentes. Troca de conta remonta a sessão e descarta respostas anteriores.
+
+`functions/src/studio.mjs` fornece `createAdventure`, `createCampaign`,
+`getAdventure`, `getCampaign`, `prepareStudioBooks` e `listStudioProjects`.
+Auth determina o dono. Projeto, recibo da operação e vínculo/contador de universo
+são transacionais; retry idêntico não duplica criação. Recursos novos, preparação
+e recibos não aceitam escrita direta do cliente. Listas paginam por dono, estado,
+`updatedAt DESC` e ID descendente, com padrão 25/máximo 50 e leitura de limite + 1.
+
+A preparação legada mantém progresso no servidor e altera apenas datas inválidas
+ou ausentes a partir de `snapshot.createTime/updateTime`, e estado ausente. Preserva
+conteúdo e datas válidas. As regras conservam datas válidas já existentes; mutações
+Admin respeitam a mesma condição. Valores devem caber no intervalo de `Date`.
+As referências de universo distinguem livros, aventuras e campanhas; exclusão
+confere os três contadores e referências antes de bloquear novos vínculos.
+Ver [contrato executável](tasks/writer-v2/execucao/07-estudio-projetos.md).

@@ -9,6 +9,7 @@ import * as functionsV1 from 'firebase-functions/v1';
 import { defineSecret, defineString, defineInt } from 'firebase-functions/params';
 import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
+import { createStudioService } from './studio.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
@@ -236,6 +237,7 @@ const callable = (method, secrets = []) =>
     async (request) => {
       try {
         const universeService = createUniverseService({ db });
+        const studio = createStudioService({ db });
         const loreAnalysis = createLoreAnalysisService({ db, generator: loreGenerator });
         const assisted = createAssistedBookService({
           db,
@@ -243,15 +245,17 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = assisted[method]
-          ? assisted
-          : loreAnalysis[method]
-            ? loreAnalysis
-            : universeService[method]
-              ? universeService
-              : service()[method]
-                ? service()
-                : createImageLibraryService({ db, assets });
+        const handler = studio[method]
+          ? studio
+          : assisted[method]
+            ? assisted
+            : loreAnalysis[method]
+              ? loreAnalysis
+              : universeService[method]
+                ? universeService
+                : service()[method]
+                  ? service()
+                  : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
@@ -275,6 +279,12 @@ export const migrateImageLibrary = callable('migrate');
 export const createUniverse = callable('createUniverse');
 export const updateUniverse = callable('updateUniverse');
 export const deleteUniverse = callable('deleteUniverse');
+export const createAdventure = callable('createAdventure');
+export const createCampaign = callable('createCampaign');
+export const getAdventure = callable('getAdventure');
+export const getCampaign = callable('getCampaign');
+export const prepareStudioBooks = callable('prepareStudioBooks');
+export const listStudioProjects = callable('listStudioProjects');
 export const saveUniverseLore = callable('saveUniverseLore');
 export const deleteUniverseLore = callable('deleteUniverseLore');
 export const analyzeChapterLore = callable('analyzeChapterLore', [key]);

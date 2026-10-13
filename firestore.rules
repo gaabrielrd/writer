@@ -10,6 +10,17 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function validStudioDate(value) {
+      return value is number && value >= 0 && value <= 8640000000000000;
+    }
+
+    function preserveBookDates() {
+      return (!validStudioDate(resource.data.get('updatedAt', null))
+          || validStudioDate(request.resource.data.get('updatedAt', null)))
+        && (!validStudioDate(resource.data.get('createdAt', null))
+          || validStudioDate(request.resource.data.get('createdAt', null)));
+    }
+
     function isBookAuthor(bookId) {
       return isAuthenticated()
         && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid;
@@ -259,6 +270,8 @@ service cloud.firestore {
       match /assistedCurrent/{id} { allow read, write: if false; }
       match /assistedLimits/{id} { allow read, write: if false; }
       match /assistedReceipts/{id} { allow read, write: if false; }
+      match /studioOperations/{operationId} { allow read, write: if false; }
+      match /studioPreparation/{preparationId} { allow read, write: if false; }
       match /imageLibrary/{imageId} {
         allow read: if isOwner(userId);
         allow write: if false;
@@ -304,6 +317,22 @@ service cloud.firestore {
         allow write: if false;
       }
       match /books/{bookId} { allow read, write: if false; }
+      match /adventures/{adventureId} { allow read, write: if false; }
+      match /campaigns/{campaignId} { allow read, write: if false; }
+    }
+
+    match /adventures/{adventureId} {
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if isOwner(resource.data.ownerId)
+        && request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;
+      allow write: if false;
+    }
+
+    match /campaigns/{campaignId} {
+      allow get: if isOwner(resource.data.ownerId);
+      allow list: if isOwner(resource.data.ownerId)
+        && request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;
+      allow write: if false;
     }
 
     // Minimal public revocation signal, never names, descriptions or author identity.
@@ -320,6 +349,8 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.authorId);
       allow create: if isAuthenticated()
         && request.resource.data.authorId == request.auth.uid
+        && validStudioDate(request.resource.data.get('createdAt', null))
+        && validStudioDate(request.resource.data.get('updatedAt', null))
         && request.resource.data.get('universeId', null) == null
         && request.resource.data.status == 'draft'
         && validPersonaReference(request.resource.data.get('personaId', null))
@@ -328,6 +359,7 @@ service cloud.firestore {
         && request.resource.data.get('deleting', false) == false
         && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
       allow update: if isOwner(resource.data.authorId)
+        && preserveBookDates()
         && validPersonaReference(request.resource.data.get('personaId', null))
         && request.resource.data.get('universeId', null) == resource.data.get('universeId', null)
         && request.resource.data.authorId == resource.data.authorId

@@ -391,6 +391,11 @@ export function createChapterChatService({
         (chapter.data().updatedAt ?? 0) + 1,
         (book.data().updatedAt ?? 0) + 1,
       );
+      if (!Number.isFinite(updatedAt) || !Number.isFinite(new Date(updatedAt).getTime()))
+        fail(
+          'failed-precondition',
+          'As datas do capítulo ou livro são inválidas. Corrija-as antes de aplicar a sugestão.',
+        );
       const result = { credits: credits - cost, content: after, wordCount, updatedAt };
       tx.update(chapterRef, { content: after, wordCount, updatedAt });
       tx.update(bookRef, {

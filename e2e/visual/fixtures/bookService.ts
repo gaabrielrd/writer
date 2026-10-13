@@ -14,6 +14,9 @@ import { author, books, chapters, FIXTURE_LIBRARY_STATE_KEY, FIXTURE_TIME } from
 
 const initialBooks = sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'empty' ? [] : books;
 const bookStore = new Map(initialBooks.map((book) => [book.id, structuredClone(book)]));
+export function fixtureStudioBooks(authorId: string): Book[] {
+  return structuredClone([...bookStore.values()].filter((book) => book.authorId === authorId));
+}
 const chapterStore = new Map(chapters.map((chapter) => [chapter.id, structuredClone(chapter)]));
 const bindingListeners = new Set<() => void>();
 let sequence = 0;

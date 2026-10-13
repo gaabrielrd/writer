@@ -7,11 +7,12 @@ Estúdio de escrita em React/Vite/Firebase, com lore contextual, assistência de
 Centralizar o planejamento de universo narrativo (personagens, locais, conceitos e relações) e a escrita em um editor de texto rico com detecção automática de termos. O projeto oferece assistência de IA contextualizada com controle de créditos, exportação em múltiplos formatos (PDF, DOCX, Markdown) e publicação online para leitores em uma interface interativa.
 
 A evolução aprovada é o **Writer V2**, com autores e mestres igualmente prioritários.
-Os cinco espaços serão Universos, Estúdio, Publicações, Catálogo e Biblioteca;
-livros, aventuras e campanhas ficam no Estúdio. A primeira versão pública do
-ecossistema inclui distribuição externa e vendas de livros e aventuras por
-criadores convidados. Essas capacidades ainda serão implementadas por incrementos;
-o protótipo aprovado é demonstrativo. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
+O Estúdio (`/studio`) reúne livros existentes e a criação privada de aventuras e
+campanhas independentes, com universo opcional, filtros e paginação. A navegação
+oferece Universos, Estúdio, Publicações, Catálogo e Biblioteca; os três últimos
+ainda exibem disponibilidade futura. A biblioteca de imagens mantém `/library`.
+Distribuição e vendas por criadores convidados serão implementadas nos próximos
+incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).
 
 ## Quando usar
@@ -148,12 +149,18 @@ Decisões relevantes de arquitetura ou tecnologia viram um ADR (Architecture Dec
 
 ## Universos compartilhados
 
-A opção **Lore compartilhado** no header permite gerenciar universos e reutilizar
+A opção **Universos** no header permite gerenciar universos e reutilizar
 fichas entre livros, mantendo o lore local separado. Criação e edição de lore
 usam seções opcionais com salvamento direto. A liberação depende das functions e regras correspondentes; veja
 [universos e lore compartilhado](docs/shared-lore.md).
 
 ## Limitações conhecidas
+
+- O Estúdio exige implantação conjunta das seis callables, regras e índices antes
+  de uso em produção. A preparação de livros legados corrige somente datas/estado,
+  em lotes retomáveis; aventuras e campanhas oferecem metadados privados neste
+  incremento. Estrutura narrativa, variantes e sessões permanecem nas próximas
+  tarefas. Veja [contrato do Estúdio](docs/tasks/writer-v2/execucao/07-estudio-projetos.md).
 
 - O [chat do Assistente IA no capítulo](docs/chapter-chat.md) tem histórico privado,
   comandos e contexto por seleção/cursor/viewport. Conversa não debita; a primeira

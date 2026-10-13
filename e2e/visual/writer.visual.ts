@@ -11,6 +11,7 @@ import {
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
+  openBookCreation,
   test,
 } from './support';
 import type { Page } from '@playwright/test';
@@ -75,14 +76,15 @@ test.describe('Páginas públicas', () => {
 
 test('biblioteca populada, modal por teclado e devolução de foco', async ({ page }, testInfo) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Estúdio', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: books[1].title, exact: true })).toBeVisible();
   await expectPortraitBooks(page, 3);
   await capture(page, testInfo, '04-biblioteca-populada');
 
-  const trigger = page.getByRole('button', { name: 'Novo Livro', exact: true });
+  const trigger = page.getByRole('button', { name: 'Novo projeto', exact: true });
   await trigger.focus();
   await page.keyboard.press('Enter');
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Criar Novo Livro' });
   await expect(dialog).toBeVisible();
   await page.getByLabel('Título da Obra').fill(books[1].title);
@@ -102,11 +104,14 @@ test('biblioteca populada, modal por teclado e devolução de foco', async ({ pa
   await expect(trigger).toBeFocused();
 
   await page.keyboard.press('Enter');
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
-  await expect(page.getByRole('heading', { level: 3 })).toHaveCount(3);
+  await expect(page.locator('a[href^="/books/"]').getByRole('heading', { level: 3 })).toHaveCount(
+    3,
+  );
 });
 
 test('obra, capítulos longos, compêndio e edição', async ({ page }, testInfo) => {
@@ -252,9 +257,9 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
     ).toBeVisible();
     await page.getByRole('link', { name: 'Voltar para o livro', exact: true }).click();
     await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Meus Livros', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Meus Livros', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+    await page.getByRole('button', { name: 'Estúdio', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Estúdio', exact: true })).toBeVisible();
   }
 });
 
@@ -265,7 +270,7 @@ test.describe('Biblioteca vazia', () => {
     page,
   }, testInfo) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Criar Primeiro Livro' }).click();
+    await openBookCreation(page);
     await page.getByLabel('Título da Obra').fill('Atlas de Outono');
     await page.getByLabel('Gênero Literário').fill('Fantasia');
     await capture(page, testInfo, '18-criacao-livro');
@@ -292,13 +297,20 @@ test.describe('Biblioteca vazia', () => {
     await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Atlas de Outono', exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/books\/visual-created-book-/);
+    await page.getByRole('button', { name: 'Estúdio', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
     await expectPortraitBooks(page, 1);
   });
 
   test('estado vazio mantém ações para começar ou importar', async ({ page }, testInfo) => {
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Nenhum livro cadastrado' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Criar Primeiro Livro' })).toBeEnabled();
+    await expect(
+      page
+        .getByRole('region', { name: 'Livros', exact: true })
+        .getByRole('heading', { name: 'Nenhum projeto nesta lista' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Novo projeto', exact: true })).toBeEnabled();
     await expect(
       page.getByRole('button', { name: 'Importar Documento', exact: true }),
     ).toBeEnabled();
@@ -309,13 +321,16 @@ test.describe('Biblioteca vazia', () => {
     page,
   }, testInfo) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Criar Primeiro Livro' }).click();
+    await openBookCreation(page);
     await page.getByLabel('Título da Obra').fill('Livro vertical');
     await page.getByLabel('Gênero Literário').fill('Fantasia');
 
     await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Livro vertical', exact: true })).toBeVisible();
+    await expect(page).toHaveURL(/\/books\/visual-created-book-/);
+    await page.getByRole('button', { name: 'Estúdio', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
     await expectPortraitBooks(page, 1);
     await capture(page, testInfo, '17-biblioteca-um-livro');
     await page.setViewportSize({ width: 320, height: 740 });
@@ -330,7 +345,7 @@ test.describe('Falha de serviço simulada', () => {
   test('mostra erro e recupera os livros ao tentar novamente', async ({ page }, testInfo) => {
     await page.goto('/');
     await expect(
-      page.getByRole('heading', { name: 'Não foi possível carregar os livros' }),
+      page.getByRole('heading', { name: 'Não foi possível carregar livros' }),
     ).toBeVisible();
     await expect(page.getByText('Falha simulada de conexão. Tente novamente.')).toBeVisible();
     await capture(page, testInfo, '13-biblioteca-erro');
@@ -340,7 +355,7 @@ test.describe('Falha de serviço simulada', () => {
       FIXTURE_LIBRARY_STATE_KEY,
     );
     await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Estúdio', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toHaveCount(
       0,
@@ -361,7 +376,7 @@ test('preferência por menos transparência usa superfícies opacas e sem desfoq
       ],
     });
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Estúdio', exact: true })).toBeVisible();
     const computed = await page
       .locator('.glass-surface')
       .first()

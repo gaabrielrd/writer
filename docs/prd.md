@@ -5,7 +5,7 @@
 
 Os RF-01 a RF-08 preservam os requisitos da base histórica, com correções de
 privacidade e referências aos incrementos existentes. A seção 17 define o escopo
-aprovado do Writer V2, ainda não implementado. “Primeira versão pública do ecossistema”
+aprovado do Writer V2, com implementação incremental do Estúdio. “Primeira versão pública do ecossistema”
 abrange as fases 1–5 do V2; não equivale à primeira versão histórica deste documento.
 Estado real e evidências: [registro de execução](tasks/writer-v2/execucao/README.md).
 
@@ -54,8 +54,8 @@ compartilha pistas sem segredos e registra consequências em campanhas particula
 
 ## 3. Jornada principal
 
-1. **Acesso e Início**: O autor acessa a aplicação, faz login com sua conta (Google ou e-mail) e visualiza seu painel de livros com o saldo de créditos de IA disponível.
-2. **Criação da Obra**: O autor clica em "Novo Livro", define título, sinopse e cria os primeiros capítulos.
+1. **Acesso e Início**: A pessoa faz login com Google ou e-mail e entra no Estúdio, que reúne livros, aventuras e campanhas particulares, com saldo de créditos de IA no header.
+2. **Criação da Obra**: Em "Novo projeto", escolhe Livro, Aventura ou Campanha. Livro reutiliza a criação existente; aventura/campanha começa por título, sinopse/descrição opcional e universo opcional.
 3. **Construção do Lore**: Na aba de compêndio, o autor cadastra as principais entidades da história (ex.: Personagem "Elena", com apelido "Leni", ocupação "Alquimista", resumo curto e relações).
 4. **Escrita Enriquecida**: No editor de texto, ao escrever "Elena caminhou até o laboratório", a palavra "Elena" é automaticamente sublinhada; ao passar o mouse, um balão exibe seu resumo; ao clicar, a barra lateral abre sua ficha completa para consulta ou ajuste rápido.
 5. **Auxílio Criativo por IA**: Ao pausar a digitação, a IA sugere a continuação da cena em texto translúcido respeitando o contexto dos personagens; o autor aceita a sugestão com `Tab`, consumindo 1 crédito do seu saldo.
@@ -190,12 +190,12 @@ da operação pertinente; não há prazo fiscal presumido neste PRD.
 
 ## 9. Interface e estados
 
-| Tela ou componente                        | Carregando                             | Vazio                                            | Sucesso                                                  | Erro                                       | Sem permissão                           | Navegação por teclado                                             |
-| ----------------------------------------- | -------------------------------------- | ------------------------------------------------ | -------------------------------------------------------- | ------------------------------------------ | --------------------------------------- | ----------------------------------------------------------------- |
-| **Dashboard de Livros** (`/`)             | `LoadingState` com esqueleto de cards  | `EmptyState` com convite "Criar primeiro livro"  | Grade de livros com capas, contagem de palavras e status | `ErrorState` com botão de tentar novamente | Redireciona para `/login`               | `Tab` entre cards, `Enter` para abrir                             |
-| **Editor e Lore** (`/books/:id/editor`)   | Esqueleto de documento e barra lateral | Capítulo em branco com placeholder motivador     | Texto rico formatado com termos de lore destacados       | Alerta persistente na barra inferior       | Redireciona para `/` se não for o autor | `Tab` para aceitar IA, `Esc` para rejeitar, `@` para menu de lore |
-| **Compêndio de Lore** (`/books/:id/lore`) | Lista de carregamento                  | Mensagem com botão "Adicionar primeira entidade" | Lista de entidades categorizada com busca                | `ErrorState` com opção de recarregar       | Redireciona para `/`                    | Atalhos de foco na busca e formulários                            |
-| **Leitor Público** (`/read/:id`)          | Esqueleto de página de leitura         | Mensagem "Nenhum capítulo publicado"             | Texto do livro formatado com sumário lateral e tooltips  | Mensagem amigável de livro não encontrado  | Mensagem "Esta obra é privada"          | Setas `←` e `→` para navegar capítulos                            |
+| Tela ou componente                        | Carregando                                | Vazio                                            | Sucesso                                                        | Erro                                      | Sem permissão                           | Navegação por teclado                                             |
+| ----------------------------------------- | ----------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------- | ----------------------------------------- | --------------------------------------- | ----------------------------------------------------------------- |
+| **Estúdio** (`/studio`)                   | Preparação legada e carregamento por tipo | `EmptyState` por tipo com ação de criação        | Livros, aventuras e campanhas, filtros e páginas independentes | Retry por seção preserva as demais        | Redireciona para `/login`               | `Tab` entre filtros, cards e ações; menus por teclado             |
+| **Editor e Lore** (`/books/:id/editor`)   | Esqueleto de documento e barra lateral    | Capítulo em branco com placeholder motivador     | Texto rico formatado com termos de lore destacados             | Alerta persistente na barra inferior      | Redireciona para `/` se não for o autor | `Tab` para aceitar IA, `Esc` para rejeitar, `@` para menu de lore |
+| **Compêndio de Lore** (`/books/:id/lore`) | Lista de carregamento                     | Mensagem com botão "Adicionar primeira entidade" | Lista de entidades categorizada com busca                      | `ErrorState` com opção de recarregar      | Redireciona para `/`                    | Atalhos de foco na busca e formulários                            |
+| **Leitor Público** (`/read/:id`)          | Esqueleto de página de leitura            | Mensagem "Nenhum capítulo publicado"             | Texto do livro formatado com sumário lateral e tooltips        | Mensagem amigável de livro não encontrado | Mensagem "Esta obra é privada"          | Setas `←` e `→` para navegar capítulos                            |
 
 ## 10. Plataformas e distribuição
 
@@ -259,7 +259,7 @@ Navegação aprovada não comprova piloto, pagamento real nem implementação do
 
 ## Incremento: Universos e lore compartilhado
 
-O autor gerencia universos próprios pela opção **Lore compartilhado** no header.
+O autor gerencia universos próprios pela opção **Universos** no header.
 Cada universo reutiliza entidades entre livros vinculados. Os dados essenciais da
 criação oferecem o vínculo quando há universos; as configurações de livros
 existentes permitem selecionar, trocar ou remover o universo. O lore local
@@ -323,8 +323,14 @@ evidência e a definição de concluído vigente. Projeções de revisão/jogado
 paga são separadas e nunca recebem um segredo para depois escondê-lo na UI.
 Os contratos normativos são formalizados no [ADR 0025](decisions/0025-writer-v2-contracts.md).
 
-A navegação já tem protótipo aprovado e 30 percursos Chromium com fixtures;
-não é demonstração de persistência/autorização/comércio reais. Roteiros estão
-preparados; participantes serão indicados pelo operador. CI/PR, sandbox Writer,
-pilotos humanos e liberação live são evidências distintas e ainda pendentes.
+O Estúdio F2-01 implementa navegação, listagem e criação privada persistida, sem
+converter aventura/campanha em livro. Seus metadados têm detalhes próprios;
+estrutura narrativa, revisão, sessões e comércio permanecem nas tarefas seguintes.
+Publicações, Catálogo e Biblioteca mostram disponibilidade futura. A autorização
+explícita de implementação conserva condições humanas/comerciais nos próprios
+aceites, sem concluir integralmente a fase 1.
+
+Roteiros estão preparados; participantes serão indicados pelo operador. CI/PR,
+emulador, fixtures visuais, pilotos humanos e liberação live são evidências distintas.
+Resultados e pendências do head ficam no [registro de execução](tasks/writer-v2/execucao/README.md).
 Estimativas de esforço/capacidade e suas limitações ficam na [timeline](tasks/writer-v2/timeline.md).

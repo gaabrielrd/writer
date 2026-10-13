@@ -72,5 +72,27 @@ separa preparação técnica de F2-01, aceite integral de fase, CI, humanos e op
 comercial. A definição de concluído vigente conserva CI verde em PR; validate local
 não a substitui. Não há autorização de publicação live decorrente deste ADR.
 
+Em 2026-10-13, após o CI verde de `079d4e9`, o operador autorizou implementar
+o Estúdio F2-01 com os contratos técnicos aprovados e manter as condições humanas
+e comerciais pendentes. O portão do incremento substitui o bloqueio integral
+anterior de fase para essa implementação. Critérios de piloto, venda, direitos,
+capacidade comercial e lançamento permanecem nos respectivos aceites; nenhum
+resultado humano/comercial é inferido da autorização.
+
+### Contratos concretizados em F2-01
+
+O Estúdio separa `books`, `adventures` e `campaigns`, com criação idempotente
+privada e vínculo de universo transacional. Listas por tipo usam dono, estado,
+data e ID; não há feed global nem total inventado. Livros legados passam por
+preparação limitada e retomável, usando datas reais do snapshot e preservando
+conteúdo/IDs. Regras e mutações Admin conservam datas válidas após a preparação.
+Excluir universo exige conferir contadores e referências dos três tipos.
+
+`app` compõe a navegação; as features usam interfaces públicas. Os três espaços
+futuros informam indisponibilidade até suas entregas. Metadados de projeto não
+comprovam estrutura narrativa, sessão ou comércio. O
+[plano executável](../tasks/writer-v2/execucao/07-estudio-projetos.md) especifica
+limites, rotas, retry e evidências necessárias.
+
 Estimativas não calibradas das 41 tarefas ampliam o horizonte do orçamento histórico,
 preservando o escopo. Reestimar com horas humanas e resultados reais de cada incremento.

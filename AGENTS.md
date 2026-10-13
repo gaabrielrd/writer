@@ -48,6 +48,7 @@
 - Não expanda o escopo além do solicitado.
 - Uma funcionalidade por vez.
 - Siga os contratos e portões por incremento em `docs/tasks/writer-v2/execucao/06-contratos-e-replanejamento.md`; confira o estado no registro de execução.
+- A autorização registrada de F2-01 permite implementar o Estúdio com contratos técnicos aprovados; preserve pendências humanas/comerciais nos seus próprios aceites, sem declarar a fase 1 integralmente concluída.
 
 ## Dependências
 
@@ -70,6 +71,9 @@
 - Mantenha vínculos e exclusão de imagens da biblioteca no servidor; todo seletor de imagem deve oferecer `ImageLibraryPicker` pela interface pública da feature.
 - Mantenha universos, vínculos de livros e mutações de lore global em `functions`.
 - Preserve a revogação do lore global por versão nas regras e no leitor público.
+- Mantenha aventuras/campanhas, recibos de criação e preparação do Estúdio no servidor; use paginação por tipo/dono e preserve identidade/conteúdo dos livros legados.
+- Datas válidas de livros não podem ser removidas ou invalidadas, inclusive por mutações Admin; preparação usa metadados reais do snapshot, sem inventar datas.
+- Vínculo de universo e criação do projeto são atômicos; exclusão confere contadores e referências de livros, aventuras e campanhas.
 
 ## Rotas
 

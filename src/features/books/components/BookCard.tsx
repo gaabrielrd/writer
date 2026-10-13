@@ -2,10 +2,11 @@ import { Link } from 'react-router';
 import { Book as BookIcon, FileText } from 'lucide-react';
 import { Badge, Card } from '@/shared/ui';
 import type { Book } from '../model/book';
+import type { StudioBookSummary } from '../services/studioBookService';
 import styles from './BookCard.module.css';
 
 export interface BookCardProps {
-  book: Book;
+  book: Book | StudioBookSummary;
 }
 
 export function BookCard({ book }: BookCardProps) {
@@ -38,9 +39,11 @@ export function BookCard({ book }: BookCardProps) {
               {book.genre && <Badge variant="neutral">{book.genre}</Badge>}
             </div>
 
-            <p className={styles.synopsis}>
-              {book.synopsis || 'Nenhuma sinopse cadastrada para este livro.'}
-            </p>
+            {(!('kind' in book) || book.synopsis !== undefined) && (
+              <p className={styles.synopsis}>
+                {book.synopsis || 'Nenhuma sinopse cadastrada para este livro.'}
+              </p>
+            )}
 
             <div className={styles.meta}>
               <span className={styles.metaItem}>

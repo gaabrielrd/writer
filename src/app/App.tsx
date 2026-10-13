@@ -6,6 +6,7 @@ import { ThemeProvider, ThemeToggle } from '@/shared/theme';
 import { AISettingsProvider, useAISettings } from '@/features/ai-assistant';
 import { WorkspaceLayoutProvider, useWorkspaceLayout } from '@/shared/ui';
 import styles from './App.module.css';
+import { StudioNavigation } from './components/StudioNavigation';
 
 const PROJECT_NAME = 'Writer Assistant';
 
@@ -24,6 +25,7 @@ function AppHeader() {
             </span>
             <span className={styles.brandText}>{PROJECT_NAME}</span>
           </Link>
+          <StudioNavigation />
           <BookNavigation />
         </div>
         <div className={styles.userBar}>

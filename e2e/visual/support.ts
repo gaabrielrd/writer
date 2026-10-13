@@ -55,7 +55,7 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
           {
             label: FIXTURE_LABEL,
             source:
-              'Componentes e rotas reais; autenticação, livros, capítulos, lore e IA fictícios.',
+              'Componentes e rotas reais; autenticação, livros, aventuras, campanhas, universos, capítulos, lore e IA fictícios.',
             theme: visualTheme,
             libraryState,
             clockMode: controlledClock ? 'controlado pelo cenário' : 'avança naturalmente',
@@ -83,6 +83,12 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
   ],
 });
 export { expect };
+
+export async function openBookCreation(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Criar Novo Livro' })).toBeVisible();
+}
 
 export async function capture(page: Page, testInfo: TestInfo, name: string): Promise<void> {
   await page.evaluate(async (label) => {

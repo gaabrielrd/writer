@@ -1,6 +1,6 @@
 # W2-F1-06 — Consolidar contratos, documentação e estimativas
 
-**Estado:** Consolidação documental revisada; validate local verde. CI e aceite integral da fase permanecem pendentes.
+**Estado:** Consolidação documental revisada; gates técnicos verdes em `079d4e9`. Aceite integral da fase permanece pendente; F2-01 tem autorização explícita de avanço registrada no portão.
 **Evidência:** [Contratos e portão](../execucao/06-contratos-e-replanejamento.md), [timeline](../timeline.md).
 **Dependências:** [W2-F1-02](../fase-01-direcao-e-fundamentos/02-modelo-de-dominio.md), [W2-F1-03](../fase-01-direcao-e-fundamentos/03-permissoes-e-privacidade.md), [W2-F1-04](../fase-01-direcao-e-fundamentos/04-regras-comerciais-e-direitos.md), [W2-F1-05](../fase-01-direcao-e-fundamentos/05-prototipos-e-pilotos.md)
 **Áreas propostas:** documentação, arquitetura, planejamento e validação. Nomes novos são propostas, sujeitos à fase 1.

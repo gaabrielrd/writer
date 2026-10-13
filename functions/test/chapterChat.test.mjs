@@ -187,6 +187,33 @@ function fixture(
     },
   };
 }
+test('datas inválidas impedem aceite sem escrita ou débito e permitem retry após correção', async () => {
+  for (const [path, invalid] of [
+    ['books/book/chapters/chapter', Infinity],
+    ['books/book', 8_640_000_000_000_000],
+  ]) {
+    const f = fixture();
+    await f.create();
+    await f.send();
+    f.records.set(path, { ...f.records.get(path), updatedAt: invalid });
+    const before = structuredClone([...f.records]);
+    await assert.rejects(f.apply(), { code: 'failed-precondition' });
+    assert.deepEqual([...f.records], before);
+    assert.equal(f.records.get('users/author').credits, 5);
+    assert.equal(
+      [...f.records.keys()].some((key) => key.includes('/receipts/')),
+      false,
+    );
+    f.records.set(path, { ...f.records.get(path), updatedAt: 100 });
+    const applied = await f.apply();
+    assert.equal(f.records.get('users/author').credits, 4);
+    assert.equal(f.records.get('books/book/chapters/chapter').content, '<p>Novo texto</p>');
+    assert.doesNotThrow(() => new Date(applied.updatedAt).toISOString());
+    assert.deepEqual(await f.apply(), applied);
+    assert.equal(f.records.get('users/author').credits, 4);
+  }
+});
+
 test('pedido congela raciocínio e modelo efetivo, sem permitir que o cliente escolha o modelo da plataforma', async () => {
   const inputs = [];
   const f = fixture(async (input) => {

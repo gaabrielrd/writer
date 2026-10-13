@@ -1,6 +1,6 @@
 # Fase 2 — Criar e preparar
 
-**Estado:** Planejada; tarefas não executadas.
+**Estado:** F2-01 implementado após autorização explícita, com validação local verde; conclusão técnica depende do CI do head. Demais tarefas não executadas.
 **Referência de esforço:** 368/584/936 h; hipótese de entrega 16 h/semana, 36,5 semanas ativas no cenário central.
 As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.
 Veja [timeline e hipóteses](../timeline.md).
@@ -11,7 +11,9 @@ Permitir criar um conto e preparar uma aventura no mesmo universo, mantendo as c
 
 ## Entrada
 
-Portão da fase 1 aprovado e contratos de domínio/permissão fechados.
+Contratos técnicos do incremento fechados e gates técnicos verificados. O operador
+autorizou iniciar F2-01 em 2026-10-13, mantendo o aceite humano/comercial pendente;
+ver [mudança explícita de sequência](../execucao/06-contratos-e-replanejamento.md).
 
 ## Entregas
 

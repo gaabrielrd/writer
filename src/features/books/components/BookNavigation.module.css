@@ -4,10 +4,6 @@
   gap: var(--header-nav-gap, var(--space-4));
   min-width: 0;
 }
-.libraryTrigger {
-  flex-shrink: 0;
-  padding-inline: 0;
-}
 .title {
   color: hsl(var(--muted-foreground));
   font-size: var(--text-sm);
