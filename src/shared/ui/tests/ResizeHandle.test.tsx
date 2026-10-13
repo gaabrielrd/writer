@@ -62,6 +62,18 @@ afterEach(() => {
 });
 
 describe('divisor redimensionável', () => {
+  it.each([false, true])(
+    'um gesto sem alteração final não grava a largura (movimento: %s)',
+    (move) => {
+      const { handle } = setup();
+      fireEvent.pointerDown(handle, { clientX: 600, button: 0 });
+      if (move) fireEvent.pointerMove(handle, { clientX: 500 });
+      fireEvent.pointerUp(handle, { clientX: 600 });
+      expect(handle).toHaveAttribute('aria-valuenow', '40');
+      expect(committed).not.toHaveBeenCalled();
+    },
+  );
+
   it('Escape no manuscrito cancela drag antes dos atalhos globais e libera o atalho depois', () => {
     const { handle } = setup();
     const text = screen.getByRole('textbox');

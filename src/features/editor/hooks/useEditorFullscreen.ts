@@ -18,11 +18,16 @@ function captureWorkingPassage() {
   if (!area) return () => undefined;
   const owner = scrollOwner(area);
   const viewportTop = owner === document.scrollingElement ? 0 : owner.getBoundingClientRect().top;
+  const viewportHeight =
+    owner === document.scrollingElement ? window.innerHeight : owner.clientHeight;
+  const visibleTop = Math.max(0, viewportTop);
+  const visibleBottom = Math.min(window.innerHeight, viewportTop + viewportHeight);
   const editable = area.querySelector('[contenteditable]');
   const block = Array.from(editable?.children ?? []).find(
     (element) => element.getBoundingClientRect().bottom > viewportTop,
   );
   let anchor: Element | Range | undefined = block;
+  let visibleCaret = false;
   const selection = window.getSelection();
   if (selection?.focusNode && editable?.contains(selection.focusNode)) {
     const caret = document.createRange();
@@ -30,10 +35,41 @@ function captureWorkingPassage() {
     caret.collapse(true);
     if (typeof caret.getBoundingClientRect === 'function') {
       const rect = caret.getBoundingClientRect();
-      const viewportHeight =
-        owner === document.scrollingElement ? window.innerHeight : owner.clientHeight;
-      if (rect.height > 0 && rect.top >= viewportTop && rect.bottom <= viewportTop + viewportHeight)
+      if (rect.height > 0 && rect.top >= visibleTop && rect.bottom <= visibleBottom) {
         anchor = caret;
+        visibleCaret = true;
+      }
+    }
+  }
+  if (
+    !visibleCaret &&
+    editable &&
+    visibleBottom > visibleTop &&
+    (!block || block.getBoundingClientRect().height > visibleBottom - visibleTop)
+  ) {
+    const bounds = editable.getBoundingClientRect();
+    const x = Math.max(0, Math.min(window.innerWidth - 1, bounds.left + bounds.width / 2));
+    const y = visibleTop + (visibleBottom - visibleTop) / 2;
+    const position =
+      typeof document.caretPositionFromPoint === 'function'
+        ? document.caretPositionFromPoint(x, y)
+        : null;
+    let candidate: Range | null = null;
+    if (position && editable.contains(position.offsetNode)) {
+      candidate = document.createRange();
+      candidate.setStart(position.offsetNode, position.offset);
+      candidate.collapse(true);
+    } else if (typeof document.caretRangeFromPoint === 'function') {
+      candidate = document.caretRangeFromPoint(x, y);
+    }
+    if (
+      candidate &&
+      editable.contains(candidate.startContainer) &&
+      typeof candidate.getBoundingClientRect === 'function'
+    ) {
+      const rect = candidate.getBoundingClientRect();
+      if (rect.height > 0 && rect.top >= visibleTop && rect.bottom <= visibleBottom)
+        anchor = candidate;
     }
   }
   if (!anchor) return () => undefined;

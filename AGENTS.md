@@ -27,6 +27,7 @@
 - Use as exportações públicas das features (index.ts).
 - Mantenha APIs externas e armazenamento do navegador atrás de serviços.
 - Mantenha `shared` neutro em relação ao domínio.
+- Centralize capacidades de raciocínio no contrato puro `functions/src/chatGeneration.mjs`, sem I/O ou credenciais.
 - Não adicione abstrações sem necessidade demonstrada.
 
 ## Estilo e interface
@@ -63,6 +64,7 @@
 - Leitura de `import.meta.env` só em `shared/config/env.ts`.
 - Mantenha geração de livros e débitos de créditos em `functions`; configure segredos somente no servidor.
 - Mantenha conversas de capítulo privadas e sem débito; aplique sugestões com manuscrito, crédito e recibo atômicos em `functions`.
+- Congele provedor, modelo e raciocínio dos pedidos de chat; nunca inclua chaves em snapshots, histórico ou recuperação.
 - Na criação assistida, mantenha sessões, entrevista, validação e confirmação do livro/lore/capa com débito atômico em `functions`.
 - Mantenha vínculos e exclusão de imagens da biblioteca no servidor; todo seletor de imagem deve oferecer `ImageLibraryPicker` pela interface pública da feature.
 - Mantenha universos, vínculos de livros e mutações de lore global em `functions`.
@@ -85,6 +87,7 @@
 - Teste o resultado observável.
 - `npm run test` aplica limites de cobertura; não os reduza para fazer passar.
 - Instale as dependências de `functions` com `npm ci --prefix functions` antes de validar.
+- Use `WRITER_VISUAL_PORT` distinto por checkout nas execuções visuais paralelas.
 
 ## Documentação
 

@@ -25,6 +25,73 @@ afterEach(() => {
 });
 
 describe('tela cheia do editor', () => {
+  it.each(['caretPositionFromPoint', 'caretRangeFromPoint'] as const)(
+    'ancora a passagem visível por %s quando o cursor está fora dela',
+    (method) => {
+      const callbacks: FrameRequestCallback[] = [];
+      vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+        callbacks.push(callback);
+        return callbacks.length;
+      });
+      const area = document.createElement('div');
+      area.setAttribute('data-editor-scroll-area', '');
+      area.style.overflowY = 'auto';
+      Object.defineProperties(area, {
+        scrollHeight: { value: 1500 },
+        clientHeight: { value: 500 },
+      });
+      area.innerHTML =
+        '<div contenteditable="true"><p>Um parágrafo longo com passagem visível</p></div>';
+      document.body.append(area);
+      const editable = area.querySelector('div')!;
+      const node = area.querySelector('p')!.firstChild!;
+      vi.spyOn(area, 'getBoundingClientRect').mockReturnValue({ top: 100 } as DOMRect);
+      vi.spyOn(editable, 'getBoundingClientRect').mockReturnValue({
+        left: 20,
+        width: 300,
+      } as DOMRect);
+      vi.spyOn(area.querySelector('p')!, 'getBoundingClientRect').mockReturnValue({
+        top: -1000,
+        bottom: 1000,
+        height: 2000,
+      } as DOMRect);
+      const original = document.createRange();
+      original.setStart(node, 0);
+      original.collapse(true);
+      window.getSelection()!.addRange(original);
+      const caret = original.cloneRange();
+      Object.assign(caret, {
+        getBoundingClientRect: () => ({ top: -1000, bottom: -980, height: 20 }),
+      });
+      const passage = original.cloneRange();
+      passage.setStart(node, 12);
+      passage.collapse(true);
+      const rect = vi.fn().mockReturnValue({ top: 140, bottom: 160, height: 20 });
+      Object.assign(passage, { getBoundingClientRect: rect });
+      vi.spyOn(document, 'createRange').mockReturnValueOnce(caret).mockReturnValue(passage);
+      const point = vi.fn(() =>
+        method === 'caretPositionFromPoint' ? { offsetNode: node, offset: 12 } : passage,
+      );
+      const previous = Object.getOwnPropertyDescriptor(document, method);
+      Object.defineProperty(document, method, { configurable: true, value: point });
+      try {
+        setup();
+        fireEvent.click(screen.getByRole('button'));
+        rect.mockReturnValue({ top: 190, bottom: 210, height: 20 });
+        act(() => {
+          callbacks.shift()!(0);
+          callbacks.shift()!(0);
+        });
+        expect(area.scrollTop).toBe(50);
+        expect(window.getSelection()!.focusOffset).toBe(0);
+        expect(point).toHaveBeenCalledOnce();
+      } finally {
+        if (previous) Object.defineProperty(document, method, previous);
+        else Reflect.deleteProperty(document, method);
+      }
+    },
+  );
+
   it('ancora o caret visível no parágrafo longo mesmo durante reflow sem overflow', () => {
     let resized: () => void = () => undefined;
     const disconnect = vi.fn();

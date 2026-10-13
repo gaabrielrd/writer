@@ -129,6 +129,11 @@ restaura o layout ao deixar a rota. O workspace redimensionável mantém uma
 árvore estável para manuscrito e painéis; a largura passa pelo adaptador local
 versionado e isolado por usuário, com fallback seguro de armazenamento.
 
+A passagem é ancorada pelo caret visível ou pelo primeiro bloco visível. Quando
+o cursor está fora da viewport e o bloco excede sua altura, uma Range virtual
+obtida pela posição textual da viewport conserva a leitura sem mover a seleção.
+O acompanhamento de reflow dura até 500 ms e termina na primeira interação.
+
 As configurações de IA são compostas por `AISettingsProvider` no layout e abertas
 por callback no menu de usuário. `useAIConfig` observa alterações no adaptador
 BYOK para invalidar sugestões anteriores. A análise/revisão do compêndio fica no

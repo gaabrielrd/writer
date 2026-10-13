@@ -327,6 +327,10 @@ truncar com tooltip, conservando o ícone e o seletor. Raciocínio usa
 opções incompatíveis desabilitadas pela matriz do modelo. Auto permanece
 disponível. Uma preferência incompatível conserva seu nome e informa o fallback.
 
+Explique a incompatibilidade por descrição acessível e tooltip do seletor.
+Um gesto no divisor que retorna à largura inicial não altera a preferência;
+limites temporários de viewport não substituem a proporção salva.
+
 Respostas do assistente têm detalhes nativos de **Modelo e raciocínio**, com
 parâmetros solicitados/usados legíveis e quebra de linha. Conversas antigas
 identificam Auto e modelo não registrado. Não mostre chaves nem pensamentos

@@ -383,3 +383,13 @@ O cenário usa somente fixtures, cobre desktop/celular nos três temas, teclado,
 retorno do foco, aviso de publicação e 320 px. A suíte visual completa continua
 protegendo capas 2:3, livro único, títulos longos, capítulos, minimapa, personas,
 importação, universos e IA. Nenhum snapshot é regenerado automaticamente.
+
+`editor-reading-position.visual.ts` verifica a passagem lida em um parágrafo
+maior que a viewport com cursor fora da área visível, na entrada e saída de tela
+cheia. Os testes do hook cobrem as APIs padrão e legada de posição textual sem
+alterar a seleção. Retry mantém a cronologia também durante a resposta otimista;
+tap e drag sem mudança conservam a preferência de largura.
+
+Relatórios e resultados gerados pelo Playwright são ignorados pelo ESLint para
+evitar leitura de arquivos temporários durante execuções paralelas. As regras
+de lint do código-fonte e os limites de cobertura permanecem os mesmos.

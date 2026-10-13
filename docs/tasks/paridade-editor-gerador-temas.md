@@ -39,7 +39,8 @@ fora do escopo. Nenhuma dependência nova é prevista.
 - Raciocínio: Auto, Nenhum, Baixo, Médio, Alto, Muito alto e Máximo, condicionado
   às capacidades verificadas do modelo. Opções incompatíveis têm explicação.
   Máximo respeita quotas, timeout e limite de tokens da aplicação.
-- Auto resolve conforme pedido/comando e capacidades, sem trocar silenciosamente
+- Auto usa o padrão documentado do modelo ou o padrão do provedor, sem trocar
+  silenciosamente
   o modelo/provedor. Escolhas afetam o próximo envio. Cada mensagem conserva a
   configuração solicitada/efetiva. Retries preservam identidade/configuração;
   regeneração permite uma nova configuração explícita.
@@ -137,4 +138,14 @@ marcar um item como entregue com base apenas na intenção ou no código escrito
   passou em 60 repetições, dez por tema/dispositivo; três gestos reais de toque
   passaram (17,2 s), além de 31 testes dirigidos e 48 de regras no emulador.
   Gate definitivo verde: 826 testes da aplicação, 69 de scripts, 87 de backend
-  e build/smoke. Resta a tarefa 12, incluindo fechamento do CI no PR.
+  e build/smoke.
+- Tarefa 12: revisão final, documentação/ADR e regras do projeto realinhadas.
+  Corrigidos retry otimista fora de ordem, gesto sem mudança que substituía
+  preferência sob limite temporário e leitura com cursor fora da viewport em
+  parágrafo longo. 46 testes dirigidos e 93 cenários finais passaram (5,4 min);
+  três casos de toque foram ignorados somente nos projetos desktop. Referência
+  Linux do styleguide revisada e atualizada; sete E2E Linux passaram (20,2 s).
+  `npm run validate` verde: 831 testes da aplicação, 69 de scripts, 87 de backend,
+  cobertura 92,78%/86,26%/91,18%/94,86%, build/smoke/tipos/lint/docs aprovados.
+  Commits e PR ficam na branch isolada `codex/editor-paridade-workspace`;
+  o CI do PR confere o commit publicado. Integração e deploy são ações separadas.

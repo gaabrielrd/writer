@@ -121,6 +121,51 @@ async function setup(overrides: Partial<React.ComponentProps<typeof ChapterChatP
   };
 }
 describe('chat do capítulo', () => {
+  it('retry antigo conserva a ordem do pedido enquanto a resposta está em andamento', async () => {
+    page.messages = [
+      { ...authorMessage, text: 'Pedido anterior' },
+      { ...assistantMessage, state: 'error', error: 'Falha anterior', suggestion: undefined },
+      { ...authorMessage, id: 'future-user', text: 'Pedido posterior', createdAt: 3 },
+      { ...assistantMessage, id: 'future', text: 'Resposta posterior', createdAt: 4 },
+    ];
+    localStorage.setItem(
+      'writer:chapter-chat:author:book:chapter:chat',
+      JSON.stringify({
+        draft: '',
+        request: {
+          requestId: 'request',
+          text: 'Pedido anterior',
+          context,
+          generation: {
+            version: 1,
+            provider: 'platform',
+            model: 'gemini-3.7-flash',
+            reasoning: 'auto',
+          },
+        },
+      }),
+    );
+    let finish!: (message: ChatMessage) => void;
+    vi.mocked(service.sendChapterChat).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const ui = await setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+    await waitFor(() => expect(service.sendChapterChat).toHaveBeenCalledOnce());
+    const authors = screen.getAllByRole('article', { name: 'Mensagem do autor' });
+    expect(within(authors[0]!).getByText('Pedido anterior')).toBeVisible();
+    expect(within(authors[1]!).getByText('Pedido posterior')).toBeVisible();
+    expect(service.captureChatGeneration).not.toHaveBeenCalled();
+    ui.unmount();
+    await act(async () => {
+      finish(assistantMessage);
+      await Promise.resolve();
+    });
+  });
+
   it.each([
     ['gpt-6-luna', true],
     ['gpt-6.1-sol', false],
@@ -132,6 +177,11 @@ describe('chat do capítulo', () => {
       openaiApiKey: 'chave-ficticia',
     });
     await setup();
+    expect(
+      screen.getByRole('combobox', { name: 'Raciocínio do assistente' }),
+    ).toHaveAccessibleDescription(
+      'Níveis desabilitados são incompatíveis com o modelo selecionado.',
+    );
     await userEvent.click(screen.getByRole('combobox', { name: 'Raciocínio do assistente' }));
     const none = await screen.findByRole('option', { name: 'Nenhum' });
     if (supportsNone) expect(none).not.toHaveAttribute('aria-disabled', 'true');

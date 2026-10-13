@@ -110,8 +110,11 @@ export function ResizeHandle({
         );
         drag.current = null;
         setDragging(false);
-        onValueChange(current.value);
-        onValueCommit?.(current.value);
+        if (current.value === clamp(current.initial)) onValueChange(current.initial);
+        else {
+          onValueChange(current.value);
+          onValueCommit?.(current.value);
+        }
         event.currentTarget.releasePointerCapture(event.pointerId);
       }}
       onPointerCancel={cancel}

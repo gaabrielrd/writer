@@ -58,6 +58,20 @@ test('cancelar drag sob limite temporário restaura a proporção preferida ao a
     .toBeLessThan(70);
   await handle.focus();
   const constrained = await handle.getAttribute('aria-valuenow');
+  await handle.click();
+  expect(
+    await page.evaluate(
+      (uid) =>
+        (
+          JSON.parse(
+            localStorage.getItem('writer:editor-workspace:' + encodeURIComponent(uid))!,
+          ) as {
+            panelPercent: number;
+          }
+        ).panelPercent,
+      author.uid,
+    ),
+  ).toBe(70);
   const rect = (await handle.boundingBox())!;
   await page.mouse.move(rect.x + rect.width / 2, rect.y + rect.height / 2);
   await page.mouse.down();

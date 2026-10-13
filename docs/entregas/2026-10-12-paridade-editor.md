@@ -347,3 +347,47 @@ e testes foram realinhados. Logs definitivos: tarefa-11-validate-definitivo.log,
 tarefa-11-caret-observador-final.log e tarefa-11-toque-final.log. Nenhuma chamada
 de geração externa, débito real ou edição de capítulo de produção foi feita.
 As alterações paralelas continuam no checkout original. Resta a tarefa 12.
+
+## Incremento de 2026-10-12 — tarefa 12
+
+A revisão fechou as doze tarefas do plano em uma branch isolada. O editor tem
+painel compartilhado redimensionável, tela cheia sem limites de largura,
+ferramentas agrupadas e menus compactos; o chat tem composer integrado, contexto
+expansível e raciocínio compatível com o modelo. Plataforma e BYOK recebem os
+parâmetros reais. Retry conserva identidade/configuração/histórico e regeneração
+usa a escolha atual. Conversar continua sem débito, com histórico privado.
+
+Foram reproduzidos e corrigidos três defeitos na revisão: ordem otimista de retry
+após turnos posteriores, tap/drag sem mudança que gravava uma largura limitada
+pela viewport e perda da passagem lida quando o cursor estava fora de um
+parágrafo muito longo. A ancoragem por bloco permanece para parágrafos comuns;
+Range virtual cobre blocos maiores que a viewport sem mover o caret. Níveis
+incompatíveis de raciocínio agora têm descrição acessível e tooltip. O ESLint
+ignora somente relatórios/resultados gerados, mantendo as regras do código.
+
+```text
+Gate definitivo: npm run validate verde
+Test Files 114 passed (114); Tests 831 passed (831)
+Cobertura: statements 92.78%, branches 86.26%, functions 91.18%, lines 94.86%
+scripts: pass 69; fail 0
+functions: pass 87; fail 0
+Build, smoke, typecheck, lint, formatação e documentação aprovados
+Testes dirigidos: 46 passed
+Matriz final: 93 passed; 3 skipped (toque em projetos desktop), 5.4m
+E2E Linux: 7 passed (20.2s), incluindo comparação do styleguide
+```
+
+A referência Linux foi atualizada após inspeção da captura real e do diff:
+o catálogo ganhou demonstração do divisor e do cabeçalho lateral. A suíte Linux
+passou com Playwright 1.63.0 em contêiner oficial efêmero, fonte montada somente
+para leitura e sem alterar tolerâncias. Os primeiros testes de auditoria
+falharam nos defeitos acima; uma execução intermediária detectou a regressão
+de ancoragem por bloco, corrigida antes dos gates definitivos. Não se contam
+execuções interrompidas como validações aprovadas.
+
+Arquitetura, styleguide, testes, contrato, ADR e AGENTS foram realinhados.
+Logs: tarefa-12-validate-definitivo.log, tarefa-12-matriz-definitiva.log e
+tarefa-12-linux-e2e-final.log. Publicação para revisão ocorre apenas na branch
+`codex/editor-paridade-workspace`; o resultado do CI fica associado ao PR.
+O checkout paralelo foi preservado. Esta fase não inclui merge na principal,
+deploy, geração externa ou edição/débito de dados de produção.

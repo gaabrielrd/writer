@@ -222,7 +222,10 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
         draft: '',
         request: pending,
       });
-      const createdAt = Date.now();
+      const createdAt =
+        page.messages.find(
+          (message) => message.role === 'user' && message.id === pending.requestId + '-user',
+        )?.createdAt ?? Date.now();
       mergeMessage({
         id: `${pending.requestId}-user`,
         role: 'user',

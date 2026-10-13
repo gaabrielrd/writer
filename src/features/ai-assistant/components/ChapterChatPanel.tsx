@@ -73,6 +73,7 @@ export function ChapterChatPanel({
   const openAISettings = useAISettings();
   const inspectorId = useId();
   const hintId = useId();
+  const reasoningHintId = hintId + '-reasoning';
   const modelLabel =
     config.provider === 'firebase_ai'
       ? chat.page.platformModel || 'Modelo da plataforma'
@@ -655,6 +656,8 @@ export function ChapterChatPanel({
             mode="select"
             size="sm"
             aria-label="Raciocínio do assistente"
+            aria-describedby={reasoningHintId}
+            title="Níveis desabilitados são incompatíveis com o modelo selecionado."
             value={chat.reasoning}
             disabled={running || applying || chat.loading || chat.preferencesSaving}
             options={CHAT_REASONING_LEVELS.map((value) => ({
@@ -665,6 +668,9 @@ export function ChapterChatPanel({
             onValueChange={(value) => void chat.changeReasoning(value as ChatReasoningLevel)}
           />
         </div>
+        <p id={reasoningHintId} className="sr-only">
+          Níveis desabilitados são incompatíveis com o modelo selecionado.
+        </p>
         {reasoningUnavailable && (
           <small>
             {CHAT_REASONING_LABELS[chat.reasoning]} não é suportado por este modelo; o próximo envio
