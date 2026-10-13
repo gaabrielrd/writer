@@ -5,6 +5,11 @@ Em 2026-10-13, `master d98c1ed` foi integrada sem conflitos por `5e2215e`;
 [evidência da atualização](../../../entregas/2026-10-13-writer-v2-sincronizacao-master.md).
 Os arquivos do checkout original e seus trabalhos paralelos permanecem preservados.
 
+Após a consolidação `01f9b55`, `master 522ccaa` foi incorporada sem conflitos por
+`0fa04fc`. Validate completo e 30 percursos Chromium passaram na branch integrada;
+[evidência da nova integração](../../../entregas/2026-10-13-writer-v2-sincronizacao-master.md).
+CI remoto, condições comerciais e pilotos humanos continuam pendentes.
+
 | Tarefa      | Estado                                                                  | Evidência                                                                         | Próxima condição                                                   |
 | ----------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | W2-F1-01    | Jornadas revisadas; validate local verde; corpus inventariado           | [Jornadas e inventário](01-jornadas-e-escopo.md)                                  | CI pendente; importação/piloto nas tarefas próprias                |

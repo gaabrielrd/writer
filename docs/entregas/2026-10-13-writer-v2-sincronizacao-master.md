@@ -71,3 +71,49 @@ conforme seus próprios planos e gates.
 1. Conferir o commit de merge e seus pais no histórico da branch.
 2. Comparar a árvore com a master integrada: somente documentação V2 adicional.
 3. Abrir o registro de execução para acompanhar a próxima tarefa e suas pendências.
+
+## Nova integração — 2026-10-13, master 522ccaa
+
+Depois da consolidação `01f9b55`, a master já tinha `af964c6`, `f36c442` e
+`522ccaa`, com otimização de testes/CI registrada em ADR 0024. Esses commits foram
+incorporados por `0fa04fc`, com pais `01f9b55` e `522ccaa`, sem conflitos.
+O checkout original permaneceu preservado; nenhuma alteração não registrada foi absorvida.
+
+A branch recebe configuração de workers/shards, regras de artefatos de CI e testes
+de contratos do pipeline. A seção de teste do protótipo V2 e seus documentos continuam
+presentes. Comparação de workflow, Vitest, Playwright e ci-contracts com a master
+integrada não encontrou diferença. Master é ancestral de HEAD.
+
+A mensagem inicial com prefixo `merge:` foi recusada pelo hook; a integração foi
+concluída com o tipo aceito `chore:`, sem bypass e sem refazer alterações manuais.
+
+### Validação local da integração
+
+| Comando/verificação                         | Resultado observado                                                                         |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `npm run validate`                          | Código 0; todos os gates locais passaram                                                    |
+| Frontend                                    | 116 arquivos, 851 testes; cobertura 92,86/86,43/91,32/94,93                                 |
+| Backend/syntax                              | 87 testes, zero falhas; check passou                                                        |
+| Scripts/pipeline, lint, tipos, build, smoke | Passaram no validate                                                                        |
+| Playwright `writer-v2-prototype.visual.ts`  | 30 passaram, 56,7 s; porta isolada 4191                                                     |
+| Visual                                      | Claro/escuro/sépia, desktop/mobile, teclado/foco e percursos de 320 px                      |
+| Compatibilidade de Git                      | Contratos/protótipo preservados, master ancestral, sem diferença nas configurações herdadas |
+
+```text
+Test Files  116 passed (116)
+     Tests  851 passed (851)
+All files          |   92.86 |    86.43 |   91.32 |   94.93 |
+ℹ tests 87
+ℹ pass 87
+ℹ fail 0
+Smoke test do bundle OK.
+30 passed (56.7s)
+```
+
+Build mantém avisos de chunks grandes/exportDocx; Playwright emitiu aviso de
+NO_COLOR/FORCE_COLOR. Não houve redução de limites nem regeneração de snapshots.
+Os testes visuais usam fixtures; não comprovam backend/acesso/pagamento reais.
+Emulador, todos os shards visuais e CI remoto não foram executados nesta rodada.
+Sem push/deploy, conta alterada, cobrança, migração ou coleta humana. Gate local
+não conclui os aceites externos da fase 1. A evidência documental posterior ao
+gate é conferida por docs/formato/diff antes do commit.
