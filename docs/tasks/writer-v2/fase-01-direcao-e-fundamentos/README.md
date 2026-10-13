@@ -1,6 +1,7 @@
 # Fase 1 — Direção e fundamentos
 
-**Estado:** Em execução; W2-F1-01 tem jornadas revisadas e validação local verde.
+**Estado:** Em execução; W2-F1-01/02/03 têm entregas documentais revisadas e gate local verde.
+Regras e funcionalidades futuras ainda precisam de implementação nas fases pertinentes.
 O [registro de execução](../execucao/README.md) contém estados e limites de evidência.
 **Janela:** Mês 1. **Capacidade:** 80 h brutas como orçamento inicial, não estimativa validada.
 

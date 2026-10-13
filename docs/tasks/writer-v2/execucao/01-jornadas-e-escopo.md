@@ -9,19 +9,23 @@
 Descoberta pelo grafo `writer-v2`, indexado neste checkout. Auditoria complementar
 somente leitura confirmou os serviços, regras e contratos na mesma base.
 
-| Capacidade atual                       | Evidência                                                                                                                   | Incremento                                                     |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Livros, capítulos e atos               | [Book](../../../../src/features/books/model/book.ts), [Chapter](../../../../src/features/books/model/chapter.ts)            | Cenas sem trocar IDs ou redividir o manuscrito                 |
-| Salvamento e recuperação local         | [Autosave](../../../../src/features/editor/hooks/useAutoSave.ts)                                                            | Histórico persistente e proteção contra edição concorrente     |
-| Universos opcionais e lore             | [Universe](../../../../src/features/universes/model/universe.ts), [Lore](../../../../src/features/lore/model/loreEntity.ts) | Variantes de campanha e promoção explícita de cânone           |
-| Aceite atômico de IA                   | [Aplicação](../../../../functions/src/chapterChat.mjs)                                                                      | Preservar texto, hash, crédito e recibo ao acrescentar versões |
-| Publicação pública por projeção        | [Publicação](../../../../src/features/books/services/publicationService.ts), [regras](../../../../firestore.rules)          | Edição paga com autorização distinta; original privado         |
-| Markdown, DOCX, impressão PDF e backup | [Exportação](../../../../src/features/editor/services/exportManuscript.ts)                                                  | EPUB e pacote de aventura por audiência                        |
-| Arquivos de capa privados              | [Storage](../../../../storage.rules)                                                                                        | Materiais compartilhados e downloads pagos protegidos          |
+| Capacidade atual                       | Evidência                                                                                                                   | Incremento                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Livros, capítulos e atos               | [Book](../../../../src/features/books/model/book.ts), [Chapter](../../../../src/features/books/model/chapter.ts)            | Cenas sem trocar IDs ou redividir o manuscrito                   |
+| Salvamento e recuperação local         | [Autosave](../../../../src/features/editor/hooks/useAutoSave.ts)                                                            | Histórico persistente e proteção contra edição concorrente       |
+| Universos opcionais e lore             | [Universe](../../../../src/features/universes/model/universe.ts), [Lore](../../../../src/features/lore/model/loreEntity.ts) | Variantes de campanha e promoção explícita de cânone             |
+| Aceite atômico de IA                   | [Aplicação](../../../../functions/src/chapterChat.mjs)                                                                      | Preservar texto, hash, crédito e recibo ao acrescentar versões   |
+| Publicação pública por projeção        | [Publicação](../../../../src/features/books/services/publicationService.ts), [regras](../../../../firestore.rules)          | Edição paga com autorização distinta; original privado           |
+| Markdown, DOCX, impressão PDF e backup | [Exportação](../../../../src/features/editor/services/exportManuscript.ts)                                                  | EPUB e pacote de aventura por audiência                          |
+| Capas com acesso SDK por proprietário  | [Storage](../../../../storage.rules)                                                                                        | Materiais compartilhados/downloads pagos com autorização própria |
 
 Campanhas/sessões, revisão por convidados e comércio são novos domínios.
 Limites do código não são benchmark de acervo. A fila de autosave é local à instância;
 não resolve conflitos entre abas. Backup privado não é pacote comercial.
+
+Complemento W2-F1-03: URLs de capas geradas usam token bearer persistente;
+restrição de leitura SDK não torna a URL revogável por papel. Esse padrão não será
+usado para materiais secretos/pagos. Ver [contrato de arquivos](03-permissoes-e-privacidade.md).
 
 ## Cenários de referência
 

@@ -11,8 +11,10 @@ segundo o operador, compra avulsa com download e uso em campanhas próprias.
 Criador vende; Writer cobra comissão configurável por contrato e centraliza atendimento.
 Compra mantém a edição adquirida; atualizações são opcionais; retirada suspende novas vendas.
 Roteiros serão preparados; o operador indicará participantes reais.
-Percentuais, taxas absorvidas, responsabilidade financeira por reversões, calendário de
-repasse e retenção ainda não foram definidos.
+Criador absorve taxas e reversões; eventual reserva é definida em contrato.
+Após reembolso integral ou disputa perdida, revogar novos downloads/acesso à edição
+e preservar notas próprias da campanha. Connect ainda precisa ser verificado, segundo o operador.
+Percentuais concretos, calendário de repasse e retenção ainda não foram definidos.
 
 “Sem revenda” aplica-se ao conteúdo autoral exclusivo; componentes com licença aberta
 preservam as permissões dessa licença. Essa separação deve aparecer no manifesto de origem.
@@ -40,17 +42,22 @@ A autorização para escrever tarefas não aprova automaticamente uma hipótese.
 
 ## Fechamento recebido e pendências remanescentes
 
-| Decisão | Fechamento em 2026-10-13                                                                                                 | Ainda necessário                                                                           |
-| ------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| D-05    | País Brasil; moeda BRL; criador é vendedor                                                                               | Meios habilitados e identificação contratual da operadora                                  |
-| D-06    | Comissão configurável por contrato; atendimento centralizado no Writer                                                   | Percentual/base, encargos, reserva, repasse e déficit de reembolso/disputa                 |
-| D-07    | Avulsa; download; uso em mesa própria; edição adquirida conservada; atualização opcional; retirada suspende novas vendas | Efeito de reembolso/disputa e retirada por violação de direitos/privacidade                |
-| D-08    | Stripe escolhido; operador informa pagamentos preparados                                                                 | Connect doméstico BR→BR, configuração/versão de API, tipo de cobrança e capabilities reais |
-| D-10    | Uso autoral e manifesto de direitos como direção técnica                                                                 | Seleção/versionamento de SRD, atribuição e revisão das licenças por componente             |
-| D-11    | Preparar roteiros; participantes indicados pelo operador                                                                 | Pessoas/consentimento, execução e resultados reais do piloto                               |
+| Decisão | Fechamento em 2026-10-13                                                                                                                                                | Ainda necessário                                                                                        |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| D-05    | País Brasil; moeda BRL; criador é vendedor                                                                                                                              | Meios habilitados e identificação contratual da operadora                                               |
+| D-06    | Comissão configurável; atendimento Writer; criador absorve taxas/reversões; eventual reserva por contrato                                                               | Percentual/base concretos, reserva/calendário por contrato e compatibilidade da responsabilidade Stripe |
+| D-07    | Avulsa/download/mesa própria; mantém edição; atualização opcional; retirada suspende vendas; reversão integral/perda de disputa revoga acesso e preserva notas próprias | Reembolso parcial/disputa aberta e retirada por violação de direitos/privacidade                        |
+| D-08    | Stripe escolhido; operador informa pagamentos preparados                                                                                                                | Connect doméstico BR→BR, configuração/versão de API, tipo de cobrança e capabilities reais              |
+| D-10    | Uso autoral e manifesto de direitos como direção técnica                                                                                                                | Seleção/versionamento de SRD, atribuição e revisão das licenças por componente                          |
+| D-11    | Preparar roteiros; participantes indicados pelo operador                                                                                                                | Pessoas/consentimento, execução e resultados reais do piloto                                            |
 
-Não fixar comissão percentual provisória nem inferir quem absorve perdas por centralizar
-atendimento. Acesso a edição adquirida permanece separado de alteração do original.
+Não fixar comissão percentual provisória. Responsabilidade do criador foi escolhida,
+mas a configuração/contrato do provedor precisa corresponder; centralizar atendimento
+não prova quem Stripe debita. Acesso adquirido permanece separado do original.
+
+Consulta preparatória no navegador em 2026-10-13: aba Stripe em sandbox, com seleção
+do fluxo Connect aberta. Nenhuma opção confirmada ou conta alterada. Tela de setup
+não comprova onboarding concluído, capabilities de repasse ou habilitação live.
 
 ## Decisões técnicas de domínio — 2026-10-13
 
@@ -62,6 +69,19 @@ inicial de 800.000 bytes de prosa/900.000 bytes do documento serializado e pagin
 Dois PDFs reais foram medidos privadamente; binários ficam separados e limites por
 mediaType/desempenho integrado serão ensaiados nas features responsáveis.
 Esse fechamento técnico não aprova retenção comercial nem comprova comportamento implementado.
+
+## Decisões técnicas de acesso — 2026-10-13
+
+[Contrato W2-F1-03](execucao/03-permissoes-e-privacidade.md): D-03 usa convites manuais
+para uid verificado, expiração de sete dias para convite pendente e participação aceita
+até revogação. D-04 usa liberação explícita em projeção separada; jogador é leitor na V1.
+Para leitura nova, autor escolhe capítulo de liberação por ficha; sem spoilers, resposta
+usa o capítulo atual; opção explícita de spoilers só inclui fichas escolhidas para a edição.
+Formato público legado preservado; progresso não substitui autorização de dados.
+D-09 fecha classificação técnica
+de dados/cache e separação de notas próprias; retenção financeira segue pendente.
+Endpoints autenticados, sem token permanente, serão usados para material secreto/pago.
+São escolhas técnicas de implementação; regras reais e casos negativos ainda não executados.
 
 ## Pesquisa preparatória conferida em 2026-10-13
 
