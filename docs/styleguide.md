@@ -46,6 +46,9 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 
 - `Button`: Variantes (`primary`, `secondary`, `outline`, `destructive`, `ghost`, `link`) e tamanhos (`sm`, `md`, `lg`, `icon`).
 - `Input`: Entrada de texto com rótulo persistente, ícones, hints/erros associados por ARIA e IDs únicos.
+- `ResizeHandle`: Divisor vertical com drag por mouse/toque, limites percentuais,
+  setas/Shift/Home/End e duplo clique para restaurar. O separador focável informa
+  valor e painel controlado por ARIA; a demonstração está em `/styleguide`.
 - `Textarea`: Área de texto redimensionável com feedback de validação associado por ARIA.
 - `FormSection`: Seção opcional acessível por botão, Enter/Espaço e `aria-expanded`/`aria-controls`. Mantém os campos montados ao recolher; aceita abertura controlada, descrição e bloqueio durante operações.
 - `Dropdown`: Seleção acessível (`mode="select"`) e ações (`mode="action"`), com ícones, busca opcional e tokens de tema. Veja [API e exemplos](dropdown.md).

@@ -1,0 +1,46 @@
+.handle {
+  position: relative;
+  flex: 0 0 8px;
+  align-self: stretch;
+  cursor: col-resize;
+  touch-action: none;
+  user-select: none;
+  border-radius: var(--radius-sm);
+  z-index: 2;
+  outline: none;
+}
+
+.handle::before {
+  content: '';
+  position: absolute;
+  inset: 0 3px;
+  border-radius: var(--radius-sm);
+  background: hsl(var(--border));
+  transition: background var(--transition-fast);
+}
+
+.handle::after {
+  content: '';
+  position: absolute;
+  width: 24px;
+  height: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.handle:hover::before,
+.handle:focus-visible::before,
+.handle[data-dragging]::before {
+  background: hsl(var(--primary));
+}
+
+.handle:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+@media (pointer: coarse) {
+  .handle::after {
+    width: 44px;
+  }
+}
