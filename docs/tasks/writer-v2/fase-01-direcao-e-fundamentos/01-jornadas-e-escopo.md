@@ -1,6 +1,6 @@
 # W2-F1-01 — Fechar jornadas e limites da primeira versão
 
-**Estado:** Jornadas revisadas; validação local verde. Corpus real e CI pendentes.
+**Estado:** Jornadas revisadas; validação local verde. Corpus inventariado; CI pendente.
 **Evidência:** [Execução W2-F1-01](../execucao/01-jornadas-e-escopo.md).
 **Dependências:** Nenhuma; tarefa de abertura.
 **Áreas propostas:** produto e documentação. Nomes novos são propostas, sujeitos à fase 1.
@@ -22,13 +22,14 @@ Entradas: escolhas da conversa e capacidades atuais. Resultado: requisitos ident
 
 ## Passos de execução
 
-- [ ] Inventariar capacidades e exemplos reais de livro e aventura.
+- [x] Inventariar capacidades e exemplos reais de livro e aventura.
 - [x] Escrever jornadas com atores, gatilhos, entradas, saídas e falhas.
 - [x] Mapear os requisitos à matriz de cobertura e às demais tarefas.
 - [x] Revisar o recorte com o criador do produto e registrar decisões.
 
-Inventário técnico conferido; cenários originais preparados. Conferência de corpus
-real autorizado permanece pendente, sem declaração de piloto executado.
+Inventário técnico conferido; cenários originais preparados. Em 2026-10-13, dois PDFs
+reais autorizados foram inventariados e medidos em W2-F1-02. Isso não comprova
+fidelidade de importação nem piloto humano executado.
 
 ## Critérios de aceite
 

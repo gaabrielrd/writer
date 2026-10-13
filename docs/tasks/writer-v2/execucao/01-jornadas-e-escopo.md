@@ -31,8 +31,9 @@ não resolve conflitos entre abas. Backup privado não é pacote comercial.
   duas mesas chegam a consequências diferentes para a mesma origem.
 
 São cenários originais preparados para roteiro; não são arquivos reais importados,
-sessões jogadas nem piloto humano concluído. O corpus real autorizado ainda precisa
-ser conferido. Não copiar aventuras comerciais para fixtures distribuíveis sem licença.
+sessões jogadas nem piloto humano concluído. Corpus real autorizado foi inventariado
+e medido posteriormente em [W2-F1-02](02-modelo-de-dominio.md), sem copiar conteúdo.
+Não copiar aventuras comerciais para fixtures distribuíveis sem licença.
 O operador indicará participantes; os roteiros serão preparados em W2-F1-05.
 
 ## Jornadas observáveis
@@ -82,5 +83,5 @@ continuam candidatos posteriores. Exportar para loja não inclui publicar nela.
 - Percentuais, encargos e responsabilidade pelo déficit não foram inventados.
 - PRD, regras, interface e dependências não mudam neste incremento.
 
-Pendentes: corpus real autorizado, aceite humano de protótipos, CI no PR e política
+Pendentes: fidelidade de importação do corpus, aceite humano de protótipos, CI no PR e política
 financeira completa. Esses resultados não são inferidos da revisão documental.

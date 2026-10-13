@@ -80,3 +80,10 @@ Checkout original e alterações paralelas preservados.
 1. Abrir o registro de execução e seguir a evidência W2-F1-01.
 2. Percorrer as jornadas de conto, aventura, compra e atendimento; conferir falhas e responsáveis.
 3. Conferir que hipóteses comerciais e evidências futuras continuam identificadas como pendentes.
+
+## Complemento em 2026-10-13 — Corpus inventariado
+
+W2-F1-02 confirmou e mediu dois PDFs reais autorizados, livro e aventura,
+sem copiar conteúdo para o repositório. Ver [evidência de domínio](2026-10-13-writer-v2-dominio.md).
+Isso resolve o inventário pendente desta entrega; não comprova fidelidade de importação,
+pilotagem humana ou CI.

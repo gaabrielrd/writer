@@ -52,6 +52,17 @@ A autorização para escrever tarefas não aprova automaticamente uma hipótese.
 Não fixar comissão percentual provisória nem inferir quem absorve perdas por centralizar
 atendimento. Acesso a edição adquirida permanece separado de alteração do original.
 
+## Decisões técnicas de domínio — 2026-10-13
+
+[Contrato W2-F1-02](execucao/02-modelo-de-dominio.md) registra a solução de implementação:
+D-02 usa lore vivo em originais autorizados, base congelada em campanhas, substituição
+local de entidade inteira e promoção explícita pelo dono. D-01 fecha um orçamento
+inicial de 800.000 bytes de prosa/900.000 bytes do documento serializado e paginação
+25/50, preservando leitura/backup legado e sem quotas comerciais de projetos.
+Dois PDFs reais foram medidos privadamente; binários ficam separados e limites por
+mediaType/desempenho integrado serão ensaiados nas features responsáveis.
+Esse fechamento técnico não aprova retenção comercial nem comprova comportamento implementado.
+
 ## Pesquisa preparatória conferida em 2026-10-13
 
 Pesquisa oficial somente leitura, por subagente; conta Stripe não acessada e nenhum
