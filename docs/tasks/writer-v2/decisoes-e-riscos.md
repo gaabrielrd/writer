@@ -140,6 +140,15 @@ exige crédito e indicação de alterações e não permite impor restrições a
 esse material. Separar texto autoral exclusivo, SRD e assets licenciados; indicar
 versão/origem e alterações, inclusive tradução. Importar conteúdo não autoriza revendê-lo.
 
+## Navegação aprovada — 2026-10-13
+
+Fechamento D-12: operador aprovou os cinco espaços Universos, Estúdio, Publicações,
+Catálogo e Biblioteca, com livros, aventuras e campanhas no Estúdio, após ver
+[o protótipo concreto](execucao/05-prototipos-e-pilotos.md). Trinta percursos Chromium
+passaram nos três temas, incluindo 320 px. Roteiros D-11 foram preparados;
+participantes, tratamento das observações e aceite humano continuam pendentes.
+Navegação aprovada não significa piloto humano concluído.
+
 ## Riscos e mitigação
 
 | Risco                                         | Ação prevista                                                        | Evidência                     |

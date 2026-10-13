@@ -2,6 +2,8 @@
 
 **Estado:** Em execução; W2-F1-01/02/03 têm entregas documentais revisadas e gate local verde.
 Regras e funcionalidades futuras ainda precisam de implementação nas fases pertinentes.
+W2-F1-04 tem contrato/pesquisa com capacidade comercial pendente; W2-F1-05 tem
+protótipo técnico validado e navegação aprovada, sem piloto humano realizado.
 O [registro de execução](../execucao/README.md) contém estados e limites de evidência.
 **Janela:** Mês 1. **Capacidade:** 80 h brutas como orçamento inicial, não estimativa validada.
 
@@ -40,7 +42,7 @@ Não é necessário executar tarefas em paralelo para cumprir o plano.
 
 - [ ] D-01 a D-12 têm escolhas ou fechamento parcial suficiente para o próximo incremento; nenhuma pendência obrigatória da fase 2.
 - [ ] Os estudos comerciais necessários para arquitetura já foram feitos, sem esperar o mês 7.
-- [ ] Protótipos mostram ambas as jornadas e aprovação foi registrada.
+- [x] Protótipos mostram ambas as jornadas e aprovação foi registrada.
 - [ ] PRD/arquitetura/AGENTS afetados foram alinhados conforme W2-F1-06.
 
 Para tarefas implementadas, aplicar [validação transversal](../validacao-e-aceite.md) e a definição de concluído.
