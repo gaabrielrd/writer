@@ -16,11 +16,13 @@ export default defineConfig<VisualOptions>({
   timeout: 45_000,
   expect: { timeout: 10_000 },
   outputDir: 'visual-test-results',
-  reporter: [
-    ['list'],
-    ['html', { outputFolder: 'visual-playwright-report', open: 'never' }],
-    ['json', { outputFile: 'visual-test-results/results.json' }],
-  ],
+  reporter: process.env.CI
+    ? [['list'], ['blob'], ['json', { outputFile: 'visual-test-results/results.json' }]]
+    : [
+        ['list'],
+        ['html', { outputFolder: 'visual-playwright-report', open: 'never' }],
+        ['json', { outputFile: 'visual-test-results/results.json' }],
+      ],
   use: {
     baseURL,
     locale: 'pt-BR',
