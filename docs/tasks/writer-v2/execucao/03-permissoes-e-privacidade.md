@@ -66,6 +66,16 @@ artefatos autorizados. Pacote de aventura separa mestre e jogador. Notas pessoai
 criador, backup privado, personas, prompts e configuração de IA não são materiais comerciais.
 Prévia antes da publicação usa o mesmo projector do destino, incluindo exportação/ZIP.
 
+Complemento comercial W2-F1-04: oferta antes da compra também apresenta projeção
+**Identificação do fornecedor**, com `supplierPublicId`, `legalName`, identificação
+CPF/CNPJ quando aplicável (`registrationType`, `registrationNumber`), `businessAddress`,
+`contactEmail` e `contactChannel`; operadora usa a mesma lista, com papel identificado.
+Dados são declarados/revisados para essa finalidade, sem copiar perfil privado ou KYC.
+Pseudônimo permanece na autoria; UID, conta Stripe e documentos pessoais ficam excluídos.
+Identificação/endereço válidos são requisito de oferta comercial, não do manuscrito privado.
+Pedido conserva essa projeção junto do contrato da compra. Fonte:
+[Decreto 7.962, art. 2](https://www.planalto.gov.br/ccivil_03/_ato2011-2014/2013/decreto/d7962.htm).
+
 Lore do leitor usa somente id projetado, name, aliases escolhidos, category, summary
 e content compartilhável escolhido, filtrados pela regra de capítulo abaixo.
 Capítulo de liberação é controle do projector; não enviar a lista de fichas futuras

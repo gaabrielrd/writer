@@ -15,6 +15,9 @@ Criador absorve taxas e reversões; eventual reserva é definida em contrato.
 Após reembolso integral ou disputa perdida, revogar novos downloads/acesso à edição
 e preservar notas próprias da campanha. Connect ainda precisa ser verificado, segundo o operador.
 Percentuais concretos, calendário de repasse e retenção ainda não foram definidos.
+Operador também confirmou: plataforma Stripe registrada no Brasil; disputa aberta
+suspende acesso, refund parcial mantém; comissão Writer é devolvida proporcionalmente
+ao refund e integralmente na disputa perdida.
 
 “Sem revenda” aplica-se ao conteúdo autoral exclusivo; componentes com licença aberta
 preservam as permissões dessa licença. Essa separação deve aparecer no manifesto de origem.
@@ -42,14 +45,14 @@ A autorização para escrever tarefas não aprova automaticamente uma hipótese.
 
 ## Fechamento recebido e pendências remanescentes
 
-| Decisão | Fechamento em 2026-10-13                                                                                                                                                | Ainda necessário                                                                                        |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| D-05    | País Brasil; moeda BRL; criador é vendedor                                                                                                                              | Meios habilitados e identificação contratual da operadora                                               |
-| D-06    | Comissão configurável; atendimento Writer; criador absorve taxas/reversões; eventual reserva por contrato                                                               | Percentual/base concretos, reserva/calendário por contrato e compatibilidade da responsabilidade Stripe |
-| D-07    | Avulsa/download/mesa própria; mantém edição; atualização opcional; retirada suspende vendas; reversão integral/perda de disputa revoga acesso e preserva notas próprias | Reembolso parcial/disputa aberta e retirada por violação de direitos/privacidade                        |
-| D-08    | Stripe escolhido; operador informa pagamentos preparados                                                                                                                | Connect doméstico BR→BR, configuração/versão de API, tipo de cobrança e capabilities reais              |
-| D-10    | Uso autoral e manifesto de direitos como direção técnica                                                                                                                | Seleção/versionamento de SRD, atribuição e revisão das licenças por componente                          |
-| D-11    | Preparar roteiros; participantes indicados pelo operador                                                                                                                | Pessoas/consentimento, execução e resultados reais do piloto                                            |
+| Decisão | Fechamento em 2026-10-13                                                                                                                                                                | Ainda necessário                                                                                        |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| D-05    | País Brasil; moeda BRL; criador é vendedor                                                                                                                                              | Meios habilitados e identificação contratual da operadora                                               |
+| D-06    | Comissão configurável; atendimento Writer; criador absorve taxas/reversões; eventual reserva por contrato                                                                               | Percentual/base concretos, reserva/calendário por contrato e compatibilidade da responsabilidade Stripe |
+| D-07    | Avulsa/download/mesa própria; mantém edição; atualização opcional; retirada suspende vendas; integral/perda revoga; disputa aberta suspende; parcial mantém; notas próprias preservadas | Contratos concretos e retirada excepcional por violação de direitos/privacidade                         |
+| D-08    | Stripe escolhido; operador informa pagamentos preparados                                                                                                                                | Connect doméstico BR→BR, configuração/versão de API, tipo de cobrança e capabilities reais              |
+| D-10    | Uso autoral e manifesto de direitos como direção técnica                                                                                                                                | Seleção/versionamento de SRD, atribuição e revisão das licenças por componente                          |
+| D-11    | Preparar roteiros; participantes indicados pelo operador                                                                                                                                | Pessoas/consentimento, execução e resultados reais do piloto                                            |
 
 Não fixar comissão percentual provisória. Responsabilidade do criador foi escolhida,
 mas a configuração/contrato do provedor precisa corresponder; centralizar atendimento
@@ -58,6 +61,29 @@ não prova quem Stripe debita. Acesso adquirido permanece separado do original.
 Consulta preparatória no navegador em 2026-10-13: aba Stripe em sandbox, com seleção
 do fluxo Connect aberta. Nenhuma opção confirmada ou conta alterada. Tela de setup
 não comprova onboarding concluído, capabilities de repasse ou habilitação live.
+Consulta posterior do mesmo dia: etapas de modelo/conta teste aparecem concluídas,
+duas contas Restricted e nenhuma Enabled. Conta inspecionada no Brasil, com pagamentos
+e payouts pausados por requisitos pendentes; pagamento exibido é exemplo automático
+Stripe. Não foi criada conta ou executada cobrança Writer pelo agente. Este resultado
+atualiza a observação anterior, sem atribuir ao agente as alterações feitas fora da consulta.
+
+## Contrato comercial — 2026-10-13
+
+[W2-F1-04](execucao/04-regras-comerciais-e-direitos.md) propõe direct charges com
+taxas cobradas do criador, perda final incobrável atribuída à Stripe e dashboard completo.
+É direção de integração, ainda sem configuração/API/capabilities real comprovada.
+Com esse modelo, reserva controlada pelo Writer não pode ser presumida; capacidade
+contratual/técnica deve ser confirmada antes de oferecer retenção.
+Oferta inicial de um criador/edição por pedido; valores/contrato vêm do servidor.
+Comissão retorna proporcionalmente; disputa aberta suspende, ganho restaura apenas
+direito vigente e perda/integral revoga. Notas próprias ficam separadas de derivados.
+Manifesto original e exemplos de centavos são referências técnicas, não produto já
+autorizado à venda nem tarifas da Stripe. D-09 ainda precisa dos agentes, fundamentos
+e prazos aplicáveis à operação real; não inventar retenção fiscal.
+
+D-07 tem fechamento da política de parcial/disputa aberta. Restituição excepcional
+por direitos/privacidade e contratos concretos continuam pendentes. D-08 tem estudo
+e sandbox observado, mas não ensaio de integração ou habilitação live.
 
 ## Decisões técnicas de domínio — 2026-10-13
 

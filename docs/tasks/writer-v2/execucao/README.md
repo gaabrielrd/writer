@@ -10,7 +10,8 @@ Os arquivos do checkout original e seus trabalhos paralelos permanecem preservad
 | W2-F1-01            | Jornadas revisadas; validate local verde; corpus inventariado | [Jornadas e inventário](01-jornadas-e-escopo.md)               | CI pendente; importação/piloto nas tarefas próprias        |
 | W2-F1-02            | Contrato revisado; validate local verde                       | [Domínio e medições](02-modelo-de-dominio.md)                  | Critérios funcionais nas fases seguintes; CI pendente      |
 | W2-F1-03            | Contrato revisado; validate local verde                       | [Permissões e casos negativos](03-permissoes-e-privacidade.md) | Implementação/regras reais nas fases próprias; CI pendente |
-| W2-F1-04 a W2-F1-06 | Planejadas                                                    | [Fase 1](../fase-01-direcao-e-fundamentos/README.md)           | Dependências e decisões de cada tarefa                     |
+| W2-F1-04            | Contrato revisado; validate local verde; tarefa em execução   | [Comércio e direitos](04-regras-comerciais-e-direitos.md)      | Connect real, contratos e ensaio comercial                 |
+| W2-F1-05 a W2-F1-06 | Planejadas                                                    | [Fase 1](../fase-01-direcao-e-fundamentos/README.md)           | Dependências e decisões de cada tarefa                     |
 | Fases 2 a 5         | Não iniciadas                                                 | [Plano](../README.md)                                          | Portão de saída da fase 1                                  |
 | Fase 6              | Descoberta futura, fora da primeira versão pública            | [Candidatos](../fase-06-evolucao-pos-v1/README.md)             | Aprovação posterior de escopo                              |
 
@@ -29,6 +30,9 @@ Aceite final segue a [definição de concluído](../../../development-process.md
 
 Criador absorve taxas/reversões e eventual reserva segue contrato. Reembolso integral
 ou disputa perdida revoga novos downloads/acesso à edição; notas próprias são preservadas.
+Disputa aberta suspende temporariamente; parcial mantém acesso. Comissão retorna
+proporcionalmente ao refund e integralmente na disputa perdida. Operador confirmou
+plataforma Stripe brasileira; inspeção do sandbox encontrou contas restritas, sem prova live.
 Percentuais concretos, calendário, retenção e capacidade real Connect continuam em
 [decisões e riscos](../decisoes-e-riscos.md).
 
