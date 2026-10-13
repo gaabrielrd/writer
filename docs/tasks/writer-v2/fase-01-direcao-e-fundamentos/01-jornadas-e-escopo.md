@@ -1,6 +1,7 @@
 # W2-F1-01 — Fechar jornadas e limites da primeira versão
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Jornadas revisadas; validação local verde. Corpus real e CI pendentes.
+**Evidência:** [Execução W2-F1-01](../execucao/01-jornadas-e-escopo.md).
 **Dependências:** Nenhuma; tarefa de abertura.
 **Áreas propostas:** produto e documentação. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -22,16 +23,26 @@ Entradas: escolhas da conversa e capacidades atuais. Resultado: requisitos ident
 ## Passos de execução
 
 - [ ] Inventariar capacidades e exemplos reais de livro e aventura.
-- [ ] Escrever jornadas com atores, gatilhos, entradas, saídas e falhas.
-- [ ] Mapear os requisitos à matriz de cobertura e às demais tarefas.
-- [ ] Revisar o recorte com o criador do produto e registrar decisões.
+- [x] Escrever jornadas com atores, gatilhos, entradas, saídas e falhas.
+- [x] Mapear os requisitos à matriz de cobertura e às demais tarefas.
+- [x] Revisar o recorte com o criador do produto e registrar decisões.
+
+Inventário técnico conferido; cenários originais preparados. Conferência de corpus
+real autorizado permanece pendente, sem declaração de piloto executado.
 
 ## Critérios de aceite
 
-- [ ] As duas jornadas incluem criação, revisão, compartilhamento, publicação e consumo.
-- [ ] A V1 contém arquivos externos e venda de livros e aventuras por convidados.
-- [ ] Cada requisito tem tarefa responsável e uma demonstração observável.
-- [ ] Nenhuma hipótese de regra comercial é apresentada como decisão do usuário.
+- [x] As duas jornadas incluem criação, revisão, compartilhamento, publicação e consumo.
+- [x] A V1 contém arquivos externos e venda de livros e aventuras por convidados.
+- [x] Cada requisito tem tarefa responsável e uma demonstração observável.
+- [x] Nenhuma hipótese de regra comercial é apresentada como decisão do usuário.
+
+Critérios acima são documentais. Aceite integral ainda depende de validação,
+registro Git e CI no PR; funcionalidades futuras não foram entregues.
+
+Validate em 2026-10-13: código 0; 106 arquivos/756 testes frontend,
+69 testes scripts, 73 backend, lint/typecheck/build/smoke verdes.
+Evidência em [entrega local](../../../entregas/2026-10-13-writer-v2-jornadas.md).
 
 ## Validação
 

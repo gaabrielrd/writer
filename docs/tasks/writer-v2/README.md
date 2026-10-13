@@ -1,8 +1,9 @@
 # Writer V2 — Estúdio, livros e campanhas
 
 **Data do planejamento:** 2026-10-12. **Responsável:** Gabriel, trabalhando sozinho, 20 horas por semana.
-**Estado:** planejamento documentado; funcionalidades futuras não implementadas.
-**Autorização deste trabalho:** detalhar o escopo em tarefas. A implementação de cada incremento tem seu próprio plano e aceite.
+**Estado:** execução iniciada na fase 1; funcionalidades futuras ainda não implementadas.
+**Autorização deste trabalho:** implementar, planejar e validar cada tarefa em sequência, fase a fase.
+O [registro de execução](execucao/README.md) distingue documento, validação local e aceite final.
 
 ## Visão e decisões confirmadas
 

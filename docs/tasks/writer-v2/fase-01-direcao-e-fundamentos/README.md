@@ -1,6 +1,7 @@
 # Fase 1 — Direção e fundamentos
 
-**Estado:** Planejada; tarefas não executadas.
+**Estado:** Em execução; W2-F1-01 tem jornadas revisadas e validação local verde.
+O [registro de execução](../execucao/README.md) contém estados e limites de evidência.
 **Janela:** Mês 1. **Capacidade:** 80 h brutas como orçamento inicial, não estimativa validada.
 
 ## Objetivo
