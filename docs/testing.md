@@ -70,8 +70,10 @@ Para reproduzir um dos shards, substitua o número antes da barra:
 npx playwright test -c playwright.visual.config.ts --shard=1/3
 ```
 
-Cada shard publica um blob e suas capturas/traces com nome próprio. O job final
-consolida os blobs em um relatório HTML único, no artefato **writer-visual-preview**,
+Cada shard publica um blob e suas capturas/traces com nome próprio.
+Os uploads substituem apenas o artefato do próprio job em uma repetição,
+preservando os resultados dos outros shards e evitando colisões de nomes.
+O job final consolida os blobs em um relatório HTML único, no artefato **writer-visual-preview**,
 com os resultados JSON de cada shard. A execução local completa conserva seu
 relatório HTML/JSON habitual. O check **E2E (Chromium)** permanece com o mesmo
 nome e exige sucesso do navegador de produção e de todos os shards; falha,

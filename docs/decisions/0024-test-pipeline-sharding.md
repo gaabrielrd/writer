@@ -32,6 +32,11 @@ O nome **E2E (Chromium)** identifica o gate final, que recusa qualquer resultado
 diferente de sucesso nos jobs de navegador ou visual, incluindo cancelamento,
 job pulado e resultado ausente. Falhas na consolidação também falham o job.
 
+Os uploads usam nomes exclusivos por job/shard e `overwrite: true`. Assim,
+repetir somente jobs com falha substitui seus próprios artefatos e conserva os
+dos jobs que já passaram. A consolidação recebe a evidência mais recente de
+cada shard, sem misturar tentativas ou duplicar cenários.
+
 ## Consequências
 
 O tempo de espera passa a depender do shard mais demorado e da consolidação,

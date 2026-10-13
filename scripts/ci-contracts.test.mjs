@@ -85,6 +85,17 @@ test('check E2E conserva o nome e espera o navegador e todos os shards', () => {
   assert.equal(gateStatus('success', 'success'), 0);
 });
 
+test('repetir jobs substitui somente suas próprias evidências sem colisões', () => {
+  for (const name of ['validate', 'browser', 'visual', 'e2e']) {
+    const uploads = job(name).split('uses: actions/upload-artifact@').slice(1);
+    assert.ok(uploads.length, `Uploads ausentes: ${name}`);
+    for (const upload of uploads) {
+      const configuration = upload.split(/^\s+- (?:name:|uses:)/m)[0];
+      assert.match(configuration, /overwrite: true/, `Repetição sem substituição: ${name}`);
+    }
+  }
+});
+
 test('gate real falha se o navegador falhar, for cancelado, pulado ou estiver ausente', () => {
   for (const outcome of ['failure', 'cancelled', 'skipped', '', undefined]) {
     assert.equal(gateStatus(outcome, 'success'), 1, `Navegador: ${outcome}`);

@@ -16,6 +16,8 @@ o isolamento, a cobertura e as evidências de revisão.
 - A CI distribui a suíte visual completa entre três runners paralelos.
 - Blobs, JSON, capturas e traces de cada shard têm nomes próprios; o relatório
   HTML consolidado conserva o artefato `writer-visual-preview`.
+- Repetições substituem os artefatos do próprio job, evitando colisões de nomes
+  e preservando as evidências dos demais jobs.
 - O check `E2E (Chromium)` conserva seu nome e recusa falhas, cancelamentos,
   jobs pulados ou resultados ausentes. Falhas na consolidação também falham o job.
 - Node 22 e 24 continuam executando o `validate` completo; o cache npm considera
@@ -45,9 +47,10 @@ o isolamento, a cobertura e as evidências de revisão.
 
 ## Testes
 
-Os sete contratos novos verificam os limites de cobertura, os ambientes Node,
+Os oito contratos novos verificam os limites de cobertura, os ambientes Node,
 a execução integral dos shards, nomes de evidências, dependências e o gate real.
 O gate é executado com sucesso, falha, cancelamento, job pulado e resultado ausente.
+Os uploads também são verificados para permitir repetição com nomes próprios.
 
 O inventário do Playwright confirmou 474 cenários únicos: 158 em cada shard,
 zero omitidos, zero duplicados e os seis cenários de seleção preservados.
@@ -107,6 +110,23 @@ preparações de runner e depende do shard mais demorado, seguido da consolidaç
 O build conserva os avisos anteriores de tamanho de chunks e importação dinâmica
 de DOCX. A suíte visual completa será validada pela CI do PR; a prova local
 executou a amostra e conferiu o inventário completo.
+
+A primeira execução remota terminou os shards em 640, 631 e 627 segundos.
+Dois passaram; um apresentou uma chamada inesperada no teste de autocomplete
+de desktop claro, também na retentativa automática. O relatório consolidado
+foi publicado e o gate recusou corretamente esse resultado. O mesmo teste
+passou em 30 repetições locais nos seis projetos; a causa remota não foi
+confirmada. Na repetição remota, o shard aprovou 154 casos e pulou quatro.
+O GitHub aceitou uploads repetidos e manteve artefatos de ambas as tentativas
+com os mesmos nomes; a consolidação poderia receber versões concorrentes dos
+mesmos arquivos. `overwrite: true` evita essa mistura, agora protegida por
+contrato. A versão final
+deve ser conferida na CI do PR 20, sem ocultar essa primeira falha.
+
+Após o ajuste dos uploads, `npm run validate` foi repetido e terminou com código
+0: 851 testes frontend, 77 de scripts e 87 de backend aprovados, build e smoke
+verdes. O frontend levou 104,68 s nessa execução; a cobertura permaneceu
+92,86% / 86,43% / 91,32% / 94,93%. Log: `optimized-validate-reruns.log`.
 
 ## Como verificar manualmente
 

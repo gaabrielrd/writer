@@ -56,6 +56,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: coverage
+          overwrite: true
           path: coverage/
           retention-days: 7
           if-no-files-found: ignore
@@ -126,6 +127,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: playwright-report
+          overwrite: true
           path: |
             playwright-report/
             test-results/
@@ -177,6 +179,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: writer-visual-blob-${{ matrix.shard }}
+          overwrite: true
           path: blob-report/
           retention-days: 7
           if-no-files-found: warn
@@ -186,6 +189,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: writer-visual-results-${{ matrix.shard }}
+          overwrite: true
           path: visual-test-results/
           retention-days: 7
           if-no-files-found: warn
@@ -237,6 +241,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: writer-visual-preview
+          overwrite: true
           path: |
             visual-playwright-report/
             visual-test-results/
