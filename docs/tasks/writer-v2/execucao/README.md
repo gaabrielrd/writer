@@ -1,6 +1,8 @@
 # Execução do Writer V2
 
-Base: `master a2df540`; branch `codex/writer-v2`, checkout isolado.
+Base inicial: `master a2df540`; branch `codex/writer-v2`, checkout isolado.
+Em 2026-10-13, `master d98c1ed` foi integrada sem conflitos por `5e2215e`;
+[evidência da atualização](../../../entregas/2026-10-13-writer-v2-sincronizacao-master.md).
 Os arquivos do checkout original e seus trabalhos paralelos permanecem preservados.
 
 | Tarefa              | Estado                                             | Evidência                                            | Próxima condição                                     |
