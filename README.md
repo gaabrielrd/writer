@@ -1,10 +1,18 @@
 # Writer Assistant
 
-Assistente para escritores de ficção com compêndio de lore contextual, auxílio de escrita por IA e publicação interativa.
+Estúdio de escrita em React/Vite/Firebase, com lore contextual, assistência de IA e publicação interativa.
 
 ## Objetivo
 
 Centralizar o planejamento de universo narrativo (personagens, locais, conceitos e relações) e a escrita em um editor de texto rico com detecção automática de termos. O projeto oferece assistência de IA contextualizada com controle de créditos, exportação em múltiplos formatos (PDF, DOCX, Markdown) e publicação online para leitores em uma interface interativa.
+
+A evolução aprovada é o **Writer V2**, com autores e mestres igualmente prioritários.
+Os cinco espaços serão Universos, Estúdio, Publicações, Catálogo e Biblioteca;
+livros, aventuras e campanhas ficam no Estúdio. A primeira versão pública do
+ecossistema inclui distribuição externa e vendas de livros e aventuras por
+criadores convidados. Essas capacidades ainda serão implementadas por incrementos;
+o protótipo aprovado é demonstrativo. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
+e [timeline reestimada](docs/tasks/writer-v2/timeline.md).
 
 ## Quando usar
 
@@ -19,7 +27,7 @@ Indicado para:
 ## Quando NÃO usar
 
 - Edição colaborativa simultânea multiusuário (estilo Google Docs com cursores múltiplos ao vivo).
-- Marketplace de venda de livros ou cobrança por leitura de capítulos com paywall.
+- Marketplace aberto a qualquer vendedor, VTT e combate automatizado na primeira versão do ecossistema.
 - Geração automática e desassistida de livros inteiros por IA.
 - Diagramação profissional de pré-impressão gráfica com controle milimétrico (InDesign).
 
@@ -164,7 +172,7 @@ usam seções opcionais com salvamento direto. A liberação depende das functio
 - A publicação é uma versão explícita, separada do rascunho. Alterações só aparecem após atualizar a publicação; tornar lore público privado retira a versão pública imediatamente. As regras precisam ser implantadas junto da versão antes de uso real. Veja [segurança da publicação](docs/publication-security.md).
 - Livros antigos com status publicado precisam de republicação explícita com nome de autor público. Nenhuma migração/publicação automática é executada.
 - A concessão mensal Premium exige um registro de direito criado por administrador em `creditEntitlements`, separado do perfil legado. Perfis antigos precisam de revisão pelo operador; a aplicação não cria nem reconcilia direitos.
-- Créditos são validados pelas regras do Firestore, mas uma arquitetura de IA exclusivamente no cliente não é um sistema de faturamento à prova de chamadas diretas. Pagamento e backend de cobrança continuam fora do escopo.
+- Créditos de IA e compras de obras são sistemas separados. A loja V2 está no escopo aprovado, mas checkout, direitos adquiridos e repasses ainda não estão implementados; Stripe Payments configurado não comprova Connect habilitado.
 - O cache persistente depende de IndexedDB; rascunhos locais distintos exigem uma escolha de recuperação. Em dispositivos compartilhados, dados locais devem ser tratados como privados.
 
 ### Implantação preparada

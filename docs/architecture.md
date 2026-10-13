@@ -313,3 +313,28 @@ o modelo da plataforma e registra a configuração efetiva; reutiliza snapshots
 de parâmetros/histórico em retries. `chapterChatProvider.mjs` contém o transporte
 Gemini do servidor, e `chapterChatService.ts` mantém BYOK no navegador. Credenciais
 entram somente nos headers do provedor, fora do histórico e da callable.
+
+## Contratos da evolução Writer V2
+
+Esta seção orienta implementação futura; as features descritas acima continuam
+sendo a base vigente. A navegação de cinco espaços foi aprovada em protótipo
+isolado em `e2e/visual`, sem rotas ou serviços novos no bundle produtivo.
+
+O [ADR 0025](decisions/0025-writer-v2-contracts.md) fixa separação entre livro
+legado, aventura autoral, campanha particular, edição e acesso. Preservar IDs/URLs
+e contratos públicos existentes. `app` compõe os espaços, `shared` continua neutro;
+novas fronteiras de feature dependem da necessidade demonstrada no incremento.
+
+Novas mutações usam autoria derivada, revisão esperada, operação/recibo idempotentes
+e datas do servidor. Lore vivo de originais, base congelada/variante inteira de
+campanha e proposta explícita de cânone conservam procedência e revogação. Notas
+próprias ficam isoladas do material derivado. Projeções por audiência têm campos
+fechados; arquivos secretos/pagos exigem autenticação e direito vigente. Corpo de
+edição imutável não torna seu acesso irrevogável; `publicBooks` continua gratuito.
+
+O [desenho de módulos](tasks/writer-v2/arquitetura-proposta.md) é proposto, não
+implementado. Contratos detalhados/condições por incremento estão na
+[consolidação](tasks/writer-v2/execucao/06-contratos-e-replanejamento.md).
+Comércio fica separado de créditos IA e exige capacidades Stripe reais, eventos
+verificados e conciliação no servidor. Nenhuma configuração Connect, migração,
+regra nova ou operação financeira é aplicada por esta documentação.

@@ -1,7 +1,9 @@
 # Fase 4 — Publicar e comercializar
 
 **Estado:** Planejada; tarefas não executadas.
-**Janela:** Meses 7–9. **Capacidade:** 240 h brutas como orçamento inicial, não estimativa validada.
+**Referência de esforço:** 488/816/1.376 h; hipótese de entrega 14 h/semana, 58,3 semanas ativas no cenário central.
+As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.
+Veja [timeline e hipóteses](../timeline.md).
 
 ## Objetivo
 

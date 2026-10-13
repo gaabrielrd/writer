@@ -415,3 +415,27 @@ tap e drag sem mudança conservam a preferência de largura.
 Relatórios e resultados gerados pelo Playwright são ignorados pelo ESLint para
 evitar leitura de arquivos temporários durante execuções paralelas. As regras
 de lint do código-fonte e os limites de cobertura permanecem os mesmos.
+
+## Protótipo e evidências do Writer V2
+
+`e2e/visual/writer-v2.html` é uma entrada demonstrativa isolada; dados e estados
+são fixtures em memória. `writer-v2-prototype.visual.ts` verifica navegação,
+preservação de texto/notas, confirmação, teclado/foco, revelação e estados
+simulados de compra/reversão nos três temas, desktop/celular e 320 px.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/writer-v2-prototype.visual.ts
+```
+
+Trinta percursos Chromium passaram no incremento do protótipo. Essa evidência
+aprova interações demonstrativas, sem comprovar autorização no servidor, regras
+reais, arquivo gerado, webhook, Connect, CI ou participação humana.
+Veja [registro e limites](entregas/2026-10-13-writer-v2-prototipo.md).
+
+Cada capacidade produtiva V2 aplica seus casos observáveis e negativos, o
+[contrato transversal](tasks/writer-v2/validacao-e-aceite.md) e a definição de
+concluído. Não substituir emulador/contas distintas por mocks para segurança nem
+compra sandbox real por alteração de estado da fixture. Pilotos usam o
+[roteiro preparado](tasks/writer-v2/execucao/05-roteiro-de-pilotos.md), com pessoas
+e tratamento das observações definidos antes da coleta. Cobertura mínima e
+comandos de validate permanecem inalterados.

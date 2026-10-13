@@ -47,6 +47,7 @@
 
 - Não expanda o escopo além do solicitado.
 - Uma funcionalidade por vez.
+- Siga os contratos e portões por incremento em `docs/tasks/writer-v2/execucao/06-contratos-e-replanejamento.md`; confira o estado no registro de execução.
 
 ## Dependências
 
@@ -88,6 +89,7 @@
 - `npm run test` aplica limites de cobertura; não os reduza para fazer passar.
 - Instale as dependências de `functions` com `npm ci --prefix functions` antes de validar.
 - Use `WRITER_VISUAL_PORT` distinto por checkout nas execuções visuais paralelas.
+- Mantenha protótipos demonstrativos em `e2e/visual`; não registre fixtures como evidência de autorização, pagamento ou piloto reais.
 
 ## Documentação
 

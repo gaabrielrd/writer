@@ -1,7 +1,9 @@
 # Fase 2 — Criar e preparar
 
 **Estado:** Planejada; tarefas não executadas.
-**Janela:** Meses 2–4. **Capacidade:** 240 h brutas como orçamento inicial, não estimativa validada.
+**Referência de esforço:** 368/584/936 h; hipótese de entrega 16 h/semana, 36,5 semanas ativas no cenário central.
+As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.
+Veja [timeline e hipóteses](../timeline.md).
 
 ## Objetivo
 

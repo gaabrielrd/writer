@@ -1,6 +1,7 @@
 # W2-F1-06 — Consolidar contratos, documentação e estimativas
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Consolidação documental revisada; validate local verde. CI e aceite integral da fase permanecem pendentes.
+**Evidência:** [Contratos e portão](../execucao/06-contratos-e-replanejamento.md), [timeline](../timeline.md).
 **Dependências:** [W2-F1-02](../fase-01-direcao-e-fundamentos/02-modelo-de-dominio.md), [W2-F1-03](../fase-01-direcao-e-fundamentos/03-permissoes-e-privacidade.md), [W2-F1-04](../fase-01-direcao-e-fundamentos/04-regras-comerciais-e-direitos.md), [W2-F1-05](../fase-01-direcao-e-fundamentos/05-prototipos-e-pilotos.md)
 **Áreas propostas:** documentação, arquitetura, planejamento e validação. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -16,22 +17,28 @@ Entradas: decisões e protótipos aprovados. Resultado: PRD/ADRs pertinentes, co
 
 - Consolidar aprovação das regras e atualizar PRD e arquitetura somente no que foi decidido.
 - Planejar módulos novos pelas fronteiras públicas; atualizar AGENTS quando uma regra vigente mudar.
-- Estimar cada tarefa incluindo migração, testes, documentação, operação e espera externa; confrontar 960 h + 80 h de reserva.
+- Estimar cada tarefa incluindo migração, testes, documentação e trabalho operacional ativo; registrar espera externa separadamente e confrontar 960 h + 80 h de reserva.
 - Definir critérios de portão e linha de base de qualidade sem reduzir cobertura.
 
 ## Passos de execução
 
-- [ ] Fechar registro de decisões obrigatórias por incremento.
-- [ ] Escrever contratos e ADRs; alinhar documentos vigentes e esta pasta.
-- [ ] Estimar tarefas de baixo para cima e ajustar timeline ou propor alterações explícitas.
+- [x] Fechar registro de decisões obrigatórias por incremento, com condições pendentes explícitas.
+- [x] Escrever contratos e ADRs; alinhar documentos vigentes e esta pasta.
+- [x] Estimar tarefas de baixo para cima e ajustar timeline ou propor alterações explícitas.
 - [ ] Executar verificações documentais e registrar aprovação do portão da fase 1.
 
 ## Critérios de aceite
 
 - [ ] Não há decisão obrigatória aberta para iniciar a fase 2.
-- [ ] Comércio e campanhas estão representados no escopo aprovado com regras atribuídas.
-- [ ] Soma de estimativas e capacidade explica a timeline, inclusive se ultrapassar 12 meses.
-- [ ] Nenhuma mudança de regra é aplicada implicitamente por um documento de proposta.
+- [x] Comércio e campanhas estão representados no escopo aprovado com regras atribuídas.
+- [x] Soma de estimativas e capacidade explica a timeline, inclusive se ultrapassar 12 meses.
+- [x] Nenhuma mudança de regra é aplicada implicitamente por um documento de proposta.
+
+A direção para preparar F2-01 está fechada; o critério de avanço integral não é
+declarado satisfeito por essa preparação. A matriz de condições identifica limites
+de histórico/portabilidade a fechar nos incrementos próprios, além de revisão/CI,
+capacidades comerciais e critérios humanos ainda pendentes. Nenhum critério das
+tarefas anteriores é eliminado pela consolidação.
 
 ## Validação
 
