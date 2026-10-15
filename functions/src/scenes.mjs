@@ -20,6 +20,7 @@ import {
 import { sceneRankBetween, validSceneRank } from './sceneRanks.mjs';
 import { writeSceneLoreIndex } from './sceneLoreIndex.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
+import { adventureBlockState, adventureSceneFields } from './adventureBlocksState.mjs';
 
 const stages = ['planned', 'writing', 'review', 'done'];
 const domains = {
@@ -106,7 +107,7 @@ export function createScenesService({ db, now = Date.now }) {
       );
     return { snapshot, ref: snapshot.ref, value, context };
   }
-  function summary(record, groupValue) {
+  function summary(record, groupValue, kind) {
     return {
       id: record.id,
       ownerId: record.ownerId,
@@ -123,6 +124,7 @@ export function createScenesService({ db, now = Date.now }) {
       bodyBytes: record.bodyBytes,
       createdAt: record.createdAt,
       updatedAt: record.updatedAt,
+      ...(kind === 'adventure' ? adventureSceneFields(record) : {}),
     };
   }
   function nextGroup(entry, deltaWords, deltaCount, timestamp, structure = false, assembly = true) {
@@ -185,7 +187,10 @@ export function createScenesService({ db, now = Date.now }) {
   function writeReceipt(tx, op, value) {
     tx.set(op.ref, { fingerprint: op.fingerprint, ...value });
   }
-  async function prepareSceneTextWrite(tx, { uid, target, root, snapshot, content, patch = {} }) {
+  async function prepareSceneTextWrite(
+    tx,
+    { uid, target, root, snapshot, content, patch = {}, scenePatch = {} },
+  ) {
     const context = scope(uid, { target }, []),
       old = snapshot.data(),
       ref = snapshot.ref;
@@ -198,9 +203,12 @@ export function createScenesService({ db, now = Date.now }) {
       text = prose(content),
       value = {
         ...old,
+        ...scenePatch,
         revision: old.revision + 1,
         updatedAt: timestamp,
-        wordCount: text.wordCount,
+        wordCount:
+          text.wordCount + (target.kind === 'adventure' ? adventureBlockState(old).extra : 0),
+        ...(target.kind === 'adventure' ? { mainWordCount: text.wordCount } : {}),
         bodyBytes: text.bodyBytes,
         bodyHash: text.bodyHash,
         ...('title' in patch ? { title: patch.title } : {}),
@@ -226,14 +234,25 @@ export function createScenesService({ db, now = Date.now }) {
         target,
         root,
         changes: [
-          { kind: 'scene', id: old.id, content, parentId: old.parentId, archived: old.archived },
+          {
+            kind: 'scene',
+            id: old.id,
+            content,
+            parentId: old.parentId,
+            archived: old.archived,
+            blockScene: value,
+          },
         ],
       });
     assertSceneEnvelope(value);
     assertSceneEnvelope(body);
     sceneRevision(value.revision);
     return {
-      result: { scene: summary(value, next), groups: [next], projectRevision: revision(root) + 1 },
+      result: {
+        scene: summary(value, next, target.kind),
+        groups: [next],
+        projectRevision: revision(root) + 1,
+      },
       marker: { updatedAt: timestamp, revision: value.revision, contentHash: body.hash },
       commit() {
         writeProject(tx, context, root, timestamp, contribution(value) - contribution(old));
@@ -241,6 +260,79 @@ export function createScenesService({ db, now = Date.now }) {
         tx.set(db.doc(ref.path + '/body/current'), body);
         progress.commit();
         if (planningValue) tx.set(db.doc(ref.path + '/planning/current'), planningValue);
+        writeGroup(tx, entry, next);
+      },
+    };
+  }
+  async function prepareAdventureSceneAggregateWrite(
+    tx,
+    {
+      uid,
+      target,
+      root,
+      snapshot,
+      extraWords,
+      blockCount,
+      nextOrder,
+      structureChanged = false,
+      mainPatch = {},
+      repair = false,
+    },
+  ) {
+    const context = scope(uid, { target }, []),
+      old = snapshot.data();
+    if (target.kind !== 'adventure' || !old || old.ownerId !== uid || old.deleting)
+      sceneFail('not-found', 'Cena indisponível.');
+    const state = adventureBlockState(old, { repair }),
+      entry = await group(context, old.parentId, tx, {
+        composed: true,
+        deleting: Boolean(old.archived),
+      }),
+      timestamp = sceneDate(now, Math.max(root.updatedAt ?? 0, old.updatedAt ?? 0)),
+      value = {
+        ...old,
+        ...mainPatch,
+        hasBlocks: true,
+        mainWordCount: state.main,
+        blockWordCount: extraWords,
+        blockCount,
+        wordCount: state.main + extraWords,
+        nextBlockOrder: nextOrder ?? state.nextOrder,
+        blocksStructureRevision: state.structure + Number(structureChanged),
+        revision: old.revision + 1,
+        updatedAt: timestamp,
+      },
+      next = nextGroup(
+        entry,
+        old.archived ? 0 : value.wordCount - old.wordCount,
+        0,
+        timestamp,
+        false,
+        !old.archived,
+      );
+    adventureBlockState(value);
+    const progress = await workLedger.prepareChanges(tx, {
+      target,
+      root,
+      changes: [
+        {
+          kind: 'scene',
+          id: old.id,
+          parentId: old.parentId,
+          archived: old.archived,
+          blockScene: value,
+        },
+      ],
+    });
+    assertSceneEnvelope(value);
+    sceneRevision(value.revision);
+    return {
+      value,
+      timestamp,
+      commit() {
+        writeProject(tx, context, root, timestamp, contribution(value) - contribution(old));
+        tx.update(snapshot.ref, value);
+        progress.commit();
         writeGroup(tx, entry, next);
       },
     };
@@ -256,7 +348,7 @@ export function createScenesService({ db, now = Date.now }) {
       conflict();
     const destination = await group(context, scene.parentId, tx, { deleting: true });
     return {
-      scene: summary(scene, destination.value),
+      scene: summary(scene, destination.value, context.target.kind),
       groups: [destination.value],
       projectRevision: revision(p),
     };
@@ -547,6 +639,7 @@ export function createScenesService({ db, now = Date.now }) {
                   ...(body ? { content: body.content } : {}),
                   parentId: value.parentId,
                   archived: value.archived,
+                  blockScene: value,
                 },
               ],
             })
@@ -575,7 +668,11 @@ export function createScenesService({ db, now = Date.now }) {
       for (const [id, groupValue] of next) writeGroup(tx, entries.get(id), groupValue);
       writeReceipt(tx, op, { sceneId: value.id, revision: value.revision, createdAt: timestamp });
       return {
-        scene: summary(value, next.get(value.parentId) ?? entries.get(value.parentId).value),
+        scene: summary(
+          value,
+          next.get(value.parentId) ?? entries.get(value.parentId).value,
+          context.target.kind,
+        ),
         groups: [...next.values()],
         projectRevision,
       };
@@ -600,6 +697,7 @@ export function createScenesService({ db, now = Date.now }) {
 
   const api = {
     prepareSceneTextWrite,
+    prepareAdventureSceneAggregateWrite,
     createScene: (uid, data) => mutate(uid, data, 'createScene'),
     updateScene: (uid, data) => mutate(uid, data, 'updateScene'),
     moveScene: (uid, data) => mutate(uid, data, 'moveScene'),
@@ -629,7 +727,7 @@ export function createScenesService({ db, now = Date.now }) {
               ? null
               : groupView(context, scene.parentId, grouping.data());
           return {
-            ...summary(scene, g ?? { rankSlot: 'A' }),
+            ...summary(scene, g ?? { rankSlot: 'A' }, context.target.kind),
             content: body.data().content,
             planning: planning({}, plan.data()),
             project: { ...context.target, title: p.title, universeId: p.universeId ?? null },
@@ -683,7 +781,7 @@ export function createScenesService({ db, now = Date.now }) {
           visible = page.docs.slice(0, limit),
           last = visible.at(-1);
         return {
-          items: visible.map((item) => summary(item.data(), entry.value)),
+          items: visible.map((item) => summary(item.data(), entry.value, context.target.kind)),
           nextCursor:
             page.docs.length > limit
               ? cursorFor(c, revision(p), last.data()[slotField(entry.value)], last.id)
@@ -912,7 +1010,11 @@ export function createScenesService({ db, now = Date.now }) {
         );
         wordProgress.commit();
         writeReceipt(tx, op, { sceneId: op.id, revision: 1, createdAt: timestamp });
-        return { scene: summary(record, value), groups: [value], projectRevision };
+        return {
+          scene: summary(record, value, context.target.kind),
+          groups: [value],
+          projectRevision,
+        };
       });
     },
     async listSceneReferences(uid, data) {

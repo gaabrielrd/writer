@@ -26,6 +26,7 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
   const active = useRef(true);
   const latest = useRef(initial.content);
   const saved = useRef(initial.content);
+  const confirmedBodyHash = useRef(initial.bodyHash);
   const revision = useRef(initial.revision);
   const pending = useRef<UpdateSceneInput | null>(null);
   const busy = useRef(false);
@@ -84,6 +85,7 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
       const result = await updateScene(request);
       if (!active.current) return;
       revision.current = result.scene.revision;
+      confirmedBodyHash.current = result.scene.bodyHash;
       saved.current = request.patch.content ?? saved.current;
       pending.current = null;
       setDocument((previous) => ({
@@ -162,6 +164,7 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
   const resolve = (keepLocal: boolean) => {
     if (!remote) return;
     revision.current = remote.revision;
+    confirmedBodyHash.current = remote.bodyHash;
     saved.current = remote.content;
     pending.current = null;
     setDocument(remote);
@@ -179,8 +182,23 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
     setError('');
   };
   const acceptMetadata = (scene: SceneSummary) => {
+    if (
+      !active.current ||
+      busy.current ||
+      pending.current ||
+      recoveryRef.current ||
+      latest.current !== saved.current ||
+      scene.bodyHash !== confirmedBodyHash.current
+    ) {
+      if (active.current) {
+        setStatus('conflict');
+        setError('O texto principal mudou. Compare os textos antes de adotar outra revisão.');
+      }
+      return false;
+    }
     revision.current = scene.revision;
     setDocument((previous) => ({ ...previous, ...scene }));
+    return true;
   };
   const getConfirmedContent = () =>
     active.current &&
@@ -201,7 +219,8 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
     }
   };
   const acceptConfirmedContent = (
-    scene: Pick<SceneDocument, 'content' | 'revision' | 'wordCount' | 'bodyHash' | 'bodyBytes'>,
+    scene: Pick<SceneDocument, 'content' | 'revision' | 'wordCount' | 'bodyHash' | 'bodyBytes'> &
+      Pick<SceneDocument, 'mainWordCount' | 'blockWordCount'>,
   ) => {
     if (
       !active.current ||
@@ -217,6 +236,7 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
     latest.current = scene.content;
     saved.current = scene.content;
     revision.current = scene.revision;
+    confirmedBodyHash.current = scene.bodyHash;
     recoveryRef.current = null;
     setDocument((previous) => ({ ...previous, ...scene }));
     setContent(scene.content);

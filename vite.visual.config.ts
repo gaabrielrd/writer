@@ -17,6 +17,14 @@ const replacements = new Map(
     ['src/features/work-progress/services/workProgressService.ts', 'workProgressFixture.ts'],
     ['src/features/manuscript-history/services/workHistoryCallables.ts', 'workHistoryFixture.ts'],
     [
+      'src/features/adventure-blocks/services/adventureBlockCallables.ts',
+      'adventureBlocksFixture.ts',
+    ],
+    [
+      'src/features/adventure-blocks/services/adventurePreviewCallables.ts',
+      'adventurePreviewFixture.ts',
+    ],
+    [
       'src/features/narrative-planning/services/narrativePlanningService.ts',
       'narrativePlanningService.ts',
     ],

@@ -209,9 +209,13 @@ function HistorySession(props: WorkHistoryDialogProps) {
                   >
                     <span>{versionTitle(version)}</span>
                     <span className={styles.hint}>
-                      {version.resource.kind === 'chapter' ? 'Capítulo' : 'Cena'} ·{' '}
-                      {versionDate(version.createdAt)} · {version.wordCount.toLocaleString('pt-BR')}{' '}
-                      palavras
+                      {version.resource.kind === 'chapter'
+                        ? 'Capítulo'
+                        : version.resource.kind === 'block'
+                          ? 'Bloco'
+                          : 'Cena'}{' '}
+                      · {versionDate(version.createdAt)} ·{' '}
+                      {version.wordCount.toLocaleString('pt-BR')} palavras
                     </span>
                   </Button>
                 </li>
@@ -323,6 +327,12 @@ function HistorySession(props: WorkHistoryDialogProps) {
                   Substituir somente o texto desta cena ou capítulo? O texto atual será guardado
                   como uma versão recuperável. Planejamento, posição e créditos permanecem iguais.
                 </p>
+                {props.editor?.destinationAudience && (
+                  <p>
+                    Audiência atual: {props.editor.destinationAudience}. A restauração troca apenas
+                    o texto; a audiência permanece igual.
+                  </p>
+                )}
                 <div className={styles.actions}>
                   <Button
                     disabled={!canRestore}

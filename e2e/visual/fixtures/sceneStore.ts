@@ -8,6 +8,11 @@ import type {
   SceneReference,
   SceneSummary,
 } from '../../../src/features/scenes/model/scene';
+import type {
+  AdventureBlockResource,
+  AdventureBlockSummary,
+} from '../../../src/features/adventure-blocks/model/adventureBlock';
+import type { AdventureBlockImage } from '../../../src/features/adventure-blocks/model/adventurePreview';
 import { countWords, type Chapter } from '../../../src/features/books/model/chapter';
 import { fixtureOwner } from './studioStore';
 import { getAdventure } from './adventureService';
@@ -20,7 +25,39 @@ export interface FixtureSceneState {
   title: string;
   universeId: string | null;
   revision: number;
-  scenes: Record<string, SceneSummary>;
+  scenes: Record<
+    string,
+    SceneSummary & {
+      hasBlocks?: boolean;
+      mainBlockImage?: Omit<AdventureBlockImage, 'name'> | null;
+    }
+  >;
+  adventureBlocks?: Record<
+    string,
+    AdventureBlockSummary & {
+      ownerId: string;
+      deleting?: boolean;
+      image?: Omit<AdventureBlockImage, 'name'> | null;
+    }
+  >;
+  adventureBlockBodies?: Record<string, string>;
+  adventureBlockSeededScenes?: string[];
+  adventurePreviewSeededScenes?: string[];
+  adventureBlockReceipts?: Record<
+    string,
+    {
+      fingerprint: string;
+      sceneId: string;
+      resource?: AdventureBlockResource;
+      revision?: number;
+      sceneRevision?: number;
+      processed?: number;
+      complete?: boolean;
+      cursor?: string;
+      words?: number;
+      count?: number;
+    }
+  >;
   bodies: Record<string, string>;
   planning: Record<string, ScenePlanning>;
   references: Record<string, SceneReferenceView[]>;
@@ -328,7 +365,48 @@ export async function fixtureBody(content: string) {
     });
   return { bodyHash: await fixtureContentHash(content), bodyBytes, wordCount: countWords(content) };
 }
-export function fixtureCas(scene: SceneSummary, expected: number) {
+export function fixtureAdventureSceneCounts(
+  scene: SceneSummary & {
+    hasBlocks?: boolean;
+    mainBlockImage?: Omit<AdventureBlockImage, 'name'> | null;
+  },
+  repair = false,
+) {
+  const integer = (value: number | undefined, minimum = 0): number => {
+    if (value === undefined || !Number.isSafeInteger(value) || value < minimum)
+      throw fixtureSceneError('O agregado dos blocos precisa de verificação.');
+    return value;
+  };
+  const marked = scene.hasBlocks === true;
+  const main = integer(scene.mainWordCount ?? (marked ? undefined : scene.wordCount));
+  const extra = repair ? 0 : integer(scene.blockWordCount ?? (marked ? undefined : 0));
+  const count = repair ? 0 : integer(scene.blockCount ?? (marked ? undefined : 0));
+  const structure = integer(scene.blocksStructureRevision ?? (marked ? undefined : 0));
+  const nextOrder = integer(scene.nextBlockOrder ?? (marked ? undefined : 1), 1);
+  const mainOrder = integer(scene.mainBlockOrder ?? 0);
+  integer(scene.wordCount);
+  if (!repair && (scene.wordCount !== main + extra || !Number.isSafeInteger(main + extra)))
+    throw fixtureSceneError('O agregado dos blocos precisa de verificação.');
+  return { main, extra, count, structure, nextOrder, mainOrder };
+}
+export function fixtureSetSceneMainBody(
+  state: FixtureSceneState,
+  scene: SceneSummary & {
+    hasBlocks?: boolean;
+    mainBlockImage?: Omit<AdventureBlockImage, 'name'> | null;
+  },
+  content: string,
+  body: Awaited<ReturnType<typeof fixtureBody>>,
+) {
+  const extra = state.target.kind === 'adventure' ? fixtureAdventureSceneCounts(scene).extra : 0;
+  state.bodies[scene.id] = content;
+  Object.assign(scene, body);
+  if (state.target.kind === 'adventure') {
+    scene.mainWordCount = body.wordCount;
+    scene.wordCount = body.wordCount + extra;
+  }
+}
+export function fixtureCas(scene: Pick<SceneSummary, 'revision'>, expected: number) {
   if (scene.revision !== expected) throw fixtureSceneError();
 }
 export function fixturePage<T>(

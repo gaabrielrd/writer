@@ -61,3 +61,23 @@ O benchmark histórico de três runners acima continua como evidência daquela b
 Medir a distribuição dos novos casos e a duração remota antes de encerrar F2-03.
 O workflow Hosting conserva seu portão próprio; seu integration sem sharding em
 30 min é um risco separado e não é resolvido por esta alteração do CI.
+
+## Revisão para F2-06 — 2026-10-15
+
+A CI de `f4a0e42` cancelou o shard 3 de seis após cerca de 15 minutos: 141 passes,
+dois skips, nenhum erro/retry registrado e dois casos sem resultado. O último
+teste passou 1,3 segundo antes do cancelamento. O progresso contínuo e o limite
+do job indicam orçamento total esgotado; o log não explicita uma anotação de
+timeout. O gate agregado recusou corretamente o resultado cancelled.
+
+F2-06 acrescenta jornadas e passa a distribuir a suíte inteira em oito shards.
+Não aumenta limite de job/teste/expectativa, não muda workers/retries nem filtra
+cenários. Os contratos continuam exigindo todos os shards e produção verdes.
+Conferir a união dos IDs do `--list` contra a suíte sem shards prova distribuição
+sem omissão/duplicação; isso não substitui executar testes nem comprova duração
+remota. O custo de preparação sobe para oito runners, com menor carga por runner.
+Registrar medição real da CI após o envio; a execução antiga continua reprovada.
+
+A enumeração local final de F2-06 encontrou 948 casos: 119/119/119/119/118/118/118/118
+nos oito shards. A união dos IDs coincide com os 948 da suíte inteira, sem omissão
+ou duplicação. Esse comando usa apenas `--list`, sem executar os testes novamente.

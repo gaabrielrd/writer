@@ -1,6 +1,6 @@
 # W2-F2-06 — Criar aventuras com estrutura narrativa
 
-**Estado:** Contrato fechado; implementação em subincrementos sequenciais.
+**Estado:** Implementado e validado localmente; CI do novo head pendente.
 **Dependências:** [W2-F2-01](../fase-02-criar-e-preparar/01-projetos-e-navegacao.md), [W2-F2-02](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md)
 **Áreas propostas:** editor, lore, image-library; proposta adventures. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -26,17 +26,17 @@ escolhas de 2026-10-15: vários blocos por cena, texto e audiência próprios; n
 legado sem classificação privados do criador. Os portões locais de F2-05 passaram;
 CI acompanha em paralelo conforme a sequência autorizada.
 
-- [ ] Implementar contrato de aventura e tipos de blocos mínimos.
-- [ ] Adaptar editor por API pública, preservando seleção, autosave e formatação.
-- [ ] Montar organização narrativa e referências de NPC/local/pista.
-- [ ] Verificar revisões e prévia por audiência sem publicação automática.
+- [x] Implementar contrato de aventura e tipos de blocos mínimos.
+- [x] Adaptar editor por API pública, preservando seleção, autosave e formatação.
+- [x] Montar organização narrativa e referências de NPC/local/pista.
+- [x] Verificar revisões e prévia por audiência sem publicação automática.
 
 ## Critérios de aceite
 
-- [ ] Mestre prepara uma aventura original sem simular o domínio com um livro.
-- [ ] Bloco secreto mantém audiência correta ao mover/duplicar.
-- [ ] NPC pode reutilizar lore existente sem copiar toda ficha.
-- [ ] Criação manual funciona sem IA, saldo ou compra.
+- [x] Mestre prepara uma aventura original sem simular o domínio com um livro.
+- [x] Bloco secreto mantém audiência correta ao mover/duplicar.
+- [x] NPC pode reutilizar lore existente sem copiar toda ficha.
+- [x] Criação manual funciona sem IA, saldo ou compra.
 
 ## Validação
 

@@ -450,6 +450,43 @@ de projeto de aventura ainda não existe e deverá incorporar essa limpeza.
 
 Ver [contrato F2-05](tasks/writer-v2/execucao/11-historico-e-restauracao.md).
 
+## Blocos narrativos de aventura e prévia privada
+
+`features/adventure-blocks` expõe navegação, editor de texto próprio, recuperação,
+ilustração e prévia por cena. A prosa existente permanece em scenes/body/current
+como Texto principal; abrir não migra nem duplica seu conteúdo. Campos mainBlock
+aditivos e fallbacks de leitura preservam a compatibilidade. Adicionais usam
+sceneBlocks com corpo separado, cena estável, revisão, audiência e ordem próprias.
+Novo/legado sem classificação é privado do criador. Livros não recebem esses campos.
+
+`functions/src/adventureBlocks*.mjs` autoriza cada recurso e mantém texto, revisões,
+total da cena, parte, ledger e recibo atomicamente. O ledger conserva uma fonte
+de cena com principal e adicionais ativos. Verificação explícita percorre apenas
+metadados em páginas, confirma o checkpoint observado e não inventa total zero.
+O loader oferece consulta de situação sem corpo quando o agregado inválido impede
+abrir a cena. Arquivo conserva texto/histórico; histórico de block restaura somente
+texto e cópia anterior, sem restaurar audiência ou imagem.
+
+Vínculo de uma ilustração por bloco usa a biblioteca pela interface pública. O uso
+tipado inclui aventura/recurso e não colide com IDs de capa. O servidor atualiza
+vínculo/contador junto da mutação, incluindo duplicação e limpeza retomável; arquivo
+mantém uso. Editores compartilham reserva de escrita, controlador e pedido incerto,
+sem adotar revisão cujo hash diverge da prosa confirmada.
+
+`adventurePreview*.mjs` filtra audiência antes de ler corpos e reconstrói HTML com
+parse5. Original completo reúne ativos; Mestre recebe gm/players e Jogadores apenas
+players. O DTO exclui planejamento, fichas, títulos de agrupadores e metadados de
+itens secretos. Páginas têm token da revisão precisa e orçamento de 4 MiB UTF-8;
+excedente segue na próxima página sem truncamento. Imagens são derivados WebP por
+sharp de até 1.024 × 1.024 e 1,5 MiB, com autorização antes/depois do I/O, sem caminho,
+imageId ou URL permanente no DTO. O cliente descarta páginas/mídias de outra conta,
+alvo, modo ou token e limpa a composição em perda de acesso.
+
+Todas as prévias continuam restritas ao dono; classificar não publica nem concede
+acesso. Exclusão integral/backup de aventura têm trabalho próprio; preservar essa
+pendência. Ver [ADR 0030](decisions/0030-adventure-blocks-and-private-previews.md) e
+[contrato F2-06](tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
+
 ## Progresso privado, contagem e retomada
 
 `features/work-progress` oferece `ProjectProgressPanel`, `ContinueWorkPanel` e

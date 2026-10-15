@@ -11,6 +11,12 @@ import {
 } from '../services/sceneService';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
 import type { RichEditorProps } from '@/features/editor';
+import type {
+  AdventureBlockCountRecoveryProps,
+  AdventureBlockImageEditorProps,
+  AdventureBlockNavigatorProps,
+  AdventureScenePreviewDialogProps,
+} from '@/features/adventure-blocks';
 import { writeSceneDraft, sceneDraftKey, readSceneDraft } from '../services/sceneDraftStorage';
 import { document, target, mutation, conflict, deferred } from './sceneFixtures';
 const auth = vi.hoisted(() => {
@@ -21,7 +27,76 @@ const auth = vi.hoisted(() => {
   } = { user: { uid: 'owner', credits: 7 }, loading: false, setPendingEditorOperation: vi.fn() };
   return value;
 });
+const imageFlight = vi.hoisted(() => ({ finish: null as (() => void) | null }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
+vi.mock('@/features/adventure-blocks', () => ({
+  useAdventureBlockMutation: () => ({ busy: false, pending: null }),
+  AdventureBlockImageEditor: (props: AdventureBlockImageEditorProps) => (
+    <>
+      <button
+        disabled={props.disabled}
+        onClick={() => {
+          void props.runExclusive?.(async () => {
+            props.onReservationChange?.(true);
+            await new Promise<void>((resolve) => {
+              imageFlight.finish = resolve;
+            });
+            props.onReservationChange?.(false);
+          });
+        }}
+      >
+        Escolher ilustração de {props.resource.kind}
+      </button>
+      <button onClick={() => imageFlight.finish?.()}>Cancelar ilustração simulada</button>
+    </>
+  ),
+  AdventureScenePreviewDialog: (props: AdventureScenePreviewDialogProps) =>
+    props.open ? (
+      <div role="dialog" aria-label="Prévia da cena simulada">
+        {props.adventureId}/{props.sceneId}
+        <button onClick={props.onClose}>Fechar prévia simulada</button>
+      </div>
+    ) : null,
+  AdventureBlockCountRecovery: (props: AdventureBlockCountRecoveryProps) => (
+    <button onClick={props.onRecovered}>
+      Verificar metadados de {props.adventureId}/{props.sceneId}
+    </button>
+  ),
+  AdventureBlockNavigator: (props: AdventureBlockNavigatorProps) => (
+    <section aria-label="Blocos da cena">
+      <button
+        disabled={props.disabled}
+        onClick={() =>
+          void props.runExclusive?.(() => {
+            props.onSceneChange?.({
+              sceneRevision: 4,
+              sceneWordCount: 12,
+              mainBodyHash: document.bodyHash,
+              structureRevision: 2,
+            });
+            return Promise.resolve();
+          })
+        }
+      >
+        Confirmar novo bloco
+      </button>
+      <button
+        onClick={() =>
+          props.onSceneChange?.({
+            sceneRevision: 8,
+            sceneWordCount: 24,
+            mainBodyHash: 'principal-remoto',
+            structureRevision: 3,
+          })
+        }
+      >
+        Confirmar bloco após edição remota
+      </button>
+      <button onClick={() => props.onPendingChange?.(true)}>Simular pedido de bloco incerto</button>
+      <button onClick={() => props.onPendingChange?.(false)}>Confirmar pedido de bloco</button>
+    </section>
+  ),
+}));
 vi.mock('@/features/editor', async () => ({
   BusyNavigationGuard: (
     await vi.importActual<typeof import('@/features/editor')>('@/features/editor')
@@ -59,6 +134,7 @@ vi.mock('../services/sceneService', () => ({
 }));
 beforeEach(() => {
   vi.clearAllMocks();
+  imageFlight.finish = null;
   localStorage.clear();
   auth.user = { uid: 'owner', credits: 7 };
   auth.loading = false;
@@ -117,6 +193,132 @@ it('aventura usa prosa própria e não inventa livro auxiliar', async () => {
     'href',
     '/adventures/adventure',
   );
+});
+
+it('oferece recuperação explícita da contagem antes de conseguir abrir uma aventura', async () => {
+  vi.mocked(getScene)
+    .mockRejectedValueOnce(new Error('Agregado de blocos indisponível'))
+    .mockResolvedValueOnce({
+      ...document,
+      project: { kind: 'adventure', id: 'adventure', title: 'O sino', universeId: null },
+    });
+  mount('/adventures/adventure/scenes/scene');
+  const recovery = await screen.findByRole('button', {
+    name: 'Verificar metadados de adventure/scene',
+  });
+  expect(
+    screen.queryByRole('textbox', { name: 'Área de escrita da cena' }),
+  ).not.toBeInTheDocument();
+  expect(getScene).toHaveBeenCalledTimes(1);
+  expect(updateScene).not.toHaveBeenCalled();
+  await userEvent.setup().click(recovery);
+  expect(await screen.findByRole('textbox', { name: 'Área de escrita da cena' })).toHaveValue(
+    document.content,
+  );
+  expect(getScene).toHaveBeenCalledTimes(2);
+  expect(updateScene).not.toHaveBeenCalled();
+});
+
+it('erro de abertura de livro não oferece reparo de blocos de aventura', async () => {
+  vi.mocked(getScene).mockRejectedValue(new Error('Livro indisponível'));
+  mount();
+  await screen.findByText('Livro indisponível');
+  expect(screen.queryByRole('button', { name: /Verificar metadados/ })).not.toBeInTheDocument();
+  expect(updateScene).not.toHaveBeenCalled();
+});
+
+it('reservar ilustração bloqueia texto, histórico e blocos até cancelar sem adotar revisão nova', async () => {
+  vi.mocked(getScene).mockResolvedValue({
+    ...document,
+    project: { kind: 'adventure', id: 'adventure', title: 'O sino', universeId: null },
+  });
+  mount('/adventures/adventure/scenes/scene');
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('button', { name: 'Escolher ilustração de scene' }));
+  expect(field).toHaveAttribute('readonly');
+  expect(screen.getByRole('button', { name: 'Histórico do texto' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Confirmar novo bloco' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Conferir prévia da cena' })).toBeDisabled();
+  await user.click(screen.getByRole('button', { name: 'Cancelar ilustração simulada' }));
+  await waitFor(() => expect(field).not.toHaveAttribute('readonly'));
+  expect(screen.getByRole('button', { name: 'Confirmar novo bloco' })).toBeEnabled();
+  expect(getScene).toHaveBeenCalledTimes(1);
+  expect(updateScene).not.toHaveBeenCalled();
+});
+
+it('abre prévia somente com identidade de aventura e cena', async () => {
+  vi.mocked(getScene).mockResolvedValue({
+    ...document,
+    project: { kind: 'adventure', id: 'adventure', title: 'O sino', universeId: null },
+  });
+  mount('/adventures/adventure/scenes/scene');
+  const button = await screen.findByRole('button', { name: 'Conferir prévia da cena' });
+  await userEvent.setup().click(button);
+  expect(screen.getByRole('dialog', { name: 'Prévia da cena simulada' })).toHaveTextContent(
+    'adventure/scene',
+  );
+  expect(updateScene).not.toHaveBeenCalled();
+});
+
+it('adota total e revisão de bloco apenas com o mesmo principal confirmado', async () => {
+  vi.mocked(getScene).mockResolvedValue({
+    ...document,
+    project: { kind: 'adventure', id: 'adventure', title: 'O sino', universeId: null },
+    mainWordCount: 2,
+    blockWordCount: 0,
+  });
+  vi.mocked(updateScene).mockResolvedValue({
+    ...mutation,
+    scene: { ...mutation.scene, revision: 5, wordCount: 13, mainWordCount: 3, blockWordCount: 10 },
+  });
+  mount('/adventures/adventure/scenes/scene');
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar novo bloco' }));
+  expect(screen.getByText('2 palavras no texto principal · 12 na cena')).toBeVisible();
+  await userEvent.setup().type(field, ' Nova');
+  await waitFor(() =>
+    expect(updateScene).toHaveBeenCalledWith(
+      expect.objectContaining({
+        expectedRevision: 4,
+        patch: { content: document.content + ' Nova' },
+      }),
+    ),
+  );
+});
+
+it('mutação de bloco não libera sobrescrita do principal remoto sem comparar', async () => {
+  vi.mocked(getScene).mockResolvedValue({
+    ...document,
+    project: { kind: 'adventure', id: 'adventure', title: 'O sino', universeId: null },
+  });
+  mount('/adventures/adventure/scenes/scene');
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  await userEvent
+    .setup()
+    .click(screen.getByRole('button', { name: 'Confirmar bloco após edição remota' }));
+  expect(field).toHaveValue(document.content);
+  expect(screen.getByRole('button', { name: 'Comparar textos' })).toBeVisible();
+  expect(screen.getByText('Conflito de revisão')).toBeVisible();
+  expect(updateScene).not.toHaveBeenCalled();
+});
+
+it('pedido de bloco incerto bloqueia prosa e saída até confirmar o mesmo pedido', async () => {
+  vi.mocked(getScene).mockResolvedValue({
+    ...document,
+    project: { kind: 'adventure', id: 'adventure', title: 'O sino', universeId: null },
+  });
+  mount('/adventures/adventure/scenes/scene');
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  await userEvent
+    .setup()
+    .click(screen.getByRole('button', { name: 'Simular pedido de bloco incerto' }));
+  expect(field).toHaveAttribute('readonly');
+  await userEvent.setup().click(screen.getByRole('link', { name: 'Voltar ao planejamento' }));
+  expect(field).toBeInTheDocument();
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar pedido de bloco' }));
+  expect(field).not.toHaveAttribute('readonly');
+  expect(updateScene).not.toHaveBeenCalled();
 });
 it('salvamento manual é observável e preserva HTML', async () => {
   mount();

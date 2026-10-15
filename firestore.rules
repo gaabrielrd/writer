@@ -349,6 +349,10 @@ service cloud.firestore {
     }
 
     match /adventures/{adventureId} {
+      match /sceneBlocks/{blockId} {
+        allow read, write: if false;
+        match /{child}/{id} { allow read, write: if false; }
+      }
       match /workVersions/{id} { allow read, write: if false; }
       match /workVersionBodies/{id} { allow read, write: if false; }
       allow get: if isOwner(resource.data.ownerId);

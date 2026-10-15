@@ -149,4 +149,17 @@ Os dois percursos existentes afetados (narrativa 320 px e histórico por projeto
 passaram em seis projetos: **12/12**, 17,641 s, zero falhas/skips/flaky, workers 2,
 retries 0. Prettier, lint dirigido e diff check verdes; capturas 320 px inspecionadas
 nos três temas. Artefatos em `writer-v2-progress-qa/f205-adventure-header`.
-O novo SHA ainda precisa de sua própria CI; este resultado não aprova o head anterior.
+O commit `f4a0e422d01e225414aed07d2cae99764bf53902` foi enviado ao mesmo
+PR após pre-push verde: tipos e 1.423 testes em 155 arquivos (100,23 s).
+Sua [CI](https://github.com/gaabrielrd/writer/actions/runs/38708131239)
+aprovou validate Node 22/24, auditoria, produção e cinco shards visuais;
+as [regras](https://github.com/gaabrielrd/writer/actions/runs/38708131210)
+também passaram. O shard 3 foi cancelado após cerca de 15 minutos, com 141 passes,
+dois skips e nenhum erro/retry registrado; dois testes ficaram sem resultado.
+O último passe ocorreu 1,3 segundo antes do cancelamento. O limite de 15 minutos
+do job e o progresso contínuo indicam esgotamento do orçamento total; o log só
+informa “operation was canceled”, portanto a causa específica é inferida.
+O agregador falhou corretamente ao receber cancelled. CI continua pendente,
+sem aumentar timeout, repetir jobs ou enfraquecer asserções. Evidência externa:
+`writer-v2-progress-qa/ci-38708131239`. O incremento seguinte avança conforme a
+autorização de acompanhamento assíncrono, sem declarar F2-05 concluído na CI.

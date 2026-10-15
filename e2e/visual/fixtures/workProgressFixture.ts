@@ -144,7 +144,7 @@ async function state(target: Work.WorkTarget) {
 }
 async function sources(target: Work.ManuscriptTarget) {
   const sceneState = await fixtureSceneState({ kind: target.kind, id: target.id });
-  const result: { id: string; content: string }[] =
+  const result: { id: string; content: string; confirmedWords?: number }[] =
     target.kind === 'book'
       ? fixtureReadChapters(target.id)
           .filter((chapter) => !chapter.deleting && chapter.contentMode !== 'scenes')
@@ -155,12 +155,19 @@ async function sources(target: Work.ManuscriptTarget) {
     if (scene.archived || !group || group.deleting || group.contentMode !== 'scenes') continue;
     const content = sceneState.bodies[scene.id];
     if (typeof content !== 'string') throw failure('O texto da fonte está indisponível.');
-    result.push({ id: `scene:${scene.id}`, content });
+    result.push({
+      id: `scene:${scene.id}`,
+      content,
+      ...(target.kind === 'adventure' ? { confirmedWords: scene.wordCount } : {}),
+    });
   }
   return result.sort((a, b) => a.id.localeCompare(b.id));
 }
 async function total(target: Work.ManuscriptTarget) {
-  return (await sources(target)).reduce((sum, source) => sum + countWords(source.content), 0);
+  return (await sources(target)).reduce(
+    (sum, source) => sum + (source.confirmedWords ?? countWords(source.content)),
+    0,
+  );
 }
 function totals(current: ProjectState) {
   return {

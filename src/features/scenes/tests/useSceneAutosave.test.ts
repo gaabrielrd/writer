@@ -28,6 +28,36 @@ const advance = async (ms = 600) => {
     await vi.advanceTimersByTimeAsync(ms);
   });
 };
+it('metadados de outro bloco não adotam uma revisão cujo principal mudou em outro dispositivo', async () => {
+  const { result } = renderHook(() => useSceneAutosave('owner', document));
+  act(() => {
+    expect(
+      result.current.acceptMetadata({ ...mutation.scene, revision: 8, bodyHash: 'other-hash' }),
+    ).toBe(false);
+  });
+  expect(result.current.document.revision).toBe(document.revision);
+  expect(result.current.content).toBe(document.content);
+  expect(result.current.status).toBe('conflict');
+  act(() => result.current.change('Minha próxima edição'));
+  await advance();
+  expect(updateScene).not.toHaveBeenCalled();
+  vi.mocked(getScene).mockResolvedValueOnce({
+    ...document,
+    revision: 8,
+    bodyHash: 'other-hash',
+    content: 'Principal escrito em outro dispositivo',
+  });
+  await act(() => result.current.compare());
+  expect(result.current.content).toBe('Minha próxima edição');
+  act(() => result.current.resolve(true));
+  await advance();
+  expect(updateScene).toHaveBeenCalledWith(
+    expect.objectContaining({
+      expectedRevision: 8,
+      patch: { content: 'Minha próxima edição' },
+    }),
+  );
+});
 it('não grava ao abrir; debounce 600ms usa CAS e apaga somente rascunho confirmado', async () => {
   const { result } = renderHook(() => useSceneAutosave('owner', document));
   expect(result.current.status).toBe('saved');
@@ -194,7 +224,9 @@ it('alerta falha de armazenamento e recusa comparação de outro projeto', async
 });
 it('aceita revisão de metadados confirmados e salva texto com novo CAS', async () => {
   const { result } = renderHook(() => useSceneAutosave('owner', document));
-  act(() => result.current.acceptMetadata({ ...mutation.scene, revision: 4 }));
+  act(() => {
+    result.current.acceptMetadata({ ...mutation.scene, revision: 4 });
+  });
   act(() => result.current.change('Texto'));
   await advance();
   expect(updateScene).toHaveBeenCalledWith(expect.objectContaining({ expectedRevision: 4 }));

@@ -423,36 +423,61 @@ it('resposta de outra seleção não repõe o corpo escolhido depois', async () 
   expect(view.result.current.selected?.version.id).toBe('other-version');
 });
 
-it('restauração de cena recebe a revisão real e prepara o próximo autosave sem inventar versão', async () => {
-  const sceneTarget: VersionTarget = { kind: 'adventure', id: 'adventure' };
-  const sceneResource = { kind: 'scene' as const, id: 'scene' };
-  source = { ...source, target: sceneTarget, resource: sceneResource, revision: 4 };
-  version = { ...version, target: sceneTarget, resource: sceneResource };
-  restored = {
-    ...source,
-    content: original,
-    contentHash: version.contentHash,
-    sourceToken: 'b'.repeat(64),
-    revision: 5,
-  };
-  previousVersion = { ...previousVersion, target: sceneTarget, resource: sceneResource };
-  vi.mocked(listWorkVersions).mockResolvedValue({ items: [version], nextCursor: null });
-  vi.mocked(readWorkVersion).mockResolvedValue({
-    version,
-    chunks: [{ index: 0, content: original }],
-    nextCursor: null,
-  });
-  vi.mocked(restoreWorkVersion).mockResolvedValue({ source: restored, previousVersion });
-  adapter.resource = sceneResource;
-  const view = renderHook(() =>
-    useWorkHistory({ ...options(), target: sceneTarget, resource: sceneResource }),
-  );
-  await ready(view);
-  await act(() => view.result.current.select(version));
-  await act(() => view.result.current.restore());
-  expect(adapter.acceptRestored).toHaveBeenCalledExactlyOnceWith(restored);
-  expect(view.result.current.source?.revision).toBe(5);
-});
+it.each(['scene', 'block'] as const)(
+  'restauração de %s recebe revisão real e total confirmado',
+  async (kind) => {
+    const sceneTarget: VersionTarget = { kind: 'adventure', id: 'adventure' };
+    const sceneResource = { kind, id: 'source' };
+    source = {
+      ...source,
+      target: sceneTarget,
+      resource: sceneResource,
+      revision: 4,
+      sceneWordCount: 42,
+    };
+    version = { ...version, target: sceneTarget, resource: sceneResource };
+    restored = {
+      ...source,
+      content: original,
+      contentHash: version.contentHash,
+      sourceToken: 'b'.repeat(64),
+      revision: 5,
+      sceneWordCount: 39,
+    };
+    previousVersion = { ...previousVersion, target: sceneTarget, resource: sceneResource };
+    vi.mocked(listWorkVersions).mockResolvedValue({ items: [version], nextCursor: null });
+    vi.mocked(readWorkVersion).mockResolvedValue({
+      version,
+      chunks: [{ index: 0, content: original }],
+      nextCursor: null,
+    });
+    vi.mocked(restoreWorkVersion).mockResolvedValue({ source: restored, previousVersion });
+    adapter.resource = sceneResource;
+    const view = renderHook(() =>
+      useWorkHistory({ ...options(), target: sceneTarget, resource: sceneResource }),
+    );
+    await ready(view);
+    await act(() => view.result.current.select(version));
+    await act(() => view.result.current.restore());
+    expect(adapter.acceptRestored).toHaveBeenCalledExactlyOnceWith(restored);
+    expect(view.result.current.source?.revision).toBe(5);
+    expect(view.result.current.source?.sceneWordCount).toBe(39);
+  },
+);
+
+it.each([undefined, -1, Number.NaN])(
+  'não adota fonte de bloco com total de cena inválido %s',
+  async (sceneWordCount) => {
+    const target: VersionTarget = { kind: 'adventure', id: 'adventure' };
+    const resource = { kind: 'block' as const, id: 'additional-block' };
+    source = { ...source, target, resource, revision: 3, sceneWordCount };
+    adapter.resource = resource;
+    const view = renderHook(() => useWorkHistory({ ...options(), target, resource }));
+    await waitFor(() => expect(view.result.current.sourceError).toContain('verificada'));
+    expect(view.result.current.source).toBeNull();
+    expect(adapter.acceptRestored).not.toHaveBeenCalled();
+  },
+);
 
 it('comparação atualizada não libera criação ou restauração enquanto a base confirmada local diverge', async () => {
   vi.mocked(restoreWorkVersion).mockRejectedValueOnce(

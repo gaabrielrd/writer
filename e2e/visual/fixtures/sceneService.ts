@@ -39,6 +39,7 @@ import {
   fixtureSceneDocument,
   fixtureSceneError,
   fixtureSceneState,
+  fixtureSetSceneMainBody,
   fixtureSceneLoreLink,
   fixtureSyncSceneBook,
   fixtureUpdateCounts,
@@ -120,15 +121,14 @@ export async function updateScene(input: UpdateSceneInput): Promise<SceneMutatio
   if (sessionStorage.getItem('writer.visual.scene-conflict') === 'true') {
     sessionStorage.removeItem('writer.visual.scene-conflict');
     scene.revision += 1;
-    state.bodies[scene.id] = '<p>Versão remota: outro caminho entre as ilhas.</p>';
-    Object.assign(scene, await fixtureBody(state.bodies[scene.id]));
+    const remoteContent = '<p>Versão remota: outro caminho entre as ilhas.</p>';
+    fixtureSetSceneMainBody(state, scene, remoteContent, await fixtureBody(remoteContent));
     fixtureUpdateCounts(state, [scene.parentId]);
   }
   fixtureCas(scene, input.expectedRevision);
   if (input.patch.content !== undefined) {
     const body = await fixtureBody(input.patch.content);
-    state.bodies[scene.id] = input.patch.content;
-    Object.assign(scene, body);
+    fixtureSetSceneMainBody(state, scene, input.patch.content, body);
   }
   if (input.patch.title !== undefined) scene.title = input.patch.title.trim();
   if (input.patch.stage !== undefined) scene.stage = input.patch.stage;
@@ -215,6 +215,14 @@ export async function getScene(input: {
   try {
     const state = await fixtureSceneState(input.target);
     const scene = state.scenes[input.sceneId];
+    if (
+      scene &&
+      input.target.kind === 'adventure' &&
+      sessionStorage.getItem('writer.visual.preview-seed') === 'true'
+    ) {
+      const { fixtureSeedAdventurePreview } = await import('./adventureBlocksFixture');
+      await fixtureSeedAdventurePreview(state, scene);
+    }
     return scene ? fixtureSceneDocument(state, scene) : null;
   } catch {
     return null;

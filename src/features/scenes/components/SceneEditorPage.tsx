@@ -5,6 +5,16 @@ import { useWorkActivity, WorkActivityNotice } from '@/features/work-progress';
 import { RichEditor, BusyNavigationGuard } from '@/features/editor';
 import { countWords } from '@/features/books';
 import {
+  AdventureBlockNavigator,
+  AdventureBlockCountRecovery,
+  AdventureBlockImageEditor,
+  AdventureScenePreviewDialog,
+  useAdventureBlockMutation,
+  type AdventureBlockNavigatorProps,
+  type AdventureBlockTotals,
+  type AdventureBlockSummary,
+} from '@/features/adventure-blocks';
+import {
   WorkHistoryDialog,
   readPendingWorkHistoryOperation,
   type VersionEditorAdapter,
@@ -67,7 +77,19 @@ function SceneEditorLoader({
     () => getScene({ target, sceneId }),
   );
   if (request.loading) return <LoadingState label="Carregando cena…" />;
-  if (request.error) return <ErrorState error={request.error} onRetry={request.retry} />;
+  if (request.error)
+    return (
+      <>
+        <ErrorState error={request.error} onRetry={request.retry} />
+        {target.kind === 'adventure' && (
+          <AdventureBlockCountRecovery
+            adventureId={target.id}
+            sceneId={sceneId}
+            onRecovered={request.retry}
+          />
+        )}
+      </>
+    );
   const document = request.value;
   if (
     !document ||
@@ -111,9 +133,19 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
     ),
   );
   const historyPendingRef = useRef(historyPending);
-  const operationBusy = editorBusy || historyBusy || historyPending;
+  const [blocksPending, setBlocksPending] = useState(false);
+  const [blocksBusy, setBlocksBusy] = useState(false);
+  const blocksPendingRef = useRef(false);
+  const blocksLock = useRef(false);
+  const operationBusy = editorBusy || historyBusy || historyPending || blocksPending || blocksBusy;
   const active = useRef(true);
   const doc = autosave.document;
+  const liveAutosave = useRef(autosave);
+  const liveUid = useRef(user?.uid);
+  useLayoutEffect(() => {
+    liveAutosave.current = autosave;
+    liveUid.current = user?.uid;
+  }, [autosave, user?.uid]);
   const target = { kind: initial.project.kind, id: initial.project.id };
   const projectUrl = `/${target.kind === 'book' ? 'books' : 'adventures'}/${encodeURIComponent(target.id)}`;
   const navigationState: unknown = location.state;
@@ -160,6 +192,14 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   });
   const historyAdapter: VersionEditorAdapter = {
     resource: { kind: 'scene', id: initial.id },
+    destinationAudience:
+      target.kind === 'adventure'
+        ? doc.mainBlockAudience === 'players'
+          ? 'Jogadores'
+          : doc.mainBlockAudience === 'gm'
+            ? 'Mestre'
+            : 'Privado do criador'
+        : undefined,
     blockedReason:
       operationBusy || autosave.status !== 'saved' || autosave.recovery
         ? 'Confirme o salvamento e resolva a recuperação antes de guardar ou restaurar uma versão.'
@@ -170,6 +210,8 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         !active.current ||
         user?.uid !== uid ||
         editorBusyRef.current ||
+        blocksLock.current ||
+        blocksPendingRef.current ||
         historyLock.current ||
         (historyPendingRef.current && !options?.recovery) ||
         autosave.status !== 'saved' ||
@@ -204,10 +246,17 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         source.revision === null
       )
         throw new Error('Esta confirmação não pertence à cena aberta.');
+      const mainWords = countWords(source.content);
+      const words = target.kind === 'adventure' ? source.sceneWordCount : mainWords;
+      if (!Number.isSafeInteger(words) || words === undefined || words < mainWords)
+        throw new Error('O total confirmado da cena não pôde ser verificado.');
       autosave.acceptConfirmedContent({
         content: source.content,
         revision: source.revision,
-        wordCount: countWords(source.content),
+        wordCount: words,
+        ...(target.kind === 'adventure'
+          ? { mainWordCount: mainWords, blockWordCount: words - mainWords }
+          : {}),
         bodyHash: source.contentHash,
         bodyBytes: new TextEncoder().encode(source.content).byteLength,
       });
@@ -219,9 +268,86 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
       if (!active.current) return;
       historyPendingRef.current = pending;
       setHistoryPending(pending);
-      setPendingEditorOperation(pending || historyLock.current || editorBusyRef.current);
+      setPendingEditorOperation(
+        pending ||
+          historyLock.current ||
+          editorBusyRef.current ||
+          blocksPendingRef.current ||
+          blocksLock.current,
+      );
     },
     [setPendingEditorOperation],
+  );
+  const onBlocksPendingChange = useCallback(
+    (pending: boolean) => {
+      if (!active.current) return;
+      blocksPendingRef.current = pending;
+      setBlocksPending(pending);
+      setPendingEditorOperation(
+        pending ||
+          blocksLock.current ||
+          historyLock.current ||
+          historyPendingRef.current ||
+          editorBusyRef.current,
+      );
+    },
+    [setPendingEditorOperation],
+  );
+  const onBlocksSceneChange = useCallback(
+    (totals: AdventureBlockTotals, block?: AdventureBlockSummary) => {
+      if (!active.current || liveUid.current !== uid) return;
+      const current = liveAutosave.current;
+      const main = block?.resource.kind === 'scene' ? block : undefined;
+      const mainWords =
+        main?.wordCount ?? current.document.mainWordCount ?? countWords(current.document.content);
+      current.acceptMetadata({
+        ...current.document,
+        revision: totals.sceneRevision,
+        wordCount: totals.sceneWordCount,
+        bodyHash: totals.mainBodyHash,
+        mainWordCount: mainWords,
+        blockWordCount: totals.sceneWordCount - mainWords,
+        blocksStructureRevision: totals.structureRevision,
+        ...(main
+          ? {
+              mainBlockTitle: main.title,
+              mainBlockType: main.narrativeType,
+              mainBlockAudience: main.audience,
+              mainBlockOrder: main.order,
+              bodyBytes: main.bodyBytes,
+            }
+          : {}),
+      });
+    },
+    [uid],
+  );
+  const runBlocksExclusive = useCallback(
+    async <T,>(work: () => Promise<T>): Promise<T> => {
+      if (
+        !active.current ||
+        liveUid.current !== uid ||
+        blocksLock.current ||
+        historyLock.current ||
+        historyPendingRef.current ||
+        editorBusyRef.current
+      )
+        throw new Error('Confirme o salvamento e as operações pendentes antes de continuar.');
+      blocksLock.current = true;
+      setBlocksBusy(true);
+      setPendingEditorOperation(true);
+      try {
+        return await liveAutosave.current.runExclusive(work);
+      } finally {
+        blocksLock.current = false;
+        if (active.current) {
+          setBlocksBusy(false);
+          setPendingEditorOperation(
+            blocksPendingRef.current || historyPendingRef.current || editorBusyRef.current,
+          );
+        }
+      }
+    },
+    [uid, setPendingEditorOperation],
   );
   const labels = {
     saved: 'Salvo',
@@ -232,7 +358,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   };
   return (
     <main className={styles.editor}>
-      <BusyNavigationGuard busy={historyBusy || historyPending} />
+      <BusyNavigationGuard busy={historyBusy || historyPending || blocksBusy || blocksPending} />
       <WorkHistoryDialog
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
@@ -253,6 +379,10 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           <Link
             to={returnUrl}
             onClick={(event) => {
+              if (blocksLock.current || blocksPendingRef.current) {
+                event.preventDefault();
+                return;
+              }
               if (historyLock.current || historyPendingRef.current) {
                 event.preventDefault();
                 setHistoryOpen(true);
@@ -271,7 +401,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
       <div className={styles.toolbar}>
         <Button
           variant="outline"
-          disabled={historyBusy || editorBusy}
+          disabled={historyBusy || editorBusy || blocksBusy || blocksPending}
           onClick={() => setHistoryOpen(true)}
         >
           Histórico do texto
@@ -279,14 +409,34 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         <Badge>{sceneStageLabels[doc.stage]}</Badge>
         <span role="status">{labels[autosave.status]}</span>
         <span className={styles.meta}>
-          {doc.wordCount.toLocaleString('pt-BR')} palavras confirmadas
+          {target.kind === 'adventure'
+            ? `${(doc.mainWordCount ?? doc.wordCount).toLocaleString('pt-BR')} palavras no texto principal · ${doc.wordCount.toLocaleString('pt-BR')} na cena`
+            : `${doc.wordCount.toLocaleString('pt-BR')} palavras confirmadas`}
         </span>
         {doc.archived && <Badge variant="secondary">Arquivada: fora da composição</Badge>}
       </div>
       <p className={styles.hint}>
-        A prosa desta cena compõe seu agrupador quando está ativa. O planejamento e as referências
-        permanecem privados.
+        {target.kind === 'adventure'
+          ? 'O texto principal e os blocos ativos compõem a cena. A audiência prepara apenas a prévia; não compartilha o conteúdo automaticamente.'
+          : 'A prosa desta cena compõe seu agrupador quando está ativa. O planejamento e as referências permanecem privados.'}
       </p>
+      {target.kind === 'adventure' && (
+        <AdventureSceneBlocks
+          adventureId={target.id}
+          sceneId={doc.id}
+          sceneRevision={doc.revision}
+          disabled={
+            historyBusy ||
+            historyPending ||
+            editorBusy ||
+            autosave.status !== 'saved' ||
+            Boolean(autosave.recovery)
+          }
+          runExclusive={runBlocksExclusive}
+          onPendingChange={onBlocksPendingChange}
+          onSceneChange={onBlocksSceneChange}
+        />
+      )}
       <Alert variant="info">
         A assistência de IA ainda não está disponível para cenas. Você pode escrever e formatar
         manualmente.
@@ -314,14 +464,22 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           <RichEditor
             ariaLabel="Área de escrita da cena"
             documentId={[uid, target.kind, target.id, doc.id].join(':')}
-            chapterTitle={doc.title}
+            chapterTitle={
+              target.kind === 'adventure' ? (doc.mainBlockTitle ?? 'Texto principal') : doc.title
+            }
             bookTitle={doc.project.title}
             placeholder="Comece a escrever sua cena aqui…"
             content={autosave.content}
-            externalBusy={historyBusy || historyPending}
+            externalBusy={historyBusy || historyPending || blocksBusy || blocksPending}
             externalContentVersion={historyContentVersion}
             onChange={(content) => {
-              if (!historyLock.current && !historyPendingRef.current) autosave.change(content);
+              if (
+                !historyLock.current &&
+                !historyPendingRef.current &&
+                !blocksLock.current &&
+                !blocksPendingRef.current
+              )
+                autosave.change(content);
             }}
             entities={entities}
             onSelectEntity={setSelected}
@@ -444,5 +602,65 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         </Dialog>
       )}
     </main>
+  );
+}
+
+function AdventureSceneBlocks({
+  adventureId,
+  sceneId,
+  sceneRevision,
+  disabled,
+  runExclusive,
+  onPendingChange,
+  onSceneChange,
+}: Pick<
+  AdventureBlockNavigatorProps,
+  'adventureId' | 'sceneId' | 'disabled' | 'runExclusive' | 'onPendingChange' | 'onSceneChange'
+> & { sceneRevision: number }) {
+  const [imageReserved, setImageReserved] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const mutation = useAdventureBlockMutation(adventureId, sceneId, {
+    onPendingChange,
+    onResult: (result) => onSceneChange?.(result, 'block' in result ? result.block : undefined),
+  });
+  return (
+    <>
+      <AdventureBlockNavigator
+        adventureId={adventureId}
+        sceneId={sceneId}
+        sceneRevision={sceneRevision}
+        activeResource={{ kind: 'scene', id: sceneId }}
+        disabled={disabled || imageReserved}
+        runExclusive={runExclusive}
+        operationController={mutation}
+        onSceneChange={onSceneChange}
+        onPendingChange={onPendingChange}
+      />
+      <div className={styles.actions}>
+        <AdventureBlockImageEditor
+          adventureId={adventureId}
+          sceneId={sceneId}
+          resource={{ kind: 'scene', id: sceneId }}
+          revision={sceneRevision}
+          disabled={disabled}
+          runExclusive={runExclusive}
+          operationController={mutation}
+          onReservationChange={setImageReserved}
+        />
+        <Button
+          variant="outline"
+          disabled={disabled || imageReserved || mutation.busy || Boolean(mutation.pending)}
+          onClick={() => setPreviewOpen(true)}
+        >
+          Conferir prévia da cena
+        </Button>
+      </div>
+      <AdventureScenePreviewDialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        adventureId={adventureId}
+        sceneId={sceneId}
+      />
+    </>
   );
 }

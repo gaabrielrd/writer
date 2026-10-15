@@ -5,6 +5,7 @@ import { createWorkProgressService } from './workProgress.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { prepareLegacyChapterTextWrite } from './workProgressLegacy.mjs';
 import { createScenesService } from './scenes.mjs';
+import { createAdventureBlocksService } from './adventureBlocks.mjs';
 import {
   workProject,
   workLimit,
@@ -32,7 +33,8 @@ import {
 export function createWorkHistoryService({ db, now = Date.now }) {
   const progress = createWorkProgressService({ db, now }),
     ledger = createWorkProgressLedger({ db }),
-    scenes = createScenesService({ db, now });
+    scenes = createScenesService({ db, now }),
+    blocks = createAdventureBlocksService({ db, now });
   function operation(context, data, method, payload) {
     const id = validateId(data.operationId);
     return {
@@ -270,25 +272,32 @@ export function createWorkHistoryService({ db, now = Date.now }) {
           workDate(now, current.root.updatedAt ?? 0),
         );
         const write =
-          resource.kind === 'chapter'
-            ? await prepareLegacyChapterTextWrite(tx, {
-                db,
-                now,
-                countWords: countVisibleWords,
-                ledger,
-                context,
-                root: current.root,
-                id: resource.id,
-                stored: current.record,
-                content,
-              })
-            : await scenes.prepareSceneTextWrite(tx, {
+          resource.kind === 'block'
+            ? await blocks.prepareAdventureBlockTextWrite(tx, {
                 uid,
                 target: context.target,
-                root: current.root,
                 snapshot: current.snapshot,
                 content,
-              });
+              })
+            : resource.kind === 'chapter'
+              ? await prepareLegacyChapterTextWrite(tx, {
+                  db,
+                  now,
+                  countWords: countVisibleWords,
+                  ledger,
+                  context,
+                  root: current.root,
+                  id: resource.id,
+                  stored: current.record,
+                  content,
+                })
+              : await scenes.prepareSceneTextWrite(tx, {
+                  uid,
+                  target: context.target,
+                  root: current.root,
+                  snapshot: current.snapshot,
+                  content,
+                });
         const after =
           resource.kind === 'chapter'
             ? { contentHash: digest(content), updatedAt: write.result.updatedAt }

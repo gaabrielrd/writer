@@ -7,6 +7,8 @@ import {
   workScope,
   readWorkMetadata,
 } from './workProgressContracts.mjs';
+import { adventureBlockState } from './adventureBlocksState.mjs';
+import { readAdventureResource, readAdventureBody } from './adventureBlocksContracts.mjs';
 export { digest, workFail };
 export const CHUNK_BYTES = 64 * 1024;
 export function historyScope(db, uid, data, fields) {
@@ -16,7 +18,11 @@ export function historyScope(db, uid, data, fields) {
 }
 export function historyResource(value, target) {
   workClosed(value, ['kind', 'id']);
-  if (!(value.kind === 'scene' || (value.kind === 'chapter' && target.kind === 'book')))
+  if (!(
+    value.kind === 'scene' ||
+    (value.kind === 'chapter' && target.kind === 'book') ||
+    (value.kind === 'block' && target.kind === 'adventure')
+  ))
     workFail('invalid-argument', 'Fonte inválida para este projeto.');
   return { kind: value.kind, id: workId(value.id) };
 }
@@ -38,6 +44,47 @@ function timestamp(snapshot) {
   return { seconds: value.seconds, nanoseconds: value.nanoseconds };
 }
 export async function readHistorySource(tx, db, context, resource) {
+  if (resource.kind === 'block') {
+    let value;
+    try {
+      value = await readAdventureResource(tx, db, context, resource);
+    } catch (cause) {
+      if (cause.code === 'not-found') return null;
+      throw cause;
+    }
+    const body = await readAdventureBody(tx, db, value),
+      contentHash = digest(body.content),
+      token = digest({
+        version: 1,
+        uid: context.uid,
+        target: context.target,
+        resource,
+        metadata: timestamp(value.blockSnapshot),
+        body: timestamp(body.snapshot),
+        contentHash,
+        revision: value.block.revision,
+      });
+    return {
+      root: value.root,
+      snapshot: value.blockSnapshot,
+      record: value.block,
+      source: {
+        target: context.target,
+        resource,
+        title: value.block.title,
+        content: body.content,
+        sourceToken: token,
+        contentHash,
+        revision: value.block.revision,
+        sceneWordCount: value.state.total,
+      },
+      marker: {
+        contentHash,
+        updatedAt: value.block.updatedAt ?? 0,
+        revision: value.block.revision,
+      },
+    };
+  }
   const root = await workProject(tx, context),
     ref = db.doc(
       context.path +
@@ -115,6 +162,9 @@ export async function readHistorySource(tx, db, context, resource) {
       sourceToken: token,
       contentHash,
       revision: resource.kind === 'scene' ? record.revision : null,
+      ...(context.target.kind === 'adventure'
+        ? { sceneWordCount: adventureBlockState(record).total }
+        : {}),
     },
     marker: {
       contentHash,

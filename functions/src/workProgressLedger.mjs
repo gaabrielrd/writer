@@ -1,4 +1,5 @@
 import { countVisibleWords } from './visibleWordCount.mjs';
+import { adventureBlockExtra } from './adventureBlocksState.mjs';
 import {
   digest,
   workPath,
@@ -89,6 +90,15 @@ export function createWorkProgressLedger({ db, countWords = countVisibleWords })
             'archived',
             'contentMode',
             'deleting',
+            'hasBlocks',
+            'mainWordCount',
+            'blockWordCount',
+            'blockCount',
+            'wordCount',
+            'revision',
+            'blocksStructureRevision',
+            'nextBlockOrder',
+            'mainBlockOrder',
           ])
         ).data();
       if (current?.bookId && current.bookId !== target.id)
@@ -127,7 +137,10 @@ export function createWorkProgressLedger({ db, countWords = countVisibleWords })
       }
       if (content !== undefined && typeof content !== 'string')
         workFail('invalid-argument', 'Texto inválido.');
-      const words = eligible ? countWords(content ?? '') : 0;
+      const blockScene = change.blockScene ?? current,
+        extra =
+          change.kind === 'scene' && !change.removed ? adventureBlockExtra(target, blockScene) : 0,
+        words = eligible ? countWords(content ?? '') + extra : 0;
       if (!Number.isSafeInteger(words) || words < 0)
         workFail('failed-precondition', 'Contagem de palavras inválida.');
       sources.push({
@@ -147,6 +160,13 @@ export function createWorkProgressLedger({ db, countWords = countVisibleWords })
             groupId,
             removed: Boolean(change.removed),
             eligible,
+            ...(target.kind === 'adventure' && change.kind === 'scene'
+              ? {
+                  blockWordCount: extra,
+                  sceneRevision: blockScene?.revision ?? null,
+                  blocksStructureRevision: blockScene?.blocksStructureRevision ?? 0,
+                }
+              : {}),
           }),
           countVersion: 1,
         },

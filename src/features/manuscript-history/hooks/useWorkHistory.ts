@@ -85,6 +85,11 @@ const invalidResponse = () =>
     new Error('A confirmação recebida não pôde ser verificada. Confirme o mesmo pedido novamente.'),
     { code: 'functions/unavailable' },
   );
+const validSceneTotal = (source: VersionSource) =>
+  source.target.kind !== 'adventure' ||
+  (Number.isSafeInteger(source.sceneWordCount) &&
+    source.sceneWordCount !== undefined &&
+    source.sceneWordCount >= 0);
 const accessDenied = (cause: unknown) => {
   const code =
     typeof cause === 'object' && cause !== null && 'code' in cause
@@ -201,6 +206,7 @@ export function useWorkHistory(options: UseWorkHistoryOptions) {
       !sameVersionResource(source.resource, wanted) ||
       !/^[a-f0-9]{64}$/.test(source.sourceToken) ||
       typeof source.content !== 'string' ||
+      !validSceneTotal(source) ||
       (wanted.kind === 'chapter'
         ? source.revision !== null
         : !Number.isSafeInteger(source.revision) || source.revision === null || source.revision < 0)
@@ -405,7 +411,8 @@ export function useWorkHistory(options: UseWorkHistoryOptions) {
           !sameVersionTarget(result.source.target, target) ||
           !sameVersionResource(result.source.resource, pending.input.resource) ||
           !/^[a-f0-9]{64}$/.test(result.source.sourceToken) ||
-          (pending.input.resource.kind === 'scene'
+          !validSceneTotal(result.source) ||
+          (pending.input.resource.kind !== 'chapter'
             ? !Number.isSafeInteger(result.source.revision) ||
               result.source.revision === null ||
               result.source.revision < 0

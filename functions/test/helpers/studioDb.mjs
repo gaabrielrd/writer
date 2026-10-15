@@ -47,8 +47,8 @@ export function studioDb() {
     return {
       ...definition,
       where: (key, op, value) => {
-        assert.equal(op, '==');
-        return query(path, [...filters, [key, value]], orders, maximum, cursor, fields);
+        assert.ok(['==', 'in'].includes(op));
+        return query(path, [...filters, [key, value, op]], orders, maximum, cursor, fields);
       },
       orderBy: (key, direction = 'asc') =>
         query(path, filters, [...orders, [key, direction]], maximum, cursor, fields),
@@ -72,7 +72,9 @@ export function studioDb() {
       (path) =>
         path.startsWith(collectionPath + '/') &&
         !path.slice(collectionPath.length + 1).includes('/') &&
-        filters.every(([key, value]) => field(path, key) === value) &&
+        filters.every(([key, value, op]) =>
+          op === 'in' ? value.includes(field(path, key)) : field(path, key) === value,
+        ) &&
         orders.every(([key]) => field(path, key) !== undefined),
     );
     paths.sort(comparator);

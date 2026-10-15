@@ -1,5 +1,5 @@
 export type VersionTarget = { kind: 'book' | 'adventure'; id: string };
-export type VersionResource = { kind: 'chapter' | 'scene'; id: string };
+export type VersionResource = { kind: 'chapter' | 'scene' | 'block'; id: string };
 export interface VersionSource {
   target: VersionTarget;
   resource: VersionResource;
@@ -8,6 +8,8 @@ export interface VersionSource {
   sourceToken: string;
   contentHash: string;
   revision: number | null;
+  /** Confirmed scene total when an adventure contains independently edited blocks. */
+  sceneWordCount?: number;
 }
 export interface VersionSummary {
   id: string;
@@ -61,6 +63,7 @@ export interface RestoreWorkVersionResult {
 export interface VersionEditorAdapter {
   resource: VersionResource;
   blockedReason?: string;
+  destinationAudience?: string;
   getConfirmedContent: () => string | null;
   runExclusive: <T>(work: () => Promise<T>, options?: { recovery: boolean }) => Promise<T>;
   acceptRestored: (source: VersionSource) => void | Promise<void>;

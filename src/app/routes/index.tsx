@@ -13,6 +13,7 @@ import { EditorPage } from '@/features/editor';
 import { AISettingsPage } from '@/features/ai-assistant';
 import { StudioPage } from '@/features/studio';
 import { AdventurePage } from '@/features/adventures';
+import { AdventureBlockEditorPage } from '@/features/adventure-blocks';
 import { SceneEditorPage } from '@/features/scenes';
 import { CampaignPage } from '@/features/campaigns';
 import { SignedInRoute } from '@/app/components/SignedInRoute';
@@ -66,6 +67,14 @@ export const routes: RouteObject[] = [
         element: (
           <SignedInRoute>
             <SceneEditorPage />
+          </SignedInRoute>
+        ),
+      },
+      {
+        path: 'adventures/:adventureId/scenes/:sceneId/blocks/:blockId',
+        element: (
+          <SignedInRoute>
+            <AdventureBlockEditorPage />
           </SignedInRoute>
         ),
       },

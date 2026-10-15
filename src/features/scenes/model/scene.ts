@@ -18,6 +18,16 @@ export interface SceneSummary {
   bodyBytes: number;
   createdAt: number;
   updatedAt: number;
+  mainWordCount?: number;
+  blockWordCount?: number;
+  blockCount?: number;
+  blocksStructureRevision?: number;
+  nextBlockOrder?: number;
+  mainBlockOrder?: number;
+  mainBlockTitle?: string;
+  mainBlockType?:
+    'introduction' | 'preparation' | 'scene' | 'location' | 'quest' | 'clue' | 'ending';
+  mainBlockAudience?: 'creator' | 'gm' | 'players';
 }
 export interface SceneGroup {
   id: string | null;

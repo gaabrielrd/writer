@@ -26,10 +26,11 @@ function validPending(value: unknown, target: VersionTarget): value is PendingWo
   const resource = resourceOf(pending);
   if (
     !resource ||
-    !['chapter', 'scene'].includes(resource.kind) ||
+    !['chapter', 'scene', 'block'].includes(resource.kind) ||
     typeof resource.id !== 'string' ||
     !resource.id ||
-    (target.kind === 'adventure' && resource.kind === 'chapter')
+    (target.kind === 'adventure' && resource.kind === 'chapter') ||
+    (target.kind === 'book' && resource.kind === 'block')
   )
     return false;
   if (pending.kind === 'delete' || pending.kind === 'restore') {

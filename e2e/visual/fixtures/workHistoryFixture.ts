@@ -9,6 +9,7 @@ import {
 import { fixtureGet, fixtureOwner } from './studioStore';
 import { fixtureContentHash, fixtureSceneState } from './sceneStore';
 import { updateScene } from './sceneService';
+import { getAdventureBlock, updateAdventureBlock } from './adventureBlocksFixture';
 import { FIXTURE_TIME } from './data';
 
 type SavedVersion = { summary: History.VersionSummary; chunks: string[] };
@@ -70,7 +71,20 @@ async function source(
 ): Promise<History.VersionSource | null> {
   await authorize(target);
   let title: string, content: string, stamp: string, revision: number | null;
-  if (resource.kind === 'chapter') {
+  let sceneWordCount: number | undefined;
+  if (resource.kind === 'block') {
+    if (target.kind !== 'adventure') return null;
+    const block = await getAdventureBlock({
+      adventureId: target.id,
+      resource: { kind: 'block', id: resource.id },
+    });
+    if (!block) return null;
+    title = block.title;
+    content = block.content;
+    stamp = `${block.updatedAt}:${block.revision}`;
+    revision = block.revision;
+    sceneWordCount = block.sceneWordCount;
+  } else if (resource.kind === 'chapter') {
     if (target.kind !== 'book') return null;
     const chapter = fixtureReadChapters(target.id).find((item) => item.id === resource.id);
     if (!chapter || chapter.deleting || chapter.contentMode === 'scenes') return null;
@@ -91,6 +105,7 @@ async function source(
     content = state.bodies[resource.id];
     stamp = `${scene.updatedAt}:${scene.revision}`;
     revision = scene.revision;
+    if (target.kind === 'adventure') sceneWordCount = scene.wordCount;
   }
   const contentHash = await fixtureContentHash(content);
   return {
@@ -99,6 +114,7 @@ async function source(
     title,
     content,
     revision,
+    ...(sceneWordCount === undefined ? {} : { sceneWordCount }),
     contentHash,
     sourceToken: await fixtureContentHash(
       JSON.stringify([targetKey(target), resource, stamp, contentHash]),
@@ -268,7 +284,15 @@ export async function readWorkVersion(input: {
   });
 }
 async function replaceSource(current: History.VersionSource, content: string, operationId: string) {
-  if (current.resource.kind === 'chapter') {
+  if (current.resource.kind === 'block') {
+    await updateAdventureBlock({
+      adventureId: current.target.id,
+      resource: { kind: 'block', id: current.resource.id },
+      operationId,
+      expectedRevision: current.revision!,
+      patch: { content },
+    });
+  } else if (current.resource.kind === 'chapter') {
     const chapter = fixtureReadChapters(current.target.id).find(
       (item) => item.id === current.resource.id,
     )!;
@@ -302,7 +326,7 @@ export async function restoreWorkVersion(
   if (prior.result) {
     if (current.sourceToken !== prior.result.source.sourceToken)
       fail('A restauração já foi aplicada e o texto mudou depois. Compare a versão atual.');
-    return structuredClone(prior.result);
+    return structuredClone({ ...prior.result, source: current });
   }
   if (current.sourceToken !== input.expectedSourceToken)
     fail('O texto salvo mudou. Compare a versão atual antes de continuar.');

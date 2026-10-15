@@ -67,14 +67,14 @@ npm run test:coverage -- --maxWorkers=2
 
 A CI mantém o `validate` completo nos dois ambientes Node 22 e 24. O navegador
 de produção e a suíte visual executam em jobs separados. A suíte visual inteira
-é distribuída por seis shards em paralelo, com dois workers por runner, incluindo
+é distribuída por oito shards em paralelo, com dois workers por runner, incluindo
 desktop/celular e claro/escuro/sépia. Os testes de seleção parcial pertencem à
 mesma suíte e passam a executar uma vez por projeto.
 
 Para reproduzir um dos shards, substitua o número antes da barra:
 
 ```bash
-npx playwright test -c playwright.visual.config.ts --shard=1/6
+npx playwright test -c playwright.visual.config.ts --shard=1/8
 ```
 
 Cada shard publica um blob e suas capturas/traces com nome próprio.
@@ -222,6 +222,23 @@ no workflow. Não aceitar um teste passando só porque o salvamento terminou
 antes da seleção: a transição durante o gesto faz parte da regressão protegida.
 
 ## Roadmap Writer e regras reais
+
+Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
+em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
+ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.
+`functions/test/adventureBlocks.test.mjs` e `adventurePreview.test.mjs` verificam
+escritores, projeção sem ler corpos secretos, whitelist, paginação por bytes,
+usos tipados e derivação/revogação de mídia. Os SDKs correspondentes em
+`tests/firestore` usam regras/Admin reais para isolamento, CAS, concorrência e
+contadores. Capturas não substituem essas provas.
+
+`e2e/visual/adventure-blocks.visual.ts` e `adventure-preview.visual.ts` usam os
+editores, filas, recuperação, validação do DTO e renderer reais. Só os transportes
+adventureBlockCallables/adventurePreviewCallables são substituídos por fixtures
+locais; a conferência dos segredos no HTML é da projeção recebida, sem esconder
+texto por CSS. Roteiros incluem três modos, imagens, paginação, perda de resposta,
+revogação, teclado e 320 px. Resultados reais ficam no
+[contrato F2-06](tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
 
 O histórico possui testes colocalizados em `manuscript-history`, editores e cenas.
 Cobrem corpus exato, manifesto/blocos/hash, conta/recurso, seleção tardia, recibo

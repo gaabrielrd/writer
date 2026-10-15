@@ -76,3 +76,22 @@ it('registro danificado de outra origem não oculta um recibo válido do recurso
     readPendingWorkHistoryOperation('owner', target, { kind: 'chapter', id: 'chapter-y' }),
   ).toEqual(other);
 });
+
+it('isola recibos do bloco adicional e recusa essa identidade no livro', () => {
+  const adventure: VersionTarget = { kind: 'adventure', id: 'adventure' };
+  const block: PendingWorkHistoryOperation = {
+    ...pending,
+    input: { ...pending.input, target: adventure, resource: { kind: 'block', id: 'same-id' } },
+  };
+  writePendingWorkHistoryOperation('owner', block);
+  expect(readPendingWorkHistoryOperation('owner', adventure, block.input.resource)).toEqual(block);
+  expect(
+    readPendingWorkHistoryOperation('owner', adventure, { kind: 'scene', id: 'same-id' }),
+  ).toBeNull();
+  expect(() =>
+    writePendingWorkHistoryOperation('owner', {
+      ...block,
+      input: { ...block.input, target },
+    }),
+  ).toThrow('preservar o pedido');
+});
