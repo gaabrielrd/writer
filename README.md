@@ -39,10 +39,13 @@ F2-07 está em implementação: a gestão de campanhas permite editar dados, esc
 estado e trocar o universo organizacional, preservando o checklist e a procedência.
 O incremento de captura acrescenta preparação retomável de aventura própria,
 base congelada completa e somente lore explicitamente referenciado, com leitura
-privada de material, narrativa, arquivo e ilustrações. A captura está validada
-localmente; acompanhe o CI e a [evidência](docs/entregas/2026-10-15-writer-v2-captura-de-aventura.md).
-Variantes, atualização
-explícita e exclusão integral seguem nas próximas etapas do
+privada de material, narrativa, arquivo e ilustrações. A captura está concluída
+tecnicamente em f97455d, com CI verde; veja a [evidência](docs/entregas/2026-10-15-writer-v2-captura-de-aventura.md).
+Notas próprias acrescentam título/texto simples particulares, com recuperação de
+pedidos sem resposta e isolamento entre mesas/abas. Continuam acessíveis quando a
+origem da base fica indisponível; não copiam lore automaticamente. C1 está validado
+localmente, com CI pendente; veja a [entrega](docs/entregas/2026-10-15-writer-v2-notas-da-campanha.md).
+Variantes, atualização explícita e exclusão integral seguem nas próximas etapas do
 [contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)

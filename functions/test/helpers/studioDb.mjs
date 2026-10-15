@@ -5,8 +5,10 @@ export function studioDb() {
   const records = new Map(),
     metadata = new Map(),
     versions = new Map(),
+    creations = new Map(),
     reads = [];
-  let queue = Promise.resolve();
+  let queue = Promise.resolve(),
+    creationSequence = 0;
   const stamp = (value, nanos = 0) => ({
     toMillis: () => value,
     seconds: Math.floor(value / 1000),
@@ -26,7 +28,10 @@ export function studioDb() {
           : record,
       );
     },
-    createTime: stamp(metadata.get(path)?.createdAt ?? 10),
+    createTime: stamp(
+      metadata.get(path)?.createdAt ?? 10,
+      metadata.get(path)?.createdAtNanoseconds ?? creations.get(path) ?? 0,
+    ),
     updateTime: stamp(
       metadata.get(path)?.updatedAt ?? 20,
       metadata.get(path)?.updatedAtNanoseconds ?? versions.get(path) ?? 0,
@@ -108,12 +113,14 @@ export function studioDb() {
           },
           set: (ref, value) =>
             writes.push(() => {
+              if (!records.has(ref.path)) creations.set(ref.path, ++creationSequence);
               records.set(ref.path, structuredClone(value));
               versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
             }),
           create: (ref, value) =>
             writes.push(() => {
               assert.ok(!records.has(ref.path));
+              creations.set(ref.path, ++creationSequence);
               records.set(ref.path, structuredClone(value));
               versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
             }),
@@ -123,7 +130,11 @@ export function studioDb() {
               records.set(ref.path, { ...records.get(ref.path), ...structuredClone(value) });
               versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
             }),
-          delete: (ref) => writes.push(() => records.delete(ref.path)),
+          delete: (ref) =>
+            writes.push(() => {
+              records.delete(ref.path);
+              creations.delete(ref.path);
+            }),
         };
         const value = await operation(tx);
         writes.forEach((write) => write());
@@ -134,7 +145,10 @@ export function studioDb() {
     },
     recursiveDelete: async (ref) => {
       for (const path of records.keys())
-        if (path === ref.path || path.startsWith(ref.path + '/')) records.delete(path);
+        if (path === ref.path || path.startsWith(ref.path + '/')) {
+          records.delete(path);
+          creations.delete(path);
+        }
     },
   };
   return { db, records, metadata, reads };

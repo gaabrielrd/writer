@@ -547,6 +547,32 @@ Variantes, atualização explícita e exclusão integral de campanha conservam e
 próprias. Veja [ADR 0031](decisions/0031-campaign-frozen-bases.md) e
 [contrato de captura](tasks/writer-v2/execucao/15-captura-de-aventura.md).
 
+## Notas autorais próprias da campanha
+
+`features/campaign-notes` concentra notas de título/texto simples e recuperação de
+pedidos próprios. A página da campanha compõe seu painel pela interface pública,
+separado do leitor derivado. As quatro APIs de `functions/src/campaignNotes.mjs`
+autorizam a campanha própria, sem depender da aventura, base ou universo originais.
+
+Notas em `campaigns/{id}/notes` têm revisão e schema; `noteState/current` controla
+a revisão da lista. Cada mutação compara revisão e grava nota/controle/recibo
+atomicamente. Recibos privados não copiam prosa. Excluir remove título/corpo e
+conserva tombstone mínimo, sem permitir reutilizar o ID. Lista pagina somente
+resumos e invalida cursor após alteração, sem carregar corpos.
+
+O token da campanha usa createTime Firestore preciso, UID e ID; metadados/checklist
+não o alteram. Gates conferem também o token interno dos filhos e recibos antes
+de projetar conteúdo, impedindo adotar notas órfãs de um root apagado/recriado.
+O hash do recibo cobre somente a nota confirmada; replay de outra nota não fica
+obsoleto apenas porque a revisão da lista avançou.
+
+O journal pode preservar payload autoral próprio, isolado por UID/campanha.
+Reserva/escrita/limpeza passam por Web Locks no adaptador e observam storage entre
+abas; lock não fica retido durante HTTP. Essa permissão não se estende a variantes
+derivadas. Campos não são preenchidos automaticamente com base/lore. SDK direto
+continua negado. Veja [ADR 0032](decisions/0032-campaign-own-notes.md) e
+[contrato C1](tasks/writer-v2/execucao/16-notas-proprias-da-campanha.md).
+
 ## Progresso privado, contagem e retomada
 
 `features/work-progress` oferece `ProjectProgressPanel`, `ContinueWorkPanel` e

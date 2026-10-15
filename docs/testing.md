@@ -249,6 +249,23 @@ recuperação, limpeza sem origem, teclado e 320 px nos três temas. O transport
 novo tem fixture própria; captura de tela não substitui autorização real.
 Veja [contrato de captura](tasks/writer-v2/execucao/15-captura-de-aventura.md).
 
+Notas próprias têm testes colocalizados em `campaign-notes`, integração pública
+em CampaignPage e `functions/test/campaignNotes.test.mjs`. Protegem payload
+autoral preservado, reserva/limpeza sob Web Locks, storage events, resposta antiga,
+troca UID/alvo/token, conflito explícito, cursor invalidado e fechamento durante
+save sem reabrir o diálogo. Cancelar antes de enviar não grava; recuperação de
+delete não depende de lista ou GET da nota apagada.
+
+`tests/firestore/campaignNotes.rules.test.mjs` verifica APIs e SDK reais no
+emulador: negação direta, CAS/replay, tombstone, Unicode exato, corpo fora da lista,
+controle ausente/inconsistente, limites e identidade precisa de root recriado.
+Notas próprias permanecem autorizadas sem aventura/universo/base originais.
+`e2e/visual/campaign-notes.visual.ts` acrescenta CRUD/teclado/320 px, perda da
+origem, recuperação após reload e corrida entre duas abas usando Web Locks reais.
+A fixture simula o servidor sob um lock separado; contagem de RPCs comprova que
+ele não substitui a reserva do produto. Token fictício não prova createTime:
+essa garantia pertence ao SDK. Ver [contrato C1](tasks/writer-v2/execucao/16-notas-proprias-da-campanha.md).
+
 Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
 em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
 ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.

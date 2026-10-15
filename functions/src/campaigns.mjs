@@ -66,6 +66,7 @@ function available(value, uid) {
     workFail('failed-precondition', 'A revisão da campanha está inconsistente.');
   return value;
 }
+export { available as availableCampaign };
 export function createCampaignsService({ db, now = Date.now }) {
   return {
     async updateCampaign(uid, data) {

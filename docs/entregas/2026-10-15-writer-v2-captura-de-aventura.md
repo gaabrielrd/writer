@@ -3,7 +3,7 @@
 - **Data:** 2026-10-15
 - **Branch:** codex/writer-v2
 - **Plano:** [F2-07 B](../tasks/writer-v2/execucao/15-captura-de-aventura.md)
-- **Estado:** implementado e validado localmente; CI do novo head pendente.
+- **Estado:** concluído tecnicamente em f97455d; validação local, CI e regras verdes.
 
 ## Objetivo
 
@@ -37,7 +37,7 @@ completa e somente fichas de lore explicitamente referenciadas.
 - [x] Limpeza é limitada e retomável mesmo sem aventura ou schema de origem suportado.
 - [x] Conta/alvo tardios não substituem a sessão atual; teclado e 320 px funcionam.
 - [x] Validate, revisão, documentação/ADR e evidência locais concluídos.
-- [ ] CI do novo head, acompanhado em paralelo no PR 21.
+- [x] CI do head f97455d, acompanhado em paralelo no PR 21 e confirmado verde.
 
 ## Arquivos alterados
 
@@ -145,3 +145,25 @@ PR 21 permanece em rascunho. Nenhum merge, deploy ou alteração no checkout mas
 5. Crie outra campanha; edite dados/checklist de uma e confira a outra intacta.
 6. Simule resposta perdida e reload; confirme o mesmo pedido no Estúdio.
 7. Altere/remova a origem durante preparação; confira aborto e limpeza retomável.
+
+## Registro e envio — 2026-10-15
+
+Implementação registrada em f97455de4b5f5fc3de2f1b0a449f066cfccc02d3 e envio
+confirmado por ls-remote na branch codex/writer-v2. Pre-commit preservou lint-staged;
+pre-push confirmou tipos e 1.547 testes em 163 arquivos, 102,63 s. O
+[PR 21](https://github.com/gaabrielrd/writer/pull/21) continua aberto em rascunho.
+
+O [CI deste head](https://github.com/gaabrielrd/writer/actions/runs/38726372126)
+aprovou validate Node 22/24, auditoria e navegador de produção; os oito shards
+visuais ainda executavam no último snapshot. As
+[regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/38726372115)
+terminaram verdes. Não presumir aprovação agregada enquanto esses jobs executam.
+C1 notas começa sob a sequência autorizada de testes dirigidos e CI em paralelo.
+
+## Confirmação remota — 2026-10-15
+
+Os runs de f97455d terminaram verdes: validate Node 22/24, auditoria, navegador de
+produção, oito shards visuais, gate agregado e regras. Logs de produção confirmam
+7/7, 14,2 s; Firestore confirma 112/112, zero falhas/skips, 46.125,841265 ms.
+Não inferir contagens de retries dos shards pelo estado success. A captura B está
+concluída tecnicamente; F2-07 continua nas notas/variantes/atualização/exclusão.

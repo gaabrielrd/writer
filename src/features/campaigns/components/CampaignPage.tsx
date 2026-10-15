@@ -8,6 +8,7 @@ import {
 } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
 import { CampaignBaseReader } from '@/features/campaign-bases';
+import { CampaignNotesPanel } from '@/features/campaign-notes';
 import {
   Badge,
   Alert,
@@ -162,6 +163,7 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
         <p>Projeto independente, sem universo vinculado.</p>
       )}
       <ProjectProgressPanel target={{ kind: 'campaign', id: campaign.id }} />
+      <CampaignNotesPanel campaignId={campaign.id} />
       {campaign.provenance.kind === 'original' && campaign.activeBaseId && (
         <CampaignBaseReader campaignId={campaign.id} generationId={campaign.activeBaseId} />
       )}

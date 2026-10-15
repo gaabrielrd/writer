@@ -1,6 +1,6 @@
 # ADR 0031 — Base congelada de campanha e captura retomável
 
-**Estado:** aceita e implementada em F2-07 B, com validação local verde; CI do envio pendente.
+**Estado:** aceita e implementada em F2-07 B; validação local, CI e regras verdes em f97455d.
 **Data:** 2026-10-15.
 
 ## Contexto

@@ -12,6 +12,7 @@ import { createUniverseService } from './universes.mjs';
 import { createStudioService } from './studio.mjs';
 import { createCampaignsService } from './campaigns.mjs';
 import { createCampaignCaptureService } from './campaignCapture.mjs';
+import { createCampaignNotesService } from './campaignNotes.mjs';
 import { setCampaignMediaHeaders } from './campaignCaptureHttp.mjs';
 import { createCampaignBaseReadService } from './campaignBaseRead.mjs';
 import { createWorkProgressService } from './workProgress.mjs';
@@ -260,6 +261,7 @@ const callable = (method, secrets = []) =>
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
         const campaigns = createCampaignsService({ db });
+        const campaignNotes = createCampaignNotesService({ db });
         const campaignCapture = createCampaignCaptureService({ db, assets });
         const campaignBaseRead = createCampaignBaseReadService({ db, assets });
         const workProgress = createWorkProgressService({ db });
@@ -275,35 +277,37 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = campaignBaseRead[method]
-          ? campaignBaseRead
-          : campaignCapture[method]
-            ? campaignCapture
-            : campaigns[method]
-              ? campaigns
-              : adventurePreview[method]
-                ? adventurePreview
-                : adventureBlocks[method]
-                  ? adventureBlocks
-                  : workHistory[method]
-                    ? workHistory
-                    : workProgress[method]
-                      ? workProgress
-                      : narrative[method]
-                        ? narrative
-                        : scenes[method]
-                          ? scenes
-                          : studio[method]
-                            ? studio
-                            : assisted[method]
-                              ? assisted
-                              : loreAnalysis[method]
-                                ? loreAnalysis
-                                : universeService[method]
-                                  ? universeService
-                                  : service()[method]
-                                    ? service()
-                                    : createImageLibraryService({ db, assets });
+        const handler = campaignNotes[method]
+          ? campaignNotes
+          : campaignBaseRead[method]
+            ? campaignBaseRead
+            : campaignCapture[method]
+              ? campaignCapture
+              : campaigns[method]
+                ? campaigns
+                : adventurePreview[method]
+                  ? adventurePreview
+                  : adventureBlocks[method]
+                    ? adventureBlocks
+                    : workHistory[method]
+                      ? workHistory
+                      : workProgress[method]
+                        ? workProgress
+                        : narrative[method]
+                          ? narrative
+                          : scenes[method]
+                            ? scenes
+                            : studio[method]
+                              ? studio
+                              : assisted[method]
+                                ? assisted
+                                : loreAnalysis[method]
+                                  ? loreAnalysis
+                                  : universeService[method]
+                                    ? universeService
+                                    : service()[method]
+                                      ? service()
+                                      : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError)
@@ -331,6 +335,10 @@ export const deleteUniverse = callable('deleteUniverse');
 export const createAdventure = callable('createAdventure');
 export const createCampaign = callable('createCampaign');
 export const updateCampaign = callable('updateCampaign');
+export const listCampaignNotes = callable('listCampaignNotes');
+export const getCampaignNote = callable('getCampaignNote');
+export const saveCampaignNote = callable('saveCampaignNote');
+export const deleteCampaignNote = callable('deleteCampaignNote');
 export const getCampaignCaptureSource = callable('getCampaignCaptureSource');
 export const startCampaignCapture = callable('startCampaignCapture');
 export const getCampaignCapture = callable('getCampaignCapture');

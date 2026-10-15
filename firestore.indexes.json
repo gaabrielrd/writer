@@ -613,9 +613,19 @@
         { "fieldPath": "orderKey", "order": "ASCENDING" },
         { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "notes",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "deleted", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "notes", "fieldPath": "content", "indexes": [] },
     { "collectionGroup": "bodies", "fieldPath": "content", "indexes": [] },
     { "collectionGroup": "items", "fieldPath": "fields", "indexes": [] },
     { "collectionGroup": "items", "fieldPath": "origin", "indexes": [] },

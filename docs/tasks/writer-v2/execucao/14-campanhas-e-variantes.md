@@ -1,6 +1,6 @@
 # F2-07 — Campanhas e variantes particulares
 
-**Estado:** subincremento A concluído tecnicamente em 624c912; captura B implementada e validada localmente, com CI do novo head pendente.
+**Estado:** A concluído tecnicamente em 624c912 e captura B em f97455d, com CI verde; notas C1 validadas localmente, CI pendente.
 Contrato operacional da captura fechado antes do código; variantes continuam pendentes.
 **Origem:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md).
 **Base:** F2-06 concluído tecnicamente em `624c912`, com CI e regras verdes.
@@ -137,7 +137,13 @@ O [contrato de captura B](15-captura-de-aventura.md) fecha persistência, limite
 API, leitura própria e validação antes do código. B foi implementado após o
 fechamento local de A: validate, SDKs reais, 36 percursos e seis controles finais
 de interface passaram. Veja a [entrega de captura](../../../entregas/2026-10-15-writer-v2-captura-de-aventura.md).
-Variantes/atualização/exclusão integral terão planos próprios; CI de B em paralelo.
+Variantes/atualização/exclusão integral terão planos próprios; CI de B verde em f97455d.
+
+Para manter incrementos pequenos, C foi separado em C1 notas autorais próprias,
+C2 variantes de lore e C3 comparação/adoção explícita. O
+[contrato C1](16-notas-proprias-da-campanha.md), revisado antes do código, estabelece
+o recurso independente cuja preservação será conferida nas etapas derivadas.
+Notas não recebem cópia automática da base; variantes continuam ligadas à origem.
 
 Trabalhar em gerações preparing/ready/aborted. activeBaseId só muda no commit final;
 preparação parcial nunca substitui uma base pronta. Paginar metadados 25/50, mas

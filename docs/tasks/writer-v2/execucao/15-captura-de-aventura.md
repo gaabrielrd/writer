@@ -1,6 +1,6 @@
 # F2-07 B — Capturar aventura própria como base de campanha
 
-**Estado:** implementado e validado localmente após A concluído tecnicamente em 624c912. CI do envio de B pendente.
+**Estado:** concluído tecnicamente em f97455d, com validação local, CI e regras verdes.
 **Origem:** [campanhas e variantes](14-campanhas-e-variantes.md).
 **Decisões do operador:** aventura completa e somente lore referenciado.
 
