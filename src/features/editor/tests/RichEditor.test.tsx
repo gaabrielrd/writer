@@ -656,3 +656,47 @@ it('bloqueia prosa, formatação e desfazer enquanto uma operação externa agua
   expect(editor).toHaveAttribute('contenteditable', 'true');
   expect(editor).toHaveTextContent('Preservado');
 });
+it('eco controlado do manuscrito após desfazer conserva a restauração disponível para refazer', async () => {
+  const user = userEvent.setup();
+  const changed = vi.fn();
+  function ControlledHistory() {
+    const [content, setContent] = useState('<h1>Texto atual confirmado</h1>');
+    const [version, setVersion] = useState(0);
+    return (
+      <>
+        <button
+          onClick={() => {
+            setContent('<h1>Versão restaurada</h1>');
+            setVersion((value) => value + 1);
+          }}
+        >
+          Restaurar versão
+        </button>
+        <RichEditor
+          content={content}
+          externalContentVersion={version}
+          onChange={(value) => {
+            changed(value);
+            setContent(value);
+          }}
+          entities={entities}
+          onSelectEntity={vi.fn()}
+          isSidebarOpen={false}
+          onToggleSidebar={vi.fn()}
+        />
+      </>
+    );
+  }
+  render(<ControlledHistory />);
+  const editor = screen.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+  await user.click(screen.getByRole('button', { name: 'Restaurar versão' }));
+  await waitFor(() => expect(editor).toHaveTextContent('Versão restaurada'));
+  await user.click(screen.getByRole('button', { name: /^Desfazer$/ }));
+  expect(editor).toHaveTextContent('Texto atual confirmado');
+  expect(changed).toHaveBeenLastCalledWith('<h1>Texto atual confirmado</h1>');
+  expect(screen.getByRole('button', { name: /^Refazer$/ })).toBeEnabled();
+  await user.click(screen.getByRole('button', { name: /^Refazer$/ }));
+  expect(editor).toHaveTextContent('Versão restaurada');
+  expect(changed).toHaveBeenLastCalledWith('<h1>Versão restaurada</h1>');
+  expect(richText.renderRichText).toHaveBeenCalledTimes(2);
+});
