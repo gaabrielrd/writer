@@ -1,6 +1,6 @@
 # F2-05 — Histórico privado e restauração do texto
 
-**Estado:** implementado e validado localmente; commit/envio e CI pendentes.
+**Estado:** implementado, validado localmente e enviado em `cd5edb0`; CI pendente.
 **Origem:** [W2-F2-05](../fase-02-criar-e-preparar/05-historico-e-restauracao.md).
 **Base:** F2-04 e correção `16e71f6` validados localmente e enviados; CI acompanhada
 em paralelo por autorização explícita do operador em 2026-10-15.

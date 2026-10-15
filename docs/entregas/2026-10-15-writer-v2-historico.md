@@ -3,7 +3,7 @@
 - **Data:** 2026-10-15
 - **Branch:** `codex/writer-v2`
 - **Plano de origem:** [F2-05](../tasks/writer-v2/execucao/11-historico-e-restauracao.md)
-- **Estado:** validado localmente; commit/envio e CI do incremento pendentes
+- **Estado:** validado localmente e enviado em `cd5edb0`; CI do incremento pendente
 
 ## Objetivo
 
@@ -108,6 +108,13 @@ Histórico por autosave, merge automático, lore versionado, restauração de pr
 inteiro, portal de jogadores, publicação, estorno financeiro e portabilidade do histórico.
 
 ## Limitações e pendências conhecidas
+
+O commit `cd5edb0e18ac96edefac526036f7f00f86486734` foi enviado ao
+[PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21), junto do plano
+`7276f11`. Hooks mantidos; pre-push confirmou tipos e 1.423 testes (155 arquivos,
+97,24 s). [CI](https://github.com/gaabrielrd/writer/actions/runs/38705606516) e
+[regras](https://github.com/gaabrielrd/writer/actions/runs/38705606462) foram
+observadas em execução; o trabalho seguinte avança sem esperar esses resultados.
 
 - Backup v6 não inclui versões; a interface informa isso. Portabilidade integral: F2-09.
 - Não existe exclusão de projeto de aventura; sua futura implementação deve limpar

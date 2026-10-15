@@ -1,6 +1,6 @@
 # W2-F2-06 — Criar aventuras com estrutura narrativa
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Contrato fechado; implementação em subincrementos sequenciais.
 **Dependências:** [W2-F2-01](../fase-02-criar-e-preparar/01-projetos-e-navegacao.md), [W2-F2-02](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md)
 **Áreas propostas:** editor, lore, image-library; proposta adventures. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -20,6 +20,11 @@ Entradas: proposta de aventura, partes/cenas, NPCs, locais e materiais autorais.
 - Reutilizar biblioteca para imagens, mantendo direitos, referências e exclusão no servidor.
 
 ## Passos de execução
+
+O [contrato executável F2-06](../execucao/12-aventuras-e-blocos.md) incorpora as
+escolhas de 2026-10-15: vários blocos por cena, texto e audiência próprios; novo e
+legado sem classificação privados do criador. Os portões locais de F2-05 passaram;
+CI acompanha em paralelo conforme a sequência autorizada.
 
 - [ ] Implementar contrato de aventura e tipos de blocos mínimos.
 - [ ] Adaptar editor por API pública, preservando seleção, autosave e formatação.
