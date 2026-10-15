@@ -13,6 +13,8 @@ import { firestore, renderRichText } from '@/shared/lib';
 import { actName, groupChapters } from '../model/act';
 import { listActs } from './chapterOrganizationService';
 import { preferredLoreTerms, universeEntityId } from '@/features/lore';
+import { resolveChapterContent } from './chapterCompositionService';
+import type { Chapter } from '../model/chapter';
 
 const MAX_DOCUMENT_BYTES = 900_000;
 const WRITE_BATCH_SIZE = 400;
@@ -43,6 +45,9 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   const bookSnapshot = await getDocFromServer(bookRef);
   if (!bookSnapshot.exists()) throw new Error('Livro não encontrado.');
   const book = bookSnapshot.data();
+  const sceneMetadata = book.hasSceneResources
+    ? { sourceSceneRevision: (book.sceneRevision ?? 0) as number }
+    : {};
   const title = requiredText(book.title, 'O título do livro', 300);
   if (book.deleting === true) throw new Error('A exclusão deste livro já foi iniciada.');
   const privacyVersion: unknown = book.publicationPrivacyVersion ?? 0;
@@ -129,16 +134,33 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   for (const chapterEntry of publicGroups.flatMap((group) => group.chapters)) {
     const chapter = chapterEntry.snapshot;
     const data = chapter.data();
-    if (typeof data.content !== 'string' || !Number.isInteger(data.order) || data.order < 0) {
+    if (
+      data.deleting ||
+      typeof data.content !== 'string' ||
+      !Number.isInteger(data.order) ||
+      data.order < 0
+    ) {
       throw new Error(
         'Há um capítulo inválido. Revise seu conteúdo e sua ordem antes de publicar.',
       );
     }
+    const canonical = await resolveChapterContent(bookId, {
+      ...data,
+      id: chapter.id,
+      bookId,
+    } as Chapter);
+    if (
+      data.contentMode === 'scenes' &&
+      new TextEncoder().encode(canonical.content).length > 800_000
+    )
+      throw new Error(
+        'Um capítulo reúne texto demais para publicar. Divida as cenas em capítulos menores.',
+      );
     const projection = {
       title: requiredText(data.title, 'O título do capítulo', 300),
       order: ++readingOrder,
       ...(data.actId ? { actId: data.actId as string } : {}),
-      content: renderRichText(data.content),
+      content: renderRichText(canonical.content),
     };
     assertDocumentSize(projection);
     writes.push({ ref: doc(collection(revisionRef, 'chapters'), chapter.id), data: projection });
@@ -184,6 +206,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       ...(publicActs.length ? { actCount: publicActs.length } : {}),
       loreCount: publicLoreCount,
       privacyVersion,
+      ...sceneMetadata,
       ...universeMetadata,
     },
   });
@@ -203,6 +226,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     // Do not undo a concurrent unpublish or publish a stale manuscript.
     if (
       latestBook.data().updatedAt !== book.updatedAt ||
+      (latestBook.data().sceneRevision ?? 0) !== (book.sceneRevision ?? 0) ||
       (latestBook.data().universeId ?? null) !== (universeId ?? null) ||
       (universe &&
         (!latestUniverse ||
@@ -223,6 +247,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       revisionId: revisionRef.id,
       publishedAt,
       ...universeMetadata,
+      ...sceneMetadata,
     });
     transaction.update(bookRef, { status: 'published', updatedAt: publishedAt });
   });
@@ -249,6 +274,14 @@ export async function beginBookDeletion(bookId: string): Promise<void> {
 
 /** Retain a private ID tombstone so orphaned revisions can never be reattached. */
 export async function finishBookDeletion(bookId: string): Promise<void> {
+  const parent = await getDocFromServer(doc(firestore, 'books', bookId));
+  if (
+    parent.exists() &&
+    (parent.data().hasSceneResources ||
+      parent.data().hasNarrativeResources ||
+      parent.data().hasProgressResources)
+  )
+    throw new Error('Conclua a limpeza dos recursos do projeto no servidor.');
   const batch = writeBatch(firestore);
   batch.set(doc(firestore, 'deletedBooks', bookId), { deletedAt: serverTimestamp() });
   batch.delete(doc(firestore, 'books', bookId));

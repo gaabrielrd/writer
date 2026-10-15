@@ -1,6 +1,7 @@
 # W2-F1-04 — Fechar regras comerciais, licenças e provedor
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Em execução; contrato documental e pesquisa registrados. Connect/capacidades, ensaio comercial e validação operacional continuam pendentes.
+**Evidência:** [Contrato e consulta de sandbox](../execucao/04-regras-comerciais-e-direitos.md), [cálculos](../execucao/04-cenarios-monetarios.json), [manifesto](../execucao/04-produto-de-referencia.md).
 **Dependências:** [W2-F1-01](../fase-01-direcao-e-fundamentos/01-jornadas-e-escopo.md), [W2-F1-02](../fase-01-direcao-e-fundamentos/02-modelo-de-dominio.md)
 **Áreas propostas:** produto, operação; propostas commerce, creator e publications. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -22,9 +23,15 @@ Entradas: livros e aventuras vendáveis, capacidade de operação e fontes ofici
 ## Passos de execução
 
 - [ ] Comparar opções de provedor usando documentação oficial e ambiente de testes.
-- [ ] Calcular exemplos de pedido aprovado, reembolsado, contestado e repassado.
+- [x] Calcular exemplos de pedido aprovado, reembolsado, contestado e repassado.
 - [ ] Registrar políticas de produtos, conteúdo e atendimento, com validação adequada ao contexto escolhido.
 - [ ] Aprovar escolhas e critérios de falha/retirada antes de contratos comerciais.
+
+Escolhas do operador registradas: taxas/reversões do criador; comissão devolvida proporcionalmente;
+disputa aberta suspende acesso, parcial mantém e integral/perda revoga; notas próprias preservadas.
+Plataforma no Brasil confirmada pelo operador. Pesquisa e inspeção somente leitura ocorreram;
+o pagamento de demonstração Stripe não é teste Writer. Critérios acima permanecem abertos
+até as condições comerciais reais; cálculos são exemplos fictícios, não tarifas aprovadas.
 
 ## Critérios de aceite
 

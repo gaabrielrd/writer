@@ -13,11 +13,16 @@ export interface Chapter {
   order: number;
   wordCount: number;
   content: string;
+  contentMode?: 'legacy' | 'scenes';
+  assemblyRevision?: number;
+  structureRevision?: number;
+  deleting?: boolean;
   createdAt: number;
   updatedAt: number;
 }
 
 export interface CreateChapterInput {
+  creationId?: string;
   actId?: string | null;
   personaComplement?: ChapterPersonaComplement | null;
   title: string;
@@ -26,6 +31,10 @@ export interface CreateChapterInput {
 }
 
 export interface UpdateChapterInput {
+  /** Captured saved prose; used for server CAS when word progress is enabled. */
+  expectedContent?: string;
+  operationId?: string;
+  expectedOwnerId?: string;
   personaComplement?: ChapterPersonaComplement | null;
   title?: string;
   order?: number;

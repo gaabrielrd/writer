@@ -200,7 +200,7 @@ Esta seção detalha as decisões técnicas aprovadas em [docs/prd.md](prd.md) p
    - **Responsabilidade:** Editor de texto rico (WYSIWYG), integração com menção rápida via `@`, visualização contextual com tooltips e integração com exportadores (Markdown, DOCX, PDF).
    - **Público:** `RichEditor`, `MentionMenu`, `ExportActions`.
 5. `src/features/ai-assistant`
-   - **Responsabilidade:** Comunicação com provedores de IA (Gemini / OpenAI), controle de debounce para autocomplete após uma pausa de 600 ms na digitação, menu de ações contextuais de escrita e orquestração de consumo de créditos. Geração automática exige uma alteração de texto originada pela digitação; abrir/focar o editor, selecionar texto, mover o cursor, formatar ou carregar conteúdo não inicia uma geração. Seleção e mudanças de contexto cancelam sugestões pendentes; inserções de IA não rearmam o autocomplete.
+   - **Responsabilidade:** Comunicação com provedores de IA (Gemini / OpenAI), controle de debounce para autocomplete após uma pausa de 600 ms na digitação, menu de ações contextuais de escrita e orquestração de consumo de créditos. Geração automática exige uma alteração de texto originada pela digitação; abrir/focar o editor, selecionar texto, mover o cursor, formatar ou carregar conteúdo não inicia uma geração. Seleção e mudanças de contexto cancelam sugestões pendentes; inserções de IA não rearmam o autocomplete. Setas, Home/End e PageUp/PageDown cancelam a intenção automática já no teclado, inclusive na borda do texto, preservando composição, menções e navegação nativa. Escape também registra o cancelamento da intenção. A revisão de digitação nula invalida a espera/oferta anterior mesmo antes dos efeitos passivos; nova digitação usa outra revisão monotônica. Pedidos manuais continuam independentes dessa intenção automática.
    - **Público:** `useAIAutocomplete`, `AIContextMenu`, `BYOKSettings`.
 
 ### Fluxo de dados e persistência
@@ -313,3 +313,304 @@ o modelo da plataforma e registra a configuração efetiva; reutiliza snapshots
 de parâmetros/histórico em retries. `chapterChatProvider.mjs` contém o transporte
 Gemini do servidor, e `chapterChatService.ts` mantém BYOK no navegador. Credenciais
 entram somente nos headers do provedor, fora do histórico e da callable.
+
+## Contratos da evolução Writer V2
+
+A implementação iniciou pelo Estúdio F2-01 e segue com cenas F2-02, descritos
+abaixo. As demais capacidades do V2 conservam seus contratos futuros e aceites próprios.
+
+O [ADR 0025](decisions/0025-writer-v2-contracts.md) fixa separação entre livro
+legado, aventura autoral, campanha particular, edição e acesso. Preservar IDs/URLs
+e contratos públicos existentes. `app` compõe os espaços, `shared` continua neutro;
+novas fronteiras de feature dependem da necessidade demonstrada no incremento.
+
+Novas mutações usam autoria derivada, revisão esperada, operação/recibo idempotentes
+e datas do servidor. Lore vivo de originais, base congelada/variante inteira de
+campanha e proposta explícita de cânone conservam procedência e revogação. Notas
+próprias ficam isoladas do material derivado. Projeções por audiência têm campos
+fechados; arquivos secretos/pagos exigem autenticação e direito vigente. Corpo de
+edição imutável não torna seu acesso irrevogável; `publicBooks` continua gratuito.
+
+O [desenho de módulos](tasks/writer-v2/arquitetura-proposta.md) é proposto, não
+implementado. Contratos detalhados/condições por incremento estão na
+[consolidação](tasks/writer-v2/execucao/06-contratos-e-replanejamento.md).
+Comércio fica separado de créditos IA e exige capacidades Stripe reais, eventos
+verificados e conciliação no servidor. Nenhuma configuração Connect, migração,
+regra nova ou operação financeira é aplicada por esta documentação.
+
+## Estúdio e projetos privados
+
+`app` compõe os cinco espaços e a proteção das rotas autenticadas. `/` conserva
+a landing anônima e redireciona a conta autenticada para `/studio`. A navegação
+global independe de livros; o título do livro permanece no contexto privado.
+Publicações, Catálogo e Biblioteca informam disponibilidade futura; `/library`
+continua sendo a biblioteca de imagens.
+
+`features/studio` compõe APIs públicas de `books`, `adventures`, `campaigns` e
+`universes`. Livro conserva identidade, capítulos, editor e fluxos existentes;
+aventura autoral e campanha independente têm coleções e páginas próprias. O Estúdio
+cria metadados privados; cenas/partes são acrescentadas pelo incremento F2-02,
+sem criar sessões implicitamente. Cada tipo possui consulta, estado, filtro e cursor
+independentes. Troca de conta remonta a sessão e descarta respostas anteriores.
+
+`functions/src/studio.mjs` fornece `createAdventure`, `createCampaign`,
+`getAdventure`, `getCampaign`, `prepareStudioBooks` e `listStudioProjects`.
+Auth determina o dono. Projeto, recibo da operação e vínculo/contador de universo
+são transacionais; retry idêntico não duplica criação. Recursos novos, preparação
+e recibos não aceitam escrita direta do cliente. Listas paginam por dono, estado,
+`updatedAt DESC` e ID descendente, com padrão 25/máximo 50 e leitura de limite + 1.
+
+Livros e aventuras têm filtro editorial independente de publicação/arquivo.
+`editorialState` válido prevalece; no legado, aventura `status=ready` corresponde
+a Pronto e os demais casos a Rascunho. O servidor filtra janelas de metadados,
+sem corpos, e mantém o cursor na última fonte examinada. O cursor vincula conta,
+tipo, status e filtro editorial; cursores anteriores sem o campo editorial só
+valem para a leitura sem esse filtro. Uma janela sem correspondências pode ter
+continuação: o hook segue a leitura com carregamento e cancelamento por conta ou
+filtro, até encontrar itens ou esgotar a consulta. Isso pode exigir várias chamadas
+limitadas, sem declarar vazio antecipadamente ou criar quota de projetos.
+
+A preparação legada mantém progresso no servidor e altera apenas datas inválidas
+ou ausentes a partir de `snapshot.createTime/updateTime`, e estado ausente. Preserva
+conteúdo e datas válidas. As regras conservam datas válidas já existentes; mutações
+Admin respeitam a mesma condição. Valores devem caber no intervalo de `Date`.
+As referências de universo distinguem livros, aventuras e campanhas; exclusão
+confere os três contadores e referências antes de bloquear novos vínculos.
+Ver [contrato executável](tasks/writer-v2/execucao/07-estudio-projetos.md).
+
+## Cenas e composição de manuscrito
+
+`features/scenes` fornece modelos, serviços callables, planejamento em lista/quadro
+e editor rico privado para livros e aventuras. `books` resolve capítulos compostos
+por sua interface pública; listas de capítulos podem pedir somente metadados.
+A rota histórica do editor do capítulo composto mostra prosa e planejamento,
+enquanto cada cena tem rota própria. Capítulos legados mantêm seu editor.
+
+`functions/src/scenes.mjs` e `sceneJobs.mjs` centralizam mutações, autorização,
+revisões, recibos em `users/{uid}/sceneOperations` e trabalhos retomáveis. Corpos,
+planos e referências são filhos de cada cena. `sceneSources` conserva a fonte da
+conversão mesmo se o capítulo for removido; `sceneControls/unassigned` organiza
+conteúdo sem agrupador. O marcador `hasSceneResources` impede finish legado de
+deixar filhos órfãos. Controles e fontes não aceitam writes do navegador.
+
+`chapterCompositionService.ts` lê páginas de prosa ativa, confere hash/revisão,
+sanitiza blocos e revalida ao terminar. Não usa a fonte congelada como fallback.
+Publicação prepara somente campos públicos e captura `sourceSceneRevision`;
+backup v5 inclui os recursos privados sem confundir plano com prosa exportável.
+Ordenação e exclusão usam checkpoints limitados; remover agrupador desvincula
+cenas. Ver [ADR 0026](decisions/0026-scenes-and-manuscript-assembly.md) e
+[contrato F2-02](tasks/writer-v2/execucao/08-planejamento-de-cenas.md), cujos gates
+registram a validação vigente deste incremento.
+
+## Arcos e cronologia básica
+
+`features/narrative-planning` fornece `NarrativePlanner`, modelos e serviços pela
+interface pública, dentro das abas de livros/aventuras. Arcos, marcos e eventos
+possuem texto de planejamento privado e sequências independentes. Ordem manual e
+data textual livre não alteram a ordem nem a prosa do manuscrito.
+
+As mutações e consultas vivem em `functions/src/narrativePlanning.mjs`, com contratos
+e jobs limitados em módulos próprios. `narrativeLinks` mantém referências por
+identidade; `sceneLoreLinks` é um índice derivado das referências explícitas das
+cenas, atualizado atomicamente e preparado por lotes para dados anteriores.
+Listas são resumos paginados e detalhes são carregados sob demanda. A autorização
+confere o pai e a origem atual, inclusive durante troca de universo e exclusão.
+
+Marcadores `hasNarrativeResources/narrativeRevision` são protegidos; `deleteSceneBook`
+incorpora filhos narrativos antes de remover o pai. `narrativeBackupService.ts` captura
+arcos/marcos/eventos/referências no JSON v6, sem UID/jobs/índice, e confere revisões
+e identidade antes/depois. Publicação/PDF/DOCX/Markdown conservam a projeção da prosa.
+Ver [ADR 0027](decisions/0027-narrative-arcs-and-timeline.md) e
+[contrato F2-03](tasks/writer-v2/execucao/09-arcos-e-cronologia.md). Gates locais,
+CI e regras verdes em `3358c75`; implantação conserva autorização própria.
+
+## Histórico privado do texto
+
+`features/manuscript-history` fornece diálogo, modelos, serviços e recuperação
+privada para capítulos legados e cenas de livro/aventura. Versões são manuais ou
+cópia anterior à restauração, mantidas até exclusão explícita. O manifesto privado
+fica em `workVersions`; corpos em blocos UTF-8 de até 64 KiB ficam em
+`workVersionBodies`, no projeto. A lista pagina metadados 25/50 e o corpo selecionado
+é reconstruído/verificado por ordem, bytes e SHA-256 antes de aparecer na UI.
+
+`functions/src/workHistory.mjs` autoriza APIs e recibos próprios. Tokens da fonte
+incluem timestamps precisos do Firestore e hash; cenas também conservam sua revisão
+real. Captura inicial explícita de capítulo reutiliza a ativação de progresso em
+um lote, mantendo a base originalmente observada. Restauração reutiliza os planos
+transacionais dos escritores legados/cenas para preservar texto anterior, prosa,
+contagens e recibo juntos. Replay não reaplica texto sobre outra gravação.
+
+Os editores reservam a escrita antes do primeiro await. Pedido incerto é guardado
+por UID/recurso sem prosa e conserva o bloqueio mesmo ao fechar o diálogo. Aceite
+confirmado atualiza corpo, revisão e bases internas juntos; desfazer é uma nova
+edição normal. Versão de origem removida continua consultável/copiável/excluível
+no projeto, mas não recria o recurso. Backup privado v6 informa que não inclui
+histórico; a exclusão existente de livro limpa versões/corpos em lotes. Exclusão
+de projeto de aventura ainda não existe e deverá incorporar essa limpeza.
+
+Ver [contrato F2-05](tasks/writer-v2/execucao/11-historico-e-restauracao.md).
+
+## Blocos narrativos de aventura e prévia privada
+
+`features/adventure-blocks` expõe navegação, editor de texto próprio, recuperação,
+ilustração e prévia por cena. A prosa existente permanece em scenes/body/current
+como Texto principal; abrir não migra nem duplica seu conteúdo. Campos mainBlock
+aditivos e fallbacks de leitura preservam a compatibilidade. Adicionais usam
+sceneBlocks com corpo separado, cena estável, revisão, audiência e ordem próprias.
+Novo/legado sem classificação é privado do criador. Livros não recebem esses campos.
+
+`functions/src/adventureBlocks*.mjs` autoriza cada recurso e mantém texto, revisões,
+total da cena, parte, ledger e recibo atomicamente. O ledger conserva uma fonte
+de cena com principal e adicionais ativos. Verificação explícita percorre apenas
+metadados em páginas, confirma o checkpoint observado e não inventa total zero.
+O loader oferece consulta de situação sem corpo quando o agregado inválido impede
+abrir a cena. Arquivo conserva texto/histórico; histórico de block restaura somente
+texto e cópia anterior, sem restaurar audiência ou imagem.
+
+Vínculo de uma ilustração por bloco usa a biblioteca pela interface pública. O uso
+tipado inclui aventura/recurso e não colide com IDs de capa. O servidor atualiza
+vínculo/contador junto da mutação, incluindo duplicação e limpeza retomável; arquivo
+mantém uso. Editores compartilham reserva de escrita, controlador e pedido incerto,
+sem adotar revisão cujo hash diverge da prosa confirmada.
+
+`adventurePreview*.mjs` filtra audiência antes de ler corpos e reconstrói HTML com
+parse5. Original completo reúne ativos; Mestre recebe gm/players e Jogadores apenas
+players. O DTO exclui planejamento, fichas, títulos de agrupadores e metadados de
+itens secretos. Páginas têm token da revisão precisa e orçamento de 4 MiB UTF-8;
+excedente segue na próxima página sem truncamento. Imagens são derivados WebP por
+sharp de até 1.024 × 1.024 e 1,5 MiB, com autorização antes/depois do I/O, sem caminho,
+imageId ou URL permanente no DTO. O cliente descarta páginas/mídias de outra conta,
+alvo, modo ou token e limpa a composição em perda de acesso.
+
+Todas as prévias continuam restritas ao dono; classificar não publica nem concede
+acesso. Exclusão integral/backup de aventura têm trabalho próprio; preservar essa
+pendência. Ver [ADR 0030](decisions/0030-adventure-blocks-and-private-previews.md) e
+[contrato F2-06](tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
+
+## Gestão privada de campanhas
+
+`features/campaigns` expõe `CampaignManagementDialog`. Seu controlador reserva uma
+operação por UID/campanha, preserva o pedido antes da rede e mantém a edição
+bloqueada quando a resposta é incerta. Fechar/reabrir ou recarregar não cria outro
+pedido. Conflito conserva os campos e só carrega a versão atual por descarte
+explícito. A página aceita o DTO confirmado do próprio pedido sem GET intermediário.
+
+`functions/src/campaigns.mjs` altera título, descrição, estado e universo
+organizacional com dono, revisão comparada e recibo na mesma transação. O vínculo
+usa o helper de universos em modo estrito, com uso tipado e contador consistente;
+universo legado sem contador exige prova limitada de ausência de usos antes do
+primeiro vínculo. Um universo removido pode ser desvinculado sem ser recriado.
+Replay reautoriza e exige revisão e hash da confirmação ainda atuais. Checklist,
+procedência, criação e lore global permanecem preservados.
+
+Essa gestão aceita campanhas independentes e campanhas originais com base canônica
+coerente. Alterar seus metadados não muda a base, a procedência ou o checklist.
+Procedências ainda não suportadas falham antes da escrita.
+Ver o [contrato F2-07](tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
+
+## Captura privada de aventura e base congelada
+
+`features/campaign-bases` expõe criação/retomada e leitor pela interface pública.
+A aventura inicia a captura; o Estúdio também descobre preparações pendentes,
+inclusive quando a origem foi removida. O leitor da campanha apresenta material,
+narrativa, lore e arquivo sem consultar prosa viva para completar a base.
+
+`functions/src/campaignCapture.mjs` prepara uma geração privada em etapas
+limitadas. `campaignCaptureItems.mjs` captura partes, cenas, blocos, texto legado,
+planejamento, narrativa e a união deduplicada de lore explicitamente referenciado.
+Não expande nomes ou relações. Cada passo compara a versão precisa da origem;
+mudança aborta duravelmente. Somente a ativação cria a campanha, seu vínculo e a
+base pronta atomicamente. Preparações incompletas não aparecem como campanhas.
+
+Os controles ficam em `users/{uid}/campaignPreparations`; a geração permanente
+em `users/{uid}/campaignBases`, com filhos `items`, `bodies`, `loreReferences`,
+`images` e `links`. Checkpoint monotônico e recibos preservam identidade em retries.
+O cliente guarda método/payload/checkpoint antes da rede, isolados por UID, e
+descobre também pedidos locais de ativação/limpeza sem confirmação após reload.
+Esses controles não guardam corpos. Troca de conta/alvo descarta respostas tardias.
+
+`campaignBaseRead.mjs` reautoriza campanha, origem e fichas antes de projetar
+resumos, corpos, relações ou mídia. Edição normal do original não altera a base.
+Lore indisponível e relações para alvos não capturados/autorizados não são expostos.
+O vínculo organizacional atual é independente do universo original capturado.
+SDK direto permanece negado. Token comum protege a composição; cursores vinculam
+escopo/projeção. Corpos usam chunks UTF-8 e SHA-256, conferidos integralmente no
+servidor e no cliente antes da exibição, com limites de bytes e sem truncamento.
+
+Ilustrações usam pin tipado próprio e geração Storage capturada. Escritores da
+aplicação preservam seus bytes; sobrescrita externa causa indisponibilidade, sem
+presumir versionamento do bucket. Mídia derivada é autenticada antes/depois do I/O,
+sem URL permanente ou caminho. Cancelamento revoga e limpa filhos/pins em lotes
+retomáveis mesmo sem a origem. Bases prontas não têm expiração automática.
+
+Variantes, atualização explícita e exclusão integral de campanha conservam etapas
+próprias. Veja [ADR 0031](decisions/0031-campaign-frozen-bases.md) e
+[contrato de captura](tasks/writer-v2/execucao/15-captura-de-aventura.md).
+
+## Notas autorais próprias da campanha
+
+`features/campaign-notes` concentra notas de título/texto simples e recuperação de
+pedidos próprios. A página da campanha compõe seu painel pela interface pública,
+separado do leitor derivado. As quatro APIs de `functions/src/campaignNotes.mjs`
+autorizam a campanha própria, sem depender da aventura, base ou universo originais.
+
+Notas em `campaigns/{id}/notes` têm revisão e schema; `noteState/current` controla
+a revisão da lista. Cada mutação compara revisão e grava nota/controle/recibo
+atomicamente. Recibos privados não copiam prosa. Excluir remove título/corpo e
+conserva tombstone mínimo, sem permitir reutilizar o ID. Lista pagina somente
+resumos e invalida cursor após alteração, sem carregar corpos.
+
+O token da campanha usa createTime Firestore preciso, UID e ID; metadados/checklist
+não o alteram. Gates conferem também o token interno dos filhos e recibos antes
+de projetar conteúdo, impedindo adotar notas órfãs de um root apagado/recriado.
+O hash do recibo cobre somente a nota confirmada; replay de outra nota não fica
+obsoleto apenas porque a revisão da lista avançou.
+
+O journal pode preservar payload autoral próprio, isolado por UID/campanha.
+Reserva/escrita/limpeza passam por Web Locks no adaptador e observam storage entre
+abas; lock não fica retido durante HTTP. Essa permissão não se estende a variantes
+derivadas. Campos não são preenchidos automaticamente com base/lore. SDK direto
+continua negado. Veja [ADR 0032](decisions/0032-campaign-own-notes.md) e
+[contrato C1](tasks/writer-v2/execucao/16-notas-proprias-da-campanha.md).
+
+## Progresso privado, contagem e retomada
+
+`features/work-progress` oferece `ProjectProgressPanel`, `ContinueWorkPanel` e
+`useWorkActivity` pela interface pública. Livros e aventuras têm estado editorial
+privado e meta total; aventuras e campanhas têm checklist privado. `editorialState`
+não altera `Book.status` nem publica conteúdo. O fuso IANA pertence ao usuário,
+inicializa pelo dispositivo com revisão comparada e não reinicia metas totais.
+
+`functions/src/workProgress.mjs` autoriza cada leitura/mutação e coordena contratos,
+ledger e escritores legados em módulos próprios. `workProgress/current` guarda
+estado, meta, revisões e checkpoint; `workWordSources` guarda contribuições por
+identidade, sem corpo/título; `workWordGroups` guarda os agregados incluídos.
+`hasProgressResources` ativa os escritores protegidos. Corpo, contagem e criação/
+remoção de capítulos passam pelo servidor após ativação; metadados permitidos
+mantêm a fronteira existente. Exclusão de livro limpa os filhos pelo job existente.
+
+O ledger acompanha criação, importação, edição, IA, conversão, movimento, arquivo/
+restauração e exclusão no mesmo commit do conteúdo. Fonte legada preservada e cena
+fora da composição não entram no total. Preparação usa checkpoint e páginas de
+metadados limitadas, lendo um corpo por transação; escritores concorrentes não
+reiniciam nem duplicam a soma. Total incompleto é `null`, nunca zero confirmado.
+`visibleWordCount.mjs` usa `parse5` somente no servidor e conserva a interpretação
+do texto visível do editor, sem alterar o manuscrito armazenado.
+
+Salvamentos legados comparam o hash da base carregada. Se uma resposta se perde,
+o cliente confirma o mesmo pedido/recibo antes de enviar a edição seguinte; usa
+somente a própria escrita confirmada como nova base. Replay no servidor compara
+o texto atual com o resultado daquele recibo, impedindo sobrescrita de uma edição
+posterior de outro dispositivo. A fila por capítulo conserva a ordem de flush.
+
+`users/{uid}/workActivityState/current` compara a revisão global das visitas;
+`workActivity` guarda somente tipo/IDs/data, sem texto, título histórico ou URL.
+Visitas não alteram a revisão da prosa nem a data do projeto. A lista resolve nomes
+atuais autorizados e Continuar reautoriza a origem; origem removida retorna ao
+projeto com aviso, projeto indisponível retorna `null`. Uma fila por usuário ordena
+visitas locais, mantendo o conflito entre dispositivos explícito.
+
+Ver [ADR 0028](decisions/0028-private-work-progress-and-resume.md) e
+[contrato F2-04](tasks/writer-v2/execucao/10-estados-metas-e-retomada.md), que registra
+os gates reais do incremento. Comércio, sessões e restauração integral permanecem
+nas respectivas tarefas.

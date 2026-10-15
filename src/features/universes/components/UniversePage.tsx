@@ -144,7 +144,7 @@ export function UniversePage() {
     <div className={styles.page}>
       <PageHeader
         title="Lore compartilhado"
-        description="Organize universos e mantenha suas fichas em comum entre livros."
+        description="Organize universos e acompanhe seus livros, aventuras e campanhas vinculados."
         actions={
           <Button onClick={() => setForm({ key })}>
             <Plus className="icon icon-sm" aria-hidden="true" />
@@ -182,6 +182,14 @@ export function UniversePage() {
                 <Badge variant="secondary">
                   {world.bookCount}{' '}
                   {world.bookCount === 1 ? 'livro vinculado' : 'livros vinculados'}
+                </Badge>
+                <Badge variant="secondary">
+                  {world.adventureCount ?? 0}{' '}
+                  {world.adventureCount === 1 ? 'aventura vinculada' : 'aventuras vinculadas'}
+                </Badge>
+                <Badge variant="secondary">
+                  {world.campaignCount ?? 0}{' '}
+                  {world.campaignCount === 1 ? 'campanha vinculada' : 'campanhas vinculadas'}
                 </Badge>
                 {world.deleting && (
                   <p>A exclusão foi iniciada. Tente excluir novamente para concluir.</p>
@@ -229,7 +237,12 @@ export function UniversePage() {
               </Button>
               <Button
                 variant="danger"
-                disabled={busy || removing.world.bookCount > 0}
+                disabled={
+                  busy ||
+                  removing.world.bookCount > 0 ||
+                  (removing.world.adventureCount ?? 0) > 0 ||
+                  (removing.world.campaignCount ?? 0) > 0
+                }
                 onClick={() => void remove()}
               >
                 Confirmar exclusão
@@ -238,10 +251,14 @@ export function UniversePage() {
           }
         >
           <p>
-            {removing.world.bookCount > 0
-              ? 'Desvincule todos os livros nas configurações de cada obra antes de excluir este universo.'
-              : 'Todas as entidades deste universo serão removidas. Esta ação não pode ser desfeita.'}
+            {(removing.world.adventureCount ?? 0) > 0 || (removing.world.campaignCount ?? 0) > 0
+              ? 'Este universo tem projetos vinculados. Consulte os projetos no Estúdio antes de excluir.'
+              : removing.world.bookCount > 0
+                ? 'Desvincule todos os livros nas configurações de cada obra antes de excluir este universo.'
+                : 'Todas as entidades deste universo serão removidas. Esta ação não pode ser desfeita.'}
           </p>
+          {((removing.world.adventureCount ?? 0) > 0 ||
+            (removing.world.campaignCount ?? 0) > 0) && <Link to="/studio">Abrir Estúdio</Link>}
           {removing.world.bookCount > 0 && <Link to="/">Abrir Meus Livros</Link>}
           {actionError && <Alert variant="destructive">{actionError}</Alert>}
         </Dialog>

@@ -1,10 +1,55 @@
 # Writer Assistant
 
-Assistente para escritores de ficção com compêndio de lore contextual, auxílio de escrita por IA e publicação interativa.
+Estúdio de escrita em React/Vite/Firebase, com lore contextual, assistência de IA e publicação interativa.
 
 ## Objetivo
 
 Centralizar o planejamento de universo narrativo (personagens, locais, conceitos e relações) e a escrita em um editor de texto rico com detecção automática de termos. O projeto oferece assistência de IA contextualizada com controle de créditos, exportação em múltiplos formatos (PDF, DOCX, Markdown) e publicação online para leitores em uma interface interativa.
+
+A evolução aprovada é o **Writer V2**, com autores e mestres igualmente prioritários.
+O Estúdio (`/studio`) reúne livros existentes e a criação privada de aventuras e
+campanhas independentes, com universo opcional, filtros e paginação. A navegação
+oferece Universos, Estúdio, Publicações, Catálogo e Biblioteca; os três últimos
+ainda exibem disponibilidade futura. A biblioteca de imagens mantém `/library`.
+Livros e aventuras recebem planejamento e texto próprio por cena no incremento
+F2-02, com arquivo/restauração, composição de capítulos/partes e backup privado v5.
+O [contrato e estado dos gates](docs/tasks/writer-v2/execucao/08-planejamento-de-cenas.md)
+registra a validação deste incremento; comércio e sessões conservam tarefas próprias.
+F2-03 acrescenta arcos, marcos e cronologia de ordem manual com datas textuais livres,
+vínculos explícitos a cenas/entidades e backup privado v6. A interface fica nas abas
+dos livros e aventuras. Este incremento passou nos gates locais e no CI em
+`3358c75`; acompanhe a evidência no
+[contrato de arcos e cronologia](docs/tasks/writer-v2/execucao/09-arcos-e-cronologia.md).
+F2-04 acrescenta estado editorial privado, meta total do manuscrito, checklist de
+preparação, fuso por usuário e retomada autorizada. A contagem acompanha o texto
+atual e possui verificação retomável para projetos anteriores. Os gates locais e
+90 jornadas Chromium passaram; a correção `16e71f6` também passou na CI. Veja o
+[contrato de progresso e retomada](docs/tasks/writer-v2/execucao/10-estados-metas-e-retomada.md).
+F2-05 acrescenta versões manuais do texto e cópia anterior a cada restauração,
+com comparação, exclusão explícita e recuperação de pedidos sem resposta. O
+histórico é privado e ainda não acompanha o backup v6. Os resultados de validação
+ficam no [contrato de histórico](docs/tasks/writer-v2/execucao/11-historico-e-restauracao.md).
+F2-06 está concluído tecnicamente em 624c912, incluindo a correção de foco/refazer
+confirmada na CI. Aventuras reúnem blocos com texto, tipo, audiência e
+ilustração próprios na mesma cena. O principal antigo permanece íntegro; novo e
+legado sem classificação são privados. As prévias Original completo, Mestre e
+Jogadores continuam restritas ao criador, com filtro e mídia no servidor, sem
+compartilhamento automático. Veja [blocos e prévias](docs/tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
+F2-07 está em implementação: a gestão de campanhas permite editar dados, escolher
+estado e trocar o universo organizacional, preservando o checklist e a procedência.
+O incremento de captura acrescenta preparação retomável de aventura própria,
+base congelada completa e somente lore explicitamente referenciado, com leitura
+privada de material, narrativa, arquivo e ilustrações. A captura está concluída
+tecnicamente em f97455d, com CI verde; veja a [evidência](docs/entregas/2026-10-15-writer-v2-captura-de-aventura.md).
+Notas próprias acrescentam título/texto simples particulares, com recuperação de
+pedidos sem resposta e isolamento entre mesas/abas. Continuam acessíveis quando a
+origem da base fica indisponível; não copiam lore automaticamente. C1 está validado
+localmente, com CI pendente; veja a [entrega](docs/entregas/2026-10-15-writer-v2-notas-da-campanha.md).
+Variantes, atualização explícita e exclusão integral seguem nas próximas etapas do
+[contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
+Distribuição e vendas por criadores convidados serão implementadas nos próximos
+incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
+e [timeline reestimada](docs/tasks/writer-v2/timeline.md).
 
 ## Quando usar
 
@@ -19,7 +64,7 @@ Indicado para:
 ## Quando NÃO usar
 
 - Edição colaborativa simultânea multiusuário (estilo Google Docs com cursores múltiplos ao vivo).
-- Marketplace de venda de livros ou cobrança por leitura de capítulos com paywall.
+- Marketplace aberto a qualquer vendedor, VTT e combate automatizado na primeira versão do ecossistema.
 - Geração automática e desassistida de livros inteiros por IA.
 - Diagramação profissional de pré-impressão gráfica com controle milimétrico (InDesign).
 
@@ -140,12 +185,20 @@ Decisões relevantes de arquitetura ou tecnologia viram um ADR (Architecture Dec
 
 ## Universos compartilhados
 
-A opção **Lore compartilhado** no header permite gerenciar universos e reutilizar
+A opção **Universos** no header permite gerenciar universos e reutilizar
 fichas entre livros, mantendo o lore local separado. Criação e edição de lore
 usam seções opcionais com salvamento direto. A liberação depende das functions e regras correspondentes; veja
 [universos e lore compartilhado](docs/shared-lore.md).
 
 ## Limitações conhecidas
+
+- O Estúdio exige implantação conjunta das seis callables, regras e índices antes
+  de uso em produção. A preparação de livros legados corrige somente datas/estado,
+  em lotes retomáveis. Cenas acrescentam callables, controles e índices próprios;
+  a implantação conjunta ainda exige autorização. Variantes, sessões e assistência
+  de IA especializada de cena permanecem nas próximas tarefas. Veja
+  [contrato do Estúdio](docs/tasks/writer-v2/execucao/07-estudio-projetos.md) e
+  [cenas](docs/tasks/writer-v2/execucao/08-planejamento-de-cenas.md).
 
 - O [chat do Assistente IA no capítulo](docs/chapter-chat.md) tem histórico privado,
   comandos e contexto por seleção/cursor/viewport. Conversa não debita; a primeira
@@ -164,7 +217,7 @@ usam seções opcionais com salvamento direto. A liberação depende das functio
 - A publicação é uma versão explícita, separada do rascunho. Alterações só aparecem após atualizar a publicação; tornar lore público privado retira a versão pública imediatamente. As regras precisam ser implantadas junto da versão antes de uso real. Veja [segurança da publicação](docs/publication-security.md).
 - Livros antigos com status publicado precisam de republicação explícita com nome de autor público. Nenhuma migração/publicação automática é executada.
 - A concessão mensal Premium exige um registro de direito criado por administrador em `creditEntitlements`, separado do perfil legado. Perfis antigos precisam de revisão pelo operador; a aplicação não cria nem reconcilia direitos.
-- Créditos são validados pelas regras do Firestore, mas uma arquitetura de IA exclusivamente no cliente não é um sistema de faturamento à prova de chamadas diretas. Pagamento e backend de cobrança continuam fora do escopo.
+- Créditos de IA e compras de obras são sistemas separados. A loja V2 está no escopo aprovado, mas checkout, direitos adquiridos e repasses ainda não estão implementados; Stripe Payments configurado não comprova Connect habilitado.
 - O cache persistente depende de IndexedDB; rascunhos locais distintos exigem uma escolha de recuperação. Em dispositivos compartilhados, dados locais devem ser tratados como privados.
 
 ### Implantação preparada

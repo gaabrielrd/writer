@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as composition from '../services/chapterCompositionService';
 import {
   beginBookDeletion,
   deletePublicationRevisions,
@@ -129,6 +130,60 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('publicationService', () => {
+  it('publica a prosa canônica das cenas e captura revisão sem plano ou fonte', async () => {
+    const book = { ...originalBook, hasSceneResources: true, sceneRevision: 7 };
+    mocks.getBook.mockResolvedValue(snapshot(book));
+    mocks.transactionGet.mockResolvedValue(snapshot(book));
+    chapters = [
+      snapshot(
+        {
+          title: 'Capítulo',
+          order: 1,
+          contentMode: 'scenes',
+          assemblyRevision: 4,
+          content: 'FONTE PRIVADA',
+          objective: 'PLANO PRIVADO',
+        },
+        'ch-1',
+      ),
+    ];
+    vi.spyOn(composition, 'resolveChapterContent').mockResolvedValueOnce({
+      id: 'ch-1',
+      bookId: 'book',
+      title: 'Capítulo',
+      order: 1,
+      content: '<p>Prosa atual</p>',
+      wordCount: 2,
+      createdAt: 1,
+      updatedAt: 100,
+      contentMode: 'scenes',
+      assemblyRevision: 4,
+    });
+    await publishBook('book', 'Autor');
+    const writes = mocks.batches.flat();
+    expect(writes.find((write) => write.path.endsWith('/chapters/ch-1'))?.data).toEqual({
+      title: 'Capítulo',
+      order: 1,
+      content: '<p>Prosa atual</p>',
+    });
+    expect(writes[0]?.data).toMatchObject({ sourceSceneRevision: 7 });
+    expect(mocks.transactionSet).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ sourceSceneRevision: 7 }),
+    );
+    expect(JSON.stringify(writes)).not.toMatch(/FONTE PRIVADA|PLANO PRIVADO|objective/);
+  });
+  it('não ativa a publicação se a revisão das cenas mudou durante o staging', async () => {
+    mocks.getBook.mockResolvedValue(
+      snapshot({ ...originalBook, hasSceneResources: true, sceneRevision: 7 }),
+    );
+    mocks.transactionGet.mockResolvedValue(
+      snapshot({ ...originalBook, hasSceneResources: true, sceneRevision: 8 }),
+    );
+    await expect(publishBook('book', 'Autor')).rejects.toThrow(/mudou durante/);
+    expect(mocks.transactionSet).not.toHaveBeenCalled();
+    expect(mocks.transactionUpdate).not.toHaveBeenCalled();
+  });
   it('publica cópia sanitizada, nome explícito e apenas campos públicos autorizados', async () => {
     await publishBook('book', '  Pseudônimo  ');
     const writes = mocks.batches.flat();
@@ -261,6 +316,16 @@ describe('publicationService', () => {
     ]);
     expect(mocks.commit).toHaveBeenCalledTimes(1);
   });
+
+  it.each([{ hasSceneResources: true }, { hasNarrativeResources: true }])(
+    'finish antigo não apaga pai com recursos %j',
+    async (resources) => {
+      mocks.getBook.mockResolvedValue(snapshot({ ...originalBook, ...resources, deleting: true }));
+      await expect(finishBookDeletion('book')).rejects.toThrow(/limpeza/);
+      expect(mocks.batches).toEqual([]);
+      expect(mocks.commit).not.toHaveBeenCalled();
+    },
+  );
 
   it('marca exclusão irreversível e depois retém somente o ID apagado', async () => {
     await beginBookDeletion('book');

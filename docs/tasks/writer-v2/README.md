@@ -1,8 +1,9 @@
 # Writer V2 — Estúdio, livros e campanhas
 
 **Data do planejamento:** 2026-10-12. **Responsável:** Gabriel, trabalhando sozinho, 20 horas por semana.
-**Estado:** planejamento documentado; funcionalidades futuras não implementadas.
-**Autorização deste trabalho:** detalhar o escopo em tarefas. A implementação de cada incremento tem seu próprio plano e aceite.
+**Estado:** fundamentos técnicos validados; Estúdio F2-01 implementado, com gates locais verdes e CI do head acompanhado no PR. Aceites humanos/comerciais e demais funcionalidades permanecem pendentes.
+**Autorização deste trabalho:** implementar, planejar e validar cada tarefa em sequência, fase a fase.
+O [registro de execução](execucao/README.md) distingue documento, validação local e aceite final.
 
 ## Visão e decisões confirmadas
 
@@ -13,7 +14,7 @@ e venda direta por criadores convidados, com catálogo acompanhado pelo operador
 Campanhas incluem preparar e conduzir sessões, compartilhar materiais e registrar consequências.
 
 Nesta pasta, **V1 do ecossistema** significa a primeira versão pública da evolução Writer V2;
-não significa a versão histórica do Writer descrita no PRD atual.
+não significa a versão histórica do Writer preservada no PRD.
 
 ## Ordem de execução
 
@@ -34,7 +35,7 @@ Os pilotos anteriores à fase 5 são fechados e não representam uma V1 pública
 - [Escopo e jornadas](escopo-e-jornadas.md): requisitos e limites.
 - [Decisões e riscos](decisoes-e-riscos.md): o que está confirmado, proposto e pendente.
 - [Arquitetura proposta](arquitetura-proposta.md): domínios, dados e acessos.
-- [Timeline e capacidade](timeline.md): orçamento, marcos e revisão de prazos.
+- [Timeline e capacidade](timeline.md): estimativas por tarefa, capacidade e revisão de horizonte.
 - [Validação e aceite](validacao-e-aceite.md): cenários e evidências exigidas.
 - [Matriz de cobertura](matriz-de-cobertura.md): ligação do escopo às tarefas.
 - [Validação do planejamento](validacao-do-planejamento.md): auditoria documental e resultados reais dos checks.
@@ -46,9 +47,12 @@ Propostas de produto estão identificadas; uma tarefa de decisão produz uma esc
 não autoriza adivinhar preços, políticas ou acesso a conteúdo privado.
 Ao terminar, registrar evidência e atualizar o estado da tarefa sem confundir planejamento com execução.
 
-Esta pasta propõe substituir limites do PRD histórico sobre campanhas e comércio.
-O [PRD atual](../../prd.md), a [arquitetura vigente](../../architecture.md) e o
-[AGENTS.md](../../../AGENTS.md) continuam descrevendo o sistema existente.
-A tarefa W2-F1-06 consolida as decisões aprovadas nesses documentos antes da implementação correspondente.
+O [PRD](../../prd.md) separa a base vigente do escopo V2 aprovado, incluindo
+campanhas, distribuição e comércio. [Arquitetura](../../architecture.md) e
+[ADR 0025](../../decisions/0025-writer-v2-contracts.md) conservam essa separação.
+A [consolidação F1-06](execucao/06-contratos-e-replanejamento.md) registra condições
+por incremento; configuração comercial, CI e pilotos não são presumidos pela
+aprovação da navegação. O [AGENTS.md](../../../AGENTS.md) mantém regras de trabalho
+e de evidência, sem declarar os módulos futuros existentes.
 
 A definição de concluído continua em [processo de desenvolvimento](../../development-process.md).

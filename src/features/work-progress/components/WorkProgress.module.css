@@ -1,0 +1,104 @@
+.panel {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.card {
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.form {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.hint {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.total {
+  font-size: 1.25rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.progress {
+  width: 100%;
+  accent-color: hsl(var(--primary));
+  height: 1rem;
+  appearance: none;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: hsl(var(--secondary));
+}
+.progress::-webkit-progress-bar {
+  background: hsl(var(--secondary));
+}
+.progress::-webkit-progress-value {
+  background: hsl(var(--primary));
+}
+.progress::-moz-progress-bar {
+  background: hsl(var(--primary));
+}
+.preferences {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  border-top: 1px solid hsl(var(--border));
+  padding-top: var(--space-4);
+}
+.list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.item {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  min-width: 0;
+  padding: var(--space-3);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+}
+.copy {
+  flex: 1 1 180px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.completed {
+  text-decoration: line-through;
+  color: hsl(var(--muted-foreground));
+}
+.resumeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--space-3);
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.wrapButton {
+  max-width: 100%;
+  white-space: normal;
+  min-height: var(--control-height);
+  height: auto;
+  overflow-wrap: anywhere;
+  text-align: center;
+}

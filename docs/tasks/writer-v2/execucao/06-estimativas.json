@@ -1,0 +1,299 @@
+{
+  "date": "2026-10-13",
+  "base": "3482a63",
+  "unit": "horas de trabalho humano ativo",
+  "meaning": "Referencia nao calibrada de esforco total por tarefa; nao horas realizadas, compromisso de data ou intervalo estatistico",
+  "confidence": "baixa: sem apontamento de horas humanas ou fator de produtividade de IA medido",
+  "grossWeeklyHours": 20,
+  "deliveryHoursByPhase": { "1": 16, "2": 16, "3": 16, "4": 14, "5": 14 },
+  "actualHours": null,
+  "tasks": [
+    {
+      "id": "W2-F1-01",
+      "phase": 1,
+      "title": "Jornadas e escopo",
+      "hours": [8, 12, 20],
+      "risk": "Inventario e corpus; CI compartilhada na consolidacao"
+    },
+    {
+      "id": "W2-F1-02",
+      "phase": 1,
+      "title": "Dominio e compatibilidade",
+      "hours": [12, 20, 32],
+      "risk": "Modelos, origem, bytes e migrações; medições nao sao benchmark"
+    },
+    {
+      "id": "W2-F1-03",
+      "phase": 1,
+      "title": "Permissoes e privacidade",
+      "hours": [12, 20, 32],
+      "risk": "Projecoes, convites, revogacao e casos negativos"
+    },
+    {
+      "id": "W2-F1-04",
+      "phase": 1,
+      "title": "Comercio e direitos",
+      "hours": [16, 24, 40],
+      "risk": "Pesquisa/configuracao; habilitacao/contratos sao espera externa"
+    },
+    {
+      "id": "W2-F1-05",
+      "phase": 1,
+      "title": "Prototipos e pilotos",
+      "hours": [16, 24, 40],
+      "risk": "Prototipo, ensaio e observacao; agenda de pessoas e espera"
+    },
+    {
+      "id": "W2-F1-06",
+      "phase": 1,
+      "title": "Consolidacao e estimativas",
+      "hours": [8, 12, 20],
+      "risk": "Revisao cruzada, portao, normas e soma de estimativas"
+    },
+    {
+      "id": "W2-F2-01",
+      "phase": 2,
+      "title": "Projetos e navegacao",
+      "hours": [32, 48, 80],
+      "risk": "Criacao idempotente, servicos, autorizacao e rotas antigas"
+    },
+    {
+      "id": "W2-F2-02",
+      "phase": 2,
+      "title": "Planejamento de cenas",
+      "hours": [48, 72, 112],
+      "risk": "Vinculo ao manuscrito, ordem, teclado e formato legado"
+    },
+    {
+      "id": "W2-F2-03",
+      "phase": 2,
+      "title": "Arcos e cronologia",
+      "hours": [24, 40, 64],
+      "risk": "Vinculos privados, ordem e alvos removidos"
+    },
+    {
+      "id": "W2-F2-04",
+      "phase": 2,
+      "title": "Estados, metas e retomada",
+      "hours": [24, 40, 64],
+      "risk": "Contagem, periodo/fuso e retomada autorizada"
+    },
+    {
+      "id": "W2-F2-05",
+      "phase": 2,
+      "title": "Historico e restauracao",
+      "hours": [64, 104, 160],
+      "risk": "Autosave/IA, snapshots, conflito, offline e cliente antigo"
+    },
+    {
+      "id": "W2-F2-06",
+      "phase": 2,
+      "title": "Aventuras",
+      "hours": [48, 80, 128],
+      "risk": "Dominio proprio, editor publico, audiencias e imagens"
+    },
+    {
+      "id": "W2-F2-07",
+      "phase": 2,
+      "title": "Campanhas e variantes",
+      "hours": [40, 64, 104],
+      "risk": "Base congelada, duas mesas, origem removida e exclusao"
+    },
+    {
+      "id": "W2-F2-08",
+      "phase": 2,
+      "title": "Preparacao de sessoes",
+      "hours": [32, 48, 80],
+      "risk": "CRUD/ordem, pistas, missoes e notas preservadas"
+    },
+    {
+      "id": "W2-F2-09",
+      "phase": 2,
+      "title": "Lore, importacao e portabilidade",
+      "hours": [56, 88, 144],
+      "risk": "Arquivos reais, mencoes/IA e roundtrip de backup"
+    },
+    {
+      "id": "W2-F3-01",
+      "phase": 3,
+      "title": "Convites e acessos",
+      "hours": [40, 64, 104],
+      "risk": "Identidade, expiracao, replay e revogacao em uso"
+    },
+    {
+      "id": "W2-F3-02",
+      "phase": 3,
+      "title": "Revisao editorial",
+      "hours": [48, 80, 128],
+      "risk": "Snapshots, ancoras de texto rico, comentarios e papeis"
+    },
+    {
+      "id": "W2-F3-03",
+      "phase": 3,
+      "title": "Sugestoes e pendencias",
+      "hours": [40, 64, 104],
+      "risk": "Aceite CAS/hash, autosave e aplicacao unica sem debito humano"
+    },
+    {
+      "id": "W2-F3-04",
+      "phase": 3,
+      "title": "Portal e materiais",
+      "hours": [48, 80, 128],
+      "risk": "Projecoes fechadas, endpoint de arquivos e cache"
+    },
+    {
+      "id": "W2-F3-05",
+      "phase": 3,
+      "title": "Revelacoes e spoilers",
+      "hours": [48, 80, 136],
+      "risk": "Capitulos, aliases, busca/IA e revogacao monotônica"
+    },
+    {
+      "id": "W2-F3-06",
+      "phase": 3,
+      "title": "Painel do mestre",
+      "hours": [40, 64, 104],
+      "risk": "UI densa, notas, rede/retry e 320 px"
+    },
+    {
+      "id": "W2-F3-07",
+      "phase": 3,
+      "title": "Consequencias e canone",
+      "hours": [40, 64, 104],
+      "risk": "Diario local, proposta escolhida e conflito global"
+    },
+    {
+      "id": "W2-F3-08",
+      "phase": 3,
+      "title": "Piloto duplo real",
+      "hours": [24, 40, 72],
+      "risk": "Duas jornadas/sessoes, observacao e correcoes; agenda externa"
+    },
+    {
+      "id": "W2-F4-01",
+      "phase": 4,
+      "title": "Edicoes e projecoes",
+      "hours": [48, 80, 136],
+      "risk": "Captura imutavel, ativacao, legado e origem revogada"
+    },
+    {
+      "id": "W2-F4-02",
+      "phase": 4,
+      "title": "EPUB e distribuicao externa",
+      "hours": [40, 64, 104],
+      "risk": "Sumario, Unicode/imagens, validador e leitor real"
+    },
+    {
+      "id": "W2-F4-03",
+      "phase": 4,
+      "title": "Pacotes de aventura",
+      "hours": [40, 64, 112],
+      "risk": "Audiencias, hashes, geracao parcial e inspeção de arquivos"
+    },
+    {
+      "id": "W2-F4-04",
+      "phase": 4,
+      "title": "Criadores convidados",
+      "hours": [40, 64, 112],
+      "risk": "Connect real, direitos, submissao e suspensao"
+    },
+    {
+      "id": "W2-F4-05",
+      "phase": 4,
+      "title": "Catalogo, series e amostras",
+      "hours": [32, 56, 88],
+      "risk": "Projecoes publicas, busca e corpo pago ausente"
+    },
+    {
+      "id": "W2-F4-06",
+      "phase": 4,
+      "title": "Ofertas e precos",
+      "hours": [24, 40, 64],
+      "risk": "Centavos, contrato/versionamento e concorrencia"
+    },
+    {
+      "id": "W2-F4-07",
+      "phase": 4,
+      "title": "Pedidos e checkout",
+      "hours": [40, 64, 112],
+      "risk": "Adapter real, direct charges, idempotencia e sandbox"
+    },
+    {
+      "id": "W2-F4-08",
+      "phase": 4,
+      "title": "Webhooks e conciliacao",
+      "hours": [56, 96, 160],
+      "risk": "Assinatura/contexto, replay/ordem, razao e recuperacao"
+    },
+    {
+      "id": "W2-F4-09",
+      "phase": 4,
+      "title": "Biblioteca e entrega",
+      "hours": [48, 80, 136],
+      "risk": "Direito, leitor, arquivos, respostas tardias e revogacao"
+    },
+    {
+      "id": "W2-F4-10",
+      "phase": 4,
+      "title": "Reembolsos e disputas",
+      "hours": [48, 80, 136],
+      "risk": "Solicitacao/efetivacao, parcial, compensacao e notas"
+    },
+    {
+      "id": "W2-F4-11",
+      "phase": 4,
+      "title": "Repasses e operacao",
+      "hours": [40, 72, 120],
+      "risk": "Extratos reais, taxas/comissao/payout e falhas"
+    },
+    {
+      "id": "W2-F4-12",
+      "phase": 4,
+      "title": "Campanha da compra",
+      "hours": [32, 56, 96],
+      "risk": "Instanciacao autorizada, update e reversao"
+    },
+    {
+      "id": "W2-F5-01",
+      "phase": 5,
+      "title": "Onboarding e piloto",
+      "hours": [24, 40, 64],
+      "risk": "Ajuda e piloto humano com compra sandbox nas duas jornadas"
+    },
+    {
+      "id": "W2-F5-02",
+      "phase": 5,
+      "title": "Metricas e economia",
+      "hours": [24, 40, 64],
+      "risk": "Eventos minimos, teste/live, denominadores e dados ausentes"
+    },
+    {
+      "id": "W2-F5-03",
+      "phase": 5,
+      "title": "Qualidade integrada",
+      "hours": [48, 80, 136],
+      "risk": "Regressao transversal, contas, formatos, acessibilidade e CI"
+    },
+    {
+      "id": "W2-F5-04",
+      "phase": 5,
+      "title": "Operacao e suporte",
+      "hours": [24, 40, 64],
+      "risk": "Runbooks, entrega/refund/payout e retenção aplicável"
+    },
+    {
+      "id": "W2-F5-05",
+      "phase": 5,
+      "title": "Rollout e recuperacao",
+      "hours": [32, 56, 96],
+      "risk": "Staging, backup/migracao/rollback e regras/indices"
+    },
+    {
+      "id": "W2-F5-06",
+      "phase": 5,
+      "title": "Aceite e lancamento",
+      "hours": [24, 40, 72],
+      "risk": "Piloto real dos dois produtos, conciliacao e auditoria"
+    }
+  ]
+}

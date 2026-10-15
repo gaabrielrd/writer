@@ -4,6 +4,13 @@
 
 Testamos o **comportamento observável** da aplicação: o que o usuário vê e faz. Não testamos detalhes internos de implementação. Um bom teste continua passando mesmo que você reorganize o código por dentro, desde que o comportamento continue o mesmo.
 
+Durante ajustes, execute somente os testes necessários para o comportamento
+afetado. Repita ou amplie a suíte quando uma nova mudança, falha ou risco de
+integração justificar; preserve `npm run validate` no fechamento do incremento.
+Por decisão do operador em 2026-10-15, acompanhe a CI em paralelo sem parar o
+próximo incremento validado localmente. Registre a CI pendente e seus resultados
+reais, seguindo o [processo de desenvolvimento](development-process.md).
+
 ## Tipos de teste
 
 - **Unidade**: funções e lógica isoladas (ex.: cálculo, formatação).
@@ -60,14 +67,14 @@ npm run test:coverage -- --maxWorkers=2
 
 A CI mantém o `validate` completo nos dois ambientes Node 22 e 24. O navegador
 de produção e a suíte visual executam em jobs separados. A suíte visual inteira
-é distribuída por três shards em paralelo, com dois workers por runner, incluindo
+é distribuída por oito shards em paralelo, com dois workers por runner, incluindo
 desktop/celular e claro/escuro/sépia. Os testes de seleção parcial pertencem à
 mesma suíte e passam a executar uma vez por projeto.
 
 Para reproduzir um dos shards, substitua o número antes da barra:
 
 ```bash
-npx playwright test -c playwright.visual.config.ts --shard=1/3
+npx playwright test -c playwright.visual.config.ts --shard=1/8
 ```
 
 Cada shard publica um blob e suas capturas/traces com nome próprio.
@@ -84,6 +91,26 @@ a preservação dos limites, dos dois ambientes Node e das evidências. Compare
 benchmarks da mesma suíte e cobertura sem processos de testes concorrentes;
 execuções com cobertura no mesmo checkout compartilham o diretório `coverage`.
 Veja a [ADR de paralelismo e sharding](decisions/0024-test-pipeline-sharding.md).
+
+## Autocomplete e navegação rápida
+
+`ai-assistant/tests/AutocompleteNavigation.test.tsx` integra editor e hook reais
+com serviços de IA/crédito simulados. Verifica que navegar após 50 ms ou no mesmo
+batch da digitação cancela a espera, conserva prosa/formatação/cursor e não debita
+crédito. Uma nova digitação gera exatamente uma sugestão. JSDOM não implementa
+esses gestos nativos: o teste entrega entrada, alteração DOM e uma notificação
+de seleção agrupada, sem comandos internos do editor. Geometria e relógio locais
+são restaurados após desmontar o componente.
+
+Escape no mesmo batch também cancela a intenção anterior, sem impedir uma nova
+digitação; composição e navegação consumida pelo menu de menções mantêm suas gates.
+
+O teste do hook também invalida uma oferta ao receber revisão nula e verifica
+que um pedido manual posterior continua disponível. O roteiro visual original
+`autocomplete-trigger.visual.ts` mantém contagens e relógio de 600 ms; suas
+repetições e o controle causal com gesto nativo são registrados na
+[entrega de arcos](entregas/2026-10-13-writer-v2-arcos.md). Um controle aprovado
+isolado não demonstra a correção de intermitência nem substitui o CI do SHA novo.
 
 ## Identidade visual
 
@@ -178,15 +205,165 @@ dimensões e integração com modal ficam em `e2e/visual/dropdown.visual.ts`.
 3. Se um teste falha após uma mudança de comportamento intencional, atualize o teste para o novo comportamento esperado.
 4. Se a falha for inesperada, corrija o código, não o teste.
 
-O cenário visual de seleção parcial posiciona o cursor no início, zera a
-rolagem do contêiner e da página e aguarda dois frames antes de medir o arrasto.
-No celular, a distância para ocultar o trecho é calculada pela posição real
-dele. O CI executa primeiro esses seis cenários como verificação rápida no
-Linux; quando passam, executa a suíte visual completa de 324 cenários.
-O gate E2E tem limite de 25 minutos para os testes e artefatos; o timeout
-individual dos testes visuais permanece em 45 segundos.
+O cenário visual de seleção parcial posiciona o cursor no primeiro bloco,
+confirma o título, zera a rolagem e mede os glifos antes do arrasto real.
+Somente esse cenário usa `controlledClock: true`: instala o relógio antes de
+abrir a aplicação, pausa após o primeiro salvamento e avança o autosave enquanto
+o botão do mouse está pressionado. Exige a transição de “Não salvo” para “Salvo”,
+o contador atualizado, o título na mesma posição e a seleção exata `trecho`.
+Depois retoma o relógio para testar rolagem, ações em 320 px e foco por teclado.
+Os demais cenários mantêm o tempo avançando naturalmente. A opção usa a
+[API Clock do Playwright](https://playwright.dev/docs/clock).
+
+No celular, a distância para ocultar o trecho vem de sua posição real. Os seis
+projetos desse cenário pertencem à suíte completa, distribuída nos seis shards
+do CI. O timeout individual permanece em 45 segundos; os limites dos jobs estão
+no workflow. Não aceitar um teste passando só porque o salvamento terminou
+antes da seleção: a transição durante o gesto faz parte da regressão protegida.
 
 ## Roadmap Writer e regras reais
+
+Gestão independente de campanhas tem testes colocalizados em `campaigns`:
+cancelamento, payload/revisão estáveis, resposta perdida, conflito com descarte
+explícito, isolamento de UID/alvo e adoção do DTO próprio. O backend em
+`functions/test/campaigns.test.mjs` e o SDK real
+`tests/firestore/campaigns.rules.test.mjs` conferem CAS/replay, contador/usos de
+universo, legado e escrita direta negada. Fixtures substituem só o novo transporte;
+os controles de navegador não comprovam autorização real ou captura de aventura.
+Ver [contrato F2-07](tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
+
+Captura e leitura de bases têm testes colocalizados em `campaign-bases`,
+integrações de Aventura/Estúdio/Campanha e testes Functions próprios. Cobrem
+pedidos estáveis, checkpoint/identidades reservadas, resposta perdida, retomada
+após reload, mudança de UID/alvo, descoberta de controles locais, paginação e
+montagem integral de Unicode/chunks/hash. O leitor preserva texto legado separado,
+arquivo, referências explícitas e relações autorizadas sem expansão transitiva.
+
+`tests/firestore/campaignCapture.rules.test.mjs` e
+`campaignBaseRead.rules.test.mjs` exercitam escritores reais e transações no
+emulador Firestore, SDK direto negado, CAS/replay, abortos, usos/pins e revogação.
+Storage é injetado nesses testes: eles não comprovam bucket, credenciais ou
+versionamento de produção. `e2e/visual/campaign-base.visual.ts` prova composição
+do cliente, duas mesas isoladas, congelamento após edição, corpus grande,
+recuperação, limpeza sem origem, teclado e 320 px nos três temas. O transporte
+novo tem fixture própria; captura de tela não substitui autorização real.
+Veja [contrato de captura](tasks/writer-v2/execucao/15-captura-de-aventura.md).
+
+Notas próprias têm testes colocalizados em `campaign-notes`, integração pública
+em CampaignPage e `functions/test/campaignNotes.test.mjs`. Protegem payload
+autoral preservado, reserva/limpeza sob Web Locks, storage events, resposta antiga,
+troca UID/alvo/token, conflito explícito, cursor invalidado e fechamento durante
+save sem reabrir o diálogo. Cancelar antes de enviar não grava; recuperação de
+delete não depende de lista ou GET da nota apagada.
+
+`tests/firestore/campaignNotes.rules.test.mjs` verifica APIs e SDK reais no
+emulador: negação direta, CAS/replay, tombstone, Unicode exato, corpo fora da lista,
+controle ausente/inconsistente, limites e identidade precisa de root recriado.
+Notas próprias permanecem autorizadas sem aventura/universo/base originais.
+`e2e/visual/campaign-notes.visual.ts` acrescenta CRUD/teclado/320 px, perda da
+origem, recuperação após reload e corrida entre duas abas usando Web Locks reais.
+A fixture simula o servidor sob um lock separado; contagem de RPCs comprova que
+ele não substitui a reserva do produto. Token fictício não prova createTime:
+essa garantia pertence ao SDK. Ver [contrato C1](tasks/writer-v2/execucao/16-notas-proprias-da-campanha.md).
+
+Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
+em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
+ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.
+`functions/test/adventureBlocks.test.mjs` e `adventurePreview.test.mjs` verificam
+escritores, projeção sem ler corpos secretos, whitelist, paginação por bytes,
+usos tipados e derivação/revogação de mídia. Os SDKs correspondentes em
+`tests/firestore` usam regras/Admin reais para isolamento, CAS, concorrência e
+contadores. Capturas não substituem essas provas.
+
+`e2e/visual/adventure-blocks.visual.ts` e `adventure-preview.visual.ts` usam os
+editores, filas, recuperação, validação do DTO e renderer reais. Só os transportes
+adventureBlockCallables/adventurePreviewCallables são substituídos por fixtures
+locais; a conferência dos segredos no HTML é da projeção recebida, sem esconder
+texto por CSS. Roteiros incluem três modos, imagens, paginação, perda de resposta,
+revogação, teclado e 320 px. Resultados reais ficam no
+[contrato F2-06](tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
+
+O histórico possui testes colocalizados em `manuscript-history`, editores e cenas.
+Cobrem corpus exato, manifesto/blocos/hash, conta/recurso, seleção tardia, recibo
+privado danificado, operação incerta, reserva, comparação, undo e saída após
+restaurar. `functions/test/workHistory.test.mjs` e
+`tests/firestore/workHistory.rules.test.mjs` protegem token preciso, ativação sem
+rebase, snapshot/restauração atômicos, prosa legada grande, isolamento e limpeza.
+`e2e/visual/manuscript-history.visual.ts` exercita seis jornadas em seis projetos:
+autor, mestre, cópia anterior, próxima edição, resposta perdida, conflito remoto,
+paginação/origem removida, exclusão, teclado e 320 px. Somente as seis callables
+são substituídas por fixtures; reconstrução, verificação e UI reais continuam no
+navegador. Autorização e atomicidade são comprovadas separadamente pelo SDK.
+
+O Estúdio tem testes de frontend colocalizados em `studio`, `adventures`,
+`campaigns` e no serviço público de livros. Protegem criação/retry com a mesma
+operação, resposta incerta, troca de conta, datas, filtros, paginação e falhas
+parciais. `functions/test/studio.test.mjs` verifica autoria, recibos, limites,
+cursores e preparação legada; `tests/firestore/studio.rules.test.mjs` usa as regras
+e o Admin SDK reais, com datas de snapshot, concorrência e proteção dos vínculos.
+O filtro editorial também cobre estado atual diferente do status legado, fallback
+de documentos antigos, projeção de metadados sem corpos e cursores vinculados ao
+filtro. O hook é exercitado com janelas vazias intermediárias, falha ao carregar
+mais e troca de conta/filtro durante uma resposta pendente. A jornada visual
+conserva os filtros independentes de autores e mestres e busca uma correspondência
+além da primeira janela, sem reduzir o cenário antigo a um filtro de arquivo.
+Os testes de personas/livros existentes permanecem parte do gate integral.
+
+Cenas acrescentam testes colocalizados de serviços, autosave CAS, rascunho tipado,
+planejamento e composição em `scenes`/`books`/`editor`. Protegem fonte legada,
+arquivo/restauração, páginas de prosa, sanitização, hashes, backup v5 e captura
+de revisão na publicação. `functions/test/scenes.test.mjs` testa mutações e jobs;
+`tests/firestore/scenes.rules.test.mjs` verifica SDK Admin/regras reais, concorrência,
+isolamento, controles protegidos, orçamento e clientes antigos. A suíte visual
+`e2e/visual/scenes.visual.ts` cobre autor e criador de aventura nos três temas e
+320 px. Seus adaptadores simulam persistência e transporte; os resultados reais
+e limitações ficam no [contrato em execução](tasks/writer-v2/execucao/08-planejamento-de-cenas.md).
+
+Arcos e cronologia têm testes colocalizados em `narrative-planning`, com integração
+em livros/editor/aventuras. Cobrem campos privados, datas textuais, sequências
+independentes, vínculos paginados, CAS, comparação/retry e respostas tardias de
+outra conta. Os testes de backup conferem identidade, contagem de referências,
+revisões de narrativa/cenas, exclusão em andamento e projeção portátil sem UID/jobs.
+Troca local de universo invalida o painel antigo e preserva o arco na URL; isso
+não comprova atualização remota em tempo real sem refresh.
+
+`functions/test/narrativePlanning.test.mjs` cobre APIs/jobs e índices explícitos;
+`tests/firestore/narrativePlanning.rules.test.mjs` usa SDK Admin/regras reais,
+incluindo corrida de revisões e preparação com remoção/adição concorrentes.
+`e2e/visual/narrative-planning.visual.ts` define 16 jornadas em seis projetos:
+autor/mestre, edição, ordenação, múltiplos vínculos, entidades explícitas versus
+menção textual, exclusão/preparação/rebalance retomáveis, backup JSON v6,
+Markdown e leitor publicado sem notas privadas, teclado e 320 px.
+Adaptadores visuais continuam fictícios; autorização real é conferida no emulador.
+Resultados e limitações ficam no [contrato F2-03](tasks/writer-v2/execucao/09-arcos-e-cronologia.md).
+
+Progresso e retomada têm testes colocalizados em `work-progress` e integração em
+livros/aventuras/campanhas/Estúdio/editores. Cobrem metas totais, estado editorial
+independente da publicação, checklist paginado, comparação e recibos incertos,
+preferência de fuso, fila de visitas, troca de conta e respostas tardias. Escritores
+legados/autosave/importação conferem a base observada e a confirmação de respostas
+perdidas antes de uma nova edição, sem sobrescrever outro dispositivo.
+
+`functions/test/workProgress.test.mjs` cobre contratos, ledger e preparação.
+`functions/test/visibleWordCount.test.mjs` usa o corpus comum de texto visível;
+`src/features/books/tests/visibleWordCountParity.test.ts` confronta o servidor com
+`renderRichText`/`countWords` no JSDOM, incluindo entidades e HTML malformado.
+`tests/firestore/workProgress.rules.test.mjs` usa SDK real para autorização,
+proteção de campos privados, checkpoint intercalado com escritores, composição,
+arquivo/restauração, exclusão, CAS, replay após edição externa e privacidade de
+retomada. `e2e/visual/work-progress.visual.ts` cobre 15 jornadas nos seis projetos:
+autor/mestre, contagem, limite da barra, checklist, paginação, conflitos, resposta
+perdida, fuso, retomada, origem removida, troca de conta, teclado e 320 px. O corpus
+também é confrontado com o contador nativo do Chromium dentro desses casos.
+As fixtures de interface não substituem as provas do servidor.
+Resultados e limitações ficam no [contrato F2-04](tasks/writer-v2/execucao/10-estados-metas-e-retomada.md).
+
+`e2e/visual/studio.visual.ts` roda oito cenários em seis projetos: três temas,
+desktop/celular, navegação/teclado em 320 px, projetos independentes, persistência
+simulada, resposta perdida, troca de conta, erro parcial, preparação e paginação.
+As fixtures nunca comprovam autorização ou persistência real; esse contrato é
+verificado separadamente no emulador. Produção exige implantação explícita de
+functions/regras/índices e não é acionada pelos testes.
 
 A [matriz de aceite](tasks/roadmap-acceptance.md) relaciona as tarefas 01–08 aos
 comportamentos e testes. `npm run test:rules` inicia somente um emulador Firestore
@@ -452,3 +629,27 @@ tap e drag sem mudança conservam a preferência de largura.
 Relatórios e resultados gerados pelo Playwright são ignorados pelo ESLint para
 evitar leitura de arquivos temporários durante execuções paralelas. As regras
 de lint do código-fonte e os limites de cobertura permanecem os mesmos.
+
+## Protótipo e evidências do Writer V2
+
+`e2e/visual/writer-v2.html` é uma entrada demonstrativa isolada; dados e estados
+são fixtures em memória. `writer-v2-prototype.visual.ts` verifica navegação,
+preservação de texto/notas, confirmação, teclado/foco, revelação e estados
+simulados de compra/reversão nos três temas, desktop/celular e 320 px.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/writer-v2-prototype.visual.ts
+```
+
+Trinta percursos Chromium passaram no incremento do protótipo. Essa evidência
+aprova interações demonstrativas, sem comprovar autorização no servidor, regras
+reais, arquivo gerado, webhook, Connect, CI ou participação humana.
+Veja [registro e limites](entregas/2026-10-13-writer-v2-prototipo.md).
+
+Cada capacidade produtiva V2 aplica seus casos observáveis e negativos, o
+[contrato transversal](tasks/writer-v2/validacao-e-aceite.md) e a definição de
+concluído. Não substituir emulador/contas distintas por mocks para segurança nem
+compra sandbox real por alteração de estado da fixture. Pilotos usam o
+[roteiro preparado](tasks/writer-v2/execucao/05-roteiro-de-pilotos.md), com pessoas
+e tratamento das observações definidos antes da coleta. Cobertura mínima e
+comandos de validate permanecem inalterados.

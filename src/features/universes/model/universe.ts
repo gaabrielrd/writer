@@ -4,6 +4,8 @@ export interface Universe {
   name: string;
   description: string;
   bookCount: number;
+  adventureCount?: number;
+  campaignCount?: number;
   privacyVersion: number;
   loreVersion: number;
   createdAt: number;

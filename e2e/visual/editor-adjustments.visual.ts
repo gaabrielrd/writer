@@ -189,82 +189,118 @@ test('menção ativa tem contraste e indicador, com navegação em 320px', async
   await expect(editor).toContainText(selectedName);
 });
 
-test('seleção parcial por mouse acompanha rolagem e cabe em 320px', async ({ page }, testInfo) => {
-  const editor = await openEditor(page);
-  await editor.fill('');
-  await page.getByRole('button', { name: 'Título Principal', exact: true }).click();
-  await editor.fill(
-    manuscript +
-      '\n\n' +
-      Array.from({ length: 50 }, () => 'A escrita continua em outro parágrafo.').join('\n\n'),
-  );
-  // Begin at the natural top of both scroll containers before measuring the drag.
-  await editor.press('Control+Home');
-  await editor.evaluate((element) => {
-    const area = element.closest('[data-editor-scroll-area]');
-    if (area) area.scrollTop = 0;
-    window.scrollTo(0, 0);
-  });
-  await page.evaluate(
-    () =>
-      new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      ),
-  );
-  const points = await editor.evaluate((element) => {
-    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-    const node = walker.nextNode()!;
-    const range = document.createRange();
-    range.setStart(node, 3);
-    range.setEnd(node, 4);
-    const start = range.getBoundingClientRect();
-    range.setStart(node, 8);
-    range.setEnd(node, 9);
-    const end = range.getBoundingClientRect();
-    // Drag inside the first/last glyphs instead of relying on zero-width caret boundaries.
-    return {
-      start: { x: start.left + start.width / 4, y: (start.top + start.bottom) / 2 },
-      end: { x: end.right - end.width / 4, y: (end.top + end.bottom) / 2 },
-      scrollTop: element.closest('[data-editor-scroll-area]')?.scrollTop,
-      windowScrollY: window.scrollY,
-    };
-  });
-  await page.mouse.move(points.start.x, points.start.y);
-  await page.mouse.down();
-  await page.mouse.move(points.end.x, points.end.y, { steps: 8 });
-  await page.mouse.up();
-  expect(
-    await page.evaluate(() => window.getSelection()?.toString()),
-    `Geometria inicial do arrasto: ${JSON.stringify(points)}`,
-  ).toBe('trecho');
-  const toolbar = page.getByRole('toolbar', { name: selectionToolbarName });
-  await expect(toolbar).toBeVisible();
-  const scrollArea = page.locator('[data-editor-scroll-area]');
-  if (testInfo.project.name.startsWith('mobile')) {
-    await page.evaluate((distance) => window.scrollBy(0, distance), points.end.y + 100);
-  } else {
-    await scrollArea.evaluate((element) => {
-      element.scrollTop = 300;
+test.describe('salvamento durante o gesto', () => {
+  test.use({ controlledClock: true });
+
+  test('seleção parcial por mouse acompanha rolagem e cabe em 320px', async ({
+    page,
+  }, testInfo) => {
+    const editor = await openEditor(page);
+    await editor.fill(
+      manuscript +
+        '\n\n' +
+        Array.from({ length: 50 }, () => 'A escrita continua em outro parágrafo.').join('\n\n'),
+    );
+    // Begin at the natural top of both scroll containers before measuring the drag.
+    await editor.press('Control+Home');
+    const headingToggle = page.getByRole('button', { name: 'Título Principal', exact: true });
+    const firstBlock = editor.locator(':scope > :first-child');
+    await expect(firstBlock).toContainText(manuscript);
+    await firstBlock.click({ position: { x: 2, y: 2 } });
+    const startsWithHeading = await firstBlock.evaluate((element) => element.tagName === 'H1');
+    await expect(headingToggle).toHaveAttribute('aria-pressed', String(startsWithHeading));
+    if (!startsWithHeading) await headingToggle.click();
+    const heading = editor.locator('h1').first();
+    await expect(headingToggle).toHaveAttribute('aria-pressed', 'true');
+    await expect(heading).toHaveText(manuscript);
+    await expect(page.getByText('305', { exact: true })).toBeVisible();
+    await expect(page.getByText('Salvo', { exact: true })).toBeVisible();
+    const insertPoint = await heading.evaluate((element) => {
+      const node = document.createTreeWalker(element, NodeFilter.SHOW_TEXT).nextNode()!;
+      const range = document.createRange();
+      range.setStart(node, node.textContent!.length - 1);
+      range.setEnd(node, node.textContent!.length);
+      const rect = range.getBoundingClientRect();
+      return { x: rect.right - rect.width / 4, y: (rect.top + rect.bottom) / 2 };
     });
-  }
-  await expect(toolbar).toHaveCount(0);
-  if (testInfo.project.name.startsWith('mobile')) {
-    await page.evaluate(() => window.scrollTo(0, 0));
-  } else {
-    await scrollArea.evaluate((element) => {
-      element.scrollTop = 0;
+    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now() + 1000)));
+    await page.mouse.click(insertPoint.x, insertPoint.y);
+    await page.clock.runFor(32);
+    await page.keyboard.insertText(' extra');
+    await page.clock.runFor(32);
+    await expect(heading).toHaveText(manuscript + ' extra');
+    await expect(page.getByText('Não salvo', { exact: true })).toBeVisible();
+    await editor.evaluate((element) => {
+      const area = element.closest('[data-editor-scroll-area]');
+      if (area) area.scrollTop = 0;
+      window.scrollTo(0, 0);
     });
-  }
-  await expect(toolbar).toBeVisible();
-  await resize(page, 320, 480);
-  await editor.evaluate((element) => element.scrollIntoView({ block: 'start' }));
-  await expect(toolbar).toBeVisible();
-  const box = (await toolbar.boundingBox())!;
-  expect(box.x).toBeGreaterThanOrEqual(0);
-  expect(box.x + box.width).toBeLessThanOrEqual(320);
-  expect(box.y).toBeGreaterThanOrEqual(0);
-  expect(box.y + box.height).toBeLessThanOrEqual(480);
-  await expectNoHorizontalOverflow(page, 'ações em 320px');
-  await page.getByRole('link', { name: 'Voltar para o livro' }).focus();
-  await expect(toolbar).toHaveCount(0);
+    await page.clock.runFor(32);
+    const points = await editor.evaluate((element) => {
+      const walker = document.createTreeWalker(element.querySelector('h1')!, NodeFilter.SHOW_TEXT);
+      const node = walker.nextNode()!;
+      const range = document.createRange();
+      range.setStart(node, 3);
+      range.setEnd(node, 4);
+      const start = range.getBoundingClientRect();
+      range.setStart(node, 8);
+      range.setEnd(node, 9);
+      const end = range.getBoundingClientRect();
+      // Drag inside the first/last glyphs instead of relying on zero-width caret boundaries.
+      return {
+        start: { x: start.left + start.width / 4, y: (start.top + start.bottom) / 2 },
+        end: { x: end.right - end.width / 4, y: (end.top + end.bottom) / 2 },
+        scrollTop: element.closest('[data-editor-scroll-area]')?.scrollTop,
+        windowScrollY: window.scrollY,
+      };
+    });
+    const headingTopBeforeSave = (await heading.boundingBox())!.y;
+    await page.mouse.move(points.start.x, points.start.y);
+    await page.mouse.down();
+    await page.clock.runFor(1100);
+    await expect(page.getByText('306', { exact: true })).toBeVisible();
+    await expect(page.getByText('Salvo', { exact: true })).toBeVisible();
+    expect(
+      (await heading.boundingBox())!.y,
+      'Salvar não deve deslocar o texto durante o arrasto',
+    ).toBeCloseTo(headingTopBeforeSave, 1);
+    await page.clock.resume();
+    await page.mouse.move(points.end.x, points.end.y, { steps: 8 });
+    await page.mouse.up();
+    expect(
+      await page.evaluate(() => window.getSelection()?.toString()),
+      `Geometria inicial do arrasto: ${JSON.stringify(points)}`,
+    ).toBe('trecho');
+    const toolbar = page.getByRole('toolbar', { name: selectionToolbarName });
+    await expect(toolbar).toBeVisible();
+    await capture(page, testInfo, 'selecao-apos-autosave');
+    const scrollArea = page.locator('[data-editor-scroll-area]');
+    if (testInfo.project.name.startsWith('mobile')) {
+      await page.evaluate((distance) => window.scrollBy(0, distance), points.end.y + 100);
+    } else {
+      await scrollArea.evaluate((element) => {
+        element.scrollTop = 300;
+      });
+    }
+    await expect(toolbar).toHaveCount(0);
+    if (testInfo.project.name.startsWith('mobile')) {
+      await page.evaluate(() => window.scrollTo(0, 0));
+    } else {
+      await scrollArea.evaluate((element) => {
+        element.scrollTop = 0;
+      });
+    }
+    await expect(toolbar).toBeVisible();
+    await resize(page, 320, 480);
+    await editor.evaluate((element) => element.scrollIntoView({ block: 'start' }));
+    await expect(toolbar).toBeVisible();
+    const box = (await toolbar.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(320);
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(480);
+    await expectNoHorizontalOverflow(page, 'ações em 320px');
+    await page.getByRole('link', { name: 'Voltar para o livro' }).focus();
+    await expect(toolbar).toHaveCount(0);
+  });
 });

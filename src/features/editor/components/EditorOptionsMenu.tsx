@@ -1,11 +1,12 @@
 import { useState, type Ref } from 'react';
-import { Download, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
+import { Download, History, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
 import { Dropdown } from '@/shared/ui';
 import { ExportDialog } from './ExportDialog';
 import type { ExportButtonProps } from './ExportButton';
 
 interface EditorOptionsMenuProps extends ExportButtonProps {
   onPersona: () => void;
+  onHistory?: () => void;
   disabled: boolean;
   personaError?: string | null;
   triggerRef: Ref<HTMLButtonElement>;
@@ -13,6 +14,7 @@ interface EditorOptionsMenuProps extends ExportButtonProps {
 
 export function EditorOptionsMenu({
   onPersona,
+  onHistory,
   disabled,
   personaError,
   triggerRef,
@@ -33,6 +35,16 @@ export function EditorOptionsMenu({
         title={personaError ?? 'Persona e exportação'}
         align="end"
         options={[
+          ...(onHistory
+            ? [
+                {
+                  value: 'history',
+                  label: 'Histórico do texto',
+                  icon: <History className="icon icon-sm" aria-hidden="true" />,
+                  onSelect: onHistory,
+                },
+              ]
+            : []),
           {
             value: 'persona',
             label: 'Persona',

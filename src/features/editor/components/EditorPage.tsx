@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import {
+  WorkHistoryDialog,
+  readPendingWorkHistoryOperation,
+  type VersionEditorAdapter,
+  type VersionSource,
+} from '@/features/manuscript-history';
+import { useWorkActivity, WorkActivityNotice } from '@/features/work-progress';
+import { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import {
   ArrowLeft,
@@ -14,6 +21,7 @@ import {
 import { Alert, Button, Dialog, ErrorState, LoadingState, useWorkspaceLayout } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
 import {
+  countWords,
   getBook,
   listChapters,
   getChapter,
@@ -22,6 +30,7 @@ import {
   subscribeWritingBindings,
   type Book,
   type Chapter,
+  SceneChapterView,
 } from '@/features/books';
 import {
   listLoreEntities,
@@ -135,12 +144,43 @@ function EditorSession() {
   const chatSequence = useRef(0);
   const chatOpening = useRef(false);
   const [isAcceptingAI, setIsAcceptingAI] = useState(false);
+  const aiBusyRef = useRef(false);
+  const historyActive = useRef(true);
+  const historyLock = useRef(false);
+  const liveContent = useRef(content);
+  useLayoutEffect(() => {
+    liveContent.current = content;
+  }, [content]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyBusy, setHistoryBusy] = useState(false);
+  const [historyContentVersion, setHistoryContentVersion] = useState(0);
+  const [historyPending, setHistoryPending] = useState(() =>
+    Boolean(
+      user?.uid &&
+      bookId &&
+      chapterId &&
+      readPendingWorkHistoryOperation(
+        user.uid,
+        { kind: 'book', id: bookId },
+        { kind: 'chapter', id: chapterId },
+      ),
+    ),
+  );
+  const historyPendingRef = useRef(historyPending);
+  const operationBusy = isAcceptingAI || historyBusy || historyPending;
+  useLayoutEffect(() => {
+    historyActive.current = true;
+    return () => {
+      historyActive.current = false;
+    };
+  }, []);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [loreRefreshError, setLoreRefreshError] = useState<string | null>(null);
   const handleBusyChange = useCallback(
     (busy: boolean) => {
+      aiBusyRef.current = busy;
       setIsAcceptingAI(busy);
-      setPendingEditorOperation(busy);
+      setPendingEditorOperation(busy || historyLock.current || historyPendingRef.current);
     },
     [setPendingEditorOperation],
   );
@@ -161,6 +201,8 @@ function EditorSession() {
     saveStatus,
     error: saveError,
     resetSavedContent,
+    acceptConfirmedContent,
+    getConfirmedContent,
     saveNow,
     getSavedContent,
   } = useAutoSave({
@@ -169,7 +211,7 @@ function EditorSession() {
     content,
     debounceMs: 1000,
     ownerId: user?.uid,
-    enabled: chapter !== null,
+    enabled: chapter !== null && chapter.contentMode !== 'scenes',
     onSaved: handleSaved,
   });
   useEffect(() => {
@@ -216,8 +258,10 @@ function EditorSession() {
     const loadData = async () => {
       try {
         const bookData: Book | null = await getBook(bookId);
-        const chaptersData: Chapter[] = await listChapters(bookId);
-        const chapterData: Chapter | null = await getChapter(bookId, chapterId);
+        const chaptersData: Chapter[] = await listChapters(bookId, { includeContent: false });
+        const chapterData: Chapter | null = await runChapterOperation(bookId, chapterId, () =>
+          getChapter(bookId, chapterId),
+        );
         const loreData: LoreEntity[] = await listLoreEntities(bookId);
         const globalData = bookData?.universeId
           ? await listLoreEntities({ kind: 'universe', id: bookData.universeId }).catch(
@@ -352,6 +396,8 @@ function EditorSession() {
     }
   };
   const applyChat = async (input: ChatApplyInput) => {
+    if (historyLock.current || historyPendingRef.current)
+      throw new Error('Confirme a operação de histórico antes de aplicar sugestões.');
     if (!chatBridge || !bookId || !chapterId || personaError)
       throw new Error(personaError || 'Editor indisponível.');
     if (input.message.context.persona.version !== (await chatDocumentHash(writingPersona.version)))
@@ -483,6 +529,110 @@ function EditorSession() {
     }
   };
 
+  const workActivity = useWorkActivity({
+    target: { kind: 'book', id: bookId ?? '' },
+    resource: { kind: 'chapter', id: chapterId ?? '' },
+    enabled: Boolean(
+      user &&
+      book?.authorId === user.uid &&
+      book.id === bookId &&
+      chapter?.id === chapterId &&
+      chapter?.bookId === bookId,
+    ),
+  });
+
+  const handleContentChange = useCallback((nextContent: string) => {
+    if (historyLock.current || historyPendingRef.current) return;
+    liveContent.current = nextContent;
+    setContent(nextContent);
+  }, []);
+  const historyState = useRef({ saveStatus, recoveryDraft, chatApplyRecovery });
+  useLayoutEffect(() => {
+    historyState.current = { saveStatus, recoveryDraft, chatApplyRecovery };
+  }, [saveStatus, recoveryDraft, chatApplyRecovery]);
+  const onHistoryPendingChange = useCallback(
+    (pending: boolean) => {
+      if (!historyActive.current) return;
+      historyPendingRef.current = pending;
+      setHistoryPending(pending);
+      setPendingEditorOperation(pending || historyLock.current || aiBusyRef.current);
+    },
+    [setPendingEditorOperation],
+  );
+  const historyAdapter: VersionEditorAdapter = {
+    resource: { kind: 'chapter', id: chapterId ?? '' },
+    blockedReason:
+      operationBusy ||
+      saveStatus !== 'saved' ||
+      content !== getSavedContent() ||
+      recoveryDraft !== null ||
+      chatApplyRecovery
+        ? 'Confirme o salvamento e resolva operações ou recuperações pendentes antes de guardar ou restaurar uma versão.'
+        : undefined,
+    getConfirmedContent: () =>
+      liveContent.current === getSavedContent() ? getConfirmedContent() : null,
+    runExclusive: async (work, options) => {
+      const ensureConfirmed = () => {
+        if (
+          !historyActive.current ||
+          !user?.uid ||
+          !bookId ||
+          !chapterId ||
+          aiBusyRef.current ||
+          historyState.current.saveStatus !== 'saved' ||
+          historyState.current.recoveryDraft !== null ||
+          historyState.current.chatApplyRecovery ||
+          getConfirmedContent() !== liveContent.current ||
+          (historyPendingRef.current && !options?.recovery)
+        )
+          throw new Error(
+            'Confirme o salvamento e resolva operações pendentes antes de continuar.',
+          );
+      };
+      if (historyLock.current) throw new Error('Uma operação de histórico já está em andamento.');
+      ensureConfirmed();
+      historyLock.current = true;
+      setHistoryBusy(true);
+      setPendingEditorOperation(true);
+      try {
+        return await runChapterOperation(bookId!, chapterId!, async () => {
+          ensureConfirmed();
+          return work();
+        });
+      } finally {
+        historyLock.current = false;
+        if (historyActive.current) {
+          setHistoryBusy(false);
+          setPendingEditorOperation(historyPendingRef.current || aiBusyRef.current);
+        }
+      }
+    },
+    acceptRestored: (source: VersionSource) => {
+      if (
+        !historyActive.current ||
+        !historyLock.current ||
+        !user?.uid ||
+        source.target.kind !== 'book' ||
+        source.target.id !== bookId ||
+        source.resource.kind !== 'chapter' ||
+        source.resource.id !== chapterId ||
+        source.revision !== null
+      )
+        throw new Error('Esta confirmação não pertence ao capítulo aberto.');
+      const previous = liveContent.current;
+      acceptConfirmedContent(source.content);
+      liveContent.current = source.content;
+      setContent(source.content);
+      const words = countWords(source.content);
+      setWordCount(words);
+      setChapter((current) =>
+        current ? { ...current, content: source.content, wordCount: words } : current,
+      );
+      setHistoryContentVersion((version) => version + 1);
+      clearLocalDraft(user.uid, bookId, chapterId, previous);
+    },
+  };
+
   if (loading) {
     return <LoadingState label="Carregando área de escrita..." />;
   }
@@ -503,6 +653,14 @@ function EditorSession() {
     );
   }
 
+  if (chapter.contentMode === 'scenes')
+    return (
+      <>
+        <WorkActivityNotice activity={workActivity} />
+        <SceneChapterView book={book} chapter={chapter} legacyDraft={recoveryDraft} />
+      </>
+    );
+
   if (recoveryDraft !== null) {
     return (
       <Dialog
@@ -518,8 +676,7 @@ function EditorSession() {
               onClick={() => {
                 if (user?.uid && bookId && chapterId)
                   clearLocalDraft(user.uid, bookId, chapterId, recoveryDraft);
-                resetSavedContent(recoveryDraft);
-                void saveNow();
+                setContent(getSavedContent());
                 setRecoveryDraft(null);
               }}
             >
@@ -560,16 +717,25 @@ function EditorSession() {
 
   return (
     <div className={styles.pageLayout} data-workspace-expanded={expanded}>
-      <BusyNavigationGuard busy={isAcceptingAI} />
-      {isAcceptingAI && (
-        <p role="status">Aguarde a aplicação terminar antes de sair do capítulo.</p>
+      <BusyNavigationGuard busy={operationBusy} />
+      <WorkHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        target={{ kind: 'book', id: book.id }}
+        resource={historyAdapter.resource}
+        editor={historyAdapter}
+        onPendingChange={onHistoryPendingChange}
+      />
+      <WorkActivityNotice activity={workActivity} />
+      {operationBusy && (
+        <p role="status">Aguarde a confirmação da operação antes de sair do capítulo.</p>
       )}
       <header className={styles.topBar}>
         <div className={styles.topBarLeft}>
           <Link
             to={`/books/${bookId}`}
             onClick={(event) => {
-              if (isAcceptingAI) event.preventDefault();
+              if (operationBusy) event.preventDefault();
             }}
             className={styles.backLink}
             title="Voltar para o livro"
@@ -592,7 +758,7 @@ function EditorSession() {
             aria-label={expanded ? 'Sair da tela cheia' : 'Entrar em tela cheia'}
             title={expanded ? 'Sair da tela cheia (Escape)' : 'Entrar em tela cheia'}
             aria-pressed={expanded}
-            disabled={isAcceptingAI}
+            disabled={operationBusy}
             onPointerDown={(event) => event.preventDefault()}
             onClick={toggleFullscreen}
           >
@@ -606,10 +772,11 @@ function EditorSession() {
             book={book}
             currentChapter={chapter}
             currentContent={content}
-            disabled={isAcceptingAI}
+            disabled={isAcceptingAI || historyBusy}
             triggerRef={personaButton}
             personaError={personaError}
             onPersona={() => setPersonaDialog(true)}
+            onHistory={() => setHistoryOpen(true)}
           />
 
           <div className={styles.saveStatusWrapper} aria-live="polite">
@@ -640,7 +807,12 @@ function EditorSession() {
           </div>
 
           {saveError && (
-            <Button variant="secondary" onClick={() => void saveNow()}>
+            <Button
+              disabled={operationBusy}
+              className={styles.saveRetry}
+              variant="secondary"
+              onClick={() => void saveNow()}
+            >
               Tentar salvar novamente
             </Button>
           )}
@@ -658,7 +830,7 @@ function EditorSession() {
               size="icon"
               type="button"
               className={styles.navBtn}
-              disabled={!prevChapter || isAcceptingAI}
+              disabled={!prevChapter || operationBusy}
               onClick={() => {
                 if (prevChapter) {
                   void navigate(`/books/${bookId}/editor/${prevChapter.id}`);
@@ -674,7 +846,7 @@ function EditorSession() {
               size="icon"
               type="button"
               className={styles.navBtn}
-              disabled={!nextChapter || isAcceptingAI}
+              disabled={!nextChapter || operationBusy}
               onClick={() => {
                 if (nextChapter) {
                   void navigate(`/books/${bookId}/editor/${nextChapter.id}`);
@@ -771,7 +943,9 @@ function EditorSession() {
           onBusyChange={handleBusyChange}
           documentId={chapter.id}
           content={content}
-          onChange={setContent}
+          externalBusy={historyBusy || historyPending}
+          externalContentVersion={historyContentVersion}
+          onChange={handleContentChange}
           entities={allLoreEntities}
           onSelectEntity={handleSelectEntity}
           onCreateEntity={(name) => {

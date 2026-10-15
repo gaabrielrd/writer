@@ -9,6 +9,18 @@ import * as functionsV1 from 'firebase-functions/v1';
 import { defineSecret, defineString, defineInt } from 'firebase-functions/params';
 import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
+import { createStudioService } from './studio.mjs';
+import { createCampaignsService } from './campaigns.mjs';
+import { createCampaignCaptureService } from './campaignCapture.mjs';
+import { createCampaignNotesService } from './campaignNotes.mjs';
+import { setCampaignMediaHeaders } from './campaignCaptureHttp.mjs';
+import { createCampaignBaseReadService } from './campaignBaseRead.mjs';
+import { createWorkProgressService } from './workProgress.mjs';
+import { createWorkHistoryService } from './workHistory.mjs';
+import { createAdventureBlocksService } from './adventureBlocks.mjs';
+import { createAdventurePreviewService } from './adventurePreview.mjs';
+import { createScenesService } from './scenes.mjs';
+import { createNarrativePlanningService } from './narrativePlanning.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
@@ -163,6 +175,16 @@ const assets = {
     const [bytes] = await bucket().file(path).download();
     return `data:image/png;base64,${bytes.toString('base64')}`;
   },
+  async read(path) {
+    return (await bucket().file(path).download())[0];
+  },
+  async metadata(path) {
+    const [value] = await bucket().file(path).getMetadata();
+    return { generation: String(value.generation), size: Number(value.size) };
+  },
+  async readGeneration(path, generation) {
+    return (await bucket().file(path, { generation }).download())[0];
+  },
   async publish(path) {
     const file = bucket().file(path);
     const [metadata] = await file.getMetadata();
@@ -234,8 +256,20 @@ const callable = (method, secrets = []) =>
       secrets,
     },
     async (request) => {
+      setCampaignMediaHeaders(method, request);
       try {
         const universeService = createUniverseService({ db });
+        const studio = createStudioService({ db });
+        const campaigns = createCampaignsService({ db });
+        const campaignNotes = createCampaignNotesService({ db });
+        const campaignCapture = createCampaignCaptureService({ db, assets });
+        const campaignBaseRead = createCampaignBaseReadService({ db, assets });
+        const workProgress = createWorkProgressService({ db });
+        const workHistory = createWorkHistoryService({ db });
+        const adventureBlocks = createAdventureBlocksService({ db });
+        const adventurePreview = createAdventurePreviewService({ db, assets });
+        const scenes = createScenesService({ db });
+        const narrative = createNarrativePlanningService({ db });
         const loreAnalysis = createLoreAnalysisService({ db, generator: loreGenerator });
         const assisted = createAssistedBookService({
           db,
@@ -243,18 +277,41 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = assisted[method]
-          ? assisted
-          : loreAnalysis[method]
-            ? loreAnalysis
-            : universeService[method]
-              ? universeService
-              : service()[method]
-                ? service()
-                : createImageLibraryService({ db, assets });
+        const handler = campaignNotes[method]
+          ? campaignNotes
+          : campaignBaseRead[method]
+            ? campaignBaseRead
+            : campaignCapture[method]
+              ? campaignCapture
+              : campaigns[method]
+                ? campaigns
+                : adventurePreview[method]
+                  ? adventurePreview
+                  : adventureBlocks[method]
+                    ? adventureBlocks
+                    : workHistory[method]
+                      ? workHistory
+                      : workProgress[method]
+                        ? workProgress
+                        : narrative[method]
+                          ? narrative
+                          : scenes[method]
+                            ? scenes
+                            : studio[method]
+                              ? studio
+                              : assisted[method]
+                                ? assisted
+                                : loreAnalysis[method]
+                                  ? loreAnalysis
+                                  : universeService[method]
+                                    ? universeService
+                                    : service()[method]
+                                      ? service()
+                                      : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
-        if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
+        if (error instanceof GenerationError)
+          throw new HttpsError(error.code, error.message, error.details);
         throw new HttpsError(
           'unavailable',
           'Serviço temporariamente indisponível. Tente novamente.',
@@ -275,6 +332,98 @@ export const migrateImageLibrary = callable('migrate');
 export const createUniverse = callable('createUniverse');
 export const updateUniverse = callable('updateUniverse');
 export const deleteUniverse = callable('deleteUniverse');
+export const createAdventure = callable('createAdventure');
+export const createCampaign = callable('createCampaign');
+export const updateCampaign = callable('updateCampaign');
+export const listCampaignNotes = callable('listCampaignNotes');
+export const getCampaignNote = callable('getCampaignNote');
+export const saveCampaignNote = callable('saveCampaignNote');
+export const deleteCampaignNote = callable('deleteCampaignNote');
+export const getCampaignCaptureSource = callable('getCampaignCaptureSource');
+export const startCampaignCapture = callable('startCampaignCapture');
+export const getCampaignCapture = callable('getCampaignCapture');
+export const listCampaignCaptures = callable('listCampaignCaptures');
+export const advanceCampaignCapture = callable('advanceCampaignCapture');
+export const activateCampaignCapture = callable('activateCampaignCapture');
+export const cancelCampaignCapture = callable('cancelCampaignCapture');
+export const getCampaignBase = callable('getCampaignBase');
+export const listCampaignBaseItems = callable('listCampaignBaseItems');
+export const readCampaignBaseItem = callable('readCampaignBaseItem');
+export const listCampaignBaseReferences = callable('listCampaignBaseReferences');
+export const readCampaignBaseImage = callable('readCampaignBaseImage');
+export const getAdventure = callable('getAdventure');
+export const getCampaign = callable('getCampaign');
+export const prepareStudioBooks = callable('prepareStudioBooks');
+export const listStudioProjects = callable('listStudioProjects');
+export const getWorkProgress = callable('getWorkProgress');
+export const getWorkVersionSource = callable('getWorkVersionSource');
+export const listAdventureBlocks = callable('listAdventureBlocks');
+export const getAdventureBlock = callable('getAdventureBlock');
+export const getAdventureBlockImage = callable('getAdventureBlockImage');
+export const setAdventureBlockImage = callable('setAdventureBlockImage');
+export const readAdventureScenePreview = callable('readAdventureScenePreview');
+export const readAdventurePreviewImage = callable('readAdventurePreviewImage');
+export const getAdventureBlockCountStatus = callable('getAdventureBlockCountStatus');
+export const createAdventureBlock = callable('createAdventureBlock');
+export const updateAdventureBlock = callable('updateAdventureBlock');
+export const duplicateAdventureBlock = callable('duplicateAdventureBlock');
+export const moveAdventureBlock = callable('moveAdventureBlock');
+export const archiveAdventureBlock = callable('archiveAdventureBlock');
+export const deleteAdventureBlock = callable('deleteAdventureBlock');
+export const verifyAdventureBlockCount = callable('verifyAdventureBlockCount');
+export const createWorkVersion = callable('createWorkVersion');
+export const listWorkVersions = callable('listWorkVersions');
+export const readWorkVersion = callable('readWorkVersion');
+export const restoreWorkVersion = callable('restoreWorkVersion');
+export const deleteWorkVersion = callable('deleteWorkVersion');
+export const updateWorkProgress = callable('updateWorkProgress');
+export const prepareWorkWordCount = callable('prepareWorkWordCount');
+export const listWorkChecklist = callable('listWorkChecklist');
+export const createWorkChecklistItem = callable('createWorkChecklistItem');
+export const updateWorkChecklistItem = callable('updateWorkChecklistItem');
+export const deleteWorkChecklistItem = callable('deleteWorkChecklistItem');
+export const getWorkPreferences = callable('getWorkPreferences');
+export const saveWorkPreferences = callable('saveWorkPreferences');
+export const recordWorkActivity = callable('recordWorkActivity');
+export const listWorkResume = callable('listWorkResume');
+export const resolveWorkResume = callable('resolveWorkResume');
+export const createLegacyChapter = callable('createLegacyChapter');
+export const saveLegacyChapter = callable('saveLegacyChapter');
+export const deleteLegacyChapters = callable('deleteLegacyChapters');
+export const createScene = callable('createScene');
+export const updateScene = callable('updateScene');
+export const moveScene = callable('moveScene');
+export const archiveScene = callable('archiveScene');
+export const getScene = callable('getScene');
+export const listScenes = callable('listScenes');
+export const listSceneGroups = callable('listSceneGroups');
+export const getSceneGroup = callable('getSceneGroup');
+export const createSceneGroup = callable('createSceneGroup');
+export const convertChapterToScenes = callable('convertChapterToScenes');
+export const setSceneReference = callable('setSceneReference');
+export const listSceneReferences = callable('listSceneReferences');
+export const listSceneSources = callable('listSceneSources');
+export const readSceneAssembly = callable('readSceneAssembly');
+export const rebalanceSceneRanks = callable('rebalanceSceneRanks');
+export const deleteSceneGroup = callable('deleteSceneGroup');
+export const deleteSceneGroups = callable('deleteSceneGroups');
+export const deleteSceneBook = callable('deleteSceneBook');
+export const getSceneJob = callable('getSceneJob');
+export const getNarrativeContext = callable('getNarrativeContext');
+export const createNarrativeItem = callable('createNarrativeItem');
+export const updateNarrativeItem = callable('updateNarrativeItem');
+export const getNarrativeItem = callable('getNarrativeItem');
+export const listNarrativeItems = callable('listNarrativeItems');
+export const moveNarrativeItem = callable('moveNarrativeItem');
+export const deleteNarrativeItem = callable('deleteNarrativeItem');
+export const setNarrativeReference = callable('setNarrativeReference');
+export const listNarrativeReferences = callable('listNarrativeReferences');
+export const listNarrativeLoreOptions = callable('listNarrativeLoreOptions');
+export const listEntityScenes = callable('listEntityScenes');
+export const listEntityNarrativeItems = callable('listEntityNarrativeItems');
+export const prepareEntitySceneIndex = callable('prepareEntitySceneIndex');
+export const rebalanceNarrativeRanks = callable('rebalanceNarrativeRanks');
+export const getNarrativeJob = callable('getNarrativeJob');
 export const saveUniverseLore = callable('saveUniverseLore');
 export const deleteUniverseLore = callable('deleteUniverseLore');
 export const analyzeChapterLore = callable('analyzeChapterLore', [key]);

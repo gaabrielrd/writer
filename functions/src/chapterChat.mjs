@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { countVisibleWords } from './visibleWordCount.mjs';
+import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { GenerationError } from './generation.mjs';
 import {
   isChatReasoning,
@@ -360,6 +362,13 @@ export function createChapterChatService({
         tx.get(bookRef),
         tx.get(userRef),
       ]);
+      if (!book.exists || book.data().authorId !== uid || book.data().deleting || !chapter.exists)
+        fail('not-found', 'Capítulo indisponível.');
+      if (chapter.data().contentMode === 'scenes')
+        fail(
+          'failed-precondition',
+          'Este capítulo é composto por cenas. Abra uma cena para editar seu texto.',
+        );
       if (previous.exists) {
         if (previous.data().fingerprint !== fingerprint)
           fail('invalid-argument', 'Aceite usado com outro conteúdo.');
@@ -367,8 +376,6 @@ export function createChapterChatService({
       }
       if (!suggestion.exists || suggestion.data().state !== 'done' || !suggestion.data().suggestion)
         fail('failed-precondition', 'Sugestão indisponível.');
-      if (!book.exists || book.data().authorId !== uid || book.data().deleting || !chapter.exists)
-        fail('not-found', 'Capítulo indisponível.');
       if (hash(chapter.data().content) !== expectedHash)
         fail(
           'failed-precondition',
@@ -380,18 +387,23 @@ export function createChapterChatService({
       const credits = user.data()?.credits;
       if (!Number.isSafeInteger(credits) || credits < cost)
         fail('resource-exhausted', 'Saldo insuficiente para aplicar a sugestão.');
-      const wordCount = after
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&[^;]+;/g, ' ')
-        .trim()
-        .split(/\s+/)
-        .filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
+      const wordCount = countVisibleWords(after);
       const updatedAt = Math.max(
         now(),
         (chapter.data().updatedAt ?? 0) + 1,
         (book.data().updatedAt ?? 0) + 1,
       );
+      if (!Number.isFinite(updatedAt) || !Number.isFinite(new Date(updatedAt).getTime()))
+        fail(
+          'failed-precondition',
+          'As datas do capítulo ou livro são inválidas. Corrija-as antes de aplicar a sugestão.',
+        );
       const result = { credits: credits - cost, content: after, wordCount, updatedAt };
+      const wordProgress = await createWorkProgressLedger({ db, now }).prepareChanges(tx, {
+        target: { kind: 'book', id: data.bookId },
+        root: book.data(),
+        changes: [{ kind: 'chapter', id: data.chapterId, content: after, contentMode: 'legacy' }],
+      });
       tx.update(chapterRef, { content: after, wordCount, updatedAt });
       tx.update(bookRef, {
         wordCount: Math.max(
@@ -401,6 +413,7 @@ export function createChapterChatService({
         updatedAt,
       });
       if (cost) tx.update(userRef, { credits: result.credits, updatedAt });
+      wordProgress.commit();
       tx.update(message, { paid: true });
       tx.set(receipt, { fingerprint, result });
       return result;

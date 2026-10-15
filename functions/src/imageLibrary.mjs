@@ -23,6 +23,66 @@ function authorize(uid) {
 function active(record) {
   if (!record || record.state !== 'active') fail('not-found', 'Imagem indisponível.');
 }
+export function imageUseCount(record) {
+  if (!record || !Number.isSafeInteger(record.useCount) || record.useCount < 0)
+    fail('failed-precondition', 'O contador de usos da imagem está inconsistente.');
+  return record.useCount;
+}
+export async function readActiveLibraryImage(tx, db, uid, id) {
+  const ref = imageRef(db, uid, id),
+    snapshot = await tx.get(ref),
+    value = snapshot.data();
+  active(value);
+  imageUseCount(value);
+  if (typeof value.path !== 'string' || !value.path)
+    fail('failed-precondition', 'Arquivo da imagem indisponível.');
+  return { ref, snapshot, value };
+}
+// Typed uses cannot collide with legacy book IDs (which do not allow colons).
+export async function prepareLibraryImageUse(tx, db, uid, { key, usage, previousId, nextId }) {
+  const ids = [...new Set([previousId, nextId].filter(Boolean))],
+    records = new Map();
+  for (const id of ids) {
+    const ref = imageRef(db, uid, id),
+      useRef = db.doc(ref.path + '/uses/' + key);
+    records.set(id, { ref, useRef, image: (await tx.get(ref)).data(), use: await tx.get(useRef) });
+  }
+  if (nextId) {
+    const next = records.get(nextId);
+    active(next.image);
+    imageUseCount(next.image);
+    if (typeof next.image.path !== 'string' || !next.image.path)
+      fail('failed-precondition', 'Arquivo da imagem indisponível.');
+  }
+  if (previousId) {
+    const previous = records.get(previousId);
+    if (imageUseCount(previous.image) < 1 || !previous.use.exists)
+      fail('failed-precondition', 'O vínculo da imagem está inconsistente.');
+  }
+  if (nextId && nextId !== previousId && records.get(nextId).use.exists)
+    fail('failed-precondition', 'O vínculo da imagem está inconsistente.');
+  if (
+    nextId &&
+    nextId !== previousId &&
+    !Number.isSafeInteger(records.get(nextId).image.useCount + 1)
+  )
+    fail('failed-precondition', 'O contador de usos da imagem está inconsistente.');
+  return {
+    commit() {
+      if (previousId === nextId) return;
+      if (previousId) {
+        const previous = records.get(previousId);
+        tx.delete(previous.useRef);
+        tx.update(previous.ref, { useCount: previous.image.useCount - 1 });
+      }
+      if (nextId) {
+        const next = records.get(nextId);
+        tx.create(next.useRef, usage);
+        tx.update(next.ref, { useCount: next.image.useCount + 1 });
+      }
+    },
+  };
+}
 
 export function createImageLibraryService({ db, assets, now = Date.now }) {
   const useRef = (uid, id, bookId) => db.doc(`${imageRef(db, uid, id).path}/uses/${bookId}`);
@@ -44,10 +104,10 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
       const path = await db.runTransaction(async (tx) => {
         const record = (await tx.get(ref)).data();
         if (!record || record.state === 'deleted') return null;
-        if (record.useCount > 0)
+        if (imageUseCount(record) > 0)
           fail(
             'failed-precondition',
-            'A imagem está em uso. Remova-a dos livros antes de excluir.',
+            'A imagem está em uso. Remova seus vínculos antes de excluir.',
           );
         tx.update(ref, { state: 'deleting', updatedAt: now() });
         return record.path;

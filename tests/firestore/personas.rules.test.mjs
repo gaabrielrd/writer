@@ -105,6 +105,8 @@ it('vincula apenas personas próprias ou padrões e valida substituições do ca
       authorId: 'author',
       title: 'Livro',
       status: 'draft',
+      createdAt: 1,
+      updatedAt: 1,
       personaId: 'preset-incisive',
     }),
   );
@@ -115,6 +117,8 @@ it('vincula apenas personas próprias ou padrões e valida substituições do ca
       authorId: 'intruder',
       title: 'Outro',
       status: 'draft',
+      createdAt: 1,
+      updatedAt: 1,
       personaId: 'custom-test',
     }),
   );

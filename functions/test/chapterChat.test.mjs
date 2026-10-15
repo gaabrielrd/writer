@@ -79,7 +79,8 @@ function fixture(
     ['books/book/chapters/chapter', { content: '<p>Texto</p>', wordCount: 1, updatedAt: 1 }],
     ['users/author', { credits: 5 }],
   ]);
-  let queue = Promise.resolve(),
+  let beforeNextTransaction,
+    queue = Promise.resolve(),
     time = 1000;
   const snap = (path) => ({
     id: path.split('/').at(-1),
@@ -124,6 +125,9 @@ function fixture(
     },
     runTransaction(work) {
       const result = queue.then(async () => {
+        const before = beforeNextTransaction;
+        beforeNextTransaction = undefined;
+        before?.();
         const writes = [];
         let writing = false;
         const tx = {
@@ -177,6 +181,9 @@ function fixture(
     send,
     apply,
     create: () => call({ action: 'create' }),
+    beforeTransaction: (work) => {
+      beforeNextTransaction = work;
+    },
     setModel: (model) => {
       service = createChapterChatService({
         db,
@@ -187,6 +194,74 @@ function fixture(
     },
   };
 }
+test('datas inválidas impedem aceite sem escrita ou débito e permitem retry após correção', async () => {
+  for (const [path, invalid] of [
+    ['books/book/chapters/chapter', Infinity],
+    ['books/book', 8_640_000_000_000_000],
+  ]) {
+    const f = fixture();
+    await f.create();
+    await f.send();
+    f.records.set(path, { ...f.records.get(path), updatedAt: invalid });
+    const before = structuredClone([...f.records]);
+    await assert.rejects(f.apply(), { code: 'failed-precondition' });
+    assert.deepEqual([...f.records], before);
+    assert.equal(f.records.get('users/author').credits, 5);
+    assert.equal(
+      [...f.records.keys()].some((key) => key.includes('/receipts/')),
+      false,
+    );
+    f.records.set(path, { ...f.records.get(path), updatedAt: 100 });
+    const applied = await f.apply();
+    assert.equal(f.records.get('users/author').credits, 4);
+    assert.equal(f.records.get('books/book/chapters/chapter').content, '<p>Novo texto</p>');
+    assert.doesNotThrow(() => new Date(applied.updatedAt).toISOString());
+    assert.deepEqual(await f.apply(), applied);
+    assert.equal(f.records.get('users/author').credits, 4);
+  }
+});
+
+test('conversão em cenas bloqueia aceite e retry antigo antes de qualquer escrita ou débito', async () => {
+  const f = fixture();
+  await f.create();
+  await f.send();
+  const path = 'books/book/chapters/chapter';
+  f.records.set(path, { ...f.records.get(path), contentMode: 'scenes' });
+  const before = structuredClone([...f.records]);
+  await assert.rejects(f.apply(), { code: 'failed-precondition' });
+  assert.deepEqual([...f.records], before);
+  f.records.set(path, { ...f.records.get(path), contentMode: 'legacy' });
+  await f.apply();
+  f.records.set(path, { ...f.records.get(path), contentMode: 'scenes' });
+  const accepted = structuredClone([...f.records]);
+  await assert.rejects(f.apply(), { code: 'failed-precondition' });
+  assert.deepEqual([...f.records], accepted);
+  assert.equal(f.records.get('users/author').credits, 4);
+});
+
+test('aceite não revela modo nem recibo antigo quando a autorização muda antes da transação', async () => {
+  for (const mode of ['legacy', 'scenes']) {
+    const f = fixture();
+    await f.create();
+    await f.send();
+    const accepted = await f.apply();
+    const chapterPath = 'books/book/chapters/chapter';
+    f.records.set(chapterPath, { ...f.records.get(chapterPath), contentMode: mode });
+    await assert.rejects(f.call({ action: 'apply' }, 'intruder'), {
+      code: 'permission-denied',
+      message: 'Livro indisponível.',
+    });
+    let revoked;
+    f.beforeTransaction(() => {
+      f.records.set('books/book', { ...f.records.get('books/book'), authorId: 'another-author' });
+      revoked = structuredClone([...f.records]);
+    });
+    await assert.rejects(f.apply(), { code: 'not-found', message: 'Capítulo indisponível.' });
+    assert.deepEqual([...f.records], revoked);
+    assert.equal(f.records.get('users/author').credits, accepted.credits);
+  }
+});
+
 test('pedido congela raciocínio e modelo efetivo, sem permitir que o cliente escolha o modelo da plataforma', async () => {
   const inputs = [];
   const f = fixture(async (input) => {
