@@ -1,6 +1,6 @@
 # F2-07 B — Capturar aventura própria como base de campanha
 
-**Estado:** contrato fechado para implementação após o fechamento local de A.
+**Estado:** implementado e validado localmente após A concluído tecnicamente em 624c912. CI do envio de B pendente.
 **Origem:** [campanhas e variantes](14-campanhas-e-variantes.md).
 **Decisões do operador:** aventura completa e somente lore referenciado.
 
@@ -10,7 +10,7 @@ Criar uma campanha privada com base imutável de uma aventura do próprio usuár
 Preparação incompleta não aparece como campanha pronta no Estúdio. O original
 permanece intacto; alterar sua prosa depois não altera a base da mesa.
 
-Capturar metadados autorais, partes, cenas, blocos, textos, planejamento, ordem,
+Capturar metadados autorais (title, synopsis e language reais da aventura), partes, cenas, blocos, textos, planejamento, ordem,
 audiências, ilustrações/alt/legendas, arcos, marcos, cronologia e referências.
 Preservar cenas sem parte e arquivo com seus estados, sem compor itens arquivados.
 Texto legado de parte, quando existir, permanece separado da composição por cenas.
@@ -67,6 +67,17 @@ não duplica corpos, fichas, campanha, universo ou uso de imagem. Replay reautor
 Ativação repetida não recria campanha removida nem retorna DTO antigo como revisão
 atual. Estado concluído pode indicar o ID para navegação e GET autorizados.
 
+Também são APIs fechadas do leitor:
+
+- getCampaignBase({campaignId}) retorna baseId, capturedAt,
+  source:{adventureId,title,synopsis,language} congelados e projectionToken,
+  após o gate da base. Sem descrição viva, caminhos ou contagens não autorizadas.
+- listCampaignBaseReferences({campaignId,sourceKey,cursor?,limit?}) retorna
+  items:[{key,kind,sourceKey,targetKey|null,available}], nextCursor e projectionToken.
+  Preserva vínculos capturados de cena/arco/marco/evento; alvo indisponível não
+  devolve nome ou ID original. Padrão 25/máximo 50, 4 MiB e cursor com o mesmo
+  escopo/token. Fonte e alvo precisam ser itens autorizados da geração capturada.
+
 ### DTOs, filhos e checkpoints
 
 CaptureSource contém adventureId, title, universeId, sourceToken e
@@ -75,6 +86,12 @@ deduplicação concluída antes da varredura. CaptureProgress contém captureId,
 phase, checkpoint inteiro monotônico, processed, counts por tipo, sourceAvailable,
 cleanupComplete,
 campaignId|null e reason|null. Counts descrevem processados, sem percentual inventado.
+Reserved:{campaignId,baseId} expõe identidades estáveis do próprio pedido desde o
+start, sem criar campanha visível. CampaignId continua null antes da ativação.
+Cliente confere resposta de start pelo operationId/captureId e adventureId; passos
+seguintes e ativação conferem também os IDs reservados. Recuperação pode guardar
+essas identidades no envelope local, fora do input RPC, para validar após reload
+sem replicar o algoritmo interno ou substituir o pedido/checkpoint preservados.
 
 Estados da preparação: preparing, prepared, activated, aborted, deleting, deleted.
 Prepared é captura íntegra aguardando ativação. Fases: parts, scenes, blocks,
@@ -94,14 +111,20 @@ checkpoint. Cancel em activated falha: excluir campanha pronta é outra operaç�
 Deleted implica cleanupComplete true. Ativação retorna kind: activated com Campaign
 confirmada na primeira execução; replay retorna kind: already-activated e campaignId,
 apenas enquanto a campanha ainda existir e pertencer ao usuário.
+Se a origem mudou ou ficou indisponível antes da ativação, persistir aborted e
+retornar kind: aborted com preparation: CaptureProgress, também no replay autorizado;
+nunca criar campanha nem reverter o aborto por uma exceção lançada na transação.
 
 Filhos flat sob campaignBases/{generationId}: items/{sourceKey} para metadados,
-bodies/{bodyKey} para campo/índice/conteúdo, loreReferences/{referenceKey} para
+bodies/{bodyKey} para campo/índice/conteúdo, links/{linkKey} para referências
+estruturadas de cena/narrativa sem arrays crescentes, loreReferences/{referenceKey} para
 identidade canônica e disponibilidade e images/{imageKey} para identidade de mídia
 e pin. Criar uma loreReference e incrementar seu total na mesma transação; várias
 cenas/marcos nunca geram várias cópias da mesma ficha. Corpo e campos grandes ficam
 fora dos metadados listáveis. Relações brutas ficam internas e nunca em chunks
 transmitidos ao cliente; o servidor projeta apenas relações autorizadas.
+Relação projetada usa targetKey da ficha capturada, título capturado autorizado,
+relationType e description; não usa targetEntityId do universo vivo para navegação.
 
 Listagem retorna items e nextCursor, limitada também a 4 MiB, sem aliases, corpos
 ou relações. Leitura retorna item autorizado, chunks [{index, content}], nextCursor
@@ -125,6 +148,8 @@ archived, orderKey e somente os metadados específicos necessários: stage de ce
 type/audience/role de bloco e dateLabel de evento. Principal é bloco role: main;
 adicional é role: additional. Não duplicar seu corpo na captura: o manifesto do
 principal pode apontar internamente para o corpo já capturado da cena.
+O arquivo efetivo do bloco inclui o da cena-pai; não reaparecer em Ativos por
+ter archived próprio false.
 
 Part pode ter manifesto de conteúdo legado, mostrado separadamente. Cada manifesto
 público tem field, sha256, bytes e chunkCount; nenhum caminho/bodyKey Storage sai no
@@ -212,3 +237,17 @@ Variantes inteiras, comparação/atualização explícita e exclusão integral t
 posteriores; comércio, portal, sessões, IA e backup permanecem em tarefas próprias.
 Testes dirigidos após ajustes, validate no fechamento, revisão, documentação e
 evidência reais. CI acompanha em paralelo, sem merge/deploy presumidos.
+
+## Validação local — 2026-10-15
+
+- Validate exit 0: 1.547 frontend/163 arquivos, 77 scripts e 289 Functions;
+  arquitetura, docs, estilo, formato, lint, tipos, sintaxe, build e smoke verdes.
+- SDK conjunto inicial 13/13; após os últimos gates, somente os nove SDKs afetados
+  de captura/leitor repetidos: 9/9, zero skips/falhas, 21.624,7227 ms.
+- Navegador 36/36 e seis controles finais após acabamento/guard de alvo; três
+  temas, desktop/celular, teclado e 320 px, sem retries/skips/flaky.
+- Reader 11/11, captura/HTTP 13/13 dirigidos; casos negativos antes/depois
+  comprovaram alvo incorreto, largura e paridade das fixtures.
+- Revisão independente de captura e leitor sem P0/P1/P2 restantes. Mídia HTTP
+  no-store provada em callable real; Storage continua injetado nos SDKs.
+- [Entrega e limites](../../../entregas/2026-10-15-writer-v2-captura-de-aventura.md).

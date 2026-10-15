@@ -1,6 +1,6 @@
 # W2-F2-05 — Guardar e restaurar versões do trabalho
 
-**Estado:** Implementado e validado localmente; CI pendente. Políticas confirmadas em 2026-10-15.
+**Estado:** Concluído tecnicamente em 624c912; CI e regras verdes. Políticas confirmadas em 2026-10-15.
 **Dependências:** [W2-F2-02](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md)
 **Áreas propostas:** editor, books; proposta adventures; functions e armazenamento. Nomes novos são propostas, sujeitos à fase 1.
 

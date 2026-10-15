@@ -12,7 +12,7 @@ import {
 } from './workProgressContracts.mjs';
 
 const statuses = ['planning', 'active', 'completed', 'archived'];
-function campaignView(id, value) {
+export function campaignView(id, value) {
   return {
     id,
     ownerId: value.ownerId,
@@ -20,7 +20,8 @@ function campaignView(id, value) {
     revision: value.revision,
     title: value.title,
     description: value.description,
-    provenance: { kind: 'independent' },
+    provenance: value.provenance,
+    ...(value.provenance.kind === 'original' ? { activeBaseId: value.activeBaseId } : {}),
     status: value.status,
     universeId: value.universeId ?? null,
     createdAt: value.createdAt,
@@ -52,8 +53,13 @@ function available(value, uid) {
     workFail('not-found', 'Campanha indisponível.');
   if (
     value.schemaVersion !== 1 ||
-    value.provenance?.kind !== 'independent' ||
-    value.activeBaseId != null
+    !(
+      (value.provenance?.kind === 'independent' && value.activeBaseId == null) ||
+      (value.provenance?.kind === 'original' &&
+        typeof value.provenance.adventureId === 'string' &&
+        typeof value.activeBaseId === 'string' &&
+        value.provenance.baseId === value.activeBaseId)
+    )
   )
     workFail('failed-precondition', 'Esta procedência de campanha ainda não pode ser alterada.');
   if (!Number.isSafeInteger(value.revision) || value.revision < 1)

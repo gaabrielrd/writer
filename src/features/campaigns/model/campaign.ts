@@ -6,18 +6,36 @@ export const campaignStatusLabels: Record<CampaignStatus, string> = {
   archived: 'Arquivada',
 };
 
-export interface Campaign {
+interface CampaignFields {
   id: string;
   ownerId: string;
   schemaVersion: 1;
   revision: number;
   title: string;
   description: string;
-  provenance: { kind: 'independent' };
   status: CampaignStatus;
   universeId: string | null;
   createdAt: number;
   updatedAt: number;
+}
+export type Campaign = CampaignFields &
+  (
+    | { provenance: { kind: 'independent' }; activeBaseId?: never }
+    | {
+        provenance: { kind: 'original'; adventureId: string; baseId: string };
+        activeBaseId: string;
+      }
+  );
+export function supportedCampaignProvenance(campaign: Campaign): boolean {
+  return (
+    campaign.provenance?.kind === 'independent' ||
+    (campaign.provenance?.kind === 'original' &&
+      typeof campaign.provenance.adventureId === 'string' &&
+      Boolean(campaign.provenance.adventureId) &&
+      typeof campaign.activeBaseId === 'string' &&
+      Boolean(campaign.activeBaseId) &&
+      campaign.provenance.baseId === campaign.activeBaseId)
+  );
 }
 
 export type CampaignSummary = Pick<

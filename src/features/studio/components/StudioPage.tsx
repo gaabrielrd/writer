@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router';
 import { Plus, Upload } from 'lucide-react';
 import { ContinueWorkPanel } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
+import { CampaignCapturePreparations } from '@/features/campaign-bases';
 import {
   BookFormDialog,
   ImportBookModal,
@@ -70,6 +71,9 @@ function StudioSession({ ownerId }: { ownerId: string }) {
         }
       />
       <ContinueWorkPanel />
+      <CampaignCapturePreparations
+        onActivated={(id) => void navigate('/campaigns/' + encodeURIComponent(id))}
+      />
       <div className={styles.filters}>
         <Dropdown
           mode="select"

@@ -1,6 +1,6 @@
 # F2-06 — Aventuras com blocos narrativos e audiências
 
-**Estado:** implementado e validado localmente; CI do novo head pendente.
+**Estado:** concluído tecnicamente em `624c912`; CI e regras verdes.
 **Origem:** [W2-F2-06](../fase-02-criar-e-preparar/06-aventuras-e-estrutura-narrativa.md).
 **Base:** F2-05 validado localmente e enviado em `cd5edb0`; CI em paralelo,
 sem impedir o próximo incremento pela autorização de 2026-10-15.

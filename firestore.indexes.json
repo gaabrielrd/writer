@@ -573,9 +573,54 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "items",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "orderKey", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "parentKey", "order": "ASCENDING" },
+        { "fieldPath": "orderKey", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "archived", "order": "ASCENDING" },
+        { "fieldPath": "orderKey", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "items",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "kind", "order": "ASCENDING" },
+        { "fieldPath": "parentKey", "order": "ASCENDING" },
+        { "fieldPath": "archived", "order": "ASCENDING" },
+        { "fieldPath": "orderKey", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "bodies", "fieldPath": "content", "indexes": [] },
+    { "collectionGroup": "items", "fieldPath": "fields", "indexes": [] },
+    { "collectionGroup": "items", "fieldPath": "origin", "indexes": [] },
+    { "collectionGroup": "items", "fieldPath": "structured", "indexes": [] },
+    { "collectionGroup": "items", "fieldPath": "image", "indexes": [] },
     {
       "collectionGroup": "assistedSessions",
       "fieldPath": "expiresAt",

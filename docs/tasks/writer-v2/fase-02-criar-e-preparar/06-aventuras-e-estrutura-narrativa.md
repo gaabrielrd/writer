@@ -1,6 +1,6 @@
 # W2-F2-06 — Criar aventuras com estrutura narrativa
 
-**Estado:** Implementado e validado localmente; CI do novo head pendente.
+**Estado:** Concluído tecnicamente em 624c912; CI e regras verdes.
 **Dependências:** [W2-F2-01](../fase-02-criar-e-preparar/01-projetos-e-navegacao.md), [W2-F2-02](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md)
 **Áreas propostas:** editor, lore, image-library; proposta adventures. Nomes novos são propostas, sujeitos à fase 1.
 

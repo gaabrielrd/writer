@@ -18,6 +18,19 @@ const auth = vi.hoisted(
   }),
 );
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
+vi.mock('@/features/campaign-bases', () => ({
+  CampaignBaseReader: ({
+    campaignId,
+    generationId,
+  }: {
+    campaignId: string;
+    generationId: string;
+  }) => (
+    <section aria-label={'Base congelada ' + campaignId + '/' + generationId}>
+      Origem indisponível para leitura
+    </section>
+  ),
+}));
 vi.mock('../services/campaignService', () => ({ getCampaign: vi.fn() }));
 const resource: Campaign = {
   id: 'project',
@@ -121,6 +134,22 @@ it('não quebra a tela nem inventa data quando o DTO traz data inválida', async
   vi.mocked(getCampaign).mockResolvedValue({ ...resource, updatedAt: Number.POSITIVE_INFINITY });
   render(tree());
   expect(await screen.findByText('Data indisponível')).toBeInTheDocument();
+});
+it('campanha original monta leitor da geração separadamente e preserva descrição e checklist próprios', async () => {
+  vi.mocked(getCampaign).mockResolvedValue({
+    ...resource,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'generation' },
+    activeBaseId: 'generation',
+  });
+  render(tree());
+  expect(
+    await screen.findByRole('region', { name: 'Base congelada project/generation' }),
+  ).toBeInTheDocument();
+  expect(screen.getByText('História privada')).toBeInTheDocument();
+  expect(
+    screen.getByRole('heading', { name: 'Progresso de campaign/project' }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Editar campanha' })).toBeEnabled();
 });
 
 vi.mock('@/features/work-progress', async (original) => ({

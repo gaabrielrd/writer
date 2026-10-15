@@ -232,6 +232,23 @@ universo, legado e escrita direta negada. Fixtures substituem só o novo transpo
 os controles de navegador não comprovam autorização real ou captura de aventura.
 Ver [contrato F2-07](tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
 
+Captura e leitura de bases têm testes colocalizados em `campaign-bases`,
+integrações de Aventura/Estúdio/Campanha e testes Functions próprios. Cobrem
+pedidos estáveis, checkpoint/identidades reservadas, resposta perdida, retomada
+após reload, mudança de UID/alvo, descoberta de controles locais, paginação e
+montagem integral de Unicode/chunks/hash. O leitor preserva texto legado separado,
+arquivo, referências explícitas e relações autorizadas sem expansão transitiva.
+
+`tests/firestore/campaignCapture.rules.test.mjs` e
+`campaignBaseRead.rules.test.mjs` exercitam escritores reais e transações no
+emulador Firestore, SDK direto negado, CAS/replay, abortos, usos/pins e revogação.
+Storage é injetado nesses testes: eles não comprovam bucket, credenciais ou
+versionamento de produção. `e2e/visual/campaign-base.visual.ts` prova composição
+do cliente, duas mesas isoladas, congelamento após edição, corpus grande,
+recuperação, limpeza sem origem, teclado e 320 px nos três temas. O transporte
+novo tem fixture própria; captura de tela não substitui autorização real.
+Veja [contrato de captura](tasks/writer-v2/execucao/15-captura-de-aventura.md).
+
 Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
 em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
 ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.

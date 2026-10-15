@@ -243,7 +243,7 @@ export function fixturePatchProject(kind: Kind, id: string, patch: Partial<Proje
   if (value?.ownerId === fixtureOwner()) {
     Object.assign(value, patch);
     const key = JSON.stringify([fixtureOwner(), kind, id]);
-    projectPatches[key] = { ...projectPatches[key], ...patch };
+    projectPatches[key] = { ...projectPatches[key], ...patch } as Partial<Project>;
     sessionStorage.setItem('writer.visual.studio-patches', JSON.stringify(projectPatches));
     persistStudio();
   }
@@ -257,7 +257,21 @@ export function fixtureCommitCampaign(
     current = stores.campaign.get(key);
   if (!current || ('deleting' in current && current.deleting))
     throw Object.assign(new Error('Campanha indisponível.'), { code: 'functions/not-found' });
-  if (current.provenance.kind !== 'independent')
+  if (
+    current.provenance.kind !== 'independent' &&
+    !(
+      current.provenance.kind === 'original' &&
+      [current.provenance.adventureId, current.provenance.baseId].every(
+        (value) =>
+          typeof value === 'string' &&
+          !!value &&
+          !value.includes('/') &&
+          !['.', '..'].includes(value) &&
+          new TextEncoder().encode(value).length <= 1500,
+      ) &&
+      current.activeBaseId === current.provenance.baseId
+    )
+  )
     throw Object.assign(new Error('Procedência de campanha não suportada.'), {
       code: 'functions/failed-precondition',
     });
@@ -275,4 +289,23 @@ export function fixtureCommitCampaign(
   stores.campaign.set(key, confirmed);
   persistStudio();
   return structuredClone(confirmed);
+}
+
+export function fixtureActivateCapturedCampaign(campaign: Campaign): Campaign {
+  if (
+    campaign.ownerId !== fixtureOwner() ||
+    campaign.provenance.kind !== 'original' ||
+    campaign.activeBaseId !== campaign.provenance.baseId
+  )
+    throw Object.assign(new Error('Campanha indisponível.'), {
+      code: 'functions/permission-denied',
+    });
+  const key = projectKey(campaign.ownerId, campaign.id);
+  if (stores.campaign.has(key))
+    throw Object.assign(new Error('Identificador já utilizado.'), {
+      code: 'functions/already-exists',
+    });
+  stores.campaign.set(key, structuredClone(campaign));
+  persistStudio();
+  return structuredClone(campaign);
 }

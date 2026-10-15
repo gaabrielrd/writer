@@ -11,6 +11,23 @@ const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } =
   loading: false,
 }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
+vi.mock('@/features/campaign-bases', () => ({
+  CampaignCapturePreparations: () => null,
+  CampaignCaptureDialog: ({
+    open,
+    adventureId,
+    onActivated,
+  }: {
+    open: boolean;
+    adventureId: string;
+    onActivated: (id: string) => void;
+  }) =>
+    open ? (
+      <section aria-label={'Criar mesa de ' + adventureId}>
+        <button onClick={() => onActivated('new-campaign')}>Abrir campanha preparada</button>
+      </section>
+    ) : null,
+}));
 vi.mock('../services/adventureService', () => ({ getAdventure: vi.fn() }));
 vi.mock('@/features/narrative-planning', () => ({
   NarrativePlanner: ({ target }: { target: { kind: string; id: string } }) => (
@@ -46,10 +63,21 @@ function tree(search = '') {
         <Route path="/adventures/:adventureId" element={<AdventurePage />} />
         <Route path="/login" element={<p>Entrar na conta</p>} />
         <Route path="/studio" element={<h1>Estúdio</h1>} />
+        <Route path="/campaigns/:campaignId" element={<h1>Campanha criada</h1>} />
       </Routes>
     </MemoryRouter>
   );
 }
+it('abre criação com a aventura atual e navega apenas após confirmação da campanha', async () => {
+  render(tree());
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Criar campanha desta aventura' }),
+  );
+  expect(screen.getByRole('region', { name: 'Criar mesa de project' })).toBeInTheDocument();
+  expect(screen.queryByRole('heading', { name: 'Campanha criada' })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir campanha preparada' }));
+  expect(await screen.findByRole('heading', { name: 'Campanha criada' })).toBeInTheDocument();
+});
 it('abre narrativa contextual da aventura e alterna por teclado sem trocar o projeto', async () => {
   render(tree('?tab=narrative&narrativeView=timeline'));
   expect(

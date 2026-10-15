@@ -335,3 +335,48 @@ it('falha ao preservar impede chamada de rede; DTO de outra conta mantém pedido
   expect(view.result.current.pending).not.toBeNull();
   expect(view.result.current.error).toContain('não pôde ser validada');
 });
+it('gestão de campanha original conserva procedência e base ao trocar universo e usa a próxima revisão', async () => {
+  campaign = {
+    ...campaign,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'captured-base' },
+    activeBaseId: 'captured-base',
+  };
+  const confirmed = vi.fn();
+  const view = renderHook(() => useCampaignManagement(campaign, { onConfirmed: confirmed }));
+  act(() => view.result.current.change('universeId', null));
+  await act(() => view.result.current.submit());
+  expect(confirmed).toHaveBeenLastCalledWith(
+    expect.objectContaining({
+      revision: 2,
+      universeId: null,
+      description: 'Descrição privada',
+      provenance: { kind: 'original', adventureId: 'adventure', baseId: 'captured-base' },
+      activeBaseId: 'captured-base',
+    }),
+  );
+  act(() => view.result.current.change('title', 'Outra mesa'));
+  await act(() => view.result.current.submit());
+  expect(updateCampaign).toHaveBeenLastCalledWith(
+    expect.objectContaining({ expectedRevision: 2, patch: { title: 'Outra mesa' } }),
+  );
+  expect(getCampaign).not.toHaveBeenCalled();
+});
+it('metadados não adotam outra procedência nem outra base recebida por engano', async () => {
+  campaign = {
+    ...campaign,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'captured-base' },
+    activeBaseId: 'captured-base',
+  };
+  vi.mocked(updateCampaign).mockResolvedValue({
+    ...campaign,
+    revision: 2,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'other-base' },
+    activeBaseId: 'other-base',
+  });
+  const confirmed = vi.fn();
+  const view = renderHook(() => useCampaignManagement(campaign, { onConfirmed: confirmed }));
+  act(() => view.result.current.change('title', 'Nova mesa'));
+  await act(() => view.result.current.submit());
+  expect(confirmed).not.toHaveBeenCalled();
+  expect(view.result.current.pending).not.toBeNull();
+});

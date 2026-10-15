@@ -7,6 +7,7 @@ import {
   WorkActivityNotice,
 } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
+import { CampaignBaseReader } from '@/features/campaign-bases';
 import {
   Badge,
   Alert,
@@ -107,7 +108,11 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
       />
       <PageHeader
         title={campaign.title}
-        description="Campanha independente"
+        description={
+          campaign.provenance.kind === 'original'
+            ? 'Campanha de aventura autoral'
+            : 'Campanha independente'
+        }
         breadcrumbs={<Link to="/studio">Estúdio</Link>}
         actions={
           <div className={styles.actions}>
@@ -157,6 +162,9 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
         <p>Projeto independente, sem universo vinculado.</p>
       )}
       <ProjectProgressPanel target={{ kind: 'campaign', id: campaign.id }} />
+      {campaign.provenance.kind === 'original' && campaign.activeBaseId && (
+        <CampaignBaseReader campaignId={campaign.id} generationId={campaign.activeBaseId} />
+      )}
     </div>
   );
 }

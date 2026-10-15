@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import {
   campaignStatusLabels,
+  supportedCampaignProvenance,
   type Campaign,
   type CampaignPatch,
   type UpdateCampaignInput,
@@ -107,7 +108,13 @@ export function useCampaignManagement(
       !value ||
       value.id !== initial.id ||
       value.ownerId !== uid ||
-      value.provenance?.kind !== 'independent' ||
+      !supportedCampaignProvenance(value) ||
+      value.provenance.kind !== initial.provenance.kind ||
+      (value.provenance.kind === 'original' &&
+        (initial.provenance.kind !== 'original' ||
+          value.provenance.adventureId !== initial.provenance.adventureId ||
+          value.provenance.baseId !== initial.provenance.baseId)) ||
+      value.activeBaseId !== initial.activeBaseId ||
       !Number.isSafeInteger(value.revision) ||
       value.revision < 1 ||
       (input && value.revision !== input.expectedRevision + 1) ||

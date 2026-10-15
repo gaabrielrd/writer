@@ -22,6 +22,17 @@ const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } =
   user: { uid: 'owner' },
   loading: false,
 }));
+const captures = vi.hoisted(() => ({ visible: false }));
+vi.mock('@/features/campaign-bases', () => ({
+  CampaignCapturePreparations: ({ onActivated }: { onActivated: (id: string) => void }) =>
+    captures.visible ? (
+      <section aria-label="Campanhas em preparação">
+        <button onClick={() => onActivated('captured-campaign')}>
+          Retomar pedido sem aventura disponível
+        </button>
+      </section>
+    ) : null,
+}));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('@/features/books', () => ({
   createBook: vi.fn(),
@@ -89,6 +100,7 @@ const campaign: CampaignSummary = {
   updatedAt: 2000,
 };
 beforeEach(() => {
+  captures.visible = false;
   vi.clearAllMocks();
   auth.user = { uid: 'owner' };
   auth.loading = false;
@@ -102,6 +114,20 @@ beforeEach(() => {
     .mockResolvedValue({ items: [campaign], nextCursor: null });
   vi.mocked(createBook).mockReset();
   vi.mocked(createCampaign).mockReset();
+});
+it('preparações permanecem acessíveis sem aventura listada e abrem a campanha confirmada', async () => {
+  captures.visible = true;
+  render(tree());
+  expect(
+    await screen.findByRole('region', { name: 'Campanhas em preparação' }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Aventuras' })).toHaveTextContent(
+    'Nenhum projeto nesta lista',
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Retomar pedido sem aventura disponível' }),
+  );
+  expect(await screen.findByRole('heading', { name: 'Campanha aberta' })).toBeInTheDocument();
 });
 function tree() {
   return (

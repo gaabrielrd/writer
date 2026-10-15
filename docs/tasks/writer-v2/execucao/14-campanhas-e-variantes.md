@@ -1,9 +1,9 @@
 # F2-07 — Campanhas e variantes particulares
 
-**Estado:** subincremento A validado localmente; decisões de
-produto da captura recebidas. Fechar seu contrato operacional antes do código.
+**Estado:** subincremento A concluído tecnicamente em 624c912; captura B implementada e validada localmente, com CI do novo head pendente.
+Contrato operacional da captura fechado antes do código; variantes continuam pendentes.
 **Origem:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md).
-**Base:** F2-06 validado localmente e enviado em `a3150a3`; CI em paralelo.
+**Base:** F2-06 concluído tecnicamente em `624c912`, com CI e regras verdes.
 
 ## Resultado
 
@@ -127,14 +127,17 @@ cujos demais critérios dependem das decisões e etapas abaixo.
   cobriu transação, autorização, recibo e contadores.
 - Navegador: 36/36; após integrar correção de foco do histórico, 12/12 afetados,
   sem retries/skips/falhas. Validate final exit 0: 1.494 frontend, 77 scripts e
-  265 Functions. Registro Git/CI de A pendentes neste checkpoint.
+  265 Functions. A registrado/enviado em 624c912; CI e regras terminaram verdes,
+  incluindo oito shards/agregador, produção 7/7 e Firestore 103/103.
 - [Evidência de gestão e foco](../../../entregas/2026-10-15-writer-v2-gestao-de-campanhas.md).
 
 ## Captura e variantes
 
 O [contrato de captura B](15-captura-de-aventura.md) fecha persistência, limites,
-API, leitura própria e validação antes do código. Sua execução começa após o
-fechamento local de A. Variantes/atualização/exclusão integral terão planos próprios.
+API, leitura própria e validação antes do código. B foi implementado após o
+fechamento local de A: validate, SDKs reais, 36 percursos e seis controles finais
+de interface passaram. Veja a [entrega de captura](../../../entregas/2026-10-15-writer-v2-captura-de-aventura.md).
+Variantes/atualização/exclusão integral terão planos próprios; CI de B em paralelo.
 
 Trabalhar em gerações preparing/ready/aborted. activeBaseId só muda no commit final;
 preparação parcial nunca substitui uma base pronta. Paginar metadados 25/50, mas

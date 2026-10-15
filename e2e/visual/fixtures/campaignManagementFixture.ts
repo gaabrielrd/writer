@@ -76,7 +76,22 @@ function authorize(campaign: Campaign | null): Campaign {
   if (!campaign || ('deleting' in campaign && campaign.deleting))
     fail('Campanha indisponível.', 'not-found');
   if (campaign.ownerId !== fixtureOwner()) fail('Campanha indisponível.', 'not-found');
-  if (campaign.provenance.kind !== 'independent') fail('Procedência de campanha não suportada.');
+  if (
+    campaign.provenance.kind !== 'independent' &&
+    !(
+      campaign.provenance.kind === 'original' &&
+      [campaign.provenance.adventureId, campaign.provenance.baseId].every(
+        (value) =>
+          typeof value === 'string' &&
+          !!value &&
+          !value.includes('/') &&
+          !['.', '..'].includes(value) &&
+          new TextEncoder().encode(value).length <= 1500,
+      ) &&
+      campaign.activeBaseId === campaign.provenance.baseId
+    )
+  )
+    fail('Procedência de campanha não suportada.');
   return campaign;
 }
 async function authorizeUniverse(patch: CampaignPatch, uid: string) {

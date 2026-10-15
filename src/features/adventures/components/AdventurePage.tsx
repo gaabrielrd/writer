@@ -1,8 +1,9 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
-import { Link, Navigate, useParams, useSearchParams } from 'react-router';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { BookOpen, Globe, History } from 'lucide-react';
 import { WorkHistoryDialog } from '@/features/manuscript-history';
 import { useAuth } from '@/features/auth';
+import { CampaignCaptureDialog, CampaignCapturePreparations } from '@/features/campaign-bases';
 import { ScenePlanner } from '@/features/scenes';
 import {
   ProjectProgressPanel,
@@ -26,6 +27,8 @@ import { getAdventure } from '../services/adventureService';
 import styles from './AdventurePage.module.css';
 
 function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
+  const navigate = useNavigate();
+  const [captureOpen, setCaptureOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [historyOpen, setHistoryOpen] = useState(false);
   const tabs = ['scenes', 'narrative', 'progress'] as const;
@@ -123,6 +126,12 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   return (
     <div className={styles.page}>
       <WorkActivityNotice activity={activity} />
+      <CampaignCaptureDialog
+        open={captureOpen}
+        onClose={() => setCaptureOpen(false)}
+        adventureId={adventure.id}
+        onActivated={(campaignId) => void navigate('/campaigns/' + encodeURIComponent(campaignId))}
+      />
       <WorkHistoryDialog
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
@@ -135,6 +144,9 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
         actions={
           <div className={styles.headerActions}>
             {back}
+            <Button variant="outline" onClick={() => setCaptureOpen(true)}>
+              Criar campanha desta aventura
+            </Button>
             <Button variant="outline" onClick={() => setHistoryOpen(true)}>
               <History className="icon icon-sm" aria-hidden="true" />
               Histórico do texto
@@ -165,6 +177,7 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
           </time>
         </p>
       </Card>
+      <CampaignCapturePreparations adventureId={adventure.id} />
       {adventure.universeId ? (
         <Link to={'/universes/' + encodeURIComponent(adventure.universeId) + '/lore'}>
           <Globe className="icon icon-sm" aria-hidden="true" /> Abrir universo vinculado

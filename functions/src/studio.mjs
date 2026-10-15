@@ -93,7 +93,11 @@ function projectView(kind, id, record) {
     updatedAt: record.updatedAt,
     ...(kind === 'adventure'
       ? { synopsis: record.synopsis, language: record.language, origin: record.origin }
-      : { description: record.description, provenance: record.provenance }),
+      : {
+          description: record.description,
+          provenance: record.provenance,
+          ...(record.provenance?.kind === 'original' ? { activeBaseId: record.activeBaseId } : {}),
+        }),
   };
 }
 function effectiveEditorialState(kind, record) {

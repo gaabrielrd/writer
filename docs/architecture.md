@@ -487,7 +487,7 @@ acesso. Exclusão integral/backup de aventura têm trabalho próprio; preservar 
 pendência. Ver [ADR 0030](decisions/0030-adventure-blocks-and-private-previews.md) e
 [contrato F2-06](tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
 
-## Gestão privada de campanhas independentes
+## Gestão privada de campanhas
 
 `features/campaigns` expõe `CampaignManagementDialog`. Seu controlador reserva uma
 operação por UID/campanha, preserva o pedido antes da rede e mantém a edição
@@ -503,9 +503,49 @@ primeiro vínculo. Um universo removido pode ser desvinculado sem ser recriado.
 Replay reautoriza e exige revisão e hash da confirmação ainda atuais. Checklist,
 procedência, criação e lore global permanecem preservados.
 
-Essa gestão não captura uma aventura nem implementa base/variantes. Somente
-campanhas independentes são aceitas; procedências futuras falham antes da escrita.
+Essa gestão aceita campanhas independentes e campanhas originais com base canônica
+coerente. Alterar seus metadados não muda a base, a procedência ou o checklist.
+Procedências ainda não suportadas falham antes da escrita.
 Ver o [contrato F2-07](tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
+
+## Captura privada de aventura e base congelada
+
+`features/campaign-bases` expõe criação/retomada e leitor pela interface pública.
+A aventura inicia a captura; o Estúdio também descobre preparações pendentes,
+inclusive quando a origem foi removida. O leitor da campanha apresenta material,
+narrativa, lore e arquivo sem consultar prosa viva para completar a base.
+
+`functions/src/campaignCapture.mjs` prepara uma geração privada em etapas
+limitadas. `campaignCaptureItems.mjs` captura partes, cenas, blocos, texto legado,
+planejamento, narrativa e a união deduplicada de lore explicitamente referenciado.
+Não expande nomes ou relações. Cada passo compara a versão precisa da origem;
+mudança aborta duravelmente. Somente a ativação cria a campanha, seu vínculo e a
+base pronta atomicamente. Preparações incompletas não aparecem como campanhas.
+
+Os controles ficam em `users/{uid}/campaignPreparations`; a geração permanente
+em `users/{uid}/campaignBases`, com filhos `items`, `bodies`, `loreReferences`,
+`images` e `links`. Checkpoint monotônico e recibos preservam identidade em retries.
+O cliente guarda método/payload/checkpoint antes da rede, isolados por UID, e
+descobre também pedidos locais de ativação/limpeza sem confirmação após reload.
+Esses controles não guardam corpos. Troca de conta/alvo descarta respostas tardias.
+
+`campaignBaseRead.mjs` reautoriza campanha, origem e fichas antes de projetar
+resumos, corpos, relações ou mídia. Edição normal do original não altera a base.
+Lore indisponível e relações para alvos não capturados/autorizados não são expostos.
+O vínculo organizacional atual é independente do universo original capturado.
+SDK direto permanece negado. Token comum protege a composição; cursores vinculam
+escopo/projeção. Corpos usam chunks UTF-8 e SHA-256, conferidos integralmente no
+servidor e no cliente antes da exibição, com limites de bytes e sem truncamento.
+
+Ilustrações usam pin tipado próprio e geração Storage capturada. Escritores da
+aplicação preservam seus bytes; sobrescrita externa causa indisponibilidade, sem
+presumir versionamento do bucket. Mídia derivada é autenticada antes/depois do I/O,
+sem URL permanente ou caminho. Cancelamento revoga e limpa filhos/pins em lotes
+retomáveis mesmo sem a origem. Bases prontas não têm expiração automática.
+
+Variantes, atualização explícita e exclusão integral de campanha conservam etapas
+próprias. Veja [ADR 0031](decisions/0031-campaign-frozen-bases.md) e
+[contrato de captura](tasks/writer-v2/execucao/15-captura-de-aventura.md).
 
 ## Progresso privado, contagem e retomada
 

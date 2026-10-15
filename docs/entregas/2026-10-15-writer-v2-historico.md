@@ -182,3 +182,7 @@ a integração verificou o roteiro original nos seis projetos, junto de seis cas
 de teclado de campanhas: 12/12 diretos. Validate integrado verde (1.494 frontend,
 77 scripts, 265 Functions). [Evidência completa](2026-10-15-writer-v2-gestao-de-campanhas.md).
 Nova confirmação de CI permanece pendente; nenhum teste funcional foi afrouxado.
+
+Essa pendência foi encerrada em 624c912: validate Node 22/24, auditoria, produção,
+oito shards, agregador e regras verdes. F2-05 está concluído tecnicamente neste
+head; [confirmação e limites](2026-10-15-writer-v2-gestao-de-campanhas.md).

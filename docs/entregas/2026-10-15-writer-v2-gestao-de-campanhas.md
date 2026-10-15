@@ -1,6 +1,6 @@
 # Writer V2 — Gestão de campanhas independentes
 
-**Estado:** validado localmente; registro Git e nova CI pendentes neste checkpoint.
+**Estado:** subincremento A concluído tecnicamente em 624c912; CI e regras verdes.
 **Escopo:** subincremento A de [F2-07](../tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
 Isso não conclui captura, variantes, atualização ou exclusão integral de F2-07.
 
@@ -94,3 +94,22 @@ Sem merge, deploy ou mudança no checkout original/master.
 3. Vincule/troque/desvincule universo próprio e recarregue.
 4. Em resposta incerta, reabra e confirme o mesmo pedido; em conflito, descarte explicitamente.
 5. Restaure versão de capítulo, feche o diálogo, retome escrita e desfaça/refaça.
+
+## Registro e envio — 2026-10-15
+
+Gestão, testes e contratos registrados em
+`624c9126236387cb600b71dcefe1fed4a27f5115`, sobre a correção isolada `7070a0c`.
+O envio da branch codex/writer-v2 ao [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21)
+foi confirmado por ls-remote. Hooks mantidos: pre-push confirmou tipos e 1.494 testes
+em 161 arquivos, 104,33 s. [CI](https://github.com/gaabrielrd/writer/actions/runs/38719991146)
+e [regras](https://github.com/gaabrielrd/writer/actions/runs/38719990928) observadas
+na fila, sem presumir resultado. Captura B inicia sob a sequência autorizada.
+
+## Confirmação remota — 2026-10-15
+
+Os runs de 624c912 terminaram verdes: validate Node 22/24, auditoria, navegador de
+produção, oito shards visuais, gate agregado e regras. Logs de produção confirmam
+7/7 (17,6 s) e Firestore 103/103, zero falhas. A correção de foco de F2-05 e o gate
+de F2-06 estão confirmados remotamente neste head. Não inferir ausência de retries
+dos shards apenas pelo estado success. F2-07 completo continua em implementação;
+essa conclusão se refere somente à gestão independente A.

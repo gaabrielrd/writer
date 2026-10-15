@@ -92,6 +92,9 @@
 - Filtre prévias por audiência no servidor antes de ler corpos; entregue somente HTML e mídia projetados, sem lore privado, caminho Storage ou URL permanente da biblioteca.
 - Mantenha usos tipados de ilustração por aventura/bloco atomicamente com vínculo, duplicação e exclusão; prévia continua restrita ao dono e não concede compartilhamento.
 - Altere metadados de campanha em `functions` com revisão, vínculo organizacional e recibo atômicos; preserve pedido incerto por UID/campanha e não adote revisão remota sem descarte explícito.
+- Prepare bases de campanha em gerações privadas; compare o token preciso da origem por etapa e crie a campanha somente com a ativação integral e atômica.
+- Sirva base e lore derivado pelo servidor com autorização vigente, preservando procedência separada do universo organizacional; não resolva fichas por nome nem relações transitivas.
+- Preserve pins próprios de mídia da base e sua geração Storage; reautorize antes/depois do I/O e mantenha controles locais incertos descobríveis mesmo após ativação ou limpeza.
 
 ## Rotas
 

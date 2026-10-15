@@ -123,6 +123,10 @@ A causa foi confirmada no retorno diferido de foco do Dialog e corrigida em
 [evidência de foco e campanhas](2026-10-15-writer-v2-gestao-de-campanhas.md).
 O próximo head ainda precisa de confirmação remota, sem alterar timeouts/asserções.
 
+O head 624c912 encerrou essa pendência: validate Node 22/24, auditoria, produção,
+oito shards/agregador e regras passaram. F2-06 está concluído tecnicamente neste
+head; [confirmação e limites](2026-10-15-writer-v2-gestao-de-campanhas.md).
+
 A CI anterior de F2-05 cancelou um shard próximo de 15 minutos, sem falhas registradas
 nos 141 casos concluídos. F2-06 distribui a suíte completa em oito shards, preservando
 15 min/job, 45 s/teste, expectativa de 10 s, dois workers, retry existente e gate
