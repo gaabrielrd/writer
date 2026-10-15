@@ -2,7 +2,7 @@
 
 - **Data:** 2026-10-15
 - **Branch:** `codex/writer-v2`
-- **Estado:** Validado localmente; aguarda commit/envio e CI do novo head
+- **Estado:** Validado localmente; enviado em `a3150a3`, CI do novo head pendente
 - **Planos:** [Blocos narrativos](../tasks/writer-v2/execucao/12-aventuras-e-blocos.md),
   [Ilustração e prévia](../tasks/writer-v2/execucao/13-imagens-e-previa-de-aventura.md)
 
@@ -104,6 +104,24 @@ passou 1/1 aguardando cada foco real do menu. A matriz final 78/78 conserva toda
 asserções de privacidade, readonly, teclado e recuperação. Nenhum timeout foi ampliado.
 
 ## Ajuste da CI
+
+O commit `a3150a31ba6eccf6719fdbfc88f7adb381aa1fe2` foi enviado ao
+[PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21). Hooks mantidos:
+pre-push confirmou tipos e 1.477 testes em 158 arquivos, 102,57 s. O SHA remoto
+foi conferido com ls-remote. [CI](https://github.com/gaabrielrd/writer/actions/runs/38715097202)
+e [regras](https://github.com/gaabrielrd/writer/actions/runs/38715097104) terminaram.
+Validate Node 22/24, auditoria, produção (7/7) e regras reais (99/99, sem skips)
+passaram. Sete shards visuais passaram; o shard 6 falhou no histórico de capítulo,
+tema sépia: depois de restaurar e desfazer, refazer não recuperou o texto esperado,
+também no retry. O gate agregado falhou corretamente. Essa regressão está em
+investigação dirigida; F2-05/F2-06 não têm conclusão técnica remota neste SHA.
+O trabalho seguinte pode avançar conforme a autorização de acompanhamento
+assíncrono, sem presumir aprovação desses checks.
+
+A causa foi confirmada no retorno diferido de foco do Dialog e corrigida em
+`7070a0c`. Validate integrado e 12 percursos afetados passaram localmente;
+[evidência de foco e campanhas](2026-10-15-writer-v2-gestao-de-campanhas.md).
+O próximo head ainda precisa de confirmação remota, sem alterar timeouts/asserções.
 
 A CI anterior de F2-05 cancelou um shard próximo de 15 minutos, sem falhas registradas
 nos 141 casos concluídos. F2-06 distribui a suíte completa em oito shards, preservando

@@ -6,10 +6,17 @@ import { CampaignPage } from '../components/CampaignPage';
 import { getCampaign } from '../services/campaignService';
 import type { Campaign } from '../model/campaign';
 
-const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } => ({
-  user: { uid: 'owner' },
-  loading: false,
-}));
+const auth = vi.hoisted(
+  (): {
+    user: { uid: string } | null;
+    loading: boolean;
+    setPendingEditorOperation: ReturnType<typeof vi.fn>;
+  } => ({
+    user: { uid: 'owner' },
+    loading: false,
+    setPendingEditorOperation: vi.fn(),
+  }),
+);
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('../services/campaignService', () => ({ getCampaign: vi.fn() }));
 const resource: Campaign = {

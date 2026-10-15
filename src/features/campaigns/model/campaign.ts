@@ -1,4 +1,10 @@
 export type CampaignStatus = 'planning' | 'active' | 'completed' | 'archived';
+export const campaignStatusLabels: Record<CampaignStatus, string> = {
+  planning: 'Em preparação',
+  active: 'Em andamento',
+  completed: 'Concluída',
+  archived: 'Arquivada',
+};
 
 export interface Campaign {
   id: string;
@@ -32,4 +38,13 @@ export interface CreateCampaignInput {
   title: string;
   description?: string;
   universeId?: string | null;
+}
+export type CampaignPatch = Partial<
+  Pick<Campaign, 'title' | 'description' | 'status' | 'universeId'>
+>;
+export interface UpdateCampaignInput {
+  campaignId: string;
+  operationId: string;
+  expectedRevision: number;
+  patch: CampaignPatch;
 }

@@ -91,6 +91,7 @@
 - Conte principal e adicionais ativos uma vez no ledger da cena; não invente zero para agregado inválido nem adote revisão com outro hash do principal.
 - Filtre prévias por audiência no servidor antes de ler corpos; entregue somente HTML e mídia projetados, sem lore privado, caminho Storage ou URL permanente da biblioteca.
 - Mantenha usos tipados de ilustração por aventura/bloco atomicamente com vínculo, duplicação e exclusão; prévia continua restrita ao dono e não concede compartilhamento.
+- Altere metadados de campanha em `functions` com revisão, vínculo organizacional e recibo atômicos; preserve pedido incerto por UID/campanha e não adote revisão remota sem descarte explícito.
 
 ## Rotas
 

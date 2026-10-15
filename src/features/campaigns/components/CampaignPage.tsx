@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { Globe, Map } from 'lucide-react';
 import {
@@ -9,6 +9,7 @@ import {
 import { useAuth } from '@/features/auth';
 import {
   Badge,
+  Alert,
   Button,
   Card,
   EmptyState,
@@ -17,11 +18,20 @@ import {
   PageHeader,
   buttonVariants,
 } from '@/shared/ui';
-import type { Campaign } from '../model/campaign';
+import { campaignStatusLabels, type Campaign } from '../model/campaign';
 import { getCampaign } from '../services/campaignService';
+import { CampaignManagementDialog } from './CampaignManagementDialog';
 import styles from './CampaignPage.module.css';
 
 function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
+  const { setPendingEditorOperation } = useAuth();
+  const [editing, setEditing] = useState(false),
+    [pending, setPending] = useState(false);
+  const onPendingChange = useCallback((value: boolean) => setPending(value), []);
+  useEffect(() => {
+    setPendingEditorOperation(pending);
+    return () => setPendingEditorOperation(false);
+  }, [pending, setPendingEditorOperation]);
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<{
     attempt: number;
@@ -84,21 +94,39 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
     Number.isFinite(campaign.updatedAt) &&
     campaign.updatedAt >= 0 &&
     campaign.updatedAt <= 8_640_000_000_000_000;
-  const status = {
-    planning: 'Em preparação',
-    active: 'Em andamento',
-    completed: 'Concluída',
-    archived: 'Arquivada',
-  }[campaign.status];
+  const status = campaignStatusLabels[campaign.status];
   return (
     <div className={styles.page}>
       <WorkActivityNotice activity={activity} />
+      <CampaignManagementDialog
+        open={editing}
+        onClose={() => setEditing(false)}
+        campaign={campaign}
+        onPendingChange={onPendingChange}
+        onConfirmed={(value) => setResult({ attempt, campaign: value })}
+      />
       <PageHeader
         title={campaign.title}
         description="Campanha independente"
         breadcrumbs={<Link to="/studio">Estúdio</Link>}
-        actions={back}
+        actions={
+          <div className={styles.actions}>
+            <Button variant="outline" onClick={() => setEditing(true)}>
+              Editar campanha
+            </Button>
+            {back}
+          </div>
+        }
       />
+      {pending && !editing && (
+        <Alert variant="warning">
+          Há uma alteração desta campanha aguardando confirmação. Confirme o mesmo pedido antes de
+          editar novamente.
+          <Button variant="secondary" onClick={() => setEditing(true)}>
+            Confirmar alterações pendentes
+          </Button>
+        </Alert>
+      )}
       <div className={styles.meta}>
         <Badge variant="secondary">Campanha</Badge>
         <Badge variant="neutral">{status}</Badge>

@@ -223,6 +223,15 @@ antes da seleção: a transição durante o gesto faz parte da regressão proteg
 
 ## Roadmap Writer e regras reais
 
+Gestão independente de campanhas tem testes colocalizados em `campaigns`:
+cancelamento, payload/revisão estáveis, resposta perdida, conflito com descarte
+explícito, isolamento de UID/alvo e adoção do DTO próprio. O backend em
+`functions/test/campaigns.test.mjs` e o SDK real
+`tests/firestore/campaigns.rules.test.mjs` conferem CAS/replay, contador/usos de
+universo, legado e escrita direta negada. Fixtures substituem só o novo transporte;
+os controles de navegador não comprovam autorização real ou captura de aventura.
+Ver [contrato F2-07](tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
+
 Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
 em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
 ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.

@@ -487,6 +487,26 @@ acesso. Exclusão integral/backup de aventura têm trabalho próprio; preservar 
 pendência. Ver [ADR 0030](decisions/0030-adventure-blocks-and-private-previews.md) e
 [contrato F2-06](tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
 
+## Gestão privada de campanhas independentes
+
+`features/campaigns` expõe `CampaignManagementDialog`. Seu controlador reserva uma
+operação por UID/campanha, preserva o pedido antes da rede e mantém a edição
+bloqueada quando a resposta é incerta. Fechar/reabrir ou recarregar não cria outro
+pedido. Conflito conserva os campos e só carrega a versão atual por descarte
+explícito. A página aceita o DTO confirmado do próprio pedido sem GET intermediário.
+
+`functions/src/campaigns.mjs` altera título, descrição, estado e universo
+organizacional com dono, revisão comparada e recibo na mesma transação. O vínculo
+usa o helper de universos em modo estrito, com uso tipado e contador consistente;
+universo legado sem contador exige prova limitada de ausência de usos antes do
+primeiro vínculo. Um universo removido pode ser desvinculado sem ser recriado.
+Replay reautoriza e exige revisão e hash da confirmação ainda atuais. Checklist,
+procedência, criação e lore global permanecem preservados.
+
+Essa gestão não captura uma aventura nem implementa base/variantes. Somente
+campanhas independentes são aceitas; procedências futuras falham antes da escrita.
+Ver o [contrato F2-07](tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
+
 ## Progresso privado, contagem e retomada
 
 `features/work-progress` oferece `ProjectProgressPanel`, `ContinueWorkPanel` e

@@ -10,6 +10,7 @@ import { defineSecret, defineString, defineInt } from 'firebase-functions/params
 import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createStudioService } from './studio.mjs';
+import { createCampaignsService } from './campaigns.mjs';
 import { createWorkProgressService } from './workProgress.mjs';
 import { createWorkHistoryService } from './workHistory.mjs';
 import { createAdventureBlocksService } from './adventureBlocks.mjs';
@@ -247,6 +248,7 @@ const callable = (method, secrets = []) =>
       try {
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
+        const campaigns = createCampaignsService({ db });
         const workProgress = createWorkProgressService({ db });
         const workHistory = createWorkHistoryService({ db });
         const adventureBlocks = createAdventureBlocksService({ db });
@@ -260,29 +262,31 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = adventurePreview[method]
-          ? adventurePreview
-          : adventureBlocks[method]
-            ? adventureBlocks
-            : workHistory[method]
-              ? workHistory
-              : workProgress[method]
-                ? workProgress
-                : narrative[method]
-                  ? narrative
-                  : scenes[method]
-                    ? scenes
-                    : studio[method]
-                      ? studio
-                      : assisted[method]
-                        ? assisted
-                        : loreAnalysis[method]
-                          ? loreAnalysis
-                          : universeService[method]
-                            ? universeService
-                            : service()[method]
-                              ? service()
-                              : createImageLibraryService({ db, assets });
+        const handler = campaigns[method]
+          ? campaigns
+          : adventurePreview[method]
+            ? adventurePreview
+            : adventureBlocks[method]
+              ? adventureBlocks
+              : workHistory[method]
+                ? workHistory
+                : workProgress[method]
+                  ? workProgress
+                  : narrative[method]
+                    ? narrative
+                    : scenes[method]
+                      ? scenes
+                      : studio[method]
+                        ? studio
+                        : assisted[method]
+                          ? assisted
+                          : loreAnalysis[method]
+                            ? loreAnalysis
+                            : universeService[method]
+                              ? universeService
+                              : service()[method]
+                                ? service()
+                                : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError)
@@ -309,6 +313,7 @@ export const updateUniverse = callable('updateUniverse');
 export const deleteUniverse = callable('deleteUniverse');
 export const createAdventure = callable('createAdventure');
 export const createCampaign = callable('createCampaign');
+export const updateCampaign = callable('updateCampaign');
 export const getAdventure = callable('getAdventure');
 export const getCampaign = callable('getCampaign');
 export const prepareStudioBooks = callable('prepareStudioBooks');

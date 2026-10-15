@@ -163,3 +163,22 @@ O agregador falhou corretamente ao receber cancelled. CI continua pendente,
 sem aumentar timeout, repetir jobs ou enfraquecer asserções. Evidência externa:
 `writer-v2-progress-qa/ci-38708131239`. O incremento seguinte avança conforme a
 autorização de acompanhamento assíncrono, sem declarar F2-05 concluído na CI.
+
+## Regressão de refazer detectada na CI — 2026-10-15
+
+O head seguinte `a3150a3` distribuiu a matriz em oito shards. Validate Node 22/24,
+auditoria, produção, regras e sete shards passaram. O shard 6 reprovou o roteiro
+de autor em desktop/sépia, também no retry: restaurar e desfazer funcionaram,
+mas refazer manteve o texto anterior ao restauro. O gate agregado falhou.
+Traces, capturas e contexto foram preservados externamente em
+`writer-v2-history-ci`; investigação dirigida em checkout isolado, sem alterar
+timeouts, asserções ou declarar CI verde. Ver
+[run 38715097202](https://github.com/gaabrielrd/writer/actions/runs/38715097202).
+
+O diagnóstico encontrou retorno diferido de foco no Dialog, preservando a pilha de
+Refazer, mas tirando foco da escrita. A correção `7070a0c` preserva o foco já escolhido
+e mantém retorno normal. Teste negativo real antes/depois e 26 unitários passaram;
+a integração verificou o roteiro original nos seis projetos, junto de seis casos
+de teclado de campanhas: 12/12 diretos. Validate integrado verde (1.494 frontend,
+77 scripts, 265 Functions). [Evidência completa](2026-10-15-writer-v2-gestao-de-campanhas.md).
+Nova confirmação de CI permanece pendente; nenhum teste funcional foi afrouxado.

@@ -2,7 +2,11 @@ import type {
   Adventure,
   CreateAdventureInput,
 } from '../../../src/features/adventures/model/adventure';
-import type { Campaign, CreateCampaignInput } from '../../../src/features/campaigns/model/campaign';
+import type {
+  Campaign,
+  CampaignPatch,
+  CreateCampaignInput,
+} from '../../../src/features/campaigns/model/campaign';
 import { author, FIXTURE_LIBRARY_STATE_KEY, FIXTURE_TIME } from './data';
 
 type Kind = 'adventure' | 'campaign';
@@ -14,6 +18,7 @@ export function fixtureOwner(): string {
 }
 const seedCount = sessionStorage.getItem('writer.visual.studio-pagination') === 'true' ? 28 : 2;
 const empty = sessionStorage.getItem(FIXTURE_LIBRARY_STATE_KEY) === 'empty';
+const projectKey = (uid: string, id: string) => JSON.stringify([uid, id]);
 const stores = { adventure: new Map<string, Adventure>(), campaign: new Map<string, Campaign>() };
 if (!empty) {
   for (let index = 0; index < seedCount; index += 1) {
@@ -42,8 +47,8 @@ if (!empty) {
       provenance: { kind: 'independent' },
       status: index === 0 ? 'planning' : 'active',
     };
-    stores.adventure.set(adventure.id, adventure);
-    stores.campaign.set(campaign.id, campaign);
+    stores.adventure.set(projectKey(adventure.ownerId, adventure.id), adventure);
+    stores.campaign.set(projectKey(campaign.ownerId, campaign.id), campaign);
   }
 }
 
@@ -52,8 +57,10 @@ const projectPatches = JSON.parse(
 ) as Record<string, Partial<Project>>;
 for (const [key, patch] of Object.entries(projectPatches)) {
   const separator = key.indexOf(':');
-  const kind = key.slice(0, separator) as Kind;
-  const value = stores[kind]?.get(key.slice(separator + 1));
+  const [uid, kind, id] = key.startsWith('[')
+    ? (JSON.parse(key) as [string, Kind, string])
+    : [author.uid, key.slice(0, separator) as Kind, key.slice(separator + 1)];
+  const value = stores[kind]?.get(projectKey(uid, id));
   if (value) Object.assign(value, patch);
 }
 interface ListInput {
@@ -140,12 +147,36 @@ export function fixtureList(kind: Kind, input: ListInput) {
 export function fixtureGet(kind: 'adventure', id: string): Promise<Adventure | null>;
 export function fixtureGet(kind: 'campaign', id: string): Promise<Campaign | null>;
 export function fixtureGet(kind: Kind, id: string): Promise<Project | null> {
-  const project = stores[kind].get(id);
+  const project = stores[kind].get(projectKey(fixtureOwner(), id));
   return Promise.resolve(structuredClone(project?.ownerId === fixtureOwner() ? project : null));
 }
 
-const receipts = new Map<string, { payload: string; project: Project }>();
-let sequence = 0;
+const storageKey = 'writer.visual.studio-projects';
+const savedProjects = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null') as {
+  adventures: Adventure[];
+  campaigns: Campaign[];
+  receipts: [string, { payload: string; project: Project }][];
+  sequence: number;
+} | null;
+for (const project of savedProjects?.adventures ?? [])
+  stores.adventure.set(projectKey(project.ownerId, project.id), project);
+for (const project of savedProjects?.campaigns ?? [])
+  stores.campaign.set(projectKey(project.ownerId, project.id), project);
+const receipts = new Map<string, { payload: string; project: Project }>(
+  savedProjects?.receipts ?? [],
+);
+let sequence = savedProjects?.sequence ?? 0;
+function persistStudio() {
+  sessionStorage.setItem(
+    storageKey,
+    JSON.stringify({
+      adventures: [...stores.adventure.values()],
+      campaigns: [...stores.campaign.values()],
+      receipts: [...receipts],
+      sequence,
+    }),
+  );
+}
 export function fixtureCreate(kind: 'adventure', input: CreateAdventureInput): Promise<Adventure>;
 export function fixtureCreate(kind: 'campaign', input: CreateCampaignInput): Promise<Campaign>;
 export async function fixtureCreate(
@@ -159,7 +190,10 @@ export async function fixtureCreate(
   if (previous) {
     if (previous.payload !== payload)
       throw new Error('Esta operação já foi usada com outros dados.');
-    return structuredClone(previous.project);
+    const current = stores[kind].get(projectKey(ownerId, previous.project.id));
+    if (!current)
+      throw Object.assign(new Error('Projeto indisponível.'), { code: 'functions/not-found' });
+    return structuredClone(current);
   }
   const common = {
     id: `visual-created-${kind}-${++sequence}`,
@@ -186,9 +220,11 @@ export async function fixtureCreate(
           provenance: { kind: 'independent' as const },
           status: 'planning' as const,
         };
-  if (kind === 'adventure') stores.adventure.set(project.id, project as Adventure);
-  else stores.campaign.set(project.id, project as Campaign);
+  if (kind === 'adventure')
+    stores.adventure.set(projectKey(ownerId, project.id), project as Adventure);
+  else stores.campaign.set(projectKey(ownerId, project.id), project as Campaign);
   receipts.set(receiptKey, { payload, project });
+  persistStudio();
   // Simulate a response lost after persistence; retry must resolve the receipt.
   if (sessionStorage.getItem('writer.visual.studio-lost-response') === kind) {
     sessionStorage.removeItem('writer.visual.studio-lost-response');
@@ -203,10 +239,40 @@ export async function fixtureCreate(
 }
 
 export function fixturePatchProject(kind: Kind, id: string, patch: Partial<Project>): void {
-  const value = stores[kind].get(id);
+  const value = stores[kind].get(projectKey(fixtureOwner(), id));
   if (value?.ownerId === fixtureOwner()) {
     Object.assign(value, patch);
-    projectPatches[kind + ':' + id] = { ...projectPatches[kind + ':' + id], ...patch };
+    const key = JSON.stringify([fixtureOwner(), kind, id]);
+    projectPatches[key] = { ...projectPatches[key], ...patch };
     sessionStorage.setItem('writer.visual.studio-patches', JSON.stringify(projectPatches));
+    persistStudio();
   }
+}
+export function fixtureCommitCampaign(
+  id: string,
+  expectedRevision: number,
+  patch: CampaignPatch,
+): Campaign {
+  const key = projectKey(fixtureOwner(), id),
+    current = stores.campaign.get(key);
+  if (!current || ('deleting' in current && current.deleting))
+    throw Object.assign(new Error('Campanha indisponível.'), { code: 'functions/not-found' });
+  if (current.provenance.kind !== 'independent')
+    throw Object.assign(new Error('Procedência de campanha não suportada.'), {
+      code: 'functions/failed-precondition',
+    });
+  if (current.revision !== expectedRevision)
+    throw Object.assign(new Error('A campanha mudou. Compare a versão atual antes de continuar.'), {
+      code: 'functions/failed-precondition',
+      details: { reason: 'revision-conflict' },
+    });
+  const confirmed: Campaign = {
+    ...current,
+    ...patch,
+    revision: current.revision + 1,
+    updatedAt: Math.max(FIXTURE_TIME, current.updatedAt + 1),
+  };
+  stores.campaign.set(key, confirmed);
+  persistStudio();
+  return structuredClone(confirmed);
 }

@@ -29,11 +29,16 @@ F2-05 acrescenta versões manuais do texto e cópia anterior a cada restauraçã
 com comparação, exclusão explícita e recuperação de pedidos sem resposta. O
 histórico é privado e ainda não acompanha o backup v6. Os resultados de validação
 ficam no [contrato de histórico](docs/tasks/writer-v2/execucao/11-historico-e-restauracao.md).
-F2-06 foi validado localmente e aguarda CI: aventuras reúnem blocos com texto, tipo, audiência e
+F2-06 foi validado localmente; a regressão de foco/refazer encontrada na CI foi
+corrigida localmente em 7070a0c e aguarda nova CI. Aventuras reúnem blocos com texto, tipo, audiência e
 ilustração próprios na mesma cena. O principal antigo permanece íntegro; novo e
 legado sem classificação são privados. As prévias Original completo, Mestre e
 Jogadores continuam restritas ao criador, com filtro e mídia no servidor, sem
 compartilhamento automático. Veja [blocos e prévias](docs/tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
+F2-07 está em implementação: a gestão de campanhas independentes permite editar
+dados, escolher estado e trocar o universo organizacional, preservando o checklist.
+Captura completa de aventura, lore referenciado, base congelada e variantes seguem nas etapas
+do [contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).
