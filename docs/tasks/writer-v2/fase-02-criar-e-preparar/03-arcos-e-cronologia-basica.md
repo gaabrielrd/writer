@@ -1,6 +1,6 @@
 # W2-F2-03 — Relacionar arcos e cronologia básica
 
-**Estado:** Implementado; validate integral final, QA completo, 74 regras e produção verdes localmente. Git e CI do incremento pendentes.
+**Estado:** Concluído tecnicamente em `3358c75`; validate, QA, regras e CI completos verdes.
 **Execução:** [contrato, escolha temporal e gates](../execucao/09-arcos-e-cronologia.md).
 **Dependências:** [W2-F2-02](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md)
 **Áreas:** narrative-planning, books, adventures, scenes e origens de lore/universo.
@@ -41,8 +41,12 @@ Entradas: entidade de lore, arco, evento e cena vinculada. Resultado: lista cron
 
 Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md) e registrar evidência real.
 
-[Evidência local](../../../entregas/2026-10-13-writer-v2-arcos.md). A conclusão técnica
-aguarda os gates finais e o CI do incremento, conforme definição de concluído.
+[Evidência](../../../entregas/2026-10-13-writer-v2-arcos.md). O SHA `3358c75`
+passou no [CI completo](https://github.com/gaabrielrd/writer/actions/runs/38459491836)
+e nas [regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/38459491878).
+Foram 732 visuais diretos, zero flaky/retry, 12 skips preexistentes; 96 narrativos
+e seis de autocomplete diretos, produção 7/7 e regras 74/74. Condições humanas,
+comerciais e implantação continuam nas respectivas entregas.
 
 ## Riscos e decisões necessárias
 

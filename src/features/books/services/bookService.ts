@@ -14,9 +14,14 @@ import {
   runTransaction,
   onSnapshot,
 } from 'firebase/firestore';
-import { firestore } from '@/shared/lib';
+import { auth, firestore } from '@/shared/lib';
 import { deleteSceneBook, deleteSceneGroup } from '@/features/scenes';
 import { resolveChapterContent } from './chapterCompositionService';
+import {
+  saveServerLegacyChapter,
+  deleteServerLegacyChapters,
+  prepareServerBookWordCount,
+} from './legacyChapterService';
 import {
   createOrganizedChapter,
   MAX_CHAPTER_SELECTION,
@@ -44,6 +49,8 @@ interface StoredBookDoc {
   sceneRevision?: number;
   hasNarrativeResources?: boolean;
   narrativeRevision?: number;
+  hasProgressResources?: boolean;
+  editorialState?: 'draft' | 'review' | 'ready';
   universeId?: string | null;
   personaId?: string | null;
   authorId: string;
@@ -92,6 +99,8 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
       coverUrl: data.coverUrl ?? null,
       ...(data.coverImageId ? { coverImageId: data.coverImageId } : {}),
       status: data.status ?? 'draft',
+      ...(data.editorialState ? { editorialState: data.editorialState } : {}),
+      ...(data.hasProgressResources ? { hasProgressResources: true } : {}),
       wordCount: data.wordCount ?? 0,
       ...(data.hasSceneResources
         ? { hasSceneResources: true, sceneRevision: data.sceneRevision ?? 0 }
@@ -131,6 +140,8 @@ export async function getBook(
     coverUrl: data.coverUrl ?? null,
     ...(data.coverImageId ? { coverImageId: data.coverImageId } : {}),
     status: data.status ?? 'draft',
+    ...(data.editorialState ? { editorialState: data.editorialState } : {}),
+    ...(data.hasProgressResources ? { hasProgressResources: true } : {}),
     wordCount: data.wordCount ?? 0,
     ...(data.hasSceneResources
       ? { hasSceneResources: true, sceneRevision: data.sceneRevision ?? 0 }
@@ -206,7 +217,12 @@ export async function deleteBook(bookId: string): Promise<void> {
   // Revoke public access first, even if a later cleanup operation fails.
   await beginBookDeletion(bookId);
   const parent = await getDocFromServer(doc(firestore, 'books', bookId));
-  if (parent.exists() && (parent.data().hasSceneResources || parent.data().hasNarrativeResources)) {
+  if (
+    parent.exists() &&
+    (parent.data().hasSceneResources ||
+      parent.data().hasNarrativeResources ||
+      parent.data().hasProgressResources)
+  ) {
     const request = {
       target: { kind: 'book' as const, id: bookId },
       operationId: crypto.randomUUID(),
@@ -320,6 +336,9 @@ export async function updateChapter(
 ): Promise<void> {
   if ('personaComplement' in input)
     input = { ...input, personaComplement: validateComplement(input.personaComplement) };
+  const { expectedContent, operationId, expectedOwnerId, ...patch } = input;
+  if (expectedOwnerId && auth.currentUser?.uid !== expectedOwnerId)
+    throw new Error('A conta mudou. Reabra o capítulo antes de salvar.');
   const chapterRef = doc(firestore, 'books', bookId, 'chapters', chapterId);
   const content = input.content;
   const wordCount =
@@ -330,13 +349,13 @@ export async function updateChapter(
         : undefined;
 
   const updateData: Partial<StoredChapterDoc> = {
-    ...input,
+    ...patch,
     ...(wordCount !== undefined ? { wordCount } : {}),
     updatedAt: Date.now(),
   };
 
   const bookRef = doc(firestore, 'books', bookId);
-  await runTransaction(firestore, async (transaction) => {
+  const serverRequired = await runTransaction(firestore, async (transaction) => {
     const [book, chapter] = await Promise.all([
       transaction.get(bookRef),
       transaction.get(chapterRef),
@@ -348,6 +367,8 @@ export async function updateChapter(
       (content !== undefined || wordCount !== undefined)
     )
       throw new Error('Este capítulo reúne cenas. Abra a cena para alterar seu texto.');
+    if (book.data().hasProgressResources && (content !== undefined || wordCount !== undefined))
+      return true;
     const now = Math.max(
       Date.now(),
       ((book.data().updatedAt as number) ?? 0) + 1,
@@ -367,7 +388,26 @@ export async function updateChapter(
           }
         : {}),
     });
+    return false;
   });
+  if (serverRequired) {
+    if (typeof content !== 'string' || typeof expectedContent !== 'string')
+      throw new Error('Atualize o capítulo antes de alterar o manuscrito verificado.');
+    const metadata = {
+      ...('title' in patch ? { title: patch.title } : {}),
+      ...('order' in patch ? { order: patch.order } : {}),
+      ...('personaComplement' in patch ? { personaComplement: patch.personaComplement } : {}),
+    };
+    await saveServerLegacyChapter({
+      bookId,
+      chapterId,
+      content,
+      expectedContent,
+      ...(operationId ? { operationId } : {}),
+      ...(expectedOwnerId ? { expectedOwnerId } : {}),
+      ...(Object.keys(metadata).length ? { patch: metadata } : {}),
+    });
+  }
 }
 
 export async function deleteChapter(
@@ -393,7 +433,7 @@ export async function deleteChapter(
     return;
   }
   const bookRef = doc(firestore, 'books', bookId);
-  await runTransaction(firestore, async (transaction) => {
+  const serverRequired = await runTransaction(firestore, async (transaction) => {
     const [book, chapter] = await Promise.all([
       transaction.get(bookRef),
       transaction.get(chapterRef),
@@ -405,6 +445,7 @@ export async function deleteChapter(
       (expectedUpdatedAt !== undefined && (chapter.data().updatedAt ?? 0) !== expectedUpdatedAt)
     )
       throw new Error('O capítulo mudou. Atualize a lista antes de remover.');
+    if (book.data().hasProgressResources) return true;
     transaction.delete(chapterRef);
     transaction.update(bookRef, {
       wordCount: Math.max(
@@ -413,7 +454,13 @@ export async function deleteChapter(
       ),
       updatedAt: Math.max(Date.now(), ((book.data().updatedAt as number) ?? 0) + 1),
     });
+    return false;
   });
+  if (serverRequired) {
+    if (expectedUpdatedAt === undefined)
+      throw new Error('Atualize a lista e confirme a remoção do capítulo novamente.');
+    await deleteServerLegacyChapters(bookId, [{ id: chapterId, expectedUpdatedAt }]);
+  }
 }
 
 export async function reorderChapters(bookId: string, orderedChapterIds: string[]): Promise<void> {
@@ -446,11 +493,14 @@ export async function recalculateBookWordCount(bookId: string): Promise<number> 
   const bookRef = doc(firestore, 'books', bookId);
   const observed = await getDocFromServer(bookRef);
   if (!observed.exists() || observed.data().deleting) throw new Error('Livro indisponível.');
+  if (observed.data().hasProgressResources) return prepareServerBookWordCount(bookId);
   const chapters = await listChapters(bookId, { includeContent: false });
   const totalWords = chapters.reduce((sum, ch) => sum + (ch.wordCount || 0), 0);
 
-  await runTransaction(firestore, async (transaction) => {
+  const serverRequired = await runTransaction(firestore, async (transaction) => {
     const current = await transaction.get(bookRef);
+    if (current.exists() && !current.data().deleting && current.data().hasProgressResources)
+      return true;
     if (
       !current.exists() ||
       current.data().deleting ||
@@ -462,9 +512,10 @@ export async function recalculateBookWordCount(bookId: string): Promise<number> 
       wordCount: totalWords,
       updatedAt: Math.max(Date.now(), ((current.data().updatedAt as number) ?? 0) + 1),
     });
+    return false;
   });
 
-  return totalWords;
+  return serverRequired ? prepareServerBookWordCount(bookId) : totalWords;
 }
 export function subscribeWritingBindings(
   bookId: string,

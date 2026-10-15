@@ -10,6 +10,8 @@ export interface Adventure {
   language: 'pt-BR';
   origin: { kind: 'authored' };
   status: AdventureStatus;
+  editorialState?: 'draft' | 'review' | 'ready';
+  hasProgressResources?: boolean;
   universeId: string | null;
   createdAt: number;
   updatedAt: number;
@@ -17,7 +19,14 @@ export interface Adventure {
 
 export type AdventureSummary = Pick<
   Adventure,
-  'id' | 'title' | 'status' | 'revision' | 'universeId' | 'createdAt' | 'updatedAt'
+  | 'id'
+  | 'title'
+  | 'status'
+  | 'editorialState'
+  | 'revision'
+  | 'universeId'
+  | 'createdAt'
+  | 'updatedAt'
 > & { kind: 'adventure' };
 export interface AdventureListInput {
   status?: 'all' | AdventureStatus;

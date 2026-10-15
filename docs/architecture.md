@@ -411,5 +411,47 @@ incorpora filhos narrativos antes de remover o pai. `narrativeBackupService.ts` 
 arcos/marcos/eventos/referências no JSON v6, sem UID/jobs/índice, e confere revisões
 e identidade antes/depois. Publicação/PDF/DOCX/Markdown conservam a projeção da prosa.
 Ver [ADR 0027](decisions/0027-narrative-arcs-and-timeline.md) e
-[contrato F2-03](tasks/writer-v2/execucao/09-arcos-e-cronologia.md). Implementação em
-validação; os gates do incremento e a implantação conservam estados próprios.
+[contrato F2-03](tasks/writer-v2/execucao/09-arcos-e-cronologia.md). Gates locais,
+CI e regras verdes em `3358c75`; implantação conserva autorização própria.
+
+## Progresso privado, contagem e retomada
+
+`features/work-progress` oferece `ProjectProgressPanel`, `ContinueWorkPanel` e
+`useWorkActivity` pela interface pública. Livros e aventuras têm estado editorial
+privado e meta total; aventuras e campanhas têm checklist privado. `editorialState`
+não altera `Book.status` nem publica conteúdo. O fuso IANA pertence ao usuário,
+inicializa pelo dispositivo com revisão comparada e não reinicia metas totais.
+
+`functions/src/workProgress.mjs` autoriza cada leitura/mutação e coordena contratos,
+ledger e escritores legados em módulos próprios. `workProgress/current` guarda
+estado, meta, revisões e checkpoint; `workWordSources` guarda contribuições por
+identidade, sem corpo/título; `workWordGroups` guarda os agregados incluídos.
+`hasProgressResources` ativa os escritores protegidos. Corpo, contagem e criação/
+remoção de capítulos passam pelo servidor após ativação; metadados permitidos
+mantêm a fronteira existente. Exclusão de livro limpa os filhos pelo job existente.
+
+O ledger acompanha criação, importação, edição, IA, conversão, movimento, arquivo/
+restauração e exclusão no mesmo commit do conteúdo. Fonte legada preservada e cena
+fora da composição não entram no total. Preparação usa checkpoint e páginas de
+metadados limitadas, lendo um corpo por transação; escritores concorrentes não
+reiniciam nem duplicam a soma. Total incompleto é `null`, nunca zero confirmado.
+`visibleWordCount.mjs` usa `parse5` somente no servidor e conserva a interpretação
+do texto visível do editor, sem alterar o manuscrito armazenado.
+
+Salvamentos legados comparam o hash da base carregada. Se uma resposta se perde,
+o cliente confirma o mesmo pedido/recibo antes de enviar a edição seguinte; usa
+somente a própria escrita confirmada como nova base. Replay no servidor compara
+o texto atual com o resultado daquele recibo, impedindo sobrescrita de uma edição
+posterior de outro dispositivo. A fila por capítulo conserva a ordem de flush.
+
+`users/{uid}/workActivityState/current` compara a revisão global das visitas;
+`workActivity` guarda somente tipo/IDs/data, sem texto, título histórico ou URL.
+Visitas não alteram a revisão da prosa nem a data do projeto. A lista resolve nomes
+atuais autorizados e Continuar reautoriza a origem; origem removida retorna ao
+projeto com aviso, projeto indisponível retorna `null`. Uma fila por usuário ordena
+visitas locais, mantendo o conflito entre dispositivos explícito.
+
+Ver [ADR 0028](decisions/0028-private-work-progress-and-resume.md) e
+[contrato F2-04](tasks/writer-v2/execucao/10-estados-metas-e-retomada.md), que registra
+os gates reais do incremento. Comércio, sessões e restauração integral permanecem
+nas respectivas tarefas.

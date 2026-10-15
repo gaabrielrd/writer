@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { GenerationError } from './generation.mjs';
+import { countVisibleWords } from './visibleWordCount.mjs';
 
 export function sceneFail(code, message, reason) {
   const error = new GenerationError(code, message);
@@ -85,21 +86,7 @@ export function prose(content = '') {
     );
   const body = { content, hash: digest(content) };
   assertSceneEnvelope(body);
-  const entities = { nbsp: ' ', amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
-  const plain = content
-    .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, '')
-    .replace(/<\/?(?:p|div|h[1-6]|li|ul|ol|blockquote|pre|br|hr|section|tr)\b[^>]*>/gi, ' ')
-    .replace(/<[^>]*>/g, '')
-    .replace(/&(#x[0-9a-f]+|#[0-9]+|nbsp|amp|lt|gt|quot|apos);/gi, (match, entity) => {
-      if (!entity.startsWith('#')) return entities[entity.toLowerCase()];
-      const number =
-        entity[1].toLowerCase() === 'x' ? parseInt(entity.slice(2), 16) : Number(entity.slice(1));
-      return number >= 0 && number <= 0x10ffff ? String.fromCodePoint(number) : match;
-    });
-  const words = plain
-    .trim()
-    .split(/\s+/)
-    .filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
+  const words = countVisibleWords(content);
   return {
     body,
     wordCount: words,

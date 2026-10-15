@@ -17,8 +17,14 @@ O [contrato e estado dos gates](docs/tasks/writer-v2/execucao/08-planejamento-de
 registra a validação deste incremento; comércio e sessões conservam tarefas próprias.
 F2-03 acrescenta arcos, marcos e cronologia de ordem manual com datas textuais livres,
 vínculos explícitos a cenas/entidades e backup privado v6. A interface fica nas abas
-dos livros e aventuras. Este incremento está em validação; acompanhe os gates no
+dos livros e aventuras. Este incremento passou nos gates locais e no CI em
+`3358c75`; acompanhe a evidência no
 [contrato de arcos e cronologia](docs/tasks/writer-v2/execucao/09-arcos-e-cronologia.md).
+F2-04 acrescenta estado editorial privado, meta total do manuscrito, checklist de
+preparação, fuso por usuário e retomada autorizada. A contagem acompanha o texto
+atual e possui verificação retomável para projetos anteriores. Os gates locais e
+90 jornadas Chromium passaram; Git e CI do novo incremento seguem no
+[contrato de progresso e retomada](docs/tasks/writer-v2/execucao/10-estados-metas-e-retomada.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).

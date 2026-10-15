@@ -64,7 +64,13 @@ export function useAutoSave({
       let succeeded = false;
       const request = (async () => {
         try {
-          const result = await saveChapterContent(bookId, chapterId, text);
+          const result = await saveChapterContent(
+            bookId,
+            chapterId,
+            text,
+            () => saved.current,
+            ownerId,
+          );
           saved.current = text;
           succeeded = true;
           if (ownerId) {
@@ -139,7 +145,7 @@ export function useAutoSave({
       // can append its edits. Never let an old session's delayed drain run later.
       if (enabled && bookId && chapterId && (latest.current !== saved.current || pending.current)) {
         const finalText = latest.current;
-        void saveChapterContent(bookId, chapterId, finalText)
+        void saveChapterContent(bookId, chapterId, finalText, () => saved.current, ownerId)
           .then(() => {
             if (ownerId) {
               try {

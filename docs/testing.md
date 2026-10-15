@@ -252,6 +252,27 @@ Markdown e leitor publicado sem notas privadas, teclado e 320 px.
 Adaptadores visuais continuam fictícios; autorização real é conferida no emulador.
 Resultados e limitações ficam no [contrato F2-03](tasks/writer-v2/execucao/09-arcos-e-cronologia.md).
 
+Progresso e retomada têm testes colocalizados em `work-progress` e integração em
+livros/aventuras/campanhas/Estúdio/editores. Cobrem metas totais, estado editorial
+independente da publicação, checklist paginado, comparação e recibos incertos,
+preferência de fuso, fila de visitas, troca de conta e respostas tardias. Escritores
+legados/autosave/importação conferem a base observada e a confirmação de respostas
+perdidas antes de uma nova edição, sem sobrescrever outro dispositivo.
+
+`functions/test/workProgress.test.mjs` cobre contratos, ledger e preparação.
+`functions/test/visibleWordCount.test.mjs` usa o corpus comum de texto visível;
+`src/features/books/tests/visibleWordCountParity.test.ts` confronta o servidor com
+`renderRichText`/`countWords` no JSDOM, incluindo entidades e HTML malformado.
+`tests/firestore/workProgress.rules.test.mjs` usa SDK real para autorização,
+proteção de campos privados, checkpoint intercalado com escritores, composição,
+arquivo/restauração, exclusão, CAS, replay após edição externa e privacidade de
+retomada. `e2e/visual/work-progress.visual.ts` cobre 15 jornadas nos seis projetos:
+autor/mestre, contagem, limite da barra, checklist, paginação, conflitos, resposta
+perdida, fuso, retomada, origem removida, troca de conta, teclado e 320 px. O corpus
+também é confrontado com o contador nativo do Chromium dentro desses casos.
+As fixtures de interface não substituem as provas do servidor.
+Resultados e limitações ficam no [contrato F2-04](tasks/writer-v2/execucao/10-estados-metas-e-retomada.md).
+
 `e2e/visual/studio.visual.ts` roda oito cenários em seis projetos: três temas,
 desktop/celular, navegação/teclado em 320 px, projetos independentes, persistência
 simulada, resposta perdida, troca de conta, erro parcial, preparação e paginação.

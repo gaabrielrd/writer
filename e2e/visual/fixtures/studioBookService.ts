@@ -42,6 +42,7 @@ export function listStudioBooks(input: StudioBookListInput = {}): Promise<Studio
       universeId: book.universeId ?? null,
       coverUrl: book.coverUrl ?? null,
       wordCount: book.wordCount,
+      editorialState: book.editorialState ?? 'draft',
       genre: book.genre,
       synopsis: book.synopsis,
       createdAt: book.createdAt,

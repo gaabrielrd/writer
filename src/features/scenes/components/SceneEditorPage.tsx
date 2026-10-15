@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router';
 import { useAuth } from '@/features/auth';
+import { useWorkActivity, WorkActivityNotice } from '@/features/work-progress';
 import { RichEditor } from '@/features/editor';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
 import { renderRichText } from '@/shared/lib/sanitizeRichText';
@@ -130,6 +131,11 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
       valid = false;
     };
   }, [target.kind, target.id, doc.project.universeId, loreVersion]);
+  const activity = useWorkActivity({
+    target,
+    resource: { kind: 'scene', id: doc.id },
+    enabled: doc.ownerId === uid && user?.uid === uid,
+  });
   const labels = {
     saved: 'Salvo',
     dirty: 'Não salvo',
@@ -139,6 +145,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   };
   return (
     <main className={styles.editor}>
+      <WorkActivityNotice activity={activity} />
       <PageHeader
         title={doc.title}
         description={

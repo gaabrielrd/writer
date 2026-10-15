@@ -33,6 +33,13 @@ import {
   subscribeWritingBindings,
 } from '../services/bookService';
 import * as generatedService from '../services/generatedBookService';
+import { prepareServerBookWordCount } from '../services/legacyChapterService';
+vi.mock('../services/legacyChapterService', () => ({
+  createServerLegacyChapter: vi.fn(),
+  saveServerLegacyChapter: vi.fn(),
+  deleteServerLegacyChapters: vi.fn(),
+  prepareServerBookWordCount: vi.fn(),
+}));
 import type { Book } from '../model/book';
 
 vi.mock('firebase/firestore', () => ({
@@ -147,7 +154,36 @@ describe('bookService', () => {
     );
   });
 
-  it.each([{ hasSceneResources: true }, { hasNarrativeResources: true }])(
+  it('adota o contador do servidor se a preparação for ativada durante a leitura para recalcular', async () => {
+    vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+      docs: [
+        {
+          id: 'chapter',
+          data: () => ({ title: 'Capítulo', order: 1, wordCount: 2, createdAt: 1, updatedAt: 100 }),
+        },
+      ],
+    } as unknown as firestoreModule.QuerySnapshot);
+    vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+      callback({
+        get: () =>
+          Promise.resolve({
+            exists: () => true,
+            data: () => ({ updatedAt: 100, wordCount: 0, hasProgressResources: true }),
+          }),
+        update: firestoreModule.updateDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
+    vi.mocked(prepareServerBookWordCount).mockResolvedValueOnce(88);
+    await expect(recalculateBookWordCount('activated-during-read')).resolves.toBe(88);
+    expect(prepareServerBookWordCount).toHaveBeenCalledWith('activated-during-read');
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { hasSceneResources: true },
+    { hasNarrativeResources: true },
+    { hasProgressResources: true },
+  ])(
     'livro com recursos %j revoga acesso e limpa no servidor com o mesmo pedido em todas as páginas',
     async (resources) => {
       vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({

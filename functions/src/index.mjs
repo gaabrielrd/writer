@@ -10,6 +10,7 @@ import { defineSecret, defineString, defineInt } from 'firebase-functions/params
 import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createStudioService } from './studio.mjs';
+import { createWorkProgressService } from './workProgress.mjs';
 import { createScenesService } from './scenes.mjs';
 import { createNarrativePlanningService } from './narrativePlanning.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
@@ -240,6 +241,7 @@ const callable = (method, secrets = []) =>
       try {
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
+        const workProgress = createWorkProgressService({ db });
         const scenes = createScenesService({ db });
         const narrative = createNarrativePlanningService({ db });
         const loreAnalysis = createLoreAnalysisService({ db, generator: loreGenerator });
@@ -249,21 +251,23 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = narrative[method]
-          ? narrative
-          : scenes[method]
-            ? scenes
-            : studio[method]
-              ? studio
-              : assisted[method]
-                ? assisted
-                : loreAnalysis[method]
-                  ? loreAnalysis
-                  : universeService[method]
-                    ? universeService
-                    : service()[method]
-                      ? service()
-                      : createImageLibraryService({ db, assets });
+        const handler = workProgress[method]
+          ? workProgress
+          : narrative[method]
+            ? narrative
+            : scenes[method]
+              ? scenes
+              : studio[method]
+                ? studio
+                : assisted[method]
+                  ? assisted
+                  : loreAnalysis[method]
+                    ? loreAnalysis
+                    : universeService[method]
+                      ? universeService
+                      : service()[method]
+                        ? service()
+                        : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError)
@@ -294,6 +298,21 @@ export const getAdventure = callable('getAdventure');
 export const getCampaign = callable('getCampaign');
 export const prepareStudioBooks = callable('prepareStudioBooks');
 export const listStudioProjects = callable('listStudioProjects');
+export const getWorkProgress = callable('getWorkProgress');
+export const updateWorkProgress = callable('updateWorkProgress');
+export const prepareWorkWordCount = callable('prepareWorkWordCount');
+export const listWorkChecklist = callable('listWorkChecklist');
+export const createWorkChecklistItem = callable('createWorkChecklistItem');
+export const updateWorkChecklistItem = callable('updateWorkChecklistItem');
+export const deleteWorkChecklistItem = callable('deleteWorkChecklistItem');
+export const getWorkPreferences = callable('getWorkPreferences');
+export const saveWorkPreferences = callable('saveWorkPreferences');
+export const recordWorkActivity = callable('recordWorkActivity');
+export const listWorkResume = callable('listWorkResume');
+export const resolveWorkResume = callable('resolveWorkResume');
+export const createLegacyChapter = callable('createLegacyChapter');
+export const saveLegacyChapter = callable('saveLegacyChapter');
+export const deleteLegacyChapters = callable('deleteLegacyChapters');
 export const createScene = callable('createScene');
 export const updateScene = callable('updateScene');
 export const moveScene = callable('moveScene');

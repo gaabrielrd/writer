@@ -105,3 +105,25 @@ it('mantém sinopse vazia conhecida e metadados editoriais recebidos no resumo',
   expect(screen.getByText('Fantasia')).toBeInTheDocument();
   expect(screen.getByText('Nenhuma sinopse cadastrada para este livro.')).toBeInTheDocument();
 });
+
+it('separa estado editorial de publicação sem badge de rascunho contraditório', () => {
+  render(
+    <MemoryRouter>
+      <BookCard
+        book={{
+          id: 'book',
+          authorId: 'owner',
+          title: 'Texto em revisão',
+          status: 'draft',
+          editorialState: 'review',
+          wordCount: 10,
+          createdAt: 1,
+          updatedAt: 2,
+        }}
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('Em revisão')).toBeVisible();
+  expect(screen.getByText('Não publicado')).toBeVisible();
+  expect(screen.queryByText('Rascunho')).not.toBeInTheDocument();
+});

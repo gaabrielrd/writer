@@ -3,6 +3,12 @@ import { Link, Navigate, useParams, useSearchParams } from 'react-router';
 import { BookOpen, Globe } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { ScenePlanner } from '@/features/scenes';
+import {
+  ProjectProgressPanel,
+  useWorkActivity,
+  WorkActivityNotice,
+  editorialStateLabels,
+} from '@/features/work-progress';
 import { NarrativePlanner } from '@/features/narrative-planning';
 import {
   Badge,
@@ -20,8 +26,11 @@ import styles from './AdventurePage.module.css';
 
 function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const narrativeOpen = searchParams.get('tab') === 'narrative';
-  const selectTab = (tab: 'scenes' | 'narrative') =>
+  const tabs = ['scenes', 'narrative', 'progress'] as const;
+  const requestedTab = searchParams.get('tab');
+  const activeTab = tabs.find((tab) => tab === requestedTab) ?? 'scenes';
+  const narrativeOpen = activeTab === 'narrative';
+  const selectTab = (tab: 'scenes' | 'narrative' | 'progress') =>
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
       next.set('tab', tab);
@@ -30,14 +39,15 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const handleTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
+    const index = tabs.indexOf(activeTab);
     const next =
-      event.key === 'Home'
-        ? 'scenes'
-        : event.key === 'End'
-          ? 'narrative'
-          : narrativeOpen
-            ? 'scenes'
-            : 'narrative';
+      tabs[
+        event.key === 'Home'
+          ? 0
+          : event.key === 'End'
+            ? tabs.length - 1
+            : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length
+      ]!;
     selectTab(next);
     document.getElementById('adventure-tab-' + next)?.focus();
   };
@@ -66,6 +76,11 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
       active = false;
     };
   }, [id, ownerId, attempt]);
+  const activity = useWorkActivity({
+    target: { kind: 'adventure', id },
+    resource: { kind: 'project' },
+    enabled: Boolean(result?.adventure && result.adventure.ownerId === ownerId),
+  });
   const back = (
     <Link to="/studio" className={buttonVariants({ variant: 'secondary' })}>
       Voltar ao Estúdio
@@ -99,9 +114,13 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
     Number.isFinite(adventure.updatedAt) &&
     adventure.updatedAt >= 0 &&
     adventure.updatedAt <= 8_640_000_000_000_000;
-  const status = { draft: 'Rascunho', ready: 'Pronta', archived: 'Arquivada' }[adventure.status];
+  const status =
+    editorialStateLabels[
+      adventure.editorialState ?? (adventure.status === 'ready' ? 'ready' : 'draft')
+    ];
   return (
     <div className={styles.page}>
+      <WorkActivityNotice activity={activity} />
       <PageHeader
         title={adventure.title}
         description="Aventura autoral"
@@ -111,6 +130,7 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
       <div className={styles.meta}>
         <Badge variant="secondary">Aventura</Badge>
         <Badge variant="neutral">{status}</Badge>
+        {adventure.status === 'archived' && <Badge variant="secondary">Arquivada</Badge>}
         <Badge variant="outline">Privada</Badge>
       </div>
       <Card className={styles.content}>
@@ -140,12 +160,12 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
       <div className={styles.tabs} role="tablist" aria-label="Preparação da aventura">
         <Button
           role="tab"
-          aria-selected={!narrativeOpen}
+          aria-selected={activeTab === 'scenes'}
           onKeyDown={handleTabKey}
           id="adventure-tab-scenes"
           aria-controls="adventure-tab-panel"
-          tabIndex={narrativeOpen ? -1 : 0}
-          variant={narrativeOpen ? 'secondary' : 'primary'}
+          tabIndex={activeTab === 'scenes' ? 0 : -1}
+          variant={activeTab === 'scenes' ? 'primary' : 'secondary'}
           onClick={() => selectTab('scenes')}
         >
           Cenas
@@ -162,13 +182,27 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
         >
           Arcos e cronologia
         </Button>
+        <Button
+          role="tab"
+          aria-selected={activeTab === 'progress'}
+          onKeyDown={handleTabKey}
+          id="adventure-tab-progress"
+          aria-controls="adventure-tab-panel"
+          tabIndex={activeTab === 'progress' ? 0 : -1}
+          variant={activeTab === 'progress' ? 'primary' : 'secondary'}
+          onClick={() => selectTab('progress')}
+        >
+          Progresso
+        </Button>
       </div>
-      <div
-        role="tabpanel"
-        id="adventure-tab-panel"
-        aria-labelledby={'adventure-tab-' + (narrativeOpen ? 'narrative' : 'scenes')}
-      >
-        {narrativeOpen ? (
+      <div role="tabpanel" id="adventure-tab-panel" aria-labelledby={'adventure-tab-' + activeTab}>
+        {activeTab === 'progress' ? (
+          <ProjectProgressPanel
+            target={{ kind: 'adventure', id: adventure.id }}
+            manuscriptRefreshKey={adventure.updatedAt}
+            onProjectChange={() => setAttempt((n) => n + 1)}
+          />
+        ) : narrativeOpen ? (
           <NarrativePlanner
             key={ownerId + ':' + adventure.id + ':' + (adventure.universeId ?? 'none')}
             target={{ kind: 'adventure', id: adventure.id }}

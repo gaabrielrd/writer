@@ -4,7 +4,15 @@ import type { Book, BookStatus } from '../model/book';
 
 export type StudioBookSummary = Pick<
   Book,
-  'id' | 'title' | 'status' | 'wordCount' | 'createdAt' | 'updatedAt' | 'genre' | 'synopsis'
+  | 'id'
+  | 'title'
+  | 'status'
+  | 'wordCount'
+  | 'createdAt'
+  | 'updatedAt'
+  | 'genre'
+  | 'synopsis'
+  | 'editorialState'
 > & {
   kind: 'book';
   revision: number;

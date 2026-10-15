@@ -24,11 +24,27 @@ export function fixtureStudioBooks(authorId: string): Book[] {
   return structuredClone([...bookStore.values()].filter((book) => book.authorId === authorId));
 }
 const chapterStore = new Map(chapters.map((chapter) => [chapter.id, structuredClone(chapter)]));
+const privateBookStorageKey = 'writer.visual.private-books';
+const restoredBooks = sessionStorage.getItem(privateBookStorageKey);
+if (restoredBooks) {
+  const restored = JSON.parse(restoredBooks) as { books: Book[]; chapters: Chapter[] };
+  bookStore.clear();
+  chapterStore.clear();
+  restored.books.forEach((book) => bookStore.set(book.id, book));
+  restored.chapters.forEach((chapter) => chapterStore.set(chapter.id, chapter));
+}
+function persistFixtureBooks() {
+  sessionStorage.setItem(
+    privateBookStorageKey,
+    JSON.stringify({ books: [...bookStore.values()], chapters: [...chapterStore.values()] }),
+  );
+}
 export function fixtureReadChapters(bookId: string): Chapter[] {
   return structuredClone([...chapterStore.values()].filter((chapter) => chapter.bookId === bookId));
 }
 export function fixtureWriteChapter(chapter: Chapter): void {
   chapterStore.set(chapter.id, structuredClone(chapter));
+  persistFixtureBooks();
   bindingListeners.forEach((notify) => notify());
 }
 export function fixtureWriteBook(bookId: string, patch: Partial<Book>): void {
@@ -39,6 +55,7 @@ export function fixtureWriteBook(bookId: string, patch: Partial<Book>): void {
       ...structuredClone(patch),
       updatedAt: Math.max(book.updatedAt, patch.updatedAt ?? book.updatedAt),
     });
+  persistFixtureBooks();
   bindingListeners.forEach((notify) => notify());
 }
 const savedNarrativeStates = sessionStorage.getItem('writer.visual.narrative');
@@ -140,6 +157,7 @@ export function updateBook(bookId: string, input: UpdateBookInput): Promise<void
   const book = bookStore.get(bookId);
   if (!book) throw new Error('Livro fictício não encontrado.');
   fixtureWriteBook(bookId, { ...input, updatedAt: FIXTURE_TIME });
+  persistFixtureBooks();
   return Promise.resolve();
 }
 
@@ -200,6 +218,7 @@ export function createChapter(bookId: string, input: CreateChapterInput): Promis
     updatedAt: FIXTURE_TIME,
   };
   chapterStore.set(chapter.id, chapter);
+  persistFixtureBooks();
   return Promise.resolve(structuredClone(chapter));
 }
 
@@ -216,12 +235,15 @@ export function updateChapter(
     wordCount: input.wordCount ?? countWords(input.content ?? chapter.content),
     updatedAt: FIXTURE_TIME,
   });
+  persistFixtureBooks();
   bindingListeners.forEach((notify) => notify());
+  persistFixtureBooks();
   return Promise.resolve();
 }
 
 export function deleteChapter(bookId: string, chapterId: string): Promise<void> {
   if (chapterStore.get(chapterId)?.bookId === bookId) chapterStore.delete(chapterId);
+  persistFixtureBooks();
   return Promise.resolve();
 }
 
@@ -230,6 +252,7 @@ export function reorderChapters(bookId: string, orderedChapterIds: string[]): Pr
     const chapter = chapterStore.get(id);
     if (chapter?.bookId === bookId) chapterStore.set(id, { ...chapter, order: index + 1 });
   });
+  persistFixtureBooks();
   return Promise.resolve();
 }
 

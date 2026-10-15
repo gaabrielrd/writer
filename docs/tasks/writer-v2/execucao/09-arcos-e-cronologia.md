@@ -1,6 +1,6 @@
 # W2-F2-03 — Arcos e cronologia básica
 
-**Base:** `f4449a5`, 2026-10-13. **Estado:** implementado; QA, regras reais, produção e validate locais aprovados. Correção de autocomplete validada localmente; CI do snapshot corrigido pendente.
+**Base:** `f4449a5`, 2026-10-13. **Estado:** concluído tecnicamente em `3358c75`; QA, validate, CI completo e regras verdes.
 **Dependência:** F2-02 passou no [CI completo](https://github.com/gaabrielrd/writer/actions/runs/38431179149)
 e nas [regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/38431178957).
 **Tarefa:** [arcos e cronologia](../fase-02-criar-e-preparar/03-arcos-e-cronologia-basica.md).
@@ -290,3 +290,22 @@ frontend, 77 scripts e 133 backend, todos sem falhas/skips. Cobertura
 lint/tipos/arquitetura/docs/styleguide/formato e smoke verdes. Log externo
 `writer-v2-arcos-autocomplete-validate.log`. Documentação final recebeu checagens
 dirigidas após registrar esses resultados. Registrar o candidato e exigir novo CI.
+
+## Confirmação técnica do incremento — 2026-10-13
+
+O SHA `3358c75aea44148989e3e8ca4f90053c27578d2c` foi registrado e enviado com
+hooks verdes (143 arquivos/1.200 testes no pre-push). O
+[CI completo](https://github.com/gaabrielrd/writer/actions/runs/38459491836)
+e as [regras](https://github.com/gaabrielrd/writer/actions/runs/38459491878)
+terminaram com sucesso no mesmo SHA. Validate Node 22/24, auditoria, produção
+7/7 em 17,9 s, seis shards e agregado E2E verdes. Visuais: 732 aprovações diretas,
+zero flaky/retry e 12 skips preexistentes, total 744. Os 96 narrativos e os seis
+de autocomplete passaram diretamente. Regras: 74/74, zero falhas/skips,
+32,560 s. Maior job visual: 12 min 39 s, dentro dos 15 min preservados.
+
+QA complementar no mesmo SHA: roteiro original 3/3 em 320 px nos três temas,
+15,523 s, dois workers, sem retry/skip/flaky; pixels finais revisados, hashes
+iguais à rodada de 18. Evidência externa em
+`writer-v2-arcos-qa/autocomplete-final-mobile-320/`; servidores próprios fechados.
+PR 21 continua em rascunho e registra estes gates. F2-03 pode avançar para F2-04;
+condições humanas, comerciais e implantação mantêm seus portões próprios.

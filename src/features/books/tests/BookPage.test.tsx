@@ -232,8 +232,12 @@ describe('BookPage', () => {
 
     // Aba Publicação
     await user.click(screen.getByRole('tab', { name: /publicação/i }));
-    expect(screen.getByText('Obra em Rascunho')).toBeInTheDocument();
+    expect(screen.getByText('Obra não publicada')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /publicar obra/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Progresso' }));
+    expect(screen.getByRole('heading', { name: 'Progresso de book/book-1' })).toBeVisible();
+    expect(screen.getByLabelText('Localização atual')).toHaveTextContent('tab=progress');
 
     // Volta para Capítulos
     await user.click(screen.getByRole('tab', { name: /capítulos/i }));
@@ -253,7 +257,7 @@ describe('BookPage', () => {
     expect(action.closest('[role="tablist"]')).toBeNull();
     getBook.mockResolvedValue(mockBook);
     await user.click(action);
-    await screen.findByText('Rascunho');
+    await screen.findByText('Não publicado');
     await user.click(screen.getByRole('tab', { name: 'Capítulos' }));
     expect(screen.queryByRole('button', { name: 'Concluir ação de lore' })).not.toBeInTheDocument();
   });
@@ -280,7 +284,7 @@ describe('BookPage', () => {
       'href',
       '/read/book-1',
     );
-    await user.click(screen.getByRole('button', { name: 'Reverter para Rascunho' }));
+    await user.click(screen.getByRole('button', { name: 'Despublicar obra' }));
     expect(publicationService.unpublishBook).toHaveBeenCalledWith('book-1');
   });
 
@@ -392,3 +396,15 @@ describe('BookPage', () => {
     expect(screen.queryByRole('dialog', { name: 'Exportar manuscrito' })).not.toBeInTheDocument();
   });
 });
+
+vi.mock('@/features/work-progress', async (original) => ({
+  ...(await original<object>()),
+  ProjectProgressPanel: ({ target }: { target: { kind: string; id: string } }) => (
+    <h2>
+      Progresso de {target.kind}/{target.id}
+    </h2>
+  ),
+  ContinueWorkPanel: () => <h2>Continuar meu trabalho</h2>,
+  useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
+  WorkActivityNotice: () => null,
+}));

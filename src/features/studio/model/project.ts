@@ -18,7 +18,7 @@ export const statusLabels: Record<StudioStatus, string> = {
 };
 export const statusesByKind: Record<StudioProjectKind, StudioStatus[]> = {
   book: ['draft', 'published'],
-  adventure: ['draft', 'ready', 'archived'],
+  adventure: ['archived'],
   campaign: ['planning', 'active', 'completed', 'archived'],
 };
 export function projectPath(project: Pick<StudioProjectSummary, 'id' | 'kind'>): string {

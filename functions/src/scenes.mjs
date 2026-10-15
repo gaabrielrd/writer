@@ -19,6 +19,7 @@ import {
 } from './sceneContracts.mjs';
 import { sceneRankBetween, validSceneRank } from './sceneRanks.mjs';
 import { writeSceneLoreIndex } from './sceneLoreIndex.mjs';
+import { createWorkProgressLedger } from './workProgressLedger.mjs';
 
 const stages = ['planned', 'writing', 'review', 'done'];
 const domains = {
@@ -33,6 +34,7 @@ const cursorFor = (context, version, key, id) =>
   encodeSceneCursor({ version: 1, context, revision: version, key, id });
 
 export function createScenesService({ db, now = Date.now }) {
+  const workLedger = createWorkProgressLedger({ db, now });
   function scope(uid, data, keys) {
     if (!uid) sceneFail('unauthenticated', 'Entre na sua conta.');
     sceneId(uid);
@@ -350,7 +352,7 @@ export function createScenesService({ db, now = Date.now }) {
           sceneFail('failed-precondition', 'Retome a reorganização antes de mudar posições.');
         return entry;
       };
-      const entry = await readGroup(old?.parentId ?? normalized.parentId ?? null, {
+      const entry = await readGroup(old ? old.parentId : (normalized.parentId ?? null), {
         composed: true,
         structure: method !== 'updateScene' && method !== 'setSceneReference',
         deleting: Boolean(old?.archived),
@@ -475,6 +477,22 @@ export function createScenesService({ db, now = Date.now }) {
       assertSceneEnvelope(value);
       if (body) assertSceneEnvelope(body);
       if (referenceRef) sceneRevision((p.narrativeRevision ?? 0) + 1);
+      const wordProgress =
+        method === 'createScene' || method === 'moveScene' || method === 'archiveScene' || body
+          ? await workLedger.prepareChanges(tx, {
+              target: context.target,
+              root: p,
+              changes: [
+                {
+                  kind: 'scene',
+                  id: value.id,
+                  ...(body ? { content: body.content } : {}),
+                  parentId: value.parentId,
+                  archived: value.archived,
+                },
+              ],
+            })
+          : null;
       const projectRevision = writeProject(
         tx,
         context,
@@ -485,6 +503,7 @@ export function createScenesService({ db, now = Date.now }) {
       if (method === 'createScene') tx.create(ref, value);
       else tx.update(ref, value);
       if (body) tx.set(db.doc(`${ref.path}/body/current`), body);
+      wordProgress?.commit();
       if (plan) tx.set(db.doc(`${ref.path}/planning/current`), plan);
       if (referenceRef) {
         tx.update(context.ref, {
@@ -810,6 +829,15 @@ export function createScenesService({ db, now = Date.now }) {
           structureRevision: 1,
           updatedAt: timestamp,
         };
+        const wordProgress = await workLedger.prepareChanges(tx, {
+          target: context.target,
+          root: p,
+          changes: [
+            { kind: 'chapter', id, contentMode: 'scenes', removed: true },
+            { kind: 'scene', id: record.id, content: body.content, parentId: id, archived: false },
+          ],
+          groupStates: [{ id, contentMode: 'scenes' }],
+        });
         tx.create(ref, record);
         tx.set(db.doc(`${ref.path}/body/current`), body);
         tx.set(db.doc(`${ref.path}/planning/current`), planning());
@@ -823,6 +851,7 @@ export function createScenesService({ db, now = Date.now }) {
           timestamp,
           record.wordCount - entry.value.wordCount,
         );
+        wordProgress.commit();
         writeReceipt(tx, op, { sceneId: op.id, revision: 1, createdAt: timestamp });
         return { scene: summary(record, value), groups: [value], projectRevision };
       });
@@ -943,6 +972,7 @@ export function createScenesService({ db, now = Date.now }) {
   addSceneJobs(api, {
     db,
     now,
+    workLedger,
     scope,
     project,
     group,

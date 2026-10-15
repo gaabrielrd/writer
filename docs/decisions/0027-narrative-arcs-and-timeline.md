@@ -1,6 +1,6 @@
 # ADR 0027 — Arcos, marcos e cronologia privada
 
-- **Status:** Aceito; implementação, regras, QA completo, validate final e produção aprovados localmente; CI do incremento pendente
+- **Status:** Aceito e implementado; QA, validate, CI completo e regras verdes em `3358c75`
 - **Data:** 2026-10-13
 
 ## Contexto

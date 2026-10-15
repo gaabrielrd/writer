@@ -1,6 +1,7 @@
+import { runChapterOperation } from '../services/chapterContentStorage';
 import { chooseDropdown } from '@/test/dropdown';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { EditorPage } from '../components/EditorPage';
@@ -68,6 +69,44 @@ describe('EditorPage', () => {
       updatedAt: 1000,
     },
   ];
+
+  it('espera a gravação pendente da sessão anterior antes de carregar a nova base CAS', async () => {
+    let release!: () => void;
+    let remote = 'Base anterior';
+    const pending = runChapterOperation(
+      'b-1',
+      'c-1',
+      () =>
+        new Promise<void>((resolve) => {
+          release = () => {
+            remote = 'Texto confirmado da sessão anterior';
+            resolve();
+          };
+        }),
+    );
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    const list = vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    const chapter = vi
+      .spyOn(bookService, 'getChapter')
+      .mockImplementation(() => Promise.resolve({ ...mockChapters[0]!, content: remote }));
+    vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue([]);
+    render(
+      <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+        <Routes>
+          <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(list).toHaveBeenCalled());
+    expect(chapter).not.toHaveBeenCalled();
+    await act(async () => {
+      release();
+      await pending;
+    });
+    expect(
+      await screen.findByRole('textbox', { name: 'Área de escrita do capítulo' }),
+    ).toHaveTextContent('Texto confirmado da sessão anterior');
+  });
 
   const mockEntities: LoreEntity[] = [
     {
@@ -421,6 +460,93 @@ describe('EditorPage', () => {
     view.unmount();
     expect(stop).toHaveBeenCalledTimes(2);
   });
+  it('manter versão salva descarta rascunho local sem escrever e conserva a base CAS para a próxima edição', async () => {
+    const user = userEvent.setup({ delay: null });
+    const saved = '<p>Versão salva A.</p>';
+    vi.spyOn(bookService, 'getBook').mockResolvedValue({ ...mockBook, hasProgressResources: true });
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    vi.spyOn(bookService, 'getChapter').mockResolvedValue({ ...mockChapters[0]!, content: saved });
+    const update = vi.spyOn(bookService, 'updateChapter').mockResolvedValue();
+    vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue([]);
+    writeLocalDraft('auth-1', 'b-1', 'c-1', '<p>Rascunho local B.</p>');
+    const view = render(
+      <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+        <Routes>
+          <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByRole('dialog', { name: 'Recuperar rascunho local?' });
+    const keep = screen.getByRole('button', { name: 'Manter versão salva' });
+    await waitFor(() => expect(getComputedStyle(keep).pointerEvents).not.toBe('none'));
+    await user.click(keep);
+    const editor = await screen.findByRole('textbox', { name: 'Área de escrita do capítulo' });
+    expect(editor).toHaveTextContent('Versão salva A.');
+    expect(readLocalDraft('auth-1', 'b-1', 'c-1')).toBeNull();
+    expect(update).not.toHaveBeenCalled();
+    // JSDOM não edita contenteditable nativamente; entregamos a alteração DOM
+    // e os eventos de entrada/seleção, com editor e autosave reais.
+    const descriptors = ['getBoundingClientRect', 'getClientRects'].map((name) => ({
+      name,
+      value: Object.getOwnPropertyDescriptor(Range.prototype, name),
+    }));
+    const rect = {
+      left: 0,
+      right: 100,
+      top: 0,
+      bottom: 20,
+      width: 100,
+      height: 20,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    };
+    Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => rect,
+    });
+    Object.defineProperty(Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => Object.assign([rect], { item: () => rect }),
+    });
+    const scroll = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined);
+    try {
+      const text = editor.querySelector('p')?.lastChild;
+      if (!(text instanceof Text)) throw new Error('Prosa salva ausente');
+      const selection = window.getSelection();
+      if (!selection) throw new Error('Seleção nativa indisponível');
+      act(() => {
+        editor.focus();
+        selection.collapse(text, text.length);
+        fireEvent(document, new Event('selectionchange'));
+        fireEvent(
+          editor,
+          new InputEvent('beforeinput', { bubbles: true, inputType: 'insertText', data: ' C' }),
+        );
+        text.appendData(' C');
+        selection.collapse(text, text.length);
+        fireEvent.input(editor, { inputType: 'insertText', data: ' C' });
+        fireEvent(document, new Event('selectionchange'));
+      });
+      expect(editor).toHaveTextContent('Versão salva A. C');
+      await screen.findByText('Não salvo');
+      view.unmount();
+      await waitFor(() => expect(update).toHaveBeenCalledTimes(1));
+      const call = update.mock.calls[0];
+      if (!call) throw new Error('Gravação da edição C ausente');
+      expect(call.slice(0, 2)).toEqual(['b-1', 'c-1']);
+      expect(call[2]).toMatchObject({ expectedContent: saved, expectedOwnerId: 'auth-1' });
+      expect(call[2].content).toContain('C');
+    } finally {
+      view.unmount();
+      scroll.mockRestore();
+      for (const descriptor of descriptors) {
+        if (descriptor.value)
+          Object.defineProperty(Range.prototype, descriptor.name, descriptor.value);
+        else Reflect.deleteProperty(Range.prototype, descriptor.name);
+      }
+    }
+  });
   it.each(['Recuperar texto local', 'Manter versão salva'])(
     'exige escolha explicita para rascunho divergente: %s',
     async (choice) => {
@@ -458,3 +584,15 @@ describe('EditorPage', () => {
     },
   );
 });
+
+vi.mock('@/features/work-progress', async (original) => ({
+  ...(await original<object>()),
+  ProjectProgressPanel: ({ target }: { target: { kind: string; id: string } }) => (
+    <h2>
+      Progresso de {target.kind}/{target.id}
+    </h2>
+  ),
+  ContinueWorkPanel: () => <h2>Continuar meu trabalho</h2>,
+  useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
+  WorkActivityNotice: () => null,
+}));

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { Plus, Upload } from 'lucide-react';
+import { ContinueWorkPanel } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
 import {
   BookFormDialog,
@@ -68,6 +69,7 @@ function StudioSession({ ownerId }: { ownerId: string }) {
           </div>
         }
       />
+      <ContinueWorkPanel />
       <div className={styles.filters}>
         <Dropdown
           mode="select"

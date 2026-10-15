@@ -47,6 +47,15 @@ if (!empty) {
   }
 }
 
+const projectPatches = JSON.parse(
+  sessionStorage.getItem('writer.visual.studio-patches') ?? '{}',
+) as Record<string, Partial<Project>>;
+for (const [key, patch] of Object.entries(projectPatches)) {
+  const separator = key.indexOf(':');
+  const kind = key.slice(0, separator) as Kind;
+  const value = stores[kind]?.get(key.slice(separator + 1));
+  if (value) Object.assign(value, patch);
+}
 interface ListInput {
   status?: string;
   cursor?: string | null;
@@ -68,6 +77,9 @@ export function fixtureList(kind: Kind, input: ListInput) {
       kind,
       title: project.title,
       status: project.status,
+      ...(kind === 'adventure'
+        ? { editorialState: (project as Adventure).editorialState ?? 'draft' }
+        : {}),
       revision: project.revision,
       universeId: project.universeId,
       createdAt: project.createdAt,
@@ -140,4 +152,13 @@ export async function fixtureCreate(
     );
   }
   return structuredClone(project);
+}
+
+export function fixturePatchProject(kind: Kind, id: string, patch: Partial<Project>): void {
+  const value = stores[kind].get(id);
+  if (value?.ownerId === fixtureOwner()) {
+    Object.assign(value, patch);
+    projectPatches[kind + ':' + id] = { ...projectPatches[kind + ':' + id], ...patch };
+    sessionStorage.setItem('writer.visual.studio-patches', JSON.stringify(projectPatches));
+  }
 }

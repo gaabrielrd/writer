@@ -295,6 +295,10 @@ service cloud.firestore {
       match /studioPreparation/{preparationId} { allow read, write: if false; }
       match /sceneOperations/{operationId} { allow read, write: if false; }
       match /narrativeOperations/{operationId} { allow read, write: if false; }
+      match /workOperations/{operationId} { allow read, write: if false; }
+      match /workPreferences/{id} { allow read, write: if false; }
+      match /workActivity/{id} { allow read, write: if false; }
+      match /workActivityState/{id} { allow read, write: if false; }
       match /imageLibrary/{imageId} {
         allow read: if isOwner(userId);
         allow write: if false;
@@ -418,6 +422,8 @@ service cloud.firestore {
         && request.resource.data.get('sceneRevision', 0) == 0
         && request.resource.data.get('hasNarrativeResources', false) == false
         && request.resource.data.get('narrativeRevision', 0) == 0
+        && request.resource.data.get('hasProgressResources', false) == false
+        && request.resource.data.get('editorialState', null) == null
         && request.resource.data.get('sceneDeletionOperationId', null) == null
         && validStudioDate(request.resource.data.get('createdAt', null))
         && validStudioDate(request.resource.data.get('updatedAt', null))
@@ -434,6 +440,10 @@ service cloud.firestore {
         && request.resource.data.get('sceneRevision', 0) == resource.data.get('sceneRevision', 0)
         && request.resource.data.get('hasNarrativeResources', false) == resource.data.get('hasNarrativeResources', false)
         && request.resource.data.get('narrativeRevision', 0) == resource.data.get('narrativeRevision', 0)
+        && request.resource.data.get('hasProgressResources', false) == resource.data.get('hasProgressResources', false)
+        && request.resource.data.get('editorialState', null) == resource.data.get('editorialState', null)
+        && (resource.data.get('hasProgressResources', false) != true
+          || request.resource.data.get('wordCount', 0) == resource.data.get('wordCount', 0))
         && request.resource.data.get('sceneDeletionOperationId', null) == resource.data.get('sceneDeletionOperationId', null)
         && validPersonaReference(request.resource.data.get('personaId', null))
         && request.resource.data.get('universeId', null) == resource.data.get('universeId', null)
@@ -448,6 +458,7 @@ service cloud.firestore {
       allow delete: if isOwner(resource.data.authorId)
         && resource.data.get('hasSceneResources', false) != true
         && resource.data.get('hasNarrativeResources', false) != true
+        && resource.data.get('hasProgressResources', false) != true
         && resource.data.get('deleting', false) == true
         && existsAfter(/databases/$(database)/documents/deletedBooks/$(bookId))
         && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId));
@@ -464,15 +475,19 @@ service cloud.firestore {
       match /chapters/{chapterId} {
         allow read: if isBookAuthor(bookId);
         allow delete: if isBookAuthor(bookId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
           && resource.data.get('contentMode', 'legacy') != 'scenes'
           && resource.data.get('deleting', false) != true;
         allow create: if isBookAuthor(bookId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
           && request.resource.data.get('contentMode', 'legacy') == 'legacy'
           && validActLink(bookId, request.resource.data)
           && validPersonaComplement(request.resource.data.get('personaComplement', null))
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
         allow update: if isBookAuthor(bookId)
           && resource.data.get('deleting', false) != true
+          && (get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'actId', 'order', 'personaComplement', 'updatedAt']))
           && (resource.data.get('contentMode', 'legacy') == 'legacy'
             ? request.resource.data.get('contentMode', 'legacy') == 'legacy'
             : (resource.data.get('contentMode', 'legacy') == 'scenes'
@@ -520,6 +535,10 @@ service cloud.firestore {
       match /narrativeControls/{id} { allow read, write: if false; }
       match /narrativeJobs/{id} { allow read, write: if false; }
       match /sceneLoreLinks/{id} { allow read, write: if false; }
+      match /workProgress/{id} { allow read, write: if false; }
+      match /workWordSources/{id} { allow read, write: if false; }
+      match /workWordGroups/{id} { allow read, write: if false; }
+      match /workChecklist/{id} { allow read, write: if false; }
 
       match /lore/{loreId} {
         function publicationRevoked() {

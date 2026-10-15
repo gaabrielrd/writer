@@ -47,7 +47,13 @@ describe('useAutoSave', () => {
       await Promise.resolve();
     });
 
-    expect(saveSpy).toHaveBeenCalledWith('b-1', 'c-1', 'Texto alterado com novas ideias');
+    expect(saveSpy).toHaveBeenCalledWith(
+      'b-1',
+      'c-1',
+      'Texto alterado com novas ideias',
+      expect.any(Function),
+      undefined,
+    );
     expect(result.current.saveStatus).toBe('saved');
     expect(onSaved).toHaveBeenCalledWith(5);
     expect(result.current.lastSavedAt).not.toBeNull();
@@ -79,7 +85,13 @@ describe('useAutoSave', () => {
       await result.current.saveNow();
     });
 
-    expect(saveSpy).toHaveBeenCalledWith('b-1', 'c-1', 'Texto modificado');
+    expect(saveSpy).toHaveBeenCalledWith(
+      'b-1',
+      'c-1',
+      'Texto modificado',
+      expect.any(Function),
+      undefined,
+    );
     expect(result.current.saveStatus).toBe('saved');
   });
 
@@ -138,7 +150,13 @@ describe('autosave recovery and ordering', () => {
     await act(async () => {
       await Promise.resolve();
     });
-    expect(save).toHaveBeenCalledWith('old-book', 'old-chapter', 'unsaved last line');
+    expect(save).toHaveBeenCalledWith(
+      'old-book',
+      'old-chapter',
+      'unsaved last line',
+      expect.any(Function),
+      'author',
+    );
     expect(localStorage.getItem('writer:draft:author:old-book:old-chapter')).toBeNull();
   });
   it('serializes writes and never marks newer edits saved by an older response', async () => {
@@ -178,7 +196,7 @@ describe('autosave recovery and ordering', () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    expect(save).toHaveBeenLastCalledWith('b', 'c', 'second latest');
+    expect(save).toHaveBeenLastCalledWith('b', 'c', 'second latest', expect.any(Function), 'a');
     expect(result.current.saveStatus).toBe('saved');
     expect(localStorage.getItem('writer:draft:a:b:c')).toBeNull();
   });
@@ -254,7 +272,7 @@ it('salva a reversao ao texto anterior depois da resposta pendente', async () =>
     await Promise.resolve();
     await Promise.resolve();
   });
-  expect(save).toHaveBeenLastCalledWith('revert', 'c', 'A');
+  expect(save).toHaveBeenLastCalledWith('revert', 'c', 'A', expect.any(Function), 'a');
   expect(result.current.saveStatus).toBe('saved');
   unmount();
   vi.useRealTimers();

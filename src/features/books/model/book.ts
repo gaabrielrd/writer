@@ -11,6 +11,8 @@ export interface Book {
   coverUrl?: string | null;
   coverImageId?: string | null;
   status: BookStatus;
+  editorialState?: 'draft' | 'review' | 'ready';
+  hasProgressResources?: boolean;
   wordCount: number;
   hasSceneResources?: boolean;
   sceneRevision?: number;

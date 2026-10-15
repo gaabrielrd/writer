@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { countVisibleWords } from './visibleWordCount.mjs';
+import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { GenerationError } from './generation.mjs';
 import {
   isChatReasoning,
@@ -385,12 +387,7 @@ export function createChapterChatService({
       const credits = user.data()?.credits;
       if (!Number.isSafeInteger(credits) || credits < cost)
         fail('resource-exhausted', 'Saldo insuficiente para aplicar a sugestão.');
-      const wordCount = after
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&[^;]+;/g, ' ')
-        .trim()
-        .split(/\s+/)
-        .filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
+      const wordCount = countVisibleWords(after);
       const updatedAt = Math.max(
         now(),
         (chapter.data().updatedAt ?? 0) + 1,
@@ -402,6 +399,11 @@ export function createChapterChatService({
           'As datas do capítulo ou livro são inválidas. Corrija-as antes de aplicar a sugestão.',
         );
       const result = { credits: credits - cost, content: after, wordCount, updatedAt };
+      const wordProgress = await createWorkProgressLedger({ db, now }).prepareChanges(tx, {
+        target: { kind: 'book', id: data.bookId },
+        root: book.data(),
+        changes: [{ kind: 'chapter', id: data.chapterId, content: after, contentMode: 'legacy' }],
+      });
       tx.update(chapterRef, { content: after, wordCount, updatedAt });
       tx.update(bookRef, {
         wordCount: Math.max(
@@ -411,6 +413,7 @@ export function createChapterChatService({
         updatedAt,
       });
       if (cost) tx.update(userRef, { credits: result.credits, updatedAt });
+      wordProgress.commit();
       tx.update(message, { paid: true });
       tx.set(receipt, { fingerprint, result });
       return result;

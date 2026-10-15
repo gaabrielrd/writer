@@ -17,6 +17,7 @@ export function addSceneJobs(api, helpers) {
   const {
     db,
     now,
+    workLedger,
     scope,
     project,
     group,
@@ -115,6 +116,12 @@ export function addSceneJobs(api, helpers) {
       }
       const timestamp = sceneDate(now, p.updatedAt ?? 0),
         removedWords = entries.reduce((sum, entry) => sum + entry.value.wordCount, 0);
+      const wordProgress = await workLedger.prepareChanges(tx, {
+        target: context.target,
+        root: p,
+        changes: [],
+        disableGroups: entries.map((entry) => entry.value.id),
+      });
       for (const entry of entries)
         tx.update(entry.ref, {
           deleting: true,
@@ -124,6 +131,7 @@ export function addSceneJobs(api, helpers) {
           updatedAt: timestamp,
         });
       writeProject(tx, context, p, timestamp, -removedWords);
+      wordProgress.commit();
       const state = {
         kind: 'delete-groups',
         input: { target: context.target, operationId: op.id, groups },
@@ -184,6 +192,17 @@ export function addSceneJobs(api, helpers) {
       const finishedGroup = page.docs.length < limit,
         index = previous.index + (finishedGroup ? 1 : 0),
         complete = index === previous.groups.length;
+      const wordProgress = await workLedger.prepareChanges(tx, {
+        target: context.target,
+        root: p,
+        changes: page.docs.map((item) => ({
+          kind: 'scene',
+          id: item.id,
+          parentId: null,
+          archived: item.data().archived,
+          removed: true,
+        })),
+      });
       for (const item of moved) tx.update(item.ref, item.patch);
       if (moved.length)
         writeGroup(tx, destination, {
@@ -196,6 +215,7 @@ export function addSceneJobs(api, helpers) {
         });
       if (finishedGroup) tx.delete(entry.ref);
       writeProject(tx, context, p, timestamp);
+      wordProgress.commit();
       const state = {
         kind: previous.kind,
         input: previous.input,
@@ -310,6 +330,10 @@ export function addSceneJobs(api, helpers) {
           'sceneLoreLinks',
           'narrativeControls',
           'narrativeJobs',
+          'workProgress',
+          'workWordSources',
+          'workWordGroups',
+          'workChecklist',
         ];
         const at = phases.indexOf(state.phase);
         if (at >= 0) {

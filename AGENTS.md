@@ -81,6 +81,9 @@
 - Ordene arcos, marcos e eventos independentemente da composição do manuscrito.
 - Atualize referências explícitas de cenas e o índice de entidades atomicamente; não crie vínculos por detecção textual.
 - Preserve os marcadores narrativos e limpe seus filhos pelo protocolo `deleteSceneBook` antes de remover o livro.
+- Atualize o ledger de palavras atomicamente com a prosa; preserve checkpoints e confirme recibos incertos antes de enviar outra edição.
+- Após ativar `hasProgressResources`, altere corpo/contagem e criação/exclusão de capítulos somente pelos escritores de `functions`.
+- Separe estado editorial de publicação; registre retomada somente por tipo/IDs/data, revalidando autorização e revisão global por usuário.
 
 ## Rotas
 

@@ -358,3 +358,15 @@ it.each([
     '/books/book',
   );
 });
+
+vi.mock('@/features/work-progress', async (original) => ({
+  ...(await original<object>()),
+  ProjectProgressPanel: ({ target }: { target: { kind: string; id: string } }) => (
+    <h2>
+      Progresso de {target.kind}/{target.id}
+    </h2>
+  ),
+  ContinueWorkPanel: () => <h2>Continuar meu trabalho</h2>,
+  useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
+  WorkActivityNotice: () => null,
+}));

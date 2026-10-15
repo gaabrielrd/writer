@@ -10,6 +10,7 @@ import { firestore } from '@/shared/lib';
 import { deleteSceneGroups } from '@/features/scenes';
 import { countWords, type Chapter, type CreateChapterInput } from '../model/chapter';
 import { type Act, groupChapters } from '../model/act';
+import { createServerLegacyChapter, deleteServerLegacyChapters } from './legacyChapterService';
 
 export const MAX_CHAPTER_SELECTION = 200;
 
@@ -78,9 +79,9 @@ export async function createAct(bookId: string, name: string): Promise<Act> {
 }
 
 /** Capture book version before queries and validate it inside the atomic operation. */
-async function organizationSnapshot(bookId: string) {
+async function organizationSnapshot(bookId: string, observed?: Record<string, unknown>) {
   const bookRef = doc(firestore, 'books', bookId);
-  const book = editableBook(await getDocFromServer(bookRef));
+  const book = observed ?? editableBook(await getDocFromServer(bookRef));
   const snapshot = await getDocsFromServer(collection(bookRef, 'chapters'));
   const chapters = snapshot.docs.map(
     (item) => ({ ...item.data(), id: item.id, bookId }) as Chapter,
@@ -96,14 +97,17 @@ export async function createOrganizedChapter(
   bookId: string,
   input: CreateChapterInput,
 ): Promise<Chapter> {
-  const { bookRef, book, chapters } = await organizationSnapshot(bookId);
+  const observed = editableBook(await getDocFromServer(doc(firestore, 'books', bookId)));
+  if (observed.hasProgressResources) return createServerLegacyChapter(bookId, input);
+  const { bookRef, book, chapters } = await organizationSnapshot(bookId, observed);
   const actId = input.actId || null;
   const siblings = chapters.filter((chapter) => (chapter.actId ?? null) === actId);
   const order = input.order ?? Math.max(0, ...siblings.map((chapter) => chapter.order)) + 1;
   if (!Number.isSafeInteger(order) || order < 1) throw new Error('Ordem de capítulo inválida.');
   const ref = doc(collection(bookRef, 'chapters'));
-  return runTransaction(firestore, async (transaction) => {
+  const created = await runTransaction(firestore, async (transaction) => {
     const current = editableBook(await transaction.get(bookRef));
+    if (current.hasProgressResources) return null;
     if (actId && !(await transaction.get(doc(bookRef, 'acts', actId))).exists())
       throw new Error('O ato não pertence a este livro.');
     assertUnchanged(current, book);
@@ -128,6 +132,7 @@ export async function createOrganizedChapter(
     });
     return chapter;
   });
+  return created ?? createServerLegacyChapter(bookId, input);
 }
 
 export async function moveChaptersToAct(
@@ -188,7 +193,7 @@ export async function deleteChapters(bookId: string, selected: readonly Chapter[
     return;
   }
   const bookRef = doc(firestore, 'books', bookId);
-  await runTransaction(firestore, async (transaction) => {
+  const serverRequired = await runTransaction(firestore, async (transaction) => {
     const current = editableBook(await transaction.get(bookRef));
     const snapshots = await Promise.all(
       selected.map((chapter) => transaction.get(doc(bookRef, 'chapters', chapter.id))),
@@ -199,10 +204,17 @@ export async function deleteChapters(bookId: string, selected: readonly Chapter[
         throw new Error('Um capítulo mudou. Atualize a lista antes de tentar novamente.');
       removedWords += (snapshot.data().wordCount as number) || 0;
     });
+    if (current.hasProgressResources) return true;
     snapshots.forEach((snapshot) => transaction.delete(snapshot.ref));
     transaction.update(bookRef, {
       wordCount: Math.max(0, ((current.wordCount as number) ?? 0) - removedWords),
       updatedAt: nextTimestamp(current.updatedAt as number),
     });
+    return false;
   });
+  if (serverRequired)
+    await deleteServerLegacyChapters(
+      bookId,
+      selected.map((chapter) => ({ id: chapter.id, expectedUpdatedAt: chapter.updatedAt })),
+    );
 }

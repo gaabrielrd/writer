@@ -369,6 +369,56 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "workActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "order": "ASCENDING",
+          "fieldPath": "kind"
+        },
+        {
+          "order": "DESCENDING",
+          "fieldPath": "accessedAt"
+        },
+        {
+          "order": "DESCENDING",
+          "fieldPath": "__name__"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "workChecklist",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "order": "ASCENDING",
+          "fieldPath": "completed"
+        },
+        {
+          "order": "ASCENDING",
+          "fieldPath": "__name__"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "chapters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "order": "ASCENDING",
+          "fieldPath": "actId"
+        },
+        {
+          "order": "DESCENDING",
+          "fieldPath": "order"
+        },
+        {
+          "order": "DESCENDING",
+          "fieldPath": "__name__"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { Globe, Map } from 'lucide-react';
+import {
+  ProjectProgressPanel,
+  useWorkActivity,
+  WorkActivityNotice,
+} from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
 import {
   Badge,
@@ -42,6 +47,11 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
       active = false;
     };
   }, [id, ownerId, attempt]);
+  const activity = useWorkActivity({
+    target: { kind: 'campaign', id },
+    resource: { kind: 'project' },
+    enabled: Boolean(result?.campaign && result.campaign.ownerId === ownerId),
+  });
   const back = (
     <Link to="/studio" className={buttonVariants({ variant: 'secondary' })}>
       Voltar ao Estúdio
@@ -82,6 +92,7 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
   }[campaign.status];
   return (
     <div className={styles.page}>
+      <WorkActivityNotice activity={activity} />
       <PageHeader
         title={campaign.title}
         description="Campanha independente"
@@ -117,6 +128,7 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
       ) : (
         <p>Projeto independente, sem universo vinculado.</p>
       )}
+      <ProjectProgressPanel target={{ kind: 'campaign', id: campaign.id }} />
     </div>
   );
 }

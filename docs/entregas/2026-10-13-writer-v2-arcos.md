@@ -3,7 +3,7 @@
 - **Data**: 2026-10-13
 - **Branch**: `codex/writer-v2`
 - **Plano de origem**: [contrato F2-03](../tasks/writer-v2/execucao/09-arcos-e-cronologia.md)
-- **Estado**: implementação, QA, regras reais, validate integral final e E2E de produção aprovados localmente; Git e CI pendentes.
+- **Estado**: concluído tecnicamente em `3358c75`; validações locais, CI integral e regras Firestore verdes. Condições humanas e comerciais permanecem nas entregas próprias.
 
 ## Objetivo
 
@@ -30,7 +30,7 @@ relacionando cenas e entidades sem alterar a composição do manuscrito.
 - [x] Jornadas narrativas funcionam por teclado, nos três temas e em 320 px.
 - [x] Regressões de cenas e dos fluxos existentes concluídas na revisão final.
 - [x] Validate integral aprovado após correção, documentação e atualização de AGENTS.
-- [ ] Alterações registradas no Git e CI verde no SHA pertinente do PR.
+- [x] Alterações registradas no Git e CI verde em `3358c75` no PR em rascunho.
 
 ## Arquivos alterados
 
@@ -294,6 +294,29 @@ lint, tipos e smoke verdes. Log externo `writer-v2-arcos-autocomplete-validate.l
 Avisos preexistentes de bundle/importação dinâmica permanecem. A atualização final
 de evidência recebeu checagens dirigidas; Git e CI do candidato ainda necessários.
 
+### Confirmação técnica final — 2026-10-13
+
+O commit `3358c75aea44148989e3e8ca4f90053c27578d2c` passou no
+[CI completo](https://github.com/gaabrielrd/writer/actions/runs/38459491836) e nas
+[regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/38459491878).
+Os seis shards aprovaram 732 percursos diretamente, sem flaky ou retry, com
+12 skips preexistentes. Os 96 casos narrativos e os seis de autocomplete passaram
+diretamente. Produção: 7/7 em 17,9 s; regras: 74/74 em 32,560 s, sem falhas/skips.
+Validate remoto Node 22/24, auditoria e agregação E2E também verdes no mesmo SHA.
+O job visual mais longo levou 12 min 39 s, dentro do limite existente de 15 min.
+
+A verificação adicional em 320 px aprovou 3/3, um por tema, sem retries,
+em 15,523 s. As três capturas foram inspecionadas: texto legível e sem corte
+horizontal no trecho visível do manuscrito. Evidência em
+`writer-v2-arcos-qa/autocomplete-final-mobile-320/`. Os hashes do código e do roteiro
+coincidiram com a rodada intacta anterior; o servidor próprio foi encerrado.
+
+Hooks de commit e envio passaram; o
+[PR 21](https://github.com/gaabrielrd/writer/pull/21) permanece em rascunho.
+As falhas e os checkpoints anteriores acima permanecem como histórico.
+F2-03 está concluído tecnicamente e F2-04 pode começar com plano próprio;
+isso não confirma piloto humano, operação comercial, merge ou implantação.
+
 ## Fora do escopo
 
 Campanhas jogáveis, calendário avançado, análise por IA, restauração integral,
@@ -304,9 +327,9 @@ pagamentos, merge e deploy. Condições humanas e comerciais permanecem nas tare
 - Fixtures comprovam interface e transporte simulado; autorização, regras e atomicidade têm evidência separada de backend/SDK.
 - Invalidação após troca de universo depende do refresh dos metadados locais; não promete atualização remota em tempo real entre abas.
 - Novas funções, regras e índices precisam de implantação autorizada para uso real.
-- CI `47fe51c` falhou no autocomplete legado; novo CI do candidato corrigido ainda pendente. E2E local anterior tem um skip legado por ausência da referência Windows.
+- E2E local anterior tem um skip legado por ausência da referência Windows; o CI final conserva seus 12 skips preexistentes e aprova os demais casos diretamente.
 - Node local 24 com engine 22 de functions produziu aviso; validação passou. Avisos preexistentes de bundle grande/importação dinâmica permanecem.
-- Falha de autocomplete reproduzida em controle causal e corrigida localmente, com regressões e roteiro intacto verdes; aguarda confirmação no CI. Hosting sem sharding continua um risco separado.
+- Falha de autocomplete corrigida e confirmada em regressões locais e no CI final. Hosting sem sharding continua um risco separado.
 
 ## Como verificar manualmente
 

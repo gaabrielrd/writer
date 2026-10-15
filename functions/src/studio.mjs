@@ -75,6 +75,9 @@ function projectView(kind, id, record) {
     revision: record.revision,
     title: record.title,
     status: record.status,
+    ...(['draft', 'review', 'ready'].includes(record.editorialState)
+      ? { editorialState: record.editorialState }
+      : {}),
     universeId: record.universeId ?? null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -90,6 +93,9 @@ function summary(kind, snapshot) {
     kind,
     title: record.title,
     status: record.status,
+    ...(['draft', 'review', 'ready'].includes(record.editorialState)
+      ? { editorialState: record.editorialState }
+      : {}),
     universeId: record.universeId ?? null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,

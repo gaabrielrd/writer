@@ -64,6 +64,11 @@ it('abre narrativa contextual da aventura e alterna por teclado sem trocar o pro
     screen.queryByRole('heading', { name: 'Planejamento de adventure/project' }),
   ).not.toBeInTheDocument();
   await userEvent.keyboard('{End}');
+  expect(screen.getByRole('tab', { name: 'Progresso' })).toHaveFocus();
+  expect(
+    screen.getByRole('heading', { name: 'Progresso de adventure/project' }),
+  ).toBeInTheDocument();
+  await userEvent.keyboard('{ArrowLeft}');
   expect(screen.getByRole('tab', { name: 'Arcos e cronologia' })).toHaveFocus();
   expect(
     screen.getByRole('heading', { name: 'Planejamento de adventure/project' }),
@@ -141,4 +146,38 @@ it('não quebra a tela nem inventa data quando o DTO traz data inválida', async
   vi.mocked(getAdventure).mockResolvedValue({ ...resource, updatedAt: Number.POSITIVE_INFINITY });
   render(tree());
   expect(await screen.findByText('Data indisponível')).toBeInTheDocument();
+});
+
+vi.mock('@/features/work-progress', async (original) => ({
+  ...(await original<object>()),
+  ProjectProgressPanel: ({ target }: { target: { kind: string; id: string } }) => (
+    <h2>
+      Progresso de {target.kind}/{target.id}
+    </h2>
+  ),
+  ContinueWorkPanel: () => <h2>Continuar meu trabalho</h2>,
+  useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
+  WorkActivityNotice: () => null,
+}));
+
+it('estado editorial atual substitui o legado ready e arquivo permanece condição independente', async () => {
+  vi.mocked(getAdventure).mockResolvedValue({
+    ...resource,
+    status: 'ready',
+    editorialState: 'review',
+  });
+  const rendered = render(tree('?tab=progress'));
+  expect(await screen.findByText('Em revisão')).toBeVisible();
+  expect(screen.queryByText('Pronto')).not.toBeInTheDocument();
+  expect(screen.queryByText('Pronta')).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Progresso de adventure/project' })).toBeVisible();
+  rendered.unmount();
+  vi.mocked(getAdventure).mockResolvedValue({
+    ...resource,
+    status: 'archived',
+    editorialState: 'ready',
+  });
+  render(tree());
+  expect(await screen.findByText('Arquivada')).toBeVisible();
+  expect(screen.getByText('Pronto')).toBeVisible();
 });

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { BookOpen, Map } from 'lucide-react';
+import { editorialStateLabels } from '@/features/work-progress';
 import { BookCard } from '@/features/books';
 import {
   Alert,
@@ -36,12 +37,27 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
         <div className={styles.sectionActions}>
           <Dropdown
             mode="select"
-            label={'Estado de ' + label}
+            label={
+              (kind === 'adventure'
+                ? 'Condição de '
+                : kind === 'book'
+                  ? 'Publicação de '
+                  : 'Estado de ') + label
+            }
             value={status}
-            onValueChange={(value) => setStatus(value as 'all' | StudioStatus)}
+            onValueChange={(value) =>
+              setStatus(
+                kind === 'adventure' && value !== 'archived'
+                  ? 'all'
+                  : (value as 'all' | StudioStatus),
+              )
+            }
             options={[
               { value: 'all', label: 'Todos os estados' },
-              ...statusesByKind[kind].map((value) => ({ value, label: statusLabels[value] })),
+              ...statusesByKind[kind].map((value) => ({
+                value,
+                label: kind === 'book' && value === 'draft' ? 'Não publicado' : statusLabels[value],
+              })),
             ]}
           />
           <Button variant="ghost" onClick={refresh}>
@@ -103,7 +119,17 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
                         {project.kind === 'adventure' ? 'Aventura' : 'Campanha'}
                       </Badge>
                       <h3>{project.title}</h3>
-                      <Badge variant="neutral">{statusLabels[project.status]}</Badge>
+                      <Badge variant="neutral">
+                        {project.kind === 'adventure'
+                          ? editorialStateLabels[
+                              project.editorialState ??
+                                (project.status === 'ready' ? 'ready' : 'draft')
+                            ]
+                          : statusLabels[project.status]}
+                      </Badge>
+                      {project.kind === 'adventure' && project.status === 'archived' && (
+                        <Badge variant="secondary">Arquivada</Badge>
+                      )}
                       <span>Abrir projeto</span>
                     </Card>
                   </Link>

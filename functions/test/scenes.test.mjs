@@ -144,6 +144,31 @@ test('moving uses observed structural versions and neighbors, preserves prosa/re
   );
 });
 
+test('moving from the unassigned group compares the actual source revision and preserves prose', async () => {
+  const { api, records } = fixture();
+  const unassigned = await scene(api, null, 2);
+  const destination = await chapter(api, 1);
+  const source = await api.getSceneGroup('author', { target, parentId: null });
+  assert.notEqual(source.group.structureRevision, destination.structureRevision);
+  const moved = await api.moveScene('author', {
+    target,
+    operationId: op(3),
+    sceneId: unassigned.scene.id,
+    expectedRevision: unassigned.scene.revision,
+    parentId: destination.id,
+    expectedSourceStructureRevision: source.group.structureRevision,
+    expectedTargetStructureRevision: destination.structureRevision,
+  });
+  assert.equal(moved.scene.parentId, destination.id);
+  assert.equal(records.get(`books/book/chapters/${destination.id}`).wordCount, 2);
+  assert.equal(records.get('books/book/sceneControls/unassigned').wordCount, 0);
+  assert.equal(records.get('books/book').wordCount, 4);
+  assert.equal(
+    (await api.getScene('author', { target, sceneId: unassigned.scene.id })).content,
+    '<p>Um texto</p>',
+  );
+});
+
 test('archive excludes composition and restores to the end without losing editable archived prose', async () => {
   const { api, records } = fixture(),
     group = await chapter(api),

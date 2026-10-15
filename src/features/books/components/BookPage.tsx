@@ -31,6 +31,12 @@ import { PersonaBindingDialog } from '@/features/ai-assistant';
 import { useAuth } from '@/features/auth';
 import { ExportDialog } from '@/features/editor';
 import { ScenePlanner } from '@/features/scenes';
+import {
+  ProjectProgressPanel,
+  WorkActivityNotice,
+  useWorkActivity,
+  editorialStateLabels,
+} from '@/features/work-progress';
 import { NarrativePlanner } from '@/features/narrative-planning';
 import { publishBook, unpublishBook } from '../services/publicationService';
 import { LoreTab } from '@/features/lore';
@@ -42,7 +48,7 @@ import { BookFormDialog } from './BookFormDialog';
 import { ImportBookModal } from './ImportBookModal';
 import styles from './BookPage.module.css';
 
-type TabId = 'chapters' | 'scenes' | 'narrative' | 'compendium' | 'publication';
+type TabId = 'chapters' | 'scenes' | 'narrative' | 'compendium' | 'publication' | 'progress';
 
 interface TabDef {
   id: TabId;
@@ -55,6 +61,7 @@ const TABS: TabDef[] = [
   { id: 'scenes', label: 'Cenas', icon: Scroll },
   { id: 'narrative', label: 'Arcos e cronologia', icon: Scroll },
   { id: 'compendium', label: 'Compêndio', icon: Scroll },
+  { id: 'progress', label: 'Progresso', icon: FileText },
   { id: 'publication', label: 'Publicação', icon: Globe },
 ];
 
@@ -187,6 +194,12 @@ function BookDetail() {
     }
   };
 
+  const activity = useWorkActivity({
+    target: { kind: 'book', id: bookId ?? '' },
+    resource: { kind: 'project' },
+    enabled: Boolean(book && book.id === bookId && book.authorId === user?.uid),
+  });
+
   if (loading) {
     return <LoadingState label="Carregando livro..." />;
   }
@@ -216,6 +229,7 @@ function BookDetail() {
 
   return (
     <div className={styles.container}>
+      <WorkActivityNotice activity={activity} />
       {actionError && (
         <Alert variant="destructive" title="A ação não foi concluída">
           {actionError}
@@ -310,10 +324,11 @@ function BookDetail() {
               <FileText className="icon icon-sm" aria-hidden="true" />
               {book.wordCount.toLocaleString('pt-BR')} palavras
             </span>
+            <Badge variant="neutral">{editorialStateLabels[book.editorialState ?? 'draft']}</Badge>
             {isPublished ? (
               <Badge variant="success">Publicado</Badge>
             ) : (
-              <Badge variant="neutral">Rascunho</Badge>
+              <Badge variant="neutral">Não publicado</Badge>
             )}
           </div>
         </div>
@@ -374,6 +389,13 @@ function BookDetail() {
         id="book-tab-panel"
         aria-labelledby={'book-tab-' + activeTab}
       >
+        {activeTab === 'progress' && (
+          <ProjectProgressPanel
+            target={{ kind: 'book', id: book.id }}
+            manuscriptRefreshKey={book.updatedAt + ':' + book.wordCount}
+            onProjectChange={refreshBook}
+          />
+        )}
         {activeTab === 'narrative' && user && (
           <NarrativePlanner
             key={user.uid + ':' + book.id + ':' + (book.universeId ?? 'none')}
@@ -419,12 +441,12 @@ function BookDetail() {
                 )}
               </div>
               <h3 className={styles.publicationTitle}>
-                {isPublished ? 'Obra Publicada' : 'Obra em Rascunho'}
+                {isPublished ? 'Obra Publicada' : 'Obra não publicada'}
               </h3>
               <p className={styles.publicationDescription}>
                 {isPublished
                   ? 'A versão publicada está disponível no link abaixo. Alterações no rascunho só aparecem após atualizar a publicação.'
-                  : 'Sua obra está em modo rascunho e só você pode vê-la. Publique-a para compartilhar com leitores.'}
+                  : 'Sua obra ainda não foi publicada e só você pode vê-la. Publique-a para compartilhar com leitores.'}
               </p>
               {isPublished && <Link to={`/read/${book.id}`}>Abrir leitor público</Link>}
               {isOwner && isPublished && (
@@ -447,7 +469,7 @@ function BookDetail() {
                   {isPublished ? (
                     <>
                       <Lock className="icon icon-sm" aria-hidden="true" />
-                      Reverter para Rascunho
+                      Despublicar obra
                     </>
                   ) : (
                     <>

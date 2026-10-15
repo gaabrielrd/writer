@@ -1,3 +1,4 @@
+import { useWorkActivity, WorkActivityNotice } from '@/features/work-progress';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import {
@@ -218,7 +219,9 @@ function EditorSession() {
       try {
         const bookData: Book | null = await getBook(bookId);
         const chaptersData: Chapter[] = await listChapters(bookId, { includeContent: false });
-        const chapterData: Chapter | null = await getChapter(bookId, chapterId);
+        const chapterData: Chapter | null = await runChapterOperation(bookId, chapterId, () =>
+          getChapter(bookId, chapterId),
+        );
         const loreData: LoreEntity[] = await listLoreEntities(bookId);
         const globalData = bookData?.universeId
           ? await listLoreEntities({ kind: 'universe', id: bookData.universeId }).catch(
@@ -484,6 +487,18 @@ function EditorSession() {
     }
   };
 
+  const workActivity = useWorkActivity({
+    target: { kind: 'book', id: bookId ?? '' },
+    resource: { kind: 'chapter', id: chapterId ?? '' },
+    enabled: Boolean(
+      user &&
+      book?.authorId === user.uid &&
+      book.id === bookId &&
+      chapter?.id === chapterId &&
+      chapter?.bookId === bookId,
+    ),
+  });
+
   if (loading) {
     return <LoadingState label="Carregando área de escrita..." />;
   }
@@ -505,7 +520,12 @@ function EditorSession() {
   }
 
   if (chapter.contentMode === 'scenes')
-    return <SceneChapterView book={book} chapter={chapter} legacyDraft={recoveryDraft} />;
+    return (
+      <>
+        <WorkActivityNotice activity={workActivity} />
+        <SceneChapterView book={book} chapter={chapter} legacyDraft={recoveryDraft} />
+      </>
+    );
 
   if (recoveryDraft !== null) {
     return (
@@ -522,8 +542,7 @@ function EditorSession() {
               onClick={() => {
                 if (user?.uid && bookId && chapterId)
                   clearLocalDraft(user.uid, bookId, chapterId, recoveryDraft);
-                resetSavedContent(recoveryDraft);
-                void saveNow();
+                setContent(getSavedContent());
                 setRecoveryDraft(null);
               }}
             >
@@ -565,6 +584,7 @@ function EditorSession() {
   return (
     <div className={styles.pageLayout} data-workspace-expanded={expanded}>
       <BusyNavigationGuard busy={isAcceptingAI} />
+      <WorkActivityNotice activity={workActivity} />
       {isAcceptingAI && (
         <p role="status">Aguarde a aplicação terminar antes de sair do capítulo.</p>
       )}
