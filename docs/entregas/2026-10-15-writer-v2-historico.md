@@ -134,3 +134,19 @@ observadas em execução; o trabalho seguinte avança sem esperar esses resultad
 4. Feche o histórico; desfaça/refaça, escreva novamente e recarregue.
 5. No histórico do projeto, consulte uma origem removida; copie ou exclua a versão,
    sem recriar o recurso nem substituir outra cena.
+
+## Correção de layout após a CI — 2026-10-15
+
+A CI de `cd5edb0` aprovou validate Node 22/24, auditoria, navegador de produção e
+regras. Os shards visuais examinados reprovaram o mesmo roteiro narrativo em
+320 px: o cabeçalho com Voltar ao Estúdio e Histórico do texto ampliava a página
+para 330 px. Logs e captura do shard 5 comprovaram a causa; não era falha de
+seletor nem de latência.
+
+A correção agrupa somente as ações da aventura em um contêiner local com quebra
+de linha, gap semântico e min-width 0. Nenhum assert, timeout ou retry mudou.
+Os dois percursos existentes afetados (narrativa 320 px e histórico por projeto)
+passaram em seis projetos: **12/12**, 17,641 s, zero falhas/skips/flaky, workers 2,
+retries 0. Prettier, lint dirigido e diff check verdes; capturas 320 px inspecionadas
+nos três temas. Artefatos em `writer-v2-progress-qa/f205-adventure-header`.
+O novo SHA ainda precisa de sua própria CI; este resultado não aprova o head anterior.

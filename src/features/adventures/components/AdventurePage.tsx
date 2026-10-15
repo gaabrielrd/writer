@@ -133,13 +133,13 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
         description="Aventura autoral"
         breadcrumbs={<Link to="/studio">Estúdio</Link>}
         actions={
-          <>
+          <div className={styles.headerActions}>
             {back}
             <Button variant="outline" onClick={() => setHistoryOpen(true)}>
               <History className="icon icon-sm" aria-hidden="true" />
               Histórico do texto
             </Button>
-          </>
+          </div>
         }
       />
       <div className={styles.meta}>
