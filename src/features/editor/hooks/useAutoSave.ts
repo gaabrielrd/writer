@@ -18,6 +18,8 @@ export interface UseAutoSaveResult {
   error: string | null;
   saveNow: () => Promise<void>;
   resetSavedContent: (newSavedContent: string) => void;
+  acceptConfirmedContent: (content: string) => void;
+  getConfirmedContent: () => string | null;
   getSavedContent: () => string;
 }
 
@@ -36,6 +38,7 @@ export function useAutoSave({
   const saved = useRef(content);
   const latest = useRef(content);
   const pending = useRef<Promise<void> | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mounted = useRef(true);
   const callback = useRef(onSaved);
   useEffect(() => {
@@ -46,6 +49,18 @@ export function useAutoSave({
     saved.current = text;
     setSaveStatus('saved');
     setError(null);
+  }, []);
+
+  const acceptConfirmedContent = useCallback((text: string) => {
+    if (!mounted.current || pending.current)
+      throw new Error('Aguarde a confirmação do salvamento antes de substituir o texto.');
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    latest.current = text;
+    saved.current = text;
+    setSaveStatus('saved');
+    setError(null);
+    setLastSavedAt(Date.now());
   }, []);
 
   const performSave = useCallback(
@@ -120,12 +135,14 @@ export function useAutoSave({
       setSaveStatus('unsaved');
       if (backupError) setError(backupError);
     });
-    const timer = setTimeout(() => {
+    timer.current = setTimeout(() => {
+      timer.current = null;
       void performSave();
     }, debounceMs);
     return () => {
       active = false;
-      clearTimeout(timer);
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = null;
     };
   }, [content, enabled, bookId, chapterId, ownerId, debounceMs, performSave]);
 
@@ -168,6 +185,11 @@ export function useAutoSave({
     error,
     saveNow: performSave,
     resetSavedContent,
+    acceptConfirmedContent,
+    getConfirmedContent: () =>
+      mounted.current && !pending.current && latest.current === saved.current
+        ? saved.current
+        : null,
     getSavedContent: () => saved.current,
   };
 }

@@ -349,6 +349,8 @@ service cloud.firestore {
     }
 
     match /adventures/{adventureId} {
+      match /workVersions/{id} { allow read, write: if false; }
+      match /workVersionBodies/{id} { allow read, write: if false; }
       allow get: if isOwner(resource.data.ownerId);
       allow list: if isOwner(resource.data.ownerId)
         && request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;
@@ -411,6 +413,8 @@ service cloud.firestore {
     }
 
     match /books/{bookId} {
+      match /workVersions/{id} { allow read, write: if false; }
+      match /workVersionBodies/{id} { allow read, write: if false; }
       // Allow an authenticated creator to read an absent ID before the atomic create.
       // Existing manuscripts remain restricted to their author.
       allow get: if isAuthenticated()

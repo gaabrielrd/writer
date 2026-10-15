@@ -334,6 +334,8 @@ export function addSceneJobs(api, helpers) {
           'workWordSources',
           'workWordGroups',
           'workChecklist',
+          'workVersionBodies',
+          'workVersions',
         ];
         const at = phases.indexOf(state.phase);
         if (at >= 0) {

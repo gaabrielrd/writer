@@ -621,3 +621,38 @@ it('restaura cursor e preserva digitação ao fechar lore antes do frame atrasad
     window.getSelection()?.removeAllRanges();
   }
 });
+
+it('mantém uma restauração externa como passo próprio de desfazer e a próxima edição como passo separado', async () => {
+  const user = userEvent.setup();
+  const { props, rerender, onChange, editor } = setup({ content: '<p>Antes da restauração</p>' });
+  rerender(<RichEditor {...props} content="<p>Versão restaurada</p>" externalContentVersion={1} />);
+  await waitFor(() => expect(editor).toHaveTextContent('Versão restaurada'));
+  expect(onChange).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: /^Desfazer$/ }));
+  expect(editor).toHaveTextContent('Antes da restauração');
+  expect(onChange).toHaveBeenLastCalledWith('<p>Antes da restauração</p>');
+  await user.click(screen.getByRole('button', { name: /^Refazer$/ }));
+  expect(editor).toHaveTextContent('Versão restaurada');
+  selectText(editor, editor.textContent.length, editor.textContent.length);
+  await user.keyboard('!');
+  await waitFor(() => expect(editor).toHaveTextContent('Versão restaurada!'));
+  await user.click(screen.getByRole('button', { name: /^Desfazer$/ }));
+  expect(editor).toHaveTextContent('Versão restaurada');
+});
+it('bloqueia prosa, formatação e desfazer enquanto uma operação externa aguarda confirmação', async () => {
+  const user = userEvent.setup();
+  const { props, rerender, onChange, editor } = setup({
+    content: '<p>Preservado</p>',
+    externalBusy: true,
+  });
+  expect(editor).toHaveAttribute('contenteditable', 'false');
+  expect(editor).toHaveAttribute('aria-readonly', 'true');
+  expect(screen.getByRole('button', { name: /^Negrito$/ })).toBeDisabled();
+  expect(screen.getByRole('button', { name: /^Desfazer$/ })).toBeDisabled();
+  await user.click(editor);
+  await user.keyboard('Não gravar');
+  expect(onChange).not.toHaveBeenCalled();
+  rerender(<RichEditor {...props} externalBusy={false} />);
+  expect(editor).toHaveAttribute('contenteditable', 'true');
+  expect(editor).toHaveTextContent('Preservado');
+});

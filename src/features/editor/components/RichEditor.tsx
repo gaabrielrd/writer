@@ -1,8 +1,9 @@
-import { useState, useRef, useMemo, useEffect, useId } from 'react';
+import { useState, useRef, useMemo, useEffect, useLayoutEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { closeHistory } from '@tiptap/pm/history';
 import {
   Bold,
   Italic,
@@ -69,6 +70,8 @@ export interface RichEditorProps {
   userCredits?: number;
   onCreditDeducted?: (newCredits: number) => void;
   onBusyChange?: (busy: boolean) => void;
+  externalBusy?: boolean;
+  externalContentVersion?: number;
 }
 
 const CATEGORY_BADGES: Record<LoreCategory, 'default' | 'accent' | 'success' | 'secondary'> = {
@@ -112,6 +115,8 @@ export function RichEditor({
   userCredits = 0,
   onCreditDeducted,
   onBusyChange,
+  externalBusy = false,
+  externalContentVersion = 0,
 }: RichEditorProps) {
   // Initial parsing is intentionally lazy: transaction-driven renders must not
   // sanitize the whole chapter again. Real external replacements use the effect below.
@@ -135,6 +140,12 @@ export function RichEditor({
   const expandedRef = useRef(workspaceExpanded);
   const discardRef = useRef<() => void>(() => undefined);
   const acceptingRef = useRef(false);
+  const externalBusyRef = useRef(externalBusy);
+  const appliedContentVersion = useRef(externalContentVersion);
+  const blocked = accepting || externalBusy;
+  useLayoutEffect(() => {
+    externalBusyRef.current = externalBusy;
+  }, [externalBusy]);
   const aiTarget = useRef<SelectionTarget | null>(null);
   const previousSidebar = useRef(isSidebarOpen);
   const scrollArea = useRef<HTMLDivElement>(null);
@@ -252,7 +263,7 @@ export function RichEditor({
     userCredits,
     onCreditDeducted,
     onShowOutOfCredits: () => setIsOutOfCreditsOpen(true),
-    enabled: !aiUnavailableReason && !accepting && Boolean(editor?.state.selection.empty),
+    enabled: !aiUnavailableReason && !blocked && Boolean(editor?.state.selection.empty),
   });
 
   useEffect(() => {
@@ -268,14 +279,19 @@ export function RichEditor({
   }, [entities, editor, loreExtension]);
   useEffect(() => {
     // A parent echo must never recreate the document: that loses cursor, composition and undo.
-    if (!editor || content === lastContent.current) return;
+    if (!editor) return;
+    const restored = appliedContentVersion.current !== externalContentVersion;
+    appliedContentVersion.current = externalContentVersion;
+    if (content === lastContent.current) return;
     lastContent.current = content;
+    if (restored) editor.view.dispatch(closeHistory(editor.state.tr));
     editor.commands.setContent(renderRichText(content), { emitUpdate: false });
-  }, [content, editor]);
-  useEffect(() => {
-    editor?.setEditable(!accepting, false);
-    editor?.view.dom.setAttribute('aria-readonly', String(accepting));
-  }, [editor, accepting]);
+    if (restored) editor.view.dispatch(closeHistory(editor.state.tr));
+  }, [content, editor, externalContentVersion]);
+  useLayoutEffect(() => {
+    editor?.setEditable(!blocked, false);
+    editor?.view.dom.setAttribute('aria-readonly', String(blocked));
+  }, [editor, blocked]);
   useEffect(() => {
     // This effect runs after the panel is removed. Restore focus once now:
     // a later focus frame could overwrite the user's next native caret move.
@@ -297,10 +313,10 @@ export function RichEditor({
   const mention = editor && !mentionDismissed ? getMentionRange(editor.state) : null;
   const selectionAnchor = useSelectionAnchor(
     editor,
-    !accepting && !isAssistantOpen && !chatOpen && !mention,
+    !blocked && !isAssistantOpen && !chatOpen && !mention,
   );
   const candidates = mention ? mentionCandidates(entities, mention.query) : [];
-  const activeGhost = !mention && !accepting ? suggestion : null;
+  const activeGhost = !mention && !blocked ? suggestion : null;
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     const position = editor.state.selection.from;
@@ -338,11 +354,11 @@ export function RichEditor({
   const setApplying = (busy: boolean) => {
     acceptingRef.current = busy;
     setAccepting(busy);
-    editor?.setEditable(!busy, false);
+    editor?.setEditable(!busy && !externalBusyRef.current, false);
     onBusyChange?.(busy);
   };
   const handleAcceptGhost = async () => {
-    if (!editor || acceptingRef.current) return;
+    if (!editor || acceptingRef.current || externalBusyRef.current) return;
     const target = {
       doc: editor.state.doc,
       from: editor.state.selection.from,
@@ -372,7 +388,7 @@ export function RichEditor({
     expandedRef.current = workspaceExpanded;
     keyHandler.current = (event) => {
       if (event.isComposing || editor?.view.composing) return false;
-      if (acceptingRef.current) return true;
+      if (acceptingRef.current || externalBusyRef.current) return true;
       if (mention) {
         if (event.key === 'Escape') {
           setMentionDismissed(true);
@@ -443,7 +459,7 @@ export function RichEditor({
     return true;
   };
   const run = (command: (activeEditor: Editor) => void) => {
-    if (editor && !accepting) command(editor);
+    if (editor && !acceptingRef.current && !externalBusyRef.current) command(editor);
   };
   useEffect(() => {
     if (!editor) return;
@@ -497,7 +513,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -515,7 +531,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -533,7 +549,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -551,7 +567,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -569,7 +585,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -591,7 +607,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -609,7 +625,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -628,7 +644,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || !editor?.can().undo()}
+            disabled={blocked || !editor?.can().undo()}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -645,7 +661,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || !editor?.can().redo()}
+            disabled={blocked || !editor?.can().redo()}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -665,7 +681,7 @@ export function RichEditor({
         >
           {onOpenChat ? (
             <AIChatLauncher
-              disabled={Boolean(aiUnavailableReason)}
+              disabled={blocked || Boolean(aiUnavailableReason)}
               open={chatOpen}
               onOpen={onOpenChat}
               anchor={selectionAnchor}
@@ -673,7 +689,9 @@ export function RichEditor({
           ) : (
             <AIActionMenu
               writingPersona={writingPersona}
-              aiUnavailableReason={aiUnavailableReason}
+              aiUnavailableReason={
+                externalBusy ? 'Aguarde a confirmação do histórico.' : aiUnavailableReason
+              }
               selectionAnchor={selectionAnchor}
               onOpenChange={setIsAssistantOpen}
               onReturnFocus={() => {
@@ -681,7 +699,9 @@ export function RichEditor({
               }}
               onGetSelectedText={captureSelection}
               onGetContextText={() => text}
-              onCanApplyResult={() => !acceptingRef.current && canApplyResult()}
+              onCanApplyResult={() =>
+                !acceptingRef.current && !externalBusyRef.current && canApplyResult()
+              }
               onApplyingChange={setApplying}
               loreEntities={entities}
               userId={userId}
@@ -752,7 +772,7 @@ export function RichEditor({
                   event.stopPropagation();
                 }
               }}
-              aria-busy={accepting}
+              aria-busy={blocked}
             />
             {suggestion && (
               <GhostSuggestion

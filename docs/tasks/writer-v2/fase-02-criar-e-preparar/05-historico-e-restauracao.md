@@ -1,6 +1,6 @@
 # W2-F2-05 — Guardar e restaurar versões do trabalho
 
-**Estado:** Planejamento em execução; políticas confirmadas em 2026-10-15.
+**Estado:** Implementado e validado localmente; CI pendente. Políticas confirmadas em 2026-10-15.
 **Dependências:** [W2-F2-02](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md)
 **Áreas propostas:** editor, books; proposta adventures; functions e armazenamento. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -29,17 +29,17 @@ retenção/criação confirmadas e fecha os protocolos de concorrência e armaze
 antes da implementação. CI acompanha o trabalho em paralelo conforme autorização
 de 2026-10-15.
 
-- [ ] Definir formato, limites e migração de documentos sem histórico.
-- [ ] Implementar criação/listagem/restauração transacional e idempotente.
-- [ ] Integrar comparação e guard de texto pendente.
-- [ ] Cobrir conflitos, cancelamento e recuperação após resposta incerta.
+- [x] Definir formato, limites e migração de documentos sem histórico.
+- [x] Implementar criação/listagem/restauração transacional e idempotente.
+- [x] Integrar comparação e guard de texto pendente.
+- [x] Cobrir conflitos, cancelamento e recuperação após resposta incerta.
 
 ## Critérios de aceite
 
-- [ ] Restaurar preserva uma cópia recuperável do estado anterior.
-- [ ] Resposta repetida não cria restaurações/debitos duplicados.
-- [ ] Mudança concorrente solicita revisão em vez de sobrescrever.
-- [ ] Histórico não é legível por visitante, jogador ou comprador.
+- [x] Restaurar preserva uma cópia recuperável do estado anterior.
+- [x] Resposta repetida não cria restaurações/debitos duplicados.
+- [x] Mudança concorrente solicita revisão em vez de sobrescrever.
+- [x] Histórico não é legível por visitante, jogador ou comprador.
 
 ## Validação
 
@@ -47,6 +47,7 @@ de 2026-10-15.
 - Editor: texto não salvo, autosave, IA pendente, desfazer e cancelamento.
 
 Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md) e registrar evidência real.
+Resultados locais e pendências: [entrega F2-05](../../../entregas/2026-10-15-writer-v2-historico.md).
 
 ## Riscos e decisões necessárias
 

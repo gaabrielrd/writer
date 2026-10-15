@@ -185,6 +185,66 @@ export function createScenesService({ db, now = Date.now }) {
   function writeReceipt(tx, op, value) {
     tx.set(op.ref, { fingerprint: op.fingerprint, ...value });
   }
+  async function prepareSceneTextWrite(tx, { uid, target, root, snapshot, content, patch = {} }) {
+    const context = scope(uid, { target }, []),
+      old = snapshot.data(),
+      ref = snapshot.ref;
+    if (!old || old.ownerId !== uid) sceneFail('not-found', 'Cena indisponível.');
+    const entry = await group(context, old.parentId, tx, {
+      composed: true,
+      deleting: Boolean(old.archived),
+    });
+    const timestamp = sceneDate(now, Math.max(root.updatedAt ?? 0, old.updatedAt ?? 0)),
+      text = prose(content),
+      value = {
+        ...old,
+        revision: old.revision + 1,
+        updatedAt: timestamp,
+        wordCount: text.wordCount,
+        bodyBytes: text.bodyBytes,
+        bodyHash: text.bodyHash,
+        ...('title' in patch ? { title: patch.title } : {}),
+        ...('stage' in patch ? { stage: patch.stage } : {}),
+      },
+      body = { ...text.body, revision: value.revision },
+      next = nextGroup(
+        entry,
+        old.archived ? 0 : value.wordCount - old.wordCount,
+        0,
+        timestamp,
+        false,
+        !old.archived,
+      ),
+      planningValue =
+        'planning' in patch
+          ? planning(
+              patch.planning,
+              (await tx.get(db.doc(ref.path + '/planning/current'))).data() ?? undefined,
+            )
+          : null,
+      progress = await workLedger.prepareChanges(tx, {
+        target,
+        root,
+        changes: [
+          { kind: 'scene', id: old.id, content, parentId: old.parentId, archived: old.archived },
+        ],
+      });
+    assertSceneEnvelope(value);
+    assertSceneEnvelope(body);
+    sceneRevision(value.revision);
+    return {
+      result: { scene: summary(value, next), groups: [next], projectRevision: revision(root) + 1 },
+      marker: { updatedAt: timestamp, revision: value.revision, contentHash: body.hash },
+      commit() {
+        writeProject(tx, context, root, timestamp, contribution(value) - contribution(old));
+        tx.update(ref, value);
+        tx.set(db.doc(ref.path + '/body/current'), body);
+        progress.commit();
+        if (planningValue) tx.set(db.doc(ref.path + '/planning/current'), planningValue);
+        writeGroup(tx, entry, next);
+      },
+    };
+  }
   async function retryScene(tx, context, p, record, method) {
     const scene = (await tx.get(db.doc(`${context.path}/scenes/${record.sceneId}`))).data();
     if (!scene || scene.ownerId !== context.uid)
@@ -339,10 +399,28 @@ export function createScenesService({ db, now = Date.now }) {
       const ref = db.doc(
         `${context.path}/scenes/${method === 'createScene' ? op.id : data.sceneId}`,
       );
-      const old = (await tx.get(ref)).data();
+      const snapshot = await tx.get(ref),
+        old = snapshot.data();
       if (method === 'createScene' ? Boolean(old) : !old || old.ownerId !== uid)
         sceneFail('failed-precondition', 'Cena indisponível.');
       if (old && old.revision !== data.expectedRevision) conflict();
+      if (method === 'updateScene' && 'content' in normalized.patch) {
+        const write = await prepareSceneTextWrite(tx, {
+          uid,
+          target: context.target,
+          root: p,
+          snapshot,
+          content: normalized.patch.content,
+          patch: normalized.patch,
+        });
+        write.commit();
+        writeReceipt(tx, op, {
+          sceneId: old.id,
+          revision: write.result.scene.revision,
+          createdAt: write.result.scene.updatedAt,
+        });
+        return write.result;
+      }
       const timestamp = sceneDate(now, p.updatedAt ?? 0),
         entries = new Map();
       const readGroup = async (id, options = {}) => {
@@ -378,26 +456,6 @@ export function createScenesService({ db, now = Date.now }) {
           const patch = normalized.patch;
           if ('title' in patch) value.title = patch.title;
           if ('stage' in patch) value.stage = patch.stage;
-          if ('content' in patch) {
-            const text = prose(patch.content);
-            body = { ...text.body, revision: value.revision };
-            Object.assign(value, {
-              wordCount: text.wordCount,
-              bodyBytes: text.bodyBytes,
-              bodyHash: text.bodyHash,
-            });
-            next.set(
-              entry.value.id,
-              nextGroup(
-                entry,
-                old.archived ? 0 : value.wordCount - old.wordCount,
-                0,
-                timestamp,
-                false,
-                !old.archived,
-              ),
-            );
-          }
           if ('planning' in patch)
             plan = planning(
               patch.planning,
@@ -541,6 +599,7 @@ export function createScenesService({ db, now = Date.now }) {
   }
 
   const api = {
+    prepareSceneTextWrite,
     createScene: (uid, data) => mutate(uid, data, 'createScene'),
     updateScene: (uid, data) => mutate(uid, data, 'updateScene'),
     moveScene: (uid, data) => mutate(uid, data, 'moveScene'),

@@ -384,6 +384,7 @@ describe('BookPage', () => {
     expect(screen.queryByRole('button', { name: 'Importar Arquivo' })).not.toBeInTheDocument();
     await user.click(options);
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Histórico do texto',
       'Exportar',
       'Importar documento',
       'Persona de IA',

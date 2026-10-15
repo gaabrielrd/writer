@@ -133,7 +133,7 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
           >
             Inclui todos os capítulos, fichas de lore privadas e relações deste livro, além das
             cenas e do planejamento narrativo quando existentes. Compartilhe somente com pessoas de
-            confiança.
+            confiança. O backup v6 não inclui o histórico de versões do texto.
           </Alert>
         )}
         {currentChapter && (

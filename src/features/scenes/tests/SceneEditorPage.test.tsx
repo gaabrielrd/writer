@@ -22,12 +22,16 @@ const auth = vi.hoisted(() => {
   return value;
 });
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
-vi.mock('@/features/editor', () => ({
+vi.mock('@/features/editor', async () => ({
+  BusyNavigationGuard: (
+    await vi.importActual<typeof import('@/features/editor')>('@/features/editor')
+  ).BusyNavigationGuard,
   RichEditor: (props: RichEditorProps) => (
     <>
       <textarea
         aria-label={props.ariaLabel}
         value={props.content}
+        readOnly={props.externalBusy}
         onChange={(event) => props.onChange(event.target.value)}
       />
       <p>Créditos reais: {props.userCredits}</p>

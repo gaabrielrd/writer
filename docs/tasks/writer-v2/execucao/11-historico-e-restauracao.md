@@ -1,6 +1,6 @@
 # F2-05 — Histórico privado e restauração do texto
 
-**Estado:** contrato fechado; implementação iniciada após revisão técnica.
+**Estado:** implementado e validado localmente; commit/envio e CI pendentes.
 **Origem:** [W2-F2-05](../fase-02-criar-e-preparar/05-historico-e-restauracao.md).
 **Base:** F2-04 e correção `16e71f6` validados localmente e enviados; CI acompanhada
 em paralelo por autorização explícita do operador em 2026-10-15.
@@ -72,8 +72,10 @@ de `shared` e reutilizável nos dois editores.
 
 DTOs compartilhados para implementação independente:
 
-- `VersionSource`: target, resource, title, content, sourceToken e contentHash.
-  Fonte indisponível/convertida retorna `null`; não inventar revisão numérica.
+- `VersionSource`: target, resource, title, content, sourceToken, contentHash e
+  revision (revisão real da cena; `null` em capítulo). Fonte indisponível/convertida
+  retorna `null`; não inventar revisão numérica. O editor aceita texto/revisão
+  devolvidos juntos, sem buscar uma nova base depois de restaurar.
 - `VersionSummary`: id, target, resource, createdAt, reason (`manual` ou
   `before-restore`), label (string ou null), wordCount, byteLength, contentHash e chunkCount.
 - `listWorkVersions`: `{items, nextCursor}`; recurso é filtro opcional.
@@ -140,9 +142,12 @@ restauração e a preservação automática do texto anterior em linguagem de pr
 ## Exclusão, compatibilidade e não escopo
 
 Remover versão marca indisponibilidade antes da limpeza limitada dos blocos.
-Exclusão do projeto limpa versões/corpos antes de concluir; remover agrupador ou
+Exclusão existente de livro limpa versões/corpos antes de concluir; remover agrupador ou
 arquivar cena conserva o histórico da identidade. Histórico não concede acesso
 direto por Firestore, leitor público, jogador ou comprador.
+A exclusão de projeto de aventura ainda não existe; sua futura implementação
+deverá incorporar a limpeza do histórico. Exclusão individual de versão funciona
+nos dois tipos de projeto.
 
 Backup privado atual v6 não inclui esse histórico; informar essa limitação no
 fluxo de backup. Portabilidade integral do histórico fica em F2-09. Não reconstruir
@@ -179,3 +184,14 @@ editores depende das APIs. Não modificar os mesmos arquivos em paralelo.
 - Exclusão explícita e exclusão de projeto limpam corpos de forma retomável.
 - Paginação, corpo selecionado, erro/retry, teclado, foco, temas e 320 px são verificados.
 - Resultados locais e CI são registrados separadamente; pilotos e condições comerciais continuam pendentes.
+
+## Evidência local — 2026-10-15
+
+Os gates de validate foram concluídos após corrigir somente a formatação do teste
+SDK e retomar do ponto da falha: 1.423 testes frontend com cobertura, 77 scripts,
+237 Functions, sintaxe, tipos, build e smoke verdes. O SDK inicial passou 89/90;
+o ID inválido do novo teste foi corrigido e somente esse caso reexecutado, 1/1 verde.
+Chromium: 36/36 sem retry, três temas, desktop/celular e 320 px; produção 6 verdes
+e um skip preexistente Windows. Revisões sem bloqueadores e capturas inspecionadas.
+Veja [entrega e limites da evidência](../../../entregas/2026-10-15-writer-v2-historico.md).
+CI do novo SHA segue em paralelo; isso não declara aprovação remota ou implantação.

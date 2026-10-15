@@ -11,6 +11,7 @@ import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createStudioService } from './studio.mjs';
 import { createWorkProgressService } from './workProgress.mjs';
+import { createWorkHistoryService } from './workHistory.mjs';
 import { createScenesService } from './scenes.mjs';
 import { createNarrativePlanningService } from './narrativePlanning.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
@@ -242,6 +243,7 @@ const callable = (method, secrets = []) =>
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
         const workProgress = createWorkProgressService({ db });
+        const workHistory = createWorkHistoryService({ db });
         const scenes = createScenesService({ db });
         const narrative = createNarrativePlanningService({ db });
         const loreAnalysis = createLoreAnalysisService({ db, generator: loreGenerator });
@@ -251,23 +253,25 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = workProgress[method]
-          ? workProgress
-          : narrative[method]
-            ? narrative
-            : scenes[method]
-              ? scenes
-              : studio[method]
-                ? studio
-                : assisted[method]
-                  ? assisted
-                  : loreAnalysis[method]
-                    ? loreAnalysis
-                    : universeService[method]
-                      ? universeService
-                      : service()[method]
-                        ? service()
-                        : createImageLibraryService({ db, assets });
+        const handler = workHistory[method]
+          ? workHistory
+          : workProgress[method]
+            ? workProgress
+            : narrative[method]
+              ? narrative
+              : scenes[method]
+                ? scenes
+                : studio[method]
+                  ? studio
+                  : assisted[method]
+                    ? assisted
+                    : loreAnalysis[method]
+                      ? loreAnalysis
+                      : universeService[method]
+                        ? universeService
+                        : service()[method]
+                          ? service()
+                          : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError)
@@ -299,6 +303,12 @@ export const getCampaign = callable('getCampaign');
 export const prepareStudioBooks = callable('prepareStudioBooks');
 export const listStudioProjects = callable('listStudioProjects');
 export const getWorkProgress = callable('getWorkProgress');
+export const getWorkVersionSource = callable('getWorkVersionSource');
+export const createWorkVersion = callable('createWorkVersion');
+export const listWorkVersions = callable('listWorkVersions');
+export const readWorkVersion = callable('readWorkVersion');
+export const restoreWorkVersion = callable('restoreWorkVersion');
+export const deleteWorkVersion = callable('deleteWorkVersion');
 export const updateWorkProgress = callable('updateWorkProgress');
 export const prepareWorkWordCount = callable('prepareWorkWordCount');
 export const listWorkChecklist = callable('listWorkChecklist');

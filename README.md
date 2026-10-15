@@ -23,8 +23,12 @@ dos livros e aventuras. Este incremento passou nos gates locais e no CI em
 F2-04 acrescenta estado editorial privado, meta total do manuscrito, checklist de
 preparação, fuso por usuário e retomada autorizada. A contagem acompanha o texto
 atual e possui verificação retomável para projetos anteriores. Os gates locais e
-90 jornadas Chromium passaram; Git e CI do novo incremento seguem no
+90 jornadas Chromium passaram; a correção `16e71f6` também passou na CI. Veja o
 [contrato de progresso e retomada](docs/tasks/writer-v2/execucao/10-estados-metas-e-retomada.md).
+F2-05 acrescenta versões manuais do texto e cópia anterior a cada restauração,
+com comparação, exclusão explícita e recuperação de pedidos sem resposta. O
+histórico é privado e ainda não acompanha o backup v6. Os resultados de validação
+ficam no [contrato de histórico](docs/tasks/writer-v2/execucao/11-historico-e-restauracao.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).

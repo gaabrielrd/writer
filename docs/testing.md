@@ -223,6 +223,18 @@ antes da seleção: a transição durante o gesto faz parte da regressão proteg
 
 ## Roadmap Writer e regras reais
 
+O histórico possui testes colocalizados em `manuscript-history`, editores e cenas.
+Cobrem corpus exato, manifesto/blocos/hash, conta/recurso, seleção tardia, recibo
+privado danificado, operação incerta, reserva, comparação, undo e saída após
+restaurar. `functions/test/workHistory.test.mjs` e
+`tests/firestore/workHistory.rules.test.mjs` protegem token preciso, ativação sem
+rebase, snapshot/restauração atômicos, prosa legada grande, isolamento e limpeza.
+`e2e/visual/manuscript-history.visual.ts` exercita seis jornadas em seis projetos:
+autor, mestre, cópia anterior, próxima edição, resposta perdida, conflito remoto,
+paginação/origem removida, exclusão, teclado e 320 px. Somente as seis callables
+são substituídas por fixtures; reconstrução, verificação e UI reais continuam no
+navegador. Autorização e atomicidade são comprovadas separadamente pelo SDK.
+
 O Estúdio tem testes de frontend colocalizados em `studio`, `adventures`,
 `campaigns` e no serviço público de livros. Protegem criação/retry com a mesma
 operação, resposta incerta, troca de conta, datas, filtros, paginação e falhas

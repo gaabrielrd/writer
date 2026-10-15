@@ -331,3 +331,80 @@ it('enfileira texto final antes da nova sessao e nunca drena sessao antiga depoi
   next.unmount();
   vi.useRealTimers();
 });
+
+describe('aceite de texto confirmado pelo histórico', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.restoreAllMocks();
+  });
+  afterEach(() => vi.useRealTimers());
+  it('não regrava o texto anterior ao desmontar imediatamente após uma restauração', () => {
+    const save = vi.spyOn(storage, 'saveChapterContent').mockResolvedValue({ wordCount: 2 });
+    const { result, unmount } = renderHook(() =>
+      useAutoSave({ bookId: 'b', chapterId: 'c', content: 'Texto anterior' }),
+    );
+    act(() => {
+      result.current.acceptConfirmedContent('Texto restaurado');
+      expect(result.current.getConfirmedContent()).toBe('Texto restaurado');
+      unmount();
+    });
+    expect(save).not.toHaveBeenCalled();
+  });
+  it('recusa substituir a base enquanto um salvamento ainda não foi confirmado', async () => {
+    let resolve!: (value: { wordCount: number }) => void;
+    const pending = new Promise<{ wordCount: number }>((done) => {
+      resolve = done;
+    });
+    vi.spyOn(storage, 'saveChapterContent').mockReturnValue(pending);
+    const { result, rerender } = renderHook(
+      ({ content }) => useAutoSave({ bookId: 'b', chapterId: 'c', content, debounceMs: 10 }),
+      { initialProps: { content: 'Anterior' } },
+    );
+    rerender({ content: 'Em gravação' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    expect(result.current.getConfirmedContent()).toBeNull();
+    expect(() => result.current.acceptConfirmedContent('Restauração')).toThrow(
+      /confirmação do salvamento/,
+    );
+    expect(result.current.getSavedContent()).toBe('Anterior');
+    await act(async () => {
+      resolve({ wordCount: 2 });
+      await pending;
+    });
+    expect(result.current.getConfirmedContent()).toBe('Em gravação');
+  });
+  it('usa o texto restaurado como base CAS da edição seguinte sem autosave da restauração', async () => {
+    let observedBase: string | undefined;
+    const save = vi
+      .spyOn(storage, 'saveChapterContent')
+      .mockImplementation((_bookId, _chapterId, _content, base) => {
+        observedBase = typeof base === 'function' ? base() : base;
+        return Promise.resolve({ wordCount: 3 });
+      });
+    const { result, rerender } = renderHook(
+      ({ content }) => useAutoSave({ bookId: 'b', chapterId: 'c', content, debounceMs: 10 }),
+      { initialProps: { content: 'Anterior' } },
+    );
+    act(() => result.current.acceptConfirmedContent('Restaurado'));
+    rerender({ content: 'Restaurado' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20);
+    });
+    expect(save).not.toHaveBeenCalled();
+    rerender({ content: 'Edição depois da restauração' });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    expect(save).toHaveBeenCalledOnce();
+    expect(observedBase).toBe('Restaurado');
+    expect(save).toHaveBeenCalledWith(
+      'b',
+      'c',
+      'Edição depois da restauração',
+      expect.any(Function),
+      undefined,
+    );
+  });
+});

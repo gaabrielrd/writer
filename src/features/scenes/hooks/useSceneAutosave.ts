@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useLayoutEffect } from 'react';
 import type { SceneDocument, SceneSummary, UpdateSceneInput } from '../model/scene';
 import { isSceneConflict, isSceneFailureDefinitive, sceneErrorMessage } from '../model/sceneError';
 import {
@@ -29,6 +29,11 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
   const revision = useRef(initial.revision);
   const pending = useRef<UpdateSceneInput | null>(null);
   const busy = useRef(false);
+  const reserved = useRef(false);
+  const recoveryRef = useRef(recovery);
+  useLayoutEffect(() => {
+    recoveryRef.current = recovery;
+  }, [recovery]);
   const comparisonToken = useRef(0);
   const keepDraft = useCallback(
     (value: string) => {
@@ -46,6 +51,7 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
   }, []);
   const change = useCallback(
     (value: string) => {
+      if (reserved.current) return;
       latest.current = value;
       setContent(value);
       keepDraft(value);
@@ -58,7 +64,7 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
     [keepDraft],
   );
   const save = useCallback(async () => {
-    if (busy.current || recovery || !active.current) return;
+    if (busy.current || reserved.current || recovery || !active.current) return;
     if (!pending.current && latest.current === saved.current) {
       setStatus('saved');
       return;
@@ -176,12 +182,59 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
     revision.current = scene.revision;
     setDocument((previous) => ({ ...previous, ...scene }));
   };
+  const getConfirmedContent = () =>
+    active.current &&
+    !busy.current &&
+    !pending.current &&
+    !recoveryRef.current &&
+    latest.current === saved.current
+      ? saved.current
+      : null;
+  const runExclusive = async <T>(work: () => Promise<T>): Promise<T> => {
+    if (reserved.current || getConfirmedContent() === null)
+      throw new Error('Confirme o salvamento e resolva a recuperação antes de continuar.');
+    reserved.current = true;
+    try {
+      return await work();
+    } finally {
+      reserved.current = false;
+    }
+  };
+  const acceptConfirmedContent = (
+    scene: Pick<SceneDocument, 'content' | 'revision' | 'wordCount' | 'bodyHash' | 'bodyBytes'>,
+  ) => {
+    if (
+      !active.current ||
+      !reserved.current ||
+      busy.current ||
+      pending.current ||
+      !Number.isSafeInteger(scene.revision) ||
+      scene.revision < 1
+    )
+      throw new Error('Esta confirmação não pertence ao texto aberto.');
+    clearSceneDraft(key, latest.current);
+    comparisonToken.current++;
+    latest.current = scene.content;
+    saved.current = scene.content;
+    revision.current = scene.revision;
+    recoveryRef.current = null;
+    setDocument((previous) => ({ ...previous, ...scene }));
+    setContent(scene.content);
+    setRecovery(null);
+    setRemote(null);
+    setError('');
+    setStorageError(false);
+    setStatus('saved');
+  };
   return {
     closeComparison: () => {
       setRemote(null);
       if (status === 'conflict') setError('O texto remoto mudou. Compare antes de salvar.');
     },
     acceptMetadata,
+    acceptConfirmedContent,
+    getConfirmedContent,
+    runExclusive,
     content,
     document,
     status,

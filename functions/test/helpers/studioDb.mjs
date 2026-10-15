@@ -4,9 +4,14 @@ import assert from 'node:assert/strict';
 export function studioDb() {
   const records = new Map(),
     metadata = new Map(),
+    versions = new Map(),
     reads = [];
   let queue = Promise.resolve();
-  const stamp = (value) => ({ toMillis: () => value });
+  const stamp = (value, nanos = 0) => ({
+    toMillis: () => value,
+    seconds: Math.floor(value / 1000),
+    nanoseconds: Math.round((value % 1000) * 1e6) + nanos,
+  });
   const snapshot = (path, fields = null) => ({
     id: path.split('/').at(-1),
     ref: db.doc(path),
@@ -22,7 +27,10 @@ export function studioDb() {
       );
     },
     createTime: stamp(metadata.get(path)?.createdAt ?? 10),
-    updateTime: stamp(metadata.get(path)?.updatedAt ?? 20),
+    updateTime: stamp(
+      metadata.get(path)?.updatedAt ?? 20,
+      metadata.get(path)?.updatedAtNanoseconds ?? versions.get(path) ?? 0,
+    ),
   });
   const field = (path, key) =>
     key === '__name__' ? path.split('/').at(-1) : records.get(path)[key];
@@ -96,16 +104,22 @@ export function studioDb() {
             assert.equal(writes.length, 0, 'Reads precede writes');
             return ref.collectionPath ? execute(ref) : snapshot(ref.path);
           },
-          set: (ref, value) => writes.push(() => records.set(ref.path, structuredClone(value))),
+          set: (ref, value) =>
+            writes.push(() => {
+              records.set(ref.path, structuredClone(value));
+              versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
+            }),
           create: (ref, value) =>
             writes.push(() => {
               assert.ok(!records.has(ref.path));
               records.set(ref.path, structuredClone(value));
+              versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
             }),
           update: (ref, value) =>
             writes.push(() => {
               assert.ok(records.has(ref.path));
               records.set(ref.path, { ...records.get(ref.path), ...structuredClone(value) });
+              versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
             }),
           delete: (ref) => writes.push(() => records.delete(ref.path)),
         };

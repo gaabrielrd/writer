@@ -139,6 +139,7 @@ describe('ExportButton', () => {
     expect(screen.getByLabelText('Conteúdo da exportação')).toBeDisabled();
     expect(screen.getByLabelText('Conteúdo da exportação')).toHaveTextContent('Livro inteiro');
     expect(screen.getByText(/fichas de lore privadas/)).toBeInTheDocument();
+    expect(screen.getByText(/backup v6 não inclui o histórico de versões do texto/)).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Baixar arquivo' }));
     expect(exportManuscript).toHaveBeenLastCalledWith(
       expect.objectContaining({ scope: 'book', format: 'json' }),

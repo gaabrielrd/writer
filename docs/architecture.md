@@ -424,6 +424,32 @@ Ver [ADR 0027](decisions/0027-narrative-arcs-and-timeline.md) e
 [contrato F2-03](tasks/writer-v2/execucao/09-arcos-e-cronologia.md). Gates locais,
 CI e regras verdes em `3358c75`; implantação conserva autorização própria.
 
+## Histórico privado do texto
+
+`features/manuscript-history` fornece diálogo, modelos, serviços e recuperação
+privada para capítulos legados e cenas de livro/aventura. Versões são manuais ou
+cópia anterior à restauração, mantidas até exclusão explícita. O manifesto privado
+fica em `workVersions`; corpos em blocos UTF-8 de até 64 KiB ficam em
+`workVersionBodies`, no projeto. A lista pagina metadados 25/50 e o corpo selecionado
+é reconstruído/verificado por ordem, bytes e SHA-256 antes de aparecer na UI.
+
+`functions/src/workHistory.mjs` autoriza APIs e recibos próprios. Tokens da fonte
+incluem timestamps precisos do Firestore e hash; cenas também conservam sua revisão
+real. Captura inicial explícita de capítulo reutiliza a ativação de progresso em
+um lote, mantendo a base originalmente observada. Restauração reutiliza os planos
+transacionais dos escritores legados/cenas para preservar texto anterior, prosa,
+contagens e recibo juntos. Replay não reaplica texto sobre outra gravação.
+
+Os editores reservam a escrita antes do primeiro await. Pedido incerto é guardado
+por UID/recurso sem prosa e conserva o bloqueio mesmo ao fechar o diálogo. Aceite
+confirmado atualiza corpo, revisão e bases internas juntos; desfazer é uma nova
+edição normal. Versão de origem removida continua consultável/copiável/excluível
+no projeto, mas não recria o recurso. Backup privado v6 informa que não inclui
+histórico; a exclusão existente de livro limpa versões/corpos em lotes. Exclusão
+de projeto de aventura ainda não existe e deverá incorporar essa limpeza.
+
+Ver [contrato F2-05](tasks/writer-v2/execucao/11-historico-e-restauracao.md).
+
 ## Progresso privado, contagem e retomada
 
 `features/work-progress` oferece `ProjectProgressPanel`, `ContinueWorkPanel` e

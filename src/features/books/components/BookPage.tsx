@@ -9,6 +9,7 @@ import {
   Edit2,
   FileText,
   Globe,
+  History,
   Lock,
   MoreHorizontal,
   Scroll,
@@ -38,6 +39,7 @@ import {
   editorialStateLabels,
 } from '@/features/work-progress';
 import { NarrativePlanner } from '@/features/narrative-planning';
+import { WorkHistoryDialog } from '@/features/manuscript-history';
 import { publishBook, unpublishBook } from '../services/publicationService';
 import { LoreTab } from '@/features/lore';
 import type { Book } from '../model/book';
@@ -85,6 +87,7 @@ function BookDetail() {
   const [isPersonaOpen, setIsPersonaOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const [expandedSynopsisBookId, setExpandedSynopsisBookId] = useState<string | null>(null);
   const synopsisId = useId();
   const bookOptionsRef = useRef<HTMLButtonElement>(null);
@@ -269,6 +272,10 @@ function BookDetail() {
                   iconOnly
                   icon={<MoreHorizontal className="icon" aria-hidden="true" />}
                 >
+                  <DropdownItem onSelect={() => setHistoryOpen(true)}>
+                    <History className="icon icon-sm" aria-hidden="true" />
+                    Histórico do texto
+                  </DropdownItem>
                   <DropdownItem onSelect={() => setIsExportOpen(true)}>
                     <Download className="icon icon-sm" aria-hidden="true" />
                     Exportar
@@ -547,6 +554,11 @@ function BookDetail() {
           }}
         />
       )}
+      <WorkHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        target={{ kind: 'book', id: book.id }}
+      />
       {isExportOpen && (
         <ExportDialog
           book={book}

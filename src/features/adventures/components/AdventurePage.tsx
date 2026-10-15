@@ -1,6 +1,7 @@
 import { useEffect, useState, type KeyboardEvent } from 'react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router';
-import { BookOpen, Globe } from 'lucide-react';
+import { BookOpen, Globe, History } from 'lucide-react';
+import { WorkHistoryDialog } from '@/features/manuscript-history';
 import { useAuth } from '@/features/auth';
 import { ScenePlanner } from '@/features/scenes';
 import {
@@ -26,6 +27,7 @@ import styles from './AdventurePage.module.css';
 
 function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [historyOpen, setHistoryOpen] = useState(false);
   const tabs = ['scenes', 'narrative', 'progress'] as const;
   const requestedTab = searchParams.get('tab');
   const activeTab = tabs.find((tab) => tab === requestedTab) ?? 'scenes';
@@ -121,11 +123,24 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   return (
     <div className={styles.page}>
       <WorkActivityNotice activity={activity} />
+      <WorkHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        target={{ kind: 'adventure', id: adventure.id }}
+      />
       <PageHeader
         title={adventure.title}
         description="Aventura autoral"
         breadcrumbs={<Link to="/studio">Estúdio</Link>}
-        actions={back}
+        actions={
+          <>
+            {back}
+            <Button variant="outline" onClick={() => setHistoryOpen(true)}>
+              <History className="icon icon-sm" aria-hidden="true" />
+              Histórico do texto
+            </Button>
+          </>
+        }
       />
       <div className={styles.meta}>
         <Badge variant="secondary">Aventura</Badge>

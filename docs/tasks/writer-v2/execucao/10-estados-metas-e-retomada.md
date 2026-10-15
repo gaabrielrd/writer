@@ -1,6 +1,6 @@
 # F2-04 — Estados editoriais, meta total e retomada
 
-**Estado:** implementado em `7988fb7`; correção local validada, nova CI pendente.
+**Estado:** concluído tecnicamente em `16e71f6`, gates locais e CI verdes.
 **Base técnica:** F2-03 concluído em `3358c75`, CI e regras verdes.
 **Origem:** [W2-F2-04](../fase-02-criar-e-preparar/04-estados-metas-e-retomada.md).
 
@@ -213,6 +213,17 @@ A correção foi registrada e enviada em `16e71f6`. Em seguida, o operador autor
 avançar sem esperar a CI e pediu testes direcionados após ajustes. F2-05 pode
 começar com os gates locais acima; CI pendente continua registrada e acompanhada
 em paralelo, conforme a [mudança de sequência](06-contratos-e-replanejamento.md).
+
+### Confirmação remota da correção
+
+A [CI de `16e71f6`](https://github.com/gaabrielrd/writer/actions/runs/38700062155)
+terminou verde em paralelo ao planejamento de F2-05: validate Node 22/24,
+auditoria, produção 7/7 e os seis shards visuais aprovados. Cada shard passou
+137 cenários diretos e conservou dois skips preexistentes: 822 diretos/12 skips,
+sem flaky ou retry. As
+[regras reais](https://github.com/gaabrielrd/writer/actions/runs/38700062164)
+passaram 85/85, zero falhas/skips. F2-04 está concluído tecnicamente; isso não
+declara piloto humano, habilitação comercial, merge ou implantação.
 
 ## Evidência local anterior à correção da integração
 

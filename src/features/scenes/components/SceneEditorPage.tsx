@@ -1,8 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { Link, useNavigate, useParams, useLocation } from 'react-router';
 import { useAuth } from '@/features/auth';
 import { useWorkActivity, WorkActivityNotice } from '@/features/work-progress';
-import { RichEditor } from '@/features/editor';
+import { RichEditor, BusyNavigationGuard } from '@/features/editor';
+import { countWords } from '@/features/books';
+import {
+  WorkHistoryDialog,
+  readPendingWorkHistoryOperation,
+  type VersionEditorAdapter,
+} from '@/features/manuscript-history';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
 import { renderRichText } from '@/shared/lib/sanitizeRichText';
 import {
@@ -90,6 +96,22 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   const [selected, setSelected] = useState<LoreEntity | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [editorBusy, setEditorBusy] = useState(false);
+  const editorBusyRef = useRef(false);
+  const historyLock = useRef(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyBusy, setHistoryBusy] = useState(false);
+  const [historyContentVersion, setHistoryContentVersion] = useState(0);
+  const [historyPending, setHistoryPending] = useState(() =>
+    Boolean(
+      readPendingWorkHistoryOperation(
+        uid,
+        { kind: initial.project.kind, id: initial.project.id },
+        { kind: 'scene', id: initial.id },
+      ),
+    ),
+  );
+  const historyPendingRef = useRef(historyPending);
+  const operationBusy = editorBusy || historyBusy || historyPending;
   const active = useRef(true);
   const doc = autosave.document;
   const target = { kind: initial.project.kind, id: initial.project.id };
@@ -105,16 +127,16 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
     !/[\r\n\\]/.test(requestedReturn)
       ? requestedReturn
       : projectUrl;
-  useEffect(() => {
+  useLayoutEffect(() => {
     active.current = true;
     return () => {
       active.current = false;
     };
   }, []);
   useEffect(() => {
-    setPendingEditorOperation(editorBusy || autosave.status !== 'saved');
+    setPendingEditorOperation(operationBusy || autosave.status !== 'saved');
     return () => setPendingEditorOperation(false);
-  }, [editorBusy, autosave.status, setPendingEditorOperation]);
+  }, [operationBusy, autosave.status, setPendingEditorOperation]);
   useEffect(() => {
     let valid = true;
     const requests = [];
@@ -136,6 +158,71 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
     resource: { kind: 'scene', id: doc.id },
     enabled: doc.ownerId === uid && user?.uid === uid,
   });
+  const historyAdapter: VersionEditorAdapter = {
+    resource: { kind: 'scene', id: initial.id },
+    blockedReason:
+      operationBusy || autosave.status !== 'saved' || autosave.recovery
+        ? 'Confirme o salvamento e resolva a recuperação antes de guardar ou restaurar uma versão.'
+        : undefined,
+    getConfirmedContent: autosave.getConfirmedContent,
+    runExclusive: async (work, options) => {
+      if (
+        !active.current ||
+        user?.uid !== uid ||
+        editorBusyRef.current ||
+        historyLock.current ||
+        (historyPendingRef.current && !options?.recovery) ||
+        autosave.status !== 'saved' ||
+        autosave.recovery
+      )
+        throw new Error('Confirme o salvamento e resolva operações pendentes antes de continuar.');
+      historyLock.current = true;
+      setHistoryBusy(true);
+      setPendingEditorOperation(true);
+      try {
+        return await autosave.runExclusive(async () => {
+          if (!active.current || user?.uid !== uid) throw new Error('O editor aberto mudou.');
+          return work();
+        });
+      } finally {
+        historyLock.current = false;
+        if (active.current) {
+          setHistoryBusy(false);
+          setPendingEditorOperation(historyPendingRef.current || editorBusyRef.current);
+        }
+      }
+    },
+    acceptRestored: (source) => {
+      if (
+        !active.current ||
+        !historyLock.current ||
+        user?.uid !== uid ||
+        source.target.kind !== target.kind ||
+        source.target.id !== target.id ||
+        source.resource.kind !== 'scene' ||
+        source.resource.id !== initial.id ||
+        source.revision === null
+      )
+        throw new Error('Esta confirmação não pertence à cena aberta.');
+      autosave.acceptConfirmedContent({
+        content: source.content,
+        revision: source.revision,
+        wordCount: countWords(source.content),
+        bodyHash: source.contentHash,
+        bodyBytes: new TextEncoder().encode(source.content).byteLength,
+      });
+      setHistoryContentVersion((version) => version + 1);
+    },
+  };
+  const onHistoryPendingChange = useCallback(
+    (pending: boolean) => {
+      if (!active.current) return;
+      historyPendingRef.current = pending;
+      setHistoryPending(pending);
+      setPendingEditorOperation(pending || historyLock.current || editorBusyRef.current);
+    },
+    [setPendingEditorOperation],
+  );
   const labels = {
     saved: 'Salvo',
     dirty: 'Não salvo',
@@ -145,6 +232,15 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   };
   return (
     <main className={styles.editor}>
+      <BusyNavigationGuard busy={historyBusy || historyPending} />
+      <WorkHistoryDialog
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        target={target}
+        resource={historyAdapter.resource}
+        editor={historyAdapter}
+        onPendingChange={onHistoryPendingChange}
+      />{' '}
       <WorkActivityNotice activity={activity} />
       <PageHeader
         title={doc.title}
@@ -157,7 +253,12 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           <Link
             to={returnUrl}
             onClick={(event) => {
-              if (autosave.status !== 'saved' || autosave.recovery || editorBusy) {
+              if (historyLock.current || historyPendingRef.current) {
+                event.preventDefault();
+                setHistoryOpen(true);
+                return;
+              }
+              if (autosave.status !== 'saved' || autosave.recovery || operationBusy) {
                 event.preventDefault();
                 setLeaving(true);
               }
@@ -168,6 +269,13 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         }
       />
       <div className={styles.toolbar}>
+        <Button
+          variant="outline"
+          disabled={historyBusy || editorBusy}
+          onClick={() => setHistoryOpen(true)}
+        >
+          Histórico do texto
+        </Button>{' '}
         <Badge>{sceneStageLabels[doc.stage]}</Badge>
         <span role="status">{labels[autosave.status]}</span>
         <span className={styles.meta}>
@@ -193,8 +301,10 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         <Alert variant="warning">
           Há um rascunho local diferente do texto confirmado. Escolha como continuar.
           <div className={styles.actions}>
-            <Button onClick={autosave.recover}>Recuperar rascunho</Button>
-            <Button variant="outline" onClick={autosave.discardRecovery}>
+            <Button disabled={operationBusy} onClick={autosave.recover}>
+              Recuperar rascunho
+            </Button>
+            <Button disabled={operationBusy} variant="outline" onClick={autosave.discardRecovery}>
               Usar texto confirmado
             </Button>
           </div>
@@ -208,7 +318,11 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
             bookTitle={doc.project.title}
             placeholder="Comece a escrever sua cena aqui…"
             content={autosave.content}
-            onChange={autosave.change}
+            externalBusy={historyBusy || historyPending}
+            externalContentVersion={historyContentVersion}
+            onChange={(content) => {
+              if (!historyLock.current && !historyPendingRef.current) autosave.change(content);
+            }}
             entities={entities}
             onSelectEntity={setSelected}
             isSidebarOpen={sidebar}
@@ -216,7 +330,10 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
             aiUnavailableReason="A assistência de IA ainda não está disponível para cenas."
             userId={uid}
             userCredits={user?.credits}
-            onBusyChange={setEditorBusy}
+            onBusyChange={(busy) => {
+              editorBusyRef.current = busy;
+              setEditorBusy(busy);
+            }}
           />
         </div>
       )}
@@ -231,7 +348,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
               <Button onClick={() => void autosave.compare()}>Comparar textos</Button>
             ) : (
               <Button
-                disabled={editorBusy || autosave.status === 'saving'}
+                disabled={operationBusy || autosave.status === 'saving'}
                 onClick={() => void autosave.save()}
               >
                 Tentar salvar novamente
@@ -250,7 +367,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
       {sidebar && (
         <SceneReferences
           document={doc}
-          disabled={autosave.status !== 'saved' || editorBusy}
+          disabled={autosave.status !== 'saved' || operationBusy}
           onRevision={autosave.acceptMetadata}
         />
       )}
@@ -273,10 +390,16 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           onClose={autosave.closeComparison}
           footer={
             <>
-              <Button variant="outline" onClick={() => autosave.resolve(false)}>
+              <Button
+                disabled={operationBusy}
+                variant="outline"
+                onClick={() => autosave.resolve(false)}
+              >
                 Usar texto remoto
               </Button>
-              <Button onClick={() => autosave.resolve(true)}>Manter meu texto e salvar</Button>
+              <Button disabled={operationBusy} onClick={() => autosave.resolve(true)}>
+                Manter meu texto e salvar
+              </Button>
             </>
           }
         >
@@ -304,7 +427,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
                 Continuar escrevendo
               </Button>
               <Button
-                disabled={autosave.storageError || editorBusy}
+                disabled={autosave.storageError || operationBusy}
                 onClick={() => {
                   void navigate(returnUrl);
                 }}

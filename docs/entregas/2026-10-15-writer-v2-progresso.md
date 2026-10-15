@@ -3,7 +3,7 @@
 - **Data:** 2026-10-15
 - **Branch:** `codex/writer-v2`
 - **Plano de origem:** [F2-04](../tasks/writer-v2/execucao/10-estados-metas-e-retomada.md)
-- **Estado:** implementado em `7988fb7`; correção de integração validada localmente, nova CI pendente
+- **Estado:** concluído tecnicamente em `16e71f6`; validação local e CI verdes
 
 ## Objetivo
 
@@ -39,7 +39,7 @@ alterar seu estado editorial.
 - [x] Validate integral, cobertura, tipos, build e smoke verdes.
 - [x] QA completo nos três temas, teclado e 320 px.
 - [x] E2E de produção local com os gates existentes preservados.
-- [ ] CI do novo SHA.
+- [x] CI do SHA de implementação/correção `16e71f6`.
 - [x] Commit `7988fb7` e envio ao PR em rascunho; correção seguinte descrita abaixo.
 
 ## Arquivos alterados
@@ -212,6 +212,20 @@ serviços públicos de books/adventures, hook/seção do Estúdio, testes coloca
 fixtures e três roteiros visuais, arquitetura, testes, ADR e contrato de execução.
 `npm ci --prefix functions` foi repetido: 251 pacotes instalados, 252 auditados,
 zero vulnerabilidades; o aviso local Node 24 versus engine 22 permanece.
+
+### CI final — correção `16e71f6`
+
+A [CI](https://github.com/gaabrielrd/writer/actions/runs/38700062155) terminou
+verde enquanto F2-05 já avançava, conforme autorização do operador. Validate
+Node 22/24, auditoria e agregado E2E passaram. Produção Linux: 7/7 em 13,9 s.
+Os seis shards visuais passaram 137 cenários cada: **822 diretos e 12 skips
+preexistentes**, sem flaky/retry. As
+[regras reais](https://github.com/gaabrielrd/writer/actions/runs/38700062164)
+passaram **85/85**, sem falhas/skips, 25.336,91 ms.
+
+Essa confirmação encerra tecnicamente F2-04 no SHA indicado. A mudança de processo
+foi registrada localmente em `7276f11`; histórico F2-05 tem contrato e implementação
+próprios, sem presumir CI para mudanças posteriores.
 
 ## Fora do escopo
 

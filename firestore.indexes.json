@@ -419,6 +419,60 @@
           "fieldPath": "__name__"
         }
       ]
+    },
+    {
+      "collectionGroup": "workVersions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "deleting",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "workVersions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "deleting",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "resourceKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "workVersionBodies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "versionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
@@ -480,6 +534,11 @@
     {
       "collectionGroup": "milestones",
       "fieldPath": "notes",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "workVersionBodies",
+      "fieldPath": "content",
       "indexes": []
     }
   ]

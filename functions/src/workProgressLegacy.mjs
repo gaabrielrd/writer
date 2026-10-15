@@ -86,6 +86,39 @@ function currentCounter(root, before, after, plan) {
   const total = Number.isSafeInteger(root.wordCount) && root.wordCount >= 0 ? root.wordCount : 0;
   return Math.max(0, total + after - before);
 }
+export async function prepareLegacyChapterTextWrite(
+  tx,
+  { db, now, countWords, ledger, context, root, id, stored, content, patch = {} },
+) {
+  contentText(content);
+  if (!stored || stored.deleting) workFail('not-found', 'Capítulo indisponível.');
+  if (stored.contentMode === 'scenes')
+    workFail('failed-precondition', 'Abra a cena para alterar o texto deste capítulo.');
+  const words = countWords(content),
+    before = countWords(stored.content ?? ''),
+    timestamp = workDate(now, Math.max(root.updatedAt ?? 0, stored.updatedAt ?? 0)),
+    plan = await ledger.prepareChanges(tx, {
+      target: context.target,
+      root,
+      changes: [{ kind: 'chapter', id, content }],
+    });
+  return {
+    result: { content, wordCount: words, updatedAt: timestamp },
+    commit() {
+      tx.update(db.doc(context.path + '/chapters/' + id), {
+        ...patch,
+        content,
+        wordCount: words,
+        updatedAt: timestamp,
+      });
+      tx.update(context.ref, {
+        wordCount: currentCounter(root, before, words, plan),
+        updatedAt: timestamp,
+      });
+      plan.commit();
+    },
+  };
+}
 export function addWorkProgressLegacy(api, { db, now, countWords, ledger }) {
   api.createLegacyChapter = async (uid, data) => {
     workClosed(data, ['bookId', 'operationId', 'input']);
@@ -220,22 +253,21 @@ export function addWorkProgressLegacy(api, { db, now, countWords, ledger }) {
       if (digest(stored.content ?? '') !== data.expectedContentHash) workConflict();
       if ('personaComplement' in patch)
         await validateComplement(tx, db, uid, patch.personaComplement);
-      const words = countWords(content),
-        before = countWords(stored.content ?? ''),
-        timestamp = workDate(now, Math.max(root.updatedAt ?? 0, stored.updatedAt ?? 0)),
-        plan = await ledger.prepareChanges(tx, {
-          target: context.target,
-          root,
-          changes: [{ kind: 'chapter', id, content }],
-        });
-      tx.update(ref, { ...patch, content, wordCount: words, updatedAt: timestamp });
-      tx.update(context.ref, {
-        wordCount: currentCounter(root, before, words, plan),
-        updatedAt: timestamp,
+      const plan = await prepareLegacyChapterTextWrite(tx, {
+        db,
+        now,
+        countWords,
+        ledger,
+        context,
+        root,
+        id,
+        stored,
+        content,
+        patch,
       });
       plan.commit();
       writeWorkReceipt(tx, op, { id, afterHash: digest(content) });
-      return { content, wordCount: words, updatedAt: timestamp };
+      return plan.result;
     });
   };
   api.deleteLegacyChapters = async (uid, data) => {

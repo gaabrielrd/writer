@@ -84,6 +84,9 @@
 - Atualize o ledger de palavras atomicamente com a prosa; preserve checkpoints e confirme recibos incertos antes de enviar outra edição.
 - Após ativar `hasProgressResources`, altere corpo/contagem e criação/exclusão de capítulos somente pelos escritores de `functions`.
 - Separe estado editorial de publicação; registre retomada somente por tipo/IDs/data, revalidando autorização e revisão global por usuário.
+- Guarde histórico privado somente por captura manual ou antes de restaurar; retenha até exclusão explícita da versão ou projeto.
+- Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
+- Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 
 ## Rotas
 

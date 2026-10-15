@@ -237,3 +237,62 @@ it('confirmação da aba A não remove rascunho B escrito durante a requisição
   expect(result.current.status).toBe('saved');
   expect(readSceneDraft(sceneDraftKey('owner', target, 'scene'))?.content).toBe('Texto B');
 });
+
+it('reserva a cena antes do primeiro await e aceita restauração sem autosave ou CAS antigo', async () => {
+  const wait = deferred<void>();
+  const { result } = renderHook(() => useSceneAutosave('owner', document));
+  let work!: Promise<void>;
+  act(() => {
+    work = result.current.runExclusive(async () => {
+      await wait.promise;
+      result.current.acceptConfirmedContent({
+        content: '<p>Restaurado</p>',
+        revision: 7,
+        wordCount: 1,
+        bodyHash: 'restored-hash',
+        bodyBytes: 17,
+      });
+    });
+    result.current.change('Tentativa durante restauração');
+  });
+  expect(result.current.content).toBe(document.content);
+  await expect(result.current.runExclusive(() => Promise.resolve())).rejects.toThrow(
+    /Confirme o salvamento/,
+  );
+  await act(async () => {
+    wait.resolve();
+    await work;
+  });
+  expect(result.current.content).toBe('<p>Restaurado</p>');
+  expect(result.current.document).toMatchObject({
+    revision: 7,
+    content: '<p>Restaurado</p>',
+    wordCount: 1,
+    bodyHash: 'restored-hash',
+    bodyBytes: 17,
+  });
+  await advance(1000);
+  expect(updateScene).not.toHaveBeenCalled();
+  act(() => result.current.change('Próxima edição'));
+  await advance();
+  expect(updateScene).toHaveBeenCalledWith(
+    expect.objectContaining({ expectedRevision: 7, patch: { content: 'Próxima edição' } }),
+  );
+});
+it('não reserva histórico com texto local ou gravação de cena ainda pendentes', async () => {
+  const wait = deferred<typeof mutation>();
+  vi.mocked(updateScene).mockReturnValue(wait.promise);
+  const { result } = renderHook(() => useSceneAutosave('owner', document));
+  act(() => result.current.change('Texto pendente'));
+  await expect(result.current.runExclusive(() => Promise.resolve())).rejects.toThrow(
+    /Confirme o salvamento/,
+  );
+  await advance();
+  await expect(result.current.runExclusive(() => Promise.resolve())).rejects.toThrow(
+    /Confirme o salvamento/,
+  );
+  await act(async () => {
+    wait.resolve({ ...mutation, scene: { ...mutation.scene, revision: 2 } });
+    await wait.promise;
+  });
+});
