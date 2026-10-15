@@ -73,6 +73,20 @@ aceites, sem serem presumidos ou removidos. Essa mudança de sequência é expl�
 e não constitui aprovação de implantação, operação financeira ou lançamento V2.
 O [plano executável F2-01](07-estudio-projetos.md) registra contratos e validações.
 
+## Atualização de sequência — 2026-10-15
+
+O operador autorizou avançar sem esperar a CI terminar e pediu testes somente
+necessários após ajustes. Os incrementos seguem planejamento, implementação,
+validação local proporcional, revisão, evidência e Git. `npm run validate` fica
+no fechamento do incremento; ajustes repetem apenas os checks afetados, ampliados
+quando falhas ou risco de integração exigirem. CI é acompanhada em paralelo.
+
+Isso substitui a espera pelo resultado remoto como condição para iniciar a
+próxima tarefa. Resultados locais e CI pendente continuam separados; falhas
+remotas entram no trabalho sem serem declaradas aprovadas. A definição de
+concluído mantém CI verde para o aceite final. Condições humanas/comerciais,
+merge, implantação e lançamento mantêm seus próprios portões.
+
 ## Estimativas e baseline
 
 [Timeline](../timeline.md) e [dados de estimativa](06-estimativas.json) substituem

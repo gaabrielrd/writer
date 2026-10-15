@@ -57,7 +57,9 @@ Não usar apenas leitura anônima para comprovar todo o modelo comercial.
 ## Comandos e evidências de implementação
 
 Instalar dependências functions com `npm ci --prefix functions` antes de validar.
-Executar `npm run validate` com cobertura vigente e gates completos.
+Executar testes direcionados durante ajustes e `npm run validate` com cobertura
+vigente no fechamento do incremento. Ampliar/repetir testes pelo risco ou falha,
+sem repetir suítes aprovadas se o comportamento não mudou.
 Para mudança de autorização, executar `npm run test:rules` nas regras reais/emulador.
 Para UI/fluxo integrado, executar `npm run test:e2e` e os cenários visuais pertinentes.
 Registrar comando, data, ambiente, SHA, resultado, falhas e limites; não inventar saída.
@@ -71,6 +73,9 @@ EPUB: validar estrutura e abrir em leitor real; conferir sumário, ordem, metada
 DOCX/PDF/pacote de aventura: renderizar/abrir os arquivos e conferir audiência.
 Pagamento: mocks validam lógica local; sandbox do provedor valida integração; piloto real autorizado valida operação.
 CI verde é conferido no SHA pertinente, não inferido de um teste local.
+Por autorização do operador em 2026-10-15, a espera pela CI não bloqueia o próximo
+incremento validado localmente; acompanhar checks e corrigir regressões em paralelo.
+Manter explícito o estado local/CI pendente até o resultado real.
 Teste humano deve registrar tarefa, pessoa/consentimento, contexto e resultado sem expor conteúdo sensível.
 
 ## Portão público

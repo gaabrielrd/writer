@@ -4,6 +4,13 @@
 
 Testamos o **comportamento observável** da aplicação: o que o usuário vê e faz. Não testamos detalhes internos de implementação. Um bom teste continua passando mesmo que você reorganize o código por dentro, desde que o comportamento continue o mesmo.
 
+Durante ajustes, execute somente os testes necessários para o comportamento
+afetado. Repita ou amplie a suíte quando uma nova mudança, falha ou risco de
+integração justificar; preserve `npm run validate` no fechamento do incremento.
+Por decisão do operador em 2026-10-15, acompanhe a CI em paralelo sem parar o
+próximo incremento validado localmente. Registre a CI pendente e seus resultados
+reais, seguindo o [processo de desenvolvimento](development-process.md).
+
 ## Tipos de teste
 
 - **Unidade**: funções e lógica isoladas (ex.: cálculo, formatação).

@@ -87,6 +87,12 @@ e sandbox observado, mas não ensaio de integração ou habilitação live.
 
 ## Decisões técnicas de domínio — 2026-10-13
 
+Em 2026-10-15, o operador confirmou para F2-05 versões manuais e cópia automática
+antes de restaurar, mantidas até exclusão explícita da versão ou projeto. Não
+capturar histórico a cada autosave/IA nem excluir por prazo. O
+[contrato F2-05](execucao/11-historico-e-restauracao.md) registra armazenamento e
+concorrência; essa decisão de histórico privado não fecha a retenção comercial D-09.
+
 [Contrato W2-F1-02](execucao/02-modelo-de-dominio.md) registra a solução de implementação:
 D-02 usa lore vivo em originais autorizados, base congelada em campanhas, substituição
 local de entidade inteira e promoção explícita pelo dono. D-01 fecha um orçamento

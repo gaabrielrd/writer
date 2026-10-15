@@ -45,8 +45,11 @@ e [regras](https://github.com/gaabrielrd/writer/actions/runs/38459491878) verdes
 F2-04 está implementado com meta total do manuscrito atual, checklist privado
 de preparação e fuso configurável por usuário, usando o dispositivo como padrão.
 O [contrato executável de F2-04](10-estados-metas-e-retomada.md) está fechado;
-validate, regras reais e 90 jornadas Chromium locais passaram. Git e CI do novo
-SHA ainda condicionam a conclusão técnica.
+validate, regras reais e 90 jornadas Chromium locais passaram. A CI de `7988fb7`
+revelou regressões visuais; a correção enviada em `16e71f6` passou 1.380 testes
+frontend, 77 scripts, 224 Functions, 85 SDK e controles Chromium 24/24 + 90/90.
+Em 2026-10-15, o operador autorizou avançar sem esperar a CI, usando testes
+direcionados após ajustes. A CI segue em paralelo, sem aprovação presumida.
 
 | Tarefa     | Estado                                                                      | Evidência                                                                                                                   | Próxima condição                                                   |
 | ---------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
@@ -59,8 +62,9 @@ SHA ainda condicionam a conclusão técnica.
 | W2-F2-01   | Concluído tecnicamente; gates locais, CI e regras verdes em 15cd417         | [Estúdio e projetos](07-estudio-projetos.md), [entrega](../../../entregas/2026-10-13-writer-v2-estudio.md)                  | Condições humanas e comerciais permanecem nas respectivas entregas |
 | W2-F2-02   | Concluído tecnicamente; gates locais, CI e regras verdes em f4449a5         | [Cenas e composição](08-planejamento-de-cenas.md), [entrega](../../../entregas/2026-10-13-writer-v2-cenas.md)               | Condições humanas/comerciais nas respectivas entregas              |
 | W2-F2-03   | Concluído tecnicamente; gates locais, CI e regras verdes em 3358c75         | [Arcos e cronologia](09-arcos-e-cronologia.md), [entrega](../../../entregas/2026-10-13-writer-v2-arcos.md)                  | Condições humanas/comerciais nas respectivas entregas              |
-| W2-F2-04   | Implementado; gates locais verdes, Git e CI do novo SHA pendentes           | [Estados, metas e retomada](10-estados-metas-e-retomada.md), [entrega](../../../entregas/2026-10-15-writer-v2-progresso.md) | Commit, envio e CI do incremento                                   |
-| F2-05 a F5 | Não iniciadas                                                               | [Plano](../README.md)                                                                                                       | Dependências e aceites pertinentes                                 |
+| W2-F2-04   | Validado localmente e enviado em 16e71f6; CI em acompanhamento              | [Estados, metas e retomada](10-estados-metas-e-retomada.md), [entrega](../../../entregas/2026-10-15-writer-v2-progresso.md) | Incorporar resultado remoto sem bloquear F2-05                     |
+| W2-F2-05   | Planejamento iniciado; criação manual e retenção explícita confirmadas      | [Contrato de histórico](11-historico-e-restauracao.md)                                                                      | Token da fonte e integração transacional antes de implementar      |
+| F2-06 a F5 | Não iniciadas                                                               | [Plano](../README.md)                                                                                                       | Dependências e aceites pertinentes                                 |
 | Fase 6     | Descoberta futura, fora da primeira versão pública                          | [Candidatos](../fase-06-evolucao-pos-v1/README.md)                                                                          | Aprovação posterior de escopo                                      |
 
 Um documento não comprova uma funcionalidade. Testes locais não comprovam CI,

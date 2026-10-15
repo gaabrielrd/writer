@@ -223,7 +223,9 @@ histórico/restauração integral, comércio e lançamento público do Writer V2
 O incremento exige implantação conjunta das funções, regras e índices antes do
 uso real. Não houve deploy ou integração na master. Pilotos humanos, Connect,
 contratos e ensaio comercial continuam nas entregas próprias. O próximo incremento
-só começa após os gates técnicos e CI do SHA exato deste incremento.
+pode começar após os gates locais: em 2026-10-15, o operador autorizou acompanhar
+a CI em paralelo. A correção foi enviada em `16e71f6`; sua aprovação remota
+permanece distinta da validação local.
 
 ## Como verificar manualmente
 

@@ -154,9 +154,12 @@ Não aplicar novo teto global de upload inferior ao corpus de 21 MB sem tratar i
 
 ## Concorrência, recuperação e exclusão
 
-Autosave atual usa fila por instância e não exige expectedRevision. Histórico futuro
-deve capturar antes/depois na mesma transação da gravação. Aceite IA mantém hash,
-texto, contagem, crédito e recibo atômicos, acrescentando revisão/histórico nessa transação.
+O contrato inicial previa histórico antes/depois de cada gravação. Em 2026-10-15,
+o operador escolheu versões manuais e cópia automática somente antes de restaurar,
+mantidas até exclusão explícita da versão ou projeto. Essa decisão substitui a
+captura automática a cada autosave/IA. Restauração preserva o estado anterior na
+mesma transação que aplica o texto. Aceite IA conserva hash, texto, contagem,
+crédito e recibo atômicos; histórico não altera débitos nem cria estorno.
 Preferências de modelo/raciocínio e chaves permanecem fora de edições/backup compartilhável.
 Cliente offline guarda a base observada; nunca reaplica texto local sobre revisão nova
 sem comparação. Dados inválidos permanecem recuperáveis no adaptador autorizado.

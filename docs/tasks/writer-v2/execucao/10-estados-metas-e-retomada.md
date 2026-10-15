@@ -132,7 +132,7 @@ validadas. Visitas não alteram updatedAt do projeto nem revisões de prosa/narr
 4. `src/features/work-progress`: modelos, serviço, hooks privados e componentes públicos.
 5. Integrar BookPage/AdventurePage/CampaignPage, StudioPage e editores; manter aliases visuais apenas em configuração de teste.
 6. Testes dirigidos, QA Chromium, validate integral, revisão independente e documentação/ADR/AGENTS/entrega.
-7. Commit, envio autorizado e CI do SHA exato no PR em rascunho antes da tarefa seguinte.
+7. Commit e envio autorizado ao PR em rascunho; acompanhar a CI do SHA exato em paralelo, conforme decisão de 2026-10-15.
 
 Backend, frontend e parser/corpus podem usar subagentes com propriedade de arquivos
 separada após fechar este contrato. Integrações dependentes e gates ficam sequenciais.
@@ -186,7 +186,7 @@ Plano de correção dentro de F2-04, antes de qualquer tarefa seguinte:
    arcos; aguardar URL e heading principal da obra ao navegar, distinguindo o título
    legítimo da retomada. Sem `.first()`, force, sleeps, aumento de timeout ou retry.
 7. Validar serviços/componentes, SDK real, controles Chromium, validate integral,
-   revisão e documentação; commit/envio autorizado e CI do novo SHA antes de F2-05.
+   revisão e documentação; commit/envio autorizado e acompanhamento da CI do novo SHA.
 
 Arquivos: `functions/src/studio.mjs`, testes de serviço/SDK; modelos de listagem
 de books/adventures, hook e seção do Estúdio e seus testes; adaptadores/roteiros
@@ -208,6 +208,11 @@ Produção local: seis passaram e um skip Windows preexistente, 18,1 s.
 Capturas dos filtros revistas nos três temas; revisão sem P0–P2 nos caminhos
 conferidos. Documentação e diff verificados. Commit/envio da correção e CI do
 novo SHA ainda condicionam a conclusão, sem usar a CI reprovada como aprovação.
+
+A correção foi registrada e enviada em `16e71f6`. Em seguida, o operador autorizou
+avançar sem esperar a CI e pediu testes direcionados após ajustes. F2-05 pode
+começar com os gates locais acima; CI pendente continua registrada e acompanhada
+em paralelo, conforme a [mudança de sequência](06-contratos-e-replanejamento.md).
 
 ## Evidência local anterior à correção da integração
 
