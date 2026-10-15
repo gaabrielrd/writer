@@ -267,6 +267,162 @@ test('SDK pagination uses exact update/id cursors, filters and authorization', a
   );
 });
 
+test('SDK editorial windows preserve current and legacy states beyond an empty first page', async () => {
+  const batch = admin.batch();
+  for (let i = 0; i < 29; i++) {
+    const value = {
+      ownerId: 'author',
+      title: String(i),
+      status: 'ready',
+      editorialState: 'ready',
+      createdAt: 1,
+      updatedAt: 100,
+      synopsis: 'SEGREDO',
+      content: 'PROSA',
+    };
+    if (i === 0) value.editorialState = 'draft';
+    if (i === 1) {
+      value.status = 'draft';
+      delete value.editorialState;
+    }
+    if (i === 2) value.editorialState = 'review';
+    if (i === 3) value.status = 'draft';
+    if (i === 4) value.editorialState = 'invalid';
+    batch.set(admin.doc(`adventures/id-${String(i).padStart(2, '0')}`), value);
+  }
+  batch.set(admin.doc('adventures/foreign'), {
+    ownerId: 'other',
+    status: 'draft',
+    editorialState: 'draft',
+    updatedAt: 500,
+  });
+  await batch.commit();
+  const request = { kind: 'adventure', editorialState: 'draft' };
+  const first = await studio.listStudioProjects('author', request);
+  assert.deepEqual(first.items, []);
+  assert.equal(JSON.parse(Buffer.from(first.nextCursor, 'base64url').toString()).id, 'id-04');
+  const next = await studio.listStudioProjects('author', { ...request, cursor: first.nextCursor });
+  assert.deepEqual(
+    next.items.map(({ id, status, editorialState }) => [id, status, editorialState]),
+    [
+      ['id-01', 'draft', 'draft'],
+      ['id-00', 'ready', 'draft'],
+    ],
+  );
+  assert.equal(next.nextCursor, null);
+  assert.equal('content' in next.items[0], false);
+  assert.equal('synopsis' in next.items[0], false);
+  const review = await studio.listStudioProjects('author', {
+    kind: 'adventure',
+    editorialState: 'review',
+  });
+  assert.deepEqual(review.items, []);
+  assert.deepEqual(
+    (
+      await studio.listStudioProjects('author', {
+        kind: 'adventure',
+        editorialState: 'review',
+        cursor: review.nextCursor,
+      })
+    ).items.map((item) => item.id),
+    ['id-02'],
+  );
+  const ready = await studio.listStudioProjects('author', {
+    kind: 'adventure',
+    editorialState: 'ready',
+  });
+  assert.equal(ready.items.length, 25);
+  assert.equal(ready.items.at(-1).id, 'id-04');
+  assert.equal(ready.items.at(-1).editorialState, 'ready');
+  assert.deepEqual(
+    (
+      await studio.listStudioProjects('author', {
+        kind: 'adventure',
+        editorialState: 'ready',
+        cursor: ready.nextCursor,
+      })
+    ).items.map((item) => item.id),
+    ['id-03'],
+  );
+  const combined = await studio.listStudioProjects('author', {
+    kind: 'adventure',
+    status: 'ready',
+    editorialState: 'draft',
+    limit: 50,
+  });
+  assert.deepEqual(
+    combined.items.map((item) => item.id),
+    ['id-00'],
+  );
+  assert.equal((await admin.doc('adventures/id-00').get()).data().status, 'ready');
+  for (const [uid, patch] of [
+    ['other', {}],
+    ['author', { editorialState: 'review' }],
+    ['author', { editorialState: 'all' }],
+    ['author', { status: 'ready' }],
+    ['author', { kind: 'book' }],
+  ])
+    await assert.rejects(
+      studio.listStudioProjects(uid, { ...request, cursor: first.nextCursor, ...patch }),
+      { code: 'invalid-argument' },
+    );
+});
+
+test('SDK editorial book state is independent of publication and old cursors only resume all states', async () => {
+  for (const [id, editorialState] of [
+    ['legacy', undefined],
+    ['review', 'review'],
+    ['ready', 'ready'],
+  ]) {
+    const value = {
+      authorId: 'author',
+      title: id,
+      status: 'published',
+      createdAt: 1,
+      updatedAt: 100,
+      content: 'PROSA',
+    };
+    if (editorialState) value.editorialState = editorialState;
+    await admin.doc(`books/${id}`).set(value);
+  }
+  await studio.prepareStudioBooks('author');
+  for (const [editorialState, id] of [
+    ['draft', 'legacy'],
+    ['review', 'review'],
+    ['ready', 'ready'],
+  ]) {
+    const page = await studio.listStudioProjects('author', {
+      kind: 'book',
+      status: 'published',
+      editorialState,
+    });
+    assert.deepEqual(
+      page.items.map((item) => item.id),
+      [id],
+    );
+    assert.equal(page.items[0].status, 'published');
+    assert.equal(page.items[0].editorialState, editorialState);
+    assert.equal('content' in page.items[0], false);
+  }
+  const first = await studio.listStudioProjects('author', { kind: 'book', limit: 1 });
+  const cursor = JSON.parse(Buffer.from(first.nextCursor, 'base64url').toString());
+  delete cursor.editorialState;
+  const legacyCursor = Buffer.from(JSON.stringify(cursor)).toString('base64url');
+  const next = await studio.listStudioProjects('author', { kind: 'book', cursor: legacyCursor });
+  assert.deepEqual(
+    next.items.map((item) => item.id),
+    ['ready', 'legacy'],
+  );
+  await assert.rejects(
+    studio.listStudioProjects('author', {
+      kind: 'book',
+      editorialState: 'ready',
+      cursor: legacyCursor,
+    }),
+    { code: 'invalid-argument' },
+  );
+});
+
 test('concurrent real creation retries create one project, receipt and universe reference', async () => {
   await universes.createUniverse('author', { creationId: 'world', name: 'Atlas' });
   const request = { operationId, title: 'Mesa', universeId: 'world' };

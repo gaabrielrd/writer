@@ -29,6 +29,7 @@ export interface StudioBooksPreparation {
 }
 export interface StudioBookListInput {
   status?: 'all' | BookStatus;
+  editorialState?: 'all' | NonNullable<Book['editorialState']>;
   cursor?: string | null;
   limit?: number;
 }

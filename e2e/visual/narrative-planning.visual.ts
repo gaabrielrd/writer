@@ -173,6 +173,13 @@ test('autor cria arco e marcos, edita objetivo e conserva notas após recarregar
   await openItem(page, planner, 'marco', 'A carta chega');
   await expect(detail(page).getByText(privateNotes, { exact: true })).toBeVisible();
   await detail(page).getByRole('button', { name: 'Voltar à lista', exact: true }).click();
+  await expect(
+    detail(page).getByRole('heading', {
+      name: 'A cartógrafa e o farol',
+      level: 3,
+      exact: true,
+    }),
+  ).toBeVisible();
   await detail(page).getByRole('button', { name: 'Editar', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Editar arco', exact: true });
   await dialog
@@ -719,8 +726,17 @@ test('teclado e largura de 320px permitem navegar e preencher planejamento nos t
   await tab.press('Home');
   await expect(page.getByRole('tab', { name: 'Cenas', exact: true })).toBeFocused();
   await page.getByRole('tab', { name: 'Cenas', exact: true }).press('End');
+  const progressTab = page.getByRole('tab', { name: 'Progresso', exact: true });
+  await expect(progressTab).toBeFocused();
+  await progressTab.press('Enter');
+  await expect(progressTab).toHaveAttribute('aria-selected', 'true');
+  await expect(
+    page.getByRole('region', { name: 'Progresso do projeto', exact: true }),
+  ).toBeVisible();
+  await progressTab.press('ArrowLeft');
   await expect(tab).toBeFocused();
   await tab.press('Enter');
+  await expect(tab).toHaveAttribute('aria-selected', 'true');
   await sequence(planner, 'arco').getByRole('button', { name: 'Novo arco', exact: true }).focus();
   await sequence(planner, 'arco')
     .getByRole('button', { name: 'Novo arco', exact: true })

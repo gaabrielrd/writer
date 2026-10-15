@@ -229,7 +229,10 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
   await page.goto('/');
   for (let cycle = 0; cycle < 2; cycle += 1) {
     await page.locator(`a[href="${bookPath}"]`).click();
-    await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${bookPath}$`));
+    await expect(
+      page.getByRole('heading', { name: bookTitle, level: 1, exact: true }),
+    ).toBeVisible();
     await page.getByRole('button', { name: `Escrever ${chapterTitle}`, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${editorPath}$`));
     await expect(
@@ -256,7 +259,10 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
       page.getByRole('heading', { name: chapterTitle, exact: true }).first(),
     ).toBeVisible();
     await page.getByRole('link', { name: 'Voltar para o livro', exact: true }).click();
-    await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${bookPath}$`));
+    await expect(
+      page.getByRole('heading', { name: bookTitle, level: 1, exact: true }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'Estúdio', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Estúdio', exact: true })).toBeVisible();

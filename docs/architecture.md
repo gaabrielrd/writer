@@ -360,6 +360,16 @@ são transacionais; retry idêntico não duplica criação. Recursos novos, prep
 e recibos não aceitam escrita direta do cliente. Listas paginam por dono, estado,
 `updatedAt DESC` e ID descendente, com padrão 25/máximo 50 e leitura de limite + 1.
 
+Livros e aventuras têm filtro editorial independente de publicação/arquivo.
+`editorialState` válido prevalece; no legado, aventura `status=ready` corresponde
+a Pronto e os demais casos a Rascunho. O servidor filtra janelas de metadados,
+sem corpos, e mantém o cursor na última fonte examinada. O cursor vincula conta,
+tipo, status e filtro editorial; cursores anteriores sem o campo editorial só
+valem para a leitura sem esse filtro. Uma janela sem correspondências pode ter
+continuação: o hook segue a leitura com carregamento e cancelamento por conta ou
+filtro, até encontrar itens ou esgotar a consulta. Isso pode exigir várias chamadas
+limitadas, sem declarar vazio antecipadamente ou criar quota de projetos.
+
 A preparação legada mantém progresso no servidor e altera apenas datas inválidas
 ou ausentes a partir de `snapshot.createTime/updateTime`, e estado ausente. Preserva
 conteúdo e datas válidas. As regras conservam datas válidas já existentes; mutações

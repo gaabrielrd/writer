@@ -7,34 +7,51 @@ export function studioDb() {
     reads = [];
   let queue = Promise.resolve();
   const stamp = (value) => ({ toMillis: () => value });
-  const snapshot = (path) => ({
+  const snapshot = (path, fields = null) => ({
     id: path.split('/').at(-1),
     ref: db.doc(path),
     exists: records.has(path),
-    data: () => structuredClone(records.get(path)),
+    data: () => {
+      const record = records.get(path);
+      return structuredClone(
+        fields && record
+          ? Object.fromEntries(
+              fields.filter((key) => key in record).map((key) => [key, record[key]]),
+            )
+          : record,
+      );
+    },
     createTime: stamp(metadata.get(path)?.createdAt ?? 10),
     updateTime: stamp(metadata.get(path)?.updatedAt ?? 20),
   });
   const field = (path, key) =>
     key === '__name__' ? path.split('/').at(-1) : records.get(path)[key];
   const compare = (a, b) => (a === b ? 0 : a < b ? -1 : 1);
-  function query(path, filters = [], orders = [], maximum = Infinity, cursor = null) {
-    const definition = { collectionPath: path, filters, orders, maximum, cursor };
+  function query(
+    path,
+    filters = [],
+    orders = [],
+    maximum = Infinity,
+    cursor = null,
+    fields = null,
+  ) {
+    const definition = { collectionPath: path, filters, orders, maximum, cursor, fields };
     return {
       ...definition,
       where: (key, op, value) => {
         assert.equal(op, '==');
-        return query(path, [...filters, [key, value]], orders, maximum, cursor);
+        return query(path, [...filters, [key, value]], orders, maximum, cursor, fields);
       },
       orderBy: (key, direction = 'asc') =>
-        query(path, filters, [...orders, [key, direction]], maximum, cursor),
-      limit: (value) => query(path, filters, orders, value, cursor),
-      startAfter: (...value) => query(path, filters, orders, maximum, value),
+        query(path, filters, [...orders, [key, direction]], maximum, cursor, fields),
+      limit: (value) => query(path, filters, orders, value, cursor, fields),
+      startAfter: (...value) => query(path, filters, orders, maximum, value, fields),
+      select: (...value) => query(path, filters, orders, maximum, cursor, value),
       get: async () => execute(definition),
     };
   }
   function execute(definition) {
-    const { collectionPath, filters, orders, maximum, cursor } = definition;
+    const { collectionPath, filters, orders, maximum, cursor, fields } = definition;
     assert.ok(Number.isFinite(maximum), 'Every query must have a bounded limit');
     const comparator = (a, b) => {
       for (const [key, direction] of orders) {
@@ -65,8 +82,8 @@ export function studioDb() {
           })(),
       )
       .slice(0, maximum);
-    reads.push({ collectionPath, maximum, count: selected.length });
-    return { docs: selected.map(snapshot) };
+    reads.push({ collectionPath, maximum, count: selected.length, fields });
+    return { docs: selected.map((path) => snapshot(path, fields)) };
   }
   const db = {
     doc: (path) => ({ path, id: path.split('/').at(-1), get: async () => snapshot(path) }),

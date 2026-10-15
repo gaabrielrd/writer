@@ -15,6 +15,16 @@ const domains = {
     statuses: ['planning', 'active', 'completed', 'archived'],
   },
 };
+const editorialStates = ['draft', 'review', 'ready'];
+const summaryFields = [
+  'title',
+  'status',
+  'editorialState',
+  'universeId',
+  'createdAt',
+  'updatedAt',
+  'revision',
+];
 const fail = (code, message) => {
   throw new GenerationError(code, message);
 };
@@ -86,6 +96,13 @@ function projectView(kind, id, record) {
       : { description: record.description, provenance: record.provenance }),
   };
 }
+function effectiveEditorialState(kind, record) {
+  return editorialStates.includes(record.editorialState)
+    ? record.editorialState
+    : kind === 'adventure' && record.status === 'ready'
+      ? 'ready'
+      : 'draft';
+}
 function summary(kind, snapshot) {
   const record = snapshot.data();
   return {
@@ -93,9 +110,7 @@ function summary(kind, snapshot) {
     kind,
     title: record.title,
     status: record.status,
-    ...(['draft', 'review', 'ready'].includes(record.editorialState)
-      ? { editorialState: record.editorialState }
-      : {}),
+    ...(kind !== 'campaign' ? { editorialState: effectiveEditorialState(kind, record) } : {}),
     universeId: record.universeId ?? null,
     createdAt: record.createdAt,
     updatedAt: record.updatedAt,
@@ -110,7 +125,7 @@ function summary(kind, snapshot) {
       : {}),
   };
 }
-function readCursor(value, uid, kind, status) {
+function readCursor(value, uid, kind, status, editorialState) {
   if (value == null) return null;
   if (typeof value !== 'string' || value.length > 4096 || !/^[A-Za-z0-9_-]+$/.test(value))
     fail('invalid-argument', 'Página inválida. Reabra o Estúdio.');
@@ -120,12 +135,13 @@ function readCursor(value, uid, kind, status) {
   } catch {
     fail('invalid-argument', 'Página inválida. Reabra o Estúdio.');
   }
-  input(cursor, ['version', 'uid', 'kind', 'status', 'updatedAt', 'id']);
+  input(cursor, ['version', 'uid', 'kind', 'status', 'editorialState', 'updatedAt', 'id']);
   if (
     cursor.version !== 1 ||
     cursor.uid !== uid ||
     cursor.kind !== kind ||
     cursor.status !== status ||
+    (Object.hasOwn(cursor, 'editorialState') ? cursor.editorialState : 'all') !== editorialState ||
     !date(cursor.updatedAt)
   )
     fail('invalid-argument', 'Página inválida. Reabra o Estúdio.');
@@ -247,14 +263,20 @@ export function createStudioService({ db, now = Date.now }) {
     },
     async listStudioProjects(uid, data) {
       authorize(uid);
-      input(data, ['kind', 'status', 'cursor', 'limit']);
+      input(data, ['kind', 'status', 'editorialState', 'cursor', 'limit']);
       const domain = Object.hasOwn(domains, data.kind) ? domains[data.kind] : null;
       if (!domain) fail('invalid-argument', 'Tipo de projeto inválido.');
       const status = data.status ?? 'all';
       if (status !== 'all' && !domain.statuses.includes(status))
         fail('invalid-argument', 'Estado de projeto inválido.');
+      const editorialState = data.editorialState === undefined ? 'all' : data.editorialState;
+      if (
+        editorialState !== 'all' &&
+        (data.kind === 'campaign' || !editorialStates.includes(editorialState))
+      )
+        fail('invalid-argument', 'Estado editorial inválido.');
       const limit = pageLimit(data.limit);
-      const cursor = readCursor(data.cursor, uid, data.kind, status);
+      const cursor = readCursor(data.cursor, uid, data.kind, status, editorialState);
       if (data.kind === 'book') {
         const prepared = (await db.doc(`users/${uid}/studioPreparation/books-v1`).get()).data();
         if (prepared?.complete !== true)
@@ -265,13 +287,19 @@ export function createStudioService({ db, now = Date.now }) {
       query = query
         .orderBy('updatedAt', 'desc')
         .orderBy('__name__', 'desc')
-        .limit(limit + 1);
+        .limit(limit + 1)
+        .select(
+          ...summaryFields,
+          ...(data.kind === 'book' ? ['coverUrl', 'wordCount', 'genre', 'synopsis'] : []),
+        );
       if (cursor) query = query.startAfter(cursor.updatedAt, cursor.id);
       const page = await query.get();
-      const visible = page.docs.slice(0, limit);
-      const last = visible.at(-1);
+      const scanned = page.docs.slice(0, limit);
+      const last = scanned.at(-1);
       return {
-        items: visible.map((snapshot) => summary(data.kind, snapshot)),
+        items: scanned
+          .map((snapshot) => summary(data.kind, snapshot))
+          .filter((item) => editorialState === 'all' || item.editorialState === editorialState),
         nextCursor:
           page.docs.length > limit
             ? Buffer.from(
@@ -280,6 +308,7 @@ export function createStudioService({ db, now = Date.now }) {
                   uid,
                   kind: data.kind,
                   status,
+                  editorialState,
                   updatedAt: last.data().updatedAt,
                   id: last.id,
                 }),

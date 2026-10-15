@@ -337,6 +337,210 @@ test('default 25 and maximum 50 pages preserve optional book metadata without ex
   assert.equal(book.revision, 0);
 });
 
+test('editorial filtering uses current private state and preserves independent legacy status', async () => {
+  const { service, records } = fixture();
+  for (const [id, status, editorialState] of [
+    ['a', 'ready', 'draft'],
+    ['b', 'draft', 'review'],
+    ['c', 'draft', 'ready'],
+    ['d', 'ready', undefined],
+    ['e', 'ready', 'invalid'],
+    ['f', 'archived', undefined],
+  ])
+    records.set(`adventures/${id}`, {
+      ownerId: 'author',
+      title: id,
+      status,
+      editorialState,
+      createdAt: 1,
+      updatedAt: 100,
+    });
+  const drafts = await service.listStudioProjects('author', {
+    kind: 'adventure',
+    editorialState: 'draft',
+  });
+  assert.deepEqual(
+    drafts.items.map(({ id, status, editorialState }) => [id, status, editorialState]),
+    [
+      ['f', 'archived', 'draft'],
+      ['a', 'ready', 'draft'],
+    ],
+  );
+  const reviews = await service.listStudioProjects('author', {
+    kind: 'adventure',
+    editorialState: 'review',
+  });
+  assert.deepEqual(
+    reviews.items.map((item) => item.id),
+    ['b'],
+  );
+  const ready = await service.listStudioProjects('author', {
+    kind: 'adventure',
+    editorialState: 'ready',
+  });
+  assert.deepEqual(
+    ready.items.map((item) => item.id),
+    ['e', 'd', 'c'],
+  );
+  const combined = await service.listStudioProjects('author', {
+    kind: 'adventure',
+    status: 'ready',
+    editorialState: 'draft',
+  });
+  assert.deepEqual(
+    combined.items.map((item) => item.id),
+    ['a'],
+  );
+  assert.equal(records.get('adventures/a').status, 'ready');
+  for (const [id, status, editorialState] of [
+    ['legacy', 'published', undefined],
+    ['review', 'draft', 'review'],
+    ['ready', 'draft', 'ready'],
+  ])
+    records.set(`books/${id}`, {
+      authorId: 'author',
+      title: id,
+      status,
+      editorialState,
+      createdAt: 1,
+      updatedAt: 100,
+    });
+  await service.prepareStudioBooks('author');
+  for (const [editorialState, id] of [
+    ['draft', 'legacy'],
+    ['review', 'review'],
+    ['ready', 'ready'],
+  ]) {
+    const page = await service.listStudioProjects('author', { kind: 'book', editorialState });
+    assert.deepEqual(
+      page.items.map((item) => item.id),
+      [id],
+    );
+    assert.equal(page.items[0].editorialState, editorialState);
+  }
+});
+
+test('editorial pages scan bounded metadata windows and advance past unmatched rows', async () => {
+  const { service, records, reads } = fixture();
+  for (const [id, editorialState] of [
+    ['f', 'ready'],
+    ['e', 'review'],
+    ['d', 'draft'],
+    ['c', 'ready'],
+    ['b', 'review'],
+    ['a', 'ready'],
+  ])
+    records.set(`adventures/${id}`, {
+      ownerId: 'author',
+      title: id,
+      status: 'ready',
+      editorialState,
+      updatedAt: 100,
+      content: 'BODY',
+      synopsis: 'SECRET',
+    });
+  const request = { kind: 'adventure', editorialState: 'draft', limit: 2 };
+  const first = await service.listStudioProjects('author', request);
+  assert.deepEqual(first.items, []);
+  assert.ok(first.nextCursor);
+  const second = await service.listStudioProjects('author', {
+    ...request,
+    cursor: first.nextCursor,
+  });
+  assert.deepEqual(
+    second.items.map((item) => item.id),
+    ['d'],
+  );
+  assert.equal(JSON.parse(Buffer.from(second.nextCursor, 'base64url').toString()).id, 'c');
+  const last = await service.listStudioProjects('author', {
+    ...request,
+    cursor: second.nextCursor,
+  });
+  assert.deepEqual(last, { items: [], nextCursor: null });
+  assert.equal(reads.length, 3);
+  for (const read of reads) {
+    assert.equal(read.maximum, 3);
+    assert.ok(read.count <= 3);
+    assert.ok(read.fields.includes('editorialState'));
+    assert.ok(!read.fields.includes('content'));
+    assert.ok(!read.fields.includes('synopsis'));
+  }
+  assert.equal('content' in second.items[0], false);
+  assert.equal('synopsis' in second.items[0], false);
+});
+
+test('editorial cursors bind account, type and both filters while preserving unfiltered old cursors', async () => {
+  const { service, records } = fixture();
+  for (const id of ['a', 'b'])
+    records.set(`adventures/${id}`, {
+      ownerId: 'author',
+      title: id,
+      status: 'ready',
+      updatedAt: 1,
+    });
+  const first = await service.listStudioProjects('author', { kind: 'adventure', limit: 1 });
+  const decoded = JSON.parse(Buffer.from(first.nextCursor, 'base64url').toString());
+  assert.equal(decoded.editorialState, 'all');
+  delete decoded.editorialState;
+  const legacy = Buffer.from(JSON.stringify(decoded)).toString('base64url');
+  for (const editorialState of [undefined, 'all']) {
+    const next = await service.listStudioProjects('author', {
+      kind: 'adventure',
+      editorialState,
+      cursor: legacy,
+    });
+    assert.deepEqual(
+      next.items.map((item) => item.id),
+      ['a'],
+    );
+  }
+  const filtered = await service.listStudioProjects('author', {
+    kind: 'adventure',
+    editorialState: 'ready',
+    limit: 1,
+  });
+  for (const [uid, request] of [
+    ['author', { kind: 'adventure', editorialState: 'ready', cursor: legacy }],
+    ['author', { kind: 'adventure', editorialState: 'draft', cursor: filtered.nextCursor }],
+    ['author', { kind: 'adventure', cursor: filtered.nextCursor }],
+    [
+      'author',
+      { kind: 'adventure', status: 'ready', editorialState: 'ready', cursor: filtered.nextCursor },
+    ],
+    ['author', { kind: 'book', editorialState: 'ready', cursor: filtered.nextCursor }],
+    ['other', { kind: 'adventure', editorialState: 'ready', cursor: filtered.nextCursor }],
+  ])
+    await rejection(service.listStudioProjects(uid, request), 'invalid-argument');
+});
+
+test('editorial filter rejects malformed values and does not alter campaign lifecycle', async () => {
+  const { service, records } = fixture();
+  for (const editorialState of [null, '', 'published', 'archived', {}, [], 1, true])
+    await rejection(
+      service.listStudioProjects('author', { kind: 'adventure', editorialState }),
+      'invalid-argument',
+    );
+  for (const editorialState of ['draft', 'review', 'ready'])
+    await rejection(
+      service.listStudioProjects('author', { kind: 'campaign', editorialState }),
+      'invalid-argument',
+    );
+  records.set('campaigns/table', {
+    ownerId: 'author',
+    title: 'Mesa',
+    status: 'active',
+    editorialState: 'ready',
+    updatedAt: 1,
+  });
+  const page = await service.listStudioProjects('author', {
+    kind: 'campaign',
+    status: 'active',
+    editorialState: 'all',
+  });
+  assert.equal(page.items[0].status, 'active');
+  assert.equal('editorialState' in page.items[0], false);
+});
+
 test('universe deletion checks new counters and bounded references even if counters drift', async () => {
   const { db, records } = fixture();
   const universes = createUniverseService({ db });

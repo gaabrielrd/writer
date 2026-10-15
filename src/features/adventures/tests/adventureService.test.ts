@@ -61,6 +61,17 @@ it('conserva código e identidade de erro para retry e dá feedback em falha des
   await expect(getAdventure('id')).rejects.toThrow('Não foi possível acessar');
 });
 
+it('envia estado editorial independente da condição arquivada sem apagar continuação vazia', async () => {
+  const page = { items: [], nextCursor: 'next-window' };
+  call.mockResolvedValue({ data: page });
+  expect(await listAdventures({ status: 'archived', editorialState: 'draft' })).toEqual(page);
+  expect(call).toHaveBeenLastCalledWith({
+    kind: 'adventure',
+    status: 'archived',
+    editorialState: 'draft',
+  });
+});
+
 it('preserva mensagem de validação do servidor para corrigir os dados', async () => {
   const failure = Object.assign(new Error('Universo indisponível'), {
     code: 'functions/failed-precondition',

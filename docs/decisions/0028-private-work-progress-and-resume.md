@@ -18,6 +18,14 @@ independentemente do status público e do ciclo da campanha. Meta positiva ou nu
 acompanha o manuscrito atual, sem quota, ranking ou produção diária. Aventura e
 campanha recebem checklist paginado com contagens globais e revisão por tarefa.
 
+O filtro editorial do Estúdio é separado da publicação e da condição de arquivo.
+O campo válido atual prevalece sobre o status legado; sem ele, aventura pronta
+conserva Pronto e os demais projetos usam Rascunho. Para incluir documentos sem
+o campo, a listagem filtra janelas limitadas de metadados no servidor. Cursores
+conservam a última fonte examinada e o escopo completo do filtro. A interface
+segue janelas vazias de forma cancelável, sem anunciar ausência antes do fim.
+Esse filtro pode exigir várias chamadas; não baixa corpos nem muda manuscritos.
+
 O servidor mantém um ledger privado por identidade de fonte e agregado por grupo.
 Cada escritor atualiza a contribuição atomicamente com a prosa; um marcador
 protegido impede clientes antigos de alterar corpo/contagem diretamente após

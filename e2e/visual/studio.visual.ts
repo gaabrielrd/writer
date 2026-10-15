@@ -249,7 +249,17 @@ test('preparação dos livros informa carregamento sem anunciar lista vazia', as
 test('paginação e filtros de tipo e estado conservam listas independentes', async ({
   page,
 }, testInfo) => {
-  await page.addInitScript(() => sessionStorage.setItem('writer.visual.studio-pagination', 'true'));
+  await page.addInitScript(() => {
+    sessionStorage.setItem('writer.visual.studio-pagination', 'true');
+    sessionStorage.setItem('writer.visual.studio-editorial-scenario', 'true');
+    sessionStorage.setItem(
+      'writer.visual.studio-patches',
+      JSON.stringify({
+        'adventure:visual-adventure-27': { status: 'ready', editorialState: 'review' },
+        'adventure:visual-adventure-28': { status: 'draft', editorialState: 'ready' },
+      }),
+    );
+  });
   await page.goto('/studio');
   const adventures = page.getByRole('region', { name: 'Aventuras', exact: true });
   const campaigns = page.getByRole('region', { name: 'Campanhas', exact: true });
@@ -261,12 +271,64 @@ test('paginação e filtros de tipo e estado conservam listas independentes', as
     adventures.getByRole('button', { name: 'Carregar mais aventuras', exact: true }),
   ).toHaveCount(0);
   await expect(campaigns.getByRole('heading', { level: 3 })).toHaveCount(25);
-  await chooseDropdown(adventures.getByLabel('Estado de Aventuras'), 'Rascunho');
+  await chooseDropdown(adventures.getByLabel('Estado editorial de Aventuras'), 'Rascunho');
   await expect(adventures.getByRole('heading', { level: 3 })).toHaveCount(1);
   await expect(
     adventures.getByRole('heading', { name: 'O farol entre as ilhas', exact: true }),
   ).toBeVisible();
-  await chooseDropdown(page.getByLabel('Tipo de projeto'), 'Campanhas');
+  await expect(campaigns.getByRole('heading', { level: 3 })).toHaveCount(25);
+  await chooseDropdown(adventures.getByLabel('Estado editorial de Aventuras'), 'Em revisão');
+  await expect(adventures.getByRole('heading', { level: 3 })).toHaveCount(1);
+  await expect(
+    adventures.getByRole('heading', { name: 'Aventura das marés 27', exact: true }),
+  ).toBeVisible();
+  await chooseDropdown(adventures.getByLabel('Estado editorial de Aventuras'), 'Pronto');
+  await expect(adventures.getByRole('heading', { level: 3 })).toHaveCount(24);
+  await adventures.getByRole('button', { name: 'Carregar mais aventuras', exact: true }).click();
+  await expect(adventures.getByRole('heading', { level: 3 })).toHaveCount(26);
+  await expect(
+    adventures.getByRole('heading', { name: 'Aventura das marés 28', exact: true }),
+  ).toBeVisible();
+  await expect(
+    adventures.getByRole('heading', { name: 'Aventura das marés 27', exact: true }),
+  ).toHaveCount(0);
+  const bookSection = page.getByRole('region', { name: 'Livros', exact: true });
+  await chooseDropdown(bookSection.getByLabel('Publicação de Livros'), 'Não publicado');
+  await chooseDropdown(bookSection.getByLabel('Estado editorial de Livros'), 'Em revisão');
+  await expect(bookSection.getByRole('heading', { level: 3 })).toHaveCount(1);
+  await expect(
+    bookSection.getByRole('heading', { name: books[0].title, exact: true }),
+  ).toBeVisible();
+  await chooseDropdown(bookSection.getByLabel('Publicação de Livros'), 'Publicado');
+  await expect(bookSection.getByRole('heading', { level: 3 })).toHaveCount(0);
+  await chooseDropdown(bookSection.getByLabel('Estado editorial de Livros'), 'Pronto');
+  await expect(
+    bookSection.getByRole('heading', { name: books[1].title, exact: true }),
+  ).toBeVisible();
+  await expect(campaigns.getByRole('heading', { level: 3 })).toHaveCount(25);
+  await page.setViewportSize({ width: 320, height: 740 });
+  await bookSection.getByLabel('Publicação de Livros').scrollIntoViewIfNeeded();
+  const bookFilters = testInfo.outputPath('estudio-publicacao-editorial-320.png');
+  await page.screenshot({ path: bookFilters, animations: 'disabled', caret: 'hide' });
+  await testInfo.attach('Publicação e estado editorial em 320px', {
+    path: bookFilters,
+    contentType: 'image/png',
+  });
+  await chooseDropdown(adventures.getByLabel('Estado editorial de Aventuras'), 'Em revisão');
+  await expect(
+    adventures.getByRole('heading', { name: 'Aventura das marés 27', exact: true }),
+  ).toBeVisible();
+  await adventures.getByLabel('Estado editorial de Aventuras').scrollIntoViewIfNeeded();
+  const adventureFilters = testInfo.outputPath('estudio-condicao-editorial-320.png');
+  await page.screenshot({ path: adventureFilters, animations: 'disabled', caret: 'hide' });
+  await testInfo.attach('Condição e estado editorial em 320px', {
+    path: adventureFilters,
+    contentType: 'image/png',
+  });
+  await chooseDropdown(
+    page.getByRole('combobox', { name: 'Tipo de projeto', exact: true }),
+    'Campanhas',
+  );
   await expect(page.getByRole('region', { name: 'Livros', exact: true })).toHaveCount(0);
   await expect(adventures).toHaveCount(0);
   await chooseDropdown(campaigns.getByLabel('Estado de Campanhas'), 'Em preparação');

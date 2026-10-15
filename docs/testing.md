@@ -222,6 +222,12 @@ operação, resposta incerta, troca de conta, datas, filtros, paginação e falh
 parciais. `functions/test/studio.test.mjs` verifica autoria, recibos, limites,
 cursores e preparação legada; `tests/firestore/studio.rules.test.mjs` usa as regras
 e o Admin SDK reais, com datas de snapshot, concorrência e proteção dos vínculos.
+O filtro editorial também cobre estado atual diferente do status legado, fallback
+de documentos antigos, projeção de metadados sem corpos e cursores vinculados ao
+filtro. O hook é exercitado com janelas vazias intermediárias, falha ao carregar
+mais e troca de conta/filtro durante uma resposta pendente. A jornada visual
+conserva os filtros independentes de autores e mestres e busca uma correspondência
+além da primeira janela, sem reduzir o cenário antigo a um filtro de arquivo.
 Os testes de personas/livros existentes permanecem parte do gate integral.
 
 Cenas acrescentam testes colocalizados de serviços, autosave CAS, rascunho tipado,

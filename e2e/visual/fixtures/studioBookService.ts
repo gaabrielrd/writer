@@ -4,8 +4,14 @@ import type {
   StudioBooksPreparation,
 } from '../../../src/features/books/services/studioBookService';
 import { FIXTURE_LIBRARY_STATE_KEY } from './data';
-import { fixtureStudioBooks } from './bookService';
-import { fixtureOwner } from './studioStore';
+import { fixtureStudioBooks, fixtureWriteBook } from './bookService';
+import { fixtureEditorialState, fixtureOwner, fixtureStudioPage } from './studioStore';
+
+if (sessionStorage.getItem('writer.visual.studio-editorial-scenario') === 'true') {
+  const [first, second] = fixtureStudioBooks(fixtureOwner());
+  if (first) fixtureWriteBook(first.id, { editorialState: 'review' });
+  if (second) fixtureWriteBook(second.id, { editorialState: 'ready' });
+}
 
 let preparationCalls = 0;
 export async function prepareStudioBooks(): Promise<StudioBooksPreparation> {
@@ -30,10 +36,9 @@ export function listStudioBooks(input: StudioBookListInput = {}): Promise<Studio
   const items = fixtureStudioBooks(fixtureOwner())
     .filter((book) => !input.status || input.status === 'all' || book.status === input.status)
     .sort((left, right) => right.updatedAt - left.updatedAt || right.id.localeCompare(left.id));
-  const offset = Number(input.cursor ?? 0);
-  const limit = input.limit ?? 25;
+  const page = fixtureStudioPage('book', items, input);
   return Promise.resolve({
-    items: items.slice(offset, offset + limit).map((book) => ({
+    items: page.items.map((book) => ({
       id: book.id,
       kind: 'book',
       title: book.title,
@@ -42,12 +47,12 @@ export function listStudioBooks(input: StudioBookListInput = {}): Promise<Studio
       universeId: book.universeId ?? null,
       coverUrl: book.coverUrl ?? null,
       wordCount: book.wordCount,
-      editorialState: book.editorialState ?? 'draft',
+      editorialState: fixtureEditorialState('book', book),
       genre: book.genre,
       synopsis: book.synopsis,
       createdAt: book.createdAt,
       updatedAt: book.updatedAt,
     })),
-    nextCursor: offset + limit < items.length ? String(offset + limit) : null,
+    nextCursor: page.nextCursor,
   });
 }

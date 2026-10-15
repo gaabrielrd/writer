@@ -50,6 +50,20 @@ it('preserva failed-precondition da preparação e não anuncia sucesso em erro 
   await expect(prepareStudioBooks()).rejects.toThrow('Não foi possível acessar seus livros');
 });
 
+it('envia estado editorial separado da publicação e conserva janela vazia com continuação', async () => {
+  const page = { items: [], nextCursor: 'next-window' };
+  call.mockResolvedValue({ data: page });
+  expect(
+    await listStudioBooks({ status: 'published', editorialState: 'review', cursor: 'old' }),
+  ).toEqual(page);
+  expect(call).toHaveBeenLastCalledWith({
+    kind: 'book',
+    status: 'published',
+    editorialState: 'review',
+    cursor: 'old',
+  });
+});
+
 it('traduz falha de transporte sem perder o código necessário para retry seguro', async () => {
   const failure = Object.assign(new Error('internal'), { code: 'functions/internal' });
   call.mockRejectedValueOnce(failure);

@@ -217,6 +217,89 @@ it('consulta estado do domínio e invalida resposta da página anterior ao troca
   expect(listCampaigns).toHaveBeenLastCalledWith({ status: 'active', cursor: null, limit: 25 });
   expect(screen.queryByRole('region', { name: 'Livros' })).not.toBeInTheDocument();
 });
+it('filtra edição dos livros e aventuras separadamente de publicação, arquivo e campanhas', async () => {
+  render(tree());
+  await screen.findByRole('link', { name: 'Livro existente' });
+  expect(screen.queryByLabelText('Estado editorial de Campanhas')).not.toBeInTheDocument();
+  await chooseDropdown(
+    userEvent,
+    screen.getByLabelText('Estado editorial de Livros'),
+    'Em revisão',
+  );
+  await waitFor(() =>
+    expect(listStudioBooks).toHaveBeenLastCalledWith({
+      status: 'all',
+      editorialState: 'review',
+      cursor: null,
+      limit: 25,
+    }),
+  );
+  await chooseDropdown(userEvent, screen.getByLabelText('Publicação de Livros'), 'Publicado');
+  await waitFor(() =>
+    expect(listStudioBooks).toHaveBeenLastCalledWith({
+      status: 'published',
+      editorialState: 'review',
+      cursor: null,
+      limit: 25,
+    }),
+  );
+  await chooseDropdown(
+    userEvent,
+    screen.getByLabelText('Estado editorial de Aventuras'),
+    'Rascunho',
+  );
+  await waitFor(() =>
+    expect(listAdventures).toHaveBeenLastCalledWith({
+      status: 'all',
+      editorialState: 'draft',
+      cursor: null,
+      limit: 25,
+    }),
+  );
+  await chooseDropdown(userEvent, screen.getByLabelText('Condição de Aventuras'), 'Arquivada');
+  await waitFor(() =>
+    expect(listAdventures).toHaveBeenLastCalledWith({
+      status: 'archived',
+      editorialState: 'draft',
+      cursor: null,
+      limit: 25,
+    }),
+  );
+  expect(listCampaigns).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('link', { name: /Mesa existente/ })).toBeVisible();
+});
+it('mantém carregamento nas janelas editoriais vazias e explica apenas o vazio final do filtro', async () => {
+  let finish!: (value: Awaited<ReturnType<typeof listAdventures>>) => void;
+  vi.mocked(listAdventures)
+    .mockResolvedValueOnce({ items: [], nextCursor: null })
+    .mockResolvedValueOnce({ items: [], nextCursor: 'window-2' })
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+  render(tree());
+  const adventures = screen.getByRole('region', { name: 'Aventuras' });
+  await within(adventures).findByText('Nenhum projeto nesta lista');
+  await chooseDropdown(
+    userEvent,
+    within(adventures).getByLabelText('Estado editorial de Aventuras'),
+    'Pronto',
+  );
+  await waitFor(() => expect(listAdventures).toHaveBeenCalledTimes(3));
+  const loading = within(adventures).getByText('Carregando aventuras...');
+  expect(loading).toBeVisible();
+  expect(loading.closest('[role="status"]')).toBeInTheDocument();
+  expect(within(adventures).queryByText('Nenhum projeto nesta lista')).not.toBeInTheDocument();
+  await act(async () => {
+    finish({ items: [], nextCursor: null });
+    await Promise.resolve();
+  });
+  expect(
+    await within(adventures).findByText('Não há projetos neste estado. Experimente outro filtro.'),
+  ).toBeVisible();
+});
 it('reutiliza criação manual de livro e só abre o recurso devolvido após persistir', async () => {
   let finish!: (value: Awaited<ReturnType<typeof createBook>>) => void;
   vi.mocked(createBook).mockImplementation(

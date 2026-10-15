@@ -30,6 +30,7 @@ export type AdventureSummary = Pick<
 > & { kind: 'adventure' };
 export interface AdventureListInput {
   status?: 'all' | AdventureStatus;
+  editorialState?: 'all' | NonNullable<Adventure['editorialState']>;
   cursor?: string | null;
   limit?: number;
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { BookOpen, Map } from 'lucide-react';
-import { editorialStateLabels } from '@/features/work-progress';
+import { editorialStateLabels, type EditorialState } from '@/features/work-progress';
 import { BookCard } from '@/features/books';
 import {
   Alert,
@@ -28,13 +28,29 @@ import styles from './StudioPage.module.css';
 
 export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
   const [status, setStatus] = useState<'all' | StudioStatus>('all');
-  const { result, loading, refresh, loadMore } = useStudioProjects(kind, status);
+  const [editorialState, setEditorialState] = useState<'all' | EditorialState>('all');
+  const { result, loading, refresh, loadMore } = useStudioProjects(kind, status, editorialState);
   const label = projectLabels[kind];
   return (
     <section className={styles.section} aria-label={label}>
       <div className={styles.sectionHeader}>
         <h2>{label}</h2>
         <div className={styles.sectionActions}>
+          {kind !== 'campaign' && (
+            <Dropdown
+              mode="select"
+              label={'Estado editorial de ' + label}
+              value={editorialState}
+              onValueChange={(value) => setEditorialState(value as 'all' | EditorialState)}
+              options={[
+                { value: 'all', label: 'Todos os estados' },
+                ...(['draft', 'review', 'ready'] as const).map((value) => ({
+                  value,
+                  label: editorialStateLabels[value],
+                })),
+              ]}
+            />
+          )}
           <Dropdown
             mode="select"
             label={
@@ -53,7 +69,10 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
               )
             }
             options={[
-              { value: 'all', label: 'Todos os estados' },
+              {
+                value: 'all',
+                label: kind === 'adventure' ? 'Todas as condições' : 'Todos os estados',
+              },
               ...statusesByKind[kind].map((value) => ({
                 value,
                 label: kind === 'book' && value === 'draft' ? 'Não publicado' : statusLabels[value],
@@ -95,7 +114,7 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
         <EmptyState
           title={'Nenhum projeto nesta lista'}
           description={
-            status === 'all'
+            status === 'all' && editorialState === 'all'
               ? 'Seus projetos deste tipo aparecerão aqui depois de criados.'
               : 'Não há projetos neste estado. Experimente outro filtro.'
           }

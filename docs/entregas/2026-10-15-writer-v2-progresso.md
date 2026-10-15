@@ -3,7 +3,7 @@
 - **Data:** 2026-10-15
 - **Branch:** `codex/writer-v2`
 - **Plano de origem:** [F2-04](../tasks/writer-v2/execucao/10-estados-metas-e-retomada.md)
-- **Estado:** implementado; gates locais verdes, Git e CI do novo SHA pendentes
+- **Estado:** implementado em `7988fb7`; correção de integração validada localmente, nova CI pendente
 
 ## Objetivo
 
@@ -40,7 +40,7 @@ alterar seu estado editorial.
 - [x] QA completo nos três temas, teclado e 320 px.
 - [x] E2E de produção local com os gates existentes preservados.
 - [ ] CI do novo SHA.
-- [ ] Commit e envio ao PR em rascunho.
+- [x] Commit `7988fb7` e envio ao PR em rascunho; correção seguinte descrita abaixo.
 
 ## Arquivos alterados
 
@@ -148,6 +148,70 @@ somente a recuperação da consulta no diálogo e fortaleceu um teste existente.
 Revisões independentes de backend, frontend e integração não encontraram P0–P2
 remanescente nos caminhos conferidos. As provas de navegador e CI conservam seus
 próprios portões; fixture não comprova autorização ou persistência reais.
+
+## Correção de integração — 2026-10-15
+
+A [CI de `7988fb7`](https://github.com/gaabrielrd/writer/actions/runs/38695798057)
+aprovou validate em Node 22/24, auditoria e produção (7/7 no Linux). As
+[regras reais](https://github.com/gaabrielrd/writer/actions/runs/38695798053)
+passaram 83/83. A suíte visual reprovou e não foi considerada concluída.
+
+O Estúdio havia perdido os filtros Rascunho/Pronto das aventuras ao separar
+estado editorial de arquivo. A correção oferece Rascunho/Em revisão/Pronto em
+livros e aventuras, independentemente da publicação/condição de arquivo, e
+conserva o ciclo das campanhas. O estado atual prevalece sobre o status legado;
+documentos antigos continuam representados sem alterar seus manuscritos.
+
+O servidor filtra janelas limitadas de metadados sem corpos e usa a última fonte
+examinada no cursor, vinculado à conta e aos dois filtros. A interface atravessa
+janelas vazias com carregamento e cancelamento por conta/filtro; falha ao carregar
+mais conserva os itens e permite retry. Nenhuma quota de projetos foi criada.
+
+Os traces também comprovaram roteiros que agiam antes da transição de página ou
+recurso: editar o marco anterior ao voltar ao arco, procurar título da obra ainda
+no Estúdio e assumir que End focava Arcos depois da inclusão de Progresso. Os
+controles agora aguardam o recurso correto e provam a nova aba, com papéis e nomes
+acessíveis exatos. Não houve aumento de timeout/retries ou uso novo de `.first()`.
+
+Validação da correção, com exit 0 em `npm run validate`:
+
+```text
+Test Files  152 passed (152)
+Tests  1380 passed (1380)
+Duration  133.84s
+All files | 93.16 | 86.56 | 92.03 | 95.36
+Scripts: tests 77; pass 77; fail 0
+Functions: tests 224; pass 224; fail 0
+built in 1.49s
+Smoke test do bundle OK.
+```
+
+- SDK real: 85/85, zero falhas/skips, 26.891,52 ms; casos novos conferem as
+  janelas vazias, estado atual/legado, projeção de metadados e escopo dos cursores.
+- Frontend dirigido: 39/39, incluindo resposta tardia, troca de conta/filtro,
+  cancelamento durante preparação e continuação após erro. São parte dos 1.380.
+- Navegador: 24/24 diretos, 67,895 s, seis projetos, dois workers e retries 0.
+  O cenário original continua exigindo exatamente um Rascunho e campanhas
+  independentes; acrescenta revisão além da primeira janela e publicação separada.
+- Uma rodada anterior desses controles passou 18/24: os seis restantes revelaram
+  ambiguidade entre Tipo de projeto e Retomar tipo de projeto. O combobox exato
+  corrigiu o roteiro; relatórios negativos preservados.
+- Seis controles adicionais passaram em 24,764 s para enquadrar os filtros nas
+  capturas 320 px. A raiz revisou livros/aventuras nos três temas, com ambos os
+  controles legíveis. Esses controles são repetição de um cenário, não novas jornadas.
+- Produção local: seis passaram e um skip preexistente Windows, 18,1 s, um worker,
+  retries 0 e configuração preservada.
+- A repetição dos percursos de progresso passou 90/90 diretos em 149,87 s,
+  seis projetos, dois workers e retries 0, sem falhas/skips/flaky. A CI do próximo
+  SHA permanece pendente.
+- Revisão estática independente do frontend e revisão da integração não encontraram
+  P0–P2 nos caminhos conferidos. Fixtures não substituem SDK/regras reais.
+
+Arquivos desta correção: serviço e testes de Estúdio em Functions/SDK, tipos e
+serviços públicos de books/adventures, hook/seção do Estúdio, testes colocalizados,
+fixtures e três roteiros visuais, arquitetura, testes, ADR e contrato de execução.
+`npm ci --prefix functions` foi repetido: 251 pacotes instalados, 252 auditados,
+zero vulnerabilidades; o aviso local Node 24 versus engine 22 permanece.
 
 ## Fora do escopo
 

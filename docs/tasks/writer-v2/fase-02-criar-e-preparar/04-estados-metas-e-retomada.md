@@ -1,6 +1,6 @@
 # W2-F2-04 — Acompanhar estados, metas e retomada
 
-**Estado:** Implementado; gates locais verdes, Git e CI do novo SHA pendentes.
+**Estado:** Implementado em `7988fb7`; correção local validada, nova CI pendente.
 **Dependências:** [W2-F2-01](../fase-02-criar-e-preparar/01-projetos-e-navegacao.md), [W2-F2-02](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md)
 **Áreas propostas:** books, editor; propostas adventures e campaigns. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -49,10 +49,11 @@ contagem canônica, preparação retomável, APIs privadas e integrações deste
 
 Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md) e registrar evidência real.
 
-Validate local: 151 arquivos/1.361 testes frontend, 77 scripts e 220 Functions;
-SDK real 83/83; Chromium 90/90 nos seis projetos, sem retries/skips/flaky, teclado
-e 320 px. Produção local: seis passaram e um skip preexistente Windows. Git e CI
-do novo incremento ainda condicionam a conclusão técnica. Ver
+Após corrigir as regressões da CI de `7988fb7`, validate local: 152 arquivos/1.380
+testes frontend, 77 scripts e 224 Functions; SDK real 85/85; Chromium 90/90 de
+progresso e 24/24 de navegação nos seis projetos, sem retries/skips/flaky,
+teclado e 320 px. Produção local: seis passaram e um skip preexistente Windows.
+Git e CI da correção ainda condicionam a conclusão técnica. Ver
 [entrega](../../../entregas/2026-10-15-writer-v2-progresso.md).
 
 ## Riscos e decisões necessárias

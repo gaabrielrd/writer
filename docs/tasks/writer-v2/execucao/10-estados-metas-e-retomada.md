@@ -1,6 +1,6 @@
 # F2-04 — Estados editoriais, meta total e retomada
 
-**Estado:** implementado; gates locais verdes, Git e CI do novo SHA pendentes.
+**Estado:** implementado em `7988fb7`; correção local validada, nova CI pendente.
 **Base técnica:** F2-03 concluído em `3358c75`, CI e regras verdes.
 **Origem:** [W2-F2-04](../fase-02-criar-e-preparar/04-estados-metas-e-retomada.md).
 
@@ -149,7 +149,67 @@ separada após fechar este contrato. Integrações dependentes e gates ficam seq
 - Navegador cobre teclado, foco, temas claro/escuro/sépia e 320 px; regressões existentes permanecem verdes.
 - `npm run validate`, regras SDK reais, produção e CI do novo SHA verdes; revisão e entrega documentadas.
 
-## Evidência local — 2026-10-15
+## Correção de integração — filtros editoriais e regressões
+
+A [CI de `7988fb7`](https://github.com/gaabrielrd/writer/actions/runs/38695798057)
+aprovou Node 22/24, auditoria e produção; as
+[regras reais](https://github.com/gaabrielrd/writer/actions/runs/38695798053)
+também passaram. A suíte visual encontrou
+roteiros anteriores incompatíveis com a nova aba Progresso, rótulos e título de
+retomada. Um percurso de edição de arco também falhou e está sob inspeção dos
+artefatos, sem atribuir a causa a lentidão. A inspeção confirmou uma regressão
+real: remover os filtros
+Rascunho/Pronto das aventuras não preserva a capacidade aprovada em F2-01.
+Não substituir sua verificação por um filtro mais restrito apenas para passar.
+
+Plano de correção dentro de F2-04, antes de qualquer tarefa seguinte:
+
+1. Acrescentar `editorialState?: all | draft | review | ready` a
+   `listStudioProjects` somente para livros/aventuras, preservando `status` legado.
+   Campanha continua com seu ciclo. O estado efetivo usa o campo válido atual;
+   se ausente, aventura `status=ready` usa Pronto e os demais usam Rascunho.
+2. Resolver o filtro no servidor em janelas da consulta de metadados já limitada
+   a 25/50 + 1. Campo ausente impede uma query por igualdade de representar todo
+   o legado; não migrar manuscritos, baixar corpos ou filtrar só a página na UI.
+   Cursor aponta a última linha verificada e vincula UID/tipo/status/estado editorial.
+   Cursor antigo sem estado editorial continua válido somente sem filtro editorial.
+3. A UI segue janelas vazias até obter resultados ou esgotar a consulta, com estado
+   de carregamento e cancelamento por conta/filtro. Não declarar acervo vazio
+   diante de uma janela vazia com continuação, nem inventar totais globais.
+   O servidor nunca busca todo o acervo numa chamada; cada página segue limitada.
+4. Oferecer filtro editorial em livros/aventuras, separado de publicação/condição
+   de arquivo. Conservar a independência das páginas e o filtro das campanhas.
+5. Preservar o teste de Rascunho do Estúdio, cobrindo também revisão/pronto após
+   mudança editorial com status legado diferente e ocorrências depois da primeira
+   janela. Provar cursor entre filtros/UIDs e cancelamento de respostas antigas.
+6. Atualizar o percurso Home/End para provar a aba Progresso antes de voltar aos
+   arcos; aguardar URL e heading principal da obra ao navegar, distinguindo o título
+   legítimo da retomada. Sem `.first()`, force, sleeps, aumento de timeout ou retry.
+7. Validar serviços/componentes, SDK real, controles Chromium, validate integral,
+   revisão e documentação; commit/envio autorizado e CI do novo SHA antes de F2-05.
+
+Arquivos: `functions/src/studio.mjs`, testes de serviço/SDK; modelos de listagem
+de books/adventures, hook e seção do Estúdio e seus testes; adaptadores/roteiros
+visuais. A regra de estado editorial, a prosa, os escritores e a publicação não
+mudam. A leitura filtrada pode percorrer várias janelas de metadados; essa condição
+permanece visível e cancelável, sem quota de projetos ou soma de totais da página.
+
+Backend, frontend e QA usam subagentes com arquivos separados; integração e gates
+dependentes permanecem sequenciais. Não avançar com o filtro removido.
+
+### Resultado local da correção
+
+Validate integral exit 0: 152 arquivos/1.380 testes frontend, 77 scripts e
+224 Functions; cobertura 93,16 / 86,56 / 92,03 / 95,36, tipos/build/smoke verdes.
+SDK real 85/85. Controles de navegação 24/24 diretos em seis projetos, mais seis
+repetições para conferir capturas em 320 px; progresso 90/90 diretos após a
+correção, 149,87 s. Execuções finais com dois workers, retries 0 e sem flaky/skips.
+Produção local: seis passaram e um skip Windows preexistente, 18,1 s.
+Capturas dos filtros revistas nos três temas; revisão sem P0–P2 nos caminhos
+conferidos. Documentação e diff verificados. Commit/envio da correção e CI do
+novo SHA ainda condicionam a conclusão, sem usar a CI reprovada como aprovação.
+
+## Evidência local anterior à correção da integração
 
 - Validate integral exit 0: 151 arquivos / 1.361 testes frontend, 77 scripts e
   220 Functions; cobertura final 93,13 / 86,47 / 92,01 / 95,35, limites preservados.
@@ -160,7 +220,8 @@ separada após fechar este contrato. Integrações dependentes e gates ficam seq
 - Produção local: seis passaram e um skip preexistente por referência Windows
   ausente, 14,7 s; gates e configuração preservados.
 - Revisões independentes sem P0–P2 remanescente nos caminhos conferidos.
-- Git/CI ainda devem conferir o SHA do novo incremento no PR em rascunho.
+- Commit `7988fb7` enviado ao PR em rascunho; a CI visual reprovou, conforme
+  a seção de correção acima. Esses resultados locais não encerram o incremento.
 
 Detalhes, controles negativos e limitações na
 [entrega F2-04](../../../entregas/2026-10-15-writer-v2-progresso.md).

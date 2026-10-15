@@ -58,8 +58,57 @@ for (const [key, patch] of Object.entries(projectPatches)) {
 }
 interface ListInput {
   status?: string;
+  editorialState?: 'all' | 'draft' | 'review' | 'ready';
   cursor?: string | null;
   limit?: number;
+}
+export function fixtureEditorialState(
+  kind: 'book' | 'adventure',
+  value: { editorialState?: unknown; status: string },
+): 'draft' | 'review' | 'ready' {
+  if (
+    value.editorialState === 'draft' ||
+    value.editorialState === 'review' ||
+    value.editorialState === 'ready'
+  )
+    return value.editorialState;
+  return kind === 'adventure' && value.status === 'ready' ? 'ready' : 'draft';
+}
+export function fixtureStudioPage<T extends { status: string; editorialState?: unknown }>(
+  kind: 'book' | Kind,
+  items: T[],
+  input: ListInput,
+): { items: T[]; nextCursor: string | null } {
+  const editorialState = input.editorialState ?? 'all';
+  if (kind === 'campaign' && editorialState !== 'all')
+    throw new Error('Campanhas não possuem estado editorial.');
+  const scope = JSON.stringify({
+    uid: fixtureOwner(),
+    kind,
+    status: input.status ?? 'all',
+    editorialState,
+  });
+  const cursor = input.cursor
+    ? (JSON.parse(input.cursor) as { scope: string; offset: number })
+    : { scope, offset: 0 };
+  if (cursor.scope !== scope || !Number.isSafeInteger(cursor.offset) || cursor.offset < 0)
+    throw Object.assign(new Error('O cursor não corresponde aos filtros atuais.'), {
+      code: 'functions/failed-precondition',
+      details: { reason: 'cursor-invalidated' },
+    });
+  const limit = input.limit ?? 25;
+  const window = items.slice(cursor.offset, cursor.offset + limit);
+  return {
+    items: window.filter(
+      (item) =>
+        editorialState === 'all' ||
+        (kind !== 'campaign' && fixtureEditorialState(kind, item) === editorialState),
+    ),
+    nextCursor:
+      cursor.offset + limit < items.length
+        ? JSON.stringify({ scope, offset: cursor.offset + limit })
+        : null,
+  };
 }
 export function fixtureList(kind: Kind, input: ListInput) {
   if (sessionStorage.getItem('writer.visual.studio-error-kind') === kind) {
@@ -69,23 +118,22 @@ export function fixtureList(kind: Kind, input: ListInput) {
     .filter((project) => project.ownerId === fixtureOwner())
     .filter((project) => !input.status || input.status === 'all' || project.status === input.status)
     .sort((left, right) => right.updatedAt - left.updatedAt || right.id.localeCompare(left.id));
-  const offset = Number(input.cursor ?? 0);
-  const limit = input.limit ?? 25;
+  const page = fixtureStudioPage(kind, items, input);
   return Promise.resolve({
-    items: items.slice(offset, offset + limit).map((project) => ({
+    items: page.items.map((project) => ({
       id: project.id,
       kind,
       title: project.title,
       status: project.status,
       ...(kind === 'adventure'
-        ? { editorialState: (project as Adventure).editorialState ?? 'draft' }
+        ? { editorialState: fixtureEditorialState('adventure', project) }
         : {}),
       revision: project.revision,
       universeId: project.universeId,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
     })),
-    nextCursor: offset + limit < items.length ? String(offset + limit) : null,
+    nextCursor: page.nextCursor,
   });
 }
 
