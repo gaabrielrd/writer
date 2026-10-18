@@ -18,6 +18,7 @@ import {
   readSessionMetadata,
 } from './campaignSessionsContracts.mjs';
 import { loreContext, loreEnvelope } from './campaignLoreContracts.mjs';
+import { baseSourceKey } from './campaignBaseContracts.mjs';
 export { closed, fail, readWorkMetadata, digest, safe, bounded };
 export const scopeFields = ['campaignId', 'campaignToken', 'sessionId', 'expectedSessionRevision'];
 export const addFields = [
@@ -86,7 +87,7 @@ export function requestInput(uid, data, action) {
       fail('invalid-argument', 'O vínculo deve usar o identificador da operação.');
     sourceContextInput(data.sourceContext);
     closed(data.target, ['kind', 'sourceKey']);
-    if (data.target.kind !== 'lore') fail('invalid-argument', 'Alvo inválido.');
+    if (!['lore', 'scene'].includes(data.target.kind)) fail('invalid-argument', 'Alvo inválido.');
     token(data.target.sourceKey);
   } else if (!workRevision(data.expectedRevision))
     fail('invalid-argument', 'Revisão do vínculo inválida.');
@@ -203,7 +204,7 @@ export function storedReference(value, c, referenceId) {
   if (
     !value.deleted &&
     (!value.target ||
-      value.target.kind !== 'lore' ||
+      !['lore', 'scene'].includes(value.target.kind) ||
       typeof value.target.sourceKey !== 'string' ||
       !/^[a-f0-9]{64}$/.test(value.target.sourceKey))
   )
@@ -217,6 +218,54 @@ export const referenceMetadata = (value) => ({
   createdAt: value.createdAt,
   updatedAt: value.updatedAt,
 });
+export const sceneFields = [
+  'sourceKey',
+  'kind',
+  'origin',
+  'title',
+  'parentKey',
+  'archived',
+  'orderKey',
+  'stage',
+];
+export function sceneCandidate(item, context, key) {
+  const origin = item.origin;
+  if (
+    item.kind !== 'scene' ||
+    item.sourceKey !== key ||
+    !origin ||
+    Object.keys(origin).length !== 3 ||
+    origin.kind !== 'scene' ||
+    origin.adventureId !== context.base.adventureId ||
+    typeof origin.id !== 'string' ||
+    !origin.id ||
+    origin.id.includes('/') ||
+    baseSourceKey(origin) !== key ||
+    typeof item.title !== 'string' ||
+    Buffer.from(item.title).toString('utf8') !== item.title ||
+    typeof item.archived !== 'boolean' ||
+    typeof item.orderKey !== 'string' ||
+    !item.orderKey ||
+    !(item.parentKey === null || /^[a-f0-9]{64}$/.test(item.parentKey)) ||
+    (item.stage !== undefined && typeof item.stage !== 'string')
+  )
+    inconsistent();
+  return {
+    kind: 'scene',
+    sourceKey: key,
+    title: item.title,
+    stage: item.stage ?? null,
+    archived: item.archived,
+  };
+}
+export async function sceneRecord(tx, db, context, key, supplied) {
+  const item =
+    supplied ??
+    (await readWorkMetadata(tx, db.doc(context.path + '/items/' + key), sceneFields)).data();
+  if (!item) return null;
+  sceneCandidate(item, context, key);
+  return item;
+}
 export async function optionalLore(tx, db, c) {
   return loreContext(
     tx,

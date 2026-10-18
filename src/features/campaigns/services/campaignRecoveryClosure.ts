@@ -94,7 +94,7 @@ export async function collectCampaignRecoveryClosures(
   const reference = read(() => readPendingSessionReference(uid, cid));
   if (reference) {
     const snapshot = structuredClone(reference);
-    add('session-reference', 'Pedido de vínculo de lore da sessão', () =>
+    add('session-reference', 'Pedido de vínculo da sessão', () =>
       forgetSessionReferenceRecovery(snapshot, check),
     );
   }

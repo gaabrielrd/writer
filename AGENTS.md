@@ -31,7 +31,7 @@
 - Não adicione abstrações sem necessidade demonstrada.
 - Mantenha `campaign-deletions` folha, importando apenas auth/shared; componha-a em `campaigns` e use essa interface no Estúdio.
 - Mantenha `campaign-sessions` folha de auth/shared; componha painel e closer somente em `campaigns` pelas interfaces públicas.
-- Limite `campaign-session-references` a auth/shared e APIs públicas puras de campaign-lore; componha slot, pendência e closer em campaigns.
+- Limite `campaign-session-references` a auth/shared, projeções públicas puras C2 e tipos/verificador puro `verifyCampaignBaseFields` de campaign-bases; não use readers/loaders B fora do gate da sessão e componha slot, pendência e closer em campaigns.
 
 ## Estilo e interface
 
@@ -123,6 +123,8 @@
 - Preserve o painel autoral e sua pendência durante refresh da base; invalidação própria de exclusão continua ocultando apresentação antes do CAS do journal.
 - Reautorize sessão ativa e projeção C2 em cada página de candidatos ou leitura de referência; persista somente IDs/tokens/revisões, sem nomes, prosa ou hashes privados.
 - Invalide somente material derivado ao observar adoção ou projeção C2 alterada; mantenha o rascunho e a pendência S1.
+- Separe plano da cena e blocos capturados; valide o manifesto completo antes de selecionar campos, leia o principal somente como bloco e não faça fallback de cenas após adoção.
+- Reautorize todo o escopo da sessão/vínculo e pin/generation após download e derivação de mídia; limpe corpos/imagens em trocas e não invalide filtros quando a opção atual for selecionada.
 - Confirme recibos históricos de vínculo sem exigir sessão ativa ou origem; persista intenção cancel sob CAS antes do resolver e preserve o journal até recibo, fence ou encerramento C4 próprio.
 - Oculte apresentação após prova remota própria de revogação antes do CAS local; trate o pulso neutro somente como invalidação e preserve controles diferentes.
 - Encerre rascunhos antigos somente por prova permanente própria de UID/campanha e confirmação do snapshot integral, sem decriptação; preserve controles inválidos e aguarde oncomplete da transação IndexedDB.

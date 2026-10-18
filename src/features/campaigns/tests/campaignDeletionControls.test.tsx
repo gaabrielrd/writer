@@ -555,7 +555,7 @@ it('encerramento C4 inclui pedido de vínculo cancelado sem material nem RPC da 
   await userEvent.click(
     await screen.findByRole('button', { name: 'Encerrar controles antigos deste navegador' }),
   );
-  await screen.findByText('Pedido de vínculo de lore da sessão');
+  await screen.findByText('Pedido de vínculo da sessão');
   expect(screen.queryByText(control.request.target.sourceKey)).not.toBeInTheDocument();
   await userEvent.click(
     screen.getByRole('button', { name: 'Confirmar encerramento dos controles' }),

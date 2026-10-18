@@ -1,6 +1,6 @@
 # F2-08 S2A — Referências de lore da sessão
 
-**Estado:** implementado e validado localmente; CI do novo head pendente.
+**Estado:** concluído tecnicamente em `d9b7988`; CI e regras verdes.
 **Dependência:** [S1](21-sessoes-privadas-da-campanha.md), validado localmente e
 enviado em `c95253a`; CI geral e regras remotas verdes (140/140 nas regras).
 **Origem:** [F2-08](../fase-02-criar-e-preparar/08-preparacao-de-sessoes.md),
@@ -291,8 +291,8 @@ Sem deploy, migração de dados reais ou limpeza de conta neste planejamento.
 4. [x] Implementar picker/renderer públicos C2 e regressões dos consumidores atuais.
 5. [x] Implementar referências, journal/recuperação/closer e slot composto em campaigns.
 6. [x] Validar duas jornadas × seis perfis, teclado/foco, três temas e celular.
-7. [ ] Validate de fechamento, revisão, docs/ADR/AGENTS e entrega; commit/envio autorizados.
-8. [ ] Acompanhar CI do próprio head sem bloquear estudo independente.
+7. [x] Validate de fechamento, revisão, docs/ADR/AGENTS e entrega; commit/envio autorizados.
+8. [x] Acompanhar CI do próprio head sem bloquear estudo independente.
 
 Critérios: vincular/ler/remover ficha efetiva e legado autorizado sem alterar
 S1/original; duplicata não cria outro vínculo; alvo revogado não revela nome e pode
@@ -335,3 +335,5 @@ permaneceram congeladas durante a matriz e após o validate.
 Ver [entrega S2A](../../../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md)
 e [ADR 0038](../../../decisions/0038-session-lore-references.md). Commit/envio e CI
 são acompanhados separadamente; F2-08 completa, cenas/blocos e S3 continuam abertos.
+
+CI do próprio commit `d9b7988` aprovada: [geral](https://github.com/gaabrielrd/writer/actions/runs/39103317060), 17 jobs verdes, incluindo navegador de produção 7/7 (13,5 s), e [regras](https://github.com/gaabrielrd/writer/actions/runs/39103317029), 145/145 sem falhas/skips. Sem merge/deploy.

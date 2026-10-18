@@ -150,14 +150,14 @@ export async function projectedStructured(tx, db, context, item) {
   }
   return result;
 }
-export async function loadContent(tx, db, context, item) {
+export function validateCapturedFields(item) {
   if (!Array.isArray(item.fields) || item.fields.length > 16) inconsistent();
-  const chunks = [],
-    fields = [],
-    seen = new Set();
+  if (!textFields[item.kind]) inconsistent();
+  const seen = new Set();
   let bytes = 0;
   for (const field of item.fields) {
     if (
+      !field ||
       !textFields[item.kind].includes(field.field) ||
       seen.has(field.field) ||
       !/^[a-f0-9]{64}$/.test(field.sha256) ||
@@ -173,6 +173,14 @@ export async function loadContent(tx, db, context, item) {
     bytes += field.bytes;
     if (bytes > CAPTURE_WRITE_BYTES) inconsistent();
     seen.add(field.field);
+  }
+  return item.fields;
+}
+export async function loadContent(tx, db, context, item) {
+  const descriptors = validateCapturedFields(item),
+    chunks = [],
+    fields = [];
+  for (const field of descriptors) {
     const content = [];
     for (let index = 0; index < field.chunkCount; index++) {
       const chunk = (

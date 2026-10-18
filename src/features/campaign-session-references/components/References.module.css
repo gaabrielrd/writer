@@ -37,3 +37,32 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
+.stack {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.stack button {
+  white-space: normal;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.rich {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.rich img,
+.image {
+  max-width: 100%;
+  height: auto;
+}
+.rich pre,
+.rich table {
+  max-width: 100%;
+  overflow-x: auto;
+}

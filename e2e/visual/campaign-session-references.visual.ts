@@ -30,7 +30,7 @@ async function seed(page: Page, paginated: boolean): Promise<Source> {
 async function openSession(page: Page, source: Source, title = 'Encontro com as fichas da mesa') {
   await page.getByRole('button', { name: 'Editar sessão ' + title, exact: true }).click();
   const parent = page.getByRole('dialog', { name: 'Editar sessão', exact: true });
-  const slot = parent.getByRole('region', { name: 'Referências de lore da sessão', exact: true });
+  const slot = parent.getByRole('region', { name: 'Referências da sessão', exact: true });
   await expect(slot.getByRole('button', { name: 'Vincular ficha', exact: true })).toBeEnabled();
   if (title === 'Encontro com as fichas da mesa')
     await expect(parent.getByLabel('Preparação da sessão', { exact: true })).toHaveValue(
@@ -339,7 +339,7 @@ test('recuperação de vínculo sobrevive revogação e tombstone, persiste canc
     .fill('Autoria preservada até a exclusão explícita.');
   await creating.getByRole('button', { name: 'Salvar sessão', exact: true }).click();
   const parent = page.getByRole('dialog', { name: 'Editar sessão', exact: true });
-  const slot = parent.getByRole('region', { name: 'Referências de lore da sessão', exact: true });
+  const slot = parent.getByRole('region', { name: 'Referências da sessão', exact: true });
   await expect(slot.getByRole('button', { name: 'Vincular ficha', exact: true })).toBeEnabled();
   await flag(page, 'writer.visual.reference-before-receive', 'addCampaignSessionReference');
   await choose(page, slot, source.overrideName);
@@ -386,7 +386,7 @@ test('recuperação de vínculo sobrevive revogação e tombstone, persiste canc
   ).toBeVisible();
   expect(await pending(page, source.campaignId)).toEqual(beforeC4);
   await expect(
-    page.getByRole('region', { name: 'Referências de lore da sessão', exact: true }),
+    page.getByRole('region', { name: 'Referências da sessão', exact: true }),
   ).toHaveCount(0);
   await deletion
     .getByRole('button', { name: 'Encerrar controles antigos deste navegador', exact: true })
@@ -395,9 +395,7 @@ test('recuperação de vínculo sobrevive revogação e tombstone, persiste canc
     name: 'Encerrar controles da campanha excluída?',
     exact: true,
   });
-  await expect(
-    closure.getByText('Pedido de vínculo de lore da sessão', { exact: true }),
-  ).toBeVisible();
+  await expect(closure.getByText('Pedido de vínculo da sessão', { exact: true })).toBeVisible();
   await closure.getByRole('button', { name: 'Manter controles', exact: true }).click();
   expect(await pending(page, source.campaignId)).toEqual(beforeC4);
   await deletion

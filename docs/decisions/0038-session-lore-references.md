@@ -1,6 +1,6 @@
 # ADR 0038 — Vínculos de lore autorizados por sessão
 
-**Estado:** implementada e validada localmente; CI do novo head pendente.
+**Estado:** concluída tecnicamente em `d9b7988`; CI e regras verdes.
 **Contrato:** [F2-08 S2A](../tasks/writer-v2/execucao/22-referencias-de-lore-da-sessao.md).
 
 ## Contexto
@@ -56,6 +56,5 @@ de habilitação futura; este incremento não autoriza deploy.
 ## Verificação
 
 Validate local verde: 1.910 frontend, 83 scripts e 383 Functions; cinco famílias
-SDK únicas e 12 combinações nativas comprovadas. A CI do novo head permanece
-pendente. Resultados e limites estão na [entrega S2A](../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md);
+SDK únicas e 12 combinações nativas comprovadas. A CI geral e regras 145/145 do head `d9b7988` passaram. Resultados e limites estão na [entrega S2A](../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md);
 a evidência de S1/c95253a permanece distinta.

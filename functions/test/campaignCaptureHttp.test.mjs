@@ -12,6 +12,7 @@ before(async () => {
   for (const [path, method] of [
     ['/media', 'readCampaignBaseImage'],
     ['/comparison-media', 'readCampaignComparisonImage'],
+    ['/session-scene-media', 'readCampaignSessionSceneImage'],
     ['/metadata', 'getCampaignBase'],
   ]) {
     app.post(
@@ -67,4 +68,15 @@ test('comparison media callable HTTP response preserves no-store for success and
   assert.equal(failure.status, 404);
   assert.equal(failure.headers.get('cache-control'), 'private, no-store');
   assert.equal((await failure.json()).error.status, 'NOT_FOUND');
+});
+
+test('session scene media preserves no-store on successful and failed callable responses', async () => {
+  for (const fail of [false, true]) {
+    const response = await call('/session-scene-media', { fail });
+    assert.equal(response.status, fail ? 404 : 200);
+    assert.equal(response.headers.get('cache-control'), 'private, no-store');
+    const body = await response.json();
+    if (fail) assert.equal(body.error.status, 'NOT_FOUND');
+    else assert.deepEqual(body, { result: { value: 'confirmed' } });
+  }
 });

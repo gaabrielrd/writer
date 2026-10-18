@@ -6,12 +6,16 @@ import type {
   PendingSessionReference,
   SessionReferenceEnvelope,
   SessionReferenceOutcome,
-  SessionReferencePage,
   SessionReferenceScope,
   SessionReferenceSourceContext,
   SessionLoreReferenceResult,
   ReadSessionLoreReferenceInput,
+  SessionLoreCandidate,
 } from '../model/sessionReference';
+import type {
+  AnySessionReferencePage,
+  SessionSceneCandidate,
+} from '../model/sessionSceneReference';
 export * from './sessionReferenceCallables';
 export function canonical(value: unknown): string {
   const sort = (item: unknown): unknown =>
@@ -118,7 +122,7 @@ export function validatePending(value: PendingSessionReference, uid: string, cid
     keys(value.request.target, ['kind', 'sourceKey']);
     if (
       value.request.referenceId !== value.request.operationId ||
-      value.request.target.kind !== 'lore' ||
+      !['lore', 'scene'].includes(value.request.target.kind) ||
       !hash(value.request.target.sourceKey) ||
       value.request.sourceContext === null
     )
@@ -182,10 +186,11 @@ export function validateOutcome(
   } else fail();
 }
 export function validatePage(
-  value: SessionReferencePage,
+  value: AnySessionReferencePage,
   uid: string,
   scope: SessionReferenceScope,
   view: 'references' | 'candidates',
+  kind: 'lore' | 'scene' = 'lore',
 ): void {
   validateEnvelope(value, uid, scope);
   keys(value, [...envelopeFields, 'view', 'sourceContext', 'items', 'nextCursor']);
@@ -203,7 +208,8 @@ export function validatePage(
   const seen = new Set<string>();
   if (value.view === 'candidates')
     value.items.forEach((item) => {
-      validateCampaignLorePickerItem(item);
+      if (kind === 'scene') validateSceneCandidate(item as SessionSceneCandidate);
+      else validateCampaignLorePickerItem(item as SessionLoreCandidate);
       if (seen.has(item.sourceKey)) fail();
       seen.add(item.sourceKey);
     });
@@ -228,6 +234,10 @@ export function validatePage(
         fail();
       seen.add(item.id);
       if (item.available) {
+        if (kind === 'scene') {
+          validateSceneCandidate(item.target as SessionSceneCandidate);
+          return;
+        }
         keys(item.target, ['kind', 'sourceKey', 'name', 'category', 'revision', 'mode', 'legacy']);
         if (item.target.kind !== 'lore') fail();
         const { kind: _, ...candidate } = item.target;
@@ -238,6 +248,17 @@ export function validatePage(
   if (
     value.sourceContext === null &&
     value.items.some((item) => 'sourceKey' in item || item.available)
+  )
+    fail();
+}
+export function validateSceneCandidate(value: SessionSceneCandidate): void {
+  keys(value, ['kind', 'sourceKey', 'title', 'stage', 'archived']);
+  if (
+    value.kind !== 'scene' ||
+    !hash(value.sourceKey) ||
+    typeof value.title !== 'string' ||
+    (value.stage !== null && typeof value.stage !== 'string') ||
+    typeof value.archived !== 'boolean'
   )
     fail();
 }

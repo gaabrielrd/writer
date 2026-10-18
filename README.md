@@ -71,12 +71,16 @@ Recuperação confirma pedidos antigos sem adotar texto posterior; atualizar a b
 preserva rascunhos não enviados. Referências, pistas e missões ficam em S2/S3.
 Veja o [contrato S1](docs/tasks/writer-v2/execucao/21-sessoes-privadas-da-campanha.md)
 e a [entrega](docs/entregas/2026-10-18-writer-v2-sessoes-privadas.md).
-F2-08 S2A está implementado e validado localmente, com CI do novo head pendente:
+F2-08 S2A está concluído tecnicamente em `d9b7988`, com CI e regras verdes:
 sessões vinculam fichas efetivas e legadas autorizadas, consultam material e removem
 vínculos indisponíveis sem alterar a preparação. Recuperação e cancelamento explícito
 permanecem acessíveis após exclusão da sessão; C4 v3 inclui esses recursos mantendo
 jobs v1/v2. Cenas/blocos e pistas/missões permanecem em S2B/S3. Veja a
 [entrega S2A](docs/entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md).
+F2-08 S2B está validado localmente, com CI do novo head pendente: cenas vinculadas
+permitem consultar planejamento, principal, adicionais, arquivo e ilustrações sem
+copiar conteúdo para a preparação. Cena ausente após adoção fica indisponível.
+Veja a [entrega S2B](docs/entregas/2026-10-18-writer-v2-cenas-completas-da-sessao.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).

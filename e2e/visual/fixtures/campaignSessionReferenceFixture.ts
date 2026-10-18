@@ -1,4 +1,6 @@
 import type * as C from '../../../src/features/campaign-session-references/model/sessionReference';
+import type * as S from '../../../src/features/campaign-session-references/model/sessionSceneReference';
+import { fixtureCampaignBaseSessionSnapshot, readCampaignBaseImage } from './campaignBaseFixture';
 import {
   fixtureAssertCampaignWritable,
   fixtureCampaignDeletionReservation,
@@ -24,7 +26,7 @@ interface Stored {
   createdAt: number;
   updatedAt: number;
   deleted: boolean;
-  target?: { kind: 'lore'; sourceKey: string };
+  target?: { kind: 'lore' | 'scene'; sourceKey: string };
 }
 interface Control {
   token: string;
@@ -282,6 +284,7 @@ interface Cursor {
   scope: unknown;
   last?: { id: string; createdAt: number };
   inner?: string;
+  offset?: number;
 }
 function decode(value: string | undefined, expected: unknown): Cursor | null {
   if (!value) return null;
@@ -291,14 +294,17 @@ function decode(value: string | undefined, expected: unknown): Cursor | null {
   } catch {
     fail('Página inválida.', undefined, 'invalid-argument');
   }
-  if (stable(cursor.scope) !== stable(expected))
+  if (
+    (cursor.offset !== undefined && (!Number.isSafeInteger(cursor.offset) || cursor.offset < 0)) ||
+    stable(cursor.scope) !== stable(expected)
+  )
     fail('Os vínculos ou sua projeção mudaram.', 'cursor-invalidated');
   return cursor;
 }
 const encode = (value: Cursor) => btoa(JSON.stringify(value));
 export async function listCampaignSessionReferences(
   input: C.ListSessionReferencesInput,
-): Promise<C.SessionReferencePage> {
+): Promise<S.AnySessionReferencePage> {
   const uid = fixtureOwner(),
     size = input.limit ?? 25;
   if (!Number.isSafeInteger(size) || size < 1 || size > 50)
@@ -316,6 +322,10 @@ export async function listCampaignSessionReferences(
       sessionRevision: input.expectedSessionRevision,
       referenceRevision: current.revision,
       view: input.view,
+      kind: input.kind ?? 'lore',
+      ...(input.view === 'candidates' && input.kind === 'scene'
+        ? { archive: input.archive ?? 'active' }
+        : {}),
       sourceContext: context,
     };
     const cursor = decode(input.cursor, cursorScope);
@@ -328,6 +338,32 @@ export async function listCampaignSessionReferences(
           items: [],
           nextCursor: null,
         };
+      if (input.kind === 'scene') {
+        const snapshot = await fixtureCampaignBaseSessionSnapshot(input.campaignId);
+        const values = snapshot.items
+          .filter(
+            ({ item }) =>
+              item.kind === 'scene' &&
+              ((input.archive ?? 'active') === 'all' ||
+                item.archived === (input.archive === 'archived')),
+          )
+          .sort(
+            (a, b) =>
+              a.item.orderKey.localeCompare(b.item.orderKey) ||
+              a.item.sourceKey.localeCompare(b.item.sourceKey),
+          );
+        const offset = cursor?.offset ?? 0;
+        return {
+          ...envelope(uid, input, current),
+          view: 'candidates' as const,
+          sourceContext: context,
+          items: values.slice(offset, offset + size).map(({ item }) => sceneMetadata(item)),
+          nextCursor:
+            offset + size < values.length
+              ? encode({ scope: cursorScope, offset: offset + size })
+              : null,
+        };
+      }
       const page = await listCampaignLore({
         campaignId: input.campaignId,
         campaignToken: input.campaignToken,
@@ -359,38 +395,53 @@ export async function listCampaignSessionReferences(
           row.campaignId === input.campaignId &&
           row.sessionId === input.sessionId &&
           !row.deleted &&
+          row.target?.kind === (input.kind ?? 'lore') &&
           (!cursor?.last ||
             row.createdAt > cursor.last.createdAt ||
             (row.createdAt === cursor.last.createdAt && row.id > cursor.last.id)),
       )
       .sort((a, b) => a.createdAt - b.createdAt || a.id.localeCompare(b.id));
     const window = rows.slice(0, size),
-      items: C.SessionReferenceRow[] = [];
+      items: S.AnySessionReferenceRow[] = [];
     for (const row of window) {
       const target =
-        context && row.target ? await candidate(input, context, row.target.sourceKey) : null;
+        context && row.target
+          ? row.target.kind === 'scene'
+            ? await sceneCandidate(input, row.target.sourceKey)
+            : await candidate(input, context, row.target.sourceKey)
+          : null;
       const metadata = {
         id: row.id,
         revision: row.revision,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
       };
-      items.push(
-        target
-          ? { ...metadata, available: true, target: { ...target, kind: 'lore' } }
-          : { ...metadata, available: false },
-      );
+      if (!target) items.push({ ...metadata, available: false });
+      else if ('kind' in target) items.push({ ...metadata, available: true, target });
+      else items.push({ ...metadata, available: true, target: { ...target, kind: 'lore' } });
     }
     const last = window.at(-1);
-    return {
+    const common = {
       ...envelope(uid, input, current),
       view: 'references' as const,
       sourceContext: context,
-      items,
       nextCursor:
         rows.length > size && last
           ? encode({ scope: cursorScope, last: { id: last.id, createdAt: last.createdAt } })
           : null,
+    };
+    if (input.kind === 'scene')
+      return {
+        ...common,
+        items: items.filter(
+          (row): row is S.SessionSceneReferenceRow => !row.available || row.target.kind === 'scene',
+        ),
+      };
+    return {
+      ...common,
+      items: items.filter(
+        (row): row is C.SessionReferenceRow => !row.available || row.target.kind === 'lore',
+      ),
     };
   });
   return response(uid, input, 'listCampaignSessionReferences', value);
@@ -415,6 +466,8 @@ export async function readCampaignSessionLoreReference(
         current.revision !== input.expectedReferenceCollectionRevision
       )
         fail('O vínculo mudou.', 'revision-conflict');
+      if (row.target?.kind !== 'lore')
+        fail('Tipo de vínculo inválido.', undefined, 'invalid-argument');
       const context = await source(uid, input);
       observeSource(context, input.sourceContext);
       let material: C.SessionLoreMaterial | null = null;
@@ -447,6 +500,261 @@ export async function readCampaignSessionLoreReference(
     },
   );
   return response(uid, input, 'readCampaignSessionLoreReference', value);
+}
+
+type CapturedScene = Awaited<
+  ReturnType<typeof fixtureCampaignBaseSessionSnapshot>
+>['items'][number];
+function sceneMetadata(item: CapturedScene['item']): S.SessionSceneCandidate {
+  return {
+    kind: 'scene',
+    sourceKey: item.sourceKey,
+    title: item.title,
+    stage: item.stage ?? null,
+    archived: item.archived,
+  };
+}
+async function sceneCandidate(
+  scope: C.SessionReferenceScope,
+  sourceKey: string,
+): Promise<S.SessionSceneCandidate | null> {
+  const snapshot = await fixtureCampaignBaseSessionSnapshot(scope.campaignId);
+  const item = snapshot.items.find(
+    ({ item }) => item.kind === 'scene' && item.sourceKey === sourceKey,
+  )?.item;
+  return item ? sceneMetadata(item) : null;
+}
+function sceneBlock(
+  item: CapturedScene['item'],
+  scene: CapturedScene['item'],
+): S.SessionSceneBlockSummary {
+  if (
+    item.kind !== 'block' ||
+    item.parentKey !== scene.sourceKey ||
+    !item.role ||
+    !item.type ||
+    !item.audience
+  )
+    fail('Bloco capturado inconsistente.');
+  const ownArchived = item.role === 'main' ? null : item.structured.ownArchived;
+  if (
+    (item.role === 'additional' && typeof ownArchived !== 'boolean') ||
+    item.archived !== (scene.archived || ownArchived === true)
+  )
+    fail('Arquivo do bloco capturado inconsistente.');
+  return {
+    kind: 'block',
+    sourceKey: item.sourceKey,
+    parentKey: scene.sourceKey,
+    title: item.title,
+    orderKey: item.orderKey,
+    type: item.type as S.SessionSceneNarrativeType,
+    audience: item.audience,
+    role: item.role,
+    archived: item.archived,
+    ownArchived: ownArchived ?? null,
+  };
+}
+async function sceneAccess(data: Data, uid: string, input: S.SessionSceneReadScope) {
+  await sessionGate(uid, input);
+  const current = control(data, uid, input),
+    row = data.rows[key(uid, input.campaignId, input.referenceId)];
+  if (!row || row.deleted || row.sessionId !== input.sessionId)
+    fail('Vínculo indisponível.', undefined, 'not-found');
+  if (row.target?.kind !== 'scene')
+    fail('Tipo de vínculo inválido.', undefined, 'invalid-argument');
+  if (
+    row.revision !== input.expectedRevision ||
+    current.revision !== input.expectedReferenceCollectionRevision
+  )
+    fail('O vínculo mudou.', 'revision-conflict');
+  const context = await source(uid, input);
+  observeSource(context, input.sourceContext);
+  const snapshot = context ? await fixtureCampaignBaseSessionSnapshot(input.campaignId) : null;
+  const scene =
+    snapshot?.items.find(
+      ({ item }) => item.kind === 'scene' && item.sourceKey === row.target?.sourceKey,
+    ) ?? null;
+  return {
+    current,
+    row,
+    context,
+    snapshot,
+    scene,
+    header: {
+      ...envelope(uid, input, current),
+      referenceId: row.id,
+      referenceRevision: row.revision,
+      sourceContext: context,
+    },
+  };
+}
+function fixtureChunks(text: string): string[] {
+  const bytes = new TextEncoder().encode(text),
+    chunks: string[] = [];
+  for (let offset = 0; offset < bytes.length;) {
+    let end = Math.min(bytes.length, offset + 65536);
+    while (end < bytes.length && (bytes[end] & 0xc0) === 0x80) end--;
+    chunks.push(new TextDecoder('utf-8', { fatal: true }).decode(bytes.slice(offset, end)));
+    offset = end;
+  }
+  return chunks.length ? chunks : [''];
+}
+export async function listCampaignSessionSceneBlocks(
+  input: S.ListSessionSceneBlocksInput,
+): Promise<S.SessionSceneBlocksPage> {
+  const uid = fixtureOwner(),
+    method = 'listCampaignSessionSceneBlocks',
+    size = input.limit ?? 25;
+  if (!Number.isInteger(size) || size < 1 || size > 50)
+    fail('Página inválida.', undefined, 'invalid-argument');
+  const value = await transaction(
+    uid,
+    input,
+    method,
+    { referenceId: input.referenceId },
+    async (data) => {
+      const access = await sceneAccess(data, uid, input);
+      if (!access.scene) return { ...access.header, scene: null, items: [], nextCursor: null };
+      const scope = {
+        ...access.header,
+        kind: 'blocks',
+        sceneKey: access.scene.item.sourceKey,
+        archive: input.archive ?? 'active',
+      };
+      const offset = decode(input.cursor, scope)?.offset ?? 0;
+      const values = access
+        .snapshot!.items.filter(
+          ({ item }) => item.kind === 'block' && item.parentKey === access.scene!.item.sourceKey,
+        )
+        .map(({ item }) => sceneBlock(item, access.scene!.item))
+        .filter(
+          (item) =>
+            (input.archive ?? 'active') === 'all' ||
+            item.archived === (input.archive === 'archived'),
+        )
+        .sort(
+          (a, b) => a.orderKey.localeCompare(b.orderKey) || a.sourceKey.localeCompare(b.sourceKey),
+        );
+      return {
+        ...access.header,
+        scene: sceneMetadata(access.scene.item),
+        items: values.slice(offset, offset + size),
+        nextCursor: offset + size < values.length ? encode({ scope, offset: offset + size }) : null,
+      };
+    },
+  );
+  return response(uid, input, method, value);
+}
+export async function readCampaignSessionSceneReference(
+  input: S.ReadSessionSceneInput,
+): Promise<S.SessionSceneReadWindow> {
+  const uid = fixtureOwner(),
+    method = 'readCampaignSessionSceneReference',
+    size = input.limit ?? 4;
+  if (!Number.isInteger(size) || size < 1 || size > 8)
+    fail('Página inválida.', undefined, 'invalid-argument');
+  const value = await transaction(
+    uid,
+    input,
+    method,
+    { referenceId: input.referenceId },
+    async (data) => {
+      const access = await sceneAccess(data, uid, input),
+        resourceKind = input.blockKey ? ('block' as const) : ('scene-plan' as const);
+      const neutral = {
+        ...access.header,
+        blockKey: input.blockKey ?? null,
+        resourceKind,
+        resourceKey: null,
+        material: null,
+      };
+      if (!access.scene) return neutral;
+      const selected = input.blockKey
+        ? access.snapshot!.items.find(
+            ({ item }) => item.kind === 'block' && item.sourceKey === input.blockKey,
+          )
+        : access.scene;
+      if (!selected) return neutral;
+      if (input.blockKey) sceneBlock(selected.item, access.scene.item);
+      const names = input.blockKey ? ['content'] : ['objective', 'conflict', 'pointOfView'];
+      const fields = selected.item.fields.filter((field) => names.includes(field.field));
+      const item: S.SessionSceneProjectedItem = input.blockKey
+        ? {
+            ...sceneBlock(selected.item, access.scene.item),
+            fields,
+            image: structuredClone(selected.item.image),
+          }
+        : {
+            kind: 'scene-plan',
+            sourceKey: selected.item.sourceKey,
+            title: selected.item.title,
+            stage: selected.item.stage ?? null,
+            archived: selected.item.archived,
+            fields,
+          };
+      const chunks = fields.flatMap(({ field }) =>
+        fixtureChunks(selected.texts[field] ?? '').map((content, index) => ({
+          field,
+          index,
+          content,
+        })),
+      );
+      const scope = {
+        ...access.header,
+        kind: resourceKind,
+        blockKey: input.blockKey ?? null,
+        resourceKey: item.sourceKey,
+      };
+      const offset = decode(input.cursor, scope)?.offset ?? 0;
+      return {
+        ...access.header,
+        blockKey: input.blockKey ?? null,
+        resourceKind,
+        resourceKey: item.sourceKey,
+        material: {
+          item,
+          chunks: chunks.slice(offset, offset + size),
+          nextCursor:
+            offset + size < chunks.length ? encode({ scope, offset: offset + size }) : null,
+        },
+      };
+    },
+  );
+  return response(uid, input, method, value);
+}
+export async function readCampaignSessionSceneImage(
+  input: S.ReadSessionSceneImageInput,
+): Promise<S.SessionSceneImage> {
+  const uid = fixtureOwner(),
+    method = 'readCampaignSessionSceneImage';
+  const authorize = () =>
+    transaction(uid, input, method, { referenceId: input.referenceId }, async (data) => {
+      const access = await sceneAccess(data, uid, input);
+      const selected = access.scene
+        ? access.snapshot!.items.find(
+            ({ item }) => item.kind === 'block' && item.sourceKey === input.blockKey,
+          )
+        : null;
+      if (selected) sceneBlock(selected.item, access.scene!.item);
+      return { header: access.header, image: selected?.item.image ?? null };
+    });
+  const before = await authorize();
+  let dataUrl: string | null = null;
+  if (before.image)
+    dataUrl = (
+      await readCampaignBaseImage({ campaignId: input.campaignId, imageKey: before.image.imageKey })
+    ).dataUrl;
+  const captured = await response(uid, input, method, {
+    ...before.header,
+    blockKey: input.blockKey,
+    imageKey: before.image?.imageKey ?? null,
+    dataUrl,
+  });
+  // Held transport simulates I/O; repeat the real fixture gates before returning bytes.
+  const after = await authorize();
+  if (stable(after) !== stable(before)) fail('A projeção mudou.', 'source-context-changed');
+  return captured;
 }
 type Mutation = C.AddSessionReferenceInput | C.RemoveSessionReferenceInput;
 function identity(uid: string, input: Mutation) {
@@ -530,8 +838,13 @@ async function mutate(
           fail('Identidade já utilizada.', undefined, 'already-exists');
         const context = await source(uid, input);
         observeSource(context, added.sourceContext);
-        if (!context || !(await candidate(input, context, added.target.sourceKey)))
-          fail('Ficha indisponível.', undefined, 'not-found');
+        if (
+          !context ||
+          !(added.target.kind === 'scene'
+            ? await sceneCandidate(input, added.target.sourceKey)
+            : await candidate(input, context, added.target.sourceKey))
+        )
+          fail('Material indisponível.', undefined, 'not-found');
         if (
           Object.values(data.rows).some(
             (row) =>
@@ -539,7 +852,8 @@ async function mutate(
               row.campaignId === input.campaignId &&
               row.sessionId === input.sessionId &&
               !row.deleted &&
-              row.target?.sourceKey === added.target.sourceKey,
+              row.target?.kind === added.target.kind &&
+              row.target.sourceKey === added.target.sourceKey,
           )
         )
           fail('Esta ficha já está vinculada.', 'reference-already-linked');
@@ -950,4 +1264,304 @@ export async function fixtureSeedSessionReferences(paginated = true) {
     authorText,
     sourceRoot: JSON.stringify(await store.fixtureGet('adventure', adventure.id)),
   };
+}
+
+export async function fixtureSeedSessionScenes(paginated = true) {
+  const worlds = await import('./universeService'),
+    lore = await import('./loreService'),
+    adventures = await import('./adventureService'),
+    scenes = await import('./sceneService'),
+    blocks = await import('./adventureBlocksFixture'),
+    bases = await import('./campaignBaseFixture'),
+    sessions = await import('./campaignSessionFixture'),
+    store = await import('./studioStore');
+  const uid = fixtureOwner();
+  const world = await worlds.createUniverse(
+    { name: 'Universo das cenas privadas', description: 'Fonte capturada' },
+    'visual-session-scene-world',
+  );
+  const adventure = await adventures.createAdventure({
+    operationId: 'visual-session-scene-adventure',
+    title: 'Aventura das cenas completas',
+    synopsis: 'SINOPSE DA FONTE CONGELADA',
+    universeId: world.id,
+  });
+  const target = { kind: 'adventure' as const, id: adventure.id };
+  const mainText =
+    '<p>PRINCIPAL CONGELADO 🐉 ' + 'Texto próprio da aventura. '.repeat(2800) + '</p>';
+  const created = await scenes.createScene({
+    target,
+    parentId: null,
+    operationId: 'visual-session-scene-origin',
+    title: 'Travessia do farol',
+    content: mainText,
+    planning: {
+      objective: 'Alcançar o farol',
+      conflict: 'Maré e neblina 🐉',
+      pointOfView: 'Tripulação',
+    },
+  });
+  const createdBlocks = [];
+  for (let n = 0; n < (paginated ? 28 : 3); n++)
+    createdBlocks.push(
+      await blocks.createAdventureBlock({
+        adventureId: adventure.id,
+        sceneId: created.scene.id,
+        operationId: 'visual-session-scene-extra-' + n,
+        title:
+          n === 27
+            ? 'Último bloco além da página'
+            : n === 2
+              ? 'Bloco guardado no Arquivo'
+              : 'Bloco da travessia ' + n,
+        content: '<p>ADICIONAL CONGELADO ' + n + ' 🐉</p>',
+        audience: n % 3 === 0 ? 'creator' : n % 3 === 1 ? 'gm' : 'players',
+      }),
+    );
+  await blocks.archiveAdventureBlock({
+    adventureId: adventure.id,
+    blockId: createdBlocks[2].block.resource.id,
+    operationId: 'visual-session-scene-archive-block',
+    expectedRevision: createdBlocks[2].block.revision,
+    archived: true,
+  });
+  const current = await blocks.getAdventureBlock({
+    adventureId: adventure.id,
+    resource: { kind: 'scene', id: created.scene.id },
+  });
+  if (!current) throw new Error('Principal da fonte indisponível.');
+  await blocks.moveAdventureBlock({
+    adventureId: adventure.id,
+    resource: { kind: 'scene', id: created.scene.id },
+    operationId: 'visual-session-scene-main-down',
+    expectedRevision: current.revision,
+    expectedStructureRevision: current.structureRevision,
+    direction: 'down',
+  });
+  const live = await scenes.getScene({ target, sceneId: created.scene.id });
+  await blocks.setAdventureBlockImage({
+    adventureId: adventure.id,
+    resource: { kind: 'scene', id: created.scene.id },
+    operationId: 'visual-session-scene-image',
+    expectedRevision: live!.revision,
+    image: {
+      imageId: 'visual-image-000001',
+      alt: 'Farol congelado na neblina',
+      caption: 'Ilustração privada da aventura',
+    },
+  });
+  const archived = await scenes.createScene({
+    target,
+    parentId: null,
+    operationId: 'visual-session-scene-archived',
+    title: 'Epílogo em Arquivo',
+    content: '<p>CENA ARQUIVADA CONGELADA</p>',
+  });
+  await scenes.archiveScene({
+    target,
+    sceneId: archived.scene.id,
+    operationId: 'visual-session-scene-archive-scene',
+    expectedRevision: archived.scene.revision,
+    archived: true,
+  });
+  const hero = await lore.createLoreEntity(
+    { kind: 'universe', id: world.id },
+    {
+      name: 'Guardiã do farol',
+      category: 'character',
+      summary: 'Ficha ainda acessível',
+      details: 'CORPO LORE PRESERVADO',
+    },
+  );
+  const latest = await scenes.getScene({ target, sceneId: created.scene.id });
+  await scenes.setSceneReference({
+    target,
+    sceneId: created.scene.id,
+    operationId: 'visual-session-scene-lore-link',
+    expectedRevision: latest!.revision,
+    reference: { kind: 'universe', scopeId: world.id, entityId: hero.id.split(':').at(-1)! },
+  });
+  const source = await bases.getCampaignCaptureSource({ adventureId: adventure.id });
+  let capture = await bases.startCampaignCapture({
+    operationId: 'visual-session-scene-capture',
+    adventureId: adventure.id,
+    expectedSourceToken: source.sourceToken,
+    title: 'Mesa das cenas privadas',
+    description: 'Preparação particular',
+    universeId: world.id,
+  });
+  for (let n = 0; capture.state === 'preparing' && n < 100; n++)
+    capture = await bases.advanceCampaignCapture({
+      captureId: capture.captureId,
+      operationId: 'visual-session-scene-capture-' + n,
+      expectedCheckpoint: capture.checkpoint,
+    });
+  if (capture.state !== 'prepared') throw new Error('Captura das cenas não terminou.');
+  const activated = await bases.activateCampaignCapture({
+    captureId: capture.captureId,
+    operationId: 'visual-session-scene-activate',
+    expectedCheckpoint: capture.checkpoint,
+  });
+  if (activated.kind !== 'activated') throw new Error('Mesa das cenas não ativada.');
+  const campaign = activated.campaign,
+    token = fixtureCampaignToken(uid, campaign.id),
+    sessionId = 'visual-session-scene-own-preparation';
+  const authorText = '  PREPARAÇÃO PRÓPRIA S1 🐉\nNão recebe os blocos da aventura.  ';
+  await sessions.saveCampaignSession({
+    campaignId: campaign.id,
+    campaignToken: token,
+    sessionId,
+    operationId: sessionId,
+    expectedRevision: 0,
+    title: 'Preparar a travessia',
+    summary: authorText,
+    scheduledDate: '2026-10-18',
+    status: 'planned',
+  });
+  const otherSessionId = 'visual-session-scene-other-preparation';
+  await sessions.saveCampaignSession({
+    campaignId: campaign.id,
+    campaignToken: token,
+    sessionId: otherSessionId,
+    operationId: otherSessionId,
+    expectedRevision: 0,
+    title: 'Outra sessão preservada',
+    summary: 'OUTRA PREPARAÇÃO INTACTA',
+    scheduledDate: null,
+    status: 'planned',
+  });
+  const other = await store.fixtureCreate('campaign', {
+    operationId: 'visual-session-scene-other-table',
+    title: 'Outra mesa de cenas',
+    description: 'OUTRA MESA INTACTA',
+  });
+  const snapshot = await fixtureCampaignBaseSessionSnapshot(campaign.id);
+  const sceneItem = snapshot.items.find(
+    ({ item }) => item.kind === 'scene' && item.title === 'Travessia do farol',
+  )!;
+  const main = snapshot.items.find(
+    ({ item }) =>
+      item.kind === 'block' && item.parentKey === sceneItem.item.sourceKey && item.role === 'main',
+  )!;
+  const last = snapshot.items.find(({ item }) => item.title === 'Último bloco além da página');
+  const lorePage = await listCampaignLore({
+    campaignId: campaign.id,
+    campaignToken: token,
+    baseId: campaign.activeBaseId!,
+  });
+  // Edit the original after capture: the session must keep showing the frozen body.
+  const beforeEdit = await scenes.getScene({ target, sceneId: created.scene.id });
+  await scenes.updateScene({
+    target,
+    sceneId: created.scene.id,
+    operationId: 'visual-session-scene-live-edited',
+    expectedRevision: beforeEdit!.revision,
+    patch: { content: '<p>ALTERAÇÃO VIVA NÃO ADOTADA</p>' },
+  });
+  return {
+    campaignId: campaign.id,
+    campaignToken: token,
+    baseId: campaign.activeBaseId!,
+    sessionId,
+    sessionRevision: 1,
+    otherSessionId,
+    otherId: other.id,
+    otherRoot: JSON.stringify(other),
+    adventureId: adventure.id,
+    worldId: world.id,
+    sceneId: created.scene.id,
+    sceneKey: sceneItem.item.sourceKey,
+    sceneTitle: sceneItem.item.title,
+    mainKey: main.item.sourceKey,
+    mainText,
+    lastKey: last?.item.sourceKey ?? null,
+    lastTitle: last?.item.title ?? null,
+    authorText,
+    loreKey: lorePage.items[0].sourceKey,
+    loreName: lorePage.items[0].name,
+    sourceRoot: JSON.stringify(await store.fixtureGet('adventure', adventure.id)),
+  };
+}
+export async function fixtureAdoptSessionSceneAbsence(campaignId: string, sceneId: string) {
+  const store = await import('./studioStore'),
+    scenes = await import('./sceneStore'),
+    comparisons = await import('./campaignComparisonFixture'),
+    adoptions = await import('./campaignAdoptionFixture');
+  const campaign = await store.fixtureGet('campaign', campaignId);
+  if (!campaign || campaign.provenance.kind !== 'original')
+    throw new Error('Mesa capturada indisponível.');
+  const target = { kind: 'adventure' as const, id: campaign.provenance.adventureId },
+    state = await scenes.fixtureSceneState(target);
+  // Controlled external source disappearance, not an additional product deletion API.
+  const old = state.scenes[sceneId];
+  delete state.scenes[sceneId];
+  delete state.bodies[sceneId];
+  delete state.planning[sceneId];
+  delete state.references[sceneId];
+  for (const [id, row] of Object.entries(state.adventureBlocks ?? {}))
+    if (row.sceneId === sceneId) {
+      delete state.adventureBlocks![id];
+      delete state.adventureBlockBodies?.[id];
+    }
+  scenes.fixtureUpdateCounts(state, [old?.parentId ?? null], true);
+  const token = fixtureCampaignToken(fixtureOwner(), campaignId),
+    source = await comparisons.getCampaignComparisonSource({
+      campaignId,
+      currentBaseId: campaign.activeBaseId!,
+    });
+  if (!source) throw new Error('Fonte de comparação indisponível.');
+  const started = await comparisons.startCampaignComparison({
+    operationId: 'visual-session-scene-absent-candidate',
+    campaignId,
+    campaignToken: token,
+    currentBaseId: campaign.activeBaseId!,
+    expectedSourceToken: source.sourceToken,
+  });
+  if ('kind' in started) throw new Error('Comparação encerrada.');
+  let comparison = started.progress;
+  for (let n = 0; comparison.state === 'preparing' && n < 100; n++)
+    comparison = (
+      await comparisons.advanceCampaignComparison({
+        comparisonId: comparison.comparisonId,
+        operationId: 'visual-session-scene-candidate-' + n,
+        expectedCheckpoint: comparison.checkpoint,
+      })
+    ).progress;
+  if (comparison.state !== 'ready') throw new Error('Comparação não ficou pronta.');
+  const lore = await listCampaignLore({
+    campaignId,
+    campaignToken: token,
+    baseId: campaign.activeBaseId!,
+  });
+  const begin = await adoptions.startCampaignAdoption({
+    operationId: 'visual-session-scene-absence-adoption',
+    campaignId,
+    campaignToken: token,
+    comparisonId: comparison.comparisonId,
+    currentBaseId: campaign.activeBaseId!,
+    candidateBaseId: comparison.candidateBaseId,
+    expectedCollectionRevision: lore.collectionRevision,
+  });
+  if ('kind' in begin) throw new Error('Adoção encerrada.');
+  let adoption = (
+    await adoptions.prepareCampaignAdoption({
+      adoptionId: begin.progress.adoptionId,
+      operationId: 'visual-session-scene-absence-prepare',
+      expectedCheckpoint: begin.progress.checkpoint,
+    })
+  ).progress;
+  for (let n = 0; adoption.state === 'preparing' && n < 100; n++)
+    adoption = (
+      await adoptions.advanceCampaignAdoption({
+        adoptionId: adoption.adoptionId,
+        operationId: 'visual-session-scene-absence-step-' + n,
+        expectedCheckpoint: adoption.checkpoint,
+      })
+    ).progress;
+  if (adoption.state !== 'ready') throw new Error('Adoção não ficou pronta.');
+  return adoptions.activateCampaignAdoption({
+    adoptionId: adoption.adoptionId,
+    operationId: 'visual-session-scene-absence-activate',
+    expectedCheckpoint: adoption.checkpoint,
+  });
 }

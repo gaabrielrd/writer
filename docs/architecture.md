@@ -718,7 +718,7 @@ missões e compartilhamento continuam fora desse recorte. Ver [ADR 0037](decisio
 
 ## Referências de lore da sessão
 
-S2A está implementado e validado localmente; CI do novo head pendente. A feature
+S2A está concluído tecnicamente em `d9b7988`; CI e regras verdes. A feature
 `campaign-session-references` usa auth/shared e APIs públicas puras de campaign-lore;
 somente campaigns compõe seu painel e controles. S1 expõe um slot com identidade
 salva, sem título ou preparação. Adoção e projeção observada por C2 invalidam apenas
@@ -743,6 +743,26 @@ lista e duplicata limitadas. Não habilitar UI antes da implantação conjunta e
 drenagem dos starts antigos. Nenhum rollout foi executado. Cenas/blocos e S3
 continuam separados; [contrato S2A](tasks/writer-v2/execucao/22-referencias-de-lore-da-sessao.md)
 e [ADR 0038](decisions/0038-session-lore-references.md).
+
+## Cenas capturadas por sessão
+
+S2B está implementado e validado localmente, com CI do novo head pendente; [contrato de cenas](tasks/writer-v2/execucao/23-cenas-completas-na-preparacao-da-sessao.md).
+`campaign-session-references` mantém um host e um journal para Fichas/Cenas. O alvo
+scene compartilha controle, recibos e fences; kind omitido continua lore, com filtro
+no servidor. Nenhum namespace ou inventário C4 é acrescentado.
+
+`campaignSessionScenes.mjs` oferece listagem de blocos, leitura de plano/bloco e
+mídia sob o gate completo de campanha/sessão/vínculo/coleção/sourceContext. O plano
+valida os descritores completos antes de selecionar objetivo/conflito/ponto de
+vista; não lê content. Principal e adicionais são blocos separados na ordem
+capturada, com Arquivo explícito e sem duplicar o corpo principal. Imagens têm
+reautorização após download/derivação, pin/generation exatos e private,no-store.
+
+O cliente verifica hashes de todas as janelas antes de mostrar prosa; mantém um
+bloco/imagem por vez e descarta respostas antigas. Somente tipos públicos e
+`verifyCampaignBaseFields` de campaign-bases podem ser reutilizados aqui; os
+readers/loaders B não atravessam o gate da sessão. Cena ausente após adoção fica
+indisponível sem legado ou fallback. [ADR 0039](decisions/0039-session-scene-material.md).
 
 ## Progresso privado, contagem e retomada
 

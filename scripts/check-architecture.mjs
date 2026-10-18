@@ -55,7 +55,7 @@ function moduleSpecifiers(source) {
       node.moduleSpecifier &&
       ts.isStringLiteral(node.moduleSpecifier)
     ) {
-      specifiers.push(node.moduleSpecifier.text);
+      specifiers.push({ specifier: node.moduleSpecifier.text, node });
     }
     if (
       ts.isCallExpression(node) &&
@@ -63,13 +63,43 @@ function moduleSpecifiers(source) {
       node.arguments.length === 1 &&
       ts.isStringLiteral(node.arguments[0])
     ) {
-      specifiers.push(node.arguments[0].text);
+      specifiers.push({ specifier: node.arguments[0].text, node });
     }
     ts.forEachChild(node, visit);
   }
 
   visit(source);
   return specifiers;
+}
+
+function isPureCampaignReferenceImport(node, feature) {
+  const allowed =
+    feature === 'campaign-bases'
+      ? new Set(['verifyCampaignBaseFields'])
+      : new Set([
+          'CampaignLoreDisplay',
+          'CampaignLorePicker',
+          'validateCampaignLoreDisplayEntity',
+          'validateCampaignLorePickerItem',
+        ]);
+  if (ts.isImportDeclaration(node)) {
+    const clause = node.importClause;
+    if (!clause) return false;
+    if (clause.isTypeOnly) return true;
+    if (clause.name || !clause.namedBindings || !ts.isNamedImports(clause.namedBindings))
+      return false;
+    return clause.namedBindings.elements.every(
+      (entry) => entry.isTypeOnly || allowed.has((entry.propertyName ?? entry.name).text),
+    );
+  }
+  if (ts.isExportDeclaration(node)) {
+    if (node.isTypeOnly) return true;
+    if (!node.exportClause || !ts.isNamedExports(node.exportClause)) return false;
+    return node.exportClause.elements.every(
+      (entry) => entry.isTypeOnly || allowed.has((entry.propertyName ?? entry.name).text),
+    );
+  }
+  return false;
 }
 
 function isTestSource(path) {
@@ -151,7 +181,7 @@ export function checkArchitecture(root = defaultRoot) {
 
     errors.push(...boundaryViolations(source, sourceRelative));
 
-    for (const specifier of moduleSpecifiers(source)) {
+    for (const { specifier, node } of moduleSpecifiers(source)) {
       const targetPath = targetFromSpecifier(sourceFile, specifier, sourceRoot);
       if (!targetPath) continue;
       const targetRelative = normalized(relative(sourceRoot, targetPath));
@@ -177,12 +207,24 @@ export function checkArchitecture(root = defaultRoot) {
       if (
         sourceFeature === 'campaign-session-references' &&
         targetFeature &&
-        !['campaign-session-references', 'auth', 'campaign-lore'].includes(targetFeature)
+        !['campaign-session-references', 'auth', 'campaign-lore', 'campaign-bases'].includes(
+          targetFeature,
+        )
       ) {
         errors.push(
-          `${sourceRelative}: campaign-session-references usa somente auth/shared e a interface pública de campaign-lore; componha outras features em campaigns.`,
+          `${sourceRelative}: campaign-session-references usa somente auth/shared e contratos puros públicos de campaign-lore/campaign-bases; componha outras features em campaigns.`,
         );
         continue;
+      }
+
+      if (
+        sourceFeature === 'campaign-session-references' &&
+        ['campaign-lore', 'campaign-bases'].includes(targetFeature) &&
+        !isPureCampaignReferenceImport(node, targetFeature)
+      ) {
+        errors.push(
+          `${sourceRelative}: campaign-session-references pode consumir somente tipos e projeções/verificadores puros públicos de ${targetFeature}.`,
+        );
       }
 
       if (

@@ -32,6 +32,9 @@ import {
   confirmed,
   canceled,
   inconsistent,
+  sceneFields,
+  sceneRecord,
+  sceneCandidate,
 } from './campaignSessionReferenceContracts.mjs';
 
 export function createCampaignSessionReferencesService({ db, now = Date.now }) {
@@ -75,14 +78,17 @@ export function createCampaignSessionReferencesService({ db, now = Date.now }) {
           sourceContext = projectedContext(context);
         compareSource(request.sourceContext, sourceContext);
         if (!context) fail('not-found', 'Material indisponível.');
-        const target = await loreRecord(tx, db, context, request.target.sourceKey);
+        const target =
+          request.target.kind === 'scene'
+            ? await sceneRecord(tx, db, context, request.target.sourceKey)
+            : await loreRecord(tx, db, context, request.target.sourceKey);
         if (!target || target.mode === 'removed') fail('not-found', 'Ficha indisponível.');
         const duplicate = await tx.get(
           db
             .collection(c.path + '/sessionReferences')
             .where('sessionId', '==', c.sessionId)
             .where('deleted', '==', false)
-            .where('target.kind', '==', 'lore')
+            .where('target.kind', '==', request.target.kind)
             .where('target.sourceKey', '==', request.target.sourceKey)
             .limit(1)
             .select(...referenceFields),
@@ -130,29 +136,55 @@ export function createCampaignSessionReferencesService({ db, now = Date.now }) {
     async listCampaignSessionReferences(uid, data) {
       if (!['references', 'candidates'].includes(data?.view))
         fail('invalid-argument', 'Vista inválida.');
+      const kind = data.kind ?? 'lore';
+      if (!['lore', 'scene'].includes(kind)) fail('invalid-argument', 'Tipo inválido.');
+      const sceneCandidates = data.view === 'candidates' && kind === 'scene';
       scopeInput(uid, data, [
         ...scopeFields,
         'view',
         'cursor',
         'limit',
+        'kind',
+        ...(sceneCandidates ? ['archive'] : []),
         ...(data.view === 'candidates' ? ['sourceContext'] : []),
       ]);
       if (data.view === 'candidates') sourceContextInput(data.sourceContext);
+      const archive = sceneCandidates ? (data.archive ?? 'active') : null;
+      if (sceneCandidates && !['active', 'archived', 'all'].includes(archive))
+        fail('invalid-argument', 'Arquivo inválido.');
       const size = workLimit(data.limit);
       return db.runTransaction(async (tx) => {
         const c = await active(tx, uid, data),
           context = await optionalLore(tx, db, c),
           sourceContext = projectedContext(context);
         if (data.view === 'candidates') compareSource(data.sourceContext, sourceContext);
-        const scope = { ...envelope(c), view: data.view, sourceContext };
+        const scope = {
+          ...envelope(c),
+          view: data.view,
+          kind,
+          ...(sceneCandidates ? { archive } : {}),
+          sourceContext,
+        };
         const cursor = decodeBaseCursor(
           data.cursor,
           scope,
-          data.view === 'references' ? ['key', 'date'] : ['key'],
+          data.view === 'references'
+            ? ['key', 'date']
+            : sceneCandidates
+              ? ['key', 'order']
+              : ['key'],
         );
         if (cursor) {
-          if (data.view === 'candidates') token(cursor.key);
-          else {
+          if (data.view === 'candidates') {
+            token(cursor.key);
+            if (
+              sceneCandidates &&
+              (typeof cursor.order !== 'string' ||
+                !cursor.order ||
+                Buffer.byteLength(cursor.order) > 1500)
+            )
+              fail('invalid-argument', 'Página inválida.');
+          } else {
             validateId(cursor.key);
             if (!safe(cursor.date) || cursor.date > 8640000000000000)
               fail('invalid-argument', 'Página inválida.');
@@ -166,6 +198,7 @@ export function createCampaignSessionReferencesService({ db, now = Date.now }) {
             .collection(c.path + '/sessionReferences')
             .where('sessionId', '==', c.sessionId)
             .where('deleted', '==', false)
+            .where('target.kind', '==', kind)
             .orderBy('createdAt')
             .orderBy('__name__')
             .limit(size + 1)
@@ -175,8 +208,11 @@ export function createCampaignSessionReferencesService({ db, now = Date.now }) {
           for (const doc of docs.slice(0, size)) {
             const value = storedReference(doc.data(), c, doc.id);
             if (value.deleted) inconsistent();
+            if (value.target.kind !== kind) inconsistent();
             const target = context
-              ? await loreRecord(tx, db, context, value.target.sourceKey)
+              ? kind === 'scene'
+                ? await sceneRecord(tx, db, context, value.target.sourceKey)
+                : await loreRecord(tx, db, context, value.target.sourceKey)
               : null;
             items.push(
               !target || target.mode === 'removed'
@@ -184,15 +220,18 @@ export function createCampaignSessionReferencesService({ db, now = Date.now }) {
                 : {
                     ...referenceMetadata(value),
                     available: true,
-                    target: {
-                      kind: 'lore',
-                      sourceKey: target.sourceKey,
-                      name: target.name,
-                      category: target.category,
-                      revision: target.revision,
-                      mode: target.mode,
-                      legacy: target.legacy ?? false,
-                    },
+                    target:
+                      kind === 'scene'
+                        ? sceneCandidate(target, context, target.sourceKey)
+                        : {
+                            kind: 'lore',
+                            sourceKey: target.sourceKey,
+                            name: target.name,
+                            category: target.category,
+                            revision: target.revision,
+                            mode: target.mode,
+                            legacy: target.legacy ?? false,
+                          },
                   },
             );
           }
@@ -203,6 +242,36 @@ export function createCampaignSessionReferencesService({ db, now = Date.now }) {
               scope,
               key: last.id,
               date: last.data().createdAt,
+            });
+          }
+        } else if (context && sceneCandidates) {
+          if (cursor) {
+            const after = await sceneRecord(tx, db, context, cursor.key);
+            if (
+              !after ||
+              after.orderKey !== cursor.order ||
+              (archive !== 'all' && after.archived !== (archive === 'archived'))
+            )
+              fail('invalid-argument', 'Página inválida.');
+          }
+          let query = db.collection(context.path + '/items').where('kind', '==', 'scene');
+          if (archive !== 'all') query = query.where('archived', '==', archive === 'archived');
+          query = query
+            .orderBy('orderKey')
+            .orderBy('__name__')
+            .limit(size + 1)
+            .select(...sceneFields);
+          if (cursor) query = query.startAfter(cursor.order, cursor.key);
+          const docs = (await tx.get(query)).docs;
+          for (const doc of docs.slice(0, size))
+            items.push(sceneCandidate(doc.data(), context, doc.id));
+          if (docs.length > size) {
+            const last = docs[size - 1];
+            nextCursor = encodeBaseCursor({
+              version: 1,
+              scope,
+              key: last.id,
+              order: last.data().orderKey,
             });
           }
         } else if (context) {
@@ -260,6 +329,7 @@ export function createCampaignSessionReferencesService({ db, now = Date.now }) {
         );
         if (!value || value.deleted) fail('not-found', 'Vínculo indisponível.');
         if (value.revision !== data.expectedRevision) workConflict();
+        if (value.target.kind !== 'lore') fail('invalid-argument', 'O vínculo não é de lore.');
         const context = await optionalLore(tx, db, c),
           sourceContext = projectedContext(context);
         compareSource(data.sourceContext, sourceContext);

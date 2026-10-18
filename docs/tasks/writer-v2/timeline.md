@@ -3,15 +3,16 @@
 ## Situação em 2026-10-18
 
 F2-01 a F2-07 e F2-08 S1 estão concluídos tecnicamente nos heads registrados na
-[execução](execucao/README.md). S2A está validado localmente, com CI do novo head pendente. Pilotos humanos,
+[execução](execucao/README.md). S2A está concluído tecnicamente em `d9b7988`, com CI e regras verdes. S2B está validado localmente, com CI do novo head pendente. Pilotos humanos,
 condições comerciais e rollout continuam com seus aceites próprios.
 
 A baseline de 13/10 abaixo é histórica: seus totais não representam saldo nem
 previsão atual de lançamento. O detalhamento de F2-08 reabriu a estimativa.
 S2A tem referência provisória **34/54/84 h** de esforço humano total, com baixa
 confiança e sem horas realizadas informadas. A antiga divisão igual de S2 foi
-abandonada. S2B depende do contrato de cenas/blocos/mídia e ainda não tem nova
-faixa. Não somar S2A à linha histórica como se fosse trabalho adicional medido,
+abandonada. O [contrato S2B](execucao/23-cenas-completas-na-preparacao-da-sessao.md)
+reabriu a referência total em **34/56/92 h** (backend 12/20/32, UI 12/20/34 e
+QA/regressões/docs 10/16/26), também provisória e com confiança baixa. Não somar S2A à linha histórica como se fosse trabalho adicional medido,
 nem subtrair tarefas entregues sem apontamento humano. Um novo total exige
 reestimar os recortes restantes; por ora, não há saldo validado.
 

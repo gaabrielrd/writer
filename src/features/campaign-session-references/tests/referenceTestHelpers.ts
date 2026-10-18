@@ -45,7 +45,7 @@ export const envelope = {
 export const page = (
   items: SessionReferenceRow[] = [],
   nextCursor: string | null = null,
-): SessionReferencePage => ({
+): Extract<SessionReferencePage, { view: 'references' }> => ({
   ...envelope,
   view: 'references',
   sourceContext: context,

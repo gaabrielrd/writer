@@ -26,6 +26,7 @@ export interface SessionLoreCandidate {
   mode: 'base' | 'override';
   legacy: boolean;
 }
+export type SessionReferenceKind = 'lore' | 'scene';
 export type SessionReferenceRow = {
   id: string;
   revision: number;
@@ -35,7 +36,16 @@ export type SessionReferenceRow = {
 export type ListSessionReferencesInput = SessionReferenceScope & {
   cursor?: string;
   limit?: number;
-} & ({ view: 'references' } | { view: 'candidates'; sourceContext: SessionReferenceSourceContext });
+} & (
+    | { view: 'references'; kind?: SessionReferenceKind }
+    | { view: 'candidates'; kind?: 'lore'; sourceContext: SessionReferenceSourceContext }
+    | {
+        view: 'candidates';
+        kind: 'scene';
+        sourceContext: SessionReferenceSourceContext;
+        archive?: 'active' | 'archived' | 'all';
+      }
+  );
 export type SessionReferencePage = SessionReferenceEnvelope & {
   sourceContext: SessionReferenceSourceContext | null;
   nextCursor: string | null;
@@ -48,7 +58,7 @@ export interface AddSessionReferenceInput extends SessionReferenceScope {
   operationId: string;
   expectedReferenceCollectionRevision: number;
   sourceContext: SessionReferenceSourceContext;
-  target: { kind: 'lore'; sourceKey: string };
+  target: { kind: SessionReferenceKind; sourceKey: string };
 }
 export interface RemoveSessionReferenceInput extends SessionReferenceScope {
   referenceId: string;

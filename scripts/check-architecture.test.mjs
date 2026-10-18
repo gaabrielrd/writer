@@ -153,7 +153,7 @@ test('referências usam lore público e são compostas somente em campaigns', ()
   withProject(
     {
       'features/campaign-session-references/index.ts':
-        "import { useAuth } from '@/features/auth'; export { View } from '@/features/campaign-lore';",
+        "import { useAuth } from '@/features/auth'; export { CampaignLoreDisplay as View } from '@/features/campaign-lore';",
       'features/campaigns/index.ts':
         "export { Panel } from '@/features/campaign-session-references';",
     },
@@ -162,7 +162,7 @@ test('referências usam lore público e são compostas somente em campaigns', ()
   for (const statement of [
     "import type { Session } from '@/features/campaign-sessions';",
     "export { close } from '@/features/campaign-deletions';",
-    "const base = import('@/features/campaign-bases');",
+    "const blocks = import('@/features/adventure-blocks');",
     "import type { Campaign } from '@/features/campaigns';",
   ])
     withProject({ 'features/campaign-session-references/index.ts': statement }, (root) =>
@@ -183,4 +183,38 @@ test('referências usam lore público e são compostas somente em campaigns', ()
       },
       (root) => assert.notDeepEqual(checkArchitecture(root), []),
     );
+});
+
+test('referências consomem apenas APIs puras de lore e base, incluindo aliases e tipos', () => {
+  withProject(
+    {
+      'features/campaign-session-references/index.ts': `
+      import type * as Base from '@/features/campaign-bases';
+      import { verifyCampaignBaseFields as verify, type CampaignBaseChunk } from '@/features/campaign-bases';
+      export { type CampaignBaseFieldManifest, verifyCampaignBaseFields as check } from '@/features/campaign-bases';
+      export type * from '@/features/campaign-lore';
+      import { CampaignLorePicker, validateCampaignLoreDisplayEntity } from '@/features/campaign-lore';
+    `,
+    },
+    (root) => assert.deepEqual(checkArchitecture(root), []),
+  );
+  for (const statement of [
+    "import { CampaignBaseReader } from '@/features/campaign-bases';",
+    "import { CampaignBaseReader as verifyCampaignBaseFields } from '@/features/campaign-bases';",
+    "import Base from '@/features/campaign-bases';",
+    "import * as Base from '@/features/campaign-bases';",
+    "import '@/features/campaign-bases';",
+    "const base = import('@/features/campaign-bases');",
+    "export * from '@/features/campaign-bases';",
+    "export * as Base from '@/features/campaign-bases';",
+    "export { CampaignBaseReader } from '@/features/campaign-bases';",
+    "import { CampaignLorePanel } from '@/features/campaign-lore';",
+  ]) {
+    withProject({ 'features/campaign-session-references/index.ts': statement }, (root) =>
+      assert.match(
+        checkArchitecture(root).join('\n'),
+        /somente tipos e projeções\/verificadores puros/,
+      ),
+    );
+  }
 });

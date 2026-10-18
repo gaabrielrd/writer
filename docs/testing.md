@@ -729,8 +729,32 @@ sem alegar validação de mídia real. O navegador usa transporte de fixture em
 `e2e/visual/campaign-session-references.visual.ts`; duas jornadas em seis perfis.
 Validate local verde: 1.910 frontend, 83 scripts e 383 Functions; cinco famílias SDK
 únicas e 12 combinações nativas positivas. A [entrega S2A](entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md)
-preserva falhas/revalidações e limitações. CI do novo head ainda pendente; testes
+preserva falhas/revalidações e limitações. CI geral e regras 145/145 do head `d9b7988` verdes; testes
 não equivalem a aprovação humana ou rollout.
+
+## Cenas e blocos por sessão (S2B)
+
+Os testes de campaign-session-references cobrem DTOs fechados de cena/plano/bloco,
+verificação integral de janelas e hashes, imagem explícita, arquivo, journal único,
+respostas tardias e recuperação independente da origem. A regra AST permite apenas
+tipos públicos e verificador puro B, fechando readers/loaders fora do gate de sessão.
+
+`functions/test/campaignSessionScenes.test.mjs` confere descritores completos antes
+de selecionar campos, plano sem leitura do principal, parent/role/origin, corpo
+compartilhado, paginação Unicode, arquivo, revisão/coleção/contexto e revogação da
+mídia após download/derivação. O teste HTTP usa o wrapper Firebase real para
+private,no-store no sucesso e erro de aplicação, sem cobrir respostas pré-callback.
+
+`tests/firestore/campaign-session-scenes.rules.test.mjs` usa captura e adoção reais
+com cinco famílias específicas e assets/deriver injetados. O navegador usa
+`e2e/visual/campaign-session-scenes.visual.ts`, duas jornadas em seis perfis; o
+transporte é simulado e não comprova autorização ou Storage reais. Validar somente
+casos afetados durante ajustes e rodar validate no fechamento, registrando contagens
+e falhas reais. Não repetir S2A integralmente por alterações mecânicas de locators.
+Validate S2B verde: 1.935 frontend, 84 scripts e 395 Functions. SDK: cinco famílias
+únicas comprovadas, com revalidação dirigida registrada; Chromium 12/12, zero
+retry/skip/falha. [Entrega e limites](entregas/2026-10-18-writer-v2-cenas-completas-da-sessao.md);
+CI do novo head pendente.
 
 ## Protótipo e evidências do Writer V2
 

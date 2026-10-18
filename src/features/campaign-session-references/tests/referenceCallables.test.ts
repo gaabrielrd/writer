@@ -2,6 +2,7 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import * as calls from '../services/sessionReferenceCallables';
 import { scope, context, operation, row } from './referenceTestHelpers';
+import { sceneScope, mainKey } from './sceneReferenceHelpers';
 const sdk = vi.hoisted(() => ({
   app: { name: 'writer-test' },
   functions: { region: 'test' },
@@ -41,6 +42,15 @@ const cases = [
     'resolveCampaignSessionReferenceOperation',
     { intent: 'cancel', action: 'remove', request: remove },
   ],
+  [
+    'listCampaignSessionSceneBlocks',
+    { ...sceneScope, archive: 'archived', cursor: 'opaque-blocks', limit: 25 },
+  ],
+  [
+    'readCampaignSessionSceneReference',
+    { ...sceneScope, blockKey: mainKey, cursor: 'opaque-text', limit: 4 },
+  ],
+  ['readCampaignSessionSceneImage', { ...sceneScope, blockKey: mainKey }],
 ] as const;
 it.each(cases)(
   'transporta %s sem transformar identidades, contexto observado ou resposta',

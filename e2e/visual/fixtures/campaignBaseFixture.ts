@@ -1100,3 +1100,20 @@ export function fixtureDeleteCampaignBases(uid: string, campaignId: string): boo
     (value) => value.uid === uid && value.progress.reserved.campaignId === campaignId,
   );
 }
+
+// Simulated transport seam only: captured scene/block clones after the existing owner/source gate.
+// This does not prove the real server's manifest/body I/O ordering.
+export async function fixtureCampaignBaseSessionSnapshot(campaignId: string) {
+  const { record, allowed } = await context(campaignId);
+  return {
+    baseId: record.baseId,
+    items: structuredClone(
+      record.snapshot.items
+        .filter(
+          ({ item }) =>
+            (item.kind === 'scene' || item.kind === 'block') && allowed.has(item.sourceKey),
+        )
+        .map(({ item, texts }) => ({ item, texts })),
+    ),
+  };
+}

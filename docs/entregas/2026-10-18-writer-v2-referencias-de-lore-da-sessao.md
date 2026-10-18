@@ -3,7 +3,7 @@
 - **Data:** 2026-10-18
 - **Branch:** `codex/writer-v2`, checkout isolado
 - **Plano de origem:** [S2A](../tasks/writer-v2/execucao/22-referencias-de-lore-da-sessao.md)
-- **Estado:** implementado e validado localmente; CI do novo head pendente no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
+- **Estado:** concluído tecnicamente em `d9b7988`; CI e regras verdes no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
 - **Decisão:** [ADR 0038](../decisions/0038-session-lore-references.md).
 
 ## Objetivo
@@ -135,7 +135,7 @@ histórico e condução ao vivo. Não houve merge, deploy ou alteração de dado
 
 ## Limitações e pendências conhecidas
 
-CI do próprio head pendente. A CI verde de S1/c95253a é evidência distinta. Habilitação
+CI do próprio head `d9b7988` verde: [geral](https://github.com/gaabrielrd/writer/actions/runs/39103317060), 17 jobs aprovados (Node 22/24, auditoria, 12 shards visuais, produção 7/7 em 13,5 s e consolidação), e [regras](https://github.com/gaabrielrd/writer/actions/runs/39103317029), 145/145, zero falhas/skips, 93.586,413291 ms. A CI S1/c95253a é evidência distinta. Habilitação
 exige implantar APIs, guardas, índices/regras e C4 start/advance conjuntamente e
 drenar versões antigas, inclusive start v2. Atualizar apenas advance não basta.
 IDs mínimos de vínculo ficam no servidor após tombstone da sessão até C4; nenhuma

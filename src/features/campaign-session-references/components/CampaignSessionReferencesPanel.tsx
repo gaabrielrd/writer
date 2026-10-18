@@ -10,14 +10,22 @@ import {
   publishInvalidation,
   subscribeInvalidation,
 } from '@/shared/services';
-import { Alert, Badge, Button, Dialog, LoadingState } from '@/shared/ui';
+import { Alert, Badge, Button, Dialog, Dropdown, LoadingState } from '@/shared/ui';
 import type {
-  SessionReferenceRow,
   SessionReferenceScope,
   SessionReferenceSourceContext,
   SessionLoreMaterial,
   PendingSessionReference,
+  SessionLoreCandidate,
 } from '../model/sessionReference';
+import type {
+  AnySessionReferenceRow,
+  SessionSceneArchive,
+  SessionSceneCandidate,
+  SessionSceneReadScope,
+} from '../model/sessionSceneReference';
+import { SessionScenePicker } from './SessionScenePicker';
+import { SessionSceneReader } from './SessionSceneReader';
 import * as api from '../services/sessionReferenceService';
 import * as store from '../services/sessionReferenceRecovery';
 import { useSessionReferenceOperation } from '../hooks/useSessionReferenceOperation';
@@ -67,17 +75,27 @@ function Panel({
   readOnly,
   uid,
 }: CampaignSessionReferencesPanelProps & { uid: string }) {
-  const [rows, setRows] = useState<SessionReferenceRow[]>([]),
+  const [kind, setKind] = useState<'lore' | 'scene'>('lore'),
+    [sceneSelection, setSceneSelection] = useState<{
+      sceneKey: string;
+      scope: SessionSceneReadScope;
+      gate: number;
+    } | null>(null),
+    [rows, setRows] = useState<AnySessionReferenceRow[]>([]),
     [context, setContext] = useState<SessionReferenceSourceContext | null>(null),
     [cursor, setCursor] = useState<string | null>(null),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(''),
     [picker, setPicker] = useState(false),
-    [selected, setSelected] = useState<SessionReferenceRow | null>(null),
+    [selected, setSelected] = useState<AnySessionReferenceRow | null>(null),
     [material, setMaterial] = useState<SessionLoreMaterial | null>(null),
     [reading, setReading] = useState(false),
     [removing, setRemoving] = useState<PendingSessionReference | null>(null),
     [stale, setStale] = useState(false);
+  const area = useRef(kind);
+  // Invalidate old area continuations during the render that changes the selection.
+  // eslint-disable-next-line react-hooks/refs
+  area.current = kind;
   const alive = useRef(true),
     latest = useRef({ isActive, readOnly }),
     owner = useRef(0),
@@ -106,6 +124,7 @@ function Panel({
     setContext(null);
     setMaterial(null);
     setSelected(null);
+    setSceneSelection(null);
     setPicker(false);
     setRemoving(null);
     setStale(true);
@@ -156,11 +175,12 @@ function Panel({
       const page = await api.listCampaignSessionReferences({
         ...scope,
         view: 'references',
+        ...(kind === 'scene' ? { kind: 'scene' as const } : {}),
         ...(next ? { cursor: next } : {}),
         limit: 25,
       });
       if (!active() || owner.current !== own || gate !== access.current) return;
-      api.validatePage(page, uid, scope, 'references');
+      api.validatePage(page, uid, scope, 'references', kind);
       if (page.view !== 'references') api.fail();
       const previous = observed.current;
       observe(page);
@@ -202,7 +222,7 @@ function Panel({
       current = false;
       window.removeEventListener('focus', focus);
     };
-  }, [scope.campaignId, scope.campaignToken, scope.sessionId, scope.expectedSessionRevision]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scope.campaignId, scope.campaignToken, scope.sessionId, scope.expectedSessionRevision, kind]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(
     () =>
       store.subscribeSessionReferences(uid, scope.campaignId, () => {
@@ -231,10 +251,38 @@ function Panel({
     )
       throw new Error('O acesso às fichas mudou. Consulte os vínculos novamente.');
     return {
-      items: page.items,
+      items: page.items as SessionLoreCandidate[],
       nextCursor: page.nextCursor,
       projectionToken: page.sourceContext?.projectionToken ?? null,
     };
+  }
+  async function sceneCandidates(
+    archive: SessionSceneArchive,
+    next?: string,
+  ): Promise<{ items: SessionSceneCandidate[]; nextCursor: string | null }> {
+    const expected = observed.current,
+      own = access.current;
+    if (!expected?.context) throw new Error('Consulte os vínculos antes de escolher uma cena.');
+    const page = await api.listCampaignSessionReferences({
+      ...scope,
+      view: 'candidates',
+      kind: 'scene',
+      sourceContext: expected.context,
+      archive,
+      ...(next ? { cursor: next } : {}),
+      limit: 25,
+    });
+    if (!active() || own !== access.current || area.current !== 'scene')
+      throw new Error('Esta seleção foi encerrada.');
+    api.validatePage(page, uid, scope, 'candidates', 'scene');
+    if (page.view !== 'candidates') api.fail();
+    observe(page);
+    if (
+      own !== access.current ||
+      api.canonical(page.sourceContext) !== api.canonical(expected.context)
+    )
+      throw new Error('O acesso às cenas mudou. Consulte novamente.');
+    return { items: page.items as SessionSceneCandidate[], nextCursor: page.nextCursor };
   }
   function add(sourceKey: string) {
     const current = observed.current;
@@ -252,13 +300,27 @@ function Panel({
         operationId,
         expectedReferenceCollectionRevision: current.revision,
         sourceContext: current.context,
-        target: { kind: 'lore', sourceKey },
+        target: { kind, sourceKey },
       },
     });
   }
-  async function read(row: SessionReferenceRow) {
+  async function read(row: AnySessionReferenceRow) {
     const current = observed.current;
     if (!row.available || !current?.context) return;
+    if (row.target.kind === 'scene') {
+      setSceneSelection({
+        sceneKey: row.target.sourceKey,
+        gate: access.current,
+        scope: {
+          ...scope,
+          referenceId: row.id,
+          expectedRevision: row.revision,
+          expectedReferenceCollectionRevision: current.revision,
+          sourceContext: current.context,
+        },
+      });
+      return;
+    }
     const own = ++readOwner.current,
       gate = access.current;
     setSelected(row);
@@ -285,7 +347,7 @@ function Panel({
       if (active() && own === readOwner.current) setReading(false);
     }
   }
-  function remove(row: SessionReferenceRow) {
+  function remove(row: AnySessionReferenceRow) {
     const current = observed.current;
     if (locked || !current) return;
     setRemoving({
@@ -303,15 +365,32 @@ function Panel({
     });
   }
   return (
-    <section className={styles.panel} aria-label="Referências de lore da sessão">
-      <h3>Fichas desta sessão</h3>
+    <section className={styles.panel} aria-label="Referências da sessão">
+      <Dropdown
+        mode="select"
+        label="Material da sessão"
+        value={kind}
+        options={[
+          { value: 'lore', label: 'Fichas' },
+          { value: 'scene', label: 'Cenas' },
+        ]}
+        onValueChange={(value) => {
+          if (value === kind) return;
+          owner.current++;
+          invalidate();
+          setError('');
+          setKind(value as 'lore' | 'scene');
+        }}
+      />
+      <h3>{kind === 'lore' ? 'Fichas desta sessão' : 'Cenas desta sessão'}</h3>
+
       <div className={styles.actions}>
         <Button ref={refresh} variant="outline" onClick={() => void load()}>
           Consultar vínculos
         </Button>
         {context && (
           <Button disabled={locked || stale} onClick={() => setPicker(true)}>
-            Vincular ficha
+            {kind === 'lore' ? 'Vincular ficha' : 'Vincular cena'}
           </Button>
         )}
         {cursor && (
@@ -329,7 +408,9 @@ function Panel({
             ? 'Esta janela está vazia; há mais vínculos para consultar.'
             : stale
               ? 'Consulte os vínculos atuais para continuar.'
-              : 'Nenhuma ficha vinculada à sessão.'}
+              : kind === 'lore'
+                ? 'Nenhuma ficha vinculada à sessão.'
+                : 'Nenhuma cena vinculada à sessão.'}
         </p>
       )}
       {!context && !loading && !error && (
@@ -342,9 +423,16 @@ function Panel({
         {rows.map((row, index) => (
           <li key={row.id}>
             <p>
-              {row.available ? row.target.name : 'Material indisponível'}{' '}
-              {row.available && row.target.legacy && (
+              {row.available
+                ? row.target.kind === 'lore'
+                  ? row.target.name
+                  : row.target.title
+                : 'Material indisponível'}{' '}
+              {row.available && row.target.kind === 'lore' && row.target.legacy && (
                 <Badge variant="outline">Legado da mesa</Badge>
+              )}
+              {row.available && row.target.kind === 'scene' && row.target.archived && (
+                <Badge variant="outline">Arquivo da cena</Badge>
               )}
             </p>
             <div className={styles.actions}>
@@ -352,9 +440,12 @@ function Panel({
                 <Button
                   variant="outline"
                   onClick={() => void read(row)}
-                  aria-label={'Ler ficha ' + row.target.name}
+                  aria-label={
+                    (row.target.kind === 'lore' ? 'Ler ficha ' : 'Ler cena ') +
+                    (row.target.kind === 'lore' ? row.target.name : row.target.title)
+                  }
                 >
-                  Ler ficha
+                  {row.target.kind === 'lore' ? 'Ler ficha' : 'Ler cena'}
                 </Button>
               )}
               <Button
@@ -362,7 +453,12 @@ function Panel({
                 disabled={locked || stale}
                 onClick={() => remove(row)}
                 aria-label={
-                  'Remover vínculo ' + (row.available ? row.target.name : String(index + 1))
+                  'Remover vínculo ' +
+                  (row.available
+                    ? row.target.kind === 'lore'
+                      ? row.target.name
+                      : row.target.title
+                    : String(index + 1))
                 }
               >
                 Remover vínculo
@@ -371,7 +467,7 @@ function Panel({
           </li>
         ))}
       </ul>
-      {context && (
+      {context && kind === 'lore' && (
         <CampaignLorePicker
           open={picker}
           identity={api.canonical([uid, scope, context])}
@@ -382,6 +478,30 @@ function Panel({
           onSelect={add}
           onClose={() => setPicker(false)}
           onInvalidated={reject}
+        />
+      )}
+      {context && picker && kind === 'scene' && (
+        <SessionScenePicker
+          active={active}
+          disabled={locked}
+          load={sceneCandidates}
+          onSelect={add}
+          onClose={() => setPicker(false)}
+          onError={reject}
+        />
+      )}
+      {sceneSelection && (
+        <SessionSceneReader
+          key={api.canonical(sceneSelection)}
+          uid={uid}
+          scope={sceneSelection.scope}
+          sceneKey={sceneSelection.sceneKey}
+          active={() =>
+            active() && area.current === 'scene' && access.current === sceneSelection.gate
+          }
+          observe={observe}
+          onError={reject}
+          onClose={() => setSceneSelection(null)}
         />
       )}
       <Dialog
@@ -420,7 +540,7 @@ function Panel({
         open={removing !== null}
         onClose={() => setRemoving(null)}
         title="Remover vínculo da sessão?"
-        description="Esta ação remove somente o vínculo; a ficha e o texto autoral permanecem."
+        description="Esta ação remove somente o vínculo; o material de origem e o texto autoral permanecem."
         footer={
           <>
             <Button variant="outline" onClick={() => setRemoving(null)}>

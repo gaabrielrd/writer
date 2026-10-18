@@ -15,6 +15,7 @@ import { createCampaignCaptureService } from './campaignCapture.mjs';
 import { createCampaignNotesService } from './campaignNotes.mjs';
 import { createCampaignSessionsService } from './campaignSessions.mjs';
 import { createCampaignSessionReferencesService } from './campaignSessionReferences.mjs';
+import { createCampaignSessionScenesService } from './campaignSessionScenes.mjs';
 import { createCampaignLoreService } from './campaignLore.mjs';
 import { createCampaignComparisonService } from './campaignComparison.mjs';
 import { createCampaignComparisonReadService } from './campaignComparisonRead.mjs';
@@ -275,6 +276,7 @@ const callable = (method, secrets = []) =>
         const campaignNotes = createCampaignNotesService({ db });
         const campaignSessions = createCampaignSessionsService({ db });
         const campaignSessionReferences = createCampaignSessionReferencesService({ db });
+        const campaignSessionScenes = createCampaignSessionScenesService({ db, assets });
         const campaignLore = createCampaignLoreService({ db });
         const campaignComparison = createCampaignComparisonService({ db, assets });
         const campaignComparisonRead = createCampaignComparisonReadService({ db, assets });
@@ -303,6 +305,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (campaignSessionScenes[method] ? campaignSessionScenes : null) ??
           (campaignSessionReferences[method] ? campaignSessionReferences : null) ??
           (campaignSessions[method] ? campaignSessions : null) ??
           (campaignDeletion[method] ? campaignDeletion : null) ??
@@ -378,6 +381,9 @@ export const listCampaignNotes = callable('listCampaignNotes');
 export const getCampaignNote = callable('getCampaignNote');
 export const saveCampaignNote = callable('saveCampaignNote');
 export const deleteCampaignNote = callable('deleteCampaignNote');
+export const listCampaignSessionSceneBlocks = callable('listCampaignSessionSceneBlocks');
+export const readCampaignSessionSceneReference = callable('readCampaignSessionSceneReference');
+export const readCampaignSessionSceneImage = callable('readCampaignSessionSceneImage');
 export const listCampaignSessionReferences = callable('listCampaignSessionReferences');
 export const addCampaignSessionReference = callable('addCampaignSessionReference');
 export const removeCampaignSessionReference = callable('removeCampaignSessionReference');

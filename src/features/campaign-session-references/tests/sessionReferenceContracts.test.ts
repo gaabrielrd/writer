@@ -165,7 +165,7 @@ it('journal é metadata-only fechado e rejeita schema futuro, IDs inválidos e c
     { sourceContext: null },
     { sourceContext: { ...context, secret: true } },
     { target: { ...request.target, name: 'cache privado' } },
-    { target: { kind: 'scene', sourceKey } },
+    { target: { kind: 'future-kind', sourceKey } },
     { target: { kind: 'lore', sourceKey: 'short' } },
   ])
     expect(() =>
