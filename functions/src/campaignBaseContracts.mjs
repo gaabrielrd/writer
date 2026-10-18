@@ -213,7 +213,7 @@ export function decodeBaseCursor(value, scope, keys = ['key']) {
   return parsed;
 }
 // Ready-base readers reuse this gate; content updateTime is deliberately not compared.
-export async function readCampaignBase(tx, db, uid, campaignId) {
+export async function readCampaignBase(tx, db, uid, campaignId, { optionalSource = false } = {}) {
   if (!uid) workFail('unauthenticated', 'Entre na sua conta.');
   await assertCampaignNotDeleted(tx, db, uid, id(campaignId));
   const campaignSnapshot = await tx.get(db.doc('campaigns/' + id(campaignId))),
@@ -223,6 +223,12 @@ export async function readCampaignBase(tx, db, uid, campaignId) {
   if (campaign.schemaVersion !== 1)
     workFail('failed-precondition', 'Versão da campanha não suportada.');
   if (
+    optionalSource &&
+    campaign.provenance?.kind === 'independent' &&
+    campaign.activeBaseId == null
+  )
+    return null;
+  if (
     campaign.provenance?.kind !== 'original' ||
     !campaign.activeBaseId ||
     campaign.provenance.baseId !== campaign.activeBaseId
@@ -230,6 +236,7 @@ export async function readCampaignBase(tx, db, uid, campaignId) {
     workFail('not-found', 'Base indisponível.');
   const ref = db.doc(basePath(uid, campaign.activeBaseId)),
     base = (await tx.get(ref)).data();
+  if (optionalSource && !base) return null;
   if (
     !base ||
     base.ownerId !== uid ||
@@ -238,10 +245,13 @@ export async function readCampaignBase(tx, db, uid, campaignId) {
     base.campaignId !== campaignId ||
     base.adventureId !== campaign.provenance.adventureId
   )
-    workFail('not-found', 'Base indisponível.');
+    workFail(optionalSource ? 'failed-precondition' : 'not-found', 'Base indisponível.');
   if (base.schemaVersion !== 1) workFail('failed-precondition', 'Versão da base não suportada.');
   const adventureSnapshot = await tx.get(db.doc('adventures/' + id(base.adventureId))),
     adventure = adventureSnapshot.data();
+  if (optionalSource && adventure && (adventure.ownerId !== uid || adventure.schemaVersion !== 1))
+    workFail('failed-precondition', 'A identidade ou versão da aventura está inconsistente.');
+  if (optionalSource && (!adventure || adventure.deleting)) return null;
   if (!adventure || adventure.ownerId !== uid || adventure.deleting)
     workFail('not-found', 'Origem indisponível.');
   if (adventure.schemaVersion !== 1)

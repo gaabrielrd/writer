@@ -245,6 +245,7 @@ async function context(
       baseId: meta.baseId,
       token: meta.projectionToken,
       revision: project.revision,
+      availableSourceKeys: [...available].sort(),
     }),
   };
   return { project, meta, envelope, available };

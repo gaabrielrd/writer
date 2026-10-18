@@ -1,6 +1,21 @@
 # Timeline e capacidade
 
-## Referência revisada em 2026-10-13
+## Situação em 2026-10-18
+
+F2-01 a F2-07 e F2-08 S1 estão concluídos tecnicamente nos heads registrados na
+[execução](execucao/README.md). S2A está validado localmente, com CI do novo head pendente. Pilotos humanos,
+condições comerciais e rollout continuam com seus aceites próprios.
+
+A baseline de 13/10 abaixo é histórica: seus totais não representam saldo nem
+previsão atual de lançamento. O detalhamento de F2-08 reabriu a estimativa.
+S2A tem referência provisória **34/54/84 h** de esforço humano total, com baixa
+confiança e sem horas realizadas informadas. A antiga divisão igual de S2 foi
+abandonada. S2B depende do contrato de cenas/blocos/mídia e ainda não tem nova
+faixa. Não somar S2A à linha histórica como se fosse trabalho adicional medido,
+nem subtrair tarefas entregues sem apontamento humano. Um novo total exige
+reestimar os recortes restantes; por ora, não há saldo validado.
+
+## Baseline histórica revisada em 2026-10-13
 
 Uma pessoa, 20 horas brutas por semana. As 41 tarefas das fases 1–5 permanecem
 no escopo; fase 6 não recebe estimativa nem compromisso. O orçamento anterior
@@ -68,18 +83,18 @@ ainda não foram registradas.
 | Fase                        |     O (h) |     C (h) |     P (h) | Situação                                                             |
 | --------------------------- | --------: | --------: | --------: | -------------------------------------------------------------------- |
 | 1                           |        72 |       112 |       184 | Referência total; artefatos entregues, pendências de aceite visíveis |
-| 2                           |       368 |       584 |       936 | Não implementada                                                     |
+| 2                           |       368 |       584 |       936 | Parcialmente entregue; F2-08 reaberta, F2-09 não iniciado            |
 | 3                           |       328 |       536 |       880 | Não implementada                                                     |
 | 4                           |       488 |       816 |      1376 | Não implementada                                                     |
 | 5                           |       176 |       296 |       496 | Não implementada                                                     |
-| **Fases 2–5 futuras**       | **1.360** | **2.232** | **3.688** | Sem fase 1 remanescente ou espera externa                            |
+| **Fases 2–5, baseline**     | **1.360** | **2.232** | **3.688** | Sem fase 1 remanescente ou espera externa                            |
 | Fases 1–5, referência total |     1.432 |     2.344 |     3.872 | Não equivale a esforço restante                                      |
 
 F5-03 cobre integração/regressão entre features, sem duplicar integralmente testes
 específicos. Pilotos incluem correções locais; descoberta estrutural reabre a tarefa
 responsável e sua estimativa, sem dupla contagem.
 
-## Capacidade e horizonte
+## Capacidade e horizonte aritmético da baseline histórica
 
 Alocação proposta para conferência com a operação real, sem alterar as 20 h informadas:
 
@@ -94,7 +109,7 @@ sistêmicos não identificados, não espera externa. Não somar outro percentual
 contingência nem as antigas 80 h sobre esta alocação. Reserva não consumida pode
 voltar à entrega; 2/4 h são hipóteses, não consumo medido.
 
-| Fase futura         | Horas centrais | Entrega/semana | Semanas ativas centrais |
+| Fase na baseline    | Horas centrais | Entrega/semana | Semanas ativas centrais |
 | ------------------- | -------------: | -------------: | ----------------------: |
 | 2                   |            584 |           16 h |                    36,5 |
 | 3                   |            536 |           16 h |                    33,5 |

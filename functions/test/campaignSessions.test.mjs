@@ -391,7 +391,7 @@ test('owner-only sessions survive unavailable adventure; token/C4 gates precede 
   );
 });
 
-test('C4 v2 purges paginated sessions/state and sanitizes only own receipts; absent v1 stays resumable and future versions fail', async () => {
+test('C4 latest purges paginated sessions/state and sanitizes only own receipts; absent v1 stays resumable and future versions fail', async () => {
   const f = await fixture();
   for (let n = 0; n < 27; n++) await save(f, 'cleanup-' + n);
   f.records.set('campaigns/other/sessions/preserved', { summary: 'Outra mesa' });
@@ -410,7 +410,7 @@ test('C4 v2 purges paginated sessions/state and sanitizes only own receipts; abs
     operationId: op('cleanup'),
   });
   const jobPath = 'users/author/campaignDeletions/' + start.progress.deletionId;
-  assert.equal(f.records.get(jobPath).cleanupVersion, 2);
+  assert.equal(f.records.get(jobPath).cleanupVersion, 3);
   await finishDeletion(deletion, start.progress, 'sessions-cleanup');
   assert.equal(
     [...f.records.keys()].some((key) => key.startsWith(path + '/')),
@@ -444,7 +444,7 @@ test('C4 v2 purges paginated sessions/state and sanitizes only own receipts; abs
     operationId: op('old-cleanup'),
   });
   const oldJob = old.records.get('users/author/campaignDeletions/' + initial.progress.deletionId);
-  for (const invalid of [null, 0, 3, '2']) {
+  for (const invalid of [null, 0, 4, '2']) {
     oldJob.cleanupVersion = invalid;
     await assert.rejects(
       oldDeletion.advanceCampaignDeletion(uid, {

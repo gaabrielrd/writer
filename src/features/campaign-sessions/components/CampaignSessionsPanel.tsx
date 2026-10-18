@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import {
@@ -33,6 +34,15 @@ import styles from './CampaignSessions.module.css';
 export interface CampaignSessionsPanelProps {
   campaignId: string;
   onPendingChange?: (pending: boolean) => void;
+  renderReferences?: (context: CampaignSessionReferenceSlot) => ReactNode;
+}
+export interface CampaignSessionReferenceSlot {
+  campaignId: string;
+  campaignToken: string;
+  sessionId: string;
+  sessionRevision: number;
+  isActive: () => boolean;
+  readOnly: boolean;
 }
 interface Form {
   id: string;
@@ -109,6 +119,7 @@ function Sessions({
   uid,
   campaignId,
   onPendingChange,
+  renderReferences,
   isActive,
   onUnavailable,
 }: CampaignSessionsPanelProps & {
@@ -153,8 +164,20 @@ function Sessions({
     readOwner = useRef(0),
     refreshButton = useRef<HTMLButtonElement>(null),
     formRef = useRef(form),
+    slotIdentity = useRef(''),
     seen = useRef(new Set<string>()),
     opBusy = useRef(false);
+  const slotKey = JSON.stringify([
+    uid,
+    campaignId,
+    tokenValue,
+    form?.id,
+    form?.revision,
+    form?.open,
+  ]);
+  // The slot carries only the saved identity; edits remain private in this feature.
+  // eslint-disable-next-line react-hooks/refs
+  slotIdentity.current = slotKey;
   useLayoutEffect(() => {
     latest.current = { isActive, onPendingChange };
     formRef.current = form;
@@ -654,6 +677,20 @@ function Sessions({
               permitido.
             </p>
             {validation && form.title && <Alert variant="warning">{validation}</Alert>}
+            {form.revision > 0 && tokenValue && renderReferences && (
+              <div key={slotKey}>
+                {/* This callback passes a guard for events/awaits; it does not read the guard during rendering. */}
+                {/* eslint-disable-next-line react-hooks/refs */}
+                {renderReferences({
+                  campaignId,
+                  campaignToken: tokenValue,
+                  sessionId: form.id,
+                  sessionRevision: form.revision,
+                  readOnly: locked || form.stale,
+                  isActive: () => active() && slotIdentity.current === slotKey,
+                })}
+              </div>
+            )}
           </div>
         )}
       </Dialog>

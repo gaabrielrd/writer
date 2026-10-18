@@ -10,7 +10,14 @@ import {
 import { useAuth } from '@/features/auth';
 import { CampaignBaseReader } from '@/features/campaign-bases';
 import { CampaignNotesPanel } from '@/features/campaign-notes';
-import { CampaignSessionsPanel } from '@/features/campaign-sessions';
+import {
+  CampaignSessionsPanel,
+  type CampaignSessionReferenceSlot,
+} from '@/features/campaign-sessions';
+import {
+  CampaignSessionReferenceControls,
+  CampaignSessionReferencesPanel,
+} from '@/features/campaign-session-references';
 import { CampaignLorePanel } from '@/features/campaign-lore';
 import {
   CampaignComparisonPanel,
@@ -43,6 +50,10 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
     [sessionsReady, setSessionsReady] = useState(false),
     [contentPending, setContentPending] = useState(false),
     [sessionsPending, setSessionsPending] = useState(false),
+    [referencesPending, setReferencesPending] = useState(false),
+    [materialBase, setMaterialBase] = useState<string | null>(null),
+    [materialProjection, setMaterialProjection] = useState<string | null>(null),
+    [materialEpoch, setMaterialEpoch] = useState(0),
     [error, setError] = useState(''),
     [checking, setChecking] = useState(false),
     [attempt, setAttempt] = useState(0),
@@ -51,9 +62,39 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const scope = { actorId: ownerId, scope: 'campaign:' + id };
   const onAvailability = useCallback((available: boolean) => setSessionsReady(available), []);
   useEffect(() => {
-    setPendingEditorOperation(contentPending || sessionsPending);
-  }, [contentPending, sessionsPending, setPendingEditorOperation]);
+    setPendingEditorOperation(contentPending || sessionsPending || referencesPending);
+  }, [contentPending, sessionsPending, referencesPending, setPendingEditorOperation]);
   useEffect(() => () => setPendingEditorOperation(false), [setPendingEditorOperation]);
+  const onMaterialBase = useCallback((baseId: string | null) => setMaterialBase(baseId), []);
+  const onMaterialProjection = useCallback((projection: string | null) => {
+    setMaterialProjection(projection);
+    if (projection === null) setMaterialEpoch((n) => n + 1);
+  }, []);
+  const onMaterialInvalidated = useCallback(() => setMaterialEpoch((n) => n + 1), []);
+  const renderReferences = useCallback(
+    (slot: CampaignSessionReferenceSlot) => (
+      <CampaignSessionReferencesPanel
+        key={JSON.stringify([
+          slot.campaignId,
+          slot.campaignToken,
+          slot.sessionId,
+          slot.sessionRevision,
+          materialBase,
+          materialProjection,
+          materialEpoch,
+        ])}
+        scope={{
+          campaignId: slot.campaignId,
+          campaignToken: slot.campaignToken,
+          sessionId: slot.sessionId,
+          expectedSessionRevision: slot.sessionRevision,
+        }}
+        isActive={slot.isActive}
+        readOnly={slot.readOnly}
+      />
+    ),
+    [materialBase, materialProjection, materialEpoch],
+  );
   useLayoutEffect(() => {
     alive.current = true;
     const off = subscribeInvalidation(scope, () => {
@@ -79,6 +120,7 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
         stamp !== getInvalidationGeneration(scope)
       )
         return;
+      if (campaign?.ownerId === ownerId) setMaterialBase(campaign.activeBaseId ?? null);
       if (!campaign || campaign.ownerId !== ownerId) setVisible(false);
       else if (!visible) {
         setAttempt((n) => n + 1);
@@ -108,6 +150,7 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
           setError('');
         }}
       />
+      <CampaignSessionReferenceControls campaignId={id} onPendingChange={setReferencesPending} />
       {error && <Alert variant="warning">{error}</Alert>}
       {visible ? (
         <>
@@ -117,9 +160,16 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
             ownerId={ownerId}
             onAvailability={onAvailability}
             onPendingChange={setContentPending}
+            onMaterialBase={onMaterialBase}
+            onMaterialProjection={onMaterialProjection}
+            onMaterialInvalidated={onMaterialInvalidated}
           />
           {sessionsReady && (
-            <CampaignSessionsPanel campaignId={id} onPendingChange={setSessionsPending} />
+            <CampaignSessionsPanel
+              campaignId={id}
+              onPendingChange={setSessionsPending}
+              renderReferences={renderReferences}
+            />
           )}
         </>
       ) : (
@@ -143,11 +193,17 @@ function CampaignContent({
   ownerId,
   onAvailability,
   onPendingChange: onContentPendingChange,
+  onMaterialBase,
+  onMaterialProjection,
+  onMaterialInvalidated,
 }: {
   id: string;
   ownerId: string;
   onAvailability: (available: boolean) => void;
   onPendingChange: (pending: boolean) => void;
+  onMaterialBase: (baseId: string | null) => void;
+  onMaterialProjection: (projection: string | null) => void;
+  onMaterialInvalidated: () => void;
 }) {
   const [editing, setEditing] = useState(false),
     [pending, setPending] = useState(false),
@@ -183,6 +239,7 @@ function CampaignContent({
       .then((campaign) => {
         if (active && stamp === getInvalidationGeneration(scope)) {
           onAvailability(Boolean(campaign && campaign.ownerId === ownerId));
+          onMaterialBase(campaign?.ownerId === ownerId ? (campaign.activeBaseId ?? null) : null);
           setResult({ attempt, campaign: campaign?.ownerId === ownerId ? campaign : null });
         }
       })
@@ -197,7 +254,7 @@ function CampaignContent({
     return () => {
       active = false;
     };
-  }, [id, ownerId, attempt, onAvailability]);
+  }, [id, ownerId, attempt, onAvailability, onMaterialBase]);
   const activity = useWorkActivity({
     target: { kind: 'campaign', id },
     resource: { kind: 'project' },
@@ -312,7 +369,10 @@ function CampaignContent({
           />
           <CampaignAdoptionPreparations
             campaignId={campaign.id}
-            onAdopted={() => setAttempt((n) => n + 1)}
+            onAdopted={() => {
+              onMaterialInvalidated();
+              setAttempt((n) => n + 1);
+            }}
             onAdaptLore={adaptLore}
           />
           {adoption && (
@@ -323,13 +383,18 @@ function CampaignContent({
               onClose={() => setAdoptionOpen(false)}
               onAdopted={() => {
                 setAdoptionOpen(false);
+                onMaterialInvalidated();
                 setAttempt((n) => n + 1);
               }}
               onAdaptLore={adaptLore}
             />
           )}
           <section ref={loreRef} tabIndex={-1} aria-label="Editar lore atual da campanha">
-            <CampaignLorePanel campaignId={campaign.id} baseId={campaign.activeBaseId} />
+            <CampaignLorePanel
+              campaignId={campaign.id}
+              baseId={campaign.activeBaseId}
+              onProjectionChange={onMaterialProjection}
+            />
           </section>
           <CampaignBaseReader campaignId={campaign.id} generationId={campaign.activeBaseId} />
         </>

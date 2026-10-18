@@ -712,6 +712,26 @@ Relatórios e resultados gerados pelo Playwright são ignorados pelo ESLint para
 evitar leitura de arquivos temporários durante execuções paralelas. As regras
 de lint do código-fonte e os limites de cobertura permanecem os mesmos.
 
+## Referências de lore por sessão (S2A)
+
+Testes colocalizados em campaign-session-references verificam ABI fechada,
+recibos históricos, eco integral de cancelamento, reserva/CAS, respostas atrasadas,
+UID, foco aninhado e recuperação fora da sessão. Campaigns verifica composição,
+preservação de S1 e encerramento C4 sem apagar outro journal. Os componentes
+públicos puros de C2 preservam os consumidores existentes.
+
+`functions/test/campaignSessionReferences.test.mjs` cobre serviço e máscaras antes
+do corpo; `campaignSessionReferencesCleanup.test.mjs` cobre inventário v3 e
+checkpoints antigos sem reinterpretar v1/v2. O SDK em
+`tests/firestore/campaign-session-references.rules.test.mjs` usa captura/adoção
+reais para legado, autorização, concorrência, páginas e limpeza. Storage é injetado,
+sem alegar validação de mídia real. O navegador usa transporte de fixture em
+`e2e/visual/campaign-session-references.visual.ts`; duas jornadas em seis perfis.
+Validate local verde: 1.910 frontend, 83 scripts e 383 Functions; cinco famílias SDK
+únicas e 12 combinações nativas positivas. A [entrega S2A](entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md)
+preserva falhas/revalidações e limitações. CI do novo head ainda pendente; testes
+não equivalem a aprovação humana ou rollout.
+
 ## Protótipo e evidências do Writer V2
 
 `e2e/visual/writer-v2.html` é uma entrada demonstrativa isolada; dados e estados

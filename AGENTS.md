@@ -31,6 +31,7 @@
 - Não adicione abstrações sem necessidade demonstrada.
 - Mantenha `campaign-deletions` folha, importando apenas auth/shared; componha-a em `campaigns` e use essa interface no Estúdio.
 - Mantenha `campaign-sessions` folha de auth/shared; componha painel e closer somente em `campaigns` pelas interfaces públicas.
+- Limite `campaign-session-references` a auth/shared e APIs públicas puras de campaign-lore; componha slot, pendência e closer em campaigns.
 
 ## Estilo e interface
 
@@ -116,10 +117,13 @@
 - Confira a reserva global permanente antes de criar, ler ou repetir mutações de campanha; roteie controles antigos por máscara de dono/campanha antes do registro completo e não reutilize o ID reservado.
 - Exclua campanhas pelo protocolo limitado da ADR 0036; remova um pin tipado por transação, preserve biblioteca/outras mesas e certifique os filhos antes da raiz.
 - Atualize o inventário e a compatibilidade dos jobs de exclusão antes de habilitar qualquer novo recurso privado de campanha.
-- Preserve o inventário v1 dos jobs sem versão; novos jobs C4 v2 incluem sessões/controle/recibos, e versões desconhecidas falham fechadas, conforme ADR 0037.
+- Preserve os inventários C4 v1 (3/7) e v2 (4/9); inicie novos jobs v3 (6/11) incluindo referências/controles/recibos/fences de sessão, rejeitando versões desconhecidas, conforme ADR 0038.
 - Mantenha sessões autorais no servidor com CAS, ordem adjacente transacional e tombstones; confira a campanha própria e a reserva antes de corpos/recibos, sem depender da origem da aventura.
 - Separe a confirmação histórica do pedido da adoção do corpo atual; não rebaseie preparação por resumo da lista, movimento ou foco, conforme ADR 0037.
 - Preserve o painel autoral e sua pendência durante refresh da base; invalidação própria de exclusão continua ocultando apresentação antes do CAS do journal.
+- Reautorize sessão ativa e projeção C2 em cada página de candidatos ou leitura de referência; persista somente IDs/tokens/revisões, sem nomes, prosa ou hashes privados.
+- Invalide somente material derivado ao observar adoção ou projeção C2 alterada; mantenha o rascunho e a pendência S1.
+- Confirme recibos históricos de vínculo sem exigir sessão ativa ou origem; persista intenção cancel sob CAS antes do resolver e preserve o journal até recibo, fence ou encerramento C4 próprio.
 - Oculte apresentação após prova remota própria de revogação antes do CAS local; trate o pulso neutro somente como invalidação e preserve controles diferentes.
 - Encerre rascunhos antigos somente por prova permanente própria de UID/campanha e confirmação do snapshot integral, sem decriptação; preserve controles inválidos e aguarde oncomplete da transação IndexedDB.
 - Implante guardas, escritores e regras conjuntamente e drene versões antigas antes de habilitar exclusão; manutenção Admin deve respeitar a reserva permanente.

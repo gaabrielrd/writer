@@ -20,6 +20,10 @@ const replacements = new Map(
       'campaignSessionFixture.ts',
     ],
     [
+      'src/features/campaign-session-references/services/sessionReferenceCallables.ts',
+      'campaignSessionReferenceFixture.ts',
+    ],
+    [
       'src/features/campaign-deletions/services/campaignDeletionCallables.ts',
       'campaignDeletionFixture.ts',
     ],

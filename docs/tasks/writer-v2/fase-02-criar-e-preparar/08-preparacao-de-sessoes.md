@@ -1,8 +1,10 @@
 # W2-F2-08 — Preparar sessões com pistas e missões
 
-**Estado:** S1 implementado e validado localmente; CI do novo head pendente.
-S2 e S3 planejados; tarefa completa ainda aberta. Ver [sessões privadas](../execucao/21-sessoes-privadas-da-campanha.md)
+**Estado:** S1 concluído tecnicamente em `c95253a`; CI e regras verdes.
+S2A validado localmente, com CI do novo head pendente; S2B/S3 e tarefa completa ainda abertos. Ver [sessões privadas](../execucao/21-sessoes-privadas-da-campanha.md)
 e [entrega](../../../entregas/2026-10-18-writer-v2-sessoes-privadas.md).
+Referências de lore: [S2A](../execucao/22-referencias-de-lore-da-sessao.md) e
+[entrega](../../../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md).
 **Dependências:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md), [W2-F2-03](../fase-02-criar-e-preparar/03-arcos-e-cronologia-basica.md)
 **Áreas propostas:** lore; proposta campaigns. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -24,7 +26,7 @@ Entradas: campanha, título/data opcional, cenas, NPCs, locais, missões e pista
 ## Passos de execução
 
 Execução vertical: S1 estrutura privada (CRUD, data, estado e ordem), S2 referências
-e consulta autorizada, S3 pistas/missões/pendências. S1 não conclui os critérios
+(S2A lore e S2B cenas/blocos) e consulta autorizada, S3 pistas/missões/pendências. S1 não conclui os critérios
 completos abaixo. Data civil sem horário é suposição inicial registrada no contrato.
 
 - [ ] Definir contratos e referências por sessão.

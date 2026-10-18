@@ -34,7 +34,7 @@ export const deletionPhases = [
 ];
 export function cleanupVersion(p) {
   const value = Object.hasOwn(p, 'cleanupVersion') ? p.cleanupVersion : 1;
-  if (value !== 1 && value !== 2)
+  if (value !== 1 && value !== 2 && value !== 3)
     workFail('failed-precondition', 'A versão da limpeza não é suportada.');
   return value;
 }
@@ -123,11 +123,11 @@ export function owned(p, uid, deletionId) {
         !value.includes('/') &&
         Buffer.byteLength(value) <= 1500),
     maxima = {
-      recovery: version === 2 ? 4 : 3,
+      recovery: version === 3 ? 6 : version === 2 ? 4 : 3,
       controls: 4,
       bases: 0,
       'lore-generations': 0,
-      'campaign-children': version === 2 ? 9 : 7,
+      'campaign-children': version === 3 ? 11 : version === 2 ? 9 : 7,
       activity: 0,
       finalizing: 0,
     },

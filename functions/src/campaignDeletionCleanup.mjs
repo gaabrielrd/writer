@@ -254,8 +254,14 @@ export async function cleanupCampaignStep(tx, db, p) {
         fields: ['ownerId', 'fingerprint'],
         value: (v) => ({ fingerprint: v.fingerprint }),
       },
-      ...(version === 2
+      ...(version >= 2
         ? [{ collection: 'campaignSessionOperations', fields: ['ownerId', 'campaignId'] }]
+        : []),
+      ...(version === 3
+        ? [
+            { collection: 'campaignSessionReferenceOperations', fields: ['ownerId', 'campaignId'] },
+            { collection: 'campaignSessionReferenceFences', fields: ['ownerId', 'campaignId'] },
+          ]
         : []),
     ]);
   if (p.phase === 'controls') return controls(tx, db, p);
@@ -270,7 +276,8 @@ export async function cleanupCampaignStep(tx, db, p) {
         'loreVariants',
         'loreVariantBodies',
         'loreVariantState',
-        ...(version === 2 ? ['sessions', 'sessionState'] : []),
+        ...(version >= 2 ? ['sessions', 'sessionState'] : []),
+        ...(version === 3 ? ['sessionReferences', 'sessionReferenceState'] : []),
       ],
       part = p.part ?? 0;
     if (part >= collections.length) return advancePhase(p);

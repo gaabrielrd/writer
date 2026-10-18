@@ -175,7 +175,20 @@ export function checkArchitecture(root = defaultRoot) {
       }
 
       if (
-        ['campaign-deletions', 'campaign-sessions'].includes(targetFeature) &&
+        sourceFeature === 'campaign-session-references' &&
+        targetFeature &&
+        !['campaign-session-references', 'auth', 'campaign-lore'].includes(targetFeature)
+      ) {
+        errors.push(
+          `${sourceRelative}: campaign-session-references usa somente auth/shared e a interface pública de campaign-lore; componha outras features em campaigns.`,
+        );
+        continue;
+      }
+
+      if (
+        ['campaign-deletions', 'campaign-sessions', 'campaign-session-references'].includes(
+          targetFeature,
+        ) &&
         sourceFeature &&
         sourceFeature !== targetFeature &&
         sourceFeature !== 'campaigns'

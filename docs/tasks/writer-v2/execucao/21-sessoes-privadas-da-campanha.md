@@ -1,6 +1,6 @@
 # F2-08 S1 — Sessões privadas da campanha
 
-**Estado:** implementado e validado localmente; CI do novo head pendente.
+**Estado:** concluído tecnicamente em `c95253a`; CI e regras verdes.
 **Evidência:** [entrega S1](../../../entregas/2026-10-18-writer-v2-sessoes-privadas.md)
 e [ADR 0037](../../../decisions/0037-private-campaign-sessions.md).
 **Dependências:** F2-07 concluído tecnicamente em `0006a66`, com CI/regras verdes.
@@ -189,7 +189,7 @@ gate. Nenhum deploy ou remoção de dado real está autorizado por este plano.
 6. [x] Integrar na campanha, controlar invalidação/foco/UID e fechamento C4.
 7. [x] Validar duas jornadas nativas nos seis perfis; revisar capturas móveis/320.
 8. [x] Rodar validate no fechamento, rever diff, atualizar docs/ADR/AGENTS e entrega.
-9. [ ] Commit e envio ao PR autorizado; acompanhar CI sem esperar para estudo seguinte.
+9. [x] Commit `c95253a` enviado ao PR autorizado; CI geral e regras verdes, com estudo seguinte em paralelo.
 
 Arquivos previstos: functions/src/campaignSessions*.mjs, funções/contratos C4,
 functions/src/index.mjs e scripts de sintaxe existentes; functions/test e tests/firestore,
@@ -226,3 +226,11 @@ Referências de cenas/NPCs/lore, pistas, missões, consequências, checklist por
 agenda externa, horário, notificações, participantes, compartilhamento, condução
 ao vivo, publicação, cânone, IA, histórico de versões, importação e backup de sessões.
 Nada disso recebe checkbox de concluído por esta estrutura privada.
+
+## Confirmação remota de S1
+
+Commit `c95253a` enviado ao PR 21 em rascunho. [CI geral](https://github.com/gaabrielrd/writer/actions/runs/39100481316)
+e [regras](https://github.com/gaabrielrd/writer/actions/runs/39100481325) do próprio head
+passaram: 17 jobs gerais, regras 140/140, sem skips, e navegador de produção 7/7.
+Isso conclui tecnicamente S1; referências, cenas/blocos, pistas e missões continuam
+nos recortes S2A/S2B/S3. Não houve merge nem deploy.

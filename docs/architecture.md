@@ -705,16 +705,44 @@ adoção de texto posterior. Journal autoral integral usa Web Locks/CAS, persist
 antes do RPC e repetição explícita. Erros temporários não encerram o pedido.
 O closer público só remove o snapshot explicitamente confirmado por prova C4.
 
-Novos jobs C4 têm cleanupVersion 2 interna: acrescentam sessions/sessionState e
+S1 introduziu cleanupVersion 2 interna em C4: acrescenta sessions/sessionState e
 sanitização seletiva de campaignSessionOperations. Ausência de versão preserva o
 inventário v1; terminal mínimo não carrega o campo. Índices cobrem ordem nos dois
 sentidos e summary não é indexado. Drenar também o início C4 antigo, junto aos
 writers/guardas/regras, antes de habilitar a UI. Nenhum rollout foi executado.
 
-S1 está validado localmente, com CI do novo head pendente. Referências, pistas,
+S1 está concluído tecnicamente em `c95253a`, com CI e regras verdes. Referências, pistas,
 missões e compartilhamento continuam fora desse recorte. Ver [ADR 0037](decisions/0037-private-campaign-sessions.md),
 [contrato S1](tasks/writer-v2/execucao/21-sessoes-privadas-da-campanha.md) e
 [entrega](entregas/2026-10-18-writer-v2-sessoes-privadas.md).
+
+## Referências de lore da sessão
+
+S2A está implementado e validado localmente; CI do novo head pendente. A feature
+`campaign-session-references` usa auth/shared e APIs públicas puras de campaign-lore;
+somente campaigns compõe seu painel e controles. S1 expõe um slot com identidade
+salva, sem título ou preparação. Adoção e projeção observada por C2 invalidam apenas
+o leitor de referências, conservando o rascunho S1. O host agrega três pendências.
+
+`functions/src/campaignSessionReferences.mjs` oferece cinco callables. A listagem
+tem views fechadas references/candidates; ambas conferem sessão ativa e revisão
+antes de resolver C2. O picker recebe loader injetado session-scoped; o renderer
+público é puro. Leitura de corpo não usa GET C2 fora desse gate. A projeção inclui
+variantes e legado autorizado; origem indisponível não inventa nomes antigos.
+
+`sessionReferences` guarda vínculos flat mínimos e tombstones; `sessionReferenceState`
+compara a coleção por sessão sem alterar o texto S1. Recibos/fences seletivos ficam
+em `users/{uid}/campaignSessionReferenceOperations` e `campaignSessionReferenceFences`.
+Confirmar histórico não exige sessão ativa nem origem; cancelamento explícito
+persiste intenção antes do RPC e cria fence contra o pedido atrasado. Journal
+metadata-only usa Web Locks/CAS integral e fica recuperável fora do diálogo S1.
+
+C4 atual começa na versão 3: recovery 6/children 11. Inventários v1 3/7 e v2 4/9
+permanecem retomáveis nas mesmas posições. SDK direto é fechado; índices cobrem
+lista e duplicata limitadas. Não habilitar UI antes da implantação conjunta e
+drenagem dos starts antigos. Nenhum rollout foi executado. Cenas/blocos e S3
+continuam separados; [contrato S2A](tasks/writer-v2/execucao/22-referencias-de-lore-da-sessao.md)
+e [ADR 0038](decisions/0038-session-lore-references.md).
 
 ## Progresso privado, contagem e retomada
 

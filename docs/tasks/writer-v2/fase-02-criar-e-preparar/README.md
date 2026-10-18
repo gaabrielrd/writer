@@ -3,9 +3,9 @@
 **Estado:** F2-01 a F2-07 concluídas tecnicamente nos heads registrados na
 [execução](../execucao/README.md). Adoção C3B concluída em `947cfc3` e exclusão
 integral C4 em `0006a66`, com CI/regras verdes.
-F2-08 S1 validado localmente, com CI do novo head pendente; S2/S3 e F2-09 não iniciados.
+F2-08 S1 concluído tecnicamente em `c95253a`, com CI/regras verdes; S2A validado localmente/CI pendente, S2B/S3 e F2-09 não iniciados.
 Condições humanas/comerciais conservam seus aceites.
-**Referência de esforço:** 368/584/936 h; hipótese de entrega 16 h/semana, 36,5 semanas ativas no cenário central.
+**Baseline histórica de esforço:** 368/584/936 h; F2-08 está em reestimativa, sem saldo validado; hipótese de entrega 16 h/semana, 36,5 semanas ativas no cenário central.
 As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.
 Veja [timeline e hipóteses](../timeline.md).
 

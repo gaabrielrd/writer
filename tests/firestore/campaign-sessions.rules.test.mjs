@@ -344,7 +344,7 @@ test('SDK sessões: preparação própria sobrevive origem revogada; C4 v2 limpa
   assert.equal(
     (await admin.doc(`users/${uid}/campaignDeletions/${d.result.progress.deletionId}`).get()).data()
       .cleanupVersion,
-    2,
+    3,
   );
   await assert.rejects(service.saveCampaignSession(uid, create(f, 'cleanup-0')), {
     code: 'failed-precondition',

@@ -103,6 +103,20 @@
       "id": "W2-F2-08",
       "phase": 2,
       "title": "Preparacao de sessoes",
+      "reassessment": {
+        "date": "2026-10-18",
+        "status": "baseline historica de F2-08 reaberta; sem novo total ou saldo restante",
+        "actualHumanHours": null,
+        "remainingHours": null,
+        "S2AReferenceTotalHours": [34, 54, 84],
+        "S2ABreakdown": {
+          "backendProjectionFencesC4": [12, 20, 32],
+          "clientPickerRendererSlotRecovery": [12, 18, 28],
+          "sdkBrowserReviewDocumentation": [10, 16, 24]
+        },
+        "S2BReferenceTotalHours": null,
+        "reason": "projecao legada, cancelamento persistido e gates por sessao nao cabem na divisao inicial; fechar cenas/blocos/midia antes de reestimar S2B"
+      },
       "hours": [32, 48, 80],
       "risk": "CRUD/ordem, pistas, missoes e notas preservadas"
     },

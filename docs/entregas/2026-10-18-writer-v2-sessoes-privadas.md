@@ -3,7 +3,7 @@
 - **Data:** 2026-10-18
 - **Branch:** `codex/writer-v2`, checkout isolado
 - **Plano de origem:** [S1](../tasks/writer-v2/execucao/21-sessoes-privadas-da-campanha.md)
-- **Estado:** implementado e validado localmente; CI do novo head pendente no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
+- **Estado:** concluído tecnicamente em `c95253a`; CI e regras verdes no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
 - **Decisão:** [ADR 0037](../decisions/0037-private-campaign-sessions.md).
 
 ## Objetivo
@@ -123,8 +123,11 @@ invalidação após erro C4 próprio e descarte indevido de pedido por erro temp
 Erros sem prova preservam journal; confirmação C4 exige identidade própria e ação
 explícita para encerrá-lo. Controle inválido/futuro ou trocado por outra aba fica intacto.
 
-CI de S1 ainda pendente. A CI verde de `0006a66` encerra C4/F2-07 e não valida
-este novo incremento. A revisão dos 48 arquivos alterados não encontrou novos
+CI do próprio head `c95253a` verde: [geral](https://github.com/gaabrielrd/writer/actions/runs/39100481316)
+e [regras](https://github.com/gaabrielrd/writer/actions/runs/39100481325), 140/140 sem skips.
+Os 17 jobs gerais passaram, incluindo Node 22/24, auditoria, 12 shards visuais,
+Chromium de produção (7/7, 17,3 s) e agregador E2E; seus resultados foram conferidos
+pelos logs próprios. A CI verde anterior de `0006a66` encerra C4/F2-07 e permanece evidência distinta. A revisão dos 48 arquivos alterados não encontrou novos
 arquivos .env, marcadores de segredo ou artefatos acima de 5 MiB. O checkout
 original `master 522ccaa` foi conferido limpo e preservado; CLAUDE.md permanece
 coerente. Após o validate, os documentos/AGENTS tiveram formato, links e diff

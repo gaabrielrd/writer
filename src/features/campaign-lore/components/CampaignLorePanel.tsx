@@ -19,6 +19,7 @@ import styles from './CampaignLore.module.css';
 export interface CampaignLorePanelProps {
   campaignId: string;
   baseId: string;
+  onProjectionChange?: (projectionToken: string | null) => void;
 }
 interface Form {
   item: CampaignLoreState;
@@ -58,6 +59,7 @@ function LoreSession({
   campaignId,
   baseId,
   isActive,
+  onProjectionChange,
 }: { uid: string; isActive: () => boolean } & CampaignLorePanelProps) {
   const [items, setItems] = useState<CampaignLoreSummary[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
@@ -92,6 +94,7 @@ function LoreSession({
   }, []);
   const active = () => alive.current && isActive();
   const denied = useCallback(() => {
+    onProjectionChange?.(null);
     accessVersion.current++;
     presentation.current++;
     setForm(null);
@@ -102,7 +105,7 @@ function LoreSession({
     setNotice(
       'Esta ficha ou sua base não está disponível. Pedidos preservados podem ser encerrados sem acessar o texto.',
     );
-  }, []);
+  }, [onProjectionChange]);
   const observe = useCallback(
     (value: CampaignLoreEnvelope) => {
       api.validateEnvelope(value, uid, campaignId, baseId, token.current);
@@ -111,9 +114,10 @@ function LoreSession({
       token.current = value.campaignToken;
       collection.current = value.collectionRevision;
       projection.current = value.projectionToken;
+      onProjectionChange?.(value.projectionToken);
       setEnvelope(value);
     },
-    [uid, campaignId, baseId],
+    [uid, campaignId, baseId, onProjectionChange],
   );
   function observeExternal(value: CampaignLoreEnvelope) {
     api.validateEnvelope(value, uid, campaignId, baseId, token.current);

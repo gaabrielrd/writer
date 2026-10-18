@@ -14,6 +14,10 @@ import {
   forgetCampaignSessionRecovery,
 } from '@/features/campaign-sessions';
 import {
+  readPendingSessionReference,
+  forgetSessionReferenceRecovery,
+} from '@/features/campaign-session-references';
+import {
   readCampaignLoreRecovery,
   forgetCampaignLoreRecovery,
   readCampaignLoreRemoteRecovery,
@@ -85,6 +89,13 @@ export async function collectCampaignRecoveryClosures(
     const snapshot = structuredClone(session);
     add('session', 'Pedido de sessão privada', () =>
       forgetCampaignSessionRecovery(snapshot, check),
+    );
+  }
+  const reference = read(() => readPendingSessionReference(uid, cid));
+  if (reference) {
+    const snapshot = structuredClone(reference);
+    add('session-reference', 'Pedido de vínculo de lore da sessão', () =>
+      forgetSessionReferenceRecovery(snapshot, check),
     );
   }
   try {

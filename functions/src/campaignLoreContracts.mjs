@@ -157,8 +157,9 @@ export function budget(value, maximum = BASE_PAGE_BYTES) {
     );
   return value;
 }
-export async function loreContext(tx, db, uid, data, optionalToken = false) {
-  const context = await readCampaignBase(tx, db, uid, workId(data.campaignId));
+export async function loreContext(tx, db, uid, data, optionalToken = false, options = {}) {
+  const context = await readCampaignBase(tx, db, uid, workId(data.campaignId), options);
+  if (!context) return null;
   const campaignToken = campaignIdentityToken(uid, context.campaignId, context.campaignSnapshot);
   if (hashId(data.baseId) !== context.base.id) changed('base-changed');
   if (

@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { CampaignPage } from '../components/CampaignPage';
 import { getCampaign } from '../services/campaignService';
 import type { Campaign } from '../model/campaign';
+import type { ListSessionReferencesInput } from '@/features/campaign-session-references';
 import { publishInvalidation } from '@/shared/services';
 const sessionCalls = vi.hoisted(() => ({
   listCampaignSessions: vi.fn(),
@@ -14,6 +15,17 @@ const sessionCalls = vi.hoisted(() => ({
   deleteCampaignSession: vi.fn(),
 }));
 vi.mock('@/features/campaign-sessions/services/campaignSessionCallables', () => sessionCalls);
+const referenceCalls = vi.hoisted(() => ({
+  listCampaignSessionReferences: vi.fn<(input: ListSessionReferencesInput) => Promise<unknown>>(),
+  addCampaignSessionReference: vi.fn(),
+  removeCampaignSessionReference: vi.fn(),
+  readCampaignSessionLoreReference: vi.fn(),
+  resolveCampaignSessionReferenceOperation: vi.fn(),
+}));
+vi.mock(
+  '@/features/campaign-session-references/services/sessionReferenceCallables',
+  () => referenceCalls,
+);
 
 const auth = vi.hoisted(
   (): {
@@ -102,12 +114,25 @@ vi.mock('@/features/campaign-notes', () => ({
     <section aria-label={'Notas próprias ' + campaignId}>Anotações autorais preservadas</section>
   ),
 }));
-vi.mock('@/features/campaign-lore', () => ({
-  CampaignLorePanel: ({ campaignId, baseId }: { campaignId: string; baseId: string }) => (
-    <section aria-label={'Lore da mesa ' + campaignId + '/' + baseId}>
-      Variantes particulares
-    </section>
-  ),
+const loreHost = vi.hoisted(() => ({ notify: null as null | ((token: string | null) => void) }));
+vi.mock('@/features/campaign-lore', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/campaign-lore')>()),
+  CampaignLorePanel: ({
+    campaignId,
+    baseId,
+    onProjectionChange,
+  }: {
+    campaignId: string;
+    baseId: string;
+    onProjectionChange?: (token: string | null) => void;
+  }) => {
+    loreHost.notify = onProjectionChange ?? null;
+    return (
+      <section aria-label={'Lore da mesa ' + campaignId + '/' + baseId}>
+        Variantes particulares
+      </section>
+    );
+  },
 }));
 vi.mock('@/features/campaign-bases', () => ({
   CampaignBaseReader: ({
@@ -461,4 +486,120 @@ it('preserva preparação autoral não salva e pendência durante a atualizaçã
   act(() => publishInvalidation({ actorId: 'owner', scope: 'campaign:project' }));
   expect(screen.queryByRole('textbox', { name: 'Preparação da sessão' })).not.toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'Conteúdo da campanha oculto' })).toBeInTheDocument();
+});
+
+it('compõe vínculos na sessão salva sem consultar novamente a cada tecla e agrega recuperação independente', async () => {
+  vi.mocked(getCampaign).mockResolvedValue({
+    ...resource,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'a'.repeat(64) },
+    activeBaseId: 'a'.repeat(64),
+  });
+  const token = 'a'.repeat(64),
+    session = {
+      id: 'session-reference-host01',
+      schemaVersion: 1,
+      ownerId: 'owner',
+      campaignId: 'project',
+      revision: 1,
+      order: 1,
+      title: 'Sessão salva',
+      summary: 'Preparação salva',
+      scheduledDate: null,
+      status: 'planned',
+      createdAt: 1000,
+      updatedAt: 1000,
+    };
+  const envelope = {
+    schemaVersion: 1,
+    ownerId: 'owner',
+    campaignId: 'project',
+    campaignToken: token,
+    collectionRevision: 1,
+  };
+  sessionCalls.listCampaignSessions.mockResolvedValue({
+    ...envelope,
+    items: [Object.fromEntries(Object.entries(session).filter(([key]) => key !== 'summary'))],
+    nextCursor: null,
+  });
+  sessionCalls.getCampaignSession.mockResolvedValue({ ...envelope, session });
+  referenceCalls.listCampaignSessionReferences.mockImplementation((input) =>
+    Promise.resolve({
+      schemaVersion: 1,
+      ownerId: 'owner',
+      campaignId: input.campaignId,
+      campaignToken: token,
+      sessionId: input.sessionId,
+      sessionRevision: input.expectedSessionRevision,
+      referenceCollectionRevision: 0,
+      view: 'references',
+      sourceContext: { baseId: 'a'.repeat(64), projectionToken: 'b'.repeat(64) },
+      items: [
+        {
+          id: 'reference-host-operation1',
+          revision: 1,
+          createdAt: 1000,
+          updatedAt: 1000,
+          available: true,
+          target: {
+            kind: 'lore',
+            sourceKey: 'c'.repeat(64),
+            name: 'Referência antiga da mesa',
+            category: 'character',
+            revision: 0,
+            mode: 'base',
+            legacy: false,
+          },
+        },
+      ],
+      nextCursor: null,
+    }),
+  );
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Editar sessão Sessão salva' }));
+  await screen.findByText('Referência antiga da mesa');
+  const calls = referenceCalls.listCampaignSessionReferences.mock.calls.length;
+  const preparation = screen.getByRole('textbox', { name: 'Preparação da sessão' });
+  await userEvent.type(preparation, ' com rascunho próprio');
+  expect(referenceCalls.listCampaignSessionReferences).toHaveBeenCalledTimes(calls);
+  expect(preparation).toHaveValue('Preparação salva com rascunho próprio');
+  referenceCalls.listCampaignSessionReferences.mockImplementationOnce(() => new Promise(() => {}));
+  act(() => loreHost.notify?.(null));
+  await waitFor(() =>
+    expect(referenceCalls.listCampaignSessionReferences).toHaveBeenCalledTimes(calls + 1),
+  );
+  expect(screen.queryByText('Referência antiga da mesa')).not.toBeInTheDocument();
+  expect(screen.getByRole('textbox', { name: 'Preparação da sessão' })).toHaveValue(
+    'Preparação salva com rascunho próprio',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar preparação' }));
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+  const control = {
+    schemaVersion: 1,
+    ownerId: 'owner',
+    intent: 'cancel',
+    action: 'remove',
+    request: {
+      campaignId: 'project',
+      campaignToken: token,
+      sessionId: session.id,
+      expectedSessionRevision: 1,
+      referenceId: 'reference-host-operation1',
+      operationId: 'reference-host-operation2',
+      expectedRevision: 1,
+      expectedReferenceCollectionRevision: 1,
+    },
+  };
+  const key = 'writer:session-references:' + JSON.stringify(['owner', 'project']);
+  act(() => {
+    localStorage.setItem(key, JSON.stringify(control));
+    window.dispatchEvent(new StorageEvent('storage', { key }));
+  });
+  await screen.findByRole('heading', { name: 'Pedidos de vínculo de sessão' });
+  await userEvent.click(screen.getByRole('button', { name: 'Rever preparação da sessão' }));
+  expect(screen.getByRole('textbox', { name: 'Preparação da sessão' })).toHaveValue(
+    'Preparação salva com rascunho próprio',
+  );
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+  expect(referenceCalls.resolveCampaignSessionReferenceOperation).not.toHaveBeenCalled();
+  expect(sessionCalls.saveCampaignSession).not.toHaveBeenCalled();
 });

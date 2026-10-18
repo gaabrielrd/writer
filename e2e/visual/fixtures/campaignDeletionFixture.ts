@@ -16,6 +16,7 @@ import { fixtureDeleteCampaignComparisons } from './campaignComparisonFixture';
 import { fixtureDeleteCampaignAdoptions } from './campaignAdoptionFixture';
 import { fixtureDeleteCampaignNotes } from './campaignNotesFixture';
 import { fixtureDeleteCampaignSessions } from './campaignSessionFixture';
+import { fixtureDeleteCampaignSessionReferences } from './campaignSessionReferenceFixture';
 import { fixtureDeleteCampaignWork } from './workProgressFixture';
 import { FIXTURE_TIME } from './data';
 
@@ -332,6 +333,7 @@ export function advanceCampaignDeletion(
       case 'campaign-children':
         fixtureDeleteCampaignNotes(uid, value.campaignId);
         fixtureDeleteCampaignSessions(uid, value.campaignId);
+        fixtureDeleteCampaignSessionReferences(uid, value.campaignId);
         fixtureDeleteCampaignWork(uid, value.campaignId, 'children');
         break;
       case 'activity':

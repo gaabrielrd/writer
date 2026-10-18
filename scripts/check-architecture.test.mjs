@@ -148,3 +148,39 @@ test('sessões permanecem folha e são compostas somente em campaigns', () => {
     (root) => assert.match(checkArchitecture(root).join('\n'), /somente campaigns/),
   );
 });
+
+test('referências usam lore público e são compostas somente em campaigns', () => {
+  withProject(
+    {
+      'features/campaign-session-references/index.ts':
+        "import { useAuth } from '@/features/auth'; export { View } from '@/features/campaign-lore';",
+      'features/campaigns/index.ts':
+        "export { Panel } from '@/features/campaign-session-references';",
+    },
+    (root) => assert.deepEqual(checkArchitecture(root), []),
+  );
+  for (const statement of [
+    "import type { Session } from '@/features/campaign-sessions';",
+    "export { close } from '@/features/campaign-deletions';",
+    "const base = import('@/features/campaign-bases');",
+    "import type { Campaign } from '@/features/campaigns';",
+  ])
+    withProject({ 'features/campaign-session-references/index.ts': statement }, (root) =>
+      assert.match(checkArchitecture(root).join('\n'), /campaign-session-references usa somente/),
+    );
+  withProject(
+    {
+      'features/campaign-session-references/index.ts':
+        "export { View } from '@/features/campaign-lore/components/View';",
+    },
+    (root) => assert.match(checkArchitecture(root).join('\n'), /apenas por sua interface pública/),
+  );
+  for (const feature of ['studio', 'campaign-lore', 'campaign-sessions'])
+    withProject(
+      {
+        [`features/${feature}/index.ts`]:
+          "const panel = import('@/features/campaign-session-references');",
+      },
+      (root) => assert.notDeepEqual(checkArchitecture(root), []),
+    );
+});

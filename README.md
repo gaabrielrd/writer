@@ -65,12 +65,18 @@ revoga o acesso antes da limpeza retomável e preserva original, biblioteca e
 outras mesas. Controles antigos só são encerrados por confirmação própria.
 Veja a [entrega C4](docs/entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md) e o
 [contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
-F2-08 S1 está validado localmente, com CI do novo head pendente: sessões privadas
+F2-08 S1 está concluído tecnicamente em `c95253a`, com CI e regras verdes: sessões privadas
 com título, preparação própria, data civil opcional, estado e ordem manual.
 Recuperação confirma pedidos antigos sem adotar texto posterior; atualizar a base
 preserva rascunhos não enviados. Referências, pistas e missões ficam em S2/S3.
 Veja o [contrato S1](docs/tasks/writer-v2/execucao/21-sessoes-privadas-da-campanha.md)
 e a [entrega](docs/entregas/2026-10-18-writer-v2-sessoes-privadas.md).
+F2-08 S2A está implementado e validado localmente, com CI do novo head pendente:
+sessões vinculam fichas efetivas e legadas autorizadas, consultam material e removem
+vínculos indisponíveis sem alterar a preparação. Recuperação e cancelamento explícito
+permanecem acessíveis após exclusão da sessão; C4 v3 inclui esses recursos mantendo
+jobs v1/v2. Cenas/blocos e pistas/missões permanecem em S2B/S3. Veja a
+[entrega S2A](docs/entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).

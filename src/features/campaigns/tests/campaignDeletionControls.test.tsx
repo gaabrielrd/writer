@@ -12,6 +12,7 @@ import {
 import { readCampaignLoreRecovery, forgetCampaignLoreRecovery } from '@/features/campaign-lore';
 import { readPendingCampaignNote } from '@/features/campaign-notes';
 import { readPendingCampaignSession } from '@/features/campaign-sessions';
+import { readPendingSessionReference } from '@/features/campaign-session-references';
 import { type DeletionLookup, type DeletionProgress } from '@/features/campaign-deletions';
 import { installRecoveryHarness } from './deletionTestBrowser';
 const auth = vi.hoisted(() => ({ user: { uid: 'owner' } }));
@@ -523,5 +524,77 @@ it('snapshot de sessão A não apaga B e controles futuros permanecem ilegíveis
   const invalid = await collectCampaignRecoveryClosures(uid, proof, () => {});
   expect(invalid.unreadable).toBe(true);
   expect(invalid.items.find((item) => item.key === 'session')).toBeUndefined();
+  expect(localStorage.getItem(key)).toEqual(JSON.stringify(future));
+});
+
+it('encerramento C4 inclui pedido de vínculo cancelado sem material nem RPC da origem', async () => {
+  const key = 'writer:session-references:' + JSON.stringify([uid, campaignId]);
+  const control = {
+    schemaVersion: 1,
+    ownerId: uid,
+    intent: 'cancel',
+    action: 'add',
+    request: {
+      campaignId,
+      campaignToken: token,
+      sessionId: 'session-reference-001',
+      expectedSessionRevision: 2,
+      referenceId: 'reference-operation-001',
+      operationId: 'reference-operation-001',
+      expectedReferenceCollectionRevision: 3,
+      sourceContext: { baseId: 'a'.repeat(64), projectionToken: 'b'.repeat(64) },
+      target: { kind: 'lore', sourceKey: 'c'.repeat(64) },
+    },
+  };
+  localStorage.setItem(key, JSON.stringify(control));
+  const otherKey = 'writer:session-references:' + JSON.stringify([uid, 'other']);
+  const other = { ...control, request: { ...control.request, campaignId: 'other' } };
+  localStorage.setItem(otherKey, JSON.stringify(other));
+  render(<CampaignDeletionControls campaignId={campaignId} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir campanha' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Encerrar controles antigos deste navegador' }),
+  );
+  await screen.findByText('Pedido de vínculo de lore da sessão');
+  expect(screen.queryByText(control.request.target.sourceKey)).not.toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Confirmar encerramento dos controles' }),
+  );
+  expect(await screen.findByText('1 controle(s) local(is) encerrado(s).')).toBeInTheDocument();
+  expect(readPendingSessionReference(uid, campaignId)).toBeNull();
+  expect(readPendingSessionReference(uid, 'other')).toEqual(other);
+  expect(rpc.startCampaignDeletion).not.toHaveBeenCalled();
+});
+it('snapshot de vínculo A não apaga cancelamento B e formato futuro fica preservado', async () => {
+  const key = 'writer:session-references:' + JSON.stringify([uid, campaignId]);
+  const control = {
+    schemaVersion: 1,
+    ownerId: uid,
+    intent: 'apply',
+    action: 'remove',
+    request: {
+      campaignId,
+      campaignToken: token,
+      sessionId: 'session-reference-001',
+      expectedSessionRevision: 1,
+      referenceId: 'reference-operation-001',
+      operationId: 'reference-operation-002',
+      expectedRevision: 1,
+      expectedReferenceCollectionRevision: 1,
+    },
+  };
+  localStorage.setItem(key, JSON.stringify(control));
+  const found = await collectCampaignRecoveryClosures(uid, proof, () => {});
+  const replacement = { ...control, intent: 'cancel' };
+  localStorage.setItem(key, JSON.stringify(replacement));
+  await expect(
+    found.items.find((item) => item.key === 'session-reference')!.close(),
+  ).rejects.toThrow(/mudou/);
+  expect(localStorage.getItem(key)).toEqual(JSON.stringify(replacement));
+  const future = { ...replacement, schemaVersion: 2 };
+  localStorage.setItem(key, JSON.stringify(future));
+  const invalid = await collectCampaignRecoveryClosures(uid, proof, () => {});
+  expect(invalid.unreadable).toBe(true);
+  expect(invalid.items.find((item) => item.key === 'session-reference')).toBeUndefined();
   expect(localStorage.getItem(key)).toEqual(JSON.stringify(future));
 });

@@ -1,6 +1,6 @@
 # ADR 0037 — Sessões privadas e evolução da limpeza de campanhas
 
-**Estado:** implementada e validada localmente; CI do novo head pendente.
+**Estado:** implementada em `c95253a`; CI e regras verdes.
 **Contrato:** [F2-08 S1](../tasks/writer-v2/execucao/21-sessoes-privadas-da-campanha.md).
 
 ## Contexto
