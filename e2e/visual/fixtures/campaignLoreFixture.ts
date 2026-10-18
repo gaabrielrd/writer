@@ -1,5 +1,5 @@
 import type * as C from '../../../src/features/campaign-lore/model/campaignLore';
-import { fixtureCampaignToken, fixtureOwner } from './studioStore';
+import { fixtureAssertCampaignWritable, fixtureCampaignToken, fixtureOwner } from './studioStore';
 import { fixtureCampaignBaseLoreMetadata, readCampaignBaseItem } from './campaignBaseFixture';
 import { FIXTURE_TIME } from './data';
 import { fixtureCampaignComparisonCurrent } from './campaignBaseFixture';
@@ -172,6 +172,7 @@ async function transaction<T>(
 ): Promise<T> {
   const run = async () => {
     current(uid);
+    fixtureAssertCampaignWritable(input.campaignId, uid);
     const data = read();
     data.calls.push({
       uid,
@@ -195,6 +196,7 @@ async function context(
   uid: string,
   input: { campaignId: string; campaignToken?: string; baseId: string },
 ) {
+  fixtureAssertCampaignWritable(input.campaignId, uid);
   const meta = await fixtureCampaignBaseLoreMetadata(input.campaignId);
   current(uid);
   const token = fixtureCampaignToken(uid, input.campaignId);
@@ -937,8 +939,9 @@ export async function fixtureCampaignLoreApplyAdoption(input: {
 export async function fixtureCampaignLoreRemoteList(
   input: R.ListCampaignLoreOperationsInput,
 ): Promise<R.CampaignLoreOperationsPage> {
-  const uid = fixtureOwner(),
-    data = read();
+  const uid = fixtureOwner();
+  fixtureAssertCampaignWritable(input.campaignId, uid);
+  const data = read();
   const rows = Object.values(data.operations)
     .filter(
       (value) =>
@@ -1032,4 +1035,28 @@ export async function fixtureCampaignLoreRemoteResolve(
       revision: value.revision,
     };
   });
+}
+
+export function fixtureDeleteCampaignLore(
+  uid: string,
+  campaignId: string,
+  phase: 'recovery' | 'bodies',
+): void {
+  current(uid);
+  const data = read();
+  if (phase === 'recovery') {
+    for (const [key, operation] of Object.entries(data.operations)) {
+      if (
+        key !== scopeKey(uid, operation.descriptor.operationId) ||
+        operation.descriptor.campaignId !== campaignId
+      )
+        continue;
+      delete data.operations[key];
+    }
+  } else {
+    delete data.projects[scopeKey(uid, campaignId)];
+    delete data.guards?.[scopeKey(uid, campaignId)];
+    delete data.guardEpochs?.[scopeKey(uid, campaignId)];
+  }
+  persist(data);
 }

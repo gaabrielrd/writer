@@ -1,3 +1,4 @@
+import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
@@ -47,11 +48,33 @@ function inputError(title: string, content: string): string {
 }
 export function CampaignNotesPanel(props: CampaignNotesPanelProps) {
   const { user } = useAuth();
+  const [, pulse] = useState(0),
+    scope = { actorId: user?.uid ?? '', scope: 'campaign:' + props.campaignId },
+    stamp = user?.uid ? getInvalidationGeneration(scope) : 0;
+  useLayoutEffect(() => {
+    if (!user?.uid) return;
+    return subscribeInvalidation(
+      { actorId: user?.uid ?? '', scope: 'campaign:' + props.campaignId },
+      () => pulse((n) => n + 1),
+    );
+  }, [user?.uid, props.campaignId]);
   return user ? (
-    <NotesSession key={JSON.stringify([user.uid, props.campaignId])} uid={user.uid} {...props} />
+    <NotesSession
+      key={JSON.stringify([user.uid, props.campaignId, stamp])}
+      uid={user.uid}
+      {...props}
+    />
   ) : null;
 }
 function NotesSession({ uid, campaignId }: { uid: string; campaignId: string }) {
+  const pulseScope = { actorId: uid, scope: 'campaign:' + campaignId },
+    stamp = useRef(getInvalidationGeneration(pulseScope));
+  const pulseActive = useCallback(
+    () =>
+      getInvalidationGeneration({ actorId: uid, scope: 'campaign:' + campaignId }) ===
+      stamp.current,
+    [uid, campaignId],
+  );
   const [initialToken] = useState(() => {
     try {
       return readPendingCampaignNote(uid, campaignId)?.input.campaignToken;
@@ -173,7 +196,7 @@ function NotesSession({ uid, campaignId }: { uid: string; campaignId: string }) 
     setReadError('');
     try {
       const value = await api.getCampaignNote({ campaignId, campaignToken: observedToken, noteId });
-      if (!alive.current || readGeneration.current !== generation) return;
+      if (!alive.current || !pulseActive() || readGeneration.current !== generation) return;
       const previous = collection.current;
       observe(value);
       if (previous !== value.collectionRevision) setEpoch((n) => n + 1);
@@ -186,11 +209,12 @@ function NotesSession({ uid, campaignId }: { uid: string; campaignId: string }) 
       }
       if (discard) controller.clearConflict();
     } catch (cause) {
-      if (!alive.current || readGeneration.current !== generation) return;
+      if (!alive.current || !pulseActive() || readGeneration.current !== generation) return;
       setReadError(api.notesMessage(cause));
       if (api.noteErrorReason(cause) === 'campaign-changed') setReadCampaignChanged(true);
     } finally {
-      if (alive.current && readGeneration.current === generation) setReadBusy(false);
+      if (alive.current && pulseActive() && readGeneration.current === generation)
+        setReadBusy(false);
     }
   }
   function closeForm() {
@@ -493,6 +517,14 @@ function NotesList({
   onReload,
   onCampaignChanged,
 }: ListProps) {
+  const pulseScope = { actorId: uid, scope: 'campaign:' + campaignId },
+    stamp = useRef(getInvalidationGeneration(pulseScope));
+  const pulseActive = useCallback(
+    () =>
+      getInvalidationGeneration({ actorId: uid, scope: 'campaign:' + campaignId }) ===
+      stamp.current,
+    [uid, campaignId],
+  );
   const [items, setItems] = useState<CampaignNoteSummary[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
     [loading, setLoading] = useState(true),
@@ -525,7 +557,7 @@ function NotesList({
           cursor: next,
           limit: 25,
         });
-        if (!active.current) return;
+        if (!active.current || !pulseActive()) return;
         api.validateNoteEnvelope(value, uid, campaignId, pageToken.current);
         if (revision.current !== undefined && revision.current !== value.collectionRevision)
           throw Object.assign(new Error('A lista mudou. Recarregue para continuar.'), {
@@ -554,7 +586,7 @@ function NotesList({
         setCursor(value.nextCursor);
         setError('');
       } catch (cause) {
-        if (!active.current) return;
+        if (!active.current || !pulseActive()) return;
         setError(api.notesMessage(cause));
         if (['cursor-invalidated', 'campaign-changed'].includes(api.noteErrorReason(cause) ?? '')) {
           setItems([]);
@@ -564,10 +596,10 @@ function NotesList({
         }
       } finally {
         busy.current = false;
-        if (active.current) setLoading(false);
+        if (active.current && pulseActive()) setLoading(false);
       }
     },
-    [uid, campaignId],
+    [uid, campaignId, pulseActive],
   );
   useEffect(() => {
     queueMicrotask(() => {

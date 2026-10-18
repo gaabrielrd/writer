@@ -1,6 +1,6 @@
 # W2-F2-07 — Instanciar campanhas e variantes particulares
 
-**Estado:** Em execução; gestão A concluída em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde. Variantes C2 e comparação C3A concluídas tecnicamente em fe10b15, com CI/regras verdes; adoção C3B e exclusão integral pendentes.
+**Estado:** gestão A concluída em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde. Variantes C2 e comparação C3A concluídas tecnicamente em fe10b15; adoção C3B concluída em 947cfc3, com CI/regras verdes. Exclusão integral C4 validada localmente; CI do novo head pendente para conclusão técnica de F2-07. Ver [entrega C4](../../../entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md).
 **Dependências:** [W2-F2-06](../fase-02-criar-e-preparar/06-aventuras-e-estrutura-narrativa.md), [W2-F1-03](../fase-01-direcao-e-fundamentos/03-permissoes-e-privacidade.md)
 **Áreas propostas:** universes, lore; propostas adventures e campaigns; functions. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -30,17 +30,22 @@ variantes, comparação de origem ou exclusão integral. O
 completa e somente lore explicitamente referenciado, com preparação retomável e
 leitor privado da base congelada; não encerra os critérios globais desta tarefa.
 
-- [ ] Implementar origem e contrato de sobreposição particular.
-- [ ] Criar/arquivar/desvincular no servidor com autorização.
-- [ ] Montar consulta de lore distinguindo base e variante.
-- [ ] Verificar atualizações da origem e conteúdo removido.
+- [x] Implementar origem e contrato de sobreposição particular.
+- [x] Criar/arquivar/desvincular no servidor com autorização.
+- [x] Montar consulta de lore distinguindo base e variante.
+- [x] Verificar atualizações da origem e conteúdo removido.
 
 ## Critérios de aceite
 
-- [ ] Duas campanhas da mesma aventura não compartilham consequências automaticamente.
-- [ ] Trocar/desvincular universo preserva conteúdo local.
-- [ ] Falha e retry não duplicam campanha.
-- [ ] Criador de aventura não recebe notas da mesa só por ser autor do original.
+- [x] Duas campanhas da mesma aventura não compartilham consequências automaticamente.
+- [x] Trocar/desvincular universo preserva conteúdo local.
+- [x] Falha e retry não duplicam campanha.
+- [x] Criador de aventura não recebe notas da mesa só por ser autor do original.
+
+Aceites locais referem-se ao recorte atual de origens próprias e isolamento por
+UID. Variantes/notas comprovam alterações particulares independentes; consequências
+estruturadas, participação e criação a partir de edição adquirida permanecem nas
+fases próprias. A CI de C4 ainda é necessária para encerrar tecnicamente F2-07.
 
 ## Validação
 

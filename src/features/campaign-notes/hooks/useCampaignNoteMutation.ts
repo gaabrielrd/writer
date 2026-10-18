@@ -1,3 +1,4 @@
+import { getInvalidationGeneration } from '@/shared/services';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import type {
@@ -56,7 +57,26 @@ export function useCampaignNoteMutation(
     [blocked, setBlocked] = useState(Boolean(initial.error)),
     [conflict, setConflict] = useState(false),
     [campaignChanged, setCampaignChanged] = useState(false);
-  const isCurrent = useCallback(() => active.current && identity.current === key, [key]);
+  const pulseScope = { actorId: uid ?? '', scope: 'campaign:' + campaignId },
+    pulseStamp = useRef({ key, value: uid ? getInvalidationGeneration(pulseScope) : 0 });
+  useLayoutEffect(() => {
+    if (pulseStamp.current.key !== key)
+      pulseStamp.current = {
+        key,
+        value: uid
+          ? getInvalidationGeneration({ actorId: uid, scope: 'campaign:' + campaignId })
+          : 0,
+      };
+  }, [key, uid, campaignId]);
+  const isCurrent = useCallback(
+    () =>
+      !!uid &&
+      active.current &&
+      identity.current === key &&
+      getInvalidationGeneration({ actorId: uid ?? '', scope: 'campaign:' + campaignId }) ===
+        pulseStamp.current.value,
+    [key, uid, campaignId],
+  );
   const adoptPending = useCallback(
     (value: PendingCampaignNoteOperation | null) => {
       pendingRef.current = value;

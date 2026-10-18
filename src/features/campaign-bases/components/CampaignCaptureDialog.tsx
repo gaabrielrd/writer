@@ -1,4 +1,5 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import { UniverseSelect } from '@/features/universes';
 import { Alert, Button, Dialog, Input, LoadingState, Textarea } from '@/shared/ui';
@@ -226,6 +227,20 @@ function Creation({
   );
 }
 function Preparation(props: CampaignCaptureDialogProps & { captureId: string }) {
+  const { user } = useAuth(),
+    observedCampaign = useRef<{ id: string; generation: number } | null>(null);
+  const currentCampaign = useCallback(
+    (id: string): boolean => {
+      if (!user?.uid) return false;
+      const now = getInvalidationGeneration({ actorId: user?.uid ?? '', scope: 'campaign:' + id }),
+        old = observedCampaign.current;
+      if (old?.id === id) return old.generation === now;
+      if (now !== 0) return false;
+      observedCampaign.current = { id, generation: now };
+      return true;
+    },
+    [user?.uid],
+  );
   const [progress, setProgress] = useState<CampaignCaptureProgress | null>(null),
     [error, setError] = useState(''),
     [attempt, setAttempt] = useState(0),
@@ -240,6 +255,19 @@ function Preparation(props: CampaignCaptureDialogProps & { captureId: string }) 
     };
   }, []);
   const accept = (value: CampaignCaptureResult) => {
+    const cid =
+      'kind' in value
+        ? value.kind === 'activated'
+          ? value.campaign.id
+          : value.kind === 'already-activated'
+            ? value.campaignId
+            : value.preparation.reserved.campaignId
+        : value.reserved.campaignId;
+    if (!currentCampaign(cid)) {
+      setProgress(null);
+      setError('A apresentação foi invalidada. Confira os controles pelo Estúdio.');
+      return;
+    }
     if ('kind' in value) {
       if (value.kind === 'aborted') setProgress(value.preparation);
       else props.onActivated(value.kind === 'activated' ? value.campaign.id : value.campaignId);
@@ -269,17 +297,44 @@ function Preparation(props: CampaignCaptureDialogProps & { captureId: string }) 
           const confirmed = api.validateCampaignCapture(value, props.captureId);
           if (confirmed.request.adventureId !== props.adventureId)
             throw new Error('A preparação não pertence a esta aventura.');
+          if (!currentCampaign(confirmed.reserved.campaignId))
+            throw new Error('A apresentação foi invalidada. Confira os controles pelo Estúdio.');
           setProgress(confirmed);
           setError('');
         }
       })
       .catch((cause) => {
-        if (valid) setError(api.captureErrorMessage(cause));
+        if (valid) {
+          setProgress(null);
+          setError(api.captureErrorMessage(cause));
+        }
       });
     return () => {
       valid = false;
     };
-  }, [props.open, props.captureId, props.adventureId, attempt]);
+  }, [props.open, props.captureId, props.adventureId, attempt, currentCampaign]);
+  const observedId = progress?.reserved.campaignId;
+  useLayoutEffect(() => {
+    if (!observedId) return;
+    return subscribeInvalidation(
+      { actorId: user?.uid ?? '', scope: 'campaign:' + observedId },
+      () => {
+        keepRunning.current = false;
+        setProgress(null);
+        setError('A apresentação foi invalidada. Confira os controles pelo Estúdio.');
+      },
+    );
+  }, [user?.uid, observedId]);
+  useEffect(() => {
+    const focus = () => {
+      if (props.open && !controller.isReserved()) {
+        setProgress(null);
+        setAttempt((n) => n + 1);
+      }
+    };
+    window.addEventListener('focus', focus);
+    return () => window.removeEventListener('focus', focus);
+  }, [props.open]); // eslint-disable-line react-hooks/exhaustive-deps
   async function advance(cleanup: boolean) {
     if (!progress || controller.isReserved() || controller.conflict || running) return;
     keepRunning.current = true;

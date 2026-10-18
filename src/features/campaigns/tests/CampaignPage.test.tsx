@@ -1,10 +1,11 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { CampaignPage } from '../components/CampaignPage';
 import { getCampaign } from '../services/campaignService';
 import type { Campaign } from '../model/campaign';
+import { publishInvalidation } from '@/shared/services';
 
 const auth = vi.hoisted(
   (): {
@@ -18,6 +19,7 @@ const auth = vi.hoisted(
   }),
 );
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
+vi.mock('@/features/universes', () => ({ UniverseSelect: () => null }));
 vi.mock('@/features/campaign-comparisons', () => ({
   CampaignComparisonPanel: ({
     campaignId,
@@ -113,6 +115,11 @@ vi.mock('@/features/campaign-bases', () => ({
   ),
 }));
 vi.mock('../services/campaignService', () => ({ getCampaign: vi.fn() }));
+vi.mock('../components/CampaignDeletionControls', () => ({
+  CampaignDeletionControls: ({ onRevoked }: { onRevoked: () => void }) => (
+    <button onClick={onRevoked}>Retomar limpeza da campanha</button>
+  ),
+}));
 const resource: Campaign = {
   id: 'project',
   ownerId: 'owner',
@@ -298,4 +305,88 @@ it('retomada confirmada recarrega campanha e adaptar retorna foco ao lore atual 
   expect(screen.getByRole('region', { name: 'Notas próprias project' })).toHaveTextContent(
     'Anotações autorais preservadas',
   );
+});
+it('pulso oculta todo conteúdo e preserva entrada de exclusão; reconsulta autorizada monta conteúdo atual', async () => {
+  render(tree());
+  await screen.findByText('História privada');
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'campaign:project' }));
+  expect(screen.queryByText('História privada')).not.toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: 'Notas próprias project' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Retomar limpeza da campanha' })).toBeEnabled();
+  expect(screen.getByRole('heading', { name: 'Conteúdo da campanha oculto' })).toBeInTheDocument();
+  vi.mocked(getCampaign).mockResolvedValue({ ...resource, description: 'Descrição conferida' });
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Conferir disponibilidade da campanha' }),
+  );
+  expect(await screen.findByText('Descrição conferida')).toBeInTheDocument();
+});
+it('prova confirmada pelo controle oculta campanha e GET negado não ressuscita notas ou conteúdo', async () => {
+  render(tree());
+  await screen.findByText('História privada');
+  await userEvent.click(screen.getByRole('button', { name: 'Retomar limpeza da campanha' }));
+  expect(screen.queryByText('História privada')).not.toBeInTheDocument();
+  vi.mocked(getCampaign).mockResolvedValue(null);
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Conferir disponibilidade da campanha' }),
+  );
+  await waitFor(() => expect(getCampaign).toHaveBeenCalledTimes(2));
+  expect(screen.getByRole('heading', { name: 'Conteúdo da campanha oculto' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Retomar limpeza da campanha' })).toBeEnabled();
+});
+it('erro transitório ao focar preserva texto em edição e nova conferência não adota metadados silenciosamente', async () => {
+  render(tree());
+  await screen.findByText('História privada');
+  await userEvent.click(screen.getByRole('button', { name: 'Editar campanha' }));
+  const field = screen.getByRole('textbox', { name: /Descrição da campanha/ });
+  await userEvent.clear(field);
+  await userEvent.type(field, 'Rascunho privado ainda não enviado');
+  vi.mocked(getCampaign).mockRejectedValueOnce(new Error('Conexão temporária'));
+  act(() => {
+    window.dispatchEvent(new Event('focus'));
+  });
+  expect(await screen.findByText('Conexão temporária')).toBeInTheDocument();
+  expect(field).toHaveValue('Rascunho privado ainda não enviado');
+  vi.mocked(getCampaign).mockResolvedValue({ ...resource, title: 'Título remoto' });
+  act(() => {
+    window.dispatchEvent(new Event('focus'));
+  });
+  await waitFor(() => expect(screen.queryByText('Conexão temporária')).not.toBeInTheDocument());
+  expect(screen.getByRole('textbox', { name: 'Título da campanha' })).toHaveValue('Meu projeto');
+  expect(field).toHaveValue('Rascunho privado ainda não enviado');
+});
+it('GET de campanha anterior ao pulso e GET de foco antigo não voltam a exibir conteúdo', async () => {
+  let resolveInitial!: (value: Campaign) => void;
+  vi.mocked(getCampaign).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveInitial = resolve;
+      }),
+  );
+  render(tree());
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'campaign:project' }));
+  await act(async () => {
+    resolveInitial(resource);
+    await Promise.resolve();
+  });
+  expect(screen.queryByText('História privada')).not.toBeInTheDocument();
+  let resolveFocus!: (value: Campaign) => void;
+  vi.mocked(getCampaign).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        resolveFocus = resolve;
+      }),
+  );
+  act(() => {
+    window.dispatchEvent(new Event('focus'));
+  });
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'campaign:project' }));
+  await act(async () => {
+    resolveFocus(resource);
+    await Promise.resolve();
+  });
+  expect(screen.getByRole('heading', { name: 'Conteúdo da campanha oculto' })).toBeInTheDocument();
+  expect(screen.queryByText('História privada')).not.toBeInTheDocument();
+  expect(
+    screen.getByRole('button', { name: 'Conferir disponibilidade da campanha' }),
+  ).toBeEnabled();
 });

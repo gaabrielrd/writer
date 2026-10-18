@@ -1,3 +1,4 @@
+import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import { Alert, Badge, Button, Card, Dialog, Dropdown, LoadingState } from '@/shared/ui';
@@ -29,12 +30,27 @@ interface Form {
 export function CampaignLorePanel(props: CampaignLorePanelProps) {
   const { user } = useAuth(),
     identity = useRef('');
-  const key = JSON.stringify([user?.uid, props.campaignId, props.baseId]);
+  const [, pulse] = useState(0);
+  const scope = { actorId: user?.uid ?? '', scope: 'campaign:' + props.campaignId },
+    stamp = user?.uid ? getInvalidationGeneration(scope) : 0;
+  useLayoutEffect(() => {
+    if (!user?.uid) return;
+    return subscribeInvalidation(
+      { actorId: user?.uid ?? '', scope: 'campaign:' + props.campaignId },
+      () => pulse((n) => n + 1),
+    );
+  }, [user?.uid, props.campaignId]);
+  const key = JSON.stringify([user?.uid, props.campaignId, props.baseId, stamp]);
   // Block old async work already during the account/base-changing render.
   // eslint-disable-next-line react-hooks/refs
   identity.current = key;
   return user ? (
-    <LoreSession key={key} uid={user.uid} {...props} isActive={() => identity.current === key} />
+    <LoreSession
+      key={key}
+      uid={user.uid}
+      {...props}
+      isActive={() => identity.current === key && getInvalidationGeneration(scope) === stamp}
+    />
   ) : null;
 }
 function LoreSession({

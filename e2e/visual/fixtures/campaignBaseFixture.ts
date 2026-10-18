@@ -3,6 +3,8 @@ import type { Adventure } from '../../../src/features/adventures/model/adventure
 import type { Campaign } from '../../../src/features/campaigns/model/campaign';
 import type { SceneReference } from '../../../src/features/scenes/model/scene';
 import {
+  fixtureAssertCampaignWritable,
+  fixtureCampaignDeletionReservation,
   fixtureActivateCapturedCampaign,
   fixtureGet,
   fixtureOwner,
@@ -488,6 +490,7 @@ export function startCampaignCapture(
   const uid = fixtureOwner();
   return serial(uid, async () => {
     current(uid);
+    fixtureAssertCampaignWritable(sourceKey('campaign', input.operationId, { uid }), uid);
     const existing = records.get(keyFor(uid, input.operationId));
     if (existing) {
       receipt(existing, 'startCampaignCapture', input);
@@ -542,6 +545,7 @@ export async function listCampaignCaptures(
     values = [...records.values()].filter(
       (record) =>
         record.uid === uid &&
+        !fixtureCampaignDeletionReservation(record.progress.reserved.campaignId) &&
         !['activated', 'deleted'].includes(record.progress.state) &&
         (!input.adventureId || record.progress.request.adventureId === input.adventureId),
     );
@@ -687,6 +691,7 @@ export function activateCampaignCapture(
     record.campaignId = campaign.id;
     record.progress.campaignId = campaign.id;
     record.progress.state = 'activated';
+    record.progress.checkpoint++;
     record.progress.updatedAt++;
     operation.commit();
     return finish(uid, 'activateCampaignCapture', {
@@ -1043,7 +1048,9 @@ export async function resolveCampaignCaptureActivation(
 ): Promise<C.CampaignCaptureActivationResolution> {
   const uid = fixtureOwner(),
     record = records.get(keyFor(uid, input.captureId)),
-    receipt = record?.receipts[input.operationId];
+    receipt =
+      record?.receipts[input.operationId] ??
+      terminalCaptures[keyFor(uid, input.captureId)]?.receipts[input.operationId];
   if (!receipt)
     fail('Ativação sem confirmação histórica.', 'failed-precondition', 'operation-unconfirmed');
   if (
@@ -1060,4 +1067,36 @@ export async function resolveCampaignCaptureActivation(
     outcome: receipt.aborted === true ? 'aborted' : 'activated',
     confirmedCheckpoint: receipt.checkpoint,
   });
+}
+
+// Historical activation receipts survive sanitization without captured text or descriptors.
+const terminalCaptureKey = 'writer.visual.campaign-base-terminals';
+const terminalCaptures = JSON.parse(sessionStorage.getItem(terminalCaptureKey) ?? '{}') as Record<
+  string,
+  { uid: string; campaignId: string; receipts: RecordCapture['receipts'] }
+>;
+export function fixtureCampaignCaptureReservedId(uid: string, captureId: string): string {
+  return sourceKey('campaign', captureId, { uid });
+}
+export function fixtureDeleteCampaignBases(uid: string, campaignId: string): boolean {
+  current(uid);
+  const entry = [...records.entries()].find(
+    ([, record]) => record.uid === uid && record.progress.reserved.campaignId === campaignId,
+  );
+  if (!entry) return true;
+  const [key, record] = entry;
+  const image = Object.entries(record.snapshot.images)[0];
+  if (image) {
+    fixtureSetImageUse(JSON.stringify(['campaign-base', record.baseId, image[0]]), null);
+    delete record.snapshot.images[image[0]];
+    persist();
+    return false;
+  }
+  terminalCaptures[key] = { uid, campaignId, receipts: structuredClone(record.receipts) };
+  sessionStorage.setItem(terminalCaptureKey, JSON.stringify(terminalCaptures));
+  records.delete(key);
+  persist();
+  return ![...records.values()].some(
+    (value) => value.uid === uid && value.progress.reserved.campaignId === campaignId,
+  );
 }

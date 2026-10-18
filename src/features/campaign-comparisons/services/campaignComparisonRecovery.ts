@@ -270,3 +270,13 @@ export function pendingComparisonFor(
 export function matchesComparisonIdentity(a: ComparisonIdentity, b: ComparisonIdentity): boolean {
   return canonical(a) === canonical(b);
 }
+
+export function forgetCampaignComparisonRecovery(
+  expected: ComparisonControl,
+  check: () => void,
+): Promise<void> {
+  return lock(expected.ownerId, expected.scope.campaignId, check, () => {
+    requireExact(expected);
+    remove(expected);
+  });
+}

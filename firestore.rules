@@ -300,6 +300,9 @@ service cloud.firestore {
       match /campaignAdoptionGuards/{id} { allow read, write: if false; }
       match /campaignVariantResolutionOperations/{id} { allow read, write: if false; }
       match /campaignAuthorization/{id} { allow read, write: if false; }
+      match /campaignDeletions/{document=**} { allow read, write: if false; }
+      match /campaignDeletionOperations/{id} { allow read, write: if false; }
+      match /campaignDeletionStartFences/{id} { allow read, write: if false; }
       match /sceneOperations/{operationId} { allow read, write: if false; }
       match /narrativeOperations/{operationId} { allow read, write: if false; }
       match /workOperations/{operationId} { allow read, write: if false; }
@@ -410,12 +413,11 @@ service cloud.firestore {
       }
     }
 
+    match /campaignDeletionReservations/{campaignId} { allow read, write: if false; }
+
     match /campaigns/{campaignId} {
       match /loreGenerations/{document=**} { allow read, write: if false; }
-      allow get: if isOwner(resource.data.ownerId);
-      allow list: if isOwner(resource.data.ownerId)
-        && request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     // Minimal public revocation signal, never names, descriptions or author identity.

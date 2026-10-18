@@ -11,6 +11,7 @@ import { workRevision, readWorkMetadata } from './workProgressContracts.mjs';
 import { campaignIdentityToken } from './campaignIdentity.mjs';
 import { loreStorageContext } from './campaignLoreStorage.mjs';
 import { readCampaignAuthorization } from './campaignAuthorization.mjs';
+import { readCampaignDeletionReservation } from './campaignDeletionGuard.mjs';
 
 export { digest, fail, captureToken as hashId, basePath, readWorkMetadata };
 export const comparisonPath = (uid, id) => `users/${uid}/campaignComparisons/${id}`;
@@ -77,6 +78,8 @@ const baseFields = [
   'snapshot',
 ];
 export async function observeCampaign(tx, db, uid, campaignId, expected = null) {
+  if ((await readCampaignDeletionReservation(tx, db, campaignId)).record)
+    return { available: false, reason: 'campaign-deleting' };
   const snapshot = await readWorkMetadata(tx, db.doc('campaigns/' + campaignId), campaignFields);
   const campaign = snapshot.data();
   const unavailable = { available: false, reason: 'campaign-unavailable' };

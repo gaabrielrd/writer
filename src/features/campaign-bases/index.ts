@@ -9,3 +9,10 @@ export {
 export { CampaignBaseReader, type CampaignBaseReaderProps } from './components/CampaignBaseReader';
 export type * from './model/campaignBase';
 export { verifyCampaignBaseFields } from './services/campaignBaseContent';
+
+export {
+  listPendingCampaignCaptureControls,
+  readPendingCampaignCapture,
+  forgetCampaignCaptureRecovery,
+  type CampaignCaptureRecoveryScope,
+} from './services/campaignCaptureRecovery';

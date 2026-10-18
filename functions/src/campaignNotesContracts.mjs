@@ -1,5 +1,6 @@
 import { validateId } from './generation.mjs';
 import { availableCampaign } from './campaigns.mjs';
+import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 import { campaignIdentityToken } from './campaignIdentity.mjs';
 import {
   workClosed,
@@ -62,8 +63,9 @@ export async function notesContext(tx, db, uid, data, keys, optionalToken = fals
   workClosed(data, ['campaignId', 'campaignToken', ...keys]);
   const campaignId = workId(data.campaignId),
     path = 'campaigns/' + campaignId,
-    ref = db.doc(path),
-    snapshot = await tx.get(ref);
+    ref = db.doc(path);
+  await assertCampaignNotDeleted(tx, db, uid, campaignId);
+  const snapshot = await tx.get(ref);
   const campaign = availableCampaign(snapshot.data(), uid);
   if (
     campaign.provenance.kind === 'original' &&

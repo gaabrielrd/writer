@@ -60,7 +60,10 @@ autorizadas e confirmar base e variantes juntas, preservando notas próprias e a
 recuperação dos pedidos anteriores. Veja o
 [contrato de adoção](docs/tasks/writer-v2/execucao/19-adocao-explicita-de-base-da-campanha.md).
 Os resultados estão na [entrega C3B](docs/entregas/2026-10-18-writer-v2-adocao-de-bases.md).
-Exclusão integral continua na etapa seguinte do
+Exclusão integral C4 está validada localmente, com CI do novo head pendente:
+revoga o acesso antes da limpeza retomável e preserva original, biblioteca e
+outras mesas. Controles antigos só são encerrados por confirmação própria.
+Veja a [entrega C4](docs/entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md) e o
 [contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)

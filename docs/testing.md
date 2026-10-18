@@ -314,6 +314,23 @@ servidor a partir da fixture. Resultados executados pertencem à
 [evidência C3B](entregas/2026-10-18-writer-v2-adocao-de-bases.md),
 sem reutilizar CI verde de C3A como validação desta mudança.
 
+Exclusão C4 tem testes colocalizados em `campaign-deletions`, composição/closers
+em `campaigns` e regressões dos leitores. `functions/test/campaignDeletion.test.mjs`
+verifica reserva permanente, CAS/recibos/fences, limites, sanitização e pins.
+`tests/firestore/campaignDeletion.rules.test.mjs` tem cinco famílias com Firestore
+e regras reais: campanha independente, gerações adotadas/legado, usos compartilhados,
+corridas/encarnação e mídia tardia/SDK privado. Assets são injetados.
+
+`e2e/visual/campaign-deletions.visual.ts` usa transporte simulado e adaptadores
+reais de recuperação, Web Locks, cifra e IndexedDB. São duas jornadas nos seis
+projetos: confirmação/teclado/320 px e respostas perdidas/recarga/encerramento
+explícito de controles. O negativo unitário host+IDB usa eventos de IDB simulados;
+não substituir a evidência nativa por esse harness. Ver
+[contrato C4](tasks/writer-v2/execucao/20-exclusao-integral-da-campanha.md) e
+[ADR 0036](decisions/0036-campaign-deletion.md). Validate e navegador têm resultados
+próprios na [entrega C4](entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md),
+sem atribuir a C4 a CI verde do C3B.
+
 Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
 em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
 ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.

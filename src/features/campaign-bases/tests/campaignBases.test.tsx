@@ -1,3 +1,4 @@
+import { publishInvalidation } from '@/shared/services';
 import { webcrypto, createHash } from 'node:crypto';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
@@ -22,7 +23,7 @@ import { useCampaignCaptureOperation } from '../hooks/useCampaignCaptureOperatio
 import { CampaignCaptureDialog } from '../components/CampaignCaptureDialog';
 import { CampaignCapturePreparations } from '../components/CampaignCapturePreparations';
 import { CampaignBaseReader } from '../components/CampaignBaseReader';
-const auth = vi.hoisted(() => ({ user: { uid: 'owner' } }));
+const auth = vi.hoisted((): { user: { uid: string } | null } => ({ user: { uid: 'owner' } }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('@/features/universes', () => ({ UniverseSelect: () => <p>Universo organizacional</p> }));
 vi.mock('../services/campaignBaseCallables', () => ({
@@ -1296,4 +1297,38 @@ it('sem Web Locks preserva pedido histórico e não envia confirmação', async 
   expect(calls.resolveCampaignCaptureActivation).not.toHaveBeenCalled();
   expect(readPendingCampaignCapture('owner', historicScope)).toEqual(operation);
   expect(result.current.error).toMatch(/reserva segura/);
+});
+
+it('leitor de base não cria scope sem sessão e invalidação descarta resposta anterior', async () => {
+  auth.user = null;
+  const view = render(<CampaignBaseReader campaignId="campaign" generationId="base" />);
+  expect(calls.getCampaignBase).not.toHaveBeenCalled();
+  const old = deferred<Awaited<ReturnType<typeof calls.getCampaignBase>>>();
+  vi.mocked(calls.getCampaignBase)
+    .mockReturnValueOnce(old.promise)
+    .mockRejectedValue(new Error('Campanha indisponível'));
+  auth.user = { uid: 'owner' };
+  view.rerender(<CampaignBaseReader campaignId="campaign" generationId="base" />);
+  await waitFor(() => expect(calls.getCampaignBase).toHaveBeenCalledOnce());
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'campaign:campaign' }));
+  await act(async () => {
+    old.resolve({
+      baseId: 'base',
+      capturedAt: 1000,
+      source: {
+        adventureId: 'adventure',
+        title: 'Texto congelado antigo',
+        synopsis: 'Sinopse antiga',
+        language: 'pt-BR',
+      },
+      projectionToken: token,
+    });
+    await old.promise;
+  });
+  expect(screen.queryByText('Texto congelado antigo')).not.toBeInTheDocument();
+  auth.user = null;
+  view.rerender(<CampaignBaseReader campaignId="campaign" generationId="base" />);
+  expect(
+    screen.queryByRole('heading', { name: 'Base congelada da campanha' }),
+  ).not.toBeInTheDocument();
 });

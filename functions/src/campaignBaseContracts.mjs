@@ -7,6 +7,7 @@ import {
   readWorkMetadata,
 } from './workProgressContracts.mjs';
 import { splitHistoryContent } from './workHistoryContracts.mjs';
+import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 
 const id = workId;
 export { workClosed as closed, workFail as fail, workId as id, digest, workLimit as limit };
@@ -214,6 +215,7 @@ export function decodeBaseCursor(value, scope, keys = ['key']) {
 // Ready-base readers reuse this gate; content updateTime is deliberately not compared.
 export async function readCampaignBase(tx, db, uid, campaignId) {
   if (!uid) workFail('unauthenticated', 'Entre na sua conta.');
+  await assertCampaignNotDeleted(tx, db, uid, id(campaignId));
   const campaignSnapshot = await tx.get(db.doc('campaigns/' + id(campaignId))),
     campaign = campaignSnapshot.data();
   if (!campaign || campaign.ownerId !== uid || campaign.deleting)

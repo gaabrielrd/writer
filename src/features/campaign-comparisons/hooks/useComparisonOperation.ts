@@ -1,3 +1,4 @@
+import { getInvalidationGeneration } from '@/shared/services';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type {
   ComparisonControl,
@@ -28,6 +29,8 @@ export function useComparisonOperation(options: Options) {
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
     [conflict, setConflict] = useState(false);
+  const pulseScope = { actorId: options.uid, scope: 'campaign:' + options.campaignId },
+    pulseStamp = useRef(getInvalidationGeneration(pulseScope));
   const alive = useRef(true),
     reserved = useRef(false),
     refreshOwner = useRef<number | null>(null),
@@ -52,7 +55,11 @@ export function useComparisonOperation(options: Options) {
     };
   }, []);
   function active() {
-    return alive.current && latest.current.isActive();
+    return (
+      alive.current &&
+      latest.current.isActive() &&
+      getInvalidationGeneration(pulseScope) === pulseStamp.current
+    );
   }
   function check() {
     if (!active()) throw new Error('A sessão desta comparação foi encerrada.');

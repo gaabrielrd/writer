@@ -1,4 +1,5 @@
 import { validateId } from './generation.mjs';
+import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 import { prepareUniverseProjectLink, universeDocumentId } from './universes.mjs';
 import {
   workClosed,
@@ -80,6 +81,7 @@ export function createCampaignsService({ db, now = Date.now }) {
         receipt = db.doc('users/' + uid + '/campaignOperations/' + operationId),
         fingerprint = digest({ campaignId: id, expectedRevision: data.expectedRevision, patch });
       return db.runTransaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, id);
         const current = available((await tx.get(ref)).data(), uid),
           prior = (await tx.get(receipt)).data();
         if (prior) {

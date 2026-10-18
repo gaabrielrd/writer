@@ -1,3 +1,4 @@
+import { getInvalidationGeneration } from '@/shared/services';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import {
@@ -16,8 +17,8 @@ import {
 } from '../services/campaignManagementService';
 import {
   readPendingCampaignOperation,
-  writePendingCampaignOperation,
-  clearPendingCampaignOperation,
+  reserveCampaignManagementOperation,
+  clearCampaignManagementSnapshot,
 } from '../services/campaignManagementRecovery';
 export type CampaignManagementFields = Pick<
   Campaign,
@@ -86,7 +87,22 @@ export function useCampaignManagement(
     [error, setError] = useState(recovery.error),
     [conflict, setConflict] = useState(false),
     [unavailable, setUnavailable] = useState(false);
-  const isCurrent = () => active.current && identity.current === key;
+  const pulseScope = { actorId: uid ?? '', scope: 'campaign:' + initial.id },
+    pulseStamp = useRef({ key, value: uid ? getInvalidationGeneration(pulseScope) : 0 });
+  useLayoutEffect(() => {
+    if (pulseStamp.current.key !== key)
+      pulseStamp.current = {
+        key,
+        value: uid
+          ? getInvalidationGeneration({ actorId: uid, scope: 'campaign:' + initial.id })
+          : 0,
+      };
+  }, [key, uid, initial.id]);
+  const isCurrent = () =>
+    !!uid &&
+    active.current &&
+    identity.current === key &&
+    getInvalidationGeneration(pulseScope) === pulseStamp.current.value;
   useEffect(() => {
     latest.current.onPendingChange?.(busy || Boolean(pending) || Boolean(recovery.error));
   }, [busy, pending, recovery.error]);
@@ -144,19 +160,27 @@ export function useCampaignManagement(
     setError('');
     let preserved = replay;
     try {
-      if (!replay) {
-        writePendingCampaignOperation(uid, input);
-        preserved = true;
-        changePending(input);
-      }
+      const check = () => {
+        if (!isCurrent()) throw new Error('A sessão deste pedido foi encerrada.');
+      };
+      await reserveCampaignManagementOperation(uid, input, replay, check);
+      check();
+      preserved = true;
+      changePending(input);
       const value = await runCampaignManagement(uid, initial.id, async () => {
         if (!isCurrent()) return null;
+        if (JSON.stringify(readPendingCampaignOperation(uid, initial.id)) !== JSON.stringify(input))
+          throw new Error('O controle mudou em outra aba e foi preservado.');
         return updateCampaign(input);
       });
       if (!isCurrent() || !value) return null;
       assertCampaign(value, input);
-      clearPendingCampaignOperation(uid, initial.id, input.operationId);
-      changePending(null);
+      const next = await clearCampaignManagementSnapshot(uid, input, check);
+      check();
+      const actual = readPendingCampaignOperation(uid, initial.id);
+      changePending(actual);
+      if (next || JSON.stringify(actual) !== JSON.stringify(next))
+        throw new Error('Outro pedido foi preservado em outra aba.');
       current.current = value;
       setBase(value);
       setFields(fieldsOf(value));
@@ -168,8 +192,11 @@ export function useCampaignManagement(
       if (!isCurrent()) return null;
       if (preserved && definitiveCampaignFailure(cause)) {
         try {
-          clearPendingCampaignOperation(uid, initial.id, input.operationId);
-          changePending(null);
+          const next = await clearCampaignManagementSnapshot(uid, input, () => {
+            if (!isCurrent()) throw new Error('A sessão deste pedido foi encerrada.');
+          });
+          if (!isCurrent()) return null;
+          changePending(next);
         } catch {
           /* Keep the same request until its receipt can be reconciled. */
         }

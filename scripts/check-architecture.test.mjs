@@ -95,3 +95,34 @@ test('ignora comentários, strings e arquivos de teste', () => {
     (root) => assert.deepEqual(checkArchitecture(root), []),
   );
 });
+
+for (const statement of [
+  "import type { Campaign } from '@/features/campaigns';",
+  "export { close } from '@/features/campaign-lore';",
+  "const close = import('@/features/campaign-bases');",
+]) {
+  test(`mantém exclusão como folha: ${statement}`, () => {
+    withProject({ 'features/campaign-deletions/index.ts': statement }, (root) =>
+      assert.match(checkArchitecture(root).join('\n'), /deve permanecer folha/),
+    );
+  });
+}
+
+test('compõe exclusão somente em campaigns e preserva neutralidade de shared', () => {
+  withProject(
+    {
+      'features/campaign-deletions/index.ts': "import { useAuth } from '@/features/auth';",
+      'features/campaigns/index.ts': "export { Deletion } from '@/features/campaign-deletions';",
+      'features/studio/index.ts': "import { Deletion } from '@/features/campaigns';",
+    },
+    (root) => assert.deepEqual(checkArchitecture(root), []),
+  );
+  withProject(
+    { 'features/studio/index.ts': "const panel = import('@/features/campaign-deletions');" },
+    (root) => assert.match(checkArchitecture(root).join('\n'), /somente campaigns/),
+  );
+  withProject(
+    { 'shared/services/pulse.ts': "import type { Proof } from '@/features/campaign-deletions';" },
+    (root) => assert.match(checkArchitecture(root).join('\n'), /shared não pode importar/),
+  );
+});

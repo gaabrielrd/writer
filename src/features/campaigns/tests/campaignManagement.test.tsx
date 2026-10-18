@@ -1,3 +1,4 @@
+import * as recovery from '../services/campaignManagementRecovery';
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Routes, Route } from 'react-router';
@@ -15,13 +16,20 @@ import {
   clearPendingCampaignOperation,
 } from '../services/campaignManagementRecovery';
 import type { Campaign, UpdateCampaignInput } from '../model/campaign';
-const auth = vi.hoisted(() => ({
-  user: { uid: 'owner' },
-  loading: false,
-  setPendingEditorOperation: vi.fn(),
-}));
+const auth = vi.hoisted(
+  (): {
+    user: { uid: string } | null;
+    loading: boolean;
+    setPendingEditorOperation: ReturnType<typeof vi.fn>;
+  } => ({
+    user: { uid: 'owner' },
+    loading: false,
+    setPendingEditorOperation: vi.fn(),
+  }),
+);
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('../services/campaignService', () => ({ getCampaign: vi.fn() }));
+vi.mock('../components/CampaignDeletionControls', () => ({ CampaignDeletionControls: () => null }));
 vi.mock('../services/campaignManagementCallables', () => ({ updateCampaign: vi.fn() }));
 vi.mock('@/features/universes', () => ({
   UniverseSelect: ({
@@ -65,6 +73,20 @@ function deferred<T>() {
   return { promise, resolve };
 }
 beforeEach(() => {
+  let tail = Promise.resolve();
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: {
+      request: (_name: string, work: () => unknown) => {
+        const run = tail.then(work);
+        tail = run.then(
+          () => {},
+          () => {},
+        );
+        return run;
+      },
+    },
+  });
   vi.clearAllMocks();
   localStorage.clear();
   auth.user = { uid: 'owner' };
@@ -379,4 +401,62 @@ it('metadados não adotam outra procedência nem outra base recebida por engano'
   await act(() => view.result.current.submit());
   expect(confirmed).not.toHaveBeenCalled();
   expect(view.result.current.pending).not.toBeNull();
+});
+
+it('gestão sem sessão não cria scope vazio e login/perda de sessão conservam guardas', async () => {
+  auth.user = null;
+  const h = renderHook(() => useCampaignManagement(campaign));
+  await act(() => h.result.current.submit());
+  expect(updateCampaign).not.toHaveBeenCalled();
+  auth.user = { uid: 'owner' };
+  h.rerender();
+  act(() => h.result.current.change('title', 'Mesa após login'));
+  await act(() => h.result.current.submit());
+  expect(updateCampaign).toHaveBeenCalledOnce();
+  auth.user = null;
+  h.rerender();
+  await act(() => h.result.current.submit());
+  expect(updateCampaign).toHaveBeenCalledOnce();
+});
+
+it('reserva A vencida antes de RPC não envia alteração e conserva B integral', async () => {
+  const h = renderHook(() => useCampaignManagement(campaign)),
+    original = recovery.reserveCampaignManagementOperation;
+  vi.spyOn(recovery, 'reserveCampaignManagementOperation').mockImplementationOnce(
+    async (...args) => {
+      await original(...args);
+      const input = args[1];
+      localStorage.setItem(
+        'writer:campaign-management:' + JSON.stringify(['owner', 'campaign']),
+        JSON.stringify({ ...input, operationId: 'B', patch: { description: 'Outro rascunho' } }),
+      );
+    },
+  );
+  act(() => h.result.current.change('title', 'Alteração A'));
+  await act(() => h.result.current.submit());
+  expect(updateCampaign).not.toHaveBeenCalled();
+  expect(readPendingCampaignOperation('owner', 'campaign')).toMatchObject({
+    operationId: 'B',
+    patch: { description: 'Outro rascunho' },
+  });
+});
+it('clear A concluído antes de resposta ao hook não apaga nem adota B posterior', async () => {
+  const onConfirmed = vi.fn(),
+    h = renderHook(() => useCampaignManagement(campaign, { onConfirmed })),
+    original = recovery.clearCampaignManagementSnapshot;
+  vi.spyOn(recovery, 'clearCampaignManagementSnapshot').mockImplementationOnce(async (...args) => {
+    const value = await original(...args),
+      input = args[1];
+    localStorage.setItem(
+      'writer:campaign-management:' + JSON.stringify(['owner', 'campaign']),
+      JSON.stringify({ ...input, operationId: 'B', patch: { title: 'Pedido B' } }),
+    );
+    return value;
+  });
+  act(() => h.result.current.change('title', 'Pedido A'));
+  await act(() => h.result.current.submit());
+  expect(updateCampaign).toHaveBeenCalledOnce();
+  expect(onConfirmed).not.toHaveBeenCalled();
+  expect(h.result.current.pending).toMatchObject({ operationId: 'B' });
+  expect(readPendingCampaignOperation('owner', 'campaign')).toMatchObject({ operationId: 'B' });
 });

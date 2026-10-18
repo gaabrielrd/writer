@@ -1,5 +1,10 @@
 import type * as C from '../../../src/features/campaign-notes/model/campaignNote';
-import { fixtureCampaignToken, fixtureGet, fixtureOwner } from './studioStore';
+import {
+  fixtureAssertCampaignWritable,
+  fixtureCampaignToken,
+  fixtureGet,
+  fixtureOwner,
+} from './studioStore';
 import { FIXTURE_TIME } from './data';
 
 type StoredNote = {
@@ -133,6 +138,7 @@ async function server<T>(
 ): Promise<T> {
   await authorize(campaignId, uid);
   const run = () => {
+    fixtureAssertCampaignWritable(campaignId, uid);
     const data = read(),
       projectKey = key(uid, campaignId);
     let project = data.projects[projectKey];
@@ -489,4 +495,12 @@ export async function deleteCampaignNote(
     },
   );
   return response(uid, 'deleteCampaignNote', input, value);
+}
+
+export function fixtureDeleteCampaignNotes(uid: string, campaignId: string): void {
+  if (uid !== fixtureOwner()) fail('A conta mudou.', 'permission-denied');
+  const data = read();
+  delete data.projects[key(uid, campaignId)];
+  // Existing receipts contain only IDs and hashes, never author text.
+  persist(data);
 }

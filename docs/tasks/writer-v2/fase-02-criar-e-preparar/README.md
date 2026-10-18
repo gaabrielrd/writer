@@ -1,9 +1,9 @@
 # Fase 2 — Criar e preparar
 
-**Estado:** F2-01 a F2-04 concluídas tecnicamente nos heads registrados na
-[execução](../execucao/README.md). F2-05 validado localmente e enviado; CI pendente
-após cancelamento de um shard. F2-06 validado localmente; CI do novo head pendente.
-F2-07 a F2-09 não iniciadas; condições humanas/comerciais conservam seus aceites.
+**Estado:** F2-01 a F2-06 concluídas tecnicamente nos heads registrados na
+[execução](../execucao/README.md). F2-07 em execução: adoção C3B concluída em
+`947cfc3`, com CI/regras verdes; exclusão integral C4 validada localmente, CI pendente.
+F2-08 e F2-09 não iniciadas; condições humanas/comerciais conservam seus aceites.
 **Referência de esforço:** 368/584/936 h; hipótese de entrega 16 h/semana, 36,5 semanas ativas no cenário central.
 As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.
 Veja [timeline e hipóteses](../timeline.md).

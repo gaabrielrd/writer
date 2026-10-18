@@ -1,4 +1,5 @@
 import { validateId } from './generation.mjs';
+import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 import { workId, workRevision } from './workProgressContracts.mjs';
 import {
   captureScope,
@@ -69,6 +70,7 @@ export function createCampaignVariantRemoteRecoveryService({ db }) {
         cursorScope = { uid, ...scope },
         cursor = decodeBaseCursor(data.cursor, cursorScope);
       return db.runTransaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, scope.campaignId);
         let q = db
           .collection(`users/${uid}/campaignVariantOperations`)
           .where('campaignId', '==', scope.campaignId)
@@ -133,6 +135,7 @@ export function createCampaignVariantRemoteRecoveryService({ db }) {
           `users/${uid}/campaignVariantResolutionOperations/${input.resolutionId}`,
         );
       return db.runTransaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, scope.campaignId);
         const prior = (await tx.get(receiptRef)).data();
         if (prior) {
           if (prior.schemaVersion !== 1)

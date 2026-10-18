@@ -131,7 +131,12 @@ vi.mock('@/features/books', () => ({
     ) : null,
 }));
 vi.mock('@/features/adventures', () => ({ listAdventures: vi.fn(), createAdventure: vi.fn() }));
-vi.mock('@/features/campaigns', () => ({ listCampaigns: vi.fn(), createCampaign: vi.fn() }));
+vi.mock('@/features/campaigns', () => ({
+  listCampaigns: vi.fn(),
+  createCampaign: vi.fn(),
+  CampaignDeletionControls: () => null,
+  CampaignDeletionPreparations: () => null,
+}));
 vi.mock('@/features/universes', () => ({ UniverseSelect: () => <p>Universo opcional</p> }));
 const book: StudioBookSummary = {
   id: 'old_book',

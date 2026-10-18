@@ -1,9 +1,11 @@
 # F2-07 C4 — Exclusão integral e retomável da campanha
 
-**Estado:** contrato técnico fechado em 2026-10-18 após revisão de backend,
-frontend e QA; implementação em andamento, ainda sem entrega validada.
+**Estado:** implementado e validado localmente em 2026-10-18; CI do novo head pendente.
+Validate verde: 1.813 frontend, 81 scripts e 358 Functions; cinco famílias SDK
+únicas validadas e 12 combinações de navegador mais duas revalidações dirigidas.
 **Dependência:** C3B concluído tecnicamente em `947cfc3`, com CI e regras verdes.
-Este plano não constitui entrega C4.
+**Evidência:** [entrega C4](../../../entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md),
+[ADR 0036](../../../decisions/0036-campaign-deletion.md).
 **Origem:** [campanhas](14-campanhas-e-variantes.md),
 [adoção](19-adocao-explicita-de-base-da-campanha.md) e
 [ADR 0035](../../../decisions/0035-campaign-base-adoption.md).
@@ -351,3 +353,17 @@ produção e manutenção Admin externa não são comprovados pelo emulador.
 Implantação futura precisa atualizar guardas/escritores/regras conjuntamente antes
 de habilitar exclusão. Este plano não autoriza merge/deploy ou exclusão real de
 dados do operador durante a implementação.
+
+## Fechamento local — 2026-10-18
+
+Implementação, SDK, navegador, revisão e validate encerrados localmente. Prova
+permanente própria permite encerrar controles antigos sem adotar a identidade ou
+o checkpoint de um journal C4 diferente. A confirmação local conserva seu CAS
+integral; rascunhos inválidos ou substituídos permanecem. Consultas e respostas
+válidas notificam revogação antes desse CAS. Reabertura de diálogos tem proprietário
+próprio, sem permitir que finally antigos prendam ou liberem a consulta nova.
+
+Ver [entrega](../../../entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md) para
+contagens, repetições afetadas e limitações. CI do novo head segue pendente; os
+checks verdes de `947cfc3` pertencem a C3B. Nenhuma implantação/exclusão real de
+dados do operador foi executada.

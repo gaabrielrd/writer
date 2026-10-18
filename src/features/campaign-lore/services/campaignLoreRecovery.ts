@@ -259,3 +259,12 @@ export function subscribeLoreOperations(listener: () => void): () => void {
     window.removeEventListener('focus', listener);
   };
 }
+
+export async function forgetCampaignLoreRecovery(
+  expected: CampaignLoreOperation,
+  check: () => void,
+): Promise<void> {
+  const next = await clearLoreOperation(expected, check);
+  check();
+  if (next !== null) throw new Error('O rascunho protegido mudou em outra aba e foi preservado.');
+}

@@ -1,3 +1,4 @@
+import { publishInvalidation } from '@/shared/services';
 import { beforeEach, expect, it, vi } from 'vitest';
 import {
   act,
@@ -24,7 +25,7 @@ import {
   readPendingCampaignNote,
   reserveCampaignNote,
 } from '../services/campaignNotesRecovery';
-const auth = vi.hoisted(() => ({ user: { uid: 'owner' } }));
+const auth = vi.hoisted((): { user: { uid: string } | null } => ({ user: { uid: 'owner' } }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('../services/campaignNotesCallables', () => ({
   listCampaignNotes: vi.fn(),
@@ -611,3 +612,24 @@ it.each(['before-reservation', 'after-reservation'])(
     expect(screen.getByLabelText('Texto da nota')).toHaveValue('Texto próprio\n🌕  ');
   },
 );
+
+it('painel de notas suporta sessão ausente/login/perda e pulso remove texto sem apagar journal', async () => {
+  auth.user = null;
+  const view = render(<CampaignNotesPanel campaignId="campaign" />);
+  expect(calls.listCampaignNotes).not.toHaveBeenCalled();
+  auth.user = { uid: 'owner' };
+  view.rerender(<CampaignNotesPanel campaignId="campaign" />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Nova nota' }));
+  await userEvent.type(screen.getByRole('textbox', { name: 'Texto da nota' }), 'Rascunho privado');
+  vi.mocked(calls.listCampaignNotes).mockRejectedValue(new Error('Campanha indisponível'));
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'campaign:campaign' }));
+  await waitFor(() =>
+    expect(screen.queryByDisplayValue('Rascunho privado')).not.toBeInTheDocument(),
+  );
+  expect(calls.saveCampaignNote).not.toHaveBeenCalled();
+  auth.user = null;
+  view.rerender(<CampaignNotesPanel campaignId="campaign" />);
+  expect(
+    screen.queryByRole('heading', { name: 'Notas próprias da campanha' }),
+  ).not.toBeInTheDocument();
+});

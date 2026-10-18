@@ -15,6 +15,11 @@ import { nextCaptureSource, prepareCaptureStep } from './campaignCaptureEngine.m
 import { readActiveLibraryImage, prepareLibraryImageUse } from './imageLibrary.mjs';
 import { id } from './campaignBaseContracts.mjs';
 import {
+  assertCampaignNotDeleted,
+  assertCampaignControlNotDeleted,
+  readCampaignDeletionReservation,
+} from './campaignDeletionGuard.mjs';
+import {
   digest,
   fail,
   comparisonPath,
@@ -77,8 +82,10 @@ export function createCampaignComparisonService({ db, assets, now = Date.now }) 
     checkpoint: workRevision(p.checkpoint + 1),
     updatedAt: workDate(now, p.updatedAt),
   });
-  const get = async (tx, uid, key) =>
-    ownedComparison((await tx.get(ref(uid, key))).data(), uid, key);
+  const get = async (tx, uid, key) => {
+    await assertCampaignControlNotDeleted(tx, db, uid, ref(uid, key));
+    return ownedComparison((await tx.get(ref(uid, key))).data(), uid, key);
+  };
   async function stepMedia(uid, input) {
     const observed = await db.runTransaction(async (tx) => {
       const p = await get(tx, uid, input.comparisonId);
@@ -143,6 +150,7 @@ export function createCampaignComparisonService({ db, assets, now = Date.now }) 
         hash = fingerprint('start', input),
         key = input.operationId;
       return db.runTransaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, input.campaignId);
         const previous = verifyPrior((await tx.get(opRef(uid, key))).data(), hash);
         const stored = (await tx.get(ref(uid, key))).data();
         const fence = verifyPrior((await tx.get(fenceRef(uid, key))).data(), hash);
@@ -220,6 +228,7 @@ export function createCampaignComparisonService({ db, assets, now = Date.now }) 
         hash = fingerprint('start', input),
         key = input.operationId;
       return db.runTransaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, input.campaignId);
         const previous = verifyPrior((await tx.get(opRef(uid, key))).data(), hash);
         const p = (await tx.get(ref(uid, key))).data();
         const fence = verifyPrior((await tx.get(fenceRef(uid, key))).data(), hash);
@@ -264,12 +273,15 @@ export function createCampaignComparisonService({ db, assets, now = Date.now }) 
         query = query
           .orderBy('createdAt', 'desc')
           .orderBy('__name__')
-          .limit(count + 1);
+          .limit(count + 1)
+          .select('ownerId', 'campaignId', 'createdAt');
         if (cursor) query = query.startAfter(cursor.date, cursor.key);
         const docs = (await tx.get(query)).docs,
           items = [];
         for (const doc of docs.slice(0, count)) {
-          const p = ownedComparison(doc.data(), uid, doc.id);
+          if ((await readCampaignDeletionReservation(tx, db, doc.data().campaignId)).record)
+            continue;
+          const p = await get(tx, uid, doc.id);
           items.push(progress(p, await observeComparison(tx, db, p)));
         }
         const last = docs[Math.min(count, docs.length) - 1];

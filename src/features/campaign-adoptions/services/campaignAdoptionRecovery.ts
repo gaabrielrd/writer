@@ -267,3 +267,13 @@ export function pendingAdoptionFor(
 export function matchesAdoptionIdentity(a: AdoptionIdentity, b: AdoptionIdentity): boolean {
   return canonical(a) === canonical(b);
 }
+
+export function forgetCampaignAdoptionRecovery(
+  expected: AdoptionControl,
+  check: () => void,
+): Promise<void> {
+  return lock(expected.ownerId, expected.scope.campaignId, check, () => {
+    requireExact(expected);
+    remove(expected);
+  });
+}

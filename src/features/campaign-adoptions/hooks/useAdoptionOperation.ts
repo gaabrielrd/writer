@@ -1,3 +1,4 @@
+import { getInvalidationGeneration } from '@/shared/services';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ComparisonReadEnvelope } from '@/features/campaign-comparisons';
 import type {
@@ -33,6 +34,8 @@ export function useAdoptionOperation(options: Options) {
     [notice, setNotice] = useState(''),
     [conflict, setConflict] = useState(false),
     [result, setResult] = useState<AdoptionMutationResult | null>(null);
+  const pulseScope = { actorId: options.uid, scope: 'campaign:' + options.selection.campaignId },
+    pulseStamp = useRef(getInvalidationGeneration(pulseScope));
   const alive = useRef(true),
     latest = useRef(options),
     reserved = useRef(false),
@@ -58,7 +61,11 @@ export function useAdoptionOperation(options: Options) {
     };
   }, []);
   function active() {
-    return alive.current && latest.current.isActive();
+    return (
+      alive.current &&
+      latest.current.isActive() &&
+      getInvalidationGeneration(pulseScope) === pulseStamp.current
+    );
   }
   function check() {
     if (!active()) throw new Error('A sessão desta adoção foi encerrada.');
@@ -180,7 +187,7 @@ export function useAdoptionOperation(options: Options) {
   const pending = !!control && control.scope.kind !== 'known';
   useEffect(() => {
     if (active()) latest.current.onPendingChange?.(busy || pending);
-  }, [busy, pending]);
+  }, [busy, pending]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
       if (reserved.current || (controlRef.current && controlRef.current.scope.kind !== 'known')) {

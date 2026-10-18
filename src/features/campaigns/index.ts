@@ -20,3 +20,8 @@ export type {
   CampaignManagementCallbacks,
   CampaignManagementFields,
 } from './hooks/useCampaignManagement';
+
+export {
+  CampaignDeletionControls,
+  CampaignDeletionPreparations,
+} from './components/CampaignDeletionControls';

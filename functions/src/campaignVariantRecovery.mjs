@@ -1,4 +1,5 @@
 import { randomBytes, createDecipheriv } from 'node:crypto';
+import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 import { workConflict } from './workProgressContracts.mjs';
 import { assertLoreAdmission } from './campaignLoreStorage.mjs';
 import {
@@ -120,6 +121,7 @@ export function createCampaignVariantRecoveryService({ db }) {
         fail('invalid-argument', 'Intenção de encerramento inválida.');
       const ref = operationRef(db, uid, descriptor.operationId);
       return db.runTransaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, descriptor.campaignId);
         const previous = verifyOperation((await tx.get(ref)).data(), descriptor);
         if (data.intent === 'confirm' && (!previous || previous.state === 'prepared'))
           fail(

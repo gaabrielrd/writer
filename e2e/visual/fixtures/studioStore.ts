@@ -123,6 +123,7 @@ export function fixtureList(kind: Kind, input: ListInput) {
   }
   const items = [...stores[kind].values()]
     .filter((project) => project.ownerId === fixtureOwner())
+    .filter((project) => kind !== 'campaign' || !fixtureCampaignDeletionReservation(project.id))
     .filter((project) => !input.status || input.status === 'all' || project.status === input.status)
     .sort((left, right) => right.updatedAt - left.updatedAt || right.id.localeCompare(left.id));
   const page = fixtureStudioPage(kind, items, input);
@@ -147,6 +148,7 @@ export function fixtureList(kind: Kind, input: ListInput) {
 export function fixtureGet(kind: 'adventure', id: string): Promise<Adventure | null>;
 export function fixtureGet(kind: 'campaign', id: string): Promise<Campaign | null>;
 export function fixtureGet(kind: Kind, id: string): Promise<Project | null> {
+  if (kind === 'campaign' && fixtureCampaignDeletionReservation(id)) return Promise.resolve(null);
   const project = stores[kind].get(projectKey(fixtureOwner(), id));
   return Promise.resolve(structuredClone(project?.ownerId === fixtureOwner() ? project : null));
 }
@@ -186,10 +188,17 @@ export async function fixtureCreate(
   const ownerId = fixtureOwner();
   const receiptKey = `${ownerId}:${input.operationId}`;
   const payload = JSON.stringify({ kind, ...input });
+  const terminal = deletedCreationReceipts[receiptKey];
+  if (terminal) {
+    if (terminal.payloadHash !== creationHash(payload))
+      throw new Error('Esta operação já foi usada com outros dados.');
+    fixtureAssertCampaignWritable(terminal.campaignId, ownerId);
+  }
   const previous = receipts.get(receiptKey);
   if (previous) {
     if (previous.payload !== payload)
       throw new Error('Esta operação já foi usada com outros dados.');
+    if (kind === 'campaign') fixtureAssertCampaignWritable(previous.project.id, ownerId);
     const current = stores[kind].get(projectKey(ownerId, previous.project.id));
     if (!current)
       throw Object.assign(new Error('Projeto indisponível.'), { code: 'functions/not-found' });
@@ -205,6 +214,7 @@ export async function fixtureCreate(
     createdAt: FIXTURE_TIME,
     updatedAt: FIXTURE_TIME,
   };
+  if (kind === 'campaign') fixtureAssertCampaignWritable(common.id, ownerId);
   const project =
     kind === 'adventure'
       ? {
@@ -239,6 +249,7 @@ export async function fixtureCreate(
 }
 
 export function fixturePatchProject(kind: Kind, id: string, patch: Partial<Project>): void {
+  if (kind === 'campaign') fixtureAssertCampaignWritable(id);
   const value = stores[kind].get(projectKey(fixtureOwner(), id));
   if (value?.ownerId === fixtureOwner()) {
     Object.assign(value, patch);
@@ -253,6 +264,7 @@ export function fixtureCommitCampaign(
   expectedRevision: number,
   patch: CampaignPatch,
 ): Campaign {
+  fixtureAssertCampaignWritable(id);
   const key = projectKey(fixtureOwner(), id),
     current = stores.campaign.get(key);
   if (!current || ('deleting' in current && current.deleting))
@@ -292,6 +304,7 @@ export function fixtureCommitCampaign(
 }
 
 export function fixtureActivateCapturedCampaign(campaign: Campaign): Campaign {
+  fixtureAssertCampaignWritable(campaign.id, campaign.ownerId);
   if (
     campaign.ownerId !== fixtureOwner() ||
     campaign.provenance.kind !== 'original' ||
@@ -328,4 +341,102 @@ export function fixtureCampaignToken(uid: string, campaignId: string): string {
   identities[key] = token;
   localStorage.setItem(storageKey, JSON.stringify(identities));
   return token;
+}
+
+// Simulated permanent deletion barrier, shared by the fixture transports only.
+export interface FixtureCampaignDeletionReservation {
+  ownerId: string;
+  campaignId: string;
+  campaignToken: string;
+  deletionId: string;
+  state: 'deleting' | 'deleted';
+}
+const deletionReservationsKey = 'writer.visual.campaign-deletion-reservations';
+export function fixtureCampaignDeletionReservation(
+  campaignId: string,
+): FixtureCampaignDeletionReservation | null {
+  const values = JSON.parse(localStorage.getItem(deletionReservationsKey) ?? '{}') as Record<
+    string,
+    FixtureCampaignDeletionReservation
+  >;
+  return structuredClone(values[campaignId] ?? null);
+}
+export function fixtureAssertCampaignWritable(campaignId: string, uid = fixtureOwner()): void {
+  const reservation = fixtureCampaignDeletionReservation(campaignId);
+  if (!reservation) return;
+  if (reservation.ownerId !== uid)
+    throw Object.assign(new Error('Campanha indisponível.'), { code: 'functions/not-found' });
+  throw Object.assign(new Error('Campanha em exclusão ou já excluída.'), {
+    code: 'functions/failed-precondition',
+    details: {
+      reason:
+        reservation.ownerId === uid && reservation.state === 'deleted'
+          ? 'campaign-deleted'
+          : 'campaign-deleting',
+    },
+  });
+}
+export function fixtureReserveCampaignDeletion(
+  reservation: FixtureCampaignDeletionReservation,
+): void {
+  if (
+    reservation.ownerId !== fixtureOwner() ||
+    fixtureCampaignToken(reservation.ownerId, reservation.campaignId) !== reservation.campaignToken
+  )
+    throw new Error('Identidade de exclusão inválida.');
+  const values = JSON.parse(localStorage.getItem(deletionReservationsKey) ?? '{}') as Record<
+    string,
+    FixtureCampaignDeletionReservation
+  >;
+  const current = values[reservation.campaignId];
+  if (current && JSON.stringify(current) !== JSON.stringify(reservation))
+    fixtureAssertCampaignWritable(reservation.campaignId);
+  values[reservation.campaignId] = structuredClone(reservation);
+  localStorage.setItem(deletionReservationsKey, JSON.stringify(values));
+}
+export function fixtureFinishCampaignDeletion(
+  uid: string,
+  campaignId: string,
+  token: string,
+  deletionId: string,
+): void {
+  const reservation = fixtureCampaignDeletionReservation(campaignId);
+  if (
+    uid !== fixtureOwner() ||
+    !reservation ||
+    reservation.ownerId !== uid ||
+    reservation.campaignToken !== token ||
+    reservation.deletionId !== deletionId
+  )
+    throw new Error('Reserva de exclusão inválida.');
+  const project = stores.campaign.get(projectKey(uid, campaignId));
+  if (project && fixtureCampaignToken(uid, campaignId) !== token)
+    throw new Error('Outra encarnação.');
+  stores.campaign.delete(projectKey(uid, campaignId));
+  for (const [key, receipt] of receipts) {
+    if (receipt.project.ownerId === uid && receipt.project.id === campaignId) {
+      deletedCreationReceipts[key] = { campaignId, payloadHash: creationHash(receipt.payload) };
+      receipts.delete(key);
+    }
+  }
+  localStorage.setItem(deletedCreationKey, JSON.stringify(deletedCreationReceipts));
+  delete projectPatches[JSON.stringify([uid, 'campaign', campaignId])];
+  sessionStorage.setItem('writer.visual.studio-patches', JSON.stringify(projectPatches));
+  persistStudio();
+  const values = JSON.parse(localStorage.getItem(deletionReservationsKey) ?? '{}') as Record<
+    string,
+    FixtureCampaignDeletionReservation
+  >;
+  values[campaignId] = { ...reservation, state: 'deleted' };
+  localStorage.setItem(deletionReservationsKey, JSON.stringify(values));
+}
+
+const deletedCreationKey = 'writer.visual.studio-creation-terminals';
+const deletedCreationReceipts = JSON.parse(
+  localStorage.getItem(deletedCreationKey) ?? '{}',
+) as Record<string, { campaignId: string; payloadHash: string }>;
+function creationHash(value: string): string {
+  let hash = 2166136261;
+  for (const character of value) hash = Math.imul(hash ^ character.codePointAt(0)!, 16777619);
+  return (hash >>> 0).toString(16).padStart(8, '0').repeat(8);
 }

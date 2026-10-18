@@ -1,3 +1,4 @@
+import { assertCampaignControlNotDeleted } from './campaignDeletionGuard.mjs';
 import {
   baseKinds,
   baseItemAvailable,
@@ -185,6 +186,7 @@ export function createCampaignComparisonReadService({
   deriveImage = deriveAdventurePreviewImage,
 }) {
   async function context(tx, uid, key) {
+    await assertCampaignControlNotDeleted(tx, db, uid, db.doc(comparisonPath(uid, key)));
     const p = ownedComparison((await tx.get(db.doc(comparisonPath(uid, key)))).data(), uid, key);
     return readComparisonContext(tx, db, uid, p);
   }

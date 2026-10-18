@@ -2,7 +2,13 @@ import { campaignStatusLabels, type UpdateCampaignInput } from '../model/campaig
 const key = (uid: string, campaignId: string) =>
   'writer:campaign-management:' + JSON.stringify([uid, campaignId]);
 function valid(value: unknown, campaignId: string): value is UpdateCampaignInput {
-  if (!value || typeof value !== 'object') return false;
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    Object.keys(value).sort().join() !== 'campaignId,expectedRevision,operationId,patch'
+  )
+    return false;
   const input = value as UpdateCampaignInput;
   if (
     input.campaignId !== campaignId ||
@@ -61,4 +67,63 @@ export function clearPendingCampaignOperation(
 ): void {
   if (readPendingCampaignOperation(uid, campaignId)?.operationId === operationId)
     localStorage.removeItem(key(uid, campaignId));
+}
+
+export async function forgetCampaignManagementRecovery(
+  uid: string,
+  expected: UpdateCampaignInput,
+  check: () => void,
+): Promise<void> {
+  if (!navigator.locks?.request)
+    throw new Error('Não há reserva segura para encerrar este controle.');
+  await navigator.locks.request(key(uid, expected.campaignId), () => {
+    check();
+    if (
+      JSON.stringify(readPendingCampaignOperation(uid, expected.campaignId)) !==
+      JSON.stringify(expected)
+    )
+      throw new Error('O controle da campanha mudou em outra aba e foi preservado.');
+    localStorage.removeItem(key(uid, expected.campaignId));
+  });
+}
+
+async function managementLock<T>(
+  uid: string,
+  campaignId: string,
+  check: () => void,
+  work: () => T,
+): Promise<T> {
+  if (!navigator.locks?.request)
+    throw new Error('Este navegador não oferece reserva segura entre abas.');
+  return navigator.locks.request(key(uid, campaignId), () => {
+    check();
+    return work();
+  });
+}
+export function reserveCampaignManagementOperation(
+  uid: string,
+  input: UpdateCampaignInput,
+  replay: boolean,
+  check: () => void,
+): Promise<void> {
+  return managementLock(uid, input.campaignId, check, () => {
+    const current = readPendingCampaignOperation(uid, input.campaignId);
+    if (replay && JSON.stringify(current) !== JSON.stringify(input))
+      throw new Error('O controle mudou em outra aba e foi preservado.');
+    writePendingCampaignOperation(uid, input);
+  });
+}
+export function clearCampaignManagementSnapshot(
+  uid: string,
+  expected: UpdateCampaignInput,
+  check: () => void,
+): Promise<UpdateCampaignInput | null> {
+  return managementLock(uid, expected.campaignId, check, () => {
+    const current = readPendingCampaignOperation(uid, expected.campaignId);
+    if (JSON.stringify(current) === JSON.stringify(expected)) {
+      localStorage.removeItem(key(uid, expected.campaignId));
+      return null;
+    }
+    return current;
+  });
 }

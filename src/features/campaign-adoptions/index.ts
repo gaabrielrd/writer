@@ -7,3 +7,8 @@ export {
   type CampaignAdoptionPreparationsProps,
 } from './components/CampaignAdoptionPreparations';
 export type { AdoptionIdentity, AdoptionSelection } from './model/campaignAdoption';
+
+export {
+  listAdoptionControls,
+  forgetCampaignAdoptionRecovery,
+} from './services/campaignAdoptionRecovery';

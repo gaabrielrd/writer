@@ -52,7 +52,9 @@ export function studioDb() {
     ),
   });
   const field = (path, key) =>
-    key === '__name__' ? path.split('/').at(-1) : records.get(path)[key];
+    key === '__name__'
+      ? path.split('/').at(-1)
+      : key.split('.').reduce((value, part) => value?.[part], records.get(path));
   const compare = (a, b) => (a === b ? 0 : a < b ? -1 : 1);
   function query(
     path,

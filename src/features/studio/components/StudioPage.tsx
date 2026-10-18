@@ -4,6 +4,7 @@ import { Plus, Upload } from 'lucide-react';
 import { ContinueWorkPanel } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
 import { CampaignCapturePreparations } from '@/features/campaign-bases';
+import { CampaignDeletionPreparations } from '@/features/campaigns';
 import {
   CampaignComparisonPreparations,
   type ComparisonReadEnvelope,
@@ -82,6 +83,7 @@ function StudioSession({ ownerId }: { ownerId: string }) {
         }
       />
       <ContinueWorkPanel />
+      <CampaignDeletionPreparations />
       <CampaignComparisonPreparations
         onReviewAdoption={(context) => {
           setAdoption({ ...context });

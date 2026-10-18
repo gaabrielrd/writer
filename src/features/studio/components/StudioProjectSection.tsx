@@ -3,12 +3,14 @@ import { Link } from 'react-router';
 import { BookOpen, Map } from 'lucide-react';
 import { editorialStateLabels, type EditorialState } from '@/features/work-progress';
 import { BookCard } from '@/features/books';
+import { CampaignDeletionControls } from '@/features/campaigns';
 import {
   Alert,
   Badge,
   Button,
   Card,
   Dropdown,
+  DropdownItem,
   EmptyState,
   ErrorState,
   LoadingState,
@@ -159,6 +161,21 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
                     {formatProjectDate(project.updatedAt)}
                   </time>
                 </p>
+                {project.kind === 'campaign' && (
+                  <CampaignDeletionControls
+                    campaignId={project.id}
+                    onRevoked={() => refresh()}
+                    renderTrigger={(open) => (
+                      <Dropdown
+                        mode="action"
+                        label={'Ações da campanha ' + project.title}
+                        trigger={<Button variant="outline">Ações da campanha</Button>}
+                      >
+                        <DropdownItem onSelect={open}>Excluir campanha</DropdownItem>
+                      </Dropdown>
+                    )}
+                  />
+                )}
               </article>
             ))}
           </div>

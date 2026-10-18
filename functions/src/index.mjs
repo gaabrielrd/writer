@@ -17,6 +17,7 @@ import { createCampaignLoreService } from './campaignLore.mjs';
 import { createCampaignComparisonService } from './campaignComparison.mjs';
 import { createCampaignComparisonReadService } from './campaignComparisonRead.mjs';
 import { createCampaignAdoptionService } from './campaignAdoption.mjs';
+import { createCampaignDeletionService } from './campaignDeletion.mjs';
 import { createCampaignVariantRemoteRecoveryService } from './campaignVariantRemoteRecovery.mjs';
 import { createCampaignVariantRecoveryService } from './campaignVariantRecovery.mjs';
 import { setCampaignVariantRecoveryHeaders } from './campaignVariantRecoveryHttp.mjs';
@@ -274,6 +275,7 @@ const callable = (method, secrets = []) =>
         const campaignComparison = createCampaignComparisonService({ db, assets });
         const campaignComparisonRead = createCampaignComparisonReadService({ db, assets });
         const campaignAdoption = createCampaignAdoptionService({ db });
+        const campaignDeletion = createCampaignDeletionService({ db });
         const campaignVariantRemoteRecovery = createCampaignVariantRemoteRecoveryService({ db });
         const campaignVariantRecovery = createCampaignVariantRecoveryService({ db });
         const campaignCapture = createCampaignCaptureService({ db, assets });
@@ -297,6 +299,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (campaignDeletion[method] ? campaignDeletion : null) ??
           (campaignAdoption[method]
             ? campaignAdoption
             : campaignVariantRemoteRecovery[method]
@@ -378,6 +381,12 @@ export const restoreCampaignLore = callable('restoreCampaignLore');
 export const discardCampaignLoreVariant = callable('discardCampaignLoreVariant');
 export const resolveCampaignLoreOperation = callable('resolveCampaignLoreOperation');
 export const listCampaignLoreOperations = callable('listCampaignLoreOperations');
+export const getCampaignDeletionSource = callable('getCampaignDeletionSource');
+export const startCampaignDeletion = callable('startCampaignDeletion');
+export const resolveCampaignDeletionStart = callable('resolveCampaignDeletionStart');
+export const getCampaignDeletion = callable('getCampaignDeletion');
+export const listCampaignDeletions = callable('listCampaignDeletions');
+export const advanceCampaignDeletion = callable('advanceCampaignDeletion');
 export const resolveCampaignLoreRemoteOperation = callable('resolveCampaignLoreRemoteOperation');
 export const startCampaignAdoption = callable('startCampaignAdoption');
 export const resolveCampaignAdoptionStart = callable('resolveCampaignAdoptionStart');

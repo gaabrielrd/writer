@@ -1,5 +1,6 @@
 import { GenerationError, validateId } from './generation.mjs';
 import { digest } from './sceneContracts.mjs';
+import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 
 export { digest };
 export function workFail(code, message, reason) {
@@ -68,9 +69,11 @@ export function workScope(db, uid, data, keys) {
   if (!uid) workFail('unauthenticated', 'Entre na sua conta.');
   workClosed(data, ['target', ...keys]);
   const target = workTarget(data.target);
-  return { uid, target, path: workPath(target), ref: db.doc(workPath(target)) };
+  return { db, uid, target, path: workPath(target), ref: db.doc(workPath(target)) };
 }
 export async function workProject(tx, context) {
+  if (context.target.kind === 'campaign')
+    await assertCampaignNotDeleted(tx, context.db, context.uid, context.target.id);
   const snapshot = await tx.get(context.ref),
     root = snapshot.data();
   if (

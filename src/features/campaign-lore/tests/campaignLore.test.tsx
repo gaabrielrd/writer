@@ -1,3 +1,4 @@
+import { publishInvalidation } from '@/shared/services';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -31,7 +32,7 @@ import type {
   CampaignLorePage,
   ResolveCampaignLoreInput,
 } from '../model/campaignLore';
-const auth = vi.hoisted(() => ({ user: { uid: 'owner' } }));
+const auth = vi.hoisted((): { user: { uid: string } | null } => ({ user: { uid: 'owner' } }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('../services/campaignLoreCallables', () => ({
   listCampaignLore: vi.fn(),
@@ -885,4 +886,26 @@ it('confirmar encerramento original de A não cancela nem apaga cifra B criada e
   );
   expect(transport.resolveCampaignLoreOperation).not.toHaveBeenCalled();
   expect(await repository.readLoreOperation(uid, campaignId)).toEqual(b);
+});
+
+it('lore suporta sessão ausente/login/perda e pulso invalida edição sem decifrar ou enviar', async () => {
+  auth.user = null;
+  const view = render(<CampaignLorePanel campaignId={campaignId} baseId={baseId} />);
+  expect(transport.listCampaignLore).not.toHaveBeenCalled();
+  auth.user = { uid };
+  view.rerender(<CampaignLorePanel campaignId={campaignId} baseId={baseId} />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Lia' }));
+  await userEvent.type(
+    screen.getByRole('textbox', { name: 'Detalhes da ficha' }),
+    'Texto privado em edição',
+  );
+  vi.mocked(transport.listCampaignLore).mockRejectedValue(new Error('Campanha indisponível'));
+  act(() => publishInvalidation({ actorId: uid, scope: 'campaign:' + campaignId }));
+  await waitFor(() =>
+    expect(screen.queryByRole('textbox', { name: 'Detalhes da ficha' })).not.toBeInTheDocument(),
+  );
+  expect(transport.saveCampaignLoreVariant).not.toHaveBeenCalled();
+  auth.user = null;
+  view.rerender(<CampaignLorePanel campaignId={campaignId} baseId={baseId} />);
+  expect(screen.queryByRole('heading', { name: 'Lore da mesa' })).not.toBeInTheDocument();
 });

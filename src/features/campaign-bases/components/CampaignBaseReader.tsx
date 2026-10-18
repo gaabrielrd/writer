@@ -1,3 +1,4 @@
+import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import { renderRichText } from '@/shared/lib';
@@ -40,9 +41,35 @@ const fieldLabels: Record<string, string> = {
   personality: 'Personalidade',
   history: 'História',
 };
+function useBaseReadGuard(campaignId: string) {
+  const { user } = useAuth(),
+    uid = user?.uid ?? '',
+    scope = { actorId: uid, scope: 'campaign:' + campaignId },
+    stamp = useRef(uid ? getInvalidationGeneration(scope) : 0);
+  return useCallback(
+    () =>
+      !!uid &&
+      getInvalidationGeneration({ actorId: uid, scope: 'campaign:' + campaignId }) ===
+        stamp.current,
+    [uid, campaignId],
+  );
+}
 export function CampaignBaseReader(props: CampaignBaseReaderProps) {
   const { user } = useAuth();
   const [attempt, setAttempt] = useState(0);
+  useLayoutEffect(() => {
+    if (!user?.uid) return;
+    const retry = () => setAttempt((n) => n + 1),
+      off = subscribeInvalidation(
+        { actorId: user?.uid ?? '', scope: 'campaign:' + props.campaignId },
+        retry,
+      );
+    window.addEventListener('focus', retry);
+    return () => {
+      off();
+      window.removeEventListener('focus', retry);
+    };
+  }, [user?.uid, props.campaignId]);
   return user ? (
     <ReaderSession
       key={JSON.stringify([user.uid, props.campaignId, props.generationId, attempt])}
@@ -56,6 +83,7 @@ function ReaderSession({
   generationId,
   retry,
 }: CampaignBaseReaderProps & { retry: () => void }) {
+  const pulseActive = useBaseReadGuard(campaignId);
   const [base, setBase] = useState<CampaignBase | null>(null),
     [error, setError] = useState(''),
     [section, setSection] = useState('material'),
@@ -68,7 +96,7 @@ function ReaderSession({
     void api
       .getCampaignBase({ campaignId })
       .then((value) => {
-        if (!active) return;
+        if (!active || !pulseActive()) return;
         api.assertCampaignResponseBudget(value);
         api.assertCampaignProjection(value.projectionToken);
         if (value.baseId !== generationId)
@@ -76,7 +104,7 @@ function ReaderSession({
         setBase(value);
       })
       .catch((cause) => {
-        if (active) {
+        if (active && pulseActive()) {
           setBase(null);
           setError(api.captureErrorMessage(cause));
         }
@@ -84,7 +112,7 @@ function ReaderSession({
     return () => {
       active = false;
     };
-  }, [campaignId, generationId]);
+  }, [campaignId, generationId, pulseActive]);
   const invalidate = useCallback((cause: unknown) => {
     setBase(null);
     setSelected(null);
@@ -234,6 +262,7 @@ function BaseItems({
   onSelect,
   onChildren,
 }: ListProps) {
+  const pulseActive = useBaseReadGuard(campaignId);
   const [items, setItems] = useState<CampaignBaseSummary[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
     [loading, setLoading] = useState(true),
@@ -259,7 +288,7 @@ function BaseItems({
           cursor: next,
           limit: 25,
         });
-        if (!active.current) return;
+        if (!active.current || !pulseActive()) return;
         api.assertCampaignResponseBudget(page);
         api.assertCampaignProjection(page.projectionToken, token);
         if (
@@ -285,13 +314,13 @@ function BaseItems({
         ]);
         setCursor(page.nextCursor);
       } catch (cause) {
-        if (active.current) onError(cause);
+        if (active.current && pulseActive()) onError(cause);
       } finally {
         busy.current = false;
-        if (active.current) setLoading(false);
+        if (active.current && pulseActive()) setLoading(false);
       }
     },
-    [campaignId, kind, archive, parentKey, token, onError],
+    [campaignId, kind, archive, parentKey, token, onError, pulseActive],
   );
   useEffect(() => {
     queueMicrotask(() => {
@@ -368,6 +397,7 @@ function BaseItem({
   onError: (cause: unknown) => void;
   onSelect: (key: string) => void;
 }) {
+  const pulseActive = useBaseReadGuard(campaignId);
   const [body, setBody] =
       useState<Awaited<ReturnType<typeof api.readCompleteCampaignBaseItem>>>(null),
     [image, setImage] = useState<string | null>(null);
@@ -381,21 +411,26 @@ function BaseItem({
   useEffect(() => {
     let active = true;
     void api
-      .readCompleteCampaignBaseItem(campaignId, sourceKey, token, () => active && alive.current)
+      .readCompleteCampaignBaseItem(
+        campaignId,
+        sourceKey,
+        token,
+        () => active && alive.current && pulseActive(),
+      )
       .then(async (value) => {
-        if (!active || !alive.current || !value) return;
+        if (!active || !alive.current || !pulseActive() || !value) return;
         setBody(value);
         if (value.item.image) {
           const media = await api.readCampaignBaseImage({
             campaignId,
             imageKey: value.item.image.imageKey,
           });
-          if (!active || !alive.current) return;
+          if (!active || !alive.current || !pulseActive()) return;
           setImage(api.validatedCampaignBaseImage(media, token));
         }
       })
       .catch((cause) => {
-        if (active && alive.current) {
+        if (active && alive.current && pulseActive()) {
           setBody(null);
           setImage(null);
           onError(cause);
@@ -404,7 +439,7 @@ function BaseItem({
     return () => {
       active = false;
     };
-  }, [campaignId, sourceKey, token, onError]);
+  }, [campaignId, sourceKey, token, onError, pulseActive]);
   if (!body) return <LoadingState label="Conferindo texto integral e autorização…" />;
   return (
     <section className={styles.stack} aria-label="Recurso capturado">
@@ -468,6 +503,7 @@ function BaseReferences({
   onError: (cause: unknown) => void;
   onSelect: (key: string) => void;
 }) {
+  const pulseActive = useBaseReadGuard(campaignId);
   const [items, setItems] = useState<CampaignBaseReference[]>([]),
     [cursor, setCursor] = useState<string | null>(null),
     [loading, setLoading] = useState(true),
@@ -491,7 +527,7 @@ function BaseReferences({
           cursor: next,
           limit: 25,
         });
-        if (!active.current) return;
+        if (!active.current || !pulseActive()) return;
         api.assertCampaignResponseBudget(page);
         api.assertCampaignProjection(page.projectionToken, token);
         if (
@@ -513,13 +549,13 @@ function BaseReferences({
         ]);
         setCursor(page.nextCursor);
       } catch (cause) {
-        if (active.current) onError(cause);
+        if (active.current && pulseActive()) onError(cause);
       } finally {
         busy.current = false;
-        if (active.current) setLoading(false);
+        if (active.current && pulseActive()) setLoading(false);
       }
     },
-    [campaignId, sourceKey, token, onError],
+    [campaignId, sourceKey, token, onError, pulseActive],
   );
   useEffect(() => {
     queueMicrotask(() => {

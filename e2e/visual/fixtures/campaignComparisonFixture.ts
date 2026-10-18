@@ -5,7 +5,13 @@ import {
   fixtureCampaignComparisonSource,
 } from './campaignBaseFixture';
 import { fixtureCampaignLoreComparisonMetadata } from './campaignLoreFixture';
-import { fixtureCampaignToken, fixtureGet, fixtureOwner } from './studioStore';
+import {
+  fixtureAssertCampaignWritable,
+  fixtureCampaignDeletionReservation,
+  fixtureCampaignToken,
+  fixtureGet,
+  fixtureOwner,
+} from './studioStore';
 import { fixtureHash } from './sceneStore';
 import { getUniverse } from './universeService';
 import { getLoreEntity } from './loreService';
@@ -246,6 +252,7 @@ export async function getCampaignComparisonSource(input: {
 export function startCampaignComparison(
   input: C.StartComparisonInput,
 ): Promise<C.StartComparisonResult> {
+  fixtureAssertCampaignWritable(input.campaignId);
   return transaction('startCampaignComparison', input, async (data, uid) => {
     const entry = key(uid, input.operationId),
       fence = data.fences[entry],
@@ -316,6 +323,7 @@ export function startCampaignComparison(
 export function resolveCampaignComparisonStart(
   input: C.StartComparisonInput & { intent: 'cancel' },
 ): Promise<C.ResolveComparisonStartResult> {
+  fixtureAssertCampaignWritable(input.campaignId);
   return transaction('resolveCampaignComparisonStart', input, async (data, uid) => {
     const request: C.StartComparisonInput = {
       operationId: input.operationId,
@@ -407,6 +415,7 @@ export async function listCampaignComparisons(
     .filter(
       (job) =>
         job.uid === uid &&
+        !fixtureCampaignDeletionReservation(job.input.campaignId) &&
         job.progress.state !== 'deleted' &&
         (!input.campaignId || job.input.campaignId === input.campaignId),
     )
@@ -961,4 +970,50 @@ export async function fixtureCampaignAdoptedSnapshot(
   const projected = await project(job.snapshot, uid);
   current(uid);
   return clone(projected.snapshot);
+}
+
+// Sanitize only controls belonging to the deleted campaign; preserve other mesas.
+export function fixtureDeleteCampaignComparisons(uid: string, campaignId: string): boolean {
+  current(uid);
+  const data = read();
+  for (const [fenceKey, fence] of Object.entries(data.fences)) {
+    if (fenceKey === key(uid, fence.operationId) && fence.campaignId === campaignId)
+      delete data.fences[fenceKey];
+  }
+  const entry = Object.entries(data.jobs).find(
+    ([, job]) => job.uid === uid && job.input.campaignId === campaignId,
+  );
+  if (!entry) {
+    persist(data);
+    return true;
+  }
+  const [entryKey, job] = entry;
+  const imageKey = job.pins[0];
+  if (imageKey) {
+    fixtureSetImageUse('candidate:' + job.progress.candidateBaseId + ':' + imageKey, null);
+    job.pins.shift();
+    persist(data);
+    return false;
+  }
+  const terminalKey = 'writer.visual.campaign-comparison-terminals';
+  const terminals = JSON.parse(localStorage.getItem(terminalKey) ?? '{}') as Record<
+    string,
+    unknown
+  >;
+  terminals[entryKey] = {
+    uid,
+    campaignId,
+    receipts: Object.fromEntries(
+      Object.entries(job.receipts).map(([id, value]) => [
+        id,
+        { fingerprint: fixtureHash(value.fingerprint), receipt: value.receipt },
+      ]),
+    ),
+  };
+  localStorage.setItem(terminalKey, JSON.stringify(terminals));
+  delete data.jobs[entryKey];
+  persist(data);
+  return !Object.values(data.jobs).some(
+    (row) => row.uid === uid && row.input.campaignId === campaignId,
+  );
 }

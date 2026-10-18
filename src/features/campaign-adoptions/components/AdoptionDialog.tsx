@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { CampaignComparisonReader } from '@/features/campaign-comparisons';
 import { CampaignLoreOperationControls } from '@/features/campaign-lore';
 import { Alert, Button, Dialog, LoadingState } from '@/shared/ui';
@@ -32,6 +33,16 @@ export function AdoptionDialog({
   onAdaptLore?: () => void;
   onPendingChange?: (value: boolean) => void;
 }) {
+  const [invalidated, setInvalidated] = useState(false),
+    pulseScope = { actorId: uid, scope: 'campaign:' + selection.campaignId },
+    pulseStamp = useRef(getInvalidationGeneration(pulseScope));
+  useLayoutEffect(
+    () =>
+      subscribeInvalidation({ actorId: uid, scope: 'campaign:' + selection.campaignId }, () =>
+        setInvalidated(true),
+      ),
+    [uid, selection.campaignId],
+  );
   const alive = useRef(true),
     initialControl = useRef<AdoptionControl | null>(null),
     shown = useRef(open),
@@ -48,7 +59,8 @@ export function AdoptionDialog({
       alive.current = false;
     };
   }, []);
-  const active = () => alive.current && isActive(),
+  const active = () =>
+      alive.current && isActive() && getInvalidationGeneration(pulseScope) === pulseStamp.current,
     op = useAdoptionOperation({
       uid,
       selection,
@@ -67,6 +79,24 @@ export function AdoptionDialog({
     setReviewedCheckpoint(null);
     onClose();
   }
+  useEffect(() => {
+    const focus = () => {
+      if (open) void op.refresh();
+    };
+    window.addEventListener('focus', focus);
+    return () => window.removeEventListener('focus', focus);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (invalidated)
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        title="Atualização indisponível"
+        description="O conteúdo foi oculto. Confira a campanha pelo Estúdio antes de continuar."
+      >
+        <p>Seu controle preservado não foi apagado.</p>
+      </Dialog>
+    );
   return (
     <>
       <Dialog

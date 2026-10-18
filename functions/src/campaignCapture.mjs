@@ -1,4 +1,9 @@
 import { validateId } from './generation.mjs';
+import {
+  assertCampaignNotDeleted,
+  assertCampaignControlNotDeleted,
+  readCampaignDeletionReservation,
+} from './campaignDeletionGuard.mjs';
 import { workRevision, workConflict, workTitle, workDate } from './workProgressContracts.mjs';
 import { prepareUniverseProjectLink, universeDocumentId } from './universes.mjs';
 import { prepareLibraryImageUse, readActiveLibraryImage } from './imageLibrary.mjs';
@@ -37,8 +42,9 @@ export function createCampaignCaptureService({ db, assets, now = Date.now }) {
     return value;
   }
   async function preparation(tx, uid, captureId) {
-    const ref = prepRef(uid, captureId),
-      value = ownedPreparation((await tx.get(ref)).data(), uid, captureId);
+    const ref = prepRef(uid, captureId);
+    await assertCampaignControlNotDeleted(tx, db, uid, ref);
+    const value = ownedPreparation((await tx.get(ref)).data(), uid, captureId);
     return { ref, value };
   }
   function operation(uid, data, method) {
@@ -137,6 +143,7 @@ export function createCampaignCaptureService({ db, assets, now = Date.now }) {
         baseId = digest({ uid, captureId, kind: 'base' }),
         campaignId = digest({ uid, captureId, kind: 'campaign' });
       return db.runTransaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, campaignId);
         const previous = await prior(tx, op),
           ref = prepRef(uid, captureId),
           current = (await tx.get(ref)).data();
@@ -222,13 +229,18 @@ export function createCampaignCaptureService({ db, assets, now = Date.now }) {
         let query = db
           .collection(`users/${uid}/campaignPreparations`)
           .orderBy('__name__')
-          .limit(size + 1);
+          .limit(size + 1)
+          .select('ownerId', 'campaignId');
         if (cursor) query = query.startAfter(id(cursor.key));
         const docs = (await tx.get(query)).docs,
           items = [];
         let last = null;
         for (const snap of docs.slice(0, size)) {
-          const value = ownedPreparation(snap.data(), uid, snap.id);
+          if ((await readCampaignDeletionReservation(tx, db, snap.data().campaignId)).record) {
+            last = snap;
+            continue;
+          }
+          const value = ownedPreparation((await tx.get(snap.ref)).data(), uid, snap.id);
           if (
             !['preparing', 'prepared', 'aborted', 'deleting'].includes(value.state) ||
             (adventureId && value.adventureId !== adventureId)

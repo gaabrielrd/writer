@@ -8,3 +8,8 @@ export {
 } from './components/CampaignComparisonPreparations';
 export { ComparisonReader as CampaignComparisonReader } from './components/ComparisonReader';
 export type { ComparisonIdentity, ComparisonReadEnvelope } from './model/campaignComparison';
+
+export {
+  listComparisonControls,
+  forgetCampaignComparisonRecovery,
+} from './services/campaignComparisonRecovery';

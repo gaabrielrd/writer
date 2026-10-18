@@ -1,5 +1,10 @@
 import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
 import {
+  assertCampaignNotDeleted,
+  assertCampaignControlNotDeleted,
+  readCampaignDeletionReservation,
+} from './campaignDeletionGuard.mjs';
+import {
   comparisonPath,
   ownedComparison,
   readComparisonContext,
@@ -55,8 +60,10 @@ export function createCampaignAdoptionService({ db, now = Date.now }) {
       const tx = meteredTransaction(raw);
       return tx.finish(await fn(tx), final);
     });
-  const get = async (tx, uid, id) =>
-    owned((await tx.get(db.doc(adoptionPath(uid, id)))).data(), uid, id);
+  const get = async (tx, uid, id) => {
+    await assertCampaignControlNotDeleted(tx, db, uid, db.doc(adoptionPath(uid, id)));
+    return owned((await tx.get(db.doc(adoptionPath(uid, id)))).data(), uid, id);
+  };
   const result = async (tx, p, r) => ({
     receipt: r,
     progress: progress(p, await observation(tx, db, p)),
@@ -260,6 +267,7 @@ export function createCampaignAdoptionService({ db, now = Date.now }) {
       const input = startInput(uid, data),
         hash = fingerprint('start', input);
       return transaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, input.campaignId);
         const previous = verifyReceipt(
           (await tx.get(db.doc(operationPath(uid, input.operationId)))).data(),
           hash,
@@ -334,6 +342,7 @@ export function createCampaignAdoptionService({ db, now = Date.now }) {
         input = startInput(uid, original),
         hash = fingerprint('start', input);
       return transaction(async (tx) => {
+        await assertCampaignNotDeleted(tx, db, uid, input.campaignId);
         const previous = verifyReceipt(
           (await tx.get(db.doc(operationPath(uid, input.operationId)))).data(),
           hash,
@@ -364,13 +373,16 @@ export function createCampaignAdoptionService({ db, now = Date.now }) {
           .collection(`users/${uid}/campaignAdoptions`)
           .orderBy('createdAt', 'desc')
           .orderBy('__name__')
-          .limit(size + 1);
+          .limit(size + 1)
+          .select('ownerId', 'campaignId', 'createdAt');
         if (campaignId) q = q.where('campaignId', '==', campaignId);
         if (cursor) q = q.startAfter(cursor.date, cursor.key);
         const docs = (await tx.get(q)).docs,
           items = [];
         for (const doc of docs.slice(0, size)) {
-          const p = owned(doc.data(), uid, doc.id);
+          if ((await readCampaignDeletionReservation(tx, db, doc.data().campaignId)).record)
+            continue;
+          const p = await get(tx, uid, doc.id);
           items.push(progress(p, await observation(tx, db, p)));
         }
         const last = docs[size - 1];

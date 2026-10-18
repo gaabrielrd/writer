@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
 import { Link, Navigate, useParams } from 'react-router';
 import { Globe, Map } from 'lucide-react';
 import {
@@ -32,9 +33,91 @@ import {
 import { campaignStatusLabels, type Campaign } from '../model/campaign';
 import { getCampaign } from '../services/campaignService';
 import { CampaignManagementDialog } from './CampaignManagementDialog';
+import { CampaignDeletionControls } from './CampaignDeletionControls';
 import styles from './CampaignPage.module.css';
 
 function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
+  const [visible, setVisible] = useState(true),
+    [error, setError] = useState(''),
+    [checking, setChecking] = useState(false),
+    [attempt, setAttempt] = useState(0),
+    alive = useRef(true),
+    generation = useRef(0);
+  const scope = { actorId: ownerId, scope: 'campaign:' + id };
+  useLayoutEffect(() => {
+    alive.current = true;
+    const off = subscribeInvalidation(scope, () => {
+      generation.current++;
+      setVisible(false);
+      setChecking(false);
+      setError('');
+    });
+    return () => {
+      alive.current = false;
+      off();
+    };
+  }, [ownerId, id]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function recheck() {
+    const own = ++generation.current,
+      stamp = getInvalidationGeneration(scope);
+    setChecking(true);
+    try {
+      const campaign = await getCampaign(id);
+      if (
+        !alive.current ||
+        own !== generation.current ||
+        stamp !== getInvalidationGeneration(scope)
+      )
+        return;
+      if (!campaign || campaign.ownerId !== ownerId) setVisible(false);
+      else if (!visible) {
+        setAttempt((n) => n + 1);
+        setVisible(true);
+      }
+      setError('');
+    } catch (cause) {
+      if (alive.current && own === generation.current)
+        setError(cause instanceof Error ? cause.message : 'Não foi possível conferir a campanha.');
+    } finally {
+      if (alive.current && own === generation.current) setChecking(false);
+    }
+  }
+  useEffect(() => {
+    const focus = () => {
+      void recheck();
+    };
+    window.addEventListener('focus', focus);
+    return () => window.removeEventListener('focus', focus);
+  }, [ownerId, id, visible]); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div className={styles.page}>
+      <CampaignDeletionControls
+        campaignId={id}
+        onRevoked={() => {
+          setVisible(false);
+          setError('');
+        }}
+      />
+      {error && <Alert variant="warning">{error}</Alert>}
+      {visible ? (
+        <CampaignContent key={attempt} id={id} ownerId={ownerId} />
+      ) : (
+        <Card className={styles.content}>
+          <h2>Conteúdo da campanha oculto</h2>
+          <p>
+            Consulte novamente para conferir a disponibilidade. A limpeza pode ser retomada pelo
+            controle de exclusão ou pelo Estúdio.
+          </p>
+          <Button disabled={checking} variant="outline" onClick={() => void recheck()}>
+            Conferir disponibilidade da campanha
+          </Button>
+          <Link to="/studio">Voltar ao Estúdio</Link>
+        </Card>
+      )}
+    </div>
+  );
+}
+function CampaignContent({ id, ownerId }: { id: string; ownerId: string }) {
   const { setPendingEditorOperation } = useAuth();
   const [editing, setEditing] = useState(false),
     [pending, setPending] = useState(false),
@@ -64,9 +147,11 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
   }>();
   useEffect(() => {
     let active = true;
+    const scope = { actorId: ownerId, scope: 'campaign:' + id },
+      stamp = getInvalidationGeneration(scope);
     void getCampaign(id)
       .then((campaign) => {
-        if (active)
+        if (active && stamp === getInvalidationGeneration(scope))
           setResult({ attempt, campaign: campaign?.ownerId === ownerId ? campaign : null });
       })
       .catch((cause: unknown) => {

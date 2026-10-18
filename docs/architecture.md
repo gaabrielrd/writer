@@ -620,7 +620,7 @@ ações explícitas; controles inválidos permanecem preservados. O painel globa
 permite concluir limpeza mesmo quando o root da campanha desaparece.
 
 C3A está concluído tecnicamente em fe10b15, com CI e regras verdes. Adoção C3B está
-concluída tecnicamente em `947cfc3`, com CI e regras verdes; exclusão integral está em implementação;
+concluída tecnicamente em `947cfc3`, com CI e regras verdes; exclusão integral C4 está validada localmente, CI pendente;
 ver [ADR 0034](decisions/0034-campaign-base-comparisons.md) e
 [contrato C3A](tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
 
@@ -654,6 +654,34 @@ reconhecer a campanha atual. Journals usam Web Locks e CAS integral, sem lock
 durante HTTP. Bases, pins e bindings emprestados não são coletados no cancelamento.
 Ver [ADR 0035](decisions/0035-campaign-base-adoption.md) e
 [contrato C3B](tasks/writer-v2/execucao/19-adocao-explicita-de-base-da-campanha.md).
+
+## Exclusão permanente de campanhas
+
+`campaign-deletions` é uma feature folha, limitada a auth/shared. `campaigns`
+coordena seus diálogos e os closers públicos dos controles A/B/C1/C2/C3A/C3B;
+o Estúdio importa essa composição. O verificador de arquitetura protege essas
+fronteiras inclusive em imports de tipos, reexports e imports dinâmicos.
+
+`campaignDeletion.mjs` coordena reserva global permanente, job privado, recibos e
+fases de limpeza limitadas. O início marca deleting e desvincula o universo na
+mesma transação. Toda leitura/mutação de campanha confere a reserva; controles
+antigos são roteados por máscara antes de ler contexto. Mídia reautoriza após I/O.
+Sanitização remove prosa/chaves/descriptors; pins são retirados um por transação,
+preservando biblioteca e outras mesas. Todas as bases e gerações físicas entram
+na limpeza. A raiz só desaparece após certificação e conferência da encarnação.
+
+O cliente separa prova remota de revogação e CAS local. Confirmação válida oculta
+conteúdo imediatamente, mesmo se um journal mais novo impedir o fechamento local.
+Encerramento explícito de rascunhos exige prova permanente própria e snapshot
+integral, sem decriptação. Pulso opaco em `shared/services` é apenas invalidação
+de apresentação; não autoriza limpeza. O relógio de autorização do UID permanece.
+
+C4 está validado localmente, com CI do novo head pendente; ver
+[entrega C4](entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md),
+[ADR 0036](decisions/0036-campaign-deletion.md) e
+[contrato executável](tasks/writer-v2/execucao/20-exclusao-integral-da-campanha.md).
+Antes de habilitar, implantar guardas/escritores/regras e drenar versões antigas.
+Qualquer novo recurso de campanha deve atualizar a limpeza antes de sua ativação.
 
 ## Progresso privado, contagem e retomada
 

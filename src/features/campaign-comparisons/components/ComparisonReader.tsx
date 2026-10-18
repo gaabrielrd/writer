@@ -1,3 +1,4 @@
+import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { renderRichText } from '@/shared/lib';
 import { Alert, Badge, Button, Dropdown, LoadingState } from '@/shared/ui';
@@ -21,12 +22,23 @@ export function ComparisonReader({
   isActive: () => boolean;
   onReviewAdoption?: (context: ComparisonReadEnvelope) => void;
 }) {
-  const [attempt, setAttempt] = useState(0);
+  const [attempt, setAttempt] = useState(0),
+    scope = { actorId: identity.ownerId, scope: 'campaign:' + identity.campaignId },
+    stamp = getInvalidationGeneration(scope);
+  useLayoutEffect(() => {
+    const retry = () => setAttempt((n) => n + 1),
+      off = subscribeInvalidation(scope, retry);
+    window.addEventListener('focus', retry);
+    return () => {
+      off();
+      window.removeEventListener('focus', retry);
+    };
+  }, [identity.ownerId, identity.campaignId]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <ReaderSession
       key={attempt}
       identity={identity}
-      isActive={isActive}
+      isActive={() => isActive() && getInvalidationGeneration(scope) === stamp}
       retry={() => setAttempt((n) => n + 1)}
       onReviewAdoption={onReviewAdoption}
     />

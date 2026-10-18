@@ -1,3 +1,4 @@
+import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Button, Dialog, LoadingState } from '@/shared/ui';
 import type {
@@ -25,6 +26,16 @@ export function ComparisonDialog({
   isActive: () => boolean;
   onReviewAdoption?: (context: ComparisonReadEnvelope) => void;
 }) {
+  const [invalidated, setInvalidated] = useState(false),
+    pulseScope = { actorId: uid, scope: 'campaign:' + selection.campaignId },
+    pulseStamp = useRef(getInvalidationGeneration(pulseScope));
+  useLayoutEffect(
+    () =>
+      subscribeInvalidation({ actorId: uid, scope: 'campaign:' + selection.campaignId }, () =>
+        setInvalidated(true),
+      ),
+    [uid, selection.campaignId],
+  );
   const alive = useRef(true),
     shown = useRef(open),
     [source, setSource] = useState<ComparisonSource | null>(null),
@@ -42,7 +53,8 @@ export function ComparisonDialog({
       alive.current = false;
     };
   }, []);
-  const active = () => alive.current && isActive();
+  const active = () =>
+    alive.current && isActive() && getInvalidationGeneration(pulseScope) === pulseStamp.current;
   const operation = useComparisonOperation({
     uid,
     campaignId: selection.campaignId,
@@ -103,6 +115,27 @@ export function ComparisonDialog({
       operation.control && operation.control.scope.kind !== 'known' ? operation.control : null;
   const locked = operation.busy || !operation.ready || !comparisonStorageAvailable();
   const sourceAvailable = progress?.sourceAvailable ?? false;
+  useEffect(() => {
+    const focus = () => {
+      if (!open) return;
+      void operation.refresh();
+      setSource(null);
+      setSourceAttempt((n) => n + 1);
+    };
+    window.addEventListener('focus', focus);
+    return () => window.removeEventListener('focus', focus);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (invalidated)
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        title="Comparação indisponível"
+        description="O conteúdo foi oculto. Confira a campanha pelo Estúdio antes de continuar."
+      >
+        <p>Seu controle preservado não foi apagado.</p>
+      </Dialog>
+    );
   return (
     <>
       <Dialog

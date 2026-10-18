@@ -93,6 +93,8 @@ function valid(
     return false;
   if (scope.kind === 'start')
     return (
+      Object.keys(operation.input).sort().join() ===
+        'adventureId,description,expectedSourceToken,operationId,title,universeId' &&
       operation.method === 'startCampaignCapture' &&
       operation.input.adventureId === scope.adventureId &&
       typeof operation.input.title === 'string' &&
@@ -101,6 +103,7 @@ function valid(
       (operation.input.universeId === null || typeof operation.input.universeId === 'string')
     );
   return (
+    Object.keys(operation.input).sort().join() === 'captureId,expectedCheckpoint,operationId' &&
     ['advanceCampaignCapture', 'activateCampaignCapture', 'cancelCampaignCapture'].includes(
       operation.method,
     ) &&
@@ -161,4 +164,16 @@ export function clearPendingCampaignCapture(
   if (!current || JSON.stringify(current) !== JSON.stringify(operation)) return false;
   localStorage.removeItem(key(uid, scope));
   return true;
+}
+
+export function forgetCampaignCaptureRecovery(
+  uid: string,
+  scope: CampaignCaptureRecoveryScope,
+  expected: PendingCampaignCaptureOperation,
+  check: () => void,
+): Promise<void> {
+  return withCampaignCaptureJournalLock(uid, scope, check, () => {
+    if (!clearPendingCampaignCapture(uid, scope, expected))
+      throw new Error('O controle da captura mudou em outra aba e foi preservado.');
+  });
 }

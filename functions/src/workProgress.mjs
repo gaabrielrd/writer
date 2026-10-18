@@ -1,4 +1,5 @@
 import { countVisibleWords } from './visibleWordCount.mjs';
+import { isCampaignDeletionError } from './campaignDeletionGuard.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { addWorkProgressLegacy } from './workProgressLegacy.mjs';
 import {
@@ -159,7 +160,7 @@ export function createWorkProgressService({ db, now = Date.now, countWords = cou
           return progressView(context, root, control.value, activityRevision);
         });
       } catch (error) {
-        if (error.code === 'not-found') return null;
+        if (error.code === 'not-found' || isCampaignDeletionError(error)) return null;
         throw error;
       }
     },
@@ -489,12 +490,12 @@ export function createWorkProgressService({ db, now = Date.now, countWords = cou
         for (const entry of page.docs.slice(0, limit)) {
           const row = entry.data(),
             target = workTarget(row.target),
-            context = { uid, target, path: workPath(target), ref: db.doc(workPath(target)) };
+            context = { db, uid, target, path: workPath(target), ref: db.doc(workPath(target)) };
           let root;
           try {
             root = await workProject(tx, context);
           } catch (error) {
-            if (error.code === 'not-found') continue;
+            if (error.code === 'not-found' || isCampaignDeletionError(error)) continue;
             throw error;
           }
           const resolved = await resolve(tx, context, root, row);

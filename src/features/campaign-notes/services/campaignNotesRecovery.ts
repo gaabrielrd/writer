@@ -125,3 +125,24 @@ export function observePendingCampaignNotes(
   window.addEventListener('storage', onStorage);
   return () => window.removeEventListener('storage', onStorage);
 }
+
+export function forgetCampaignNoteRecovery(
+  uid: string,
+  expected: PendingCampaignNoteOperation,
+  check: () => void,
+): Promise<void> {
+  return withNoteLock(
+    uid,
+    expected.input.campaignId,
+    () => {
+      check();
+      return true;
+    },
+    () => {
+      const actual = readPendingCampaignNote(uid, expected.input.campaignId);
+      if (JSON.stringify(actual) !== JSON.stringify(expected))
+        throw new Error('O pedido da nota mudou em outra aba e foi preservado.');
+      localStorage.removeItem(campaignNoteJournalKey(uid, expected.input.campaignId));
+    },
+  );
+}

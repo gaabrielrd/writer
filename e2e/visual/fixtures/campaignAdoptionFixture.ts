@@ -13,7 +13,13 @@ import {
   fixtureCampaignLoreRemoteResolve,
 } from './campaignLoreFixture';
 import { fixtureActivateAdoptedCampaignBase } from './campaignBaseFixture';
-import { fixtureCampaignToken, fixtureGet, fixtureOwner } from './studioStore';
+import {
+  fixtureAssertCampaignWritable,
+  fixtureCampaignDeletionReservation,
+  fixtureCampaignToken,
+  fixtureGet,
+  fixtureOwner,
+} from './studioStore';
 import { fixtureHash } from './sceneStore';
 import { FIXTURE_TIME } from './data';
 
@@ -233,6 +239,7 @@ function tick(job: Job) {
   job.progress.updatedAt++;
 }
 export function startCampaignAdoption(input: A.StartAdoptionInput): Promise<A.StartAdoptionResult> {
+  fixtureAssertCampaignWritable(input.campaignId);
   return transaction(
     'startCampaignAdoption',
     { operationId: input.operationId },
@@ -324,6 +331,7 @@ export function startCampaignAdoption(input: A.StartAdoptionInput): Promise<A.St
 export function resolveCampaignAdoptionStart(
   input: A.StartAdoptionInput & { intent: 'cancel' },
 ): Promise<A.ResolveAdoptionStartResult> {
+  fixtureAssertCampaignWritable(input.campaignId);
   return transaction(
     'resolveCampaignAdoptionStart',
     { operationId: input.operationId },
@@ -368,7 +376,9 @@ export async function listCampaignAdoptions(input: A.ListAdoptionsInput): Promis
     rows = Object.values(read().jobs)
       .filter(
         (job) =>
-          job.uid === uid && (!input.campaignId || job.input.campaignId === input.campaignId),
+          job.uid === uid &&
+          !fixtureCampaignDeletionReservation(job.input.campaignId) &&
+          (!input.campaignId || job.input.campaignId === input.campaignId),
       )
       .sort(
         (a, b) =>
@@ -654,5 +664,58 @@ export function resolveCampaignLoreRemoteOperation(
       data.resolutions[id] = { fingerprint, value: clone(value) };
       return value;
     },
+  );
+}
+
+// Sanitize only controls belonging to the deleted campaign; preserve other mesas.
+export function fixtureDeleteCampaignAdoptions(uid: string, campaignId: string): boolean {
+  current(uid);
+  const data = read();
+  for (const [fenceKey, fence] of Object.entries(data.fences)) {
+    if (fenceKey === key(uid, fence.operationId) && fence.campaignId === campaignId)
+      delete data.fences[fenceKey];
+  }
+  for (const [id, resolution] of Object.entries(data.resolutions)) {
+    if (resolution.value.ownerId === uid && resolution.value.request.campaignId === campaignId)
+      delete data.resolutions[id];
+  }
+  const entry = Object.entries(data.jobs).find(
+    ([, job]) => job.uid === uid && job.input.campaignId === campaignId,
+  );
+  if (!entry) {
+    persist(data);
+    return true;
+  }
+  const [entryKey, job] = entry;
+
+  const terminalKey = 'writer.visual.campaign-adoption-terminals';
+  const terminals = JSON.parse(localStorage.getItem(terminalKey) ?? '{}') as Record<
+    string,
+    unknown
+  >;
+  terminals[entryKey] = {
+    uid,
+    campaignId,
+    receipts: Object.fromEntries(
+      Object.entries(job.receipts).map(([id, value]) => [
+        id,
+        {
+          fingerprint: fixtureHash(value.fingerprint),
+          receipt: {
+            operationId: value.receipt.operationId,
+            action: value.receipt.action,
+            expectedCheckpoint: value.receipt.expectedCheckpoint,
+            confirmedCheckpoint: value.receipt.confirmedCheckpoint,
+            outcome: value.receipt.outcome,
+          },
+        },
+      ]),
+    ),
+  };
+  localStorage.setItem(terminalKey, JSON.stringify(terminals));
+  delete data.jobs[entryKey];
+  persist(data);
+  return !Object.values(data.jobs).some(
+    (row) => row.uid === uid && row.input.campaignId === campaignId,
   );
 }

@@ -8,7 +8,7 @@ import {
   seedAssistedBook,
 } from './bookService';
 import { fixtureGet, fixtureOwner, fixturePatchProject } from './studioStore';
-import { fixtureSceneState } from './sceneStore';
+import { fixtureHash, fixtureSceneState } from './sceneStore';
 import { FIXTURE_TIME, FIXTURE_BOOK_ID } from './data';
 
 interface ProjectState {
@@ -529,4 +529,39 @@ export async function listWorkResume(
         ? JSON.stringify({ scope, revision: current.revision, offset: offset + limit })
         : null,
   };
+}
+
+// Delete only this campaign's private progress/activity; retain preferences and other work.
+export function fixtureDeleteCampaignWork(
+  uid: string,
+  campaignId: string,
+  phase: 'children' | 'activity',
+): void {
+  if (uid !== fixtureOwner()) throw new Error('A conta mudou.');
+  if (phase === 'children') projects.delete(identity({ kind: 'campaign', id: campaignId }, uid));
+  const current = users.get(uid);
+  if (current && phase === 'children') {
+    for (const receipt of Object.values(current.receipts)) {
+      let request: { target?: Work.WorkTarget };
+      try {
+        request = JSON.parse(receipt.fingerprint) as { target?: Work.WorkTarget };
+      } catch {
+        continue;
+      }
+      if (request.target?.kind === 'campaign' && request.target.id === campaignId) {
+        receipt.fingerprint = fixtureHash(receipt.fingerprint);
+        receipt.result = {};
+      }
+    }
+  }
+  if (current && phase === 'activity') {
+    const remaining = current.activity.filter(
+      (row) => row.target.kind !== 'campaign' || row.target.id !== campaignId,
+    );
+    if (remaining.length !== current.activity.length) {
+      current.activity = remaining;
+      current.revision++;
+    }
+  }
+  persist();
 }
