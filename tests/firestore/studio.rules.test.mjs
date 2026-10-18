@@ -62,7 +62,7 @@ after(async () => {
   else process.env.METADATA_SERVER_DETECTION = metadataDetection;
 });
 
-test('private originals require ownership and bounded owner queries; all writes and children are closed', async () => {
+test('private originals keep adventure owner queries and server-only campaigns; all writes and children are closed', async () => {
   const adventure = await studio.createAdventure('author', {
     operationId,
     title: 'Aventura',
@@ -78,14 +78,15 @@ test('private originals require ownership and bounded owner queries; all writes 
     ['campaigns', campaign],
   ]) {
     const path = `${kind}/${value.id}`;
-    await assertSucceeds(getDoc(doc(client(), path)));
+    const ownerRead = kind === 'campaigns' ? assertFails : assertSucceeds;
+    await ownerRead(getDoc(doc(client(), path)));
     for (const uid of [null, 'other']) {
       await assertFails(getDoc(doc(client(uid), path)));
       await assertFails(
         getDocs(query(collection(client(uid), kind), where('ownerId', '==', 'author'), limit(25))),
       );
     }
-    await assertSucceeds(
+    await ownerRead(
       getDocs(query(collection(client(), kind), where('ownerId', '==', 'author'), limit(50))),
     );
     await assertFails(getDocs(query(collection(client(), kind), where('ownerId', '==', 'author'))));

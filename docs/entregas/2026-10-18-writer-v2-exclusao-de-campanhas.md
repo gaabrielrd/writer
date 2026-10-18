@@ -128,6 +128,17 @@ novos arquivos .env ou artefatos acima de 5 MiB. O checkout original
 
 ## Fora do escopo e pendências
 
+A CI de `1b20f49` revelou uma expectativa anterior no teste de regras do Estúdio:
+o caso conjunto ainda permitia GET/list SDK do dono em campanhas. C4 fecha esse
+acesso intencionalmente. O [run de regras](https://github.com/gaabrielrd/writer/actions/runs/39098228242)
+terminou com **134/135**, uma falha e zero skips. A correção altera somente o
+teste: campanhas negadas, aventuras com consultas autorizadas preservadas; nenhuma
+regra ou código do produto foi relaxado. Caso afetado repetido em emulador real:
+**1/1**, zero falhas/skips, 3.901,3647 ms (caso 3.208,6615 ms). Syntax e formato
+passaram. Os 134 casos inalterados não foram repetidos localmente. Log externo:
+`writer-v2-studio-c4-owner-sdk.log`; emulador encerrado e porta fechada. A CI da
+correção continua necessária para conclusão técnica.
+
 CI do novo head, merge, deploy e exclusão real de dados do operador não fazem parte
 da evidência local. Habilitação exige guardas/escritores/regras conjuntos e dreno
 de versões antigas; manutenção Admin deve respeitar a reserva. Índices implantados,
