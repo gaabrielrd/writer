@@ -100,3 +100,8 @@ A enumeração local de C3A encontrou 1.092 casos: 91 em cada um dos doze shards
 A união coincide com os 1.092 IDs da suíte inteira, sem omissões/duplicações.
 Os oito contratos dirigidos da CI também passaram; isso preserva gates e limites,
 sem constituir aprovação remota ou execução dos 1.092 testes pelo `--list`.
+
+A CI do head `fe10b15` confirmou os doze shards e a consolidação verdes:
+1.080 passes, 12 skips preexistentes, zero retries/flaky. O tempo de execução de
+testes por shard ficou entre 5,4 e 9,5 minutos, sem setup/consolidação. É medição
+desse head; não garante prazo futuro ou capacidade fixa de runners.

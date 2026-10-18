@@ -2,8 +2,8 @@
 
 **Data do planejamento:** 2026-10-12. **Responsável:** Gabriel, trabalhando sozinho, 20 horas por semana.
 **Estado:** fundamentos técnicos e F2-01 a F2-06 validados; F2-07 em execução,
-com captura/notas concluídas e variantes/comparação validadas localmente.
-CI do head acompanhado no PR; adoção, exclusão integral, funcionalidades seguintes
+com captura/notas/variantes/comparação concluídas tecnicamente em fe10b15.
+CI e regras verdes no PR; adoção, exclusão integral, funcionalidades seguintes
 e aceites humanos/comerciais permanecem pendentes.
 **Autorização deste trabalho:** implementar, planejar e validar cada tarefa em sequência, fase a fase.
 O [registro de execução](execucao/README.md) distingue documento, validação local e aceite final.

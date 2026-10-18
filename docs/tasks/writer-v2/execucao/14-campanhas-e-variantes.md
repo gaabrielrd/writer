@@ -147,13 +147,13 @@ Notas não recebem cópia automática da base; variantes continuam ligadas à or
 
 C1 está concluído tecnicamente em bda5e70, com CI e regras verdes.
 O [contrato C2](17-variantes-de-lore-da-campanha.md) foi fechado após revisões
-independentes e está implementado e validado localmente. Oferece ficha inteira particular,
+independentes e está concluído tecnicamente em fe10b15, com CI/regras verdes. Oferece ficha inteira particular,
 retirada/restauração/descarte e recuperação cifrada com autorização atual também
 dos alvos de relações. Não antecipa troca de activeBaseId ou exclusão integral.
 
 O [incremento C3A](18-comparacao-de-bases-da-campanha.md) está implementado e
-validado localmente: candidata completa e comparação de origem, itens, referências
-e ilustrações por identidade, sem alterar a base ativa. CI do novo head pendente;
+concluído tecnicamente em fe10b15: candidata completa e comparação de origem, itens,
+referências e ilustrações por identidade, sem alterar a base ativa. CI/regras verdes;
 ver [entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
 C3B continua responsável pela adoção
 explícita e continuidade das variantes/pedidos antigos; exclusão integral conserva

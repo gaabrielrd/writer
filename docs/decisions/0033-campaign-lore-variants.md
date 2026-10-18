@@ -1,6 +1,6 @@
 # ADR 0033 — Variantes inteiras e recuperação protegida da mesa
 
-**Estado:** aceita; C2 validado localmente em 2026-10-17, CI do novo head pendente.
+**Estado:** aceita; C2 concluído tecnicamente em `fe10b15`, CI e regras verdes.
 **Data:** 2026-10-15.
 
 ## Contexto

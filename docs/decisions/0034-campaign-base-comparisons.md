@@ -1,6 +1,6 @@
 # ADR 0034 — Preparar e comparar uma candidata de base
 
-**Estado:** aceita; C3A validado localmente, CI do novo head pendente.
+**Estado:** aceita; C3A concluído tecnicamente em `fe10b15`, CI e regras verdes.
 **Data:** 2026-10-17.
 
 ## Contexto

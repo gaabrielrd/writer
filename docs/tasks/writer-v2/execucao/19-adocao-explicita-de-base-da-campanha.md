@@ -2,8 +2,7 @@
 
 **Estado:** planejamento em revisão; implementação não iniciada. A escolha de
 produto abaixo e os contratos técnicos indicados ainda precisam ser fechados.
-**Base:** C3A validado localmente e enviado em `fe10b15`; regras remotas verdes e
-CI geral em paralelo na primeira consulta.
+**Base:** C3A concluído tecnicamente em `fe10b15`, com CI e regras verdes.
 **Origem:** [D-02](02-modelo-de-dominio.md), [campanhas](14-campanhas-e-variantes.md),
 [C2](17-variantes-de-lore-da-campanha.md), [C3A](18-comparacao-de-bases-da-campanha.md)
 e [ADR 0034](../../../decisions/0034-campaign-base-comparisons.md).

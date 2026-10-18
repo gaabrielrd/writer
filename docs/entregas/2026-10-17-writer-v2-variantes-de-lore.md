@@ -200,3 +200,13 @@ duas vezes. Os traces mostram prazo consumido por navegações completas repetid
 com ordem/reload já verificados; não comprovam um botão Fechar quebrado. A correção
 dirigida e a distribuição em doze shards são acompanhadas no incremento C3A.
 Não declarar conclusão remota deste SHA; o resultado cancelado permanece registrado.
+
+## Conclusão técnica no head integrado
+
+O head `fe10b15`, com C2 e C3A, passou na
+[CI completa](https://github.com/gaabrielrd/writer/actions/runs/39089175323) e nas
+[regras](https://github.com/gaabrielrd/writer/actions/runs/39089175341). Validate
+Node 22/24, auditoria, produção 7/7, doze shards/consolidação e Firestore 125/125
+verdes. Visuais: 1.080 passes diretos, 12 skips preexistentes e zero retries/flaky.
+C2 concluído tecnicamente nesse head; C3B e exclusão integral seguem pendentes.
+O resultado cancelado anterior não foi convertido retroativamente em aprovação.

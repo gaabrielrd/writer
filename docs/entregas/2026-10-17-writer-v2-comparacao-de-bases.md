@@ -1,7 +1,7 @@
 # Writer V2 — Candidatas e comparação de bases da campanha
 
-**Data:** 2026-10-17. **Estado:** validado localmente; CI do novo head a acompanhar
-no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
+**Data:** 2026-10-17. **Estado:** concluído tecnicamente em `fe10b15`, com CI e
+regras verdes no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
 
 ## Objetivo
 
@@ -130,3 +130,15 @@ Na primeira consulta do novo head, [regras Firestore](https://github.com/gaabrie
 concluídas com sucesso e [CI geral](https://github.com/gaabrielrd/writer/actions/runs/39089175323)
 em execução. Resultado parcial não equivale a aprovação remota geral; acompanhamento
 continua em paralelo ao planejamento C3B, conforme autorização.
+
+## Confirmação remota
+
+CI e regras do mesmo SHA `fe10b15` terminaram com sucesso, incluindo validate
+Node 22/24, auditoria, produção, doze shards e consolidação. Logs reais:
+**1.080 visuais passaram**, **12 skips preexistentes**, **zero retries/flaky**;
+produção **7/7**, 18,3 s; Firestore **125/125**, zero falhas/skips, 49.182,260951 ms.
+As execuções de testes dos shards duraram de 5,4 a 9,5 minutos, sem contar setup
+ou consolidação. Isso mede este head, sem prometer duração futura.
+
+C3A concluído tecnicamente; C3B e exclusão integral ainda pendentes. O PR continua
+em rascunho, sem merge/deploy e sem encerrar gates humanos/comerciais.

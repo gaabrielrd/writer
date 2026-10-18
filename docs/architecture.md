@@ -575,7 +575,7 @@ continua negado. Veja [ADR 0032](decisions/0032-campaign-own-notes.md) e
 
 ## Variantes particulares de lore da campanha
 
-O incremento C2 validado localmente concentra leitura/escrita em campaignLore e recuperação
+C2, concluído tecnicamente em fe10b15, concentra leitura/escrita em campaignLore e recuperação
 em campaignVariantRecovery de Functions; a feature campaign-lore oferece painel
 público próprio. O leitor da Base congelada conserva seu contrato imutável.
 Overlay por sourceKey usa base/override/removed, revisão contínua e corpo em chunks
@@ -619,7 +619,7 @@ autorizar avanço automático. Fence inicial e encerramento de passo vencido exi
 ações explícitas; controles inválidos permanecem preservados. O painel global
 permite concluir limpeza mesmo quando o root da campanha desaparece.
 
-C3A está validado localmente, com CI do novo head pendente. Adoção C3B e exclusão
+C3A está concluído tecnicamente em fe10b15, com CI e regras verdes. Adoção C3B e exclusão
 integral seguem pendentes;
 ver [ADR 0034](decisions/0034-campaign-base-comparisons.md) e
 [contrato C3A](tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).

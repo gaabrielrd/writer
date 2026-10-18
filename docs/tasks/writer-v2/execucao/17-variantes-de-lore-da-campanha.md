@@ -1,6 +1,6 @@
 # F2-07 C2 — Variantes de lore da campanha
 
-**Estado:** implementado e validado localmente em 2026-10-17; CI do novo head pendente.
+**Estado:** concluído tecnicamente em `fe10b15`, com CI/regras verdes em 2026-10-17.
 **Base:** C1 concluído tecnicamente em bda5e70; regras e CI remotos verdes,
 confirmados durante a implementação C2. B concluído em f97455d, com CI e regras verdes.
 **Origem:** [campanhas](14-campanhas-e-variantes.md),
@@ -461,4 +461,5 @@ chave ou revisão automaticamente para nova activeBaseId.
   revisão final em 2026-10-17 sem P0/P1/P2 concreto remanescente.
 - [Entrega e limites da evidência](../../../entregas/2026-10-17-writer-v2-variantes-de-lore.md).
   C2 não encerra F2-07: comparação/adoção explícita e limpeza integral permanecem
-  obrigatórias. CI pendente é acompanhada em paralelo, sem merge/deploy.
+  obrigatórias. CI/regras de fe10b15 verdes; resultados anteriores permanecem
+  registrados na entrega. Sem merge/deploy.

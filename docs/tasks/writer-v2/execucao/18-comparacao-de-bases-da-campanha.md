@@ -1,7 +1,7 @@
 # F2-07 C3A — Capturar candidata e comparar bases da campanha
 
-**Estado:** implementado e validado localmente em 2026-10-17; CI do novo head
-pendente. [Entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
+**Estado:** concluído tecnicamente em `fe10b15`, CI e regras verdes em 2026-10-17.
+[Entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
 **Base:** C2 validado localmente e enviado em `16d90b9`; CI em paralelo.
 **Origem:** [campanhas](14-campanhas-e-variantes.md),
 [domínio D-02](02-modelo-de-dominio.md), [captura B](15-captura-de-aventura.md) e
@@ -598,3 +598,8 @@ entrega atualizadas; Git/CI são acompanhados no PR, sem merge ou deploy.
 
 Esse fechamento local permite continuar sob a sequência autorizada. A conclusão
 remota requer CI verde no head; C3B e exclusão integral continuam pendentes.
+
+Confirmação posterior: fe10b15 passou na CI e regras do mesmo SHA, incluindo
+validate Node 22/24, auditoria, produção 7/7, doze shards/consolidação e SDK
+Firestore 125/125. Visuais: 1.080 passes, 12 skips preexistentes, zero retries/flaky.
+Isso encerra C3A tecnicamente, sem encerrar C3B, F2-07 ou aceites humanos/comerciais.
