@@ -85,6 +85,11 @@ também a correção dirigida da narrativa e os doze shards sem omissão de caso
 CI do novo head será acompanhada em paralelo. Comparar uma candidata não substitui
 a adoção explícita C3B nem a limpeza integral da campanha, que seguem obrigatórias.
 
+O [planejamento C3B](19-adocao-explicita-de-base-da-campanha.md) começou após o
+fechamento local C3A. Staging, continuidade de revisões/corpos e barreira de pedidos
+foram auditados; a política de ficha ausente da candidata aguarda o operador.
+Não há implementação C3B; ABI/limites finais serão revisados após essa escolha.
+
 ## Decisões recebidas em 2026-10-13
 
 - Brasil e BRL; Stripe preparado para pagamentos, segundo o operador.

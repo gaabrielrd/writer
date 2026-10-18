@@ -118,3 +118,15 @@ live conservam seus gates próprios. Checkout original master 522ccaa preservado
    explicitamente. Em duas abas, preservar o controle mais recente.
 5. Descartar candidata e retomar limpeza pelo Estúdio mesmo sem a origem.
 6. Repetir por teclado e em 320 px, nos temas claro, escuro e sépia.
+
+## Registro e envio
+
+Commit `fe10b151f17230cc12aa2236edf209cc9ff26da4`, 56 arquivos, 9.129 inserções e
+313 remoções. Pre-commit/commit-msg passaram; pre-push preservado: tipos verdes,
+170 arquivos/1.680 testes em 128,14 s. SHA remoto conferido; worktree limpo após
+envio. PR 21 confirmado aberto em rascunho, sem merge, base master 522ccaa.
+
+Na primeira consulta do novo head, [regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/39089175341)
+concluídas com sucesso e [CI geral](https://github.com/gaabrielrd/writer/actions/runs/39089175323)
+em execução. Resultado parcial não equivale a aprovação remota geral; acompanhamento
+continua em paralelo ao planejamento C3B, conforme autorização.
