@@ -1,6 +1,7 @@
 # W2-F2-08 — Preparar sessões com pistas e missões
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** contrato de S1 revisto; implementação iniciando. S2 e S3 planejados,
+sem validação funcional desta tarefa. Ver [sessões privadas](../execucao/21-sessoes-privadas-da-campanha.md).
 **Dependências:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md), [W2-F2-03](../fase-02-criar-e-preparar/03-arcos-e-cronologia-basica.md)
 **Áreas propostas:** lore; proposta campaigns. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -20,6 +21,10 @@ Entradas: campanha, título/data opcional, cenas, NPCs, locais, missões e pista
 - Planejamento continua acessível em texto/lista e não exige mapa ou rolagem de dado.
 
 ## Passos de execução
+
+Execução vertical: S1 estrutura privada (CRUD, data, estado e ordem), S2 referências
+e consulta autorizada, S3 pistas/missões/pendências. S1 não conclui os critérios
+completos abaixo. Data civil sem horário é suposição inicial registrada no contrato.
 
 - [ ] Definir contratos e referências por sessão.
 - [ ] Implementar CRUD, ordem e estados privados.
