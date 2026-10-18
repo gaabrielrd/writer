@@ -893,3 +893,23 @@ export async function readCampaignBaseImage({
   const dataUrl = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
   return { dataUrl, projectionToken: token };
 }
+
+// Read-only simulated server seam: raw scan keys, authorized captured metadata only.
+export async function fixtureCampaignBaseLoreMetadata(campaignId: string) {
+  const { record, allowed, token } = await context(campaignId);
+  return {
+    baseId: record.baseId,
+    projectionToken: token,
+    availableSourceKeys: record.snapshot.items
+      .filter(({ item }) => item.kind === 'lore' && allowed.has(item.sourceKey))
+      .map(({ item }) => item.sourceKey),
+    items: record.snapshot.items
+      .filter(({ item }) => item.kind === 'lore')
+      .map(({ item }) => ({
+        sourceKey: item.sourceKey,
+        ...(allowed.has(item.sourceKey)
+          ? { name: item.title, category: item.structured.category }
+          : {}),
+      })),
+  };
+}

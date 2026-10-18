@@ -98,6 +98,9 @@
 - Mantenha notas autorais de campanha separadas da base/variantes e acessíveis sem a origem; não copie conteúdo derivado automaticamente para notas.
 - Vincule notas, controles e recibos à encarnação precisa da campanha; compare revisões e conserve tombstones sem corpo para impedir recriação por replay.
 - Reserve e limpe pedidos de notas sob Web Locks por UID/campanha, sem lock durante HTTP; o journal integral de texto próprio não autoriza cache de variantes derivadas.
+- Vincule variantes inteiras à encarnação da campanha e à base; preserve revisão contínua e bodyRevision ao retirar/restaurar, conforme ADR 0033.
+- Recupere variantes somente após reautorizar ficha e alvos congelados; persista ciphertext em IndexedDB sem chave e invalide respostas após mudança de projeção.
+- Aguarde oncomplete antes do envio e da confirmação local antes de fechar a chave; encerre pedidos desconhecidos somente por cancelamento explícito com fence.
 
 ## Rotas
 

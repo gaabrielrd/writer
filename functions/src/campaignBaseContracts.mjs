@@ -255,6 +255,7 @@ export async function readCampaignBase(tx, db, uid, campaignId) {
     uid,
     campaignId,
     campaign,
+    campaignSnapshot,
     base,
     ref,
     path: ref.path,

@@ -1,5 +1,5 @@
 import type * as C from '../../../src/features/campaign-notes/model/campaignNote';
-import { fixtureGet, fixtureOwner } from './studioStore';
+import { fixtureCampaignToken, fixtureGet, fixtureOwner } from './studioStore';
 import { FIXTURE_TIME } from './data';
 
 type StoredNote = {
@@ -139,7 +139,7 @@ async function server<T>(
     if (!project) {
       // Fictional immutable root identity, independent of mutable metadata. SDK proves Firestore createTime.
       project = {
-        token: (crypto.randomUUID() + crypto.randomUUID()).replaceAll('-', ''),
+        token: fixtureCampaignToken(uid, campaignId),
         notes: {},
       };
       data.projects[projectKey] = project;

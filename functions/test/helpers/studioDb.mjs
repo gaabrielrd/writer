@@ -22,9 +22,22 @@ export function studioDb() {
       const record = records.get(path);
       return structuredClone(
         fields && record
-          ? Object.fromEntries(
-              fields.filter((key) => key in record).map((key) => [key, record[key]]),
-            )
+          ? fields.reduce((result, field) => {
+              const keys = field.split('.');
+              let source = record,
+                target = result;
+              for (let index = 0; index < keys.length; index++) {
+                const key = keys[index];
+                if (!source || !Object.hasOwn(source, key)) break;
+                if (index === keys.length - 1) target[key] = source[key];
+                else {
+                  target[key] ??= {};
+                  target = target[key];
+                  source = source[key];
+                }
+              }
+              return result;
+            }, {})
           : record,
       );
     },

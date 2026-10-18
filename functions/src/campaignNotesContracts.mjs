@@ -1,5 +1,6 @@
 import { validateId } from './generation.mjs';
 import { availableCampaign } from './campaigns.mjs';
+import { campaignIdentityToken } from './campaignIdentity.mjs';
 import {
   workClosed,
   workFail,
@@ -71,21 +72,7 @@ export async function notesContext(tx, db, uid, data, keys, optionalToken = fals
       !/^[a-f0-9]{64}$/.test(campaign.activeBaseId))
   )
     workFail('failed-precondition', 'A procedência da campanha está inconsistente.');
-  const stamp = snapshot.createTime;
-  if (
-    !stamp ||
-    !Number.isSafeInteger(stamp.seconds) ||
-    !Number.isInteger(stamp.nanoseconds) ||
-    stamp.nanoseconds < 0 ||
-    stamp.nanoseconds >= 1e9
-  )
-    workFail('failed-precondition', 'Não foi possível conferir a identidade da campanha.');
-  const campaignToken = digest({
-    version: 1,
-    uid,
-    campaignId,
-    createTime: { seconds: stamp.seconds, nanoseconds: stamp.nanoseconds },
-  });
+  const campaignToken = campaignIdentityToken(uid, campaignId, snapshot);
   if (!optionalToken || data.campaignToken !== undefined)
     if (notesToken(data.campaignToken) !== campaignToken) campaignChanged();
   const controlRef = db.doc(path + '/noteState/current'),

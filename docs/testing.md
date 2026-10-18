@@ -266,6 +266,22 @@ A fixture simula o servidor sob um lock separado; contagem de RPCs comprova que
 ele não substitui a reserva do produto. Token fictício não prova createTime:
 essa garantia pertence ao SDK. Ver [contrato C1](tasks/writer-v2/execucao/16-notas-proprias-da-campanha.md).
 
+Variantes particulares têm contratos/servidor em campaignLore e recuperação em
+campaignVariantRecovery, com testes dirigidos de entidade inteira, bodyRevision,
+CAS/replay, chave/fence, UTF-8/limites e projeção de relações. HTTP real verifica
+private,no-store no callback da chave em sucesso/erro; não cobre recusas anteriores
+do framework nem configuração de produção. O SDK dedicado campaignLore.rules
+exercita escritores e regras reais, incluindo identidade de root e preservação C1.
+
+No cliente, testes de campaign-lore cobrem controle de sessão, journal/cripto e
+DTOs. Navegador usa Web Crypto, IndexedDB e Web Locks reais; fixture simula apenas
+servidor/transportes. Controles distinguem sealed antes do primeiro envio de resposta
+perdida após commit, e verificam abort após put.onsuccess antes de oncomplete.
+Quota é erro injetado; não comprova disco cheio. Evidência de ausência de plaintext
+exclui explicitamente backing stores writer.visual.* e não imprime chaves/registros.
+Gate/revogação reais pertencem ao SDK; fixture prova composição do cliente.
+Ver [contrato C2](tasks/writer-v2/execucao/17-variantes-de-lore-da-campanha.md).
+
 Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
 em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
 ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.

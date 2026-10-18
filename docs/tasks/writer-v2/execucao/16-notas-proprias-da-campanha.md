@@ -1,6 +1,6 @@
 # F2-07 C1 — Notas próprias da campanha
 
-**Estado:** implementado e validado localmente; CI pendente.
+**Estado:** concluído tecnicamente em bda5e70; validação local, CI e regras verdes.
 Contrato operacional revisado antes do código.
 Captura B concluída tecnicamente em f97455d, com validate, CI e regras verdes.
 **Origem:** [campanhas e variantes](14-campanhas-e-variantes.md),

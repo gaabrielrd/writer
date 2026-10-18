@@ -1,6 +1,6 @@
 # W2-F2-07 — Instanciar campanhas e variantes particulares
 
-**Estado:** Em execução; gestão A concluída em 624c912 e captura B em f97455d, com CI verde. Notas próprias C1 validadas localmente, CI pendente; variantes/atualização/exclusão integral pendentes.
+**Estado:** Em execução; gestão A concluída em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde. Variantes C2 validadas localmente em 2026-10-17, CI pendente; comparação/atualização e exclusão integral pendentes.
 **Dependências:** [W2-F2-06](../fase-02-criar-e-preparar/06-aventuras-e-estrutura-narrativa.md), [W2-F1-03](../fase-01-direcao-e-fundamentos/03-permissoes-e-privacidade.md)
 **Áreas propostas:** universes, lore; propostas adventures e campaigns; functions. Nomes novos são propostas, sujeitos à fase 1.
 

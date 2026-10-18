@@ -625,6 +625,14 @@
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "campaignVariantOperations", "fieldPath": "key", "indexes": [] },
+    {
+      "collectionGroup": "campaignVariantOperations",
+      "fieldPath": "relatedSourceKeys",
+      "indexes": []
+    },
+    { "collectionGroup": "loreVariantBodies", "fieldPath": "content", "indexes": [] },
+    { "collectionGroup": "loreVariants", "fieldPath": "manifest", "indexes": [] },
     { "collectionGroup": "notes", "fieldPath": "content", "indexes": [] },
     { "collectionGroup": "bodies", "fieldPath": "content", "indexes": [] },
     { "collectionGroup": "items", "fieldPath": "fields", "indexes": [] },

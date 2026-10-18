@@ -3,7 +3,7 @@
 - **Data:** 2026-10-15
 - **Branch:** codex/writer-v2
 - **Plano de origem:** [F2-07 C1](../tasks/writer-v2/execucao/16-notas-proprias-da-campanha.md)
-- **Estado:** validado localmente; CI pendente. Não encerra F2-07.
+- **Estado:** concluído tecnicamente em bda5e70; CI e regras verdes. Não encerra F2-07.
 
 ## Objetivo
 
@@ -30,7 +30,7 @@ notas continuam acessíveis quando a aventura ou o universo da base fica indispo
 - [x] Origem indisponível não bloqueia texto próprio; SDK direto nega todos os papéis.
 - [x] Três temas, teclado/foco e 320 px sem overflow nas jornadas verificadas.
 - [x] Revisão, validate e documentação locais.
-- [ ] CI do novo head, acompanhado em paralelo no PR 21.
+- [x] CI do head bda5e70, acompanhado em paralelo no PR 21 e confirmado verde.
 
 ## Arquivos alterados
 
@@ -116,7 +116,7 @@ Sem Web Locks ou persistência segura, campos são preservados e mutações não
 Excluir nota remove título/corpo e mantém tombstone; não há restauração. Limpeza
 integral futura deverá incluir notas, controles e recibos. Índice declarado não
 significa implantado. Fixture não comprova produção ou piloto humano.
-Sem dependências novas, merge ou deploy. CI pendente não é conclusão técnica.
+Sem dependências novas, merge ou deploy. F2-07 continua pendente além de C1.
 
 ## Como verificar manualmente
 
@@ -126,3 +126,21 @@ Sem dependências novas, merge ou deploy. CI pendente não é conclusão técnic
 4. Simular resposta perdida e recarregar; repetir o pedido preservado sem duplicar.
 5. Tornar a origem indisponível; notas próprias continuam editáveis e a base falha
    separadamente. Excluir com confirmação e conferir ausência após reload.
+
+## Publicação no PR — 2026-10-15
+
+Commit bda5e70cfb4918d64e30b077aacd188de3c8c853 enviado e confirmado em
+origin/codex/writer-v2. Pre-commit e commit-msg passaram. Pre-push preservado:
+tipos verdes e 1.581 testes/165 arquivos em 104,76 s. Checkout original master
+522ccaa permanece limpo, sem alteração. [PR 21](https://github.com/gaabrielrd/writer/pull/21)
+continua aberto em rascunho. [CI](https://github.com/gaabrielrd/writer/actions/runs/38731708025)
+e [regras](https://github.com/gaabrielrd/writer/actions/runs/38731708028) iniciadas,
+ainda pendentes na verificação; o próximo incremento avança conforme autorização.
+
+Verificação intermediária: regras concluíram verdes, **116/116**, zero falhas/skips,
+41.421,742937 ms (job 116410814782). Produção Chromium **7/7**, 15,4 s
+(job 116410814517). CI geral ainda em execução; resultados parciais não a encerram.
+
+Verificação final: CI 38731708025 concluída com success, assim como regras 38731708028. Validate Node 22/24, auditoria, produção, oito shards visuais e gate
+agregado verdes. O estado success não foi convertido em contagem de retries/skips.
+C1 concluído tecnicamente; variantes C2 já avançavam conforme a sequência autorizada.

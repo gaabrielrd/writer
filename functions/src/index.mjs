@@ -13,6 +13,9 @@ import { createStudioService } from './studio.mjs';
 import { createCampaignsService } from './campaigns.mjs';
 import { createCampaignCaptureService } from './campaignCapture.mjs';
 import { createCampaignNotesService } from './campaignNotes.mjs';
+import { createCampaignLoreService } from './campaignLore.mjs';
+import { createCampaignVariantRecoveryService } from './campaignVariantRecovery.mjs';
+import { setCampaignVariantRecoveryHeaders } from './campaignVariantRecoveryHttp.mjs';
 import { setCampaignMediaHeaders } from './campaignCaptureHttp.mjs';
 import { createCampaignBaseReadService } from './campaignBaseRead.mjs';
 import { createWorkProgressService } from './workProgress.mjs';
@@ -257,11 +260,14 @@ const callable = (method, secrets = []) =>
     },
     async (request) => {
       setCampaignMediaHeaders(method, request);
+      setCampaignVariantRecoveryHeaders(method, request);
       try {
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
+        const campaignLore = createCampaignLoreService({ db });
+        const campaignVariantRecovery = createCampaignVariantRecoveryService({ db });
         const campaignCapture = createCampaignCaptureService({ db, assets });
         const campaignBaseRead = createCampaignBaseReadService({ db, assets });
         const workProgress = createWorkProgressService({ db });
@@ -277,37 +283,41 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = campaignNotes[method]
-          ? campaignNotes
-          : campaignBaseRead[method]
-            ? campaignBaseRead
-            : campaignCapture[method]
-              ? campaignCapture
-              : campaigns[method]
-                ? campaigns
-                : adventurePreview[method]
-                  ? adventurePreview
-                  : adventureBlocks[method]
-                    ? adventureBlocks
-                    : workHistory[method]
-                      ? workHistory
-                      : workProgress[method]
-                        ? workProgress
-                        : narrative[method]
-                          ? narrative
-                          : scenes[method]
-                            ? scenes
-                            : studio[method]
-                              ? studio
-                              : assisted[method]
-                                ? assisted
-                                : loreAnalysis[method]
-                                  ? loreAnalysis
-                                  : universeService[method]
-                                    ? universeService
-                                    : service()[method]
-                                      ? service()
-                                      : createImageLibraryService({ db, assets });
+        const handler = campaignLore[method]
+          ? campaignLore
+          : campaignVariantRecovery[method]
+            ? campaignVariantRecovery
+            : campaignNotes[method]
+              ? campaignNotes
+              : campaignBaseRead[method]
+                ? campaignBaseRead
+                : campaignCapture[method]
+                  ? campaignCapture
+                  : campaigns[method]
+                    ? campaigns
+                    : adventurePreview[method]
+                      ? adventurePreview
+                      : adventureBlocks[method]
+                        ? adventureBlocks
+                        : workHistory[method]
+                          ? workHistory
+                          : workProgress[method]
+                            ? workProgress
+                            : narrative[method]
+                              ? narrative
+                              : scenes[method]
+                                ? scenes
+                                : studio[method]
+                                  ? studio
+                                  : assisted[method]
+                                    ? assisted
+                                    : loreAnalysis[method]
+                                      ? loreAnalysis
+                                      : universeService[method]
+                                        ? universeService
+                                        : service()[method]
+                                          ? service()
+                                          : createImageLibraryService({ db, assets });
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError)
@@ -339,6 +349,14 @@ export const listCampaignNotes = callable('listCampaignNotes');
 export const getCampaignNote = callable('getCampaignNote');
 export const saveCampaignNote = callable('saveCampaignNote');
 export const deleteCampaignNote = callable('deleteCampaignNote');
+export const listCampaignLore = callable('listCampaignLore');
+export const getCampaignLore = callable('getCampaignLore');
+export const prepareCampaignLoreVariant = callable('prepareCampaignLoreVariant');
+export const saveCampaignLoreVariant = callable('saveCampaignLoreVariant');
+export const removeCampaignLore = callable('removeCampaignLore');
+export const restoreCampaignLore = callable('restoreCampaignLore');
+export const discardCampaignLoreVariant = callable('discardCampaignLoreVariant');
+export const resolveCampaignLoreOperation = callable('resolveCampaignLoreOperation');
 export const getCampaignCaptureSource = callable('getCampaignCaptureSource');
 export const startCampaignCapture = callable('startCampaignCapture');
 export const getCampaignCapture = callable('getCampaignCapture');

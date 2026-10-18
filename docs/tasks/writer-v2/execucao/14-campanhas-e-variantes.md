@@ -1,7 +1,7 @@
 # F2-07 — Campanhas e variantes particulares
 
-**Estado:** A concluído tecnicamente em 624c912 e captura B em f97455d, com CI verde; notas C1 validadas localmente, CI pendente.
-Contrato operacional da captura fechado antes do código; variantes continuam pendentes.
+**Estado:** A concluído tecnicamente em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde. Variantes C2 validadas localmente em 2026-10-17; CI do novo head pendente.
+Comparação/adoção explícita e exclusão integral permanecem pendentes.
 **Origem:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md).
 **Base:** F2-06 concluído tecnicamente em `624c912`, com CI e regras verdes.
 
@@ -144,6 +144,12 @@ C2 variantes de lore e C3 comparação/adoção explícita. O
 [contrato C1](16-notas-proprias-da-campanha.md), revisado antes do código, estabelece
 o recurso independente cuja preservação será conferida nas etapas derivadas.
 Notas não recebem cópia automática da base; variantes continuam ligadas à origem.
+
+C1 está concluído tecnicamente em bda5e70, com CI e regras verdes.
+O [contrato C2](17-variantes-de-lore-da-campanha.md) foi fechado após revisões
+independentes e está implementado e validado localmente. Oferece ficha inteira particular,
+retirada/restauração/descarte e recuperação cifrada com autorização atual também
+dos alvos de relações. Não antecipa troca de activeBaseId ou exclusão integral.
 
 Trabalhar em gerações preparing/ready/aborted. activeBaseId só muda no commit final;
 preparação parcial nunca substitui uma base pronta. Paginar metadados 25/50, mas

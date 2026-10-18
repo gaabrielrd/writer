@@ -9,6 +9,7 @@ import {
 import { useAuth } from '@/features/auth';
 import { CampaignBaseReader } from '@/features/campaign-bases';
 import { CampaignNotesPanel } from '@/features/campaign-notes';
+import { CampaignLorePanel } from '@/features/campaign-lore';
 import {
   Badge,
   Alert,
@@ -165,7 +166,10 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
       <ProjectProgressPanel target={{ kind: 'campaign', id: campaign.id }} />
       <CampaignNotesPanel campaignId={campaign.id} />
       {campaign.provenance.kind === 'original' && campaign.activeBaseId && (
-        <CampaignBaseReader campaignId={campaign.id} generationId={campaign.activeBaseId} />
+        <>
+          <CampaignLorePanel campaignId={campaign.id} baseId={campaign.activeBaseId} />
+          <CampaignBaseReader campaignId={campaign.id} generationId={campaign.activeBaseId} />
+        </>
       )}
     </div>
   );

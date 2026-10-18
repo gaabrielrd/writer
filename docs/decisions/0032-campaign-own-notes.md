@@ -1,6 +1,6 @@
 # ADR 0032 — Notas autorais próprias da campanha
 
-**Estado:** aceita e implementada; C1 validado localmente, CI pendente.
+**Estado:** aceita e implementada; C1 concluído tecnicamente em bda5e70, CI verde.
 **Data:** 2026-10-15.
 
 ## Contexto

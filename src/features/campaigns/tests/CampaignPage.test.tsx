@@ -23,6 +23,13 @@ vi.mock('@/features/campaign-notes', () => ({
     <section aria-label={'Notas próprias ' + campaignId}>Anotações autorais preservadas</section>
   ),
 }));
+vi.mock('@/features/campaign-lore', () => ({
+  CampaignLorePanel: ({ campaignId, baseId }: { campaignId: string; baseId: string }) => (
+    <section aria-label={'Lore da mesa ' + campaignId + '/' + baseId}>
+      Variantes particulares
+    </section>
+  ),
+}));
 vi.mock('@/features/campaign-bases', () => ({
   CampaignBaseReader: ({
     campaignId,
@@ -73,6 +80,7 @@ it('abre metadados persistidos, mantém privacidade e permite retornar ao Estúd
   expect(await screen.findByRole('heading', { name: 'Meu projeto' })).toBeInTheDocument();
   expect(screen.getByText('História privada')).toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'Notas próprias project' })).toBeInTheDocument();
+  expect(screen.queryByRole('region', { name: /Lore da mesa/ })).not.toBeInTheDocument();
   expect(screen.getByText('Privada')).toBeInTheDocument();
   expect(screen.getByText('Projeto independente, sem universo vinculado.')).toBeInTheDocument();
   expect(getCampaign).toHaveBeenCalledWith('project');
@@ -156,6 +164,9 @@ it('campanha original monta leitor da geração separadamente e preserva descri�
     screen.getByRole('heading', { name: 'Progresso de campaign/project' }),
   ).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Editar campanha' })).toBeEnabled();
+  expect(
+    screen.getByRole('region', { name: 'Lore da mesa project/generation' }),
+  ).toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'Notas próprias project' })).toBeInTheDocument();
 });
 

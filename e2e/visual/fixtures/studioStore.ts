@@ -309,3 +309,23 @@ export function fixtureActivateCapturedCampaign(campaign: Campaign): Campaign {
   persistStudio();
   return structuredClone(campaign);
 }
+
+// One simulated immutable root identity across fixture transports; SDK proves real createTime.
+export function fixtureCampaignToken(uid: string, campaignId: string): string {
+  const storageKey = 'writer.visual.campaign-identities',
+    key = JSON.stringify([uid, campaignId]);
+  const identities = JSON.parse(localStorage.getItem(storageKey) ?? '{}') as Record<string, string>;
+  if (identities[key]) return identities[key];
+  // Migrate only a previously issued C1 identity, without resetting notes or reading their bodies.
+  const legacy = JSON.parse(
+    localStorage.getItem('writer.visual.campaign-notes') ?? '{"projects":{}}',
+  ) as { projects: Record<string, { token?: string }> };
+  const previous = legacy.projects[key]?.token;
+  const token =
+    previous && /^[a-f0-9]{64}$/.test(previous)
+      ? previous
+      : (crypto.randomUUID() + crypto.randomUUID()).replaceAll('-', '');
+  identities[key] = token;
+  localStorage.setItem(storageKey, JSON.stringify(identities));
+  return token;
+}

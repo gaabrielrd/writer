@@ -573,6 +573,24 @@ derivadas. Campos não são preenchidos automaticamente com base/lore. SDK diret
 continua negado. Veja [ADR 0032](decisions/0032-campaign-own-notes.md) e
 [contrato C1](tasks/writer-v2/execucao/16-notas-proprias-da-campanha.md).
 
+## Variantes particulares de lore da campanha
+
+O incremento C2 validado localmente concentra leitura/escrita em campaignLore e recuperação
+em campaignVariantRecovery de Functions; a feature campaign-lore oferece painel
+público próprio. O leitor da Base congelada conserva seu contrato imutável.
+Overlay por sourceKey usa base/override/removed, revisão contínua e corpo em chunks
+com bodyRevision independente. Escrita de corpo/estado/controle/recibo é atômica.
+campaignIdentityToken reutiliza o mesmo createTime preciso de C1 sem ler suas notas.
+
+Listas percorrem lore capturado paginado e aplicam overlay/gates no servidor.
+Relações expõem nomes efetivos autorizados; Input não carrega nomes dos alvos.
+Recuperação usa ciphertext binário em IndexedDB, Web Locks e AES-GCM, com chave
+somente em memória após autorização online de ficha e alvos congelados. Fase
+confirmed precede fechar a chave; cancelamento explícito grava fence sem corpo.
+SDK direto permanece negado. C2 ainda não troca a base nem exclui a campanha.
+Ver [ADR 0033](decisions/0033-campaign-lore-variants.md) e
+[contrato C2](tasks/writer-v2/execucao/17-variantes-de-lore-da-campanha.md).
+
 ## Progresso privado, contagem e retomada
 
 `features/work-progress` oferece `ProjectProgressPanel`, `ContinueWorkPanel` e

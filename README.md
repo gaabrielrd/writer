@@ -43,9 +43,13 @@ privada de material, narrativa, arquivo e ilustrações. A captura está conclu�
 tecnicamente em f97455d, com CI verde; veja a [evidência](docs/entregas/2026-10-15-writer-v2-captura-de-aventura.md).
 Notas próprias acrescentam título/texto simples particulares, com recuperação de
 pedidos sem resposta e isolamento entre mesas/abas. Continuam acessíveis quando a
-origem da base fica indisponível; não copiam lore automaticamente. C1 está validado
-localmente, com CI pendente; veja a [entrega](docs/entregas/2026-10-15-writer-v2-notas-da-campanha.md).
-Variantes, atualização explícita e exclusão integral seguem nas próximas etapas do
+origem da base fica indisponível; não copiam lore automaticamente. C1 está concluído
+tecnicamente em bda5e70, com CI verde; veja a [entrega](docs/entregas/2026-10-15-writer-v2-notas-da-campanha.md).
+Variantes C2 permitem adaptar fichas inteiras somente na mesa, retirar/restaurar e
+descartar alterações locais, com recuperação cifrada após conferir a autorização
+atual. O incremento está validado localmente; CI do novo head permanece pendente.
+Veja a [entrega de variantes](docs/entregas/2026-10-17-writer-v2-variantes-de-lore.md).
+Atualização explícita e exclusão integral seguem nas próximas etapas do
 [contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
