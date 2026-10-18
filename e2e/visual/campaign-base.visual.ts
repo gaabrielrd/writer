@@ -202,7 +202,12 @@ test('duas mesas recebem bases independentes, texto congelado e somente lore exp
   await expect(body).toContainText('Navegadora');
   await expect(body).not.toContainText('RELAÇÃO NÃO EXPANDE CAPTURA');
   await area(page, 'Lore');
-  await expect(page.getByRole('button', { name: 'Lia referenciada', exact: true })).toBeVisible();
+  const baseReader = page
+    .getByRole('heading', { name: 'Base congelada da campanha', exact: true })
+    .locator('..');
+  await expect(
+    baseReader.getByRole('button', { name: 'Lia referenciada', exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Ficha sem referência', exact: true })).toHaveCount(
     0,
   );
@@ -259,7 +264,7 @@ test('duas mesas recebem bases independentes, texto congelado e somente lore exp
     'Texto vivo reescrito',
   );
   await area(page, 'Lore');
-  await page.getByRole('button', { name: 'Lia referenciada', exact: true }).click();
+  await baseReader.getByRole('button', { name: 'Lia referenciada', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Recurso capturado' })).toContainText(
     'DETALHE CONGELADO da cartógrafa',
   );

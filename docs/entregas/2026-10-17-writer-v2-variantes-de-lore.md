@@ -169,3 +169,18 @@ Consulta intermediária dos checks de `16d90b9`: Validate Node 22 e 24, auditori
 produção Chromium e regras concluídos com sucesso. Logs reais: produção 7/7,
 19,3 s; Firestore 120/120, zero falhas/skips, 51.036,07656 ms. Oito shards visuais
 ainda em execução; esses resultados parciais não encerram a CI geral.
+
+## Correção dirigida após a CI — 2026-10-17
+
+A CI de 16d90b9 terminou com falha em seis shards, todos no mesmo caso B:
+`campaign-base.visual.ts:186`, seletor global de “Lia referenciada” encontrava
+dois botões, na Base congelada e no novo Lore da mesa. O teste passou a localizar
+esse botão dentro do cartão identificado pelo heading da Base congelada. Foram
+preservadas as verificações de conteúdo, isolamento e ausência de lore transitivo;
+nenhum timeout, retry ou comportamento do produto foi alterado.
+
+Somente esse caso foi repetido nos seis projetos: **6/6**, 47,8 s, zero
+falhas/skips/retries. Evidência: `writer-v2-base-ci-fix.log` e
+`writer-v2-base-ci-fix-results.json` na pasta de artefatos acima. Correção será
+enviada isoladamente dos arquivos C3A em implementação; CI do novo head continua
+pendente até confirmação dos seus checks.
