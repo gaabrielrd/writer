@@ -3,7 +3,7 @@
 - **Data:** 2026-10-18
 - **Branch:** `codex/writer-v2`
 - **Plano de origem:** [F2-07 C4](../tasks/writer-v2/execucao/20-exclusao-integral-da-campanha.md)
-- **Estado:** validado localmente; CI do novo head pendente no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
+- **Estado:** concluído tecnicamente em `0006a66`, com CI/regras verdes no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
 - **Decisão:** [ADR 0036](../decisions/0036-campaign-deletion.md).
 
 ## Objetivo
@@ -136,15 +136,22 @@ teste: campanhas negadas, aventuras com consultas autorizadas preservadas; nenhu
 regra ou código do produto foi relaxado. Caso afetado repetido em emulador real:
 **1/1**, zero falhas/skips, 3.901,3647 ms (caso 3.208,6615 ms). Syntax e formato
 passaram. Os 134 casos inalterados não foram repetidos localmente. Log externo:
-`writer-v2-studio-c4-owner-sdk.log`; emulador encerrado e porta fechada. A CI da
-correção continua necessária para conclusão técnica.
+`writer-v2-studio-c4-owner-sdk.log`; emulador encerrado e porta fechada.
 
-CI do novo head, merge, deploy e exclusão real de dados do operador não fazem parte
-da evidência local. Habilitação exige guardas/escritores/regras conjuntos e dreno
+O head da correção `0006a666116641b4b40bf412dbe5fd4cbf08b50f` passou no
+[CI geral](https://github.com/gaabrielrd/writer/actions/runs/39098696334) e nas
+[regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/39098696342).
+Validate Node 22/24 e auditoria verdes; navegador de produção **7/7** em 15,8 s;
+doze shards visuais e agregador aprovados. Regras **135/135**, zero falhas/skips.
+O status dos shards não foi convertido em contagem exata de casos ou retries.
+Hooks do envio preservados: typecheck e **1.813 testes/177 arquivos**, 120,64 s.
+
+Merge, deploy e exclusão real de dados do operador não foram executados.
+Habilitação exige guardas/escritores/regras conjuntos e dreno
 de versões antigas; manutenção Admin deve respeitar a reserva. Índices implantados,
 bucket real, zoom físico de 200%, leitor de tela, segundo dispositivo e pilotos
 humanos não foram comprovados. Sessões, compartilhamento e comércio continuam nas
-respectivas tarefas. F2-07 aguarda a CI para conclusão técnica.
+respectivas tarefas. F2-07 está concluído tecnicamente no recorte documentado.
 
 ## Evidência e verificação manual
 

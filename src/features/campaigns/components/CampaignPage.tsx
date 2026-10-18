@@ -10,6 +10,7 @@ import {
 import { useAuth } from '@/features/auth';
 import { CampaignBaseReader } from '@/features/campaign-bases';
 import { CampaignNotesPanel } from '@/features/campaign-notes';
+import { CampaignSessionsPanel } from '@/features/campaign-sessions';
 import { CampaignLorePanel } from '@/features/campaign-lore';
 import {
   CampaignComparisonPanel,
@@ -37,13 +38,22 @@ import { CampaignDeletionControls } from './CampaignDeletionControls';
 import styles from './CampaignPage.module.css';
 
 function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
+  const { setPendingEditorOperation } = useAuth();
   const [visible, setVisible] = useState(true),
+    [sessionsReady, setSessionsReady] = useState(false),
+    [contentPending, setContentPending] = useState(false),
+    [sessionsPending, setSessionsPending] = useState(false),
     [error, setError] = useState(''),
     [checking, setChecking] = useState(false),
     [attempt, setAttempt] = useState(0),
     alive = useRef(true),
     generation = useRef(0);
   const scope = { actorId: ownerId, scope: 'campaign:' + id };
+  const onAvailability = useCallback((available: boolean) => setSessionsReady(available), []);
+  useEffect(() => {
+    setPendingEditorOperation(contentPending || sessionsPending);
+  }, [contentPending, sessionsPending, setPendingEditorOperation]);
+  useEffect(() => () => setPendingEditorOperation(false), [setPendingEditorOperation]);
   useLayoutEffect(() => {
     alive.current = true;
     const off = subscribeInvalidation(scope, () => {
@@ -100,7 +110,18 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
       />
       {error && <Alert variant="warning">{error}</Alert>}
       {visible ? (
-        <CampaignContent key={attempt} id={id} ownerId={ownerId} />
+        <>
+          <CampaignContent
+            key={attempt}
+            id={id}
+            ownerId={ownerId}
+            onAvailability={onAvailability}
+            onPendingChange={setContentPending}
+          />
+          {sessionsReady && (
+            <CampaignSessionsPanel campaignId={id} onPendingChange={setSessionsPending} />
+          )}
+        </>
       ) : (
         <Card className={styles.content}>
           <h2>Conteúdo da campanha oculto</h2>
@@ -117,8 +138,17 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
     </div>
   );
 }
-function CampaignContent({ id, ownerId }: { id: string; ownerId: string }) {
-  const { setPendingEditorOperation } = useAuth();
+function CampaignContent({
+  id,
+  ownerId,
+  onAvailability,
+  onPendingChange: onContentPendingChange,
+}: {
+  id: string;
+  ownerId: string;
+  onAvailability: (available: boolean) => void;
+  onPendingChange: (pending: boolean) => void;
+}) {
   const [editing, setEditing] = useState(false),
     [pending, setPending] = useState(false),
     [adoption, setAdoption] = useState<ComparisonReadEnvelope | null>(null),
@@ -136,9 +166,9 @@ function CampaignContent({ id, ownerId }: { id: string; ownerId: string }) {
   }
   const onPendingChange = useCallback((value: boolean) => setPending(value), []);
   useEffect(() => {
-    setPendingEditorOperation(pending);
-    return () => setPendingEditorOperation(false);
-  }, [pending, setPendingEditorOperation]);
+    onContentPendingChange(pending);
+    return () => onContentPendingChange(false);
+  }, [pending, onContentPendingChange]);
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<{
     attempt: number;
@@ -151,8 +181,10 @@ function CampaignContent({ id, ownerId }: { id: string; ownerId: string }) {
       stamp = getInvalidationGeneration(scope);
     void getCampaign(id)
       .then((campaign) => {
-        if (active && stamp === getInvalidationGeneration(scope))
+        if (active && stamp === getInvalidationGeneration(scope)) {
+          onAvailability(Boolean(campaign && campaign.ownerId === ownerId));
           setResult({ attempt, campaign: campaign?.ownerId === ownerId ? campaign : null });
+        }
       })
       .catch((cause: unknown) => {
         if (active)
@@ -165,7 +197,7 @@ function CampaignContent({ id, ownerId }: { id: string; ownerId: string }) {
     return () => {
       active = false;
     };
-  }, [id, ownerId, attempt]);
+  }, [id, ownerId, attempt, onAvailability]);
   const activity = useWorkActivity({
     target: { kind: 'campaign', id },
     resource: { kind: 'project' },

@@ -13,6 +13,7 @@ import { createStudioService } from './studio.mjs';
 import { createCampaignsService } from './campaigns.mjs';
 import { createCampaignCaptureService } from './campaignCapture.mjs';
 import { createCampaignNotesService } from './campaignNotes.mjs';
+import { createCampaignSessionsService } from './campaignSessions.mjs';
 import { createCampaignLoreService } from './campaignLore.mjs';
 import { createCampaignComparisonService } from './campaignComparison.mjs';
 import { createCampaignComparisonReadService } from './campaignComparisonRead.mjs';
@@ -271,6 +272,7 @@ const callable = (method, secrets = []) =>
         const studio = createStudioService({ db });
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
+        const campaignSessions = createCampaignSessionsService({ db });
         const campaignLore = createCampaignLoreService({ db });
         const campaignComparison = createCampaignComparisonService({ db, assets });
         const campaignComparisonRead = createCampaignComparisonReadService({ db, assets });
@@ -299,6 +301,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (campaignSessions[method] ? campaignSessions : null) ??
           (campaignDeletion[method] ? campaignDeletion : null) ??
           (campaignAdoption[method]
             ? campaignAdoption
@@ -372,6 +375,11 @@ export const listCampaignNotes = callable('listCampaignNotes');
 export const getCampaignNote = callable('getCampaignNote');
 export const saveCampaignNote = callable('saveCampaignNote');
 export const deleteCampaignNote = callable('deleteCampaignNote');
+export const listCampaignSessions = callable('listCampaignSessions');
+export const getCampaignSession = callable('getCampaignSession');
+export const saveCampaignSession = callable('saveCampaignSession');
+export const moveCampaignSession = callable('moveCampaignSession');
+export const deleteCampaignSession = callable('deleteCampaignSession');
 export const listCampaignLore = callable('listCampaignLore');
 export const getCampaignLore = callable('getCampaignLore');
 export const prepareCampaignLoreVariant = callable('prepareCampaignLoreVariant');

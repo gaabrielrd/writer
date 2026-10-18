@@ -126,3 +126,25 @@ test('compõe exclusão somente em campaigns e preserva neutralidade de shared',
     (root) => assert.match(checkArchitecture(root).join('\n'), /shared não pode importar/),
   );
 });
+
+test('sessões permanecem folha e são compostas somente em campaigns', () => {
+  withProject(
+    {
+      'features/campaign-sessions/index.ts': "import { useAuth } from '@/features/auth';",
+      'features/campaigns/index.ts': "export { Panel } from '@/features/campaign-sessions';",
+    },
+    (root) => assert.deepEqual(checkArchitecture(root), []),
+  );
+  for (const statement of [
+    "import type { Campaign } from '@/features/campaigns';",
+    "export { close } from '@/features/campaign-deletions';",
+    "const lore = import('@/features/campaign-lore');",
+  ])
+    withProject({ 'features/campaign-sessions/index.ts': statement }, (root) =>
+      assert.match(checkArchitecture(root).join('\n'), /campaign-sessions deve permanecer folha/),
+    );
+  withProject(
+    { 'features/studio/index.ts': "const panel = import('@/features/campaign-sessions');" },
+    (root) => assert.match(checkArchitecture(root).join('\n'), /somente campaigns/),
+  );
+});

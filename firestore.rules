@@ -303,6 +303,7 @@ service cloud.firestore {
       match /campaignDeletions/{document=**} { allow read, write: if false; }
       match /campaignDeletionOperations/{id} { allow read, write: if false; }
       match /campaignDeletionStartFences/{id} { allow read, write: if false; }
+      match /campaignSessionOperations/{id} { allow read, write: if false; }
       match /sceneOperations/{operationId} { allow read, write: if false; }
       match /narrativeOperations/{operationId} { allow read, write: if false; }
       match /workOperations/{operationId} { allow read, write: if false; }
@@ -417,6 +418,8 @@ service cloud.firestore {
 
     match /campaigns/{campaignId} {
       match /loreGenerations/{document=**} { allow read, write: if false; }
+      match /sessions/{document=**} { allow read, write: if false; }
+      match /sessionState/{document=**} { allow read, write: if false; }
       allow read, write: if false;
     }
 

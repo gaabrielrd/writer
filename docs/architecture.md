@@ -620,7 +620,7 @@ ações explícitas; controles inválidos permanecem preservados. O painel globa
 permite concluir limpeza mesmo quando o root da campanha desaparece.
 
 C3A está concluído tecnicamente em fe10b15, com CI e regras verdes. Adoção C3B está
-concluída tecnicamente em `947cfc3`, com CI e regras verdes; exclusão integral C4 está validada localmente, CI pendente;
+concluída tecnicamente em `947cfc3`, com CI e regras verdes; exclusão integral C4 está concluída tecnicamente em `0006a66`, com CI/regras verdes;
 ver [ADR 0034](decisions/0034-campaign-base-comparisons.md) e
 [contrato C3A](tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
 
@@ -676,12 +676,45 @@ Encerramento explícito de rascunhos exige prova permanente própria e snapshot
 integral, sem decriptação. Pulso opaco em `shared/services` é apenas invalidação
 de apresentação; não autoriza limpeza. O relógio de autorização do UID permanece.
 
-C4 está validado localmente, com CI do novo head pendente; ver
+C4 está concluído tecnicamente em `0006a66`, com CI/regras verdes; ver
 [entrega C4](entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md),
 [ADR 0036](decisions/0036-campaign-deletion.md) e
 [contrato executável](tasks/writer-v2/execucao/20-exclusao-integral-da-campanha.md).
 Antes de habilitar, implantar guardas/escritores/regras e drenar versões antigas.
 Qualquer novo recurso de campanha deve atualizar a limpeza antes de sua ativação.
+
+## Sessões privadas da campanha
+
+`campaign-sessions` permanece folha de auth/shared, composta por `campaigns`.
+O painel autoral fica em um slot estável por UID/campanha, após a primeira consulta
+própria autorizada. Refresh da base remonta leitores derivados sem perder seu
+rascunho; prova de exclusão própria continua ocultando ambos. Pendências da gestão
+e das sessões são agregadas no host, sem um callback liberar a outra operação.
+
+Cinco APIs de `functions/src/campaignSessions.mjs` autorizam a encarnação precisa
+e a reserva C4 antes de corpo/recibo, sem consultar aventura para texto próprio.
+`sessions` contém documentos individuais e tombstones; `sessionState/current`
+controla coleção e próxima ordem. Mover troca duas ordens/revisões na transação,
+preservando preparação e comparação do editor. Listagem só carrega metadados e
+cursores vinculados à revisão observada. Data é civil, opcional e sem fuso; esta
+forma ainda é suposição inicial de produto registrada no contrato.
+
+Recibo histórico confirma o evento original mesmo após outra edição, mas só
+entrega corpo quando revisão/hash ainda coincidem; session null não autoriza
+adoção de texto posterior. Journal autoral integral usa Web Locks/CAS, persistência
+antes do RPC e repetição explícita. Erros temporários não encerram o pedido.
+O closer público só remove o snapshot explicitamente confirmado por prova C4.
+
+Novos jobs C4 têm cleanupVersion 2 interna: acrescentam sessions/sessionState e
+sanitização seletiva de campaignSessionOperations. Ausência de versão preserva o
+inventário v1; terminal mínimo não carrega o campo. Índices cobrem ordem nos dois
+sentidos e summary não é indexado. Drenar também o início C4 antigo, junto aos
+writers/guardas/regras, antes de habilitar a UI. Nenhum rollout foi executado.
+
+S1 está validado localmente, com CI do novo head pendente. Referências, pistas,
+missões e compartilhamento continuam fora desse recorte. Ver [ADR 0037](decisions/0037-private-campaign-sessions.md),
+[contrato S1](tasks/writer-v2/execucao/21-sessoes-privadas-da-campanha.md) e
+[entrega](entregas/2026-10-18-writer-v2-sessoes-privadas.md).
 
 ## Progresso privado, contagem e retomada
 

@@ -1,9 +1,9 @@
 # Fase 2 — Criar e preparar
 
-**Estado:** F2-01 a F2-06 concluídas tecnicamente nos heads registrados na
-[execução](../execucao/README.md). F2-07 em execução: adoção C3B concluída em
-`947cfc3`, com CI/regras verdes; exclusão integral C4 validada localmente, CI pendente.
-F2-08 S1 com contrato revisto para iniciar implementação; F2-09 não iniciada.
+**Estado:** F2-01 a F2-07 concluídas tecnicamente nos heads registrados na
+[execução](../execucao/README.md). Adoção C3B concluída em `947cfc3` e exclusão
+integral C4 em `0006a66`, com CI/regras verdes.
+F2-08 S1 validado localmente, com CI do novo head pendente; S2/S3 e F2-09 não iniciados.
 Condições humanas/comerciais conservam seus aceites.
 **Referência de esforço:** 368/584/936 h; hipótese de entrega 16 h/semana, 36,5 semanas ativas no cenário central.
 As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.

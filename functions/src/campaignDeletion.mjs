@@ -198,6 +198,7 @@ export function createCampaignDeletionService({ db, now = Date.now }) {
           createdAt = date(now, root.updatedAt ?? 0),
           p = {
             schemaVersion: 1,
+            cleanupVersion: 2,
             ownerId: uid,
             campaignId: input.campaignId,
             campaignToken: input.campaignToken,

@@ -685,9 +685,28 @@
         { "fieldPath": "createdAt", "order": "DESCENDING" },
         { "fieldPath": "__name__", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "deleted", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "ASCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "deleted", "order": "ASCENDING" },
+        { "fieldPath": "order", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "sessions", "fieldPath": "summary", "indexes": [] },
     { "collectionGroup": "loreVariants", "fieldPath": "bodyBinding", "indexes": [] },
     { "collectionGroup": "loreVariants", "fieldPath": "anchor", "indexes": [] },
     { "collectionGroup": "campaignVariantOperations", "fieldPath": "key", "indexes": [] },

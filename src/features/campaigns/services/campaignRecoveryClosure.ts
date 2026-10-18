@@ -10,6 +10,10 @@ import {
 } from '@/features/campaign-bases';
 import { readPendingCampaignNote, forgetCampaignNoteRecovery } from '@/features/campaign-notes';
 import {
+  readPendingCampaignSession,
+  forgetCampaignSessionRecovery,
+} from '@/features/campaign-sessions';
+import {
   readCampaignLoreRecovery,
   forgetCampaignLoreRecovery,
   readCampaignLoreRemoteRecovery,
@@ -75,6 +79,13 @@ export async function collectCampaignRecoveryClosures(
   if (note) {
     const snapshot = structuredClone(note);
     add('note', 'Pedido de nota própria', () => forgetCampaignNoteRecovery(uid, snapshot, check));
+  }
+  const session = read(() => readPendingCampaignSession(uid, cid));
+  if (session) {
+    const snapshot = structuredClone(session);
+    add('session', 'Pedido de sessão privada', () =>
+      forgetCampaignSessionRecovery(snapshot, check),
+    );
   }
   try {
     const lore = await readCampaignLoreRecovery(uid, cid);

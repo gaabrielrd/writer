@@ -35,7 +35,7 @@ ilustração próprios na mesma cena. O principal antigo permanece íntegro; nov
 legado sem classificação são privados. As prévias Original completo, Mestre e
 Jogadores continuam restritas ao criador, com filtro e mídia no servidor, sem
 compartilhamento automático. Veja [blocos e prévias](docs/tasks/writer-v2/execucao/12-aventuras-e-blocos.md).
-F2-07 está em implementação: a gestão de campanhas permite editar dados, escolher
+F2-07 está concluído tecnicamente em `0006a66`: a gestão de campanhas permite editar dados, escolher
 estado e trocar o universo organizacional, preservando o checklist e a procedência.
 O incremento de captura acrescenta preparação retomável de aventura própria,
 base congelada completa e somente lore explicitamente referenciado, com leitura
@@ -60,11 +60,17 @@ autorizadas e confirmar base e variantes juntas, preservando notas próprias e a
 recuperação dos pedidos anteriores. Veja o
 [contrato de adoção](docs/tasks/writer-v2/execucao/19-adocao-explicita-de-base-da-campanha.md).
 Os resultados estão na [entrega C3B](docs/entregas/2026-10-18-writer-v2-adocao-de-bases.md).
-Exclusão integral C4 está validada localmente, com CI do novo head pendente:
+Exclusão integral C4 está concluída tecnicamente em `0006a66`, com CI/regras verdes:
 revoga o acesso antes da limpeza retomável e preserva original, biblioteca e
 outras mesas. Controles antigos só são encerrados por confirmação própria.
 Veja a [entrega C4](docs/entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md) e o
 [contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
+F2-08 S1 está validado localmente, com CI do novo head pendente: sessões privadas
+com título, preparação própria, data civil opcional, estado e ordem manual.
+Recuperação confirma pedidos antigos sem adotar texto posterior; atualizar a base
+preserva rascunhos não enviados. Referências, pistas e missões ficam em S2/S3.
+Veja o [contrato S1](docs/tasks/writer-v2/execucao/21-sessoes-privadas-da-campanha.md)
+e a [entrega](docs/entregas/2026-10-18-writer-v2-sessoes-privadas.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).

@@ -1,10 +1,11 @@
 # F2-08 S1 — Sessões privadas da campanha
 
-**Estado:** contrato revisto por backend, cliente e QA; implementação autorizada
-pelo escopo sequencial do Writer V2, ainda não validada nem entregue.
-**Dependências:** F2-07 validado localmente em `1b20f49`; regras remotas revelaram
-uma expectativa SDK antiga no teste do Estúdio, em correção. A CI acompanha a
-execução sem bloquear estudo independente, conforme decisão do operador.
+**Estado:** implementado e validado localmente; CI do novo head pendente.
+**Evidência:** [entrega S1](../../../entregas/2026-10-18-writer-v2-sessoes-privadas.md)
+e [ADR 0037](../../../decisions/0037-private-campaign-sessions.md).
+**Dependências:** F2-07 concluído tecnicamente em `0006a66`, com CI/regras verdes.
+Uma expectativa SDK antiga do teste do Estúdio foi corrigida sem alterar regras.
+A CI acompanha a execução sem bloquear estudo independente, conforme decisão do operador.
 **Origem:** [preparação de sessões](../fase-02-criar-e-preparar/08-preparacao-de-sessoes.md),
 [domínio](02-modelo-de-dominio.md), [privacidade](03-permissoes-e-privacidade.md)
 e [exclusão C4](20-exclusao-integral-da-campanha.md).
@@ -181,13 +182,13 @@ gate. Nenhum deploy ou remoção de dado real está autorizado por este plano.
 ## Sequência de execução
 
 1. [x] Rever ABI com backend, cliente e QA; fechar lacunas de recibo e limpeza.
-2. [ ] Implementar serviço puro injetado, CAS, ordem, paginação e testes de domínio.
-3. [ ] Atualizar inventário C4 com compatibilidade v1/v2 e testes reais de limpeza.
-4. [ ] Compor callables, regras negativas, índice e testes SDK com emulador real.
-5. [ ] Implementar folha cliente, journal/closer, painel e testes de comportamento.
-6. [ ] Integrar na campanha, controlar invalidação/foco/UID e fechamento C4.
-7. [ ] Validar duas jornadas nativas nos seis perfis; revisar capturas móveis/320.
-8. [ ] Rodar validate no fechamento, rever diff, atualizar docs/ADR/AGENTS e entrega.
+2. [x] Implementar serviço puro injetado, CAS, ordem, paginação e testes de domínio.
+3. [x] Atualizar inventário C4 com compatibilidade v1/v2 e testes reais de limpeza.
+4. [x] Compor callables, regras negativas, índice e testes SDK com emulador real.
+5. [x] Implementar folha cliente, journal/closer, painel e testes de comportamento.
+6. [x] Integrar na campanha, controlar invalidação/foco/UID e fechamento C4.
+7. [x] Validar duas jornadas nativas nos seis perfis; revisar capturas móveis/320.
+8. [x] Rodar validate no fechamento, rever diff, atualizar docs/ADR/AGENTS e entrega.
 9. [ ] Commit e envio ao PR autorizado; acompanhar CI sem esperar para estudo seguinte.
 
 Arquivos previstos: functions/src/campaignSessions*.mjs, funções/contratos C4,

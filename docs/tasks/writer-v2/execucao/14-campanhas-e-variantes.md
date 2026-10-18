@@ -2,7 +2,7 @@
 
 **Estado:** A concluído tecnicamente em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde.
 Variantes C2 e comparação C3A concluídas tecnicamente em fe10b15, com CI/regras verdes.
-Adoção explícita C3B concluída tecnicamente em `947cfc3`, com CI/regras verdes; exclusão integral C4 validada localmente, CI do novo head pendente.
+Adoção explícita C3B concluída tecnicamente em `947cfc3`, com CI/regras verdes; exclusão integral C4 concluída tecnicamente em `0006a66`, com CI/regras verdes.
 **Origem:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md).
 **Base:** F2-06 concluído tecnicamente em `624c912`, com CI e regras verdes.
 
@@ -161,7 +161,7 @@ legado autorizado e continuidade das variantes/pedidos antigos. Está validado
 localmente e concluído tecnicamente em `947cfc3`, com CI/regras verdes;
 ver [entrega C3B](../../../entregas/2026-10-18-writer-v2-adocao-de-bases.md).
 Exclusão integral tem [contrato C4](20-exclusao-integral-da-campanha.md) próprio,
-revisado antes do código; está validada localmente, com CI do novo head pendente.
+revisado antes do código; está concluída tecnicamente em `0006a66`, com CI/regras verdes.
 Ver [entrega C4](../../../entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md).
 F2-07 aguarda essa confirmação remota para conclusão técnica; a sequência autorizada
 permite planejar o próximo incremento sem esperar a CI.

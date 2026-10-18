@@ -11,6 +11,7 @@ import {
 } from '../services/campaignManagementRecovery';
 import { readCampaignLoreRecovery, forgetCampaignLoreRecovery } from '@/features/campaign-lore';
 import { readPendingCampaignNote } from '@/features/campaign-notes';
+import { readPendingCampaignSession } from '@/features/campaign-sessions';
 import { type DeletionLookup, type DeletionProgress } from '@/features/campaign-deletions';
 import { installRecoveryHarness } from './deletionTestBrowser';
 const auth = vi.hoisted(() => ({ user: { uid: 'owner' } }));
@@ -460,4 +461,67 @@ it('controle C4 de outra encarnação preservado permite conferir prova e encerr
   expect(decrypt).not.toHaveBeenCalled();
   expect(rpc.startCampaignDeletion).not.toHaveBeenCalled();
   expect(rpc.advanceCampaignDeletion).not.toHaveBeenCalled();
+});
+it('confirmação C4 encerra snapshot de sessão antiga sem repetir RPC ou exibir preparação no diálogo', async () => {
+  const key = 'writer:campaign-sessions:' + JSON.stringify([uid, campaignId]);
+  const op = {
+    schemaVersion: 1,
+    ownerId: uid,
+    method: 'saveCampaignSession',
+    input: {
+      campaignId,
+      campaignToken: '9'.repeat(64),
+      sessionId: 'session-0000000001',
+      operationId: 'session-0000000001',
+      expectedRevision: 0,
+      title: 'Preparação privada',
+      summary: 'Texto autoral preservado',
+      scheduledDate: null,
+      status: 'planned',
+    },
+  };
+  localStorage.setItem(key, JSON.stringify(op));
+  render(<CampaignDeletionControls campaignId={campaignId} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir campanha' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Encerrar controles antigos deste navegador' }),
+  );
+  await screen.findByText('Pedido de sessão privada');
+  expect(screen.queryByText(op.input.summary)).not.toBeInTheDocument();
+  expect(screen.queryByText(op.input.title)).not.toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Confirmar encerramento dos controles' }),
+  );
+  expect(await screen.findByText('1 controle(s) local(is) encerrado(s).')).toBeInTheDocument();
+  expect(readPendingCampaignSession(uid, campaignId)).toBeNull();
+  expect(rpc.startCampaignDeletion).not.toHaveBeenCalled();
+});
+it('snapshot de sessão A não apaga B e controles futuros permanecem ilegíveis no encerramento', async () => {
+  const key = 'writer:campaign-sessions:' + JSON.stringify([uid, campaignId]);
+  const a = {
+    schemaVersion: 1,
+    ownerId: uid,
+    method: 'deleteCampaignSession',
+    input: {
+      campaignId,
+      campaignToken: token,
+      sessionId: 'session-0000000001',
+      operationId: 'operation-00000001',
+      expectedRevision: 1,
+    },
+  };
+  localStorage.setItem(key, JSON.stringify(a));
+  const found = await collectCampaignRecoveryClosures(uid, proof, () => {});
+  const b = { ...a, input: { ...a.input, operationId: 'operation-00000002' } };
+  localStorage.setItem(key, JSON.stringify(b));
+  await expect(found.items.find((item) => item.key === 'session')!.close()).rejects.toThrow(
+    /mudou/,
+  );
+  expect(localStorage.getItem(key)).toEqual(JSON.stringify(b));
+  const future = { ...b, schemaVersion: 2 };
+  localStorage.setItem(key, JSON.stringify(future));
+  const invalid = await collectCampaignRecoveryClosures(uid, proof, () => {});
+  expect(invalid.unreadable).toBe(true);
+  expect(invalid.items.find((item) => item.key === 'session')).toBeUndefined();
+  expect(localStorage.getItem(key)).toEqual(JSON.stringify(future));
 });

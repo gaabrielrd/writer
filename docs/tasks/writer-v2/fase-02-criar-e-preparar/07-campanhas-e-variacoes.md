@@ -1,6 +1,6 @@
 # W2-F2-07 — Instanciar campanhas e variantes particulares
 
-**Estado:** gestão A concluída em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde. Variantes C2 e comparação C3A concluídas tecnicamente em fe10b15; adoção C3B concluída em 947cfc3, com CI/regras verdes. Exclusão integral C4 validada localmente; CI do novo head pendente para conclusão técnica de F2-07. Ver [entrega C4](../../../entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md).
+**Estado:** gestão A concluída em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde. Variantes C2 e comparação C3A concluídas tecnicamente em fe10b15; adoção C3B concluída em 947cfc3, com CI/regras verdes. Exclusão integral C4 e F2-07 concluídas tecnicamente em `0006a66`, com CI/regras verdes. Ver [entrega C4](../../../entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md).
 **Dependências:** [W2-F2-06](../fase-02-criar-e-preparar/06-aventuras-e-estrutura-narrativa.md), [W2-F1-03](../fase-01-direcao-e-fundamentos/03-permissoes-e-privacidade.md)
 **Áreas propostas:** universes, lore; propostas adventures e campaigns; functions. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -45,7 +45,7 @@ leitor privado da base congelada; não encerra os critérios globais desta taref
 Aceites locais referem-se ao recorte atual de origens próprias e isolamento por
 UID. Variantes/notas comprovam alterações particulares independentes; consequências
 estruturadas, participação e criação a partir de edição adquirida permanecem nas
-fases próprias. A CI de C4 ainda é necessária para encerrar tecnicamente F2-07.
+fases próprias. A CI de C4 em `0006a66` encerrou tecnicamente o recorte de F2-07.
 
 ## Validação
 

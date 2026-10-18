@@ -32,6 +32,12 @@ export const deletionPhases = [
   'finalizing',
   'complete',
 ];
+export function cleanupVersion(p) {
+  const value = Object.hasOwn(p, 'cleanupVersion') ? p.cleanupVersion : 1;
+  if (value !== 1 && value !== 2)
+    workFail('failed-precondition', 'A versão da limpeza não é suportada.');
+  return value;
+}
 export const hash = (value) => {
   if (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value))
     workFail('invalid-argument', 'Identidade inválida.');
@@ -108,6 +114,7 @@ export function owned(p, uid, deletionId) {
       workFail('failed-precondition', 'O registro terminal está inconsistente.');
     return p;
   }
+  const version = cleanupVersion(p);
   const internal = ['part', 'cursor', 'childId', 'childPart', 'childCursor', 'certified'],
     nullableId = (value) =>
       value === null ||
@@ -116,17 +123,19 @@ export function owned(p, uid, deletionId) {
         !value.includes('/') &&
         Buffer.byteLength(value) <= 1500),
     maxima = {
-      recovery: 3,
+      recovery: version === 2 ? 4 : 3,
       controls: 4,
       bases: 0,
       'lore-generations': 0,
-      'campaign-children': 7,
+      'campaign-children': version === 2 ? 9 : 7,
       activity: 0,
       finalizing: 0,
     },
     phaseIndex = deletionPhases.indexOf(p.phase);
   if (
-    Object.keys(p).some((key) => !Object.hasOwn(dto, key) && !internal.includes(key)) ||
+    Object.keys(p).some(
+      (key) => !Object.hasOwn(dto, key) && !internal.includes(key) && key !== 'cleanupVersion',
+    ) ||
     !internal.every((key) => Object.hasOwn(p, key)) ||
     !Number.isSafeInteger(p.part) ||
     p.part < 0 ||

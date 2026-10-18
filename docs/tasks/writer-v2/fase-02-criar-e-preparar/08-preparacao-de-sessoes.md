@@ -1,7 +1,8 @@
 # W2-F2-08 — Preparar sessões com pistas e missões
 
-**Estado:** contrato de S1 revisto; implementação iniciando. S2 e S3 planejados,
-sem validação funcional desta tarefa. Ver [sessões privadas](../execucao/21-sessoes-privadas-da-campanha.md).
+**Estado:** S1 implementado e validado localmente; CI do novo head pendente.
+S2 e S3 planejados; tarefa completa ainda aberta. Ver [sessões privadas](../execucao/21-sessoes-privadas-da-campanha.md)
+e [entrega](../../../entregas/2026-10-18-writer-v2-sessoes-privadas.md).
 **Dependências:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md), [W2-F2-03](../fase-02-criar-e-preparar/03-arcos-e-cronologia-basica.md)
 **Áreas propostas:** lore; proposta campaigns. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -27,7 +28,7 @@ e consulta autorizada, S3 pistas/missões/pendências. S1 não conclui os crité
 completos abaixo. Data civil sem horário é suposição inicial registrada no contrato.
 
 - [ ] Definir contratos e referências por sessão.
-- [ ] Implementar CRUD, ordem e estados privados.
+- [x] Implementar CRUD, ordem e estados privados (S1 validado localmente).
 - [ ] Montar checklist e consulta rápida ao lore.
 - [ ] Testar mover itens, referência excluída e retomada de sessão.
 
@@ -35,7 +36,7 @@ completos abaixo. Data civil sem horário é suposição inicial registrada no c
 
 - [ ] Mestre prepara uma sessão com cena, NPC, pista e missão.
 - [ ] Concluir missão não publica pista nem altera universo.
-- [ ] Mover sessão preserva preparação e anotações.
+- [x] Mover sessão preserva preparação e anotações próprias (S1).
 - [ ] Item indisponível é sinalizado sem impedir consulta aos demais.
 
 ## Validação

@@ -1,6 +1,12 @@
 import { readWorkMetadata } from './workProgressContracts.mjs';
 import { basePath, baseImageKey, baseImageUseKey } from './campaignBaseContracts.mjs';
-import { fail, digest, revision, deletionPhases } from './campaignDeletionContracts.mjs';
+import {
+  fail,
+  digest,
+  revision,
+  deletionPhases,
+  cleanupVersion,
+} from './campaignDeletionContracts.mjs';
 
 const own = (v, p) => {
   if (!v || v.ownerId !== p.ownerId || v.campaignId !== p.campaignId)
@@ -225,6 +231,7 @@ async function tree(tx, db, p, generation = false) {
   return { ...working, childPart: childPart + 1 };
 }
 export async function cleanupCampaignStep(tx, db, p) {
+  const version = cleanupVersion(p);
   if (p.phase === 'recovery')
     return sanitize(tx, db, p, [
       {
@@ -247,6 +254,9 @@ export async function cleanupCampaignStep(tx, db, p) {
         fields: ['ownerId', 'fingerprint'],
         value: (v) => ({ fingerprint: v.fingerprint }),
       },
+      ...(version === 2
+        ? [{ collection: 'campaignSessionOperations', fields: ['ownerId', 'campaignId'] }]
+        : []),
     ]);
   if (p.phase === 'controls') return controls(tx, db, p);
   if (p.phase === 'bases') return tree(tx, db, p);
@@ -260,6 +270,7 @@ export async function cleanupCampaignStep(tx, db, p) {
         'loreVariants',
         'loreVariantBodies',
         'loreVariantState',
+        ...(version === 2 ? ['sessions', 'sessionState'] : []),
       ],
       part = p.part ?? 0;
     if (part >= collections.length) return advancePhase(p);

@@ -331,6 +331,23 @@ não substituir a evidência nativa por esse harness. Ver
 próprios na [entrega C4](entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md),
 sem atribuir a C4 a CI verde do C3B.
 
+Sessões privadas S1 têm testes colocalizados em `campaign-sessions`, integração
+com leaf real em `campaigns/tests/CampaignPage.test.tsx` e cinco famílias SDK em
+`tests/firestore/campaign-sessions.rules.test.mjs`. Cobrem datas gregorianas sem
+conversão, CAS, ordem/revisão do vizinho, replay histórico sem adotar corpo posterior,
+controle perdido inclusive só tombstones, origem revogada e limpeza C4 v1/v2.
+O teste de fronteira Firebase mocka apenas SDK/app e confere as cinco APIs.
+Journal, foco, UID e A→B são exercitados pelo produto; prova C4 própria oculta
+antes de qualquer encerramento local, preservando controle inválido/futuro.
+
+`e2e/visual/campaign-sessions.visual.ts` reúne dois percursos nos seis perfis, com
+callables substituídos somente no servidor visual. Web Locks/storage do navegador
+são reais; transporte simulado não comprova autorização. Formulários/listas têm
+capturas em 320 px; segunda jornada também usa tamanhos padrão desktop/celular.
+Resultados, primeira falha de IDs no teste e revalidações afetadas ficam na
+[entrega S1](entregas/2026-10-18-writer-v2-sessoes-privadas.md), sem confundir CI
+histórica de C4 com aprovação do incremento novo.
+
 Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
 em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
 ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.

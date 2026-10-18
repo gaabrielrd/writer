@@ -1,6 +1,6 @@
 # ADR 0036 — Exclusão permanente e retomável de campanhas
 
-**Estado:** implementada e validada localmente em 2026-10-18; CI do novo head pendente.
+**Estado:** implementada e concluída tecnicamente em `0006a66`, com CI/regras verdes.
 **Contrato:** [F2-07 C4](../tasks/writer-v2/execucao/20-exclusao-integral-da-campanha.md).
 
 ## Contexto

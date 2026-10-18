@@ -1,6 +1,6 @@
 # F2-07 C4 — Exclusão integral e retomável da campanha
 
-**Estado:** implementado e validado localmente em 2026-10-18; CI do novo head pendente.
+**Estado:** concluído tecnicamente em `0006a66`, com CI/regras verdes em 2026-10-18.
 Validate verde: 1.813 frontend, 81 scripts e 358 Functions; cinco famílias SDK
 únicas validadas e 12 combinações de navegador mais duas revalidações dirigidas.
 **Dependência:** C3B concluído tecnicamente em `947cfc3`, com CI e regras verdes.
@@ -364,6 +364,8 @@ válidas notificam revogação antes desse CAS. Reabertura de diálogos tem prop
 próprio, sem permitir que finally antigos prendam ou liberem a consulta nova.
 
 Ver [entrega](../../../entregas/2026-10-18-writer-v2-exclusao-de-campanhas.md) para
-contagens, repetições afetadas e limitações. CI do novo head segue pendente; os
-checks verdes de `947cfc3` pertencem a C3B. Nenhuma implantação/exclusão real de
+contagens, repetições afetadas e limitações. Após corrigir somente a expectativa
+SDK antiga do Estúdio, CI e regras do próprio head `0006a66` passaram: validate
+Node 22/24, auditoria, produção 7/7, doze shards visuais e agregador, regras 135/135.
+Nenhuma implantação/exclusão real de
 dados do operador foi executada.

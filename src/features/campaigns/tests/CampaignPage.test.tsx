@@ -6,6 +6,14 @@ import { CampaignPage } from '../components/CampaignPage';
 import { getCampaign } from '../services/campaignService';
 import type { Campaign } from '../model/campaign';
 import { publishInvalidation } from '@/shared/services';
+const sessionCalls = vi.hoisted(() => ({
+  listCampaignSessions: vi.fn(),
+  getCampaignSession: vi.fn(),
+  saveCampaignSession: vi.fn(),
+  moveCampaignSession: vi.fn(),
+  deleteCampaignSession: vi.fn(),
+}));
+vi.mock('@/features/campaign-sessions/services/campaignSessionCallables', () => sessionCalls);
 
 const auth = vi.hoisted(
   (): {
@@ -135,9 +143,19 @@ const resource: Campaign = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   auth.user = { uid: 'owner' };
   auth.loading = false;
   vi.mocked(getCampaign).mockResolvedValue(resource);
+  vi.mocked(sessionCalls.listCampaignSessions).mockResolvedValue({
+    schemaVersion: 1,
+    ownerId: 'owner',
+    campaignId: 'project',
+    campaignToken: 'a'.repeat(64),
+    collectionRevision: 0,
+    items: [],
+    nextCursor: null,
+  });
 });
 function tree() {
   return (
@@ -389,4 +407,58 @@ it('GET de campanha anterior ao pulso e GET de foco antigo não voltam a exibir 
   expect(
     screen.getByRole('button', { name: 'Conferir disponibilidade da campanha' }),
   ).toBeEnabled();
+});
+
+it('preserva preparação autoral não salva e pendência durante a atualização da base', async () => {
+  const original: Campaign = {
+    ...resource,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'generation' },
+    activeBaseId: 'generation',
+  };
+  let finish!: (value: Campaign) => void;
+  vi.mocked(getCampaign)
+    .mockResolvedValueOnce(original)
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Nova sessão' }));
+  await userEvent.type(
+    screen.getByRole('textbox', { name: 'Título da sessão' }),
+    'Sessão das torres',
+  );
+  const preparation = screen.getByRole('textbox', { name: 'Preparação da sessão' });
+  await userEvent.type(preparation, 'Texto autoral ainda não enviado');
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar preparação' }));
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar adoção retomada' }));
+  await waitFor(() => expect(getCampaign).toHaveBeenCalledTimes(2));
+  expect(screen.getByText('Carregando campanha...')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Rever preparação da sessão' }));
+  expect(screen.getByRole('textbox', { name: 'Preparação da sessão' })).toHaveValue(
+    'Texto autoral ainda não enviado',
+  );
+  await act(async () => {
+    finish({
+      ...original,
+      revision: 2,
+      activeBaseId: 'next-generation',
+      provenance: { kind: 'original', adventureId: 'adventure', baseId: 'next-generation' },
+    });
+    await Promise.resolve();
+  });
+  expect(screen.getByRole('textbox', { name: 'Título da sessão' })).toHaveValue(
+    'Sessão das torres',
+  );
+  expect(screen.getByRole('textbox', { name: 'Preparação da sessão' })).toHaveValue(
+    'Texto autoral ainda não enviado',
+  );
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+  expect(sessionCalls.saveCampaignSession).not.toHaveBeenCalled();
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'campaign:project' }));
+  expect(screen.queryByRole('textbox', { name: 'Preparação da sessão' })).not.toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'Conteúdo da campanha oculto' })).toBeInTheDocument();
 });

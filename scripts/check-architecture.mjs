@@ -163,25 +163,25 @@ export function checkArchitecture(root = defaultRoot) {
       }
 
       if (
-        sourceFeature === 'campaign-deletions' &&
+        ['campaign-deletions', 'campaign-sessions'].includes(sourceFeature) &&
         targetFeature &&
         targetFeature !== sourceFeature &&
         targetFeature !== 'auth'
       ) {
         errors.push(
-          `${sourceRelative}: campaign-deletions deve permanecer folha; componha "${targetFeature}" em campaigns.`,
+          `${sourceRelative}: ${sourceFeature} deve permanecer folha; componha "${targetFeature}" em campaigns.`,
         );
         continue;
       }
 
       if (
-        targetFeature === 'campaign-deletions' &&
+        ['campaign-deletions', 'campaign-sessions'].includes(targetFeature) &&
         sourceFeature &&
         sourceFeature !== targetFeature &&
         sourceFeature !== 'campaigns'
       ) {
         errors.push(
-          `${sourceRelative}: somente campaigns pode compor campaign-deletions entre features.`,
+          `${sourceRelative}: somente campaigns pode compor ${targetFeature} entre features.`,
         );
         continue;
       }
