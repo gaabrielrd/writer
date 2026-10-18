@@ -94,6 +94,9 @@ ver [ADR 0035](../../../decisions/0035-campaign-base-adoption.md). C3B passou no
 validate local: 1.755 frontend, 77 scripts, 347 Functions, SDK 5/5 e navegador
 13/13. [Entrega C3B](../../../entregas/2026-10-18-writer-v2-adocao-de-bases.md).
 CI do novo head pendente; exclusão integral é o próximo incremento de F2-07.
+O [contrato C4](20-exclusao-integral-da-campanha.md) foi fechado após revisões de
+backend, cliente e QA: reserva permanente, fases limitadas, pins exatos e
+encerramento de controles antigos. Nenhum código/teste C4 executado neste plano.
 
 ## Decisões recebidas em 2026-10-13
 

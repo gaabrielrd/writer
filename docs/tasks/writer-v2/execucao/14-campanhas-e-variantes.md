@@ -160,7 +160,8 @@ C3B acrescenta [adoção explícita](19-adocao-explicita-de-base-da-campanha.md)
 legado autorizado e continuidade das variantes/pedidos antigos. Está validado
 localmente, com CI do novo head pendente;
 ver [entrega C3B](../../../entregas/2026-10-18-writer-v2-adocao-de-bases.md).
-Exclusão integral conserva incremento próprio; F2-07 ainda não está concluído.
+Exclusão integral tem [contrato C4](20-exclusao-integral-da-campanha.md) próprio,
+revisado antes do código; F2-07 ainda não está concluído.
 
 Trabalhar em gerações preparing/ready/aborted. activeBaseId só muda no commit final;
 preparação parcial nunca substitui uma base pronta. Paginar metadados 25/50, mas
