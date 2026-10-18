@@ -9,6 +9,8 @@ import {
 } from './campaignBaseContracts.mjs';
 import { workRevision, readWorkMetadata } from './workProgressContracts.mjs';
 import { campaignIdentityToken } from './campaignIdentity.mjs';
+import { loreStorageContext } from './campaignLoreStorage.mjs';
+import { readCampaignAuthorization } from './campaignAuthorization.mjs';
 
 export { digest, fail, captureToken as hashId, basePath, readWorkMetadata };
 export const comparisonPath = (uid, id) => `users/${uid}/campaignComparisons/${id}`;
@@ -32,7 +34,7 @@ export function ownedComparison(p, uid, id) {
     p.schemaVersion !== 1 ||
     p.id !== id ||
     p.baseId !== candidateId(uid, p.campaignToken, id) ||
-    !['preparing', 'ready', 'aborted', 'deleting', 'deleted'].includes(p.state)
+    !['preparing', 'ready', 'adopted', 'aborted', 'deleting', 'deleted'].includes(p.state)
   )
     inconsistent();
   workRevision(p.checkpoint);
@@ -55,7 +57,14 @@ export const progress = (p, observation) => ({
   createdAt: p.createdAt,
   updatedAt: p.updatedAt,
 });
-const campaignFields = ['ownerId', 'schemaVersion', 'deleting', 'activeBaseId', 'provenance'];
+const campaignFields = [
+  'ownerId',
+  'schemaVersion',
+  'deleting',
+  'activeBaseId',
+  'provenance',
+  'activeLoreGenerationId',
+];
 const baseFields = [
   'id',
   'ownerId',
@@ -184,6 +193,12 @@ export async function readComparisonContext(tx, db, uid, p) {
   )
     inconsistent();
   const current = await generationContext(tx, db, uid, p.campaignId, observed.base);
+  const storage = await loreStorageContext(tx, db, {
+    ...current,
+    campaign: observed.campaign,
+    campaignToken: p.campaignToken,
+  });
+  Object.assign(current, storage);
   const next = await generationContext(tx, db, uid, p.campaignId, candidate);
   const control = (
     await readWorkMetadata(tx, db.doc(`campaigns/${p.campaignId}/loreVariantState/current`), [
@@ -210,7 +225,7 @@ export async function readComparisonContext(tx, db, uid, p) {
     (
       await tx.get(
         db
-          .collection(`campaigns/${p.campaignId}/loreVariants`)
+          .collection(current.lorePath + '/loreVariants')
           .orderBy('__name__')
           .limit(1)
           .select(),
@@ -218,6 +233,7 @@ export async function readComparisonContext(tx, db, uid, p) {
     ).docs.length
   )
     inconsistent();
+  const authorization = await readCampaignAuthorization(tx, db, uid);
   const envelope = {
     ...identity(p),
     currentCapturedAt: observed.base.capturedAt,
@@ -228,6 +244,9 @@ export async function readComparisonContext(tx, db, uid, p) {
       current: current.projectionToken,
       candidate: next.projectionToken,
       collectionRevision,
+      authorization: authorization.record
+        ? { token: authorization.record.token, epoch: authorization.epoch }
+        : null,
     }),
   };
   if (

@@ -5,6 +5,8 @@ import {
   type CampaignBaseItem,
   type CampaignBaseWindow,
   type CampaignCaptureProgress,
+  type CampaignCaptureActivationResolution,
+  type ResolveCampaignCaptureActivationInput,
 } from '../model/campaignBase';
 export * from './campaignBaseCallables';
 export function assertCampaignProjection(token: string, expected?: string): void {
@@ -69,6 +71,36 @@ export function validateCampaignCapture(
 export function assertCampaignResponseBudget(value: unknown): void {
   if (new TextEncoder().encode(JSON.stringify(value)).byteLength > 4 * 1024 * 1024)
     throw new Error('A resposta da base ultrapassa o orçamento de leitura.');
+}
+export function validateCampaignCaptureActivationResolution(
+  value: CampaignCaptureActivationResolution,
+  ownerId: string,
+  request: ResolveCampaignCaptureActivationInput,
+): CampaignCaptureActivationResolution {
+  assertCampaignResponseBudget(value);
+  if (
+    !value ||
+    value.schemaVersion !== 1 ||
+    value.ownerId !== ownerId ||
+    !['activated', 'aborted'].includes(value.outcome) ||
+    !Number.isSafeInteger(value.confirmedCheckpoint) ||
+    value.confirmedCheckpoint !== request.expectedCheckpoint + 1 ||
+    !value.request ||
+    value.request.captureId !== request.captureId ||
+    value.request.operationId !== request.operationId ||
+    value.request.expectedCheckpoint !== request.expectedCheckpoint ||
+    Object.keys(value.request).some(
+      (field) => !['captureId', 'operationId', 'expectedCheckpoint'].includes(field),
+    ) ||
+    Object.keys(value).some(
+      (field) =>
+        !['schemaVersion', 'ownerId', 'request', 'outcome', 'confirmedCheckpoint'].includes(field),
+    )
+  )
+    throw Object.assign(new Error('O registro histórico não corresponde ao pedido preservado.'), {
+      code: 'functions/unavailable',
+    });
+  return value;
 }
 export async function readCompleteCampaignBaseItem(
   campaignId: string,

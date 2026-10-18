@@ -6,6 +6,19 @@ export interface PendingCampaignCaptureControl {
   adventureId: string;
   captureId: string;
 }
+export async function withCampaignCaptureJournalLock<T>(
+  uid: string,
+  scope: CampaignCaptureRecoveryScope,
+  assertActive: () => void,
+  work: () => T,
+): Promise<T> {
+  if (!navigator.locks?.request)
+    throw new Error('Este navegador não oferece reserva segura de capturas entre abas.');
+  return navigator.locks.request('writer:campaign-capture:' + JSON.stringify([uid, scope]), () => {
+    assertActive();
+    return work();
+  });
+}
 export function listPendingCampaignCaptureControls(
   uid: string,
   adventureId?: string,
@@ -142,8 +155,10 @@ export function writePendingCampaignCapture(
 export function clearPendingCampaignCapture(
   uid: string,
   scope: CampaignCaptureRecoveryScope,
-  operationId: string,
-): void {
-  if (readPendingCampaignCapture(uid, scope)?.input.operationId === operationId)
-    localStorage.removeItem(key(uid, scope));
+  operation: PendingCampaignCaptureOperation,
+): boolean {
+  const current = readPendingCampaignCapture(uid, scope);
+  if (!current || JSON.stringify(current) !== JSON.stringify(operation)) return false;
+  localStorage.removeItem(key(uid, scope));
+  return true;
 }

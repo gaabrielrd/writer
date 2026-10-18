@@ -100,7 +100,14 @@
 - Reserve e limpe pedidos de notas sob Web Locks por UID/campanha, sem lock durante HTTP; o journal integral de texto próprio não autoriza cache de variantes derivadas.
 - Vincule variantes inteiras à encarnação da campanha e à base; preserve revisão contínua e bodyRevision ao retirar/restaurar, conforme ADR 0033.
 - Recupere variantes somente após reautorizar ficha e alvos congelados; persista ciphertext em IndexedDB sem chave e invalide respostas após mudança de projeção.
-- Prepare e compare candidatas sem trocar activeBaseId, notas ou variantes; adoção exige o incremento próprio da ADR 0034.
+- Prepare e compare candidatas sem trocar a base ativa; adote base, procedência, geração de lore e revisões no mesmo commit, conforme ADR 0035.
+- Resolva lore pela geração ativa; permita fallback legado somente quando o ponteiro estiver ausente, nunca quando estiver inválido.
+- Preserve anchors e bindings físicos achatados das variantes legadas; não colete bases, pins ou corpos emprestados ao cancelar adoção.
+- Confira a barreira de adoção em toda mutação C2 e atualize o relógio privado de autorização atomicamente em todo escritor de universo/lore global.
+- Implante todos os escritores do relógio e drene versões antigas antes de habilitar adoção; manutenção Admin segue o mesmo protocolo e exclusão de campanha preserva o relógio do UID.
+- Conserve a base/AAD de rascunhos cifrados; resolva pedidos antigos por metadados/recibos sem migrar chave, texto ou descriptor ao navegador.
+- Congele o controle integral mostrado em confirmações; releia-o antes do RPC e compare sob Web Locks ao limpar, preservando pedidos novos de outra aba.
+- Use o resolver histórico B somente para confirmar o evento de ativação, sem reconhecer ou recriar a campanha atual.
 - Projete diferenças antes de classificar e invalide a composição ao observar outro token, revisão ou datas; não use hashes privados como sinal de mudança.
 - Preserve pedidos incertos de comparação sob Web Locks e CAS integral; controles conhecidos não autorizam RPC automático, e encerramento inicial exige intenção explícita.
 - Aguarde oncomplete antes do envio e da confirmação local antes de fechar a chave; encerre pedidos desconhecidos somente por cancelamento explícito com fence.

@@ -47,6 +47,7 @@ export function result(revision = 0): CampaignLoreResult {
     item: {
       sourceKey,
       revision,
+      legacy: false,
       mode: revision ? 'override' : 'base',
       createdAt: revision ? 100 : null,
       updatedAt: revision ? 100 : null,

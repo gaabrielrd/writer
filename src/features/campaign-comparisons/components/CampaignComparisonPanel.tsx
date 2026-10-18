@@ -4,9 +4,11 @@ import { Button, Card } from '@/shared/ui';
 import { CampaignComparisonPreparations } from './CampaignComparisonPreparations';
 import { ComparisonDialog } from './ComparisonDialog';
 import styles from './Comparisons.module.css';
+import type { ComparisonReadEnvelope } from '../model/campaignComparison';
 export interface CampaignComparisonPanelProps {
   campaignId: string;
   currentBaseId: string;
+  onReviewAdoption?: (context: ComparisonReadEnvelope) => void;
 }
 export function CampaignComparisonPanel(props: CampaignComparisonPanelProps) {
   const { user } = useAuth(),
@@ -50,8 +52,12 @@ function PanelSession(
         open={open}
         isActive={() => props.isActive() && activeAttempt.current === attempt}
         onClose={() => setOpen(false)}
+        onReviewAdoption={props.onReviewAdoption}
       />
-      <CampaignComparisonPreparations campaignId={props.campaignId} />
+      <CampaignComparisonPreparations
+        campaignId={props.campaignId}
+        onReviewAdoption={props.onReviewAdoption}
+      />
     </section>
   );
 }

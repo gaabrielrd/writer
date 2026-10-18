@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { Globe, Map } from 'lucide-react';
 import {
@@ -10,7 +10,14 @@ import { useAuth } from '@/features/auth';
 import { CampaignBaseReader } from '@/features/campaign-bases';
 import { CampaignNotesPanel } from '@/features/campaign-notes';
 import { CampaignLorePanel } from '@/features/campaign-lore';
-import { CampaignComparisonPanel } from '@/features/campaign-comparisons';
+import {
+  CampaignComparisonPanel,
+  type ComparisonReadEnvelope,
+} from '@/features/campaign-comparisons';
+import {
+  CampaignAdoptionDialog,
+  CampaignAdoptionPreparations,
+} from '@/features/campaign-adoptions';
 import {
   Badge,
   Alert,
@@ -30,7 +37,20 @@ import styles from './CampaignPage.module.css';
 function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const { setPendingEditorOperation } = useAuth();
   const [editing, setEditing] = useState(false),
-    [pending, setPending] = useState(false);
+    [pending, setPending] = useState(false),
+    [adoption, setAdoption] = useState<ComparisonReadEnvelope | null>(null),
+    [adoptionOpen, setAdoptionOpen] = useState(false),
+    [adoptionAttempt, setAdoptionAttempt] = useState(0);
+  const loreRef = useRef<HTMLElement | null>(null);
+  function reviewAdoption(context: ComparisonReadEnvelope) {
+    setAdoption({ ...context });
+    setAdoptionAttempt((n) => n + 1);
+    setAdoptionOpen(true);
+  }
+  function adaptLore() {
+    loreRef.current?.focus();
+    loreRef.current?.scrollIntoView?.({ block: 'start' });
+  }
   const onPendingChange = useCallback((value: boolean) => setPending(value), []);
   useEffect(() => {
     setPendingEditorOperation(pending);
@@ -168,8 +188,32 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
       <CampaignNotesPanel campaignId={campaign.id} />
       {campaign.provenance.kind === 'original' && campaign.activeBaseId && (
         <>
-          <CampaignComparisonPanel campaignId={campaign.id} currentBaseId={campaign.activeBaseId} />
-          <CampaignLorePanel campaignId={campaign.id} baseId={campaign.activeBaseId} />
+          <CampaignComparisonPanel
+            campaignId={campaign.id}
+            currentBaseId={campaign.activeBaseId}
+            onReviewAdoption={reviewAdoption}
+          />
+          <CampaignAdoptionPreparations
+            campaignId={campaign.id}
+            onAdopted={() => setAttempt((n) => n + 1)}
+            onAdaptLore={adaptLore}
+          />
+          {adoption && (
+            <CampaignAdoptionDialog
+              key={adoptionAttempt}
+              selection={{ campaignId: campaign.id, context: adoption }}
+              open={adoptionOpen}
+              onClose={() => setAdoptionOpen(false)}
+              onAdopted={() => {
+                setAdoptionOpen(false);
+                setAttempt((n) => n + 1);
+              }}
+              onAdaptLore={adaptLore}
+            />
+          )}
+          <section ref={loreRef} tabIndex={-1} aria-label="Editar lore atual da campanha">
+            <CampaignLorePanel campaignId={campaign.id} baseId={campaign.activeBaseId} />
+          </section>
           <CampaignBaseReader campaignId={campaign.id} generationId={campaign.activeBaseId} />
         </>
       )}

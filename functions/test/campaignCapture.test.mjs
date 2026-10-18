@@ -569,3 +569,115 @@ test('pending controls paginate independently of device and redact derived count
     code: 'failed-precondition',
   });
 });
+
+test('historical activation resolution reads only its receipt after adoption, deletion and root recreation', async () => {
+  const f = await fixture(),
+    p = await finish(f, await start(f, 'history')),
+    input = {
+      captureId: p.captureId,
+      operationId: op('history-activate'),
+      expectedCheckpoint: p.checkpoint,
+    },
+    result = await f.api.activateCampaignCapture(uid, input),
+    reads = [],
+    historical = createCampaignCaptureService({
+      db: {
+        doc: (value) => f.db.doc(value),
+        runTransaction: (work) =>
+          f.db.runTransaction((tx) =>
+            work({
+              get: (ref) => {
+                reads.push(ref.path);
+                return tx.get(ref);
+              },
+            }),
+          ),
+      },
+    });
+  const expected = {
+    schemaVersion: 1,
+    ownerId: uid,
+    request: input,
+    outcome: 'activated',
+    confirmedCheckpoint: p.checkpoint + 1,
+  };
+  const rootPath = 'campaigns/' + result.campaign.id;
+  f.records.set(rootPath, {
+    ...result.campaign,
+    activeBaseId: 'adopted-base',
+    provenance: { ...result.campaign.provenance, baseId: 'adopted-base' },
+  });
+  await assert.rejects(f.api.activateCampaignCapture(uid, input), { code: 'not-found' });
+  assert.deepEqual(await historical.resolveCampaignCaptureActivation(uid, input), expected);
+  f.records.delete(rootPath);
+  assert.deepEqual(await historical.resolveCampaignCaptureActivation(uid, input), expected);
+  f.records.set(rootPath, {
+    ownerId: uid,
+    schemaVersion: 1,
+    provenance: { kind: 'independent' },
+    title: 'Outra encarnação',
+  });
+  f.records.delete(path);
+  f.records.delete('users/' + uid + '/campaignPreparations/' + p.captureId);
+  const before = structuredClone([...f.records]);
+  assert.deepEqual(await historical.resolveCampaignCaptureActivation(uid, input), expected);
+  assert.deepEqual([...f.records], before);
+  assert.deepEqual(
+    reads,
+    Array(3).fill('users/' + uid + '/campaignCaptureOperations/' + input.operationId),
+  );
+});
+
+test('historical activation resolution rejects absence, divergent inputs and inconsistent receipts without writes', async () => {
+  const f = await fixture(),
+    input = {
+      captureId: op('historical-capture'),
+      operationId: op('historical-receipt'),
+      expectedCheckpoint: 7,
+    },
+    receiptPath = 'users/' + uid + '/campaignCaptureOperations/' + input.operationId,
+    valid = {
+      fingerprint: digest({ method: 'activate', ...input }),
+      captureId: input.captureId,
+      checkpoint: 8,
+    };
+  const unconfirmed = (error) => error.details?.reason === 'operation-unconfirmed';
+  await assert.rejects(f.api.resolveCampaignCaptureActivation(uid, input), unconfirmed);
+  assert.equal(f.records.has(receiptPath), false);
+  f.records.set(receiptPath, valid);
+  await assert.rejects(f.api.resolveCampaignCaptureActivation('other', input), unconfirmed);
+  await assert.rejects(
+    f.api.resolveCampaignCaptureActivation(uid, { ...input, expectedCheckpoint: 8 }),
+    { code: 'invalid-argument' },
+  );
+  await assert.rejects(
+    f.api.resolveCampaignCaptureActivation(uid, { ...input, captureId: op('different-capture') }),
+    { code: 'invalid-argument' },
+  );
+  for (const patch of [
+    { captureId: 'different' },
+    { checkpoint: 7 },
+    { checkpoint: 9 },
+    { aborted: false },
+    { aborted: undefined },
+    { aborted: 'true' },
+  ]) {
+    f.records.set(receiptPath, { ...valid, ...patch });
+    const before = structuredClone([...f.records]);
+    await assert.rejects(f.api.resolveCampaignCaptureActivation(uid, input), {
+      code: 'failed-precondition',
+    });
+    assert.deepEqual([...f.records], before);
+  }
+  f.records.set(receiptPath, { ...valid, aborted: true });
+  assert.deepEqual(await f.api.resolveCampaignCaptureActivation(uid, input), {
+    schemaVersion: 1,
+    ownerId: uid,
+    request: input,
+    outcome: 'aborted',
+    confirmedCheckpoint: 8,
+  });
+  await assert.rejects(f.api.resolveCampaignCaptureActivation(null, input), {
+    code: 'unauthenticated',
+  });
+});

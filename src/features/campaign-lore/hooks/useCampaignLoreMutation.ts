@@ -94,7 +94,7 @@ export function useCampaignLoreMutation(options: Options) {
     )
       throw new Error('A sessão deste pedido foi encerrada.');
   }
-  async function finish(op: CampaignLoreOperation, intent: 'confirm' | 'cancel') {
+  async function finish(op: CampaignLoreOperation, intent: 'confirm' | 'cancel', exact = false) {
     const result = await api.resolveCampaignLoreOperation({
       ...op.header,
       action: op.action,
@@ -103,6 +103,12 @@ export function useCampaignLoreMutation(options: Options) {
     });
     check();
     api.validateResolution(result, op);
+    if (exact) {
+      const current = await recovery.readLoreOperation(options.uid, options.campaignId);
+      check();
+      if (!recovery.sameLoreOperation(current, op))
+        throw new Error('O controle local mudou em outra aba e foi preservado.');
+    }
     const next = await recovery.clearLoreOperation(op, check);
     check();
     adopt(next);
@@ -237,13 +243,15 @@ export function useCampaignLoreMutation(options: Options) {
       await send(op, expected);
     });
   }
-  function cancel() {
+  function cancel(expected: CampaignLoreOperation | null = pendingRef.current) {
     return run(async () => {
       const op = await recovery.readLoreOperation(options.uid, options.campaignId);
       check();
+      if (!expected || !recovery.sameLoreOperation(op, expected))
+        throw new Error('O controle local mudou em outra aba e foi preservado.');
       adopt(op);
       if (!op) return;
-      const result = await finish(op, 'cancel');
+      const result = await finish(op, 'cancel', true);
       latest.current.onClosed();
       setError(
         result.state === 'committed'

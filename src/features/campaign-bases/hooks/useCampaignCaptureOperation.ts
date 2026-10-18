@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import type {
   CampaignCaptureActivation,
+  CampaignCaptureActivationResolution,
   CampaignCaptureProgress,
   PendingCampaignCaptureOperation,
 } from '../model/campaignBase';
@@ -10,6 +11,7 @@ import {
   clearPendingCampaignCapture,
   readPendingCampaignCapture,
   writePendingCampaignCapture,
+  withCampaignCaptureJournalLock,
   type CampaignCaptureRecoveryScope,
 } from '../services/campaignCaptureRecovery';
 export type CampaignCaptureResult = CampaignCaptureProgress | CampaignCaptureActivation;
@@ -50,7 +52,8 @@ export function useCampaignCaptureOperation(
     pendingRef = useRef(initial.pending);
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(initial.error),
-    [conflict, setConflict] = useState(false);
+    [conflict, setConflict] = useState(false),
+    [historical, setHistorical] = useState<CampaignCaptureActivationResolution | null>(null);
   const isCurrent = () => active.current && identity.current === key;
   useEffect(() => {
     latest.current.onPendingChange?.(busy || Boolean(pending) || Boolean(initial.error));
@@ -68,6 +71,15 @@ export function useCampaignCaptureOperation(
     pendingRef.current = value;
     if (isCurrent()) setPending(value);
   };
+  const journal = <T>(work: () => T) =>
+    withCampaignCaptureJournalLock(
+      uid!,
+      scope,
+      () => {
+        if (!isCurrent()) throw new Error('A sessão ou a captura mudou. O pedido foi preservado.');
+      },
+      work,
+    );
   async function execute(
     operation: PendingCampaignCaptureOperation,
     replay = false,
@@ -83,10 +95,12 @@ export function useCampaignCaptureOperation(
     busyRef.current = true;
     setBusy(true);
     setError('');
+    setHistorical(null);
     let preserved = replay;
     try {
       if (!replay) {
-        writePendingCampaignCapture(uid, scope, operation);
+        await journal(() => writePendingCampaignCapture(uid, scope, operation));
+        if (!isCurrent()) return null;
         preserved = true;
         changePending(operation);
       }
@@ -94,6 +108,13 @@ export function useCampaignCaptureOperation(
         uid,
         scope.kind === 'start' ? scope.adventureId : scope.captureId,
         async () => {
+          if (!isCurrent()) return null;
+          await journal(() => {
+            if (
+              JSON.stringify(readPendingCampaignCapture(uid, scope)) !== JSON.stringify(operation)
+            )
+              throw new Error('O pedido preservado mudou em outra aba. Reabra a preparação.');
+          });
           if (!isCurrent()) return null;
           switch (operation.method) {
             case 'startCampaignCapture':
@@ -159,7 +180,9 @@ export function useCampaignCaptureOperation(
       } else {
         matchesPreparation(value);
       }
-      clearPendingCampaignCapture(uid, scope, operation.input.operationId);
+      if (!(await journal(() => clearPendingCampaignCapture(uid, scope, operation))))
+        throw new Error('O pedido preservado mudou em outra aba. Reabra a preparação.');
+      if (!isCurrent()) return null;
       changePending(null);
       setConflict(false);
       conflictRef.current = false;
@@ -167,14 +190,19 @@ export function useCampaignCaptureOperation(
       return value;
     } catch (cause) {
       if (!isCurrent()) return null;
-      if (preserved && api.definitiveCaptureFailure(cause)) {
+      if (
+        preserved &&
+        operation.method !== 'activateCampaignCapture' &&
+        api.definitiveCaptureFailure(cause)
+      ) {
         try {
-          clearPendingCampaignCapture(uid, scope, operation.input.operationId);
-          changePending(null);
+          const cleared = await journal(() => clearPendingCampaignCapture(uid, scope, operation));
+          if (cleared && isCurrent()) changePending(null);
         } catch {
           /* Retain the exact request until reconciliation. */
         }
       }
+      if (!isCurrent()) return null;
       setError(api.captureErrorMessage(cause));
       setConflict(preserved && api.definitiveCaptureFailure(cause));
       conflictRef.current = preserved && api.definitiveCaptureFailure(cause);
@@ -184,8 +212,49 @@ export function useCampaignCaptureOperation(
       if (isCurrent()) setBusy(false);
     }
   }
+  async function resolveActivation() {
+    const operation = pendingRef.current;
+    if (!uid || !isCurrent() || busyRef.current || operation?.method !== 'activateCampaignCapture')
+      return null;
+    busyRef.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const value = await api.runCampaignCapture(uid, operation.input.captureId, async () => {
+        if (!isCurrent()) return null;
+        await journal(() => {
+          if (JSON.stringify(readPendingCampaignCapture(uid, scope)) !== JSON.stringify(operation))
+            throw new Error('O pedido preservado mudou em outra aba. Reabra a preparação.');
+        });
+        if (!isCurrent()) return null;
+        return api.resolveCampaignCaptureActivation(operation.input);
+      });
+      if (!isCurrent() || !value) return null;
+      const confirmed = api.validateCampaignCaptureActivationResolution(
+        value,
+        uid,
+        operation.input,
+      );
+      if (!(await journal(() => clearPendingCampaignCapture(uid, scope, operation))))
+        throw new Error('O pedido preservado mudou em outra aba. Reabra a preparação.');
+      if (!isCurrent()) return null;
+      changePending(null);
+      conflictRef.current = false;
+      setConflict(false);
+      setHistorical(confirmed);
+      return confirmed;
+    } catch (cause) {
+      if (isCurrent()) setError(api.captureErrorMessage(cause));
+      return null;
+    } finally {
+      busyRef.current = false;
+      if (isCurrent()) setBusy(false);
+    }
+  }
   return {
     pending,
+    historical,
+    resolveActivation,
     busy,
     error,
     conflict,

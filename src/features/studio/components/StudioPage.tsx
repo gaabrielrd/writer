@@ -4,7 +4,14 @@ import { Plus, Upload } from 'lucide-react';
 import { ContinueWorkPanel } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
 import { CampaignCapturePreparations } from '@/features/campaign-bases';
-import { CampaignComparisonPreparations } from '@/features/campaign-comparisons';
+import {
+  CampaignComparisonPreparations,
+  type ComparisonReadEnvelope,
+} from '@/features/campaign-comparisons';
+import {
+  CampaignAdoptionDialog,
+  CampaignAdoptionPreparations,
+} from '@/features/campaign-adoptions';
 import {
   BookFormDialog,
   ImportBookModal,
@@ -22,6 +29,9 @@ function StudioSession({ ownerId }: { ownerId: string }) {
   const [kind, setKind] = useState<'all' | StudioProjectKind>('all');
   const [form, setForm] = useState<StudioProjectKind | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [adoption, setAdoption] = useState<ComparisonReadEnvelope | null>(null),
+    [adoptionOpen, setAdoptionOpen] = useState(false),
+    [adoptionAttempt, setAdoptionAttempt] = useState(0);
   const active = useRef(true);
   useEffect(() => {
     active.current = true;
@@ -72,7 +82,22 @@ function StudioSession({ ownerId }: { ownerId: string }) {
         }
       />
       <ContinueWorkPanel />
-      <CampaignComparisonPreparations />
+      <CampaignComparisonPreparations
+        onReviewAdoption={(context) => {
+          setAdoption({ ...context });
+          setAdoptionAttempt((n) => n + 1);
+          setAdoptionOpen(true);
+        }}
+      />
+      <CampaignAdoptionPreparations />
+      {adoption && (
+        <CampaignAdoptionDialog
+          key={adoptionAttempt}
+          selection={{ campaignId: adoption.campaignId, context: adoption }}
+          open={adoptionOpen}
+          onClose={() => setAdoptionOpen(false)}
+        />
+      )}
       <CampaignCapturePreparations
         onActivated={(id) => void navigate('/campaigns/' + encodeURIComponent(id))}
       />

@@ -55,7 +55,12 @@ em fe10b15, com CI e regras verdes;
 veja o [contrato de comparação](docs/tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
 Veja também a
 [entrega C3A](docs/entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
-Adoção explícita e exclusão integral seguem nas próximas etapas do
+Adoção explícita C3B está validada localmente; CI do novo head pendente. Permite conservar fichas legadas
+autorizadas e confirmar base e variantes juntas, preservando notas próprias e a
+recuperação dos pedidos anteriores. Veja o
+[contrato de adoção](docs/tasks/writer-v2/execucao/19-adocao-explicita-de-base-da-campanha.md).
+Os resultados estão na [entrega C3B](docs/entregas/2026-10-18-writer-v2-adocao-de-bases.md).
+Exclusão integral continua na etapa seguinte do
 [contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)

@@ -44,6 +44,7 @@ export const changeLabels = {
 export const stateLabels = {
   preparing: 'Em preparação',
   ready: 'Pronta para comparar',
+  adopted: 'Adotada pela campanha',
   aborted: 'Interrompida',
   deleting: 'Descarte em andamento',
   deleted: 'Descartada',
@@ -221,7 +222,7 @@ export function validateProgress(
     (value.state === 'deleted'
       ? !value.cleanupComplete || value.phase !== 'cleanup'
       : value.cleanupComplete) ||
-    (value.state === 'ready' && value.phase !== 'complete')
+    (['ready', 'adopted'].includes(value.state) && value.phase !== 'complete')
   )
     fail();
   if (!value.sourceAvailable) {

@@ -37,6 +37,7 @@ export interface CampaignLoreEntityView extends Omit<CampaignLoreEntityInput, 'r
   relations: (CampaignLoreRelation & { targetName: string })[];
 }
 export interface CampaignLoreState {
+  legacy: boolean;
   sourceKey: string;
   revision: number;
   mode: 'base' | 'override' | 'removed';
@@ -46,6 +47,7 @@ export interface CampaignLoreState {
   entity: CampaignLoreEntityView | null;
 }
 export interface CampaignLoreSummary {
+  legacy: boolean;
   sourceKey: string;
   revision: number;
   mode: CampaignLoreState['mode'];

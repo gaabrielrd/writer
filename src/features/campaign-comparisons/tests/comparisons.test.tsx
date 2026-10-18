@@ -942,3 +942,17 @@ it('ação que invalida GET sem resposta libera loading e permite consulta nova 
   expect(h.result.current.control).toEqual(store.knownComparison(newer));
   expect(transport.advanceCampaignComparison).not.toHaveBeenCalled();
 });
+it('retomada pública da comparação emite envelope observado e fecha antes de revisar adoção', async () => {
+  job = { ...progress, state: 'ready', phase: 'complete' };
+  const review = vi.fn();
+  render(<CampaignComparisonPreparations onReviewAdoption={review} />);
+  await userEvent.click(await screen.findByRole('button', { name: /Candidata arison-1/ }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Comparar candidata' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Revisar atualização da campanha' }),
+  );
+  expect(review).toHaveBeenCalledWith(expect.objectContaining(envelope));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(transport.startCampaignComparison).not.toHaveBeenCalled();
+  expect(transport.cancelCampaignComparison).not.toHaveBeenCalled();
+});

@@ -9,6 +9,8 @@ import type {
   CampaignBaseList,
   CampaignBaseWindow,
   CampaignCaptureActivation,
+  CampaignCaptureActivationResolution,
+  ResolveCampaignCaptureActivationInput,
   CampaignCaptureList,
   CampaignCaptureProgress,
   CampaignCaptureSource,
@@ -50,6 +52,9 @@ export const advanceCampaignCapture = (
 export const activateCampaignCapture = (
   input: ActivateCampaignCaptureInput,
 ): Promise<CampaignCaptureActivation> => call('activateCampaignCapture', input);
+export const resolveCampaignCaptureActivation = (
+  input: ResolveCampaignCaptureActivationInput,
+): Promise<CampaignCaptureActivationResolution> => call('resolveCampaignCaptureActivation', input);
 export const cancelCampaignCapture = (
   input: CancelCampaignCaptureInput,
 ): Promise<CampaignCaptureProgress> => call('cancelCampaignCapture', input);

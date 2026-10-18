@@ -16,6 +16,8 @@ import { createCampaignNotesService } from './campaignNotes.mjs';
 import { createCampaignLoreService } from './campaignLore.mjs';
 import { createCampaignComparisonService } from './campaignComparison.mjs';
 import { createCampaignComparisonReadService } from './campaignComparisonRead.mjs';
+import { createCampaignAdoptionService } from './campaignAdoption.mjs';
+import { createCampaignVariantRemoteRecoveryService } from './campaignVariantRemoteRecovery.mjs';
 import { createCampaignVariantRecoveryService } from './campaignVariantRecovery.mjs';
 import { setCampaignVariantRecoveryHeaders } from './campaignVariantRecoveryHttp.mjs';
 import { setCampaignMediaHeaders } from './campaignCaptureHttp.mjs';
@@ -271,6 +273,8 @@ const callable = (method, secrets = []) =>
         const campaignLore = createCampaignLoreService({ db });
         const campaignComparison = createCampaignComparisonService({ db, assets });
         const campaignComparisonRead = createCampaignComparisonReadService({ db, assets });
+        const campaignAdoption = createCampaignAdoptionService({ db });
+        const campaignVariantRemoteRecovery = createCampaignVariantRemoteRecoveryService({ db });
         const campaignVariantRecovery = createCampaignVariantRecoveryService({ db });
         const campaignCapture = createCampaignCaptureService({ db, assets });
         const campaignBaseRead = createCampaignBaseReadService({ db, assets });
@@ -293,6 +297,11 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (campaignAdoption[method]
+            ? campaignAdoption
+            : campaignVariantRemoteRecovery[method]
+              ? campaignVariantRemoteRecovery
+              : null) ??
           comparisonHandler ??
           (campaignLore[method]
             ? campaignLore
@@ -368,6 +377,18 @@ export const removeCampaignLore = callable('removeCampaignLore');
 export const restoreCampaignLore = callable('restoreCampaignLore');
 export const discardCampaignLoreVariant = callable('discardCampaignLoreVariant');
 export const resolveCampaignLoreOperation = callable('resolveCampaignLoreOperation');
+export const listCampaignLoreOperations = callable('listCampaignLoreOperations');
+export const resolveCampaignLoreRemoteOperation = callable('resolveCampaignLoreRemoteOperation');
+export const startCampaignAdoption = callable('startCampaignAdoption');
+export const resolveCampaignAdoptionStart = callable('resolveCampaignAdoptionStart');
+export const getCampaignAdoption = callable('getCampaignAdoption');
+export const listCampaignAdoptions = callable('listCampaignAdoptions');
+export const listCampaignAdoptionDecisions = callable('listCampaignAdoptionDecisions');
+export const decideCampaignAdoption = callable('decideCampaignAdoption');
+export const prepareCampaignAdoption = callable('prepareCampaignAdoption');
+export const advanceCampaignAdoption = callable('advanceCampaignAdoption');
+export const activateCampaignAdoption = callable('activateCampaignAdoption');
+export const cancelCampaignAdoption = callable('cancelCampaignAdoption');
 export const getCampaignComparisonSource = callable('getCampaignComparisonSource');
 export const startCampaignComparison = callable('startCampaignComparison');
 export const resolveCampaignComparisonStart = callable('resolveCampaignComparisonStart');
@@ -384,6 +405,7 @@ export const getCampaignCapture = callable('getCampaignCapture');
 export const listCampaignCaptures = callable('listCampaignCaptures');
 export const advanceCampaignCapture = callable('advanceCampaignCapture');
 export const activateCampaignCapture = callable('activateCampaignCapture');
+export const resolveCampaignCaptureActivation = callable('resolveCampaignCaptureActivation');
 export const cancelCampaignCapture = callable('cancelCampaignCapture');
 export const getCampaignBase = callable('getCampaignBase');
 export const listCampaignBaseItems = callable('listCampaignBaseItems');

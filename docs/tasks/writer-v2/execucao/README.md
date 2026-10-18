@@ -68,7 +68,7 @@ F2-04 está concluído tecnicamente; F2-05 já começou sob a sequência autoriz
 | W2-F2-04   | Concluído tecnicamente em 16e71f6; CI e regras verdes                                                                                 | [Estados, metas e retomada](10-estados-metas-e-retomada.md), [entrega](../../../entregas/2026-10-15-writer-v2-progresso.md)                                                                                                                              | Condições humanas/comerciais nas entregas próprias                 |
 | W2-F2-05   | Concluído tecnicamente em 624c912; correção de foco e CI verdes                                                                       | [Histórico](11-historico-e-restauracao.md), [entrega](../../../entregas/2026-10-15-writer-v2-historico.md)                                                                                                                                               | Aceites humanos/comerciais nas tarefas próprias                    |
 | W2-F2-06   | Concluído tecnicamente em 624c912; CI e regras verdes                                                                                 | [Aventuras e blocos](12-aventuras-e-blocos.md), [entrega](../../../entregas/2026-10-15-writer-v2-aventuras-e-blocos.md)                                                                                                                                  | Aceites humanos/comerciais nas tarefas próprias                    |
-| W2-F2-07   | Gestão A em 624c912; captura B em f97455d; notas C1 em bda5e70; variantes C2 e comparação C3A concluídas em fe10b15, CI/regras verdes | [Campanhas e variantes](14-campanhas-e-variantes.md), [captura B](15-captura-de-aventura.md), [notas C1](16-notas-proprias-da-campanha.md), [variantes C2](17-variantes-de-lore-da-campanha.md), [comparação C3A](18-comparacao-de-bases-da-campanha.md) | Adoção C3B e exclusão integral pendentes                           |
+| W2-F2-07   | Gestão A em 624c912; captura B em f97455d; notas C1 em bda5e70; variantes C2 e comparação C3A concluídas em fe10b15, CI/regras verdes | [Campanhas e variantes](14-campanhas-e-variantes.md), [captura B](15-captura-de-aventura.md), [notas C1](16-notas-proprias-da-campanha.md), [variantes C2](17-variantes-de-lore-da-campanha.md), [comparação C3A](18-comparacao-de-bases-da-campanha.md) | C3B validado localmente; CI pendente; exclusão integral pendente   |
 | F2-08 a F5 | Não iniciadas                                                                                                                         | [Plano](../README.md)                                                                                                                                                                                                                                    | Dependências e aceites pertinentes                                 |
 | Fase 6     | Descoberta futura, fora da primeira versão pública                                                                                    | [Candidatos](../fase-06-evolucao-pos-v1/README.md)                                                                                                                                                                                                       | Aprovação posterior de escopo                                      |
 
@@ -83,13 +83,17 @@ C3A está concluído tecnicamente em fe10b15: 1.680 frontend, 77 scripts,
 A [entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md) registra
 também a correção dirigida da narrativa e os doze shards sem omissão de casos.
 CI e regras do head fe10b15 terminaram verdes. Comparar uma candidata não substitui
-a adoção explícita C3B nem a limpeza integral da campanha, que seguem obrigatórias.
+a adoção explícita C3B ou a limpeza integral da campanha, obrigatórias no contrato.
 
 O [planejamento C3B](19-adocao-explicita-de-base-da-campanha.md) começou após o
 fechamento local C3A. Staging, continuidade de revisões/corpos, barreira de pedidos,
 ABI comum, limites e cobertura estática dos epochs foram auditados em ebb1c1f.
-A política de ficha ausente da candidata aguarda o operador. Não há implementação
-C3B; após a escolha, fechar seu ramo de modelo/acesso antes de implementar.
+O operador aprovou manter fichas legadas autorizadas. O contrato foi fechado com
+participação separada do modo, anchors/bindings achatados e relógio global por UID;
+ver [ADR 0035](../../../decisions/0035-campaign-base-adoption.md). C3B passou no
+validate local: 1.755 frontend, 77 scripts, 347 Functions, SDK 5/5 e navegador
+13/13. [Entrega C3B](../../../entregas/2026-10-18-writer-v2-adocao-de-bases.md).
+CI do novo head pendente; exclusão integral é o próximo incremento de F2-07.
 
 ## Decisões recebidas em 2026-10-13
 

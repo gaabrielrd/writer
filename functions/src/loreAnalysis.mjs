@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { GenerationError, validateId } from './generation.mjs';
 import { universeDocumentId } from './universes.mjs';
+import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
 
 const fail = (code, message) => {
   throw new GenerationError(code, message);
@@ -337,6 +338,10 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
           writes.push({ target, value, existing, scope: change.scope, name: merged.name });
         }
         // All reads and validation finish before writes. Visibility and relations cannot change here.
+        const authorization = writes.some((write) => write.scope === 'global')
+          ? await prepareCampaignAuthorization(tx, db, uid, { bump: true })
+          : null;
+        authorization?.commit();
         for (const write of writes) {
           if (write.existing) tx.update(write.target, write.value);
           else tx.create(write.target, write.value);

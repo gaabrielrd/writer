@@ -1,11 +1,13 @@
 # F2-07 C3B — Adotar explicitamente uma candidata da campanha
 
-**Estado:** planejamento em revisão; implementação não iniciada. A escolha de
-produto abaixo e os contratos técnicos indicados ainda precisam ser fechados.
+**Estado:** contrato fechado em 2026-10-17 após escolha explícita do operador;
+implementação validada localmente. SDK C3B real: 5/5 famílias; navegador final:
+13/13; validate verde. CI do novo head pendente, sem conclusão remota presumida.
 **Base:** C3A concluído tecnicamente em `fe10b15`, com CI e regras verdes.
 **Origem:** [D-02](02-modelo-de-dominio.md), [campanhas](14-campanhas-e-variantes.md),
 [C2](17-variantes-de-lore-da-campanha.md), [C3A](18-comparacao-de-bases-da-campanha.md)
 e [ADR 0034](../../../decisions/0034-campaign-base-comparisons.md).
+**Decisão de adoção:** [ADR 0035](../../../decisions/0035-campaign-base-adoption.md).
 
 ## Objetivo
 
@@ -18,19 +20,27 @@ Uma edição normal posterior do original não recaptura nem substitui a candida
 ready. Adotar exatamente a candidata comparada, com autorização/privacidade atuais.
 Revogação, troca da base/campanha ou edição C2 concorrente são condições distintas.
 
-## Escolha de produto pendente
+## Escolha de produto confirmada
 
-Pergunta enviada ao operador em 2026-10-17: uma ficha adaptada pela mesa deixa de
-ser referenciada na candidata, embora a origem continue autorizada. Oferecer:
+Em 2026-10-17 o operador escolheu permitir manter uma ficha adaptada que deixou
+de ser referenciada na candidata como legado da campanha, vinculada à origem e
+às mesmas regras de acesso. A retenção é escolha explícita por ficha; não é cópia
+para nota própria. Não expandir automaticamente alvos por relações nem resolver
+por nome.
 
-1. Manter a ficha como legado da campanha, vinculada à origem e aos mesmos gates;
-   opção recomendada, ainda sem resposta.
-2. Exigir descarte explícito da variante antes da adoção, conservando a base atual
-   enquanto isso.
+Participação interna candidate/legacy/inactive é ortogonal a mode base/override/removed.
+Ficha presente usa a candidata como anchor. Ficha local ausente pode conservar
+anchor congelado achatado `{capturedBaseId,sourceKey}` por keep-local ou tornar-se
+inactive por discard-local explícito, preservando tombstone/revisão. Não oferecer
+use-candidate para uma ficha ausente. Overlays base sem material local nem retenção
+legada anterior tornam-se inativos quando ausentes; não são incorporados por relação.
 
-Não assumir resposta por tempo decorrido. Essa escolha também delimita restauração,
-descarte e relações do legado. Não expandir automaticamente os alvos por relações,
-não resolver por nome e não converter conteúdo derivado em nota independente.
+Retirar/restaurar uma ficha legada conserva anchor e previousMode. Descartar somente
+seu override no C2 volta à ficha congelada do anchor, que continua legada; remover
+o legado inteiro da próxima composição é discard-local na revisão da adoção.
+Reentrada da mesma sourceKey produz uma única ficha, muda o anchor à candidata e
+preserva corpo local se escolhido. Não há cadeia de anchors ou binding; revogação
+apenas bloqueia acesso e nunca se converte em retirada autoral ou descarte implícito.
 
 ## Requisitos e decisões já estabelecidos
 
@@ -110,7 +120,7 @@ adoção futura. Disputa entre descarte e reserva/ativação deve ter um único 
    abortar e liberar a admissão, permitindo resolver o pedido e tentar novamente.
 3. Revisar decisões paginadas por sourceKey/revisão: manter variante inteira ou usar
    ficha candidata; preservar retirada ou voltar explicitamente à base nova.
-   O tratamento da ficha ausente depende da escolha de produto pendente.
+   Para ficha ausente, escolher manter legado ou descartar explicitamente.
 4. Para adaptar texto, voltar ao editor C2 da base atual. O save invalida o plano
    anterior; nova comparação/conferência deve ser explícita, sem rebase de escolhas.
 5. Preparar geração de lore isolada em etapas, mantendo os leitores atuais. Expor
@@ -152,8 +162,8 @@ quando os bytes não mudam. `removed→base` preserva retirada e, ao restaurar, 
 a ficha candidata; `removed→override` preserva retirada e a variante confirmada.
 Escolher ficha candidata remove o override do novo estado por decisão explícita.
 Metadados name/category de modo base ou previousMode base precisam corresponder
-à candidata, evitando divergência entre lista e GET. Definir o ramo de ficha ausente
-após a escolha de produto; recurso revogado permanece internamente inerte.
+à candidata, evitando divergência entre lista e GET. Ficha legada usa metadados de
+seu anchor congelado; recurso revogado permanece internamente inerte.
 
 Uma relação autorizada incompatível não pode
 sumir silenciosamente da decisão “manter variante”; resolver explicitamente ou
@@ -228,8 +238,8 @@ rollback nem histórico de variantes inativas. Neste incremento, não fazer cole
 automática de gerações inativas ou de corpos descartados durante a adoção. O
 descarte lógico não concede acesso aos bytes retidos. Save/discard C2 posterior
 continua removendo seu corpo anterior pelo binding validado, sem promessa de
-leitura das versões inativas. A retenção adicional necessária ao eventual legado
-depende da escolha de produto.
+leitura das versões inativas. Anchors de legado conservam sua base física e pins
+até exclusão integral; sua leitura sempre revalida a origem atual.
 
 Cancelamento limpa somente staging próprio, sem apagar candidata, base anterior,
 pins de outra geração ou autoria da mesa. A exclusão integral continua em etapa
@@ -276,7 +286,8 @@ só permite encerrar o journal após confirmação do fence correspondente.
 Para ficha presente, choices são keep-local e use-candidate. A primeira preserva
 entidade inteira, mode e previousMode; a segunda descarta explicitamente override
 e retirada. Overlays base sem conteúdo local acompanham a candidata e preservam
-continuidade de revisão. Não definir ainda choices/defaults para ficha ausente.
+continuidade de revisão. Para ficha ausente com material local ou legado retido,
+exigir keep-local ou discard-local; nenhuma escolha é aplicada implicitamente.
 
 A página contém sourceKey/revision/mode, nomes/categorias autorizados dos dois
 lados, presença, escolha e impedimentos seguros. Seu cursor vincula identidade,
@@ -312,15 +323,23 @@ metadados/binding inertes, sem ler corpo. Não criar índice de dependências in
 de recibos antigos nem assumir relações vazias.
 
 Não usar sourceToken ou comparisonToken inteiro como CAS final: incluem versões
-de conteúdo que podem mudar após a captura. Validar gates em páginas sob epochs
-dos universos envolvidos, guardando identidade/encarnação, disponibilidade,
-loreVersion e privacyVersion. Conferir na implementação que toda mutação relevante
-aos gates atualiza esses epochs ou é coberta por leitura direta no commit.
-Adventure/root, claim, base, fence e revisão C2 são conferidos diretamente.
+de conteúdo que podem mudar após a captura. Legados podem acumular universos sem
+limite, portanto um array de epochs por universo não prova commit constante.
+Adicionar um único relógio privado por UID em
+users/{uid}/campaignAuthorization/current, com schemaVersion/ownerId, token aleatório
+persistente e epoch inteiro seguro não negativo. Start inicializa explicitamente
+o relógio ausente; ausência posterior é erro, sem fallback/reset silencioso.
+
+Toda criação/edição/exclusão de lore global e criação/exclusão de universo atualiza
+esse relógio na mesma transação, inclusive lote global da análise. A passada de
+autorização lê o mesmo token/epoch em cada etapa e certifica todos os gates dos
+anchors/participantes. O final relê um documento, independentemente da quantidade
+de universos legados. Adventure/root, claim, base, fence e revisão C2 são conferidos
+diretamente. Token também impede aceitar recriação/reset do relógio como continuidade.
 
 Se um epoch mudar, invalidar a passada de autorização e refazê-la explicitamente,
 preservando candidata, decisões e staging; não recapturar nem abortar apenas por
-edição comum do conteúdo. O commit compara os epochs da última passada completa.
+edição comum do conteúdo. O commit compara token/epoch da última passada completa.
 Advance/activate que detecte essa mudança confirma seu pedido exato por recibo
 reauthorization-required, incrementa checkpoint e retorna estado preparing/fase
 authorization, sem adoção. O cliente encerra somente o StepPending confirmado e
@@ -328,7 +347,14 @@ oferece novo avanço explícito; lançar apenas erro deixaria o pedido bloqueand
 reconferência. Preservar fence e escolhas; o recibo não autoriza repetir activate
 com outro checkpoint automaticamente.
 Revogação efetiva aplica gates e impedimentos atuais; não é tratada como simples
-mudança de texto. A extensão dessa lista de anchors ao legado fica pendente.
+mudança de texto. Perder autorização previamente validada impede confirmação e
+aborta/libera a própria barreira; uma revisão nova pode carregar metadados inertes.
+Legado previamente retido conserva participation legacy sob gate negado, sem ler
+corpo nem exigir nova retenção apenas por uma revogação temporária. Ausência nova
+sem retenção prévia pode conservar overlay/anchor/binding inativos até escolha
+autorizada, sem apagar bytes como se fosse descarte. Relação só alcança participante
+autorizado; retenção de um alvo
+precisa de escolha própria, sem inclusão transitiva.
 
 Auditoria estática do ramo comum em 2026-10-17, sem execução C3B:
 
@@ -340,13 +366,15 @@ Auditoria estática do ramo comum em 2026-10-17, sem execução C3B:
 | createUniverse / updateUniverse, universes.mjs       | authorId só na criação; update muda nome/descrição; marcador impede recriação normal do ID removido                   |
 | SDK e outros fluxos                                  | regras negam escrita direta global; criação assistida/geração/importação não gravam cânone global                     |
 
-Certificar loreVersion/privacyVersion somente como inteiros seguros não negativos,
+Certificar o novo epoch por UID somente como inteiro seguro não negativo,
 sem coerção ou fallback de campo ausente; repetir a validação no commit final.
-Incrementos existentes não validam overflow, portanto epoch inseguro deve impedir
-certificação, sem aceitar um contador que possa deixar de variar. Os gates C2 da
+Seu incremento valida overflow antes de qualquer escrita. Os contadores antigos
+loreVersion/privacyVersion orientaram a auditoria, mas não substituem o novo
+relógio global nem exigem array ilimitado no certificado. Os gates C2 da
 mesa dependem de existência/dono/deleting; isPublic false não revoga acesso do
 próprio criador. A versão de privacidade é detector conservador, não permissão nova.
-Esta cobertura estática não substitui as provas transacionais e SDK do incremento.
+Esta cobertura estática orienta a atualização atômica do novo relógio por UID e
+não substitui as provas transacionais e SDK do incremento.
 
 ### Armazenamento, limites e índices
 
@@ -411,6 +439,8 @@ sem acesso cruzado a arquivos internos de features.
 
 - Backend novo em functions/src/campaignAdoption*.mjs, com contratos/serviço
   separados do leitor de corpos C2. Integrar exports em functions/src/index.mjs.
+- Relógio global em functions/src/campaignAuthorization.mjs, com integração atômica
+  em universes.mjs e loreAnalysis.mjs, sem I/O fora da transação ou reset de contador.
 - Adaptar campaignLore.mjs, campaignLoreContracts.mjs e campaignVariantRecovery.mjs
   para geração ativa, binding, fence e controles remotos; preservar cifragem/AAD.
 - Adaptar campaignComparison*.mjs para claim/adopted e geração C2; campaignCapture.mjs
@@ -427,14 +457,15 @@ sem acesso cruzado a arquivos internos de features.
 
 ## Sequência de implementação proposta
 
-1. Receber a escolha de produto; fechar ABI/modelo/limites e revisão independente.
+1. Registrar escolha de legado e fechar ABI/modelo/limites e revisão independente
+   (feito em 2026-10-17; não comprova implementação).
 2. Implementar staging e admissão C2 com regressões do layout legado.
 3. Implementar decisões e ativação/recibos/cancelamento; proteger C3A adotada.
 4. Compor revisão/recuperação pela interface pública, sem ciclo entre features.
 5. Validar afetados, SDK real e navegador dirigido; revisar e executar validate.
 6. Atualizar ADR/arquitetura/regras/entrega e Git; acompanhar CI sem merge/deploy.
 
-Não iniciar o passo 2 com as alternativas contratuais deste documento abertas.
+Executar os próximos passos dentro dos contratos fechados deste documento.
 
 ## Matriz de validação proposta
 
@@ -475,10 +506,28 @@ completo foi rejeitada: foi substituída por controles mínimos e resolução pr
 com recibo próprio. Não foi criado índice de dependências inferido de recibos.
 Nenhum código ou teste C3B foi executado.
 
-A decisão humana sobre ficha ausente permanece pendente. Depois dela, fechar o
-ramo correspondente, completar seus anchors de autorização e revisar os arquivos
-afetados antes de implementar. ABI/modelo desse ramo não podem ser inferidos dos
-contratos comuns; a escolha não autoriza expansão de relações ou novas permissões.
+Após a resposta humana, a revisão de backend/cliente/QA convergiu em participação
+ortogonal ao modo, anchor e bodyBinding achatados, descarte explícito, reentrada
+por sourceKey e relógio global por UID para universos legados arbitrários. O
+contrato está fechado; a escolha não autoriza expansão de relações ou novas
+permissões. Testar adoções sucessivas, revogação de universo legado e reentrada,
+sem alterar as 13 execuções nativas propostas nem os gates globais.
+
+## Evidência local — 2026-10-18
+
+Validate final exit 0: 173 arquivos/1.755 testes de frontend, 77 scripts e 347
+Functions. Cobertura: 90,53% instruções, 84,60% ramos, 90,15% funções e 93,15%
+linhas. SDK C3B 5/5 em 155.539,7154 ms; SDK do relógio/análise 2/2 em
+9.995,4077 ms. Navegador final 13/13, sem retry/skip/flaky, em três lotes cujo
+tempo somado é 88.883,18 ms. Seis PNG 320 px inspecionados pela raiz.
+
+Revisão corrigiu DTO de aborto, contagem redigida, GET antigo, invalidação das
+decisões, CAS integral e confirmação A→B entre abas, incluindo cancelamento C2.
+Uma tentativa parou em formato; outra teve 1.750 testes positivos, mas funções
+89,82%. Cinco jornadas adicionais cobriram fluxos antes não exercidos, sem mudar
+produção ou limites. Ver [entrega](../../../entregas/2026-10-18-writer-v2-adocao-de-bases.md).
+Exclusão integral continua no incremento seguinte; pilotos e comércio conservam
+seus portões. A CI verde de fe10b15 pertence ao C3A, não valida este novo head.
 
 ## Riscos e não escopo
 

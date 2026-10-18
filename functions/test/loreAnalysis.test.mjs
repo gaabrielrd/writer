@@ -160,16 +160,19 @@ test('analysis does not write lore or debit; apply debits once for an entire bat
   await service.analyzeChapterLore('author', request);
   assert.equal(records.get('users/author').credits, 5);
   assert.equal([...records.keys()].filter((key) => key.includes('/lore/')).length, 0);
-  const result = await apply(service, [
-    ...local,
-    { scope: 'global', input: { ...input, name: 'Porto' } },
-  ]);
+  const changes = [...local, { scope: 'global', input: { ...input, name: 'Porto' } }];
+  const result = await apply(service, changes);
   assert.deepEqual(result, { applied: 2, credits: 4 });
   assert.equal(records.get(`books/book/lore/${request.requestId}-0`).isPublic, false);
   assert.equal(records.get(`universes/world/lore/${request.requestId}-1`).isPublic, false);
   assert.equal(records.get('universes/world').loreVersion, 4);
   assert.equal(records.get('universes/world').privacyVersion, 4);
   assert.equal(records.get('publicUniversePrivacy/world').version, 4);
+  const clock = structuredClone(records.get('users/author/campaignAuthorization/current'));
+  assert.equal(clock.epoch, 1);
+  assert.match(clock.token, /^[a-f0-9]{64}$/);
+  assert.deepEqual(await apply(service, changes), result);
+  assert.deepEqual(records.get('users/author/campaignAuthorization/current'), clock);
 });
 test('concurrent retries are idempotent and reject a different payload after apply', async () => {
   const { service, records } = fixture();
@@ -177,6 +180,7 @@ test('concurrent retries are idempotent and reject a different payload after app
   const results = await Promise.all([apply(service), apply(service)]);
   assert.deepEqual(results[0], results[1]);
   assert.equal(records.get('users/author').credits, 4);
+  assert.equal(records.has('users/author/campaignAuthorization/current'), false);
   await assert.rejects(apply(service, [{ scope: 'local', input: { ...input, name: 'Outro' } }]), {
     code: 'failed-precondition',
   });

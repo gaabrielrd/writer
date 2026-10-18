@@ -1,4 +1,5 @@
 import { GenerationError } from './generation.mjs';
+import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
 
 function fail(code, message) {
   throw new GenerationError(code, message);
@@ -151,6 +152,8 @@ export function createUniverseService({ db, now = Date.now }) {
           createdAt: now(),
           updatedAt: now(),
         };
+        const authorization = await prepareCampaignAuthorization(tx, db, uid, { bump: true });
+        authorization.commit();
         tx.create(ref, value);
         tx.create(marker, { version: 0, active: true });
         return { ...value, id };
@@ -194,6 +197,8 @@ export function createUniverseService({ db, now = Date.now }) {
             'Desvincule todos os livros, aventuras e campanhas antes de excluir o universo.',
           );
         if (!record.deleting) {
+          const authorization = await prepareCampaignAuthorization(tx, db, uid, { bump: true });
+          authorization.commit();
           tx.update(ref, {
             deleting: true,
             privacyVersion: record.privacyVersion + 1,
@@ -286,6 +291,8 @@ export function createUniverseService({ db, now = Date.now }) {
           return { ...existing.data(), id: `universe:${universeId}:${id}`, universeId };
         if (data.create !== true && !existing.exists) fail('not-found', 'Entidade indisponível.');
         const revoke = existing.data()?.isPublic === true && value.isPublic === false;
+        const authorization = await prepareCampaignAuthorization(tx, db, uid, { bump: true });
+        authorization.commit();
         tx.update(worldRef, {
           loreVersion: world.loreVersion + 1,
           privacyVersion: world.privacyVersion + Number(revoke),
@@ -312,6 +319,8 @@ export function createUniverseService({ db, now = Date.now }) {
         owned(world, uid);
         if (!existing.exists) return;
         const revoke = existing.data().isPublic === true;
+        const authorization = await prepareCampaignAuthorization(tx, db, uid, { bump: true });
+        authorization.commit();
         tx.update(worldRef, {
           loreVersion: world.loreVersion + 1,
           privacyVersion: world.privacyVersion + Number(revoke),

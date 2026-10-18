@@ -77,7 +77,16 @@ beforeEach(() => {
   rawKey = toBase64(crypto.getRandomValues(new Uint8Array(32)).buffer);
   vi.mocked(transport.listCampaignLore).mockResolvedValue({
     ...envelope,
-    items: [{ sourceKey, name: entity.name, category: entity.category, revision: 0, mode: 'base' }],
+    items: [
+      {
+        sourceKey,
+        name: entity.name,
+        category: entity.category,
+        revision: 0,
+        legacy: false,
+        mode: 'base',
+      },
+    ],
     nextCursor: null,
   });
   vi.mocked(transport.getCampaignLore).mockResolvedValue(result());
@@ -319,6 +328,7 @@ it.each(['remove', 'restore', 'discard'] as const)(
       ...result(1),
       item: {
         ...result(1).item!,
+        legacy: false,
         mode:
           action === 'remove'
             ? ('removed' as const)
@@ -360,7 +370,9 @@ it('lista vazia com cursor permite página seguinte e não revela corpo antes de
     .mockResolvedValueOnce({ ...envelope, items: [], nextCursor: 'next' })
     .mockResolvedValueOnce({
       ...envelope,
-      items: [{ sourceKey, name: 'Lia', category: 'character', mode: 'base', revision: 0 }],
+      items: [
+        { sourceKey, name: 'Lia', category: 'character', legacy: false, mode: 'base', revision: 0 },
+      ],
       nextCursor: null,
     });
   render(<CampaignLorePanel campaignId={campaignId} baseId={baseId} />);
@@ -468,7 +480,14 @@ it.each(['refresh', 'next'] as const)(
       vi.mocked(transport.listCampaignLore).mockResolvedValueOnce({
         ...envelope,
         items: [
-          { sourceKey, name: entity.name, category: entity.category, revision: 0, mode: 'base' },
+          {
+            sourceKey,
+            name: entity.name,
+            category: entity.category,
+            revision: 0,
+            legacy: false,
+            mode: 'base',
+          },
         ],
         nextCursor: 'next',
       });
@@ -539,6 +558,7 @@ it('edita a ficha inteira, preserva aliases com vírgulas e envia as relações 
       name: 'Guardião autorizado',
       category: 'character' as const,
       revision: 0,
+      legacy: false,
       mode: 'base' as const,
     },
     key = { ...guard, sourceKey: secondKey, name: 'Chave autorizada' };
@@ -625,6 +645,7 @@ it('seletor de relações recupera erro de rede, percorre janela vazia e ignora 
           name: 'Ficha do destino',
           category: 'concept',
           revision: 0,
+          legacy: false,
           mode: 'base',
         },
       ],
@@ -652,6 +673,7 @@ it('seletor de relações recupera erro de rede, percorre janela vazia e ignora 
           name: 'Resposta já fechada',
           category: 'concept',
           revision: 0,
+          legacy: false,
           mode: 'base',
         },
       ],
@@ -692,6 +714,7 @@ it('retira com confirmação, restaura a variante anterior e descarta integralme
               name: 'Lia',
               category: 'character',
               revision: state.item!.revision,
+              legacy: false,
               mode: state.item!.mode,
             },
           ]
@@ -706,7 +729,14 @@ it('retira com confirmação, restaura a variante anterior e descarta integralme
     state = {
       ...state,
       collectionRevision: 2,
-      item: { ...state.item!, revision: 2, mode: 'removed', entity: null, entityHash: null },
+      item: {
+        ...state.item!,
+        revision: 2,
+        legacy: false,
+        mode: 'removed',
+        entity: null,
+        entityHash: null,
+      },
     };
     return Promise.resolve(state);
   });
@@ -717,6 +747,7 @@ it('retira com confirmação, restaura a variante anterior e descarta integralme
       item: {
         ...state.item!,
         revision: 3,
+        legacy: false,
         mode: 'override',
         entity: { ...original, details: 'Variante da mesa anterior' },
         entityHash: 'f'.repeat(64),
@@ -731,6 +762,7 @@ it('retira com confirmação, restaura a variante anterior e descarta integralme
       item: {
         ...state.item!,
         revision: 4,
+        legacy: false,
         mode: 'base',
         entity: original,
         entityHash: 'f'.repeat(64),
@@ -831,4 +863,26 @@ it('recuperação escolhida após reload abre somente o texto decifrado autoriza
     expect.objectContaining({ operationId: header.operationId, expectedRevision: 0 }),
   );
   expect(await repository.readLoreOperation(uid, campaignId)).toBeNull();
+});
+it('confirmar encerramento original de A não cancela nem apaga cifra B criada em outra aba', async () => {
+  const a = await seedSealed();
+  render(<CampaignLorePanel campaignId={campaignId} baseId={baseId} />);
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Encerrar pedido sem recuperar texto' }),
+  );
+  await repository.clearLoreOperation(a);
+  const b = { ...a, header: { ...a.header, operationId: 'new-cipher-B' } };
+  await repository.reserveLoreOperation({
+    ...b,
+    phase: 'preparing',
+    nonce: undefined,
+    ciphertext: undefined,
+  });
+  await repository.replaceLoreOperation(b, 'preparing');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar encerramento' }));
+  await waitFor(() =>
+    expect(screen.getByText(/controle local mudou em outra aba/i)).toBeInTheDocument(),
+  );
+  expect(transport.resolveCampaignLoreOperation).not.toHaveBeenCalled();
+  expect(await repository.readLoreOperation(uid, campaignId)).toEqual(b);
 });

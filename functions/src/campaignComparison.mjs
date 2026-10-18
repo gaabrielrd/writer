@@ -334,6 +334,8 @@ export function createCampaignComparisonService({ db, assets, now = Date.now }) 
         const observed = await observeComparison(tx, db, p);
         if (previous) return mutation(previous.receipt, p, observed);
         if (p.checkpoint !== input.expectedCheckpoint) workConflict();
+        if (p.state === 'adopted' || p.adoptionClaim)
+          fail('failed-precondition', 'A comparação adotada ou em adoção não pode ser descartada.');
         const campaign = (await tx.get(db.doc('campaigns/' + p.campaignId))).data();
         if (campaign?.activeBaseId === p.baseId)
           fail('failed-precondition', 'A base ativa não pode ser descartada.');

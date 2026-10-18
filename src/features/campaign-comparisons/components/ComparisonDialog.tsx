@@ -1,6 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Alert, Button, Dialog, LoadingState } from '@/shared/ui';
-import type { ComparisonSelection, ComparisonSource } from '../model/campaignComparison';
+import type {
+  ComparisonSelection,
+  ComparisonSource,
+  ComparisonReadEnvelope,
+} from '../model/campaignComparison';
 import { useComparisonOperation } from '../hooks/useComparisonOperation';
 import * as api from '../services/campaignComparisonService';
 import { comparisonStorageAvailable } from '../services/campaignComparisonRecovery';
@@ -12,12 +16,14 @@ export function ComparisonDialog({
   open,
   onClose,
   isActive,
+  onReviewAdoption,
 }: {
   uid: string;
   selection: ComparisonSelection;
   open: boolean;
   onClose: () => void;
   isActive: () => boolean;
+  onReviewAdoption?: (context: ComparisonReadEnvelope) => void;
 }) {
   const alive = useRef(true),
     shown = useRef(open),
@@ -250,7 +256,7 @@ export function ComparisonDialog({
                       Continuar descarte
                     </Button>
                   ) : (
-                    progress.state !== 'deleted' && (
+                    !['deleted', 'adopted'].includes(progress.state) && (
                       <Button
                         variant="outline"
                         disabled={locked}
@@ -272,6 +278,16 @@ export function ComparisonDialog({
               key={progress.comparisonId}
               identity={api.identityOf(progress)}
               isActive={() => active() && shown.current}
+              onReviewAdoption={
+                onReviewAdoption
+                  ? (context) => {
+                      if (!active() || !shown.current) return;
+                      setComparing(false);
+                      onClose();
+                      onReviewAdoption(context);
+                    }
+                  : undefined
+              }
             />
           )}
         </div>

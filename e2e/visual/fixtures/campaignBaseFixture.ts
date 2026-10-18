@@ -31,11 +31,15 @@ interface Snapshot {
 interface RecordCapture {
   uid: string;
   sourceToken: string;
+  adoptedComparisonId?: string;
   baseId: string;
   progress: C.CampaignCaptureProgress;
   snapshot: Snapshot;
   campaignId: string | null;
-  receipts: Record<string, { fingerprint: string; method: string }>;
+  receipts: Record<
+    string,
+    { fingerprint: string; method: string; checkpoint?: number; aborted?: true }
+  >;
 }
 const storageKey = 'writer.visual.campaign-bases';
 const records = new Map<string, RecordCapture>(
@@ -421,7 +425,14 @@ function receipt(record: RecordCapture, method: string, input: { operationId: st
   return {
     old: !!old,
     commit() {
-      record.receipts[input.operationId] = { fingerprint, method };
+      record.receipts[input.operationId] = {
+        fingerprint,
+        method,
+        checkpoint: record.progress.checkpoint,
+        ...(method === 'activateCampaignCapture' && record.progress.state === 'aborted'
+          ? { aborted: true as const }
+          : {}),
+      };
       persist();
     },
   };
@@ -733,12 +744,21 @@ async function context(campaignId: string) {
   const uid = fixtureOwner(),
     campaign = await fixtureGet('campaign', campaignId);
   current(uid);
-  const record = [...records.values()].find(
+  const stored = [...records.values()].find(
     (record) =>
       record.uid === uid &&
       record.campaignId === campaignId &&
+      record.baseId === campaign?.activeBaseId &&
       record.progress.state === 'activated',
   );
+  const record = stored?.adoptedComparisonId
+    ? {
+        ...stored,
+        snapshot: await (
+          await import('./campaignComparisonFixture')
+        ).fixtureCampaignAdoptedSnapshot(stored.adoptedComparisonId, campaignId, stored.baseId),
+      }
+    : stored;
   if (
     !campaign ||
     campaign.provenance.kind !== 'original' ||
@@ -967,4 +987,77 @@ export async function fixtureCampaignComparisonCurrent(campaignId: string) {
     unavailableImageItemKeys,
     snapshot: value,
   };
+}
+
+export async function fixtureActivateAdoptedCampaignBase(input: {
+  campaignId: string;
+  comparisonId: string;
+  baseId: string;
+  capturedAt: number;
+  source: C.CampaignBase['source'];
+  universeId: string | null;
+}) {
+  const uid = fixtureOwner(),
+    campaign = await fixtureGet('campaign', input.campaignId);
+  current(uid);
+  if (
+    !campaign ||
+    campaign.provenance.kind !== 'original' ||
+    campaign.provenance.adventureId !== input.source.adventureId
+  )
+    fail('Campanha indisponível.', 'not-found');
+  const previous = [...records.values()].find(
+    (record) =>
+      record.uid === uid &&
+      record.campaignId === campaign.id &&
+      record.baseId === campaign.activeBaseId,
+  );
+  if (!previous) fail('Base atual indisponível.', 'not-found');
+  const adopted: RecordCapture = {
+    ...previous,
+    adoptedComparisonId: input.comparisonId,
+    baseId: input.baseId,
+    progress: {
+      ...structuredClone(previous.progress),
+      reserved: { campaignId: campaign.id, baseId: input.baseId },
+      updatedAt: input.capturedAt,
+    },
+    snapshot: {
+      meta: structuredClone(input.source),
+      universeId: input.universeId,
+      items: [],
+      links: [],
+      images: {},
+    },
+    receipts: {},
+  };
+  records.set(keyFor(uid, 'adopted:' + input.baseId), adopted);
+  fixturePatchProject('campaign', campaign.id, {
+    activeBaseId: input.baseId,
+    provenance: { ...campaign.provenance, baseId: input.baseId },
+  });
+  persist();
+}
+export async function resolveCampaignCaptureActivation(
+  input: C.ResolveCampaignCaptureActivationInput,
+): Promise<C.CampaignCaptureActivationResolution> {
+  const uid = fixtureOwner(),
+    record = records.get(keyFor(uid, input.captureId)),
+    receipt = record?.receipts[input.operationId];
+  if (!receipt)
+    fail('Ativação sem confirmação histórica.', 'failed-precondition', 'operation-unconfirmed');
+  if (
+    receipt.method !== 'activateCampaignCapture' ||
+    receipt.fingerprint !== fixtureHash({ method: 'activateCampaignCapture', input })
+  )
+    fail('Pedido diferente do registro histórico.', 'invalid-argument');
+  if (receipt.checkpoint !== input.expectedCheckpoint + 1)
+    fail('Registro histórico inconsistente.');
+  return finish(uid, 'resolveCampaignCaptureActivation', {
+    schemaVersion: 1,
+    ownerId: uid,
+    request: structuredClone(input),
+    outcome: receipt.aborted === true ? 'aborted' : 'activated',
+    confirmedCheckpoint: receipt.checkpoint,
+  });
 }

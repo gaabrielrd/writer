@@ -24,10 +24,59 @@ const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } =
 }));
 const captures = vi.hoisted(() => ({ visible: false }));
 const comparisons = vi.hoisted(() => ({ visible: false }));
+const adoptions = vi.hoisted(() => ({ visible: false }));
+vi.mock('@/features/campaign-adoptions', () => ({
+  CampaignAdoptionPreparations: () =>
+    adoptions.visible ? (
+      <section aria-label="Atualizações sem campanha">Retomar atualização própria</section>
+    ) : null,
+  CampaignAdoptionDialog: ({
+    open,
+    selection,
+    onClose,
+  }: {
+    open: boolean;
+    selection: { context?: import('@/features/campaign-comparisons').ComparisonReadEnvelope };
+    onClose: () => void;
+  }) =>
+    open ? (
+      <section aria-label="Revisão observada no Estúdio">
+        <p>Revisão {selection.context?.collectionRevision}</p>
+        <button onClick={onClose}>Fechar revisão no Estúdio</button>
+      </section>
+    ) : null,
+}));
 vi.mock('@/features/campaign-comparisons', () => ({
-  CampaignComparisonPreparations: () =>
+  CampaignComparisonPreparations: ({
+    onReviewAdoption,
+  }: {
+    onReviewAdoption?: (
+      context: import('@/features/campaign-comparisons').ComparisonReadEnvelope,
+    ) => void;
+  }) =>
     comparisons.visible ? (
-      <section aria-label="Candidatas sem campanha">Retomar comparação privada</section>
+      <section aria-label="Candidatas sem campanha">
+        Retomar comparação privada
+        <button
+          onClick={() =>
+            onReviewAdoption?.({
+              schemaVersion: 1,
+              ownerId: 'owner',
+              campaignId: 'missing-root',
+              comparisonId: 'comparison',
+              campaignToken: 'c'.repeat(64),
+              currentBaseId: 'a'.repeat(64),
+              candidateBaseId: 'b'.repeat(64),
+              currentCapturedAt: 1000,
+              candidateCapturedAt: 2000,
+              collectionRevision: 7,
+              comparisonToken: 'e'.repeat(64),
+            })
+          }
+        >
+          Revisar candidata observada no Estúdio
+        </button>
+      </section>
     ) : null,
 }));
 vi.mock('@/features/campaign-bases', () => ({
@@ -107,6 +156,7 @@ const campaign: CampaignSummary = {
   updatedAt: 2000,
 };
 beforeEach(() => {
+  adoptions.visible = false;
   comparisons.visible = false;
   captures.visible = false;
   vi.clearAllMocks();
@@ -122,6 +172,14 @@ beforeEach(() => {
     .mockResolvedValue({ items: [campaign], nextCursor: null });
   vi.mocked(createBook).mockReset();
   vi.mocked(createCampaign).mockReset();
+});
+it('atualização continua descobrível no Estúdio mesmo sem root de campanha listado', async () => {
+  adoptions.visible = true;
+  vi.mocked(listCampaigns).mockResolvedValue({ items: [], nextCursor: null });
+  render(tree());
+  expect(
+    await screen.findByRole('region', { name: 'Atualizações sem campanha' }),
+  ).toHaveTextContent('Retomar atualização própria');
 });
 it('candidatas continuam acessíveis mesmo sem campanha listada', async () => {
   comparisons.visible = true;
@@ -459,3 +517,25 @@ vi.mock('@/features/work-progress', async (original) => ({
   useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
   WorkActivityNotice: () => null,
 }));
+it('Estúdio abre revisão com envelope observado da candidata e fecha sem criar campanha ou repetir captura', async () => {
+  comparisons.visible = true;
+  vi.mocked(listCampaigns).mockResolvedValue({ items: [], nextCursor: null });
+  render(tree());
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Revisar candidata observada no Estúdio' }),
+  );
+  expect(screen.getByRole('region', { name: 'Revisão observada no Estúdio' })).toHaveTextContent(
+    'Revisão 7',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar revisão no Estúdio' }));
+  expect(
+    screen.queryByRole('region', { name: 'Revisão observada no Estúdio' }),
+  ).not.toBeInTheDocument();
+  expect(createCampaign).not.toHaveBeenCalled();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Revisar candidata observada no Estúdio' }),
+  );
+  expect(screen.getByRole('region', { name: 'Revisão observada no Estúdio' })).toHaveTextContent(
+    'Revisão 7',
+  );
+});

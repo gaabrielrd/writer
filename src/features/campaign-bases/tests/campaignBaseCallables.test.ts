@@ -31,6 +31,10 @@ it.each([
     'activateCampaignCapture',
     { captureId: 'capture', operationId: 'activate', expectedCheckpoint: 3 },
   ],
+  [
+    'resolveCampaignCaptureActivation',
+    { captureId: 'capture', operationId: 'activate', expectedCheckpoint: 3 },
+  ],
   ['cancelCampaignCapture', { captureId: 'capture', operationId: 'cancel', expectedCheckpoint: 4 }],
   ['getCampaignBase', { campaignId: 'campaign' }],
   [

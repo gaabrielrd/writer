@@ -619,10 +619,41 @@ autorizar avanço automático. Fence inicial e encerramento de passo vencido exi
 ações explícitas; controles inválidos permanecem preservados. O painel global
 permite concluir limpeza mesmo quando o root da campanha desaparece.
 
-C3A está concluído tecnicamente em fe10b15, com CI e regras verdes. Adoção C3B e exclusão
-integral seguem pendentes;
+C3A está concluído tecnicamente em fe10b15, com CI e regras verdes. Adoção C3B está
+validada localmente, com CI do novo head pendente; exclusão integral segue pendente;
 ver [ADR 0034](decisions/0034-campaign-base-comparisons.md) e
 [contrato C3A](tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
+
+## Adoção de base e continuidade das variantes
+
+`features/campaign-adoptions` oferece revisão, decisões e preparação pela interface
+pública; a campanha e o Estúdio compõem essa capacidade. `campaignAdoption.mjs`
+coordena contratos, leitura e etapas limitadas. A revisão não bloqueia C2;
+preparação instala uma barreira por encarnação antes de auditar pedidos remotos.
+Cada escolha compara revisão e checkpoint. Alteração concorrente invalida o plano.
+
+`campaigns/{id}/loreGenerations` guarda staging privado. O commit troca base,
+procedência, geração ativa, revisões, comparação adotada e recibo atomicamente.
+`campaignLoreStorage.mjs` resolve essa geração; somente a ausência do ponteiro
+permite ler o layout legado. Participação candidate/legacy/inactive é separada de
+base/override/removed. Anchor aponta diretamente à ficha congelada; bodyBinding
+aponta aos bytes físicos, sem cópia ou cadeia de gerações. Retenção de legado
+continua sujeita ao gate atual da origem, inclusive após adoções sucessivas.
+
+O relógio privado `users/{uid}/campaignAuthorization/current` certifica autorização
+de universos legados sem enumerá-los no commit. Escritores canônicos de universo,
+lore global e análise o atualizam atomicamente; token e epoch seguro protegem
+contra reset/overflow. Implantar esses escritores e drenar versões antigas antes
+de habilitar adoção. Toda manutenção Admin deve seguir o mesmo protocolo. Exclusão
+de uma campanha não pode remover o relógio compartilhado pelo UID.
+
+Pedidos C2 remotos têm consulta de metadados e resolução com token preciso/recibo
+próprio, sem exportar descriptor, chave ou prosa. Rascunhos cifrados conservam base
+e AAD originais. O resolver histórico B confirma apenas o evento de ativação, sem
+reconhecer a campanha atual. Journals usam Web Locks e CAS integral, sem lock
+durante HTTP. Bases, pins e bindings emprestados não são coletados no cancelamento.
+Ver [ADR 0035](decisions/0035-campaign-base-adoption.md) e
+[contrato C3B](tasks/writer-v2/execucao/19-adocao-explicita-de-base-da-campanha.md).
 
 ## Progresso privado, contagem e retomada
 

@@ -13,7 +13,8 @@ export interface ComparisonIdentity {
   currentBaseId: string;
   candidateBaseId: string;
 }
-export type ComparisonState = 'preparing' | 'ready' | 'aborted' | 'deleting' | 'deleted';
+export type ComparisonState =
+  'preparing' | 'ready' | 'adopted' | 'aborted' | 'deleting' | 'deleted';
 export type ComparisonPhase =
   | 'parts'
   | 'scenes'

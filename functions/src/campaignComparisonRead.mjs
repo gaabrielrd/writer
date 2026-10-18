@@ -290,20 +290,16 @@ export function createCampaignComparisonReadService({
               );
               if ((a ? a.summary : b.summary).kind === 'lore') {
                 const overlay = (
-                  await readWorkMetadata(
-                    tx,
-                    db.doc(`campaigns/${c.p.campaignId}/loreVariants/${key}`),
-                    [
-                      'schemaVersion',
-                      'ownerId',
-                      'campaignId',
-                      'campaignToken',
-                      'baseId',
-                      'sourceKey',
-                      'mode',
-                      'revision',
-                    ],
-                  )
+                  await readWorkMetadata(tx, db.doc(c.current.lorePath + '/loreVariants/' + key), [
+                    'schemaVersion',
+                    'ownerId',
+                    'campaignId',
+                    'campaignToken',
+                    'baseId',
+                    'sourceKey',
+                    'mode',
+                    'revision',
+                  ])
                 ).data();
                 if (
                   overlay &&

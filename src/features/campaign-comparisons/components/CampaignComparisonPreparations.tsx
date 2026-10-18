@@ -1,7 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import { Alert, Button, Card, LoadingState } from '@/shared/ui';
-import type { ComparisonProgress, ComparisonSelection } from '../model/campaignComparison';
+import type {
+  ComparisonProgress,
+  ComparisonSelection,
+  ComparisonReadEnvelope,
+} from '../model/campaignComparison';
 import * as api from '../services/campaignComparisonService';
 import {
   listComparisonControls,
@@ -11,6 +15,7 @@ import { ComparisonDialog } from './ComparisonDialog';
 import styles from './Comparisons.module.css';
 export interface CampaignComparisonPreparationsProps {
   campaignId?: string;
+  onReviewAdoption?: (context: ComparisonReadEnvelope) => void;
 }
 export function CampaignComparisonPreparations(props: CampaignComparisonPreparationsProps) {
   const { user } = useAuth(),
@@ -27,6 +32,7 @@ function Preparations({
   uid,
   campaignId,
   isActive,
+  onReviewAdoption,
 }: { uid: string; isActive: () => boolean } & CampaignComparisonPreparationsProps) {
   const [items, setItems] = useState<ComparisonProgress[]>([]),
     [local, setLocal] = useState(() => listComparisonControls(uid, campaignId)),
@@ -208,6 +214,7 @@ function Preparations({
           selection={selected}
           open={open}
           isActive={active}
+          onReviewAdoption={onReviewAdoption}
           onClose={() => {
             setOpen(false);
             setLocal(listComparisonControls(uid, campaignId));

@@ -225,8 +225,24 @@ export function clearLoreOperation(
   return locked(op.ownerId, op.header.campaignId, () =>
     transaction(op.ownerId, op.header.campaignId, (current) => {
       assertActive();
-      return current?.header.operationId === op.header.operationId ? null : current;
+      return sameLoreOperation(current, op) ? null : current;
     }),
+  );
+}
+export function sameLoreOperation(
+  a: CampaignLoreOperation | null,
+  b: CampaignLoreOperation,
+): boolean {
+  if (!a) return false;
+  const metadata = (v: CampaignLoreOperation) =>
+    JSON.stringify({ ...v, nonce: undefined, ciphertext: undefined });
+  const binary = (x: ArrayBuffer | undefined, y: ArrayBuffer | undefined) =>
+    x === undefined || y === undefined
+      ? x === y
+      : x.byteLength === y.byteLength &&
+        new Uint8Array(x).every((byte, index) => byte === new Uint8Array(y)[index]);
+  return (
+    metadata(a) === metadata(b) && binary(a.nonce, b.nonce) && binary(a.ciphertext, b.ciphertext)
   );
 }
 export function subscribeLoreOperations(listener: () => void): () => void {

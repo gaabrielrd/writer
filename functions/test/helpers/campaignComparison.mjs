@@ -17,6 +17,7 @@ export async function comparisonFixture(
     metadata: async () => ({ generation: '12345678901234567890', size: 4 }),
     readGeneration: async () => Buffer.from('webp'),
   },
+  beforeCapture,
 ) {
   const studio = createStudioService({ db }),
     scenes = createScenesService({ db }),
@@ -123,6 +124,20 @@ export async function comparisonFixture(
     expectedRevision: (await scenes.getScene(uid, { target, sceneId: scene.id })).revision,
     image: { imageId, alt: 'Dragão', caption: 'Legenda' },
   });
+  if (beforeCapture)
+    await beforeCapture({
+      db,
+      studio,
+      scenes,
+      universe,
+      narrative,
+      blocks,
+      part,
+      scene,
+      arc,
+      milestone,
+      event,
+    });
   const capture = createCampaignCaptureService({ db, assets });
   let p = await capture.startCampaignCapture(uid, {
     operationId: op('base'),

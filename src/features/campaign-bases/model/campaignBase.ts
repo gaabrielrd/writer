@@ -35,6 +35,15 @@ export interface AdvanceCampaignCaptureInput {
 }
 export type ActivateCampaignCaptureInput = AdvanceCampaignCaptureInput;
 export type CancelCampaignCaptureInput = AdvanceCampaignCaptureInput;
+export type ResolveCampaignCaptureActivationInput = ActivateCampaignCaptureInput;
+export interface CampaignCaptureActivationResolution {
+  schemaVersion: 1;
+  ownerId: string;
+  request: ResolveCampaignCaptureActivationInput;
+  outcome: 'activated' | 'aborted';
+  confirmedCheckpoint: number;
+}
+
 export interface CampaignCaptureIdentity {
   campaignId: string;
   baseId: string;

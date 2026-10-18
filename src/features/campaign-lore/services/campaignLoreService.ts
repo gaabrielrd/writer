@@ -77,6 +77,7 @@ export function validateEnvelope(
 export function validateSummary(item: CampaignLoreSummary): void {
   if (
     !item ||
+    typeof item.legacy !== 'boolean' ||
     !hash(item.sourceKey) ||
     !integer(item.revision) ||
     !['base', 'override', 'removed'].includes(item.mode) ||
@@ -187,6 +188,7 @@ export function normalizedEntity(
 export function validateState(item: CampaignLoreState, sourceKey: string): void {
   if (
     !item ||
+    typeof item.legacy !== 'boolean' ||
     item.sourceKey !== sourceKey ||
     !hash(sourceKey) ||
     !integer(item.revision) ||

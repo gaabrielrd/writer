@@ -32,6 +32,7 @@ vi.mock('../services/campaignBaseCallables', () => ({
   listCampaignCaptures: vi.fn(),
   advanceCampaignCapture: vi.fn(),
   activateCampaignCapture: vi.fn(),
+  resolveCampaignCaptureActivation: vi.fn(),
   cancelCampaignCapture: vi.fn(),
   getCampaignBase: vi.fn(),
   listCampaignBaseItems: vi.fn(),
@@ -110,6 +111,10 @@ function deferred<T>() {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('crypto', webcrypto);
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: { request: vi.fn((_name: string, work: () => unknown) => Promise.resolve(work())) },
+  });
   auth.user = { uid: 'owner' };
   vi.mocked(calls.getCampaignCaptureSource).mockResolvedValue({
     adventureId: 'adventure',
@@ -266,6 +271,7 @@ it('uma resposta tardia não chama o callback da nova conta', async () => {
       input: { captureId: 'capture', operationId: 'old', expectedCheckpoint: 0 },
     });
   });
+  await waitFor(() => expect(calls.advanceCampaignCapture).toHaveBeenCalledOnce());
   auth.user = { uid: 'other' };
   view.rerender();
   await act(async () => {
@@ -1049,4 +1055,245 @@ it('GET de preparação recusa outra aventura da mesma conta e permite tentar de
   await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
   expect(await screen.findByRole('button', { name: 'Continuar preparação' })).toBeEnabled();
   expect(calls.getCampaignCapture).toHaveBeenCalledTimes(2);
+});
+
+const historicPending = (): Extract<
+  PendingCampaignCaptureOperation,
+  { method: 'activateCampaignCapture' }
+> => ({
+  method: 'activateCampaignCapture',
+  input: { captureId: 'capture', operationId: 'old-activate', expectedCheckpoint: 3 },
+  expected: { campaignId: 'campaign', baseId: 'base', adventureId: 'adventure' },
+});
+const historicScope = { kind: 'capture' as const, captureId: 'capture' };
+const historicResolution = (operation = historicPending()) => ({
+  schemaVersion: 1 as const,
+  ownerId: 'owner',
+  request: operation.input,
+  outcome: 'activated' as const,
+  confirmedCheckpoint: 4,
+});
+it.each(['activated', 'aborted'] as const)(
+  'confirma evento histórico %s explicitamente sem reconhecer ou abrir root atual',
+  async (outcome) => {
+    const operation = historicPending(),
+      onActivated = vi.fn();
+    writePendingCampaignCapture('owner', historicScope, operation);
+    vi.mocked(calls.activateCampaignCapture).mockRejectedValue(
+      Object.assign(new Error('Campanha indisponível'), { code: 'functions/not-found' }),
+    );
+    vi.mocked(calls.resolveCampaignCaptureActivation).mockResolvedValue({
+      ...historicResolution(),
+      outcome,
+    });
+    render(
+      <MemoryRouter>
+        <CampaignCaptureDialog
+          open
+          onClose={vi.fn()}
+          adventureId="adventure"
+          initialCaptureId="capture"
+          onActivated={onActivated}
+        />
+      </MemoryRouter>,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Confirmar mesmo pedido' }));
+    expect(await screen.findByText('Campanha indisponível')).toBeInTheDocument();
+    expect(readPendingCampaignCapture('owner', historicScope)).toEqual(operation);
+    expect(calls.resolveCampaignCaptureActivation).not.toHaveBeenCalled();
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Confirmar registro histórico da ativação' }),
+    );
+    await screen.findByText(/Isso não confirma a existência ou a identidade atual/);
+    expect(readPendingCampaignCapture('owner', historicScope)).toBeNull();
+    expect(onActivated).not.toHaveBeenCalled();
+    expect(calls.getCampaignCapture).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button', { name: 'Abrir campanha criada' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Carregando preparação…')).not.toBeInTheDocument();
+    expect(calls.resolveCampaignCaptureActivation).toHaveBeenCalledWith(operation.input);
+  },
+);
+it('ausência de recibo histórico preserva ativação antiga e não reenvia activate', async () => {
+  const operation = historicPending();
+  writePendingCampaignCapture('owner', historicScope, operation);
+  vi.mocked(calls.resolveCampaignCaptureActivation).mockRejectedValue(
+    Object.assign(new Error('Sem confirmação histórica'), {
+      code: 'functions/failed-precondition',
+      details: { reason: 'operation-unconfirmed' },
+    }),
+  );
+  const { result } = renderHook(() => useCampaignCaptureOperation(historicScope));
+  await act(async () => {
+    await result.current.resolveActivation();
+  });
+  expect(readPendingCampaignCapture('owner', historicScope)).toEqual(operation);
+  expect(result.current.pending).toEqual(operation);
+  expect(result.current.historical).toBeNull();
+  expect(result.current.error).toBe('Sem confirmação histórica');
+  expect(calls.activateCampaignCapture).not.toHaveBeenCalled();
+});
+it.each([
+  { ownerId: 'other' },
+  { confirmedCheckpoint: 3 },
+  { request: { captureId: 'capture', operationId: 'other', expectedCheckpoint: 3 } },
+  { schemaVersion: 2 },
+])('recibo histórico divergente %j nunca limpa o pedido', async (patch) => {
+  const operation = historicPending();
+  writePendingCampaignCapture('owner', historicScope, operation);
+  vi.mocked(calls.resolveCampaignCaptureActivation).mockResolvedValue({
+    ...historicResolution(),
+    ...patch,
+  } as ReturnType<typeof historicResolution>);
+  const { result } = renderHook(() => useCampaignCaptureOperation(historicScope));
+  await act(async () => {
+    await result.current.resolveActivation();
+  });
+  expect(readPendingCampaignCapture('owner', historicScope)).toEqual(operation);
+  expect(result.current.historical).toBeNull();
+});
+it('resposta histórica antiga não limpa envelope novo com mesmo operationId', async () => {
+  const operation = historicPending(),
+    late = deferred<ReturnType<typeof historicResolution>>();
+  writePendingCampaignCapture('owner', historicScope, operation);
+  vi.mocked(calls.resolveCampaignCaptureActivation).mockReturnValue(late.promise);
+  const { result } = renderHook(() => useCampaignCaptureOperation(historicScope));
+  let request!: Promise<unknown>;
+  act(() => {
+    request = result.current.resolveActivation();
+  });
+  await waitFor(() => expect(calls.resolveCampaignCaptureActivation).toHaveBeenCalledOnce());
+  const newer = { ...operation, expected: { ...operation.expected, baseId: 'new-base' } };
+  localStorage.setItem(
+    'writer:campaign-capture:' + JSON.stringify(['owner', 'capture', 'capture']),
+    JSON.stringify(newer),
+  );
+  await act(async () => {
+    late.resolve(historicResolution());
+    await request;
+  });
+  expect(readPendingCampaignCapture('owner', historicScope)).toEqual(newer);
+  expect(result.current.historical).toBeNull();
+  expect(result.current.error).toMatch(/mudou em outra aba/);
+});
+it('troca de sessão antes da confirmação histórica preserva journal da conta anterior', async () => {
+  const operation = historicPending(),
+    late = deferred<ReturnType<typeof historicResolution>>();
+  writePendingCampaignCapture('owner', historicScope, operation);
+  vi.mocked(calls.resolveCampaignCaptureActivation).mockReturnValue(late.promise);
+  const { result, rerender } = renderHook(() => useCampaignCaptureOperation(historicScope));
+  let request!: Promise<unknown>;
+  act(() => {
+    request = result.current.resolveActivation();
+  });
+  await waitFor(() => expect(calls.resolveCampaignCaptureActivation).toHaveBeenCalledOnce());
+  auth.user = { uid: 'other' };
+  rerender();
+  await act(async () => {
+    late.resolve(historicResolution());
+    await request;
+  });
+  expect(readPendingCampaignCapture('owner', historicScope)).toEqual(operation);
+  expect(readPendingCampaignCapture('other', historicScope)).toBeNull();
+  expect(result.current.historical).toBeNull();
+});
+
+it('confirmação histórica encerra ações do progresso antigo já carregado sem oferecer outra criação', async () => {
+  vi.mocked(calls.getCampaignCapture).mockResolvedValue(
+    progress({ state: 'prepared', phase: 'complete', checkpoint: 3 }),
+  );
+  vi.mocked(calls.activateCampaignCapture).mockRejectedValue(
+    Object.assign(new Error('Resposta perdida'), { code: 'functions/unavailable' }),
+  );
+  const onActivated = vi.fn();
+  render(
+    <MemoryRouter>
+      <CampaignCaptureDialog
+        open
+        onClose={vi.fn()}
+        adventureId="adventure"
+        initialCaptureId="capture"
+        onActivated={onActivated}
+      />
+    </MemoryRouter>,
+  );
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Criar campanha com esta base' }),
+  );
+  await screen.findByText('Resposta perdida');
+  const request = vi.mocked(calls.activateCampaignCapture).mock.calls[0]?.[0];
+  if (!request) throw new Error('Ativação não enviada pelo controlador.');
+  vi.mocked(calls.resolveCampaignCaptureActivation).mockResolvedValue({
+    ...historicResolution(),
+    request,
+  });
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Confirmar registro histórico da ativação' }),
+  );
+  await screen.findByText(/Isso não confirma a existência ou a identidade atual/);
+  expect(
+    screen.queryByRole('button', { name: 'Criar campanha com esta base' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Cancelar preparação e limpar' }),
+  ).not.toBeInTheDocument();
+  expect(onActivated).not.toHaveBeenCalled();
+  expect(calls.activateCampaignCapture).toHaveBeenCalledOnce();
+});
+
+it('histórico revalida CAS depois de adquirir a reserva de limpeza sem prender HTTP no lock', async () => {
+  const operation = historicPending(),
+    release = deferred<void>();
+  let acquired = 0,
+    held = false;
+  Object.defineProperty(navigator, 'locks', {
+    configurable: true,
+    value: {
+      request: vi.fn(async (_name: string, work: () => unknown) => {
+        acquired++;
+        if (acquired === 2) await release.promise;
+        held = true;
+        try {
+          return work();
+        } finally {
+          held = false;
+        }
+      }),
+    },
+  });
+  writePendingCampaignCapture('owner', historicScope, operation);
+  vi.mocked(calls.resolveCampaignCaptureActivation).mockImplementation(() => {
+    expect(held).toBe(false);
+    return Promise.resolve(historicResolution());
+  });
+  const { result } = renderHook(() => useCampaignCaptureOperation(historicScope));
+  let request!: Promise<unknown>;
+  act(() => {
+    request = result.current.resolveActivation();
+  });
+  await waitFor(() => expect(acquired).toBe(2));
+  const newer = { ...operation, expected: { ...operation.expected, baseId: 'other-base' } };
+  localStorage.setItem(
+    'writer:campaign-capture:' + JSON.stringify(['owner', 'capture', 'capture']),
+    JSON.stringify(newer),
+  );
+  await act(async () => {
+    release.resolve();
+    await request;
+  });
+  expect(readPendingCampaignCapture('owner', historicScope)).toEqual(newer);
+  expect(result.current.historical).toBeNull();
+  expect(result.current.error).toMatch(/mudou em outra aba/);
+});
+
+it('sem Web Locks preserva pedido histórico e não envia confirmação', async () => {
+  Object.defineProperty(navigator, 'locks', { configurable: true, value: undefined });
+  const operation = historicPending();
+  writePendingCampaignCapture('owner', historicScope, operation);
+  const { result } = renderHook(() => useCampaignCaptureOperation(historicScope));
+  await act(async () => {
+    await result.current.resolveActivation();
+  });
+  expect(calls.resolveCampaignCaptureActivation).not.toHaveBeenCalled();
+  expect(readPendingCampaignCapture('owner', historicScope)).toEqual(operation);
+  expect(result.current.error).toMatch(/reserva segura/);
 });

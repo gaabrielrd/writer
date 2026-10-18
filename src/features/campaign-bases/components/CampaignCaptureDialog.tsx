@@ -49,6 +49,24 @@ function Recovery({ controller }: { controller: ReturnType<typeof useCampaignCap
           <Button disabled={controller.busy} onClick={() => void controller.recover()}>
             Confirmar mesmo pedido
           </Button>
+          {controller.pending.method === 'activateCampaignCapture' && (
+            <Button
+              disabled={controller.busy}
+              variant="outline"
+              onClick={() => void controller.resolveActivation()}
+            >
+              Confirmar registro histórico da ativação
+            </Button>
+          )}
+        </Alert>
+      )}
+      {controller.historical && (
+        <Alert>
+          {controller.historical.outcome === 'activated'
+            ? 'O registro histórico confirma que a campanha foi criada.'
+            : 'O registro histórico confirma que a ativação foi interrompida.'}{' '}
+          Isso não confirma a existência ou a identidade atual da campanha. O pedido local
+          correspondente foi encerrado.
         </Alert>
       )}
     </>
@@ -317,10 +335,10 @@ function Preparation(props: CampaignCaptureDialogProps & { captureId: string }) 
             <Button onClick={() => setAttempt((n) => n + 1)}>Tentar novamente</Button>
           </Alert>
         )}
-        {!progress && !error && !controller.pending && (
+        {!progress && !error && !controller.pending && !controller.historical && (
           <LoadingState label="Carregando preparação…" />
         )}
-        {progress && (
+        {progress && !controller.historical && (
           <>
             <p role="status">
               {capturePhaseLabels[progress.phase]} · Etapa confirmada {progress.checkpoint}

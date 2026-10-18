@@ -23,6 +23,8 @@ interface Job {
   candidateCapturedAt: number;
   offset: number;
   pins: string[];
+  adoptionClaim?: string;
+  adopted?: boolean;
   receipts: Record<string, { fingerprint: string; receipt: C.ComparisonReceipt }>;
 }
 interface Data {
@@ -491,7 +493,8 @@ export function cancelCampaignComparison(
     if (op.old) return result(job, op.old.receipt);
     if (job.progress.checkpoint !== input.expectedCheckpoint) conflict();
     const campaign = await fixtureGet('campaign', job.input.campaignId);
-    if (campaign?.activeBaseId === job.progress.candidateBaseId) fail('A candidata está ativa.');
+    if (job.adopted || job.adoptionClaim || campaign?.activeBaseId === job.progress.candidateBaseId)
+      fail('A candidata está protegida pela adoção.');
     if (job.progress.state === 'deleted') fail('Limpeza encerrada.');
     if (job.progress.state !== 'deleting') {
       job.progress.state = 'deleting';
@@ -891,4 +894,71 @@ export async function readCampaignComparisonImage(input: {
     key: input.imageKey,
     dataUrl: 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA',
   });
+}
+
+// Fixture-only seams: the production controller still owns decisions and local journals.
+export async function fixtureCampaignAdoptionComparison(comparisonId: string) {
+  const ctx = await context(comparisonId);
+  return {
+    envelope: clone(ctx.envelope),
+    candidate: clone(ctx.candidate.snapshot),
+    candidateKeys: clone(ctx.candidate.allKeys.items),
+    current: clone(ctx.current.snapshot),
+    adventureId: ctx.job.adventureId,
+  };
+}
+export function fixtureCampaignAdoptionClaim(
+  comparisonId: string,
+  adoptionId: string,
+  release = false,
+) {
+  const uid = fixtureOwner(),
+    data = read(),
+    job = find(data, uid, comparisonId);
+  if (job.adopted) fail('A candidata já foi adotada.');
+  if (job.adoptionClaim && job.adoptionClaim !== adoptionId) conflict();
+  if (release) {
+    if (job.adoptionClaim === adoptionId) delete job.adoptionClaim;
+  } else {
+    if (job.progress.state !== 'ready') fail('A candidata não está pronta.');
+    job.adoptionClaim = adoptionId;
+  }
+  persist(data);
+}
+export function fixtureCampaignComparisonAdopt(comparisonId: string, adoptionId: string) {
+  const data = read(),
+    job = find(data, fixtureOwner(), comparisonId);
+  if (job.adoptionClaim !== adoptionId || job.adopted) conflict();
+  job.adopted = true;
+  job.progress.state = 'adopted';
+  delete job.adoptionClaim;
+  persist(data);
+}
+export async function fixtureCampaignAdoptedSnapshot(
+  comparisonId: string,
+  campaignId: string,
+  baseId: string,
+) {
+  const uid = fixtureOwner(),
+    job = find(read(), uid, comparisonId),
+    campaign = await fixtureGet('campaign', campaignId);
+  current(uid);
+  if (
+    !job.adopted ||
+    job.input.campaignId !== campaignId ||
+    job.progress.candidateBaseId !== baseId ||
+    !campaign ||
+    campaign.provenance.kind !== 'original' ||
+    campaign.activeBaseId !== baseId ||
+    campaign.provenance.baseId !== baseId ||
+    fixtureCampaignToken(uid, campaignId) !== job.input.campaignToken
+  )
+    fail('Base adotada indisponível.', 'not-found');
+  const adventure = await fixtureGet('adventure', job.adventureId);
+  current(uid);
+  if (!adventure || ('deleting' in adventure && adventure.deleting))
+    fail('Origem indisponível.', 'not-found');
+  const projected = await project(job.snapshot, uid);
+  current(uid);
+  return clone(projected.snapshot);
 }

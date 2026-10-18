@@ -2,8 +2,19 @@ import type * as C from '../../../src/features/campaign-lore/model/campaignLore'
 import { fixtureCampaignToken, fixtureOwner } from './studioStore';
 import { fixtureCampaignBaseLoreMetadata, readCampaignBaseItem } from './campaignBaseFixture';
 import { FIXTURE_TIME } from './data';
+import { fixtureCampaignComparisonCurrent } from './campaignBaseFixture';
+import { getUniverse } from './universeService';
+import { getLoreEntity } from './loreService';
+import type * as R from '../../../src/features/campaign-lore/model/campaignLoreRemote';
 
+type Anchor = {
+  baseId: string;
+  origin: { kind: string; id: string; scopeId?: string };
+  entity: C.CampaignLoreEntityInput;
+};
 type Overlay = {
+  legacy?: boolean;
+  inactive?: boolean;
   revision: number;
   mode: C.CampaignLoreState['mode'];
   previousMode?: 'base' | 'override';
@@ -30,6 +41,7 @@ interface Project {
   baseId: string;
   revision: number;
   overlays: Record<string, Overlay>;
+  anchors?: Record<string, Anchor>;
 }
 interface Call {
   uid: string;
@@ -42,6 +54,8 @@ interface Call {
 }
 interface Data {
   projects: Record<string, Project>;
+  guards?: Record<string, { adoptionId: string; baseId: string; epoch: number }>;
+  guardEpochs?: Record<string, number>;
   operations: Record<string, Operation>;
   calls: Call[];
 }
@@ -193,6 +207,30 @@ async function context(
   if (project.baseId !== meta.baseId) fail('A base mudou.', 'failed-precondition', 'base-changed');
   if (!Number.isSafeInteger(project.revision) || project.revision < 0)
     fail('Controle inconsistente.');
+  const available = new Set(meta.availableSourceKeys);
+  for (const [key, anchor] of Object.entries(project.anchors ?? {})) {
+    const overlay = project.overlays[key];
+    if (meta.items.some((item) => item.sourceKey === key) || !overlay?.legacy || overlay.inactive)
+      continue;
+    let authorized = false;
+    try {
+      const world = anchor.origin.scopeId ? await getUniverse(anchor.origin.scopeId) : null;
+      authorized =
+        world?.authorId === uid &&
+        !!(await getLoreEntity(
+          { kind: 'universe', id: anchor.origin.scopeId! },
+          'universe:' + anchor.origin.scopeId + ':' + anchor.origin.id,
+        ));
+    } catch {
+      /* Legacy authorization remains independent of the current universe. */
+    }
+    current(uid);
+    if (authorized) available.add(key);
+    meta.items.push({
+      sourceKey: key,
+      ...(authorized ? { name: anchor.entity.name, category: anchor.entity.category } : {}),
+    });
+  }
   const envelope: C.CampaignLoreEnvelope = {
     schemaVersion: 1,
     ownerId: uid,
@@ -207,11 +245,15 @@ async function context(
       revision: project.revision,
     }),
   };
-  return { project, meta, envelope, available: new Set(meta.availableSourceKeys) };
+  return { project, meta, envelope, available };
 }
 type Context = Awaited<ReturnType<typeof context>>;
 function requireSource(ctx: Context, sourceKey: string) {
-  if (!ctx.available.has(sourceKey) || !ctx.meta.items.some((item) => item.sourceKey === sourceKey))
+  if (
+    !ctx.available.has(sourceKey) ||
+    ctx.project.overlays[sourceKey]?.inactive ||
+    !ctx.meta.items.some((item) => item.sourceKey === sourceKey)
+  )
     fail('Ficha indisponível.', 'not-found');
 }
 function requireTargets(ctx: Context, input: C.CampaignLoreSaveHeader) {
@@ -271,6 +313,7 @@ function sourceName(ctx: Context, key: string) {
 async function view(ctx: Context, campaignId: string, key: string): Promise<C.CampaignLoreState> {
   const overlay = ctx.project.overlays[key];
   const common = {
+    legacy: overlay?.legacy ?? false,
     sourceKey: key,
     revision: overlay?.revision ?? 0,
     mode: overlay?.mode ?? 'base',
@@ -278,7 +321,11 @@ async function view(ctx: Context, campaignId: string, key: string): Promise<C.Ca
     updatedAt: overlay?.updatedAt ?? null,
   };
   if (overlay?.mode === 'removed') return { ...common, entity: null, entityHash: null };
-  const entity = overlay?.mode === 'override' ? overlay.entity! : await baseEntity(campaignId, key);
+  const entity =
+    overlay?.mode === 'override'
+      ? overlay.entity!
+      : ((overlay?.legacy ? ctx.project.anchors?.[key]?.entity : null) ??
+        (await baseEntity(campaignId, key)));
   const projected: C.CampaignLoreEntityView = {
     ...structuredClone(entity),
     relations: entity.relations.flatMap((relation) => {
@@ -474,7 +521,8 @@ export async function listCampaignLore(
       window = rows.slice(0, size),
       items: C.CampaignLoreSummary[] = [];
     for (const row of window) {
-      if (!ctx.available.has(row.sourceKey)) continue;
+      if (!ctx.available.has(row.sourceKey) || ctx.project.overlays[row.sourceKey]?.inactive)
+        continue;
       const overlay = ctx.project.overlays[row.sourceKey],
         mode = overlay?.mode ?? 'base';
       if ((selected === 'removed') !== (mode === 'removed')) continue;
@@ -484,6 +532,7 @@ export async function listCampaignLore(
       if (!name || !['character', 'location', 'concept', 'other'].includes(category ?? ''))
         fail('Metadados inconsistentes.');
       items.push({
+        legacy: overlay?.legacy ?? false,
         sourceKey: row.sourceKey,
         revision: overlay?.revision ?? 0,
         mode,
@@ -516,6 +565,7 @@ export async function getCampaignLore(
       ...ctx.envelope,
       item:
         ctx.available.has(input.sourceKey) &&
+        !ctx.project.overlays[input.sourceKey]?.inactive &&
         ctx.meta.items.some((item) => item.sourceKey === input.sourceKey)
           ? await view(ctx, input.campaignId, input.sourceKey)
           : null,
@@ -530,6 +580,8 @@ export async function prepareCampaignLoreVariant(
   related(input);
   const uid = fixtureOwner();
   const value = await transaction(uid, input, 'prepareCampaignLoreVariant', async (data) => {
+    if (data.guards?.[scopeKey(uid, input.campaignId)])
+      fail('A atualização está preparando o lore.', 'failed-precondition', 'adoption-in-progress');
     const ctx = await context(data, uid, input);
     requireTargets(ctx, input);
     const op = operationFor(data, uid, input, 'save', input.relatedSourceKeys);
@@ -577,6 +629,8 @@ async function mutate(
     fail('O transporte não recebeu o pedido.', 'unavailable');
   }
   const value = await transaction(uid, input, method, async (data) => {
+    if (data.guards?.[scopeKey(uid, input.campaignId)])
+      fail('A atualização está preparando o lore.', 'failed-precondition', 'adoption-in-progress');
     const ctx = await context(data, uid, input);
     requireSource(ctx, input.sourceKey);
     const save = input as C.SaveCampaignLoreInput;
@@ -639,6 +693,8 @@ async function mutate(
       fail('A ficha não tem variante para descartar.');
     const time = Math.max(FIXTURE_TIME + ctx.project.revision + 1, (old?.updatedAt ?? 0) + 1),
       overlay: Overlay = {
+        legacy: old?.legacy ?? false,
+        inactive: false,
         revision: (old?.revision ?? 0) + 1,
         mode:
           action === 'save'
@@ -744,4 +800,236 @@ export async function fixtureCampaignLoreComparisonMetadata(campaignId: string, 
       ]),
     ),
   };
+}
+
+// Transport-only integration seams. They never inspect the product journal or its keys.
+export async function fixtureCampaignLoreAdoptionSnapshot(campaignId: string, baseId: string) {
+  const uid = fixtureOwner(),
+    data = read(),
+    ctx = await context(data, uid, { campaignId, baseId });
+  const keys = new Set([
+    ...ctx.meta.items.map((item) => item.sourceKey),
+    ...Object.keys(ctx.project.overlays),
+  ]);
+  return {
+    collectionRevision: ctx.project.revision,
+    items: [...keys].sort().map((sourceKey) => {
+      const overlay = ctx.project.overlays[sourceKey],
+        row = ctx.meta.items.find((item) => item.sourceKey === sourceKey),
+        available = ctx.available.has(sourceKey) && !overlay?.inactive;
+      return {
+        sourceKey,
+        revision: overlay?.revision ?? 0,
+        mode: overlay?.mode ?? 'base',
+        legacy: overlay?.legacy ?? false,
+        inactive: overlay?.inactive ?? false,
+        available,
+        hasLocal: !!overlay && (overlay.mode !== 'base' || !!overlay.legacy),
+        ...(available
+          ? {
+              name: overlay?.entity?.name ?? row?.name,
+              category: overlay?.entity?.category ?? row?.category,
+            }
+          : {}),
+      };
+    }),
+  };
+}
+export async function fixtureCampaignLoreAdoptionGuard(
+  campaignId: string,
+  baseId: string,
+  adoptionId: string,
+  releaseEpoch?: number,
+) {
+  const uid = fixtureOwner();
+  return transaction(uid, { campaignId }, 'fixture-admission', (data) => {
+    const key = scopeKey(uid, campaignId);
+    data.guards ??= {};
+    data.guardEpochs ??= {};
+    const old = data.guards[key];
+    if (releaseEpoch !== undefined) {
+      if (old?.adoptionId !== adoptionId || old.epoch !== releaseEpoch)
+        fail('A reserva pertence a outra atualização.');
+      delete data.guards[key];
+      data.guardEpochs[key] = old.epoch + 1;
+      persist(data);
+      return old.epoch + 1;
+    }
+    if (old) {
+      if (old.adoptionId !== adoptionId || old.baseId !== baseId) conflict();
+      return old.epoch;
+    }
+    const epoch = (data.guardEpochs[key] ?? 0) + 1;
+    data.guardEpochs[key] = epoch;
+    data.guards[key] = { adoptionId, baseId, epoch };
+    persist(data);
+    return epoch;
+  });
+}
+export async function fixtureCampaignLoreApplyAdoption(input: {
+  campaignId: string;
+  oldBaseId: string;
+  baseId: string;
+  expectedRevision: number;
+  adoptionId: string;
+  epoch: number;
+  candidateKeys: string[];
+  choices: Record<string, 'keep-local' | 'use-candidate' | 'discard-local'>;
+}) {
+  const uid = fixtureOwner(),
+    data = read(),
+    ctx = await context(data, uid, { campaignId: input.campaignId, baseId: input.oldBaseId }),
+    key = scopeKey(uid, input.campaignId);
+  if (
+    ctx.project.revision !== input.expectedRevision ||
+    data.guards?.[key]?.adoptionId !== input.adoptionId ||
+    data.guards[key].epoch !== input.epoch
+  )
+    conflict();
+  const frozen = await fixtureCampaignComparisonCurrent(input.campaignId);
+  current(uid);
+  const project = ctx.project;
+  project.anchors ??= {};
+  for (const [sourceKey, old] of Object.entries(project.overlays)) {
+    const present = input.candidateKeys.includes(sourceKey),
+      choice = input.choices[sourceKey],
+      wasLegacy = old.legacy === true;
+    if (
+      !present &&
+      choice === 'keep-local' &&
+      ctx.available.has(sourceKey) &&
+      !project.anchors[sourceKey]
+    ) {
+      const captured = frozen.snapshot.items.find((value) => value.item.sourceKey === sourceKey);
+      if (!captured) fail('A âncora congelada não foi encontrada.');
+      project.anchors[sourceKey] = {
+        baseId: input.oldBaseId,
+        origin: structuredClone(captured.origin),
+        entity: await baseEntity(input.campaignId, sourceKey),
+      };
+    }
+    if (choice === 'use-candidate' || choice === 'discard-local') {
+      project.overlays[sourceKey] = {
+        revision: old.revision + 1,
+        mode: 'base',
+        legacy: false,
+        inactive: !present,
+        createdAt: old.createdAt,
+        updatedAt: old.updatedAt + 1,
+      };
+    } else {
+      const legacy = !present && (choice === 'keep-local' || wasLegacy);
+      project.overlays[sourceKey] = {
+        ...old,
+        revision: old.revision + 1,
+        legacy,
+        inactive: !present && !legacy,
+        updatedAt: old.updatedAt + 1,
+      };
+    }
+    if (present) delete project.anchors[sourceKey];
+  }
+  project.baseId = input.baseId;
+  project.revision++;
+  data.projects[key] = project;
+  persist(data);
+}
+export async function fixtureCampaignLoreRemoteList(
+  input: R.ListCampaignLoreOperationsInput,
+): Promise<R.CampaignLoreOperationsPage> {
+  const uid = fixtureOwner(),
+    data = read();
+  const rows = Object.values(data.operations)
+    .filter(
+      (value) =>
+        value.descriptor.campaignId === input.campaignId &&
+        value.descriptor.campaignToken === input.campaignToken &&
+        value.descriptor.baseId === input.baseId,
+    )
+    .sort((a, b) => a.descriptor.operationId.localeCompare(b.descriptor.operationId));
+  const scope = stable({ uid, ...input, cursor: undefined }),
+    last = input.cursor ? (JSON.parse(input.cursor) as { scope: string; last: string }) : null;
+  if (last && last.scope !== scope) fail('A página mudou.');
+  const window = rows
+    .filter((value) => !last || value.descriptor.operationId > last.last)
+    .slice(0, input.limit ?? 25);
+  const items: R.CampaignLoreRemoteControl[] = [];
+  for (const value of window) {
+    if (value.closed || value.state === 'canceled') continue;
+    items.push({
+      operationId: value.descriptor.operationId,
+      state: value.state,
+      revision: value.revision,
+      statusToken: await hash({
+        descriptor: value.descriptor,
+        state: value.state,
+        closed: value.closed ?? false,
+        revision: value.revision,
+      }),
+    });
+  }
+  current(uid);
+  return {
+    schemaVersion: 1,
+    ownerId: uid,
+    campaignId: input.campaignId,
+    campaignToken: input.campaignToken,
+    baseId: input.baseId,
+    items,
+    nextCursor:
+      rows.some(
+        (value) => value.descriptor.operationId > (window.at(-1)?.descriptor.operationId ?? ''),
+      ) && window.length
+        ? JSON.stringify({ scope, last: window.at(-1)!.descriptor.operationId })
+        : null,
+  };
+}
+export async function fixtureCampaignLoreRemoteResolve(
+  input: R.ResolveCampaignLoreRemoteInput,
+): Promise<R.CampaignLoreRemoteResolution> {
+  const uid = fixtureOwner();
+  return transaction(uid, input, 'resolveCampaignLoreRemoteOperation', async (data) => {
+    const value = data.operations[scopeKey(uid, input.operationId)];
+    if (
+      !value ||
+      value.descriptor.campaignId !== input.campaignId ||
+      value.descriptor.campaignToken !== input.campaignToken ||
+      value.descriptor.baseId !== input.baseId
+    )
+      fail('Pedido indisponível.', 'not-found');
+    const token = await hash({
+      descriptor: value.descriptor,
+      state: value.state,
+      closed: value.closed ?? false,
+      revision: value.revision,
+    });
+    current(uid);
+    if (
+      token !== input.statusToken ||
+      value.closed ||
+      (input.intent === 'confirm' ? value.state !== 'committed' : value.state !== 'prepared')
+    )
+      return {
+        schemaVersion: 1,
+        ownerId: uid,
+        request: structuredClone(input),
+        outcome: 'rejected',
+        state: null,
+        reason: 'operation-changed',
+        revision: null,
+      };
+    if (value.state === 'prepared') value.state = 'canceled';
+    value.closed = true;
+    delete value.key;
+    persist(data);
+    return {
+      schemaVersion: 1,
+      ownerId: uid,
+      request: structuredClone(input),
+      outcome: 'resolved',
+      state: value.state === 'committed' ? 'confirmed' : 'canceled',
+      reason: null,
+      revision: value.revision,
+    };
+  });
 }

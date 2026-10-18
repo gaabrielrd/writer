@@ -1,5 +1,6 @@
 import { randomBytes, createDecipheriv } from 'node:crypto';
 import { workConflict } from './workProgressContracts.mjs';
+import { assertLoreAdmission } from './campaignLoreStorage.mjs';
 import {
   closed,
   fail,
@@ -87,6 +88,7 @@ export function createCampaignVariantRecoveryService({ db }) {
       return db.runTransaction(async (tx) => {
         const context = await loreContext(tx, db, uid, data),
           record = await loreRecord(tx, db, context, descriptor.sourceKey);
+        assertLoreAdmission(context);
         if (!record) fail('not-found', 'Ficha indisponível.');
         await requireTargets(tx, db, context, descriptor.relatedSourceKeys);
         const previous = verifyOperation((await tx.get(ref)).data(), descriptor);

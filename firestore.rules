@@ -293,6 +293,13 @@ service cloud.firestore {
       match /assistedReceipts/{id} { allow read, write: if false; }
       match /studioOperations/{operationId} { allow read, write: if false; }
       match /studioPreparation/{preparationId} { allow read, write: if false; }
+      // Campaign adoption and its authorization clock are server controlled.
+      match /campaignAdoptions/{document=**} { allow read, write: if false; }
+      match /campaignAdoptionOperations/{id} { allow read, write: if false; }
+      match /campaignAdoptionStartFences/{id} { allow read, write: if false; }
+      match /campaignAdoptionGuards/{id} { allow read, write: if false; }
+      match /campaignVariantResolutionOperations/{id} { allow read, write: if false; }
+      match /campaignAuthorization/{id} { allow read, write: if false; }
       match /sceneOperations/{operationId} { allow read, write: if false; }
       match /narrativeOperations/{operationId} { allow read, write: if false; }
       match /workOperations/{operationId} { allow read, write: if false; }
@@ -404,6 +411,7 @@ service cloud.firestore {
     }
 
     match /campaigns/{campaignId} {
+      match /loreGenerations/{document=**} { allow read, write: if false; }
       allow get: if isOwner(resource.data.ownerId);
       allow list: if isOwner(resource.data.ownerId)
         && request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;

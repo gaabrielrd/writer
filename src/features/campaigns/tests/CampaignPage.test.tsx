@@ -22,14 +22,70 @@ vi.mock('@/features/campaign-comparisons', () => ({
   CampaignComparisonPanel: ({
     campaignId,
     currentBaseId,
+    onReviewAdoption,
   }: {
     campaignId: string;
     currentBaseId: string;
+    onReviewAdoption?: (
+      context: import('@/features/campaign-comparisons').ComparisonReadEnvelope,
+    ) => void;
   }) => (
     <section aria-label={'Comparação ' + campaignId + '/' + currentBaseId}>
       Candidata privada
+      <button
+        onClick={() =>
+          onReviewAdoption?.({
+            schemaVersion: 1,
+            ownerId: 'owner',
+            campaignId,
+            comparisonId: 'comparison',
+            campaignToken: 'c'.repeat(64),
+            currentBaseId,
+            candidateBaseId: 'candidate',
+            currentCapturedAt: 1000,
+            candidateCapturedAt: 2000,
+            collectionRevision: 3,
+            comparisonToken: 'e'.repeat(64),
+          })
+        }
+      >
+        Revisar adoção observada
+      </button>
     </section>
   ),
+}));
+vi.mock('@/features/campaign-adoptions', () => ({
+  CampaignAdoptionPreparations: ({
+    campaignId,
+    onAdopted,
+    onAdaptLore,
+  }: {
+    campaignId: string;
+    onAdopted: () => void;
+    onAdaptLore: () => void;
+  }) => (
+    <section aria-label={'Atualizações ' + campaignId}>
+      Retomar atualização<button onClick={onAdopted}>Confirmar adoção retomada</button>
+      <button onClick={onAdaptLore}>Adaptar lore da preparação</button>
+    </section>
+  ),
+  CampaignAdoptionDialog: ({
+    open,
+    selection,
+    onAdopted,
+    onClose,
+  }: {
+    open: boolean;
+    selection: { campaignId: string };
+    onAdopted: () => void;
+    onClose: () => void;
+  }) =>
+    open ? (
+      <section aria-label={'Adoção ' + selection.campaignId}>
+        <button onClick={onAdopted}>Confirmar adoção observada</button>
+        <button onClick={onClose}>Fechar adoção observada</button>
+      </section>
+    ) : null,
 }));
 vi.mock('@/features/campaign-notes', () => ({
   CampaignNotesPanel: ({ campaignId }: { campaignId: string }) => (
@@ -183,6 +239,32 @@ it('campanha original monta leitor da geração separadamente e preserva descri�
   ).toBeInTheDocument();
   expect(screen.getByRole('region', { name: 'Notas próprias project' })).toBeInTheDocument();
 });
+it('adoção confirmada consulta DTO atual e remonta leitores sem substituir autoria própria pelo snapshot', async () => {
+  const original: Campaign = {
+    ...resource,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'generation' },
+    activeBaseId: 'generation',
+  };
+  vi.mocked(getCampaign)
+    .mockResolvedValueOnce(original)
+    .mockResolvedValueOnce({
+      ...original,
+      revision: 2,
+      activeBaseId: 'next-generation',
+      provenance: { kind: 'original', adventureId: 'adventure', baseId: 'next-generation' },
+      description: 'Descrição própria atual',
+    });
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Revisar adoção observada' }));
+  expect(screen.getByRole('region', { name: 'Adoção project' })).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar adoção observada' }));
+  expect(
+    await screen.findByRole('region', { name: 'Base congelada project/next-generation' }),
+  ).toBeInTheDocument();
+  expect(screen.getByText('Descrição própria atual')).toBeInTheDocument();
+  expect(screen.getByRole('region', { name: 'Notas próprias project' })).toBeInTheDocument();
+  expect(getCampaign).toHaveBeenCalledTimes(2);
+});
 
 vi.mock('@/features/work-progress', async (original) => ({
   ...(await original<object>()),
@@ -195,3 +277,25 @@ vi.mock('@/features/work-progress', async (original) => ({
   useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
   WorkActivityNotice: () => null,
 }));
+it('retomada confirmada recarrega campanha e adaptar retorna foco ao lore atual sem trocar base', async () => {
+  const original: Campaign = {
+    ...resource,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'generation' },
+    activeBaseId: 'generation',
+  };
+  vi.mocked(getCampaign).mockResolvedValue(original);
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Adaptar lore da preparação' }));
+  expect(screen.getByRole('region', { name: 'Editar lore atual da campanha' })).toHaveFocus();
+  expect(getCampaign).toHaveBeenCalledOnce();
+  await userEvent.click(screen.getByRole('button', { name: 'Revisar adoção observada' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar adoção observada' }));
+  expect(screen.queryByRole('region', { name: 'Adoção project' })).not.toBeInTheDocument();
+  expect(getCampaign).toHaveBeenCalledOnce();
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar adoção retomada' }));
+  await screen.findByRole('button', { name: 'Confirmar adoção retomada' });
+  expect(getCampaign).toHaveBeenCalledTimes(2);
+  expect(screen.getByRole('region', { name: 'Notas próprias project' })).toHaveTextContent(
+    'Anotações autorais preservadas',
+  );
+});

@@ -15,9 +15,11 @@ import styles from './Comparisons.module.css';
 export function ComparisonReader({
   identity,
   isActive,
+  onReviewAdoption,
 }: {
   identity: ComparisonIdentity;
   isActive: () => boolean;
+  onReviewAdoption?: (context: ComparisonReadEnvelope) => void;
 }) {
   const [attempt, setAttempt] = useState(0);
   return (
@@ -26,6 +28,7 @@ export function ComparisonReader({
       identity={identity}
       isActive={isActive}
       retry={() => setAttempt((n) => n + 1)}
+      onReviewAdoption={onReviewAdoption}
     />
   );
 }
@@ -33,10 +36,12 @@ function ReaderSession({
   identity,
   isActive,
   retry,
+  onReviewAdoption,
 }: {
   identity: ComparisonIdentity;
   isActive: () => boolean;
   retry: () => void;
+  onReviewAdoption?: (context: ComparisonReadEnvelope) => void;
 }) {
   const [group, setGroup] = useState<ComparisonGroup>('source'),
     [kind, setKind] = useState('all'),
@@ -202,6 +207,15 @@ function ReaderSession({
                 </p>
               ))}
             </div>
+          )}
+          {envelope && onReviewAdoption && (
+            <Button
+              onClick={() => {
+                if (active() && context.current) onReviewAdoption({ ...context.current });
+              }}
+            >
+              Revisar atualização da campanha
+            </Button>
           )}
           <div className={styles.actions}>
             <Dropdown

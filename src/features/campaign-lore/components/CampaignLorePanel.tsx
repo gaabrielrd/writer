@@ -51,7 +51,7 @@ function LoreSession({
     [notice, setNotice] = useState(''),
     [form, setForm] = useState<Form | null>(null),
     [confirmation, setConfirmation] = useState<CampaignLoreAction | null>(null),
-    [canceling, setCanceling] = useState(false),
+    [canceling, setCanceling] = useState<CampaignLoreOperation | null>(null),
     [epoch, setEpoch] = useState(0),
     [checking, setChecking] = useState(false),
     [verificationRequired, setVerificationRequired] = useState(false),
@@ -135,6 +135,7 @@ function LoreSession({
     // Names are not in the ciphertext. No target name is invented or resolved live.
     const next: Form = {
       item: {
+        legacy: false,
         sourceKey: op.header.sourceKey,
         revision: op.header.expectedRevision,
         mode: 'override',
@@ -395,7 +396,13 @@ function LoreSession({
                 Recuperar pedido de lore
               </Button>
             )}
-            <Button disabled={mutation.busy} variant="outline" onClick={() => setCanceling(true)}>
+            <Button
+              disabled={mutation.busy}
+              variant="outline"
+              onClick={() => {
+                if (mutation.pending) setCanceling(structuredClone(mutation.pending));
+              }}
+            >
               Encerrar pedido sem recuperar texto
             </Button>
           </div>
@@ -440,6 +447,7 @@ function LoreSession({
                 {item.name}
               </Button>
               <Badge variant="outline">{api.loreModes[item.mode]}</Badge>
+              {item.legacy && <Badge variant="outline">Legado da mesa</Badge>}
             </div>
           </li>
         ))}
@@ -492,6 +500,12 @@ function LoreSession({
       >
         {form && (
           <div className={styles.form}>
+            {form.item.legacy && (
+              <Alert variant="info">
+                Legado da mesa: esta ficha conserva sua origem e permissões. Restaurar mantém o modo
+                anterior; descartar a variante retorna à ficha congelada de origem.
+              </Alert>
+            )}
             {verificationRequired && (
               <Alert variant="warning">
                 Confira novamente o acesso antes de enviar. Seus campos foram mantidos nesta sessão.
@@ -573,20 +587,21 @@ function LoreSession({
         </p>
       </Dialog>
       <Dialog
-        open={canceling}
-        onClose={() => setCanceling(false)}
+        open={canceling !== null}
+        onClose={() => setCanceling(null)}
         title="Encerrar recuperação de lore?"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setCanceling(false)}>
+            <Button variant="secondary" onClick={() => setCanceling(null)}>
               Manter pedido
             </Button>
             <Button
               variant="destructive"
               disabled={mutation.busy}
               onClick={() => {
-                setCanceling(false);
-                void mutation.cancel();
+                const expected = canceling;
+                setCanceling(null);
+                void mutation.cancel(expected);
               }}
             >
               Confirmar encerramento

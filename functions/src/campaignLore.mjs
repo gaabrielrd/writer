@@ -27,8 +27,13 @@ import {
   confirmationHash,
 } from './campaignLoreContracts.mjs';
 import { sealedRequest, decryptEntity, activeOperation } from './campaignVariantRecovery.mjs';
+import {
+  assertLoreAdmission,
+  normalizedBodyBinding,
+  loreWindow,
+  validateOldBodyRefs,
+} from './campaignLoreStorage.mjs';
 
-const listFields = ['sourceKey', 'origin', 'kind', 'title', 'structured.category'];
 export function createCampaignLoreService({ db, now = Date.now }) {
   async function mutate(uid, data, action) {
     if (!uid) fail('unauthenticated', 'Entre na sua conta.');
@@ -39,6 +44,7 @@ export function createCampaignLoreService({ db, now = Date.now }) {
     return db.runTransaction(async (tx) => {
       const context = await loreContext(tx, db, uid, data),
         record = await loreRecord(tx, db, context, descriptor.sourceKey);
+      assertLoreAdmission(context);
       if (!record) fail('not-found', 'Ficha indisponível.');
       if (action === 'save') await requireTargets(tx, db, context, descriptor.relatedSourceKeys);
       const opRef = operationRef(db, uid, descriptor.operationId),
@@ -114,6 +120,20 @@ export function createCampaignLoreService({ db, now = Date.now }) {
               ? null
               : (record.overlay?.manifest ?? null),
         ...(action === 'remove' ? { previousMode: record.mode } : {}),
+        ...(context.generationId
+          ? {
+              participation: record.overlay?.participation ?? 'candidate',
+              anchor: record.overlay?.anchor ?? {
+                capturedBaseId: context.base.id,
+                sourceKey: descriptor.sourceKey,
+              },
+            }
+          : {}),
+        ...(action === 'save'
+          ? { bodyBinding: preparedBody.bodyBinding }
+          : action !== 'discard' && record.overlay?.manifest
+            ? { bodyBinding: normalizedBodyBinding(context, record.overlay) }
+            : {}),
       };
       const nextRecord = {
           ...record,
@@ -154,6 +174,7 @@ export function createCampaignLoreService({ db, now = Date.now }) {
       const oldRefs = ['save', 'discard'].includes(action)
         ? bodyRefs(db, context, record.overlay)
         : [];
+      await validateOldBodyRefs(tx, db, context, record.overlay, oldRefs);
       budget(
         {
           overlay,
@@ -194,17 +215,10 @@ export function createCampaignLoreService({ db, now = Date.now }) {
           },
           cursor = decodeBaseCursor(data.cursor, scope);
         if (cursor) hashId(cursor.key);
-        let query = db
-          .collection(context.path + '/items')
-          .where('kind', '==', 'lore')
-          .orderBy('__name__')
-          .limit(size + 1)
-          .select(...listFields);
-        if (cursor) query = query.startAfter(cursor.key);
-        const docs = (await tx.get(query)).docs,
+        const window = await loreWindow(tx, db, context, cursor?.key, size),
           items = [];
-        for (const snapshot of docs.slice(0, size)) {
-          const record = await loreRecord(tx, db, context, snapshot.id, snapshot.data());
+        for (const key of window.keys) {
+          const record = await loreRecord(tx, db, context, key, window.items.get(key));
           if (!record || (record.mode === 'removed') !== (view === 'removed')) continue;
           items.push({
             sourceKey: record.sourceKey,
@@ -212,12 +226,12 @@ export function createCampaignLoreService({ db, now = Date.now }) {
             mode: record.mode,
             name: record.name,
             category: record.category,
+            legacy: record.legacy ?? false,
           });
         }
-        const nextCursor =
-          docs.length > size
-            ? encodeBaseCursor({ version: 1, scope, key: docs[size - 1].id })
-            : null;
+        const nextCursor = window.more
+          ? encodeBaseCursor({ version: 1, scope, key: window.keys.at(-1) })
+          : null;
         return budget({ ...envelope, items, nextCursor });
       });
     },

@@ -5,6 +5,7 @@ import {
   workRevision,
   workId,
   digest,
+  readWorkMetadata,
 } from './workProgressContracts.mjs';
 import {
   readCampaignBase,
@@ -16,6 +17,15 @@ import {
 } from './campaignBaseContracts.mjs';
 import { campaignIdentityToken } from './campaignIdentity.mjs';
 import { CHUNK_BYTES, splitHistoryContent } from './workHistoryContracts.mjs';
+import { readCampaignAuthorization } from './campaignAuthorization.mjs';
+import {
+  loreStorageContext,
+  readLoreGuard,
+  anchorContext,
+  normalizedBodyBinding,
+  bindingPath,
+  validateBodyStorage,
+} from './campaignLoreStorage.mjs';
 
 export { closed, fail, digest, CHUNK_BYTES };
 export const LORE_BYTES = 900000;
@@ -156,8 +166,9 @@ export async function loreContext(tx, db, uid, data, optionalToken = false) {
     hashId(data.campaignToken) !== campaignToken
   )
     changed('campaign-changed');
-  const lorePath = `campaigns/${context.campaignId}`,
-    controlRef = db.doc(lorePath + '/loreVariantState/current'),
+  const storage = await loreStorageContext(tx, db, { ...context, campaignToken });
+  const lorePath = storage.lorePath,
+    controlRef = db.doc(`campaigns/${context.campaignId}/loreVariantState/current`),
     control = (await tx.get(controlRef)).data();
   let collectionRevision = 0;
   if (control) {
@@ -187,7 +198,18 @@ export async function loreContext(tx, db, uid, data, optionalToken = false) {
     ).docs.length
   )
     inconsistent();
-  return { ...context, campaignToken, lorePath, controlRef, collectionRevision };
+  const authorization = await readCampaignAuthorization(tx, db, uid);
+  const result = {
+    ...context,
+    ...storage,
+    campaignToken,
+    lorePath,
+    controlRef,
+    controlRecord: control ?? null,
+    collectionRevision,
+    authorization,
+  };
+  return { ...result, guard: await readLoreGuard(tx, db, result) };
 }
 export const loreEnvelope = (context) => ({
   schemaVersion: 1,
@@ -200,6 +222,10 @@ export const loreEnvelope = (context) => ({
     base: context.projectionToken,
     campaignToken: context.campaignToken,
     collectionRevision: context.collectionRevision,
+    generationId: context.generationId ?? null,
+    authorization: context.authorization?.record
+      ? { token: context.authorization.record.token, epoch: context.authorization.epoch }
+      : null,
   }),
 });
 export function overlayRecord(value, context, key) {
@@ -244,11 +270,35 @@ export function overlayRecord(value, context, key) {
       !/^[a-f0-9]{64}$/.test(manifest.sha256)
     )
       inconsistent();
-  } else if (value.manifest != null) inconsistent();
+    normalizedBodyBinding(context, value);
+  } else if (value.manifest != null || value.bodyBinding != null) inconsistent();
+  if (
+    value.participation !== undefined &&
+    !['candidate', 'legacy', 'inactive'].includes(value.participation)
+  )
+    inconsistent();
   return value;
 }
 export async function loreRecord(tx, db, context, key, supplied) {
-  const item = supplied ?? (await tx.get(db.doc(context.path + '/items/' + key))).data();
+  const overlay = overlayRecord(
+    (await tx.get(db.doc(context.lorePath + '/loreVariants/' + key))).data(),
+    context,
+    key,
+  );
+  if (overlay?.participation === 'inactive' && !context.includeInactive) return null;
+  let source = context;
+  const itemFields = ['sourceKey', 'kind', 'origin', 'title', 'structured.category'];
+  let item =
+    supplied ??
+    (await readWorkMetadata(tx, db.doc(context.path + '/items/' + key), itemFields)).data();
+  if (
+    !item &&
+    (overlay?.participation === 'legacy' || (context.includeInactive && overlay?.anchor))
+  ) {
+    if (overlay.anchor?.sourceKey !== key) inconsistent();
+    source = await anchorContext(tx, db, context, overlay.anchor);
+    item = (await readWorkMetadata(tx, db.doc(source.path + '/items/' + key), itemFields)).data();
+  }
   if (!item) return null;
   if (
     item.kind !== 'lore' ||
@@ -258,16 +308,13 @@ export async function loreRecord(tx, db, context, key, supplied) {
     typeof item.origin.scopeId !== 'string'
   )
     inconsistent();
-  if (!(await baseItemAvailable(tx, db, context, item))) return null;
+  if (!(await baseItemAvailable(tx, db, source, item))) return null;
   if (!utf8(item.title) || !categories.includes(item.structured?.category)) inconsistent();
-  const overlay = overlayRecord(
-    (await tx.get(db.doc(context.lorePath + '/loreVariants/' + key))).data(),
-    context,
-    key,
-  );
   return {
     item,
     overlay,
+    anchorContext: source,
+    legacy: overlay?.participation === 'legacy',
     sourceKey: key,
     revision: overlay?.revision ?? 0,
     mode: overlay?.mode ?? 'base',
@@ -291,12 +338,18 @@ export const variantChunkId = (context, key, bodyRevision, index) =>
   });
 export function bodyRefs(db, context, record) {
   const manifest = record?.manifest;
+  const binding = normalizedBodyBinding(context, record);
   return manifest
     ? Array.from({ length: manifest.chunkCount }, (_, index) =>
         db.doc(
-          context.lorePath +
+          bindingPath(context, binding) +
             '/loreVariantBodies/' +
-            variantChunkId(context, record.sourceKey, manifest.bodyRevision, index),
+            variantChunkId(
+              { ...context, base: { ...context.base, id: binding.baseId } },
+              record.sourceKey,
+              manifest.bodyRevision,
+              index,
+            ),
         ),
       )
     : [];
@@ -305,6 +358,14 @@ export function bodyPlan(context, key, revision, entity) {
   const content = JSON.stringify(entity),
     chunks = splitHistoryContent(content);
   return {
+    bodyBinding: {
+      schemaVersion: 1,
+      layout: context.generationId ? 'generation' : 'legacy',
+      generationId: context.generationId ?? null,
+      baseId: context.base.id,
+      sourceKey: key,
+      bodyRevision: revision,
+    },
     manifest: {
       bodyRevision: revision,
       bytes: Buffer.byteLength(content),
@@ -322,6 +383,8 @@ export function bodyPlan(context, key, revision, entity) {
   };
 }
 export async function readVariantEntity(tx, db, context, record) {
+  const binding = normalizedBodyBinding(context, record);
+  await validateBodyStorage(tx, db, context, binding);
   const refs = bodyRefs(db, context, record),
     texts = [];
   for (let index = 0; index < refs.length; index++) {
@@ -329,7 +392,7 @@ export async function readVariantEntity(tx, db, context, record) {
     if (
       !value ||
       value.sourceKey !== record.sourceKey ||
-      value.baseId !== context.base.id ||
+      value.baseId !== binding.baseId ||
       value.campaignToken !== context.campaignToken ||
       value.revision !== record.manifest.bodyRevision ||
       value.index !== index ||
@@ -357,6 +420,17 @@ export async function readVariantEntity(tx, db, context, record) {
   return entity;
 }
 export async function readBaseEntity(tx, db, context, item) {
+  item = (
+    await readWorkMetadata(tx, db.doc(context.path + '/items/' + item.sourceKey), [
+      'sourceKey',
+      'kind',
+      'origin',
+      'title',
+      'fields',
+      'structured',
+    ])
+  ).data();
+  if (!item) inconsistent();
   if (!Array.isArray(item.fields) || item.fields.length > 6) inconsistent();
   const texts = {},
     allowed = ['summary', 'details', ...textNames];
@@ -450,7 +524,7 @@ export async function loreState(tx, db, context, record, suppliedEntity) {
       suppliedEntity ??
       (record.mode === 'override'
         ? await readVariantEntity(tx, db, context, record.overlay)
-        : await readBaseEntity(tx, db, context, record.item));
+        : await readBaseEntity(tx, db, record.anchorContext ?? context, record.item));
     entityHash = digest(JSON.stringify(source));
     entity = await projectEntity(tx, db, context, source);
   }
@@ -458,6 +532,7 @@ export async function loreState(tx, db, context, record, suppliedEntity) {
     sourceKey: record.sourceKey,
     revision: record.revision,
     mode: record.mode,
+    legacy: record.legacy ?? false,
     createdAt: record.overlay?.createdAt ?? null,
     updatedAt: record.overlay?.updatedAt ?? null,
     entityHash,

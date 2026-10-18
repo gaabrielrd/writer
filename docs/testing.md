@@ -296,6 +296,24 @@ Locks; a recuperação cifrada de texto continua pertencendo ao C2. Registrar
 separadamente testes dirigidos, SDK, navegador e validate no
 [contrato C3A](tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
 
+Adoção C3B tem testes colocalizados em `campaign-adoptions` e regressões de B/C2,
+com servidor em `functions/test/campaignAdoption.test.mjs`. Instrumentação confere
+máscaras antes dos gates, orçamento de etapas/corpos e commit sem varredura.
+`campaignAuthorization.test.mjs` e o SDK de análise verificam o relógio privado
+atualizado pelos escritores reais. Esses testes não comprovam que versões antigas
+dos escritores foram drenadas em produção, requisito para habilitar adoção.
+
+`tests/firestore/campaignAdoption.rules.test.mjs` reúne cinco famílias com
+Firestore/regras reais: mais de 25 overlays e Unicode, pedidos/barreira,
+concorrência/encarnação, legado/autorização e falhas/limpeza/preservação. Assets
+injetados não comprovam Storage nem implantação de índices. O navegador dirigido
+`e2e/visual/campaign-adoptions.visual.ts` prova composição, recuperação explícita,
+reentrada/retirada e temas/320 px com transporte simulado. Web Locks, IDB e cifra
+do controle específico são reais; não inferir autorização ou atomicidade do
+servidor a partir da fixture. Resultados executados pertencem à
+[evidência C3B](entregas/2026-10-18-writer-v2-adocao-de-bases.md),
+sem reutilizar CI verde de C3A como validação desta mudança.
+
 Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
 em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,
 ordem, agregado, hash da base, restauração, reserva de ilustração e recibos incertos.

@@ -156,9 +156,11 @@ O [incremento C3A](18-comparacao-de-bases-da-campanha.md) está implementado e
 concluído tecnicamente em fe10b15: candidata completa e comparação de origem, itens,
 referências e ilustrações por identidade, sem alterar a base ativa. CI/regras verdes;
 ver [entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
-C3B continua responsável pela [adoção explícita](19-adocao-explicita-de-base-da-campanha.md)
-e continuidade das variantes/pedidos antigos; exclusão integral conserva
-incremento próprio. Comparação isolada não encerra C3 ou F2-07.
+C3B acrescenta [adoção explícita](19-adocao-explicita-de-base-da-campanha.md),
+legado autorizado e continuidade das variantes/pedidos antigos. Está validado
+localmente, com CI do novo head pendente;
+ver [entrega C3B](../../../entregas/2026-10-18-writer-v2-adocao-de-bases.md).
+Exclusão integral conserva incremento próprio; F2-07 ainda não está concluído.
 
 Trabalhar em gerações preparing/ready/aborted. activeBaseId só muda no commit final;
 preparação parcial nunca substitui uma base pronta. Paginar metadados 25/50, mas

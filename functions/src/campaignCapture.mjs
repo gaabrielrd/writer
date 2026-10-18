@@ -288,6 +288,40 @@ export function createCampaignCaptureService({ db, assets, now = Date.now }) {
         return captureProgress(value);
       });
     },
+    async resolveCampaignCaptureActivation(uid, data) {
+      captureScope(uid, data, ['captureId', 'operationId', 'expectedCheckpoint']);
+      id(data.captureId);
+      workRevision(data.expectedCheckpoint);
+      const confirmedCheckpoint = data.expectedCheckpoint + 1;
+      workRevision(confirmedCheckpoint);
+      const op = operation(uid, data, 'activate');
+      return db.runTransaction(async (tx) => {
+        const value = await prior(tx, op);
+        if (!value)
+          fail(
+            'failed-precondition',
+            'A ativação ainda não possui confirmação histórica.',
+            'operation-unconfirmed',
+          );
+        if (
+          value.captureId !== data.captureId ||
+          value.checkpoint !== confirmedCheckpoint ||
+          (Object.hasOwn(value, 'aborted') && value.aborted !== true)
+        )
+          fail('failed-precondition', 'O registro histórico da ativação está inconsistente.');
+        return {
+          schemaVersion: 1,
+          ownerId: uid,
+          request: {
+            captureId: data.captureId,
+            operationId: data.operationId,
+            expectedCheckpoint: data.expectedCheckpoint,
+          },
+          outcome: value.aborted === true ? 'aborted' : 'activated',
+          confirmedCheckpoint,
+        };
+      });
+    },
     async activateCampaignCapture(uid, data) {
       captureScope(uid, data, ['captureId', 'operationId', 'expectedCheckpoint']);
       id(data.captureId);

@@ -26,6 +26,7 @@ test('analysis tickets and quotas are server-only even for their owner', async (
   for (const path of [
     'users/author/loreAnalyses/batch',
     'users/author/loreAnalysisLimits/current',
+    'users/author/campaignAuthorization/current',
   ]) {
     await environment.withSecurityRulesDisabled(async (context) =>
       setDoc(doc(context.firestore(), path), { provider: 'platform', state: 'ready' }),
@@ -92,6 +93,10 @@ test('real Firestore transaction applies local/global together and charges once 
       { applied: 2, credits: 1 },
     ]);
     assert.equal((await db.doc('users/author').get()).data().credits, 1);
+    const clock = (await db.doc('users/author/campaignAuthorization/current').get()).data();
+    assert.equal(clock.epoch, 1);
+    assert.equal(clock.ownerId, 'author');
+    assert.match(clock.token, /^[a-f0-9]{64}$/);
     assert.equal(
       (await db.doc(`books/book/lore/${request.requestId}-0`).get()).data().isPublic,
       false,
