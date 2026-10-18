@@ -1,6 +1,6 @@
 # ADR 0035 — Adoção explícita de base e fichas legadas da campanha
 
-**Estado:** implementada e validada localmente; CI do novo head pendente.
+**Estado:** implementada e concluída tecnicamente em `947cfc3`, com CI e regras verdes.
 **Decisão de produto:** em 2026-10-17 o operador aprovou conservar fichas legadas
 autorizadas, vinculadas à origem e às mesmas regras de acesso.
 

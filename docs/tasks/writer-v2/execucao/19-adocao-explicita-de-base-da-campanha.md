@@ -1,8 +1,8 @@
 # F2-07 C3B — Adotar explicitamente uma candidata da campanha
 
 **Estado:** contrato fechado em 2026-10-17 após escolha explícita do operador;
-implementação validada localmente. SDK C3B real: 5/5 famílias; navegador final:
-13/13; validate verde. CI do novo head pendente, sem conclusão remota presumida.
+implementação concluída tecnicamente em `947cfc3`. SDK C3B real: 5/5 famílias;
+navegador final: 13/13; validate, CI e regras do próprio head verdes.
 **Base:** C3A concluído tecnicamente em `fe10b15`, com CI e regras verdes.
 **Origem:** [D-02](02-modelo-de-dominio.md), [campanhas](14-campanhas-e-variantes.md),
 [C2](17-variantes-de-lore-da-campanha.md), [C3A](18-comparacao-de-bases-da-campanha.md)

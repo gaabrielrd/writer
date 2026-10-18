@@ -55,7 +55,7 @@ em fe10b15, com CI e regras verdes;
 veja o [contrato de comparação](docs/tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
 Veja também a
 [entrega C3A](docs/entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
-Adoção explícita C3B está validada localmente; CI do novo head pendente. Permite conservar fichas legadas
+Adoção explícita C3B está concluída tecnicamente em `947cfc3`, com CI e regras verdes. Permite conservar fichas legadas
 autorizadas e confirmar base e variantes juntas, preservando notas próprias e a
 recuperação dos pedidos anteriores. Veja o
 [contrato de adoção](docs/tasks/writer-v2/execucao/19-adocao-explicita-de-base-da-campanha.md).

@@ -2,7 +2,7 @@
 
 **Estado:** A concluído tecnicamente em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde.
 Variantes C2 e comparação C3A concluídas tecnicamente em fe10b15, com CI/regras verdes.
-Adoção explícita C3B e exclusão integral permanecem pendentes.
+Adoção explícita C3B concluída tecnicamente em `947cfc3`, com CI/regras verdes; exclusão integral em implementação.
 **Origem:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md).
 **Base:** F2-06 concluído tecnicamente em `624c912`, com CI e regras verdes.
 
@@ -158,7 +158,7 @@ referências e ilustrações por identidade, sem alterar a base ativa. CI/regras
 ver [entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
 C3B acrescenta [adoção explícita](19-adocao-explicita-de-base-da-campanha.md),
 legado autorizado e continuidade das variantes/pedidos antigos. Está validado
-localmente, com CI do novo head pendente;
+localmente e concluído tecnicamente em `947cfc3`, com CI/regras verdes;
 ver [entrega C3B](../../../entregas/2026-10-18-writer-v2-adocao-de-bases.md).
 Exclusão integral tem [contrato C4](20-exclusao-integral-da-campanha.md) próprio,
 revisado antes do código; F2-07 ainda não está concluído.

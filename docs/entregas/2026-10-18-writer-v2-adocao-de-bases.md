@@ -3,7 +3,7 @@
 - **Data:** 2026-10-18
 - **Branch:** `codex/writer-v2`
 - **Plano:** [contrato C3B](../tasks/writer-v2/execucao/19-adocao-explicita-de-base-da-campanha.md)
-- **Estado:** validado localmente; CI do novo head pendente no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21)
+- **Estado:** concluído tecnicamente em `947cfc3`, com validação local, CI e regras verdes; [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
 
 ## Objetivo
 
@@ -39,7 +39,7 @@ regras de acesso. Notas próprias, outra campanha e original permanecem íntegro
 - [x] Pedidos remotos, conflitos, cancelamento e replay mantêm isolamento.
 - [x] Interface cobre retomada, decisões, pausa explícita, temas e 320 px.
 - [x] Revisão, validate local, SDK real e navegador dirigido verdes.
-- [ ] CI do novo head verde; não reutilizar os checks históricos de C3A.
+- [x] CI do próprio head `947cfc3` verde, incluindo regras Firestore.
 
 ## Arquivos alterados
 
@@ -88,6 +88,17 @@ recuperação usa os viewports normais de 1440/390 px, sem alegar 320 px nele.
 Zero pageerrors/requisições externas; console.error não tem coletor dedicado.
 Teclado Enter foi exercitado; esta suíte não acrescenta prova de trap/retorno de
 foco, zoom físico ou leitor de tela.
+
+### Confirmação remota de `947cfc3`
+
+O [CI](https://github.com/gaabrielrd/writer/actions/runs/39094467940) terminou
+verde: validate em Node 22 e 24, auditoria, navegador de produção, 12 shards
+visuais e agregador Chromium. O log de produção registra **7 passed (17.9s)**.
+O workflow de [regras Firestore](https://github.com/gaabrielrd/writer/actions/runs/39094467932)
+também terminou verde: **130 testes, 130 aprovados, zero falhas/skips**.
+Não se deduz uma contagem de testes ou retries dos shards a partir do estado verde.
+Os hooks de prepush permaneceram ativos: tipos e **1.755 testes / 173 arquivos**
+passaram novamente, em 118,05 s. Push confirmado; sem merge ou deploy.
 
 ## Revisão e correções
 

@@ -620,7 +620,7 @@ ações explícitas; controles inválidos permanecem preservados. O painel globa
 permite concluir limpeza mesmo quando o root da campanha desaparece.
 
 C3A está concluído tecnicamente em fe10b15, com CI e regras verdes. Adoção C3B está
-validada localmente, com CI do novo head pendente; exclusão integral segue pendente;
+concluída tecnicamente em `947cfc3`, com CI e regras verdes; exclusão integral está em implementação;
 ver [ADR 0034](decisions/0034-campaign-base-comparisons.md) e
 [contrato C3A](tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
 

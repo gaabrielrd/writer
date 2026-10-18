@@ -1,9 +1,9 @@
 # F2-07 C4 — Exclusão integral e retomável da campanha
 
 **Estado:** contrato técnico fechado em 2026-10-18 após revisão de backend,
-frontend e QA; implementação ainda não iniciada.
-**Dependência:** C3B validado localmente e enviado em `947cfc3`; CI desse head em
-paralelo, conforme sequência autorizada. Este plano não constitui entrega C4.
+frontend e QA; implementação em andamento, ainda sem entrega validada.
+**Dependência:** C3B concluído tecnicamente em `947cfc3`, com CI e regras verdes.
+Este plano não constitui entrega C4.
 **Origem:** [campanhas](14-campanhas-e-variantes.md),
 [adoção](19-adocao-explicita-de-base-da-campanha.md) e
 [ADR 0035](../../../decisions/0035-campaign-base-adoption.md).
