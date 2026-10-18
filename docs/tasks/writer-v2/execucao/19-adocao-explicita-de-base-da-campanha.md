@@ -91,6 +91,11 @@ em trânsito não executará. O cliente preserva o journal. Confirmação válid
 limpar somente o controle integral correspondente por CAS e depois consultar a
 rota normal, sem reconhecer root atual/recriado como a encarnação original.
 
+O catch atual de useCampaignCaptureOperation limpa pedidos preservados em algumas
+falhas definitivas. Para a ativação antiga, essa limpeza deve esperar a resolução
+histórica explícita; operationId sozinho também não substitui o CAS do envelope
+integral. Resposta antiga ou troca de sessão nunca apaga um pedido mais novo.
+
 C3A permite descartar candidata sem a origem, necessário para limpeza. Uma
 candidata adotada precisa de estado/indicação próprios e proteção no servidor:
 cancelamento ou replay nunca pode liberar seus filhos/pins, mesmo após outra
@@ -113,7 +118,7 @@ adoção futura. Disputa entre descarte e reserva/ativação deve ter um único 
 6. Confirmar a adoção atomicamente e remontar leitores pela nova identidade. Recibo
    exato permite confirmar resposta perdida; controles globais continuam descobríveis.
 
-## Contratos técnicos a fechar antes do código
+## Contratos técnicos comuns
 
 ### Gerações, revisões e corpos
 
@@ -158,7 +163,7 @@ vínculo oculto em avisos. Não ampliar captura transitivamente.
 ### Admissão, pendências e concorrência
 
 Fence pertence a uma adoção/encarnação específicas. Cancelar J1 nunca libera J2.
-Todos os prepare/save C2 pertinentes precisam revalidar a barreira na transação;
+Todos os prepare/save/remove/restore/discard C2 precisam revalidar a barreira na transação;
 resolver/encerrar recibos próprios continua possível. Se houver pedido aberto,
 liberar a barreira antes de exigir recuperação que precise aplicar a mutação.
 
@@ -173,6 +178,42 @@ cancel ausente cria fence. Expor essa saída metadata-only para journal antigo,
 inclusive confirmed ou pedido nunca recebido sem chave/ciphertext. Não tentar
 recuperar plaintext da base antiga nem limpar o registro sem escolha explícita.
 
+Para outro dispositivo, o resolver integral não basta: save exige
+relatedSourceKeys, que não pode ser exposto pela listagem remota. Acrescentar:
+
+- listCampaignLoreOperations recebe campaignId/campaignToken/baseId, cursor e
+  limit. Retorna identidade/owner/schema, operationId, state prepared/committed,
+  revisão confirmada ou nula e statusToken opaco. Lista somente abertos; não retorna
+  descriptor, relações, chave, fingerprint de conteúdo ou prosa.
+- resolveCampaignLoreRemoteOperation recebe o mesmo escopo, operationId,
+  statusToken, resolutionId estável e intent confirm/cancel. O servidor carrega e
+  valida o descriptor privado; não o reconstrói no cliente. confirm exige committed
+  aberto; cancel exige prepared aberto. Não depende de root/base/origem atuais.
+
+statusToken vincula UID, escopo, operationId e updateTime preciso. Uma transição
+prepared→committed ou fechamento concorrente rejeita o token antigo com
+operation-changed. resolutionId identifica recibo separado em
+users/{uid}/campaignVariantResolutionOperations/{resolutionId}, criado atomicamente
+com o fechamento ou com a rejeição definitiva dessa tentativa. Replay exato retorna
+esse recibo antes de comparar updateTime;
+assim resposta perdida continua confirmável após o fechamento. Outro payload com
+o mesmo ID é rejeitado. Resposta ecoa request integral e dono/schema: outcome
+resolved traz estado terminal confirmed/canceled e revisão; outcome rejected traz
+reason operation-changed e não afirma qual outra operação venceu. Nunca retorna
+descriptor. Ausência não equivale a sucesso.
+
+Recibo rejected permite encerrar explicitamente só o controle remoto por CAS
+integral, preservando o journal cifrado. Isso dá saída mesmo se a operação fechada
+por outra aba sumir da lista de abertos. Nova decisão exige nova consulta e outro
+resolutionId; não rebasear token/pedido preservado. Erro sem esse recibo confirmado
+não autoriza limpar o controle. Rejeição não altera a operação C2, chave ou revisão.
+
+Lore preserva o pedido exato dessa resolução em controle metadata-only próprio,
+com CAS e isolamento de sessão; não sobrescreve o journal cifrado existente. O
+resolver C2 integral continua atendendo o navegador que já tem seu descriptor.
+Sem ciphertext local, não prometer recuperação pelo servidor: encerrar ou retomar
+no navegador que conserva o rascunho são escolhas explícitas.
+
 Commit final compara encarnação, base corrente, candidata pronta, escolhas,
 revisão C2 e autorização. Atualiza todos os ponteiros/controle/procedência/recibo
 no mesmo commit; não regrava notas ou metadados próprios de uma cópia antiga.
@@ -182,15 +223,207 @@ o estado na mesma transação; só um pode vencer, sem confiar no botão do clie
 
 ### Retenção, cancelamento e acesso
 
-Definir retenção da base anterior e das gerações que sustentam corpos/legado.
+Reter base anterior, pins e gerações físicas que sustentam bindings; não oferecer
+rollback nem histórico de variantes inativas. Neste incremento, não fazer coleta
+automática de gerações inativas ou de corpos descartados durante a adoção. O
+descarte lógico não concede acesso aos bytes retidos. Save/discard C2 posterior
+continua removendo seu corpo anterior pelo binding validado, sem promessa de
+leitura das versões inativas. A retenção adicional necessária ao eventual legado
+depende da escolha de produto.
+
 Cancelamento limpa somente staging próprio, sem apagar candidata, base anterior,
 pins de outra geração ou autoria da mesa. A exclusão integral continua em etapa
 própria e deverá enumerar todas essas gerações/controles/chaves/pins.
 
-Fechar estados, DTOs, identidades, cursores, orçamentos por etapa e índices antes
-da implementação. Coleções privadas permanecem negadas ao SDK direto. No cliente,
-controles mínimos, CAS integral, propriedade de leitura por geração e guardas
-após awaits seguem os contratos corrigidos em C3A.
+Coleções privadas permanecem negadas ao SDK direto. No cliente, controles mínimos,
+CAS integral, propriedade de leitura por geração e guardas após awaits seguem os
+contratos corrigidos em C3A.
+
+### ABI e estados da adoção
+
+Identidade pública fechada: schemaVersion 1, ownerId, adoptionId, campaignId,
+campaignToken, comparisonId, currentBaseId, candidateBaseId, loreGenerationId e
+expectedCollectionRevision. A revisão C2 esperada fica fixa durante todo o plano;
+o servidor reserva loreGenerationId. Não aceitar paths, chunks ou bindings físicos
+do cliente.
+
+Estados: reviewing, preparing, ready, adopted, aborted, deleting e deleted. Fases:
+review, operations, overlays, authorization, complete e cleanup. deleting/deleted
+servem ao staging cancelado; adopted é terminal e não perde seu recibo ou proteção.
+Um único checkpoint monotônico controla decisões e etapas, sem planRevision
+paralela. O progresso próprio inclui estado/fase/checkpoint, disponibilidade,
+motivo seguro e datas; contagens ou resumos derivados só aparecem autorizados.
+
+| Operação                      | Entrada específica e efeito                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| startCampaignAdoption         | operationId, campanha/token, comparação, duas bases e revisão C2 esperadas; cria revisão sem fence    |
+| resolveCampaignAdoptionStart  | input inicial integral e intent cancel; confirma recibo ou instala fence de start ausente, como C3A   |
+| getCampaignAdoption           | adoptionId; consulta controle próprio, inclusive sem root/origem                                      |
+| listCampaignAdoptions         | campaignId opcional, cursor e limit; descoberta global própria                                        |
+| listCampaignAdoptionDecisions | adoptionId, cursor e limit; somente resumos autorizados                                               |
+| decideCampaignAdoption        | adoptionId, sourceKey, expectedRevision, choice, expectedCheckpoint e operationId                     |
+| prepareCampaignAdoption       | adoptionId, expectedCheckpoint e operationId; reivindica candidata e instala fence antes da auditoria |
+| advanceCampaignAdoption       | mesmo envelope de etapa; uma unidade limitada da fase atual                                           |
+| activateCampaignAdoption      | mesmo envelope; confirmação final explícita                                                           |
+| cancelCampaignAdoption        | mesmo envelope; encerra e limpa staging em etapas, sem descartar candidata                            |
+
+As mutações retornam receipt separado de progress. O recibo confirma método/input
+integral, operação e checkpoints esperado/confirmado; uma decisão confirma também
+ficha, revisão e escolha. Replay consulta o recibo primeiro e pode trazer progresso
+mais recente, sem autorizar o próximo pedido automaticamente. Ausência de start
+só permite encerrar o journal após confirmação do fence correspondente.
+
+Para ficha presente, choices são keep-local e use-candidate. A primeira preserva
+entidade inteira, mode e previousMode; a segunda descarta explicitamente override
+e retirada. Overlays base sem conteúdo local acompanham a candidata e preservam
+continuidade de revisão. Não definir ainda choices/defaults para ficha ausente.
+
+A página contém sourceKey/revision/mode, nomes/categorias autorizados dos dois
+lados, presença, escolha e impedimentos seguros. Seu cursor vincula identidade,
+snapshot C2, filtros e projeção vigente, usando a última chave examinada. Página
+vazia pode ter continuação. O cursor não vincula checkpoint: decidir não muda a
+ordem/membership. O envelope ecoa checkpoint; recibo da própria decisão atualiza
+só sua linha, enquanto avanço externo desconhecido invalida o cache de escolhas.
+
+Start e revisão não bloqueiam C2. Prepare instala guard e claim atomicamente;
+audita operações antes de materializar overlays. Falta de decisão detectada na
+varredura também aborta/libera a própria barreira, sem preparar estado parcial
+adotável. Qualquer mudança da revisão C2 invalida o plano, sem rebase de escolhas.
+Nova tentativa após aborted exige novo start explícito.
+
+O guard mantém admissionEpoch monotônico, separado da revisão do conteúdo C2.
+Fence identifica campaignToken/adoptionId/epoch; liberar e reservar novamente
+incrementa epoch, sem apagar seu contador. Etapas, cursores internos e certificado
+de staging vinculam esse triplo, bases, revisão C2 fixa e checkpoint de decisões
+fechadas no prepare. Cada etapa grava resultado/cursor/checkpoint e digest
+acumulado atomicamente. Cancelar/liberar exige o triplo exato; final verifica
+certificado completo sem enumerar novamente todas as fichas.
+
+### Leitura de relações e validação de autorização
+
+O overlay atual contém name/category/mode/manifest; as relações estão no corpo
+JSON. Portanto não inferir compatibilidade de keep-local só pelo overlay. Em uma
+etapa, conferir a autorização da própria ficha antes de ler seu corpo confirmado,
+validar manifesto/hash/bytes e conferir até 50 alvos antes de projetar relações ou
+validar sua compatibilidade. Isso segue a projeção C2; não exige conhecer todos os
+alvos antes da leitura interna do corpo da ficha autorizada. Nenhum vínculo,
+descrição ou nome revogado aparece no DTO. Ficha indisponível transporta somente
+metadados/binding inertes, sem ler corpo. Não criar índice de dependências inferido
+de recibos antigos nem assumir relações vazias.
+
+Não usar sourceToken ou comparisonToken inteiro como CAS final: incluem versões
+de conteúdo que podem mudar após a captura. Validar gates em páginas sob epochs
+dos universos envolvidos, guardando identidade/encarnação, disponibilidade,
+loreVersion e privacyVersion. Conferir na implementação que toda mutação relevante
+aos gates atualiza esses epochs ou é coberta por leitura direta no commit.
+Adventure/root, claim, base, fence e revisão C2 são conferidos diretamente.
+
+Se um epoch mudar, invalidar a passada de autorização e refazê-la explicitamente,
+preservando candidata, decisões e staging; não recapturar nem abortar apenas por
+edição comum do conteúdo. O commit compara os epochs da última passada completa.
+Advance/activate que detecte essa mudança confirma seu pedido exato por recibo
+reauthorization-required, incrementa checkpoint e retorna estado preparing/fase
+authorization, sem adoção. O cliente encerra somente o StepPending confirmado e
+oferece novo avanço explícito; lançar apenas erro deixaria o pedido bloqueando a
+reconferência. Preservar fence e escolhas; o recibo não autoriza repetir activate
+com outro checkpoint automaticamente.
+Revogação efetiva aplica gates e impedimentos atuais; não é tratada como simples
+mudança de texto. A extensão dessa lista de anchors ao legado fica pendente.
+
+Auditoria estática do ramo comum em 2026-10-17, sem execução C3B:
+
+| Mutação existente                                    | Cobertura observada                                                                                                   |
+| ---------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| saveUniverseLore / deleteUniverseLore, universes.mjs | loreVersion muda atomicamente com criação/edição/exclusão; privacyVersion também muda na revogação pública pertinente |
+| applyLoreAnalysis global, loreAnalysis.mjs           | lote e incremento de loreVersion no mesmo commit; não altera visibilidade/relações                                    |
+| deleteUniverse, universes.mjs                        | deleting e privacyVersion antes da limpeza recursiva; commit C3B relê existência/dono/deleting                        |
+| createUniverse / updateUniverse, universes.mjs       | authorId só na criação; update muda nome/descrição; marcador impede recriação normal do ID removido                   |
+| SDK e outros fluxos                                  | regras negam escrita direta global; criação assistida/geração/importação não gravam cânone global                     |
+
+Certificar loreVersion/privacyVersion somente como inteiros seguros não negativos,
+sem coerção ou fallback de campo ausente; repetir a validação no commit final.
+Incrementos existentes não validam overflow, portanto epoch inseguro deve impedir
+certificação, sem aceitar um contador que possa deixar de variar. Os gates C2 da
+mesa dependem de existência/dono/deleting; isPublic false não revoga acesso do
+próprio criador. A versão de privacidade é detector conservador, não permissão nova.
+Esta cobertura estática não substitui as provas transacionais e SDK do incremento.
+
+### Armazenamento, limites e índices
+
+Paths privados propostos, sempre sob o UID autenticado:
+
+```text
+users/{uid}/campaignAdoptions/{adoptionId}/decisions/{sourceKey}
+users/{uid}/campaignAdoptionOperations/{operationId}
+users/{uid}/campaignAdoptionStartFences/{operationId}
+users/{uid}/campaignAdoptionGuards/{digest(campaignId,campaignToken)}
+campaigns/{campaignId}/loreGenerations/{generationId}/loreVariants/{sourceKey}
+campaigns/{campaignId}/loreGenerations/{generationId}/loreVariantBodies/{chunkId}
+```
+
+O documento da geração valida dono/campanha/encarnação/base e estado. O controle
+global C2 continua único. Binding privado tem schemaVersion, layout legacy ou
+generation, generationId nulo ou válido, baseId física, sourceKey e bodyRevision
+inteira positiva. Os demais componentes de escopo vêm do contexto autorizado.
+
+Páginas de leitura têm padrão 25 e máximo 50. Auditoria, migração e cancelamento
+processam até 25 registros por etapa, consultando até 26 para detectar continuação.
+Cada tentativa transacional mede todos os documentos consultados, inclusive gates:
+teto de 384 leituras, 64 escritas, 4 MiB selecionados lidos, 2 MiB de escritas
+estimadas e 4 MiB de resposta. Esses são orçamentos internos conservadores, não
+uma afirmação sobre quotas da plataforma ou prova de tamanho real com índices.
+Não truncar texto/relações nem avançar cursor se o item indivisível exceder orçamento.
+Usar máscaras fechadas para metadados; uma etapa de validação de corpo processa
+no máximo um override de até 900.000 bytes, chunks de até 64 KiB e 50 relações.
+Não carregar blobs, copiar mídia ou ler corpos em páginas de lista. O commit
+final tem até 10 escritas e tamanho constante; nenhum scan completo cabe nele.
+
+Listar adoções por createdAt DESC e `__name__` ASC, com índice global e variante
+prefixada por campaignId. Decisões/overlays são percorridos por `__name__`. Auditoria
+C2 filtra campaignId/campaignToken/baseId, ordena `__name__` e examina closed no
+servidor; acrescentar índice desses três campos ASC seguido de `__name__` ASC.
+Não consultar closed == false: registros antigos sem campo continuam abertos.
+Selecionar só campos necessários, sem key/relatedSourceKeys nos controles remotos.
+Excluir conteúdo/binding/decisões extensas de indexação quando aplicável.
+
+### Cliente e composição pública
+
+Journal metadata-only distingue StartPending, StepPending e KnownControl. Somente
+os dois primeiros guardam método/input exatos; Known não dispara RPC. Reserva,
+transição e clear usam CAS integral sob Web Locks por UID/campanha, sem manter
+lock durante HTTP. Controles inválidos permanecem preservados e bloqueiam
+substitutos. Após cada await, conferir sessão/alvo, propriedade da leitura,
+recibo, piso de checkpoint e journal atual; outra aba vencedora interrompe a
+sequência. GET não rebaixa Known nem fornece checkpoint para rebase automático.
+
+Comparação emite onReviewAdoption com o ComparisonReadEnvelope autorizado observado,
+incluindo identidade, collectionRevision e datas, e não importa adoção. Não obter
+uma revisão C2 mais nova silenciosamente para preencher start: conferir esse
+contexto esperado no servidor ou pedir revisão explícita. A página da campanha
+compõe o diálogo; adoção consome somente APIs públicas de comparação e lore.
+Lore continua dono de crypto/IDB e expõe seus controles normal e
+metadata-only. Estúdio compõe CampaignAdoptionPreparations com filtro opcional
+por campanha, também sem root/origem. campaign-bases mantém resolver/journal B.
+Atualizar leitores e comparadores existentes para resolver a geração C2 ativa,
+sem acesso cruzado a arquivos internos de features.
+
+### Arquivos e fronteiras previstos
+
+- Backend novo em functions/src/campaignAdoption*.mjs, com contratos/serviço
+  separados do leitor de corpos C2. Integrar exports em functions/src/index.mjs.
+- Adaptar campaignLore.mjs, campaignLoreContracts.mjs e campaignVariantRecovery.mjs
+  para geração ativa, binding, fence e controles remotos; preservar cifragem/AAD.
+- Adaptar campaignComparison*.mjs para claim/adopted e geração C2; campaignCapture.mjs
+  para o resolver histórico B. As notas C1 continuam como regressão de preservação.
+- Frontend novo em src/features/campaign-adoptions; integrar pelas exportações
+  públicas de campaign-comparisons, campaign-lore e campaign-bases. Composição em
+  CampaignPage e StudioPage, sem rota ou dependência nova exigida pelo plano.
+- Atualizar firestore.rules e firestore.indexes.json; testar negação direta das
+  novas coleções privadas e consultas reais no emulador.
+- Unitários nas features e functions/test; SDK nas famílias existentes; novo
+  cenário dirigido em e2e/visual com fixture de transporte explicitamente simulada.
+- No fechamento implementado, atualizar ADR/architecture/testing/AGENTS e entrega;
+  este planejamento não constitui entrega C3B nem aprovação comercial/humana.
 
 ## Sequência de implementação proposta
 
@@ -214,6 +447,13 @@ pedidos/barreira remotos; concorrência/encarnação/refence; ramo de legado esc
 e autorização; falhas/cleanup/pins com C1/original/outra mesa intactos. Assets
 injetados não comprovam Storage real ou versionamento do bucket.
 
+Instrumentar unitários para contar leituras/escritas/bytes e provar máscaras no
+caminho real getAll fieldMask, zero chunks lidos ao negar a própria ficha e zero
+chunks copiados no staging. SDK inclui operação antiga sem closed, página vazia
+com cursor, override máximo com 50 alvos e save/remove/restore/discard tardios.
+Revogação após staging impede confirmação; edição comum repete somente gates.
+Final não enumera coleções. Falha antes/depois do commit conserva repetição exata.
+
 Navegador proposto: duas jornadas nos seis projetos e um controle desktop, 13
 execuções. Adoção completa cobre decisões, retirada/restauração/edição posterior,
 geração congelada, teclado/foco/320 px/temas. Bloqueio/recuperação cobre pedido C2
@@ -228,17 +468,17 @@ o gate estrito. Cobrir CAS de resposta antiga e sessão, sem repetir toda a matr
 
 ## Revisão técnica de planejamento — 2026-10-17
 
-Auditorias de backend, cliente e QA identificaram as dependências e lacunas
-registradas acima. O rascunho incorpora staging isolado, binding imutável achatado,
-revisões/tombstones contínuos, fence antes da auditoria, candidata congelada,
-proteção permanente de adopted e resolver histórico B sem autoridade sobre root
-atual. A revisão operacional final ainda está pendente; nenhum código ou teste
-C3B foi executado.
+Auditorias de backend, cliente e QA detalharam ABI comum, revisão sem barreira,
+checkpoint único, fence/epoch antes da auditoria, binding achatado, validação de
+relações por corpo autorizado, budgets e índices. A listagem remota de descriptor
+completo foi rejeitada: foi substituída por controles mínimos e resolução privada
+com recibo próprio. Não foi criado índice de dependências inferido de recibos.
+Nenhum código ou teste C3B foi executado.
 
-A decisão humana sobre ficha ausente permanece pendente. Depois dela, fechar
-modelo/DTOs públicos, estados/cursores/orçamentos e lista de arquivos afetados na
-revisão operacional antes de implementar; a escolha não autoriza inferir regras
-de legado, expansão de relações ou novas permissões.
+A decisão humana sobre ficha ausente permanece pendente. Depois dela, fechar o
+ramo correspondente, completar seus anchors de autorização e revisar os arquivos
+afetados antes de implementar. ABI/modelo desse ramo não podem ser inferidos dos
+contratos comuns; a escolha não autoriza expansão de relações ou novas permissões.
 
 ## Riscos e não escopo
 
