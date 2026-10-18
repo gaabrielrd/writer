@@ -86,9 +86,10 @@ CI e regras do head fe10b15 terminaram verdes. Comparar uma candidata não subst
 a adoção explícita C3B nem a limpeza integral da campanha, que seguem obrigatórias.
 
 O [planejamento C3B](19-adocao-explicita-de-base-da-campanha.md) começou após o
-fechamento local C3A. Staging, continuidade de revisões/corpos e barreira de pedidos
-foram auditados; a política de ficha ausente da candidata aguarda o operador.
-Não há implementação C3B; ABI/limites finais serão revisados após essa escolha.
+fechamento local C3A. Staging, continuidade de revisões/corpos, barreira de pedidos,
+ABI comum, limites e cobertura estática dos epochs foram auditados em ebb1c1f.
+A política de ficha ausente da candidata aguarda o operador. Não há implementação
+C3B; após a escolha, fechar seu ramo de modelo/acesso antes de implementar.
 
 ## Decisões recebidas em 2026-10-13
 

@@ -1,7 +1,8 @@
 # F2-07 — Campanhas e variantes particulares
 
-**Estado:** A concluído tecnicamente em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde. Variantes C2 validadas localmente em 2026-10-17; CI do novo head pendente.
-Comparação/adoção explícita e exclusão integral permanecem pendentes.
+**Estado:** A concluído tecnicamente em 624c912, captura B em f97455d e notas C1 em bda5e70, com CI verde.
+Variantes C2 e comparação C3A concluídas tecnicamente em fe10b15, com CI/regras verdes.
+Adoção explícita C3B e exclusão integral permanecem pendentes.
 **Origem:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md).
 **Base:** F2-06 concluído tecnicamente em `624c912`, com CI e regras verdes.
 
@@ -155,8 +156,8 @@ O [incremento C3A](18-comparacao-de-bases-da-campanha.md) está implementado e
 concluído tecnicamente em fe10b15: candidata completa e comparação de origem, itens,
 referências e ilustrações por identidade, sem alterar a base ativa. CI/regras verdes;
 ver [entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
-C3B continua responsável pela adoção
-explícita e continuidade das variantes/pedidos antigos; exclusão integral conserva
+C3B continua responsável pela [adoção explícita](19-adocao-explicita-de-base-da-campanha.md)
+e continuidade das variantes/pedidos antigos; exclusão integral conserva
 incremento próprio. Comparação isolada não encerra C3 ou F2-07.
 
 Trabalhar em gerações preparing/ready/aborted. activeBaseId só muda no commit final;
@@ -164,10 +165,17 @@ preparação parcial nunca substitui uma base pronta. Paginar metadados 25/50, m
 limitar também bytes/leituras de corpos por etapa; não gravar cinquenta fichas de
 900 KB em uma transação. Preservar Unicode/HTML e não truncar.
 
-Token da origem deve incluir UID, alvo e timestamps precisos de aventura/universo,
-vínculo, sceneRevision/narrativeRevision e loreVersion/privacyVersion pertinentes.
-Revalidar em cada etapa e na ativação final. Origem alterada aborta a preparação e
-mantém base ativa; não adotar revisão nova em retry.
+Durante a captura de uma base ainda em preparação, o token da origem inclui UID,
+alvo e timestamps precisos de aventura/universo, vínculo, sceneRevision/narrativeRevision
+e loreVersion/privacyVersion pertinentes. Revalidar em cada etapa e na finalização
+da captura; origem alterada aborta essa preparação e mantém base ativa, sem adotar
+revisão nova em retry.
+
+Uma candidata ready já está congelada: edição comum posterior da origem não a
+recaptura nem impede sua adoção apenas por mudar conteúdo. C3B verifica gates
+atuais, encarnação, base ativa, revisão C2 e epochs de autorização conforme seu
+contrato; não usa o sourceToken completo como CAS final. Mudança de autorização
+exige nova conferência explícita, preservando a candidata congelada.
 
 Variantes referenciam sourceKey estável e substituem a entidade inteira; revisão
 contínua e modos base/override/removed evitam reaplicação antiga após descarte.
