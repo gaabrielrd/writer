@@ -184,3 +184,19 @@ falhas/skips/retries. Evidência: `writer-v2-base-ci-fix.log` e
 `writer-v2-base-ci-fix-results.json` na pasta de artefatos acima. Correção será
 enviada isoladamente dos arquivos C3A em implementação; CI do novo head continua
 pendente até confirmação dos seus checks.
+
+Correção enviada em `75b9104753b06087ddd7719ba210a6c7ac459eb5`, após o plano
+documental `71d5da6`. Pre-push do checkout isolado: tipos e 1.620 testes/167
+arquivos verdes em 141,31 s. SHA remoto conferido; integração fast-forward no
+worktree principal preservou todos os arquivos C3A em andamento. O checkout
+isolado não incluiu implementação C3A. [CI corrigida](https://github.com/gaabrielrd/writer/actions/runs/39086855026)
+e [regras](https://github.com/gaabrielrd/writer/actions/runs/39086855023) iniciadas;
+aguardam conclusão, acompanhadas em paralelo.
+
+Resultado remoto de `75b9104`: regras verdes; CI cancelada. Validate Node 22/24,
+auditoria, produção e sete shards visuais passaram; shard 1 atingiu o limite de
+15 minutos. Antes, o teste de ordem/exportação da cronologia esgotou seus 45 s
+duas vezes. Os traces mostram prazo consumido por navegações completas repetidas,
+com ordem/reload já verificados; não comprovam um botão Fechar quebrado. A correção
+dirigida e a distribuição em doze shards são acompanhadas no incremento C3A.
+Não declarar conclusão remota deste SHA; o resultado cancelado permanece registrado.

@@ -81,3 +81,22 @@ Registrar medição real da CI após o envio; a execução antiga continua repro
 A enumeração local final de F2-06 encontrou 948 casos: 119/119/119/119/118/118/118/118
 nos oito shards. A união dos IDs coincide com os 948 da suíte inteira, sem omissão
 ou duplicação. Esse comando usa apenas `--list`, sem executar os testes novamente.
+
+## Revisão para F2-07 C3A — 2026-10-17
+
+A CI de `75b9104` concluiu sete shards visuais, validate Node 22/24, auditoria,
+produção e regras com sucesso, mas cancelou o shard 1 no limite de 15 minutos.
+Antes do cancelamento, um teste de cronologia esgotou seus 45 segundos duas vezes:
+os traces mostram navegações completas redundantes consumindo o prazo. Foram
+removidas duas dessas navegações, preservando reload de persistência, ordem,
+downloads e comparação integral do manuscrito. A execução antiga segue cancelada.
+
+A suíte crescente passa a doze shards completos, mantendo dois workers, limites,
+retries, evidências e gate agregado. Conferir a união dos IDs enumerados contra a
+suíte inteira antes do envio; enumeração não comprova execução ou duração remota.
+Há mais preparações de runner; a redução da espera depende da capacidade remota.
+
+A enumeração local de C3A encontrou 1.092 casos: 91 em cada um dos doze shards.
+A união coincide com os 1.092 IDs da suíte inteira, sem omissões/duplicações.
+Os oito contratos dirigidos da CI também passaram; isso preserva gates e limites,
+sem constituir aprovação remota ou execução dos 1.092 testes pelo `--list`.

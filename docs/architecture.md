@@ -591,6 +591,39 @@ SDK direto permanece negado. C2 ainda não troca a base nem exclui a campanha.
 Ver [ADR 0033](decisions/0033-campaign-lore-variants.md) e
 [contrato C2](tasks/writer-v2/execucao/17-variantes-de-lore-da-campanha.md).
 
+## Candidatas e comparação de bases da campanha
+
+`features/campaign-comparisons` compõe o painel da campanha e a descoberta global
+no Estúdio. O servidor divide preparação/limpeza em `campaignComparison.mjs` e
+leituras em `campaignComparisonRead.mjs`; contratos ficam em módulo puro próprio.
+`campaignCaptureEngine.mjs` reúne o motor mínimo compartilhado com a captura B,
+sem permitir que endpoints B leiam uma candidata arbitrária.
+
+`users/{uid}/campaignComparisons`, `campaignComparisonOperations` e
+`campaignComparisonStartFences` guardam controles, recibos e intenção inicial.
+A candidata usa `campaignBases` e os cinco filhos existentes. Não cria outro root
+de campanha e não muda base ativa, notas ou variantes. Preparação compara origem,
+encarnação e base a cada passo; descarte limpa filhos/pins sem depender da origem.
+
+A comparação pagina dados da origem, itens, referências e imagens, projetando
+antes de classificar. Ordem usa adjacência; metadados de imagem comparam somente
+imageKey/alt/caption. Listas não carregam corpos ou bytes de imagens. Detalhes e
+mídia mantêm os gates de B, com limites de leitura/escrita e no-store de mídia.
+Identidade, datas, revisão de variantes e token comum impedem compor contextos
+diferentes. SDK direto continua negado; índices declarados não estão implantados
+por consequência dos testes locais.
+
+O journal local contém apenas controles mínimos, com Web Locks e CAS integral.
+Um marcador conhecido preserva descoberta sem representar pedido pendente ou
+autorizar avanço automático. Fence inicial e encerramento de passo vencido exigem
+ações explícitas; controles inválidos permanecem preservados. O painel global
+permite concluir limpeza mesmo quando o root da campanha desaparece.
+
+C3A está validado localmente, com CI do novo head pendente. Adoção C3B e exclusão
+integral seguem pendentes;
+ver [ADR 0034](decisions/0034-campaign-base-comparisons.md) e
+[contrato C3A](tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
+
 ## Progresso privado, contagem e retomada
 
 `features/work-progress` oferece `ProjectProgressPanel`, `ContinueWorkPanel` e

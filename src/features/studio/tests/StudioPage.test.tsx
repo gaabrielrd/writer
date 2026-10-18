@@ -23,6 +23,13 @@ const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } =
   loading: false,
 }));
 const captures = vi.hoisted(() => ({ visible: false }));
+const comparisons = vi.hoisted(() => ({ visible: false }));
+vi.mock('@/features/campaign-comparisons', () => ({
+  CampaignComparisonPreparations: () =>
+    comparisons.visible ? (
+      <section aria-label="Candidatas sem campanha">Retomar comparação privada</section>
+    ) : null,
+}));
 vi.mock('@/features/campaign-bases', () => ({
   CampaignCapturePreparations: ({ onActivated }: { onActivated: (id: string) => void }) =>
     captures.visible ? (
@@ -100,6 +107,7 @@ const campaign: CampaignSummary = {
   updatedAt: 2000,
 };
 beforeEach(() => {
+  comparisons.visible = false;
   captures.visible = false;
   vi.clearAllMocks();
   auth.user = { uid: 'owner' };
@@ -114,6 +122,14 @@ beforeEach(() => {
     .mockResolvedValue({ items: [campaign], nextCursor: null });
   vi.mocked(createBook).mockReset();
   vi.mocked(createCampaign).mockReset();
+});
+it('candidatas continuam acessíveis mesmo sem campanha listada', async () => {
+  comparisons.visible = true;
+  vi.mocked(listCampaigns).mockResolvedValue({ items: [], nextCursor: null });
+  render(tree());
+  expect(await screen.findByRole('region', { name: 'Candidatas sem campanha' })).toHaveTextContent(
+    'Retomar comparação privada',
+  );
 });
 it('preparações permanecem acessíveis sem aventura listada e abrem a campanha confirmada', async () => {
   captures.visible = true;

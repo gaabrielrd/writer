@@ -4,6 +4,7 @@ import { Plus, Upload } from 'lucide-react';
 import { ContinueWorkPanel } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
 import { CampaignCapturePreparations } from '@/features/campaign-bases';
+import { CampaignComparisonPreparations } from '@/features/campaign-comparisons';
 import {
   BookFormDialog,
   ImportBookModal,
@@ -71,6 +72,7 @@ function StudioSession({ ownerId }: { ownerId: string }) {
         }
       />
       <ContinueWorkPanel />
+      <CampaignComparisonPreparations />
       <CampaignCapturePreparations
         onActivated={(id) => void navigate('/campaigns/' + encodeURIComponent(id))}
       />

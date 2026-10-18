@@ -1,7 +1,7 @@
 # F2-07 C3A — Capturar candidata e comparar bases da campanha
 
-**Estado:** contrato operacional fechado após revisões independentes, 2026-10-17;
-implementação autorizada pelo objetivo contínuo, ainda sem validação C3A.
+**Estado:** implementado e validado localmente em 2026-10-17; CI do novo head
+pendente. [Entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
 **Base:** C2 validado localmente e enviado em `16d90b9`; CI em paralelo.
 **Origem:** [campanhas](14-campanhas-e-variantes.md),
 [domínio D-02](02-modelo-de-dominio.md), [captura B](15-captura-de-aventura.md) e
@@ -70,7 +70,7 @@ Nenhuma escrita em activeBaseId, procedência, metadados próprios, vínculo,
 checklist, notas, variantes, créditos ou operações/chaves C2. Candidata recebe
 seus próprios pins de mídia e não reutiliza os pins da base ativa.
 
-## APIs propostas
+## APIs privadas implementadas
 
 Entradas são fechadas; UID vem da autenticação. Callables conservam App Check.
 
@@ -408,6 +408,14 @@ e request integral antes de clear. Resposta antiga de start não desfaz cancel-s
 Nenhum ID/checkpoint novo enquanto incerto. Clear retorna o controle atual e o
 hook relê depois do await; resposta antiga não zera pedido novo de outra aba.
 
+Exceção explícita para passo definitivamente vencido: após conflito e GET
+autoritativo da mesma identidade com checkpoint maior que expected, oferecer
+“Encerrar tentativa e usar progresso atual”. A monotonicidade impede execução
+tardia do passo antigo. Preservar até essa escolha; clear usa CAS integral e
+conserva KnownControl atualizado, sem criar outro RPC automaticamente. GET maior
+sozinho não prova se o pedido executou antes; não afirmar isso na UI. Falta de
+conectividade/prova ou identidade diferente conserva a pendência.
+
 Eventos storage/focus sinalizam releitura, sem carregar texto. Descoberta combina
 todos os controles locais próprios e a lista remota; inicial local tem precedência
 até recibo/fence. Limpeza final sem resposta fica descobrível mesmo se deleted não
@@ -422,6 +430,16 @@ após última janela autorizada, remontagem ordenada e verificação integral do
 campos/bytes/hash. Após await, revalidar sessão/identidade/controle atual.
 
 Grupo source já possui resumos completos dos dois lados, sem readItem extra.
+Metadados autorais da ilustração no item (`imageKey`, `alt`, `caption`) seguem a
+autorização do item, como no leitor B. Comparar somente esses três campos; campos
+internos não podem marcar uma alteração invisível. Perder pin/registro/arquivo
+impede a prévia e pode omitir a linha do grupo images, sem transformar uma legenda
+autoral ainda autorizada em dado secreto. O detalhe deve explicar a mudança com
+seus metadados públicos; bytes e hashes privados não compõem essa explicação.
+No detalhe de item, mostrar texto/alt/legenda após a verificação integral e buscar
+bytes somente por ação explícita de prévia. O grupo images carrega a prévia ao
+abrir seus detalhes. Qualquer erro nessa busca invalida o composto: os erros
+atuais não distinguem com segurança toda perda de arquivo de uma revogação.
 Detalhe item null para um lado anteriormente presente invalida a leitura; não
 reclassifica uma retirada autoral. Sem token novo, devolver erro seguro em vez
 de compor resposta incoerente. orderContextChanged é false se falta um lado;
@@ -501,3 +519,82 @@ e invalidação por variante; recuperação/aborto/descarte/fence, inclusive úl
 passo sem resposta; revogação e respostas tardias de UID/lado/token/mídia, com notas
 C1 acessíveis, teclado/foco/320 px nos temas. Fixtures provam composição cliente;
 orçamento, atomicidade, autorização e pins exigem evidência SDK separada.
+
+## Evidência intermediária de implementação — 2026-10-17
+
+- Extração do motor/gates: 42 regressões dirigidas B/C1/C2 verdes. Servidor novo:
+  nove casos próprios; última execução de vinte também inclui onze leitores B
+  afetados pelas máscaras. Essas execuções podem se sobrepor; não somar como únicos.
+- HTTP real: três casos verdes, 551,8628 ms, cobrindo no-store de mídia B/C3A em
+  sucesso/erro no callback e ausência dessa política em metadados. Não comprova
+  respostas anteriores ao callback do framework ou produção.
+- SDK real dos cinco arquivos campaignCapture/campaignBaseRead/campaignNotes/
+  campaignLore/campaignComparison: 22/22, zero falhas/skips, 83.436,166 ms, exit 0;
+  harness concluiu a limpeza do emulador. Assets são injetados, sem prova de Storage.
+- Provas SDK novas incluem sete famílias, raiz, links/imagens, rebalance, CAS/fence,
+  root recriado, projeções/cursor, pior par de cem alvos com fichas vivas grandes,
+  limites, limpeza/pins e preservação da base ativa/C1/C2.
+- Uma revisão posterior identificou cursor de detalhe ignorado se item ausente:
+  negativo falhou antes e passou após a correção (1/1, 229,2368 ms), incluindo UID
+  alheio. A projeção de imagem também passou a limitar os três campos públicos:
+  dois dirigidos verdes (252,1236 ms), com negativo antes para campo invisível.
+- Após a máscara nested da imagem, apenas o cenário SDK afetado foi repetido:
+  `SDK real writers capture seven families`, verde em 16.298,4743 ms; runner em
+  17.502,5403 ms, exit 0. O filtro carregou ainda três arquivos sem casos
+  correspondentes; não são três cenários adicionais. A prova inclui campo interno
+  ignorado e legenda pública alterada com pin ausente; assets continuam injetados.
+- Interface, navegador, revisão final e validate completo permanecem pendentes;
+  este registro não encerra C3A.
+
+Marco posterior do cliente: 75 testes dirigidos em cinco arquivos, tipos e lint
+verdes. Cinco negativos corrigiram contexto novo em páginas de texto, controle
+local com scope inválido e nova preparação após descarte. Detalhes não dependem
+mais de buscar bytes de ilustração automaticamente.
+
+Navegador inicial: 24 positivos únicos, quatro jornadas nos seis projetos,
+26.940,604 ms + 93.824,963 ms, sem retries/skips/flaky. O lote anterior parou em
+quatro seeds C1 com noteId diferente de operationId; corrigido só o seed, sem
+alcançar o fluxo C3A naquela tentativa. Raiz inspecionou seis PNG 320×740 nos três
+temas; não representa zoom físico ou leitor de tela.
+
+Revisão independente encontrou P2 no journal: Known mais recente podia ser
+substituído por StepPending antigo e confirmação pós-await adotava controle
+obsoleto. Seis negativos falharam antes e passaram após; execução dirigida final
+dos dois arquivos afetados: 41/41, 11,45 s, tipos/lint verdes. Reserva protege o
+checkpoint sob lock e confirmação/GET reconsultam o slot, pausando sem rebase ou
+novo RPC se outra aba venceu. Repetição nativa somente da jornada afetada e
+revisão final ainda pendentes.
+
+A CI de 75b9104 terminou cancelada em um dos oito shards após prazo de 15 minutos;
+sete shards, produção, validate Node 22/24, auditoria e regras passaram. Dois
+traces de cronologia mostram navegações redundantes consumindo seu prazo de 45 s.
+O teste mantém reload/ordem/exportações/asserts, removendo só duas navegações.
+Sua repetição dirigida nos seis projetos ainda está pendente. A suíte completa
+passa a doze shards, com gates/limites/retries intactos: oito contratos CI verdes,
+enumeração de 1.092 IDs, 91 por shard, união exata sem omissão/duplicação. `--list`
+não executa navegador nem comprova tempo remoto. Ver ADR 0024.
+
+## Fechamento local — 2026-10-17
+
+Após a correção do primeiro P2, os doze afetados passaram em 90.097,568 ms:
+seis da jornada de recuperação C3A e seis do caso de narrativa. Não somar as
+repetições aos 24 cenários C3A únicos. Narrativa preservou todas as verificações
+e passou entre 10,321 e 17,919 s.
+
+A revisão identificou ainda loading preso quando uma ação invalidava GET sem
+resposta. O negativo falhou antes e passou após; sete dirigidos, tipos/lint verdes.
+Propriedade por geração permite GET novo e impede o finally antigo de liberá-lo.
+Somente um controle nativo específico foi acrescentado à evidência externa:
+1/1 desktop-light, 4.689 ms de teste / 8.133,146 ms total, zero retries/skips/flaky.
+Transportes simulados e adaptador/Web Lock reais, sem replicar lógica do hook.
+Revisão final de cliente e integração CI/narrativa sem bloqueadores restantes.
+
+`npm run validate` final exit 0: 170 arquivos/1.680 frontend em 146,32 s,
+77 scripts (9.683,6018 ms), 324 Functions (2.847,5666 ms), todos os demais gates,
+tipos, build e smoke verdes. Cobertura 90,69/84,71/90,30/93,32% em
+instruções/ramos/funções/linhas, sem reduzir limites. Build 2,75 s conserva avisos
+existentes de chunk grande e importação mista DOCX. Documentação/ADR/regras e
+entrega atualizadas; Git/CI são acompanhados no PR, sem merge ou deploy.
+
+Esse fechamento local permite continuar sob a sequência autorizada. A conclusão
+remota requer CI verde no head; C3B e exclusão integral continuam pendentes.

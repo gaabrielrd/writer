@@ -1,7 +1,10 @@
 # Writer V2 — Estúdio, livros e campanhas
 
 **Data do planejamento:** 2026-10-12. **Responsável:** Gabriel, trabalhando sozinho, 20 horas por semana.
-**Estado:** fundamentos técnicos validados; Estúdio F2-01 implementado, com gates locais verdes e CI do head acompanhado no PR. Aceites humanos/comerciais e demais funcionalidades permanecem pendentes.
+**Estado:** fundamentos técnicos e F2-01 a F2-06 validados; F2-07 em execução,
+com captura/notas concluídas e variantes/comparação validadas localmente.
+CI do head acompanhado no PR; adoção, exclusão integral, funcionalidades seguintes
+e aceites humanos/comerciais permanecem pendentes.
 **Autorização deste trabalho:** implementar, planejar e validar cada tarefa em sequência, fase a fase.
 O [registro de execução](execucao/README.md) distingue documento, validação local e aceite final.
 

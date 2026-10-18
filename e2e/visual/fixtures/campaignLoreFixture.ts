@@ -727,3 +727,21 @@ export async function resolveCampaignLoreOperation(
   });
   return response(uid, 'resolveCampaignLoreOperation', input, value);
 }
+
+// Comparison transport only: authorized local state, without bodies or recovery material.
+export async function fixtureCampaignLoreComparisonMetadata(campaignId: string, baseId: string) {
+  const uid = fixtureOwner();
+  const ctx = await context(read(), uid, { campaignId, baseId });
+  return {
+    collectionRevision: ctx.project.revision,
+    items: Object.fromEntries(
+      [...ctx.available].map((key) => [
+        key,
+        {
+          mode: ctx.project.overlays[key]?.mode ?? 'base',
+          revision: ctx.project.overlays[key]?.revision ?? 0,
+        },
+      ]),
+    ),
+  };
+}

@@ -14,6 +14,8 @@ import { createCampaignsService } from './campaigns.mjs';
 import { createCampaignCaptureService } from './campaignCapture.mjs';
 import { createCampaignNotesService } from './campaignNotes.mjs';
 import { createCampaignLoreService } from './campaignLore.mjs';
+import { createCampaignComparisonService } from './campaignComparison.mjs';
+import { createCampaignComparisonReadService } from './campaignComparisonRead.mjs';
 import { createCampaignVariantRecoveryService } from './campaignVariantRecovery.mjs';
 import { setCampaignVariantRecoveryHeaders } from './campaignVariantRecoveryHttp.mjs';
 import { setCampaignMediaHeaders } from './campaignCaptureHttp.mjs';
@@ -267,6 +269,8 @@ const callable = (method, secrets = []) =>
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
         const campaignLore = createCampaignLoreService({ db });
+        const campaignComparison = createCampaignComparisonService({ db, assets });
+        const campaignComparisonRead = createCampaignComparisonReadService({ db, assets });
         const campaignVariantRecovery = createCampaignVariantRecoveryService({ db });
         const campaignCapture = createCampaignCaptureService({ db, assets });
         const campaignBaseRead = createCampaignBaseReadService({ db, assets });
@@ -283,41 +287,48 @@ const callable = (method, secrets = []) =>
           generator: assistedGenerator,
           costs: { text: assistedCost.value(), cover: coverCost.value() },
         });
-        const handler = campaignLore[method]
-          ? campaignLore
-          : campaignVariantRecovery[method]
-            ? campaignVariantRecovery
-            : campaignNotes[method]
-              ? campaignNotes
-              : campaignBaseRead[method]
-                ? campaignBaseRead
-                : campaignCapture[method]
-                  ? campaignCapture
-                  : campaigns[method]
-                    ? campaigns
-                    : adventurePreview[method]
-                      ? adventurePreview
-                      : adventureBlocks[method]
-                        ? adventureBlocks
-                        : workHistory[method]
-                          ? workHistory
-                          : workProgress[method]
-                            ? workProgress
-                            : narrative[method]
-                              ? narrative
-                              : scenes[method]
-                                ? scenes
-                                : studio[method]
-                                  ? studio
-                                  : assisted[method]
-                                    ? assisted
-                                    : loreAnalysis[method]
-                                      ? loreAnalysis
-                                      : universeService[method]
-                                        ? universeService
-                                        : service()[method]
-                                          ? service()
-                                          : createImageLibraryService({ db, assets });
+        const comparisonHandler = campaignComparison[method]
+          ? campaignComparison
+          : campaignComparisonRead[method]
+            ? campaignComparisonRead
+            : null;
+        const handler =
+          comparisonHandler ??
+          (campaignLore[method]
+            ? campaignLore
+            : campaignVariantRecovery[method]
+              ? campaignVariantRecovery
+              : campaignNotes[method]
+                ? campaignNotes
+                : campaignBaseRead[method]
+                  ? campaignBaseRead
+                  : campaignCapture[method]
+                    ? campaignCapture
+                    : campaigns[method]
+                      ? campaigns
+                      : adventurePreview[method]
+                        ? adventurePreview
+                        : adventureBlocks[method]
+                          ? adventureBlocks
+                          : workHistory[method]
+                            ? workHistory
+                            : workProgress[method]
+                              ? workProgress
+                              : narrative[method]
+                                ? narrative
+                                : scenes[method]
+                                  ? scenes
+                                  : studio[method]
+                                    ? studio
+                                    : assisted[method]
+                                      ? assisted
+                                      : loreAnalysis[method]
+                                        ? loreAnalysis
+                                        : universeService[method]
+                                          ? universeService
+                                          : service()[method]
+                                            ? service()
+                                            : createImageLibraryService({ db, assets }));
         return await handler[method](request.auth?.uid, request.data);
       } catch (error) {
         if (error instanceof GenerationError)
@@ -357,6 +368,16 @@ export const removeCampaignLore = callable('removeCampaignLore');
 export const restoreCampaignLore = callable('restoreCampaignLore');
 export const discardCampaignLoreVariant = callable('discardCampaignLoreVariant');
 export const resolveCampaignLoreOperation = callable('resolveCampaignLoreOperation');
+export const getCampaignComparisonSource = callable('getCampaignComparisonSource');
+export const startCampaignComparison = callable('startCampaignComparison');
+export const resolveCampaignComparisonStart = callable('resolveCampaignComparisonStart');
+export const getCampaignComparison = callable('getCampaignComparison');
+export const listCampaignComparisons = callable('listCampaignComparisons');
+export const advanceCampaignComparison = callable('advanceCampaignComparison');
+export const cancelCampaignComparison = callable('cancelCampaignComparison');
+export const listCampaignComparisonChanges = callable('listCampaignComparisonChanges');
+export const readCampaignComparisonItem = callable('readCampaignComparisonItem');
+export const readCampaignComparisonImage = callable('readCampaignComparisonImage');
 export const getCampaignCaptureSource = callable('getCampaignCaptureSource');
 export const startCampaignCapture = callable('startCampaignCapture');
 export const getCampaignCapture = callable('getCampaignCapture');

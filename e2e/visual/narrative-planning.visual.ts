@@ -231,7 +231,9 @@ test('ordem manual de eventos ignora datas e preserva manuscrito exportado', asy
   await createScene(page, 'Prosa do farol', bookPath, 'Capítulo do manuscrito');
   await page.goto(bookPath);
   const before = await downloadBook(page, 'Markdown (.md)');
-  const planner = await openPlanner(page);
+  await page.getByRole('tab', { name: 'Arcos e cronologia', exact: true }).click();
+  const planner = page.getByRole('region', { name: 'Arcos e cronologia', exact: true });
+  await expect(planner.getByRole('navigation', { name: 'Visões do planejamento' })).toBeVisible();
   await view(planner, 'Cronologia');
   await create(page, planner, 'evento', 'Chegada', 'Depois do fim');
   await create(page, planner, 'evento', 'Partida', 'Antes do início');
@@ -253,7 +255,6 @@ test('ordem manual de eventos ignora datas e preserva manuscrito exportado', asy
     'Chegada',
   ]);
   await capture(page, testInfo, 'cronologia-ordem-manual');
-  await page.goto(bookPath);
   expect(await downloadBook(page, 'Markdown (.md)')).toBe(before);
   expect(before).toContain('PROSA CANÔNICA DO FAROL');
   expect(before).not.toContain(privateNotes);

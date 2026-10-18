@@ -1,0 +1,94 @@
+.panel,
+.stack {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.panel {
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+.panel h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.stack h3,
+.stack h4,
+.stack h5 {
+  font-weight: 600;
+  line-height: 1.4;
+}
+.stack h3 {
+  font-size: 1.125rem;
+}
+.panel > *,
+.stack > *,
+.columns > *,
+.list > li {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  min-width: 0;
+}
+.actions button,
+.list button,
+.stack button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  min-width: 0;
+}
+.columns > section {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+}
+.list {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  padding: 0;
+  min-width: 0;
+}
+.rowCard {
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+}
+.meta {
+  font-size: 0.875rem;
+  color: hsl(var(--muted-foreground));
+}
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.rich {
+  overflow-wrap: anywhere;
+}
+.rich img,
+.image {
+  max-width: 100%;
+  height: auto;
+}
+.image {
+  max-height: 26rem;
+  object-fit: contain;
+}
+@media (max-width: 640px) {
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

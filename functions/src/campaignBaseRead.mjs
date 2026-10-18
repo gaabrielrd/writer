@@ -1,3 +1,4 @@
+import { readWorkMetadata } from './workProgressContracts.mjs';
 import {
   closed,
   fail,
@@ -39,7 +40,7 @@ function request(uid, data, keys) {
   closed(data, ['campaignId', ...keys]);
   return id(data.campaignId);
 }
-function summary(item) {
+export function summary(item) {
   const value = baseSummary(item),
     allowed =
       {
@@ -51,7 +52,7 @@ function summary(item) {
     if (!allowed.includes(key)) delete value[key];
   return value;
 }
-function validItem(item, key) {
+export function validItem(item, key) {
   if (
     !item ||
     item.sourceKey !== key ||
@@ -76,7 +77,7 @@ const textFields = {
   event: ['description'],
   lore: ['summary', 'details', 'appearance', 'personality', 'history', 'notes'],
 };
-async function projectedStructured(tx, db, context, item) {
+export async function projectedStructured(tx, db, context, item) {
   const stored = item.structured ?? {},
     result = {};
   const fields =
@@ -119,7 +120,14 @@ async function projectedStructured(tx, db, context, item) {
       const targetId = relation.targetEntityId.slice(prefix.length);
       if (!targetId || targetId.includes('/') || targetId.includes(':')) continue;
       const key = baseSourceKey({ kind: 'lore', id: targetId, scopeId: context.base.universeId });
-      const target = (await tx.get(db.doc(context.path + '/items/' + key))).data();
+      const target = (
+        await readWorkMetadata(tx, db.doc(context.path + '/items/' + key), [
+          'sourceKey',
+          'kind',
+          'title',
+          'origin',
+        ])
+      ).data();
       if (
         !target ||
         target.kind !== 'lore' ||
@@ -142,7 +150,7 @@ async function projectedStructured(tx, db, context, item) {
   }
   return result;
 }
-async function loadContent(tx, db, context, item) {
+export async function loadContent(tx, db, context, item) {
   if (!Array.isArray(item.fields) || item.fields.length > 16) inconsistent();
   const chunks = [],
     fields = [],
@@ -200,55 +208,11 @@ export function createCampaignBaseReadService({
   async function imageAccess(uid, campaignId, imageKey) {
     return db.runTransaction(async (tx) => {
       const context = await readCampaignBase(tx, db, uid, campaignId);
-      const image = (await tx.get(db.doc(context.path + '/images/' + imageKey))).data();
-      if (
-        !image ||
-        image.imageKey !== imageKey ||
-        image.state !== 'ready' ||
-        baseImageKey(image.imageId) !== imageKey ||
-        image.useKey !== baseImageUseKey(context.base.id, image.imageId)
-      )
-        fail('not-found', 'Ilustração indisponível.');
-      const ref = 'users/' + uid + '/imageLibrary/' + id(image.imageId);
-      const library = (await tx.get(db.doc(ref))).data();
-      const use = (await tx.get(db.doc(ref + '/uses/' + image.useKey))).data();
-      if (
-        !library ||
-        library.state !== 'active' ||
-        library.path !== image.path ||
-        !Number.isSafeInteger(library.useCount) ||
-        library.useCount < 1 ||
-        !use ||
-        use.kind !== 'campaign-base' ||
-        use.campaignId !== campaignId ||
-        use.baseId !== context.base.id ||
-        typeof image.generation !== 'string' ||
-        !/^[0-9]+$/.test(image.generation)
-      )
-        fail('not-found', 'Ilustração indisponível.');
-      return {
-        image,
-        projectionToken: context.projectionToken,
-        identity: digest({ image, token: context.projectionToken }),
-      };
+      return readBaseImageAccess(tx, db, context, imageKey);
     });
   }
   async function checkStorage(image) {
-    let metadata;
-    try {
-      metadata = await assets.metadata(image.path);
-    } catch {
-      fail('not-found', 'Ilustração indisponível.');
-    }
-    if (!metadata || metadata.generation !== image.generation)
-      fail('failed-precondition', 'A identidade da ilustração mudou.');
-    if (
-      !Number.isSafeInteger(metadata.size) ||
-      metadata.size < 1 ||
-      metadata.size > BASE_IMAGE_BYTES
-    )
-      fail('failed-precondition', 'A ilustração ultrapassa o orçamento da leitura.');
-    return metadata;
+    return checkCapturedImageStorage(assets, image);
   }
   return {
     async getCampaignBase(uid, data) {
@@ -307,46 +271,7 @@ export function createCampaignBaseReadService({
           const link = doc.data();
           if (!['scene', 'narrative'].includes(link.kind) || link.sourceKey !== sourceKey)
             inconsistent();
-          const reference = link.reference;
-          let origin = null;
-          const lore =
-            link.kind === 'scene'
-              ? reference
-              : reference?.kind === 'lore'
-                ? reference.reference
-                : null;
-          if (lore?.kind === 'universe' && lore.scopeId === context.base.universeId)
-            origin = { kind: 'lore', scopeId: lore.scopeId, id: lore.entityId };
-          else if (link.kind === 'narrative' && reference?.kind === 'scene')
-            origin = {
-              adventureId: context.base.adventureId,
-              kind: 'scene',
-              id: reference.sceneId,
-            };
-          else if (link.kind === 'narrative' && reference?.kind === 'event')
-            origin = {
-              adventureId: context.base.adventureId,
-              kind: 'event',
-              id: reference.eventId,
-            };
-          let targetKey = null;
-          if (origin && typeof origin.id === 'string') {
-            const key = baseSourceKey(origin);
-            const target = (await tx.get(db.doc(context.path + '/items/' + key))).data();
-            if (
-              target &&
-              target.sourceKey === key &&
-              (await baseItemAvailable(tx, db, context, target))
-            )
-              targetKey = key;
-          }
-          items.push({
-            key: doc.id,
-            kind: link.kind,
-            sourceKey,
-            targetKey,
-            available: targetKey !== null,
-          });
+          items.push(await projectedReference(tx, db, context, link, doc.id));
         }
         return budget({
           items,
@@ -541,4 +466,109 @@ export function createCampaignBaseReadService({
       });
     },
   };
+}
+
+export async function projectedReference(tx, db, context, link, key) {
+  const reference = link.reference;
+  let origin = null;
+  const lore =
+    link.kind === 'scene' ? reference : reference?.kind === 'lore' ? reference.reference : null;
+  if (lore?.kind === 'universe' && lore.scopeId === context.base.universeId)
+    origin = { kind: 'lore', scopeId: lore.scopeId, id: lore.entityId };
+  else if (link.kind === 'narrative' && reference?.kind === 'scene')
+    origin = {
+      adventureId: context.base.adventureId,
+      kind: 'scene',
+      id: reference.sceneId,
+    };
+  else if (link.kind === 'narrative' && reference?.kind === 'event')
+    origin = {
+      adventureId: context.base.adventureId,
+      kind: 'event',
+      id: reference.eventId,
+    };
+  let targetKey = null;
+  if (origin && typeof origin.id === 'string') {
+    const key = baseSourceKey(origin);
+    const target = (
+      await readWorkMetadata(tx, db.doc(context.path + '/items/' + key), [
+        'sourceKey',
+        'kind',
+        'origin',
+      ])
+    ).data();
+    if (target && target.sourceKey === key && (await baseItemAvailable(tx, db, context, target)))
+      targetKey = key;
+  }
+  return {
+    key,
+    kind: link.kind,
+    sourceKey: link.sourceKey,
+    targetKey,
+    available: targetKey !== null,
+  };
+}
+
+export async function readBaseImageAccess(tx, db, context, imageKey) {
+  const image = (
+    await readWorkMetadata(tx, db.doc(context.path + '/images/' + imageKey), [
+      'imageKey',
+      'imageId',
+      'state',
+      'path',
+      'generation',
+      'size',
+      'useKey',
+    ])
+  ).data();
+  if (
+    !image ||
+    image.imageKey !== imageKey ||
+    image.state !== 'ready' ||
+    baseImageKey(image.imageId) !== imageKey ||
+    image.useKey !== baseImageUseKey(context.base.id, image.imageId)
+  )
+    fail('not-found', 'Ilustração indisponível.');
+  const ref = 'users/' + context.uid + '/imageLibrary/' + id(image.imageId);
+  const library = (await readWorkMetadata(tx, db.doc(ref), ['state', 'path', 'useCount'])).data();
+  const use = (
+    await readWorkMetadata(tx, db.doc(ref + '/uses/' + image.useKey), [
+      'kind',
+      'campaignId',
+      'baseId',
+    ])
+  ).data();
+  if (
+    !library ||
+    library.state !== 'active' ||
+    library.path !== image.path ||
+    !Number.isSafeInteger(library.useCount) ||
+    library.useCount < 1 ||
+    !use ||
+    use.kind !== 'campaign-base' ||
+    use.campaignId !== context.campaignId ||
+    use.baseId !== context.base.id ||
+    typeof image.generation !== 'string' ||
+    !/^[0-9]+$/.test(image.generation)
+  )
+    fail('not-found', 'Ilustração indisponível.');
+  return {
+    image,
+    projectionToken: context.projectionToken,
+    identity: digest({ image, token: context.projectionToken }),
+  };
+}
+
+export async function checkCapturedImageStorage(assets, image) {
+  let metadata;
+  try {
+    metadata = await assets.metadata(image.path);
+  } catch {
+    fail('not-found', 'Ilustração indisponível.');
+  }
+  if (!metadata || metadata.generation !== image.generation)
+    fail('failed-precondition', 'A identidade da ilustração mudou.');
+  if (!Number.isSafeInteger(metadata.size) || metadata.size < 1 || metadata.size > BASE_IMAGE_BYTES)
+    fail('failed-precondition', 'A ilustração ultrapassa o orçamento da leitura.');
+  return metadata;
 }

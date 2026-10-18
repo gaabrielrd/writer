@@ -151,9 +151,11 @@ independentes e está implementado e validado localmente. Oferece ficha inteira 
 retirada/restauração/descarte e recuperação cifrada com autorização atual também
 dos alvos de relações. Não antecipa troca de activeBaseId ou exclusão integral.
 
-O [plano C3A](18-comparacao-de-bases-da-campanha.md) está fechado após revisão técnica:
-capturar candidata completa e comparar itens, referências e ilustrações por
-identidade, sem alterar a base ativa. C3B continua responsável pela adoção
+O [incremento C3A](18-comparacao-de-bases-da-campanha.md) está implementado e
+validado localmente: candidata completa e comparação de origem, itens, referências
+e ilustrações por identidade, sem alterar a base ativa. CI do novo head pendente;
+ver [entrega C3A](../../../entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
+C3B continua responsável pela adoção
 explícita e continuidade das variantes/pedidos antigos; exclusão integral conserva
 incremento próprio. Comparação isolada não encerra C3 ou F2-07.
 

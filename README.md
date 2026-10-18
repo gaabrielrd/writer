@@ -47,9 +47,15 @@ origem da base fica indisponível; não copiam lore automaticamente. C1 está co
 tecnicamente em bda5e70, com CI verde; veja a [entrega](docs/entregas/2026-10-15-writer-v2-notas-da-campanha.md).
 Variantes C2 permitem adaptar fichas inteiras somente na mesa, retirar/restaurar e
 descartar alterações locais, com recuperação cifrada após conferir a autorização
-atual. O incremento está validado localmente; CI do novo head permanece pendente.
+atual. O incremento está validado localmente; resultados remotos ficam registrados
+na entrega e o CI do head é acompanhado no PR.
 Veja a [entrega de variantes](docs/entregas/2026-10-17-writer-v2-variantes-de-lore.md).
-Atualização explícita e exclusão integral seguem nas próximas etapas do
+O incremento C3A prepara e compara uma candidata completa, com retomada e
+descarte, preservando base ativa, variantes e notas. Está validado localmente;
+veja o [contrato de comparação](docs/tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
+CI do novo head permanece pendente; veja a
+[entrega C3A](docs/entregas/2026-10-17-writer-v2-comparacao-de-bases.md).
+Adoção explícita e exclusão integral seguem nas próximas etapas do
 [contrato de campanhas](docs/tasks/writer-v2/execucao/14-campanhas-e-variantes.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)

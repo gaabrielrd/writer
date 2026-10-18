@@ -11,6 +11,7 @@ before(async () => {
   app.use(express.json());
   for (const [path, method] of [
     ['/media', 'readCampaignBaseImage'],
+    ['/comparison-media', 'readCampaignComparisonImage'],
     ['/metadata', 'getCampaignBase'],
   ]) {
     app.post(
@@ -55,4 +56,15 @@ test('campaign media cache policy does not change other callable responses', asy
   const response = await call('/metadata');
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('cache-control'), null);
+});
+
+test('comparison media callable HTTP response preserves no-store for success and service failure', async () => {
+  const success = await call('/comparison-media');
+  assert.equal(success.status, 200);
+  assert.equal(success.headers.get('cache-control'), 'private, no-store');
+  assert.deepEqual(await success.json(), { result: { value: 'confirmed' } });
+  const failure = await call('/comparison-media', { fail: true });
+  assert.equal(failure.status, 404);
+  assert.equal(failure.headers.get('cache-control'), 'private, no-store');
+  assert.equal((await failure.json()).error.status, 'NOT_FOUND');
 });

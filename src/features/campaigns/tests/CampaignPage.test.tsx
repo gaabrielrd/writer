@@ -18,6 +18,19 @@ const auth = vi.hoisted(
   }),
 );
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
+vi.mock('@/features/campaign-comparisons', () => ({
+  CampaignComparisonPanel: ({
+    campaignId,
+    currentBaseId,
+  }: {
+    campaignId: string;
+    currentBaseId: string;
+  }) => (
+    <section aria-label={'Comparação ' + campaignId + '/' + currentBaseId}>
+      Candidata privada
+    </section>
+  ),
+}));
 vi.mock('@/features/campaign-notes', () => ({
   CampaignNotesPanel: ({ campaignId }: { campaignId: string }) => (
     <section aria-label={'Notas próprias ' + campaignId}>Anotações autorais preservadas</section>
@@ -164,6 +177,7 @@ it('campanha original monta leitor da geração separadamente e preserva descri�
     screen.getByRole('heading', { name: 'Progresso de campaign/project' }),
   ).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Editar campanha' })).toBeEnabled();
+  expect(screen.getByRole('region', { name: 'Comparação project/generation' })).toBeInTheDocument();
   expect(
     screen.getByRole('region', { name: 'Lore da mesa project/generation' }),
   ).toBeInTheDocument();

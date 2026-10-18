@@ -67,14 +67,14 @@ npm run test:coverage -- --maxWorkers=2
 
 A CI mantém o `validate` completo nos dois ambientes Node 22 e 24. O navegador
 de produção e a suíte visual executam em jobs separados. A suíte visual inteira
-é distribuída por oito shards em paralelo, com dois workers por runner, incluindo
+é distribuída por doze shards em paralelo, com dois workers por runner, incluindo
 desktop/celular e claro/escuro/sépia. Os testes de seleção parcial pertencem à
 mesma suíte e passam a executar uma vez por projeto.
 
 Para reproduzir um dos shards, substitua o número antes da barra:
 
 ```bash
-npx playwright test -c playwright.visual.config.ts --shard=1/8
+npx playwright test -c playwright.visual.config.ts --shard=1/12
 ```
 
 Cada shard publica um blob e suas capturas/traces com nome próprio.
@@ -281,6 +281,20 @@ Quota é erro injetado; não comprova disco cheio. Evidência de ausência de pl
 exclui explicitamente backing stores writer.visual.* e não imprime chaves/registros.
 Gate/revogação reais pertencem ao SDK; fixture prova composição do cliente.
 Ver [contrato C2](tasks/writer-v2/execucao/17-variantes-de-lore-da-campanha.md).
+
+Comparação C3A tem testes colocalizados em `campaign-comparisons`, servidor em
+`functions/test/campaignComparison.test.mjs` e SDK em
+`tests/firestore/campaignComparison.rules.test.mjs`. Verificam captura candidata,
+CAS/recibos/fence, contexto de ordem, projeção antes da classificação, limites,
+cursores e limpeza sem alterar base ativa/C1/C2. O SDK usa Firestore/regras reais
+e assets injetados; não comprova Storage ou implantação dos índices.
+
+`e2e/visual/campaign-comparisons.visual.ts` cobre composição dos quatro grupos,
+paginação, invalidação, recuperação após reload, descarte, revogação e respostas
+tardias, com servidor simulado. O journal C3A contém somente metadados sob Web
+Locks; a recuperação cifrada de texto continua pertencendo ao C2. Registrar
+separadamente testes dirigidos, SDK, navegador e validate no
+[contrato C3A](tasks/writer-v2/execucao/18-comparacao-de-bases-da-campanha.md).
 
 Blocos de aventura têm testes colocalizados em `adventure-blocks` e integração
 em `scenes`/`manuscript-history`: prosa por identidade, padrão privado, arquivo,

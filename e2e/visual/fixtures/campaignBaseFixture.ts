@@ -913,3 +913,58 @@ export async function fixtureCampaignBaseLoreMetadata(campaignId: string) {
       })),
   };
 }
+
+// Read-only seams for the comparison transport. They never activate another campaign.
+export async function fixtureCampaignComparisonSource(adventureId: string) {
+  const { value, token } = await snapshot(adventureId);
+  return { snapshot: structuredClone(value), sourceToken: token };
+}
+export async function fixtureCampaignComparisonCurrent(campaignId: string) {
+  const { record, allowed, token } = await context(campaignId);
+  const value = structuredClone(record.snapshot);
+  const allKeys = {
+    items: value.items.map(({ item }) => item.sourceKey),
+    references: value.links.map((link) => link.key),
+    images: Object.keys(value.images),
+  };
+  value.items = value.items.filter(({ item }) => allowed.has(item.sourceKey));
+  for (const { item } of value.items) {
+    if (item.structured.relations)
+      item.structured.relations = item.structured.relations.filter((relation) =>
+        allowed.has(relation.targetKey),
+      );
+  }
+  value.links = value.links
+    .filter((link) => allowed.has(link.sourceKey))
+    .map((link) => ({
+      ...link,
+      targetKey: link.targetKey && allowed.has(link.targetKey) ? link.targetKey : null,
+      available: !!link.targetKey && allowed.has(link.targetKey),
+    }));
+  value.images = Object.fromEntries(
+    Object.entries(value.images).filter(([, image]) => {
+      try {
+        fixtureLibraryImage(image.imageId);
+        return true;
+      } catch {
+        return false;
+      }
+    }),
+  );
+  const unavailableImageItemKeys: string[] = [];
+  for (const { item } of value.items) {
+    if (item.image && !value.images[item.image.imageKey]) {
+      unavailableImageItemKeys.push(item.sourceKey);
+      item.image = null;
+    }
+  }
+  return {
+    baseId: record.baseId,
+    adventureId: record.progress.request.adventureId,
+    capturedAt: record.progress.updatedAt,
+    projectionToken: token,
+    allKeys,
+    unavailableImageItemKeys,
+    snapshot: value,
+  };
+}

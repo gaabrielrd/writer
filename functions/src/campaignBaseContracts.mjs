@@ -1,4 +1,11 @@
-import { workClosed, workFail, workId, digest, workLimit } from './workProgressContracts.mjs';
+import {
+  workClosed,
+  workFail,
+  workId,
+  digest,
+  workLimit,
+  readWorkMetadata,
+} from './workProgressContracts.mjs';
 import { splitHistoryContent } from './workHistoryContracts.mjs';
 
 const id = workId;
@@ -274,7 +281,11 @@ export async function baseItemAvailable(tx, db, context, item) {
   )
     return false;
   const entity = (
-    await tx.get(db.doc(`universes/${id(item.origin.scopeId)}/lore/${id(item.origin.id)}`))
+    await readWorkMetadata(
+      tx,
+      db.doc(`universes/${id(item.origin.scopeId)}/lore/${id(item.origin.id)}`),
+      ['deleting'],
+    )
   ).data();
   return Boolean(entity && !entity.deleting);
 }

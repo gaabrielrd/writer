@@ -6,7 +6,8 @@ export function studioDb() {
     metadata = new Map(),
     versions = new Map(),
     creations = new Map(),
-    reads = [];
+    reads = [],
+    metadataReads = [];
   let queue = Promise.resolve(),
     creationSequence = 0;
   const stamp = (value, nanos = 0) => ({
@@ -120,6 +121,11 @@ export function studioDb() {
       const result = queue.then(async () => {
         const writes = [];
         const tx = {
+          getAll: async (ref, options) => {
+            assert.equal(writes.length, 0, 'Reads precede writes');
+            metadataReads.push({ path: ref.path, fields: options.fieldMask });
+            return [snapshot(ref.path, options.fieldMask)];
+          },
           get: async (ref) => {
             assert.equal(writes.length, 0, 'Reads precede writes');
             return ref.collectionPath ? execute(ref) : snapshot(ref.path);
@@ -164,5 +170,5 @@ export function studioDb() {
         }
     },
   };
-  return { db, records, metadata, reads };
+  return { db, records, metadata, reads, metadataReads };
 }

@@ -2,7 +2,7 @@ import { validateId } from './generation.mjs';
 import { workRevision, workConflict, workTitle, workDate } from './workProgressContracts.mjs';
 import { prepareUniverseProjectLink, universeDocumentId } from './universes.mjs';
 import { prepareLibraryImageUse, readActiveLibraryImage } from './imageLibrary.mjs';
-import { captureItem } from './campaignCaptureItems.mjs';
+import { nextCaptureSource, prepareCaptureStep } from './campaignCaptureEngine.mjs';
 import {
   fail,
   id,
@@ -18,8 +18,6 @@ import {
   captureSource,
   captureProgress,
   emptyCaptureCounts,
-  capturePhases,
-  baseImageUseKey,
   encodeBaseCursor,
   decodeBaseCursor,
 } from './campaignBaseContracts.mjs';
@@ -70,78 +68,6 @@ export function createCampaignCaptureService({ db, assets, now = Date.now }) {
     }
     return true;
   }
-  const nextPhase = (p) => ({
-    ...p,
-    phase: capturePhases[capturePhases.indexOf(p.phase) + 1],
-    cursor: null,
-    parentId: null,
-    parentCursor: null,
-  });
-  async function page(tx, collection, cursor) {
-    let query = db.collection(collection).orderBy('__name__').limit(1).select();
-    if (cursor != null) query = query.startAfter(cursor);
-    const snapshot = (await tx.get(query)).docs[0];
-    return snapshot ? tx.get(snapshot.ref) : null;
-  }
-  async function nextSource(tx, p) {
-    const root = `adventures/${p.adventureId}`,
-      path = basePath(p.ownerId, p.baseId);
-    const collections = {
-      parts: 'parts',
-      scenes: 'scenes',
-      blocks: 'sceneBlocks',
-      arcs: 'arcs',
-      events: 'timelineEvents',
-      narrativeLinks: 'narrativeLinks',
-    };
-    if (collections[p.phase])
-      return {
-        snapshot: await page(tx, `${root}/${collections[p.phase]}`, p.cursor),
-        next: nextPhase(p),
-      };
-    if (['sceneReferences', 'milestones'].includes(p.phase)) {
-      let parentId = p.parentId;
-      if (!parentId) {
-        const parent = await page(
-          tx,
-          root + (p.phase === 'sceneReferences' ? '/scenes' : '/arcs'),
-          p.parentCursor,
-        );
-        if (!parent) return { snapshot: null, next: nextPhase(p) };
-        if (parent.data().deleting)
-          fail('failed-precondition', 'Conclua a exclusão da origem antes de capturar.');
-        parentId = parent.id;
-      }
-      const snapshot = await page(
-        tx,
-        `${root}/${p.phase === 'sceneReferences' ? 'scenes' : 'arcs'}/${parentId}/${p.phase === 'sceneReferences' ? 'references' : 'milestones'}`,
-        p.cursor,
-      );
-      return {
-        snapshot,
-        parentId,
-        next: { ...p, parentId: null, parentCursor: parentId, cursor: null },
-      };
-    }
-    if (p.phase === 'lore')
-      return { snapshot: await page(tx, path + '/loreReferences', p.cursor), next: nextPhase(p) };
-    if (p.phase === 'images')
-      return { snapshot: await page(tx, path + '/images', p.cursor), next: nextPhase(p) };
-    if (p.phase === 'finalizing') {
-      let query = db
-        .collection(path + '/items')
-        .where('kind', '==', 'scene')
-        .orderBy('__name__')
-        .limit(1);
-      if (p.cursor) query = query.startAfter(p.cursor);
-      const snapshot = (await tx.get(query)).docs[0];
-      return {
-        snapshot: snapshot ?? null,
-        next: { ...p, phase: 'complete', state: 'prepared', cursor: null },
-      };
-    }
-    fail('failed-precondition', 'Preparação não pode avançar neste estado.');
-  }
   function mutated(p) {
     const checkpoint = p.checkpoint + 1;
     workRevision(checkpoint);
@@ -158,7 +84,7 @@ export function createCampaignCaptureService({ db, assets, now = Date.now }) {
         return null;
       const origin = await readCaptureOrigin(tx, db, uid, p.adventureId);
       if (!origin || origin.sourceToken !== p.sourceToken) return null;
-      const source = await nextSource(tx, p);
+      const source = await nextCaptureSource(tx, db, p);
       if (!source.snapshot) return null;
       const imageId = source.snapshot.data().imageId,
         image = await readActiveLibraryImage(tx, db, uid, imageId);
@@ -353,71 +279,9 @@ export function createCampaignCaptureService({ db, assets, now = Date.now }) {
           receipt(tx, op, value);
           return captureProgress(value, available);
         }
-        const source = await nextSource(tx, p);
-        let value,
-          plan = null;
-        if (!source.snapshot) value = mutated(source.next);
-        else if (p.phase === 'images') {
-          const imageId = source.snapshot.data().imageId,
-            image = await readActiveLibraryImage(tx, db, uid, imageId);
-          if (!media || media.imageId !== imageId || media.path !== image.value.path)
-            fail('failed-precondition', 'A imagem mudou durante a captura.');
-          const useKey = baseImageUseKey(p.baseId, imageId),
-            use = await prepareLibraryImageUse(tx, db, uid, {
-              key: useKey,
-              usage: { kind: 'campaign-base', campaignId: p.campaignId, baseId: p.baseId },
-              previousId: null,
-              nextId: imageId,
-            });
-          plan = {
-            commit() {
-              use.commit();
-              tx.update(source.snapshot.ref, {
-                state: 'ready',
-                path: media.path,
-                generation: media.generation,
-                size: media.size,
-                useKey,
-              });
-            },
-          };
-          value = mutated({
-            ...p,
-            cursor: source.snapshot.id,
-            processed: p.processed + 1,
-            counts: { ...p.counts, image: p.counts.image + 1 },
-          });
-        } else if (p.phase === 'finalizing') {
-          const item = source.snapshot.data(),
-            state = item.structured;
-          if (
-            state.capturedExtraWords !== state.blockWordCount ||
-            state.capturedExtraCount !== state.blockCount
-          )
-            fail('failed-precondition', 'O agregado dos blocos da origem precisa de verificação.');
-          value = mutated({ ...p, cursor: source.snapshot.id });
-        } else {
-          plan = await captureItem(
-            tx,
-            db,
-            { ...p, parentId: source.parentId ?? p.parentId },
-            p.phase,
-            source.snapshot,
-          );
-          value = mutated({
-            ...p,
-            parentId: source.parentId ?? p.parentId,
-            cursor: source.snapshot.id,
-            processed: p.processed + 1,
-            counts: Object.fromEntries(
-              Object.entries(p.counts).map(([key, count]) => [
-                key,
-                count + (plan.counts[key] ?? 0),
-              ]),
-            ),
-          });
-        }
-        plan?.commit();
+        const plan = await prepareCaptureStep(tx, db, p, media);
+        const value = mutated(plan.next);
+        plan.commit();
         tx.update(ref, value);
         tx.update(db.doc(basePath(uid, p.baseId)), { counts: value.counts });
         receipt(tx, op, value);

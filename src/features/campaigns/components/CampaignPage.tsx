@@ -10,6 +10,7 @@ import { useAuth } from '@/features/auth';
 import { CampaignBaseReader } from '@/features/campaign-bases';
 import { CampaignNotesPanel } from '@/features/campaign-notes';
 import { CampaignLorePanel } from '@/features/campaign-lore';
+import { CampaignComparisonPanel } from '@/features/campaign-comparisons';
 import {
   Badge,
   Alert,
@@ -167,6 +168,7 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
       <CampaignNotesPanel campaignId={campaign.id} />
       {campaign.provenance.kind === 'original' && campaign.activeBaseId && (
         <>
+          <CampaignComparisonPanel campaignId={campaign.id} currentBaseId={campaign.activeBaseId} />
           <CampaignLorePanel campaignId={campaign.id} baseId={campaign.activeBaseId} />
           <CampaignBaseReader campaignId={campaign.id} generationId={campaign.activeBaseId} />
         </>
