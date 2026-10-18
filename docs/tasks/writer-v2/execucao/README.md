@@ -76,6 +76,11 @@ Um documento não comprova uma funcionalidade. Testes locais não comprovam CI,
 capacidade comercial live, participação humana ou operação em produção.
 Aceite final segue a [definição de concluído](../../../development-process.md).
 
+C2 foi enviado em `16d90b9`, com validate local verde; seus checks remotos seguem
+em paralelo. O [plano C3A](18-comparacao-de-bases-da-campanha.md) está fechado após
+revisões técnicas, antes do código. Comparar uma candidata não substitui a adoção explícita C3B nem
+a limpeza integral da campanha, que permanecem obrigatórias.
+
 ## Decisões recebidas em 2026-10-13
 
 - Brasil e BRL; Stripe preparado para pagamentos, segundo o operador.

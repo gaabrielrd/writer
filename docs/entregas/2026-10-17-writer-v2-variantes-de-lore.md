@@ -44,7 +44,8 @@ resposta sem persistir texto derivado ou chaves no navegador.
 - [x] Reserva entre abas, autorização tardia e indisponibilidade de recursos seguros têm controles.
 - [x] SDK direto nega corpos, overlays, controles e chaves; notas C1 são preservadas.
 - [x] Validate completo, revisão e navegador dirigido passaram localmente.
-- [ ] CI do novo head e registro Git remoto: conferir no PR após envio.
+- [x] Commit e push conferidos no SHA 16d90b9.
+- [ ] CI do novo head: conferir no PR.
 
 ## Arquivos alterados
 
@@ -150,3 +151,21 @@ compartilhamento e comércio. Essas obrigações continuam nos respectivos incre
 5. Tornar a origem/alvo indisponível: nenhum texto recuperado deve aparecer; notas
    próprias continuam editáveis e o pedido pode ser encerrado explicitamente.
 6. Repetir por teclado e em 320 px; fechamento do modal devolve foco à ficha.
+
+## Publicação no PR — 2026-10-17
+
+Commit `16d90b91718dad9e06df64d191dc0473f989dcd6`, 49 arquivos, 7.459 inserções e
+81 remoções. Pre-commit/commit-msg passaram. Pre-push preservado: tipos verdes,
+167 arquivos/1.620 testes em 116,97 s. SHA confirmado por ls-remote; worktree
+limpo após envio. Checkout original `master 522ccaa` preservado e limpo.
+
+[PR 21](https://github.com/gaabrielrd/writer/pull/21) permanece aberto em rascunho.
+[CI 39085289874](https://github.com/gaabrielrd/writer/actions/runs/39085289874) e
+[regras 39085290023](https://github.com/gaabrielrd/writer/actions/runs/39085290023)
+estavam em execução na primeira consulta; não constituem aprovação remota.
+Comparação/adoção e exclusão integral continuam pendentes. Sem merge ou deploy.
+
+Consulta intermediária dos checks de `16d90b9`: Validate Node 22 e 24, auditoria,
+produção Chromium e regras concluídos com sucesso. Logs reais: produção 7/7,
+19,3 s; Firestore 120/120, zero falhas/skips, 51.036,07656 ms. Oito shards visuais
+ainda em execução; esses resultados parciais não encerram a CI geral.

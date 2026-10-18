@@ -151,6 +151,12 @@ independentes e está implementado e validado localmente. Oferece ficha inteira 
 retirada/restauração/descarte e recuperação cifrada com autorização atual também
 dos alvos de relações. Não antecipa troca de activeBaseId ou exclusão integral.
 
+O [plano C3A](18-comparacao-de-bases-da-campanha.md) está fechado após revisão técnica:
+capturar candidata completa e comparar itens, referências e ilustrações por
+identidade, sem alterar a base ativa. C3B continua responsável pela adoção
+explícita e continuidade das variantes/pedidos antigos; exclusão integral conserva
+incremento próprio. Comparação isolada não encerra C3 ou F2-07.
+
 Trabalhar em gerações preparing/ready/aborted. activeBaseId só muda no commit final;
 preparação parcial nunca substitui uma base pronta. Paginar metadados 25/50, mas
 limitar também bytes/leituras de corpos por etapa; não gravar cinquenta fichas de
