@@ -207,3 +207,42 @@ Não foi repetido validate integral para esta correção de sincronização do t
 os validates locais de A acima continuam identificados por seu snapshot.
 O próximo head precisa de nova CI; acompanhar sem bloquear a descoberta de P1,
 sem declarar a falha antiga aprovada nem atribuí-la a código de produção.
+
+### Envio da correção de retomada e descoberta visual
+
+`f0220944abb319ea3299d2fd5a0cad0b642cf9f3` foi enviado com hooks normais;
+pre-push passou tipos e 2.527 testes/219 arquivos em 148,39 s. HEAD, upstream e
+branch remota coincidiram; master original permaneceu limpa em 522ccaa.
+Rules 39662549405 passaram; CI 39662549222 ainda executava na consulta.
+
+O fechamento da matriz anterior de 5f947a0 mostrou outra falha: Visual 7/12
+(job 119429326763) teve 109 passes, uma falha também no retry e um skip em
+14,1 min. Cinco outros shards passaram e seis foram cancelados; agregador E2E
+falhou. Não há CI geral verde para esse head. O teste de lore de aventura ainda
+procurava data-lore-id separado por dois-pontos; A usa a tupla JSON qualificada
+com a mesma origem do matcher servidor. Nenhum fallback legado foi introduzido.
+
+A expectativa visual foi atualizada para localizar a marcação pelo nome acessível
+e exigir a tupla exata de aventura, projeto e ficha. Exige uma única marcação e
+nenhuma do alvo global de mesmo alias, acrescenta edição por teclado e abre a
+ficha local por Enter para conferir resumo e texto editado. Asserções anteriores
+de privacidade, referência além da primeira página, salvamento e largura permanecem.
+
+O primeiro lote dirigido local falhou 6/6 (sem retry): cinco por seletor ambíguo
+dos dois botões Fechar, um por fill durante atualização do editor ter concatenado
+a prosa. Não foram contados como passes. O arranjo agora aguarda texto e marcação,
+edita por teclado com resultado integral esperado e fecha por Escape. Nenhuma
+mudança de produção, timeout, retry ou cobertura. Lint e formatação dirigidos passaram;
+resultado final: 6/6 perfis passaram em 45,33 s, zero retry/skip/flaky, todos os
+coletores com blockedRequests=[] e runtimeErrors=[]. Identidade, prioridade local,
+teclado, leitura da ficha e salvamento foram observados no navegador real.
+As duas capturas finais light (desktop e 320 px) e o leitor móvel foram
+inspecionados: prosa sem duplicação e sem corte horizontal. Transporte permanece
+fictício; isso não substitui a prova SDK de autorização registrada em A.
+
+Logs privados: ci-visual7-119429326763-failure.txt, primeiro lote
+ci-lore-identity-native.json, resultado final ci-lore-identity-native-final.json e
+manifesto ci-lore-identity-native-verification.json, sob writer-v2-editor-chat-qa.
+Revisão final sem achados P1/P2; somente teste visual e este registro no novo
+commit. Não houve novo validate integral para alterar expectativa de teste;
+o próximo head ainda depende de CI própria.

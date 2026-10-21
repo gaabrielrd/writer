@@ -309,14 +309,32 @@ test('autor cria e edita lore privado e usa referência e alias local além da p
   await expect(planning).toHaveCount(0);
   await planner.getByRole('link', { name: 'Travessia local', exact: true }).click();
   const editor = page.getByRole('textbox', { name: 'Área de escrita da cena', exact: true });
-  await editor.fill('Rastro aguarda no farol.');
-  const mention = page.locator(
-    '[data-lore-id="adventure:' + source.adventureId + ':' + source.localId + '"]',
-  );
+  await expect(editor).toHaveText('Rastro aguarda no farol.');
+  const mention = editor.getByRole('button', {
+    name: 'Ver ficha de Z Vigia da aventura',
+    exact: true,
+  });
   await expect(mention).toHaveText('Rastro');
-  await expect(page.locator('[data-lore-id="' + source.globalId + '"]')).toHaveCount(0);
+  await editor.press('Control+End');
+  await page.keyboard.type(' A vigília continua.');
+  await expect(editor).toHaveText('Rastro aguarda no farol. A vigília continua.');
+  await expect(mention).toHaveAttribute(
+    'data-lore-id',
+    JSON.stringify(['adventure', source.adventureId, source.localId]),
+  );
+  await expect(editor.locator('[data-lore-id]')).toHaveCount(1);
+  await expect(
+    editor.getByRole('button', { name: 'Ver ficha de Alvo global autorizado', exact: true }),
+  ).toHaveCount(0);
   await expect(page.getByText('Salvo', { exact: true })).toBeVisible();
   await capture(page, info, 'aventura-alias-local-com-referencia');
+  await mention.focus();
+  await page.keyboard.press('Enter');
+  const reader = page.getByRole('dialog', { name: 'Z Vigia da aventura', exact: true });
+  await expect(reader.getByText('Resumo particular 26', { exact: true })).toBeVisible();
+  await expect(reader.getByText('REVISÃO SEM TRIM', { exact: true })).toBeVisible();
+  await reader.press('Escape');
+  await expect(reader).toHaveCount(0);
   const saved = await page.evaluate(
     async ({ prefix, source }) => {
       const api = (await import(
