@@ -11,10 +11,10 @@ Fluxo recomendado para levar uma ideia até o código, de forma organizada e ver
 5. **Planejamento**: quebre em passos. Você pode pedir ao agente: "Use a skill plan-feature...".
 6. **Branch**: crie uma branch para o trabalho (`git checkout -b feat/descricao`).
 7. **Implementação**: escreva o código seguindo a [arquitetura](architecture.md).
-8. **Validação local**: execute testes direcionados ao comportamento afetado durante ajustes. Rode `npm run validate` no fechamento do incremento; amplie os testes quando o risco de integração ou uma falha justificar. Em mudanças de interface, resolva também os avisos de `npm run check:styleguide`.
+8. **Validação local**: execute testes direcionados ao comportamento afetado durante ajustes. Rode `npm run validate` no fechamento de grandes blocos; amplie os testes quando o risco de integração ou uma falha justificar. Em mudanças de interface, resolva também os avisos de `npm run check:styleguide`.
 9. **Evidência da entrega**: registre em [entregas](entregas/README.md) o que foi entregue, os testes e o resultado das validações. Você pode pedir ao agente: "Use a skill document-delivery...".
 10. **Commit**: registre as mudanças com mensagem clara.
-11. **Pull Request**: abra o PR descrevendo o que mudou e por quê.
+11. **Pull Request**: quando o envio remoto for solicitado, abra ou atualize o PR descrevendo o que mudou e por quê.
 12. **Revisão**: ajuste conforme os comentários antes de integrar.
 
 Atualizações herdadas do template usam `npm run update:template -- --dry-run`
@@ -44,7 +44,8 @@ A convenção é verificada pelo hook `commit-msg` (`scripts/check-commit-messag
 | Pull Request | `validate` em Node 22/24, auditoria e E2E no Chromium |
 
 Os hooks são atalhos para pegar o problema cedo; corrija a causa quando um deles
-falhar. O CI executa os portões completos e é a fonte da verdade.
+falhar. Na integração remota, o CI executa os portões completos; durante o
+desenvolvimento local, registre os checks efetivamente executados.
 
 ## Definição de concluído
 
@@ -54,13 +55,18 @@ Uma tarefa está concluída quando:
 - Funciona localmente
 - Os testes passam
 - Não há erro de lint, typecheck ou build (`npm run validate` verde)
-- O CI está verde no Pull Request
+- Para integração remota, o CI está verde no Pull Request
 - A documentação foi atualizada quando necessário
 - A entrega está registrada em [entregas](entregas/README.md)
 - As alterações estão registradas no Git
 
-Por decisão do operador em 2026-10-15, a espera pela CI não bloqueia o próximo
-incremento após a validação local. Acompanhe os checks em paralelo e incorpore
-regressões ao trabalho. Registre separadamente “validado localmente; CI pendente”
-e conclusão com CI verde, sem converter espera ou teste local em aprovação remota.
-Essa sequência não autoriza merge, deploy ou lançamento.
+Por decisão do operador em 2026-10-21, durante o desenvolvimento mantenha as
+alterações em commits locais, sem push ou atualização de PRs. Ignore a CI remota:
+não acompanhe, dispare ou repita workflows. Esta orientação substitui o
+acompanhamento em paralelo definido em 2026-10-15.
+
+A validação local permite continuar os incrementos. Execute testes direcionados
+após ajustes e `npm run validate` no fechamento de grandes blocos. Registre quais
+checks passaram e quais não foram executados; o resultado local não comprova
+aprovação remota. Uma nova solicitação de envio remoto retoma os portões da CI
+para integração. Merge, deploy e lançamento dependem de instrução própria.

@@ -15,7 +15,7 @@
 3. Apresente um plano para mudanças que afetam vários arquivos.
 4. Mantenha as alterações dentro do escopo solicitado.
 5. Adicione ou atualize testes para mudanças de comportamento.
-6. Execute testes direcionados a cada ajuste e `npm run validate` no fechamento do incremento.
+6. Execute testes direcionados a cada ajuste e `npm run validate` no fechamento de grandes blocos.
 7. Revise o diff final.
 8. Atualize a documentação afetada.
 9. Registre a evidência da entrega em `docs/entregas`.
@@ -160,6 +160,7 @@
 
 - Primeira linha no formato `tipo: descrição`, até 72 caracteres, sem ponto final.
 - Não use `--no-verify` para contornar os hooks.
+- Durante o desenvolvimento, mantenha commits locais; não faça push nem atualize PRs sem nova instrução do usuário.
 
 ## Testes
 
@@ -170,7 +171,7 @@
 - Use `WRITER_VISUAL_PORT` distinto por checkout nas execuções visuais paralelas.
 - Mantenha protótipos demonstrativos em `e2e/visual`; não registre fixtures como evidência de autorização, pagamento ou piloto reais.
 - Repita apenas os testes afetados pelo ajuste; amplie a validação quando houver risco de integração ou falha sem causa resolvida.
-- Avance após validação local sem esperar a CI remota; acompanhe os checks em paralelo e corrija regressões identificadas.
+- Durante o desenvolvimento, ignore a CI remota: não acompanhe, dispare ou repita workflows; registre a validação local realizada.
 
 ## Documentação
 
