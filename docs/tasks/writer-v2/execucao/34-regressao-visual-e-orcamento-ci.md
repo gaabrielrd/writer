@@ -74,4 +74,7 @@ Oito contratos CI, tipos E2E e lint verdes. Enumeração completa: 1.332 IDs,
 84 nos quatro primeiros shards/83 nos demais, união exata sem duplicação.
 Sem novo validate completo: produto preserva os bytes validados no M2.
 Veja a [entrega dirigida](../../../entregas/2026-10-21-writer-v2-preparo-de-edicao-e-ci.md).
-CI nova e medição remota pendentes; P1 continua sendo o próximo trabalho funcional.
+CI 39689254763 e Rules 39689254799 verdes em 96ff5e0; os 16 shards reportaram
+1.320 passes, 12 skips e zero retries, com 5,5–12,4 min de execução Playwright
+por shard (sem setup). As seis jornadas de alias passaram no Linux sem retry.
+P1 continua sendo o próximo trabalho funcional; o marco não altera sua contagem.

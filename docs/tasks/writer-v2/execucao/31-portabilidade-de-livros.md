@@ -1,6 +1,6 @@
 # F2-09 P1 — Backup completo e restauração privada de livros
 
-**Estado em 2026-10-21:** universo confirmado; M1 de captura de histórico e M2 de contêiner limitado implementados e validados localmente. Veja [M1](32-captura-consistente-do-historico.md) e [M2](33-conteiner-limitado-de-backup.md). Pacote completo/schema/captura restante/restauração ainda pendentes.
+**Estado em 2026-10-21:** universo confirmado; M1 de captura de histórico e M2 de contêiner limitado implementados e validados localmente. Veja [M1](32-captura-consistente-do-historico.md) e [M2](33-conteiner-limitado-de-backup.md). M3a fecha o [pertencimento SDK da estrutura](35-clock-da-estrutura-legada.md). Pacote completo/schema/captura restante/restauração ainda pendentes.
 **Base:** A enviado em `5f947a0e5e50df81154df14a7124b914278cd4c9`, HEAD/upstream/remoto
 conferidos e checkout limpo no fechamento A. PR21 aberto em rascunho; Rules
 39659740521 verdes. Na CI 39659740574 passaram Node 22, auditoria e produção

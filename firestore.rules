@@ -21,6 +21,13 @@ service cloud.firestore {
           || validStudioDate(request.resource.data.get('createdAt', null)));
     }
 
+    // Membership writes must invalidate paginated captures of a live book.
+    function bookStructureClockAdvanced(bookId) {
+      let before = get(/databases/$(database)/documents/books/$(bookId)).data.get('updatedAt', null);
+      let after = getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('updatedAt', null);
+      return validStudioDate(after) && (!validStudioDate(before) || after > before);
+    }
+
     function isBookAuthor(bookId) {
       return isAuthenticated()
         && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid;
@@ -551,6 +558,7 @@ service cloud.firestore {
         allow read: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId) && validAct(request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == false
+          && bookStructureClockAdvanced(bookId)
           && getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('actCount', 0) == request.resource.data.order;
         allow update: if false;
         allow delete: if isBookAuthor(bookId)
@@ -561,8 +569,11 @@ service cloud.firestore {
         allow delete: if isBookAuthor(bookId)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
           && resource.data.get('contentMode', 'legacy') != 'scenes'
-          && resource.data.get('deleting', false) != true;
+          && resource.data.get('deleting', false) != true
+          && (get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
+            || bookStructureClockAdvanced(bookId));
         allow create: if isBookAuthor(bookId)
+          && bookStructureClockAdvanced(bookId)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
           && request.resource.data.get('contentMode', 'legacy') == 'legacy'
           && validActLink(bookId, request.resource.data)

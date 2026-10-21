@@ -3,8 +3,8 @@
 - **Data:** 2026-10-21
 - **Branch:** codex/writer-v2
 - **Plano:** [execução 34](../tasks/writer-v2/execucao/34-regressao-visual-e-orcamento-ci.md).
-- **Estado:** manutenção de testes/CI validada de forma dirigida; aprovação remota
-  do novo head pendente. Sem mudança de runtime do produto.
+- **Estado:** manutenção concluída tecnicamente em 96ff5e0, com CI e Rules verdes.
+  Sem mudança de runtime do produto.
 
 ## Objetivo e alterações
 
@@ -42,7 +42,7 @@ pela interface. Não se afirma corrigir um defeito de runtime de Control+End.
 - [x] As 1.332 identidades constam exatamente uma vez na união dos 16 shards.
 - [x] Oito contratos CI, tipos E2E, lint, formato, links e diff verdes.
 - [x] Nenhum arquivo de runtime/dependência/Rule/armazenamento alterado.
-- [ ] CI remota do novo head verde e duração efetiva medida.
+- [x] CI/Rules de 96ff5e0 verdes e duração remota registrada abaixo.
 
 ## Arquivos alterados
 
@@ -92,8 +92,8 @@ Diff dirigido: sem alteração de src/functions/Rules, dependência, timeout, re
 cobertura ou critério de sucesso. Regra de AGENTS vigente continua suficiente;
 nenhuma regra de produto foi criada/revogada. Sem segredos, mídia ou artefato grande.
 
-A prova final local é Windows. A confirmação do preparo no Linux e a duração da
-matriz dependem da próxima CI; resultados anteriores permanecem falhos/parciais.
+A prova local Windows foi complementada pela CI Linux verde de 96ff5e0,
+com as seis jornadas de alias sem retry. Resultados anteriores permanecem falhos/parciais.
 Não esperar a CI para avançar a P1, conforme autorização do operador.
 Sem merge, deploy, provedor pago ou modificação da master original.
 Não contar manutenção como tarefa ampla do Writer V2; P1/F2-09 e gates humanos/
@@ -105,3 +105,19 @@ Rodar a jornada autor de adventure-lore nos seis projetos. Seleção deve aparec
 ser colapsada e reconhecida antes de digitar; prosa anterior, alias e leitor
 continuam íntegros. Para conferir distribuição, listar a suíte e cada shard 1/16
 a 16/16 e comparar identidades. --list não prova execução nem performance.
+
+## Confirmação remota — 2026-10-21
+
+Commit 96ff5e040e1fb81ead6847f518d97267fa9da099: [CI 39689254763](https://github.com/gaabrielrd/writer/actions/runs/39689254763)
+e [Rules 39689254799](https://github.com/gaabrielrd/writer/actions/runs/39689254799)
+concluídas com sucesso. Os 21 jobs CI passaram, incluindo validate Node 22/24,
+auditoria, produção, 16 shards e agregador. Rules passaram em job próprio.
+
+Logs dos 16 shards conferidos: 1.320 passes, 12 skips reportados e zero retries;
+nenhum skip foi introduzido no ajuste. As seis jornadas autor/alias passaram na
+primeira tentativa no Linux. Duração reportada pelo Playwright por shard:
+5,5 a 12,4 minutos, sem setup/upload/consolidação; não é garantia de prazo futuro.
+Sem cancelamentos nessa matriz. Evidência compacta privada em ci-96-remote.json.
+
+O resultado fecha tecnicamente esta manutenção. O gate posterior M3a de estrutura
+tem suas próprias provas SDK e seus checks ainda pendentes, sem herdar aprovação.

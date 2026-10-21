@@ -213,3 +213,18 @@ sem omissão/duplicação. Sem mudança de runtime ou novo validate completo; pr
 conserva os bytes validados no M2. CI Linux/performance ainda pendentes.
 Veja a [entrega dirigida](../../../entregas/2026-10-21-writer-v2-preparo-de-edicao-e-ci.md).
 Não é nova tarefa ampla; continuar schema/captura restante de P1.
+
+### P1 M3a — pertencimento SDK da estrutura
+
+O [contrato 35](35-clock-da-estrutura-legada.md) exige raiz/filho atômicos para
+criar capítulo/ato e remover capítulo ativo. Reproduziu quatro operações indevidas
+no SDK e fechou o gate sem mudar os escritores atuais, que já avançam a raiz.
+71 cenários distintos têm prova positiva composta; a
+[entrega M3a](../../../entregas/2026-10-21-writer-v2-clock-da-estrutura-legada.md)
+preserva as falhas/ajustes e os limites. CI nova pendente. Root token não cobre
+sozinho metadados/personas/progresso/mídia ou Admin; continuar captura integral P1.
+
+A manutenção anterior 96ff5e0 tem CI/regras verdes: 16 shards, 1.320 passes,
+12 skips reportados e zero retries. As seis jornadas de alias passaram no Linux
+sem retry; a duração Playwright por shard ficou entre 5,5 e 12,4 min, sem setup.
+Esses resultados não substituem os checks das novas Rules de M3a.

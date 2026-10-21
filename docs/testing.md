@@ -894,3 +894,22 @@ TypedArray entre realms. A prova nativa dirigida usa Chromium, Blob/Web Crypto
 reais, vetor de 404 bytes e 12 payloads máximos; evidência na entrega M2.
 A fixture binária não demonstra schema/autorização de livro. Os testes de P1
 completo deverão provar captura, mídia, revisão e restauração/ativação no servidor.
+
+## Pertencimento da estrutura legada — P1 M3a
+
+Com emulador demo configurado em FIRESTORE_EMULATOR_HOST:
+
+```bash
+node --test tests/firestore/bookStructureBackup.rules.test.mjs
+```
+
+O arquivo também é descoberto por npm run test:rules. São dez casos de SDK/Rules
+com timestamp Admin e serviço de token reais: criação/remoção sem raiz recusadas,
+data igual/retrocesso/raiz errada, atomicidade e token com texto vazio,
+isolamento, datas legadas, cleanup deleting e lote de 200. Metadata direta
+permanece permitida e demonstra que a raiz não substitui readset por documento.
+
+A [entrega M3a](entregas/2026-10-21-writer-v2-clock-da-estrutura-legada.md) separa
+reprodução vermelha, dez novos verdes, regressão de duas operações antigas e
+26 testes finais dos arquivos alterados. As outras cinco famílias somam 45
+positivos inalterados; não converter evidência composta em execução única.

@@ -131,3 +131,12 @@ O preparo final observa a barra de seleção aparecer e desaparecer, além da
 posição colapsada no DOM. Não altera runtime nem relaxa prosa/alias esperados;
 também não afirma corrigir o atalho Control+End como comportamento de produto.
 Veja [plano dirigido 34](../tasks/writer-v2/execucao/34-regressao-visual-e-orcamento-ci.md).
+
+### Confirmação da revisão P1
+
+A CI de 96ff5e0 concluiu todos os 16 shards e o agregador com sucesso:
+1.320 passes, 12 skips reportados, zero retries. As seis jornadas de alias
+passaram no Linux na primeira tentativa. Os logs Playwright reportam 5,5–12,4 min
+por shard, sem preparação/upload/consolidação. Esse head também tem validate
+Node 22/24, auditoria, produção e Rules verdes. É medição desta execução,
+não garantia de prazo futuro nem aprovação de mudanças posteriores.

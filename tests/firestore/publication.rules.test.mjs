@@ -148,7 +148,11 @@ describe('publicação segura no Firestore', { concurrency: false }, () => {
     await assertSucceeds(
       updateDoc(doc(db('author'), bookPath), { title: 'Rascunho revisado', wordCount: 42 }),
     );
-    await assertSucceeds(setDoc(doc(db('author'), `${bookPath}/chapters/new`), chapter));
+    const owner = db('author');
+    const create = writeBatch(owner);
+    create.set(doc(owner, `${bookPath}/chapters/new`), chapter);
+    create.update(doc(owner, bookPath), { updatedAt: 101 });
+    await assertSucceeds(create.commit());
     await assertFails(getDoc(doc(db(), bookPath)));
     await assertFails(getDoc(doc(db(), `${bookPath}/chapters/new`)));
     assert.equal((await getDoc(doc(db(), rootPath))).exists(), false);

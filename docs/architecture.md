@@ -499,6 +499,13 @@ não estão integrados. Não acumular os frames no consumidor como prova de mem�
 limitada. JSON v1–v6 permanece intacto. Veja a [ADR 0045](decisions/0045-book-backup-framing.md)
 e o [contrato M2](tasks/writer-v2/execucao/33-conteiner-limitado-de-backup.md).
 
+Rules exigem avanço atômico de updatedAt da raiz na criação SDK de ato/capítulo
+e remoção de capítulo ativo. O token usa timestamps nativos; o avanço lógico
+garante alteração dessa raiz mesmo com contagens iguais. Limpeza já deleting
+mantém o fluxo anterior, com captura bloqueada. Metadata direta de capítulo ainda
+exige readset próprio; essa regra de pertencimento não prova snapshot integral
+nem controla Admin. Veja a [ADR 0046](decisions/0046-book-backup-membership-clock.md).
+
 Ver [contrato F2-05](tasks/writer-v2/execucao/11-historico-e-restauracao.md).
 
 ## Blocos narrativos de aventura e prévia privada

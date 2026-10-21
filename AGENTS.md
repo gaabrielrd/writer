@@ -105,6 +105,7 @@
 - Incremente `historyRevision` na mesma transação de criação/retirada de versão e cópia anterior; preserve o contador no cliente, replay e cleanup.
 - Capture histórico completo com o mesmo token nativo por página e reautorização final; coordene writers/Rules e drene instâncias antigas antes de habilitar, conforme ADR 0044.
 - Verifique selo/EOF do contêiner inteiro antes de confiar no backup; mantenha validação semântica/autorização separadas do framing, conforme ADR 0045.
+- Avance updatedAt do livro atomicamente na criação SDK de ato/capítulo e na remoção de capítulo ativo; preserve a limpeza já deleting, conforme contrato 35.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.
