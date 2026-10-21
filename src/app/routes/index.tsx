@@ -11,6 +11,13 @@ import { AssistedBookPage, BookPage, ReaderView } from '@/features/books';
 import { LorePage } from '@/features/lore';
 import { EditorPage } from '@/features/editor';
 import { AISettingsPage } from '@/features/ai-assistant';
+import { StudioPage } from '@/features/studio';
+import { AdventurePage } from '@/features/adventures';
+import { AdventureBlockEditorPage } from '@/features/adventure-blocks';
+import { SceneEditorPage } from '@/features/scenes';
+import { CampaignPage } from '@/features/campaigns';
+import { SignedInRoute } from '@/app/components/SignedInRoute';
+import { FutureSpacePage } from '@/app/components/FutureSpacePage';
 
 /**
  * Definicao das rotas, separada do router para permitir montar a mesma
@@ -30,6 +37,71 @@ export const routes: RouteObject[] = [
       {
         path: 'login',
         element: <LoginPage />,
+      },
+      {
+        path: 'studio',
+        element: (
+          <SignedInRoute>
+            <StudioPage />
+          </SignedInRoute>
+        ),
+      },
+      {
+        path: 'adventures/:adventureId',
+        element: (
+          <SignedInRoute>
+            <AdventurePage />
+          </SignedInRoute>
+        ),
+      },
+      {
+        path: 'campaigns/:campaignId',
+        element: (
+          <SignedInRoute>
+            <CampaignPage />
+          </SignedInRoute>
+        ),
+      },
+      {
+        path: 'adventures/:adventureId/scenes/:sceneId',
+        element: (
+          <SignedInRoute>
+            <SceneEditorPage />
+          </SignedInRoute>
+        ),
+      },
+      {
+        path: 'adventures/:adventureId/scenes/:sceneId/blocks/:blockId',
+        element: (
+          <SignedInRoute>
+            <AdventureBlockEditorPage />
+          </SignedInRoute>
+        ),
+      },
+      {
+        path: 'books/:bookId/scenes/:sceneId',
+        element: (
+          <AuthorBookRoute>
+            <SceneEditorPage />
+          </AuthorBookRoute>
+        ),
+      },
+      {
+        path: 'publications',
+        element: (
+          <SignedInRoute>
+            <FutureSpacePage space="publications" />
+          </SignedInRoute>
+        ),
+      },
+      { path: 'catalog', element: <FutureSpacePage space="catalog" /> },
+      {
+        path: 'biblioteca',
+        element: (
+          <SignedInRoute>
+            <FutureSpacePage space="library" />
+          </SignedInRoute>
+        ),
       },
       {
         path: 'books/:bookId',

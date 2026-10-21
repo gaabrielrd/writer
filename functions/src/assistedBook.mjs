@@ -354,6 +354,7 @@ export function createAssistedBookService({
             coverUrl: selected?.url ?? null,
             coverImageId: selectedRef ? (data.coverId ?? data.imageId) : null,
             status: 'draft',
+            localLoreVersion: 0,
             wordCount: 0,
             createdAt: now(),
             updatedAt: now(),

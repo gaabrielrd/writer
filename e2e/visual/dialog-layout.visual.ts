@@ -62,6 +62,7 @@ test('edição de livro mantém header e footer visíveis em viewport baixo', as
 test('importação extensa usa uma única área de rolagem', async ({ page }, testInfo) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   await page.getByLabel('Arquivo do manuscrito').setInputFiles({
     name: 'trinta-capitulos.md',
     mimeType: 'text/markdown',

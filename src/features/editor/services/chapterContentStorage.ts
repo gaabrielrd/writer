@@ -26,10 +26,18 @@ export function saveChapterContent(
   bookId: string,
   chapterId: string,
   content: string,
+  expectedContent?: string | (() => string),
+  ownerId?: string,
 ): Promise<{ wordCount: number }> {
   const wordCount = countWords(content);
   return runChapterOperation(bookId, chapterId, async () => {
-    await updateChapter(bookId, chapterId, { content, wordCount });
+    const observed = typeof expectedContent === 'function' ? expectedContent() : expectedContent;
+    await updateChapter(bookId, chapterId, {
+      content,
+      wordCount,
+      ...(observed !== undefined ? { expectedContent: observed } : {}),
+      ...(ownerId ? { expectedOwnerId: ownerId } : {}),
+    });
     return { wordCount };
   });
 }

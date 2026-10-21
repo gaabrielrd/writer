@@ -4,6 +4,7 @@ export interface Book {
   id: string;
   universeId?: string | null;
   personaId?: string | null;
+  localLoreVersion?: number;
   authorId: string;
   title: string;
   genre?: string;
@@ -11,7 +12,14 @@ export interface Book {
   coverUrl?: string | null;
   coverImageId?: string | null;
   status: BookStatus;
+  editorialState?: 'draft' | 'review' | 'ready';
+  hasProgressResources?: boolean;
   wordCount: number;
+  hasSceneResources?: boolean;
+  sceneRevision?: number;
+  hasNarrativeResources?: boolean;
+  narrativeRevision?: number;
+  deleting?: boolean;
   createdAt: number;
   updatedAt: number;
 }

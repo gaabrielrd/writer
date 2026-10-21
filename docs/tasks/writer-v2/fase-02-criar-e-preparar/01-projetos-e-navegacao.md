@@ -1,8 +1,10 @@
 # W2-F2-01 — Organizar projetos e navegação do estúdio
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Concluído tecnicamente em `15cd417`, com CI e regras verdes; aceites humanos/comerciais permanecem nas entregas próprias.
+**Evidência de planejamento/autorização:** [Estúdio e projetos](../execucao/07-estudio-projetos.md).
+**Evidência da implementação:** [Entrega do Estúdio](../../../entregas/2026-10-13-writer-v2-estudio.md).
 **Dependências:** [W2-F1-06](../fase-01-direcao-e-fundamentos/06-contratos-e-replanejamento.md)
-**Áreas propostas:** app/routes, books, universes; propostas adventures e campaigns. Nomes novos são propostas, sujeitos à fase 1.
+**Áreas implementadas:** app/routes, studio, books, universes, adventures e campaigns; backend/regras/índices pertinentes.
 
 ## Contexto e objetivo
 
@@ -21,17 +23,17 @@ Entradas: conta autenticada, projetos atuais e navegação aprovada. Resultado: 
 
 ## Passos de execução
 
-- [ ] Definir contratos de listagem/criação e rotas pela interface pública.
-- [ ] Implementar serviços e autorização, incluindo criação idempotente.
-- [ ] Montar navegação e telas com estados assíncronos completos.
-- [ ] Verificar links antigos, retomada e migração apenas dos campos aprovados.
+- [x] Definir contratos de listagem/criação e rotas pela interface pública.
+- [x] Implementar serviços e autorização, incluindo criação idempotente.
+- [x] Montar navegação e telas com estados assíncronos completos.
+- [x] Verificar links antigos, retomada e migração apenas dos campos aprovados.
 
 ## Critérios de aceite
 
-- [ ] Autor abre livro existente e mestre cria campanha sem ter de criar um livro fictício.
-- [ ] Projeto independente funciona sem universo.
-- [ ] Conta sem acesso não encontra projeto na lista nem por URL direta.
-- [ ] Retentativa não duplica projetos, capas ou débitos de IA.
+- [x] Autor abre livro existente e mestre cria campanha sem ter de criar um livro fictício.
+- [x] Projeto independente funciona sem universo.
+- [x] Conta sem acesso não encontra projeto na lista nem por URL direta.
+- [x] Retentativa não duplica projetos, capas ou débitos de IA.
 
 ## Validação
 

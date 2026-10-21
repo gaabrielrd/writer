@@ -1,12 +1,19 @@
 import { BookOpen, Edit2, Eye, EyeOff, MapPin, Tag, Trash2, User } from 'lucide-react';
 import { Badge, Button, Card } from '@/shared/ui';
-import type { LoreCategory, LoreEntity } from '../model/loreEntity';
+import type { LoreCategory, LoreEntity, LoreMentionEntity } from '../model/loreEntity';
 import styles from './LoreEntityCard.module.css';
 
-export interface LoreEntityCardProps {
-  entity: LoreEntity;
-  onView: (entity: LoreEntity) => void;
-  onEdit: (entity: LoreEntity) => void;
+export interface LoreEntityCardProps<
+  T extends LoreMentionEntity & {
+    isPublic: boolean;
+    relationCount?: number;
+    relations?: unknown[];
+  } = LoreEntity,
+> {
+  entity: T;
+  disabled?: boolean;
+  onView: (entity: T) => void;
+  onEdit: (entity: T) => void;
   onDelete: (entityId: string) => void;
 }
 
@@ -34,7 +41,14 @@ const CATEGORY_BADGES: Record<
   other: 'neutral',
 };
 
-export function LoreEntityCard({ entity, onView, onEdit, onDelete }: LoreEntityCardProps) {
+export function LoreEntityCard<
+  T extends LoreMentionEntity & {
+    isPublic: boolean;
+    relationCount?: number;
+    relations?: unknown[];
+  },
+>({ entity, disabled = false, onView, onEdit, onDelete }: LoreEntityCardProps<T>) {
+  const relationCount = entity.relationCount ?? entity.relations?.length;
   const IconComponent = CATEGORY_ICONS[entity.category] || Tag;
 
   return (
@@ -72,11 +86,11 @@ export function LoreEntityCard({ entity, onView, onEdit, onDelete }: LoreEntityC
 
         <p className={styles.summary}>{entity.summary}</p>
 
-        {entity.relations.length > 0 && (
+        {relationCount !== undefined && relationCount > 0 && (
           <div className={styles.relationsInfo}>
             <span>
-              <strong>{entity.relations.length}</strong>{' '}
-              {entity.relations.length === 1 ? 'relação vinculada' : 'relações vinculadas'}
+              <strong>{relationCount}</strong>{' '}
+              {relationCount === 1 ? 'relação vinculada' : 'relações vinculadas'}
             </span>
           </div>
         )}
@@ -84,6 +98,7 @@ export function LoreEntityCard({ entity, onView, onEdit, onDelete }: LoreEntityC
         <div className={styles.actions}>
           <Button
             variant="primary"
+            disabled={disabled}
             onClick={() => onView(entity)}
             title="Ver ficha completa da entidade"
           >
@@ -93,6 +108,7 @@ export function LoreEntityCard({ entity, onView, onEdit, onDelete }: LoreEntityC
           <div className={styles.actionButtons}>
             <Button
               variant="secondary"
+              disabled={disabled}
               onClick={() => onEdit(entity)}
               title={`Editar ${entity.name}`}
               aria-label={`Editar ${entity.name}`}
@@ -101,6 +117,7 @@ export function LoreEntityCard({ entity, onView, onEdit, onDelete }: LoreEntityC
             </Button>
             <Button
               variant="danger"
+              disabled={disabled}
               onClick={() => onDelete(entity.id)}
               title={`Excluir ${entity.name}`}
               aria-label={`Excluir ${entity.name}`}

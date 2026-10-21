@@ -5,7 +5,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
 
 const [host, port] = (process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080').split(':');
 let environment;
@@ -98,13 +98,17 @@ it('nega campos estranhos, perfis reservados, limites e atributos fora da escala
 });
 
 it('vincula apenas personas próprias ou padrões e valida substituições do capítulo', async () => {
-  await assertSucceeds(setDoc(doc(db('author'), path), persona));
-  const book = doc(db('author'), 'books/book');
+  const firestore = db('author');
+  await assertSucceeds(setDoc(doc(firestore, path), persona));
+  const book = doc(firestore, 'books/book');
   await assertSucceeds(
     setDoc(book, {
       authorId: 'author',
       title: 'Livro',
       status: 'draft',
+      localLoreVersion: 0,
+      createdAt: 1,
+      updatedAt: 1,
       personaId: 'preset-incisive',
     }),
   );
@@ -115,20 +119,24 @@ it('vincula apenas personas próprias ou padrões e valida substituições do ca
       authorId: 'intruder',
       title: 'Outro',
       status: 'draft',
+      localLoreVersion: 0,
+      createdAt: 1,
+      updatedAt: 1,
       personaId: 'custom-test',
     }),
   );
-  const chapter = doc(db('author'), 'books/book/chapters/chapter');
-  await assertSucceeds(
-    setDoc(chapter, {
-      title: 'Cena',
-      content: '',
-      personaComplement: {
-        personaId: 'preset-unsettling',
-        overrides: [{ traitId: 'tension', value: 0 }],
-      },
-    }),
-  );
+  const chapter = doc(firestore, 'books/book/chapters/chapter');
+  const create = writeBatch(firestore);
+  create.set(chapter, {
+    title: 'Cena',
+    content: '',
+    personaComplement: {
+      personaId: 'preset-unsettling',
+      overrides: [{ traitId: 'tension', value: 0 }],
+    },
+  });
+  create.update(book, { updatedAt: 2 });
+  await assertSucceeds(create.commit());
   await assertFails(
     updateDoc(chapter, { personaComplement: { personaId: 'custom-missing', overrides: [] } }),
   );

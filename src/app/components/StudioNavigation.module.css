@@ -1,0 +1,16 @@
+.nav {
+  display: flex;
+  align-items: center;
+  gap: var(--header-nav-gap, var(--space-4));
+  min-width: 0;
+}
+
+.trigger {
+  padding-inline: 0;
+  white-space: nowrap;
+}
+
+.separator {
+  color: hsl(var(--muted-foreground));
+  line-height: 1;
+}

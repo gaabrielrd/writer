@@ -52,3 +52,17 @@ Requisições podem travar. Use um timeout (por exemplo, com `AbortController`) 
 ## Dados fake em desenvolvimento e testes
 
 Para desenvolver ou testar sem depender de uma API real, use um adaptador com dados fake que respeite a mesma interface do serviço. Assim a tela funciona igual, e os testes ficam rápidos e previsíveis.
+
+## IA de cenas e blocos
+
+O callable `editorChat` reutiliza a configuração de Firebase, App Check e segredo
+de geração existentes, na região us-central1. Não há nova variável pública ou
+chave no bundle. O transporte cliente suporta streaming com eventos validados e
+recibos; perda de resposta preserva operação para observe/cancel. BYOK reutiliza
+o parser de stream do provedor, mantendo a chave somente nos headers de saída.
+Não execute novamente uma tentativa incerta com configurações atuais.
+
+O backend lê persona/lore e reautoriza suas origens; contexto enviado pelo cliente
+não substitui esse gate. Rules negam SDK direto nos namespaces do chat. O rollout
+precisa coordenar writers do clock de lore do livro e regras; drene clientes
+anteriores antes de habilitar. Veja a [ADR 0043](decisions/0043-authorized-editor-chat.md).

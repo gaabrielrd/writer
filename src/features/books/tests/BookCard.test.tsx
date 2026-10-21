@@ -57,3 +57,73 @@ describe('BookCard', () => {
     expect(screen.getByText('Publicado')).toBeInTheDocument();
   });
 });
+
+it('renderiza resumo paginado sem alegar sinopse ausente quando ela não foi fornecida', () => {
+  render(
+    <MemoryRouter>
+      <BookCard
+        book={{
+          id: 'old_book',
+          kind: 'book',
+          title: 'Livro legado',
+          status: 'draft',
+          wordCount: 123,
+          coverUrl: null,
+          universeId: null,
+          revision: 0,
+          createdAt: 1,
+          updatedAt: 2,
+        }}
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByRole('link')).toHaveAttribute('href', '/books/old_book');
+  expect(screen.getByText('123 palavras')).toBeInTheDocument();
+  expect(screen.queryByText('Nenhuma sinopse cadastrada para este livro.')).not.toBeInTheDocument();
+});
+it('mantém sinopse vazia conhecida e metadados editoriais recebidos no resumo', () => {
+  render(
+    <MemoryRouter>
+      <BookCard
+        book={{
+          id: 'book',
+          kind: 'book',
+          title: 'Resumo editorial',
+          status: 'published',
+          wordCount: 0,
+          coverUrl: null,
+          universeId: null,
+          revision: 0,
+          createdAt: 1,
+          updatedAt: 2,
+          genre: 'Fantasia',
+          synopsis: '',
+        }}
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('Fantasia')).toBeInTheDocument();
+  expect(screen.getByText('Nenhuma sinopse cadastrada para este livro.')).toBeInTheDocument();
+});
+
+it('separa estado editorial de publicação sem badge de rascunho contraditório', () => {
+  render(
+    <MemoryRouter>
+      <BookCard
+        book={{
+          id: 'book',
+          authorId: 'owner',
+          title: 'Texto em revisão',
+          status: 'draft',
+          editorialState: 'review',
+          wordCount: 10,
+          createdAt: 1,
+          updatedAt: 2,
+        }}
+      />
+    </MemoryRouter>,
+  );
+  expect(screen.getByText('Em revisão')).toBeVisible();
+  expect(screen.getByText('Não publicado')).toBeVisible();
+  expect(screen.queryByText('Rascunho')).not.toBeInTheDocument();
+});

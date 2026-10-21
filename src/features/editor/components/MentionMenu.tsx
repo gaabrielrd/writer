@@ -1,16 +1,17 @@
 import { useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 import { Badge } from '@/shared/ui';
-import type { LoreCategory, LoreEntity } from '@/features/lore';
+import type { LoreCategory, LoreEntity, LoreMentionEntity } from '@/features/lore';
 import styles from './MentionMenu.module.css';
 
-export interface MentionMenuProps {
+export interface MentionMenuProps<T extends LoreMentionEntity = LoreEntity> {
   id?: string;
   onCreate?: () => void;
-  entities: LoreEntity[];
+  entities: T[];
+  getEntityKey?: (entity: T) => string;
   query: string;
   selectedIndex: number;
-  onSelect: (entity: LoreEntity) => void;
+  onSelect: (entity: T) => void;
   onHoverIndex: (index: number) => void;
 }
 
@@ -28,15 +29,16 @@ const CATEGORY_LABELS: Record<LoreCategory, string> = {
   other: 'Outro',
 };
 
-export function MentionMenu({
+export function MentionMenu<T extends LoreMentionEntity>({
   id,
   entities,
+  getEntityKey = (entity) => entity.id,
   query,
   selectedIndex,
   onSelect,
   onHoverIndex,
   onCreate,
-}: MentionMenuProps) {
+}: MentionMenuProps<T>) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -95,7 +97,7 @@ export function MentionMenu({
           const isSelected = index === selectedIndex;
           return (
             <button
-              key={entity.id}
+              key={getEntityKey(entity)}
               id={`${id}-option-${index}`}
               tabIndex={-1}
               onMouseDown={(event) => event.preventDefault()}

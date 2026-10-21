@@ -1,7 +1,9 @@
 # Fase 3 — Compartilhar e usar
 
 **Estado:** Planejada; tarefas não executadas.
-**Janela:** Meses 5–6. **Capacidade:** 160 h brutas como orçamento inicial, não estimativa validada.
+**Referência de esforço:** 328/536/880 h; hipótese de entrega 16 h/semana, 33,5 semanas ativas no cenário central.
+As antigas 160 h são orçamento histórico; calendário/esperas não estão comprometidos.
+Veja [timeline e hipóteses](../timeline.md).
 
 ## Objetivo
 

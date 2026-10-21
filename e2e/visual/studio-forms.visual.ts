@@ -3,6 +3,7 @@ import {
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
+  openBookCreation,
   test,
 } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID, lore } from './fixtures/data';
@@ -11,8 +12,7 @@ test('livro cria pelos dados essenciais e mantém detalhes opcionais ao recolher
   page,
 }, testInfo) => {
   await page.goto('/');
-  const trigger = page.getByRole('button', { name: 'Novo Livro', exact: true });
-  await trigger.click();
+  await openBookCreation(page);
   const dialog = page.getByRole('dialog', { name: 'Criar Novo Livro' });
   await expect(dialog.getByRole('button', { name: 'Criar Livro', exact: true })).toBeDisabled();
   await dialog
@@ -36,7 +36,7 @@ test('livro cria pelos dados essenciais e mantém detalhes opcionais ao recolher
   );
   await dialog.getByRole('button', { name: 'Criar Livro', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(trigger).toBeFocused();
+  await expect(page).toHaveURL(/\/books\/visual-created-book-/);
   await expect(
     page.getByRole('heading', {
       name: 'As histórias que atravessam as estações e voltam para casa',

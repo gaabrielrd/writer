@@ -465,6 +465,7 @@ function ChapterListSession({
                                 {ch.title}
                               </Button>
                             )}
+                            {ch.contentMode === 'scenes' && <span>Composto por cenas</span>}
                           </div>
                         </TableCell>
                         <TableCell className={styles.wordsCell}>

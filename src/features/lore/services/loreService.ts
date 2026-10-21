@@ -3,8 +3,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  setDoc,
-  updateDoc,
   query,
   orderBy,
   runTransaction,
@@ -37,8 +35,23 @@ interface StoredLoreDoc {
   updatedAt: number;
 }
 
+function localLoreVersion(book: Record<string, unknown>): number {
+  const value = 'localLoreVersion' in book ? book.localLoreVersion : 0;
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0)
+    throw new Error('Não foi possível verificar a versão do lore deste livro.');
+  return value;
+}
+
+function nextLocalLoreVersion(book: Record<string, unknown>): number {
+  const value = localLoreVersion(book);
+  if (value === Number.MAX_SAFE_INTEGER)
+    throw new Error('A versão do lore deste livro atingiu o limite seguro.');
+  return value + 1;
+}
+
 function loreCollection(source: string | LoreScope) {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   return collection(firestore, scope.kind === 'book' ? 'books' : 'universes', scope.id, 'lore');
 }
 
@@ -97,6 +110,7 @@ export function subscribeLoreEntities(
   onError: (error: unknown) => void,
 ) {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   return onSnapshot(
     query(loreCollection(source), orderBy('name', 'asc')),
     (snapshot) => {
@@ -114,6 +128,7 @@ export function subscribeLoreEntities(
 
 export async function listLoreEntities(source: string | LoreScope): Promise<LoreEntity[]> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   const loreRef = loreCollection(source);
   const q = query(loreRef, orderBy('name', 'asc'));
@@ -131,6 +146,7 @@ export async function getLoreEntity(
   entityId: string,
 ): Promise<LoreEntity | null> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   const entityDocRef = doc(loreCollection(source), loreEntityDocumentId(scope, entityId));
   const snap = await getDoc(entityDocRef);
@@ -149,6 +165,7 @@ export async function createLoreEntity(
   input: CreateLoreEntityInput,
 ): Promise<LoreEntity> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   if (scope.kind === 'universe')
     return globalCall('saveUniverseLore', {
@@ -177,22 +194,20 @@ export async function createLoreEntity(
     updatedAt: now,
   };
 
-  if (input.creationId)
-    return runTransaction(firestore, async (transaction) => {
-      const existing = await transaction.get(newEntityDoc);
-      if (existing.exists()) return mapLocal(newEntityDoc.id, bookId, existing.data());
-      transaction.set(newEntityDoc, entityDocData);
-      return mapLocal(newEntityDoc.id, bookId, entityDocData);
-    });
-  await setDoc(newEntityDoc, entityDocData);
-
-  return {
-    id: newEntityDoc.id,
-    ...entityDocData,
-    aliases: entityDocData.aliases ?? [],
-    details: entityDocData.details ?? '',
-    relations: entityDocData.relations ?? [],
-  };
+  const bookRef = doc(firestore, 'books', bookId);
+  return runTransaction(firestore, async (transaction) => {
+    const [book, existing] = await Promise.all([
+      transaction.get(bookRef),
+      transaction.get(newEntityDoc),
+    ]);
+    if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
+    localLoreVersion(book.data());
+    if (existing.exists()) return mapLocal(newEntityDoc.id, bookId, existing.data());
+    const version = nextLocalLoreVersion(book.data());
+    transaction.set(newEntityDoc, entityDocData);
+    transaction.update(bookRef, { localLoreVersion: version });
+    return mapLocal(newEntityDoc.id, bookId, entityDocData);
+  });
 }
 
 export async function updateLoreEntity(
@@ -201,6 +216,7 @@ export async function updateLoreEntity(
   input: UpdateLoreEntityInput,
 ): Promise<void> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   if (scope.kind === 'universe') {
     const existing = await getLoreEntity(source, entityId);
@@ -229,24 +245,29 @@ export async function updateLoreEntity(
   if (input.relations !== undefined) updates.relations = input.relations;
   if (input.isPublic !== undefined) updates.isPublic = input.isPublic;
 
-  if (input.isPublic === false) {
-    await runTransaction(firestore, async (transaction) => {
-      const current = await transaction.get(entityDocRef);
-      const bookRef = doc(firestore, 'books', bookId);
-      const book = await transaction.get(bookRef);
-      if (current.exists() && current.data().isPublic === true) {
-        transaction.update(doc(firestore, 'books', bookId), {
-          status: 'draft',
-          updatedAt: Date.now(),
-          publicationPrivacyVersion: (Number(book.data()?.publicationPrivacyVersion) || 0) + 1,
-        });
-        transaction.delete(doc(firestore, 'publicBooks', bookId));
-      }
-      transaction.update(entityDocRef, updates);
+  const bookRef = doc(firestore, 'books', bookId);
+  await runTransaction(firestore, async (transaction) => {
+    const [book, current] = await Promise.all([
+      transaction.get(bookRef),
+      transaction.get(entityDocRef),
+    ]);
+    if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
+    if (!current.exists()) throw new Error('Entidade indisponível.');
+    const version = nextLocalLoreVersion(book.data());
+    const revokePublication = input.isPublic === false && current.data().isPublic === true;
+    transaction.update(bookRef, {
+      localLoreVersion: version,
+      ...(revokePublication
+        ? {
+            status: 'draft',
+            updatedAt: Date.now(),
+            publicationPrivacyVersion: (Number(book.data().publicationPrivacyVersion) || 0) + 1,
+          }
+        : {}),
     });
-    return;
-  }
-  await updateDoc(entityDocRef, updates);
+    if (revokePublication) transaction.delete(doc(firestore, 'publicBooks', bookId));
+    transaction.update(entityDocRef, updates);
+  });
 }
 
 export async function deleteLoreEntity(
@@ -254,6 +275,7 @@ export async function deleteLoreEntity(
   entityId: string,
 ): Promise<void> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   if (scope.kind === 'universe') {
     await globalCall('deleteUniverseLore', {
@@ -263,18 +285,28 @@ export async function deleteLoreEntity(
     return;
   }
   const entityDocRef = doc(firestore, 'books', bookId, 'lore', entityId);
+  const bookRef = doc(firestore, 'books', bookId);
   await runTransaction(firestore, async (transaction) => {
-    const current = await transaction.get(entityDocRef);
-    const bookRef = doc(firestore, 'books', bookId);
-    const book = await transaction.get(bookRef);
-    if (current.exists() && current.data().isPublic === true) {
-      transaction.update(doc(firestore, 'books', bookId), {
-        status: 'draft',
-        updatedAt: Date.now(),
-        publicationPrivacyVersion: (Number(book.data()?.publicationPrivacyVersion) || 0) + 1,
-      });
-      transaction.delete(doc(firestore, 'publicBooks', bookId));
-    }
+    const [book, current] = await Promise.all([
+      transaction.get(bookRef),
+      transaction.get(entityDocRef),
+    ]);
+    if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
+    localLoreVersion(book.data());
+    if (!current.exists()) return;
+    const version = nextLocalLoreVersion(book.data());
+    const revokePublication = current.data().isPublic === true;
+    transaction.update(bookRef, {
+      localLoreVersion: version,
+      ...(revokePublication
+        ? {
+            status: 'draft',
+            updatedAt: Date.now(),
+            publicationPrivacyVersion: (Number(book.data().publicationPrivacyVersion) || 0) + 1,
+          }
+        : {}),
+    });
+    if (revokePublication) transaction.delete(doc(firestore, 'publicBooks', bookId));
     transaction.delete(entityDocRef);
   });
 }

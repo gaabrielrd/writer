@@ -9,11 +9,13 @@ export function UniverseSelect({
   onChange,
   disabled,
   alwaysShow = false,
+  hint = 'O lore global fica disponível em todos os livros vinculados.',
 }: {
   value: string | null;
   onChange: (value: string | null) => void;
   disabled?: boolean;
   alwaysShow?: boolean;
+  hint?: string;
 }) {
   const { user } = useAuth();
   const [attempt, setAttempt] = useState(0);
@@ -62,7 +64,7 @@ export function UniverseSelect({
       value={value ?? ''}
       disabled={disabled}
       onValueChange={(value) => onChange(value || null)}
-      hint="O lore global fica disponível em todos os livros vinculados."
+      hint={hint}
       options={[
         { value: '', label: 'Sem universo' },
         ...worlds.map((world) => ({ value: world.id, label: world.name })),

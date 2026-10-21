@@ -45,6 +45,7 @@ test('PDF real com nove capítulos e sumário é revisado sem páginas prelimina
   await source.close();
   await page.goto('/');
   await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   await page
     .getByLabel('Arquivo do manuscrito')
     .setInputFiles({ name: 'nove-capitulos.pdf', mimeType: 'application/pdf', buffer: pdf });
@@ -69,6 +70,7 @@ test('Markdown preserva capítulos e permite selecionar e renomear antes de impo
 }, testInfo) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   await page.getByLabel('Arquivo do manuscrito').setInputFiles({
     name: 'manuscrito.md',
     mimeType: 'text/markdown',

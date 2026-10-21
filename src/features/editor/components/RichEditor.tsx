@@ -1,8 +1,9 @@
-import { useState, useRef, useMemo, useEffect, useId } from 'react';
+import { useState, useRef, useMemo, useEffect, useLayoutEffect, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { closeHistory } from '@tiptap/pm/history';
 import {
   Bold,
   Italic,
@@ -16,7 +17,7 @@ import {
   Redo2,
 } from 'lucide-react';
 import { Button, Badge } from '@/shared/ui';
-import { findLoreMatches, type LoreCategory, type LoreEntity } from '@/features/lore';
+import { type LoreCategory, type LoreEntity, type LoreMentionEntity } from '@/features/lore';
 import {
   useAIAutocomplete,
   GhostSuggestion,
@@ -27,6 +28,7 @@ import {
   useAIConfig,
   type WritingPersonaContext,
   type ChatEditorBridge,
+  type EditorChatEditorBridge,
   type AIActionType,
 } from '@/features/ai-assistant';
 import { renderRichText, sanitizeRichText } from '@/shared/lib/sanitizeRichText';
@@ -44,13 +46,30 @@ import { useSelectionAnchor } from '../hooks/useSelectionAnchor';
 import { useChapterMinimap } from '../hooks/useChapterMinimap';
 import { ChapterMinimap } from './ChapterMinimap';
 import { useChatEditorBridge } from '../hooks/useChatEditorBridge';
+import { useEditorChatEditorBridge } from '../hooks/useEditorChatEditorBridge';
+import {
+  editorLoreMatches,
+  editorLoreEntityKey,
+  type EditorLoreMatcher,
+} from '../model/editorLoreMatcher';
 import styles from './RichEditor.module.css';
 
-export interface RichEditorProps {
+export interface RichEditorAICapabilities {
+  chat?: boolean;
+  autocomplete?: boolean;
+  legacyActions?: boolean;
+}
+
+export interface RichEditorProps<T extends LoreMentionEntity = LoreEntity> {
+  ariaLabel?: string;
   workspaceExpanded?: boolean;
   chatOpen?: boolean;
   onOpenChat?: (action?: AIActionType) => void;
   onChatBridge?: (bridge: ChatEditorBridge | null) => void;
+  onEditorChatBridge?: (bridge: EditorChatEditorBridge | null) => void;
+  aiCapabilities?: RichEditorAICapabilities;
+  chatUnavailableReason?: string | null;
+  loreMatcher?: EditorLoreMatcher;
   chapterTitle?: string;
   bookTitle?: string;
   writingPersona?: WritingPersonaContext;
@@ -58,8 +77,9 @@ export interface RichEditorProps {
   documentId?: string;
   content: string;
   onChange: (content: string) => void;
-  entities: LoreEntity[];
-  onSelectEntity: (entity: LoreEntity) => void;
+  entities: T[];
+  isLoreActive?: () => boolean;
+  onSelectEntity: (entity: T) => void;
   onCreateEntity?: (name: string) => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -68,6 +88,8 @@ export interface RichEditorProps {
   userCredits?: number;
   onCreditDeducted?: (newCredits: number) => void;
   onBusyChange?: (busy: boolean) => void;
+  externalBusy?: boolean;
+  externalContentVersion?: number;
 }
 
 const CATEGORY_BADGES: Record<LoreCategory, 'default' | 'accent' | 'success' | 'secondary'> = {
@@ -88,11 +110,16 @@ interface SelectionTarget {
   to: number;
 }
 
-export function RichEditor({
+export function RichEditor<T extends LoreMentionEntity>({
+  ariaLabel = 'Área de escrita do capítulo',
   workspaceExpanded = false,
   chatOpen = false,
   onOpenChat,
   onChatBridge,
+  onEditorChatBridge,
+  aiCapabilities,
+  chatUnavailableReason,
+  loreMatcher = 'legacy',
   chapterTitle = '',
   bookTitle = '',
   documentId,
@@ -101,6 +128,7 @@ export function RichEditor({
   content,
   onChange,
   entities,
+  isLoreActive = () => true,
   onSelectEntity,
   onCreateEntity,
   isSidebarOpen,
@@ -110,9 +138,33 @@ export function RichEditor({
   userCredits = 0,
   onCreditDeducted,
   onBusyChange,
-}: RichEditorProps) {
+  externalBusy = false,
+  externalContentVersion = 0,
+}: RichEditorProps<T>) {
   // Initial parsing is intentionally lazy: transaction-driven renders must not
   // sanitize the whole chapter again. Real external replacements use the effect below.
+  const chatEnabled = aiCapabilities?.chat ?? true;
+  const autocompleteEnabled = aiCapabilities?.autocomplete ?? true;
+  const legacyActionsEnabled = aiCapabilities?.legacyActions ?? true;
+  const chatReason =
+    chatUnavailableReason === undefined ? aiUnavailableReason : chatUnavailableReason;
+  const capabilityState = `${chatEnabled}:${autocompleteEnabled}:${legacyActionsEnabled}`;
+  const capabilityGuard = useRef({
+    chatEnabled,
+    autocompleteEnabled,
+    legacyActionsEnabled,
+    chatReason,
+    aiUnavailableReason,
+  });
+  useLayoutEffect(() => {
+    capabilityGuard.current = {
+      chatEnabled,
+      autocompleteEnabled,
+      legacyActionsEnabled,
+      chatReason,
+      aiUnavailableReason,
+    };
+  });
   const [initialHtml] = useState(() => renderRichText(content));
   const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
   const openAISettings = useAISettings();
@@ -121,26 +173,47 @@ export function RichEditor({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [accepting, setAccepting] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const [hover, setHover] = useState<{ entity: LoreEntity; left: number; top: number } | null>(
-    null,
-  );
+  const [previousLegacyActions, setPreviousLegacyActions] = useState(legacyActionsEnabled);
+  if (previousLegacyActions !== legacyActionsEnabled) {
+    setPreviousLegacyActions(legacyActionsEnabled);
+    if (!legacyActionsEnabled) setIsAssistantOpen(false);
+  }
+  const [hover, setHover] = useState<{ entity: T; left: number; top: number } | null>(null);
+  const currentLoreGuard = useRef(isLoreActive);
+  // eslint-disable-next-line react-hooks/refs
+  currentLoreGuard.current = isLoreActive;
+  const entityKey = (entity: T) => editorLoreEntityKey(entity, loreMatcher);
+  const visibleHover =
+    isLoreActive() && hover
+      ? entities.find((item) => entityKey(item) === entityKey(hover.entity))
+      : undefined;
   const menuId = useId();
   const lastContent = useRef(content);
   const typedInput = useRef(false);
-  const [typingRevision, setTypingRevision] = useState(0);
+  const typingSequence = useRef(0);
+  const [typingRevision, setTypingRevision] = useState<number | null>(null);
   const keyHandler = useRef<(event: KeyboardEvent) => boolean>(() => false);
   const expandedRef = useRef(workspaceExpanded);
   const discardRef = useRef<() => void>(() => undefined);
   const acceptingRef = useRef(false);
+  const externalBusyRef = useRef(externalBusy);
+  const appliedContentVersion = useRef(externalContentVersion);
+  const blocked = accepting || externalBusy;
+  useLayoutEffect(() => {
+    externalBusyRef.current = externalBusy;
+  }, [externalBusy]);
   const aiTarget = useRef<SelectionTarget | null>(null);
   const previousSidebar = useRef(isSidebarOpen);
   const scrollArea = useRef<HTMLDivElement>(null);
   const [menuPosition, setMenuPosition] = useState({ top: 40, left: 0 });
   const [loreOptions] = useState(() => ({
-    getEntities: () => entities,
-    onSelect: onSelectEntity,
-    onHover: (entity: LoreEntity | null, element?: HTMLElement) => {
-      if (!entity || !element) {
+    getEntities: () => (currentLoreGuard.current() ? entities : []),
+    getMatcher: () => loreMatcher,
+    onSelect: (entity: T) => {
+      if (currentLoreGuard.current()) onSelectEntity(entity);
+    },
+    onHover: (entity: T | null, element?: HTMLElement) => {
+      if (!currentLoreGuard.current() || !entity || !element) {
         setHover(null);
         return;
       }
@@ -174,7 +247,7 @@ export function RichEditor({
           class: styles.richText ?? '',
           role: 'textbox',
           'aria-multiline': 'true',
-          'aria-label': 'Área de escrita do capítulo',
+          'aria-label': ariaLabel,
           spellcheck: 'true',
           'data-placeholder': placeholder,
         },
@@ -202,7 +275,7 @@ export function RichEditor({
         },
       },
       onUpdate: ({ editor: activeEditor }) => {
-        if (typedInput.current) setTypingRevision((value) => value + 1);
+        if (typedInput.current) setTypingRevision(++typingSequence.current);
         typedInput.current = false;
         lastContent.current = activeEditor.getHTML();
         onChange(lastContent.current);
@@ -214,6 +287,7 @@ export function RichEditor({
       onSelectionUpdate: ({ transaction }) => {
         if (transaction.docChanged) return;
         typedInput.current = false;
+        setTypingRevision(null);
         setMentionDismissed(false);
         setSelectedIndex(0);
         discardRef.current();
@@ -222,8 +296,9 @@ export function RichEditor({
     [documentId],
   );
   const text = editor?.getText({ blockSeparator: '\n' }) ?? '';
-  const minimap = useChapterMinimap(editor, entities, scrollArea);
+  const minimap = useChapterMinimap(editor, entities, scrollArea, loreMatcher);
   useChatEditorBridge(editor, scrollArea, {
+    enabled: chatEnabled,
     title: chapterTitle,
     bookTitle,
     persona: writingPersona ?? { instruction: '', version: '' },
@@ -234,6 +309,16 @@ export function RichEditor({
       onBusyChange?.(busy);
     },
     onReady: onChatBridge,
+  });
+  useEditorChatEditorBridge(editor, scrollArea, {
+    enabled: chatEnabled,
+    onReady: onEditorChatBridge,
+    setBusy: (busy) => {
+      acceptingRef.current = busy;
+      setAccepting(busy);
+      editor?.setEditable(!busy && !externalBusyRef.current, false);
+      onBusyChange?.(busy);
+    },
   });
   const cursorPosition =
     editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
@@ -248,39 +333,67 @@ export function RichEditor({
     userCredits,
     onCreditDeducted,
     onShowOutOfCredits: () => setIsOutOfCreditsOpen(true),
-    enabled: !aiUnavailableReason && !accepting && Boolean(editor?.state.selection.empty),
+    enabled:
+      autocompleteEnabled &&
+      !aiUnavailableReason &&
+      !blocked &&
+      Boolean(editor?.state.selection.empty),
   });
 
+  const previousCapabilities = useRef(capabilityState);
+  useEffect(() => {
+    if (previousCapabilities.current === capabilityState) return;
+    previousCapabilities.current = capabilityState;
+    setTypingRevision(null);
+    discardSuggestion();
+  }, [capabilityState, discardSuggestion]);
   useEffect(() => {
     discardRef.current = discardSuggestion;
   }, [discardSuggestion]);
-  useEffect(() => {
-    loreExtension.update({ onSelect: onSelectEntity });
+  useLayoutEffect(() => {
+    loreExtension.update({
+      onSelect: (entity: T) => {
+        if (currentLoreGuard.current()) onSelectEntity(entity);
+      },
+    });
   }, [onSelectEntity, loreExtension]);
-  useEffect(() => {
-    loreExtension.update({ getEntities: () => entities });
+  useLayoutEffect(() => {
+    loreExtension.update({
+      getEntities: () => (currentLoreGuard.current() ? entities : []),
+      getMatcher: () => loreMatcher,
+    });
     if (editor && !editor.isDestroyed)
       editor.view.dispatch(editor.state.tr.setMeta(loreDecorationKey, true));
-  }, [entities, editor, loreExtension]);
+  }, [entities, editor, loreExtension, loreMatcher]);
   useEffect(() => {
     // A parent echo must never recreate the document: that loses cursor, composition and undo.
-    if (!editor || content === lastContent.current) return;
+    if (!editor) return;
+    const restored = appliedContentVersion.current !== externalContentVersion;
+    appliedContentVersion.current = externalContentVersion;
+    if (content === lastContent.current) return;
     lastContent.current = content;
+    if (restored) editor.view.dispatch(closeHistory(editor.state.tr));
     editor.commands.setContent(renderRichText(content), { emitUpdate: false });
-  }, [content, editor]);
+    if (restored) editor.view.dispatch(closeHistory(editor.state.tr));
+  }, [content, editor, externalContentVersion]);
+  useLayoutEffect(() => {
+    editor?.setEditable(!blocked, false);
+    editor?.view.dom.setAttribute('aria-readonly', String(blocked));
+  }, [editor, blocked]);
   useEffect(() => {
-    editor?.setEditable(!accepting, false);
-    editor?.view.dom.setAttribute('aria-readonly', String(accepting));
-  }, [editor, accepting]);
-  useEffect(() => {
-    if (previousSidebar.current && !isSidebarOpen)
-      editor?.commands.focus(undefined, { scrollIntoView: false });
+    // This effect runs after the panel is removed. Restore focus once now:
+    // a later focus frame could overwrite the user's next native caret move.
+    if (previousSidebar.current && !isSidebarOpen && editor && !editor.isDestroyed)
+      editor.view.focus();
     previousSidebar.current = isSidebarOpen;
   }, [isSidebarOpen, editor]);
 
-  const matches = useMemo(() => findLoreMatches(text, entities), [text, entities]);
+  const matches = useMemo(
+    () => editorLoreMatches(text, entities, loreMatcher),
+    [text, entities, loreMatcher],
+  );
   const mentionedEntities = useMemo(() => {
-    const map = new Map<string, { entity: LoreEntity; count: number }>();
+    const map = new Map<string, { entity: T; count: number }>();
     for (const match of matches) {
       const existing = map.get(match.entityId);
       if (existing) existing.count += 1;
@@ -289,12 +402,17 @@ export function RichEditor({
     return Array.from(map.values());
   }, [matches]);
   const mention = editor && !mentionDismissed ? getMentionRange(editor.state) : null;
+  const selectionActionsEnabled = onOpenChat
+    ? chatEnabled && !chatReason
+    : legacyActionsEnabled && !aiUnavailableReason;
   const selectionAnchor = useSelectionAnchor(
     editor,
-    !accepting && !isAssistantOpen && !chatOpen && !mention,
+    selectionActionsEnabled && !blocked && !isAssistantOpen && !chatOpen && !mention,
   );
-  const candidates = mention ? mentionCandidates(entities, mention.query) : [];
-  const activeGhost = !mention && !accepting ? suggestion : null;
+  const candidates =
+    mention && isLoreActive() ? mentionCandidates(entities, mention.query, loreMatcher) : [];
+  const visibleSuggestion = autocompleteEnabled && !aiUnavailableReason ? suggestion : null;
+  const activeGhost = !mention && !blocked ? visibleSuggestion : null;
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     const position = editor.state.selection.from;
@@ -312,8 +430,8 @@ export function RichEditor({
   const optionCount = candidates.length + (canCreate ? 1 : 0);
   const activeIndex = optionCount ? Math.min(selectedIndex, optionCount - 1) : 0;
 
-  const selectMention = (entity: LoreEntity) => {
-    if (!editor || !mention) return;
+  const selectMention = (entity: T) => {
+    if (!editor || !mention || !currentLoreGuard.current()) return;
     editor
       .chain()
       .focus()
@@ -332,11 +450,18 @@ export function RichEditor({
   const setApplying = (busy: boolean) => {
     acceptingRef.current = busy;
     setAccepting(busy);
-    editor?.setEditable(!busy, false);
+    editor?.setEditable(!busy && !externalBusyRef.current, false);
     onBusyChange?.(busy);
   };
   const handleAcceptGhost = async () => {
-    if (!editor || acceptingRef.current) return;
+    if (
+      !editor ||
+      acceptingRef.current ||
+      externalBusyRef.current ||
+      !capabilityGuard.current.autocompleteEnabled ||
+      capabilityGuard.current.aiUnavailableReason
+    )
+      return;
     const target = {
       doc: editor.state.doc,
       from: editor.state.selection.from,
@@ -345,9 +470,20 @@ export function RichEditor({
     setApplying(true);
     try {
       const accepted = await acceptSuggestion(
-        () => !editor.isDestroyed && editor.state.doc.eq(target.doc),
+        () =>
+          !editor.isDestroyed &&
+          editor.state.doc.eq(target.doc) &&
+          capabilityGuard.current.autocompleteEnabled &&
+          !capabilityGuard.current.aiUnavailableReason,
       );
-      if (!accepted || editor.isDestroyed || !editor.state.doc.eq(target.doc)) return;
+      if (
+        !accepted ||
+        editor.isDestroyed ||
+        !editor.state.doc.eq(target.doc) ||
+        !capabilityGuard.current.autocompleteEnabled ||
+        capabilityGuard.current.aiUnavailableReason
+      )
+        return;
       const before = editor.state.doc.textBetween(Math.max(0, target.from - 1), target.from);
       editor
         .chain()
@@ -366,7 +502,7 @@ export function RichEditor({
     expandedRef.current = workspaceExpanded;
     keyHandler.current = (event) => {
       if (event.isComposing || editor?.view.composing) return false;
-      if (acceptingRef.current) return true;
+      if (acceptingRef.current || externalBusyRef.current) return true;
       if (mention) {
         if (event.key === 'Escape') {
           setMentionDismissed(true);
@@ -388,22 +524,34 @@ export function RichEditor({
           return true;
         }
       }
-      if (event.key === 'Tab' && suggestion) {
+      if (event.key === 'Tab' && visibleSuggestion) {
         event.preventDefault();
         void handleAcceptGhost();
         return true;
       }
       if (event.key === 'Escape') {
+        setTypingRevision(null);
         discardSuggestion();
         setHover(null);
-        return Boolean(suggestion || hover);
+        return Boolean(activeGhost || hover);
+      }
+      if (/^(ArrowLeft|ArrowRight|ArrowUp|ArrowDown|Home|End|PageUp|PageDown)$/.test(event.key)) {
+        // Native selection notifications can coalesce a quick move out and back.
+        // Cancel the intent too, so a pending typing effect cannot rearm the timer.
+        setTypingRevision(null);
+        discardSuggestion();
       }
       return false; // StarterKit owns formatting, history and platform keyboard conventions.
     };
   });
 
   const captureSelection = () => {
-    if (!editor) return '';
+    if (
+      !editor ||
+      !capabilityGuard.current.legacyActionsEnabled ||
+      capabilityGuard.current.aiUnavailableReason
+    )
+      return '';
     const { from, to } = editor.state.selection;
     aiTarget.current = { doc: editor.state.doc, from, to };
     return editor.state.doc.textBetween(from, to, '\n');
@@ -412,6 +560,8 @@ export function RichEditor({
     Boolean(
       editor &&
       !editor.isDestroyed &&
+      capabilityGuard.current.legacyActionsEnabled &&
+      !capabilityGuard.current.aiUnavailableReason &&
       aiTarget.current &&
       editor.state.doc.eq(aiTarget.current.doc),
     );
@@ -430,7 +580,7 @@ export function RichEditor({
     return true;
   };
   const run = (command: (activeEditor: Editor) => void) => {
-    if (editor && !accepting) command(editor);
+    if (editor && !acceptingRef.current && !externalBusyRef.current) command(editor);
   };
   useEffect(() => {
     if (!editor) return;
@@ -484,7 +634,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -502,7 +652,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -520,7 +670,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -538,7 +688,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -556,7 +706,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -578,7 +728,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -596,7 +746,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting}
+            disabled={blocked}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -615,7 +765,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || !editor?.can().undo()}
+            disabled={blocked || !editor?.can().undo()}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -632,7 +782,7 @@ export function RichEditor({
             size="icon"
             type="button"
             className={styles.toolBtn}
-            disabled={accepting || !editor?.can().redo()}
+            disabled={blocked || !editor?.can().redo()}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() =>
               run((active) => {
@@ -650,35 +800,51 @@ export function RichEditor({
           role="group"
           aria-label="Painéis do editor"
         >
-          {onOpenChat ? (
-            <AIChatLauncher
-              disabled={Boolean(aiUnavailableReason)}
-              open={chatOpen}
-              onOpen={onOpenChat}
-              anchor={selectionAnchor}
-            />
-          ) : (
-            <AIActionMenu
-              writingPersona={writingPersona}
-              aiUnavailableReason={aiUnavailableReason}
-              selectionAnchor={selectionAnchor}
-              onOpenChange={setIsAssistantOpen}
-              onReturnFocus={() => {
-                if (editor && !editor.isDestroyed) editor.view.focus();
-              }}
-              onGetSelectedText={captureSelection}
-              onGetContextText={() => text}
-              onCanApplyResult={() => !acceptingRef.current && canApplyResult()}
-              onApplyingChange={setApplying}
-              loreEntities={entities}
-              userId={userId}
-              userCredits={userCredits}
-              onCreditDeducted={onCreditDeducted}
-              onShowOutOfCredits={() => setIsOutOfCreditsOpen(true)}
-              onInsertText={(value) => applyGeneratedText(value, false)}
-              onReplaceSelection={(value) => applyGeneratedText(value, true)}
-            />
-          )}
+          {onOpenChat
+            ? chatEnabled && (
+                <AIChatLauncher
+                  disabled={blocked || Boolean(chatReason)}
+                  open={chatOpen}
+                  onOpen={(action) => {
+                    if (
+                      capabilityGuard.current.chatEnabled &&
+                      !capabilityGuard.current.chatReason &&
+                      !acceptingRef.current &&
+                      !externalBusyRef.current
+                    )
+                      onOpenChat(action);
+                  }}
+                  anchor={selectionAnchor}
+                />
+              )
+            : legacyActionsEnabled && (
+                <AIActionMenu
+                  writingPersona={writingPersona}
+                  aiUnavailableReason={
+                    externalBusy ? 'Aguarde a confirmação do histórico.' : aiUnavailableReason
+                  }
+                  selectionAnchor={selectionAnchor}
+                  onOpenChange={setIsAssistantOpen}
+                  onReturnFocus={() => {
+                    if (editor && !editor.isDestroyed) editor.view.focus();
+                  }}
+                  onGetSelectedText={captureSelection}
+                  onGetContextText={() => text}
+                  onCanApplyResult={() =>
+                    !acceptingRef.current && !externalBusyRef.current && canApplyResult()
+                  }
+                  onApplyingChange={setApplying}
+                  loreEntities={entities}
+                  userId={userId}
+                  userCredits={userCredits}
+                  onCreditDeducted={onCreditDeducted}
+                  onShowOutOfCredits={() => {
+                    if (capabilityGuard.current.legacyActionsEnabled) setIsOutOfCreditsOpen(true);
+                  }}
+                  onInsertText={(value) => applyGeneratedText(value, false)}
+                  onReplaceSelection={(value) => applyGeneratedText(value, true)}
+                />
+              )}
           <Button
             variant="ghost"
             aria-pressed={isSidebarOpen}
@@ -699,10 +865,12 @@ export function RichEditor({
           <div className={styles.lorePillsList}>
             {mentionedEntities.map(({ entity, count }) => (
               <button
-                key={entity.id}
+                key={entityKey(entity)}
                 type="button"
                 className={styles.lorePill}
-                onClick={() => onSelectEntity(entity)}
+                onClick={() => {
+                  if (currentLoreGuard.current()) onSelectEntity(entity);
+                }}
                 title={`Clique para abrir a ficha de ${entity.name}`}
               >
                 <Badge variant={CATEGORY_BADGES[entity.category]}>
@@ -739,12 +907,12 @@ export function RichEditor({
                   event.stopPropagation();
                 }
               }}
-              aria-busy={accepting}
+              aria-busy={blocked}
             />
-            {suggestion && (
+            {visibleSuggestion && (
               <GhostSuggestion
                 compact
-                suggestion={suggestion}
+                suggestion={visibleSuggestion}
                 onAccept={() => void handleAcceptGhost()}
                 onDiscard={discardSuggestion}
                 isUsingBYOK={isUsingBYOK}
@@ -756,6 +924,7 @@ export function RichEditor({
                   <MentionMenu
                     id={menuId}
                     entities={candidates}
+                    getEntityKey={entityKey}
                     query={mention.query}
                     selectedIndex={activeIndex}
                     onSelect={selectMention}
@@ -769,19 +938,20 @@ export function RichEditor({
         </div>
       </div>
       {hover &&
+        visibleHover &&
         createPortal(
           <div
             className={styles.inlineTooltip}
             role="tooltip"
             style={{ left: hover.left, top: hover.top }}
           >
-            <strong>{hover.entity.name}</strong>
-            <Badge variant={CATEGORY_BADGES[hover.entity.category]}>
-              {CATEGORY_LABELS[hover.entity.category]}
+            <strong>{visibleHover.name}</strong>
+            <Badge variant={CATEGORY_BADGES[visibleHover.category]}>
+              {CATEGORY_LABELS[visibleHover.category]}
             </Badge>
-            <p>{hover.entity.summary}</p>
-            {hover.entity.aliases.length > 0 && (
-              <small>Apelidos: {hover.entity.aliases.join(', ')}</small>
+            <p>{visibleHover.summary}</p>
+            {visibleHover.aliases.length > 0 && (
+              <small>Apelidos: {visibleHover.aliases.join(', ')}</small>
             )}
           </div>,
           document.body,

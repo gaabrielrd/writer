@@ -47,3 +47,44 @@ it('serializa gravacoes entre sessoes e permite repetir apos falha', async () =>
   await expect(failed).rejects.toThrow('offline');
   await expect(retry).resolves.toEqual({ wordCount: 1 });
 });
+
+it('captura a base confirmada ao executar a gravação enfileirada e conserva a conta da sessão', async () => {
+  vi.restoreAllMocks();
+  let confirmed = 'Original';
+  let finish!: () => void;
+  const update = vi
+    .spyOn(bookService, 'updateChapter')
+    .mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = () => {
+            confirmed = 'Primeira';
+            resolve();
+          };
+        }),
+    )
+    .mockResolvedValue(undefined);
+  const first = saveChapterContent('cas-book', 'chapter', 'Primeira', () => confirmed, 'author');
+  const flush = saveChapterContent('cas-book', 'chapter', 'Final', () => confirmed, 'author');
+  expect(update).toHaveBeenCalledTimes(1);
+  expect(update).toHaveBeenCalledWith(
+    'cas-book',
+    'chapter',
+    expect.objectContaining({
+      expectedContent: 'Original',
+      expectedOwnerId: 'author',
+      content: 'Primeira',
+    }),
+  );
+  finish();
+  await Promise.all([first, flush]);
+  expect(update).toHaveBeenLastCalledWith(
+    'cas-book',
+    'chapter',
+    expect.objectContaining({
+      expectedContent: 'Primeira',
+      expectedOwnerId: 'author',
+      content: 'Final',
+    }),
+  );
+});

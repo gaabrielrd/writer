@@ -11,7 +11,7 @@ Fluxo recomendado para levar uma ideia até o código, de forma organizada e ver
 5. **Planejamento**: quebre em passos. Você pode pedir ao agente: "Use a skill plan-feature...".
 6. **Branch**: crie uma branch para o trabalho (`git checkout -b feat/descricao`).
 7. **Implementação**: escreva o código seguindo a [arquitetura](architecture.md).
-8. **Validação local**: rode `npm run validate` até ficar tudo verde. Em mudanças de interface, resolva também os avisos de `npm run check:styleguide`.
+8. **Validação local**: execute testes direcionados ao comportamento afetado durante ajustes. Rode `npm run validate` no fechamento do incremento; amplie os testes quando o risco de integração ou uma falha justificar. Em mudanças de interface, resolva também os avisos de `npm run check:styleguide`.
 9. **Evidência da entrega**: registre em [entregas](entregas/README.md) o que foi entregue, os testes e o resultado das validações. Você pode pedir ao agente: "Use a skill document-delivery...".
 10. **Commit**: registre as mudanças com mensagem clara.
 11. **Pull Request**: abra o PR descrevendo o que mudou e por quê.
@@ -58,3 +58,9 @@ Uma tarefa está concluída quando:
 - A documentação foi atualizada quando necessário
 - A entrega está registrada em [entregas](entregas/README.md)
 - As alterações estão registradas no Git
+
+Por decisão do operador em 2026-10-15, a espera pela CI não bloqueia o próximo
+incremento após a validação local. Acompanhe os checks em paralelo e incorpore
+regressões ao trabalho. Registre separadamente “validado localmente; CI pendente”
+e conclusão com CI verde, sem converter espera ou teste local em aprovação remota.
+Essa sequência não autoriza merge, deploy ou lançamento.

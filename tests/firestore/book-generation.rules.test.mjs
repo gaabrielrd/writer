@@ -29,7 +29,14 @@ test('manual creation can read an absent ID and atomically create only one priva
     runTransaction(db, async (tx) => {
       const snap = await tx.get(ref);
       if (snap.exists()) return snap.data();
-      const book = { authorId: 'author', title: 'Atlas', status: 'draft' };
+      const book = {
+        authorId: 'author',
+        title: 'Atlas',
+        status: 'draft',
+        localLoreVersion: 0,
+        createdAt: 1,
+        updatedAt: 1,
+      };
       tx.set(ref, book);
       return book;
     });

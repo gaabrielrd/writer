@@ -115,7 +115,7 @@ function ImageGrid({ onSelect }: { onSelect?: (image: LibraryImage) => void }) {
             <p className={styles.name}>{image.name}</p>
             <p className={styles.details}>
               {new Date(image.createdAt).toLocaleDateString('pt-BR')} · {image.useCount}{' '}
-              {image.useCount === 1 ? 'livro' : 'livros'}
+              {image.useCount === 1 ? 'uso' : 'usos'}
             </p>
             <div className={styles.actions}>
               {onSelect ? (
@@ -155,7 +155,7 @@ function ImageGrid({ onSelect }: { onSelect?: (image: LibraryImage) => void }) {
                     disabled={image.useCount > 0}
                     title={
                       image.useCount > 0
-                        ? 'Remova a imagem dos livros antes de excluir'
+                        ? 'Remova os vínculos da imagem antes de excluir'
                         : 'Excluir imagem'
                     }
                     onClick={() => setDeleting(image)}
@@ -270,7 +270,7 @@ export function ImageLibraryPage() {
     <section>
       <PageHeader
         title="Biblioteca de Imagens"
-        description="Suas imagens aceitas da IA. Reutilize nas capas e fichas sem consumir novos créditos."
+        description="Suas imagens aceitas da IA. Reutilize nas capas, fichas e aventuras sem consumir novos créditos."
       />
       <ImageGrid key={user.uid} />
     </section>

@@ -1,10 +1,10 @@
 import { useState, type ReactNode } from 'react';
 import { Badge } from '@/shared/ui';
-import type { LoreCategory, LoreEntity } from '../model/loreEntity';
+import type { LoreCategory, LoreMentionEntity } from '../model/loreEntity';
 import styles from './LoreTooltip.module.css';
 
 export interface LoreTooltipProps {
-  entity: LoreEntity;
+  entity: LoreMentionEntity;
   children: ReactNode;
 }
 

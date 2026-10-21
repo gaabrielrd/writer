@@ -15,3 +15,8 @@ export { LoreTab, LoreCollection } from './components/LoreTab';
 export type { LoreTabProps } from './components/LoreTab';
 export * from './model/loreAnalysis';
 export * from './services/loreAnalysisService';
+
+export * from './model/adventureLore';
+export { useAdventureLoreContext } from './hooks/useAdventureLoreContext';
+export type { AdventureLoreContextValue } from './hooks/useAdventureLoreContext';
+export { AdventureLoreReader } from './components/AdventureLoreReader';

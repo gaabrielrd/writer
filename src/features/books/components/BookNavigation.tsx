@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router';
-import { BookOpen, ChevronDown, Globe, Images } from 'lucide-react';
+import { useLocation } from 'react-router';
 import { useAuth } from '@/features/auth';
-import { Button, Dropdown, DropdownItem } from '@/shared/ui';
 import { watchBookTitle } from '../services/bookNavigationService';
 import styles from './BookNavigation.module.css';
 
@@ -17,61 +15,25 @@ export function BookNavigation() {
   const [title, setTitle] = useState<{ key: string; text: string }>();
   useEffect(() => {
     if (!user || !bookId) return;
-    return watchBookTitle(bookId, user.uid, (text) => setTitle({ key, text }));
+    let active = true;
+    const stop = watchBookTitle(bookId, user.uid, (text) => {
+      if (active) setTitle({ key, text });
+    });
+    return () => {
+      active = false;
+      stop();
+    };
   }, [bookId, user, key]);
-  if (!user) return null;
   const current = title?.key === key ? title.text : '';
-  const imageLibrarySelected = pathname === '/library';
-  const loreLibrarySelected = pathname === '/universes' || pathname.startsWith('/universes/');
-  const SelectedIcon = loreLibrarySelected ? Globe : imageLibrarySelected ? Images : BookOpen;
+  if (!user || !bookId || !current) return null;
   return (
-    <nav className={styles.nav} aria-label="Navegação principal">
+    <span className={styles.nav} aria-label="Livro atual">
       <span className={styles.separator} aria-hidden="true">
         /
       </span>
-      <Dropdown
-        label="Suas bibliotecas"
-        trigger={
-          <Button variant="ghost" className={styles.libraryTrigger}>
-            <SelectedIcon className="icon icon-sm" aria-hidden="true" />
-            {loreLibrarySelected
-              ? 'Lore compartilhado'
-              : imageLibrarySelected
-                ? 'Biblioteca de Imagens'
-                : 'Meus Livros'}
-            <ChevronDown className="icon icon-sm" aria-hidden="true" />
-          </Button>
-        }
-      >
-        <DropdownItem asChild>
-          <Link to="/universes" aria-current={loreLibrarySelected ? 'page' : undefined}>
-            <Globe className="icon icon-sm" aria-hidden="true" />
-            Lore compartilhado
-          </Link>
-        </DropdownItem>
-        <DropdownItem asChild>
-          <Link to="/" aria-current={pathname === '/' ? 'page' : undefined}>
-            <BookOpen className="icon icon-sm" aria-hidden="true" />
-            Meus Livros
-          </Link>
-        </DropdownItem>
-        <DropdownItem asChild>
-          <Link to="/library" aria-current={pathname === '/library' ? 'page' : undefined}>
-            <Images className="icon icon-sm" aria-hidden="true" />
-            Biblioteca de Imagens
-          </Link>
-        </DropdownItem>
-      </Dropdown>
-      {current && (
-        <>
-          <span className={styles.separator} aria-hidden="true">
-            /
-          </span>
-          <span className={styles.title} title={current} aria-current="page">
-            {current}
-          </span>
-        </>
-      )}
-    </nav>
+      <span className={styles.title} title={current} aria-current="page">
+        {current}
+      </span>
+    </span>
   );
 }

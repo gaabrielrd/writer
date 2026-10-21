@@ -11,6 +11,8 @@ export interface LoreRelation {
   targetEntityId: string;
   relationType: string;
   description?: string;
+  /** Present only on a contextual, authorized full read. */
+  available?: boolean;
 }
 
 export interface LoreDetails {
@@ -20,7 +22,19 @@ export interface LoreDetails {
   notes: string;
 }
 
-export type LoreScope = { kind: 'book' | 'universe'; id: string };
+export type LoreScope = { kind: 'book' | 'universe' | 'adventure'; id: string };
+
+/** Real metadata shared by legacy full fiches and contextual adventure summaries. */
+export interface LoreMentionEntity {
+  id: string;
+  name: string;
+  aliases: string[];
+  category: LoreCategory;
+  summary: string;
+  bookId?: string;
+  universeId?: string;
+  adventureId?: string;
+}
 
 interface LoreEntityFields {
   id: string;
@@ -37,7 +51,11 @@ interface LoreEntityFields {
 }
 
 export type LoreEntity = LoreEntityFields &
-  ({ bookId: string; universeId?: never } | { universeId: string; bookId?: never });
+  (
+    | { bookId: string; universeId?: never; adventureId?: never }
+    | { universeId: string; bookId?: never; adventureId?: never }
+    | { adventureId: string; bookId?: never; universeId?: never }
+  );
 
 export interface CreateLoreEntityInput {
   creationId?: string;

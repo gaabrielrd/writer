@@ -1,7 +1,18 @@
 # Fase 2 — Criar e preparar
 
-**Estado:** Planejada; tarefas não executadas.
-**Janela:** Meses 2–4. **Capacidade:** 240 h brutas como orçamento inicial, não estimativa validada.
+**Estado:** F2-01 a F2-07 concluídas tecnicamente nos heads registrados na
+[execução](../execucao/README.md). Adoção C3B concluída em `947cfc3` e exclusão
+integral C4 em `0006a66`, com CI/regras verdes.
+F2-08 S1/c95253a e S2A/d9b7988 concluídos tecnicamente, com CI/regras verdes.
+S2B concluído tecnicamente em `56cbb06`, com CI/regras verdes. S3 implementado e
+validado localmente em `a9b588a`; CI geral falhou por timeouts visuais e a correção
+passou na validação dirigida, CI geral e regras em `e924890`. F2-09 L validado localmente, com CI do novo incremento pendente; ver [sequência detalhada](../execucao/25-lore-importacao-e-portabilidade.md).
+Ver [contrato S3](../execucao/24-pistas-missoes-e-pendencias.md) e
+[entrega](../../../entregas/2026-10-21-writer-v2-pistas-e-missoes.md).
+Condições humanas/comerciais conservam seus aceites.
+**Baseline histórica de esforço:** 368/584/936 h; F2-08 está em reestimativa, sem saldo validado; hipótese de entrega 16 h/semana, 36,5 semanas ativas no cenário central.
+As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.
+Veja [timeline e hipóteses](../timeline.md).
 
 ## Objetivo
 
@@ -9,7 +20,9 @@ Permitir criar um conto e preparar uma aventura no mesmo universo, mantendo as c
 
 ## Entrada
 
-Portão da fase 1 aprovado e contratos de domínio/permissão fechados.
+Contratos técnicos do incremento fechados e gates técnicos verificados. O operador
+autorizou iniciar F2-01 em 2026-10-13, mantendo o aceite humano/comercial pendente;
+ver [mudança explícita de sequência](../execucao/06-contratos-e-replanejamento.md).
 
 ## Entregas
 

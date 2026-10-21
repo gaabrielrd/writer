@@ -1,0 +1,7 @@
+.action {
+  max-width: 100%;
+  min-height: var(--control-height);
+  height: auto;
+  white-space: normal;
+  text-align: center;
+}

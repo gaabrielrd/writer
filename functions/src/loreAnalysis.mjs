@@ -1,6 +1,8 @@
+import { readBookLocalLoreVersion, nextBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { createHash } from 'node:crypto';
 import { GenerationError, validateId } from './generation.mjs';
 import { universeDocumentId } from './universes.mjs';
+import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
 
 const fail = (code, message) => {
   throw new GenerationError(code, message);
@@ -72,6 +74,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
     const book = bookDoc.data();
     if (!book || book.authorId !== uid || !chapter.exists)
       fail('permission-denied', 'Livro ou capítulo indisponível.');
+    const localLoreVersion = readBookLocalLoreVersion(book);
     const worldRef = book.universeId
       ? db.doc(`universes/${universeDocumentId(book.universeId)}`)
       : null;
@@ -102,7 +105,12 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       worldRef,
       world,
       entities,
-      revision: hash([book.universeId ?? null, world?.loreVersion ?? 0, entities]),
+      revision: hash([
+        book.universeId ?? null,
+        localLoreVersion,
+        world?.loreVersion ?? 0,
+        entities,
+      ]),
       chapterHash: hash(chapter.data().content ?? ''),
     };
   }
@@ -337,6 +345,15 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
           writes.push({ target, value, existing, scope: change.scope, name: merged.name });
         }
         // All reads and validation finish before writes. Visibility and relations cannot change here.
+        const localVersion = writes.some((write) => write.scope === 'local')
+          ? nextBookLocalLoreVersion(context.book)
+          : null;
+        const authorization = writes.some((write) => write.scope === 'global')
+          ? await prepareCampaignAuthorization(tx, db, uid, { bump: true })
+          : null;
+        authorization?.commit();
+        if (localVersion !== null)
+          tx.update(context.bookRef, { localLoreVersion: localVersion, updatedAt: now() });
         for (const write of writes) {
           if (write.existing) tx.update(write.target, write.value);
           else tx.create(write.target, write.value);
