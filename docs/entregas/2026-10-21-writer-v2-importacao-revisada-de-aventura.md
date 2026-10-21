@@ -197,3 +197,15 @@ confirmou o mesmo hash, sem reenviar/forçar push ou alterar a base.
 
 I concluído tecnicamente. Planejamento A avançou durante a CI, conforme autorização;
 F2-09 e V2 continuam em andamento, sem merge/deploy ou aceite humano/comercial.
+
+## Regressão de sincronização do teste — 2026-10-21
+
+A CI de A no head `5f947a0` revelou uma corrida no teste de retomada de I em
+Node 24: a limpeza do erro era usada como prontidão, embora a verificação ainda
+mantivesse o botão desabilitado. A correção aguarda o controle habilitar, prova
+que o clique durante a consulta não envia nada e exige o mesmo append e ativação
+única com o ID esperado. Sem alteração de produção, timeout ou retry.
+ESLint/Prettier e os 13 testes do arquivo passaram; nova CI permanece pendente.
+Detalhes e resultados remotos estão na
+[entrega A](2026-10-21-writer-v2-chat-autorizado-de-cenas.md#correção-dirigida-após-a-ci--2026-10-21).
+O sucesso do head anterior de I acima permanece um resultado histórico distinto.

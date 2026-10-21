@@ -12,6 +12,7 @@ import {
   installImportServer,
   review,
   id,
+  adventureId,
   deferred,
 } from './importTestHelpers';
 import {
@@ -145,14 +146,36 @@ it('erro de formato permite outro arquivo e preflight mantém revisão editável
 });
 it('após resposta perdida retoma o snapshot e verifica o mesmo pedido', async () => {
   server.failAfter('append');
-  render(<AdventureImportDialog open onClose={vi.fn()} onActivated={vi.fn()} />);
+  const onActivated = vi.fn();
+  render(<AdventureImportDialog open onClose={vi.fn()} onActivated={onActivated} />);
   await upload();
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar importação' }));
   expect(await screen.findByText('Resposta perdida')).toBeVisible();
+  const originalAppend = vi.mocked(rpc.appendAdventureImportSection).mock.calls[0]![0];
+  const readProgress = vi.mocked(rpc.getAdventureImport).getMockImplementation()!;
+  const verification = deferred<void>();
+  vi.mocked(rpc.getAdventureImport).mockImplementationOnce(async (input) => {
+    await verification.promise;
+    return readProgress(input);
+  });
   await userEvent.click(screen.getByRole('button', { name: 'Verificar pedido' }));
   await waitFor(() => expect(screen.queryByText('Resposta perdida')).not.toBeInTheDocument());
-  await userEvent.click(screen.getByRole('button', { name: 'Retomar importação' }));
+  const resume = screen.getByRole('button', { name: 'Retomar importação' });
+  // Clearing the old error starts verification; it does not mean the controls are ready.
+  expect(resume).toBeDisabled();
+  await userEvent.click(resume);
+  expect(rpc.appendAdventureImportSection).toHaveBeenCalledOnce();
+  expect(rpc.activateAdventureImport).not.toHaveBeenCalled();
+  await act(async () => {
+    verification.resolve(undefined);
+    await verification.promise;
+  });
+  await waitFor(() => expect(resume).toBeEnabled());
+  expect(vi.mocked(rpc.appendAdventureImportSection).mock.calls[1]![0]).toEqual(originalAppend);
+  await userEvent.click(resume);
   await waitFor(() => expect(rpc.activateAdventureImport).toHaveBeenCalledOnce());
+  await waitFor(() => expect(onActivated).toHaveBeenCalledOnce());
+  expect(onActivated).toHaveBeenCalledWith(adventureId);
 });
 it('preparação sem snapshot pode ser cancelada após escolha explícita', async () => {
   render(<AdventureImportDialog open importId={id} onClose={vi.fn()} onActivated={vi.fn()} />);

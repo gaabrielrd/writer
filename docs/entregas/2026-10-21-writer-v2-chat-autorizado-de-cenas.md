@@ -178,3 +178,32 @@ O mesmo commit da implementação registra esta evidência e as confirmações r
 anteriores de I. [PR 21](https://github.com/gaabrielrd/writer/pull/21) permanece em
 rascunho; CI deste incremento será acompanhada sem bloquear a descoberta de P1.
 Não confundir essa autorização com merge, deploy ou lançamento.
+
+## Correção dirigida após a CI — 2026-10-21
+
+O head `5f947a0e5e50df81154df14a7124b914278cd4c9` passou Rules
+[39659740521](https://github.com/gaabrielrd/writer/actions/runs/39659740521).
+Na [CI 39659740574](https://github.com/gaabrielrd/writer/actions/runs/39659740574),
+Validate Node 22, auditoria e produção Chromium passaram. Validate Node 24
+(job 119429326269) falhou no teste de retomada de importação de aventura:
+ativação esperada uma vez, observada zero. Na consulta, cinco shards visuais
+estavam verdes e sete ainda executavam; isso não constitui CI geral aprovada.
+
+A causa foi uma corrida do teste anterior de I: verificar o pedido limpa o erro
+antes de concluir a consulta, mantendo Retomar desabilitado. Esperar somente o
+sumiço do erro permitia um clique ignorado pelo botão. O teste agora segura a
+consulta, comprova que o clique desabilitado não envia append/ativação, libera a
+resposta, aguarda Retomar habilitar e exige o replay integral do mesmo append.
+Mantém a ativação única e confirma a notificação com o ID correto da aventura.
+Nenhum hook, componente, timeout, retry ou limite de cobertura foi alterado.
+
+Validação dirigida do arquivo final: ESLint e Prettier passaram; Vitest passou
+13/13, sem falha ou skip, em 4,91 s. Uma execução anterior do mesmo arquivo
+passou 13/13 em 4,87 s; depois foi corrigido somente o callback async de act
+apontado pelo lint. Revisão do diff sem achados P1/P2. Log final privado:
+`writer-v2-editor-chat-qa/ci-node24-import-ui-fix-final.log`.
+
+Não foi repetido validate integral para esta correção de sincronização do teste;
+os validates locais de A acima continuam identificados por seu snapshot.
+O próximo head precisa de nova CI; acompanhar sem bloquear a descoberta de P1,
+sem declarar a falha antiga aprovada nem atribuí-la a código de produção.
