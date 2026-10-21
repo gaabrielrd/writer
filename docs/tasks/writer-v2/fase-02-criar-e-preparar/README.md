@@ -4,9 +4,12 @@
 [execução](../execucao/README.md). Adoção C3B concluída em `947cfc3` e exclusão
 integral C4 em `0006a66`, com CI/regras verdes.
 F2-08 S1/c95253a e S2A/d9b7988 concluídos tecnicamente, com CI/regras verdes.
-S2B validado localmente, CI do novo head pendente; S3 e F2-09 ainda não implementados.
-Ver [contrato S2B](../execucao/23-cenas-completas-na-preparacao-da-sessao.md) e
-[entrega](../../../entregas/2026-10-18-writer-v2-cenas-completas-da-sessao.md).
+S2B concluído tecnicamente em `56cbb06`, com CI/regras verdes. S3 implementado e
+validado localmente em `a9b588a`; CI geral falhou por timeouts visuais e a correção
+passou na validação dirigida; CI do novo head pendente. F2-09 começou a descoberta,
+sem código novo; ver [sequência detalhada](../execucao/25-lore-importacao-e-portabilidade.md).
+Ver [contrato S3](../execucao/24-pistas-missoes-e-pendencias.md) e
+[entrega](../../../entregas/2026-10-21-writer-v2-pistas-e-missoes.md).
 Condições humanas/comerciais conservam seus aceites.
 **Baseline histórica de esforço:** 368/584/936 h; F2-08 está em reestimativa, sem saldo validado; hipótese de entrega 16 h/semana, 36,5 semanas ativas no cenário central.
 As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.

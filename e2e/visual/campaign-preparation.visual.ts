@@ -150,7 +150,7 @@ async function verifySource(page: Page, source: Source) {
   expect(result).toEqual({ original: source.sourceRoot, other: source.otherRoot });
 }
 
-test('pistas e missões próprias compartilham estado, retomam e preservam texto ao excluir sessão', async ({
+test('pistas e missões são criadas e ordenadas sem perder rascunho da sessão', async ({
   page,
 }, info) => {
   if (info.project.name.startsWith('mobile'))
@@ -222,6 +222,69 @@ test('pistas e missões próprias compartilham estado, retomam e preservam texto
   await expect(opener).toBeFocused();
   await parent.getByRole('button', { name: 'Descartar rascunho e fechar', exact: true }).click();
   await expect(parent).toHaveCount(0);
+  await verifySource(page, source);
+  await expectNoHorizontalOverflow(page, 'preparação com rascunho próprio');
+});
+
+test('missão reutilizada compartilha estado e preserva texto ao excluir sessão', async ({
+  page,
+}, info) => {
+  if (info.project.name.startsWith('mobile'))
+    await page.setViewportSize({ width: 320, height: 740 });
+  const source = await seed(page);
+  // Arrange a mission already linked to the first session. The previous journey
+  // proves creation, linking, ordering and preservation of the S1 draft through UI.
+  await page.evaluate(
+    async ({ prefix, source }) => {
+      const api = (await import(
+        prefix + 'campaignPreparationFixture.ts'
+      )) as typeof import('./fixtures/campaignPreparationFixture');
+      const scope = { campaignId: source.campaignId, campaignToken: source.campaignToken };
+      const catalogue = await api.listCampaignPreparationItems({
+        ...scope,
+        kind: 'quest',
+        view: 'all',
+      });
+      const itemId = 'visual-preparation-shared-quest';
+      const result = await api.saveCampaignPreparationItem({
+        ...scope,
+        itemId,
+        operationId: itemId,
+        expectedRevision: 0,
+        expectedItemCollectionRevision: catalogue.itemCollectionRevision,
+        kind: 'quest',
+        title: 'Missão preparada no navegador',
+        status: 'available',
+        body: { description: 'MISSÃO DO NAVEGADOR', consequences: 'A vila pode recuperar a luz.' },
+      });
+      if (result.kind !== 'confirmed') throw Error('Missão de preparação não criada');
+      const sessionScope = {
+        ...scope,
+        sessionId: source.sessionId,
+        expectedSessionRevision: 1,
+      };
+      const links = await api.listCampaignSessionPreparationLinks(sessionScope);
+      const created = await api.listCampaignPreparationItems({
+        ...scope,
+        kind: 'quest',
+        view: 'all',
+      });
+      const item = created.items.find((row) => row.id === itemId);
+      if (!item) throw Error('Missão de preparação ausente');
+      const linked = await api.addCampaignSessionPreparationLink({
+        ...sessionScope,
+        operationId: 'visual-preparation-shared-first-link',
+        linkId: 'visual-preparation-shared-first-link',
+        expectedRevision: 0,
+        expectedLinkCollectionRevision: links.linkCollectionRevision,
+        itemId,
+        expectedItemRevision: item.revision,
+      });
+      if (linked.kind !== 'confirmed') throw Error('Vínculo de preparação não criado');
+    },
+    { prefix, source },
+  );
+  await page.goto('/campaigns/' + source.campaignId);
   await openSession(page, 'Outra sessão preservada');
   await select(page, preparation(page), 'Tipo de item', 'Missões');
   await select(page, preparation(page), 'Mostrar itens', 'Pendentes');
@@ -283,9 +346,9 @@ test('pistas e missões próprias compartilham estado, retomam e preservam texto
   await expectNoHorizontalOverflow(page, 'preparação final');
 });
 
-test('reconhecimento próprio após reload preserva conflito, item neutro e texto separado da origem', async ({
+test('recibo de preparação após reload confirma pedido e preserva texto salvo', async ({
   page,
-}, info) => {
+}) => {
   const source = await seed(page);
   await page.goto('/campaigns/' + source.campaignId);
   await openSession(page);
@@ -311,6 +374,19 @@ test('reconhecimento próprio após reload preserva conflito, item neutro e text
   await expect(editor(page).getByLabel('Texto da pista', { exact: true })).toHaveValue(
     'TEXTO SALVO COM RESPOSTA PERDIDA',
   );
+  await closePreparation(page);
+  await closeSession(page);
+  await verifySource(page, source);
+});
+
+test('conflito de preparação preserva rascunho e permite encerrar pedido sem executar', async ({
+  page,
+}) => {
+  const source = await seed(page);
+  await page.goto('/campaigns/' + source.campaignId);
+  await openSession(page);
+  await select(page, preparation(page), 'Mostrar itens', 'Todos');
+  await consult(page, 'A chave da maré');
   // A changed collection/item causes a genuine CAS conflict and preserves the unsent form.
   await page.evaluate(
     async ({ prefix, source }) => {
@@ -350,6 +426,14 @@ test('reconhecimento próprio após reload preserva conflito, item neutro e text
   await closeSession(page);
   await page.getByRole('button', { name: 'Encerrar pedido sem executar', exact: true }).click();
   await expect.poll(() => pending(page, source.campaignId)).toBeNull();
+  await verifySource(page, source);
+});
+
+test('vínculo de item excluído fica neutro após adoção sem perder texto próprio', async ({
+  page,
+}, info) => {
+  const source = await seed(page);
+  await page.goto('/campaigns/' + source.campaignId);
   // Arrange a removed item with a surviving link via the same transport; render/removal use the product UI.
   await page.evaluate(
     async ({ prefix, source }) => {

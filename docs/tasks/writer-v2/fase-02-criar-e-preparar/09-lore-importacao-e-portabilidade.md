@@ -1,8 +1,13 @@
 # W2-F2-09 — Integrar lore, importação e portabilidade
 
-**Estado:** Planejada; execução não iniciada.
+**Estado em 2026-10-21:** descoberta concluída; detalhamento em andamento, sem código implementado.
+A [sequência executável](../execucao/25-lore-importacao-e-portabilidade.md) separa
+lore próprio de aventura, importação, IA, portabilidade de livro/aventura/campanha
+e demonstração integrada. O operador confirmou backup do estado atual e de todo
+o histórico, incluindo versões manuais e cópias anteriores às restaurações.
 **Dependências:** [W2-F2-05](../fase-02-criar-e-preparar/05-historico-e-restauracao.md), [W2-F2-06](../fase-02-criar-e-preparar/06-aventuras-e-estrutura-narrativa.md), [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md), [W2-F2-08](../fase-02-criar-e-preparar/08-preparacao-de-sessoes.md)
-**Áreas propostas:** books, editor, lore, universes, ai-assistant; propostas adventures e campaigns. Nomes novos são propostas, sujeitos à fase 1.
+**Áreas envolvidas:** books, editor, lore, universes, ai-assistant, scenes, adventures,
+adventure-blocks, campaigns e seus serviços de captura, variantes e sessões.
 
 ## Contexto e objetivo
 
@@ -43,7 +48,10 @@ Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md
 ## Riscos e decisões necessárias
 
 - O grafo pode não refletir branches de importação paralelas; confirmar integração no checkout antes de implementar.
-- Dados de participantes precisam de política D-09.
+- Dados estruturados de participantes futuros precisam de política D-09; isso não
+  bloqueia o lore privado atual e não autoriza importar participantes ou grants.
+- O exportador atual é somente de livro e não tem restauração; os novos formatos
+  precisam comprovar roundtrip, compatibilidade e autorização vigente da origem.
 
 ## Não escopo
 

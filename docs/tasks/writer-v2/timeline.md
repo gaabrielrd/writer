@@ -5,7 +5,9 @@
 F2-01 a F2-07 e F2-08 S1 estão concluídos tecnicamente nos heads registrados na
 [execução](execucao/README.md). S2A está concluído tecnicamente em `d9b7988`, com CI e regras verdes. S2B está concluído tecnicamente em 56cbb06, com CI/regras verdes. S3 passou na
 validação local (1.998 frontend, 409 Functions, SDK e navegador), com CI do novo
-head pendente. F2-09 e fases seguintes permanecem abertos. Pilotos humanos,
+head falhou por timeouts visuais, com correção visual validada localmente e nova CI pendente.
+F2-09 está em descoberta/detalhamento, sem código implementado;
+ver [sequência](execucao/25-lore-importacao-e-portabilidade.md). Fases seguintes permanecem abertas. Pilotos humanos,
 condições comerciais e rollout continuam com seus aceites próprios.
 
 A baseline de 13/10 abaixo é histórica: seus totais não representam saldo nem
@@ -23,6 +25,14 @@ antiga 8/12/20 h por **46/78/128 h** humanas totais (backend 18/30/48,
 cliente 16/28/46, QA 12/20/34), sem dupla contagem e com confiança baixa.
 Catálogo reutilizável, dois controles CAS e C4 v4 ampliam o recorte. Não são
 horas realizadas/restantes nem previsão de lançamento.
+
+A descoberta de F2-09 confirmou ausência de restauração JSON e portabilidade dos
+novos domínios. O [contrato L](execucao/26-lore-proprio-de-aventura.md) reabre somente
+lore próprio de aventura em **60/102/168 h** humanas totais: backend 22/38/64,
+cliente 20/34/54 e QA integrado 18/30/50, sem duplicar unidades. A faixa histórica
+F2-09 56/88/144 h não representa mais o recorte atual. Falta consolidar as demais
+verticais, incluindo o histórico integral confirmado pelo operador. Não há saldo
+medido nem nova previsão de lançamento.
 
 ## Baseline histórica revisada em 2026-10-13
 

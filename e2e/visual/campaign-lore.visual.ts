@@ -1,4 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
+import type { CampaignLoreOperation } from '../../src/features/campaign-lore/model/campaignLore';
 import { chooseDropdown } from '../dropdown';
 import {
   capture,
@@ -550,9 +551,80 @@ test('lore efetivo e seletor paginados usam identidade capturada e removem rela�
   );
 });
 
-test('recuperação cifrada distingue envio ausente e commit incerto e reserva entre abas com UID tardio', async ({
+// Arrange only variants already proven through the preceding UI journeys. This uses the
+// transport and real encryption; it never inserts a journal or bypasses the controller under test.
+async function seedConfirmedVariants(
+  page: Page,
+  source: Source,
+  variants: { name: string; details: string }[],
+) {
+  await page.evaluate(
+    async ({ prefix, source, variants }) => {
+      const api = (await import(
+        prefix + 'campaignLoreFixture.ts'
+      )) as typeof import('./fixtures/campaignLoreFixture');
+      const cryptoPath = '/src/features/campaign-lore/services/campaignLoreCrypto.ts';
+      const crypto = (await import(
+        cryptoPath
+      )) as typeof import('../../src/features/campaign-lore/services/campaignLoreCrypto');
+      const servicePath = '/src/features/campaign-lore/services/campaignLoreService.ts';
+      const service = (await import(
+        servicePath
+      )) as typeof import('../../src/features/campaign-lore/services/campaignLoreService');
+      const list = await api.listCampaignLore({
+        campaignId: source.campaignId,
+        baseId: source.baseId,
+      });
+      const scope = {
+        campaignId: source.campaignId,
+        baseId: source.baseId,
+        campaignToken: list.campaignToken,
+      };
+      for (const [index, variant] of variants.entries()) {
+        const current = await api.getCampaignLore({
+          ...scope,
+          sourceKey: source.main.sourceKey,
+        });
+        if (!current.item?.entity) throw Error('Missing confirmed variant precondition');
+        const entity = { ...service.toEntityInput(current.item.entity), ...variant };
+        const header = {
+          ...scope,
+          sourceKey: source.main.sourceKey,
+          operationId: 'visual-c2-confirmed-precondition-' + index,
+          expectedRevision: current.item.revision,
+        };
+        const relatedSourceKeys = service.relatedKeys(entity);
+        const prepared = await api.prepareCampaignLoreVariant({ ...header, relatedSourceKeys });
+        const operation: CampaignLoreOperation = {
+          schemaVersion: 1,
+          ownerId: prepared.ownerId,
+          header,
+          action: 'save',
+          relatedSourceKeys,
+          phase: 'sealed',
+        };
+        const sealed = await crypto.sealLore(operation, entity, prepared.key);
+        await api.saveCampaignLoreVariant({
+          ...header,
+          relatedSourceKeys,
+          sealed: crypto.sealedRequest({ ...operation, ...sealed }),
+        });
+        const receipt = await api.resolveCampaignLoreOperation({
+          ...header,
+          action: 'save',
+          relatedSourceKeys,
+          intent: 'confirm',
+        });
+        if (receipt.state !== 'committed' || receipt.revision !== index + 1)
+          throw Error('Variant precondition was not confirmed at its original revision');
+      }
+    },
+    { prefix, source, variants },
+  );
+}
+
+test('envio ausente preserva journal cifrado e recupera o texto depois de recarregar', async ({
   page,
-  context,
 }) => {
   const source = await seed(page);
   await openCampaign(page, source.campaignId);
@@ -578,7 +650,15 @@ test('recuperação cifrada distingue envio ausente e commit incerto e reserva e
   dialog = page.getByRole('dialog', { name: 'Editar lore da mesa', exact: true });
   await expect(dialog.getByLabel('Detalhes da ficha', { exact: true })).toHaveValue(text);
   await close(page);
-  dialog = await openFicha(page, 'Sentinela cifrada da mesa');
+});
+
+test('commit incerto confirma recibo e recupera depois de recarregar sem preparar novamente', async ({
+  page,
+}) => {
+  const source = await seed(page);
+  await seedConfirmedVariants(page, source, [{ name: 'Sentinela cifrada da mesa', details: text }]);
+  await openCampaign(page, source.campaignId);
+  const dialog = await openFicha(page, 'Sentinela cifrada da mesa');
   const edited = text + '\nRevisão confirmada por recibo.';
   await dialog.getByLabel('Detalhes da ficha', { exact: true }).fill(edited);
   await flag(page, 'writer.visual.campaign-lore-lost-response', 'saveCampaignLoreVariant');
@@ -604,6 +684,19 @@ test('recuperação cifrada distingue envio ausente e commit incerto e reserva e
     preparedCount,
   );
   await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+test('duas abas reservam um envio com Web Lock real e preservam ambos os rascunhos', async ({
+  page,
+  context,
+}) => {
+  const source = await seed(page);
+  const edited = text + '\nRevisão confirmada por recibo.';
+  await seedConfirmedVariants(page, source, [
+    { name: 'Sentinela cifrada da mesa', details: text },
+    { name: 'Sentinela cifrada da mesa', details: edited },
+  ]);
+  await openCampaign(page, source.campaignId);
   const otherEvent = context.waitForEvent('page');
   await page.evaluate(() => {
     window.open(location.href, '_blank');
@@ -663,7 +756,24 @@ test('recuperação cifrada distingue envio ausente e commit incerto e reserva e
     .getByRole('button', { name: /^Rascunho da aba [AB]$/ })
     .textContent();
   expect(winningName).not.toBeNull();
-  dialog = await openFicha(page, winningName!);
+});
+
+test('conta trocada rejeita resposta tardia e preserva a recuperação cifrada da conta original', async ({
+  page,
+}) => {
+  const source = await seed(page);
+  const edited = text + '\nRevisão confirmada por recibo.';
+  await seedConfirmedVariants(page, source, [
+    { name: 'Sentinela cifrada da mesa', details: text },
+    { name: 'Sentinela cifrada da mesa', details: edited },
+    { name: 'Rascunho da aba A', details: edited },
+  ]);
+  await openCampaign(page, source.campaignId);
+  const winningName = await panel(page)
+    .getByRole('button', { name: /^Rascunho da aba [AB]$/ })
+    .textContent();
+  expect(winningName).not.toBeNull();
+  let dialog = await openFicha(page, winningName!);
   await dialog
     .getByLabel('Detalhes da ficha', { exact: true })
     .fill('TEXTO DERIVADO DA PRIMEIRA CONTA');

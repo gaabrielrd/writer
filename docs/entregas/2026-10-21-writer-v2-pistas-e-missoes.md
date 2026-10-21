@@ -3,7 +3,8 @@
 - **Data:** 2026-10-21
 - **Branch:** codex/writer-v2
 - **Plano:** [F2-08 S3](../tasks/writer-v2/execucao/24-pistas-missoes-e-pendencias.md).
-- **Estado:** implementado e validado localmente; CI do novo head pendente no
+- **Estado:** implementado e validado localmente em `a9b588a`; CI geral falhou por
+  timeouts visuais, com correção visual validada localmente; CI do novo head pendente no
   [PR #21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
 
 ## Objetivo
@@ -147,7 +148,8 @@ edição do original, merge e deploy. Distribuição/comércio mantêm tarefas p
 
 ## Limitações e pendências conhecidas
 
-CI do novo head pendente; S2B/56cbb06 tem CI e regras verdes separadamente.
+CI de `a9b588a` falhou por timeouts visuais; correção visual validada localmente; CI do novo head pendente.
+S2B/56cbb06 tem CI e regras verdes separadamente.
 Habilitar S3 exige dez APIs, C4v4, guardas, regras/índices conjuntos e drenagem de
 versões antigas. Emulador não comprova índice implantado ou operação em produção.
 Piloto humano, leitor de tela, zoom físico 200% e segundo dispositivo não comprovados.
@@ -160,6 +162,53 @@ Artefatos: C:/Users/gaabr/.codex/visualizations/2026/10/12/01a131c1-057d-7721-88
 incluindo validate.log, sdk-*.log, qa-summary.json, captures-final.json,
 root-verified-native.json e JSONs/logs dos quatro lotes nativos. Portas 64995,
 61441 e 62321 encerradas após os runners.
+
+## CI de a9b588a e correção dos testes visuais
+
+O commit `a9b588a` foi enviado ao PR #21. A
+[CI geral 39591699901](https://github.com/gaabrielrd/writer/actions/runs/39591699901)
+falhou nos shards 1/12 e 9/12: testes longos de comparação C3, recuperação C2 e
+preparação S3 excederam 45 segundos. Ambos os shards registraram três falhas
+finais; a jornada S3 também repetiu a falha no retry. Validate Node 22/24,
+auditoria, navegador de produção e os outros dez shards passaram.
+[Regras 39591699969](https://github.com/gaabrielrd/writer/actions/runs/39591699969)
+passaram. Isso não comprova conclusão técnica de S3.
+
+A correção altera somente três arquivos de teste: comparação e lore passam de
+quatro para sete jornadas cada; preparação passa de três para seis. Os fluxos de
+recibo, fence, reload, Web Locks reais, troca de UID, conflito, vínculo neutro,
+rascunho próprio e exclusão foram preservados. As precondições independentes usam
+o transporte fixture e, no lore, AES-GCM real; não inserem journal falso.
+A revisão cruzada não encontrou P1/P2 nem asserção/captura original removida.
+
+Validação dirigida com dois workers e zero retries:
+
+| Lote                                                | Resultado                            | Duração do runner |
+| --------------------------------------------------- | ------------------------------------ | ----------------: |
+| Primeiro desktop escuro                             | 8 positivos, 1 falha de arranjo novo |     78.853,036 ms |
+| Somente arranjo corrigido + quatro jornadas de lore | 5/5                                  |     21.406,672 ms |
+| Cinco perfis restantes                              | 65/65                                |    186.175,912 ms |
+
+A falha local nova ocorreu porque o cenário neutro independente permanecia no
+Estúdio depois de `seed`; foi acrescentada somente sua navegação inicial à
+campanha. O caso corrigido passou nos seis perfis. Resultado final: **78
+combinações únicas positivas** (13 jornadas × 6 perfis), **79 execuções**, uma
+falha inicial preservada, zero retries/skips/flaky. A soma dos runners é
+286.435,620 ms e inclui o lote que falhou. Não confundir esse total com horas humanas.
+
+Os 110 coletores (79 de isolamento e 31 de console da preparação), incluindo o
+caso que falhou por arranjo, registraram zero exceções, erros de console ou chamadas
+externas. Lint dos três arquivos e o typecheck E2E oficial passaram também após o ajuste final de navegação, que foi verificado no runner.
+
+Não houve mudança em src, Functions, regras/índices, dependências, configuração,
+timeout, retries, skips ou critérios. Não repetir o validate global do produto
+somente por essa reorganização de testes/documentos: o validate S3 anterior
+continua registrado acima; os hooks e a CI do novo head executam seus portões.
+
+Artefatos da correção:
+C:/Users/gaabr/.codex/visualizations/2026/10/12/01a131c1-057d-7721-88fb-d2454dec09b9/writer-v2-ci-s3-retake,
+com logs dos dois jobs remotos, três JSONs/logs locais, hashes antes/depois,
+`root-verified.json` e `collectors.json`. Nova CI permanece pendente; sem merge/deploy.
 
 ## Como verificar manualmente
 

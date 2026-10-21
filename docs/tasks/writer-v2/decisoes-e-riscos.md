@@ -92,6 +92,11 @@ antes de restaurar, mantidas até exclusão explícita da versão ou projeto. N�
 capturar histórico a cada autosave/IA nem excluir por prazo. O
 [contrato F2-05](execucao/11-historico-e-restauracao.md) registra armazenamento e
 concorrência; essa decisão de histórico privado não fecha a retenção comercial D-09.
+Em 2026-10-21, o operador confirmou que a portabilidade privada de livros, aventuras
+e campanhas deve guardar o estado atual e todo o histórico, incluindo versões
+manuais e cópias anteriores às restaurações. O
+[plano F2-09](execucao/25-lore-importacao-e-portabilidade.md) exige roundtrip desse
+conteúdo; o JSON legado de livro ainda não o implementa.
 
 [Contrato W2-F1-02](execucao/02-modelo-de-dominio.md) registra a solução de implementação:
 D-02 usa lore vivo em originais autorizados, base congelada em campanhas, substituição

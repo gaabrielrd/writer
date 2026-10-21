@@ -459,9 +459,9 @@ test('união paginada filtra janelas vazias e mudança C2 invalida toda composi�
   await capture(page, info, 'comparacao-c2-apos-invalidacao');
 });
 
-test('pedidos incertos repetem recibos e fence explícito; descarte permanece no Estúdio sem origem', async ({
+test('recibos incertos de início e avanço repetem os mesmos pedidos após reload', async ({
   page,
-}, info) => {
+}) => {
   const source = await seed(page);
   await flag(page, 'writer.visual.comparison-lost-response', 'startCampaignComparison');
   await start(page, source);
@@ -520,6 +520,12 @@ test('pedidos incertos repetem recibos e fence explícito; descarte permanece no
       .map((c) => c.operationId),
   ).toEqual([initial.operationId, initial.operationId]);
   await close(page);
+});
+
+test('encerramento inicial sem recebimento usa o mesmo pedido para o fence explícito', async ({
+  page,
+}) => {
+  const source = await seed(page);
   await flag(page, 'writer.visual.comparison-before-receive', 'startCampaignComparison');
   await start(page, source);
   await expect(
@@ -538,6 +544,12 @@ test('pedidos incertos repetem recibos e fence explícito; descarte permanece no
       .map((c) => c.operationId),
   ).toEqual([absent.operationId]);
   await close(page);
+});
+
+test('origem alterada interrompe a candidata e permite seu descarte explícito', async ({
+  page,
+}) => {
+  const source = await seed(page);
   await flag(page, 'writer.visual.comparison-hold-response', 'startCampaignComparison');
   await start(page, source);
   await expect
@@ -571,6 +583,46 @@ test('pedidos incertos repetem recibos e fence explícito; descarte permanece no
     dialog(page).getByRole('heading', { name: 'Descartada', exact: true }),
   ).toBeVisible();
   await close(page);
+});
+
+test('descarte sem origem permanece no Estúdio com cancelamento incerto e reload', async ({
+  page,
+}, info) => {
+  const source = await seed(page);
+  // Precondição simulada pelas APIs da fixture: a preparação completa pela UI
+  // e seus recibos já são comprovados na jornada de início/avanço acima.
+  await page.evaluate(
+    async ({ prefix, source }) => {
+      const api = (await import(
+        prefix + 'campaignComparisonFixture.ts'
+      )) as typeof import('./fixtures/campaignComparisonFixture');
+      const context = await api.getCampaignComparisonSource({
+        campaignId: source.campaignId,
+        currentBaseId: source.baseId,
+      });
+      if (!context) throw new Error('Origem da candidata de descarte indisponível');
+      const started = await api.startCampaignComparison({
+        operationId: 'visual-c3-ready-discard',
+        campaignId: source.campaignId,
+        campaignToken: context.campaignToken,
+        currentBaseId: source.baseId,
+        expectedSourceToken: context.sourceToken,
+      });
+      if (!('progress' in started)) throw new Error('A candidata de descarte não foi iniciada');
+      let progress = started.progress;
+      for (let step = 0; progress.state === 'preparing' && step < 30; step++) {
+        progress = (
+          await api.advanceCampaignComparison({
+            comparisonId: progress.comparisonId,
+            operationId: 'visual-c3-ready-discard-step-' + step,
+            expectedCheckpoint: progress.checkpoint,
+          })
+        ).progress;
+      }
+      if (progress.state !== 'ready') throw new Error('A candidata de descarte não ficou pronta');
+    },
+    { prefix, source },
+  );
   await page.evaluate(
     async ({ prefix, source }) => {
       const studio = (await import(

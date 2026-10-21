@@ -1,7 +1,8 @@
 # F2-08 S3 — Pistas, missões e pendências
 
 **Estado:** decisões recebidas e contrato técnico fechado em 2026-10-21;
-implementado e validado localmente; CI do novo head pendente, sem rollout.
+implementado e validado localmente em `a9b588a`; CI geral falhou por timeouts
+visuais. Correção visual validada localmente; CI do novo head pendente, sem rollout.
 **Dependência:** [S2B](23-cenas-completas-na-preparacao-da-sessao.md), concluído
 tecnicamente em `56cbb06`: correção visual com CI geral e regras verdes no PR #21.
 A falha original de cacd71e e sua correção permanecem na evidência S2B.
@@ -242,8 +243,9 @@ Nenhum deploy, migração real ou exclusão de dados do operador é autorizado a
        unidades; composição CampaignPage, slot S1, closer e fronteira arquitetural.
 6. [x] QA: quatro famílias SDK reais, fixture e três jornadas em seis perfis.
 7. [x] Revisar integração, validate no fechamento, docs/ADR/AGENTS/evidência.
-8. [ ] Commit/envio autorizado ao PR em rascunho; acompanhar CI sem bloquear
-       próximo incremento após validação local. Sem merge/deploy.
+8. [x] Commit/envio autorizado em `a9b588a` ao PR em rascunho.
+9. [ ] Corrigir timeouts visuais identificados na CI e acompanhar o novo head,
+       sem bloquear trabalho independente validado. Sem merge/deploy.
 
 ## Critérios e matriz de validação
 
