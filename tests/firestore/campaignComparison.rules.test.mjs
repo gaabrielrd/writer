@@ -358,7 +358,9 @@ test('SDK worst lore pair projects100 captured targets through masks without rea
     .filter((r) => r.path.startsWith('universes/world/lore/'));
   assert.ok(live.length >= 100);
   assert.equal(
-    live.every((r) => r.fields.length === 1 && r.fields[0] === 'deleting'),
+    live.every(
+      (r) => r.fields.length === 2 && r.fields[0] === 'deleting' && r.fields[1] === 'deleted',
+    ),
     true,
   );
   assert.equal(JSON.stringify(rows).includes('PRIVATE-LIVE-TEXT'), false);

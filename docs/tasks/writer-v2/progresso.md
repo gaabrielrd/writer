@@ -24,7 +24,7 @@ histórico/restauração, aventuras/blocos e campanhas/base/variantes/adoção/e
 F2-08 acrescenta sessões, referências de lore, cenas completas, pistas e missões
 particulares da campanha, reutilizáveis entre sessões.
 
-F2-09 L foi implementado e validado localmente: lore próprio de aventura, menções e referências, com quatro famílias SDK e 12 combinações nativas positivas. CI do novo incremento pendente. As seis verticais seguintes continuam planejadas. [O detalhamento](execucao/25-lore-importacao-e-portabilidade.md)
+F2-09 L foi implementado e validado localmente: lore próprio de aventura, menções e referências, com quatro famílias SDK e 12 combinações nativas positivas. CI de `2af6df5` revelou duas expectativas legadas, corrigidas e revalidadas localmente; CI do próximo head pendente. As seis verticais seguintes continuam planejadas. [O detalhamento](execucao/25-lore-importacao-e-portabilidade.md)
 separa lore local, importação, IA, portabilidade de livro/aventura/campanha e
 validação integrada. Uma tarefa restante no índice representa vários incrementos.
 

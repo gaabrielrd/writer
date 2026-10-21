@@ -3,7 +3,7 @@
 - **Data:** 2026-10-21
 - **Branch:** `codex/writer-v2`
 - **Plano:** [F2-09 L](../tasks/writer-v2/execucao/26-lore-proprio-de-aventura.md).
-- **Estado:** implementado, revisado e validado localmente; commit/push e CI deste incremento são portões próprios. Sem merge ou deploy.
+- **Estado:** implementado, revisado e validado localmente em `2af6df5`, enviado ao PR #21. A CI encontrou expectativas legadas; correção dirigida validada localmente, aguardando CI do novo head. Sem merge ou deploy.
 
 ## Objetivo
 
@@ -162,3 +162,51 @@ autorização do operador; conclusão local não declara F2-09 inteira pronta.
    revisão atual e escolher explicitamente se deseja usá-la, conservando rascunho.
 5. Simular resposta perdida; confirmar o mesmo pedido ou encerrá-lo. Confirmar
    histórico não deve substituir uma edição posterior.
+
+## Correção dirigida após CI — 2026-10-21
+
+O commit `2af6df56581d763dc9cd860cc688248ad73c245b` foi enviado normalmente,
+com hooks verdes: tipos e 2.037 testes/198 arquivos no pre-push, em 140,26 s.
+HEAD, origin/codex/writer-v2, upstream e head do PR #21 foram conferidos iguais.
+A master original permaneceu limpa em `522ccaa7bcc92fe5eb4ae4ff54446afee98a52bf`.
+
+A [CI de regras 39603978475](https://github.com/gaabrielrd/writer/actions/runs/39603978475)
+terminou com 157/158 testes positivos, zero skips e duração 111.888,09074 ms.
+A única falha foi a expectativa antiga do SDK de comparação:
+aceitava somente metadata `deleting`, mas o gate agora também confere `deleted`.
+O teste continua exigindo exatamente esses dois campos, sem prosa viva, 101 chaves
+sem perda, orçamento de 4 MiB e até 512 documentos.
+
+Na [CI geral 39603978427](https://github.com/gaabrielrd/writer/actions/runs/39603978427),
+validate Node 22/24, auditoria e navegador de produção passaram. Os seis shards
+2/4/6/8/10/12 falharam no mesmo teste de teclado em seis perfis: End esperava
+Progresso como última aba, anterior à inclusão de Lore. A correção confere foco e
+seleção em Lore, usa ArrowLeft para Progresso e mantém todas as verificações
+anteriores de Progresso, retorno à narrativa, formulário e largura de 320 px.
+Falhas DNS de download tiveram fallback bem-sucedido; não causaram essas falhas.
+
+Correção limitada a dois testes, sem alterações em src, Functions, regras,
+índices, dependências, configuração, cobertura, timeout ou retries:
+
+- `tests/firestore/campaignComparison.rules.test.mjs`;
+- `e2e/visual/narrative-planning.visual.ts`.
+
+Revalidação real após o ajuste:
+
+```text
+SDK worst lore pair: tests 1, pass 1, fail 0
+duration_ms 47059.7793
+Nativo teclado/320px: 6 passed, zero skips/retries/flaky
+duration 17159.96 ms
+6 coletores: runtimeErrors 0, blockedRequests 0
+ESLint dirigido: exit 0
+tsc -p tsconfig.e2e.json --noEmit: exit 0
+```
+
+Revisão independente dos dois diffs não encontrou P1/P2; nenhuma asserção antiga
+foi removida. Os logs completos dos sete jobs remotos, relatório nativo, log SDK e
+`ci-retake-verified.json` foram preservados no diretório de evidência L.
+O emulador temporário e o servidor visual foram encerrados. A produção permanece
+idêntica à que passou no validate local e nos validates remotos; não foi repetido
+o validate global para uma correção exclusiva de expectativas de teste/docs.
+A CI do próximo head permanece um portão próprio; sem merge ou deploy.
