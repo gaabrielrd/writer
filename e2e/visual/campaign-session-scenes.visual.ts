@@ -265,9 +265,9 @@ test('cena completa privada separa planejamento e main, pagina adicionais e arqu
   });
 });
 
-test('pedido scene incerto recupera sem rebase, cena ausente após adoção não volta e closer C4 preserva pedido lore antigo', async ({
+test('pedido scene confirmado após reload preserva rascunho e cena ausente após adoção fica removível', async ({
   page,
-}, info) => {
+}) => {
   const source = await seed(page, false);
   await page.goto('/campaigns/' + source.campaignId);
   let opened = await openSession(page, source);
@@ -283,7 +283,7 @@ test('pedido scene incerto recupera sem rebase, cena ausente após adoção não
   expect(JSON.stringify(committed)).not.toContain('PRINCIPAL CONGELADO');
   await closeSession(page);
   await page.reload();
-  let controls = page
+  const controls = page
     .getByRole('heading', { name: 'Pedidos de vínculo de sessão', exact: true })
     .locator('..');
   await expect(
@@ -344,13 +344,68 @@ test('pedido scene incerto recupera sem rebase, cena ausente após adoção não
     .click();
   await opened.slot.getByRole('button', { name: 'Consultar vínculos', exact: true }).click();
   await expect(opened.slot.getByRole('listitem')).toHaveCount(0);
+  await expect(opened.parent.getByLabel('Preparação da sessão', { exact: true })).toHaveValue(
+    source.authorText,
+  );
+  await closeSession(page);
+});
+
+test('cancelamento scene sobrevive reload e fence; closer C4 preserva pedido lore antigo', async ({
+  page,
+}, info) => {
+  const source = await seed(page, false);
+  // Arrange the same server state left by the recovery/adoption journey: a removed
+  // scene link, its receipt/control and the adopted base without that scene.
+  // This uses the transport fixture, not product journals or a C4 controller mock.
+  await page.evaluate(
+    async ({ prefix, source }) => {
+      const api = (await import(
+        prefix + 'campaignSessionReferenceFixture.ts'
+      )) as typeof import('./fixtures/campaignSessionReferenceFixture');
+      const scope = {
+        campaignId: source.campaignId,
+        campaignToken: source.campaignToken,
+        sessionId: source.sessionId,
+        expectedSessionRevision: source.sessionRevision,
+      };
+      const initial = await api.listCampaignSessionReferences({
+        ...scope,
+        view: 'references',
+        kind: 'scene',
+      });
+      if (!initial.sourceContext) throw Error('Contexto inicial da cena ausente');
+      const referenceId = 'visual-session-scenes-before-cancel';
+      const added = await api.addCampaignSessionReference({
+        ...scope,
+        referenceId,
+        operationId: referenceId,
+        expectedReferenceCollectionRevision: initial.referenceCollectionRevision,
+        sourceContext: initial.sourceContext,
+        target: { kind: 'scene', sourceKey: source.sceneKey },
+      });
+      if (added.kind !== 'confirmed') throw Error('Vínculo inicial não confirmado');
+      const removed = await api.removeCampaignSessionReference({
+        ...scope,
+        referenceId,
+        operationId: 'visual-session-scenes-removed-before-cancel',
+        expectedRevision: added.receipt.revision,
+        expectedReferenceCollectionRevision: added.receipt.referenceCollectionRevision,
+      });
+      if (removed.kind !== 'confirmed') throw Error('Remoção inicial não confirmada');
+      await api.fixtureAdoptSessionSceneAbsence(source.campaignId, source.sceneId);
+    },
+    { prefix, source },
+  );
+  await page.goto('/campaigns/' + source.campaignId);
+  const opened = await openSession(page, source);
+  await expect(opened.slot.getByRole('listitem')).toHaveCount(0);
   await flag(page, 'writer.visual.reference-before-receive', 'addCampaignSessionReference');
   await choose(page, opened.slot, 'Epílogo em Arquivo', true);
   const unknown = await pending(page, source.campaignId);
   expect(unknown?.action === 'add' && unknown.request.target.kind).toBe('scene');
   await closeSession(page);
   await page.reload();
-  controls = page
+  let controls = page
     .getByRole('heading', { name: 'Pedidos de vínculo de sessão', exact: true })
     .locator('..');
   await flag(

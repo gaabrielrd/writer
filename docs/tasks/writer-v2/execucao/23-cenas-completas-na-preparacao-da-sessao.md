@@ -284,7 +284,7 @@ exclusão de dados do operador ou novo processamento pago autorizado por este pl
 5. [x] SDK real com captura completa, main compartilhado/adicionais/arquivo, páginas,
        wrong parent, ausência após adoção, perda de sessão/vínculo durante I/O e C4v1/v2/v3.
 6. [x] Duas jornadas × seis perfis, sem ampliar matriz sem risco concreto.
-7. [ ] Validate no fechamento, revisão, docs/ADR/AGENTS/evidência, commit/envio.
+7. [x] Validate no fechamento, revisão, docs/ADR/AGENTS/evidência, commit/envio.
 8. [ ] Acompanhar CI em paralelo sem presumir aprovação remota.
 
 Aceite: vincular cena atual, consultar plano e principal/adicionais na ordem
@@ -330,4 +330,9 @@ comprovadas; primeira execução 5/5, reforço de cursores com uma falha de expe
 corrigida e repetição somente da família afetada. Chromium 12/12, sem retry/skip,
 75.352,899 ms. Revisão independente encontrou dois P2 de refresh e filtro atual;
 ambos têm negativos antes/depois e nenhum bloqueador restante. [Entrega S2B](../../../entregas/2026-10-18-writer-v2-cenas-completas-da-sessao.md).
-CI do novo head ainda pendente; a CI verde de S2A/d9b7988 é evidência distinta.
+CI de cacd71e: regras 150/150 verdes; geral falhou por prazo no antigo cenário
+visual J2. Correção em 2026-10-21 separa dois comportamentos independentes,
+preservando as 69 asserções e acrescentando duas. Afetados 12/12 sem retries;
+validate repetido verde (1.935 frontend, 84 scripts, 395 Functions). CI da correção
+será acompanhada em paralelo; não confundir com aprovação do head anterior.
+A entrega vinculada registra traces, lotes e limites da evidência.

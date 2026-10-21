@@ -147,3 +147,49 @@ Emuladores 63518/62798/49401 e Vite 64991 encerrados.
 4. Adotar base sem a cena; consultar, conferir linha neutra e remover vínculo.
 5. Recuperar pedido scene sem resposta ou encerrá-lo explicitamente; excluir
    campanha, encerrar snapshot antigo e conferir a outra mesa preservada.
+
+## Correção dirigida da CI em 2026-10-21
+
+A [CI geral de cacd71e](https://github.com/gaabrielrd/writer/actions/runs/39105541269)
+falhou no shard visual 5: cenário desktop-light J2 excedeu os 45 s globais tanto
+na primeira tentativa quanto no retry, em recargas finais distintas. Traces
+mostraram cerca de 26–30 s somente em navegação. Node 22/24, auditoria, produção e
+os outros onze shards passaram. [Regras remotas](https://github.com/gaabrielrd/writer/actions/runs/39105541334)
+passaram 150/150, sem falhas/skips. A evidência local anterior não é aprovação da CI.
+
+Somente o teste visual foi alterado: o antigo J2 foi dividido em reconhecimento/
+adoção e cancelamento/fence/closer C4. O segundo prepara pelo transporte da fixture
+o mesmo estado anterior de servidor; não manipula journals nem simula o closer.
+As 69 asserções anteriores foram preservadas integralmente, com duas adicionais
+(71 totais), conferidas por AST. Produto, fixture, timeout e retries permanecem
+iguais. O primeiro cenário J1 não mudou.
+
+Validação afetada: **12/12** (dois fluxos × seis perfis), zero retry/skip/flaky/falha.
+Lotes 2/2 em **18.911,830 ms** e 10/10 em **50.987,478 ms**; total **69.899,308 ms**.
+Os JSONs brutos e 24 coletores foram conferidos: zero console.error/runtimeErrors/
+requisições externas. Os seis J1 inalterados conservam a evidência anterior e não
+foram repetidos neste lote; a suíte passa a declarar 18 combinações, sem alegar
+18 execuções novas. Porta 64993 livre após os testes. SDK não repetido: nenhuma
+mudança de produto, contrato ou regra.
+
+Após npm ci --prefix functions (251 pacotes, zero vulnerabilidades), o fechamento
+local repetiu npm run validate, **exit 0**:
+
+```text
+Test Files 189 passed (189)
+Tests 1935 passed (1935), Duration 162.09s
+Coverage: statements 90.57 | branches 84.88 | functions 90.41 | lines 93.2
+scripts: 84 pass, 0 fail, 0 skip, duration_ms 10999.7222
+Functions: 395 pass, 0 fail, 0 skip, duration_ms 2641.2576
+built in 2.13s
+Smoke test do bundle OK.
+WRITER_S2B_CI_FIX_VALIDATE_EXIT=0
+```
+
+Skills, arquitetura, docs, estilo, formato, lint, tipos e sintaxe passaram.
+Avisos existentes de chunks/DOCX e engines/deprecações da instalação permanecem.
+Artefatos: writer-v2-session-scenes-ci-fix/{validate.log,desktop/results.json,
+remaining/results.json,verified-summary.json,ci100-shard5.zip}. Revisão do diff
+confirma escopo de teste e docs, sem novas dependências ou mudança de segurança.
+Correção validada localmente; CI do novo commit será acompanhada em paralelo.
+Master original e planejamento S3 não entram neste commit; sem merge/deploy.
