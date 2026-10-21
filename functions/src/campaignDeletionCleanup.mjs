@@ -257,10 +257,16 @@ export async function cleanupCampaignStep(tx, db, p) {
       ...(version >= 2
         ? [{ collection: 'campaignSessionOperations', fields: ['ownerId', 'campaignId'] }]
         : []),
-      ...(version === 3
+      ...(version >= 3
         ? [
             { collection: 'campaignSessionReferenceOperations', fields: ['ownerId', 'campaignId'] },
             { collection: 'campaignSessionReferenceFences', fields: ['ownerId', 'campaignId'] },
+          ]
+        : []),
+      ...(version === 4
+        ? [
+            { collection: 'campaignPreparationOperations', fields: ['ownerId', 'campaignId'] },
+            { collection: 'campaignPreparationFences', fields: ['ownerId', 'campaignId'] },
           ]
         : []),
     ]);
@@ -277,7 +283,16 @@ export async function cleanupCampaignStep(tx, db, p) {
         'loreVariantBodies',
         'loreVariantState',
         ...(version >= 2 ? ['sessions', 'sessionState'] : []),
-        ...(version === 3 ? ['sessionReferences', 'sessionReferenceState'] : []),
+        ...(version >= 3 ? ['sessionReferences', 'sessionReferenceState'] : []),
+        ...(version === 4
+          ? [
+              'preparationItems',
+              'preparationBodies',
+              'preparationState',
+              'sessionPreparationLinks',
+              'sessionPreparationState',
+            ]
+          : []),
       ],
       part = p.part ?? 0;
     if (part >= collections.length) return advancePhase(p);

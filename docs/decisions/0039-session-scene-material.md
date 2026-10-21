@@ -1,6 +1,6 @@
 # ADR 0039 — Cenas capturadas consultadas pela sessão
 
-**Estado:** implementada e validada localmente; CI do novo head pendente.
+**Estado:** concluída tecnicamente em `56cbb06`, com CI geral e regras verdes.
 **Contrato:** [F2-08 S2B](../tasks/writer-v2/execucao/23-cenas-completas-na-preparacao-da-sessao.md).
 
 ## Contexto

@@ -193,7 +193,9 @@ export function checkArchitecture(root = defaultRoot) {
       }
 
       if (
-        ['campaign-deletions', 'campaign-sessions'].includes(sourceFeature) &&
+        ['campaign-deletions', 'campaign-sessions', 'campaign-preparation'].includes(
+          sourceFeature,
+        ) &&
         targetFeature &&
         targetFeature !== sourceFeature &&
         targetFeature !== 'auth'
@@ -228,9 +230,12 @@ export function checkArchitecture(root = defaultRoot) {
       }
 
       if (
-        ['campaign-deletions', 'campaign-sessions', 'campaign-session-references'].includes(
-          targetFeature,
-        ) &&
+        [
+          'campaign-deletions',
+          'campaign-sessions',
+          'campaign-session-references',
+          'campaign-preparation',
+        ].includes(targetFeature) &&
         sourceFeature &&
         sourceFeature !== targetFeature &&
         sourceFeature !== 'campaigns'

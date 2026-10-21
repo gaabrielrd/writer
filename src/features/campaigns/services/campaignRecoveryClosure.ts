@@ -10,6 +10,10 @@ import {
 } from '@/features/campaign-bases';
 import { readPendingCampaignNote, forgetCampaignNoteRecovery } from '@/features/campaign-notes';
 import {
+  readPendingCampaignPreparation,
+  forgetCampaignPreparationRecovery,
+} from '@/features/campaign-preparation';
+import {
   readPendingCampaignSession,
   forgetCampaignSessionRecovery,
 } from '@/features/campaign-sessions';
@@ -83,6 +87,13 @@ export async function collectCampaignRecoveryClosures(
   if (note) {
     const snapshot = structuredClone(note);
     add('note', 'Pedido de nota própria', () => forgetCampaignNoteRecovery(uid, snapshot, check));
+  }
+  const preparation = read(() => readPendingCampaignPreparation(uid, cid));
+  if (preparation) {
+    const snapshot = structuredClone(preparation);
+    add('campaign-preparation', 'Pedido de pista ou missão privada', () =>
+      forgetCampaignPreparationRecovery(snapshot, check),
+    );
   }
   const session = read(() => readPendingCampaignSession(uid, cid));
   if (session) {

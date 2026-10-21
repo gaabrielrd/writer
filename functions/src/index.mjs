@@ -13,6 +13,7 @@ import { createStudioService } from './studio.mjs';
 import { createCampaignsService } from './campaigns.mjs';
 import { createCampaignCaptureService } from './campaignCapture.mjs';
 import { createCampaignNotesService } from './campaignNotes.mjs';
+import { createCampaignPreparationService } from './campaignPreparation.mjs';
 import { createCampaignSessionsService } from './campaignSessions.mjs';
 import { createCampaignSessionReferencesService } from './campaignSessionReferences.mjs';
 import { createCampaignSessionScenesService } from './campaignSessionScenes.mjs';
@@ -274,6 +275,7 @@ const callable = (method, secrets = []) =>
         const studio = createStudioService({ db });
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
+        const campaignPreparation = createCampaignPreparationService({ db });
         const campaignSessions = createCampaignSessionsService({ db });
         const campaignSessionReferences = createCampaignSessionReferencesService({ db });
         const campaignSessionScenes = createCampaignSessionScenesService({ db, assets });
@@ -305,6 +307,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (campaignPreparation[method] ? campaignPreparation : null) ??
           (campaignSessionScenes[method] ? campaignSessionScenes : null) ??
           (campaignSessionReferences[method] ? campaignSessionReferences : null) ??
           (campaignSessions[method] ? campaignSessions : null) ??
@@ -596,3 +599,16 @@ export const cleanupBookAssets = onSchedule(
     }
   },
 );
+
+export const listCampaignPreparationItems = callable('listCampaignPreparationItems');
+export const getCampaignPreparationItem = callable('getCampaignPreparationItem');
+export const saveCampaignPreparationItem = callable('saveCampaignPreparationItem');
+export const deleteCampaignPreparationItem = callable('deleteCampaignPreparationItem');
+export const moveCampaignPreparationItem = callable('moveCampaignPreparationItem');
+export const listCampaignSessionPreparationLinks = callable('listCampaignSessionPreparationLinks');
+export const addCampaignSessionPreparationLink = callable('addCampaignSessionPreparationLink');
+export const removeCampaignSessionPreparationLink = callable(
+  'removeCampaignSessionPreparationLink',
+);
+export const moveCampaignSessionPreparationLink = callable('moveCampaignSessionPreparationLink');
+export const resolveCampaignPreparationOperation = callable('resolveCampaignPreparationOperation');

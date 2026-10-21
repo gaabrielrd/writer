@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { useState } from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -7,6 +8,33 @@ import { getCampaign } from '../services/campaignService';
 import type { Campaign } from '../model/campaign';
 import type { ListSessionReferencesInput } from '@/features/campaign-session-references';
 import { publishInvalidation } from '@/shared/services';
+const preparationHost = vi.hoisted(() => ({
+  props: null as null | {
+    campaignId: string;
+    openRequest?: import('@/features/campaign-preparation').CampaignPreparationOpenRequest | null;
+    onPendingChange?: (pending: boolean) => void;
+  },
+}));
+vi.mock('@/features/campaign-preparation', () => ({
+  CampaignPreparationPanel: (props: NonNullable<typeof preparationHost.props>) => {
+    preparationHost.props = props;
+    const [text, setText] = useState('');
+    return (
+      <section aria-label={'Preparação própria ' + props.campaignId}>
+        <label>
+          Texto próprio da pista
+          <input
+            value={text}
+            onChange={(event) => {
+              setText(event.target.value);
+              props.onPendingChange?.(Boolean(event.target.value));
+            }}
+          />
+        </label>
+      </section>
+    );
+  },
+}));
 const sessionCalls = vi.hoisted(() => ({
   listCampaignSessions: vi.fn(),
   getCampaignSession: vi.fn(),
@@ -168,6 +196,7 @@ const resource: Campaign = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  preparationHost.props = null;
   localStorage.clear();
   auth.user = { uid: 'owner' };
   auth.loading = false;
@@ -601,5 +630,103 @@ it('compõe vínculos na sessão salva sem consultar novamente a cada tecla e ag
   );
   expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
   expect(referenceCalls.resolveCampaignSessionReferenceOperation).not.toHaveBeenCalled();
+  expect(sessionCalls.saveCampaignSession).not.toHaveBeenCalled();
+});
+
+it('mantém host de pistas e pendência autoral durante projeção e adoção da base', async () => {
+  const original: Campaign = {
+    ...resource,
+    provenance: { kind: 'original', adventureId: 'adventure', baseId: 'generation' },
+    activeBaseId: 'generation',
+  };
+  vi.mocked(getCampaign).mockResolvedValue(original);
+  render(tree());
+  await screen.findByText('História privada');
+  const field = screen.getByRole('textbox', { name: 'Texto próprio da pista' });
+  await userEvent.type(field, 'Pista própria ainda não enviada');
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+  act(() => loreHost.notify?.(null));
+  expect(screen.getByRole('textbox', { name: 'Texto próprio da pista' })).toBe(field);
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar adoção retomada' }));
+  await waitFor(() => expect(getCampaign).toHaveBeenCalledTimes(2));
+  expect(screen.getByRole('textbox', { name: 'Texto próprio da pista' })).toBe(field);
+  expect(field).toHaveValue('Pista própria ainda não enviada');
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+});
+
+it('slot passa sessão salva ao host estável sem copiar ou salvar preparação S1 suja', async () => {
+  const token = 'a'.repeat(64);
+  const session = {
+    id: 'session-preparation-host01',
+    schemaVersion: 1,
+    ownerId: 'owner',
+    campaignId: 'project',
+    revision: 2,
+    order: 1,
+    title: 'Sessão para pistas',
+    summary: 'Preparação salva',
+    scheduledDate: null,
+    status: 'planned',
+    createdAt: 1000,
+    updatedAt: 2000,
+  };
+  const envelope = {
+    schemaVersion: 1,
+    ownerId: 'owner',
+    campaignId: 'project',
+    campaignToken: token,
+    collectionRevision: 2,
+  };
+  sessionCalls.listCampaignSessions.mockResolvedValue({
+    ...envelope,
+    items: [Object.fromEntries(Object.entries(session).filter(([key]) => key !== 'summary'))],
+    nextCursor: null,
+  });
+  sessionCalls.getCampaignSession.mockResolvedValue({ ...envelope, session });
+  referenceCalls.listCampaignSessionReferences.mockResolvedValue({
+    schemaVersion: 1,
+    ownerId: 'owner',
+    campaignId: 'project',
+    campaignToken: token,
+    sessionId: session.id,
+    sessionRevision: 2,
+    referenceCollectionRevision: 0,
+    view: 'references',
+    sourceContext: null,
+    items: [],
+    nextCursor: null,
+  });
+  render(tree());
+  const field = await screen.findByRole('textbox', { name: 'Texto próprio da pista' });
+  await userEvent.type(field, 'Rascunho independente');
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Editar sessão Sessão para pistas' }),
+  );
+  await userEvent.type(
+    screen.getByRole('textbox', { name: 'Preparação da sessão' }),
+    ' com rascunho',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Pistas e missões desta sessão' }));
+  const request = preparationHost.props?.openRequest;
+  expect(request).toMatchObject({
+    requestId: 1,
+    view: 'pending',
+    session: {
+      campaignId: 'project',
+      campaignToken: token,
+      sessionId: session.id,
+      expectedSessionRevision: 2,
+      readOnly: false,
+    },
+  });
+  expect(request?.session.isActive()).toBe(true);
+  expect(screen.getByRole('textbox', { name: 'Preparação da sessão' })).toHaveValue(
+    'Preparação salva com rascunho',
+  );
+  expect(field).toHaveValue('Rascunho independente');
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar preparação' }));
+  expect(request?.session.isActive()).toBe(false);
+  expect(screen.getByRole('textbox', { name: 'Texto próprio da pista' })).toBe(field);
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
   expect(sessionCalls.saveCampaignSession).not.toHaveBeenCalled();
 });

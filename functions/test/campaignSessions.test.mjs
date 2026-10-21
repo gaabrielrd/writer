@@ -410,7 +410,7 @@ test('C4 latest purges paginated sessions/state and sanitizes only own receipts;
     operationId: op('cleanup'),
   });
   const jobPath = 'users/author/campaignDeletions/' + start.progress.deletionId;
-  assert.equal(f.records.get(jobPath).cleanupVersion, 3);
+  assert.equal(f.records.get(jobPath).cleanupVersion, 4);
   await finishDeletion(deletion, start.progress, 'sessions-cleanup');
   assert.equal(
     [...f.records.keys()].some((key) => key.startsWith(path + '/')),
@@ -444,7 +444,7 @@ test('C4 latest purges paginated sessions/state and sanitizes only own receipts;
     operationId: op('old-cleanup'),
   });
   const oldJob = old.records.get('users/author/campaignDeletions/' + initial.progress.deletionId);
-  for (const invalid of [null, 0, 4, '2']) {
+  for (const invalid of [null, 0, 5, '2']) {
     oldJob.cleanupVersion = invalid;
     await assert.rejects(
       oldDeletion.advanceCampaignDeletion(uid, {

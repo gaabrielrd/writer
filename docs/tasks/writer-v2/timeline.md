@@ -1,9 +1,11 @@
 # Timeline e capacidade
 
-## Situação em 2026-10-18
+## Situação em 2026-10-21
 
 F2-01 a F2-07 e F2-08 S1 estão concluídos tecnicamente nos heads registrados na
-[execução](execucao/README.md). S2A está concluído tecnicamente em `d9b7988`, com CI e regras verdes. S2B está validado localmente, com CI do novo head pendente. Pilotos humanos,
+[execução](execucao/README.md). S2A está concluído tecnicamente em `d9b7988`, com CI e regras verdes. S2B está concluído tecnicamente em 56cbb06, com CI/regras verdes. S3 passou na
+validação local (1.998 frontend, 409 Functions, SDK e navegador), com CI do novo
+head pendente. F2-09 e fases seguintes permanecem abertos. Pilotos humanos,
 condições comerciais e rollout continuam com seus aceites próprios.
 
 A baseline de 13/10 abaixo é histórica: seus totais não representam saldo nem
@@ -15,6 +17,12 @@ reabriu a referência total em **34/56/92 h** (backend 12/20/32, UI 12/20/34 e
 QA/regressões/docs 10/16/26), também provisória e com confiança baixa. Não somar S2A à linha histórica como se fosse trabalho adicional medido,
 nem subtrair tarefas entregues sem apontamento humano. Um novo total exige
 reestimar os recortes restantes; por ora, não há saldo validado.
+
+O [contrato S3](execucao/24-pistas-missoes-e-pendencias.md) substitui a referência
+antiga 8/12/20 h por **46/78/128 h** humanas totais (backend 18/30/48,
+cliente 16/28/46, QA 12/20/34), sem dupla contagem e com confiança baixa.
+Catálogo reutilizável, dois controles CAS e C4 v4 ampliam o recorte. Não são
+horas realizadas/restantes nem previsão de lançamento.
 
 ## Baseline histórica revisada em 2026-10-13
 

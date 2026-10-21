@@ -322,7 +322,7 @@ test('SDK sessões: cursor vinculado, calendário real, controle perdido e recib
   );
 });
 
-test('SDK sessões: preparação própria sobrevive origem revogada; C4 v2 limpa mais25, saneia recibos e v1 permanece retomável', async () => {
+test('SDK sessões: preparação própria sobrevive origem revogada; C4 limpa mais25, saneia recibos e v1 permanece retomável', async () => {
   const captured = await comparisonFixture(admin),
     service = createCampaignSessionsService({ db: admin });
   const page = await service.listCampaignSessions(uid, { campaignId: captured.campaign.id });
@@ -344,7 +344,7 @@ test('SDK sessões: preparação própria sobrevive origem revogada; C4 v2 limpa
   assert.equal(
     (await admin.doc(`users/${uid}/campaignDeletions/${d.result.progress.deletionId}`).get()).data()
       .cleanupVersion,
-    3,
+    4,
   );
   await assert.rejects(service.saveCampaignSession(uid, create(f, 'cleanup-0')), {
     code: 'failed-precondition',

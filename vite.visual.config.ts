@@ -16,6 +16,10 @@ const replacements = new Map(
     ['src/features/campaign-bases/services/campaignBaseCallables.ts', 'campaignBaseFixture.ts'],
     ['src/features/campaign-notes/services/campaignNotesCallables.ts', 'campaignNotesFixture.ts'],
     [
+      'src/features/campaign-preparation/services/campaignPreparationCallables.ts',
+      'campaignPreparationFixture.ts',
+    ],
+    [
       'src/features/campaign-sessions/services/campaignSessionCallables.ts',
       'campaignSessionFixture.ts',
     ],

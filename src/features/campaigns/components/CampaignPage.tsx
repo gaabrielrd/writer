@@ -11,6 +11,10 @@ import { useAuth } from '@/features/auth';
 import { CampaignBaseReader } from '@/features/campaign-bases';
 import { CampaignNotesPanel } from '@/features/campaign-notes';
 import {
+  CampaignPreparationPanel,
+  type CampaignPreparationOpenRequest,
+} from '@/features/campaign-preparation';
+import {
   CampaignSessionsPanel,
   type CampaignSessionReferenceSlot,
 } from '@/features/campaign-sessions';
@@ -51,6 +55,10 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
     [contentPending, setContentPending] = useState(false),
     [sessionsPending, setSessionsPending] = useState(false),
     [referencesPending, setReferencesPending] = useState(false),
+    [preparationPending, setPreparationPending] = useState(false),
+    [preparationRequest, setPreparationRequest] = useState<CampaignPreparationOpenRequest | null>(
+      null,
+    ),
     [materialBase, setMaterialBase] = useState<string | null>(null),
     [materialProjection, setMaterialProjection] = useState<string | null>(null),
     [materialEpoch, setMaterialEpoch] = useState(0),
@@ -62,8 +70,16 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const scope = { actorId: ownerId, scope: 'campaign:' + id };
   const onAvailability = useCallback((available: boolean) => setSessionsReady(available), []);
   useEffect(() => {
-    setPendingEditorOperation(contentPending || sessionsPending || referencesPending);
-  }, [contentPending, sessionsPending, referencesPending, setPendingEditorOperation]);
+    setPendingEditorOperation(
+      contentPending || sessionsPending || referencesPending || preparationPending,
+    );
+  }, [
+    contentPending,
+    sessionsPending,
+    referencesPending,
+    preparationPending,
+    setPendingEditorOperation,
+  ]);
   useEffect(() => () => setPendingEditorOperation(false), [setPendingEditorOperation]);
   const onMaterialBase = useCallback((baseId: string | null) => setMaterialBase(baseId), []);
   const onMaterialProjection = useCallback((projection: string | null) => {
@@ -73,25 +89,46 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const onMaterialInvalidated = useCallback(() => setMaterialEpoch((n) => n + 1), []);
   const renderReferences = useCallback(
     (slot: CampaignSessionReferenceSlot) => (
-      <CampaignSessionReferencesPanel
-        key={JSON.stringify([
-          slot.campaignId,
-          slot.campaignToken,
-          slot.sessionId,
-          slot.sessionRevision,
-          materialBase,
-          materialProjection,
-          materialEpoch,
-        ])}
-        scope={{
-          campaignId: slot.campaignId,
-          campaignToken: slot.campaignToken,
-          sessionId: slot.sessionId,
-          expectedSessionRevision: slot.sessionRevision,
-        }}
-        isActive={slot.isActive}
-        readOnly={slot.readOnly}
-      />
+      <>
+        <CampaignSessionReferencesPanel
+          key={JSON.stringify([
+            slot.campaignId,
+            slot.campaignToken,
+            slot.sessionId,
+            slot.sessionRevision,
+            materialBase,
+            materialProjection,
+            materialEpoch,
+          ])}
+          scope={{
+            campaignId: slot.campaignId,
+            campaignToken: slot.campaignToken,
+            sessionId: slot.sessionId,
+            expectedSessionRevision: slot.sessionRevision,
+          }}
+          isActive={slot.isActive}
+          readOnly={slot.readOnly}
+        />
+        <Button
+          variant="outline"
+          onClick={() =>
+            setPreparationRequest((previous) => ({
+              requestId: (previous?.requestId ?? 0) + 1,
+              session: {
+                campaignId: slot.campaignId,
+                campaignToken: slot.campaignToken,
+                sessionId: slot.sessionId,
+                expectedSessionRevision: slot.sessionRevision,
+                isActive: slot.isActive,
+                readOnly: slot.readOnly,
+              },
+              view: 'pending',
+            }))
+          }
+        >
+          Pistas e missões desta sessão
+        </Button>
+      </>
     ),
     [materialBase, materialProjection, materialEpoch],
   );
@@ -151,6 +188,11 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
         }}
       />
       <CampaignSessionReferenceControls campaignId={id} onPendingChange={setReferencesPending} />
+      <CampaignPreparationPanel
+        campaignId={id}
+        openRequest={preparationRequest}
+        onPendingChange={setPreparationPending}
+      />
       {error && <Alert variant="warning">{error}</Alert>}
       {visible ? (
         <>

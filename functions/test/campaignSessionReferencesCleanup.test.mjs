@@ -17,7 +17,7 @@ async function fixture() {
   return f;
 }
 
-test('C4 v3 cleans paginated reference namespaces and sanitizes receipts/fences without touching another campaign', async () => {
+test('C4 latest cleans paginated reference namespaces and sanitizes receipts/fences without touching another campaign', async () => {
   const f = await fixture();
   for (const name of children)
     for (let n = 0; n < 27; n++)
@@ -46,7 +46,7 @@ test('C4 v3 cleans paginated reference namespaces and sanitizes receipts/fences 
     });
   const deletion = await startDeletion(f.db, campaignId, 'reference-cleanup');
   const path = `users/${uid}/campaignDeletions/${deletion.result.progress.deletionId}`;
-  assert.equal(f.records.get(path).cleanupVersion, 3);
+  assert.equal(f.records.get(path).cleanupVersion, 4);
   await finishDeletion(deletion.service, deletion.result.progress, 'reference-step');
   assert.equal(
     [...f.records.keys()].some((key) => key.startsWith(`campaigns/${campaignId}/`)),
@@ -81,6 +81,7 @@ test('C4 retains old v1/v2 part boundaries and rejects unknown versions or reint
     [1, 3, 7],
     [2, 4, 9],
     [3, 6, 11],
+    [4, 8, 16],
   ]) {
     for (const [phase, maximum] of [
       ['recovery', recoveryMaximum],
@@ -99,7 +100,7 @@ test('C4 retains old v1/v2 part boundaries and rejects unknown versions or reint
       });
     }
   }
-  for (const version of [null, 0, 4, '3'])
+  for (const version of [null, 0, 5, '3'])
     assert.throws(() => owned({ ...original, cleanupVersion: version }, uid, original.deletionId), {
       code: 'failed-precondition',
     });

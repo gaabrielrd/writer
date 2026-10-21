@@ -782,7 +782,7 @@ test('SDK cenas da sessão: replay histórico e fence sobrevivem tombstone e C4 
     (
       await admin.doc(`users/${uid}/campaignDeletions/${deletion.result.progress.deletionId}`).get()
     ).data().cleanupVersion,
-    3,
+    4,
   );
   await assert.rejects(
     sceneReader().readCampaignSessionSceneReference(uid, linked.input),

@@ -747,14 +747,46 @@ private,no-store no sucesso e erro de aplicação, sem cobrir respostas pré-cal
 
 `tests/firestore/campaign-session-scenes.rules.test.mjs` usa captura e adoção reais
 com cinco famílias específicas e assets/deriver injetados. O navegador usa
-`e2e/visual/campaign-session-scenes.visual.ts`, duas jornadas em seis perfis; o
+`e2e/visual/campaign-session-scenes.visual.ts`, três jornadas em seis perfis após
+a divisão do cenário de recuperação; o
 transporte é simulado e não comprova autorização ou Storage reais. Validar somente
 casos afetados durante ajustes e rodar validate no fechamento, registrando contagens
 e falhas reais. Não repetir S2A integralmente por alterações mecânicas de locators.
 Validate S2B verde: 1.935 frontend, 84 scripts e 395 Functions. SDK: cinco famílias
 únicas comprovadas, com revalidação dirigida registrada; Chromium 12/12, zero
 retry/skip/falha. [Entrega e limites](entregas/2026-10-18-writer-v2-cenas-completas-da-sessao.md);
-CI do novo head pendente.
+Correção `56cbb06` com CI geral e regras verdes: antigo J2 separado em dois
+fluxos, 69 asserções preservadas e duas adicionais; 12 afetados verdes sem retries.
+A entrega registra os lotes dirigidos e a falha anterior da CI.
+
+## Pistas, missões e vínculos próprios (S3)
+
+Unidades em campaign-preparation cobrem DTOs das dez APIs, seis recibos/actions,
+estados/pendência derivada, limites sem truncamento, journal integral/Web Locks,
+reserva/cancel/fence, actor swap, respostas tardias, CAS do formulário congelado,
+CRUD/ordem/vínculos e rascunho preservado. CampaignPage e closer têm testes de
+composição estável e encerramento exato sem prosa, preservando outra campanha e
+formatos futuros. A regra AST mantém a folha auth/shared composta em campaigns.
+
+functions/test/campaignPreparation.test.mjs e campaignPreparationCleanup.test.mjs
+cobrem catálogo/corpos separados, sessão/item/coleção/CAS, ordem mista, leitura
+após gate, histórico/fence e compatibilidade C4v1/v2/v3/v4. SDK real em
+tests/firestore/campaign-preparation.rules.test.mjs reúne quatro famílias:
+autorização/SDK direto get-list-write fechado nos sete namespaces/páginas sem
+corpo/cursores; ciclo/concorrência/duas sessões/exclusões; origem S2 revogada e
+prosa própria; histórico/cancelamento e C4 paginado em todos os namespaces novos.
+
+O navegador usa e2e/visual/campaign-preparation.visual.ts com UI, serviços,
+recovery e Web Locks reais, somente transporte substituído. Três jornadas em
+seis perfis: catálogo/estados/ordens/retomada/S1 dirty; reconhecimento/conflito/
+item neutro; cancelamento persistido/fence/closer. Desktop conserva sua largura;
+mobile J1 usa 320 px nos três temas. A divisão respeita 45 s sem retirar asserções
+ou aumentar retry/timeout. Resultados reais, repetições dirigidas e limitações
+ficam no [contrato S3](tasks/writer-v2/execucao/24-pistas-missoes-e-pendencias.md).
+Fechamento global verde: 1.998 frontend, 85 scripts e 409 Functions. SDK: quatro
+famílias únicas; navegador: 18 combinações positivas e dois dirigidos de Escape.
+A [entrega S3](entregas/2026-10-21-writer-v2-pistas-e-missoes.md) separa falhas de
+roteiro, repetições e limites; CI do novo head pendente.
 
 ## Protótipo e evidências do Writer V2
 

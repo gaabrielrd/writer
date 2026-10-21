@@ -13,6 +13,7 @@ import { readCampaignLoreRecovery, forgetCampaignLoreRecovery } from '@/features
 import { readPendingCampaignNote } from '@/features/campaign-notes';
 import { readPendingCampaignSession } from '@/features/campaign-sessions';
 import { readPendingSessionReference } from '@/features/campaign-session-references';
+import { readPendingCampaignPreparation } from '@/features/campaign-preparation';
 import { type DeletionLookup, type DeletionProgress } from '@/features/campaign-deletions';
 import { installRecoveryHarness } from './deletionTestBrowser';
 const auth = vi.hoisted(() => ({ user: { uid: 'owner' } }));
@@ -597,4 +598,73 @@ it('snapshot de vínculo A não apaga cancelamento B e formato futuro fica prese
   expect(invalid.unreadable).toBe(true);
   expect(invalid.items.find((item) => item.key === 'session-reference')).toBeUndefined();
   expect(localStorage.getItem(key)).toEqual(JSON.stringify(future));
+});
+
+function preparationControl() {
+  return {
+    schemaVersion: 1,
+    ownerId: uid,
+    intent: 'cancel',
+    action: 'save-item',
+    request: {
+      campaignId,
+      campaignToken: token,
+      operationId: 'preparation-operation-001',
+      itemId: 'preparation-operation-001',
+      expectedRevision: 0,
+      expectedItemCollectionRevision: 0,
+      kind: 'clue',
+      title: 'Pista privada',
+      status: 'pending',
+      body: {
+        text: 'PROSA PARTICULAR NÃO DEVE APARECER NO CLOSER',
+        condition: 'Ao entrar',
+        recipient: 'Mesa',
+      },
+    },
+  };
+}
+it('closer C4 encerra pedido S3 exato sem mostrar prosa nem alterar outra campanha', async () => {
+  const key = 'writer:campaign-preparation:' + JSON.stringify([uid, campaignId]);
+  const otherKey = 'writer:campaign-preparation:' + JSON.stringify([uid, 'other']);
+  const control = preparationControl();
+  const other = { ...control, request: { ...control.request, campaignId: 'other' } };
+  localStorage.setItem(key, JSON.stringify(control));
+  localStorage.setItem(otherKey, JSON.stringify(other));
+  render(<CampaignDeletionControls campaignId={campaignId} />);
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir campanha' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Encerrar controles antigos deste navegador' }),
+  );
+  await screen.findByText('Pedido de pista ou missão privada');
+  expect(screen.queryByText(control.request.body.text)).not.toBeInTheDocument();
+  expect(screen.queryByText(control.request.title)).not.toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Confirmar encerramento dos controles' }),
+  );
+  expect(await screen.findByText('1 controle(s) local(is) encerrado(s).')).toBeInTheDocument();
+  expect(readPendingCampaignPreparation(uid, campaignId)).toBeNull();
+  expect(readPendingCampaignPreparation(uid, 'other')).toEqual(other);
+  expect(rpc.startCampaignDeletion).not.toHaveBeenCalled();
+});
+it('closer S3 preserva replacement de prosa e formato futuro em vez de apagar snapshot antigo', async () => {
+  const key = 'writer:campaign-preparation:' + JSON.stringify([uid, campaignId]);
+  const control = preparationControl();
+  localStorage.setItem(key, JSON.stringify(control));
+  const entries = await collectCampaignRecoveryClosures(uid, proof, () => {});
+  const replacement = {
+    ...control,
+    request: { ...control.request, body: { ...control.request.body, text: 'Rascunho posterior' } },
+  };
+  localStorage.setItem(key, JSON.stringify(replacement));
+  await expect(
+    entries.items.find((item) => item.key === 'campaign-preparation')!.close(),
+  ).rejects.toThrow();
+  expect(readPendingCampaignPreparation(uid, campaignId)).toEqual(replacement);
+  const future = { ...replacement, schemaVersion: 9 };
+  localStorage.setItem(key, JSON.stringify(future));
+  const unreadable = await collectCampaignRecoveryClosures(uid, proof, () => {});
+  expect(unreadable.unreadable).toBe(true);
+  expect(unreadable.items.find((item) => item.key === 'campaign-preparation')).toBeUndefined();
+  expect(localStorage.getItem(key)).toBe(JSON.stringify(future));
 });

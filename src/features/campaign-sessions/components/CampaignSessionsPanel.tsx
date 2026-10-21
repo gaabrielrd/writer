@@ -698,7 +698,7 @@ function Sessions({
         open={!!deleting}
         onClose={() => setDeleting(null)}
         title="Excluir sessão"
-        description="A exclusão é definitiva e remove a preparação desta sessão."
+        description="A exclusão é definitiva e remove a preparação desta sessão. Pistas e missões da campanha são preservadas."
         footer={
           <div className={styles.actions}>
             <Button variant="outline" onClick={() => setDeleting(null)}>

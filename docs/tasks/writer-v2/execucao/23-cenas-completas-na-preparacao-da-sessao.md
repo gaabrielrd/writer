@@ -285,7 +285,7 @@ exclusão de dados do operador ou novo processamento pago autorizado por este pl
        wrong parent, ausência após adoção, perda de sessão/vínculo durante I/O e C4v1/v2/v3.
 6. [x] Duas jornadas × seis perfis, sem ampliar matriz sem risco concreto.
 7. [x] Validate no fechamento, revisão, docs/ADR/AGENTS/evidência, commit/envio.
-8. [ ] Acompanhar CI em paralelo sem presumir aprovação remota.
+8. [x] CI da correção `56cbb06` e regras verdes, acompanhadas em paralelo.
 
 Aceite: vincular cena atual, consultar plano e principal/adicionais na ordem
 capturada uma vez, imagem particular do bloco e arquivo explícito; referência
@@ -336,3 +336,7 @@ preservando as 69 asserções e acrescentando duas. Afetados 12/12 sem retries;
 validate repetido verde (1.935 frontend, 84 scripts, 395 Functions). CI da correção
 será acompanhada em paralelo; não confundir com aprovação do head anterior.
 A entrega vinculada registra traces, lotes e limites da evidência.
+
+CI final da correção `56cbb06` confirmada em 2026-10-21: [geral](https://github.com/gaabrielrd/writer/actions/runs/39586473749)
+com 17 jobs verdes, incluindo doze shards visuais; [regras](https://github.com/gaabrielrd/writer/actions/runs/39586473753)
+verdes. S2B concluído tecnicamente, sem merge/deploy. S3 segue em seu próprio contrato.

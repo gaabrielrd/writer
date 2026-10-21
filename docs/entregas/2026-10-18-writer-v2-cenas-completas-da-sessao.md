@@ -3,7 +3,7 @@
 - **Data:** 2026-10-18
 - **Branch:** `codex/writer-v2`
 - **Plano:** [F2-08 S2B](../tasks/writer-v2/execucao/23-cenas-completas-na-preparacao-da-sessao.md).
-- **Estado:** implementado e validado localmente; CI do novo head pendente no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
+- **Estado:** concluído tecnicamente em `56cbb06`, com CI e regras verdes no [PR 21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
 
 ## Objetivo
 
@@ -34,7 +34,7 @@ ilustrações durante a preparação privada, preservando o texto próprio da se
 - [x] Recusar parent incorreto, contexto/cursor trocados e imagem revogada durante I/O.
 - [x] Preservar lore anterior, recuperação, preparação própria e outra mesa.
 - [x] Validar localmente, revisar e documentar sem reduzir os portões existentes.
-- [ ] CI do novo head verde; habilitação/rollout não executados.
+- [x] CI do head `56cbb06` verde; habilitação/rollout não executados.
 
 ## Arquivos alterados
 
@@ -193,3 +193,12 @@ remaining/results.json,verified-summary.json,ci100-shard5.zip}. Revisão do diff
 confirma escopo de teste e docs, sem novas dependências ou mudança de segurança.
 Correção validada localmente; CI do novo commit será acompanhada em paralelo.
 Master original e planejamento S3 não entram neste commit; sem merge/deploy.
+
+### Confirmação remota da correção em 2026-10-21
+
+Commit `56cbb067569225733f21bba85817cef949688711` enviado ao PR #21, mantendo-o
+em rascunho. Hooks passaram: tipos e 1.935 testes, 130,94 s. HEAD local, upstream,
+ls-remote e head do PR coincidiram. [CI geral](https://github.com/gaabrielrd/writer/actions/runs/39586473749)
+verde em 17 jobs: Node 22/24, auditoria, navegador de produção, doze shards visuais
+e gate E2E. [Regras](https://github.com/gaabrielrd/writer/actions/runs/39586473753)
+verdes separadamente. Essa aprovação fecha S2B; não comprova S3 nem rollout.

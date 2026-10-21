@@ -218,3 +218,38 @@ test('referências consomem apenas APIs puras de lore e base, incluindo aliases 
     );
   }
 });
+
+test('preparação própria permanece folha e é composta somente em campaigns', () => {
+  withProject(
+    {
+      'features/campaign-preparation/index.ts': "import { useAuth } from '@/features/auth';",
+      'features/campaigns/index.ts': "export { Panel } from '@/features/campaign-preparation';",
+    },
+    (root) => assert.deepEqual(checkArchitecture(root), []),
+  );
+  for (const statement of [
+    "import type { Campaign } from '@/features/campaigns';",
+    "import { Reader } from '@/features/campaign-session-references';",
+    "const sessions = import('@/features/campaign-sessions');",
+    "export { close } from '@/features/campaign-lore';",
+  ])
+    withProject({ 'features/campaign-preparation/index.ts': statement }, (root) =>
+      assert.match(
+        checkArchitecture(root).join('\n'),
+        /campaign-preparation deve permanecer folha/,
+      ),
+    );
+  for (const feature of [
+    'studio',
+    'campaign-lore',
+    'campaign-sessions',
+    'campaign-session-references',
+  ])
+    withProject(
+      {
+        [`features/${feature}/index.ts`]:
+          "const panel = import('@/features/campaign-preparation');",
+      },
+      (root) => assert.notDeepEqual(checkArchitecture(root), []),
+    );
+});

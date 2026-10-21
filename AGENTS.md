@@ -31,6 +31,7 @@
 - Não adicione abstrações sem necessidade demonstrada.
 - Mantenha `campaign-deletions` folha, importando apenas auth/shared; componha-a em `campaigns` e use essa interface no Estúdio.
 - Mantenha `campaign-sessions` folha de auth/shared; componha painel e closer somente em `campaigns` pelas interfaces públicas.
+- Mantenha `campaign-preparation` folha de auth/shared; componha editor estável, slot e closer em `campaigns`, fora de `materialEpoch`, conforme ADR 0040.
 - Limite `campaign-session-references` a auth/shared, projeções públicas puras C2 e tipos/verificador puro `verifyCampaignBaseFields` de campaign-bases; não use readers/loaders B fora do gate da sessão e componha slot, pendência e closer em campaigns.
 
 ## Estilo e interface
@@ -117,8 +118,10 @@
 - Confira a reserva global permanente antes de criar, ler ou repetir mutações de campanha; roteie controles antigos por máscara de dono/campanha antes do registro completo e não reutilize o ID reservado.
 - Exclua campanhas pelo protocolo limitado da ADR 0036; remova um pin tipado por transação, preserve biblioteca/outras mesas e certifique os filhos antes da raiz.
 - Atualize o inventário e a compatibilidade dos jobs de exclusão antes de habilitar qualquer novo recurso privado de campanha.
-- Preserve os inventários C4 v1 (3/7) e v2 (4/9); inicie novos jobs v3 (6/11) incluindo referências/controles/recibos/fences de sessão, rejeitando versões desconhecidas, conforme ADR 0038.
+- Preserve os inventários C4 v1 (3/7), v2 (4/9) e v3 (6/11); inicie jobs v4 (8/16) com todos os recursos S3, rejeitando versões desconhecidas, conforme ADR 0040.
 - Mantenha sessões autorais no servidor com CAS, ordem adjacente transacional e tombstones; confira a campanha própria e a reserva antes de corpos/recibos, sem depender da origem da aventura.
+- Conserve pistas/missões próprias na campanha e vínculos sem prosa nas sessões; excluir sessão preserva itens/corpos e excluir item deixa vínculo neutro removível.
+- Congele o CAS do editor S3 e confira revisão exata antes do corpo; mantenha recibos/resolver sem prosa e journal próprio integral sob Web Locks, separado do material derivado S2.
 - Separe a confirmação histórica do pedido da adoção do corpo atual; não rebaseie preparação por resumo da lista, movimento ou foco, conforme ADR 0037.
 - Preserve o painel autoral e sua pendência durante refresh da base; invalidação própria de exclusão continua ocultando apresentação antes do CAS do journal.
 - Reautorize sessão ativa e projeção C2 em cada página de candidatos ou leitura de referência; persista somente IDs/tokens/revisões, sem nomes, prosa ou hashes privados.

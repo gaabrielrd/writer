@@ -626,7 +626,7 @@ test('SDK referências: recibo histórico e fence exatos continuam após revoga�
   );
 });
 
-test('SDK referências: C4 v3 limpa mais25 vínculos e recibos/fences, preserva outra mesa e retoma inventários v1/v2', async () => {
+test('SDK referências: C4 limpa mais25 vínculos e recibos/fences, preserva outra mesa e retoma inventários v1/v2', async () => {
   const f = await fixture(),
     first = await refs(f);
   let page = first;
@@ -666,7 +666,7 @@ test('SDK referências: C4 v3 limpa mais25 vínculos e recibos/fences, preserva 
     (
       await admin.doc(`users/${uid}/campaignDeletions/${deletion.result.progress.deletionId}`).get()
     ).data().cleanupVersion,
-    3,
+    4,
   );
   await assert.rejects(
     f.api.addCampaignSessionReference(uid, add(f, page, 'late-after-c4')),

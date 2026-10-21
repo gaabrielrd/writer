@@ -737,8 +737,8 @@ Confirmar histórico não exige sessão ativa nem origem; cancelamento explícit
 persiste intenção antes do RPC e cria fence contra o pedido atrasado. Journal
 metadata-only usa Web Locks/CAS integral e fica recuperável fora do diálogo S1.
 
-C4 atual começa na versão 3: recovery 6/children 11. Inventários v1 3/7 e v2 4/9
-permanecem retomáveis nas mesmas posições. SDK direto é fechado; índices cobrem
+C4 passou a v3 em S2A e agora inicia v4 em S3: recovery 8/children 16. Inventários
+v1 3/7, v2 4/9 e v3 6/11 permanecem retomáveis nas mesmas posições. SDK direto é fechado; índices cobrem
 lista e duplicata limitadas. Não habilitar UI antes da implantação conjunta e
 drenagem dos starts antigos. Nenhum rollout foi executado. Cenas/blocos e S3
 continuam separados; [contrato S2A](tasks/writer-v2/execucao/22-referencias-de-lore-da-sessao.md)
@@ -746,7 +746,7 @@ e [ADR 0038](decisions/0038-session-lore-references.md).
 
 ## Cenas capturadas por sessão
 
-S2B está implementado e validado localmente, com CI do novo head pendente; [contrato de cenas](tasks/writer-v2/execucao/23-cenas-completas-na-preparacao-da-sessao.md).
+S2B está concluído tecnicamente em `56cbb06`, com CI e regras verdes; [contrato de cenas](tasks/writer-v2/execucao/23-cenas-completas-na-preparacao-da-sessao.md).
 `campaign-session-references` mantém um host e um journal para Fichas/Cenas. O alvo
 scene compartilha controle, recibos e fences; kind omitido continua lore, com filtro
 no servidor. Nenhum namespace ou inventário C4 é acrescentado.
@@ -763,6 +763,39 @@ bloco/imagem por vez e descarta respostas antigas. Somente tipos públicos e
 `verifyCampaignBaseFields` de campaign-bases podem ser reutilizados aqui; os
 readers/loaders B não atravessam o gate da sessão. Cena ausente após adoção fica
 indisponível sem legado ou fallback. [ADR 0039](decisions/0039-session-scene-material.md).
+
+## Pistas e missões próprias da campanha
+
+campaign-preparation é folha de auth/shared, composta somente em campaigns. Seu
+painel/editor/journal é estável por UID/campanha, fora de materialEpoch e de
+CampaignContent. O slot S1 apenas abre um contexto salvo por callback público;
+não importa S3 nem copia sua preparação. Dirty e pedidos são agregados no host.
+
+Itens pertencem à campanha; vínculos reutilizam-nos em sessões com ordem mista.
+Catálogo ordena por tipo; estados e reabertura são manuais. Pendência deriva de
+pending para pistas e available/active para missões. Excluir sessão conserva
+itens/corpos; excluir item apaga corpo e deixa vínculo neutro/removível. Nenhuma
+condição/destinatário/consequência concede acesso, publica ou altera universo.
+
+functions/src/campaignPreparation.mjs oferece dez RPCs, seis ações e recibos
+metadata-only. Itens/corpos e controles ficam separados; SDK direto é fechado.
+Listas selecionam metadados, get exige revisão exata antes do body. CAS do
+formulário congela a revisão da coleção; listas não rebaseiam texto. Cursores de
+vínculo prendem ambas as coleções. Prosa própria tem até 150.000 caracteres por
+campo e 512 KiB agregados UTF-8, sem trim/truncamento e sem indexação do mapa body.
+
+Journal integral com Web Locks/CAS conserva o pedido antes do HTTP; cancelamento
+persiste intent e cria fence sem ecoar prosa/pedido/hash. Reconhecimento histórico
+não adota corpo novo. Respostas antigas são invalidadas ao editar/confirmar.
+Campanha/token/reserva C4 precedem corpos e recibos; sessão ativa é requisito de
+operação nova de vínculo, sem impedir reconhecer histórico. Apoio derivado S2
+permanece separado e sujeito à sua autorização.
+
+C4v4 acrescenta os sete namespaces e conserva prefixos v1/v2/v3, paginação de 25
+e sanitização dos controles. Escritores/guardas/regras/índices sobem juntos,
+drenando processos antigos antes de habilitar S3. Veja [ADR 0040](decisions/0040-campaign-preparation-items.md)
+e [contrato S3](tasks/writer-v2/execucao/24-pistas-missoes-e-pendencias.md).
+Fechamento local e matriz nativa verdes; CI do novo head pendente. Nenhum rollout executado.
 
 ## Progresso privado, contagem e retomada
 
