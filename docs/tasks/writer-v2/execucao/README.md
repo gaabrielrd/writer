@@ -203,3 +203,13 @@ CI do M1 e847afa: Rules verdes, CI geral parcial com sete shards verdes e cinco
 cancelados; agregador falhou. Há falha de inserção/caret em dois perfis de
 adventure-lore e timeouts em três casos que passaram no retry. Diagnóstico na
 entrega M1; ajuste dirigido será incorporado sem bloquear o avanço validado local.
+
+### Manutenção dirigida após M2
+
+O [plano 34](34-regressao-visual-e-orcamento-ci.md) prepara foco/seleção reconhecida
+antes da digitação no teste de alias e distribui a mesma suíte em 16 shards.
+Seis perfis finais e oito contratos CI verdes; enumeração das 1.332 identidades
+sem omissão/duplicação. Sem mudança de runtime ou novo validate completo; produto
+conserva os bytes validados no M2. CI Linux/performance ainda pendentes.
+Veja a [entrega dirigida](../../../entregas/2026-10-21-writer-v2-preparo-de-edicao-e-ci.md).
+Não é nova tarefa ampla; continuar schema/captura restante de P1.

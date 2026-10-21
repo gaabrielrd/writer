@@ -315,7 +315,31 @@ test('autor cria e edita lore privado e usa referência e alias local além da p
     exact: true,
   });
   await expect(mention).toHaveText('Rastro');
-  await editor.press('Control+End');
+  // The journey tests alias-preserving typing; observe the insertion point first.
+  await editor.scrollIntoViewIfNeeded();
+  await editor.focus();
+  await expect(editor).toBeFocused();
+  const selectionToolbar = page.getByRole('toolbar', {
+    name: 'Assistente IA para o texto selecionado',
+    exact: true,
+  });
+  await editor.press('ControlOrMeta+A');
+  await expect(selectionToolbar).toBeVisible();
+  await editor.press('ArrowRight');
+  await expect(selectionToolbar).toBeHidden();
+  await expect
+    .poll(() =>
+      editor.evaluate((root) => {
+        const selection = root.ownerDocument.getSelection();
+        if (!selection?.isCollapsed || !selection.focusNode || !root.contains(selection.focusNode))
+          return null;
+        const before = root.ownerDocument.createRange();
+        before.selectNodeContents(root);
+        before.setEnd(selection.focusNode, selection.focusOffset);
+        return before.toString();
+      }),
+    )
+    .toBe('Rastro aguarda no farol.');
   await page.keyboard.type(' A vigília continua.');
   await expect(editor).toHaveText('Rastro aguarda no farol. A vigília continua.');
   await expect(mention).toHaveAttribute(

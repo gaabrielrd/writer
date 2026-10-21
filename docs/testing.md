@@ -67,14 +67,14 @@ npm run test:coverage -- --maxWorkers=2
 
 A CI mantém o `validate` completo nos dois ambientes Node 22 e 24. O navegador
 de produção e a suíte visual executam em jobs separados. A suíte visual inteira
-é distribuída por doze shards em paralelo, com dois workers por runner, incluindo
+é distribuída por dezesseis shards em paralelo, com dois workers por runner, incluindo
 desktop/celular e claro/escuro/sépia. Os testes de seleção parcial pertencem à
 mesma suíte e passam a executar uma vez por projeto.
 
 Para reproduzir um dos shards, substitua o número antes da barra:
 
 ```bash
-npx playwright test -c playwright.visual.config.ts --shard=1/12
+npx playwright test -c playwright.visual.config.ts --shard=1/16
 ```
 
 Cada shard publica um blob e suas capturas/traces com nome próprio.
@@ -216,7 +216,7 @@ Os demais cenários mantêm o tempo avançando naturalmente. A opção usa a
 [API Clock do Playwright](https://playwright.dev/docs/clock).
 
 No celular, a distância para ocultar o trecho vem de sua posição real. Os seis
-projetos desse cenário pertencem à suíte completa, distribuída nos seis shards
+projetos desse cenário pertencem à suíte completa, distribuída nos dezesseis shards
 do CI. O timeout individual permanece em 45 segundos; os limites dos jobs estão
 no workflow. Não aceitar um teste passando só porque o salvamento terminou
 antes da seleção: a transição durante o gesto faz parte da regressão protegida.

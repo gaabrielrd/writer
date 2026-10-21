@@ -105,3 +105,29 @@ A CI do head `fe10b15` confirmou os doze shards e a consolidação verdes:
 1.080 passes, 12 skips preexistentes, zero retries/flaky. O tempo de execução de
 testes por shard ficou entre 5,4 e 9,5 minutos, sem setup/consolidação. É medição
 desse head; não garante prazo futuro ou capacidade fixa de runners.
+
+## Revisão para P1 — 2026-10-21
+
+A matriz M1 de e847afa concluiu sete shards e cancelou 1/3/5/9/11 perto do limite
+de 15 min/job; o agregador falhou. Node 22/24, auditoria e produção passaram.
+Artefatos 3/9 confirmaram uma expectativa de digitação após Control+End falhando
+também no retry e três jornadas que passaram no retry após exceder 45 s.
+Os demais cancelados não tinham linha de falha antes do encerramento. O avanço
+contínuo perto do limite é compatível com orçamento total insuficiente, sem
+atribuir causa oficial aos cancelamentos somente pelo status.
+
+A suíte completa passa a 16 shards, preservando dois workers, limite de 45 s/caso,
+15 min/job, um retry, fail-fast=false, evidências por shard e gate agregado.
+A enumeração --list/JSON encontrou 1.332 identidades: 84 nos quatro primeiros
+shards e 83 nos demais. A união ID/projeto/caminho/título coincide com a suíte
+sem shards: zero omissões, extras ou duplicações. Nenhum cenário foi filtrado.
+Isso prova distribuição, não execução ou duração remota. Há quatro preparações
+extras de runner; a redução de espera depende da capacidade/filas do GitHub.
+
+A jornada de lore agora verifica foco e seleção reconhecida pela interface antes
+de digitar. A primeira tentativa de verificar só o DOM falhou uma vez: o caret
+aparecia no fim, mas a digitação substituiu a prosa apesar dessa indicação no DOM.
+O preparo final observa a barra de seleção aparecer e desaparecer, além da
+posição colapsada no DOM. Não altera runtime nem relaxa prosa/alias esperados;
+também não afirma corrigir o atalho Control+End como comportamento de produto.
+Veja [plano dirigido 34](../tasks/writer-v2/execucao/34-regressao-visual-e-orcamento-ci.md).

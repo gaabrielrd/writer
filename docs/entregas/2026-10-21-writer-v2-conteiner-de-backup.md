@@ -118,3 +118,15 @@ Executar os dois comandos direcionados descritos em docs/testing.md. Para provar
 o arquivo todo, consumir o leitor até o retorno final validado; interromper
 após o primeiro registro não valida o selo. Corromper o último byte deve falhar.
 A futura UI P1 só deve usar o resultado depois da validação semântica e dos gates.
+
+## Registro remoto verificado em 2026-10-21
+
+M2 enviado em 2f80f91d1fc110aa420bc669782a3c6ef84437fb: HEAD/upstream/remoto
+coincidentes e ambos checkouts limpos naquele fechamento; master original
+522ccaa preservada. Hooks normais, com tipos e 2.548/220 testes verdes no pre-push
+em 153,47 s. Nove hashes de código/testes/pacote preservados após hooks e envio.
+
+Rules 39687293480 verdes. Na consulta de CI 39687293696 antes da manutenção,
+Node 22/24, auditoria, produção e shards 8 e 12 estavam verdes; demais visuais
+ainda em execução. Isso não é aprovação geral. O ajuste dirigido seguinte de
+teste/CI avança sem esperar a matriz; resultados remotos continuam próprios.
