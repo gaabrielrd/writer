@@ -1,6 +1,6 @@
 # ADR 0041 — Lore privado da aventura
 
-**Estado:** implementada e validada localmente; CI do novo incremento pendente, sem rollout.
+**Estado:** implementada e concluída tecnicamente em `087bced`, com CI geral e regras verdes; sem rollout.
 **Contrato:** [F2-09 L](../tasks/writer-v2/execucao/26-lore-proprio-de-aventura.md).
 
 ## Contexto

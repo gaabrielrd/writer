@@ -61,6 +61,7 @@ test('aventura em duas colunas conserva estrutura, caixas, atributos e revisão'
   await source.close();
   await page.goto('/');
   await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   await page
     .getByLabel('Arquivo do manuscrito')
     .setInputFiles({ name: 'campanha.pdf', mimeType: 'application/pdf', buffer });
@@ -115,6 +116,7 @@ test('arquivo real de Phandelver recupera sete seções e identifica os três ma
   const buffer = await readFile(sourcePath!);
   await page.goto('/');
   await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   await page
     .getByLabel('Arquivo do manuscrito')
     .setInputFiles({ name: 'Phandelver.pdf', mimeType: 'application/pdf', buffer });

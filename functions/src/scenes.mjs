@@ -3,6 +3,8 @@ import { storedMetadata as storedAdventureLoreMetadata } from './adventureLoreCo
 import { validateId } from './generation.mjs';
 import {
   closed,
+  initialScene,
+  initialSceneGroup,
   sceneFail,
   conflict,
   sceneId,
@@ -400,29 +402,16 @@ export function createScenesService({ db, now = Date.now }) {
     return sceneRankBetween(after?.[field] ?? null, before?.[field] ?? null);
   }
   function newScene(context, id, title, parent, content, timestamp, rank) {
-    const text = prose(content);
-    const record = {
+    return initialScene({
+      uid: context.uid,
       id,
-      ownerId: context.uid,
-      schemaVersion: 1,
-      revision: 1,
       title,
       parentId: parent,
-      stage: 'planned',
-      archived: false,
-      rankA: rank,
-      rankB: rank,
-      wordCount: text.wordCount,
-      bodyHash: text.bodyHash,
-      bodyBytes: text.bodyBytes,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    };
-    const body = { ...text.body, revision: 1 };
-    assertSceneEnvelope(body);
-    return { record, body };
+      content,
+      timestamp,
+      rank,
+    });
   }
-
   async function mutate(uid, data, method) {
     const fields = {
       createScene: ['operationId', 'title', 'parentId', 'planning', 'content'],
@@ -934,23 +923,15 @@ export function createScenesService({ db, now = Date.now }) {
         const order = (latest?.order ?? 0) + 1,
           timestamp = sceneDate(now, p.updatedAt ?? 0);
         if (!Number.isSafeInteger(order)) sceneFail('failed-precondition', 'Ordem inválida.');
-        const value = {
+        const value = initialSceneGroup({
+          uid,
           id: op.id,
-          ownerId: uid,
-          schemaVersion: 1,
-          revision: 1,
           title,
-          contentMode: 'scenes',
-          assemblyRevision: 0,
-          structureRevision: 0,
-          wordCount: 0,
-          sceneCount: 0,
-          rankSlot: 'A',
           order,
-          createdAt: timestamp,
-          updatedAt: timestamp,
-          ...(context.target.kind === 'book' ? { content: '', actId } : {}),
-        };
+          timestamp,
+          kind: context.target.kind,
+          actId,
+        });
         tx.create(ref, value);
         writeProject(tx, context, p, timestamp);
         writeReceipt(tx, op, { groupId: op.id, createdAt: timestamp });

@@ -271,7 +271,12 @@ service cloud.firestore {
         && (size <= 14 ? true : validPersonaOverride(overrides[14]))
         && (size <= 15 ? true : validPersonaOverride(overrides[15])));
     }
+    match /adventureImportReservations/{id} { allow read, write: if false; }
     match /users/{userId} {
+      match /adventureImports/{document=**} { allow read, write: if false; }
+      match /adventureImportRecoveryKeys/{id} { allow read, write: if false; }
+      match /adventureImportOperations/{id} { allow read, write: if false; }
+      match /adventureImportStartFences/{id} { allow read, write: if false; }
       // Conversations, provider origin and debit receipts are server controlled.
       match /chapterChats/{document=**} { allow read, write: if false; }
       match /chapterChatLimits/{id} { allow read, write: if false; }

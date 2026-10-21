@@ -248,6 +248,15 @@ export async function fixtureCreate(
   return structuredClone(project);
 }
 
+/** Publish only a fully activated import; existing authored creation IDs stay unchanged. */
+export function fixtureInstallImportedAdventure(root: Adventure): void {
+  if (root.ownerId !== fixtureOwner() || root.origin.kind !== 'imported')
+    throw new Error('A importação não pertence à conta atual.');
+  const key = projectKey(root.ownerId, root.id);
+  if (stores.adventure.has(key)) throw new Error('O ID da aventura já foi utilizado.');
+  stores.adventure.set(key, structuredClone(root));
+  persistStudio();
+}
 export function fixturePatchProject(kind: Kind, id: string, patch: Partial<Project>): void {
   if (kind === 'campaign') fixtureAssertCampaignWritable(id);
   const value = stores[kind].get(projectKey(fixtureOwner(), id));

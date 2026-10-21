@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from 'react-router';
 import { Plus, Upload } from 'lucide-react';
 import { ContinueWorkPanel } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
+import { AdventureImportDialog, AdventureImportPreparations } from '@/features/adventure-import';
 import { CampaignCapturePreparations } from '@/features/campaign-bases';
 import { CampaignDeletionPreparations } from '@/features/campaigns';
 import {
@@ -30,6 +31,7 @@ function StudioSession({ ownerId }: { ownerId: string }) {
   const [kind, setKind] = useState<'all' | StudioProjectKind>('all');
   const [form, setForm] = useState<StudioProjectKind | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [adventureImportOpen, setAdventureImportOpen] = useState(false);
   const [adoption, setAdoption] = useState<ComparisonReadEnvelope | null>(null),
     [adoptionOpen, setAdoptionOpen] = useState(false),
     [adoptionAttempt, setAdoptionAttempt] = useState(0);
@@ -72,10 +74,21 @@ function StudioSession({ ownerId }: { ownerId: string }) {
               <DropdownItem onSelect={() => setForm('adventure')}>Aventura</DropdownItem>
               <DropdownItem onSelect={() => setForm('campaign')}>Campanha</DropdownItem>
             </Dropdown>
-            <Button variant="secondary" onClick={() => setImportOpen(true)}>
-              <Upload className="icon icon-sm" aria-hidden="true" />
-              Importar Documento
-            </Button>
+            <Dropdown
+              mode="action"
+              label="Importar Documento"
+              trigger={
+                <Button variant="secondary">
+                  <Upload className="icon icon-sm" aria-hidden="true" />
+                  Importar Documento
+                </Button>
+              }
+            >
+              <DropdownItem onSelect={() => setImportOpen(true)}>Livro</DropdownItem>
+              <DropdownItem onSelect={() => setAdventureImportOpen(true)}>
+                Nova aventura
+              </DropdownItem>
+            </Dropdown>
             <Button variant="secondary" onClick={() => void navigate('/books/new/assisted')}>
               Criar com IA
             </Button>
@@ -83,6 +96,19 @@ function StudioSession({ ownerId }: { ownerId: string }) {
         }
       />
       <ContinueWorkPanel />
+      <AdventureImportPreparations
+        onActivated={(id) => {
+          if (active.current) void navigate('/adventures/' + encodeURIComponent(id));
+        }}
+      />
+      <AdventureImportDialog
+        open={adventureImportOpen}
+        onClose={() => setAdventureImportOpen(false)}
+        onActivated={(id) => {
+          if (active.current) void navigate('/adventures/' + encodeURIComponent(id));
+        }}
+      />
+
       <CampaignDeletionPreparations />
       <CampaignComparisonPreparations
         onReviewAdoption={(context) => {

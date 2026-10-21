@@ -186,3 +186,15 @@ no Kindle Previewer. Isso fundamenta exportação, não uma integração automá
 A [documentação do Stripe Connect](https://docs.stripe.com/connect) é uma fonte para investigar
 pagamentos entre múltiplas partes, sem escolha de fornecedor neste plano.
 Revalidar documentação, requisitos regionais e preços no momento da decisão comercial.
+
+## Recuperação de importação de aventura — 2026-10-21
+
+O operador escolheu preservar no dispositivo uma cópia protegida da revisão
+confirmada, sem guardar o PDF. A promessa cobre títulos, divisões, uniões,
+seleção e texto confirmado após seal durável; não é autosave anterior à
+confirmação nem sincronização entre dispositivos. Chave somente em memória e
+obtida após autorização do job; nenhum append antes da persistência cifrada.
+O [contrato I](execucao/27-importacao-revisada-de-aventura.md) detalha a proposta,
+com ABI revisada e implementação validada localmente. A
+[entrega I](../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md)
+registra os limites da evidência e a CI ainda pendente.

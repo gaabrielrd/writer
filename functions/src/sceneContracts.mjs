@@ -147,3 +147,48 @@ export function decodeSceneCursor(value, context, { observeUpdatedAt = false } =
   }
   return result;
 }
+
+// The authoring and import writers share the same initial scene/part schema.
+export function initialScene({ uid, id, title, parentId, content, timestamp, rank }) {
+  const text = prose(content);
+  assertSceneEnvelope({ ...text.body, revision: 1 });
+  return {
+    record: {
+      id,
+      ownerId: uid,
+      schemaVersion: 1,
+      revision: 1,
+      title,
+      parentId,
+      stage: 'planned',
+      archived: false,
+      rankA: rank,
+      rankB: rank,
+      wordCount: text.wordCount,
+      bodyHash: text.bodyHash,
+      bodyBytes: text.bodyBytes,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    },
+    body: { ...text.body, revision: 1 },
+  };
+}
+export function initialSceneGroup({ uid, id, title, order, timestamp, kind, actId = null }) {
+  return {
+    id,
+    ownerId: uid,
+    schemaVersion: 1,
+    revision: 1,
+    title,
+    contentMode: 'scenes',
+    assemblyRevision: 0,
+    structureRevision: 0,
+    wordCount: 0,
+    sceneCount: 0,
+    rankSlot: 'A',
+    order,
+    createdAt: timestamp,
+    updatedAt: timestamp,
+    ...(kind === 'book' ? { content: '', actId } : {}),
+  };
+}

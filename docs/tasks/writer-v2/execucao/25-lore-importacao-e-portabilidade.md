@@ -1,6 +1,6 @@
 # F2-09 — Lore, importação, IA e portabilidade privada
 
-**Estado em 2026-10-21:** descoberta concluída sobre `a9b588a`; L foi implementado e validado localmente após a correção S3 `e924890`, com CI própria pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md). Este documento organiza a tarefa [W2-F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
+**Estado em 2026-10-21:** descoberta concluída sobre `a9b588a`; L está concluído tecnicamente em `087bced`, com CI geral/regras verdes, após a correção S3 `e924890`. I está implementado e validado localmente, com CI do novo incremento pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md). Este documento organiza a tarefa [W2-F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
 em incrementos sequenciais. Não comprova entrega nem fecha o portão da fase 2.
 
 ## Objetivo e base verificada
@@ -74,6 +74,15 @@ invalida projeções sem apagar notas próprias. Livros e bases antigas continua
 legíveis. Nenhum conteúdo é publicado ou compartilhado automaticamente.
 
 ### I — Importação revisada para aventura
+
+O [plano I](27-importacao-revisada-de-aventura.md) detalha preparação privada,
+reserva, ativação, retomada e limpeza. O operador aprovou guardar no dispositivo
+uma cópia protegida da revisão confirmada, sem PDF. Recuperação após reload exige
+autorização atual e seal durável antes do primeiro envio; não cobre revisão ainda
+não confirmada nem sincronização entre dispositivos. A ABI foi revisada e a implementação
+liberada; implementação/revisão/validate local concluídos. A
+[entrega I](../../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md)
+registra testes, falhas preservadas e CI pendente.
 
 Expor os contratos reutilizáveis do parser/revisão sem importar internos de books.
 A revisão deve mostrar o destino: cada seção confirmada forma uma parte com cena

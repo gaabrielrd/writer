@@ -12,6 +12,14 @@ const replacements = new Map(
     ['src/features/books/services/bookService.ts', 'bookService.ts'],
     ['src/features/books/services/studioBookService.ts', 'studioBookService.ts'],
     ['src/features/adventures/services/adventureService.ts', 'adventureService.ts'],
+    [
+      'src/features/adventure-import/services/adventureImportCallables.ts',
+      'adventureImportFixture.ts',
+    ],
+    [
+      'src/features/adventure-import/services/adventureImportKeyClient.ts',
+      'adventureImportFixture.ts',
+    ],
     ['src/features/campaigns/services/campaignService.ts', 'campaignService.ts'],
     ['src/features/campaign-bases/services/campaignBaseCallables.ts', 'campaignBaseFixture.ts'],
     ['src/features/campaign-notes/services/campaignNotesCallables.ts', 'campaignNotesFixture.ts'],

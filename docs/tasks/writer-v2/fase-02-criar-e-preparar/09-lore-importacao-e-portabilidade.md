@@ -1,10 +1,17 @@
 # W2-F2-09 — Integrar lore, importação e portabilidade
 
-**Estado em 2026-10-21:** L implementado e validado localmente sob [contrato fechado](../execucao/26-lore-proprio-de-aventura.md), com CI de `2af6df5` encontrou expectativas legadas; correção dirigida local verde e CI do próximo head pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md); importação, IA e portabilidade continuam planejadas.
+**Estado em 2026-10-21:** L concluído tecnicamente em `087bced`, com CI geral/regras
+verdes, sob [contrato fechado](../execucao/26-lore-proprio-de-aventura.md). Falhas e
+correções estão preservadas na [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md).
+I implementado e validado localmente, com CI pendente; IA e portabilidade continuam planejadas.
 A [sequência executável](../execucao/25-lore-importacao-e-portabilidade.md) separa
 lore próprio de aventura, importação, IA, portabilidade de livro/aventura/campanha
 e demonstração integrada. O operador confirmou backup do estado atual e de todo
 o histórico, incluindo versões manuais e cópias anteriores às restaurações.
+A importação tem [plano próprio liberado](../execucao/27-importacao-revisada-de-aventura.md),
+incluindo a decisão de preservar a revisão confirmada protegida no dispositivo,
+sem PDF. A [entrega I](../../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md)
+registra o fechamento local e mantém a CI pendente.
 **Dependências:** [W2-F2-05](../fase-02-criar-e-preparar/05-historico-e-restauracao.md), [W2-F2-06](../fase-02-criar-e-preparar/06-aventuras-e-estrutura-narrativa.md), [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md), [W2-F2-08](../fase-02-criar-e-preparar/08-preparacao-de-sessoes.md)
 **Áreas envolvidas:** books, editor, lore, universes, ai-assistant, scenes, adventures,
 adventure-blocks, campaigns e seus serviços de captura, variantes e sessões.
@@ -26,14 +33,14 @@ Entradas: manuscritos/importações, lore, personas e dados de campanha. Resulta
 
 ## Passos de execução
 
-- [ ] Conferir o plano de importação PDF existente e reusar contratos de blocos.
+- [x] Conferir o plano de importação PDF existente e reusar contratos de blocos (I validado localmente; CI pendente).
 - [ ] Integrar menções/lore/IA por interfaces públicas.
 - [ ] Implementar portabilidade dos novos campos e testar versões antigas.
 - [ ] Executar demonstração de conto e aventura no mesmo universo.
 
 ## Critérios de aceite
 
-- [ ] Importação não publica nem concede direito de revenda.
+- [x] Importação não publica nem concede direito de revenda (I, sem habilitação comercial).
 - [ ] Menção de entidade particular prevalece conforme regra aprovada e não revela segredo por fallback.
 - [ ] Backup mantém sessões, origem e consequências; não é arquivo de venda.
 - [ ] Livros legados, exportações e créditos de IA mantêm comportamento atual.

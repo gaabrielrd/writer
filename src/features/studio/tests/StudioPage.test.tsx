@@ -130,6 +130,10 @@ vi.mock('@/features/books', () => ({
       </div>
     ) : null,
 }));
+vi.mock('@/features/adventure-import', () => ({
+  AdventureImportDialog: () => null,
+  AdventureImportPreparations: () => null,
+}));
 vi.mock('@/features/adventures', () => ({ listAdventures: vi.fn(), createAdventure: vi.fn() }));
 vi.mock('@/features/campaigns', () => ({
   listCampaigns: vi.fn(),
@@ -431,6 +435,7 @@ it.each(['import', 'assisted'])(
     render(tree());
     if (action === 'import') {
       await userEvent.click(screen.getByRole('button', { name: 'Importar Documento' }));
+      await userEvent.click(screen.getByRole('menuitem', { name: 'Livro' }));
       await userEvent.click(screen.getByRole('button', { name: 'Concluir importação' }));
       expect(await screen.findByRole('heading', { name: 'Livro aberto' })).toBeInTheDocument();
     } else {
@@ -497,6 +502,7 @@ it('permite fechar formulários e mostra erro parcial de aventuras sem apagar li
   await userEvent.click(screen.getByRole('button', { name: 'Fechar formulário' }));
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Importar Documento' }));
+  await userEvent.click(screen.getByRole('menuitem', { name: 'Livro' }));
   await userEvent.click(screen.getByRole('button', { name: 'Cancelar importação' }));
   expect(screen.queryByRole('button', { name: 'Concluir importação' })).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Novo projeto' }));

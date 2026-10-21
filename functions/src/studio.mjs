@@ -175,7 +175,13 @@ export function createStudioService({ db, now = Date.now }) {
     const receipt = db.doc(`users/${uid}/studioOperations/${id}`);
     return db.runTransaction(async (tx) => {
       if (kind === 'campaign') await assertCampaignNotDeleted(tx, db, uid, id);
-      const [existing, operation] = await Promise.all([tx.get(ref), tx.get(receipt)]);
+      const [existing, operation, importReservation] = await Promise.all([
+        tx.get(ref),
+        tx.get(receipt),
+        kind === 'adventure' ? tx.get(db.doc('adventureImportReservations/' + id)) : null,
+      ]);
+      if (importReservation?.exists)
+        fail('failed-precondition', 'Identificador reservado para uma importação.');
       const current = existing.data();
       if (operation.exists) {
         if (operation.data().fingerprint !== fingerprint)

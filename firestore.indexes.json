@@ -997,6 +997,8 @@
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "adventureImportRecoveryKeys", "fieldPath": "keyBase64", "indexes": [] },
+    { "collectionGroup": "adventureImports", "fieldPath": "project", "indexes": [] },
     {
       "collectionGroup": "preparationBodies",
       "fieldPath": "body",

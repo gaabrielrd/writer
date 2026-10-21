@@ -1,6 +1,6 @@
 # Progresso do Writer V2
 
-**Snapshot:** 2026-10-21, branch `codex/writer-v2`, implementação até `a9b588a`, correção visual em `e924890`.
+**Snapshot:** 2026-10-21, branch `codex/writer-v2`, implementação L em `2af6df5`, correção de testes em `087bced`.
 Este relatório conta tarefas do plano, sem atribuir o mesmo esforço a cada tarefa.
 
 | Fase                          | Total de tarefas | Implementadas | Restantes |
@@ -24,7 +24,17 @@ histórico/restauração, aventuras/blocos e campanhas/base/variantes/adoção/e
 F2-08 acrescenta sessões, referências de lore, cenas completas, pistas e missões
 particulares da campanha, reutilizáveis entre sessões.
 
-F2-09 L foi implementado e validado localmente: lore próprio de aventura, menções e referências, com quatro famílias SDK e 12 combinações nativas positivas. CI de `2af6df5` revelou duas expectativas legadas, corrigidas e revalidadas localmente; CI do próximo head pendente. As seis verticais seguintes continuam planejadas. [O detalhamento](execucao/25-lore-importacao-e-portabilidade.md)
+F2-09 L foi implementado e validado localmente: lore próprio de aventura, menções e referências, com quatro famílias SDK e 12 combinações nativas positivas. CI de `2af6df5` revelou duas expectativas legadas, corrigidas e revalidadas localmente; O head corrigido `087bced` passou na CI geral 39607044458 e regras 39607044506;
+a primeira execução teve um shard cancelado após 103 passes, preservado na
+[entrega L](../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md).
+L está concluído tecnicamente. I está implementado e validado localmente: 2.123 testes
+frontend, 85 scripts e 444 Functions; quatro famílias SDK e 16 combinações nativas
+novas únicas positivas, mais cinco regressões legadas. CI do novo incremento pendente.
+As cinco verticais seguintes continuam planejadas. O
+[plano I](execucao/27-importacao-revisada-de-aventura.md) e sua
+[ABI](execucao/28-contratos-da-importacao-de-aventura.md) detalham a importação e a
+recuperação protegida aprovada; [entrega local I](../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md)
+com falhas iniciais e limites preservados. [O detalhamento](execucao/25-lore-importacao-e-portabilidade.md)
 separa lore local, importação, IA, portabilidade de livro/aventura/campanha e
 validação integrada. Uma tarefa restante no índice representa vários incrementos.
 

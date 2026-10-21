@@ -1,9 +1,13 @@
+import { createAdventureImportService } from './adventureImport.mjs';
+import { createAdventureImportRecoveryHandler } from './adventureImportRecovery.mjs';
+import { getAuth } from 'firebase-admin/auth';
+import { getAppCheck } from 'firebase-admin/app-check';
 import { createAdventureLoreService } from './adventureLore.mjs';
 import { randomUUID } from 'node:crypto';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
 import * as functionsV1 from 'firebase-functions/v1';
@@ -274,6 +278,7 @@ const callable = (method, secrets = []) =>
       try {
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
+        const adventureImport = createAdventureImportService({ db });
         const adventureLore = createAdventureLoreService({ db });
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
@@ -309,6 +314,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (adventureImport[method] ? adventureImport : null) ??
           (adventureLore[method] ? adventureLore : null) ??
           (campaignPreparation[method] ? campaignPreparation : null) ??
           (campaignSessionScenes[method] ? campaignSessionScenes : null) ??
@@ -621,3 +627,20 @@ export const getAdventureLore = callable('getAdventureLore');
 export const saveAdventureLore = callable('saveAdventureLore');
 export const deleteAdventureLore = callable('deleteAdventureLore');
 export const resolveAdventureLoreOperation = callable('resolveAdventureLoreOperation');
+
+export const startAdventureImport = callable('startAdventureImport');
+export const resolveAdventureImportStart = callable('resolveAdventureImportStart');
+export const listAdventureImports = callable('listAdventureImports');
+export const getAdventureImport = callable('getAdventureImport');
+export const appendAdventureImportSection = callable('appendAdventureImportSection');
+export const advanceAdventureImport = callable('advanceAdventureImport');
+export const activateAdventureImport = callable('activateAdventureImport');
+export const cancelAdventureImport = callable('cancelAdventureImport');
+export const getAdventureImportRecoveryKey = onRequest(
+  { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
+  createAdventureImportRecoveryHandler({
+    service: createAdventureImportService({ db }),
+    verifyIdToken: (token) => getAuth().verifyIdToken(token),
+    verifyAppCheck: (token) => getAppCheck().verifyToken(token),
+  }),
+);

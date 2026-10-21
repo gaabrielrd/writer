@@ -8,7 +8,15 @@ export interface Adventure {
   title: string;
   synopsis: string;
   language: 'pt-BR';
-  origin: { kind: 'authored' };
+  origin:
+    | { kind: 'authored' }
+    | {
+        kind: 'imported';
+        importId: string;
+        sourceMediaType: string;
+        sourceHash: string;
+        reviewHash: string;
+      };
   status: AdventureStatus;
   editorialState?: 'draft' | 'review' | 'ready';
   hasProgressResources?: boolean;

@@ -143,7 +143,9 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
       />
       <PageHeader
         title={adventure.title}
-        description="Aventura autoral"
+        description={
+          adventure.origin.kind === 'imported' ? 'Aventura importada' : 'Aventura autoral'
+        }
         breadcrumbs={<Link to="/studio">Estúdio</Link>}
         actions={
           <div className={styles.headerActions}>

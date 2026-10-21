@@ -210,3 +210,25 @@ O emulador temporário e o servidor visual foram encerrados. A produção perman
 idêntica à que passou no validate local e nos validates remotos; não foi repetido
 o validate global para uma correção exclusiva de expectativas de teste/docs.
 A CI do próximo head permanece um portão próprio; sem merge ou deploy.
+
+## Acompanhamento do head corrigido
+
+O head `087bced4195a32949edb5ffc76cb42098a830860` foi enviado com hooks normais
+verdes: tipos e 2.037 testes/198 arquivos, 133,96 s. PR #21 permanece em rascunho.
+As [regras 39607044506](https://github.com/gaabrielrd/writer/actions/runs/39607044506)
+passaram. Na [CI 39607044458](https://github.com/gaabrielrd/writer/actions/runs/39607044458),
+validate Node 22/24, auditoria, navegador de produção e 11 shards visuais passaram.
+O shard 1 registrou 103 casos aprovados e um skip preexistente em 14,3 minutos,
+mas seu job foi cancelado; o agregado E2E falhou por esse cancelamento. Isso não
+constitui CI geral verde. Log integral 119245829355 preservado no diretório L.
+Foi solicitada repetição somente desse job em 2026-10-21, mantendo configuração,
+limites e código. Resultado da repetição será registrado separadamente, sem
+bloquear a importação conforme a autorização vigente.
+
+A repetição terminou com sucesso: CI geral 39607044458 e regras 39607044506 verdes
+no mesmo `087bced`. A API recebeu solicitação de repetição de um job; a execução
+remota final lista novamente todos os 17 jobs, todos aprovados. O shard1 final
+registrou 103 passes e um skip preexistente em 13,8 minutos; o agregado confirmou
+BROWSER_RESULT=success e VISUAL_RESULT=success. Logs finais 119256882291 e
+119264563065 preservados. L está concluído tecnicamente; F2-09 continua com I e as
+verticais seguintes, sem merge/deploy ou conclusão dos aceites humanos/comerciais.

@@ -83,7 +83,14 @@ copiar conteúdo para a preparação. Cena ausente após adoção fica indispon�
 Veja a [entrega S2B](docs/entregas/2026-10-18-writer-v2-cenas-completas-da-sessao.md).
 S3 acrescenta pistas e missões próprias da campanha, com estados privados,
 pendências, ordem e vínculos reutilizáveis entre sessões. Excluir sessão conserva
-itens e textos. A interface e o backend passaram na validação local; CI do novo head pendente; veja o [contrato S3](docs/tasks/writer-v2/execucao/24-pistas-missoes-e-pendencias.md).
+itens e textos. S3 está concluído tecnicamente em `e924890`, com CI geral e regras verdes; veja o [contrato S3](docs/tasks/writer-v2/execucao/24-pistas-missoes-e-pendencias.md).
+F2-09 L acrescenta lore privado de aventuras, menções e referências nas campanhas,
+concluído tecnicamente em `087bced`. A importação revisada I permite escolher Livro
+ou Nova aventura no Estúdio, revisar seções e criar uma aventura privada somente
+após ativação integral. A cópia protegida da revisão confirmada permite retomar
+no mesmo dispositivo, sem guardar o PDF. I está validado localmente, com CI pendente; IA e
+portabilidade permanecem nas próximas verticais. Veja o
+[plano de importação](docs/tasks/writer-v2/execucao/27-importacao-revisada-de-aventura.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).

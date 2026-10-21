@@ -831,4 +831,29 @@ visual; toda prova de autorização permanece no SDK. Fixtures de captura,
 comparação, lore e referências discriminam origem local. AES-GCM, recuperação C2
 e troca de conta continuam reais no navegador. Roteiros devem ser executados nos
 seis perfis, com evidência de teclado/overflow e capturas inspecionadas.
-L passou na validação local: 2.037 testes frontend, 85 scripts, 427 Functions, quatro famílias SDK e 12 combinações nativas positivas. A [entrega L](entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md) preserva falhas iniciais, repetições dirigidas e limites da evidência. CI do novo incremento pendente.
+L passou na validação local: 2.037 testes frontend, 85 scripts, 427 Functions, quatro famílias SDK e 12 combinações nativas positivas. A [entrega L](entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md) preserva falhas iniciais, repetições dirigidas e limites da evidência. CI geral e regras de `087bced` verdes; o cancelamento inicial e a repetição remota permanecem registrados.
+
+## Importação revisada de aventuras (I)
+
+Unidades de adventure-import cobrem ABI/hashes, limites completos do corpo e RPC,
+cliente HTTP sem cache, AES-GCM, IndexedDB/CAS binário, UID/respostas tardias,
+reconhecimento/cancelamento e interface sob StrictMode. Regressões de books usam
+os reexports para o parser público document-import, sem alterar seu gravador.
+
+`tests/firestore/adventure-import.rules.test.mjs` tem quatro famílias sobre
+Firestore real: privacidade/HTTP; ciclo e ativação atômica; retry/CAS/encarnação;
+cancelamento, corrida e limpeza limitada. O onRequest é real, mas os verificadores
+Auth/App Check do teste HTTP são injetados; não prova configuração Google live.
+
+`e2e/visual/adventure-import.visual.ts` mantém duas jornadas em seis perfis e casos
+dirigidos de recuperação/identidade. Interface, rotas, WebCrypto, IndexedDB e Web
+Locks são reais; o transporte é simulado. O estado do servidor fictício em
+writer.visual.* é explicitamente separado da inspeção do armazenamento produtivo.
+Isso não prova autorização real. Repetir somente casos afetados por correções,
+preservando falhas anteriores e sem aumentar timeouts/retries.
+
+Corpora privados ficam fora do Git. A comparação local antes/depois usa o parser
+real, hashes das seções e envelopes completos, sem enviar PDF ou prosa ao servidor.
+O manuscrito de 327 páginas continua reconhecido como uma seção: não declarar
+capítulos recuperados automaticamente. O cenário legado de nove capítulos é
+sintético apesar do título do teste; Phandelver é o PDF real separado.

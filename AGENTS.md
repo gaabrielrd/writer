@@ -29,6 +29,7 @@
 - Mantenha `shared` neutro em relação ao domínio.
 - Centralize capacidades de raciocínio no contrato puro `functions/src/chatGeneration.mjs`, sem I/O ou credenciais.
 - Não adicione abstrações sem necessidade demonstrada.
+- Reutilize parser, revisão e prévia pela API pública de document-import; preserve os reexports legados de books.
 - Mantenha `campaign-deletions` folha, importando apenas auth/shared; componha-a em `campaigns` e use essa interface no Estúdio.
 - Mantenha `campaign-sessions` folha de auth/shared; componha painel e closer somente em `campaigns` pelas interfaces públicas.
 - Mantenha `campaign-preparation` folha de auth/shared; componha editor estável, slot e closer em `campaigns`, fora de `materialEpoch`, conforme ADR 0040.
@@ -80,6 +81,9 @@
 - Mantenha a origem/hash global antiga; captura local usa origem adventure-lore e originAdventureToken interno separado, conferido com a raiz atual antes de derivados B/C2/C3/S2.
 - Pedidos incertos de lore de aventura ficam somente em memória; não adote corpo atual por confirmação histórica nem rebaseie rascunhos silenciosamente.
 - Mantenha aventuras/campanhas, recibos de criação e preparação do Estúdio no servidor; use paginação por tipo/dono e preserve identidade/conteúdo dos livros legados.
+- Importe aventuras pelo protocolo da ADR 0042: reserva permanente, raiz ausente até ativação atômica e limpeza limitada sem excluir projeto ativado.
+- Persista a revisão confirmada cifrada e aguarde oncomplete antes de append; não persista PDF ou chave e obtenha a chave somente por HTTP autorizado sem cache.
+- Confira encarnação, hash e keyId antes de alterar controles locais de importação; preserve CAS binário integral e remova chave/sinopse temporária no encerramento remoto.
 - Datas válidas de livros não podem ser removidas ou invalidadas, inclusive por mutações Admin; preparação usa metadados reais do snapshot, sem inventar datas.
 - Vínculo de universo e criação do projeto são atômicos; exclusão confere contadores e referências de livros, aventuras e campanhas.
 - Mantenha cenas, conversão, contagens e jobs em `functions`; compare revisões observadas e preserve prosa ao remover agrupadores.

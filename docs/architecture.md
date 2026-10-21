@@ -862,6 +862,36 @@ originAdventureToken interno, fora de origin/sourceKey/DTO. B/C2/C3/S2 exigem
 metadata atual mais a mesma encarnação da raiz antes de transportar derivado.
 Referências de cenas e narrativa aceitam apenas lore local da própria aventura.
 
-L implementado e validado localmente; CI do novo incremento pendente. Veja [ADR 0041](decisions/0041-adventure-private-lore.md)
+L concluído tecnicamente em `087bced`, com CI geral e regras verdes. Veja [ADR 0041](decisions/0041-adventure-private-lore.md)
 e [contrato L](tasks/writer-v2/execucao/26-lore-proprio-de-aventura.md).
 Importação, IA e portabilidade permanecem nas próximas verticais.
+
+## Importação revisada de aventuras
+
+`features/document-import` é a folha pública de parser, modelos, revisão e prévia
+PDF, reutilizada por books e adventure-import. Os reexports de books conservam as
+interfaces legadas; a contagem neutra fica em shared/lib/countWords.ts sem novo
+algoritmo. A interface pública de adventure-import é composta no Estúdio.
+
+Cada seção confirmada gera uma parte e uma cena com principal virtual privado.
+`functions/src/adventureImport.mjs` compartilha inicializadores reais de cena e
+ledger, sem modificar o algoritmo de contagem. A raiz permanece ausente enquanto
+upload/preparação constroem filhos privados; ativação cria raiz, vínculo e recibo
+atomicamente. Studio respeita a reserva global permanente. SDK direto não lê nem
+escreve controles, chaves ou reservas. C4 continua v4, sem novos recursos de campanha.
+
+O journal metadata-only precede o pedido. A revisão confirmada recebe AES-256-GCM
+em IndexedDB, aguardando oncomplete antes do primeiro append. Nenhum PDF ou chave
+é persistido no cliente. A chave vem por HTTP autorizado com Auth/App Check e
+private,no-store; o rewrite Hosting precede a SPA e o proxy Vite encaminha somente
+a rota exata ao projeto Firebase configurado. Web Locks cobrem apenas CAS local.
+
+Tokens de encarnação derivam de createTime preciso do controle/reserva. Retomada,
+retry e limpeza conferem vínculo local e remoto antes de alterar controles.
+Cancelamento fecha admissão antes da limpeza limitada; ativado não é apagado pelo
+job. Estados terminais removem chave e sinopse temporária do controle, preservando
+a sinopse integral na raiz ativada. Reanexar o mesmo PDF restaura somente a prévia
+local, após conferir bytes/hash/tipo, sem alterar a revisão congelada.
+
+Veja [ADR 0042](decisions/0042-reviewed-adventure-import.md) e
+[ABI I](tasks/writer-v2/execucao/28-contratos-da-importacao-de-aventura.md).

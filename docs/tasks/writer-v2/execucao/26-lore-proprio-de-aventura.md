@@ -3,7 +3,7 @@
 **Estado em 2026-10-21:** contrato revisado e implementação liberada pelo
 responsável pela integração após enviar a correção S3 em `e924890`. A ABI de
 relações indisponíveis, metadata, limites e inventários foi fechada entre backend,
-cliente e QA. L foi implementado e validado localmente; CI de `2af6df5` encontrou expectativas legadas; correção dirigida local verde e CI do próximo head pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md).
+cliente e QA. L está concluído tecnicamente em `087bced`, com CI geral e regras verdes. A CI inicial de `2af6df5` encontrou expectativas legadas, corrigidas e revalidadas; um cancelamento remoto e a repetição positiva estão preservados na evidência. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md).
 A liberação permitiu iniciar L; o fechamento local e remoto mantém portões próprios.
 
 **Origem:** [F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
