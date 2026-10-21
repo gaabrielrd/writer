@@ -136,6 +136,28 @@ service cloud.firestore {
       return aliases.size() <= index || (aliases[index] is string && aliases[index].size() <= 200);
     }
 
+    function validBookLocalLoreVersion(value) {
+      return value is int && value >= 0 && value <= 9007199254740991;
+    }
+
+    function preserveBookLocalLoreVersion() {
+      let previous = resource.data.get('localLoreVersion', 0);
+      let next = request.resource.data.get('localLoreVersion', 0);
+      return validBookLocalLoreVersion(previous) && validBookLocalLoreVersion(next)
+        && (!resource.data.keys().hasAny(['localLoreVersion'])
+          || request.resource.data.keys().hasAll(['localLoreVersion']))
+        && (next == previous || (previous < 9007199254740991 && next == previous + 1));
+    }
+
+    function bookLocalLoreAdvanced(bookId) {
+      let before = get(/databases/$(database)/documents/books/$(bookId)).data;
+      let after = getAfter(/databases/$(database)/documents/books/$(bookId)).data;
+      let previous = before.get('localLoreVersion', 0);
+      let next = after.get('localLoreVersion', null);
+      return validBookLocalLoreVersion(previous) && validBookLocalLoreVersion(next)
+        && previous < 9007199254740991 && next == previous + 1;
+    }
+
     function validLore(data) {
       return data.keys().hasAll(['name', 'aliases', 'category', 'summary'])
         && data.keys().hasOnly(['name', 'aliases', 'category', 'summary', 'sourceEntityId'])
@@ -280,6 +302,12 @@ service cloud.firestore {
       // Conversations, provider origin and debit receipts are server controlled.
       match /chapterChats/{document=**} { allow read, write: if false; }
       match /chapterChatLimits/{id} { allow read, write: if false; }
+      match /editorChatContexts/{id} { allow read, write: if false; }
+      match /editorChatContextBodies/{id} { allow read, write: if false; }
+      match /editorChatOperations/{id} { allow read, write: if false; }
+      match /editorChatCleanup/{id} { allow read, write: if false; }
+      match /editorChats/{document=**} { allow read, write: if false; }
+      match /editorChatCatalogs/{id} { allow read, write: if false; }
       match /aiPersonas/{personaId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && validAIPersona(request.resource.data, personaId)
@@ -459,6 +487,8 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.authorId);
       allow create: if isAuthenticated()
         && request.resource.data.authorId == request.auth.uid
+        && validBookLocalLoreVersion(request.resource.data.get('localLoreVersion', null))
+        && request.resource.data.localLoreVersion == 0
         && request.resource.data.get('hasSceneResources', false) == false
         && request.resource.data.get('sceneRevision', 0) == 0
         && request.resource.data.get('hasNarrativeResources', false) == false
@@ -477,6 +507,7 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
       allow update: if isOwner(resource.data.authorId)
         && preserveBookDates()
+        && preserveBookLocalLoreVersion()
         && request.resource.data.get('hasSceneResources', false) == resource.data.get('hasSceneResources', false)
         && request.resource.data.get('sceneRevision', 0) == resource.data.get('sceneRevision', 0)
         && request.resource.data.get('hasNarrativeResources', false) == resource.data.get('hasNarrativeResources', false)
@@ -591,13 +622,17 @@ service cloud.firestore {
         }
         allow read: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId)
-          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+          && bookLocalLoreAdvanced(bookId);
         allow update: if isBookAuthor(bookId)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+          && bookLocalLoreAdvanced(bookId)
           && (resource.data.get('isPublic', false) != true
             || request.resource.data.get('isPublic', false) == true
             || publicationRevoked());
         allow delete: if isBookAuthor(bookId)
+          && (get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
+            || bookLocalLoreAdvanced(bookId))
           && (resource.data.get('isPublic', false) != true || publicationRevoked());
       }
     }

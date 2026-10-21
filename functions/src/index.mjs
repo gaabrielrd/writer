@@ -1,3 +1,5 @@
+import { createEditorChatService } from './editorChat.mjs';
+import { EditorChatContractError } from './editorChatContracts.mjs';
 import { createAdventureImportService } from './adventureImport.mjs';
 import { createAdventureImportRecoveryHandler } from './adventureImportRecovery.mjs';
 import { getAuth } from 'firebase-admin/auth';
@@ -79,6 +81,39 @@ export const chapterChat = onCall(
     } catch (error) {
       if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
       throw new HttpsError('unavailable', 'Não foi possível concluir a conversa. Tente novamente.');
+    }
+  },
+);
+export const editorChat = onCall(
+  {
+    region: 'us-central1',
+    enforceAppCheck: true,
+    timeoutSeconds: 120,
+    maxInstances: 5,
+    memory: '512MiB',
+    secrets: [key],
+  },
+  async (request, response) => {
+    try {
+      return await createEditorChatService({
+        db,
+        platformModel: textModel.value(),
+        generator: (input, chunk, { signal }) =>
+          generatePlatformChat({ ...input, text: input.prompt }, chunk, {
+            apiKey: key.value(),
+            signal,
+          }),
+      }).dispatch(request.auth?.uid, request.data, {
+        signal: response?.signal,
+        stream: response ? (event) => response.sendChunk(event) : undefined,
+      });
+    } catch (error) {
+      if (error instanceof EditorChatContractError)
+        throw new HttpsError(error.code, error.message, error.details);
+      throw new HttpsError(
+        'unavailable',
+        'Não foi possível concluir o pedido de chat. Tente novamente.',
+      );
     }
   },
 );

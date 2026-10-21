@@ -134,6 +134,16 @@ export function useAdventureBlockDraft(
     mutation.isReserved()
       ? null
       : saved.current;
+  const getConfirmedSnapshot = () => {
+    const content = getConfirmedContent();
+    return content === null
+      ? null
+      : {
+          content,
+          revision: currentDocument.current.revision,
+          bodyHash: confirmedBodyHash.current,
+        };
+  };
   const change = (value: string) => {
     if (!active.current || reserved.current || mutation.isReserved()) return;
     latest.current = value;
@@ -305,6 +315,7 @@ export function useAdventureBlockDraft(
     compare,
     resolve,
     getConfirmedContent,
+    getConfirmedSnapshot,
     runExclusive,
     acceptConfirmedContent,
     acceptMetadata,

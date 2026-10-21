@@ -338,6 +338,95 @@ describe('bookService', () => {
   });
 
   describe('Books CRUD', () => {
+    it.each([undefined, 0, 7, Number.MAX_SAFE_INTEGER])(
+      'preserves a valid or absent local clock during reads and stable creation replay (%s)',
+      async (value) => {
+        const stored = {
+          id: 'book-0000000000001',
+          authorId: 'author',
+          title: 'Existing',
+          ...(value === undefined ? {} : { localLoreVersion: value }),
+        };
+        const snapshot = { id: stored.id, exists: () => true, data: () => stored };
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce(
+          snapshot as unknown as firestoreModule.DocumentSnapshot,
+        );
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [snapshot],
+        } as unknown as firestoreModule.QuerySnapshot);
+        vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+          callback({
+            get: () => Promise.resolve(snapshot),
+          } as unknown as firestoreModule.Transaction),
+        );
+        const read = await getBook(stored.id);
+        const listed = await listBooksByAuthor('author');
+        const replay = await createBook('author', {
+          title: 'Ignored retry title',
+          creationId: stored.id,
+        });
+        expect(read?.localLoreVersion).toBe(value);
+        expect(listed[0]?.localLoreVersion).toBe(value);
+        expect(replay).toEqual(stored);
+        if (value === undefined) {
+          expect(read).not.toHaveProperty('localLoreVersion');
+          expect(listed[0]).not.toHaveProperty('localLoreVersion');
+        }
+        expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+        expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([undefined, null, -1, 0.5, '0', NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
+      'rejects a present invalid local clock on reads and creation replay (%s)',
+      async (value) => {
+        const snapshot = {
+          id: 'book-0000000000001',
+          exists: () => true,
+          data: () => ({ authorId: 'author', title: 'Corrupt', localLoreVersion: value }),
+        };
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce(
+          snapshot as unknown as firestoreModule.DocumentSnapshot,
+        );
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [snapshot],
+        } as unknown as firestoreModule.QuerySnapshot);
+        vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+          callback({
+            get: () => Promise.resolve(snapshot),
+          } as unknown as firestoreModule.Transaction),
+        );
+        await expect(getBook(snapshot.id)).rejects.toThrow('versão do lore');
+        await expect(listBooksByAuthor('author')).rejects.toThrow('versão do lore');
+        await expect(
+          createBook('author', { title: 'Retry', creationId: snapshot.id }),
+        ).rejects.toThrow('versão do lore');
+        expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+        expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+      },
+    );
+
+    it('updates book metadata without initializing or replacing its local lore clock', async () => {
+      await updateBook('book', { title: 'Renamed', synopsis: 'Edited' });
+      const patch = vi.mocked(firestoreModule.updateDoc).mock.calls[0]?.[1];
+      expect(patch).toMatchObject({ title: 'Renamed', synopsis: 'Edited' });
+      expect(patch).not.toHaveProperty('localLoreVersion');
+    });
+
+    it.each([undefined, 0, 7])(
+      'rejects attempts to reset the local clock through metadata updates (%s)',
+      async (value) => {
+        await expect(
+          updateBook('book', {
+            status: 'draft',
+            localLoreVersion: value,
+          } as unknown as Parameters<typeof updateBook>[1]),
+        ).rejects.toThrow('versão do lore');
+        expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+        expect(unpublishBook).not.toHaveBeenCalled();
+      },
+    );
+
     it('reuses a stable ID after a manual creation was already saved', async () => {
       const stored = { id: 'book-0000000000001', authorId: 'author-123', title: 'Atlas' };
       vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
@@ -364,7 +453,7 @@ describe('bookService', () => {
       });
       expect(set).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ id: book.id, status: 'draft' }),
+        expect.objectContaining({ id: book.id, status: 'draft', localLoreVersion: 0 }),
       );
     });
     it('routes generated covers to the backend rather than writing unverified URLs', async () => {
@@ -471,6 +560,7 @@ describe('bookService', () => {
       expect(newBook.title).toBe('O Nome do Vento');
       expect(newBook.status).toBe('draft');
       expect(newBook.wordCount).toBe(0);
+      expect(newBook.localLoreVersion).toBe(0);
       expect(firestoreModule.setDoc).toHaveBeenCalledTimes(1);
     });
 

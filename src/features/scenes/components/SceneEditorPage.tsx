@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useRef, useState, useLayoutEffect } from 'react';
-import { Link, useNavigate, useParams, useLocation } from 'react-router';
+import { Link, useParams, useLocation } from 'react-router';
 import { useAuth } from '@/features/auth';
 import { useWorkActivity, WorkActivityNotice } from '@/features/work-progress';
 import { RichEditor, BusyNavigationGuard } from '@/features/editor';
 import { countWords } from '@/features/books';
+import {
+  AdventurePersonaDialog,
+  EditorChatWorkspace,
+  type EditorChatApplyHost,
+  type EditorChatEditorBridge,
+  type AIActionType,
+} from '@/features/ai-assistant';
 import {
   AdventureBlockNavigator,
   AdventureBlockCountRecovery,
@@ -114,7 +121,6 @@ function SceneEditorLoader({
 }
 function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocument }) {
   const { user, setPendingEditorOperation } = useAuth();
-  const navigate = useNavigate();
   const location = useLocation();
   const autosave = useSceneAutosave(uid, initial);
   const [sidebar, setSidebar] = useState(false);
@@ -122,7 +128,25 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   const [legacyLoreError, setLoreError] = useState('');
   const [loreVersion, setLoreVersion] = useState(0);
   const [selected, setSelected] = useState<LoreMentionEntity | null>(null);
-  const [leaving, setLeaving] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const actionSequence = useRef(0);
+  const [chatAction, setChatAction] = useState<{ id: number; action: AIActionType }>();
+  const [personaOpen, setPersonaOpen] = useState(false);
+  const [personaPending, setPersonaPending] = useState(false);
+  const [personaVersion, setPersonaVersion] = useState(0);
+  const [chatPending, setChatPending] = useState(false);
+  const [chatDraft, setChatDraft] = useState(false);
+  const [chatBusy, setChatBusy] = useState(false);
+  const chatLock = useRef(false);
+  const chatPendingRef = useRef(false);
+  const chatBridge = useRef<EditorChatEditorBridge | null>(null);
+  const registerChatBridge = useCallback((bridge: EditorChatEditorBridge | null) => {
+    chatBridge.current = bridge;
+  }, []);
+  const onChatPending = useCallback((pending: boolean) => {
+    chatPendingRef.current = pending;
+    setChatPending(pending);
+  }, []);
   const [editorBusy, setEditorBusy] = useState(false);
   const editorBusyRef = useRef(false);
   const historyLock = useRef(false);
@@ -143,7 +167,8 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   const [blocksBusy, setBlocksBusy] = useState(false);
   const blocksPendingRef = useRef(false);
   const blocksLock = useRef(false);
-  const operationBusy = editorBusy || historyBusy || historyPending || blocksPending || blocksBusy;
+  const operationBusy =
+    editorBusy || historyBusy || historyPending || blocksPending || blocksBusy || chatBusy;
   const active = useRef(true);
   const doc = autosave.document;
   const liveAutosave = useRef(autosave);
@@ -176,9 +201,18 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
     };
   }, []);
   useEffect(() => {
-    setPendingEditorOperation(operationBusy || autosave.status !== 'saved');
+    setPendingEditorOperation(
+      operationBusy || personaPending || chatPending || chatDraft || autosave.status !== 'saved',
+    );
     return () => setPendingEditorOperation(false);
-  }, [operationBusy, autosave.status, setPendingEditorOperation]);
+  }, [
+    operationBusy,
+    personaPending,
+    chatPending,
+    chatDraft,
+    autosave.status,
+    setPendingEditorOperation,
+  ]);
   useEffect(() => {
     let valid = true;
     if (target.kind === 'adventure') return;
@@ -224,6 +258,8 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         blocksLock.current ||
         blocksPendingRef.current ||
         historyLock.current ||
+        chatLock.current ||
+        chatPendingRef.current ||
         (historyPendingRef.current && !options?.recovery) ||
         autosave.status !== 'saved' ||
         autosave.recovery
@@ -282,6 +318,8 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
       setPendingEditorOperation(
         pending ||
           historyLock.current ||
+          chatLock.current ||
+          chatPendingRef.current ||
           editorBusyRef.current ||
           blocksPendingRef.current ||
           blocksLock.current,
@@ -298,6 +336,8 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         pending ||
           blocksLock.current ||
           historyLock.current ||
+          chatLock.current ||
+          chatPendingRef.current ||
           historyPendingRef.current ||
           editorBusyRef.current,
       );
@@ -338,6 +378,8 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         !active.current ||
         liveUid.current !== uid ||
         blocksLock.current ||
+        chatLock.current ||
+        chatPendingRef.current ||
         historyLock.current ||
         historyPendingRef.current ||
         editorBusyRef.current
@@ -360,6 +402,83 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
     },
     [uid, setPendingEditorOperation],
   );
+  const chatHost: EditorChatApplyHost = {
+    target,
+    resource: { kind: 'scene', id: initial.id },
+    checkCurrent: () => {
+      if (!active.current || liveUid.current !== uid) throw new Error('O editor aberto mudou.');
+    },
+    getConfirmedSnapshot: () => liveAutosave.current.getConfirmedSnapshot(),
+    getBridge: () => chatBridge.current,
+    runExclusive: async (work) => {
+      if (
+        !active.current ||
+        liveUid.current !== uid ||
+        chatLock.current ||
+        historyLock.current ||
+        historyPendingRef.current ||
+        blocksLock.current ||
+        blocksPendingRef.current ||
+        editorBusyRef.current
+      )
+        throw new Error(
+          'Confirme o salvamento e resolva as operações pendentes antes de continuar.',
+        );
+      chatLock.current = true;
+      setChatBusy(true);
+      try {
+        return await liveAutosave.current.runExclusive(work);
+      } finally {
+        chatLock.current = false;
+        if (active.current) setChatBusy(false);
+      }
+    },
+    acceptConfirmed: (source) => {
+      if (
+        !chatLock.current ||
+        !active.current ||
+        liveUid.current !== uid ||
+        source.revision === null
+      )
+        throw new Error('Esta confirmação não pertence à cena aberta.');
+      const mainWords = countWords(source.content),
+        words = target.kind === 'adventure' ? source.sceneWordCount : mainWords;
+      if (words === undefined || !Number.isSafeInteger(words) || words < mainWords)
+        throw new Error('Total da cena indisponível.');
+      liveAutosave.current.acceptConfirmedContent({
+        content: source.content,
+        revision: source.revision,
+        bodyHash: source.contentHash,
+        bodyBytes: new TextEncoder().encode(source.content).byteLength,
+        wordCount: words,
+        ...(target.kind === 'adventure'
+          ? { mainWordCount: mainWords, blockWordCount: words - mainWords }
+          : {}),
+      });
+    },
+    prepareAdoption: async (source) => {
+      const fresh = await getScene({ target, sceneId: initial.id });
+      if (
+        !active.current ||
+        liveUid.current !== uid ||
+        !chatLock.current ||
+        !fresh ||
+        fresh.ownerId !== uid ||
+        fresh.id !== initial.id ||
+        fresh.project.kind !== target.kind ||
+        fresh.project.id !== target.id ||
+        fresh.content !== source.content ||
+        fresh.revision !== source.revision ||
+        fresh.bodyHash !== source.contentHash ||
+        (target.kind === 'adventure' && fresh.wordCount !== source.sceneWordCount)
+      )
+        throw new Error('A confirmação da cena mudou. Compare o texto antes de adotar.');
+      return () => {
+        liveAutosave.current.acceptConfirmedContent(fresh);
+        liveAutosave.current.acceptMetadata(fresh);
+      };
+    },
+  };
   const labels = {
     saved: 'Salvo',
     dirty: 'Não salvo',
@@ -369,7 +488,61 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   };
   return (
     <main className={styles.editor}>
-      <BusyNavigationGuard busy={historyBusy || historyPending || blocksBusy || blocksPending} />
+      <BusyNavigationGuard
+        busy={
+          historyBusy ||
+          historyPending ||
+          blocksBusy ||
+          blocksPending ||
+          chatBusy ||
+          chatPending ||
+          personaPending
+        }
+        unsavedMessage={
+          chatDraft || autosave.status !== 'saved' || autosave.recovery
+            ? `${autosave.storageError ? 'O rascunho do manuscrito ainda não pôde ser guardado neste dispositivo.' : 'O texto do manuscrito permanece no rascunho deste dispositivo.'}${chatDraft ? ' A pergunta do assistente está só na memória e será descartada ao sair.' : ''}`
+            : undefined
+        }
+        allowDiscard={!autosave.storageError}
+        discardLabel={chatDraft ? 'Sair e descartar pergunta' : 'Sair com rascunho'}
+      />
+      <EditorChatWorkspace
+        uid={uid}
+        host={chatHost}
+        open={chatOpen}
+        requestAction={chatAction}
+        onClose={() => setChatOpen(false)}
+        onPendingChange={onChatPending}
+        onDraftChange={setChatDraft}
+        invalidationKey={JSON.stringify([
+          loreVersion,
+          personaVersion,
+          adventureLore.context?.generation,
+          loreError,
+        ])}
+        disabledReason={
+          autosave.status !== 'saved' ||
+          autosave.recovery ||
+          historyBusy ||
+          historyPending ||
+          blocksBusy ||
+          blocksPending ||
+          chatBusy ||
+          personaPending
+            ? 'Confirme o salvamento e resolva operações pendentes para preparar ou aplicar.'
+            : null
+        }
+      />
+      {personaOpen && target.kind === 'adventure' && (
+        <AdventurePersonaDialog
+          uid={uid}
+          adventureId={target.id}
+          sceneId={initial.id}
+          onClose={() => setPersonaOpen(false)}
+          onPendingChange={setPersonaPending}
+          onChanged={() => setPersonaVersion((v) => v + 1)}
+        />
+      )}
       <WorkHistoryDialog
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
@@ -378,6 +551,13 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         editor={historyAdapter}
         onPendingChange={onHistoryPendingChange}
       />{' '}
+      {chatPending && (
+        <Alert variant="warning" title="Conversa com operação em andamento">
+          <Button variant="outline" onClick={() => setChatOpen(true)}>
+            Conferir assistente
+          </Button>
+        </Alert>
+      )}
       <WorkActivityNotice activity={activity} />
       <PageHeader
         title={doc.title}
@@ -386,37 +566,27 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           ' · ' +
           (doc.group?.title ?? (target.kind === 'book' ? 'Sem capítulo' : 'Sem parte'))
         }
-        breadcrumbs={
-          <Link
-            to={returnUrl}
-            onClick={(event) => {
-              if (blocksLock.current || blocksPendingRef.current) {
-                event.preventDefault();
-                return;
-              }
-              if (historyLock.current || historyPendingRef.current) {
-                event.preventDefault();
-                setHistoryOpen(true);
-                return;
-              }
-              if (autosave.status !== 'saved' || autosave.recovery || operationBusy) {
-                event.preventDefault();
-                setLeaving(true);
-              }
-            }}
-          >
-            Voltar ao planejamento
-          </Link>
-        }
+        breadcrumbs={<Link to={returnUrl}>Voltar ao planejamento</Link>}
       />
       <div className={styles.toolbar}>
         <Button
           variant="outline"
-          disabled={historyBusy || editorBusy || blocksBusy || blocksPending}
+          disabled={
+            historyBusy || editorBusy || blocksBusy || blocksPending || chatPending || chatBusy
+          }
           onClick={() => setHistoryOpen(true)}
         >
           Histórico do texto
         </Button>{' '}
+        {target.kind === 'adventure' && (
+          <Button
+            variant="outline"
+            disabled={operationBusy || chatPending || personaPending}
+            onClick={() => setPersonaOpen(true)}
+          >
+            Persona da cena
+          </Button>
+        )}
         <Badge>{sceneStageLabels[doc.stage]}</Badge>
         <span role="status">{labels[autosave.status]}</span>
         <span className={styles.meta}>
@@ -439,6 +609,9 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           disabled={
             historyBusy ||
             historyPending ||
+            chatBusy ||
+            chatPending ||
+            personaPending ||
             editorBusy ||
             autosave.status !== 'saved' ||
             Boolean(autosave.recovery)
@@ -449,8 +622,8 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         />
       )}
       <Alert variant="info">
-        A assistência de IA ainda não está disponível para cenas. Você pode escrever e formatar
-        manualmente.
+        Converse sobre esta cena pelo assistente. Autocomplete permanece indisponível. Você pode
+        escrever e formatar manualmente.
       </Alert>
       {autosave.storageError && (
         <Alert variant="warning">
@@ -481,10 +654,11 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
             bookTitle={doc.project.title}
             placeholder="Comece a escrever sua cena aqui…"
             content={autosave.content}
-            externalBusy={historyBusy || historyPending || blocksBusy || blocksPending}
+            externalBusy={historyBusy || historyPending || blocksBusy || blocksPending || chatBusy}
             externalContentVersion={historyContentVersion}
             onChange={(content) => {
               if (
+                !chatLock.current &&
                 !historyLock.current &&
                 !historyPendingRef.current &&
                 !blocksLock.current &&
@@ -500,7 +674,16 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
             onSelectEntity={setSelected}
             isSidebarOpen={sidebar}
             onToggleSidebar={() => setSidebar((value) => !value)}
-            aiUnavailableReason="A assistência de IA ainda não está disponível para cenas."
+            aiUnavailableReason="Autocomplete e ações legadas não estão disponíveis neste texto."
+            aiCapabilities={{ chat: true, autocomplete: false, legacyActions: false }}
+            chatUnavailableReason={null}
+            loreMatcher="editor-chat-v1"
+            onEditorChatBridge={registerChatBridge}
+            onOpenChat={(action) => {
+              if (action) setChatAction({ id: ++actionSequence.current, action });
+              setChatOpen(true);
+            }}
+            chatOpen={chatOpen}
             userId={uid}
             userCredits={user?.credits}
             onBusyChange={(busy) => {
@@ -544,7 +727,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
       {sidebar && (
         <SceneReferences
           document={doc}
-          disabled={autosave.status !== 'saved' || operationBusy}
+          disabled={autosave.status !== 'saved' || operationBusy || chatPending}
           onRevision={autosave.acceptMetadata}
         />
       )}
@@ -597,34 +780,6 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
             className={styles.compare}
             dangerouslySetInnerHTML={{ __html: renderRichText(autosave.remote.content) }}
           />
-        </Dialog>
-      )}
-      {leaving && (
-        <Dialog
-          open
-          title="Texto ainda não confirmado"
-          description="Seu texto será oferecido como rascunho local ao voltar. Um conflito continuará exigindo comparação."
-          onClose={() => setLeaving(false)}
-          footer={
-            <>
-              <Button variant="outline" onClick={() => setLeaving(false)}>
-                Continuar escrevendo
-              </Button>
-              <Button
-                disabled={autosave.storageError || operationBusy}
-                onClick={() => {
-                  void navigate(returnUrl);
-                }}
-              >
-                Sair com rascunho
-              </Button>
-            </>
-          }
-        >
-          <p>
-            Aguarde a confirmação para garantir que o texto esteja disponível em outros
-            dispositivos.
-          </p>
         </Dialog>
       )}
     </main>

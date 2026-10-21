@@ -8,10 +8,12 @@ import {
   within,
 } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, createMemoryRouter, RouterProvider } from 'react-router';
+import { useEffect } from 'react';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { chooseDropdown } from '@/test/dropdown';
 import type { RichEditorProps } from '@/features/editor';
+import type { EditorChatWorkspaceProps, EditorChatEditorBridge } from '@/features/ai-assistant';
 import type { WorkHistoryDialogProps, VersionSource } from '@/features/manuscript-history';
 import { AdventureBlockNavigator } from '../components/AdventureBlockNavigator';
 import { AdventureBlockEditor } from '../components/AdventureBlockEditor';
@@ -35,6 +37,7 @@ import {
 } from '../model/adventureBlock';
 const auth = vi.hoisted(() => ({
   user: { uid: 'owner', credits: 5 },
+  currentUser: { uid: 'owner' },
   loading: false,
   setPendingEditorOperation: vi.fn(),
 }));
@@ -51,15 +54,37 @@ vi.mock('../services/adventureBlockCallables', () => ({
   verifyAdventureBlockCount: vi.fn(),
   getAdventureBlockCountStatus: vi.fn(),
 }));
+let editorProps: RichEditorProps | null = null;
+let workspace: EditorChatWorkspaceProps | null = null;
+let workspaceMounts = 0;
+let bridge: EditorChatEditorBridge;
+vi.mock('@/shared/lib', async () => ({ ...(await vi.importActual<object>('@/shared/lib')), auth }));
+vi.mock('@/features/ai-assistant', () => ({
+  EditorChatWorkspace: (props: EditorChatWorkspaceProps) => {
+    workspace = props;
+    useEffect(() => {
+      workspaceMounts++;
+    }, []);
+    return null;
+  },
+}));
 vi.mock('@/features/editor', () => ({
-  RichEditor: (props: RichEditorProps) => (
-    <textarea
-      aria-label={props.ariaLabel}
-      value={props.content}
-      readOnly={props.externalBusy}
-      onChange={(event) => props.onChange(event.target.value)}
-    />
-  ),
+  RichEditor: (props: RichEditorProps) => {
+    editorProps = props;
+    const onBridge = props.onEditorChatBridge;
+    useEffect(() => {
+      onBridge?.(bridge);
+      return () => onBridge?.(null);
+    }, [onBridge]);
+    return (
+      <textarea
+        aria-label={props.ariaLabel}
+        value={props.content}
+        readOnly={props.externalBusy}
+        onChange={(event) => props.onChange(event.target.value)}
+      />
+    );
+  },
 }));
 vi.mock('@/features/books', () => ({
   countWords: (text: string) =>
@@ -125,6 +150,17 @@ function deferred<T>() {
 beforeEach(async () => {
   vi.clearAllMocks();
   auth.user = { uid: 'owner', credits: 5 };
+  auth.currentUser = { uid: 'owner' };
+  workspace = null;
+  workspaceMounts = 0;
+  editorProps = null;
+  bridge = {
+    capture: vi.fn(),
+    preview: vi.fn(),
+    prepare: vi.fn(),
+    focus: vi.fn(),
+    setBusy: vi.fn((value: boolean) => editorProps?.onBusyChange?.(value)),
+  };
   auth.loading = false;
   const content = '<p>Texto do bloco</p>',
     mainBodyHash = await blockContentHash('<p>Texto principal</p>');
@@ -788,4 +824,290 @@ it('reparo tardio de outra conta não abre a cena na conta atual', async () => {
   });
   expect(await screen.findByText('Cena indisponível')).toBeVisible();
   expect(onRecovered).not.toHaveBeenCalled();
+});
+
+it('snapshot de bloco confirma conteúdo, revisão e hash sem combinar renders', async () => {
+  const view = renderHook(() => useAdventureBlockDraft('owner', 'adventure', document));
+  const snapshot = view.result.current.getConfirmedSnapshot;
+  expect(snapshot()).toEqual({
+    content: document.content,
+    revision: document.revision,
+    bodyHash: document.bodyHash,
+  });
+  await act(async () => {
+    await view.result.current.runExclusive(async () => {
+      await Promise.resolve();
+      view.result.current.acceptConfirmedContent({
+        content: '<p>Confirmado</p>',
+        revision: 9,
+        sceneWordCount: 5,
+        bodyHash: 'confirmed-hash',
+        wordCount: 1,
+      });
+      expect(snapshot()).toEqual({
+        content: '<p>Confirmado</p>',
+        revision: 9,
+        bodyHash: 'confirmed-hash',
+      });
+    });
+  });
+  act(() => view.result.current.change('Ainda local'));
+  expect(snapshot()).toBeNull();
+  view.unmount();
+  expect(snapshot()).toBeNull();
+});
+
+it('integra o workspace do bloco sem ativar ações legadas e permite escrever durante a geração', async () => {
+  render(editor());
+  const input = await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+  const host = workspace!.host;
+  const callback = editorProps!.onEditorChatBridge;
+  expect(host.target).toEqual({ kind: 'adventure', id: 'adventure' });
+  expect(host.resource).toEqual({ kind: 'block', id: 'block-a' });
+  expect(host.getConfirmedSnapshot()).toEqual({
+    content: document.content,
+    revision: 2,
+    bodyHash: document.bodyHash,
+  });
+  expect(host.getBridge()).toBe(bridge);
+  expect(editorProps!.aiCapabilities).toEqual({
+    chat: true,
+    autocomplete: false,
+    legacyActions: false,
+  });
+  expect(editorProps!.loreMatcher).toBe('editor-chat-v1');
+  expect(editorProps!.chatUnavailableReason).toBeNull();
+  act(() => {
+    editorProps!.onOpenChat?.();
+    workspace!.onPendingChange?.(true);
+  });
+  expect(workspace!.open).toBe(true);
+  expect(editorProps!.chatOpen).toBe(true);
+  act(() => editorProps!.onOpenChat?.('improve_style'));
+  expect(workspace!.requestAction).toEqual({ id: 1, action: 'improve_style' });
+  act(() => editorProps!.onOpenChat?.('improve_style'));
+  expect(workspace!.requestAction).toEqual({ id: 2, action: 'improve_style' });
+  act(() => workspace!.onClose());
+  expect(editorProps!.chatOpen).toBe(false);
+  expect(workspace!.host).toBe(host);
+  expect(editorProps!.onEditorChatBridge).toBe(callback);
+  expect(input).not.toHaveAttribute('readonly');
+  expect(screen.getByRole('button', { name: 'Histórico do bloco' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Subir Pista do cais' })).toBeDisabled();
+  fireEvent.change(input, { target: { value: 'Escrevendo enquanto gera' } });
+  expect(input).toHaveValue('Escrevendo enquanto gera');
+  await waitFor(() => expect(api.updateAdventureBlock).toHaveBeenCalledOnce());
+  expect(vi.mocked(api.updateAdventureBlock).mock.calls[0]![0].patch.content).toBe(
+    'Escrevendo enquanto gera',
+  );
+});
+
+it('reserva curta bloqueia outras mutações e admite busy do próprio bridge sem conflito', async () => {
+  render(editor());
+  const input = await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+  const host = workspace!.host;
+  const held = deferred<void>();
+  let reserving!: Promise<void>;
+  act(() => {
+    reserving = host.runExclusive(async () => {
+      bridge.setBusy(true);
+      host.checkCurrent();
+      expect(host.getConfirmedSnapshot()?.revision).toBe(2);
+      await held.promise;
+      bridge.setBusy(false);
+    });
+  });
+  expect(input).toHaveAttribute('readonly');
+  expect(screen.getByRole('button', { name: 'Histórico do bloco' })).toBeDisabled();
+  fireEvent.change(input, { target: { value: 'Não adotar enquanto reservado' } });
+  expect(input).toHaveValue(document.content);
+  await expect(host.runExclusive(() => Promise.resolve())).rejects.toThrow('Resolva as operações');
+  await act(async () => {
+    held.resolve();
+    await reserving;
+  });
+  expect(input).not.toHaveAttribute('readonly');
+  expect(api.updateAdventureBlock).not.toHaveBeenCalled();
+});
+
+it('adoção do chat confere texto e totais completos antes de atualizar bloco e navegação sem reset de undo', async () => {
+  render(editor());
+  const input = await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+  const host = workspace!.host;
+  const oldVersion = editorProps!.externalContentVersion;
+  const oldContent = document.content;
+  document = {
+    ...document,
+    content: historySource.content,
+    bodyHash: historySource.contentHash,
+    revision: 7,
+    sceneWordCount: 9,
+    sceneRevision: 10,
+    structureRevision: 8,
+    wordCount: 4,
+  };
+  await act(async () => {
+    await host.runExclusive(async () => {
+      const adopt = await host.prepareAdoption!(historySource);
+      expect(host.getConfirmedSnapshot()?.content).toBe(oldContent);
+      adopt();
+    });
+  });
+  expect(input).toHaveValue(historySource.content);
+  expect(editorProps!.externalContentVersion).toBe(oldVersion);
+  expect(host.getConfirmedSnapshot()?.revision).toBe(7);
+  expect(
+    screen.getByText('4 palavras confirmadas neste bloco · 9 palavras confirmadas na cena.'),
+  ).toBeVisible();
+  const navigator = screen.getByRole('region', { name: 'Blocos da cena' });
+  await waitFor(() =>
+    expect(within(navigator).getByText('9 palavras confirmadas na cena.')).toBeVisible(),
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Subir Pista do cais' }));
+  await waitFor(() => expect(api.moveAdventureBlock).toHaveBeenCalledOnce());
+  expect(vi.mocked(api.moveAdventureBlock).mock.calls[0]![0]).toMatchObject({
+    expectedRevision: 7,
+    expectedStructureRevision: 8,
+  });
+});
+
+it.each(['revision', 'body', 'scene', 'total', 'hash'] as const)(
+  'recusa adoção %s divergente e preserva a base própria',
+  async (mismatch) => {
+    render(editor());
+    const input = await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+    const host = workspace!.host;
+    const old = host.getConfirmedSnapshot();
+    document = {
+      ...document,
+      content: historySource.content,
+      bodyHash: historySource.contentHash,
+      revision: 7,
+      sceneWordCount: 9,
+    };
+    if (mismatch === 'revision') document = { ...document, revision: 8 };
+    if (mismatch === 'body') document = { ...document, content: 'Outro corpo' };
+    if (mismatch === 'scene') document = { ...document, sceneId: 'other-scene' };
+    if (mismatch === 'total') document = { ...document, sceneWordCount: 10 };
+    if (mismatch === 'hash') document = { ...document, bodyHash: 'f'.repeat(64) };
+    await act(async () => {
+      await expect(
+        host.runExclusive(async () => {
+          const adopt = await host.prepareAdoption!(historySource);
+          adopt();
+        }),
+      ).rejects.toThrow();
+    });
+    expect(input).toHaveValue(old!.content);
+    expect(host.getConfirmedSnapshot()).toEqual(old);
+    expect(api.updateAdventureBlock).not.toHaveBeenCalled();
+  },
+);
+
+it('cerca adoção tardia após troca da instância autenticada e após desmontar o bloco', async () => {
+  const view = render(editor());
+  await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+  const host = workspace!.host;
+  const held = deferred<AdventureBlockDocument>();
+  vi.mocked(api.getAdventureBlock).mockReturnValueOnce(held.promise);
+  let adopting!: Promise<void>;
+  act(() => {
+    adopting = host.runExclusive(async () => {
+      const adopt = await host.prepareAdoption!(historySource);
+      adopt();
+    });
+  });
+  auth.currentUser = { uid: 'owner' };
+  await act(async () => {
+    held.resolve({
+      ...document,
+      content: historySource.content,
+      bodyHash: historySource.contentHash,
+      revision: 7,
+      sceneWordCount: 9,
+    });
+    await expect(adopting).rejects.toThrow('O bloco ou a conta mudou');
+  });
+  expect(screen.getByRole('textbox', { name: 'Área de escrita do bloco' })).toHaveValue(
+    document.content,
+  );
+  view.unmount();
+  expect(() => host.checkCurrent()).toThrow();
+});
+
+it('protege pergunta em RAM na saída sem criar outro blocker ou prometer recuperação', async () => {
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/edit',
+        element: <AdventureBlockEditor adventureId="adventure" sceneId="scene" blockId="block-a" />,
+      },
+      { path: '*', element: <p>Outra página</p> },
+    ],
+    { initialEntries: ['/edit'] },
+  );
+  render(<RouterProvider router={router} />);
+  await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+  act(() => workspace!.onDraftChange?.(true));
+  const unload = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(unload);
+  expect(unload.defaultPrevented).toBe(true);
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar à cena' }));
+  expect(
+    await screen.findByText(/A pergunta do assistente está apenas na memória e será descartada/),
+  ).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar no bloco' }));
+  act(() => workspace!.onPendingChange?.(true));
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar à cena' }));
+  expect(await screen.findByText('Operação ainda não confirmada')).toBeVisible();
+  expect(
+    screen.queryByRole('button', { name: 'Sair e descartar pergunta' }),
+  ).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar no bloco' }));
+  act(() => workspace!.onPendingChange?.(false));
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar à cena' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Sair e descartar pergunta' }));
+  expect(await screen.findByText('Outra página')).toBeVisible();
+});
+
+it('mantém workspace e pergunta em RAM quando o bloco é removido, oferecendo somente controle conhecido', async () => {
+  render(editor());
+  await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+  const host = workspace!.host;
+  act(() => workspace!.onDraftChange?.(true));
+  await userEvent.click(screen.getByRole('button', { name: 'Opções de Pista do cais' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Excluir bloco' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar bloco' }));
+  expect(await screen.findByText('Bloco removido')).toBeVisible();
+  expect(workspaceMounts).toBe(1);
+  expect(workspace!.host).toBe(host);
+  expect(workspace!.disabledReason).toContain('não está mais disponível');
+  expect(() => host.checkCurrent()).toThrow();
+  await userEvent.click(screen.getByRole('button', { name: 'Conferir assistente' }));
+  expect(workspace!.open).toBe(true);
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+});
+
+it('confere bytes reais mesmo quando a resposta remota declara o mesmo hash incorreto', async () => {
+  render(editor());
+  await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+  const host = workspace!.host;
+  const own = host.getConfirmedSnapshot();
+  const source = { ...historySource, contentHash: '0'.repeat(64) };
+  document = {
+    ...document,
+    content: source.content,
+    bodyHash: source.contentHash,
+    revision: 7,
+    sceneWordCount: 9,
+  };
+  await act(async () => {
+    await expect(
+      host.runExclusive(async () => {
+        await host.prepareAdoption!(source);
+      }),
+    ).rejects.toThrow('Não foi possível conferir');
+  });
+  expect(host.getConfirmedSnapshot()).toEqual(own);
 });

@@ -4,6 +4,7 @@ export interface Book {
   id: string;
   universeId?: string | null;
   personaId?: string | null;
+  localLoreVersion?: number;
   authorId: string;
   title: string;
   genre?: string;

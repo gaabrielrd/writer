@@ -133,7 +133,14 @@ test('receipts, preparation progress and typed universe references are server-on
 });
 
 test('book dates cannot be omitted at creation or removed after normalization; legacy fields stay usable', async () => {
-  const value = { authorId: 'author', title: 'Livro', status: 'draft', createdAt: 1, updatedAt: 2 };
+  const value = {
+    authorId: 'author',
+    title: 'Livro',
+    status: 'draft',
+    localLoreVersion: 0,
+    createdAt: 1,
+    updatedAt: 2,
+  };
   await assertSucceeds(setDoc(doc(client(), 'books/new'), value));
   for (const key of ['createdAt', 'updatedAt']) {
     for (const invalid of [null, 'date', -1, Infinity, NaN, 9_000_000_000_000_000])

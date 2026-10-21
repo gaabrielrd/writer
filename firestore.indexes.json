@@ -1,6 +1,46 @@
 {
   "indexes": [
     {
+      "collectionGroup": "editorChats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.updatedAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "turns",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "summary.state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "campaignDeletions",
       "queryScope": "COLLECTION",
       "fields": [
@@ -997,6 +1037,15 @@
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "editorChatCatalogs", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "turnBodies", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "turnQuestions", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "turns", "fieldPath": "closureManifest", "indexes": [] },
+    { "collectionGroup": "turns", "fieldPath": "proofCoverage", "indexes": [] },
+    { "collectionGroup": "editorChatContexts", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "editorChatContextBodies", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "editorChatOperations", "fieldPath": "*", "indexes": [] },
+    { "collectionGroup": "editorChatCleanup", "fieldPath": "*", "indexes": [] },
     { "collectionGroup": "adventureImportRecoveryKeys", "fieldPath": "keyBase64", "indexes": [] },
     { "collectionGroup": "adventureImports", "fieldPath": "project", "indexes": [] },
     {

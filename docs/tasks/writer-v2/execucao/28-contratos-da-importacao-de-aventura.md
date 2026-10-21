@@ -4,7 +4,8 @@
 sem alterar o escopo de produto. No fechamento inicial deste adendo, os vetores
 eram somente cálculos de contrato. A implementação posterior foi validada localmente;
 ver [entrega I](../../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md).
-CI do novo incremento pendente; vetores isolados não substituem prova integrada.
+I concluído tecnicamente em ffc01d9, com CI geral/regras verdes; vetores isolados
+não substituem prova integrada.
 
 ## Convenções e normalização
 
@@ -550,7 +551,7 @@ criada mas resposta perdida; marker sem key; start fenced atrasado; recibo hist�
 sem rebase; mais de 25 seções e raiz ausente por endereço conhecido. Não contar
 fixtures ou verificadores injetados como prova de autorização real de produção.
 
-## Inventário e revisão pendente
+## Inventário e gates de integração
 
 Além do inventário 27: binding onRequest/Admin Auth/AppCheck em Functions, rewrite
 `firebase.json` e proxy exato dessa rota no vite.config.ts, com projectId público existente
@@ -565,5 +566,5 @@ horas realizadas ou promessa de prazo. Este adendo não soma nova parcela à bas
 - [x] Revisão literal root/cliente/QA dos DTOs, normalização, preimages e estados.
 - [x] Reproduzir 13 vetores de hash independentemente e fechar vetor AES-GCM documental.
 - [x] Fechar encaminhamento local same-origin por proxy exato, sem nova env/dependência.
-- [ ] Implementar e validar a evidência HTTP de erro real após liberação.
+- [x] Implementar e validar HTTP real em sucesso/erros; ver entrega I e SDK. Verificadores Auth/App Check injetados não comprovam configuração Google live.
 - [x] Integrador liberar implementação do plano 27; sem merge/deploy ou mutação de dados reais.

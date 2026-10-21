@@ -3,7 +3,7 @@
 **Estado em 2026-10-21:** contrato fechado e implementação liberada pelo integrador,
 após revisão cruzada cliente/backend/QA sem P1/P2 remanescente. Decisão de
 recuperação protegida recebida; 13 hashes e vetor AES reproduzidos independentemente.
-Implementado, revisado e validado localmente; CI do novo incremento pendente.
+Concluído tecnicamente em `ffc01d9`, com CI geral 39622654285 e regras 39622654323 verdes.
 Ver [entrega I](../../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md).
 **Origem:** [F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
 e [sequência executável](25-lore-importacao-e-portabilidade.md).
@@ -533,5 +533,6 @@ fora do Git. Manuscrito continua uma seção, sem capítulos detectados automati
 67 fontes congeladas, incluindo a descrição de aventura importada e ambos P2;
 revisão final cruzada sem P1/P2 remanescente. SDK/browser/proxy são provas locais
 com limites distintos, sem autorização Google/Hosting live ou piloto humano.
-CI do novo commit continua pendente; não impede planejamento do próximo incremento.
+CI do commit ffc01d9 concluiu verde, assim como regras 162/162. O planejamento A
+avançou durante a CI; ver fechamento remoto na entrega.
 F2-09, backup e IA não estão concluídos. Sem merge/deploy.

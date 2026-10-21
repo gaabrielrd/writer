@@ -3,7 +3,7 @@
 - **Data:** 2026-10-21
 - **Branch:** `codex/writer-v2`
 - **Plano:** [F2-09 I](../tasks/writer-v2/execucao/27-importacao-revisada-de-aventura.md) e [ABI](../tasks/writer-v2/execucao/28-contratos-da-importacao-de-aventura.md).
-- **Estado:** implementado e revisado; validado localmente com npm run validate verde. CI do novo incremento pendente. Sem merge, deploy ou lançamento.
+- **Estado:** implementado e revisado; validado localmente com npm run validate verde. Concluído tecnicamente em `ffc01d9`, com CI geral e regras verdes. Sem merge, deploy ou lançamento.
 
 ## Objetivo
 
@@ -39,7 +39,8 @@ retomando uma importação interrompida sem perder a revisão confirmada no disp
 - [x] HTTP autorizado sem cache; chaves/controladores/reservas fechados ao SDK direto.
 - [x] Retomada, cancelamento e limpeza com identidade exata e preservação de outros controles.
 - [x] Regressões de livros, corpus privado, SDK e interface com evidência separada.
-- [ ] CI do novo commit e aceites humanos/comerciais pertinentes.
+- [x] CI geral e regras do commit ffc01d9 verdes.
+- [ ] Aceites humanos/comerciais pertinentes.
 
 ## Arquivos alterados
 
@@ -162,8 +163,7 @@ Somente revisão confirmada e selada tem recuperação; sem sincronização entr
 dispositivos ou autosave novo antes de confirmar. Snapshot inválido é preservado
 quando não há prova segura para removê-lo. Mapas/imagens não entram na aventura.
 Implantação exige coordenação de Functions, guardas, regras, índices e rewrite.
-Build conserva avisos de chunks grandes/import estático-dinâmico. CI do novo
-head e pilotos humanos/comerciais continuam pendentes. F2-09 e a V2 não terminam
+Build conserva avisos de chunks grandes/import estático-dinâmico. Pilotos humanos/comerciais continuam pendentes. F2-09 e a V2 não terminam
 neste incremento; a contagem ampla continua 8/35 tarefas tecnicamente concluídas.
 
 ## Como verificar manualmente
@@ -174,3 +174,26 @@ neste incremento; a contagem ampla continua 8/35 tarefas tecnicamente concluída
 4. Abrir a aventura ativada: conferir ordem, principal único e audiência privada.
 5. Em outra preparação, cancelar e verificar remoção dos filhos sem obra visível.
 6. Importar um livro pelo mesmo menu e conferir o fluxo legado.
+
+## Fechamento remoto — 2026-10-21
+
+Commit `ffc01d91bfd1661083ffa8f4eb2deed3db7a29da` enviado com hooks normais.
+Pre-push confirmou tipos e 2.123 testes/204 arquivos, 137,29s. HEAD, upstream e
+refs/heads/codex/writer-v2 remota coincidem; ambos checkouts limpos nesse checkpoint.
+Master original preservada em `522ccaa7bcc92fe5eb4ae4ff54446afee98a52bf`.
+
+[CI geral 39622654285](https://github.com/gaabrielrd/writer/actions/runs/39622654285)
+concluída com sucesso: 17 jobs verdes, incluindo Validate Node 22/24, auditoria,
+produção Chromium, todos os 12 shards visuais e agregador E2E. O agregador
+119307238929 confirmou BROWSER_RESULT success e VISUAL_RESULT success. Não se
+infere contagem de retries/skips de toda a matriz somente desse status.
+
+[Regras 39622654323](https://github.com/gaabrielrd/writer/actions/runs/39622654323)
+verdes: 162/162, zero fail/skip, incluindo as quatro famílias I. Logs do job
+119299864160 e agregador preservados no diretório privado de artefatos.
+PR 21 permanece aberto em rascunho, merged=false, head ffc01d9 conferido.
+O snapshot inicial do PR ficou temporariamente atrás da branch; leitura posterior
+confirmou o mesmo hash, sem reenviar/forçar push ou alterar a base.
+
+I concluído tecnicamente. Planejamento A avançou durante a CI, conforme autorização;
+F2-09 e V2 continuam em andamento, sem merge/deploy ou aceite humano/comercial.

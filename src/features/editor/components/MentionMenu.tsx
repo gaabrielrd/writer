@@ -8,6 +8,7 @@ export interface MentionMenuProps<T extends LoreMentionEntity = LoreEntity> {
   id?: string;
   onCreate?: () => void;
   entities: T[];
+  getEntityKey?: (entity: T) => string;
   query: string;
   selectedIndex: number;
   onSelect: (entity: T) => void;
@@ -31,6 +32,7 @@ const CATEGORY_LABELS: Record<LoreCategory, string> = {
 export function MentionMenu<T extends LoreMentionEntity>({
   id,
   entities,
+  getEntityKey = (entity) => entity.id,
   query,
   selectedIndex,
   onSelect,
@@ -95,7 +97,7 @@ export function MentionMenu<T extends LoreMentionEntity>({
           const isSelected = index === selectedIndex;
           return (
             <button
-              key={entity.id}
+              key={getEntityKey(entity)}
               id={`${id}-option-${index}`}
               tabIndex={-1}
               onMouseDown={(event) => event.preventDefault()}

@@ -1,3 +1,4 @@
+import { readBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { GenerationError, validateId } from './generation.mjs';
 import { prepareUniverseLink } from './universes.mjs';
 
@@ -160,6 +161,7 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
         if (deleted.exists || book?.deleting)
           fail('failed-precondition', 'Livro removido ou em exclusão.');
         if (book && book.authorId !== uid) fail('permission-denied', 'Livro indisponível.');
+        if (book) readBookLocalLoreVersion(book);
         if (data.bookId && !book) fail('not-found', 'Livro indisponível.');
         if (!data.bookId && book) {
           if (book.coverImageId !== id || (book.universeId ?? null) !== universeId)
@@ -198,6 +200,7 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
             id: bookId,
             authorId: uid,
             status: 'draft',
+            localLoreVersion: 0,
             wordCount: 0,
             createdAt: now(),
           }),

@@ -85,6 +85,7 @@ const replacements = new Map(
     ['src/features/ai-assistant/services/bookGenerationService.ts', 'bookGenerationService.ts'],
     ['src/features/ai-assistant/services/assistedBookService.ts', 'assistedBookService.ts'],
     ['src/features/ai-assistant/services/chapterChatService.ts', 'chapterChatService.ts'],
+    ['src/features/ai-assistant/services/editorChatService.ts', 'editorChatService.ts'],
     ['src/shared/lib/firebase.ts', 'firebase.ts'],
   ].map(([source, fixture]) => [
     normalizePath(resolve(root, source)),

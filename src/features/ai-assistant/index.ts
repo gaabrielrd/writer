@@ -30,3 +30,38 @@ export { AIChatLauncher } from './components/AIChatLauncher';
 export { ChapterChatPanel } from './components/ChapterChatPanel';
 export type { ChatApplyInput } from './components/ChapterChatPanel';
 export * from './services/assistedBookService';
+export * from './model/editorChat';
+export * from './services/editorChatService';
+export * from './services/editorChatOperationStorage';
+export type {
+  EditorChatCaptureSource,
+  EditorChatEditorTarget,
+  EditorChatOwnCapture,
+  EditorChatPreparedText,
+  EditorChatEditorBridge,
+} from './model/editorChatEditorBridge';
+export {
+  editorChatMatcherId,
+  preferredEditorChatTerms,
+  findEditorChatLoreMatches,
+} from '../../../functions/src/editorChatMatcher.mjs';
+export type { EditorChatMatcherEntity } from '../../../functions/src/editorChatMatcher.mjs';
+export type { EditorChatHost, EditorChatConfirmedSnapshot } from './model/editorChatHost';
+export { captureEditorChatHost } from './services/editorChatHostService';
+export { useEditorChat } from './hooks/useEditorChat';
+export type {
+  EditorChatController,
+  EditorChatControllerState,
+  EditorChatByokControl,
+  EditorChatControllerError,
+  UseEditorChatOptions,
+} from './model/editorChatController';
+
+export {
+  EditorChatWorkspace,
+  type EditorChatWorkspaceProps,
+} from './components/EditorChatWorkspace';
+export type { EditorChatApplyHost, EditorChatApplyInput } from './services/editorChatApplyService';
+
+export { AdventurePersonaDialog } from './components/AdventurePersonaDialog';
+export type { AdventurePersonaDialogProps } from './components/AdventurePersonaDialog';

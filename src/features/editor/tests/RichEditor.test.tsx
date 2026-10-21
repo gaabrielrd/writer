@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RichEditor, type RichEditorProps } from '../components/RichEditor';
 import type { LoreEntity } from '@/features/lore';
@@ -715,4 +715,60 @@ it('revogação remove tooltip e callback antigo antes de aceitar seleção de l
   expect(screen.queryByRole('tooltip')).toBeNull();
   expect(view.editor).toHaveTextContent('Arthur voltou.');
   expect(view.onChange).not.toHaveBeenCalled();
+});
+
+it('uses qualified local/global identities consistently for decorations, tooltip, pills and mention callbacks', async () => {
+  const local: LoreEntity = {
+    ...entities[0]!,
+    id: 'same',
+    name: 'Lia',
+    aliases: ['Vigia'],
+    summary: 'Ficha local',
+  };
+  const global: LoreEntity = {
+    ...entities[1]!,
+    bookId: undefined,
+    adventureId: undefined,
+    universeId: 'world',
+    id: 'same',
+    name: 'Torre',
+    aliases: ['Vigia'],
+    summary: 'Ficha global',
+  };
+  const onSelectEntity = vi.fn();
+  const { editor, onChange, props, rerender } = setup({
+    content: '<p>Lia, Torre e Vigia.</p>',
+    entities: [global, local],
+    loreMatcher: 'editor-chat-v1',
+    onSelectEntity,
+    aiCapabilities: { chat: false, autocomplete: false, legacyActions: false },
+  });
+  const decorations = Array.from(editor.querySelectorAll<HTMLElement>('[data-lore-id]'));
+  expect(decorations.map((element) => element.dataset.loreId)).toEqual([
+    '["book","b-1","same"]',
+    '["universe","world","same"]',
+    '["book","b-1","same"]',
+  ]);
+  fireEvent.mouseOver(decorations[1]!);
+  expect(await screen.findByRole('tooltip')).toHaveTextContent('Ficha global');
+  await userEvent.setup({ delay: null }).click(decorations[1]!);
+  expect(onSelectEntity).toHaveBeenLastCalledWith(global);
+  fireEvent.focus(decorations[0]!);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Ficha local');
+  fireEvent.click(screen.getByRole('button', { name: 'Lia (2)' }));
+  expect(onSelectEntity).toHaveBeenLastCalledWith(local);
+  fireEvent.click(screen.getByRole('button', { name: 'Torre' }));
+  expect(onSelectEntity).toHaveBeenLastCalledWith(global);
+  expect(onChange).not.toHaveBeenCalled();
+  rerender(<RichEditor {...props} content="<p>@Vigia</p>" />);
+  selectText(editor, 6, 6);
+  const mentionMenu = await screen.findByRole('listbox', {
+    name: 'Sugestões de menção do compêndio',
+  });
+  await waitFor(() => expect(within(mentionMenu).getAllByRole('option')).toHaveLength(1));
+  expect(within(mentionMenu).getByRole('option')).toHaveTextContent('Lia');
+  fireEvent.keyDown(editor, { key: 'Enter' });
+  await waitFor(() => expect(editor).toHaveTextContent('Lia'));
+  expect(onChange).toHaveBeenCalled();
+  expect(editor.innerHTML).not.toContain('data-lore-id="same"');
 });

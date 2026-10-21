@@ -1,6 +1,6 @@
 # ADR 0042 — Importação revisada de aventura
 
-**Estado:** implementada, revisada e validada localmente; CI do novo incremento pendente.
+**Estado:** concluída tecnicamente em ffc01d9, com CI geral/regras verdes; sem rollout.
 **Contrato:** [plano I](../tasks/writer-v2/execucao/27-importacao-revisada-de-aventura.md)
 e [ABI fechada](../tasks/writer-v2/execucao/28-contratos-da-importacao-de-aventura.md).
 

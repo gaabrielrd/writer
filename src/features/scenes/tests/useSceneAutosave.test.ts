@@ -328,3 +328,34 @@ it('não reserva histórico com texto local ou gravação de cena ainda pendente
     await wait.promise;
   });
 });
+
+it('snapshot confirmado lê texto, revisão e hash juntos antes de um novo render', async () => {
+  const { result, unmount } = renderHook(() => useSceneAutosave('owner', document));
+  const snapshot = result.current.getConfirmedSnapshot;
+  expect(snapshot()).toEqual({
+    content: document.content,
+    revision: document.revision,
+    bodyHash: document.bodyHash,
+  });
+  await act(async () => {
+    await result.current.runExclusive(async () => {
+      await Promise.resolve();
+      result.current.acceptConfirmedContent({
+        content: '<p>Confirmado</p>',
+        revision: 9,
+        wordCount: 1,
+        bodyHash: 'confirmed-hash',
+        bodyBytes: 17,
+      });
+      expect(snapshot()).toEqual({
+        content: '<p>Confirmado</p>',
+        revision: 9,
+        bodyHash: 'confirmed-hash',
+      });
+    });
+  });
+  act(() => result.current.change('Ainda local'));
+  expect(snapshot()).toBeNull();
+  unmount();
+  expect(snapshot()).toBeNull();
+});

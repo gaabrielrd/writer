@@ -8,6 +8,7 @@ import {
   minimapViewport,
   type MinimapDestination,
 } from '../model/chapterMinimap';
+import type { EditorLoreMatcher } from '../model/editorLoreMatcher';
 import { ghostSuggestionKey } from '../model/richDocument';
 
 export interface MeasuredMinimapDestination extends MinimapDestination {
@@ -19,6 +20,7 @@ export function useChapterMinimap(
   editor: Editor | null,
   entities: LoreMentionEntity[],
   scrollArea: RefObject<HTMLDivElement | null>,
+  mode: EditorLoreMatcher = 'legacy',
 ) {
   const [destinations, setDestinations] = useState<MeasuredMinimapDestination[]>([]);
   const [viewport, setViewport] = useState({ start: 0, end: 1 });
@@ -29,7 +31,7 @@ export function useChapterMinimap(
     if (!editor || !area) return;
     const root = editor.view.dom;
     let document = editor.state.doc;
-    let entries = buildChapterMinimap(document, entities);
+    let entries = buildChapterMinimap(document, entities, mode);
     let geometryDirty = true;
     let frame = 0;
 
@@ -77,7 +79,7 @@ export function useChapterMinimap(
     const changed = ({ transaction }: { transaction: Transaction }) => {
       if (document !== editor.state.doc) {
         document = editor.state.doc;
-        entries = buildChapterMinimap(document, entities);
+        entries = buildChapterMinimap(document, entities, mode);
         resized();
       } else if (transaction.getMeta(ghostSuggestionKey) !== undefined) {
         resized();
@@ -122,7 +124,7 @@ export function useChapterMinimap(
       window.removeEventListener('resize', resized);
       navigation.current = () => undefined;
     };
-  }, [editor, entities, scrollArea]);
+  }, [editor, entities, scrollArea, mode]);
 
   return {
     destinations,

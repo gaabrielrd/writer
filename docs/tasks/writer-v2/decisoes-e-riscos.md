@@ -197,4 +197,4 @@ obtida após autorização do job; nenhum append antes da persistência cifrada.
 O [contrato I](execucao/27-importacao-revisada-de-aventura.md) detalha a proposta,
 com ABI revisada e implementação validada localmente. A
 [entrega I](../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md)
-registra os limites da evidência e a CI ainda pendente.
+registra os limites da evidência e o fechamento remoto verde de ffc01d9.

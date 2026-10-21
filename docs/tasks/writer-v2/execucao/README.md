@@ -73,8 +73,8 @@ F2-04 está concluído tecnicamente; F2-05 já começou sob a sequência autoriz
 | F2-08 S2A | Concluído tecnicamente em d9b7988; CI e regras verdes                       | [Referências de lore](22-referencias-de-lore-da-sessao.md), [entrega](../../../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md)                                                                                                                                                               | S2B/S3 concluídos tecnicamente; F2-09 em andamento                 |
 | F2-08 S2B | Concluído tecnicamente em 56cbb06; CI e regras verdes                       | [Cenas completas](23-cenas-completas-na-preparacao-da-sessao.md), [entrega](../../../entregas/2026-10-18-writer-v2-cenas-completas-da-sessao.md), [ADR 0039](../../../decisions/0039-session-scene-material.md)                                                                                              | S3 concluído tecnicamente; F2-09 em andamento                      |
 | F2-08 S3  | Concluído tecnicamente em e924890; CI geral e regras verdes                 | [Pistas e missões](24-pistas-missoes-e-pendencias.md)                                                                                                                                                                                                                                                        | 1.998 frontend, 409 Functions; SDK e navegador verdes              |
-| F2-09 L   | Concluído tecnicamente em 087bced; CI geral e regras verdes                 | [Lore próprio](26-lore-proprio-de-aventura.md), [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md)                                                                                                                                                                              | I validado localmente; IA/portabilidade têm verticais próprias     |
-| F2-09 I   | Implementado e validado localmente; CI pendente                             | [Importação](27-importacao-revisada-de-aventura.md), [ABI](28-contratos-da-importacao-de-aventura.md)                                                                                                                                                                                                        | 2.123 frontend/85 scripts/444 Functions; SDK e nativo positivos    |
+| F2-09 L   | Concluído tecnicamente em 087bced; CI geral e regras verdes                 | [Lore próprio](26-lore-proprio-de-aventura.md), [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md)                                                                                                                                                                              | I concluído tecnicamente; IA/portabilidade têm verticais próprias  |
+| F2-09 I   | Concluído tecnicamente em ffc01d9; CI geral/regras verdes                   | [Importação](27-importacao-revisada-de-aventura.md), [ABI](28-contratos-da-importacao-de-aventura.md)                                                                                                                                                                                                        | 2.123 frontend/85 scripts/444 Functions; SDK e nativo positivos    |
 | Fase 6    | Descoberta futura, fora da primeira versão pública                          | [Candidatos](../fase-06-evolucao-pos-v1/README.md)                                                                                                                                                                                                                                                           | Aprovação posterior de escopo                                      |
 
 Um documento não comprova uma funcionalidade. Testes locais não comprovam CI,
@@ -148,4 +148,17 @@ O plano cobre nova aventura, upload/preparação/ativação, retomada e limpeza.
 Contrato de wire e revisão cruzada foram fechados, com 13 hashes e AES conferidos
 independentemente. I foi implementado, revisado e validado localmente; veja a
 [entrega I](../../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md).
-CI do novo incremento pendente; IA é a próxima vertical. F2-09 segue em andamento.
+CI geral/regras verdes em ffc01d9; IA é a próxima vertical. F2-09 segue em andamento.
+
+## Contexto autorizado e IA de cenas/blocos validado localmente
+
+O [plano A](29-contexto-autorizado-e-ia-de-cenas.md) e a [ABI 30](30-contratos-do-chat-de-cenas.md)
+foram implementados para os três novos alvos, preservando capítulo e histórico
+legados. Persona base por aventura, complemento por cena e preservação de perguntas
+próprias seguem as escolhas do operador. Contexto/proveniência, geração/BYOK,
+aplicação e recuperação têm unidades, SDKs reais e UI nativa próprios.
+
+Veja a [entrega A](../../../entregas/2026-10-21-writer-v2-chat-autorizado-de-cenas.md):
+validate 2.527/85/615, 30 combinações nativas novas e três regressões positivas.
+CI do novo head pendente; o próximo incremento é P1 (portabilidade de livros),
+sem aguardar CI conforme a autorização. F2-09 e a fase 2 continuam abertas.

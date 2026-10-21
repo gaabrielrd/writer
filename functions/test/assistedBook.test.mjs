@@ -201,6 +201,7 @@ test('commit creates one private draft and all local lore with resolved relation
   const f = fixture();
   const session = await f.ready();
   const [a, b] = await Promise.all([f.commit(), f.commit()]);
+  assert.equal([...f.records].find(([path]) => /^books\/[^/]+$/.test(path))[1].localLoreVersion, 0);
   assert.equal(a.book.id, b.book.id);
   assert.equal(b.credits, 18);
   assert.equal(a.book.status, 'draft');

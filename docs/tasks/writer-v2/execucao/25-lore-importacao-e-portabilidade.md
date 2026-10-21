@@ -1,6 +1,6 @@
 # F2-09 — Lore, importação, IA e portabilidade privada
 
-**Estado em 2026-10-21:** descoberta concluída sobre `a9b588a`; L está concluído tecnicamente em `087bced`, com CI geral/regras verdes, após a correção S3 `e924890`. I está implementado e validado localmente, com CI do novo incremento pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md). Este documento organiza a tarefa [W2-F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
+**Estado em 2026-10-21:** descoberta concluída sobre `a9b588a`; L está concluído tecnicamente em `087bced`, com CI geral/regras verdes, após a correção S3 `e924890`. I concluiu tecnicamente em ffc01d9, com CI geral e regras verdes. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md). Este documento organiza a tarefa [W2-F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
 em incrementos sequenciais. Não comprova entrega nem fecha o portão da fase 2.
 
 ## Objetivo e base verificada
@@ -82,7 +82,7 @@ autorização atual e seal durável antes do primeiro envio; não cobre revisão
 não confirmada nem sincronização entre dispositivos. A ABI foi revisada e a implementação
 liberada; implementação/revisão/validate local concluídos. A
 [entrega I](../../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md)
-registra testes, falhas preservadas e CI pendente.
+registra testes, falhas preservadas e fechamento remoto verde de ffc01d9.
 
 Expor os contratos reutilizáveis do parser/revisão sem importar internos de books.
 A revisão deve mostrar o destino: cada seção confirmada forma uma parte com cena
@@ -96,6 +96,10 @@ Aceite: cancelar não cria obra visível; retry não duplica partes/cenas; texto
 acentos e ordem sobrevivem à confirmação. Validar DOCX/PDF/Markdown e corpus real.
 
 ### A — Contexto autorizado e IA de cenas/blocos
+
+[Plano A implementado e validado localmente](29-contexto-autorizado-e-ia-de-cenas.md),
+com CI do novo head pendente; [evidência A](../../../entregas/2026-10-21-writer-v2-chat-autorizado-de-cenas.md).
+Novos alvos compõem uma entrega completa; capítulos/históricos legados não são migrados.
 
 Resolver no servidor somente IDs e campos que o autor pode ler, com a mesma
 prioridade local/global usada pelas menções. Reautorizar antes da geração e da

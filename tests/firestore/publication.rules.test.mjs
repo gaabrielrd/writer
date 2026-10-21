@@ -134,8 +134,10 @@ describe('publicação segura no Firestore', { concurrency: false }, () => {
 
   it('rejeita publicação sem projeção e originais criados publicados', async () => {
     const owner = db('author');
-    await assertFails(setDoc(doc(owner, 'books/new'), privateBook));
-    await assertSucceeds(setDoc(doc(owner, 'books/new'), { ...privateBook, status: 'draft' }));
+    await assertFails(setDoc(doc(owner, 'books/new'), { ...privateBook, localLoreVersion: 0 }));
+    await assertSucceeds(
+      setDoc(doc(owner, 'books/new'), { ...privateBook, localLoreVersion: 0, status: 'draft' }),
+    );
     await assertFails(updateDoc(doc(owner, 'books/new'), { status: 'published' }));
   });
 
@@ -247,20 +249,28 @@ describe('publicação segura no Firestore', { concurrency: false }, () => {
       status: 'draft',
       updatedAt: 200,
       publicationPrivacyVersion: 1,
+      localLoreVersion: 1,
     });
     revoke.delete(doc(owner, rootPath));
     revoke.update(entity, { isPublic: false });
     await assertSucceeds(revoke.commit());
     await assertFails(getDoc(doc(db(), `${revisionPath}/lore/lore-1`)));
     await assertFails(getDoc(doc(db(), `${revisionPath}/chapters/ch-1`)));
-    await assertSucceeds(deleteDoc(entity));
+    const removePrivate = writeBatch(owner);
+    removePrivate.update(doc(owner, bookPath), { localLoreVersion: 2 });
+    removePrivate.delete(entity);
+    await assertSucceeds(removePrivate.commit());
   });
 
   it('impede reativar revisões antigas ou reconstruir sua autorização após revogar lore', async () => {
     await seed();
     const owner = db('author');
     const revoke = writeBatch(owner);
-    revoke.update(doc(owner, bookPath), { status: 'draft', publicationPrivacyVersion: 1 });
+    revoke.update(doc(owner, bookPath), {
+      status: 'draft',
+      publicationPrivacyVersion: 1,
+      localLoreVersion: 1,
+    });
     revoke.delete(doc(owner, rootPath));
     revoke.update(doc(owner, `${bookPath}/lore/lore-1`), { isPublic: false });
     await assertSucceeds(revoke.commit());
@@ -294,7 +304,11 @@ describe('publicação segura no Firestore', { concurrency: false }, () => {
     incomplete.delete(doc(owner, `${bookPath}/lore/lore-1`));
     await assertFails(incomplete.commit());
     const complete = writeBatch(owner);
-    complete.update(doc(owner, bookPath), { status: 'draft', publicationPrivacyVersion: 1 });
+    complete.update(doc(owner, bookPath), {
+      status: 'draft',
+      publicationPrivacyVersion: 1,
+      localLoreVersion: 1,
+    });
     complete.delete(doc(owner, rootPath));
     complete.delete(doc(owner, `${bookPath}/lore/lore-1`));
     await assertSucceeds(complete.commit());

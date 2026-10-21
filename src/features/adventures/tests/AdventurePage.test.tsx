@@ -1,17 +1,76 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, createMemoryRouter, RouterProvider } from 'react-router';
+import type { AdventurePersonaDialogProps } from '@/features/ai-assistant';
 import { AdventurePage } from '../components/AdventurePage';
 import { getAdventure } from '../services/adventureService';
 import type { Adventure } from '../model/adventure';
 
-const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } => ({
-  user: { uid: 'owner' },
-  loading: false,
+const auth = vi.hoisted(
+  (): {
+    user: { uid: string } | null;
+    loading: boolean;
+    setPendingEditorOperation: ReturnType<typeof vi.fn>;
+  } => ({
+    user: { uid: 'owner' },
+    loading: false,
+    setPendingEditorOperation: vi.fn(),
+  }),
+);
+const persona = vi.hoisted(() => ({
+  pending: false,
+  listeners: new Set<() => void>(),
+  props: null as AdventurePersonaDialogProps | null,
 }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
-vi.mock('@/features/lore', () => ({ LoreCollection: () => <h2>Lore da aventura</h2> }));
+vi.mock('@/features/ai-assistant', () => ({
+  readEditorChatOperation: vi.fn((uid: string) =>
+    persona.pending && uid === 'owner' ? { state: 'uncertain' } : null,
+  ),
+  subscribeEditorChatOperation: vi.fn((_uid: string, _scope: unknown, listener: () => void) => {
+    persona.listeners.add(listener);
+    return () => persona.listeners.delete(listener);
+  }),
+  AdventurePersonaDialog: (props: AdventurePersonaDialogProps) => {
+    persona.props = props;
+    return (
+      <section aria-label="Persona da aventura aberta">
+        <span>
+          {props.uid}/{props.adventureId}/{String(props.sceneId)}
+        </span>
+        <button
+          onClick={() => {
+            persona.pending = true;
+            for (const listener of persona.listeners) listener();
+            props.onPendingChange?.(true);
+          }}
+        >
+          Pedido incerto
+        </button>
+        <button
+          onClick={() => {
+            persona.pending = false;
+            for (const listener of persona.listeners) listener();
+            props.onPendingChange?.(false);
+          }}
+        >
+          Resolver pedido
+        </button>
+        <button onClick={props.onChanged}>Persona alterada</button>
+        <button onClick={props.onClose}>Fechar persona</button>
+      </section>
+    );
+  },
+}));
+vi.mock('@/features/lore', () => ({
+  LoreCollection: ({ onBusyChange }: { onBusyChange?: (busy: boolean) => void }) => (
+    <>
+      <h2>Lore da aventura</h2>
+      <input aria-label="Rascunho de lore" defaultValue="" onChange={() => onBusyChange?.(true)} />
+    </>
+  ),
+}));
 vi.mock('@/features/campaign-bases', () => ({
   CampaignCapturePreparations: () => null,
   CampaignCaptureDialog: ({
@@ -55,6 +114,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   auth.user = { uid: 'owner' };
   auth.loading = false;
+  persona.pending = false;
+  persona.listeners.clear();
+  persona.props = null;
   vi.mocked(getAdventure).mockResolvedValue(resource);
 });
 function tree(search = '') {
@@ -212,4 +274,94 @@ it('estado editorial atual substitui o legado ready e arquivo permanece condiç�
   render(tree());
   expect(await screen.findByText('Arquivada')).toBeVisible();
   expect(screen.getByText('Pronto')).toBeVisible();
+});
+
+it('abre a persona base pela API pública com a conta e aventura atuais, sem inventar cena', async () => {
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
+  expect(screen.getByRole('region', { name: 'Persona da aventura aberta' })).toBeVisible();
+  expect(persona.props).toMatchObject({ uid: 'owner', adventureId: 'project', sceneId: null });
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar persona' }));
+  expect(
+    screen.queryByRole('region', { name: 'Persona da aventura aberta' }),
+  ).not.toBeInTheDocument();
+});
+
+it('compartilha o único guard de navegação e Auth com a pendência de persona, liberando após resolver', async () => {
+  const router = createMemoryRouter(
+    [
+      { path: '/adventures/:adventureId', element: <AdventurePage /> },
+      { path: '/studio', element: <h1>Estúdio</h1> },
+    ],
+    { initialEntries: ['/adventures/project'] },
+  );
+  render(<RouterProvider router={router} />);
+  await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Pedido incerto' }));
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar ao Estúdio' }));
+  expect(screen.getByRole('heading', { name: 'Meu projeto' })).toBeVisible();
+  expect(router.state.location.pathname).toBe('/adventures/project');
+  const unload = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(unload);
+  expect(unload.defaultPrevented).toBe(true);
+  await userEvent.click(screen.getByRole('button', { name: 'Resolver pedido' }));
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(false);
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar ao Estúdio' }));
+  expect(await screen.findByRole('heading', { name: 'Estúdio' })).toBeVisible();
+});
+
+it.each(['falha', 'ausente'] as const)(
+  'oferece recuperação metadata-only quando a origem %s',
+  async (origin) => {
+    persona.pending = true;
+    if (origin === 'falha') vi.mocked(getAdventure).mockRejectedValueOnce(new Error('Sem conexão'));
+    else vi.mocked(getAdventure).mockResolvedValueOnce(null);
+    render(tree());
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Recuperar pedido de persona' }),
+    );
+    expect(persona.props).toMatchObject({ uid: 'owner', adventureId: 'project', sceneId: null });
+    expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+    await userEvent.click(screen.getByRole('button', { name: 'Resolver pedido' }));
+    expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(false);
+  },
+);
+
+it('recarrega os metadados sem remontar ou sobrescrever o lore sujo, inclusive após falha transitória', async () => {
+  const user = userEvent.setup();
+  vi.mocked(getAdventure)
+    .mockResolvedValueOnce(resource)
+    .mockResolvedValueOnce({ ...resource, title: 'Projeto atualizado', updatedAt: 3000 })
+    .mockRejectedValueOnce(new Error('Atualização sem resposta'));
+  render(tree('?tab=lore'));
+  await screen.findByRole('heading', { name: 'Meu projeto' });
+  const draft = screen.getByLabelText('Rascunho de lore');
+  await user.type(draft, 'Meu texto próprio ainda não salvo');
+  await user.click(screen.getByRole('button', { name: 'Persona da aventura' }));
+  await user.click(screen.getByRole('button', { name: 'Persona alterada' }));
+  expect(await screen.findByRole('heading', { name: 'Projeto atualizado' })).toBeVisible();
+  expect(screen.getByLabelText('Rascunho de lore')).toBe(draft);
+  expect(draft).toHaveValue('Meu texto próprio ainda não salvo');
+  await user.click(screen.getByRole('button', { name: 'Persona alterada' }));
+  expect(await screen.findByText(/Atualização sem resposta/)).toBeVisible();
+  expect(screen.getByLabelText('Rascunho de lore')).toBe(draft);
+  expect(draft).toHaveValue('Meu texto próprio ainda não salvo');
+  expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
+});
+
+it('encerra a projeção da persona e libera o guard anterior ao trocar de conta', async () => {
+  const view = render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Pedido incerto' }));
+  const previous = persona.props!;
+  auth.user = { uid: 'new-owner' };
+  vi.mocked(getAdventure).mockResolvedValueOnce(null);
+  view.rerender(tree());
+  expect(await screen.findByText('Aventura indisponível')).toBeVisible();
+  expect(
+    screen.queryByRole('region', { name: 'Persona da aventura aberta' }),
+  ).not.toBeInTheDocument();
+  expect(previous.uid).toBe('owner');
+  await waitFor(() => expect(auth.setPendingEditorOperation).toHaveBeenCalledWith(false));
 });

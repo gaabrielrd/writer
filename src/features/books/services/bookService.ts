@@ -45,6 +45,7 @@ import {
 
 interface StoredBookDoc {
   deleting?: boolean;
+  localLoreVersion?: number;
   hasSceneResources?: boolean;
   sceneRevision?: number;
   hasNarrativeResources?: boolean;
@@ -81,6 +82,14 @@ interface StoredChapterDoc {
   updatedAt: number;
 }
 
+function localLoreVersion(data: StoredBookDoc): number | undefined {
+  if (!('localLoreVersion' in data)) return undefined;
+  const value = data.localLoreVersion;
+  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0)
+    throw new Error('Não foi possível verificar a versão do lore deste livro.');
+  return value;
+}
+
 export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
   const booksRef = collection(firestore, 'books');
   const q = query(booksRef, where('authorId', '==', authorId));
@@ -88,9 +97,11 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
 
   const books = snapshot.docs.map((docSnap) => {
     const data = docSnap.data() as StoredBookDoc;
+    const loreVersion = localLoreVersion(data);
     return {
       id: docSnap.id,
       authorId: data.authorId,
+      ...(loreVersion !== undefined ? { localLoreVersion: loreVersion } : {}),
       ...(data.personaId ? { personaId: data.personaId } : {}),
       ...(data.universeId ? { universeId: data.universeId } : {}),
       title: data.title,
@@ -129,9 +140,11 @@ export async function getBook(
   if (!snapshot.exists()) return null;
 
   const data = snapshot.data() as StoredBookDoc;
+  const loreVersion = localLoreVersion(data);
   return {
     id: snapshot.id,
     authorId: data.authorId,
+    ...(loreVersion !== undefined ? { localLoreVersion: loreVersion } : {}),
     ...(data.personaId ? { personaId: data.personaId } : {}),
     ...(data.universeId ? { universeId: data.universeId } : {}),
     title: data.title,
@@ -175,6 +188,7 @@ export async function createBook(authorId: string, input: CreateBookInput): Prom
     synopsis: input.synopsis?.trim() ?? '',
     coverUrl: input.coverUrl ?? null,
     status: 'draft',
+    localLoreVersion: 0,
     wordCount: 0,
     createdAt: now,
     updatedAt: now,
@@ -186,6 +200,7 @@ export async function createBook(authorId: string, input: CreateBookInput): Prom
       if (existing.exists()) {
         const book = existing.data() as Book;
         if (book.authorId !== authorId) throw new Error('Livro indisponível.');
+        localLoreVersion(book);
         return book;
       }
       transaction.set(newDocRef, newBook);
@@ -197,6 +212,8 @@ export async function createBook(authorId: string, input: CreateBookInput): Prom
 }
 
 export async function updateBook(bookId: string, input: UpdateBookInput): Promise<void> {
+  if ('localLoreVersion' in input)
+    throw new Error('A versão do lore é controlada pelas alterações das fichas.');
   if (input.status === 'published') {
     throw new Error('Use a publicação para revisar e disponibilizar uma cópia pública do livro.');
   }

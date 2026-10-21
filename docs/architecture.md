@@ -156,6 +156,36 @@ Selecionar/focar/rolar não gera respostas. Conversa é gratuita e privada por
 capítulo; cobrança ocorre no primeiro aceite da sugestão da plataforma.
 Veja [chat do capítulo](chapter-chat.md) e [ADR 0022](decisions/0022-chapter-chat-and-atomic-acceptance.md).
 
+### Chat de cenas e blocos
+
+Cenas de livros, principal de aventura e blocos adicionais usam `EditorChatWorkspace`
+pela interface pública de `ai-assistant`. O host reserva apenas captura/aceite,
+fornece snapshot confirmado e adota conteúdo/metadados sem reinicializar o editor;
+a geração permite continuar escrevendo. `RichEditor` separa chat, autocomplete e
+ações legadas por capacidades. O matcher opt-in compartilha o contrato Unicode
+puro e identifica fichas por origem, evitando colisões local/global.
+
+`functions/src/editorChat.mjs` compõe contexto paginado, conversas, geração e
+aplicação. O callable `editorChat` exige Auth e App Check. O servidor lê persona e
+lore autorizados, fecha manifesto/proveniência e reautoriza origem nativa antes de
+cada entrega derivada. Perguntas próprias ficam separadas das respostas. Revogação
+oculta respostas afetadas sem apagar perguntas ou manuscrito; somente a mesma
+origem reautorizada recupera o histórico. A criação de contexto não salva a pergunta.
+
+Persona do livro e complemento de capítulo são preservados. Aventuras têm base
+por aventura e complemento por cena; blocos herdam. O compilador puro
+`personaProfile.mjs` é compartilhado, sem I/O. Setters têm CAS, recibo e fence e não
+alteram prosa, crédito ou audiência. Não há setter por bloco.
+
+O journal cliente guarda apenas controles sob Web Locks e CAS integral; rascunho
+de pergunta fica em RAM com confirmação de saída. Reload consulta/cancela a mesma
+intenção sem repetir provedor. BYOK usa a configuração congelada e chave somente
+no transporte do provedor; resposta só aparece após conclusão e leitura autorizadas.
+Primeiro aceite de plataforma cobra um crédito; reapply explícito do mesmo turno
+pago e BYOK não cobram. Texto, contagem, ledger, saldo e recibo são atômicos; undo
+continua sendo edição normal, sem estorno. Veja o
+[contrato do chat](tasks/writer-v2/execucao/30-contratos-do-chat-de-cenas.md).
+
 O minimapa é interno à feature `editor`: o modelo deriva blocos e ocorrências do
 documento ProseMirror, reutilizando o motor público de lore; um hook mede a
 geometria e acompanha rolagem/redimensionamento. A navegação altera somente a

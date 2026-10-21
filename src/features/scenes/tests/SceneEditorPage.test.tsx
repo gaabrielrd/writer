@@ -1,6 +1,10 @@
+import type {
+  EditorChatWorkspaceProps,
+  AdventurePersonaDialogProps,
+} from '@/features/ai-assistant';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, createMemoryRouter, RouterProvider } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { SceneEditorPage } from '../components/SceneEditorPage';
 import {
@@ -27,6 +31,34 @@ const auth = vi.hoisted(() => {
   } = { user: { uid: 'owner', credits: 7 }, loading: false, setPendingEditorOperation: vi.fn() };
   return value;
 });
+const chatView = vi.hoisted(() => ({ props: null as EditorChatWorkspaceProps | null }));
+vi.mock('@/features/ai-assistant', async (original) => ({
+  ...(await original<object>()),
+  AdventurePersonaDialog: (props: AdventurePersonaDialogProps) => (
+    <div role="dialog" aria-label="Persona da cena simulada">
+      <p>
+        {props.adventureId}/{props.sceneId}
+      </p>
+      <button onClick={() => props.onChanged?.()}>Confirmar persona</button>
+      <button onClick={props.onClose}>Fechar persona</button>
+    </div>
+  ),
+  EditorChatWorkspace: (props: EditorChatWorkspaceProps) => {
+    chatView.props = props;
+    return (
+      <section aria-label="Assistente simulado">
+        <button onClick={() => props.onPendingChange?.(true)}>Simular geração</button>
+        <button onClick={() => props.onPendingChange?.(false)}>Concluir geração</button>
+        <button onClick={() => props.onDraftChange?.(true)}>Pergunta em memória</button>
+        {props.open && (
+          <div role="dialog" aria-label="Chat simulado">
+            <button onClick={props.onClose}>Recolher chat</button>
+          </div>
+        )}
+      </section>
+    );
+  },
+}));
 const imageFlight = vi.hoisted(() => ({ finish: null as (() => void) | null }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('@/features/adventure-blocks', () => ({
@@ -109,6 +141,20 @@ vi.mock('@/features/editor', async () => ({
         readOnly={props.externalBusy}
         onChange={(event) => props.onChange(event.target.value)}
       />
+      <p data-testid="ai-capabilities">{JSON.stringify(props.aiCapabilities)}</p>
+      <button
+        disabled={
+          props.aiCapabilities?.chat === false ||
+          Boolean(
+            props.chatUnavailableReason === undefined
+              ? props.aiUnavailableReason
+              : props.chatUnavailableReason,
+          )
+        }
+        onClick={() => props.onOpenChat?.()}
+      >
+        Conversar sobre cena
+      </button>
       <p>Créditos reais: {props.userCredits}</p>
       <p>{props.aiUnavailableReason}</p>
       <button onClick={props.onToggleSidebar}>Abrir referências</button>
@@ -164,24 +210,26 @@ beforeEach(() => {
 });
 function mount(path = '/books/book/scenes/scene') {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route path="/books/:bookId/scenes/:sceneId" element={<SceneEditorPage />} />
-        <Route path="/adventures/:adventureId/scenes/:sceneId" element={<SceneEditorPage />} />
-        <Route path="/books/:bookId" element={<p>Voltei ao livro</p>} />
-        <Route path="*" element={<SceneEditorPage />} />
-      </Routes>
-    </MemoryRouter>,
+    <RouterProvider
+      router={createMemoryRouter(
+        [
+          { path: '/books/:bookId/scenes/:sceneId', element: <SceneEditorPage /> },
+          { path: '/adventures/:adventureId/scenes/:sceneId', element: <SceneEditorPage /> },
+          { path: '/books/:bookId', element: <p>Voltei ao livro</p> },
+          { path: '*', element: <SceneEditorPage /> },
+        ],
+        { initialEntries: [path] },
+      )}
+    />,
   );
 }
-it('carrega contexto do DTO e envia somente alvo tipado com crédito real e IA indisponível', async () => {
+
+it('carrega contexto do DTO com crédito real e habilita somente o novo chat', async () => {
   mount();
   await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
   expect(getScene).toHaveBeenCalledWith({ target, sceneId: 'scene' });
   expect(screen.getByText('Créditos reais: 7')).toBeInTheDocument();
-  expect(
-    screen.getAllByText(/A assistência de IA ainda não está disponível para cenas/).length,
-  ).toBeGreaterThan(0);
+  expect(screen.getAllByText(/Converse sobre esta cena/).length).toBeGreaterThan(0);
   expect(screen.getByText('O farol · A última luz')).toBeInTheDocument();
   expect(updateScene).not.toHaveBeenCalled();
 });
@@ -584,3 +632,110 @@ vi.mock('@/features/work-progress', async (original) => ({
   useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
   WorkActivityNotice: () => null,
 }));
+
+it('abre novo chat com capacidades separadas, sem habilitar ações legadas', async () => {
+  mount();
+  await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  expect(screen.getByTestId('ai-capabilities')).toHaveTextContent(
+    '{"chat":true,"autocomplete":false,"legacyActions":false}',
+  );
+  expect(screen.getByRole('button', { name: 'Conversar sobre cena' })).toBeEnabled();
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Conversar sobre cena' }));
+  expect(screen.getByRole('dialog', { name: 'Chat simulado' })).toBeInTheDocument();
+  expect(chatView.props?.host.target).toEqual(target);
+  expect(chatView.props?.host.resource).toEqual({ kind: 'scene', id: 'scene' });
+});
+it('geração em andamento mantém escrita disponível e bloqueia saída pendente', async () => {
+  mount();
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Simular geração' }));
+  expect(field).not.toHaveAttribute('readonly');
+  await userEvent.setup().type(field, ' Durante a resposta');
+  expect(field).toHaveValue(document.content + ' Durante a resposta');
+  await userEvent.setup().click(screen.getByRole('link', { name: 'Voltar ao planejamento' }));
+  expect(field).toBeInTheDocument();
+});
+it('pergunta em RAM exige descarte explícito ao sair, sem guardar seu texto', async () => {
+  mount();
+  await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Pergunta em memória' }));
+  const closing = new Event('beforeunload', { cancelable: true });
+  window.dispatchEvent(closing);
+  expect(closing.defaultPrevented).toBe(true);
+  await userEvent.setup().click(screen.getByRole('link', { name: 'Voltar ao planejamento' }));
+  expect(screen.getByRole('dialog', { name: 'Texto ainda não confirmado' })).toHaveTextContent(
+    'A pergunta do assistente está só na memória',
+  );
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Sair e descartar pergunta' }));
+  expect(await screen.findByText('Voltei ao livro')).toBeInTheDocument();
+});
+it('adota texto e metadados confirmados sob reserva sem novo autosave nem reset do editor', async () => {
+  mount();
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  const source = {
+    target,
+    resource: { kind: 'scene' as const, id: 'scene' },
+    title: 'Cena',
+    content: '<p>Confirmado IA</p>',
+    contentHash: 'hash-ia-confirmado',
+    sourceToken: 'a'.repeat(64),
+    revision: 4,
+  };
+  vi.mocked(getScene).mockResolvedValue({
+    ...document,
+    content: source.content,
+    bodyHash: source.contentHash,
+    revision: 4,
+    wordCount: 2,
+    bodyBytes: source.content.length,
+  });
+  const host = chatView.props!.host;
+  await act(() =>
+    host.runExclusive(async () => {
+      const adopt = await host.prepareAdoption!(source);
+      adopt();
+    }),
+  );
+  expect(field).toHaveValue(source.content);
+  expect(updateScene).not.toHaveBeenCalled();
+  expect(screen.getByText('Salvo')).toBeInTheDocument();
+});
+it('confirmação divergente mantém manuscrito local e não adota resposta histórica', async () => {
+  mount();
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  const source = {
+    target,
+    resource: { kind: 'scene' as const, id: 'scene' },
+    title: 'Cena',
+    content: '<p>Texto antigo</p>',
+    contentHash: 'hash-historico',
+    sourceToken: 'a'.repeat(64),
+    revision: 4,
+  };
+  const host = chatView.props!.host;
+  await act(async () => {
+    await expect(host.runExclusive(() => host.prepareAdoption!(source))).rejects.toThrow(
+      'A confirmação da cena mudou',
+    );
+  });
+  expect(field).toHaveValue(document.content);
+  expect(updateScene).not.toHaveBeenCalled();
+});
+
+it('configura complemento da cena e invalida contexto sem criar persona separada por bloco', async () => {
+  vi.mocked(getScene).mockResolvedValue({
+    ...document,
+    project: { kind: 'adventure', id: 'adventure', title: 'Aventura', universeId: null },
+    group: { ...document.group!, kind: 'part' },
+  });
+  mount('/adventures/adventure/scenes/scene');
+  await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  const oldHint = chatView.props!.invalidationKey;
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Persona da cena' }));
+  expect(screen.getByRole('dialog', { name: 'Persona da cena simulada' })).toHaveTextContent(
+    'adventure/scene',
+  );
+  await userEvent.setup().click(screen.getByRole('button', { name: 'Confirmar persona' }));
+  expect(chatView.props!.invalidationKey).not.toBe(oldHint);
+  expect(updateScene).not.toHaveBeenCalled();
+});

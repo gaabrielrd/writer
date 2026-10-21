@@ -93,6 +93,7 @@ test('real Firestore transaction applies local/global together and charges once 
       { applied: 2, credits: 1 },
     ]);
     assert.equal((await db.doc('users/author').get()).data().credits, 1);
+    assert.equal((await db.doc('books/book').get()).data().localLoreVersion, 1);
     const clock = (await db.doc('users/author/campaignAuthorization/current').get()).data();
     assert.equal(clock.epoch, 1);
     assert.equal(clock.ownerId, 'author');

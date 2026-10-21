@@ -33,6 +33,7 @@ test('manual creation can read an absent ID and atomically create only one priva
         authorId: 'author',
         title: 'Atlas',
         status: 'draft',
+        localLoreVersion: 0,
         createdAt: 1,
         updatedAt: 1,
       };

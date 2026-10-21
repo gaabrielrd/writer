@@ -165,6 +165,7 @@ test('analysis does not write lore or debit; apply debits once for an entire bat
   assert.deepEqual(result, { applied: 2, credits: 4 });
   assert.equal(records.get(`books/book/lore/${request.requestId}-0`).isPublic, false);
   assert.equal(records.get(`universes/world/lore/${request.requestId}-1`).isPublic, false);
+  assert.equal(records.get('books/book').localLoreVersion, 1);
   assert.equal(records.get('universes/world').loreVersion, 4);
   assert.equal(records.get('universes/world').privacyVersion, 4);
   assert.equal(records.get('publicUniversePrivacy/world').version, 4);
@@ -173,6 +174,7 @@ test('analysis does not write lore or debit; apply debits once for an entire bat
   assert.match(clock.token, /^[a-f0-9]{64}$/);
   assert.deepEqual(await apply(service, changes), result);
   assert.deepEqual(records.get('users/author/campaignAuthorization/current'), clock);
+  assert.equal(records.get('books/book').localLoreVersion, 1);
 });
 test('concurrent retries are idempotent and reject a different payload after apply', async () => {
   const { service, records } = fixture();
@@ -261,6 +263,7 @@ test('a batch can update several existing records with only selected summary fie
   ]);
   assert.equal(records.get('books/book/lore/arthur').summary, 'Depois');
   assert.equal(records.get('books/book/lore/port').summary, 'Atualizado');
+  assert.equal(records.get('books/book').localLoreVersion, 1);
   assert.equal(records.get('users/author').credits, 4);
 });
 test('stale text, lore, universe linkage, persisted chapter and expiration refuse writes', async () => {
@@ -363,4 +366,35 @@ test('free analyses are limited per hour and can be retrieved idempotently', asy
     service.analyzeChapterLore('author', { ...request, requestId: 'analysis-000000000099' }),
     { code: 'resource-exhausted' },
   );
+});
+
+test('global-only analysis preserves the absent local baseline and local epoch changes stale a ticket', async () => {
+  const global = fixture();
+  await global.service.analyzeChapterLore('author', request);
+  await apply(global.service, [{ scope: 'global', input }]);
+  assert.equal(Object.hasOwn(global.records.get('books/book'), 'localLoreVersion'), false);
+  const local = fixture();
+  await local.service.analyzeChapterLore('author', request);
+  local.records.get('books/book').localLoreVersion = 1;
+  const before = structuredClone([...local.records]);
+  await assert.rejects(apply(local.service), { code: 'failed-precondition' });
+  assert.deepEqual([...local.records], before);
+});
+
+test('malformed local epochs fail closed and exhausted epochs cannot charge or write lore', async () => {
+  for (const value of [null, undefined, -1, 0.5, '1', Number.MAX_SAFE_INTEGER + 1]) {
+    const f = fixture();
+    f.records.get('books/book').localLoreVersion = value;
+    const before = structuredClone([...f.records]);
+    await assert.rejects(f.service.analyzeChapterLore('author', request), {
+      code: 'failed-precondition',
+    });
+    assert.deepEqual([...f.records], before);
+  }
+  const f = fixture();
+  f.records.get('books/book').localLoreVersion = Number.MAX_SAFE_INTEGER;
+  await f.service.analyzeChapterLore('author', request);
+  const before = structuredClone([...f.records]);
+  await assert.rejects(apply(f.service), { code: 'failed-precondition' });
+  assert.deepEqual([...f.records], before);
 });

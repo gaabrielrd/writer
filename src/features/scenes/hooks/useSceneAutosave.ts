@@ -208,6 +208,12 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
     latest.current === saved.current
       ? saved.current
       : null;
+  const getConfirmedSnapshot = () => {
+    const content = getConfirmedContent();
+    return content === null
+      ? null
+      : { content, revision: revision.current, bodyHash: confirmedBodyHash.current };
+  };
   const runExclusive = async <T>(work: () => Promise<T>): Promise<T> => {
     if (reserved.current || getConfirmedContent() === null)
       throw new Error('Confirme o salvamento e resolva a recuperação antes de continuar.');
@@ -254,6 +260,7 @@ export function useSceneAutosave(uid: string, initial: SceneDocument) {
     acceptMetadata,
     acceptConfirmedContent,
     getConfirmedContent,
+    getConfirmedSnapshot,
     runExclusive,
     content,
     document,

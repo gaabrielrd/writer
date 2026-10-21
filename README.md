@@ -88,9 +88,14 @@ F2-09 L acrescenta lore privado de aventuras, menções e referências nas campa
 concluído tecnicamente em `087bced`. A importação revisada I permite escolher Livro
 ou Nova aventura no Estúdio, revisar seções e criar uma aventura privada somente
 após ativação integral. A cópia protegida da revisão confirmada permite retomar
-no mesmo dispositivo, sem guardar o PDF. I está validado localmente, com CI pendente; IA e
+no mesmo dispositivo, sem guardar o PDF. I concluiu tecnicamente em `ffc01d9`, com CI/regras verdes; IA e
 portabilidade permanecem nas próximas verticais. Veja o
 [plano de importação](docs/tasks/writer-v2/execucao/27-importacao-revisada-de-aventura.md).
+F2-09 A está implementado e validado localmente: chat privado de cenas de livro, principal de
+aventura e blocos adicionais, contexto autorizado e inspecionável, persona da
+aventura com ajustes por cena e aplicação atômica. Perguntas próprias permanecem
+quando uma resposta depende de lore indisponível. A CI do novo head está pendente; veja a
+[entrega A](docs/entregas/2026-10-21-writer-v2-chat-autorizado-de-cenas.md) e o [plano A](docs/tasks/writer-v2/execucao/29-contexto-autorizado-e-ia-de-cenas.md).
 Distribuição e vendas por criadores convidados serão implementadas nos próximos
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).

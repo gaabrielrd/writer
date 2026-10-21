@@ -207,3 +207,14 @@ export async function sendChapterChat(
   write(identity, store);
   return completed;
 }
+
+/** Unexpected real BYOK execution fails explicitly; this fixture never calls a paid provider. */
+export function readProviderStream(
+  _response: Response,
+  _provider: 'openai' | 'gemini',
+  _onChunk: (text: string) => void,
+  _signal: AbortSignal,
+): Promise<string> {
+  void [_response, _provider, _onChunk, _signal];
+  return Promise.reject(new Error('Provedor externo desativado na prévia visual.'));
+}

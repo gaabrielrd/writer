@@ -1,6 +1,6 @@
 # Progresso do Writer V2
 
-**Snapshot:** 2026-10-21, branch `codex/writer-v2`, implementação L em `2af6df5`, correção de testes em `087bced`.
+**Snapshot:** 2026-10-21, branch `codex/writer-v2`; L concluído em `087bced` e I em `ffc01d9`, ambos com CI/regras verdes. A implementado e validado localmente, com CI do novo head pendente.
 Este relatório conta tarefas do plano, sem atribuir o mesmo esforço a cada tarefa.
 
 | Fase                          | Total de tarefas | Implementadas | Restantes |
@@ -29,8 +29,13 @@ a primeira execução teve um shard cancelado após 103 passes, preservado na
 [entrega L](../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md).
 L está concluído tecnicamente. I está implementado e validado localmente: 2.123 testes
 frontend, 85 scripts e 444 Functions; quatro famílias SDK e 16 combinações nativas
-novas únicas positivas, mais cinco regressões legadas. CI do novo incremento pendente.
-As cinco verticais seguintes continuam planejadas. O
+novas únicas positivas, mais cinco regressões legadas. Concluído tecnicamente em
+ffc01d9: CI geral 39622654285 e regras 39622654323 (162/162) verdes.
+A acrescenta chat autorizado de cenas/blocos, persona por aventura/cena,
+proveniência e aplicação atômica; validate verde (2.527 frontend, 85 scripts, 615 Functions),
+30 combinações nativas novas e três regressões positivas. CI do novo head pendente;
+[entrega A](../../entregas/2026-10-21-writer-v2-chat-autorizado-de-cenas.md).
+As quatro verticais seguintes (P1/P2/P3/D) continuam planejadas. O
 [plano I](execucao/27-importacao-revisada-de-aventura.md) e sua
 [ABI](execucao/28-contratos-da-importacao-de-aventura.md) detalham a importação e a
 recuperação protegida aprovada; [entrega local I](../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md)

@@ -2,13 +2,15 @@ import { Extension } from '@tiptap/react';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { type LoreCategory, type LoreEntity, type LoreMentionEntity } from '@/features/lore';
+
 import {
-  findLoreMatches,
-  preferredLoreTerms,
-  type LoreCategory,
-  type LoreEntity,
-  type LoreMentionEntity,
-} from '@/features/lore';
+  editorLoreMatches,
+  editorLoreTerms,
+  editorLoreEntityKey,
+  editorLoreNormalizedTerm,
+  type EditorLoreMatcher,
+} from './editorLoreMatcher';
 
 export const loreDecorationKey = new PluginKey<DecorationSet>('writerLore');
 
@@ -16,12 +18,13 @@ export const loreDecorationKey = new PluginKey<DecorationSet>('writerLore');
 export function buildLoreDecorations(
   doc: ProseMirrorNode,
   entities: LoreMentionEntity[],
+  mode: EditorLoreMatcher = 'legacy',
 ): DecorationSet {
   const decorations: Decoration[] = [];
   doc.descendants((node, position) => {
     if (!node.isTextblock || node.type.spec.code) return;
     const text = node.textBetween(0, node.content.size, '', '\n');
-    for (const match of findLoreMatches(text, entities)) {
+    for (const match of editorLoreMatches(text, entities, mode)) {
       decorations.push(
         Decoration.inline(position + 1 + match.startIndex, position + 1 + match.endIndex, {
           'data-lore-id': match.entityId,
@@ -39,6 +42,7 @@ export function buildLoreDecorations(
 
 export interface LoreDecorationOptions<T extends LoreMentionEntity = LoreEntity> {
   getEntities: () => T[];
+  getMatcher?: () => EditorLoreMatcher;
   onHover: (entity: T | null, element?: HTMLElement) => void;
   onSelect: (entity: T) => void;
 }
@@ -49,7 +53,11 @@ export function createLoreExtension<T extends LoreMentionEntity>(
   const entityForTarget = (target: EventTarget | null) => {
     const element =
       target instanceof Element ? target.closest<HTMLElement>('[data-lore-id]') : null;
-    const entity = options.getEntities().find((item) => item.id === element?.dataset.loreId);
+    const entity = options
+      .getEntities()
+      .find(
+        (item) => editorLoreEntityKey(item, options.getMatcher?.()) === element?.dataset.loreId,
+      );
     return { element, entity };
   };
   const extension = Extension.create({
@@ -59,10 +67,15 @@ export function createLoreExtension<T extends LoreMentionEntity>(
         new Plugin<DecorationSet>({
           key: loreDecorationKey,
           state: {
-            init: (_, state) => buildLoreDecorations(state.doc, options.getEntities()),
+            init: (_, state) =>
+              buildLoreDecorations(state.doc, options.getEntities(), options.getMatcher?.()),
             apply: (transaction, previous) =>
               transaction.docChanged || transaction.getMeta(loreDecorationKey)
-                ? buildLoreDecorations(transaction.doc, options.getEntities())
+                ? buildLoreDecorations(
+                    transaction.doc,
+                    options.getEntities(),
+                    options.getMatcher?.(),
+                  )
                 : previous,
           },
           props: {
@@ -147,18 +160,30 @@ const CATEGORY_SEARCH_TERMS: Record<LoreCategory, string[]> = {
   other: ['outro', 'outros'],
 };
 
-export function mentionCandidates<T extends LoreMentionEntity>(entities: T[], query: string): T[] {
-  const normalized = query.trim().toLocaleLowerCase();
-  const owners = preferredLoreTerms(entities);
+export function mentionCandidates<T extends LoreMentionEntity>(
+  entities: T[],
+  query: string,
+  mode: EditorLoreMatcher = 'legacy',
+): T[] {
+  const normalized = editorLoreNormalizedTerm(query, mode);
+  const owners = editorLoreTerms(entities, mode);
   return entities.filter((entity) => {
-    const terms = [entity.name, ...entity.aliases].filter(
-      (term) => owners.get(term.trim().toLocaleLowerCase())?.id === entity.id,
-    );
+    const terms = [entity.name, ...entity.aliases].filter((term) => {
+      const owner = owners.get(editorLoreNormalizedTerm(term, mode));
+      return Boolean(
+        owner && editorLoreEntityKey(owner, mode) === editorLoreEntityKey(entity, mode),
+      );
+    });
     return (
-      terms.some((term) => term.toLocaleLowerCase().includes(normalized)) ||
+      terms.some((term) =>
+        (mode === 'legacy'
+          ? term.toLocaleLowerCase()
+          : editorLoreNormalizedTerm(term, mode)
+        ).includes(normalized),
+      ) ||
       (terms.length > 0 &&
         [entity.category, ...CATEGORY_SEARCH_TERMS[entity.category]].some((term) =>
-          term.toLocaleLowerCase().includes(normalized),
+          editorLoreNormalizedTerm(term, mode).includes(normalized),
         ))
     );
   });

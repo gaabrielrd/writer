@@ -17,12 +17,7 @@ import {
   Redo2,
 } from 'lucide-react';
 import { Button, Badge } from '@/shared/ui';
-import {
-  findLoreMatches,
-  type LoreCategory,
-  type LoreEntity,
-  type LoreMentionEntity,
-} from '@/features/lore';
+import { type LoreCategory, type LoreEntity, type LoreMentionEntity } from '@/features/lore';
 import {
   useAIAutocomplete,
   GhostSuggestion,
@@ -33,6 +28,7 @@ import {
   useAIConfig,
   type WritingPersonaContext,
   type ChatEditorBridge,
+  type EditorChatEditorBridge,
   type AIActionType,
 } from '@/features/ai-assistant';
 import { renderRichText, sanitizeRichText } from '@/shared/lib/sanitizeRichText';
@@ -50,7 +46,19 @@ import { useSelectionAnchor } from '../hooks/useSelectionAnchor';
 import { useChapterMinimap } from '../hooks/useChapterMinimap';
 import { ChapterMinimap } from './ChapterMinimap';
 import { useChatEditorBridge } from '../hooks/useChatEditorBridge';
+import { useEditorChatEditorBridge } from '../hooks/useEditorChatEditorBridge';
+import {
+  editorLoreMatches,
+  editorLoreEntityKey,
+  type EditorLoreMatcher,
+} from '../model/editorLoreMatcher';
 import styles from './RichEditor.module.css';
+
+export interface RichEditorAICapabilities {
+  chat?: boolean;
+  autocomplete?: boolean;
+  legacyActions?: boolean;
+}
 
 export interface RichEditorProps<T extends LoreMentionEntity = LoreEntity> {
   ariaLabel?: string;
@@ -58,6 +66,10 @@ export interface RichEditorProps<T extends LoreMentionEntity = LoreEntity> {
   chatOpen?: boolean;
   onOpenChat?: (action?: AIActionType) => void;
   onChatBridge?: (bridge: ChatEditorBridge | null) => void;
+  onEditorChatBridge?: (bridge: EditorChatEditorBridge | null) => void;
+  aiCapabilities?: RichEditorAICapabilities;
+  chatUnavailableReason?: string | null;
+  loreMatcher?: EditorLoreMatcher;
   chapterTitle?: string;
   bookTitle?: string;
   writingPersona?: WritingPersonaContext;
@@ -104,6 +116,10 @@ export function RichEditor<T extends LoreMentionEntity>({
   chatOpen = false,
   onOpenChat,
   onChatBridge,
+  onEditorChatBridge,
+  aiCapabilities,
+  chatUnavailableReason,
+  loreMatcher = 'legacy',
   chapterTitle = '',
   bookTitle = '',
   documentId,
@@ -127,6 +143,28 @@ export function RichEditor<T extends LoreMentionEntity>({
 }: RichEditorProps<T>) {
   // Initial parsing is intentionally lazy: transaction-driven renders must not
   // sanitize the whole chapter again. Real external replacements use the effect below.
+  const chatEnabled = aiCapabilities?.chat ?? true;
+  const autocompleteEnabled = aiCapabilities?.autocomplete ?? true;
+  const legacyActionsEnabled = aiCapabilities?.legacyActions ?? true;
+  const chatReason =
+    chatUnavailableReason === undefined ? aiUnavailableReason : chatUnavailableReason;
+  const capabilityState = `${chatEnabled}:${autocompleteEnabled}:${legacyActionsEnabled}`;
+  const capabilityGuard = useRef({
+    chatEnabled,
+    autocompleteEnabled,
+    legacyActionsEnabled,
+    chatReason,
+    aiUnavailableReason,
+  });
+  useLayoutEffect(() => {
+    capabilityGuard.current = {
+      chatEnabled,
+      autocompleteEnabled,
+      legacyActionsEnabled,
+      chatReason,
+      aiUnavailableReason,
+    };
+  });
   const [initialHtml] = useState(() => renderRichText(content));
   const [isOutOfCreditsOpen, setIsOutOfCreditsOpen] = useState(false);
   const openAISettings = useAISettings();
@@ -135,13 +173,20 @@ export function RichEditor<T extends LoreMentionEntity>({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [accepting, setAccepting] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [previousLegacyActions, setPreviousLegacyActions] = useState(legacyActionsEnabled);
+  if (previousLegacyActions !== legacyActionsEnabled) {
+    setPreviousLegacyActions(legacyActionsEnabled);
+    if (!legacyActionsEnabled) setIsAssistantOpen(false);
+  }
   const [hover, setHover] = useState<{ entity: T; left: number; top: number } | null>(null);
   const currentLoreGuard = useRef(isLoreActive);
   // eslint-disable-next-line react-hooks/refs
   currentLoreGuard.current = isLoreActive;
-  const visibleHover = isLoreActive()
-    ? entities.find((item) => item.id === hover?.entity.id)
-    : undefined;
+  const entityKey = (entity: T) => editorLoreEntityKey(entity, loreMatcher);
+  const visibleHover =
+    isLoreActive() && hover
+      ? entities.find((item) => entityKey(item) === entityKey(hover.entity))
+      : undefined;
   const menuId = useId();
   const lastContent = useRef(content);
   const typedInput = useRef(false);
@@ -163,6 +208,7 @@ export function RichEditor<T extends LoreMentionEntity>({
   const [menuPosition, setMenuPosition] = useState({ top: 40, left: 0 });
   const [loreOptions] = useState(() => ({
     getEntities: () => (currentLoreGuard.current() ? entities : []),
+    getMatcher: () => loreMatcher,
     onSelect: (entity: T) => {
       if (currentLoreGuard.current()) onSelectEntity(entity);
     },
@@ -250,8 +296,9 @@ export function RichEditor<T extends LoreMentionEntity>({
     [documentId],
   );
   const text = editor?.getText({ blockSeparator: '\n' }) ?? '';
-  const minimap = useChapterMinimap(editor, entities, scrollArea);
+  const minimap = useChapterMinimap(editor, entities, scrollArea, loreMatcher);
   useChatEditorBridge(editor, scrollArea, {
+    enabled: chatEnabled,
     title: chapterTitle,
     bookTitle,
     persona: writingPersona ?? { instruction: '', version: '' },
@@ -262,6 +309,16 @@ export function RichEditor<T extends LoreMentionEntity>({
       onBusyChange?.(busy);
     },
     onReady: onChatBridge,
+  });
+  useEditorChatEditorBridge(editor, scrollArea, {
+    enabled: chatEnabled,
+    onReady: onEditorChatBridge,
+    setBusy: (busy) => {
+      acceptingRef.current = busy;
+      setAccepting(busy);
+      editor?.setEditable(!busy && !externalBusyRef.current, false);
+      onBusyChange?.(busy);
+    },
   });
   const cursorPosition =
     editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
@@ -276,9 +333,20 @@ export function RichEditor<T extends LoreMentionEntity>({
     userCredits,
     onCreditDeducted,
     onShowOutOfCredits: () => setIsOutOfCreditsOpen(true),
-    enabled: !aiUnavailableReason && !blocked && Boolean(editor?.state.selection.empty),
+    enabled:
+      autocompleteEnabled &&
+      !aiUnavailableReason &&
+      !blocked &&
+      Boolean(editor?.state.selection.empty),
   });
 
+  const previousCapabilities = useRef(capabilityState);
+  useEffect(() => {
+    if (previousCapabilities.current === capabilityState) return;
+    previousCapabilities.current = capabilityState;
+    setTypingRevision(null);
+    discardSuggestion();
+  }, [capabilityState, discardSuggestion]);
   useEffect(() => {
     discardRef.current = discardSuggestion;
   }, [discardSuggestion]);
@@ -290,10 +358,13 @@ export function RichEditor<T extends LoreMentionEntity>({
     });
   }, [onSelectEntity, loreExtension]);
   useLayoutEffect(() => {
-    loreExtension.update({ getEntities: () => (currentLoreGuard.current() ? entities : []) });
+    loreExtension.update({
+      getEntities: () => (currentLoreGuard.current() ? entities : []),
+      getMatcher: () => loreMatcher,
+    });
     if (editor && !editor.isDestroyed)
       editor.view.dispatch(editor.state.tr.setMeta(loreDecorationKey, true));
-  }, [entities, editor, loreExtension]);
+  }, [entities, editor, loreExtension, loreMatcher]);
   useEffect(() => {
     // A parent echo must never recreate the document: that loses cursor, composition and undo.
     if (!editor) return;
@@ -317,7 +388,10 @@ export function RichEditor<T extends LoreMentionEntity>({
     previousSidebar.current = isSidebarOpen;
   }, [isSidebarOpen, editor]);
 
-  const matches = useMemo(() => findLoreMatches(text, entities), [text, entities]);
+  const matches = useMemo(
+    () => editorLoreMatches(text, entities, loreMatcher),
+    [text, entities, loreMatcher],
+  );
   const mentionedEntities = useMemo(() => {
     const map = new Map<string, { entity: T; count: number }>();
     for (const match of matches) {
@@ -328,12 +402,17 @@ export function RichEditor<T extends LoreMentionEntity>({
     return Array.from(map.values());
   }, [matches]);
   const mention = editor && !mentionDismissed ? getMentionRange(editor.state) : null;
+  const selectionActionsEnabled = onOpenChat
+    ? chatEnabled && !chatReason
+    : legacyActionsEnabled && !aiUnavailableReason;
   const selectionAnchor = useSelectionAnchor(
     editor,
-    !blocked && !isAssistantOpen && !chatOpen && !mention,
+    selectionActionsEnabled && !blocked && !isAssistantOpen && !chatOpen && !mention,
   );
-  const candidates = mention && isLoreActive() ? mentionCandidates(entities, mention.query) : [];
-  const activeGhost = !mention && !blocked ? suggestion : null;
+  const candidates =
+    mention && isLoreActive() ? mentionCandidates(entities, mention.query, loreMatcher) : [];
+  const visibleSuggestion = autocompleteEnabled && !aiUnavailableReason ? suggestion : null;
+  const activeGhost = !mention && !blocked ? visibleSuggestion : null;
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
     const position = editor.state.selection.from;
@@ -375,7 +454,14 @@ export function RichEditor<T extends LoreMentionEntity>({
     onBusyChange?.(busy);
   };
   const handleAcceptGhost = async () => {
-    if (!editor || acceptingRef.current || externalBusyRef.current) return;
+    if (
+      !editor ||
+      acceptingRef.current ||
+      externalBusyRef.current ||
+      !capabilityGuard.current.autocompleteEnabled ||
+      capabilityGuard.current.aiUnavailableReason
+    )
+      return;
     const target = {
       doc: editor.state.doc,
       from: editor.state.selection.from,
@@ -384,9 +470,20 @@ export function RichEditor<T extends LoreMentionEntity>({
     setApplying(true);
     try {
       const accepted = await acceptSuggestion(
-        () => !editor.isDestroyed && editor.state.doc.eq(target.doc),
+        () =>
+          !editor.isDestroyed &&
+          editor.state.doc.eq(target.doc) &&
+          capabilityGuard.current.autocompleteEnabled &&
+          !capabilityGuard.current.aiUnavailableReason,
       );
-      if (!accepted || editor.isDestroyed || !editor.state.doc.eq(target.doc)) return;
+      if (
+        !accepted ||
+        editor.isDestroyed ||
+        !editor.state.doc.eq(target.doc) ||
+        !capabilityGuard.current.autocompleteEnabled ||
+        capabilityGuard.current.aiUnavailableReason
+      )
+        return;
       const before = editor.state.doc.textBetween(Math.max(0, target.from - 1), target.from);
       editor
         .chain()
@@ -427,7 +524,7 @@ export function RichEditor<T extends LoreMentionEntity>({
           return true;
         }
       }
-      if (event.key === 'Tab' && suggestion) {
+      if (event.key === 'Tab' && visibleSuggestion) {
         event.preventDefault();
         void handleAcceptGhost();
         return true;
@@ -436,7 +533,7 @@ export function RichEditor<T extends LoreMentionEntity>({
         setTypingRevision(null);
         discardSuggestion();
         setHover(null);
-        return Boolean(suggestion || hover);
+        return Boolean(activeGhost || hover);
       }
       if (/^(ArrowLeft|ArrowRight|ArrowUp|ArrowDown|Home|End|PageUp|PageDown)$/.test(event.key)) {
         // Native selection notifications can coalesce a quick move out and back.
@@ -449,7 +546,12 @@ export function RichEditor<T extends LoreMentionEntity>({
   });
 
   const captureSelection = () => {
-    if (!editor) return '';
+    if (
+      !editor ||
+      !capabilityGuard.current.legacyActionsEnabled ||
+      capabilityGuard.current.aiUnavailableReason
+    )
+      return '';
     const { from, to } = editor.state.selection;
     aiTarget.current = { doc: editor.state.doc, from, to };
     return editor.state.doc.textBetween(from, to, '\n');
@@ -458,6 +560,8 @@ export function RichEditor<T extends LoreMentionEntity>({
     Boolean(
       editor &&
       !editor.isDestroyed &&
+      capabilityGuard.current.legacyActionsEnabled &&
+      !capabilityGuard.current.aiUnavailableReason &&
       aiTarget.current &&
       editor.state.doc.eq(aiTarget.current.doc),
     );
@@ -696,39 +800,51 @@ export function RichEditor<T extends LoreMentionEntity>({
           role="group"
           aria-label="Painéis do editor"
         >
-          {onOpenChat ? (
-            <AIChatLauncher
-              disabled={blocked || Boolean(aiUnavailableReason)}
-              open={chatOpen}
-              onOpen={onOpenChat}
-              anchor={selectionAnchor}
-            />
-          ) : (
-            <AIActionMenu
-              writingPersona={writingPersona}
-              aiUnavailableReason={
-                externalBusy ? 'Aguarde a confirmação do histórico.' : aiUnavailableReason
-              }
-              selectionAnchor={selectionAnchor}
-              onOpenChange={setIsAssistantOpen}
-              onReturnFocus={() => {
-                if (editor && !editor.isDestroyed) editor.view.focus();
-              }}
-              onGetSelectedText={captureSelection}
-              onGetContextText={() => text}
-              onCanApplyResult={() =>
-                !acceptingRef.current && !externalBusyRef.current && canApplyResult()
-              }
-              onApplyingChange={setApplying}
-              loreEntities={entities}
-              userId={userId}
-              userCredits={userCredits}
-              onCreditDeducted={onCreditDeducted}
-              onShowOutOfCredits={() => setIsOutOfCreditsOpen(true)}
-              onInsertText={(value) => applyGeneratedText(value, false)}
-              onReplaceSelection={(value) => applyGeneratedText(value, true)}
-            />
-          )}
+          {onOpenChat
+            ? chatEnabled && (
+                <AIChatLauncher
+                  disabled={blocked || Boolean(chatReason)}
+                  open={chatOpen}
+                  onOpen={(action) => {
+                    if (
+                      capabilityGuard.current.chatEnabled &&
+                      !capabilityGuard.current.chatReason &&
+                      !acceptingRef.current &&
+                      !externalBusyRef.current
+                    )
+                      onOpenChat(action);
+                  }}
+                  anchor={selectionAnchor}
+                />
+              )
+            : legacyActionsEnabled && (
+                <AIActionMenu
+                  writingPersona={writingPersona}
+                  aiUnavailableReason={
+                    externalBusy ? 'Aguarde a confirmação do histórico.' : aiUnavailableReason
+                  }
+                  selectionAnchor={selectionAnchor}
+                  onOpenChange={setIsAssistantOpen}
+                  onReturnFocus={() => {
+                    if (editor && !editor.isDestroyed) editor.view.focus();
+                  }}
+                  onGetSelectedText={captureSelection}
+                  onGetContextText={() => text}
+                  onCanApplyResult={() =>
+                    !acceptingRef.current && !externalBusyRef.current && canApplyResult()
+                  }
+                  onApplyingChange={setApplying}
+                  loreEntities={entities}
+                  userId={userId}
+                  userCredits={userCredits}
+                  onCreditDeducted={onCreditDeducted}
+                  onShowOutOfCredits={() => {
+                    if (capabilityGuard.current.legacyActionsEnabled) setIsOutOfCreditsOpen(true);
+                  }}
+                  onInsertText={(value) => applyGeneratedText(value, false)}
+                  onReplaceSelection={(value) => applyGeneratedText(value, true)}
+                />
+              )}
           <Button
             variant="ghost"
             aria-pressed={isSidebarOpen}
@@ -749,10 +865,12 @@ export function RichEditor<T extends LoreMentionEntity>({
           <div className={styles.lorePillsList}>
             {mentionedEntities.map(({ entity, count }) => (
               <button
-                key={entity.id}
+                key={entityKey(entity)}
                 type="button"
                 className={styles.lorePill}
-                onClick={() => onSelectEntity(entity)}
+                onClick={() => {
+                  if (currentLoreGuard.current()) onSelectEntity(entity);
+                }}
                 title={`Clique para abrir a ficha de ${entity.name}`}
               >
                 <Badge variant={CATEGORY_BADGES[entity.category]}>
@@ -791,10 +909,10 @@ export function RichEditor<T extends LoreMentionEntity>({
               }}
               aria-busy={blocked}
             />
-            {suggestion && (
+            {visibleSuggestion && (
               <GhostSuggestion
                 compact
-                suggestion={suggestion}
+                suggestion={visibleSuggestion}
                 onAccept={() => void handleAcceptGhost()}
                 onDiscard={discardSuggestion}
                 isUsingBYOK={isUsingBYOK}
@@ -806,6 +924,7 @@ export function RichEditor<T extends LoreMentionEntity>({
                   <MentionMenu
                     id={menuId}
                     entities={candidates}
+                    getEntityKey={entityKey}
                     query={mention.query}
                     selectedIndex={activeIndex}
                     onSelect={selectMention}
