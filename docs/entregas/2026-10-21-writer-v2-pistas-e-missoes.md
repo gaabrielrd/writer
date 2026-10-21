@@ -4,7 +4,7 @@
 - **Branch:** codex/writer-v2
 - **Plano:** [F2-08 S3](../tasks/writer-v2/execucao/24-pistas-missoes-e-pendencias.md).
 - **Estado:** implementado e validado localmente em `a9b588a`; CI geral falhou por
-  timeouts visuais, com correção visual validada localmente; CI do novo head pendente no
+  timeouts visuais; correção visual em `e924890` validada localmente e com CI geral/regras verdes no
   [PR #21 em rascunho](https://github.com/gaabrielrd/writer/pull/21).
 
 ## Objetivo
@@ -148,7 +148,7 @@ edição do original, merge e deploy. Distribuição/comércio mantêm tarefas p
 
 ## Limitações e pendências conhecidas
 
-CI de `a9b588a` falhou por timeouts visuais; correção visual validada localmente; CI do novo head pendente.
+CI de `a9b588a` falhou por timeouts visuais; correção `e924890` validada localmente e com CI geral/regras verdes.
 S2B/56cbb06 tem CI e regras verdes separadamente.
 Habilitar S3 exige dez APIs, C4v4, guardas, regras/índices conjuntos e drenagem de
 versões antigas. Emulador não comprova índice implantado ou operação em produção.
@@ -208,7 +208,7 @@ continua registrado acima; os hooks e a CI do novo head executam seus portões.
 Artefatos da correção:
 C:/Users/gaabr/.codex/visualizations/2026/10/12/01a131c1-057d-7721-88fb-d2454dec09b9/writer-v2-ci-s3-retake,
 com logs dos dois jobs remotos, três JSONs/logs locais, hashes antes/depois,
-`root-verified.json` e `collectors.json`. Nova CI permanece pendente; sem merge/deploy.
+`root-verified.json` e `collectors.json`. Nova CI geral e regras concluídas com sucesso; sem merge/deploy.
 
 ## Como verificar manualmente
 
@@ -219,3 +219,12 @@ com logs dos dois jobs remotos, três JSONs/logs locais, hashes antes/depois,
    deixa vínculo neutro removível.
 5. Perder resposta, recarregar e confirmar/encerrar o mesmo pedido. Conferir
    conflito sem perder rascunho, Escape/foco e outra campanha após C4.
+
+## Fechamento remoto da correção visual
+
+O head `e924890d1cab8f7f896bd924ca352229e10baf63` passou na
+[CI geral, run 105/39597170795](https://github.com/gaabrielrd/writer/actions/runs/39597170795)
+e nas [Firestore Rules, run 57/39597170719](https://github.com/gaabrielrd/writer/actions/runs/39597170719).
+Os dois workflows foram consultados por SHA e retornaram completed/success.
+A falha anterior e os resultados locais permanecem neste registro. S3/F2-08
+concluído tecnicamente; sem merge, deploy ou aceite humano/comercial implícito.

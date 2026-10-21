@@ -397,6 +397,7 @@ describe('EditorPage', () => {
       ...mockEntities[0]!,
       id: 'universe:world:e-1',
       bookId: undefined,
+      adventureId: undefined,
       universeId: 'world',
       name: 'Sábia',
       summary: 'Uma sábia do universo',

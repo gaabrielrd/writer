@@ -2,12 +2,21 @@ import { Extension } from '@tiptap/react';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { findLoreMatches, type LoreCategory, type LoreEntity } from '@/features/lore';
+import {
+  findLoreMatches,
+  preferredLoreTerms,
+  type LoreCategory,
+  type LoreEntity,
+  type LoreMentionEntity,
+} from '@/features/lore';
 
 export const loreDecorationKey = new PluginKey<DecorationSet>('writerLore');
 
 /** Decorations never enter the document, history, clipboard or saved HTML. */
-export function buildLoreDecorations(doc: ProseMirrorNode, entities: LoreEntity[]): DecorationSet {
+export function buildLoreDecorations(
+  doc: ProseMirrorNode,
+  entities: LoreMentionEntity[],
+): DecorationSet {
   const decorations: Decoration[] = [];
   doc.descendants((node, position) => {
     if (!node.isTextblock || node.type.spec.code) return;
@@ -28,13 +37,15 @@ export function buildLoreDecorations(doc: ProseMirrorNode, entities: LoreEntity[
   return DecorationSet.create(doc, decorations);
 }
 
-export interface LoreDecorationOptions {
-  getEntities: () => LoreEntity[];
-  onHover: (entity: LoreEntity | null, element?: HTMLElement) => void;
-  onSelect: (entity: LoreEntity) => void;
+export interface LoreDecorationOptions<T extends LoreMentionEntity = LoreEntity> {
+  getEntities: () => T[];
+  onHover: (entity: T | null, element?: HTMLElement) => void;
+  onSelect: (entity: T) => void;
 }
 
-export function createLoreExtension(options: LoreDecorationOptions) {
+export function createLoreExtension<T extends LoreMentionEntity>(
+  options: LoreDecorationOptions<T>,
+) {
   const entityForTarget = (target: EventTarget | null) => {
     const element =
       target instanceof Element ? target.closest<HTMLElement>('[data-lore-id]') : null;
@@ -107,7 +118,7 @@ export function createLoreExtension(options: LoreDecorationOptions) {
   });
   return {
     extension,
-    update: (next: Partial<LoreDecorationOptions>) => {
+    update: (next: Partial<LoreDecorationOptions<T>>) => {
       options = { ...options, ...next };
     },
   };
@@ -136,16 +147,21 @@ const CATEGORY_SEARCH_TERMS: Record<LoreCategory, string[]> = {
   other: ['outro', 'outros'],
 };
 
-export function mentionCandidates(entities: LoreEntity[], query: string): LoreEntity[] {
+export function mentionCandidates<T extends LoreMentionEntity>(entities: T[], query: string): T[] {
   const normalized = query.trim().toLocaleLowerCase();
-  return entities.filter((entity) =>
-    [
-      entity.name,
-      ...entity.aliases,
-      entity.category,
-      ...CATEGORY_SEARCH_TERMS[entity.category],
-    ].some((term) => term.toLocaleLowerCase().includes(normalized)),
-  );
+  const owners = preferredLoreTerms(entities);
+  return entities.filter((entity) => {
+    const terms = [entity.name, ...entity.aliases].filter(
+      (term) => owners.get(term.trim().toLocaleLowerCase())?.id === entity.id,
+    );
+    return (
+      terms.some((term) => term.toLocaleLowerCase().includes(normalized)) ||
+      (terms.length > 0 &&
+        [entity.category, ...CATEGORY_SEARCH_TERMS[entity.category]].some((term) =>
+          term.toLocaleLowerCase().includes(normalized),
+        ))
+    );
+  });
 }
 
 /** AI output is text, never HTML. */

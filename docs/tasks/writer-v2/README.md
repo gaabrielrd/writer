@@ -3,8 +3,7 @@
 **Data do planejamento:** 2026-10-12. **Responsável:** Gabriel, trabalhando sozinho, 20 horas por semana.
 **Estado em 2026-10-21:** F2-01 a F2-07 concluídas tecnicamente; F2-08 implementada
 e validada localmente em `a9b588a`; CI geral falhou por timeouts visuais e sua
-correção passou na validação dirigida; CI do novo head pendente. F2-09 está em
-descoberta/planejamento; fases 3–5 não implementadas. Aceites humanos/comerciais
+correção `e924890` passou na validação dirigida, CI geral e regras. F2-09 L está implementado e validado localmente; CI do novo incremento pendente; fases 3–5 não implementadas. Aceites humanos/comerciais
 seguem pendentes. O [progresso verificado](progresso.md) separa contagem de tarefas,
 implementação local e conclusão técnica.
 **Autorização deste trabalho:** implementar, planejar e validar cada tarefa em sequência, fase a fase.

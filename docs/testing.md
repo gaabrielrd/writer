@@ -811,3 +811,24 @@ compra sandbox real por alteração de estado da fixture. Pilotos usam o
 [roteiro preparado](tasks/writer-v2/execucao/05-roteiro-de-pilotos.md), com pessoas
 e tratamento das observações definidos antes da coleta. Cobertura mínima e
 comandos de validate permanecem inalterados.
+
+## Lore privado de aventuras
+
+Os testes colocalizados de lore e editor protegem a ABI fechada, os vetores
+canônicos independentes, o catálogo completo para menções, hints/UID/respostas
+tardias, edição e pedidos incertos. As unidades de Functions cobrem CRUD,
+CAS, limites, recibos/fences e a origem local nas bases/campanhas, preservando
+os hashes globais anteriores.
+
+`tests/firestore/adventure-lore.rules.test.mjs` usa emulador demo, Admin SDK e
+regras reais em quatro famílias: fronteiras/CRUD; paginação e captura explícita;
+duas mesas com variantes/adoção; revogação e recriação da raiz com filhos vivos.
+A prova de encarnação usa createTime real, inclusive quando campos/IDs reaparecem.
+
+`e2e/visual/adventure-lore.visual.ts` usa interface e guardas reais. Somente as
+cinco callables e o adaptador de hints recebem transportes locais no servidor
+visual; toda prova de autorização permanece no SDK. Fixtures de captura,
+comparação, lore e referências discriminam origem local. AES-GCM, recuperação C2
+e troca de conta continuam reais no navegador. Roteiros devem ser executados nos
+seis perfis, com evidência de teclado/overflow e capturas inspecionadas.
+L passou na validação local: 2.037 testes frontend, 85 scripts, 427 Functions, quatro famílias SDK e 12 combinações nativas positivas. A [entrega L](entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md) preserva falhas iniciais, repetições dirigidas e limites da evidência. CI do novo incremento pendente.

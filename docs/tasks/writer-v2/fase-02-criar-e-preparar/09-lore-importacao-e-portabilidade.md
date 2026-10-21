@@ -1,6 +1,6 @@
 # W2-F2-09 — Integrar lore, importação e portabilidade
 
-**Estado em 2026-10-21:** descoberta concluída; detalhamento em andamento, sem código implementado.
+**Estado em 2026-10-21:** L implementado e validado localmente sob [contrato fechado](../execucao/26-lore-proprio-de-aventura.md), com CI do novo incremento pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md); importação, IA e portabilidade continuam planejadas.
 A [sequência executável](../execucao/25-lore-importacao-e-portabilidade.md) separa
 lore próprio de aventura, importação, IA, portabilidade de livro/aventura/campanha
 e demonstração integrada. O operador confirmou backup do estado atual e de todo

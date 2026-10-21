@@ -1,7 +1,6 @@
 # F2-09 — Lore, importação, IA e portabilidade privada
 
-**Estado em 2026-10-21:** descoberta concluída sobre `a9b588a`; execução de código
-não iniciada. Este documento organiza a tarefa [W2-F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
+**Estado em 2026-10-21:** descoberta concluída sobre `a9b588a`; L foi implementado e validado localmente após a correção S3 `e924890`, com CI própria pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md). Este documento organiza a tarefa [W2-F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
 em incrementos sequenciais. Não comprova entrega nem fecha o portão da fase 2.
 
 ## Objetivo e base verificada
@@ -56,7 +55,7 @@ a simples ampliação de `LoreScope` deixaria a campanha incompleta.
 ### L — Lore próprio da aventura
 
 Contrato específico: [L — lore próprio de aventura](26-lore-proprio-de-aventura.md),
-em revisão antes da implementação.
+revisado e liberado após envio da correção S3 em `e924890`, com CI em paralelo.
 
 Criar/listar/editar/excluir fichas particulares pelo servidor, integrar a interface
 pública de lore e os editores de cena/bloco. Estender referências explícitas e sua

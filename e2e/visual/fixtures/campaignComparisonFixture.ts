@@ -1,6 +1,7 @@
 import type * as C from '../../../src/features/campaign-comparisons/model/campaignComparison';
 import type * as B from '../../../src/features/campaign-bases/model/campaignBase';
 import {
+  fixtureCapturedLoreAvailable,
   fixtureCampaignComparisonCurrent,
   fixtureCampaignComparisonSource,
 } from './campaignBaseFixture';
@@ -14,7 +15,6 @@ import {
 } from './studioStore';
 import { fixtureHash } from './sceneStore';
 import { getUniverse } from './universeService';
-import { getLoreEntity } from './loreService';
 import { fixtureLibraryImage, fixtureSetImageUse } from './imageLibraryService';
 import { FIXTURE_TIME } from './data';
 
@@ -553,13 +553,9 @@ async function project(value: Snapshot, uid: string) {
       allowed.add(captured.item.sourceKey);
       continue;
     }
-    if (!worldAvailable) continue;
+    if (captured.origin.kind !== 'adventure-lore' && !worldAvailable) continue;
     try {
-      const entity = await getLoreEntity(
-        { kind: 'universe', id: captured.origin.scopeId! },
-        'universe:' + captured.origin.scopeId + ':' + captured.origin.id,
-      );
-      if (entity) allowed.add(captured.item.sourceKey);
+      if (await fixtureCapturedLoreAvailable(captured)) allowed.add(captured.item.sourceKey);
     } catch {
       /* absent entity revokes its captured projection */
     }

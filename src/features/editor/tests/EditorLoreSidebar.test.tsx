@@ -207,6 +207,7 @@ describe('EditorLoreSidebar', () => {
       name: 'Ilha global',
       universeId: 'universe-1',
       bookId: undefined,
+      adventureId: undefined,
     };
     render(
       <EditorLoreSidebar

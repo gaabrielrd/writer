@@ -240,7 +240,7 @@ export async function loreWindow(tx, db, context, after, size) {
     .where('kind', '==', 'lore')
     .orderBy('__name__')
     .limit(size + 1)
-    .select('sourceKey', 'origin', 'kind', 'title', 'structured.category');
+    .select('sourceKey', 'origin', 'originAdventureToken', 'kind', 'title', 'structured.category');
   let b = db
     .collection(context.lorePath + '/loreVariants')
     .orderBy('__name__')

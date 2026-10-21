@@ -75,6 +75,10 @@
 - Mantenha vínculos e exclusão de imagens da biblioteca no servidor; todo seletor de imagem deve oferecer `ImageLibraryPicker` pela interface pública da feature.
 - Mantenha universos, vínculos de livros e mutações de lore global em `functions`.
 - Preserve a revogação do lore global por versão nas regras e no leitor público.
+- Mantenha lore próprio de aventuras nas cinco APIs de servidor; metadata, corpos, recibos e fences não admitem SDK direto.
+- Preserve contextToken/encarnação e CAS do lore local; menções exigem todas as páginas locais antes das globais e detalhes só por get autorizado.
+- Mantenha a origem/hash global antiga; captura local usa origem adventure-lore e originAdventureToken interno separado, conferido com a raiz atual antes de derivados B/C2/C3/S2.
+- Pedidos incertos de lore de aventura ficam somente em memória; não adote corpo atual por confirmação histórica nem rebaseie rascunhos silenciosamente.
 - Mantenha aventuras/campanhas, recibos de criação e preparação do Estúdio no servidor; use paginação por tipo/dono e preserve identidade/conteúdo dos livros legados.
 - Datas válidas de livros não podem ser removidas ou invalidadas, inclusive por mutações Admin; preparação usa metadados reais do snapshot, sem inventar datas.
 - Vínculo de universo e criação do projeto são atômicos; exclusão confere contadores e referências de livros, aventuras e campanhas.

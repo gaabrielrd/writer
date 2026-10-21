@@ -125,6 +125,14 @@ vi.mock('@/features/editor', async () => ({
 vi.mock('@/features/lore', async (original) => ({
   ...(await original<object>()),
   listLoreEntities: vi.fn(),
+  useAdventureLoreContext: () => ({
+    items: [],
+    error: '',
+    loading: false,
+    context: null,
+    refresh: vi.fn(),
+  }),
+  AdventureLoreReader: () => null,
 }));
 vi.mock('../services/sceneService', () => ({
   getScene: vi.fn(),

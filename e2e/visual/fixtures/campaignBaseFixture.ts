@@ -14,13 +14,20 @@ import { fixtureContentHash, fixtureHash, fixtureSceneState } from './sceneStore
 import { fixtureNarrativeState, fixtureNarrativeSourceKey } from './narrativeStore';
 import { getUniverse } from './universeService';
 import { getLoreEntity } from './loreService';
+import {
+  fixtureAdventureLoreProjection,
+  fixtureGetLocalAdventureLore,
+  fixtureLocalAdventureLoreAvailable,
+  fixtureLocalAdventureLoreVersion,
+} from './adventureLoreFixture';
 import { fixtureLibraryImage, fixtureSetImageUse } from './imageLibraryService';
 import { FIXTURE_TIME } from './data';
 
 type Captured = {
   item: C.CampaignBaseItem;
   texts: Record<string, string>;
-  origin: { kind: string; id: string; scopeId?: string };
+  origin: { kind: string; id: string; scopeId?: string; adventureId?: string };
+  originAdventureToken?: string;
 };
 type Link = C.CampaignBaseReference;
 interface Snapshot {
@@ -99,6 +106,52 @@ function find(captureId: string) {
   if (!record) fail('Preparação indisponível.', 'not-found');
   return record;
 }
+// Server-fixture gate: only captured identity plus live availability metadata.
+export async function fixtureCapturedLoreAvailable(
+  captured: Pick<Captured, 'origin' | 'originAdventureToken'>,
+) {
+  const uid = fixtureOwner();
+  if (captured.origin.kind === 'adventure-lore') {
+    const adventureId = captured.origin.adventureId;
+    if (!adventureId || !captured.originAdventureToken) return false;
+    try {
+      const available = await fixtureLocalAdventureLoreAvailable(
+        adventureId,
+        captured.origin.id,
+        captured.originAdventureToken,
+      );
+      return uid === fixtureOwner() && available;
+    } catch {
+      return false;
+    }
+  }
+  if (captured.origin.kind !== 'lore' || !captured.origin.scopeId) return false;
+  const world = await getUniverse(captured.origin.scopeId);
+  if (
+    !world ||
+    world.authorId !== uid ||
+    ('deleting' in world && world.deleting) ||
+    ('deleted' in world && world.deleted)
+  )
+    return false;
+  const entity = await getLoreEntity(
+    { kind: 'universe', id: captured.origin.scopeId },
+    'universe:' + captured.origin.scopeId + ':' + captured.origin.id,
+  );
+  return (
+    uid === fixtureOwner() &&
+    !!entity &&
+    !('deleting' in entity && entity.deleting) &&
+    !('deleted' in entity && entity.deleted)
+  );
+}
+function referenceKey(reference: SceneReference, adventure: Adventure) {
+  if (reference.kind === 'adventure' && reference.scopeId === adventure.id)
+    return sourceKey('adventure-lore', reference.entityId, { adventureId: adventure.id });
+  return reference.kind === 'universe' && reference.scopeId === adventure.universeId
+    ? sourceKey('lore', reference.entityId, { scopeId: reference.scopeId })
+    : null;
+}
 function originAvailable(adventure: Adventure | null) {
   return Boolean(adventure && !('deleting' in adventure && adventure.deleting));
 }
@@ -131,7 +184,7 @@ async function snapshot(adventureId: string): Promise<{ value: Snapshot; token: 
     title: string,
     texts: Record<string, string>,
     extra: Partial<C.CampaignBaseItem> = {},
-    originExtra: { scopeId?: string } = {},
+    originExtra: { kind?: string; scopeId?: string; adventureId?: string } = {},
   ) {
     const key = sourceKey(kind, id, originExtra),
       fields: C.CampaignBaseManifest[] = [];
@@ -221,10 +274,7 @@ async function snapshot(adventureId: string): Promise<{ value: Snapshot; token: 
     );
     for (const entry of scenes.references[scene.id] ?? []) {
       const reference = entry.reference,
-        targetKey =
-          reference.kind === 'universe' && reference.scopeId === adventure.universeId
-            ? sourceKey('lore', reference.entityId, { scopeId: reference.scopeId })
-            : null;
+        targetKey = referenceKey(reference, adventure);
       if (targetKey) references.set(targetKey, reference);
       links.push({
         key: sourceKey('scene-link', entry.id, { sceneId: scene.id }),
@@ -273,15 +323,9 @@ async function snapshot(adventureId: string): Promise<{ value: Snapshot; token: 
     for (const entry of narrative.references[fixtureNarrativeSourceKey(item)] ?? []) {
       const reference = entry.reference;
       let targetKey: string | null = null;
-      if (
-        reference.kind === 'lore' &&
-        reference.reference.kind === 'universe' &&
-        reference.reference.scopeId === adventure.universeId
-      ) {
-        targetKey = sourceKey('lore', reference.reference.entityId, {
-          scopeId: reference.reference.scopeId,
-        });
-        references.set(targetKey, reference.reference);
+      if (reference.kind === 'lore') {
+        targetKey = referenceKey(reference.reference, adventure);
+        if (targetKey) references.set(targetKey, reference.reference);
       } else if (reference.kind === 'scene') targetKey = sourceKey('scene', reference.sceneId);
       else if (reference.kind === 'event') targetKey = sourceKey('event', reference.eventId);
       links.push({
@@ -294,10 +338,13 @@ async function snapshot(adventureId: string): Promise<{ value: Snapshot; token: 
     }
   }
   for (const [key, reference] of references) {
-    const entity = await getLoreEntity(
-      { kind: 'universe', id: reference.scopeId },
-      'universe:' + reference.scopeId + ':' + reference.entityId,
-    );
+    const entity =
+      reference.kind === 'adventure'
+        ? await fixtureGetLocalAdventureLore(reference.scopeId, reference.entityId)
+        : await getLoreEntity(
+            { kind: 'universe', id: reference.scopeId },
+            'universe:' + reference.scopeId + ':' + reference.entityId,
+          );
     if (!entity) continue;
     const texts: Record<string, string> = { summary: entity.summary, details: entity.details };
     for (const field of ['appearance', 'personality', 'history', 'notes'] as const)
@@ -316,23 +363,32 @@ async function snapshot(adventureId: string): Promise<{ value: Snapshot; token: 
           relations: [],
         },
       },
-      { scopeId: reference.scopeId },
+      reference.kind === 'adventure'
+        ? { kind: 'adventure-lore', adventureId: reference.scopeId }
+        : { scopeId: reference.scopeId },
     );
+    if (reference.kind === 'adventure')
+      items[items.length - 1].originAdventureToken = (
+        await fixtureAdventureLoreProjection(reference.scopeId)
+      ).adventureToken;
   }
   for (const captured of items.filter((value) => value.item.kind === 'lore')) {
-    const entity = await getLoreEntity(
-      { kind: 'universe', id: captured.origin.scopeId! },
-      'universe:' + captured.origin.scopeId + ':' + captured.origin.id,
-    );
+    const local = captured.origin.kind === 'adventure-lore';
+    const entity = local
+      ? await fixtureGetLocalAdventureLore(captured.origin.adventureId!, captured.origin.id)
+      : await getLoreEntity(
+          { kind: 'universe', id: captured.origin.scopeId! },
+          'universe:' + captured.origin.scopeId + ':' + captured.origin.id,
+        );
     captured.item.structured.relations = (entity?.relations ?? []).flatMap((relation) => {
-      const prefix = 'universe:' + captured.origin.scopeId + ':';
-      const target = items.find(
-        (candidate) =>
-          candidate.item.kind === 'lore' &&
-          candidate.origin.scopeId === captured.origin.scopeId &&
-          relation.targetEntityId.startsWith(prefix) &&
-          candidate.origin.id === relation.targetEntityId.slice(prefix.length),
-      );
+      const target = items.find((candidate) => {
+        if (candidate.item.kind !== 'lore') return false;
+        const canonical =
+          candidate.origin.kind === 'adventure-lore'
+            ? 'adventure:' + candidate.origin.adventureId + ':' + candidate.origin.id
+            : 'universe:' + candidate.origin.scopeId + ':' + candidate.origin.id;
+        return relation.targetEntityId === canonical;
+      });
       return target
         ? [
             {
@@ -777,14 +833,7 @@ async function context(campaignId: string) {
   const allowed = new Set<string>();
   for (const value of record.snapshot.items) {
     if (value.item.kind !== 'lore') allowed.add(value.item.sourceKey);
-    else if (
-      world?.authorId === uid &&
-      (await getLoreEntity(
-        { kind: 'universe', id: value.origin.scopeId! },
-        'universe:' + value.origin.scopeId + ':' + value.origin.id,
-      ))
-    )
-      allowed.add(value.item.sourceKey);
+    else if (await fixtureCapturedLoreAvailable(value)) allowed.add(value.item.sourceKey);
   }
   current(uid);
   return {
@@ -795,6 +844,7 @@ async function context(campaignId: string) {
       baseId: record.baseId,
       allowed: [...allowed].sort(),
       privacyVersion: world?.privacyVersion ?? null,
+      localLoreVersion: fixtureLocalAdventureLoreVersion(record.progress.request.adventureId),
     }),
   };
 }

@@ -1,6 +1,6 @@
 # Progresso do Writer V2
 
-**Snapshot:** 2026-10-21, branch `codex/writer-v2`, implementação até `a9b588a`.
+**Snapshot:** 2026-10-21, branch `codex/writer-v2`, implementação até `a9b588a`, correção visual em `e924890`.
 Este relatório conta tarefas do plano, sem atribuir o mesmo esforço a cada tarefa.
 
 | Fase                          | Total de tarefas | Implementadas | Restantes |
@@ -11,20 +11,20 @@ Este relatório conta tarefas do plano, sem atribuir o mesmo esforço a cada tar
 | 5 — Validar e lançar          |                6 |             0 |         6 |
 | **Implementação (fases 2–5)** |           **35** |         **8** |    **27** |
 
-**8/35 = 22,9% por contagem de tarefas implementadas.** Dessas oito, sete têm
-conclusão técnica confirmada no CI. F2-08 terminou a validação local no commit
-`a9b588a`; regras, validate Node 22/24, auditoria e navegador de produção passaram,
-mas a CI geral terminou com timeouts em dois shards visuais. A correção divide
-os cenários longos e passou em 78 combinações dirigidas, sem reduzir limites ou asserções.
-Portanto **7/35 = 20%** têm conclusão técnica confirmada; mais uma tarefa está
-implementada e aguarda o fechamento remoto.
+**8/35 = 22,9% por contagem de tarefas implementadas e tecnicamente
+concluídas.** F2-08 terminou a validação local em `a9b588a`; a CI original falhou
+por timeouts em dois shards visuais. A correção `e924890` dividiu os cenários
+longos, passou em 78 combinações dirigidas e na
+[CI geral 39597170795](https://github.com/gaabrielrd/writer/actions/runs/39597170795)
+e nas [regras 39597170719](https://github.com/gaabrielrd/writer/actions/runs/39597170719),
+ambas concluídas com sucesso. Sem merge ou deploy.
 
 F2-01 a F2-07 cobrem Estúdio, cenas/composição, arcos/cronologia, metas/retomada,
 histórico/restauração, aventuras/blocos e campanhas/base/variantes/adoção/exclusão.
 F2-08 acrescenta sessões, referências de lore, cenas completas, pistas e missões
 particulares da campanha, reutilizáveis entre sessões.
 
-F2-09 começou a descoberta, sem código novo. [O detalhamento](execucao/25-lore-importacao-e-portabilidade.md)
+F2-09 L foi implementado e validado localmente: lore próprio de aventura, menções e referências, com quatro famílias SDK e 12 combinações nativas positivas. CI do novo incremento pendente. As seis verticais seguintes continuam planejadas. [O detalhamento](execucao/25-lore-importacao-e-portabilidade.md)
 separa lore local, importação, IA, portabilidade de livro/aventura/campanha e
 validação integrada. Uma tarefa restante no índice representa vários incrementos.
 

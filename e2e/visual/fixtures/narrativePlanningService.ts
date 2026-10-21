@@ -19,6 +19,7 @@ import type {
   UpdateNarrativeItemInput,
 } from '../../../src/features/narrative-planning/model/narrative';
 import { getLoreEntity, listLoreEntities } from './loreService';
+import { fixtureGetLocalAdventureLore, listAdventureLore } from './adventureLoreFixture';
 import { getScene } from './sceneService';
 import {
   fixtureHash,
@@ -254,12 +255,16 @@ async function lore(
   const allowed =
     reference.kind === 'book'
       ? state.target.kind === 'book' && reference.scopeId === state.target.id
-      : reference.scopeId === context.universeId;
+      : reference.kind === 'adventure'
+        ? state.target.kind === 'adventure' && reference.scopeId === state.target.id
+        : reference.scopeId === context.universeId;
   if (
     !allowed ||
     sessionStorage.getItem('writer.visual.narrative-unavailable-reference') === 'true'
   )
     return null;
+  if (reference.kind === 'adventure')
+    return fixtureGetLocalAdventureLore(reference.scopeId, reference.entityId);
   return getLoreEntity(
     { kind: reference.kind, id: reference.scopeId },
     reference.kind === 'universe'
@@ -324,6 +329,23 @@ export async function listNarrativeReferences(input: NarrativeReferenceListInput
 export async function listNarrativeLoreOptions(input: NarrativeLoreListInput) {
   const state = await fixtureNarrativeState(input.target);
   const context = await fixtureNarrativeContext(state);
+  if (input.scope === 'adventure') {
+    if (input.target.kind !== 'adventure') throw fixtureNarrativeError('Origem inválida.');
+    const result = await listAdventureLore({
+      adventureId: input.target.id,
+      scope: 'adventure',
+      cursor: input.cursor,
+      limit: input.limit,
+    });
+    return {
+      items: result.items.map((entity) => ({
+        reference: entity.reference,
+        name: entity.name,
+        category: entity.category,
+      })),
+      nextCursor: result.nextCursor,
+    };
+  }
   const scopeId =
     input.scope === 'book'
       ? input.target.kind === 'book'

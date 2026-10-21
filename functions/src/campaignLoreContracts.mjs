@@ -1,3 +1,4 @@
+import { assertLoreItemOrigin, loreRelationOrigin } from './campaignLoreOrigin.mjs';
 import { validateId } from './generation.mjs';
 import {
   workClosed as closed,
@@ -288,7 +289,14 @@ export async function loreRecord(tx, db, context, key, supplied) {
   );
   if (overlay?.participation === 'inactive' && !context.includeInactive) return null;
   let source = context;
-  const itemFields = ['sourceKey', 'kind', 'origin', 'title', 'structured.category'];
+  const itemFields = [
+    'sourceKey',
+    'kind',
+    'origin',
+    'originAdventureToken',
+    'title',
+    'structured.category',
+  ];
   let item =
     supplied ??
     (await readWorkMetadata(tx, db.doc(context.path + '/items/' + key), itemFields)).data();
@@ -301,14 +309,8 @@ export async function loreRecord(tx, db, context, key, supplied) {
     item = (await readWorkMetadata(tx, db.doc(source.path + '/items/' + key), itemFields)).data();
   }
   if (!item) return null;
-  if (
-    item.kind !== 'lore' ||
-    item.sourceKey !== key ||
-    item.origin?.kind !== 'lore' ||
-    typeof item.origin.id !== 'string' ||
-    typeof item.origin.scopeId !== 'string'
-  )
-    inconsistent();
+  if (item.kind !== 'lore' || item.sourceKey !== key) inconsistent();
+  assertLoreItemOrigin(item, source.base);
   if (!(await baseItemAvailable(tx, db, source, item))) return null;
   if (!utf8(item.title) || !categories.includes(item.structured?.category)) inconsistent();
   return {
@@ -421,17 +423,21 @@ export async function readVariantEntity(tx, db, context, record) {
   return entity;
 }
 export async function readBaseEntity(tx, db, context, item) {
+  const expectedKey = item.sourceKey;
   item = (
     await readWorkMetadata(tx, db.doc(context.path + '/items/' + item.sourceKey), [
       'sourceKey',
       'kind',
       'origin',
+      'originAdventureToken',
       'title',
       'fields',
       'structured',
     ])
   ).data();
-  if (!item) inconsistent();
+  if (!item || item.sourceKey !== expectedKey) inconsistent();
+  assertLoreItemOrigin(item, context.base);
+  if (!(await baseItemAvailable(tx, db, context, item))) fail('not-found', 'Ficha indisponível.');
   if (!Array.isArray(item.fields) || item.fields.length > 6) inconsistent();
   const texts = {},
     allowed = ['summary', 'details', ...textNames];
@@ -475,8 +481,7 @@ export async function readBaseEntity(tx, db, context, item) {
     texts[field.field] = content;
   }
   if (!Object.hasOwn(texts, 'summary') || !Object.hasOwn(texts, 'details')) inconsistent();
-  const stored = item.structured,
-    prefix = `universe:${context.base.universeId}:`;
+  const stored = item.structured;
   if (
     !Array.isArray(stored.aliases) ||
     stored.aliases.length > 20 ||
@@ -487,13 +492,11 @@ export async function readBaseEntity(tx, db, context, item) {
     inconsistent();
   const relations = [];
   for (const relation of stored.relations) {
-    if (typeof relation.targetEntityId !== 'string' || !relation.targetEntityId.startsWith(prefix))
-      continue;
-    const targetId = relation.targetEntityId.slice(prefix.length);
-    if (!targetId || targetId.includes('/') || targetId.includes(':')) continue;
+    const origin = loreRelationOrigin(relation.targetEntityId, context.base);
+    if (!origin) continue;
     if (!utf8(relation.relationType) || !utf8(relation.description ?? '')) inconsistent();
     relations.push({
-      targetKey: baseSourceKey({ kind: 'lore', id: targetId, scopeId: context.base.universeId }),
+      targetKey: baseSourceKey(origin),
       relationType: relation.relationType,
       description: relation.description ?? '',
     });

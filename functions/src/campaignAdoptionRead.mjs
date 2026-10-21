@@ -1,3 +1,4 @@
+import { assertLoreItemOrigin } from './campaignLoreOrigin.mjs';
 import {
   baseItemAvailable,
   encodeBaseCursor,
@@ -33,12 +34,14 @@ export async function candidateItem(tx, db, context, key) {
       'sourceKey',
       'kind',
       'origin',
+      'originAdventureToken',
       'title',
       'structured.category',
     ])
   ).data();
   if (item && (item.kind !== 'lore' || item.sourceKey !== key))
     fail('failed-precondition', 'Ficha candidata inconsistente.');
+  if (item) assertLoreItemOrigin(item, context.base);
   return item ?? null;
 }
 export async function decisionRow(tx, db, p, c, key, suppliedOverlay) {

@@ -795,7 +795,7 @@ C4v4 acrescenta os sete namespaces e conserva prefixos v1/v2/v3, paginação de 
 e sanitização dos controles. Escritores/guardas/regras/índices sobem juntos,
 drenando processos antigos antes de habilitar S3. Veja [ADR 0040](decisions/0040-campaign-preparation-items.md)
 e [contrato S3](tasks/writer-v2/execucao/24-pistas-missoes-e-pendencias.md).
-Fechamento local e matriz nativa verdes; CI do novo head pendente. Nenhum rollout executado.
+Fechamento local e matriz nativa verdes; correção visual e924890 com CI geral e regras verdes. Nenhum rollout executado.
 
 ## Progresso privado, contagem e retomada
 
@@ -838,3 +838,30 @@ Ver [ADR 0028](decisions/0028-private-work-progress-and-resume.md) e
 [contrato F2-04](tasks/writer-v2/execucao/10-estados-metas-e-retomada.md), que registra
 os gates reais do incremento. Comércio, sessões e restauração integral permanecem
 nas respectivas tarefas.
+
+## Lore privado de aventuras
+
+`features/lore` expõe coleção e leitor próprios de aventura, mantendo os ramos de
+livro/universo. As cinco APIs de `functions/src/adventureLore.mjs` autorizam a
+raiz e sua encarnação precisa. Metadata em `adventures/{id}/lore` é separada dos
+corpos em `loreBodies`; recibos e fences por UID não carregam prosa. Os quatro
+namespaces ficam fechados ao SDK direto.
+
+CAS da ficha/coleção, tombstones permanentes e recibo histórico evitam sobrescrita
+ou recriação por retry. A prosa conserva whitespace; nova ficha é sempre privada.
+Toda escrita incrementa loreVersion e o relógio de autorização atomicamente.
+
+O contexto de menções reúne todas as páginas locais antes das globais, com tokens
+coerentes. O catálogo visível permanece paginado. Somente abrir ficha solicita
+corpo, após conferir contexto e revisão. Hints não autorizam cache: invalidam o
+leitor e exigem prova de servidor; rascunho local fica estável por UID/aventura.
+
+`campaignLoreOrigin.mjs` discrimina procedência global/local sem mudar hashes
+antigos. Itens locais capturados continuam kind lore e guardam
+originAdventureToken interno, fora de origin/sourceKey/DTO. B/C2/C3/S2 exigem
+metadata atual mais a mesma encarnação da raiz antes de transportar derivado.
+Referências de cenas e narrativa aceitam apenas lore local da própria aventura.
+
+L implementado e validado localmente; CI do novo incremento pendente. Veja [ADR 0041](decisions/0041-adventure-private-lore.md)
+e [contrato L](tasks/writer-v2/execucao/26-lore-proprio-de-aventura.md).
+Importação, IA e portabilidade permanecem nas próximas verticais.

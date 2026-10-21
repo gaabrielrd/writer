@@ -11,6 +11,7 @@ const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } =
   loading: false,
 }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
+vi.mock('@/features/lore', () => ({ LoreCollection: () => <h2>Lore da aventura</h2> }));
 vi.mock('@/features/campaign-bases', () => ({
   CampaignCapturePreparations: () => null,
   CampaignCaptureDialog: ({
@@ -92,6 +93,9 @@ it('abre narrativa contextual da aventura e alterna por teclado sem trocar o pro
     screen.queryByRole('heading', { name: 'Planejamento de adventure/project' }),
   ).not.toBeInTheDocument();
   await userEvent.keyboard('{End}');
+  expect(screen.getByRole('tab', { name: 'Lore' })).toHaveFocus();
+  expect(screen.getByRole('heading', { name: 'Lore da aventura' })).toBeVisible();
+  await userEvent.keyboard('{ArrowLeft}');
   expect(screen.getByRole('tab', { name: 'Progresso' })).toHaveFocus();
   expect(
     screen.getByRole('heading', { name: 'Progresso de adventure/project' }),

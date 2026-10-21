@@ -22,6 +22,7 @@ import type {
   UpdateSceneInput,
 } from '../../../src/features/scenes/model/scene';
 import { getLoreEntity } from './loreService';
+import { fixtureGetLocalAdventureLore } from './adventureLoreFixture';
 import { fixtureRemoveChapter } from './bookService';
 import { FIXTURE_TIME } from './data';
 import {
@@ -336,6 +337,14 @@ export async function setSceneReference(input: SceneReferenceInput): Promise<Sce
   const scene = fixtureScene(state, input.sceneId);
   fixtureCas(scene, input.expectedRevision);
   const id = fixtureHash(input.reference);
+  if (
+    !input.remove &&
+    input.reference.kind === 'adventure' &&
+    (input.target.kind !== 'adventure' ||
+      input.reference.scopeId !== input.target.id ||
+      !(await fixtureGetLocalAdventureLore(input.reference.scopeId, input.reference.entityId)))
+  )
+    throw fixtureSceneError('Referência indisponível.');
   const refs = (state.references[scene.id] ?? []).filter((ref) => ref.id !== id);
   if (!input.remove)
     refs.push({ id, reference: structuredClone(input.reference), available: true });
@@ -365,15 +374,19 @@ export async function listSceneReferences(input: {
       const permitted =
         reference.kind === 'book'
           ? input.target.kind === 'book' && reference.scopeId === input.target.id
-          : reference.scopeId === state.universeId;
+          : reference.kind === 'adventure'
+            ? input.target.kind === 'adventure' && reference.scopeId === input.target.id
+            : reference.scopeId === state.universeId;
       const entity =
         permitted && sessionStorage.getItem('writer.visual.scene-unavailable-reference') !== 'true'
-          ? await getLoreEntity(
-              { kind: reference.kind, id: reference.scopeId },
-              reference.kind === 'universe'
-                ? `universe:${reference.scopeId}:${reference.entityId}`
-                : reference.entityId,
-            )
+          ? reference.kind === 'adventure'
+            ? await fixtureGetLocalAdventureLore(reference.scopeId, reference.entityId)
+            : await getLoreEntity(
+                { kind: reference.kind, id: reference.scopeId },
+                reference.kind === 'universe'
+                  ? `universe:${reference.scopeId}:${reference.entityId}`
+                  : reference.entityId,
+              )
           : null;
       return {
         id: view.id,

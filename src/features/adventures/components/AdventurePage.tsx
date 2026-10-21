@@ -2,6 +2,8 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
 import { BookOpen, Globe, History } from 'lucide-react';
 import { WorkHistoryDialog } from '@/features/manuscript-history';
+import { LoreCollection } from '@/features/lore';
+import { BusyNavigationGuard } from '@/features/editor';
 import { useAuth } from '@/features/auth';
 import { CampaignCaptureDialog, CampaignCapturePreparations } from '@/features/campaign-bases';
 import { ScenePlanner } from '@/features/scenes';
@@ -31,11 +33,12 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const [captureOpen, setCaptureOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [historyOpen, setHistoryOpen] = useState(false);
-  const tabs = ['scenes', 'narrative', 'progress'] as const;
+  const [loreBusy, setLoreBusy] = useState(false);
+  const tabs = ['scenes', 'narrative', 'progress', 'lore'] as const;
   const requestedTab = searchParams.get('tab');
   const activeTab = tabs.find((tab) => tab === requestedTab) ?? 'scenes';
   const narrativeOpen = activeTab === 'narrative';
-  const selectTab = (tab: 'scenes' | 'narrative' | 'progress') =>
+  const selectTab = (tab: 'scenes' | 'narrative' | 'progress' | 'lore') =>
     setSearchParams((current) => {
       const next = new URLSearchParams(current);
       next.set('tab', tab);
@@ -125,6 +128,7 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
     ];
   return (
     <div className={styles.page}>
+      <BusyNavigationGuard busy={loreBusy} />
       <WorkActivityNotice activity={activity} />
       <CampaignCaptureDialog
         open={captureOpen}
@@ -222,9 +226,28 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
         >
           Progresso
         </Button>
+        <Button
+          role="tab"
+          aria-selected={activeTab === 'lore'}
+          onKeyDown={handleTabKey}
+          id="adventure-tab-lore"
+          aria-controls="adventure-tab-panel"
+          tabIndex={activeTab === 'lore' ? 0 : -1}
+          variant={activeTab === 'lore' ? 'primary' : 'secondary'}
+          onClick={() => selectTab('lore')}
+        >
+          Lore
+        </Button>
       </div>
       <div role="tabpanel" id="adventure-tab-panel" aria-labelledby={'adventure-tab-' + activeTab}>
-        {activeTab === 'progress' ? (
+        <div hidden={activeTab !== 'lore'}>
+          <LoreCollection
+            scope={{ kind: 'adventure', id: adventure.id }}
+            active={activeTab === 'lore'}
+            onBusyChange={setLoreBusy}
+          />
+        </div>
+        {activeTab === 'lore' ? null : activeTab === 'progress' ? (
           <ProjectProgressPanel
             target={{ kind: 'adventure', id: adventure.id }}
             manuscriptRefreshKey={adventure.updatedAt}

@@ -1,16 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { Check } from 'lucide-react';
 import { Badge } from '@/shared/ui';
-import type { LoreCategory, LoreEntity } from '@/features/lore';
+import type { LoreCategory, LoreEntity, LoreMentionEntity } from '@/features/lore';
 import styles from './MentionMenu.module.css';
 
-export interface MentionMenuProps {
+export interface MentionMenuProps<T extends LoreMentionEntity = LoreEntity> {
   id?: string;
   onCreate?: () => void;
-  entities: LoreEntity[];
+  entities: T[];
   query: string;
   selectedIndex: number;
-  onSelect: (entity: LoreEntity) => void;
+  onSelect: (entity: T) => void;
   onHoverIndex: (index: number) => void;
 }
 
@@ -28,7 +28,7 @@ const CATEGORY_LABELS: Record<LoreCategory, string> = {
   other: 'Outro',
 };
 
-export function MentionMenu({
+export function MentionMenu<T extends LoreMentionEntity>({
   id,
   entities,
   query,
@@ -36,7 +36,7 @@ export function MentionMenu({
   onSelect,
   onHoverIndex,
   onCreate,
-}: MentionMenuProps) {
+}: MentionMenuProps<T>) {
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

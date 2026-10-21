@@ -1,3 +1,4 @@
+import { createAdventureLoreService } from './adventureLore.mjs';
 import { randomUUID } from 'node:crypto';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -273,6 +274,7 @@ const callable = (method, secrets = []) =>
       try {
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
+        const adventureLore = createAdventureLoreService({ db });
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
         const campaignPreparation = createCampaignPreparationService({ db });
@@ -307,6 +309,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (adventureLore[method] ? adventureLore : null) ??
           (campaignPreparation[method] ? campaignPreparation : null) ??
           (campaignSessionScenes[method] ? campaignSessionScenes : null) ??
           (campaignSessionReferences[method] ? campaignSessionReferences : null) ??
@@ -612,3 +615,9 @@ export const removeCampaignSessionPreparationLink = callable(
 );
 export const moveCampaignSessionPreparationLink = callable('moveCampaignSessionPreparationLink');
 export const resolveCampaignPreparationOperation = callable('resolveCampaignPreparationOperation');
+
+export const listAdventureLore = callable('listAdventureLore');
+export const getAdventureLore = callable('getAdventureLore');
+export const saveAdventureLore = callable('saveAdventureLore');
+export const deleteAdventureLore = callable('deleteAdventureLore');
+export const resolveAdventureLoreOperation = callable('resolveAdventureLoreOperation');

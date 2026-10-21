@@ -1,3 +1,5 @@
+import { readAdventureLoreContext } from './adventureLore.mjs';
+import { storedMetadata as storedAdventureLoreMetadata } from './adventureLoreContracts.mjs';
 import { sceneRankBetween, validSceneRank } from './sceneRanks.mjs';
 import { addNarrativeJobs } from './narrativeJobs.mjs';
 import {
@@ -132,17 +134,41 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
     return (await loreState(context, p, ref, tx)).entity;
   }
   async function loreState(context, p, ref, tx) {
-    let snapshot, worldSnapshot;
+    let snapshot, worldSnapshot, localContext;
     if (ref.kind === 'book') {
       if (context.target.kind === 'book' && ref.scopeId === context.target.id)
         snapshot = await tx.get(db.doc(`${context.path}/lore/${ref.entityId}`));
+    } else if (ref.kind === 'adventure') {
+      if (context.target.kind === 'adventure' && ref.scopeId === context.target.id) {
+        localContext = await readAdventureLoreContext(
+          tx,
+          db,
+          context.uid,
+          { adventureId: context.target.id },
+          true,
+          false,
+        );
+        snapshot = await tx.get(db.doc(context.path + '/lore/' + ref.entityId));
+      }
     } else if (ref.scopeId === p.universeId) {
       worldSnapshot = await tx.get(db.doc(`universes/${ref.scopeId}`));
       const universe = worldSnapshot.data();
       if (universe?.authorId === context.uid && !universe.deleting)
         snapshot = await tx.get(db.doc(`universes/${ref.scopeId}/lore/${ref.entityId}`));
     }
-    const entity = snapshot?.data() ?? null,
+    const rawEntity = snapshot?.data() ?? null,
+      localEntity =
+        localContext && rawEntity?.adventureToken === localContext.adventureToken
+          ? storedAdventureLoreMetadata(rawEntity, localContext, ref.entityId)
+          : null,
+      entity =
+        ref.kind === 'adventure'
+          ? localEntity && !localEntity.deleted
+            ? localEntity
+            : null
+          : rawEntity && !rawEntity.deleted && !rawEntity.deleting
+            ? rawEntity
+            : null,
       world = worldSnapshot?.data();
     return {
       entity,
@@ -154,6 +180,8 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
         originWorldSnapshot: worldSnapshot?.updateTime?.toMillis?.() ?? 0,
         originWorldDate: world?.updatedAt ?? 0,
         originLoreVersion: world?.loreVersion ?? 0,
+        originLocalLoreVersion: p.loreVersion ?? 0,
+        originLocalIdentity: localContext?.adventureToken ?? null,
         originPrivacyVersion: world?.privacyVersion ?? 0,
         linkedUniverseId: p.universeId ?? null,
       },
@@ -526,15 +554,26 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
       const context = scope(db, uid, data, ['scope', 'cursor', 'limit']),
         pageLimit = limit(data.limit);
       if (
-        !['book', 'universe'].includes(data.scope) ||
-        (data.scope === 'book' && context.target.kind !== 'book')
+        !['book', 'adventure', 'universe'].includes(data.scope) ||
+        (['book', 'adventure'].includes(data.scope) && context.target.kind !== data.scope)
       )
         fail('invalid-argument', 'Escopo de lore inválido.');
       return db.runTransaction(async (tx) => {
         const p = await root(context, tx);
+        const localContext =
+          data.scope === 'adventure'
+            ? await readAdventureLoreContext(
+                tx,
+                db,
+                uid,
+                { adventureId: context.target.id },
+                true,
+                false,
+              )
+            : null;
         let path,
           world = null;
-        if (data.scope === 'book') path = `${context.path}/lore`;
+        if (['book', 'adventure'].includes(data.scope)) path = `${context.path}/lore`;
         else if (p.universeId) {
           world = (await tx.get(db.doc(`universes/${id(p.universeId)}`))).data();
           if (world?.authorId === uid && !world.deleting) path = `universes/${p.universeId}/lore`;
@@ -544,6 +583,8 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
             originId: p.universeId ?? null,
             originDate: world?.updatedAt ?? 0,
             originLore: world?.loreVersion ?? 0,
+            originLocalLore: p.loreVersion ?? 0,
+            originLocalIdentity: localContext?.adventureToken ?? null,
             originPrivacy: world?.privacyVersion ?? 0,
             available: Boolean(path),
           };
@@ -560,20 +601,26 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
           context,
           p,
           tx,
-          db.collection(path).orderBy('__name__'),
+          (data.scope === 'adventure'
+            ? db.collection(path).where('deleted', '==', false)
+            : db.collection(path)
+          ).orderBy('__name__'),
           c,
           data.cursor,
           pageLimit,
           undefined,
-          (snap) => ({
-            reference: {
-              kind: data.scope,
-              scopeId: data.scope === 'book' ? context.target.id : p.universeId,
-              entityId: snap.id,
-            },
-            name: snap.data().name ?? '',
-            category: snap.data().category ?? '',
-          }),
+          (snap) => {
+            if (localContext) storedAdventureLoreMetadata(snap.data(), localContext, snap.id);
+            return {
+              reference: {
+                kind: data.scope,
+                scopeId: data.scope === 'universe' ? p.universeId : context.target.id,
+                entityId: snap.id,
+              },
+              name: snap.data().name ?? '',
+              category: snap.data().category ?? '',
+            };
+          },
           observed,
         );
       });

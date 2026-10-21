@@ -1,7 +1,11 @@
 export type SceneProject = { kind: 'book' | 'adventure'; id: string };
 export type SceneStage = 'planned' | 'writing' | 'review' | 'done';
 export type ScenePlanning = { objective: string; conflict: string; pointOfView: string };
-export type SceneReference = { kind: 'book' | 'universe'; scopeId: string; entityId: string };
+export type SceneReference = {
+  kind: 'book' | 'universe' | 'adventure';
+  scopeId: string;
+  entityId: string;
+};
 export interface SceneSummary {
   id: string;
   ownerId: string;

@@ -11,6 +11,8 @@ import {
   LoadingState,
   Dropdown,
 } from '@/shared/ui';
+import { useAuth } from '@/features/auth';
+import { AdventureLoreCollection } from './AdventureLoreCollection';
 import type { Book } from '@/features/books';
 import {
   type CreateLoreEntityInput,
@@ -99,7 +101,7 @@ function BookLoreScopes({ book, actionsContainer, onEntitiesChanged, onBusyChang
     </>
   );
 }
-export function LoreCollection({
+function LegacyLoreCollection({
   scope,
   relatedEntities = [],
   actionsContainer,
@@ -488,4 +490,31 @@ export function LoreCollection({
       />
     </div>
   );
+}
+
+export function LoreCollection(props: {
+  scope: string | LoreScope;
+  active?: boolean;
+  relatedEntities?: LoreEntity[];
+  actionsContainer?: HTMLElement | null;
+  onEntitiesChanged?: () => void;
+  onBusyChange?: (busy: boolean) => void;
+}) {
+  return typeof props.scope !== 'string' && props.scope.kind === 'adventure' ? (
+    <AdventureLoreActor
+      adventureId={props.scope.id}
+      active={props.active}
+      onBusyChange={props.onBusyChange}
+      onEntitiesChanged={props.onEntitiesChanged}
+    />
+  ) : (
+    <LegacyLoreCollection {...props} />
+  );
+}
+
+function AdventureLoreActor(props: Parameters<typeof AdventureLoreCollection>[0]) {
+  const { user } = useAuth();
+  return user ? (
+    <AdventureLoreCollection key={JSON.stringify([user.uid, props.adventureId])} {...props} />
+  ) : null;
 }

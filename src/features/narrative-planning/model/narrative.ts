@@ -160,7 +160,7 @@ export interface NarrativeLoreOption {
 }
 export interface NarrativeLoreListInput {
   target: NarrativeTarget;
-  scope: 'book' | 'universe';
+  scope: 'book' | 'universe' | 'adventure';
   cursor?: string | null;
   limit?: number;
 }

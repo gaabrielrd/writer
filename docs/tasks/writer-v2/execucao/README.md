@@ -105,11 +105,12 @@ mais duas revalidações dirigidas. A [entrega C4](../../../entregas/2026-10-18-
 separa a primeira falha de baseline/cobertura, correções e limites da evidência.
 CI de regras em 1b20f49 revelou expectativa SDK antiga; correção dirigida 1/1 verde. A correção 0006a66 passou no CI geral e regras 135/135, concluindo tecnicamente C4/F2-07.
 O [contrato S1](21-sessoes-privadas-da-campanha.md) foi revisto por backend, cliente e QA.
-S1 passou no validate: 1.860 frontend, 82 scripts e 369 Functions; cinco famílias SDK e 12 combinações nativas comprovadas. A CI do próprio head `c95253a` passou, incluindo regras 140/140. O [plano S2A](22-referencias-de-lore-da-sessao.md) passou no validate local: 1.910 frontend, 83 scripts, 383 Functions, cinco famílias SDK únicas e 12 combinações nativas. CI geral e regras 145/145 do head `d9b7988` verdes; [entrega S2A](../../../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md). Veja a [entrega S1](../../../entregas/2026-10-18-writer-v2-sessoes-privadas.md). Referências S2 e itens S3 implementados; S3 aguarda correção da CI visual.
-F2-09 começou a descoberta sobre `a9b588a`, sem código novo. O
+S1 passou no validate: 1.860 frontend, 82 scripts e 369 Functions; cinco famílias SDK e 12 combinações nativas comprovadas. A CI do próprio head `c95253a` passou, incluindo regras 140/140. O [plano S2A](22-referencias-de-lore-da-sessao.md) passou no validate local: 1.910 frontend, 83 scripts, 383 Functions, cinco famílias SDK únicas e 12 combinações nativas. CI geral e regras 145/145 do head `d9b7988` verdes; [entrega S2A](../../../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md). Veja a [entrega S1](../../../entregas/2026-10-18-writer-v2-sessoes-privadas.md). Referências S2 e itens S3 implementados; S3 concluiu tecnicamente após correção visual `e924890`, com CI geral/regras verdes.
+F2-09 começou a descoberta sobre `a9b588a`. Após enviar a correção S3 em
+`e924890`, L foi implementado e validado localmente, com CI do novo incremento pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md). O
 [detalhamento sequencial](25-lore-importacao-e-portabilidade.md) começa por lore
 próprio de aventura e distingue importação, IA e restauração privada. O
-[contrato L](26-lore-proprio-de-aventura.md) está em revisão, sem código novo. As fases
+[contrato L](26-lore-proprio-de-aventura.md) está fechado e liberado para implementação. As fases
 seguintes continuam não implementadas; [progresso verificado](../progresso.md).
 
 ## Decisões recebidas em 2026-10-13

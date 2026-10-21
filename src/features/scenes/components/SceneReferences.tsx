@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   listLoreEntities,
+  useAdventureLoreContext,
   entityScope,
   loreEntityDocumentId,
   type LoreEntity,
+  type LoreMentionEntity,
 } from '@/features/lore';
-import { Alert, Button, Dropdown, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
+import { Button, Dropdown, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
 import type { SceneDocument, SceneReference, SceneSummary } from '../model/scene';
 import { getScene, listSceneReferences, setSceneReference } from '../services/sceneService';
 import { sceneErrorMessage } from '../model/sceneError';
@@ -23,6 +25,7 @@ export function SceneReferences({
   onRevision: (scene: SceneSummary) => void;
 }) {
   const target = { kind: document.project.kind, id: document.project.id };
+  const adventureLore = useAdventureLoreContext(target.kind === 'adventure' ? target.id : null);
   const active = useRef(true);
   useEffect(() => {
     active.current = true;
@@ -52,6 +55,7 @@ export function SceneReferences({
       ':' +
       loadVersion,
     async () => {
+      if (target.kind === 'adventure') return { entities: [], error: '' };
       const requests = [];
       if (target.kind === 'book') requests.push(listLoreEntities({ kind: 'book', id: target.id }));
       if (document.project.universeId)
@@ -67,9 +71,11 @@ export function SceneReferences({
       };
     },
   );
-  const entities = lore.value?.entities ?? [];
-  const loading = lore.loading;
-  const error = lore.error || lore.value?.error || '';
+  const entities: LoreMentionEntity[] =
+    target.kind === 'adventure' ? adventureLore.items : (lore.value?.entities ?? []);
+  const loading = target.kind === 'adventure' ? adventureLore.loading : lore.loading;
+  const error =
+    target.kind === 'adventure' ? adventureLore.error : lore.error || lore.value?.error || '';
   const options = entities.map((entity) => {
     const scope = entityScope(entity);
     const reference: SceneReference = {
@@ -79,7 +85,10 @@ export function SceneReferences({
     };
     return {
       value: JSON.stringify(reference),
-      label: entity.name + ' · ' + (scope.kind === 'book' ? 'Livro' : 'Universo'),
+      label:
+        entity.name +
+        ' · ' +
+        (scope.kind === 'book' ? 'Livro' : scope.kind === 'adventure' ? 'Aventura' : 'Universo'),
       reference,
     };
   });
@@ -98,25 +107,42 @@ export function SceneReferences({
       {!references.loading && !references.error && references.items.length === 0 && (
         <EmptyState title="Nenhuma referência vinculada" />
       )}
-      {references.items.map((item) => (
-        <div className={styles.actions} key={item.id}>
-          <span>{item.available ? (item.name ?? 'Referência') : 'Referência indisponível'}</span>
-          <Button
-            variant="ghost"
-            disabled={disabled}
-            aria-label={`Remover referência ${item.available ? (item.name ?? 'vinculada') : 'indisponível'}`}
-            onClick={() =>
-              setOperation({
-                reference: item.reference,
-                name: item.available ? (item.name ?? 'Referência') : 'Referência indisponível',
-                remove: true,
+      {references.items.map((stored) => {
+        const current =
+          target.kind === 'adventure'
+            ? entities.find((entity) => {
+                const scope = entityScope(entity);
+                return (
+                  scope.kind === stored.reference.kind &&
+                  scope.id === stored.reference.scopeId &&
+                  loreEntityDocumentId(scope, entity.id) === stored.reference.entityId
+                );
               })
-            }
-          >
-            Remover
-          </Button>
-        </div>
-      ))}
+            : null;
+        const item =
+          target.kind === 'adventure'
+            ? { ...stored, available: Boolean(current), name: current?.name }
+            : stored;
+        return (
+          <div className={styles.actions} key={item.id}>
+            <span>{item.available ? (item.name ?? 'Referência') : 'Referência indisponível'}</span>
+            <Button
+              variant="ghost"
+              disabled={disabled}
+              aria-label={`Remover referência ${item.available ? (item.name ?? 'vinculada') : 'indisponível'}`}
+              onClick={() =>
+                setOperation({
+                  reference: item.reference,
+                  name: item.available ? (item.name ?? 'Referência') : 'Referência indisponível',
+                  remove: true,
+                })
+              }
+            >
+              Remover
+            </Button>
+          </div>
+        );
+      })}
       {references.cursor && (
         <Button
           variant="outline"
@@ -160,12 +186,14 @@ export function SceneReferences({
         <ErrorState
           title="Parte do lore está indisponível"
           error={error}
-          onRetry={() => setLoadVersion((value) => value + 1)}
+          onRetry={() =>
+            target.kind === 'adventure'
+              ? adventureLore.refresh()
+              : setLoadVersion((value) => value + 1)
+          }
         />
       )}
-      {target.kind === 'adventure' && !document.project.universeId && (
-        <Alert variant="info">Vincule um universo à aventura para selecionar seu lore.</Alert>
-      )}
+
       {operation && (
         <SceneOperationDialog
           title={operation.remove ? 'Remover referência' : 'Vincular referência'}

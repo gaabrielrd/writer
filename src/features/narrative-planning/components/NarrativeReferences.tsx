@@ -7,6 +7,7 @@ import {
   type SceneGroup,
   type SceneSummary,
 } from '@/features/scenes';
+import { useAdventureLoreContext } from '@/features/lore';
 import { Badge, Button, Dropdown } from '@/shared/ui';
 import type {
   NarrativeContext,
@@ -41,6 +42,7 @@ export function NarrativeReferences({
   onOpen: (item: NarrativeSource) => void;
 }) {
   const { target } = context;
+  const loreContext = useAdventureLoreContext(target.kind === 'adventure' ? target.id : null);
   const location = useLocation();
   const source = narrativeSource(item);
   const [version, setVersion] = useState(0);
@@ -69,51 +71,69 @@ export function NarrativeReferences({
         </Button>
       </div>
       <ul className={styles.list}>
-        {refs.items.map((ref) => (
-          <li key={ref.id} className={styles.row}>
-            <span>
-              {ref.available ? (ref.label ?? 'Referência') : 'Referência indisponível'}{' '}
-              {ref.available && ref.archived && <Badge variant="secondary">Cena arquivada</Badge>}
-            </span>
-            <div className={styles.actions}>
-              {ref.available && ref.reference.kind === 'scene' && (
-                <Link
-                  to={sceneRoute(target, ref.reference.sceneId)}
-                  state={{ returnTo: location.pathname + location.search }}
-                >
-                  Abrir cena
-                </Link>
-              )}
-              {ref.available && ref.reference.kind === 'event' && (
+        {refs.items.map((stored) => {
+          const linked = stored.reference.kind === 'lore' ? stored.reference.reference : null;
+          const fresh =
+            linked && target.kind === 'adventure'
+              ? loreContext.items.find(
+                  (entity) =>
+                    entity.reference.kind === linked.kind &&
+                    entity.reference.scopeId === linked.scopeId &&
+                    entity.reference.entityId === linked.entityId,
+                )
+              : undefined;
+          const ref =
+            linked && target.kind === 'adventure'
+              ? { ...stored, available: Boolean(fresh), label: fresh?.name }
+              : stored;
+          return (
+            <li key={ref.id} className={styles.row}>
+              <span>
+                {ref.available ? (ref.label ?? 'Referência') : 'Referência indisponível'}{' '}
+                {ref.available && ref.archived && <Badge variant="secondary">Cena arquivada</Badge>}
+              </span>
+              <div className={styles.actions}>
+                {ref.available && ref.reference.kind === 'scene' && (
+                  <Link
+                    to={sceneRoute(target, ref.reference.sceneId)}
+                    state={{ returnTo: location.pathname + location.search }}
+                  >
+                    Abrir cena
+                  </Link>
+                )}
+                {ref.available && ref.reference.kind === 'event' && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      if (ref.reference.kind === 'event')
+                        onOpen({ kind: 'event', id: ref.reference.eventId });
+                    }}
+                  >
+                    Abrir evento vinculado
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
-                  onClick={() => {
-                    if (ref.reference.kind === 'event')
-                      onOpen({ kind: 'event', id: ref.reference.eventId });
-                  }}
+                  aria-label={
+                    'Remover referência ' +
+                    (ref.available ? (ref.label ?? 'vinculada') : 'indisponível')
+                  }
+                  onClick={() =>
+                    setLink({
+                      reference: ref.reference,
+                      label: ref.available
+                        ? (ref.label ?? 'Referência')
+                        : 'Referência indisponível',
+                      remove: true,
+                    })
+                  }
                 >
-                  Abrir evento vinculado
+                  Remover
                 </Button>
-              )}
-              <Button
-                variant="ghost"
-                aria-label={
-                  'Remover referência ' +
-                  (ref.available ? (ref.label ?? 'vinculada') : 'indisponível')
-                }
-                onClick={() =>
-                  setLink({
-                    reference: ref.reference,
-                    label: ref.available ? (ref.label ?? 'Referência') : 'Referência indisponível',
-                    remove: true,
-                  })
-                }
-              >
-                Remover
-              </Button>
-            </div>
-          </li>
-        ))}
+              </div>
+            </li>
+          );
+        })}
       </ul>
       <NarrativePageFeedback
         page={refs}
@@ -131,7 +151,15 @@ export function NarrativeReferences({
       {link && (
         <NarrativeOperationDialog
           title={link.remove ? 'Remover referência' : 'Confirmar referência'}
-          description={link.label}
+          description={
+            target.kind === 'adventure' && link.reference.kind === 'lore'
+              ? (loreContext.items.find(
+                  (entity) =>
+                    entity.id ===
+                    `${link.reference.kind === 'lore' ? link.reference.reference.kind : ''}:${link.reference.kind === 'lore' ? link.reference.reference.scopeId : ''}:${link.reference.kind === 'lore' ? link.reference.reference.entityId : ''}`,
+                )?.name ?? 'Referência indisponível')
+              : link.label
+          }
           onClose={() => setLink(null)}
           onSuccess={() => {
             setLink(null);
@@ -352,20 +380,41 @@ export function LoreOptions({
     label: string,
   ) => void;
 }) {
-  const [scope, setScope] = useState<'book' | 'universe'>(
-    context.target.kind === 'book' ? 'book' : 'universe',
+  const loreContext = useAdventureLoreContext(
+    context.target.kind === 'adventure' ? context.target.id : null,
+  );
+  const [scope, setScope] = useState<'book' | 'universe' | 'adventure'>(
+    context.target.kind === 'book' ? 'book' : 'adventure',
   );
   const [selected, setSelected] = useState('');
   const options = useNarrativePage<NarrativeLoreOption>(
-    'lore-options:' + scope + ':' + context.universeId,
+    'lore-options:' +
+      scope +
+      ':' +
+      context.universeId +
+      ':' +
+      (loreContext.context?.identity.contextToken ?? 'checking'),
     (cursor) =>
-      scope === 'book' || context.universeId
+      scope !== 'universe' || context.universeId
         ? listNarrativeLoreOptions({ target: context.target, scope, cursor, limit: 25 })
         : Promise.resolve({ items: [], nextCursor: null }),
     (value) => JSON.stringify(value.reference),
   );
-  const choice = options.items.find((value) => JSON.stringify(value.reference) === selected);
-  const available = scope === 'book' ? context.target.kind === 'book' : Boolean(context.universeId);
+  const visibleOptions =
+    context.target.kind === 'adventure'
+      ? options.items.flatMap((value) => {
+          const fresh = loreContext.items.find(
+            (entity) =>
+              entity.reference.kind === value.reference.kind &&
+              entity.reference.scopeId === value.reference.scopeId &&
+              entity.reference.entityId === value.reference.entityId,
+          );
+          return fresh ? [{ ...value, name: fresh.name }] : [];
+        })
+      : options.items;
+  const choice = visibleOptions.find((value) => JSON.stringify(value.reference) === selected);
+  const available =
+    scope !== 'universe' ? scope === context.target.kind : Boolean(context.universeId);
   return (
     <>
       <Dropdown
@@ -373,11 +422,13 @@ export function LoreOptions({
         label="Origem da entidade"
         value={scope}
         onValueChange={(value) => {
-          setScope(value === 'book' ? 'book' : 'universe');
+          setScope(value === 'book' ? 'book' : value === 'adventure' ? 'adventure' : 'universe');
           setSelected('');
         }}
         options={[
-          ...(context.target.kind === 'book' ? [{ value: 'book', label: 'Livro' }] : []),
+          ...(context.target.kind === 'book'
+            ? [{ value: 'book', label: 'Livro' }]
+            : [{ value: 'adventure', label: 'Aventura' }]),
           ...(context.universeId ? [{ value: 'universe', label: 'Universo' }] : []),
         ]}
       />
@@ -388,8 +439,10 @@ export function LoreOptions({
             label="Entidade"
             value={selected}
             onValueChange={setSelected}
-            disabled={options.loading}
-            options={options.items.map((value) => ({
+            disabled={
+              options.loading || (context.target.kind === 'adventure' && loreContext.loading)
+            }
+            options={visibleOptions.map((value) => ({
               value: JSON.stringify(value.reference),
               label: value.name,
             }))}

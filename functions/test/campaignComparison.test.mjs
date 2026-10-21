@@ -384,7 +384,10 @@ test('hundred relation targets use metadata masks; paginated union retains every
   const live = f.metadataReads.filter((read) => read.path.startsWith('universes/world/lore/'));
   assert.ok(live.length >= 100);
   assert.equal(
-    live.every((read) => read.fields.length === 1 && read.fields[0] === 'deleting'),
+    live.every(
+      (read) =>
+        read.fields.length === 2 && read.fields[0] === 'deleting' && read.fields[1] === 'deleted',
+    ),
     true,
   );
   assert.equal(JSON.stringify(rows).includes('PRIVATE LIVE'), false);

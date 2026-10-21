@@ -1,16 +1,15 @@
 # F2-09 L — Lore próprio de aventura
 
-**Estado em 2026-10-21:** em revisão, não liberado para implementação enquanto a
-correção local dos testes S3 estiver aberta. A ABI de relações indisponíveis foi
-fechada entre backend e cliente e está descrita abaixo. Este documento ainda passa
-por revisão. Após validação local e envio da correção S3, a CI remota será
-acompanhada em paralelo, sem exigir espera para avançar, conforme decisão do
-operador. Nenhum código ou teste de L foi executado nesta descoberta.
+**Estado em 2026-10-21:** contrato revisado e implementação liberada pelo
+responsável pela integração após enviar a correção S3 em `e924890`. A ABI de
+relações indisponíveis, metadata, limites e inventários foi fechada entre backend,
+cliente e QA. L foi implementado e validado localmente; CI do novo incremento pendente. Ver [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md).
+A liberação permitiu iniciar L; o fechamento local e remoto mantém portões próprios.
 
 **Origem:** [F2-09](../fase-02-criar-e-preparar/09-lore-importacao-e-portabilidade.md)
 e [divisão em incrementos](25-lore-importacao-e-portabilidade.md).
 **Base da descoberta:** S3 `a9b588a`, validado localmente; sua correção visual de CI
-continua em andamento. Este contrato não declara essa correção concluída.
+foi validada localmente e enviada em `e924890`. Esse head passou na CI geral 39597170795 e nas regras 39597170719; esse resultado é de S3, não de L.
 
 ## Objetivo e limite da vertical
 
@@ -385,6 +384,15 @@ nos namespaces existentes. Contexto local corrigido precisa alcançar as checage
 antes/depois de download/derivação das imagens e impedir commit tardio na UI.
 Nenhum caminho privado de Storage ou token permanente entra no DTO novo.
 
+Cada item local capturado guarda também `originAdventureToken` interno, fora de
+`origin`, sourceKey e DTO público. O gate exige que esse token congelado e o
+adventureToken da metadata da ficha coincidam com a identidade derivada do
+createTime real da raiz atual. Item local sem o campo falha fechado: não existe
+legado local anterior a L. Recriar raiz ou ficha com os mesmos IDs não reautoriza
+o corpo capturado da encarnação anterior. FieldMasks, âncoras e contextos de
+B/C2/C3/S2 propagam esse campo sem carregar prosa para conferir disponibilidade;
+origens globais e seus hashes permanecem intactos.
+
 Raiz ausente/deleting bloqueia leitura, mutação e histórico antes de corpos.
 Ficha local tombstonada fica indisponível em base, C2, C3 e S2, sem afetar próprios.
 C4 permanece v4: não há namespace novo de campanha nem pin novo. L não afirma
@@ -534,16 +542,18 @@ novamente ao subtotal histórico como se fosse trabalho adicional independente.
 
 A matriz local da correção S3 fechou 78 combinações únicas positivas, com uma
 falha inicial de arranjo preservada e corrigida, além de tipos/lint verdes. Esse
-resultado não é teste de L nem comprova CI remota. O contrato continua em revisão
-até o responsável enviar a correção e liberar a implementação.
+resultado não é teste de L nem comprova CI remota. A correção foi enviada em
+`e924890`; hooks verdes (tipos, 1.998 testes/194 arquivos, 135,19 s). Responsável
+pela integração revisou este contrato e liberou L sem esperar o CI, conforme
+autorização vigente. CI geral 39597170795 e regras 39597170719 encerraram com sucesso.
 
 Antes de implementar:
 
-- [ ] Fechar, validar localmente e enviar a correção dos testes S3 no recorte autorizado; acompanhar CI remota em paralelo.
+- [x] Fechar, validar localmente e enviar a correção dos testes S3 no recorte autorizado; acompanhar CI remota em paralelo.
 - [x] Fechar entre backend/cliente a representação de relações indisponíveis.
-- [ ] Revisar este contrato e sua composição antes de implementar.
-- [ ] Confirmar limites, DTOs e inventários de arquivos entre backend/cliente/QA.
-- [ ] Responsável pela integração liberar explicitamente a implementação de L.
+- [x] Revisar este contrato e sua composição antes de implementar.
+- [x] Confirmar limites, DTOs e inventários de arquivos entre backend/cliente/QA.
+- [x] Responsável pela integração liberar explicitamente a implementação de L.
 
 Após implementação, revisão/validate/evidência/Git e CI permanecem portões próprios.
 Não há autorização de merge, deploy, migração real ou exclusão Admin de dados do

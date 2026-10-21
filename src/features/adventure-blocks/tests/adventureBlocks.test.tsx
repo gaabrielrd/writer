@@ -69,7 +69,10 @@ vi.mock('@/features/books', () => ({
       .split(/\s+/)
       .filter(Boolean).length,
 }));
-vi.mock('@/features/lore', () => ({ listLoreEntities: vi.fn().mockResolvedValue([]) }));
+vi.mock('@/features/lore', () => ({
+  useAdventureLoreContext: () => ({ items: [], error: '', loading: false }),
+  AdventureLoreReader: () => null,
+}));
 let historySource: VersionSource;
 vi.mock('@/features/manuscript-history', () => ({
   readPendingWorkHistoryOperation: () => null,

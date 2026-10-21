@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { Editor } from '@tiptap/react';
 import type { Transaction } from '@tiptap/pm/state';
-import type { LoreEntity } from '@/features/lore';
+import type { LoreMentionEntity } from '@/features/lore';
 import {
   buildChapterMinimap,
   clampMinimap,
@@ -17,7 +17,7 @@ export interface MeasuredMinimapDestination extends MinimapDestination {
 
 export function useChapterMinimap(
   editor: Editor | null,
-  entities: LoreEntity[],
+  entities: LoreMentionEntity[],
   scrollArea: RefObject<HTMLDivElement | null>,
 ) {
   const [destinations, setDestinations] = useState<MeasuredMinimapDestination[]>([]);

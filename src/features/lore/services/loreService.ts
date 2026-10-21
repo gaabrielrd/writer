@@ -39,6 +39,7 @@ interface StoredLoreDoc {
 
 function loreCollection(source: string | LoreScope) {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   return collection(firestore, scope.kind === 'book' ? 'books' : 'universes', scope.id, 'lore');
 }
 
@@ -97,6 +98,7 @@ export function subscribeLoreEntities(
   onError: (error: unknown) => void,
 ) {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   return onSnapshot(
     query(loreCollection(source), orderBy('name', 'asc')),
     (snapshot) => {
@@ -114,6 +116,7 @@ export function subscribeLoreEntities(
 
 export async function listLoreEntities(source: string | LoreScope): Promise<LoreEntity[]> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   const loreRef = loreCollection(source);
   const q = query(loreRef, orderBy('name', 'asc'));
@@ -131,6 +134,7 @@ export async function getLoreEntity(
   entityId: string,
 ): Promise<LoreEntity | null> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   const entityDocRef = doc(loreCollection(source), loreEntityDocumentId(scope, entityId));
   const snap = await getDoc(entityDocRef);
@@ -149,6 +153,7 @@ export async function createLoreEntity(
   input: CreateLoreEntityInput,
 ): Promise<LoreEntity> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   if (scope.kind === 'universe')
     return globalCall('saveUniverseLore', {
@@ -201,6 +206,7 @@ export async function updateLoreEntity(
   input: UpdateLoreEntityInput,
 ): Promise<void> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   if (scope.kind === 'universe') {
     const existing = await getLoreEntity(source, entityId);
@@ -254,6 +260,7 @@ export async function deleteLoreEntity(
   entityId: string,
 ): Promise<void> {
   const scope = asLoreScope(source);
+  if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   if (scope.kind === 'universe') {
     await globalCall('deleteUniverseLore', {

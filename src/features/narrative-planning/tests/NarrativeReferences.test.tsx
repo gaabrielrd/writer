@@ -17,6 +17,9 @@ import {
 } from './narrativeFixtures';
 import type { NarrativeContext, NarrativeMutationResult } from '../model/narrative';
 vi.mock('../services/narrativePlanningService');
+vi.mock('@/features/lore', () => ({
+  useAdventureLoreContext: () => ({ context: null, items: [], loading: false, error: '' }),
+}));
 vi.mock('@/features/scenes', () => ({
   listSceneGroups: vi.fn(),
   listScenes: vi.fn(),
@@ -261,12 +264,14 @@ it('universo atualmente vinculado é selecionado por escopo, não nome igual', a
     ),
   );
 });
-it('aventura sem universo não consulta lore inexistente nem impede cenas/eventos', async () => {
+it('aventura sem universo consulta lore local e mantém cenas/eventos', async () => {
   mount({ ...context, target: { kind: 'adventure', id: 'adventure' } });
   await click('Vincular referência');
   await choose('Tipo de referência', 'Entidade de lore');
-  await screen.findByText(/Vincule um universo à aventura/);
-  expect(api.listNarrativeLoreOptions).not.toHaveBeenCalled();
+  await screen.findByRole('combobox', { name: 'Entidade' });
+  expect(api.listNarrativeLoreOptions).toHaveBeenCalledWith(
+    expect.objectContaining({ target: { kind: 'adventure', id: 'adventure' }, scope: 'adventure' }),
+  );
   await choose('Tipo de referência', 'Evento');
   await screen.findByRole('combobox', { name: 'Evento' });
 });

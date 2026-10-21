@@ -1,14 +1,14 @@
 import { Edit2, Eye, EyeOff, Tag } from 'lucide-react';
 import { Badge, Button, Dialog } from '@/shared/ui';
-import type { LoreCategory, LoreEntity } from '../model/loreEntity';
+import type { LoreCategory, LoreEntity, LoreMentionEntity } from '../model/loreEntity';
 import styles from './LoreDrawer.module.css';
 
 export interface LoreDrawerProps {
   entity: LoreEntity | null;
-  allEntities: LoreEntity[];
+  allEntities: LoreMentionEntity[];
   open: boolean;
   onClose: () => void;
-  onEdit: (entity: LoreEntity) => void;
+  onEdit?: (entity: LoreEntity) => void;
 }
 
 const CATEGORY_LABELS: Record<LoreCategory, string> = {
@@ -43,16 +43,18 @@ export function LoreDrawer({ entity, allEntities, open, onClose, onEdit }: LoreD
           <Button variant="secondary" onClick={onClose}>
             Fechar
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              onClose();
-              onEdit(entity);
-            }}
-          >
-            <Edit2 className="icon icon-sm" aria-hidden="true" />
-            Editar Ficha
-          </Button>
+          {onEdit && (
+            <Button
+              variant="primary"
+              onClick={() => {
+                onClose();
+                onEdit(entity);
+              }}
+            >
+              <Edit2 className="icon icon-sm" aria-hidden="true" />
+              Editar Ficha
+            </Button>
+          )}
         </div>
       }
     >
@@ -129,12 +131,13 @@ export function LoreDrawer({ entity, allEntities, open, onClose, onEdit }: LoreD
             <strong className={styles.sectionTitle}>Relações Cadastradas:</strong>
             <div className={styles.relationsList}>
               {entity.relations.map((rel, idx) => {
-                const target = entityMap.get(rel.targetEntityId);
+                const target =
+                  rel.available === false ? undefined : entityMap.get(rel.targetEntityId);
                 return (
                   <div key={idx} className={styles.relationItem}>
                     <span className={styles.relTypeBadge}>{rel.relationType}</span>
                     <strong className={styles.targetName}>
-                      {target ? target.name : 'Entidade desconhecida'}
+                      {target ? target.name : 'Entidade indisponível'}
                     </strong>
                     {target && <Badge variant="neutral">{CATEGORY_LABELS[target.category]}</Badge>}
                     {rel.description && <span className={styles.relDesc}>— {rel.description}</span>}

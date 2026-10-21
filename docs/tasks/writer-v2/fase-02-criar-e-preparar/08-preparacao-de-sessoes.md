@@ -1,7 +1,7 @@
 # W2-F2-08 — Preparar sessões com pistas e missões
 
 **Estado:** S1 concluído tecnicamente em `c95253a`; CI e regras verdes.
-S2A concluído tecnicamente em `d9b7988`, com CI e regras verdes; S2B concluído tecnicamente em `56cbb06`, com CI e regras verdes; [S3](../execucao/24-pistas-missoes-e-pendencias.md) validado localmente; CI de `a9b588a` falhou por timeouts visuais; correção visual validada localmente; CI do novo head pendente para conclusão técnica da tarefa. Ver [sessões privadas](../execucao/21-sessoes-privadas-da-campanha.md)
+S2A concluído tecnicamente em `d9b7988`, com CI e regras verdes; S2B concluído tecnicamente em `56cbb06`, com CI e regras verdes; [S3](../execucao/24-pistas-missoes-e-pendencias.md) validado localmente; CI de `a9b588a` falhou por timeouts visuais; correção visual `e924890` validada localmente e com CI geral/regras verdes; tarefa concluída tecnicamente. Ver [sessões privadas](../execucao/21-sessoes-privadas-da-campanha.md)
 e [entrega](../../../entregas/2026-10-18-writer-v2-sessoes-privadas.md).
 Referências de lore: [S2A](../execucao/22-referencias-de-lore-da-sessao.md) e
 [entrega](../../../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md).
@@ -60,4 +60,4 @@ Agendamento externo, combate, turnos, tokens e compartilhamento automático ao m
 
 Fechamento S3: [entrega](../../../entregas/2026-10-21-writer-v2-pistas-e-missoes.md),
 validate local verde, quatro famílias SDK e 18 combinações nativas verificadas.
-CI de `a9b588a` falhou por timeouts visuais; correção visual validada localmente; CI do novo head pendente; F2-09 permanece separado.
+CI de `a9b588a` falhou por timeouts visuais; correção visual `e924890` validada localmente e com CI geral/regras verdes; F2-09 permanece separado.

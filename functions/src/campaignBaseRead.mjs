@@ -1,3 +1,4 @@
+import { loreRelationOrigin, loreReferenceOrigin } from './campaignLoreOrigin.mjs';
 import { readWorkMetadata } from './workProgressContracts.mjs';
 import {
   closed,
@@ -110,22 +111,17 @@ export async function projectedStructured(tx, db, context, item) {
     result.relations = [];
     if (!Array.isArray(stored.relations ?? []) || (stored.relations?.length ?? 0) > 50)
       inconsistent();
-    const prefix = 'universe:' + context.base.universeId + ':';
     for (const relation of stored.relations ?? []) {
-      if (
-        typeof relation?.targetEntityId !== 'string' ||
-        !relation.targetEntityId.startsWith(prefix)
-      )
-        continue;
-      const targetId = relation.targetEntityId.slice(prefix.length);
-      if (!targetId || targetId.includes('/') || targetId.includes(':')) continue;
-      const key = baseSourceKey({ kind: 'lore', id: targetId, scopeId: context.base.universeId });
+      const origin = loreRelationOrigin(relation?.targetEntityId, context.base);
+      if (!origin) continue;
+      const key = baseSourceKey(origin);
       const target = (
         await readWorkMetadata(tx, db.doc(context.path + '/items/' + key), [
           'sourceKey',
           'kind',
           'title',
           'origin',
+          'originAdventureToken',
         ])
       ).data();
       if (
@@ -341,6 +337,7 @@ export function createCampaignBaseReadService({
             'archived',
             'orderKey',
             'origin',
+            'originAdventureToken',
             'stage',
             'type',
             'audience',
@@ -481,8 +478,7 @@ export async function projectedReference(tx, db, context, link, key) {
   let origin = null;
   const lore =
     link.kind === 'scene' ? reference : reference?.kind === 'lore' ? reference.reference : null;
-  if (lore?.kind === 'universe' && lore.scopeId === context.base.universeId)
-    origin = { kind: 'lore', scopeId: lore.scopeId, id: lore.entityId };
+  if (lore) origin = loreReferenceOrigin(lore, context.base);
   else if (link.kind === 'narrative' && reference?.kind === 'scene')
     origin = {
       adventureId: context.base.adventureId,
@@ -503,6 +499,7 @@ export async function projectedReference(tx, db, context, link, key) {
         'sourceKey',
         'kind',
         'origin',
+        'originAdventureToken',
       ])
     ).data();
     if (target && target.sourceKey === key && (await baseItemAvailable(tx, db, context, target)))

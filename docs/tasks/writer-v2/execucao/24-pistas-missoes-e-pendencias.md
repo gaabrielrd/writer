@@ -2,7 +2,7 @@
 
 **Estado:** decisões recebidas e contrato técnico fechado em 2026-10-21;
 implementado e validado localmente em `a9b588a`; CI geral falhou por timeouts
-visuais. Correção visual validada localmente; CI do novo head pendente, sem rollout.
+visuais. Correção visual `e924890` validada localmente, com CI geral/regras verdes; concluído tecnicamente, sem rollout.
 **Dependência:** [S2B](23-cenas-completas-na-preparacao-da-sessao.md), concluído
 tecnicamente em `56cbb06`: correção visual com CI geral e regras verdes no PR #21.
 A falha original de cacd71e e sua correção permanecem na evidência S2B.

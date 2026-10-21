@@ -1,5 +1,5 @@
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
-import { findLoreMatches, type LoreCategory, type LoreEntity } from '@/features/lore';
+import { findLoreMatches, type LoreCategory, type LoreMentionEntity } from '@/features/lore';
 
 export interface MinimapDestination {
   position: number;
@@ -19,7 +19,7 @@ const categoryLabels: Record<LoreCategory, string> = {
 };
 
 /** Derive navigation from the document, never from saved HTML or ghost suggestions. */
-export function buildChapterMinimap(doc: ProseMirrorNode, entities: LoreEntity[]) {
+export function buildChapterMinimap(doc: ProseMirrorNode, entities: LoreMentionEntity[]) {
   const destinations: MinimapDestination[] = [];
   if (!doc.textContent.trim()) return destinations;
   doc.descendants((node, position) => {

@@ -49,8 +49,12 @@ export const sourceKey = (source) => digest(resource(source, true));
 export const sequenceKey = (value) => digest(sequenceResource(value));
 export function loreReference(value) {
   closed(value, ['kind', 'scopeId', 'entityId']);
-  if (!['book', 'universe'].includes(value.kind))
+  if (!['book', 'adventure', 'universe'].includes(value.kind))
     sceneFail('invalid-argument', 'Referência de lore inválida.');
+  if (value.kind === 'adventure') {
+    validateId(value.scopeId);
+    validateId(value.entityId);
+  }
   return { kind: value.kind, scopeId: sceneId(value.scopeId), entityId: sceneId(value.entityId) };
 }
 export function reference(value) {

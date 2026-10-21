@@ -5,9 +5,16 @@ import { SceneReferences } from '../components/SceneReferences';
 import { listLoreEntities, type LoreEntity } from '@/features/lore';
 import { getScene, listSceneReferences, setSceneReference } from '../services/sceneService';
 import { document, mutation, conflict, deferred } from './sceneFixtures';
+const currentLore = vi.hoisted(() => ({
+  items: [] as import('@/features/lore').LoreMentionEntity[],
+  loading: false,
+  error: '',
+  refresh: vi.fn(),
+}));
 vi.mock('@/features/lore', async (original) => ({
   ...(await original<object>()),
   listLoreEntities: vi.fn(),
+  useAdventureLoreContext: () => currentLore,
 }));
 vi.mock('../services/sceneService', () => ({
   getScene: vi.fn(),
@@ -36,6 +43,9 @@ const global: LoreEntity = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  currentLore.items = [];
+  currentLore.loading = false;
+  currentLore.error = '';
   vi.mocked(listLoreEntities).mockResolvedValue([local]);
   vi.mocked(listSceneReferences).mockResolvedValue({
     items: [],
@@ -79,7 +89,7 @@ it('vincula identidade local e atualiza revisão observada sem incluir corpo', a
   expect(changed).toHaveBeenCalledWith(expect.objectContaining({ revision: 2 }));
 });
 it('aventura seleciona somente universo autorizado e extrai ID tipado sem comparar nomes', async () => {
-  vi.mocked(listLoreEntities).mockResolvedValue([global]);
+  currentLore.items = [global];
   render(
     <SceneReferences
       document={{
@@ -99,8 +109,7 @@ it('aventura seleciona somente universo autorizado e extrai ID tipado sem compar
       }),
     ),
   );
-  expect(listLoreEntities).toHaveBeenCalledTimes(1);
-  expect(listLoreEntities).toHaveBeenCalledWith({ kind: 'universe', id: 'world' });
+  expect(listLoreEntities).not.toHaveBeenCalled();
 });
 it('indisponível não mostra nome antigo e permite remover identidade guardada', async () => {
   const ref = { kind: 'universe' as const, scopeId: 'revoked', entityId: 'mara' };
@@ -182,7 +191,10 @@ it('pagina referências e apresenta erro parcial de lore com retry', async () =>
     ),
   );
 });
-it('sem universo em aventura informa próximo passo e não busca livro auxiliar', async () => {
+it('aventura sem universo oferece lore local sem buscar livro auxiliar', async () => {
+  currentLore.items = [
+    { ...local, id: 'adventure:adventure:lia', bookId: undefined, adventureId: 'adventure' },
+  ];
   render(
     <SceneReferences
       document={{
@@ -192,13 +204,12 @@ it('sem universo em aventura informa próximo passo e não busca livro auxiliar'
       onRevision={vi.fn()}
     />,
   );
-  await screen.findByText('Vincule um universo à aventura para selecionar seu lore.');
+  await choose('Lia · Aventura');
   expect(listLoreEntities).not.toHaveBeenCalled();
-  expect(screen.getByRole('button', { name: 'Vincular referência' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Vincular referência' })).toBeEnabled();
 });
 it('troca de escopo não conserva nomes antigos enquanto resposta nova está pendente', async () => {
-  const next = deferred<LoreEntity[]>();
-  vi.mocked(listLoreEntities).mockResolvedValueOnce([global]).mockReturnValueOnce(next.promise);
+  currentLore.items = [global];
   const doc = {
     ...document,
     project: { ...document.project, kind: 'adventure' as const, universeId: 'world' },
@@ -206,6 +217,8 @@ it('troca de escopo não conserva nomes antigos enquanto resposta nova está pen
   const view = render(<SceneReferences document={doc} onRevision={vi.fn()} />);
   await choose('Mara · Universo');
   await userEvent.setup().keyboard('{Escape}');
+  currentLore.items = [];
+  currentLore.loading = true;
   view.rerender(
     <SceneReferences
       document={{ ...doc, project: { ...doc.project, universeId: 'other' } }}
@@ -215,10 +228,6 @@ it('troca de escopo não conserva nomes antigos enquanto resposta nova está pen
   expect(screen.getByText('Carregando lore autorizado…')).toBeInTheDocument();
   expect(screen.queryByRole('combobox', { name: 'Lore para vincular' })).not.toBeInTheDocument();
   view.unmount();
-  await act(async () => {
-    next.resolve([]);
-    await next.promise;
-  });
 });
 
 it('resposta de vínculo após desmontagem não atualiza o pai de outra sessão', async () => {

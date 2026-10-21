@@ -269,6 +269,7 @@ describe('Compêndio em lista e ações em lote', () => {
     const globalEntities = entities.map((entity) => ({
       ...entity,
       bookId: undefined,
+      adventureId: undefined,
       id: `universe:world:${entity.id}`,
       universeId: 'world',
     }));

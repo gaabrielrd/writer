@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import type { Editor } from '@tiptap/react';
 import { DOMSerializer, type Node as ProseMirrorNode } from '@tiptap/pm/model';
-import type { LoreEntity } from '@/features/lore';
+import type { LoreMentionEntity } from '@/features/lore';
 import {
   chatDocumentHash,
   relevantChatLore,
@@ -18,7 +18,7 @@ export function useChatEditorBridge(
     title: string;
     bookTitle: string;
     persona: WritingPersonaContext;
-    entities: LoreEntity[];
+    entities: LoreMentionEntity[];
     setBusy: (busy: boolean) => void;
     onReady?: (bridge: ChatEditorBridge | null) => void;
   },

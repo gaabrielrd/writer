@@ -17,7 +17,12 @@ import {
   Redo2,
 } from 'lucide-react';
 import { Button, Badge } from '@/shared/ui';
-import { findLoreMatches, type LoreCategory, type LoreEntity } from '@/features/lore';
+import {
+  findLoreMatches,
+  type LoreCategory,
+  type LoreEntity,
+  type LoreMentionEntity,
+} from '@/features/lore';
 import {
   useAIAutocomplete,
   GhostSuggestion,
@@ -47,7 +52,7 @@ import { ChapterMinimap } from './ChapterMinimap';
 import { useChatEditorBridge } from '../hooks/useChatEditorBridge';
 import styles from './RichEditor.module.css';
 
-export interface RichEditorProps {
+export interface RichEditorProps<T extends LoreMentionEntity = LoreEntity> {
   ariaLabel?: string;
   workspaceExpanded?: boolean;
   chatOpen?: boolean;
@@ -60,8 +65,9 @@ export interface RichEditorProps {
   documentId?: string;
   content: string;
   onChange: (content: string) => void;
-  entities: LoreEntity[];
-  onSelectEntity: (entity: LoreEntity) => void;
+  entities: T[];
+  isLoreActive?: () => boolean;
+  onSelectEntity: (entity: T) => void;
   onCreateEntity?: (name: string) => void;
   isSidebarOpen: boolean;
   onToggleSidebar: () => void;
@@ -92,7 +98,7 @@ interface SelectionTarget {
   to: number;
 }
 
-export function RichEditor({
+export function RichEditor<T extends LoreMentionEntity>({
   ariaLabel = 'Área de escrita do capítulo',
   workspaceExpanded = false,
   chatOpen = false,
@@ -106,6 +112,7 @@ export function RichEditor({
   content,
   onChange,
   entities,
+  isLoreActive = () => true,
   onSelectEntity,
   onCreateEntity,
   isSidebarOpen,
@@ -117,7 +124,7 @@ export function RichEditor({
   onBusyChange,
   externalBusy = false,
   externalContentVersion = 0,
-}: RichEditorProps) {
+}: RichEditorProps<T>) {
   // Initial parsing is intentionally lazy: transaction-driven renders must not
   // sanitize the whole chapter again. Real external replacements use the effect below.
   const [initialHtml] = useState(() => renderRichText(content));
@@ -128,9 +135,13 @@ export function RichEditor({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [accepting, setAccepting] = useState(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
-  const [hover, setHover] = useState<{ entity: LoreEntity; left: number; top: number } | null>(
-    null,
-  );
+  const [hover, setHover] = useState<{ entity: T; left: number; top: number } | null>(null);
+  const currentLoreGuard = useRef(isLoreActive);
+  // eslint-disable-next-line react-hooks/refs
+  currentLoreGuard.current = isLoreActive;
+  const visibleHover = isLoreActive()
+    ? entities.find((item) => item.id === hover?.entity.id)
+    : undefined;
   const menuId = useId();
   const lastContent = useRef(content);
   const typedInput = useRef(false);
@@ -151,10 +162,12 @@ export function RichEditor({
   const scrollArea = useRef<HTMLDivElement>(null);
   const [menuPosition, setMenuPosition] = useState({ top: 40, left: 0 });
   const [loreOptions] = useState(() => ({
-    getEntities: () => entities,
-    onSelect: onSelectEntity,
-    onHover: (entity: LoreEntity | null, element?: HTMLElement) => {
-      if (!entity || !element) {
+    getEntities: () => (currentLoreGuard.current() ? entities : []),
+    onSelect: (entity: T) => {
+      if (currentLoreGuard.current()) onSelectEntity(entity);
+    },
+    onHover: (entity: T | null, element?: HTMLElement) => {
+      if (!currentLoreGuard.current() || !entity || !element) {
         setHover(null);
         return;
       }
@@ -269,11 +282,15 @@ export function RichEditor({
   useEffect(() => {
     discardRef.current = discardSuggestion;
   }, [discardSuggestion]);
-  useEffect(() => {
-    loreExtension.update({ onSelect: onSelectEntity });
+  useLayoutEffect(() => {
+    loreExtension.update({
+      onSelect: (entity: T) => {
+        if (currentLoreGuard.current()) onSelectEntity(entity);
+      },
+    });
   }, [onSelectEntity, loreExtension]);
-  useEffect(() => {
-    loreExtension.update({ getEntities: () => entities });
+  useLayoutEffect(() => {
+    loreExtension.update({ getEntities: () => (currentLoreGuard.current() ? entities : []) });
     if (editor && !editor.isDestroyed)
       editor.view.dispatch(editor.state.tr.setMeta(loreDecorationKey, true));
   }, [entities, editor, loreExtension]);
@@ -302,7 +319,7 @@ export function RichEditor({
 
   const matches = useMemo(() => findLoreMatches(text, entities), [text, entities]);
   const mentionedEntities = useMemo(() => {
-    const map = new Map<string, { entity: LoreEntity; count: number }>();
+    const map = new Map<string, { entity: T; count: number }>();
     for (const match of matches) {
       const existing = map.get(match.entityId);
       if (existing) existing.count += 1;
@@ -315,7 +332,7 @@ export function RichEditor({
     editor,
     !blocked && !isAssistantOpen && !chatOpen && !mention,
   );
-  const candidates = mention ? mentionCandidates(entities, mention.query) : [];
+  const candidates = mention && isLoreActive() ? mentionCandidates(entities, mention.query) : [];
   const activeGhost = !mention && !blocked ? suggestion : null;
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -334,8 +351,8 @@ export function RichEditor({
   const optionCount = candidates.length + (canCreate ? 1 : 0);
   const activeIndex = optionCount ? Math.min(selectedIndex, optionCount - 1) : 0;
 
-  const selectMention = (entity: LoreEntity) => {
-    if (!editor || !mention) return;
+  const selectMention = (entity: T) => {
+    if (!editor || !mention || !currentLoreGuard.current()) return;
     editor
       .chain()
       .focus()
@@ -802,19 +819,20 @@ export function RichEditor({
         </div>
       </div>
       {hover &&
+        visibleHover &&
         createPortal(
           <div
             className={styles.inlineTooltip}
             role="tooltip"
             style={{ left: hover.left, top: hover.top }}
           >
-            <strong>{hover.entity.name}</strong>
-            <Badge variant={CATEGORY_BADGES[hover.entity.category]}>
-              {CATEGORY_LABELS[hover.entity.category]}
+            <strong>{visibleHover.name}</strong>
+            <Badge variant={CATEGORY_BADGES[visibleHover.category]}>
+              {CATEGORY_LABELS[visibleHover.category]}
             </Badge>
-            <p>{hover.entity.summary}</p>
-            {hover.entity.aliases.length > 0 && (
-              <small>Apelidos: {hover.entity.aliases.join(', ')}</small>
+            <p>{visibleHover.summary}</p>
+            {visibleHover.aliases.length > 0 && (
+              <small>Apelidos: {visibleHover.aliases.join(', ')}</small>
             )}
           </div>,
           document.body,

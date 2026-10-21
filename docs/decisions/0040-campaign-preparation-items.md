@@ -1,7 +1,7 @@
 # ADR 0040 — Pistas e missões próprias da campanha
 
 **Estado:** implementada e validada localmente em `a9b588a`; CI geral falhou por
-timeouts visuais. Correção visual validada localmente; CI do novo head pendente.
+timeouts visuais. Correção visual e924890 validada localmente e com CI geral/regras verdes; concluída tecnicamente.
 **Contrato:** [F2-08 S3](../tasks/writer-v2/execucao/24-pistas-missoes-e-pendencias.md).
 
 ## Contexto

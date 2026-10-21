@@ -8,7 +8,11 @@ import {
   readPendingWorkHistoryOperation,
   type VersionEditorAdapter,
 } from '@/features/manuscript-history';
-import { listLoreEntities, type LoreEntity } from '@/features/lore';
+import {
+  useAdventureLoreContext,
+  AdventureLoreReader,
+  type LoreMentionEntity,
+} from '@/features/lore';
 import { renderRichText } from '@/shared/lib';
 import {
   Alert,
@@ -150,10 +154,11 @@ function BlockSession({
     ),
   );
   const historyPendingRef = useRef(historyPending);
-  const [entities, setEntities] = useState<LoreEntity[]>([]),
-    [loreError, setLoreError] = useState('');
+  const lore = useAdventureLoreContext(adventureId);
+  const entities = lore.items,
+    loreError = lore.error;
   const [sidebar, setSidebar] = useState(false),
-    [selected, setSelected] = useState<LoreEntity | null>(null);
+    [selected, setSelected] = useState<LoreMentionEntity | null>(null);
   const doc = draft.document;
   const operationBusy = Boolean(
     editorBusy ||
@@ -189,20 +194,6 @@ function BlockSession({
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [operationBusy]);
-  useEffect(() => {
-    if (!doc.universeId) return;
-    let current = true;
-    void listLoreEntities({ kind: 'universe', id: doc.universeId })
-      .then((value) => {
-        if (current) setEntities(value);
-      })
-      .catch((cause: unknown) => {
-        if (current) setLoreError(blockErrorMessage(cause));
-      });
-    return () => {
-      current = false;
-    };
-  }, [doc.universeId]);
   const onHistoryPending = useCallback((pending: boolean) => {
     if (active.current) {
       historyPendingRef.current = pending;
@@ -398,6 +389,7 @@ function BlockSession({
                 draft.change(value);
             }}
             entities={entities}
+            isLoreActive={() => Boolean(lore.context && lore.isCurrent(lore.context))}
             onSelectEntity={setSelected}
             isSidebarOpen={sidebar}
             onToggleSidebar={() => setSidebar((value) => !value)}
@@ -432,8 +424,8 @@ function BlockSession({
       )}
       {loreError && <Alert variant="warning">{loreError}</Alert>}
       {sidebar && (
-        <section aria-label="Lore do universo">
-          <h2>Lore do universo</h2>
+        <section aria-label="Lore autorizado">
+          <h2>Lore autorizado</h2>
           {entities.length ? (
             entities.map((entity) => (
               <Button key={entity.id} variant="ghost" onClick={() => setSelected(entity)}>
@@ -456,10 +448,11 @@ function BlockSession({
         operationController={draft.mutation}
       />
       {selected && (
-        <Dialog open title={selected.name} onClose={() => setSelected(null)}>
-          <p>{selected.summary}</p>
-          <p>{selected.details}</p>
-        </Dialog>
+        <AdventureLoreReader
+          adventureId={adventureId}
+          entityId={selected.id}
+          onClose={() => setSelected(null)}
+        />
       )}
       {draft.remote && (
         <Dialog

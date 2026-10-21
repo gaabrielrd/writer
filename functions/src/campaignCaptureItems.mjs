@@ -1,3 +1,7 @@
+import { loreReferenceOrigin } from './campaignLoreOrigin.mjs';
+import { readAdventureLoreContext } from './adventureLore.mjs';
+import { metadataFields, storedMetadata, storedBody } from './adventureLoreContracts.mjs';
+import { readWorkMetadata } from './workProgressContracts.mjs';
 import {
   baseSourceKey,
   baseBodyKey,
@@ -292,7 +296,9 @@ export async function captureItem(tx, db, p, phase, snapshot) {
           ? reference.reference
           : null;
     if (lore) {
-      if (lore.kind !== 'universe' || lore.scopeId !== p.sourceUniverseId) {
+      if (
+        !loreReferenceOrigin(lore, { adventureId: p.adventureId, universeId: p.sourceUniverseId })
+      ) {
         // Keep the captured reference unavailable; never resolve into another scope.
       } else {
         const pending = await storeLoreReference(tx, db, p, lore);
@@ -301,14 +307,49 @@ export async function captureItem(tx, db, p, phase, snapshot) {
       }
     }
   } else if (phase === 'lore') {
-    const reference = value.reference,
-      loreSnapshot = await tx.get(
-        db.doc(`universes/${reference.scopeId}/lore/${reference.entityId}`),
-      ),
-      entity = loreSnapshot.data();
-    if (entity && !entity.deleting) {
-      const origin = { kind: 'lore', scopeId: reference.scopeId, id: reference.entityId },
-        texts = { details: entity.details ?? '', summary: entity.summary ?? '' };
+    const reference = value.reference;
+    const origin = loreReferenceOrigin(reference, {
+      adventureId: p.adventureId,
+      universeId: p.sourceUniverseId,
+    });
+    if (!origin) fail('failed-precondition', 'Referência de lore inconsistente.');
+    let entity, originAdventureToken;
+    if (origin.kind === 'adventure-lore') {
+      const context = await readAdventureLoreContext(
+        tx,
+        db,
+        p.ownerId,
+        { adventureId: p.adventureId },
+        true,
+        false,
+      );
+      originAdventureToken = context.adventureToken;
+      const meta = storedMetadata(
+        (
+          await readWorkMetadata(
+            tx,
+            db.doc(context.path + '/lore/' + reference.entityId),
+            metadataFields,
+          )
+        ).data(),
+        context,
+        reference.entityId,
+      );
+      if (meta && !meta.deleted)
+        entity = {
+          ...meta,
+          ...storedBody(
+            (await tx.get(db.doc(context.path + '/loreBodies/' + reference.entityId))).data(),
+            context,
+            meta,
+          ),
+        };
+    } else
+      entity = (
+        await tx.get(db.doc('universes/' + reference.scopeId + '/lore/' + reference.entityId))
+      ).data();
+    if (entity && !entity.deleting && !entity.deleted) {
+      const texts = { details: entity.details ?? '', summary: entity.summary ?? '' };
       for (const field of ['appearance', 'personality', 'history', 'notes'])
         if (entity.structuredDetails) texts[field] = entity.structuredDetails[field] ?? '';
       plan = await storeCapturedItem(
@@ -316,7 +357,12 @@ export async function captureItem(tx, db, p, phase, snapshot) {
         db,
         p,
         origin,
-        { title: entity.name, orderKey: reference.entityId },
+        {
+          kind: 'lore',
+          ...(originAdventureToken ? { originAdventureToken } : {}),
+          title: entity.name,
+          orderKey: reference.entityId,
+        },
         texts,
         {
           aliases: entity.aliases ?? [],

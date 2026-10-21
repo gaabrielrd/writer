@@ -19,7 +19,13 @@ import {
   readPendingWorkHistoryOperation,
   type VersionEditorAdapter,
 } from '@/features/manuscript-history';
-import { listLoreEntities, type LoreEntity } from '@/features/lore';
+import {
+  listLoreEntities,
+  useAdventureLoreContext,
+  AdventureLoreReader,
+  type LoreEntity,
+  type LoreMentionEntity,
+} from '@/features/lore';
 import { renderRichText } from '@/shared/lib/sanitizeRichText';
 import {
   Alert,
@@ -112,10 +118,10 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   const location = useLocation();
   const autosave = useSceneAutosave(uid, initial);
   const [sidebar, setSidebar] = useState(false);
-  const [entities, setEntities] = useState<LoreEntity[]>([]);
-  const [loreError, setLoreError] = useState('');
+  const [legacyEntities, setEntities] = useState<LoreEntity[]>([]);
+  const [legacyLoreError, setLoreError] = useState('');
   const [loreVersion, setLoreVersion] = useState(0);
-  const [selected, setSelected] = useState<LoreEntity | null>(null);
+  const [selected, setSelected] = useState<LoreMentionEntity | null>(null);
   const [leaving, setLeaving] = useState(false);
   const [editorBusy, setEditorBusy] = useState(false);
   const editorBusyRef = useRef(false);
@@ -147,6 +153,10 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
     liveUid.current = user?.uid;
   }, [autosave, user?.uid]);
   const target = { kind: initial.project.kind, id: initial.project.id };
+  const adventureLore = useAdventureLoreContext(target.kind === 'adventure' ? target.id : null);
+  const entities: LoreMentionEntity[] =
+    target.kind === 'adventure' ? adventureLore.items : legacyEntities;
+  const loreError = target.kind === 'adventure' ? adventureLore.error : legacyLoreError;
   const projectUrl = `/${target.kind === 'book' ? 'books' : 'adventures'}/${encodeURIComponent(target.id)}`;
   const navigationState: unknown = location.state;
   const requestedReturn =
@@ -171,6 +181,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   }, [operationBusy, autosave.status, setPendingEditorOperation]);
   useEffect(() => {
     let valid = true;
+    if (target.kind === 'adventure') return;
     const requests = [];
     if (target.kind === 'book') requests.push(listLoreEntities({ kind: 'book', id: target.id }));
     if (doc.project.universeId)
@@ -482,6 +493,10 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
                 autosave.change(content);
             }}
             entities={entities}
+            isLoreActive={() =>
+              target.kind !== 'adventure' ||
+              Boolean(adventureLore.context && adventureLore.isCurrent(adventureLore.context))
+            }
             onSelectEntity={setSelected}
             isSidebarOpen={sidebar}
             onToggleSidebar={() => setSidebar((value) => !value)}
@@ -519,7 +534,11 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         <ErrorState
           title="Parte do lore está indisponível"
           error={loreError}
-          onRetry={() => setLoreVersion((value) => value + 1)}
+          onRetry={() =>
+            target.kind === 'adventure'
+              ? adventureLore.refresh()
+              : setLoreVersion((value) => value + 1)
+          }
         />
       )}
       {sidebar && (
@@ -529,7 +548,14 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           onRevision={autosave.acceptMetadata}
         />
       )}
-      {selected && (
+      {selected && target.kind === 'adventure' && (
+        <AdventureLoreReader
+          adventureId={target.id}
+          entityId={selected.id}
+          onClose={() => setSelected(null)}
+        />
+      )}
+      {selected && target.kind === 'book' && (
         <Dialog
           open
           title={selected.name}
@@ -537,7 +563,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           onClose={() => setSelected(null)}
         >
           <p>{selected.summary}</p>
-          <p>{selected.details}</p>
+          <p>{(selected as LoreEntity).details}</p>
         </Dialog>
       )}
       {autosave.remote && (

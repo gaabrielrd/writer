@@ -700,3 +700,19 @@ it('eco controlado do manuscrito após desfazer conserva a restauração dispon�
   expect(changed).toHaveBeenLastCalledWith('<h1>Versão restaurada</h1>');
   expect(richText.renderRichText).toHaveBeenCalledTimes(2);
 });
+
+it('revogação remove tooltip e callback antigo antes de aceitar seleção de lore', async () => {
+  let allowed = true;
+  const user = userEvent.setup();
+  const view = setup({ content: '<p>Arthur voltou.</p>', isLoreActive: () => allowed });
+  const term = await screen.findByRole('button', { name: 'Ver ficha de Rei Arthur' });
+  await user.hover(term);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Soberano da Bretanha');
+  allowed = false;
+  fireEvent.click(term);
+  expect(view.props.onSelectEntity).not.toHaveBeenCalled();
+  view.rerender(<RichEditor {...view.props} entities={[]} />);
+  expect(screen.queryByRole('tooltip')).toBeNull();
+  expect(view.editor).toHaveTextContent('Arthur voltou.');
+  expect(view.onChange).not.toHaveBeenCalled();
+});

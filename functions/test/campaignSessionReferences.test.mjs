@@ -366,6 +366,10 @@ test('retained legacy from another universe remains resolvable when current univ
       });
   f.records.get(basePath).universeId = 'missing-current-world';
   f.records.delete(basePath + '/items/' + key('a'));
+  // Current base belongs to the other universe; old b/c items are absent there,
+  // while the explicit legacy anchor below retains a from the original base.
+  f.records.delete(basePath + '/items/' + key('b'));
+  f.records.delete(basePath + '/items/' + key('c'));
   f.records.set(campaignPath + '/loreVariants/' + key('a'), {
     schemaVersion: 1,
     ownerId: uid,

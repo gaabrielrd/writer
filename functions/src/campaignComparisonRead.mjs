@@ -42,6 +42,7 @@ const itemFields = [
   'archived',
   'orderKey',
   'origin',
+  'originAdventureToken',
   'stage',
   'type',
   'audience',
@@ -53,7 +54,7 @@ const itemFields = [
   'image.alt',
   'image.caption',
 ];
-const dependencyFields = ['sourceKey', 'kind', 'origin'];
+const dependencyFields = ['sourceKey', 'kind', 'origin', 'originAdventureToken'];
 const budget = (value) => {
   if (Buffer.byteLength(JSON.stringify(value)) > BASE_PAGE_BYTES)
     fail('failed-precondition', 'Resposta acima do orçamento.');

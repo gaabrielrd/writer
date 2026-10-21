@@ -303,6 +303,8 @@ service cloud.firestore {
       match /campaignDeletions/{document=**} { allow read, write: if false; }
       match /campaignDeletionOperations/{id} { allow read, write: if false; }
       match /campaignDeletionStartFences/{id} { allow read, write: if false; }
+      match /adventureLoreOperations/{id} { allow read, write: if false; }
+      match /adventureLoreFences/{id} { allow read, write: if false; }
       match /campaignPreparationOperations/{id} { allow read, write: if false; }
       match /campaignPreparationFences/{id} { allow read, write: if false; }
       match /campaignSessionOperations/{id} { allow read, write: if false; }
@@ -364,6 +366,8 @@ service cloud.firestore {
     }
 
     match /adventures/{adventureId} {
+      match /lore/{document=**} { allow read, write: if false; }
+      match /loreBodies/{document=**} { allow read, write: if false; }
       match /sceneBlocks/{blockId} {
         allow read, write: if false;
         match /{child}/{id} { allow read, write: if false; }

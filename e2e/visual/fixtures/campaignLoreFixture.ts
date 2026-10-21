@@ -1,15 +1,18 @@
 import type * as C from '../../../src/features/campaign-lore/model/campaignLore';
 import { fixtureAssertCampaignWritable, fixtureCampaignToken, fixtureOwner } from './studioStore';
-import { fixtureCampaignBaseLoreMetadata, readCampaignBaseItem } from './campaignBaseFixture';
+import {
+  fixtureCampaignBaseLoreMetadata,
+  readCampaignBaseItem,
+  fixtureCapturedLoreAvailable,
+} from './campaignBaseFixture';
 import { FIXTURE_TIME } from './data';
 import { fixtureCampaignComparisonCurrent } from './campaignBaseFixture';
-import { getUniverse } from './universeService';
-import { getLoreEntity } from './loreService';
 import type * as R from '../../../src/features/campaign-lore/model/campaignLoreRemote';
 
 type Anchor = {
   baseId: string;
-  origin: { kind: string; id: string; scopeId?: string };
+  origin: { kind: string; id: string; scopeId?: string; adventureId?: string };
+  originAdventureToken?: string;
   entity: C.CampaignLoreEntityInput;
 };
 type Overlay = {
@@ -216,13 +219,7 @@ async function context(
       continue;
     let authorized = false;
     try {
-      const world = anchor.origin.scopeId ? await getUniverse(anchor.origin.scopeId) : null;
-      authorized =
-        world?.authorId === uid &&
-        !!(await getLoreEntity(
-          { kind: 'universe', id: anchor.origin.scopeId! },
-          'universe:' + anchor.origin.scopeId + ':' + anchor.origin.id,
-        ));
+      authorized = await fixtureCapturedLoreAvailable(anchor);
     } catch {
       /* Legacy authorization remains independent of the current universe. */
     }
@@ -908,6 +905,9 @@ export async function fixtureCampaignLoreApplyAdoption(input: {
       project.anchors[sourceKey] = {
         baseId: input.oldBaseId,
         origin: structuredClone(captured.origin),
+        ...(captured.originAdventureToken
+          ? { originAdventureToken: captured.originAdventureToken }
+          : {}),
         entity: await baseEntity(input.campaignId, sourceKey),
       };
     }

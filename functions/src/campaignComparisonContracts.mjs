@@ -1,3 +1,4 @@
+import { adventureIdentityToken } from './campaignLoreOrigin.mjs';
 import {
   captureScope,
   captureToken,
@@ -162,10 +163,19 @@ export async function generationContext(tx, db, uid, campaignId, base) {
         'privacyVersion',
       ])
     ).data();
+  const adventureSnapshot = await readWorkMetadata(tx, db.doc('adventures/' + base.adventureId), [
+    'ownerId',
+    'schemaVersion',
+    'deleting',
+    'loreVersion',
+  ]);
+  const adventure = adventureSnapshot.data();
   return {
     uid,
     campaignId,
     base,
+    adventure,
+    adventureSnapshot,
     path: basePath(uid, base.id),
     world,
     projectionToken: digest({
@@ -174,6 +184,10 @@ export async function generationContext(tx, db, uid, campaignId, base) {
       baseId: base.id,
       worldAvailable: Boolean(world && world.authorId === uid && !world.deleting),
       loreVersion: world?.loreVersion ?? null,
+      localLoreVersion: adventure?.loreVersion ?? 0,
+      localAdventureToken: adventureSnapshot.exists
+        ? adventureIdentityToken(uid, base.adventureId, adventureSnapshot)
+        : null,
       privacyVersion: world?.privacyVersion ?? null,
     }),
   };

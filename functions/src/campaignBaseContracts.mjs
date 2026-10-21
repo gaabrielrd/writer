@@ -1,3 +1,4 @@
+import { assertLoreItemOrigin, adventureIdentityToken } from './campaignLoreOrigin.mjs';
 import {
   workClosed,
   workFail,
@@ -268,6 +269,8 @@ export async function readCampaignBase(tx, db, uid, campaignId, { optionalSource
     baseId: base.id,
     worldAvailable: Boolean(world && world.authorId === uid && !world.deleting),
     loreVersion: world?.loreVersion ?? null,
+    localLoreVersion: adventure.loreVersion ?? 0,
+    localAdventureToken: adventureIdentityToken(uid, base.adventureId, adventureSnapshot),
     privacyVersion: world?.privacyVersion ?? null,
   });
   return {
@@ -279,25 +282,72 @@ export async function readCampaignBase(tx, db, uid, campaignId, { optionalSource
     ref,
     path: ref.path,
     adventure,
+    adventureSnapshot,
     world,
     projectionToken,
   };
 }
 export async function baseItemAvailable(tx, db, context, item) {
   if (item.kind !== 'lore') return true;
-  if (
-    !context.world ||
-    context.world.authorId !== context.uid ||
-    context.world.deleting ||
-    item.origin.scopeId !== context.base.universeId
-  )
+  const origin = assertLoreItemOrigin(item, context.base);
+  if (origin.kind === 'adventure-lore') {
+    const snapshot =
+      context.adventureSnapshot ??
+      (await readWorkMetadata(tx, db.doc('adventures/' + id(context.base.adventureId)), [
+        'ownerId',
+        'schemaVersion',
+        'deleting',
+        'loreVersion',
+      ]));
+    const adventure = snapshot.data();
+    if (
+      !adventure ||
+      adventure.ownerId !== context.uid ||
+      adventure.schemaVersion !== 1 ||
+      adventure.deleting
+    )
+      return false;
+    const currentToken = adventureIdentityToken(context.uid, context.base.adventureId, snapshot);
+    if (
+      typeof item.originAdventureToken !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(item.originAdventureToken)
+    )
+      workFail('failed-precondition', 'A identidade capturada do lore está inconsistente.');
+    if (item.originAdventureToken !== currentToken) return false;
+    const entity = (
+      await readWorkMetadata(
+        tx,
+        db.doc('adventures/' + id(origin.adventureId) + '/lore/' + id(origin.id)),
+        [
+          'ownerId',
+          'adventureId',
+          'adventureToken',
+          'entityId',
+          'schemaVersion',
+          'deleted',
+          'deleting',
+        ],
+      )
+    ).data();
+    return (
+      !!entity &&
+      entity.ownerId === context.uid &&
+      entity.adventureId === origin.adventureId &&
+      entity.adventureToken === currentToken &&
+      entity.entityId === origin.id &&
+      entity.schemaVersion === 1 &&
+      !entity.deleted &&
+      !entity.deleting
+    );
+  }
+  if (!context.world || context.world.authorId !== context.uid || context.world.deleting)
     return false;
   const entity = (
     await readWorkMetadata(
       tx,
-      db.doc(`universes/${id(item.origin.scopeId)}/lore/${id(item.origin.id)}`),
-      ['deleting'],
+      db.doc('universes/' + id(origin.scopeId) + '/lore/' + id(origin.id)),
+      ['deleting', 'deleted'],
     )
   ).data();
-  return Boolean(entity && !entity.deleting);
+  return !!entity && !entity.deleting && !entity.deleted;
 }

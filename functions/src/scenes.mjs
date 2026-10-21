@@ -1,3 +1,5 @@
+import { readAdventureLoreContext } from './adventureLore.mjs';
+import { storedMetadata as storedAdventureLoreMetadata } from './adventureLoreContracts.mjs';
 import { validateId } from './generation.mjs';
 import {
   closed,
@@ -473,10 +475,14 @@ export function createScenesService({ db, now = Date.now }) {
     if (method === 'setSceneReference') {
       closed(data.reference, ['kind', 'scopeId', 'entityId']);
       if (
-        !['book', 'universe'].includes(data.reference.kind) ||
+        !['book', 'adventure', 'universe'].includes(data.reference.kind) ||
         (data.remove !== undefined && typeof data.remove !== 'boolean')
       )
         sceneFail('invalid-argument', 'Referência inválida.');
+      if (data.reference.kind === 'adventure') {
+        validateId(data.reference.scopeId);
+        validateId(data.reference.entityId);
+      }
       reference = {
         kind: data.reference.kind,
         scopeId: sceneId(data.reference.scopeId),
@@ -687,12 +693,30 @@ export function createScenesService({ db, now = Date.now }) {
         : db.doc(`${context.path}/lore/${reference.entityId}`).get());
       return entity.data() ?? null;
     }
+    if (reference.kind === 'adventure') {
+      if (context.target.kind !== 'adventure' || reference.scopeId !== context.target.id)
+        return null;
+      if (!tx) return db.runTransaction((t) => referenceAvailable(context, p, reference, t));
+      const loreContext = await readAdventureLoreContext(
+        tx,
+        db,
+        context.uid,
+        { adventureId: context.target.id },
+        true,
+        false,
+      );
+      const entity = (await tx.get(db.doc(context.path + '/lore/' + reference.entityId))).data();
+      if (!entity || entity.adventureToken !== loreContext.adventureToken) return null;
+      const meta = storedAdventureLoreMetadata(entity, loreContext, reference.entityId);
+      return !meta.deleted ? meta : null;
+    }
     if (reference.scopeId !== p.universeId) return null;
     const worldRef = db.doc(`universes/${reference.scopeId}`),
       loreRef = db.doc(`${worldRef.path}/lore/${reference.entityId}`);
     const world = (await (tx ? tx.get(worldRef) : worldRef.get())).data();
     if (!world || world.authorId !== context.uid || world.deleting) return null;
-    return (await (tx ? tx.get(loreRef) : loreRef.get())).data() ?? null;
+    const entity = (await (tx ? tx.get(loreRef) : loreRef.get())).data();
+    return entity && !entity.deleting && !entity.deleted ? entity : null;
   }
 
   const api = {
