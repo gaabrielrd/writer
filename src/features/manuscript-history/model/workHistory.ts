@@ -36,6 +36,15 @@ export interface CompleteWorkVersion {
   version: VersionSummary;
   content: string;
 }
+export interface WorkHistoryBackupSource {
+  schemaVersion: 1;
+  historyRevision: number;
+  sourceToken: string;
+}
+export interface WorkHistoryBackup {
+  schemaVersion: 1;
+  versions: CompleteWorkVersion[];
+}
 export interface CreateWorkVersionInput {
   target: VersionTarget;
   resource: VersionResource;

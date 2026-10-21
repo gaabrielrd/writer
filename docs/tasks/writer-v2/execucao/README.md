@@ -162,3 +162,30 @@ Veja a [entrega A](../../../entregas/2026-10-21-writer-v2-chat-autorizado-de-cen
 validate 2.527/85/615, 30 combinações nativas novas e três regressões positivas.
 CI do novo head pendente; o próximo incremento é P1 (portabilidade de livros),
 sem aguardar CI conforme a autorização. F2-09 e a fase 2 continuam abertas.
+
+## P1 — portabilidade de livros em descoberta
+
+O [plano P1](31-portabilidade-de-livros.md) inventaria exportação v1–v6, histórico
+completo/removido, rascunhos e nova cópia privada. O operador confirmou religar ao
+universo original se o acesso continuar autorizado, sem duplicação. Dados próprios
+continuam restauráveis com aviso quando a origem estiver indisponível; referências
+externas não viram lore local. Consistência do snapshot e protocolo ainda precisam fechar.
+Sem implementação P1 liberada. A foi enviado em 5f947a0; Rules 39659740521 verdes.
+A CI 39659740574 revelou uma corrida no teste anterior de importação em Node 24;
+correção isolada em f022094, com 13/13 testes dirigidos verdes e Node 24/Rules
+remotos verdes nesse head intermediário. A expectativa visual de lore foi corrigida
+em 6650408, com 6/6 perfis nativos verdes; produção permanece igual naquele ajuste. Head base
+6650408 enviado e conferido; Rules 39663714845 verdes. CI 39663715057 cancelada:
+Node 22/24, auditoria, produção e dez shards verdes; shards 1/3 cancelados e
+agregador E2E falhou. Um caso no shard 1 passou após retry. Não é CI geral verde.
+
+### P1 M1 — catálogo e captura completa do histórico
+
+O [contrato M1](32-captura-consistente-do-historico.md) foi implementado: revisão
+transacional do catálogo, token por identidade nativa e leituras paginadas com
+reautorização. Versões de recursos removidos entram; nenhuma seleção parcial é
+retornada. Validate 2.545/85/635, SDK 10/10 e seis regressões nativas positivos.
+Veja a [entrega interna M1](../../../entregas/2026-10-21-writer-v2-captura-do-historico.md).
+Sem pacote/restauração/roundtrip P1 ou fechamento de F2-09; o próximo marco fecha
+formato, orçamento de bytes e captura dos demais dados/mídia. CI do novo head
+continua condição própria, sem bloquear o próximo marco validado localmente.

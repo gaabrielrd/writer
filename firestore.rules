@@ -149,6 +149,15 @@ service cloud.firestore {
         && (next == previous || (previous < 9007199254740991 && next == previous + 1));
     }
 
+    function preserveWorkHistoryRevision() {
+      let before = resource.data.get('historyRevision', 0);
+      let after = request.resource.data.get('historyRevision', 0);
+      return before is int && before >= 0 && before <= 9007199254740991
+        && after is int && after == before
+        && (!resource.data.keys().hasAny(['historyRevision'])
+          || request.resource.data.keys().hasAll(['historyRevision']));
+    }
+
     function bookLocalLoreAdvanced(bookId) {
       let before = get(/databases/$(database)/documents/books/$(bookId)).data;
       let after = getAfter(/databases/$(database)/documents/books/$(bookId)).data;
@@ -491,6 +500,8 @@ service cloud.firestore {
         && request.resource.data.localLoreVersion == 0
         && request.resource.data.get('hasSceneResources', false) == false
         && request.resource.data.get('sceneRevision', 0) == 0
+        && request.resource.data.get('historyRevision', 0) is int
+        && request.resource.data.get('historyRevision', 0) == 0
         && request.resource.data.get('hasNarrativeResources', false) == false
         && request.resource.data.get('narrativeRevision', 0) == 0
         && request.resource.data.get('hasProgressResources', false) == false
@@ -508,6 +519,7 @@ service cloud.firestore {
       allow update: if isOwner(resource.data.authorId)
         && preserveBookDates()
         && preserveBookLocalLoreVersion()
+        && preserveWorkHistoryRevision()
         && request.resource.data.get('hasSceneResources', false) == resource.data.get('hasSceneResources', false)
         && request.resource.data.get('sceneRevision', 0) == resource.data.get('sceneRevision', 0)
         && request.resource.data.get('hasNarrativeResources', false) == resource.data.get('hasNarrativeResources', false)

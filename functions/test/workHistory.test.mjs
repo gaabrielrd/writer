@@ -560,3 +560,317 @@ test('authorization, closed inputs, cross-resource restore, invalid limits and c
   assert.deepEqual(f.records.get('books/book/chapters/chapter'), before);
   assert.equal(versions(f).length, 1);
 });
+
+test('backup catalog captures legacy zero without writes and advances once for manual versions and replay', async () => {
+  const f = fixture(),
+    before = structuredClone([...f.records]);
+  const first = await f.api.getWorkHistoryBackupSource('author', { target });
+  assert.equal(first.historyRevision, 0);
+  assert.equal(first.schemaVersion, 1);
+  assert.match(first.sourceToken, /^[a-f0-9]{64}$/);
+  assert.deepEqual([...f.records], before);
+  const current = await source(f),
+    request = {
+      target,
+      resource,
+      operationId: op('catalog-one'),
+      expectedSourceToken: current.sourceToken,
+    };
+  const [a, b] = await Promise.all([
+    f.api.createWorkVersion('author', request),
+    f.api.createWorkVersion('author', request),
+  ]);
+  assert.deepEqual(a, b);
+  const second = await f.api.getWorkHistoryBackupSource('author', { target });
+  assert.equal(second.historyRevision, 1);
+  assert.notEqual(second.sourceToken, first.sourceToken);
+  assert.deepEqual(await f.api.createWorkVersion('author', request), a);
+  assert.deepEqual(await f.api.getWorkHistoryBackupSource('author', { target }), second);
+  assert.equal(f.records.get('books/book').updatedAt, 100);
+});
+
+test('backup guarded pages reject creation and deletion between list/body pages before returning a mixed selection', async () => {
+  const f = fixture();
+  const a = await capture(f, 'catalog-a');
+  await capture(f, 'catalog-b');
+  const first = await f.api.getWorkHistoryBackupSource('author', { target });
+  const page = await f.api.listWorkVersions('author', {
+    target,
+    expectedHistoryToken: first.sourceToken,
+    limit: 1,
+  });
+  assert.equal(page.items.length, 1);
+  assert.ok(page.nextCursor);
+  await capture(f, 'catalog-c');
+  const reads = f.reads.length;
+  await assert.rejects(
+    f.api.listWorkVersions('author', {
+      target,
+      cursor: page.nextCursor,
+      expectedHistoryToken: first.sourceToken,
+      limit: 1,
+    }),
+    { code: 'failed-precondition', details: { reason: 'history-snapshot-changed' } },
+  );
+  assert.equal(f.reads.length, reads);
+  const next = await f.api.getWorkHistoryBackupSource('author', { target });
+  await f.api.deleteWorkVersion('author', {
+    target,
+    versionId: a.version.id,
+    operationId: op('catalog-delete'),
+  });
+  await assert.rejects(
+    f.api.readWorkVersion('author', {
+      target,
+      versionId: a.version.id,
+      expectedHistoryToken: next.sourceToken,
+    }),
+    { code: 'failed-precondition', details: { reason: 'history-snapshot-changed' } },
+  );
+  assert.equal((await f.api.getWorkHistoryBackupSource('author', { target })).historyRevision, 4);
+});
+
+test('backup token includes precise native metadata and incarnation, not just the catalog count', async () => {
+  const f = fixture(),
+    path = 'books/book';
+  f.metadata.set(path, {
+    createdAt: 10,
+    createdAtNanoseconds: 1,
+    updatedAt: 20,
+    updatedAtNanoseconds: 1,
+  });
+  const first = await f.api.getWorkHistoryBackupSource('author', { target });
+  f.metadata.set(path, {
+    createdAt: 10,
+    createdAtNanoseconds: 1,
+    updatedAt: 20,
+    updatedAtNanoseconds: 2,
+  });
+  const second = await f.api.getWorkHistoryBackupSource('author', { target });
+  assert.equal(second.historyRevision, first.historyRevision);
+  assert.notEqual(second.sourceToken, first.sourceToken);
+  f.metadata.set(path, {
+    createdAt: 10,
+    createdAtNanoseconds: 2,
+    updatedAt: 20,
+    updatedAtNanoseconds: 2,
+  });
+  assert.notEqual(
+    (await f.api.getWorkHistoryBackupSource('author', { target })).sourceToken,
+    second.sourceToken,
+  );
+  f.metadata.delete(path);
+  const third = await f.api.getWorkHistoryBackupSource('author', { target });
+  await f.db.runTransaction(async (tx) => tx.update(f.db.doc(path), { title: 'Outra' }));
+  await f.db.runTransaction(async (tx) => tx.update(f.db.doc(path), { title: 'Livro' }));
+  assert.notEqual(
+    (await f.api.getWorkHistoryBackupSource('author', { target })).sourceToken,
+    third.sourceToken,
+  );
+});
+
+test('backup reads versions of deleted resources and reauthorizes instead of trusting the token', async () => {
+  const f = fixture(),
+    { version } = await capture(f, 'removed-resource');
+  await f.db.runTransaction(async (tx) => tx.delete(f.db.doc('books/book/chapters/chapter')));
+  const observed = await f.api.getWorkHistoryBackupSource('author', { target });
+  assert.equal(
+    (await f.api.listWorkVersions('author', { target, expectedHistoryToken: observed.sourceToken }))
+      .items[0].id,
+    version.id,
+  );
+  const read = await f.api.readWorkVersion('author', {
+    target,
+    versionId: version.id,
+    expectedHistoryToken: observed.sourceToken,
+  });
+  assert.equal(read.chunks.map((x) => x.content).join(''), '<p>Texto original</p>');
+  const reads = f.reads.length;
+  await assert.rejects(f.api.getWorkHistoryBackupSource('other', { target }), {
+    code: 'not-found',
+  });
+  await assert.rejects(
+    f.api.listWorkVersions('other', { target, expectedHistoryToken: observed.sourceToken }),
+    { code: 'not-found' },
+  );
+  await assert.rejects(
+    f.api.readWorkVersion('other', {
+      target,
+      versionId: version.id,
+      expectedHistoryToken: observed.sourceToken,
+    }),
+    { code: 'not-found' },
+  );
+  assert.equal(f.reads.length, reads);
+  f.records.get('books/book').deleting = true;
+  await assert.rejects(
+    f.api.readWorkVersion('author', {
+      target,
+      versionId: version.id,
+      expectedHistoryToken: observed.sourceToken,
+    }),
+    { code: 'not-found' },
+  );
+});
+
+test('restoring increments the catalog once with its predecessor and retry preserves the exact source', async () => {
+  const f = fixture(),
+    { version } = await capture(f, 'restore-clock');
+  await save(f, 'Texto atual', 'before-restore-clock');
+  const request = {
+    target,
+    resource,
+    versionId: version.id,
+    operationId: op('restore-clock-apply'),
+    expectedSourceToken: (await source(f)).sourceToken,
+  };
+  const restored = await f.api.restoreWorkVersion('author', request);
+  assert.equal(f.records.get('books/book').historyRevision, 2);
+  assert.equal(await body(f, restored.previousVersion.id), 'Texto atual');
+  const epoch = await f.api.getWorkHistoryBackupSource('author', { target });
+  assert.deepEqual(await f.api.restoreWorkVersion('author', request), restored);
+  assert.deepEqual(await f.api.getWorkHistoryBackupSource('author', { target }), epoch);
+  assert.equal(f.records.get('users/author').credits, 7);
+});
+
+for (const revision of [
+  null,
+  undefined,
+  -1,
+  0.5,
+  '0',
+  NaN,
+  Number.MAX_SAFE_INTEGER + 1,
+  Number.MAX_SAFE_INTEGER,
+])
+  test(
+    'corrupt or exhausted history clock blocks capture before legacy activation: ' +
+      String(revision),
+    async () => {
+      const f = fixture();
+      f.records.get('books/book').historyRevision = revision;
+      const before = structuredClone([...f.records]);
+      await assert.rejects(capture(f, 'invalid-clock'), { code: 'failed-precondition' });
+      assert.deepEqual([...f.records], before);
+      if (revision !== Number.MAX_SAFE_INTEGER)
+        await assert.rejects(f.api.getWorkHistoryBackupSource('author', { target }), {
+          code: 'failed-precondition',
+        });
+    },
+  );
+
+test('the catalog revision rolls back with an interrupted receipt write and retry commits once', async () => {
+  const f = fixture();
+  await capture(f, 'rollback-base');
+  const before = structuredClone([...f.records]);
+  let fail = true;
+  const api = createWorkHistoryService({
+    db: {
+      ...f.db,
+      runTransaction: (work) =>
+        f.db.runTransaction((tx) =>
+          work({
+            ...tx,
+            create(ref, value) {
+              if (fail && ref.path.includes('/workHistoryOperations/')) {
+                fail = false;
+                throw new Error('Recibo interrompido');
+              }
+              tx.create(ref, value);
+            },
+          }),
+        ),
+    },
+  });
+  const request = {
+    target,
+    resource,
+    operationId: op('rollback-new'),
+    expectedSourceToken: (await source(f)).sourceToken,
+  };
+  await assert.rejects(api.createWorkVersion('author', request), /Recibo interrompido/);
+  assert.deepEqual([...f.records], before);
+  await api.createWorkVersion('author', request);
+  assert.equal(f.records.get('books/book').historyRevision, 2);
+  assert.equal(versions(f).length, 2);
+});
+
+test('backup optional input is closed, legacy readers remain usable, and null tokens are not absence', async () => {
+  const f = fixture(),
+    { version } = await capture(f, 'legacy-reader');
+  assert.equal((await f.api.listWorkVersions('author', { target })).items.length, 1);
+  assert.equal(await body(f, version.id), '<p>Texto original</p>');
+  await assert.rejects(f.api.getWorkHistoryBackupSource(null, { target }), {
+    code: 'unauthenticated',
+  });
+  await assert.rejects(f.api.getWorkHistoryBackupSource('author', { target, content: 'forged' }), {
+    code: 'invalid-argument',
+  });
+  for (const expectedHistoryToken of [null, '', 'A'.repeat(64), 'z'.repeat(64), 1]) {
+    await assert.rejects(f.api.listWorkVersions('author', { target, expectedHistoryToken }), {
+      code: 'invalid-argument',
+    });
+    await assert.rejects(
+      f.api.readWorkVersion('author', { target, versionId: version.id, expectedHistoryToken }),
+      { code: 'invalid-argument' },
+    );
+  }
+});
+
+for (const patch of [
+  { createTime: undefined },
+  { updateTime: { seconds: 1, nanoseconds: -1 } },
+  { createTime: { seconds: NaN, nanoseconds: 0 } },
+  { updateTime: { seconds: 1, nanoseconds: 1_000_000_000 } },
+])
+  test(
+    'backup source refuses unavailable/invalid native timestamps instead of inventing a date: ' +
+      Object.keys(patch)[0] +
+      JSON.stringify(patch),
+    async () => {
+      const f = fixture(),
+        before = structuredClone([...f.records]);
+      const api = createWorkHistoryService({
+        db: {
+          ...f.db,
+          runTransaction: (work) =>
+            f.db.runTransaction((tx) =>
+              work({
+                ...tx,
+                async get(ref) {
+                  const snapshot = await tx.get(ref);
+                  return ref.path === 'books/book' ? { ...snapshot, ...patch } : snapshot;
+                },
+              }),
+            ),
+        },
+      });
+      await assert.rejects(api.getWorkHistoryBackupSource('author', { target }), {
+        code: 'failed-precondition',
+      });
+      assert.deepEqual([...f.records], before);
+    },
+  );
+
+test('legacy absent catalog clock does not hide versions already stored before this protocol', async () => {
+  const f = fixture(),
+    { version } = await capture(f, 'pre-clock-version');
+  delete f.records.get('books/book').historyRevision;
+  const epoch = await f.api.getWorkHistoryBackupSource('author', { target });
+  assert.equal(epoch.historyRevision, 0);
+  const page = await f.api.listWorkVersions('author', {
+    target,
+    expectedHistoryToken: epoch.sourceToken,
+  });
+  assert.equal(page.items[0].id, version.id);
+  assert.equal(
+    (
+      await f.api.readWorkVersion('author', {
+        target,
+        versionId: version.id,
+        expectedHistoryToken: epoch.sourceToken,
+      })
+    ).chunks[0].content,
+    '<p>Texto original</p>',
+  );
+});

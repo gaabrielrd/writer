@@ -198,3 +198,17 @@ O [contrato I](execucao/27-importacao-revisada-de-aventura.md) detalha a propost
 com ABI revisada e implementação validada localmente. A
 [entrega I](../../entregas/2026-10-21-writer-v2-importacao-revisada-de-aventura.md)
 registra os limites da evidência e o fechamento remoto verde de ffc01d9.
+
+## Universo na restauração de livros — 2026-10-21
+
+O operador escolheu restaurar o livro como nova cópia privada e religá-lo ao
+universo original se ainda houver acesso, sem duplicar o universo. O arquivo não
+concede acesso, não sobrescreve lore global e não restaura sua edição antiga.
+A revisão informa origem indisponível; dados próprios permanecem restauráveis
+sem vínculo e referências externas ficam neutras. Revogação após a revisão exige
+nova revisão antes da ativação, sem substituição silenciosa de universo.
+
+O [plano P1](execucao/31-portabilidade-de-livros.md#regra-de-restauração-do-universo)
+separa a decisão confirmada do contrato técnico ainda em fechamento. Em arquivos
+legados, global inline não vira lore local nem prova de encarnação histórica.
+Sem implementação/roundtrip/validação P1 declarados nesta decisão.

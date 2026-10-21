@@ -123,6 +123,13 @@ arcos, cronologia, lore, personas e progresso. Recriar vínculos/revisões no se
 Versão futura desconhecida falha antes de gravar. Ausência em arquivo legado é
 mostrada, sem inventar dados.
 
+Em 2026-10-21, o operador confirmou: religar ao universo original se ainda houver
+acesso, sem duplicá-lo. A revisão deve distinguir vínculo atual de cópia de lore;
+origem indisponível não é convertida em ficha própria. O
+[plano P1](31-portabilidade-de-livros.md) registra os casos de autorização,
+revogação entre revisão/ativação e JSON legado com global inline. Essa decisão
+não equivale à implementação do leitor/restaurador ou à conclusão de F2-09.
+
 ### P2 — Backup e restauração de aventura
 
 Reutilizar somente a infraestrutura demonstrada em P1, com DTO próprio da aventura:

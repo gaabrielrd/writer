@@ -2,6 +2,8 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { renderRichText } from '@/shared/lib/sanitizeRichText';
 import {
+  captureWorkHistoryBackup,
+  getWorkHistoryBackupSource,
   copyWorkVersionText,
   createWorkVersion,
   deleteWorkVersion,
@@ -39,11 +41,14 @@ beforeEach(async () => {
     chunkCount: 2,
   };
 });
-it('chama as seis APIs autenticadas preservando parâmetros e janelas vazias', async () => {
+it('chama as sete APIs autenticadas preservando parâmetros e janelas vazias', async () => {
   call.mockResolvedValue({ data: null });
   expect(await getWorkVersionSource({ target, resource })).toBeNull();
   expect(getFunctions).toHaveBeenCalledWith(app, 'us-central1');
   expect(httpsCallable).toHaveBeenLastCalledWith({}, 'getWorkVersionSource');
+  await getWorkHistoryBackupSource({ target });
+  expect(httpsCallable).toHaveBeenLastCalledWith({}, 'getWorkHistoryBackupSource');
+  expect(call).toHaveBeenLastCalledWith({ target });
   const create = {
     target,
     resource,
@@ -189,4 +194,176 @@ it('copia texto visível com separação dos blocos sem executar markup', async 
     '<p>Primeiro <strong>parágrafo</strong></p><p>Segundo<br>trecho</p><script>alert(1)</script>',
   );
   expect(writeText).toHaveBeenCalledWith('Primeiro parágrafo\nSegundo\ntrecho');
+});
+
+const backupEpoch = () => ({ schemaVersion: 1, historyRevision: 2, sourceToken: 'd'.repeat(64) });
+const bodyPage = (summary: VersionSummary, content = '') => ({
+  version: summary,
+  chunks: [{ index: 0, content }],
+  nextCursor: null,
+});
+async function emptyVersion(id = 'removed-version'): Promise<VersionSummary> {
+  return {
+    ...version,
+    id,
+    resource: { kind: 'chapter', id: 'deleted-chapter' },
+    reason: 'before-restore',
+    label: 'Anterior à restauração',
+    wordCount: 0,
+    byteLength: 0,
+    contentHash: await workHistoryHash(''),
+    chunkCount: 1,
+  };
+}
+function response(data: unknown) {
+  return { data };
+}
+
+it('captura todas as páginas e corpos exatos, inclusive versão vazia de capítulo removido, sem token no arquivo', async () => {
+  const removed = await emptyVersion();
+  call
+    .mockResolvedValueOnce(response(backupEpoch()))
+    .mockResolvedValueOnce(response({ items: [version], nextCursor: 'next-page' }))
+    .mockResolvedValueOnce(
+      response({ version, chunks: [{ index: 0, content: 'á😀\n' }], nextCursor: 'next-body' }),
+    )
+    .mockResolvedValueOnce(
+      response({
+        version,
+        chunks: [{ index: 1, content: '<strong>texto</strong>' }],
+        nextCursor: null,
+      }),
+    )
+    .mockResolvedValueOnce(response({ items: [removed], nextCursor: null }))
+    .mockResolvedValueOnce(response(bodyPage(removed)))
+    .mockResolvedValueOnce(response(backupEpoch()));
+  const result = await captureWorkHistoryBackup(target);
+  expect(result).toEqual({
+    schemaVersion: 1,
+    versions: [
+      { version, content: 'á😀\n<strong>texto</strong>' },
+      { version: removed, content: '' },
+    ],
+  });
+  expect(JSON.stringify(result)).not.toContain(backupEpoch().sourceToken);
+  expect(call).toHaveBeenCalledTimes(7);
+  expect(call).toHaveBeenNthCalledWith(1, { target });
+  expect(call).toHaveBeenNthCalledWith(7, { target });
+  for (const index of [2, 3, 4, 5, 6])
+    expect(call.mock.calls[index - 1]?.[0]).toMatchObject({
+      target,
+      expectedHistoryToken: backupEpoch().sourceToken,
+    });
+  expect(call).toHaveBeenNthCalledWith(5, {
+    target,
+    cursor: 'next-page',
+    limit: 50,
+    expectedHistoryToken: backupEpoch().sourceToken,
+  });
+});
+
+it('catálogo vazio também exige confirmação final e não fabrica versões', async () => {
+  call
+    .mockResolvedValueOnce(response(backupEpoch()))
+    .mockResolvedValueOnce(response({ items: [], nextCursor: null }))
+    .mockResolvedValueOnce(response(backupEpoch()));
+  expect(await captureWorkHistoryBackup(target)).toEqual({ schemaVersion: 1, versions: [] });
+  expect(call).toHaveBeenCalledTimes(3);
+});
+
+it.each(['token', 'revision'])(
+  'mudança final de %s descarta captura inteira em vez de devolver seleção antiga',
+  async (field) => {
+    const changed = {
+      ...backupEpoch(),
+      ...(field === 'token' ? { sourceToken: 'e'.repeat(64) } : { historyRevision: 3 }),
+    };
+    call
+      .mockResolvedValueOnce(response(backupEpoch()))
+      .mockResolvedValueOnce(response({ items: [], nextCursor: null }))
+      .mockResolvedValueOnce(response(changed));
+    await expect(captureWorkHistoryBackup(target)).rejects.toThrow('histórico completo');
+  },
+);
+
+it.each([1, 2, 3, 4])(
+  'invalidação após I/O %s não devolve nem persiste captura parcial',
+  async (step) => {
+    const removed = await emptyVersion();
+    let current = true,
+      index = 0;
+    const data = [
+      backupEpoch(),
+      { items: [removed], nextCursor: null },
+      bodyPage(removed),
+      backupEpoch(),
+    ];
+    call.mockImplementation(() => {
+      index++;
+      if (index === step) current = false;
+      return Promise.resolve(response(data[index - 1]));
+    });
+    expect(await captureWorkHistoryBackup(target, () => current)).toBeNull();
+    expect(call).toHaveBeenCalledTimes(step);
+  },
+);
+
+it('captura já invalidada não inicia RPC', async () => {
+  expect(await captureWorkHistoryBackup(target, () => false)).toBeNull();
+  expect(call).not.toHaveBeenCalled();
+});
+
+it('revogação entre catálogo e corpo rejeita sem fallback para texto parcial', async () => {
+  call
+    .mockResolvedValueOnce(response(backupEpoch()))
+    .mockResolvedValueOnce(response({ items: [version], nextCursor: null }))
+    .mockRejectedValueOnce(
+      Object.assign(new Error('Projeto indisponível'), { code: 'functions/not-found' }),
+    );
+  await expect(captureWorkHistoryBackup(target)).rejects.toMatchObject({
+    code: 'functions/not-found',
+  });
+  expect(call).toHaveBeenCalledTimes(3);
+});
+
+it.each([
+  'duplicate',
+  'cursor',
+  'body-summary',
+  'body-extra',
+  'scope',
+  'extra-page',
+  'source',
+  'resource',
+])('não aceita manifesto de backup inconsistente: %s', async (problem) => {
+  const removed = await emptyVersion();
+  if (problem === 'source') {
+    call.mockResolvedValueOnce(response({ ...backupEpoch(), historyRevision: null }));
+  } else {
+    call.mockResolvedValueOnce(response(backupEpoch()));
+    if (problem === 'extra-page') {
+      call.mockResolvedValueOnce(response({ items: [], nextCursor: null, hidden: 'não exportar' }));
+    } else {
+      const summary = {
+        ...removed,
+        ...(problem === 'scope' ? { target: { kind: 'book', id: 'other' } } : {}),
+        ...(problem === 'resource' ? { resource: { kind: 'block', id: 'block' } } : {}),
+      };
+      call.mockResolvedValueOnce(
+        response({
+          items: problem === 'duplicate' ? [summary, summary] : [summary],
+          nextCursor: problem === 'cursor' ? 'same-page' : null,
+        }),
+      );
+      const read = {
+        ...removed,
+        ...(problem === 'body-summary' ? { label: 'metadado diferente' } : {}),
+        ...(problem === 'body-extra' ? { secret: 'campo não contratado' } : {}),
+      };
+      call.mockResolvedValueOnce(response(bodyPage(read)));
+      if (problem === 'cursor')
+        call.mockResolvedValueOnce(response({ items: [], nextCursor: 'same-page' }));
+    }
+  }
+  await expect(captureWorkHistoryBackup(target)).rejects.toThrow('histórico completo');
 });

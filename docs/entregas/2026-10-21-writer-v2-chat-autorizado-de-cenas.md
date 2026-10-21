@@ -246,3 +246,19 @@ manifesto ci-lore-identity-native-verification.json, sob writer-v2-editor-chat-q
 Revisão final sem achados P1/P2; somente teste visual e este registro no novo
 commit. Não houve novo validate integral para alterar expectativa de teste;
 o próximo head ainda depende de CI própria.
+
+### Acompanhamento remoto de 6650408 — 2026-10-21
+
+Rules [39663714845](https://github.com/gaabrielrd/writer/actions/runs/39663714845)
+verdes. Na [CI 39663715057](https://github.com/gaabrielrd/writer/actions/runs/39663715057),
+Node 22 e 24, auditoria, produção Chromium e dez shards visuais passaram, incluindo
+7/12 com a expectativa de lore corrigida. Shards 1/12 (119444043454) e 3/12
+(119444043710) terminaram cancelados; o agregador E2E falhou. O run ficou cancelled.
+Não declarar CI geral verde nem inferir a causa dos cancelamentos só do status.
+
+O log do shard 1 mostra uma falha no caso de recuperação de vínculo C4/S2, em
+46,1 s; o mesmo caso passou no retry em 38,9 s. O cancelamento interrompeu o lote
+antes do resultado final. O shard 3 não registrou falha de teste nas linhas
+consultadas antes do cancelamento. São resultados parciais, não execução integral
+aprovada; sem aumentar timeout, retry ou reduzir a suíte. P1 continua em descoberta
+em paralelo conforme autorização do operador; seu planejamento não fecha o gate A.

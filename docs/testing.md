@@ -857,3 +857,22 @@ real, hashes das seções e envelopes completos, sem enviar PDF ou prosa ao serv
 O manuscrito de 327 páginas continua reconhecido como uma seção: não declarar
 capítulos recuperados automaticamente. O cenário legado de nove capítulos é
 sintético apesar do título do teste; Phandelver é o PDF real separado.
+
+## Captura completa do histórico — P1 M1
+
+O leitor de manuscript-history verifica todas as páginas/resumos/corpos e só
+retorna o histórico completo após confirmar o token final. Testes dirigidos:
+
+```bash
+npx vitest run src/features/manuscript-history/tests/workHistoryService.test.ts
+node --test functions/test/workHistory.test.mjs functions/test/adventureBlocks.test.mjs
+```
+
+workHistory.rules.test.mjs usa Firestore/Admin reais locais para concorrência,
+replay, token nativo/ABA/encarnação, versão de recurso removido, exclusão
+interrompida e preservação do contador no cliente. Ele pertence a npm run test:rules;
+não executar seu Admin contra serviços live. A revisão do catálogo deve avançar
+no mesmo commit dos writers; não simular isso só incrementando o fixture.
+As regressões nativas de manuscript-history cobrem a continuidade do diálogo
+existente, com transporte fictício, e não substituem a prova SDK. A implementação
+de pacote/roundtrip completo P1 permanece separada desse marco.

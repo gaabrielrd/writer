@@ -14,13 +14,19 @@ import { FIXTURE_TIME } from './data';
 
 type SavedVersion = { summary: History.VersionSummary; chunks: string[] };
 type Receipt = { fingerprint: string; result: unknown; restoredHash?: string };
-type State = { versions: [string, SavedVersion][]; receipts: [string, Receipt][]; clock: number };
+type State = {
+  versions: [string, SavedVersion][];
+  receipts: [string, Receipt][];
+  clock: number;
+  revisions?: [string, number][];
+};
 const storageKey = 'writer.visual.work-history';
 const initial = JSON.parse(
   sessionStorage.getItem(storageKey) ?? '{"versions":[],"receipts":[],"clock":0}',
 ) as State;
 const versions = new Map(initial.versions);
 const receipts = new Map(initial.receipts);
+const revisions = new Map(initial.revisions ?? []);
 let clock = initial.clock;
 const targetKey = (target: History.VersionTarget) =>
   `${fixtureOwner()}:${target.kind}:${target.id}`;
@@ -30,7 +36,12 @@ const sameResource = (a: History.VersionResource, b: History.VersionResource) =>
 function persist() {
   sessionStorage.setItem(
     storageKey,
-    JSON.stringify({ versions: [...versions], receipts: [...receipts], clock }),
+    JSON.stringify({
+      versions: [...versions],
+      receipts: [...receipts],
+      clock,
+      revisions: [...revisions],
+    }),
   );
 }
 function fail(message: string, code = 'failed-precondition', reason = 'revision-conflict'): never {
@@ -47,6 +58,7 @@ async function authorize(target: History.VersionTarget) {
     sessionStorage.getItem('writer.visual.history-revoked-target') === `${target.kind}:${target.id}`
   )
     fail('Projeto indisponível.', 'not-found');
+  return root;
 }
 function splitBody(content: string) {
   const chunks: string[] = [];
@@ -141,6 +153,8 @@ function saveVersion(
     chunkCount: chunks.length,
   };
   versions.set(versionKey(current.target, id), { summary, chunks });
+  const key = targetKey(current.target);
+  revisions.set(key, (revisions.get(key) ?? 0) + 1);
   return summary;
 }
 function savedVersion(target: History.VersionTarget, id: string) {
@@ -164,6 +178,28 @@ function lostResponse(method: string) {
       'unavailable',
     );
   }
+}
+export async function getWorkHistoryBackupSource(input: {
+  target: History.VersionTarget;
+}): Promise<History.WorkHistoryBackupSource> {
+  const root = await authorize(input.target),
+    key = targetKey(input.target);
+  const historyRevision = revisions.get(key) ?? 0;
+  return {
+    schemaVersion: 1,
+    historyRevision,
+    sourceToken: await fixtureContentHash(
+      JSON.stringify([key, root.createdAt, root.updatedAt, historyRevision]),
+    ),
+  };
+}
+async function checkHistoryToken(input: {
+  target: History.VersionTarget;
+  expectedHistoryToken?: string;
+}) {
+  if (input.expectedHistoryToken === undefined) return;
+  if (input.expectedHistoryToken !== (await getWorkHistoryBackupSource(input)).sourceToken)
+    fail('O histórico mudou durante a captura.', 'failed-precondition', 'history-snapshot-changed');
 }
 export const getWorkVersionSource = (input: {
   target: History.VersionTarget;
@@ -196,6 +232,7 @@ export async function listWorkVersions(input: {
   resource?: History.VersionResource;
   cursor?: string | null;
   limit?: number;
+  expectedHistoryToken?: string;
 }): Promise<History.VersionPage> {
   await authorize(input.target);
   const seedKey = 'writer.visual.history-seeded:' + targetKey(input.target);
@@ -229,6 +266,7 @@ export async function listWorkVersions(input: {
       persist();
     }
   }
+  await checkHistoryToken(input);
   const scope = cursorScope(input.target, input.resource ?? null);
   const cursor = input.cursor
     ? (JSON.parse(input.cursor) as { scope: string; createdAt: number; id: string })
@@ -264,8 +302,10 @@ export async function readWorkVersion(input: {
   versionId: string;
   cursor?: string | null;
   limit?: number;
+  expectedHistoryToken?: string;
 }): Promise<History.VersionBodyPage> {
   await authorize(input.target);
+  await checkHistoryToken(input);
   const value = savedVersion(input.target, input.versionId),
     scope = cursorScope(input.target, input.versionId);
   const cursor = input.cursor
@@ -360,6 +400,8 @@ export async function deleteWorkVersion(
   if (prior.result) return prior.result;
   const value = savedVersion(input.target, input.versionId);
   versions.delete(versionKey(input.target, input.versionId));
+  const key = targetKey(input.target);
+  revisions.set(key, (revisions.get(key) ?? 0) + 1);
   const result = { complete: true, processed: value.chunks.length };
   receipts.set(prior.key, { fingerprint: prior.fingerprint, result });
   persist();

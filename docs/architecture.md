@@ -478,6 +478,18 @@ no projeto, mas não recria o recurso. Backup privado v6 informa que não inclui
 histórico; a exclusão existente de livro limpa versões/corpos em lotes. Exclusão
 de projeto de aventura ainda não existe e deverá incorporar essa limpeza.
 
+O marco interno P1 de portabilidade adiciona historyRevision na raiz: captura
+manual, cópia anterior à restauração e retirada de versão incrementam o catálogo
+atomicamente com o recibo. Cleanup e replay não incrementam de novo. Rules
+reservam o campo ao servidor. getWorkHistoryBackupSource produz token ligado ao
+UID/projeto e createTime/updateTime nativos; lista e corpo podem exigir o mesmo
+token na transação autorizada. captureWorkHistoryBackup percorre todas as versões,
+inclusive recursos removidos, verifica corpos/resumos e revalida o token no fim.
+Não devolve resultado parcial nem põe o token no DTO do arquivo. Isso ainda não
+integra histórico ao JSON v6 nem implementa pacote/restauração; o token de M1 não
+substitui os clocks dos demais recursos. Veja o
+[contrato M1](tasks/writer-v2/execucao/32-captura-consistente-do-historico.md).
+
 Ver [contrato F2-05](tasks/writer-v2/execucao/11-historico-e-restauracao.md).
 
 ## Blocos narrativos de aventura e prévia privada

@@ -497,6 +497,7 @@ export const getCampaign = callable('getCampaign');
 export const prepareStudioBooks = callable('prepareStudioBooks');
 export const listStudioProjects = callable('listStudioProjects');
 export const getWorkProgress = callable('getWorkProgress');
+export const getWorkHistoryBackupSource = callable('getWorkHistoryBackupSource');
 export const getWorkVersionSource = callable('getWorkVersionSource');
 export const listAdventureBlocks = callable('listAdventureBlocks');
 export const getAdventureBlock = callable('getAdventureBlock');

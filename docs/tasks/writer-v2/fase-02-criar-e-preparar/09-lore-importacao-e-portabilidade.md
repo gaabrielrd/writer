@@ -32,6 +32,10 @@ Entradas: manuscritos/importações, lore, personas e dados de campanha. Resulta
 - Preservar menções, prioridade local/global e referências em mudanças de projeto.
 - Contexto de IA recebe somente recursos que a pessoa pode ler; não inserir dados de jogadores no contexto de outro usuário.
 - Definir backup privado versionado de aventura/campanha e restaurabilidade, sem chaves, pedidos ou credenciais.
+- Na restauração de livro, religar ao universo original somente com acesso atual,
+  sem duplicar ou sobrescrever universo/lore global. Sem acesso, revisar os próprios
+  sem vínculo e conservar referências externas indisponíveis; nunca convertê-las
+  em fichas locais. Decisão de 2026-10-21, detalhada no [plano P1](../execucao/31-portabilidade-de-livros.md).
 
 ## Passos de execução
 

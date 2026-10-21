@@ -15,6 +15,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  deleteField,
   query,
   limit,
 } from 'firebase/firestore';
@@ -216,6 +217,7 @@ test('SDK concurrent restores commit one predecessor and source change; retries 
   assert.equal(await read(first.previousVersion.id), 'Um texto novo');
   assert.equal((await admin.doc('books/book/workProgress/current').get()).data().wordCount, 2);
   assert.equal((await admin.doc('books/book').get()).data().wordCount, 2);
+  assert.equal((await admin.doc('books/book').get()).data().historyRevision, 2);
   await save('Depois do recibo', 'later');
   await assert.rejects(api.restoreWorkVersion('author', request), { code: 'failed-precondition' });
   assert.equal((await source()).content, 'Depois do recibo');
@@ -291,6 +293,10 @@ test('SDK scene history works for books and adventures and preserves planning, p
     const result = await scenes.getScene('author', { target: project, sceneId: res.id });
     assert.equal(result.archived, true);
     assert.equal(result.group.wordCount, 0);
+    assert.equal(
+      (await api.getWorkHistoryBackupSource('author', { target: project })).historyRevision,
+      3,
+    );
     for (const uid of ['author', 'other', null])
       await assertFails(
         getDoc(
@@ -352,4 +358,180 @@ test('SDK metadata pages and deleted-source versions remain private; explicit ve
   assert.equal((await admin.collection('books/book/workVersions').get()).size, 0);
   assert.equal((await admin.collection('books/book/workVersionBodies').get()).size, 0);
   assert.equal((await admin.doc('books/book').get()).exists, false);
+});
+
+test('SDK backup source is read-only; native tokens reject root ABA, recreation, foreign UID and revocation', async () => {
+  const ref = admin.doc('books/book'),
+    initial = await ref.get();
+  const first = await api.getWorkHistoryBackupSource('author', { target });
+  assert.equal(first.historyRevision, 0);
+  assert.equal((await ref.get()).updateTime.isEqual(initial.updateTime), true);
+  await ref.update({ title: 'Outra' });
+  await ref.update({ title: 'Livro' });
+  const after = await api.getWorkHistoryBackupSource('author', { target });
+  assert.equal(after.historyRevision, first.historyRevision);
+  assert.notEqual(after.sourceToken, first.sourceToken);
+  await assert.rejects(
+    api.listWorkVersions('author', { target, expectedHistoryToken: first.sourceToken }),
+    { code: 'failed-precondition', details: { reason: 'history-snapshot-changed' } },
+  );
+  const old = await ref.get();
+  await ref.delete();
+  await ref.set(old.data());
+  assert.equal((await ref.get()).createTime.isEqual(old.createTime), false);
+  await assert.rejects(
+    api.listWorkVersions('author', { target, expectedHistoryToken: after.sourceToken }),
+    { code: 'failed-precondition', details: { reason: 'history-snapshot-changed' } },
+  );
+  const current = await api.getWorkHistoryBackupSource('author', { target });
+  await assert.rejects(api.getWorkHistoryBackupSource('other', { target }), { code: 'not-found' });
+  await assert.rejects(
+    api.listWorkVersions('other', { target, expectedHistoryToken: current.sourceToken }),
+    { code: 'not-found' },
+  );
+  await assert.rejects(api.getWorkHistoryBackupSource(null, { target }), {
+    code: 'unauthenticated',
+  });
+  await ref.update({ deleting: true });
+  await assert.rejects(
+    api.listWorkVersions('author', { target, expectedHistoryToken: current.sourceToken }),
+    { code: 'not-found' },
+  );
+});
+
+test('SDK concurrent catalog creation increments once per new receipt and guarded list rejects a changed page', async () => {
+  await prepare();
+  const observed = await source(),
+    request = (name) => ({
+      target,
+      resource,
+      operationId: op(name),
+      expectedSourceToken: observed.sourceToken,
+    });
+  const [a, replay, b] = await Promise.all([
+    api.createWorkVersion('author', request('epoch-a')),
+    api.createWorkVersion('author', request('epoch-a')),
+    api.createWorkVersion('author', request('epoch-b')),
+  ]);
+  assert.deepEqual(a, replay);
+  assert.notEqual(a.version.id, b.version.id);
+  assert.equal((await admin.doc('books/book').get()).data().historyRevision, 2);
+  assert.equal((await admin.collection('books/book/workVersions').get()).size, 2);
+  const epoch = await api.getWorkHistoryBackupSource('author', { target });
+  const page = await api.listWorkVersions('author', {
+    target,
+    expectedHistoryToken: epoch.sourceToken,
+    limit: 1,
+  });
+  assert.ok(page.nextCursor);
+  await capture('epoch-c');
+  await assert.rejects(
+    api.listWorkVersions('author', {
+      target,
+      expectedHistoryToken: epoch.sourceToken,
+      cursor: page.nextCursor,
+      limit: 1,
+    }),
+    { code: 'failed-precondition', details: { reason: 'history-snapshot-changed' } },
+  );
+  assert.equal((await api.getWorkHistoryBackupSource('author', { target })).historyRevision, 3);
+  assert.equal((await admin.doc('users/author').get()).data().credits, 7);
+});
+
+test('SDK interrupted version deletion changes selection once and bounded cleanup/replay preserves its new token', async () => {
+  const { version } = await capture('epoch-delete');
+  const old = await api.getWorkHistoryBackupSource('author', { target });
+  const request = { target, versionId: version.id, operationId: op('epoch-delete-request') };
+  let interrupt = true;
+  const interrupted = createWorkHistoryService({
+    db: {
+      doc: (path) => admin.doc(path),
+      collection: (path) => admin.collection(path),
+      runTransaction: (work) =>
+        admin.runTransaction((tx) =>
+          work({
+            get: tx.get.bind(tx),
+            getAll: tx.getAll.bind(tx),
+            set: tx.set.bind(tx),
+            create: tx.create.bind(tx),
+            update: tx.update.bind(tx),
+            delete(ref) {
+              if (interrupt && ref.path.includes('/workVersionBodies/')) {
+                interrupt = false;
+                throw new Error('Limpeza interrompida');
+              }
+              return tx.delete(ref);
+            },
+          }),
+        ),
+    },
+  });
+  await assert.rejects(interrupted.deleteWorkVersion('author', request), /Limpeza interrompida/);
+  const epoch = await api.getWorkHistoryBackupSource('author', { target });
+  assert.equal(epoch.historyRevision, 2);
+  assert.notEqual(epoch.sourceToken, old.sourceToken);
+  assert.equal(
+    (await admin.doc('books/book/workVersions/' + version.id).get()).data().deleting,
+    true,
+  );
+  assert.equal(
+    (await api.listWorkVersions('author', { target, expectedHistoryToken: epoch.sourceToken }))
+      .items.length,
+    0,
+  );
+  await assert.rejects(
+    api.readWorkVersion('author', {
+      target,
+      versionId: version.id,
+      expectedHistoryToken: old.sourceToken,
+    }),
+    { code: 'failed-precondition', details: { reason: 'history-snapshot-changed' } },
+  );
+  assert.equal((await api.deleteWorkVersion('author', request)).complete, true);
+  assert.deepEqual(await api.getWorkHistoryBackupSource('author', { target }), epoch);
+  await api.deleteWorkVersion('author', request);
+  assert.deepEqual(await api.getWorkHistoryBackupSource('author', { target }), epoch);
+});
+
+test('SDK guarded history retains a deleted chapter version and preserves exact Unicode without granting direct reads', async () => {
+  const content = '<p>  ação 🐉 e ação  </p>';
+  await admin.doc('books/book/chapters/chapter').update({ content });
+  const { version } = await capture('epoch-removed');
+  await admin.doc('books/book/chapters/chapter').delete();
+  const epoch = await api.getWorkHistoryBackupSource('author', { target });
+  const page = await api.listWorkVersions('author', {
+    target,
+    expectedHistoryToken: epoch.sourceToken,
+  });
+  assert.equal(page.items[0].id, version.id);
+  const body = await api.readWorkVersion('author', {
+    target,
+    versionId: version.id,
+    expectedHistoryToken: epoch.sourceToken,
+  });
+  assert.equal(body.chunks.map((row) => row.content).join(''), content);
+  await assertFails(getDoc(doc(client(), 'books/book/workVersions/' + version.id)));
+});
+
+test('SDK Rules reserve catalog clock: clients cannot forge, reset, remove or increment it', async () => {
+  await capture('epoch-rule');
+  const ref = doc(client(), 'books/book');
+  for (const historyRevision of [0, 2, null, deleteField()])
+    await assertFails(updateDoc(ref, { historyRevision }));
+  await assertSucceeds(updateDoc(ref, { title: 'Metadado próprio', updatedAt: 101 }));
+  assert.equal((await admin.doc('books/book').get()).data().historyRevision, 1);
+  const value = {
+    authorId: 'author',
+    title: 'Novo',
+    status: 'draft',
+    localLoreVersion: 0,
+    createdAt: 1,
+    updatedAt: 1,
+    wordCount: 0,
+  };
+  await assertFails(setDoc(doc(client(), 'books/forged-clock'), { ...value, historyRevision: 1 }));
+  await assertSucceeds(
+    setDoc(doc(client(), 'books/legacy-zero'), { ...value, historyRevision: 0 }),
+  );
+  await assertFails(updateDoc(doc(client(), 'books/legacy-zero'), { historyRevision: 1 }));
 });

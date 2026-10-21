@@ -1,4 +1,10 @@
 import { validateId } from './generation.mjs';
+import {
+  nextWorkHistoryRevision,
+  historyBackupToken,
+  readHistoryBackupSource,
+  assertHistoryBackupSource,
+} from './workHistorySnapshot.mjs';
 import { countVisibleWords } from './visibleWordCount.mjs';
 import { assertSceneEnvelope } from './sceneContracts.mjs';
 import { createWorkProgressService } from './workProgress.mjs';
@@ -99,6 +105,10 @@ export function createWorkHistoryService({ db, now = Date.now }) {
     });
   }
   return {
+    async getWorkHistoryBackupSource(uid, data) {
+      const context = historyScope(db, uid, data, []);
+      return db.runTransaction((tx) => readHistoryBackupSource(tx, context));
+    },
     async getWorkVersionSource(uid, data) {
       const context = historyScope(db, uid, data, ['resource']),
         resource = historyResource(data.resource, context.target);
@@ -125,8 +135,10 @@ export function createWorkHistoryService({ db, now = Date.now }) {
       const label = data.label?.trim() || null,
         op = operation(context, data, 'create', { resource, token, label });
       const prior = await db.runTransaction(async (tx) => {
-        await workProject(tx, context);
-        return receipt(tx, op);
+        const root = await workProject(tx, context),
+          stored = await receipt(tx, op);
+        if (!stored) nextWorkHistoryRevision(root);
+        return stored;
       });
       if (prior)
         return db.runTransaction(async (tx) => {
@@ -156,17 +168,28 @@ export function createWorkHistoryService({ db, now = Date.now }) {
           label,
           workDate(now, current.root.updatedAt ?? 0),
         );
+        const historyRevision = nextWorkHistoryRevision(current.root);
         plan.commit(tx);
+        tx.update(context.ref, { historyRevision });
         tx.create(op.ref, { fingerprint: op.fingerprint, versionId: op.id });
         return { version: plan.version };
       });
     },
     async listWorkVersions(uid, data) {
-      const context = historyScope(db, uid, data, ['resource', 'cursor', 'limit']),
+      const context = historyScope(db, uid, data, [
+          'resource',
+          'cursor',
+          'limit',
+          'expectedHistoryToken',
+        ]),
         resource = data.resource == null ? null : historyResource(data.resource, context.target),
         limit = workLimit(data.limit),
         scope = { uid, target: context.target, resource, kind: 'list' },
-        cursor = historyCursor(data.cursor, scope);
+        cursor = historyCursor(data.cursor, scope),
+        expected =
+          data.expectedHistoryToken === undefined
+            ? undefined
+            : historyBackupToken(data.expectedHistoryToken);
       if (
         cursor &&
         (!Number.isFinite(cursor.date) || cursor.date < 0 || cursor.date > 8640000000000000)
@@ -174,7 +197,8 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         workFail('invalid-argument', 'Página inválida.');
       if (cursor) workId(cursor.id);
       return db.runTransaction(async (tx) => {
-        await workProject(tx, context);
+        if (expected === undefined) await workProject(tx, context);
+        else await assertHistoryBackupSource(tx, context, expected);
         let query = db.collection(context.path + '/workVersions').where('deleting', '==', false);
         if (resource) query = query.where('resourceKey', '==', digest(resource));
         query = query
@@ -195,11 +219,20 @@ export function createWorkHistoryService({ db, now = Date.now }) {
       });
     },
     async readWorkVersion(uid, data) {
-      const context = historyScope(db, uid, data, ['versionId', 'cursor', 'limit']),
+      const context = historyScope(db, uid, data, [
+          'versionId',
+          'cursor',
+          'limit',
+          'expectedHistoryToken',
+        ]),
         id = workId(data.versionId),
         limit = data.limit ?? 4,
         scope = { uid, target: context.target, versionId: id, kind: 'body' },
-        cursor = historyCursor(data.cursor, scope);
+        cursor = historyCursor(data.cursor, scope),
+        expected =
+          data.expectedHistoryToken === undefined
+            ? undefined
+            : historyBackupToken(data.expectedHistoryToken);
       if (
         !Number.isInteger(limit) ||
         limit < 1 ||
@@ -208,7 +241,8 @@ export function createWorkHistoryService({ db, now = Date.now }) {
       )
         workFail('invalid-argument', 'Página inválida.');
       return db.runTransaction(async (tx) => {
-        await workProject(tx, context);
+        if (expected === undefined) await workProject(tx, context);
+        else await assertHistoryBackupSource(tx, context, expected);
         const value = await readHistoryVersion(tx, db, context, id),
           start = cursor?.index ?? 0;
         if (start >= value.chunkCount) workFail('invalid-argument', 'Página inválida.');
@@ -235,8 +269,10 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         token = sourceToken(data.expectedSourceToken),
         op = operation(context, data, 'restore', { resource, versionId: id, token });
       const prior = await db.runTransaction(async (tx) => {
-        await workProject(tx, context);
-        return receipt(tx, op);
+        const root = await workProject(tx, context),
+          stored = await receipt(tx, op);
+        if (!stored) nextWorkHistoryRevision(root);
+        return stored;
       });
       if (prior) return restoreResult(context, resource, prior);
       await activateLegacy(context, resource, token, op);
@@ -302,8 +338,10 @@ export function createWorkHistoryService({ db, now = Date.now }) {
           resource.kind === 'chapter'
             ? { contentHash: digest(content), updatedAt: write.result.updatedAt }
             : write.marker;
+        const historyRevision = nextWorkHistoryRevision(current.root);
         copy.commit(tx);
         write.commit();
+        tx.update(context.ref, { historyRevision });
         const result = { fingerprint: op.fingerprint, previousVersionId, after };
         tx.create(op.ref, result);
         return result;
@@ -316,12 +354,15 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         op = operation(context, data, 'delete', { versionId: id }),
         ref = versionRef(db, context, id);
       await db.runTransaction(async (tx) => {
-        await workProject(tx, context);
-        const previous = await receipt(tx, op),
+        const root = await workProject(tx, context),
+          previous = await receipt(tx, op),
           snapshot = await tx.get(ref);
         if (previous) return;
         if (!snapshot.exists) workFail('not-found', 'Versão indisponível.');
+        const historyRevision =
+          snapshot.data().deleting === true ? null : nextWorkHistoryRevision(root);
         tx.update(ref, { deleting: true });
+        if (historyRevision !== null) tx.update(context.ref, { historyRevision });
         tx.create(op.ref, { fingerprint: op.fingerprint, complete: false, processed: 0 });
       });
       return db.runTransaction(async (tx) => {

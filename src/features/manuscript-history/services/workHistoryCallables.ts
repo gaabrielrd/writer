@@ -12,6 +12,7 @@ import {
   type VersionSource,
   type VersionSummary,
   type VersionTarget,
+  type WorkHistoryBackupSource,
 } from '../model/workHistory';
 async function call<T>(name: string, input: unknown): Promise<T> {
   try {
@@ -36,6 +37,9 @@ async function call<T>(name: string, input: unknown): Promise<T> {
     throw new Error('Não foi possível acessar o histórico. Tente novamente.', { cause });
   }
 }
+export const getWorkHistoryBackupSource = (input: {
+  target: VersionTarget;
+}): Promise<WorkHistoryBackupSource> => call('getWorkHistoryBackupSource', input);
 export const getWorkVersionSource = (input: {
   target: VersionTarget;
   resource: VersionResource;
@@ -48,12 +52,14 @@ export const listWorkVersions = (input: {
   resource?: VersionResource;
   cursor?: string | null;
   limit?: number;
+  expectedHistoryToken?: string;
 }): Promise<VersionPage> => call('listWorkVersions', input);
 export const readWorkVersion = (input: {
   target: VersionTarget;
   versionId: string;
   cursor?: string | null;
   limit?: number;
+  expectedHistoryToken?: string;
 }): Promise<VersionBodyPage> => call('readWorkVersion', input);
 export const restoreWorkVersion = (
   input: RestoreWorkVersionInput,
