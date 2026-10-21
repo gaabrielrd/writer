@@ -170,7 +170,7 @@ completo/removido, rascunhos e nova cópia privada. O operador confirmou religar
 universo original se o acesso continuar autorizado, sem duplicação. Dados próprios
 continuam restauráveis com aviso quando a origem estiver indisponível; referências
 externas não viram lore local. Consistência do snapshot e protocolo ainda precisam fechar.
-Sem implementação P1 liberada. A foi enviado em 5f947a0; Rules 39659740521 verdes.
+P1 tem implementação interna limitada aos marcos registrados abaixo; restauração ainda não liberada. A foi enviado em 5f947a0; Rules 39659740521 verdes.
 A CI 39659740574 revelou uma corrida no teste anterior de importação em Node 24;
 correção isolada em f022094, com 13/13 testes dirigidos verdes e Node 24/Rules
 remotos verdes nesse head intermediário. A expectativa visual de lore foi corrigida
@@ -189,3 +189,17 @@ Veja a [entrega interna M1](../../../entregas/2026-10-21-writer-v2-captura-do-hi
 Sem pacote/restauração/roundtrip P1 ou fechamento de F2-09; o próximo marco fecha
 formato, orçamento de bytes e captura dos demais dados/mídia. CI do novo head
 continua condição própria, sem bloquear o próximo marco validado localmente.
+
+### P1 M2 — contêiner limitado validado localmente
+
+O [contrato M2](33-conteiner-limitado-de-backup.md) e a
+[ADR 0045](../../../decisions/0045-book-backup-framing.md) implementam framing
+sem compressão, leitura limitada, cadeia SHA-256 e selo/EOF. Validate
+2.548/85/655 e cinco casos Chromium nativos verdes. Veja a
+[entrega interna M2](../../../entregas/2026-10-21-writer-v2-conteiner-de-backup.md).
+Ainda sem schema/captura restante/mídia/restauração de livro; P1 e F2-09 abertos.
+
+CI do M1 e847afa: Rules verdes, CI geral parcial com sete shards verdes e cinco
+cancelados; agregador falhou. Há falha de inserção/caret em dois perfis de
+adventure-lore e timeouts em três casos que passaram no retry. Diagnóstico na
+entrega M1; ajuste dirigido será incorporado sem bloquear o avanço validado local.

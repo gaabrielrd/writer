@@ -490,6 +490,15 @@ integra histórico ao JSON v6 nem implementa pacote/restauração; o token de M1
 substitui os clocks dos demais recursos. Veja o
 [contrato M1](tasks/writer-v2/execucao/32-captura-consistente-do-historico.md).
 
+A feature folha book-portability expõe framing/integridade puro compartilhado
+com functions/src/bookBackupContainer.mjs e um adaptador Blob em services.
+O contêiner v1 é sem compressão, com quadros limitados e cadeia SHA-256 até selo/EOF.
+O leitor retorna registros provisórios; consumir um registro não autoriza gravar
+ou ativar projeto. Schema semântico, captura restante/mídia e restauração P1 ainda
+não estão integrados. Não acumular os frames no consumidor como prova de memória
+limitada. JSON v1–v6 permanece intacto. Veja a [ADR 0045](decisions/0045-book-backup-framing.md)
+e o [contrato M2](tasks/writer-v2/execucao/33-conteiner-limitado-de-backup.md).
+
 Ver [contrato F2-05](tasks/writer-v2/execucao/11-historico-e-restauracao.md).
 
 ## Blocos narrativos de aventura e prévia privada

@@ -107,3 +107,25 @@ consultar e excluir uma versão de capítulo removido sem recriá-lo. A prova de
 concorrência/token/Rules exige executar workHistory.rules.test.mjs no emulador;
 fixtures de navegador não demonstram essa autorização. A nova captura por serviço
 ainda não tem ação de download no produto.
+
+## Atualização remota verificada em 2026-10-21
+
+M1 foi registrado e enviado em e847afaa761c6039416bc0048609f8ac6c25d3c2, com
+HEAD/upstream/remoto coincidentes e checkouts limpos naquele fechamento.
+Pre-push normal: tipos e 2.545/219 testes verdes, 152,24 s.
+Rules 39683718923 verdes. CI 39683718918 terminou com sete shards visuais,
+Node 22/24, auditoria e Chromium de produção verdes; shards 1/3/5/9/11 cancelados,
+agregador E2E falhou. Portanto M1 não tem aprovação geral remota.
+
+Os cinco logs cancelados e artefatos de 3/9 foram inspecionados. A jornada autor
+de adventure-lore inseriu texto antes da prosa em mobile-dark e desktop-sepia,
+inclusive no retry; esperava inserção ao final após Control+End.
+Outros três casos de desktop-sepia excederam 45 s e passaram no retry. Os três
+demais shards cancelados não registraram linha de falha de teste antes do cancelamento.
+Os cancelamentos ocorreram perto do limite configurado de 15 minutos; isso é
+compatível com esgotamento do job, sem confirmação oficial da causa só pelo status.
+A regressão de caret e o orçamento da matriz exigem ajuste dirigido separado,
+sem alterar esta evidência local positiva nem declarar CI verde.
+
+Evidência privada: m1-ci-investigation.json e ZIPs m1-visual-3/9, com SHA-256
+conferidos contra os digests retornados pelo GitHub. Não houve rerun da matriz inteira.

@@ -1,6 +1,6 @@
 # F2-09 P1 — Backup completo e restauração privada de livros
 
-**Estado em 2026-10-21:** decisão de universo confirmada; M1 de captura do histórico implementado e validado localmente sob [contrato próprio](32-captura-consistente-do-historico.md). Pacote/restauração ainda não implementados.
+**Estado em 2026-10-21:** universo confirmado; M1 de captura de histórico e M2 de contêiner limitado implementados e validados localmente. Veja [M1](32-captura-consistente-do-historico.md) e [M2](33-conteiner-limitado-de-backup.md). Pacote completo/schema/captura restante/restauração ainda pendentes.
 **Base:** A enviado em `5f947a0e5e50df81154df14a7124b914278cd4c9`, HEAD/upstream/remoto
 conferidos e checkout limpo no fechamento A. PR21 aberto em rascunho; Rules
 39659740521 verdes. Na CI 39659740574 passaram Node 22, auditoria e produção
@@ -131,9 +131,10 @@ Novos backups precisam conter o histórico real, não apenas snapshot atual.
    de identidade/acesso antes e depois dos I/Os. Rascunho próprio é contribuição
    explícita separada da captura salva; não criar versão manual por fazer backup.
 2. Produzir formato novo versionado com manifesto fechado e mídia apropriada,
-   evitando base64 ilimitado em documento Firestore. Proposta a validar: pacote ZIP
-   com manifesto JSON usando a dependência JSZip já existente; extensão/limites e
-   schema serão normativos somente no adendo de contratos.
+   evitando base64 ilimitado em documento Firestore. O [contrato M2](33-conteiner-limitado-de-backup.md)
+   adota contêiner sem compressão com quadros limitados e selo, conforme ADR 0045;
+   a hipótese ZIP anterior foi substituída. Schema semântico do livro e mídia
+   ainda exigem contrato próprio antes da restauração.
 3. Ler/validar arquivo local e mostrar revisão: títulos, contagens, histórico,
    origem, vínculos e dados ausentes. Não executar conteúdo, carregar URLs remotas
    ou gravar projeto antes da confirmação. Versão futura desconhecida falha cedo.
@@ -204,7 +205,8 @@ Inferência para o contrato: tamanho comprimido e callback de progresso sozinhos
 não provam orçamento de memória. Comparar um pacote restrito sem compressão com
 leitura por fluxo limitada; fechar limites por entrada e total, caminhos,
 duplicatas, CRC/hash e falhas de cancelamento antes da implementação. Nenhum
-formato foi adotado nem dependência adicionada nesta descoberta.
+formato havia sido adotado nessa descoberta. Depois, o [contrato M2](33-conteiner-limitado-de-backup.md)
+adotou contêiner sem compressão e limitado por quadro; nenhuma dependência foi adicionada.
 
 A [referência RPC do Firestore](https://docs.cloud.google.com/firestore/docs/reference/rpc/google.firestore.v1#readonly)
 descreve read_time com precisão de microssegundos na última hora; PITR amplia a

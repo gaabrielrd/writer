@@ -876,3 +876,21 @@ no mesmo commit dos writers; não simular isso só incrementando o fixture.
 As regressões nativas de manuscript-history cobrem a continuidade do diálogo
 existente, com transporte fictício, e não substituem a prova SDK. A implementação
 de pacote/roundtrip completo P1 permanece separada desse marco.
+
+## Contêiner de backup — P1 M2
+
+O codec puro possui vetores independentes Python/hashlib/struct e testes Node de
+roundtrip binário/Unicode, corrupção, selo/EOF, sequência, metadata canônica,
+comprimentos maliciosos antes da leitura, backpressure e cancelamento:
+
+```bash
+node --test functions/test/bookBackupContainer.test.mjs
+npx vitest run src/features/book-portability/tests/backupBlobSource.test.ts
+```
+
+O segundo comando verifica o adaptador Blob por intervalos, erro sem retry e API
+pública com Web Crypto real. Comparar bytes, sem depender de protótipo de
+TypedArray entre realms. A prova nativa dirigida usa Chromium, Blob/Web Crypto
+reais, vetor de 404 bytes e 12 payloads máximos; evidência na entrega M2.
+A fixture binária não demonstra schema/autorização de livro. Os testes de P1
+completo deverão provar captura, mídia, revisão e restauração/ativação no servidor.
