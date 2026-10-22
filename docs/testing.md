@@ -1330,3 +1330,17 @@ compatibilidade JSON v1–v6 e cleanup com corpos v5. A evidência de SDK real,
 incluindo excesso do limite nativo sem perda da fonte, fica na
 [entrega M28](entregas/2026-10-22-writer-v2-materializacao-do-lore-proprio.md).
 Ainda não comprova restauração ativada, suporte integral a campos grandes ou deploy.
+
+## Recursos de cenas/narrativa preparados (P1 M29)
+
+```bash
+node --test functions/test/bookRestoreResources.test.mjs
+```
+
+Cobre todos os tipos, pais ausentes, filhos antes do cabeçalho, arquivo/ordem A/B,
+índices canônicos, vínculos repetidos sem no-op, replay/CAS, prova nativa,
+rollback/retry, JSON v1–v6 e limpeza v7 combinada com corpos v5. O harness que
+insere uma raiz sintética confere somente o contrato dos leitores existentes,
+sem demonstrar ativação pela restauração.
+[Entrega M29](entregas/2026-10-22-writer-v2-cenas-e-narrativa-na-preparacao.md)
+registra a evidência de Node/SDK e limites. Contagens e restauração final seguem pendentes.

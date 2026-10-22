@@ -492,3 +492,14 @@ intacta, recriação protegida e compatibilidade JSON v1–v6. Nenhuma ativaçã
 Representação dos campos grandes, demais recursos, personas/mídia, histórico/
 rascunho, autorização/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
 Somente commit local; CI ignorada.
+
+### P1 M29 — cenas e narrativa na preparação
+
+O [contrato 62](62-cenas-e-narrativa-na-preparacao.md) materializa todos os onze
+tipos após lore e índices nativos. Progresso v3 confere o manifesto e aguarda
+resource-counts; inventário v7 limpa filhos antes dos pais, mesmo sem cabeçalho.
+[Evidência M29](../../../entregas/2026-10-22-writer-v2-cenas-e-narrativa-na-preparacao.md):
+153 Node e três cenários SDK distintos positivos. Achado de updateTime em no-op
+foi corrigido e o cenário afetado repetido; conteúdo/journal idênticos são reutilizados.
+Reconciliação, campos grandes, personas, histórico/rascunho/capa, autorização/
+ativação e host/UI/roundtrip/validate seguem P1/F2-09. Somente local; CI ignorada.

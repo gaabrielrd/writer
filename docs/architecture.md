@@ -1268,3 +1268,16 @@ Journal/recibo/ficha/cursor são atômicos e cleanup v6 certifica o namespace lo
 mantendo compatibilidade com corpos v5 e inventários anteriores. Raiz ausente,
 nenhuma promoção global ou publicação. Campos grandes ainda precisam de
 representação e consumidores antes da ativação; falha nativa preserva a fonte.
+
+## Cenas e narrativa na preparação (P1 M29)
+
+[ADR 0073](decisions/0073-restored-scenes-and-narrative.md) acrescenta projeções
+nativas fechadas e escritor interno de todos os recursos após lore. Progresso v3
+confere manifesto e termina em resource-counts, sem ativar ou servir a cópia.
+Filhos podem ser preparados antes dos pais: journal tipado registra cada caminho.
+
+Cleanup v7 drena filhos antes de corpos v5 e famílias simples; cena/arco só é
+removido após seus filhos estarem vazios. Certificação final inclui famílias novas.
+Vínculo canônico repetido revalida prova/conteúdo e conserva journal/native intactos,
+pois no-op não avança updateTime do Firestore. Contagens derivadas, índices prontos,
+campos grandes e demais estágios continuam condições obrigatórias da ativação.

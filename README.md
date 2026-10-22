@@ -343,3 +343,8 @@ com retomada paginada e inventário v6. A varredura aceita lore intercalado e
 preserva o cursor dos recursos ainda pendentes. Fichas maiores que o limite
 nativo continuam exigindo representação adequada antes da ativação; nenhuma
 fonte é truncada. P1/F2-09 permanecem abertos, sem nova UI ou deploy.
+
+P1 M29 prepara [cenas e narrativa](docs/tasks/writer-v2/execucao/62-cenas-e-narrativa-na-preparacao.md):
+corpos, planos, fontes, referências/índices, arcos, marcos e cronologia. Inventário
+v7 remove filhos antes dos pais, inclusive após interrupção anterior ao cabeçalho.
+A cópia continua sem raiz; reconciliação de contagens e fluxo final seguem pendentes.

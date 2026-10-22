@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { GenerationError, validateId } from './generation.mjs';
 import { digest } from './sceneContracts.mjs';
+import { BOOK_RESOURCE_KINDS } from './bookBackupResources.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
 export const BOOK_RESTORE_METHODS = [
@@ -171,7 +172,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3, 4, 5, 6].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -300,7 +301,11 @@ export function jobShape(uid, id, job) {
               'validation-items',
               'validation-state',
               ...(job.cleanupVersion >= 4
-                ? ['artifacts', ...(job.cleanupVersion >= 5 ? ['body-artifacts'] : [])]
+                ? [
+                    'artifacts',
+                    ...(job.cleanupVersion >= 5 ? ['body-artifacts'] : []),
+                    ...(job.cleanupVersion >= 7 ? ['resource-children'] : []),
+                  ]
                 : []),
             ]
           : []),
@@ -445,10 +450,14 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
     preparationProgress(job.preparation);
-    if ((job.cleanupVersion === 6) !== (job.preparation.schemaVersion === 2)) inconsistent();
+    if (
+      job.preparation.schemaVersion !==
+      (job.cleanupVersion === 7 ? 3 : job.cleanupVersion === 6 ? 2 : 1)
+    )
+      inconsistent();
     if (
       job.preparation.itemIndex > job.validationMeta.items ||
-      (job.preparation.schemaVersion === 2 &&
+      (job.preparation.schemaVersion >= 2 &&
         job.preparation.loreItemIndex >= job.validationMeta.items) ||
       job.preparation.cleanedArtifacts > job.preparation.artifactCount ||
       (job.state === 'content-verified' && job.preparation.cleanedArtifacts !== 0) ||
@@ -471,24 +480,29 @@ export function preparationProgress(value) {
     'chapterCount',
     'wordCount',
     'timestamp',
-    ...(value?.schemaVersion === 2
+    ...(value?.schemaVersion >= 2
       ? ['loreCount', 'loreRelationCount', 'relationOffset', 'loreItemIndex']
       : []),
+    ...(value?.schemaVersion === 3 ? ['resourceStartIndex', 'resourceCounts'] : []),
   ]);
   if (
-    ![1, 2].includes(value.schemaVersion) ||
-    !(value.schemaVersion === 1 ? ['structure', 'resources'] : ['resources', 'scenes']).includes(
-      value.phase,
-    )
+    ![1, 2, 3].includes(value.schemaVersion) ||
+    !(
+      value.schemaVersion === 1
+        ? ['structure', 'resources']
+        : value.schemaVersion === 2
+          ? ['resources', 'scenes']
+          : ['scenes', 'resource-counts']
+    ).includes(value.phase)
   )
     inconsistent();
-  if (value.schemaVersion === 2) {
+  if (value.schemaVersion >= 2) {
     for (const key of ['loreCount', 'loreRelationCount', 'relationOffset', 'loreItemIndex'])
       integer(value[key]);
     if (
-      value.loreItemIndex < value.itemIndex ||
+      (value.schemaVersion === 2 && value.loreItemIndex < value.itemIndex) ||
       value.relationOffset > value.loreRelationCount ||
-      (value.phase === 'scenes' && value.relationOffset !== 0)
+      (['scenes', 'resource-counts'].includes(value.phase) && value.relationOffset !== 0)
     )
       inconsistent();
   }
@@ -503,6 +517,23 @@ export function preparationProgress(value) {
   ])
     integer(value[key]);
   if (!Number.isFinite(new Date(value.timestamp).getTime())) inconsistent();
+  if (value.schemaVersion === 3) {
+    integer(value.resourceStartIndex);
+    closed(value.resourceCounts, BOOK_RESOURCE_KINDS);
+    let total = 0;
+    for (const kind of BOOK_RESOURCE_KINDS) total = sum(total, value.resourceCounts[kind]);
+    if (
+      value.resourceStartIndex > value.itemIndex ||
+      value.resourceStartIndex > value.loreItemIndex ||
+      value.resourceCounts.lore > value.loreCount ||
+      (value.phase === 'scenes'
+        ? value.itemIndex > value.loreItemIndex
+        : value.itemIndex !== value.loreItemIndex + 1) ||
+      total !==
+        value.itemIndex - value.resourceStartIndex - (value.phase === 'resource-counts' ? 1 : 0)
+    )
+      inconsistent();
+  }
   return structuredClone(value);
 }
 export function restoreValidationMeta(value, version = 1) {

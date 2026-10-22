@@ -1,5 +1,12 @@
 import { digest } from './sceneContracts.mjs';
 import {
+  BOOK_RESTORE_RESOURCE_FLAT,
+  BOOK_RESTORE_RESOURCE_CHILDREN,
+  BOOK_RESTORE_RESOURCE_TYPES,
+  bookRestoreResourcePath,
+  bookRestoreParentCollections,
+} from './bookRestoreResourcePaths.mjs';
+import {
   inconsistent,
   closed,
   bornEqual,
@@ -25,6 +32,14 @@ const context = (loaded) => ({
   jobToken: loaded.view.jobToken,
 });
 function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
+  if (version >= 7) {
+    const suffix = bookRestoreResourcePath(kind, id);
+    if (suffix)
+      return {
+        ref: db.doc('books/' + loaded.job.bookId + '/' + suffix),
+        journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+      };
+  }
   if (version >= 5 && ['text-body', 'text-chunk'].includes(kind)) {
     const match = typeof id === 'string' && /^([a-f0-9]{64})(?::([0-9]{15}))?$/.exec(id);
     if (
@@ -79,6 +94,7 @@ async function receipt(tx, db, loaded, id) {
     ![
       'advanceBookRestoreStructure',
       ...(loaded.job.cleanupVersion >= 6 ? ['advanceBookRestoreLore'] : []),
+      ...(loaded.job.cleanupVersion >= 7 ? ['advanceBookRestoreResources'] : []),
     ].includes(value.receipt?.action) ||
     value.receipt.operationId !== id ||
     value.receipt.checkpoint > loaded.job.checkpoint ||
@@ -131,7 +147,7 @@ export async function prepareBookRestoreArtifacts(
   version = loaded.job.cleanupVersion,
 ) {
   restoreId(operationId);
-  if (![4, 5, 6].includes(version) || writes.length > (version >= 5 ? 136 : 8)) inconsistent();
+  if (![4, 5, 6, 7].includes(version) || writes.length > (version >= 5 ? 136 : 8)) inconsistent();
   const effects = [],
     paths = new Set();
   let created = 0;
@@ -147,6 +163,15 @@ export async function prepareBookRestoreArtifacts(
     if (snapshot.exists || target.exists) {
       if (!snapshot.exists || !target.exists || !write.replace) inconsistent();
       first = (await authentic(tx, db, loaded, snapshot, target)).createdByOperationId;
+      if (
+        version >= 7 &&
+        ['scene-reference', 'scene-lore-link', 'narrative-link'].includes(write.kind)
+      ) {
+        // Firestore preserves native updateTime on a no-op. Keep both artifact and journal unchanged.
+        const existing = await tx.get(at.ref);
+        if (digest(existing.data()) !== digest(write.value)) inconsistent();
+        continue;
+      }
     } else created++;
     effects.push({
       ...at,
@@ -188,6 +213,7 @@ export async function assertBookRestoreArtifactsEmpty(
     ...Object.values(BOOK_RESTORE_NATIVE_V4),
     ...(version >= 5 ? ['bookTextBodies'] : []),
     ...(version >= 6 ? ['lore'] : []),
+    ...(version >= 7 ? Object.values(BOOK_RESTORE_RESOURCE_FLAT) : []),
   ]) {
     const page = await tx.get(
       db
@@ -199,7 +225,7 @@ export async function assertBookRestoreArtifactsEmpty(
   }
 }
 export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) {
-  if (![4, 5, 6].includes(loaded.job.cleanupVersion) || loaded.job.cleanupPhase !== 'artifacts')
+  if (![4, 5, 6, 7].includes(loaded.job.cleanupVersion) || loaded.job.cleanupPhase !== 'artifacts')
     inconsistent();
   const page = await tx.get(
       db
@@ -221,10 +247,23 @@ export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) 
     remove = [];
   for (const snapshot of selected) {
     const data = snapshot.data();
-    if (['text-body', 'text-chunk'].includes(data?.kind)) inconsistent();
+    if (
+      ['text-body', 'text-chunk'].includes(data?.kind) ||
+      Object.hasOwn(BOOK_RESTORE_RESOURCE_CHILDREN, data?.kind)
+    )
+      inconsistent();
     const at = address(db, loaded, data?.kind, data?.id),
       target = await readWorkMetadata(tx, at.ref, []);
     await authentic(tx, db, loaded, snapshot, target);
+    for (const name of bookRestoreParentCollections(data.kind)) {
+      const children = await tx.get(
+        db
+          .collection(target.ref.path + '/' + name)
+          .select()
+          .limit(1),
+      );
+      if (children.docs.length) inconsistent();
+    }
     remove.push(target.ref, snapshot.ref);
   }
   const preparation = structuredClone(loaded.job.preparation);
@@ -263,7 +302,10 @@ export async function assertBookRestoreBodyNamespaceEmpty(tx, db, loaded) {
   if (bodies.docs.length || journals.docs.length) inconsistent();
 }
 export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, limit) {
-  if (![5, 6].includes(loaded.job.cleanupVersion) || loaded.job.cleanupPhase !== 'body-artifacts')
+  if (
+    ![5, 6, 7].includes(loaded.job.cleanupVersion) ||
+    loaded.job.cleanupPhase !== 'body-artifacts'
+  )
     inconsistent();
   integer(limit, 1);
   const bodies = await tx.get(
@@ -323,4 +365,67 @@ export async function assertBookRestoreLoreNamespaceEmpty(tx, db, loaded) {
     tx.get(db.collection(journalPath(loaded)).where('kind', '==', 'lore').select('kind').limit(1)),
   ]);
   if (native.docs.length || journals.docs.length) inconsistent();
+}
+
+export async function assertBookRestoreResourceNamespacesEmpty(tx, db, loaded) {
+  for (const name of Object.values(BOOK_RESTORE_RESOURCE_FLAT)) {
+    const page = await tx.get(
+      db
+        .collection('books/' + loaded.job.bookId + '/' + name)
+        .select()
+        .limit(1),
+    );
+    if (page.docs.length) inconsistent();
+  }
+  const journals = await tx.get(
+    db
+      .collection(journalPath(loaded))
+      .where('kind', 'in', BOOK_RESTORE_RESOURCE_TYPES)
+      .select('kind')
+      .limit(1),
+  );
+  if (journals.docs.length) inconsistent();
+}
+/** Drain journaled nested children even when their parent has not been prepared yet. */
+export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, limit) {
+  if (loaded.job.cleanupVersion !== 7 || loaded.job.cleanupPhase !== 'resource-children')
+    inconsistent();
+  integer(limit, 1);
+  const page = await tx.get(
+    db
+      .collection(journalPath(loaded))
+      .where('kind', 'in', Object.keys(BOOK_RESTORE_RESOURCE_CHILDREN))
+      .orderBy('__name__')
+      .select(
+        'schemaVersion',
+        'ownerId',
+        'restoreId',
+        'jobToken',
+        'kind',
+        'id',
+        'createdByOperationId',
+        'lastOperationId',
+      )
+      .limit(limit + 1),
+  );
+  const selected = page.docs.slice(0, limit),
+    remove = [];
+  for (const snapshot of selected) {
+    const data = snapshot.data();
+    const at = address(db, loaded, data?.kind, data?.id),
+      target = await readWorkMetadata(tx, at.ref, []);
+    await authentic(tx, db, loaded, snapshot, target);
+    remove.push(target.ref, snapshot.ref);
+  }
+  const preparation = structuredClone(loaded.job.preparation);
+  preparation.cleanedArtifacts = sum(preparation.cleanedArtifacts, selected.length);
+  if (preparation.cleanedArtifacts > preparation.artifactCount) inconsistent();
+  return {
+    remove,
+    patch: {
+      preparation,
+      state: 'cancelling',
+      cleanupPhase: selected.length === 0 ? 'body-artifacts' : 'resource-children',
+    },
+  };
 }

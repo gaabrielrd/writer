@@ -1,8 +1,10 @@
 import { createBookRestoreStructureService } from './bookRestoreStructure.mjs';
 import { createBookRestoreLoreService } from './bookRestoreLore.mjs';
+import { createBookRestoreResourcesService } from './bookRestoreResources.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
   prepareBookRestoreBodyArtifactsCleanup,
+  prepareBookRestoreResourceChildrenCleanup,
 } from './bookRestoreArtifacts.mjs';
 import { createVerifiedBookRestoreContent } from './bookRestoreContentRead.mjs';
 import { createBookRestoreValidationService } from './bookRestoreValidation.mjs';
@@ -58,6 +60,7 @@ const actions = {
   advanceBookRestoreValidation: ['validating', 'content-verified', 'content-rejected'],
   advanceBookRestoreStructure: ['content-verified'],
   advanceBookRestoreLore: ['content-verified'],
+  advanceBookRestoreResources: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -230,6 +233,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
           'validation-state',
           'artifacts',
           'body-artifacts',
+          'resource-children',
         ].includes(r.integrity.cleanupPhase)
       )
         inconsistent();
@@ -261,7 +265,22 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         ].some((k) => (r.preparation[k] ?? 0) > (loaded.job.preparation[k] ?? 0))
       )
         inconsistent();
-    } else if (['advanceBookRestoreStructure', 'advanceBookRestoreLore'].includes(r.action))
+      if (
+        r.preparation.resourceCounts &&
+        Object.keys(r.preparation.resourceCounts).some(
+          (kind) =>
+            r.preparation.resourceCounts[kind] >
+            (loaded.job.preparation.resourceCounts?.[kind] ?? 0),
+        )
+      )
+        inconsistent();
+    } else if (
+      [
+        'advanceBookRestoreStructure',
+        'advanceBookRestoreLore',
+        'advanceBookRestoreResources',
+      ].includes(r.action)
+    )
       inconsistent();
     if (r.action === 'startBookRestore') {
       if (
@@ -573,7 +592,14 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         state: 'cancelling',
         recoveryReady: false,
         ...(loaded.job.cleanupVersion >= 4
-          ? { cleanupPhase: loaded.job.cleanupVersion >= 5 ? 'body-artifacts' : 'artifacts' }
+          ? {
+              cleanupPhase:
+                loaded.job.cleanupVersion >= 7
+                  ? 'resource-children'
+                  : loaded.job.cleanupVersion >= 5
+                    ? 'body-artifacts'
+                    : 'artifacts',
+            }
           : {}),
       });
       tx.delete(keyRef(uid, id));
@@ -597,13 +623,15 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         fail('failed-precondition', 'checkpoint-conflict');
       if (loaded.job.cleanupVersion >= 2 && loaded.job.cleanupPhase !== 'chunks') {
         const prepared =
-          loaded.job.cleanupPhase === 'body-artifacts'
-            ? await prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, request.limit)
-            : loaded.job.cleanupPhase === 'artifacts'
-              ? await prepareBookRestoreArtifactsCleanup(tx, db, loaded, request.limit)
-              : loaded.job.cleanupPhase.startsWith('validation-')
-                ? await prepareBookRestoreValidationCleanup(tx, db, loaded, request.limit)
-                : await prepareBookRestoreIntegrityCleanup(tx, db, loaded, request.limit);
+          loaded.job.cleanupPhase === 'resource-children'
+            ? await prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, request.limit)
+            : loaded.job.cleanupPhase === 'body-artifacts'
+              ? await prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, request.limit)
+              : loaded.job.cleanupPhase === 'artifacts'
+                ? await prepareBookRestoreArtifactsCleanup(tx, db, loaded, request.limit)
+                : loaded.job.cleanupPhase.startsWith('validation-')
+                  ? await prepareBookRestoreValidationCleanup(tx, db, loaded, request.limit)
+                  : await prepareBookRestoreIntegrityCleanup(tx, db, loaded, request.limit);
         const record = next(loaded.job, request, prepared.patch);
         for (const ref of prepared.remove) tx.delete(ref);
         tx.update(loaded.ref, record);
@@ -839,7 +867,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const resources = createBookRestoreResourcesService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...resources,
     ...lore,
     ...structure,
     ...validation,
