@@ -1,4 +1,20 @@
 export * from './model/backupContainer';
+export {
+  streamBookBackup,
+  type BookBackupOptions,
+  type BookBackupHistoryPort,
+} from './services/streamBookBackup';
+export {
+  saveBookBackup,
+  createBookBackupFileSink,
+  type BookBackupSink,
+} from './services/bookBackupSink';
+export {
+  readBookBackupPackage,
+  inspectBookBackupPackage,
+  type BookPackageReport,
+  type BookPackageEvent,
+} from '../../../functions/src/bookBackupPackage.mjs';
 export { createBookBackupBlobSource } from './services/backupBlobSource';
 export {
   captureBookBackupStructure,

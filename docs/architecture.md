@@ -1019,3 +1019,13 @@ faz hash por stream e ranges limitados; bookCoverBackupRecords verifica bytes
 incrementalmente e reautoriza antes do selo. Manifesto portátil não leva path,
 URL/token ou versão Storage. Capa apenas por URL fica legacy-unavailable.
 Veja [ADR 0053](decisions/0053-book-cover-bytes.md). Schema/sink/restauração seguem em P1.
+
+## Pacote de livro e arquivo temporário — P1 M10
+
+streamBookBackup compõe sete capacidades com origem fixada e histórico injetado
+pelo editor via interface pública. Ponte interna de uma posição aguarda consumo.
+Todas as provas são reconferidas antes de footer e selo M2. Envelope v1 separa
+novo .writerbook do JSON legado; leitor retorna envelope-only só após EOF.
+saveBookBackup congela draft antes do destino, aguarda cada write e confirma
+arquivo temporário somente no sucesso. Veja [ADR 0054](decisions/0054-streamed-book-package.md).
+Schema semântico, legado, UI e restauração continuam obrigatórios em P1.

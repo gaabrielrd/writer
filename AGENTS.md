@@ -113,6 +113,7 @@
 - Capture universo por vínculo da raiz, sem metadata global; confira encarnação/autorização e não promova descriptor indisponível ao restaurar, conforme ADR 0051.
 - Congele rascunho explícito antes de await, inclusive vazio/removido; reautorize seu perfil declarado próprio e não salve nem recrie capítulo ao capturar, conforme ADR 0052.
 - Capture capa somente por biblioteca/uso próprios e geração Storage fixada; reautorize antes/depois do I/O, confira hashes e rode test:media para esse protocolo, conforme ADR 0053.
+- Componha backups com pressão de consumo, provas reconferidas antes de footer/selo e arquivo temporário confirmado só no sucesso; envelope-only não autoriza restauração, conforme ADR 0054.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

@@ -1057,3 +1057,18 @@ A [entrega M9](entregas/2026-10-21-writer-v2-bytes-da-capa-no-backup.md) registr
 256 partes e PNG decodificado com hash independente. Há avisos reais de listeners
 em teeny-request e NPE de EOF ao encerrar runtime Java após testes positivos;
 estão documentados, sem supressão nem alegação de ausência de vazamento.
+
+## Pacote integral e arquivo temporário — P1 M10
+
+```bash
+node --test functions/test/bookBackupPackage.test.mjs functions/test/bookBackupContainer.test.mjs
+npx vitest run src/features/book-portability/tests
+```
+
+A [entrega M10](entregas/2026-10-22-writer-v2-pacote-integral-por-fluxo.md)
+registra 24 testes Node, 114 cliente e nove cenários num probe Chromium/OPFS com
+Firestore/Storage reais. Inclui sete seções, reconferência, fluxo serial, abort/
+RPC tardio, erros de sink e preservação do arquivo anterior sob invalidação.
+Relatório envelope-only não valida DTO, relações, autoria ou direito de restaurar.
+OPFS é prova de plataforma/disco, sem seletor externo/UX/restauração. Warnings
+Storage/bundle e validate completo pendente estão separados na evidência.

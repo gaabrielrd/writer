@@ -295,3 +295,11 @@ URL legada não é buscada; origem quebrada falha. [Entrega M9](../../../entrega
 12 Functions, 17 cliente, cinco SDK Firestore/Storage reais e 20 cenários nativos.
 test:media torna a prova reproduzível; avisos de streams/runtime constam na entrega.
 P1 continua para schema, sink e restauração; desenvolvimento local sem CI/push.
+
+### P1 M10 — pacote por fluxo e gravação temporária
+
+O [contrato 43](43-pacote-integral-e-gravacao.md) compõe sete capturas com pressão
+de consumo e reconferência antes de footer/selo. Leitor verifica envelope, não DTO.
+Sink confirma arquivo somente no sucesso. [Entrega M10](../../../entregas/2026-10-22-writer-v2-pacote-integral-por-fluxo.md):
+24 Node, 114 cliente e nove cenários Chromium/OPFS/emuladores reais.
+P1 continua para schema semântico, legado, UI e restauração; somente local, sem CI/push.
