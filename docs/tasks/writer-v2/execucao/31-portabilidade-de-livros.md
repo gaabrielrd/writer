@@ -1,6 +1,6 @@
 # F2-09 P1 — Backup completo e restauração privada de livros
 
-**Estado em 2026-10-21:** universo confirmado; M1 de captura de histórico e M2 de contêiner limitado implementados e validados localmente. Veja [M1](32-captura-consistente-do-historico.md) e [M2](33-conteiner-limitado-de-backup.md). M3a fecha o [pertencimento SDK da estrutura](35-clock-da-estrutura-legada.md). Pacote completo/schema/captura restante/restauração ainda pendentes.
+**Estado em 2026-10-21:** universo confirmado; M1 de captura de histórico e M2 de contêiner limitado implementados e validados localmente. Veja [M1](32-captura-consistente-do-historico.md) e [M2](33-conteiner-limitado-de-backup.md). M3a fecha o [pertencimento SDK da estrutura](35-clock-da-estrutura-legada.md); M3b implementa [leitura limitada e conferência da estrutura salva](36-leitura-limitada-da-estrutura.md). Pacote completo/schema das demais capacidades/captura restante/restauração ainda pendentes.
 **Base:** A enviado em `5f947a0e5e50df81154df14a7124b914278cd4c9`, HEAD/upstream/remoto
 conferidos e checkout limpo no fechamento A. PR21 aberto em rascunho; Rules
 39659740521 verdes. Na CI 39659740574 passaram Node 22, auditoria e produção
@@ -238,7 +238,7 @@ São critérios de teste propostos, não resultados executados de P1.
 5. Integrar exportação, revisão e restauração ao Estúdio/editor por interfaces
    públicas, com rascunho preservado, estados claros e recuperação.
 6. Roundtrip real, SDK de corridas/autorizações/legados e nativo por temas/celular;
-   validate no fechamento, revisão, entrega, Git e CI em paralelo.
+   validate no fechamento, revisão, entrega e commits locais, sem acompanhar CI.
 
 Áreas previstas: books, editor, document-import somente se houver reuso demonstrado,
 scenes, narrative-planning, manuscript-history, lore, universes, ai-assistant/personas,
@@ -259,7 +259,7 @@ escolhida ao fechar fronteiras; nenhuma importação interna entre features.
 - [ ] Perda de resposta, UID/ABA, concorrência, cancel/retomada e cleanup sem perda ou duplicação.
 - [ ] SDK com origens e autores distintos; versão futura/corpo/hash/tamanho inválidos falham antes de ativar.
 - [ ] Nativo de backup/restore/retomada/legados e temas/celular; provas distintas das fixtures.
-- [ ] Validate local, documentação/entrega/revisão/Git e CI com resultados reais separados.
+- [ ] Validate local, documentação/entrega/revisão/Git; CI retomada quando houver solicitação de envio remoto.
 
 ## Riscos e esforço
 

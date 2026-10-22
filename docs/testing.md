@@ -914,3 +914,25 @@ A [entrega M3a](entregas/2026-10-21-writer-v2-clock-da-estrutura-legada.md) sepa
 reprodução vermelha, dez novos verdes, regressão de duas operações antigas e
 26 testes finais dos arquivos alterados. As outras cinco famílias somam 45
 positivos inalterados; não converter evidência composta em execução única.
+
+## Leitura limitada da estrutura salva — P1 M3b
+
+```bash
+node --test functions/test/bookBackupRead.test.mjs
+npx vitest run src/features/book-portability/tests
+```
+
+A ABI/projeção e os testes do cliente verificam fonte/token, paginação sem corte,
+ordem UTF-8, partes/hash, vazio/Unicode, sink aguardado, buffers isolados,
+abort/falha sem retry, manifesto alterado e ausência de selo de captura inválida.
+Os testes do adaptador conferem import sem inicialização e nomes/região das APIs.
+
+Com FIRESTORE_EMULATOR_HOST demo, executar também
+`node --test tests/firestore/bookBackupRead.rules.test.mjs` ou a descoberta normal
+por `npm run test:rules`. São nove cenários de SDK/Admin reais, incluindo título
+isolado sem raiz, pertencimento atômico, writers legados e controle de meta.
+A [entrega M3b](entregas/2026-10-21-writer-v2-leitura-da-estrutura.md) registra
+resultados e limites do probe Chromium com transporte loopback para Firestore:
+cinco casos, 108 capítulos, sem rede externa. Não equivale a App Check produtivo,
+memória do sink final, UI ou restauração completa. Validate no fechamento de P1;
+sem acompanhar CI durante desenvolvimento, conforme orientação vigente.

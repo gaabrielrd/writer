@@ -228,3 +228,14 @@ A manutenção anterior 96ff5e0 tem CI/regras verdes: 16 shards, 1.320 passes,
 12 skips reportados e zero retries. As seis jornadas de alias passaram no Linux
 sem retry; a duração Playwright por shard ficou entre 5,5 e 12,4 min, sem setup.
 Esses resultados não substituem os checks das novas Rules de M3a.
+
+### P1 M3b — estrutura salva com conferência final
+
+O [contrato 36](36-leitura-limitada-da-estrutura.md) implementa leitura privada de
+metadados/progresso, atos e capítulos, paginação sem prosa e partes de 64 KiB.
+Cliente escreve um item por vez e reenumera tokens nativos no fim, sem readset
+ilimitado. A [entrega M3b](../../../entregas/2026-10-21-writer-v2-leitura-da-estrutura.md)
+registra nove testes Functions, 31 casos cliente com evidência composta, nove SDK
+e cinco casos Chromium/emulador. Schema das demais capacidades, histórico por
+fluxo, rascunho, mídia, sink persistente, revisão e restauração continuam em P1.
+Avanço somente local, sem acompanhamento de CI, conforme instrução de 2026-10-21.

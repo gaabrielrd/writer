@@ -36,6 +36,7 @@ import { setCampaignMediaHeaders } from './campaignCaptureHttp.mjs';
 import { createCampaignBaseReadService } from './campaignBaseRead.mjs';
 import { createWorkProgressService } from './workProgress.mjs';
 import { createWorkHistoryService } from './workHistory.mjs';
+import { createBookBackupReadService } from './bookBackupRead.mjs';
 import { createAdventureBlocksService } from './adventureBlocks.mjs';
 import { createAdventurePreviewService } from './adventurePreview.mjs';
 import { createScenesService } from './scenes.mjs';
@@ -332,6 +333,7 @@ const callable = (method, secrets = []) =>
         const campaignBaseRead = createCampaignBaseReadService({ db, assets });
         const workProgress = createWorkProgressService({ db });
         const workHistory = createWorkHistoryService({ db });
+        const bookBackupRead = createBookBackupReadService({ db });
         const adventureBlocks = createAdventureBlocksService({ db });
         const adventurePreview = createAdventurePreviewService({ db, assets });
         const scenes = createScenesService({ db });
@@ -349,6 +351,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (bookBackupRead[method] ? bookBackupRead : null) ??
           (adventureImport[method] ? adventureImport : null) ??
           (adventureLore[method] ? adventureLore : null) ??
           (campaignPreparation[method] ? campaignPreparation : null) ??
@@ -498,6 +501,9 @@ export const prepareStudioBooks = callable('prepareStudioBooks');
 export const listStudioProjects = callable('listStudioProjects');
 export const getWorkProgress = callable('getWorkProgress');
 export const getWorkHistoryBackupSource = callable('getWorkHistoryBackupSource');
+export const getBookBackupSource = callable('getBookBackupSource');
+export const listBookBackupStructure = callable('listBookBackupStructure');
+export const readBookBackupStructure = callable('readBookBackupStructure');
 export const getWorkVersionSource = callable('getWorkVersionSource');
 export const listAdventureBlocks = callable('listAdventureBlocks');
 export const getAdventureBlock = callable('getAdventureBlock');

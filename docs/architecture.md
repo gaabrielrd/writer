@@ -953,3 +953,14 @@ local, após conferir bytes/hash/tipo, sem alterar a revisão congelada.
 
 Veja [ADR 0042](decisions/0042-reviewed-adventure-import.md) e
 [ABI I](tasks/writer-v2/execucao/28-contratos-da-importacao-de-aventura.md).
+
+## Captura da estrutura salva — P1 M3b
+
+Três leituras em functions/src/bookBackupRead.mjs fornecem origem, páginas de
+IDs/tokens sem prosa e corpo JSON projetado em partes de 64 KiB. A origem fixa
+UID/livro e identidade nativa de raiz/controle; cada item fixa sua própria
+identidade. book-portability captura um item por vez em sink aguardado e confere
+novamente seleção/versões por cadeia incremental, antes do selo pelo orquestrador.
+A prova só cobre estrutura salva; não é schema/backup/restauração completos.
+Imports de Firebase ficam adiados no adaptador callable, sem inicialização ao
+usar transporte injetado. Veja [ADR 0047](decisions/0047-book-structure-read-proof.md).
