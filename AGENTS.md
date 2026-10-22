@@ -204,3 +204,12 @@
 Uma tarefa só está concluída quando todos os itens da definição de
 concluído estiverem satisfeitos. A lista fica em
 `docs/development-process.md` e é a única fonte da verdade.
+
+## Corpos de texto restaurados
+
+- Preserve 8 MiB lógicos e o contrato content null/contentStorage da ADR 0067;
+  não apresente corpo ausente ou inválido como manuscrito vazio.
+- Grave corpo imutável, partes, capítulo, ledger, journals e recibo juntos;
+  conte palavras pelo texto original e autorize o projeto antes do leitor interno.
+- Mantenha cleanup v5 por filhos antes do pai e compatibilidade v1–v4;
+  adapte leitores, escritores, histórico, pins/coleta e exclusão antes da ativação.

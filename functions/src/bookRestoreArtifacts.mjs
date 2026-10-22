@@ -24,7 +24,26 @@ const context = (loaded) => ({
   restoreId: loaded.job.restoreId,
   jobToken: loaded.view.jobToken,
 });
-function address(db, loaded, kind, id) {
+function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
+  if (version >= 5 && ['text-body', 'text-chunk'].includes(kind)) {
+    const match = typeof id === 'string' && /^([a-f0-9]{64})(?::([0-9]{15}))?$/.exec(id);
+    if (
+      !match ||
+      (kind === 'text-chunk') !== Boolean(match[2]) ||
+      (match[2] && Number(match[2]) >= 128)
+    )
+      inconsistent();
+    return {
+      ref: db.doc(
+        'books/' +
+          loaded.job.bookId +
+          '/bookTextBodies/' +
+          match[1] +
+          (match[2] ? '/chunks/' + match[2] : ''),
+      ),
+      journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+    };
+  }
   if (!Object.hasOwn(BOOK_RESTORE_NATIVE_V4, kind)) inconsistent();
   if (
     kind === 'work-control'
@@ -93,14 +112,21 @@ async function authentic(tx, db, loaded, snapshot, target) {
   return data;
 }
 /** Prepare bounded native writes; all reads finish before the caller commits anything. */
-export async function prepareBookRestoreArtifacts(tx, db, loaded, operationId, writes) {
+export async function prepareBookRestoreArtifacts(
+  tx,
+  db,
+  loaded,
+  operationId,
+  writes,
+  version = loaded.job.cleanupVersion,
+) {
   restoreId(operationId);
-  if (writes.length > 8) inconsistent();
+  if (![4, 5].includes(version) || writes.length > (version === 5 ? 136 : 8)) inconsistent();
   const effects = [],
     paths = new Set();
   let created = 0;
   for (const write of writes) {
-    const at = address(db, loaded, write.kind, write.id);
+    const at = address(db, loaded, write.kind, write.id, version);
     if (paths.has(at.ref.path)) inconsistent();
     paths.add(at.ref.path);
     const [snapshot, target] = await Promise.all([
@@ -140,10 +166,18 @@ export async function prepareBookRestoreArtifacts(tx, db, loaded, operationId, w
     },
   };
 }
-export async function assertBookRestoreArtifactsEmpty(tx, db, loaded) {
+export async function assertBookRestoreArtifactsEmpty(
+  tx,
+  db,
+  loaded,
+  version = loaded.job.cleanupVersion,
+) {
   const journal = await tx.get(db.collection(journalPath(loaded)).select('schemaVersion').limit(1));
   if (journal.docs.length) inconsistent();
-  for (const name of Object.values(BOOK_RESTORE_NATIVE_V4)) {
+  for (const name of [
+    ...Object.values(BOOK_RESTORE_NATIVE_V4),
+    ...(version >= 5 ? ['bookTextBodies'] : []),
+  ]) {
     const page = await tx.get(
       db
         .collection('books/' + loaded.job.bookId + '/' + name)
@@ -154,7 +188,8 @@ export async function assertBookRestoreArtifactsEmpty(tx, db, loaded) {
   }
 }
 export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) {
-  if (loaded.job.cleanupVersion !== 4 || loaded.job.cleanupPhase !== 'artifacts') inconsistent();
+  if (![4, 5].includes(loaded.job.cleanupVersion) || loaded.job.cleanupPhase !== 'artifacts')
+    inconsistent();
   const page = await tx.get(
       db
         .collection(journalPath(loaded))
@@ -174,8 +209,9 @@ export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) 
     selected = page.docs.slice(0, limit),
     remove = [];
   for (const snapshot of selected) {
-    const data = snapshot.data(),
-      at = address(db, loaded, data?.kind, data?.id),
+    const data = snapshot.data();
+    if (['text-body', 'text-chunk'].includes(data?.kind)) inconsistent();
+    const at = address(db, loaded, data?.kind, data?.id),
       target = await readWorkMetadata(tx, at.ref, []);
     await authentic(tx, db, loaded, snapshot, target);
     remove.push(target.ref, snapshot.ref);
@@ -197,4 +233,69 @@ export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) 
       cleanupPhase: selected.length === 0 ? 'chunks' : 'artifacts',
     },
   };
+}
+
+export async function assertBookRestoreBodyNamespaceEmpty(tx, db, loaded) {
+  const bodies = await tx.get(
+      db
+        .collection('books/' + loaded.job.bookId + '/bookTextBodies')
+        .select()
+        .limit(1),
+    ),
+    journals = await tx.get(
+      db
+        .collection(journalPath(loaded))
+        .where('kind', 'in', ['text-body', 'text-chunk'])
+        .select('kind')
+        .limit(1),
+    );
+  if (bodies.docs.length || journals.docs.length) inconsistent();
+}
+export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, limit) {
+  if (loaded.job.cleanupVersion !== 5 || loaded.job.cleanupPhase !== 'body-artifacts')
+    inconsistent();
+  integer(limit, 1);
+  const bodies = await tx.get(
+      db
+        .collection('books/' + loaded.job.bookId + '/bookTextBodies')
+        .orderBy('__name__')
+        .select()
+        .limit(1),
+    ),
+    remove = [];
+  let count = 0,
+    phase = 'body-artifacts';
+  if (!bodies.docs.length) {
+    await assertBookRestoreBodyNamespaceEmpty(tx, db, loaded);
+    phase = 'artifacts';
+  } else {
+    const body = bodies.docs[0],
+      at = address(db, loaded, 'text-body', body.id),
+      journal = await tx.get(at.journal);
+    await authentic(tx, db, loaded, journal, body);
+    const children = await tx.get(
+      db
+        .collection(body.ref.path + '/chunks')
+        .orderBy('__name__')
+        .select()
+        .limit(limit + 1),
+    );
+    if (children.docs.length) {
+      for (const child of children.docs.slice(0, limit)) {
+        const key = body.id + ':' + child.id,
+          part = address(db, loaded, 'text-chunk', key),
+          metadata = await tx.get(part.journal);
+        await authentic(tx, db, loaded, metadata, child);
+        remove.push(child.ref, part.journal);
+        count++;
+      }
+    } else {
+      remove.push(body.ref, at.journal);
+      count++;
+    }
+  }
+  const preparation = structuredClone(loaded.job.preparation);
+  preparation.cleanedArtifacts = sum(preparation.cleanedArtifacts, count);
+  if (preparation.cleanedArtifacts > preparation.artifactCount) inconsistent();
+  return { remove, patch: { preparation, state: 'cancelling', cleanupPhase: phase } };
 }

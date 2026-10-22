@@ -1243,3 +1243,17 @@ commit de documento/journal/recibos, contagem/prosa, SDK negado, limpeza de oito
 pares e replay após cancelamento. Outro caso prova rejeição de campo de 1.100.000
 bytes pelo armazenamento sem avanço/recibo/capítulo parcial e com fonte integral
 legível. Essa limitação ainda precisa ser resolvida antes de concluir P1.
+
+## Corpos grandes de capítulo (P1 M23)
+
+```bash
+node --test functions/test/bookChapterText.test.mjs
+```
+
+Onze testes cobrem limiar físico, limite lógico, identidade, BOM/Unicode,
+manifestações inválidas, ausência/ABA/hash/contexto, preparação e limpeza v5 com
+replay e compatibilidade v4. Regressão ampliada da restauração: 114/114.
+[Entrega M23](entregas/2026-10-22-writer-v2-texto-grande-na-preparacao.md) distingue
+a jornada SDK real de 1.100.000 bytes da prova isolada de capacidade perto de 8 MiB.
+O SDK também mantém a falha atômica para título grande, ainda não suportado.
+Não comprova hidratação do editor, ativação ou restore completo; validate fica P1.

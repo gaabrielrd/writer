@@ -69,7 +69,7 @@ export async function readBookRestoreValidationState(tx, snapshot, loaded, db) {
 
   if (
     value.checkpoint !==
-      (loaded.job.cleanupVersion === 4 ? loaded.job.validationCheckpoint : loaded.job.checkpoint) ||
+      (loaded.job.cleanupVersion >= 4 ? loaded.job.validationCheckpoint : loaded.job.checkpoint) ||
     digest(value) !== loaded.job.validationStateHash
   )
     inconsistent();

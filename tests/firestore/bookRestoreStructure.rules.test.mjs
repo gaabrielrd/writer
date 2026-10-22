@@ -108,9 +108,10 @@ test('native structure and journal commit with receipts, remain SDK private and 
   assert.deepEqual(replay.receipt, first.receipt);
   assert.equal(replay.progress.state, 'cancelled');
 });
-test('native oversized document fails without progress or truncation and recreated prepared data stays protected from cleanup', async () => {
+test('native oversized metadata fails without progress or truncation and recreated prepared data stays protected from cleanup', async () => {
   const legacy = bookLegacyFixture(1);
-  legacy.chapters[0].content = 'x'.repeat(1100000);
+  legacy.chapters[0].title = 'x'.repeat(1100000);
+  legacy.chapters[0].content = 'Own saved prose';
   const { progress } = await uploadLegacyRestore(api, uid, id, legacy),
     validated = await finishLegacyRestore(factory, uid, id, progress),
     first = (
@@ -120,7 +121,7 @@ test('native oversized document fails without progress or truncation and recreat
     before = await admin.doc(root).get();
   await assert.rejects(
     () => api.advanceBookRestoreStructure(uid, request),
-    (error) => error.code === 3 && /property "content".*longer than/i.test(error.message),
+    (error) => error.code === 3 && /property "title".*longer than/i.test(error.message),
   );
   const after = await admin.doc(root).get();
   assert.deepEqual(after.data(), before.data());
@@ -136,8 +137,8 @@ test('native oversized document fails without progress or truncation and recreat
       jobToken: first.jobToken,
     }),
     chapter = await reader.readMappedItem(1);
-  assert.equal(chapter.value.content.length, 1100000);
-  assert.equal(chapter.value.content, legacy.chapters[0].content);
+  assert.equal(chapter.value.title.length, 1100000);
+  assert.equal(chapter.value.title, legacy.chapters[0].title);
   const target = admin.doc('books/' + first.bookId + '/workProgress/current'),
     stored = await target.get();
   await target.delete();

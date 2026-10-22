@@ -171,7 +171,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3, 4].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4, 5].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -299,7 +299,9 @@ export function jobShape(uid, id, job) {
               'validation-index',
               'validation-items',
               'validation-state',
-              ...(job.cleanupVersion === 4 ? ['artifacts'] : []),
+              ...(job.cleanupVersion >= 4
+                ? ['artifacts', ...(job.cleanupVersion === 5 ? ['body-artifacts'] : [])]
+                : []),
             ]
           : []),
       ].includes(job.cleanupPhase) ||
@@ -435,7 +437,7 @@ export function jobShape(uid, id, job) {
     ].some((k) => Object.hasOwn(job, k))
   )
     inconsistent();
-  if (job.cleanupVersion === 4) {
+  if (job.cleanupVersion >= 4) {
     integer(job.validationCheckpoint);
     if (
       job.validationCheckpoint >= job.checkpoint ||
@@ -546,7 +548,7 @@ export function progress(uid, id, snapshot) {
     cleanedChunks: job.cleanedChunks,
     integrity: integrityProgress(job),
     validation: validationProgress(job),
-    ...(job.cleanupVersion === 4 ? { preparation: preparationProgress(job.preparation) } : {}),
+    ...(job.cleanupVersion >= 4 ? { preparation: preparationProgress(job.preparation) } : {}),
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };

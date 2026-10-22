@@ -178,10 +178,10 @@ export function createBookRestoreIntegrityService({
     },
   };
 }
-/** Common proof/state cleanup for v2-v4; the job commits deletes and its receipt. */
+/** Common proof/state cleanup for v2-v5; the job commits deletes and its receipt. */
 export async function prepareBookRestoreIntegrityCleanup(tx, db, loaded, limit) {
   const job = loaded.job;
-  if (![2, 3, 4].includes(job.cleanupVersion) || !['proofs', 'state'].includes(job.cleanupPhase))
+  if (![2, 3, 4, 5].includes(job.cleanupVersion) || !['proofs', 'state'].includes(job.cleanupPhase))
     inconsistent();
   if (job.cleanupPhase === 'proofs') {
     const page = await tx.get(
@@ -244,7 +244,7 @@ export async function prepareBookRestoreIntegrityCleanup(tx, db, loaded, limit) 
       if (page.docs.length) inconsistent();
     }
   }
-  if (job.cleanupVersion === 4) await assertBookRestoreArtifactsEmpty(tx, db, loaded);
+  if (job.cleanupVersion >= 4) await assertBookRestoreArtifactsEmpty(tx, db, loaded);
   for (const item of states.docs) {
     if (item.id !== 'current') inconsistent();
     stateContext(item.data(), loaded);

@@ -426,3 +426,14 @@ de clone por tentativa. SDK demonstrou rejeição atômica de campo de 1.100.000
 bytes, sem truncamento; representação grande continua obrigatória.
 Demais recursos, perfis/mídia, ativação e host/UI/roundtrip/validate seguem em P1.
 Somente local, sem CI/push.
+
+### P1 M23 — texto grande na preparação
+
+O [contrato 56](56-texto-grande-na-preparacao.md) resolve armazenamento de content
+por corpo imutável/partes, ledger completo e limpeza v5. Preserva v4 para projetos
+pequenos e o limite lógico de 8 MiB. [Evidência M23](../../../entregas/2026-10-22-writer-v2-texto-grande-na-preparacao.md):
+114 Node e três SDK reais positivos. A jornada de fonte tem 1.100.000 bytes;
+a prova de 8.384.512 bytes é isolada de capacidade física.
+Integração dos consumidores/pins/coleta, demais campos grandes/recursos,
+perfis/mídia, ativação e host/UI/roundtrip/validate permanecem em P1/F2-09.
+Somente commit local; CI ignorada.

@@ -1188,3 +1188,18 @@ remove pares por máscara, certifica namespaces antes de bytes/índices e outra 
 na conclusão; versões anteriores mantêm inventários. Alteração/ABA/foreign ou
 raiz presente impedem remoção. Ainda faltam demais recursos, representação para
 campos acima do teto nativo, perfis/mídia, autorização/ativação e host/UI/roundtrip.
+
+## Texto grande de capítulo na preparação (P1 M23)
+
+[ADR 0067](decisions/0067-restored-chapter-text-bodies.md) acrescenta bookChapterText:
+acima de 512 KiB UTF-8, geração imutável em bookTextBodies com partes binárias
+de 64 KiB, até 8 MiB lógicos. Capítulo guarda content null/contentStorage explícito.
+Ledger usa texto completo; transação grava documentos/journals/cursor/recibo.
+Corpo nasce com um pin. Futuras versões precisam integrar referências e coleta.
+
+Cleanup v5 remove pares de partes antes do cabeçalho, confere journals/recibos e
+certifica ausência antes das fases existentes. V4 pequeno permanece compatível;
+validationCheckpoint continua fixo em v4/v5. Leitor interno autentica contexto,
+hashes, nascimento das partes e UTF-8/BOM; chamador deve autorizar projeto.
+Sem raiz, API pública, Rules novas ou fallback vazio. Ainda faltam consumidores
+de livro ativo, outros campos grandes, demais recursos e ativação/host/UI.

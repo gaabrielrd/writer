@@ -312,3 +312,8 @@ permanece disponível; esse marco ainda não grava ou ativa a cópia.
 P1 M22 inicia a [preparação nativa de atos, capítulos e ledger](docs/tasks/writer-v2/execucao/55-preparacao-nativa-da-estrutura.md),
 com journal/recibo atômicos e limpeza v4, mantendo raiz ausente. Demais recursos,
 campos grandes e fluxo completo de restauração continuam pendentes.
+
+P1 M23 prepara [texto grande de capítulo](docs/tasks/writer-v2/execucao/56-texto-grande-na-preparacao.md)
+em corpo imutável e partes, com leitor interno e limpeza v5. Preserva 8 MiB
+lógicos, sem tornar a cópia visível. Integração dos consumidores e demais campos
+grandes continuam obrigatórias antes de habilitar a restauração.

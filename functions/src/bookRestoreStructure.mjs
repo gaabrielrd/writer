@@ -7,10 +7,12 @@ import {
   sum,
   date,
 } from './bookRestoreUploadContracts.mjs';
+import { prepareRestoredChapterText } from './bookChapterText.mjs';
 import { createVerifiedBookRestoreContent } from './bookRestoreContentRead.mjs';
 import {
   prepareBookRestoreArtifacts,
   assertBookRestoreArtifactsEmpty,
+  assertBookRestoreBodyNamespaceEmpty,
 } from './bookRestoreArtifacts.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { initialWorkControl } from './workProgressContracts.mjs';
@@ -80,7 +82,7 @@ export function createBookRestoreStructureService({
       });
       if (initial.resolved) return initial.resolved;
       const original = initial.loaded,
-        first = original.job.cleanupVersion !== 4,
+        first = original.job.cleanupVersion < 4,
         cursor = first
           ? {
               schemaVersion: 1,
@@ -123,6 +125,7 @@ export function createBookRestoreStructureService({
         available(loaded, request);
         await item.verify(tx);
         if (first) await assertBookRestoreArtifactsEmpty(tx, db, loaded);
+        let version = loaded.job.cleanupVersion >= 4 ? loaded.job.cleanupVersion : 4;
         const preparation = structuredClone(cursor),
           writes = [],
           kind = item.record.kind,
@@ -156,6 +159,22 @@ export function createBookRestoreStructureService({
             item.value,
             preparation.timestamp,
           );
+          const content = chapter.content,
+            body = prepareRestoredChapterText({
+              uid,
+              bookId: target.id,
+              chapterId: chapter.id,
+              operationId: request.operationId,
+              timestamp: preparation.timestamp,
+              content,
+            });
+          if (body) {
+            version = 5;
+            if (loaded.job.cleanupVersion < 5)
+              await assertBookRestoreBodyNamespaceEmpty(tx, db, loaded);
+            Object.assign(chapter, body.patch);
+            writes.push(...body.writes);
+          }
           writes.push({ kind: 'chapter', id: chapter.id, value: chapter });
           const buffered = [],
             prefix = 'books/' + target.id + '/',
@@ -176,7 +195,7 @@ export function createBookRestoreStructureService({
                 {
                   kind: 'chapter',
                   id: chapter.id,
-                  content: chapter.content,
+                  content,
                   contentMode: chapter.contentMode,
                 },
               ],
@@ -214,10 +233,11 @@ export function createBookRestoreStructureService({
           loaded,
           request.operationId,
           writes,
+          version,
         );
         preparation.artifactCount = sum(preparation.artifactCount, effects.created);
         const record = next(loaded.job, request, {
-          cleanupVersion: 4,
+          cleanupVersion: version,
           validationCheckpoint: loaded.job.validationCheckpoint ?? loaded.job.checkpoint,
           preparation,
         });
