@@ -1226,3 +1226,20 @@ remapeado novo, lore local com aparência externa, consumo atômico e ABA de ín
 legado com IDs estáveis entre serviços, estilo ausente e cancelamento. O runner
 test:rules descobre esse arquivo automaticamente. Collector de testes pode
 acumular fixtures pequenas; o leitor de produção mantém partes/páginas limitadas.
+
+## Estrutura nativa restaurada (P1 M22)
+
+```bash
+node --test functions/test/bookRestoreStructure.test.mjs
+```
+
+Dezessete testes novos cobrem documentos/ledger, snapshot fixo, retries/CAS,
+cancelamento concorrente, limpeza limitada, foreign/ABA, seis legados, filho
+reaparecido e repetição do callback com rollback. A última simulação é um teste
+do port transacional; não comprova retry nativo do serviço.
+
+bookRestoreStructure.rules.test.mjs usa SDK Admin/Rules reais em emulador: confere
+commit de documento/journal/recibos, contagem/prosa, SDK negado, limpeza de oito
+pares e replay após cancelamento. Outro caso prova rejeição de campo de 1.100.000
+bytes pelo armazenamento sem avanço/recibo/capítulo parcial e com fonte integral
+legível. Essa limitação ainda precisa ser resolvida antes de concluir P1.

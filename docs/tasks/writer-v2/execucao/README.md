@@ -415,3 +415,14 @@ M20 com provas. [Evidência M21](../../../entregas/2026-10-22-writer-v2-identida
 do arquivo afetado. Não escreve recursos. Inventário/esquema/writers nativos,
 perfis/mídia/ledger, autorização/ativação e host/UI/roundtrip/validate seguem em P1.
 Somente commits locais, CI ignorada.
+
+### P1 M22 — estrutura nativa e limpeza v4
+
+O [contrato 55](55-preparacao-nativa-da-estrutura.md) grava atos/capítulos/ledger
+sob raiz ausente, com journal nativo, CAS/recibo e cleanup v4. Snapshot final de
+validação fica fixo. [Evidência M22](../../../entregas/2026-10-22-writer-v2-estrutura-nativa-da-restauracao.md):
+103 Node e dois SDK reais passaram; cenário de estrutura repetido após correção
+de clone por tentativa. SDK demonstrou rejeição atômica de campo de 1.100.000
+bytes, sem truncamento; representação grande continua obrigatória.
+Demais recursos, perfis/mídia, ativação e host/UI/roundtrip/validate seguem em P1.
+Somente local, sem CI/push.

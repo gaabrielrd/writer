@@ -171,7 +171,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -294,8 +294,13 @@ export function jobShape(uid, id, job) {
         'proofs',
         'state',
         'done',
-        ...(job.cleanupVersion === 3
-          ? ['validation-index', 'validation-items', 'validation-state']
+        ...(job.cleanupVersion >= 3
+          ? [
+              'validation-index',
+              'validation-items',
+              'validation-state',
+              ...(job.cleanupVersion === 4 ? ['artifacts'] : []),
+            ]
           : []),
       ].includes(job.cleanupPhase) ||
       ![null, 'file-hash-mismatch', 'upload-chain-mismatch'].includes(job.integrityFailure) ||
@@ -305,7 +310,7 @@ export function jobShape(uid, id, job) {
         'rejected',
         'cancelling',
         'cancelled',
-        ...(job.cleanupVersion === 3 ? ['validating', 'content-verified', 'content-rejected'] : []),
+        ...(job.cleanupVersion >= 3 ? ['validating', 'content-verified', 'content-rejected'] : []),
       ].includes(job.state)
     )
       inconsistent();
@@ -354,7 +359,7 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
   }
-  if (job.cleanupVersion === 3) {
+  if (job.cleanupVersion >= 3) {
     if (
       ![1, 2].includes(job.validationVersion) ||
       (job.validationVersion === 2) !== (job.source.format === 'writer-book-backup') ||
@@ -430,7 +435,52 @@ export function jobShape(uid, id, job) {
     ].some((k) => Object.hasOwn(job, k))
   )
     inconsistent();
+  if (job.cleanupVersion === 4) {
+    integer(job.validationCheckpoint);
+    if (
+      job.validationCheckpoint >= job.checkpoint ||
+      !['content-verified', 'cancelling', 'cancelled'].includes(job.state)
+    )
+      inconsistent();
+    preparationProgress(job.preparation);
+    if (
+      job.preparation.itemIndex > job.validationMeta.items ||
+      job.preparation.cleanedArtifacts > job.preparation.artifactCount ||
+      (job.state === 'content-verified' && job.preparation.cleanedArtifacts !== 0) ||
+      (job.state === 'cancelled' &&
+        job.preparation.cleanedArtifacts !== job.preparation.artifactCount)
+    )
+      inconsistent();
+  } else if (Object.hasOwn(job, 'preparation') || Object.hasOwn(job, 'validationCheckpoint'))
+    inconsistent();
   return job;
+}
+export function preparationProgress(value) {
+  closed(value, [
+    'schemaVersion',
+    'phase',
+    'itemIndex',
+    'artifactCount',
+    'cleanedArtifacts',
+    'actCount',
+    'chapterCount',
+    'wordCount',
+    'timestamp',
+  ]);
+  if (value.schemaVersion !== 1 || !['structure', 'resources'].includes(value.phase))
+    inconsistent();
+  for (const key of [
+    'itemIndex',
+    'artifactCount',
+    'cleanedArtifacts',
+    'actCount',
+    'chapterCount',
+    'wordCount',
+    'timestamp',
+  ])
+    integer(value[key]);
+  if (!Number.isFinite(new Date(value.timestamp).getTime())) inconsistent();
+  return structuredClone(value);
 }
 export function restoreValidationMeta(value, version = 1) {
   closed(value, ['phase', 'frames', 'items', 'checkedChunks', 'failure', 'reportHash']);
@@ -469,7 +519,7 @@ export function restoreValidationMeta(value, version = 1) {
   return value;
 }
 export const validationProgress = (job) =>
-  job.cleanupVersion === 3 ? { ...job.validationMeta, summary: job.validationSummary } : null;
+  job.cleanupVersion >= 3 ? { ...job.validationMeta, summary: job.validationSummary } : null;
 export const integrityProgress = (job) => ({
   checkedChunks: job.checkedChunks ?? 0,
   checkedBytes: job.checkedBytes ?? 0,
@@ -496,6 +546,7 @@ export function progress(uid, id, snapshot) {
     cleanedChunks: job.cleanedChunks,
     integrity: integrityProgress(job),
     validation: validationProgress(job),
+    ...(job.cleanupVersion === 4 ? { preparation: preparationProgress(job.preparation) } : {}),
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };

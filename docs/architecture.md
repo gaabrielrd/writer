@@ -1167,3 +1167,24 @@ mantém prova própria do índice e usa verify(tx) junto de M20 antes de escreve
 Qualificador externo tem precedência local somente com identidade confirmada.
 Raw mantém bytes/provas com rawIdentity novo. Ainda não há writer/inventário
 ampliado, documento nativo, ativação ou fluxo UI de restauração.
+
+## Preparação nativa da estrutura restaurada (P1 M22)
+
+[ADR 0066](decisions/0066-book-restore-native-structure.md) compõe
+bookRestoreStructure e bookRestoreArtifacts na fábrica interna. Cada unidade
+consome M20/M21 e grava documento/journal/progresso/recibo juntos; cursor é clonado
+por tentativa para retries do SDK. Snapshot de validação mantém o checkpoint
+original, fixado em validationCheckpoint somente para v4. preparation contém
+apenas fase, cursor, contadores e timestamp; content-verified não significa cópia pronta.
+
+V4 abrange atos, capítulos, workProgress, workWordGroups e workWordSources mais
+materializationArtifacts privado. Ledger existente é preparado com countReady
+falso e writes em buffer; raiz nunca é escrita. IDs/dono/datas/revisões/contagem
+são novos, prosa/ordem/vínculos preservados. A fase resources mantém no cursor
+o primeiro item que ainda não foi escrito.
+
+Journal confere nascimento/última atualização com documento e recibos. Cleanup
+remove pares por máscara, certifica namespaces antes de bytes/índices e outra vez
+na conclusão; versões anteriores mantêm inventários. Alteração/ABA/foreign ou
+raiz presente impedem remoção. Ainda faltam demais recursos, representação para
+campos acima do teto nativo, perfis/mídia, autorização/ativação e host/UI/roundtrip.

@@ -308,3 +308,7 @@ mantém o texto salvo no manuscrito e recupera rascunho diferente como versão s
 P1 M21 prepara [IDs e referências da cópia restaurada](docs/tasks/writer-v2/execucao/54-remapeamento-da-identidade-restaurada.md),
 com perfis próprios e relações de lore em páginas verificadas. A leitura original
 permanece disponível; esse marco ainda não grava ou ativa a cópia.
+
+P1 M22 inicia a [preparação nativa de atos, capítulos e ledger](docs/tasks/writer-v2/execucao/55-preparacao-nativa-da-estrutura.md),
+com journal/recibo atômicos e limpeza v4, mantendo raiz ausente. Demais recursos,
+campos grandes e fluxo completo de restauração continuam pendentes.
