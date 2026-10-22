@@ -105,7 +105,7 @@ export function prepareRestoredChapterText({
   return { manifest, writes, patch: { content: null, contentStorage: manifest } };
 }
 /** Internal reader: caller must authorize the owning project before calling. */
-export async function readBookChapterText(tx, db, { uid, bookId, chapterId, chapter }) {
+export async function openBookChapterText(tx, db, { uid, bookId, chapterId, chapter }) {
   authorize(uid);
   bookContentId(bookId);
   bookContentId(chapterId);
@@ -119,7 +119,7 @@ export async function readBookChapterText(tx, db, { uid, bookId, chapterId, chap
     if (chapter.content === null) inconsistent();
     const content = chapter.content ?? '';
     if (typeof content !== 'string' || !content.isWellFormed()) inconsistent();
-    return content;
+    return { inline: content };
   }
   if (chapter.content !== null) inconsistent();
   const manifest = chapterTextManifest(chapter.contentStorage),
@@ -148,35 +148,50 @@ export async function readBookChapterText(tx, db, { uid, bookId, chapterId, chap
     ) !== digest(manifest)
   )
     inconsistent();
-  const bytes = new Uint8Array(manifest.byteLength),
+  return { manifest, body, path, uid, bookId, chapterId };
+}
+/** Must use an opening from this same transaction; never accepts a client opening. */
+export async function readBookChapterTextPart(tx, db, opened, index) {
+  const { manifest, body, path, uid, bookId, chapterId } = opened;
+  integer(index);
+  if (index >= manifest.chunkCount) inconsistent();
+  const snapshot = await tx.get(db.doc(path + '/chunks/' + chunkId(index))),
+    part = snapshot.data(),
+    expected = Math.min(
+      BOOK_CHAPTER_TEXT_PART_BYTES,
+      manifest.byteLength - index * BOOK_CHAPTER_TEXT_PART_BYTES,
+    );
+  if (
+    !part ||
+    part.schemaVersion !== 1 ||
+    part.ownerId !== uid ||
+    part.bookId !== bookId ||
+    part.bodyId !== manifest.bodyId ||
+    part.chapterId !== chapterId ||
+    part.index !== index ||
+    part.byteLength !== expected ||
+    !(part.bytes instanceof Uint8Array) ||
+    part.bytes.length !== expected ||
+    createHash('sha256').update(part.bytes).digest('hex') !== part.contentHash ||
+    !bornEqual(snapshot, body) ||
+    !bornEqual(snapshot, { createTime: snapshot.updateTime })
+  )
+    inconsistent();
+  return part.bytes;
+}
+/** Internal reader: caller must authorize the owning project before calling. */
+export async function readBookChapterText(tx, db, input) {
+  const opened = await openBookChapterText(tx, db, input);
+  if ('inline' in opened) return opened.inline;
+  const { manifest } = opened,
+    bytes = new Uint8Array(manifest.byteLength),
     hasher = createHash('sha256');
   let offset = 0;
   for (let index = 0; index < manifest.chunkCount; index++) {
-    const snapshot = await tx.get(db.doc(path + '/chunks/' + chunkId(index))),
-      part = snapshot.data(),
-      expected = Math.min(
-        BOOK_CHAPTER_TEXT_PART_BYTES,
-        manifest.byteLength - index * BOOK_CHAPTER_TEXT_PART_BYTES,
-      );
-    if (
-      !part ||
-      part.schemaVersion !== 1 ||
-      part.ownerId !== uid ||
-      part.bookId !== bookId ||
-      part.bodyId !== manifest.bodyId ||
-      part.chapterId !== chapterId ||
-      part.index !== index ||
-      part.byteLength !== expected ||
-      !(part.bytes instanceof Uint8Array) ||
-      part.bytes.length !== expected ||
-      createHash('sha256').update(part.bytes).digest('hex') !== part.contentHash ||
-      !bornEqual(snapshot, body) ||
-      !bornEqual(snapshot, { createTime: snapshot.updateTime })
-    )
-      inconsistent();
-    bytes.set(part.bytes, offset);
-    offset += part.bytes.length;
-    hasher.update(part.bytes);
+    const part = await readBookChapterTextPart(tx, db, opened, index);
+    bytes.set(part, offset);
+    offset += part.length;
+    hasher.update(part);
   }
   if (offset !== manifest.byteLength || hasher.digest('hex') !== manifest.contentHash)
     inconsistent();

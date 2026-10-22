@@ -317,3 +317,8 @@ P1 M23 prepara [texto grande de capítulo](docs/tasks/writer-v2/execucao/56-text
 em corpo imutável e partes, com leitor interno e limpeza v5. Preserva 8 MiB
 lógicos, sem tornar a cópia visível. Integração dos consumidores e demais campos
 grandes continuam obrigatórias antes de habilitar a restauração.
+
+P1 M24 integra [leitura lógica de capítulos](docs/tasks/writer-v2/execucao/57-leitura-logica-dos-capitulos.md)
+ao cliente, histórico, contagem, análise e backup, com partes autorizadas e
+conferência integral. Escrita/pins/coleta, demais recursos e ativação da cópia
+continuam nas próximas tarefas; não há UI nova de restauração nem deploy.

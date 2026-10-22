@@ -1203,3 +1203,16 @@ validationCheckpoint continua fixo em v4/v5. Leitor interno autentica contexto,
 hashes, nascimento das partes e UTF-8/BOM; chamador deve autorizar projeto.
 Sem raiz, API pública, Rules novas ou fallback vazio. Ainda faltam consumidores
 de livro ativo, outros campos grandes, demais recursos e ativação/host/UI.
+
+## Leitura lógica de capítulos (P1 M24)
+
+[ADR 0068](decisions/0068-logical-chapter-text-read.md) separa abertura/parte em
+bookChapterText e compõe readLegacyChapterText por workProgress. API reautoriza
+raiz/capítulo/geração a cada parte e fixa nascimento nativo no token. Cliente
+chapterTextReadService monta bytes em lotes de oito, valida manifesto/tamanho/
+hash/UTF-8/BOM, conta e confirmação final; bookService limita capítulos simultâneos.
+
+Leitores de histórico, ledger/bootstrap, análise de lore e backup usam string
+lógica. SDK de corpo segue negado. Escritores/histórico por referência/pins/
+coleta/exclusão/conversão e ativação ainda precisam ser integrados. A callable
+usa wrapper Auth/App Check e cache privado, sem deploy neste incremento.

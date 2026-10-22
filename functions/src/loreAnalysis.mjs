@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { GenerationError, validateId } from './generation.mjs';
 import { universeDocumentId } from './universes.mjs';
 import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
+import { readBookChapterText } from './bookChapterText.mjs';
 
 const fail = (code, message) => {
   throw new GenerationError(code, message);
@@ -72,7 +73,13 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
     const chapterRef = db.doc(`${bookRef.path}/chapters/${universeDocumentId(chapterId)}`);
     const [bookDoc, chapter] = await Promise.all([tx.get(bookRef), tx.get(chapterRef)]);
     const book = bookDoc.data();
-    if (!book || book.authorId !== uid || !chapter.exists)
+    if (
+      !book ||
+      book.authorId !== uid ||
+      book.deleting ||
+      !chapter.exists ||
+      chapter.data().deleting
+    )
       fail('permission-denied', 'Livro ou capítulo indisponível.');
     const localLoreVersion = readBookLocalLoreVersion(book);
     const worldRef = book.universeId
@@ -111,7 +118,11 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
         world?.loreVersion ?? 0,
         entities,
       ]),
-      chapterHash: hash(chapter.data().content ?? ''),
+      chapterHash: hash(
+        chapter.data().contentMode === 'scenes'
+          ? (chapter.data().content ?? '')
+          : await readBookChapterText(tx, db, { uid, bookId, chapterId, chapter: chapter.data() }),
+      ),
     };
   }
   async function prepare(uid, data, provider) {

@@ -41,6 +41,8 @@ vi.mock('../services/legacyChapterService', () => ({
   prepareServerBookWordCount: vi.fn(),
 }));
 import type { Book } from '../model/book';
+import { readServerLegacyChapterText } from '../services/chapterTextReadService';
+vi.mock('../services/chapterTextReadService', () => ({ readServerLegacyChapterText: vi.fn() }));
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn((_db: unknown, ...pathSegments: string[]) => ({ pathSegments })),
@@ -801,4 +803,66 @@ it('recusa a persona complementar inválida antes de criar um capítulo', async 
     }),
   ).rejects.toThrow();
   expect(firestoreModule.getDocFromServer).not.toHaveBeenCalled();
+});
+
+describe('capítulos com corpo externo', () => {
+  const descriptor = {
+      schemaVersion: 1,
+      bodyId: 'a'.repeat(64),
+      contentHash: 'b'.repeat(64),
+      byteLength: 600000,
+      chunkCount: 10,
+    },
+    stored = {
+      title: 'Grande',
+      order: 1,
+      content: null,
+      contentStorage: descriptor,
+      createdAt: 1,
+      updatedAt: 2,
+    };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(firestoreModule.getDoc).mockResolvedValue({
+      id: 'chapter',
+      exists: () => true,
+      data: () => stored,
+    } as unknown as firestoreModule.DocumentSnapshot);
+    vi.mocked(firestoreModule.getDocs).mockResolvedValue({
+      docs: [{ id: 'chapter', data: () => stored }],
+    } as unknown as firestoreModule.QuerySnapshot);
+    vi.mocked(firestoreModule.getDocsFromServer).mockResolvedValue({
+      docs: [],
+    } as unknown as firestoreModule.QuerySnapshot);
+  });
+  it('entrega o texto resolvido ao editor e aos consumidores de lista completa', async () => {
+    vi.mocked(readServerLegacyChapterText).mockResolvedValue('Texto completo 🌙');
+    expect((await getChapter('book', 'chapter'))?.content).toBe('Texto completo 🌙');
+    expect((await listChapters('book'))[0]?.content).toBe('Texto completo 🌙');
+    expect(readServerLegacyChapterText).toHaveBeenCalledWith('book', 'chapter', descriptor);
+  });
+  it('propaga leitura indisponível em vez de devolver capítulo vazio', async () => {
+    vi.mocked(readServerLegacyChapterText).mockRejectedValue(new Error('corpo indisponível'));
+    await expect(getChapter('book', 'chapter')).rejects.toThrow('corpo indisponível');
+    await expect(listChapters('book')).rejects.toThrow('corpo indisponível');
+  });
+  it('não baixa corpos quando apenas metadados foram solicitados', async () => {
+    const list = await listChapters('book', { includeContent: false });
+    expect(list[0]).toMatchObject({ id: 'chapter', title: 'Grande', content: '' });
+    expect(readServerLegacyChapterText).not.toHaveBeenCalled();
+  });
+  it('recusa null sem descriptor e representação dupla', async () => {
+    for (const data of [
+      { ...stored, contentStorage: undefined },
+      { ...stored, content: 'fallback' },
+    ]) {
+      vi.mocked(firestoreModule.getDoc).mockResolvedValue({
+        id: 'chapter',
+        exists: () => true,
+        data: () => data,
+      } as unknown as firestoreModule.DocumentSnapshot);
+      await expect(getChapter('book', 'chapter')).rejects.toThrow();
+    }
+    expect(readServerLegacyChapterText).not.toHaveBeenCalled();
+  });
 });

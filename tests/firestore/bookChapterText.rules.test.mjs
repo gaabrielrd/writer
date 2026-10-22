@@ -145,3 +145,72 @@ test('native capacity commits and reads near-8-MiB text with all 133 native arti
   assert.equal((await admin.collection(root + '/materializationArtifacts').get()).size, 133);
   assert.equal((await admin.doc('books/' + bookId).get()).exists, false);
 });
+
+test('native chapter read reauthorizes each physical page and refuses prepared, foreign, changed and recreated sources', async () => {
+  const { createWorkProgressService } = await import('../../functions/src/workProgress.mjs');
+  const bookId = 'read-book',
+    chapterId = 'read-chapter',
+    content = '\ufeff' + 'ação 🌙\n'.repeat(60000),
+    plan = prepareRestoredChapterText({
+      uid,
+      bookId,
+      chapterId,
+      content,
+      operationId: 'native-read-operation01',
+      timestamp: 1000,
+    }),
+    chapterPath = 'books/' + bookId + '/chapters/' + chapterId,
+    bodyPath = 'books/' + bookId + '/bookTextBodies/' + plan.manifest.bodyId,
+    request = { bookId, chapterId, bodyId: plan.manifest.bodyId, index: 0 },
+    api = createWorkProgressService({ db: admin });
+  await admin.runTransaction(async (tx) => {
+    tx.create(admin.doc(chapterPath), { bookId, ownerId: uid, title: 'Chapter', ...plan.patch });
+    for (const write of plan.writes) {
+      const [id, index] = write.id.split(':');
+      tx.create(
+        admin.doc('books/' + bookId + '/bookTextBodies/' + id + (index ? '/chunks/' + index : '')),
+        write.value,
+      );
+    }
+  });
+  await assert.rejects(() => api.readLegacyChapterText(uid, request), { code: 'not-found' });
+  await admin.doc('books/' + bookId).create({ authorId: uid, title: 'Private', status: 'draft' });
+  await assert.rejects(() => api.readLegacyChapterText('other', request), { code: 'not-found' });
+  const first = await api.readLegacyChapterText(uid, request),
+    parts = [Buffer.from(first.chunkBase64, 'base64')];
+  for (let index = 1; index < plan.manifest.chunkCount; index++) {
+    const page = await api.readLegacyChapterText(uid, {
+      ...request,
+      index,
+      sourceToken: first.sourceToken,
+    });
+    assert.equal(page.sourceToken, first.sourceToken);
+    parts.push(Buffer.from(page.chunkBase64, 'base64'));
+  }
+  assert.equal(Buffer.concat(parts).toString('utf8'), content);
+  await admin.doc(chapterPath).update({ title: 'Changed' });
+  await assert.rejects(
+    () => api.readLegacyChapterText(uid, { ...request, index: 1, sourceToken: first.sourceToken }),
+    { code: 'failed-precondition' },
+  );
+  const next = await api.readLegacyChapterText(uid, request),
+    root = admin.doc('books/' + bookId),
+    value = (await root.get()).data();
+  await root.delete();
+  await root.create(value);
+  await assert.rejects(
+    () => api.readLegacyChapterText(uid, { ...request, index: 1, sourceToken: next.sourceToken }),
+    { code: 'failed-precondition' },
+  );
+  const fresh = await api.readLegacyChapterText(uid, request),
+    part = admin.doc(bodyPath + '/chunks/000000000000001'),
+    partValue = (await part.get()).data();
+  await part.delete();
+  await part.create(partValue);
+  await assert.rejects(
+    () => api.readLegacyChapterText(uid, { ...request, index: 1, sourceToken: fresh.sourceToken }),
+    { code: 'failed-precondition' },
+  );
+  for (const actor of [env.authenticatedContext(uid), env.unauthenticatedContext()])
+    await assertFails(getDoc(doc(actor.firestore(), bodyPath)));
+});

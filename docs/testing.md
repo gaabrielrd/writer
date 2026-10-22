@@ -1257,3 +1257,20 @@ replay e compatibilidade v4. Regressão ampliada da restauração: 114/114.
 a jornada SDK real de 1.100.000 bytes da prova isolada de capacidade perto de 8 MiB.
 O SDK também mantém a falha atômica para título grande, ainda não suportado.
 Não comprova hidratação do editor, ativação ou restore completo; validate fica P1.
+
+## Leitura lógica de capítulos (P1 M24)
+
+```bash
+node --test functions/test/bookChapterRead.test.mjs
+npx vitest run src/features/books/tests/chapterTextReadService.test.ts src/features/books/tests/bookService.test.ts
+```
+
+Os 15 casos Node novos cobrem uma parte por transação, origem/conta/ABA,
+revogação e consumidores completos. Os 14 testes do leitor cliente incluem
+8 MiB, hash/UTF-8 inválidos, troca de conta e confirmação final; quatro casos de
+bookService conferem hidratação, metadata-only e ausência sem fallback.
+
+[Entrega M24](entregas/2026-10-22-writer-v2-leitura-logica-dos-capitulos.md):
+120 Node distintos, 72 Vitest distintos e dois SDK positivos. SDK monta raiz ativa pela
+fixture, não pelo restore, e prova autorização/consistência da fábrica, sem
+comprovar wrapper Auth/App Check ou jornada UI produtiva. Suite integral segue P1.

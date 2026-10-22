@@ -437,3 +437,14 @@ a prova de 8.384.512 bytes é isolada de capacidade física.
 Integração dos consumidores/pins/coleta, demais campos grandes/recursos,
 perfis/mídia, ativação e host/UI/roundtrip/validate permanecem em P1/F2-09.
 Somente commit local; CI ignorada.
+
+### P1 M24 — leitura lógica dos capítulos
+
+O [contrato 57](57-leitura-logica-dos-capitulos.md) integra corpo externo ao
+cliente e leitores de histórico, contagem, análise e backup. Cada parte confere
+acesso e origem; cliente valida bytes completos, conta e confirmação final.
+[Evidência M24](../../../entregas/2026-10-22-writer-v2-leitura-logica-dos-capitulos.md):
+120 Node distintos, 72 Vitest distintos e dois SDK positivos. Callable preparada, sem deploy.
+Escrita/versões por referências/pins/coleta/exclusão/conversão, demais recursos,
+campos grandes, mídia/personas, ativação e host/UI/roundtrip/validate seguem P1.
+Somente commit local; CI ignorada.

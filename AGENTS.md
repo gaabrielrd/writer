@@ -213,3 +213,12 @@ concluído estiverem satisfeitos. A lista fica em
   conte palavras pelo texto original e autorize o projeto antes do leitor interno.
 - Mantenha cleanup v5 por filhos antes do pai e compatibilidade v1–v4;
   adapte leitores, escritores, histórico, pins/coleta e exclusão antes da ativação.
+
+## Leitura de capítulos com corpo externo
+
+- Use readLegacyChapterText para as partes do capítulo atual e reautorize cada
+  página; não exponha bookTextBodies via SDK nem aceite abertura interna do cliente.
+- Preserve o token de origem e a conta em toda a montagem; confira hash/UTF-8/BOM
+  e confirmação final antes de entregar texto ao editor, conforme ADR 0068.
+- Use texto lógico no histórico, backup, análise e contagem; leitura metadata-only
+  não pode servir como texto salvo. Ativação exige integrar escritores e coleta.

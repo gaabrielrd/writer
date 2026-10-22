@@ -326,6 +326,10 @@ const callable = (method, secrets = []) =>
       setCampaignMediaHeaders(method, request);
       setBookBackupCoverHeaders(method, request);
       setBookRestoreHeaders(method, request);
+      if (method === 'readLegacyChapterText') {
+        request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
+        request.rawRequest?.res?.setHeader('Vary', 'Authorization');
+      }
       setCampaignVariantRecoveryHeaders(method, request);
       try {
         const universeService = createUniverseService({ db });
@@ -573,6 +577,7 @@ export const recordWorkActivity = callable('recordWorkActivity');
 export const listWorkResume = callable('listWorkResume');
 export const resolveWorkResume = callable('resolveWorkResume');
 export const createLegacyChapter = callable('createLegacyChapter');
+export const readLegacyChapterText = callable('readLegacyChapterText');
 export const saveLegacyChapter = callable('saveLegacyChapter');
 export const deleteLegacyChapters = callable('deleteLegacyChapters');
 export const createScene = callable('createScene');

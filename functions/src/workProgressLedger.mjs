@@ -1,4 +1,5 @@
 import { countVisibleWords } from './visibleWordCount.mjs';
+import { readBookChapterText } from './bookChapterText.mjs';
 import { adventureBlockExtra } from './adventureBlocksState.mjs';
 import {
   digest,
@@ -130,7 +131,12 @@ export function createWorkProgressLedger({ db, countWords = countVisibleWords })
       if (content === undefined && eligible) {
         content =
           change.kind === 'chapter'
-            ? ((await tx.get(sourceRef)).data()?.content ?? '')
+            ? await readBookChapterText(tx, db, {
+                uid: root.authorId,
+                bookId: target.id,
+                chapterId: change.id,
+                chapter: (await tx.get(sourceRef)).data(),
+              })
             : (await tx.get(db.doc(sourceRef.path + '/body/current'))).data()?.content;
         if (typeof content !== 'string')
           workFail('failed-precondition', 'O texto da fonte está indisponível.');

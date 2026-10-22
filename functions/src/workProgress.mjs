@@ -1,4 +1,6 @@
 import { countVisibleWords } from './visibleWordCount.mjs';
+import { addBookChapterRead } from './bookChapterRead.mjs';
+import { readBookChapterText } from './bookChapterText.mjs';
 import { isCampaignDeletionError } from './campaignDeletionGuard.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { addWorkProgressLegacy } from './workProgressLegacy.mjs';
@@ -295,10 +297,17 @@ export function createWorkProgressService({ db, now = Date.now, countWords = cou
               snapshot = await tx.get(sourceRef),
               stored = snapshot.data();
             let content;
-            if (stored)
+            if (stored && !stored.deleting)
               content =
                 kind === 'chapter'
-                  ? (stored.content ?? '')
+                  ? stored.contentMode === 'scenes'
+                    ? ''
+                    : await readBookChapterText(tx, db, {
+                        uid: context.uid,
+                        bookId: context.target.id,
+                        chapterId: entry.id,
+                        chapter: stored,
+                      })
                   : (await tx.get(db.doc(sourceRef.path + '/body/current'))).data()?.content;
             const plan = await ledger.prepareChanges(tx, {
               target: context.target,
@@ -598,6 +607,7 @@ export function createWorkProgressService({ db, now = Date.now, countWords = cou
       return next ? { item: workItem(next), ...totals(updated) } : totals(updated);
     });
   }
+  addBookChapterRead(api, { db });
   addWorkProgressLegacy(api, { db, now, countWords, ledger });
   return api;
 }

@@ -7,6 +7,7 @@ import {
 } from './bookBackupContext.mjs';
 import { digest, workClosed, workFail, workId, workLimit } from './workProgressContracts.mjs';
 import { BOOK_STRUCTURE_LIMITS, serializeBookBackupStructure } from './bookBackupStructure.mjs';
+import { readBookChapterText } from './bookChapterText.mjs';
 
 function kind(value, allowBook = false) {
   if (!(allowBook ? ['book', 'act', 'chapter'] : ['act', 'chapter']).includes(value))
@@ -118,7 +119,19 @@ export function createBookBackupReadService({ db }) {
           workFail('failed-precondition', 'Estrutura em alteração. Aguarde para fazer o backup.');
         let encoded;
         try {
-          encoded = serializeBookBackupStructure(type, value, current.control);
+          const logical =
+            type === 'chapter' && value.contentMode !== 'scenes'
+              ? {
+                  ...value,
+                  content: await readBookChapterText(tx, db, {
+                    uid,
+                    bookId: context.target.id,
+                    chapterId: id,
+                    chapter: value,
+                  }),
+                }
+              : value;
+          encoded = serializeBookBackupStructure(type, logical, current.control);
         } catch {
           workFail(
             'failed-precondition',

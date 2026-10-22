@@ -17,6 +17,7 @@ import {
 import { auth, firestore } from '@/shared/lib';
 import { deleteSceneBook, deleteSceneGroup } from '@/features/scenes';
 import { resolveChapterContent } from './chapterCompositionService';
+import { readServerLegacyChapterText } from './chapterTextReadService';
 import {
   saveServerLegacyChapter,
   deleteServerLegacyChapters,
@@ -77,7 +78,8 @@ interface StoredChapterDoc {
   title: string;
   order: number;
   wordCount: number;
-  content: string;
+  content: string | null;
+  contentStorage?: unknown;
   createdAt: number;
   updatedAt: number;
 }
@@ -262,6 +264,21 @@ export async function deleteBook(bookId: string): Promise<void> {
   await finishBookDeletion(bookId);
 }
 
+async function storedChapterText(
+  bookId: string,
+  chapterId: string,
+  data: StoredChapterDoc,
+): Promise<string> {
+  if (data.contentStorage != null) {
+    if (data.content !== null || data.contentMode === 'scenes')
+      throw new Error('Representação do texto do capítulo inconsistente.');
+    return readServerLegacyChapterText(bookId, chapterId, data.contentStorage);
+  }
+  if (data.content === null || (data.content !== undefined && typeof data.content !== 'string'))
+    throw new Error('Texto do capítulo indisponível.');
+  return data.content ?? '';
+}
+
 export async function listChapters(
   bookId: string,
   options: { includeContent?: boolean } = {},
@@ -270,9 +287,11 @@ export async function listChapters(
   const q = query(chaptersRef, orderBy('order', 'asc'));
   const snapshot = await getDocs(q);
 
-  const chapters = snapshot.docs.map((docSnap) => {
+  const chapters: Chapter[] = [];
+  // A chapter already fetches up to eight parts concurrently; bound the book-wide fanout.
+  for (const docSnap of snapshot.docs) {
     const data = docSnap.data() as StoredChapterDoc;
-    return {
+    chapters.push({
       id: docSnap.id,
       bookId,
       ...(data.actId ? { actId: data.actId } : {}),
@@ -282,7 +301,10 @@ export async function listChapters(
       title: data.title,
       order: data.order ?? 0,
       wordCount: data.wordCount ?? 0,
-      content: data.content ?? '',
+      content:
+        options.includeContent === false || data.deleting
+          ? (data.content ?? '')
+          : await storedChapterText(bookId, docSnap.id, data),
       ...(data.contentMode === 'scenes'
         ? {
             contentMode: 'scenes' as const,
@@ -293,8 +315,8 @@ export async function listChapters(
       ...(data.deleting ? { deleting: true } : {}),
       createdAt: data.createdAt ?? Date.now(),
       updatedAt: data.updatedAt ?? 0,
-    };
-  });
+    });
+  }
   const ordered = groupChapters(
     chapters.filter((chapter) => !chapter.deleting),
     await listActs(bookId),
@@ -324,7 +346,7 @@ export async function getChapter(bookId: string, chapterId: string): Promise<Cha
     title: data.title,
     order: data.order ?? 0,
     wordCount: data.wordCount ?? 0,
-    content: data.content ?? '',
+    content: await storedChapterText(bookId, snapshot.id, data),
     ...(data.contentMode === 'scenes'
       ? {
           contentMode: 'scenes' as const,

@@ -8,6 +8,7 @@ import {
   readWorkMetadata,
 } from './workProgressContracts.mjs';
 import { adventureBlockState } from './adventureBlocksState.mjs';
+import { readBookChapterText } from './bookChapterText.mjs';
 import { readAdventureResource, readAdventureBody } from './adventureBlocksContracts.mjs';
 export { digest, workFail };
 export const CHUNK_BYTES = 64 * 1024;
@@ -104,7 +105,15 @@ export async function readHistorySource(tx, db, context, resource) {
   )
     return null;
   let bodySnapshot = null,
-    content = record.content ?? '';
+    content =
+      resource.kind === 'chapter'
+        ? await readBookChapterText(tx, db, {
+            uid: context.uid,
+            bookId: context.target.id,
+            chapterId: resource.id,
+            chapter: record,
+          })
+        : (record.content ?? '');
   if (resource.kind === 'scene') {
     if (record.parentId !== null) {
       const parent = (
