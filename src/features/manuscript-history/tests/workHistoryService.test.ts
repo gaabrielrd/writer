@@ -367,3 +367,44 @@ it.each([
   }
   await expect(captureWorkHistoryBackup(target)).rejects.toThrow('histórico completo');
 });
+
+it('fluxo usa as callables existentes com order id, token e leitura limitada', async () => {
+  const { streamWorkHistoryBackup } = await import('../services/workHistoryBackupStream');
+  const summary = {
+    ...version,
+    chunkCount: 1,
+    byteLength: 0,
+    wordCount: 0,
+    contentHash: await workHistoryHash(''),
+  };
+  call
+    .mockResolvedValueOnce(response(backupEpoch()))
+    .mockResolvedValueOnce(response({ items: [summary], nextCursor: null }))
+    .mockResolvedValueOnce(
+      response({ version: summary, chunks: [{ index: 0, content: '' }], nextCursor: null }),
+    )
+    .mockResolvedValueOnce(response(backupEpoch()));
+  const parts = [];
+  for await (const part of streamWorkHistoryBackup(target)) parts.push(part);
+  expect(parts).toHaveLength(2);
+  expect(vi.mocked(httpsCallable).mock.calls.map((args) => args[1])).toEqual([
+    'getWorkHistoryBackupSource',
+    'listWorkVersions',
+    'readWorkVersion',
+    'getWorkHistoryBackupSource',
+  ]);
+  expect(call).toHaveBeenNthCalledWith(2, {
+    target,
+    order: 'id',
+    cursor: null,
+    limit: 50,
+    expectedHistoryToken: backupEpoch().sourceToken,
+  });
+  expect(call).toHaveBeenNthCalledWith(3, {
+    target,
+    versionId: summary.id,
+    cursor: null,
+    limit: 4,
+    expectedHistoryToken: backupEpoch().sourceToken,
+  });
+});

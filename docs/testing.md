@@ -936,3 +936,23 @@ resultados e limites do probe Chromium com transporte loopback para Firestore:
 cinco casos, 108 capítulos, sem rede externa. Não equivale a App Check produtivo,
 memória do sink final, UI ou restauração completa. Validate no fechamento de P1;
 sem acompanhar CI durante desenvolvimento, conforme orientação vigente.
+
+## Histórico por fluxo — P1 M4
+
+```bash
+node --test functions/test/workHistory.test.mjs functions/test/workHistoryBackupOrder.test.mjs
+npx vitest run src/features/manuscript-history/tests/workHistoryService.test.ts src/features/manuscript-history/tests/workHistoryBackupStream.test.ts src/features/book-portability/tests/bookHistoryBackupRecords.test.ts
+```
+
+SDK com FIRESTORE_EMULATOR_HOST local demo:
+`node --test tests/firestore/workHistoryBackup.rules.test.mjs`. Prova ordem/cursor
+compatíveis, 55 versões, recursos ausentes, gates e writers reais. A descoberta
+por test:rules inclui esse arquivo sem novo caminho de acesso direto.
+
+Vetores fixos SHA-256 e Node crypto verificam igualdade; o teste de 20 MiB exige
+partes de até 64 KiB e não usa o digest de entrada inteira. Cliente cobre retorno
+antecipado, pressão de consumo, manifesto/hash, sessão/origem, vazio e BOM; SDK cobre UID.
+A [entrega M4](entregas/2026-10-21-writer-v2-historico-por-fluxo.md) distingue
+88 cenários cliente com evidência composta e cinco casos Chromium/emulador da
+exportação/restauração P1 ainda pendente. Auditoria de produção tem três achados
+moderados idênticos à baseline; não rotulá-la como verde.

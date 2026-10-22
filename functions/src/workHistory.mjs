@@ -181,18 +181,29 @@ export function createWorkHistoryService({ db, now = Date.now }) {
           'cursor',
           'limit',
           'expectedHistoryToken',
+          'order',
         ]),
         resource = data.resource == null ? null : historyResource(data.resource, context.target),
         limit = workLimit(data.limit),
-        scope = { uid, target: context.target, resource, kind: 'list' },
+        byId = data.order === 'id',
+        scope = {
+          uid,
+          target: context.target,
+          resource,
+          kind: 'list',
+          ...(byId ? { order: 'id' } : {}),
+        },
         cursor = historyCursor(data.cursor, scope),
         expected =
           data.expectedHistoryToken === undefined
             ? undefined
             : historyBackupToken(data.expectedHistoryToken);
+      if (data.order !== undefined && !byId) workFail('invalid-argument', 'Ordem inválida.');
       if (
         cursor &&
-        (!Number.isFinite(cursor.date) || cursor.date < 0 || cursor.date > 8640000000000000)
+        (byId
+          ? 'date' in cursor || 'index' in cursor
+          : !Number.isFinite(cursor.date) || cursor.date < 0 || cursor.date > 8640000000000000)
       )
         workFail('invalid-argument', 'Página inválida.');
       if (cursor) workId(cursor.id);
@@ -201,11 +212,13 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         else await assertHistoryBackupSource(tx, context, expected);
         let query = db.collection(context.path + '/workVersions').where('deleting', '==', false);
         if (resource) query = query.where('resourceKey', '==', digest(resource));
-        query = query
-          .orderBy('createdAt', 'desc')
-          .orderBy('__name__', 'desc')
-          .limit(limit + 1);
-        if (cursor) query = query.startAfter(cursor.date, cursor.id);
+        query = (
+          byId
+            ? query.orderBy('__name__')
+            : query.orderBy('createdAt', 'desc').orderBy('__name__', 'desc')
+        ).limit(limit + 1);
+        if (cursor)
+          query = byId ? query.startAfter(cursor.id) : query.startAfter(cursor.date, cursor.id);
         const page = await tx.get(query),
           selected = page.docs.slice(0, limit),
           last = selected.at(-1);
@@ -213,7 +226,11 @@ export function createWorkHistoryService({ db, now = Date.now }) {
           items: selected.map((snapshot) => versionSummary(snapshot.data())),
           nextCursor:
             page.docs.length > limit
-              ? encodeHistoryCursor({ scope, date: last.data().createdAt, id: last.id })
+              ? encodeHistoryCursor({
+                  scope,
+                  ...(byId ? {} : { date: last.data().createdAt }),
+                  id: last.id,
+                })
               : null,
         };
       });

@@ -466,3 +466,23 @@ function originalChunk(
 ) {
   return Promise.resolve(chunkFor(f.documents.get(input.kind + '/' + input.id)!, input, f.anchor));
 }
+
+it('preserva BOM em IDs de livro/capítulo ao conferir UTF-8', async () => {
+  const f = fixture(0),
+    sink = collected(),
+    bookId = '\ufefflivro',
+    chapterId = '\ufeffcapítulo';
+  f.anchor.bookId = bookId;
+  f.documents.set('book/' + bookId, f.documents.get('book/book')!);
+  f.documents.delete('book/book');
+  f.documents.set('chapter/' + chapterId, {
+    body: JSON.stringify({ content: '\ufefftexto' }),
+    itemToken: token(chapterId),
+  });
+  const proof = await captureBookBackupStructure({ bookId, api: f.api, write: sink.write });
+  await verifyBookBackupStructure(proof, { api: f.api });
+  expect(sink.records.map((record) => record.id)).toContain(chapterId);
+  expect(body(sink.records, 'chapter', chapterId)).toBe(
+    f.documents.get('chapter/' + chapterId)!.body,
+  );
+});

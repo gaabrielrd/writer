@@ -111,3 +111,38 @@ export async function workHistoryHash(content: string): Promise<string> {
     '',
   );
 }
+
+export type WorkHistoryBackupPart =
+  | { type: 'version'; version: VersionSummary }
+  | { type: 'text'; versionId: string; index: number; payload: Uint8Array };
+export interface WorkHistoryStreamProof {
+  schemaVersion: 1;
+  target: VersionTarget;
+  source: WorkHistoryBackupSource;
+  versions: number;
+  byteLength: number;
+  chunkCount: number;
+}
+export interface WorkHistoryBackupStreamApi {
+  getSource(this: void, input: { target: VersionTarget }): Promise<WorkHistoryBackupSource>;
+  list(
+    this: void,
+    input: {
+      target: VersionTarget;
+      order: 'id';
+      cursor: string | null;
+      limit: number;
+      expectedHistoryToken: string;
+    },
+  ): Promise<VersionPage>;
+  read(
+    this: void,
+    input: {
+      target: VersionTarget;
+      versionId: string;
+      cursor: string | null;
+      limit: number;
+      expectedHistoryToken: string;
+    },
+  ): Promise<VersionBodyPage>;
+}

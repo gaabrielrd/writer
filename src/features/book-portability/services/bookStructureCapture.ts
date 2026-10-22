@@ -45,7 +45,9 @@ function validId(value: unknown): value is string {
     ) &&
     !['.', '..'].includes(value) &&
     new TextEncoder().encode(value).length <= 1500 &&
-    new TextDecoder().decode(new TextEncoder().encode(value)) === value
+    new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
+      new TextEncoder().encode(value),
+    ) === value
   );
 }
 const validHash = (value: unknown): value is string =>

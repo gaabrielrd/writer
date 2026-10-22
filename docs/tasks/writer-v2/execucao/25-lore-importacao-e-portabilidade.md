@@ -130,6 +130,9 @@ origem indisponível não é convertida em ficha própria. O
 revogação entre revisão/ativação e JSON legado com global inline. Essa decisão
 não equivale à implementação do leitor/restaurador ou à conclusão de F2-09.
 
+P1 avança localmente em captura: estrutura salva M3b e [histórico por fluxo M4](37-historico-por-fluxo.md).
+Pacote integral, mídia, sink persistente e restauração continuam pendentes.
+
 ### P2 — Backup e restauração de aventura
 
 Reutilizar somente a infraestrutura demonstrada em P1, com DTO próprio da aventura:

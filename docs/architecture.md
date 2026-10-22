@@ -964,3 +964,13 @@ novamente seleção/versões por cadeia incremental, antes do selo pelo orquestr
 A prova só cobre estrutura salva; não é schema/backup/restauração completos.
 Imports de Firebase ficam adiados no adaptador callable, sem inicialização ao
 usar transporte injetado. Veja [ADR 0047](decisions/0047-book-structure-read-proof.md).
+
+## Histórico por fluxo — P1 M4
+
+manuscript-history expõe streamWorkHistoryBackup e verifyWorkHistoryBackupStream,
+com ordem ID opcional na lista existente, SHA-256 incremental de @noble/hashes e
+memória limitada a página/partes. O coletor M1 permanece compatível. A ponte em
+book-portability usa somente tipos da interface pública e emite resumos/textos e
+índice final, sem controles privados. Todos os registros continuam provisórios
+até revalidar as demais capacidades e fechar M2. Preservar BOM/UTF-8 literal.
+Veja [ADR 0048](decisions/0048-history-backup-stream.md) para limites e dependência.

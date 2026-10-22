@@ -104,6 +104,7 @@
 - Guarde histórico privado somente por captura manual ou antes de restaurar; retenha até exclusão explícita da versão ou projeto.
 - Incremente `historyRevision` na mesma transação de criação/retirada de versão e cópia anterior; preserve o contador no cliente, replay e cleanup.
 - Capture histórico completo com o mesmo token nativo por página e reautorização final; coordene writers/Rules e drene instâncias antigas antes de habilitar, conforme ADR 0044.
+- Use o fluxo por ID/hash incremental para backup de histórico; preserve UTF-8/BOM literais e confira a prova antes do selo, conforme ADR 0048.
 - Verifique selo/EOF do contêiner inteiro antes de confiar no backup; mantenha validação semântica/autorização separadas do framing, conforme ADR 0045.
 - Avance updatedAt do livro atomicamente na criação SDK de ato/capítulo e na remoção de capítulo ativo; preserve a limpeza já deleting, conforme contrato 35.
 - Confira a prova nativa da estrutura após todas as seções e antes do selo; não remova controle de progresso ativo nem trate tokens como dados portáteis, conforme ADR 0047.

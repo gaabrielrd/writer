@@ -9,3 +9,5 @@ export type {
   BookStructureProof,
   BookStructureCaptureOptions,
 } from './services/bookStructureCapture';
+
+export { bookHistoryBackupRecords } from './services/bookHistoryBackupRecords';

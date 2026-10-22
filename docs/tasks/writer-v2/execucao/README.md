@@ -239,3 +239,14 @@ registra nove testes Functions, 31 casos cliente com evidência composta, nove S
 e cinco casos Chromium/emulador. Schema das demais capacidades, histórico por
 fluxo, rascunho, mídia, sink persistente, revisão e restauração continuam em P1.
 Avanço somente local, sem acompanhamento de CI, conforme instrução de 2026-10-21.
+
+### P1 M4 — histórico completo por fluxo
+
+O [contrato 37](37-historico-por-fluxo.md) acrescenta ordem ID de backup, hash
+incremental e produtor com partes limitadas, preservando o coletor e a UI antigos.
+A ponte emite registros M2 e índice final sem controles privados. Functions
+36/36, SDK 5/5, cliente com 88 casos distintos em lotes e cinco cenários nativos
+positivos; [evidência e limites](../../../entregas/2026-10-21-writer-v2-historico-por-fluxo.md).
+O probe final compõe estrutura/histórico de 58 versões, com BOM literal, hash
+corrompido, mudança real de catálogo e abort. Continua sem pacote P1 completo,
+sink persistente ou restauração. Desenvolvimento somente local e sem CI.

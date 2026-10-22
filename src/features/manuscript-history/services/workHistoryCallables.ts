@@ -50,6 +50,7 @@ export const createWorkVersion = (
 export const listWorkVersions = (input: {
   target: VersionTarget;
   resource?: VersionResource;
+  order?: 'id';
   cursor?: string | null;
   limit?: number;
   expectedHistoryToken?: string;
