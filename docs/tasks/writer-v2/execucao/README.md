@@ -329,3 +329,13 @@ recibos, chave HTTP privada, fence e cleanup. [Evidência M13](../../../entregas
 17 Node, três cliente e seis SDK reais. uploaded não significa validado/ativado.
 P1 continua para revisão cifrada no host, validação servidor/remapeamento/mídia,
 ativação/roundtrip/UI e validate completo. Somente commits locais, sem CI/push.
+
+### P1 M14 — integridade retomável dos bytes
+
+O [contrato 47](47-integridade-retomavel-da-restauracao.md) acrescenta SHA-256 e
+chain em lotes, checkpoint privado, provas nativas por parte, leitor interno e
+cleanup v2. [Entrega M14](../../../entregas/2026-10-22-writer-v2-integridade-dos-backups.md):
+14 Node novos, regressões dirigidas e cinco cenários SDK novos positivos.
+bytes-verified não é conteúdo validado nem livro ativado. P1 segue para validação
+semântica servidor, remapeamento/mídia, revisão protegida no host, ativação/UI/
+roundtrip e validate integral. Somente commits locais; CI ignorada.

@@ -738,3 +738,5 @@ export const getBookRestoreRecoveryKey = onRequest(
     verifyAppCheck: (token) => getAppCheck().verifyToken(token),
   }),
 );
+
+export const advanceBookRestoreIntegrity = callable('advanceBookRestoreIntegrity');

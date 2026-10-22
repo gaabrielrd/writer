@@ -1061,3 +1061,14 @@ namespaces. Cleanup v1 remove somente partes e chave, preservando metadados.
 uploaded não valida conteúdo nem ativa livro.
 Veja [ADR 0057](decisions/0057-book-restore-upload.md). Preparação, inventário
 ampliado, materialização e ativação continuam obrigatórios em P1.
+
+## Integridade retomável da entrada — P1 M14
+
+bookRestoreIntegrity confere SHA-256/chain em lotes de até 16 partes (1 MiB).
+Estado SHA privado serializado por hash-wasm permite retomada em nova instância;
+provas por parte fixam hash/tamanho e identidade nativa. bytes-verified é anterior
+à validação semântica. A porta interna de ranges reautoriza e recusa mudança/ABA,
+sem endpoint de download. Leitura composta tem teto M2 de 272 KiB.
+Cleanup v2 acrescenta provas e estado SHA, com fases limitadas e compatibilidade
+v1. Veja [ADR 0058](decisions/0058-book-restore-integrity.md); restauração/ativação
+integral e host ainda pendentes.

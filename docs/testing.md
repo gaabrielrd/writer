@@ -1114,3 +1114,15 @@ A [evidência M13](entregas/2026-10-22-writer-v2-reserva-e-transferencia-de-back
 separa verificadores HTTP simulados de transações/Rules reais. Sem UI,
 Auth/App Check produtivos, validação semântica servidor, ativação ou roundtrip.
 Validate integral no fechamento P1; sem CI/envio remoto.
+
+## Integridade dos bytes recebidos — P1 M14
+
+bookRestoreIntegrity.test.mjs: 14 casos positivos finais, incluindo vetores SHA
+independentes, retomada, replay, corrupção, limite 16+1, source guard e framing
+real com payload cheio. Regressões M13/HTTP: 17 casos. SDK real novo:
+bookRestoreIntegrity.rules.test.mjs, cinco cenários com Rules deny, retry/CAS,
+retomada, ABA nativo, cancelamento/cleanup e preservação de outro projeto.
+[Entrega M14](entregas/2026-10-22-writer-v2-integridade-dos-backups.md) registra
+execuções separadas, regressões SDK e limites. Sem UI/produção/validação semântica;
+cliente não mudou, portanto não houve repetição de Vitest cliente/build.
+Validate integral no fechamento P1; sem CI.

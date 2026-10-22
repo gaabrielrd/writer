@@ -118,6 +118,7 @@
 - Leia JSON de backup v1–v6 por spans e mantenha procedência/ausências legadas explícitas; não fabrique selo/histórico/datas, não busque URL de capa nem promova lore global inline, conforme ADR 0056.
 - Reserve restaurações de livro por nascimento nativo e marcador tipado em deletedBooks; mantenha raiz ausente e uploaded separado de validado/ativado, conforme ADR 0057.
 - Remova bytes/chave somente pelo cleanup versionado da restauração; amplie seu inventário antes de criar recursos de preparação e preserve reservas permanentes.
+- Confira SHA integral por checkpoint privado e provas nativas; bytes-verified não valida conteúdo nem autoriza ativação. Limpe estado SHA/provas pelo inventário v2, conforme ADR 0058.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.
