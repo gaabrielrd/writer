@@ -220,7 +220,7 @@ projeto `demo-writer-backup-cover`. Se o CLI não estiver no PATH, configure
 
 O novo caminho de backup P1 já tem captura de estrutura, histórico, cenas,
 narrativa, lore, personas, universo, rascunho e bytes de capa, compostos em fluxo
-com envelope e gravação temporária em arquivo. Schema semântico integral, leitor
+com envelope, validação de conteúdo e gravação temporária em arquivo. Leitor
 legado, interface e restauração continuam em implementação; veja
 [o plano P1](docs/tasks/writer-v2/execucao/31-portabilidade-de-livros.md).
 

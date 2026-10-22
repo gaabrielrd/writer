@@ -303,3 +303,12 @@ de consumo e reconferência antes de footer/selo. Leitor verifica envelope, não
 Sink confirma arquivo somente no sucesso. [Entrega M10](../../../entregas/2026-10-22-writer-v2-pacote-integral-por-fluxo.md):
 24 Node, 114 cliente e nove cenários Chromium/OPFS/emuladores reais.
 P1 continua para schema semântico, legado, UI e restauração; somente local, sem CI/push.
+
+### P1 M11 — conteúdo e índice temporário protegido
+
+O [contrato 44](44-validacao-semantica-do-pacote.md) fecha DTOs e valida partes,
+hashes, identidades, contagens e vínculos. Índice protegido OPFS evita lista de
+IDs ilimitada em RAM. [Entrega M11](../../../entregas/2026-10-22-writer-v2-validacao-do-conteudo-do-backup.md):
+35 Node com regressões, lotes cliente dirigidos e dois probes nativos sobrepostos,
+incluindo adulteração/cleanup/isolamento. P1 segue aberto para JSON legado, UI e
+restauração; relatório content-only não é autorização. Sem CI/push.

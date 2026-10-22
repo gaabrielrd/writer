@@ -1072,3 +1072,18 @@ RPC tardio, erros de sink e preservação do arquivo anterior sob invalidação.
 Relatório envelope-only não valida DTO, relações, autoria ou direito de restaurar.
 OPFS é prova de plataforma/disco, sem seletor externo/UX/restauração. Warnings
 Storage/bundle e validate completo pendente estão separados na evidência.
+
+## Conteúdo do pacote e índice protegido — P1 M11
+
+```bash
+node --test functions/test/bookBackupContent.test.mjs
+npx vitest run src/features/book-portability/tests/inspectBookBackupContent.test.ts src/features/book-portability/tests/bookValidationIndex.test.ts
+```
+
+A [entrega M11](entregas/2026-10-22-writer-v2-validacao-do-conteudo-do-backup.md)
+separa onze testes Node novos, lotes cliente (119, depois sete e seis direcionados)
+e dois probes nativos sobrepostos. Verifica hashes/partes/identidades, todos os
+DTOs, relações e ranks ativos; mantém avisos para ausência legítima.
+OPFS/Web Crypto reais provam cifragem, adulteração, isolamento e cleanup;
+quota é simulada no teste unitário. content-only não concede autoria/acesso/
+ativação. Não substituir testes de autorização ou restauração por esse relatório.

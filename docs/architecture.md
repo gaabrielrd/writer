@@ -1029,3 +1029,13 @@ novo .writerbook do JSON legado; leitor retorna envelope-only só após EOF.
 saveBookBackup congela draft antes do destino, aguarda cada write e confirma
 arquivo temporário somente no sucesso. Veja [ADR 0054](decisions/0054-streamed-book-package.md).
 Schema semântico, legado, UI e restauração continuam obrigatórios em P1.
+
+## Validação de conteúdo — P1 M11
+
+bookBackupSchema/bookBackupContent fecham DTOs e conferem partes, identidades,
+hashes, contagens e vínculos com portas puras de índice/hash. content-only exige
+envelope completo, sem conferir autorização de restauração. book-portability usa
+índice OPFS por operação, nomes HMAC e valores AES-GCM com chave só em RAM;
+sem prosa ou lista ilimitada de IDs. Cleanup é obrigatório para retorno positivo.
+Veja [ADR 0055](decisions/0055-book-backup-content-validation.md).
+Leitor legado, revisão e servidor de restauração continuam em P1.

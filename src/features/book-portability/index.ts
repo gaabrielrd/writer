@@ -1,4 +1,6 @@
 export * from './model/backupContainer';
+export { inspectBookBackupContent } from './services/inspectBookBackupContent';
+export type { BookContentReport } from '../../../functions/src/bookBackupContent.mjs';
 export {
   streamBookBackup,
   type BookBackupOptions,
