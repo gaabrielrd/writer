@@ -993,3 +993,21 @@ A [entrega M6](entregas/2026-10-21-writer-v2-lore-e-personas-no-backup.md)
 registra 20 testes Functions, 30 cliente, seis SDK novos com evidência composta,
 seis SDK de regressão e 11 cenários Chromium/emulador. Distinguir esses cenários
 de sink persistente, UI, Auth/App Check produtivos e restauração P1 não entregues.
+
+## Origem de universo no backup — P1 M7
+
+```bash
+node --test functions/test/bookBackupUniverseRead.test.mjs
+npx vitest run src/features/book-portability/tests/bookUniverseCapture.test.ts src/features/book-portability/tests/bookStructureCallables.test.ts
+```
+
+SDK com FIRESTORE_EMULATOR_HOST local demo:
+`node --test tests/firestore/bookBackupUniverse.rules.test.mjs`.
+Cobre writers reais de universo/vínculo, máscaras/timestamps, raiz imóvel,
+revogação, substituição Admin, indisponibilidade opaca e isolamento.
+A descoberta test:rules inclui o arquivo. Permission-denied esperado na
+exclusão SDK comprova a Rules existente, não uma falha a contornar.
+
+A [entrega M7](entregas/2026-10-21-writer-v2-origem-de-universo-no-backup.md)
+registra oito Functions, 14 cliente, cinco SDK e 14 cenários Chromium/emulador.
+Distinguir captura/framing da religação/restauração, UI e sink ainda pendentes.

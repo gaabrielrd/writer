@@ -12,6 +12,11 @@ export type {
 
 export { bookHistoryBackupRecords } from './services/bookHistoryBackupRecords';
 export {
+  captureBookBackupUniverse,
+  verifyBookBackupUniverse,
+  type BookUniverseProof,
+} from './services/bookUniverseCapture';
+export {
   captureBookBackupResources,
   verifyBookBackupResources,
 } from './services/bookResourceCapture';

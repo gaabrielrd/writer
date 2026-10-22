@@ -39,6 +39,7 @@ import { createWorkHistoryService } from './workHistory.mjs';
 import { createBookBackupReadService } from './bookBackupRead.mjs';
 import { createBookBackupResourceService } from './bookBackupResourceRead.mjs';
 import { createBookBackupPersonaService } from './bookBackupPersonaRead.mjs';
+import { createBookBackupUniverseService } from './bookBackupUniverseRead.mjs';
 import { createAdventureBlocksService } from './adventureBlocks.mjs';
 import { createAdventurePreviewService } from './adventurePreview.mjs';
 import { createScenesService } from './scenes.mjs';
@@ -338,6 +339,7 @@ const callable = (method, secrets = []) =>
         const bookBackupRead = createBookBackupReadService({ db });
         const bookBackupResources = createBookBackupResourceService({ db });
         const bookBackupPersonas = createBookBackupPersonaService({ db });
+        const bookBackupUniverse = createBookBackupUniverseService({ db });
         const adventureBlocks = createAdventureBlocksService({ db });
         const adventurePreview = createAdventurePreviewService({ db, assets });
         const scenes = createScenesService({ db });
@@ -355,6 +357,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (bookBackupUniverse[method] ? bookBackupUniverse : null) ??
           (bookBackupPersonas[method] ? bookBackupPersonas : null) ??
           (bookBackupResources[method] ? bookBackupResources : null) ??
           (bookBackupRead[method] ? bookBackupRead : null) ??
@@ -514,6 +517,7 @@ export const listBookBackupResources = callable('listBookBackupResources');
 export const readBookBackupResource = callable('readBookBackupResource');
 export const listBookBackupPersonaBindings = callable('listBookBackupPersonaBindings');
 export const readBookBackupPersona = callable('readBookBackupPersona');
+export const getBookBackupUniverse = callable('getBookBackupUniverse');
 export const getWorkVersionSource = callable('getWorkVersionSource');
 export const listAdventureBlocks = callable('listAdventureBlocks');
 export const getAdventureBlock = callable('getAdventureBlock');

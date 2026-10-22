@@ -992,3 +992,12 @@ inclui encarnação/versão nativa do perfil da conta, que não avança a raiz d
 bookPersonaCapture emite um perfil por vínculo e confere ausências/tokens no fim;
 presets usam hash puro. Não copiar chaves ou perfil de conta. Veja
 [ADR 0050](decisions/0050-book-lore-and-personas.md). Schema/sink/restauração seguem em P1.
+
+## Origem de universo na captura — P1 M7
+
+getBookBackupUniverse resolve somente o vínculo da raiz autorizada. Máscara
+authorId/deleting e timestamps nativos produzem descriptor none/reference/
+unavailable sem copiar metadata/lore global. Token indisponível exclui identidade
+alheia; origem autorizada fixa versão/encarnação. bookUniverseCapture escreve um
+registro e revalida a prova antes do selo. Veja [ADR 0051](decisions/0051-book-universe-origin.md).
+A religação na ativação do restaurador ainda é requisito de P1.

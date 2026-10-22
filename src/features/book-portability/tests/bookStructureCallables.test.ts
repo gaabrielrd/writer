@@ -116,3 +116,16 @@ it('personas usam somente origem e vínculos autorizados pelas novas callables',
   expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'readBookBackupPersona');
   expect(mocks.invoke).toHaveBeenLastCalledWith(body);
 });
+
+it('universo usa somente vínculo da raiz, com token esperado, sem inicializar Firebase no import', async () => {
+  const { bookUniverseApi } = await import('../services/bookUniverseCallables');
+  expect(mocks.getFirebaseApp).not.toHaveBeenCalled();
+  const input = {
+    bookId: 'book',
+    sourceToken: 'a'.repeat(64),
+    expectedUniverseToken: 'b'.repeat(64),
+  };
+  await bookUniverseApi.read(input);
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'getBookBackupUniverse');
+  expect(mocks.invoke).toHaveBeenLastCalledWith(input);
+});

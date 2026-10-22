@@ -268,3 +268,12 @@ recriação de perfil externo à raiz invalida a prova. [Entrega M6](../../../en
 20 Functions, 30 cliente, seis SDK novos com evidência composta, seis SDK de
 regressão e 11 cenários nativos. P1 continua aberto para universo/rascunho/mídia,
 schema, sink e restauração; avanço local, sem CI/push.
+
+### P1 M7 — origem de universo sem cópia global
+
+O [contrato 40](40-origem-de-universo-no-backup.md) captura descriptor de vínculo
+autorizado com encarnação nativa ou referência indisponível neutra. Não copia
+metadata/lore global; edição/recriação/revogação invalida a prova antes do selo.
+[Entrega M7](../../../entregas/2026-10-21-writer-v2-origem-de-universo-no-backup.md):
+oito Functions, 14 cliente, cinco SDK e 14 cenários nativos. P1 segue aberto para
+rascunho/mídia, schema, sink e restauração; avanço local, sem CI/push.
