@@ -339,3 +339,14 @@ cleanup v2. [Entrega M14](../../../entregas/2026-10-22-writer-v2-integridade-dos
 bytes-verified não é conteúdo validado nem livro ativado. P1 segue para validação
 semântica servidor, remapeamento/mídia, revisão protegida no host, ativação/UI/
 roundtrip e validate integral. Somente commits locais; CI ignorada.
+
+### P1 M15 — núcleo semântico com checkpoints
+
+O [contrato 48](48-nucleo-semantico-com-checkpoints.md) extrai uma única máquina
+para pacote novo e legado, com checkpoints mínimos, expectativas raw e lotes
+de relações/referências/ranks. [Evidência M15](../../../entregas/2026-10-22-writer-v2-nucleo-semantico-com-checkpoints.md):
+35 Node distintos, 46 cliente e 20 cenários nativos em dois probes.
+Resultado interno semantic-only não autoriza framing nem restauração.
+Parser e coordenação de persistência servidor são a próxima ligação necessária;
+remapeamento/mídia, ativação, host/UI/roundtrip e validate seguem em P1.
+Somente commits locais, sem CI/push.

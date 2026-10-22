@@ -1126,3 +1126,14 @@ retomada, ABA nativo, cancelamento/cleanup e preservação de outro projeto.
 execuções separadas, regressões SDK e limites. Sem UI/produção/validação semântica;
 cliente não mudou, portanto não houve repetição de Vitest cliente/build.
 Validate integral no fechamento P1; sem CI.
+
+## Núcleo semântico com checkpoints — P1 M15
+
+bookContentMachine.test.mjs acrescenta 13 casos de retomada via JSON, lotes,
+isolamento e falhas; regressões nova/legada existentes somam outros 22.
+Vitest dirigido: 46 casos. Dois probes Chromium/OPFS reais verificaram 11
+cenários de pacote novo e nove de JSON v1–v6, com emuladores locais no primeiro.
+[Entrega M15](entregas/2026-10-22-writer-v2-nucleo-semantico-com-checkpoints.md)
+separa fixtures, APIs simuladas, navegador/serviços reais e resultados de comandos.
+Não há prova de parser/persistência retomável no servidor, restauração ou Auth
+produtivos. Validate completo no fechamento P1; CI ignorada.

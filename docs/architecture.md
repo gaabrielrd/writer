@@ -1072,3 +1072,15 @@ sem endpoint de download. Leitura composta tem teto M2 de 272 KiB.
 Cleanup v2 acrescenta provas e estado SHA, com fases limitadas e compatibilidade
 v1. Veja [ADR 0058](decisions/0058-book-restore-integrity.md); restauração/ativação
 integral e host ainda pendentes.
+
+## Núcleo semântico continuável — P1 M15
+
+bookContentMachine concentra as regras semânticas usadas por pacote novo e
+normalização legada. Estado fechado de até 16 KiB conserva somente metadata;
+relações e conferência final de referências/ranks avançam em lotes de até 64.
+Instância inválida ou com I/O pendente não fornece checkpoint/result.
+O adaptador bookBackupContent continua conferindo bytes/raw/canonicidade e
+framing antes de compor content-only; resultado interno é semantic-only.
+Checkpoint/índice são controle confiável do host, sem autorização própria.
+Veja [ADR 0059](decisions/0059-book-content-checkpoints.md).
+Persistência/parser servidor, preparação e ativação continuam em P1.
