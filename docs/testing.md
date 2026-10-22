@@ -1161,3 +1161,17 @@ serializado atravessa cortes em UTF-8/escapes/números; casos combinam limites
 antigos sem truncar compatibilidade. Probe privado comparou 4.500 entradas
 determinísticas ao scanner anterior. Não comprova integração servidor do legado,
 restauração ou aprovação remota. Validate integral no fechamento P1.
+
+## Catálogo e normalização legados retomáveis — P1 M18
+
+```bash
+node --test functions/test/bookLegacyNormalize.test.mjs functions/test/bookLegacyReview.test.mjs functions/test/bookLegacyJSON.test.mjs
+npx vitest run src/features/editor/tests/bookLegacyInterop.test.ts src/features/book-portability/tests/inspectLegacyBookBackup.test.ts
+```
+
+[Entrega M18](entregas/2026-10-22-writer-v2-catalogo-legado-retomavel.md):
+29 Node, oito cliente e 14 cenários Chromium/File/OPFS positivos. Testes retomam
+catálogo/normalizador/núcleo, conferem 205 referências, limites, falhas e readback
+sem writes/sem reparar índice ausente. Probe privado comparou 85 casos ao fluxo
+anterior, incluindo relatórios/índice completos. Não prova integração servidor
+do legado ou restauração. Validate integral permanece no fechamento P1; sem CI.

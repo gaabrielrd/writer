@@ -1108,3 +1108,16 @@ normalização precisam de passos e snapshot M16 deve ser ampliado/versionado;
 limite atual de 64 KiB não pode reduzir compatibilidade.
 Veja [ADR 0061](decisions/0061-legacy-book-json-cursor.md). Legado servidor,
 materialização/ativação e host/UI continuam pendentes.
+
+## Catálogo e normalização legados com checkpoints — P1 M18
+
+bookLegacyCatalog extrai estados/presenças/contagens, aceitação de span e descriptor
+serializável. bookLegacyNormalize valida perfil/grupo ou emite registro por passo;
+cenas/narrativa separam referências e fixam hash do item em andamento.
+Cursor metadata-only de até 16 KiB vincula descriptor/contagens/posição.
+bookLegacyReview usa esses mesmos passos e continua alimentando o núcleo M15.
+readBookLegacyNormalizedItem relê por cursor anterior/identidade/hash e confere
+índices existentes, sem writes. Esses controles não autenticam a origem.
+Veja [ADR 0062](decisions/0062-legacy-book-normalization-checkpoints.md).
+Ligação ao servidor e snapshot ampliado/versionado permanecem necessários;
+nenhuma coleção/callable/Rule mudou neste marco.

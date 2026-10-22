@@ -371,3 +371,13 @@ Cursor de até 512 KiB não acumula prosa/lista de itens. Catálogo/normalizaç�
 snapshot servidor ainda precisam ser adaptados antes de ligar o legado ao job.
 P1/F2-09 permanecem abertos, com materialização/mídia, ativação e host/UI/
 roundtrip/validate pendentes. Somente local, CI ignorada.
+
+### P1 M18 — catálogo e normalização legados retomáveis
+
+O [contrato 51](51-catalogo-e-normalizacao-legados.md) extrai catálogo serializável
+e normalização por unidades, compartilhados com o leitor, incluindo releitura sem
+writes. [Entrega M18](../../../entregas/2026-10-22-writer-v2-catalogo-legado-retomavel.md):
+29 Node, oito cliente, 14 cenários nativos e paridade em 85 casos de domínio.
+Ligação ao job M16, snapshot ampliado e prova SDK são a próxima etapa obrigatória;
+remapeamento/mídia/ativação e host/UI/roundtrip/validate seguem em P1.
+Somente commits locais, sem CI/push.
