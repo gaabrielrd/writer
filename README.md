@@ -304,3 +304,7 @@ P1 M20 acrescenta o [leitor interno de itens validados](docs/tasks/writer-v2/exe
 novo/legado, JSON por item e histórico/rascunho/capa por fluxo, com prova para a
 transação consumidora. Ainda não há restauração final. O contrato confirmado
 mantém o texto salvo no manuscrito e recupera rascunho diferente como versão separada.
+
+P1 M21 prepara [IDs e referências da cópia restaurada](docs/tasks/writer-v2/execucao/54-remapeamento-da-identidade-restaurada.md),
+com perfis próprios e relações de lore em páginas verificadas. A leitura original
+permanece disponível; esse marco ainda não grava ou ativa a cópia.

@@ -1208,3 +1208,21 @@ bookRestoreLegacyValidation.rules.test.mjs agora exercitam o leitor Admin real,
 raw e verificação transacional, incluindo recriação de ponteiro/índice/recibo.
 Set idêntico pode preservar timestamps nativos: usar delete/create para provar
 troca de nascimento. Fixtures não comprovam esses timestamps nem Rules.
+
+## Remapeamento de cópia de livro (P1 M21)
+
+```bash
+node --test functions/test/bookRestoreRemap.test.mjs
+```
+
+Quinze casos conferem todos os tipos de identidade, histórico removido, texto
+exato, relações nativas/externas, perfis consistentes/ausentes, seis legados e
+páginas de relações com provas. Vetor SHA-256 de Python fixa domínio e contexto.
+Pacotes reconstruídos de teste usam perfis completos para validação estrita;
+perfil legado ausente é conferido separadamente, sem fallback para a conta atual.
+
+bookRestoreRemap.rules.test.mjs acrescenta dois cenários SDK reais: pacote
+remapeado novo, lore local com aparência externa, consumo atômico e ABA de índice;
+legado com IDs estáveis entre serviços, estilo ausente e cancelamento. O runner
+test:rules descobre esse arquivo automaticamente. Collector de testes pode
+acumular fixtures pequenas; o leitor de produção mantém partes/páginas limitadas.

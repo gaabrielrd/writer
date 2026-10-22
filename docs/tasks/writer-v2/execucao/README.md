@@ -405,3 +405,13 @@ ativação e host/UI/roundtrip/validate continuam em P1. Commits locais, sem CI.
 [Evidência M20](../../../entregas/2026-10-22-writer-v2-leitura-autenticada-da-restauracao.md):
 71 Node, seis SDK reais distintos; dois afetados repetidos depois do pin do
 recibo inicial. Checks locais dirigidos passaram; validate integral segue em P1.
+
+### P1 M21 — identidade da cópia restaurada
+
+O [contrato 54](54-remapeamento-da-identidade-restaurada.md) acrescenta remapeamento
+por contexto/tipo/pai, chaves nativas e relações de lore em páginas, consumindo
+M20 com provas. [Evidência M21](../../../entregas/2026-10-22-writer-v2-identidade-da-copia-restaurada.md):
+83 Node dirigidos e dois SDK reais passaram; vetor independente passou na repetição
+do arquivo afetado. Não escreve recursos. Inventário/esquema/writers nativos,
+perfis/mídia/ledger, autorização/ativação e host/UI/roundtrip/validate seguem em P1.
+Somente commits locais, CI ignorada.

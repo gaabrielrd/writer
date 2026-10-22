@@ -1151,3 +1151,19 @@ quadro, sem lista ilimitada de bytes ou provas. Não há writer, coleção, Rule
 rota nova; cleanup v3 e codecs anteriores continuam. Remapeamento, inventário,
 writers/ledger/personas/mídia, autorização/ativação e host/UI/roundtrip permanecem
 em P1. Rascunho diferente deverá virar versão separada, preservando manuscrito salvo.
+
+## Identidade restaurada de livro (P1 M21)
+
+[ADR 0065](decisions/0065-restored-book-identity.md) define bookRestoreRemap e
+readMappedItem interno. Contexto/pedido/tipo/pai determinam IDs sem mapa global;
+chaves derivadas seguem os contratos nativos. Remapear referências explícitas,
+não prosa/traits/datas fonte. Perfis consistentes são copiados para identidade
+custom nova; legado ausente não usa perfil atual. Universo/outros projetos
+conservam procedência sem grant.
+
+Projeção de lore separa relations da base. loreRelations null significa ausência;
+count zero significa array presente vazio. read(offset,limit) limita até 64,
+mantém prova própria do índice e usa verify(tx) junto de M20 antes de escrever.
+Qualificador externo tem precedência local somente com identidade confirmada.
+Raw mantém bytes/provas com rawIdentity novo. Ainda não há writer/inventário
+ampliado, documento nativo, ativação ou fluxo UI de restauração.

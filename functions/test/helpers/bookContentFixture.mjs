@@ -181,14 +181,14 @@ export function fixture() {
     record('book-cover', 'book', { schemaVersion: 1, cover: { kind: 'none' } }),
   ];
 }
-export async function source(records) {
+export async function source(records, bookId = 'book') {
   const counts = createBookPackageCounts();
   for (const r of records) countBookPackageRecord(counts, bookPackageSection(r.kind), r);
   const chunks = [];
   for await (const chunk of encodeBookBackup([
-    bookPackageHeader('book'),
+    bookPackageHeader(bookId),
     ...records,
-    bookPackageEnd('book', counts),
+    bookPackageEnd(bookId, counts),
   ]))
     chunks.push(chunk);
   const bytes = Buffer.concat(chunks);

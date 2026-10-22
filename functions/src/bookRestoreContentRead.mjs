@@ -1,4 +1,5 @@
 import { digest } from './sceneContracts.mjs';
+import { createBookRestoreRemapper, BOOK_RESTORE_RELATION_ITEMS } from './bookRestoreRemap.mjs';
 import { inconsistent, integer } from './bookRestoreUploadContracts.mjs';
 import {
   createVerifiedBookRestoreSource,
@@ -107,10 +108,67 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
       onRead: observed.observe,
     });
   }
-  return Object.freeze({
+  const mapper = createBookRestoreRemapper({
+    schemaVersion: 1,
+    jobToken: initial.loaded.view.jobToken,
+    sourceBookId: initial.loaded.job.validationSummary.sourceBookId,
+    bookId: initial.loaded.job.bookId,
+  });
+  const api = {
     itemCount: initial.state.items,
     bookId: initial.loaded.job.bookId,
     sourceBookId: initial.loaded.job.validationSummary.sourceBookId,
+    async readMappedItem(index) {
+      const item = await api.readItem(index),
+        mapped = mapper.mapJSON(item.record, item.value);
+      let rawIdentity = null;
+      if (item.raw) {
+        const source =
+          item.record.kind === 'work-version'
+            ? { kind: 'work-version-text', id: item.value.id }
+            : item.record.kind === 'book-draft'
+              ? { kind: 'book-draft-text', id: item.value.chapter.id }
+              : { kind: 'book-cover-bytes', id: item.value.cover.imageId };
+        rawIdentity = mapper.rawIdentity({ ...source, part: 0 });
+      }
+      const loreRelations =
+        mapped.relations === null
+          ? null
+          : Object.freeze({
+              count: mapped.relations.length,
+              async read(offset, limit = BOOK_RESTORE_RELATION_ITEMS) {
+                integer(offset);
+                integer(limit, 1);
+                if (offset > mapped.relations.length || limit > BOOK_RESTORE_RELATION_ITEMS)
+                  inconsistent();
+                const store = createBookRestoreValidationStore(db, initial.loaded, null),
+                  end = Math.min(offset + limit, mapped.relations.length),
+                  values = [];
+                for (let at = offset; at < end; at++)
+                  values.push(
+                    await mapper.mapLoreRelation(
+                      mapped.relations[at],
+                      async (original) =>
+                        (await store.index.get(['node', 'lore', '', original])) !== undefined,
+                    ),
+                  );
+                async function verify(tx) {
+                  await item.verify(tx);
+                  await store.verify(tx);
+                }
+                await db.runTransaction(verify);
+                return { offset, values, done: end === mapped.relations.length, verify };
+              },
+            });
+      return {
+        record: mapped.record,
+        value: mapped.value,
+        raw: item.raw,
+        rawIdentity,
+        loreRelations,
+        verify: item.verify,
+      };
+    },
     async readItem(index) {
       integer(index);
       if (index >= initial.state.items) inconsistent();
@@ -189,7 +247,8 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
         : null;
       return { record: structuredClone(pointer.record), value, raw, verify };
     },
-  });
+  };
+  return Object.freeze(api);
 }
 
 async function* readRaw(raw, open) {
