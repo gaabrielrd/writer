@@ -381,3 +381,14 @@ writes. [Entrega M18](../../../entregas/2026-10-22-writer-v2-catalogo-legado-ret
 Ligação ao job M16, snapshot ampliado e prova SDK são a próxima etapa obrigatória;
 remapeamento/mídia/ativação e host/UI/roundtrip/validate seguem em P1.
 Somente commits locais, sem CI/push.
+
+### P1 M19 — validação servidor de JSON v1–v6
+
+O [contrato 52](52-validacao-servidor-do-json-legado.md) liga passos compartilhados
+ao job e à fonte M14, com snapshot opaco v2 e compatibilidade archive/cleanup.
+[Entrega M19](../../../entregas/2026-10-22-writer-v2-validacao-servidor-do-legado.md):
+85 Node, oito cliente e seis SDK reais positivos, incluindo estado grande,
+Rules deny, nascimento/ABA e limpeza. content-verified ainda não cria livro.
+Materialização/remapeamento/mídia e novo inventário são a próxima etapa;
+reautorização/ativação e host/UI/roundtrip/validate continuam em P1.
+Somente commits locais, sem CI/push.

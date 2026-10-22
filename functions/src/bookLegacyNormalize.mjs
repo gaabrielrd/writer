@@ -241,7 +241,13 @@ async function normalizationStep(source, catalog, cursor, { index, hash, signal 
     reference: next.reference,
   });
   function output(kind, entityId, value, where = origin()) {
-    const { bytes } = encodeBookBackupJSON(value);
+    let bytes;
+    try {
+      ({ bytes } = encodeBookBackupJSON(value));
+    } catch (error) {
+      if (error instanceof TypeError || error instanceof RangeError) bad();
+      throw error;
+    }
     next.emitted = count(next.emitted + 1);
     return {
       record: { kind, id: entityId, part: 0 },

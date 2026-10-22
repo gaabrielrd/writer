@@ -356,13 +356,14 @@ export function jobShape(uid, id, job) {
   }
   if (job.cleanupVersion === 3) {
     if (
-      job.validationVersion !== 1 ||
+      ![1, 2].includes(job.validationVersion) ||
+      (job.validationVersion === 2) !== (job.source.format === 'writer-book-backup') ||
       !Object.hasOwn(job, 'validationStateHash') ||
       !Object.hasOwn(job, 'validationSummary')
     )
       inconsistent();
     restoreId(job.validationBirthOperationId);
-    restoreValidationMeta(job.validationMeta);
+    restoreValidationMeta(job.validationMeta, job.validationVersion);
     if (
       !['validating', 'content-verified', 'content-rejected', 'cancelling', 'cancelled'].includes(
         job.state,
@@ -373,7 +374,13 @@ export function jobShape(uid, id, job) {
     if (job.validationStateHash !== null) restoreHash(job.validationStateHash);
     if (
       job.state === 'validating' &&
-      (!['frames', 'semantic', 'recheck'].includes(job.validationMeta.phase) ||
+      (![
+        ...(job.validationVersion === 2
+          ? ['legacy-scan', 'legacy-catalog', 'legacy-normalize']
+          : ['frames']),
+        'semantic',
+        'recheck',
+      ].includes(job.validationMeta.phase) ||
         job.validationStateHash === null ||
         job.validationSummary !== null)
     )
@@ -397,7 +404,13 @@ export function jobShape(uid, id, job) {
       inconsistent();
     if (job.state === 'cancelled' && job.validationStateHash !== null) inconsistent();
     if (job.validationSummary !== null) {
-      closed(job.validationSummary, ['sourceBookId', 'totals', 'warnings']);
+      closed(job.validationSummary, [
+        'sourceBookId',
+        'totals',
+        'warnings',
+        ...(job.validationVersion === 2 ? ['source', 'legacyWarnings'] : []),
+      ]);
+      if (job.validationVersion === 2) restoreLegacyValidationSummary(job.validationSummary, job);
       if (
         typeof job.validationSummary.sourceBookId !== 'string' ||
         !job.validationSummary.sourceBookId ||
@@ -419,9 +432,19 @@ export function jobShape(uid, id, job) {
     inconsistent();
   return job;
 }
-export function restoreValidationMeta(value) {
+export function restoreValidationMeta(value, version = 1) {
   closed(value, ['phase', 'frames', 'items', 'checkedChunks', 'failure', 'reportHash']);
-  if (!['frames', 'semantic', 'recheck', 'done', 'rejected'].includes(value.phase)) inconsistent();
+  if (
+    ![1, 2].includes(version) ||
+    ![
+      ...(version === 2 ? ['legacy-scan', 'legacy-catalog', 'legacy-normalize'] : ['frames']),
+      'semantic',
+      'recheck',
+      'done',
+      'rejected',
+    ].includes(value.phase)
+  )
+    inconsistent();
   for (const key of ['frames', 'items', 'checkedChunks']) integer(value[key]);
   if (
     ![
@@ -476,4 +499,54 @@ export function progress(uid, id, snapshot) {
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };
+}
+
+function restoreLegacyValidationSummary(summary, job) {
+  const value = summary.source;
+  closed(value, [
+    'format',
+    'version',
+    'size',
+    'fingerprint',
+    'bookId',
+    'universeCandidate',
+    'availability',
+    'ignoredGlobalEntries',
+    'publicationDiscarded',
+  ]);
+  if (
+    value.format !== 'writer-book-backup' ||
+    value.version !== job.source.version ||
+    value.size !== job.source.byteLength ||
+    value.fingerprint !== job.source.sha256 ||
+    value.bookId !== summary.sourceBookId ||
+    typeof value.publicationDiscarded !== 'boolean'
+  )
+    inconsistent();
+  integer(value.ignoredGlobalEntries);
+  if (value.universeCandidate !== null) {
+    closed(value.universeCandidate, ['id', 'incarnation']);
+    if (
+      typeof value.universeCandidate.id !== 'string' ||
+      !/^[a-zA-Z0-9_-]{1,128}$/.test(value.universeCandidate.id) ||
+      value.universeCandidate.incarnation !== 'not-recorded'
+    )
+      inconsistent();
+  }
+  closed(value.availability, ['history', 'progress', 'draft', 'cover', 'inactiveRanks']);
+  if (
+    value.availability.history !== 'not-recorded' ||
+    value.availability.progress !== 'not-recorded' ||
+    value.availability.draft !== 'not-separable' ||
+    !['not-recorded', 'url-only', 'none-declared'].includes(value.availability.cover) ||
+    !['not-recorded', 'not-applicable'].includes(value.availability.inactiveRanks)
+  )
+    inconsistent();
+  closed(summary.legacyWarnings, [
+    'resolvedLabelsIgnored',
+    'unusedProfiles',
+    'renderedAssemblies',
+    'derivedRankBuffers',
+  ]);
+  Object.values(summary.legacyWarnings).forEach((v) => integer(v));
 }

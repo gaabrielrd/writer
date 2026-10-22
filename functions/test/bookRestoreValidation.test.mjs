@@ -220,18 +220,16 @@ test('state checksum, raw part ABA and foreign reserved namespaces fail without 
   );
   assert.equal(changed.records.get(root).state, 'bytes-verified');
 });
-test('legacy input remains explicit pending and closed requests reject forged cursors or reports', async () => {
+test('incomplete legacy content is rejected and closed requests refuse forged cursors or reports', async () => {
   const f = setup(),
     { p } = await ready(
       f,
       Buffer.from('{"format":"writer-book-backup","version":6}'),
       'writer-book-backup',
     );
-  await assert.rejects(f.api.advanceBookRestoreValidation(uid, mutate(p, 'validation-legacy01')), {
-    code: 'failed-precondition',
-    details: { reason: 'legacy-validation-pending' },
-  });
-  assert.equal(f.records.get(root).state, 'bytes-verified');
+  const done = await finish(f, p);
+  assert.equal(done.state, 'content-rejected');
+  assert.equal(done.validation.failure, 'invalid-record');
   await assert.rejects(
     f.api.advanceBookRestoreValidation(uid, { ...mutate(p, 'validation-legacy02'), cursor: {} }),
     { code: 'invalid-argument' },

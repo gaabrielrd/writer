@@ -1121,3 +1121,17 @@ readBookLegacyNormalizedItem relê por cursor anterior/identidade/hash e confere
 Veja [ADR 0062](decisions/0062-legacy-book-normalization-checkpoints.md).
 Ligação ao servidor e snapshot ampliado/versionado permanecem necessários;
 nenhuma coleção/callable/Rule mudou neste marco.
+
+## Validação servidor do JSON legado — P1 M19
+
+advanceBookRestoreValidation também percorre JSON v1–v6 pela fonte privada M14,
+scanner/catalog/normalizador compartilhados e núcleo M15. Metadados do legado
+preservam procedência/ausências, sem selo fabricado, cópia global ou grant.
+Checkpoint validationVersion 2 guarda stateJSON canônico opaco de até 640 KiB
+reais, com contexto/hash/checkpoint/nascimento conferidos. Archive v1 conserva
+codec de 64 KiB. Fases/resumo/recibos têm guardas por versão.
+Pointers mantêm cursor anterior/record/hash, não DTO; relações relêem sem writes.
+Inventário cleanup v3 já cobre os mesmos namespaces e limpa estado corrompido.
+Veja [ADR 0063](decisions/0063-legacy-book-server-validation.md).
+Materialização/remapeamento/mídia, reautorização/ativação e host/UI permanecem
+necessários; antes dos novos writers, ampliar o inventário de limpeza.

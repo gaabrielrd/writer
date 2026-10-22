@@ -1175,3 +1175,17 @@ catálogo/normalizador/núcleo, conferem 205 referências, limites, falhas e rea
 sem writes/sem reparar índice ausente. Probe privado comparou 85 casos ao fluxo
 anterior, incluindo relatórios/índice completos. Não prova integração servidor
 do legado ou restauração. Validate integral permanece no fechamento P1; sem CI.
+
+## Validação servidor de JSON v1–v6 — P1 M19
+
+Node dirigido: bookRestoreLegacyValidation, bookRestoreValidation, bookRestoreUpload,
+bookRestoreIntegrity, bookRestoreRecovery, bookLegacyNormalize, bookLegacyReview
+e bookLegacyJSON: 85/85. SDK real: bookRestoreLegacyValidation.rules.test.mjs e
+bookRestoreValidation.rules.test.mjs: seis positivos, sem skip, emulador loopback.
+Vitest inspectLegacyBookBackup/bookLegacyInterop: oito positivos.
+[Entrega M19](entregas/2026-10-22-writer-v2-validacao-servidor-do-legado.md) registra
+tempos e escopo: seis versões, paridade, fanout, estados/recibos/CAS, JSON opaco
+grande, born/ABA, Rules e cleanup. Checkpoint nativo de 235.284 bytes retomado;
+criação idêntica perdeu nascimento sem impedir cancelamento.
+Não comprova criação/ativação do livro, host/UI ou Auth/App Check produtivos.
+Validate integral permanece para fechamento P1; CI ignorada.

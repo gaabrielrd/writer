@@ -22,7 +22,9 @@ const hash = {
     };
   },
 };
+export { hash as bookRestoreValidationHash };
 export const VALIDATION_SNAPSHOT_BYTES = 65536;
+export const LEGACY_VALIDATION_SNAPSHOT_BYTES = 640 * 1024;
 export function initialBookValidation() {
   return {
     phase: 'frames',
@@ -212,6 +214,47 @@ export function completeBookValidation(state, sourceHash, index) {
     warnings: summary.warnings,
   };
 }
+
+export const bookValidationVersion = (source) => (source.format === 'writer-book-backup' ? 2 : 1);
+export function readValidationSnapshot(value, loaded) {
+  const version = loaded.job.validationVersion;
+  if (version === 1) {
+    if (
+      Object.hasOwn(value, 'stateJSON') ||
+      Object.hasOwn(value, 'validationVersion') ||
+      Buffer.byteLength(JSON.stringify(value), 'utf8') > VALIDATION_SNAPSHOT_BYTES ||
+      !value.state ||
+      typeof value.state !== 'object' ||
+      Array.isArray(value.state)
+    )
+      inconsistent();
+    return structuredClone(value.state);
+  }
+  if (
+    version !== 2 ||
+    value.validationVersion !== 2 ||
+    Object.hasOwn(value, 'state') ||
+    Object.keys(value).length !== 7 ||
+    typeof value.stateJSON !== 'string' ||
+    Buffer.byteLength(value.stateJSON, 'utf8') > LEGACY_VALIDATION_SNAPSHOT_BYTES
+  )
+    inconsistent();
+  let state;
+  try {
+    state = JSON.parse(value.stateJSON);
+  } catch {
+    inconsistent();
+  }
+  if (
+    !state ||
+    typeof state !== 'object' ||
+    Array.isArray(state) ||
+    JSON.stringify(state) !== value.stateJSON ||
+    !state.legacy
+  )
+    inconsistent();
+  return state;
+}
 export function validationSnapshot(loaded, state, checkpoint) {
   const value = {
     schemaVersion: 1,
@@ -219,8 +262,16 @@ export function validationSnapshot(loaded, state, checkpoint) {
     restoreId: loaded.job.restoreId,
     jobToken: loaded.view.jobToken,
     checkpoint,
-    state,
   };
-  if (Buffer.byteLength(JSON.stringify(value), 'utf8') > VALIDATION_SNAPSHOT_BYTES) inconsistent();
+  if (bookValidationVersion(loaded.job.source) === 2) {
+    const stateJSON = JSON.stringify(state);
+    if (Buffer.byteLength(stateJSON, 'utf8') > LEGACY_VALIDATION_SNAPSHOT_BYTES) inconsistent();
+    value.validationVersion = 2;
+    value.stateJSON = stateJSON;
+  } else {
+    value.state = state;
+    if (Buffer.byteLength(JSON.stringify(value), 'utf8') > VALIDATION_SNAPSHOT_BYTES)
+      inconsistent();
+  }
   return { value, hash: digest(value) };
 }

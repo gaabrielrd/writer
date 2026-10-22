@@ -222,7 +222,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         inconsistent();
     } else if (r.action === 'advanceBookRestoreIntegrity') inconsistent();
     if (r.validation !== undefined) {
-      restoreValidationMeta(r.validation);
+      restoreValidationMeta(r.validation, loaded.job.validationVersion);
       if (
         !loaded.job.validationMeta ||
         ['frames', 'items', 'checkedChunks'].some(

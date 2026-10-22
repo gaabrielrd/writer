@@ -228,8 +228,9 @@ semântico com checkpoints. O servidor valida o contêiner novo em etapas, com
 índice privado e limpeza limitada. O scanner JSON legado também já é retomável,
 compartilhando a gramática estrita com o leitor existente. Catálogo e normalização
 também avançam por checkpoints e permitem reler registros sem gravar índices.
-A ligação do legado ao job servidor, preparação/ativação
-e interface de restauração continuam em implementação; veja
+O job servidor também valida os JSON v1–v6, com checkpoint privado versionado,
+procedência e limpeza compatível. Preparação/materialização, ativação e interface
+de restauração continuam em implementação; veja
 [o plano P1](docs/tasks/writer-v2/execucao/31-portabilidade-de-livros.md).
 
 ## Como usar agentes

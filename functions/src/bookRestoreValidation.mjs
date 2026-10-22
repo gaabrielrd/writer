@@ -26,8 +26,14 @@ import {
   completeBookValidation,
   validationSnapshot,
   validationMeta,
-  VALIDATION_SNAPSHOT_BYTES,
+  readValidationSnapshot,
+  bookValidationVersion,
 } from './bookRestoreValidationStep.mjs';
+import {
+  initialBookLegacyValidation,
+  prepareBookLegacyValidationStep,
+  completeBookLegacyValidation,
+} from './bookRestoreLegacyValidation.mjs';
 const refFor = (db, loaded) => db.doc(loaded.ref.path + '/validationState/current');
 async function emptyNamespace(tx, db, loaded) {
   for (const name of ['validationIndex', 'validationItems', 'validationState']) {
@@ -62,12 +68,11 @@ async function stateFor(tx, snapshot, loaded, db) {
     inconsistent();
 
   if (
-    Buffer.byteLength(JSON.stringify(value), 'utf8') > VALIDATION_SNAPSHOT_BYTES ||
     value.checkpoint !== loaded.job.checkpoint ||
     digest(value) !== loaded.job.validationStateHash
   )
     inconsistent();
-  return structuredClone(value.state);
+  return readValidationSnapshot(value, loaded);
 }
 export function createBookRestoreValidationService({
   db,
@@ -84,8 +89,6 @@ export function createBookRestoreValidationService({
       fail('failed-precondition', 'state-conflict');
     if (loaded.job.checkpoint !== request.expectedCheckpoint)
       fail('failed-precondition', 'checkpoint-conflict');
-    if (loaded.job.source.format !== 'writer-book-archive')
-      fail('failed-precondition', 'legacy-validation-pending');
   }
   return {
     async advanceBookRestoreValidation(uid, input) {
@@ -105,7 +108,14 @@ export function createBookRestoreValidationService({
         const snapshot = await tx.get(refFor(db, loaded));
         if (loaded.job.state === 'bytes-verified') {
           await emptyNamespace(tx, db, loaded);
-          return { loaded, state: initialBookValidation(), token: null };
+          return {
+            loaded,
+            state:
+              bookValidationVersion(loaded.job.source) === 2
+                ? initialBookLegacyValidation()
+                : initialBookValidation(),
+            token: null,
+          };
         }
         return {
           loaded,
@@ -153,7 +163,9 @@ export function createBookRestoreValidationService({
           }
           state.recheck = end;
           if (end === loaded.job.checkedChunks) {
-            report = completeBookValidation(state, loaded.job.source.sha256, store.index);
+            report = state.legacy
+              ? completeBookLegacyValidation(state, loaded.job.source.sha256, store.index)
+              : completeBookValidation(state, loaded.job.source.sha256, store.index);
             state.phase = 'done';
           }
         } else {
@@ -166,7 +178,9 @@ export function createBookRestoreValidationService({
             allowedStates: ['bytes-verified', 'validating'],
             onRead: observe,
           });
-          await prepareBookValidationStep(state, source, store);
+          if (state.legacy && state.phase.startsWith('legacy-'))
+            await prepareBookLegacyValidationStep(state, source, store, loaded.job.source);
+          else await prepareBookValidationStep(state, source, store);
           if (state.machine?.bookId === loaded.job.bookId)
             throw new BookBackupFormatError(
               'invalid-record',
@@ -219,7 +233,7 @@ export function createBookRestoreValidationService({
         );
         const record = next(job, request, {
           cleanupVersion: 3,
-          validationVersion: 1,
+          validationVersion: bookValidationVersion(job.source),
           validationBirthOperationId: job.validationBirthOperationId ?? request.operationId,
           validationMeta: meta,
           validationStateHash: prepared?.hash ?? null,
@@ -228,6 +242,9 @@ export function createBookRestoreValidationService({
                 sourceBookId: report.sourceBookId,
                 totals: report.totals,
                 warnings: report.warnings,
+                ...(report.source
+                  ? { source: report.source, legacyWarnings: report.legacyWarnings }
+                  : {}),
               }
             : null,
           state: rejection ? 'content-rejected' : report ? 'content-verified' : 'validating',

@@ -121,6 +121,7 @@
 - Confira SHA integral por checkpoint privado e provas nativas; bytes-verified não valida conteúdo nem autoriza ativação. Limpe estado SHA/provas pelo inventário v2, conforme ADR 0058.
 - Use o mesmo núcleo semântico para novo/legado; vincule checkpoint/índice à origem no host e não aceite semantic-only ou prova raw do cliente como autorização, conforme ADR 0059.
 - Confirme leituras nativas e índice/item/checkpoint/recibo juntos na validação servidor; preserve vínculo de nascimento e cleanup v3, conforme ADR 0060.
+- Valide JSON legado pelos passos compartilhados e snapshot v2 opaco privado; meça o payload antes do escape, preserve codec archive v1 e não trate procedência como autorização, conforme ADR 0063.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.
