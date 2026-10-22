@@ -5,6 +5,7 @@ import { before, beforeEach, after, test } from 'node:test';
 import { initializeTestEnvironment, assertFails } from '@firebase/rules-unit-testing';
 import { doc, collection, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { createBookRestoreUploadService } from '../../functions/src/bookRestoreUpload.mjs';
+import { digest } from '../../functions/src/sceneContracts.mjs';
 import { inspectBookLegacyContent } from '../../functions/src/bookLegacyReview.mjs';
 import { bookLegacyFixture as fixture } from '../../functions/test/helpers/bookLegacyFixture.mjs';
 import { indexFixture, hashPort } from '../../functions/test/helpers/bookContentFixture.mjs';
@@ -127,6 +128,25 @@ test('native legacy validation commits opaque state/index/receipt together and m
     for (const name of ['validationState', 'validationIndex', 'validationItems'])
       await assertFails(getDocs(collection(db, root + '/' + name)));
   }
+  const reader = await api.openVerifiedBookRestoreContent(uid, {
+    restoreId: id,
+    jobToken: done.jobToken,
+  });
+  let ownProse = false;
+  for (let position = 0; position < reader.itemCount; position++) {
+    const content = await reader.readItem(position);
+    await admin.runTransaction(content.verify);
+    assert.equal(content.raw, null);
+    ownProse ||= JSON.stringify(content.value).includes('Own prose');
+  }
+  assert.equal(ownProse, true);
+  const prepared = await reader.readItem(0),
+    catalogRef = admin.doc(root + '/validationIndex/' + digest(['legacy', 'book', '0'])),
+    catalog = await catalogRef.get();
+  await catalogRef.delete();
+  await catalogRef.create(catalog.data()); // Identical payload, new native birth.
+  await assert.rejects(() => admin.runTransaction(prepared.verify));
+  await assert.rejects(() => reader.readItem(0));
   const metadata = JSON.stringify(await api.listBookRestores(uid, {}));
   for (const text of [
     'Own title',

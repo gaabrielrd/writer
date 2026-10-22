@@ -1189,3 +1189,22 @@ grande, born/ABA, Rules e cleanup. Checkpoint nativo de 235.284 bytes retomado;
 criação idêntica perdeu nascimento sem impedir cancelamento.
 Não comprova criação/ativação do livro, host/UI ou Auth/App Check produtivos.
 Validate integral permanece para fechamento P1; CI ignorada.
+
+## Itens de restauração validados (P1 M20)
+
+Teste dirigido do leitor servidor:
+
+```bash
+node --test functions/test/bookRestoreContentRead.test.mjs
+```
+
+Cobre novo formato e seis legados, itens multipartes, histórico vazio, rascunho
+BOM/Unicode e PNG, autorização, cancelamento, ABA de ponteiro/recibos/chunks/estado,
+índices legados e falhas de I/O. Reconferir verify(tx) na transação consumidora é
+parte do contrato. Testes não criam livros, personas ou mídia.
+
+Os SDK existentes bookRestoreValidation.rules.test.mjs e
+bookRestoreLegacyValidation.rules.test.mjs agora exercitam o leitor Admin real,
+raw e verificação transacional, incluindo recriação de ponteiro/índice/recibo.
+Set idêntico pode preservar timestamps nativos: usar delete/create para provar
+troca de nascimento. Fixtures não comprovam esses timestamps nem Rules.

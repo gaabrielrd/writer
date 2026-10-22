@@ -46,7 +46,7 @@ async function emptyNamespace(tx, db, loaded) {
     if (page.docs.length) inconsistent();
   }
 }
-async function stateFor(tx, snapshot, loaded, db) {
+export async function readBookRestoreValidationState(tx, snapshot, loaded, db) {
   const value = snapshot.data();
   validationContext(value, loaded);
   const birth = await tx.get(
@@ -119,7 +119,7 @@ export function createBookRestoreValidationService({
         }
         return {
           loaded,
-          state: await stateFor(tx, snapshot, loaded, db),
+          state: await readBookRestoreValidationState(tx, snapshot, loaded, db),
           token: nativeRestoreToken(snapshot),
         };
       });
@@ -218,7 +218,7 @@ export function createBookRestoreValidationService({
           await emptyNamespace(tx, db, current);
           if (initial.token !== null) inconsistent();
         } else {
-          await stateFor(tx, snapshot, current, db);
+          await readBookRestoreValidationState(tx, snapshot, current, db);
           if (nativeRestoreToken(snapshot) !== initial.token) inconsistent();
         }
         await store.verify(tx);

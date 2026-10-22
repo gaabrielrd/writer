@@ -1,3 +1,4 @@
+import { createVerifiedBookRestoreContent } from './bookRestoreContentRead.mjs';
 import { createBookRestoreValidationService } from './bookRestoreValidation.mjs';
 import { prepareBookRestoreValidationCleanup } from './bookRestoreValidationCleanup.mjs';
 import {
@@ -779,6 +780,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
   return {
     ...validation,
     ...integrity,
+    async openVerifiedBookRestoreContent(uid, input) {
+      authorize(uid);
+      closed(input, ['restoreId', 'jobToken']);
+      return createVerifiedBookRestoreContent({
+        db,
+        uid,
+        id: restoreId(input.restoreId),
+        token: restoreHash(input.jobToken),
+        load,
+      });
+    },
     async openVerifiedBookRestoreSource(uid, input) {
       authorize(uid);
       closed(input, ['restoreId', 'jobToken']);

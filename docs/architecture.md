@@ -1135,3 +1135,19 @@ Inventário cleanup v3 já cobre os mesmos namespaces e limpa estado corrompido.
 Veja [ADR 0063](decisions/0063-legacy-book-server-validation.md).
 Materialização/remapeamento/mídia, reautorização/ativação e host/UI permanecem
 necessários; antes dos novos writers, ampliar o inventário de limpeza.
+
+## Leitura dos itens confirmados para restaurar livros (P1 M20)
+
+[ADR 0064](decisions/0064-verified-book-restore-content-read.md) acrescenta
+bookRestoreContentRead, composto somente na fábrica privada. Validação exporta
+a autenticação de snapshot para reuso; store oferece leitura imutável de itens.
+Abertura reconstrói relatório/resumo e fixa controle, snapshot e primeiro recibo.
+Cada JSON ou parte raw traz verify(tx), obrigatório antes das escritas consumidoras:
+reconfere origem e provas observadas, sem trocar pelo estado atual.
+
+Novo formato lê spans canônicos limitados; legado reproduz cursor/catálogo M18,
+conferindo hash/tamanho/localização. Raw mantém hash incremental e provas por
+quadro, sem lista ilimitada de bytes ou provas. Não há writer, coleção, Rule ou
+rota nova; cleanup v3 e codecs anteriores continuam. Remapeamento, inventário,
+writers/ledger/personas/mídia, autorização/ativação e host/UI/roundtrip permanecem
+em P1. Rascunho diferente deverá virar versão separada, preservando manuscrito salvo.

@@ -144,6 +144,43 @@ test('real server validation resumes to the shared semantic result and every pri
     for (const name of ['validationState', 'validationIndex', 'validationItems'])
       await assertFails(getDocs(collection(db, root + '/' + name)));
   }
+  const reader = await api.openVerifiedBookRestoreContent(uid, {
+    restoreId: id,
+    jobToken: done.jobToken,
+  });
+  let rawParts = 0;
+  for (let position = 0; position < reader.itemCount; position++) {
+    const content = await reader.readItem(position);
+    await admin.runTransaction(content.verify);
+    if (content.raw)
+      for await (const part of content.raw()) {
+        await admin.runTransaction(part.verify);
+        rawParts++;
+      }
+  }
+  assert.equal(rawParts, 2); // Empty historical text and explicit BOM/Unicode draft.
+  const content = await reader.readItem(0),
+    proofRef = admin.doc('privateProofs/content-read');
+  await admin.runTransaction(async (tx) => {
+    await content.verify(tx);
+    tx.create(proofRef, { accepted: true });
+  });
+  assert.equal((await proofRef.get()).data().accepted, true);
+  const second = await reader.readItem(1);
+  const pointer = await item.ref.get();
+  await pointer.ref.delete();
+  await pointer.ref.create(pointer.data());
+  await assert.rejects(() => admin.runTransaction(content.verify));
+  await assert.rejects(() => reader.readItem(0));
+  const job = await admin.doc(root).get(),
+    birthRef = admin.doc(
+      'users/' + uid + '/bookRestoreOperations/' + job.data().validationBirthOperationId,
+    ),
+    birth = await birthRef.get();
+  await birthRef.delete();
+  await birthRef.create(birth.data());
+  await assert.rejects(() => admin.runTransaction(second.verify));
+  await assert.rejects(() => reader.readItem(1));
   const metadata = JSON.stringify(await api.listBookRestores(uid, {}));
   for (const text of ['Original', 'Livro', 'hashState', 'instructions'])
     assert.equal(metadata.includes(text), false);

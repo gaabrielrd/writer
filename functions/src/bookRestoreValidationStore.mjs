@@ -1,6 +1,12 @@
 import { digest } from './sceneContracts.mjs';
 import { BookBackupFormatError } from './bookBackupContainer.mjs';
-import { inconsistent, chunkId, bornEqual, restoreId } from './bookRestoreUploadContracts.mjs';
+import {
+  inconsistent,
+  chunkId,
+  bornEqual,
+  restoreId,
+  integer,
+} from './bookRestoreUploadContracts.mjs';
 import { nativeRestoreToken } from './bookRestoreIntegrityRead.mjs';
 const utf8 = new TextEncoder();
 const duplicate = () => {
@@ -121,6 +127,15 @@ export function createBookRestoreValidationStore(db, loaded, operationId) {
     writes,
     setItemIndex(value) {
       itemIndex = value;
+    },
+    async getItem(index) {
+      integer(index);
+      const ref = db.doc(loaded.ref.path + '/validationItems/' + chunkId(index)),
+        value = await observe(ref);
+      if (!value || value.index !== index) inconsistent();
+      validationContext(value, loaded);
+      await immutable(ref, value);
+      return structuredClone(value);
     },
     async addItem(index, value) {
       const ref = db.doc(loaded.ref.path + '/validationItems/' + chunkId(index));

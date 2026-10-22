@@ -299,3 +299,8 @@ usam seções opcionais com salvamento direto. A liberação depende das functio
 Os workflows de Hosting e de atualização manual de regras/índices estão
 preparados com gates desabilitados por padrão. A ativação exige destino verificado
 e autorização separada de acesso. Consulte [implantação](docs/deployment.md).
+
+P1 M20 acrescenta o [leitor interno de itens validados](docs/tasks/writer-v2/execucao/53-leitura-autenticada-dos-itens-validados.md):
+novo/legado, JSON por item e histórico/rascunho/capa por fluxo, com prova para a
+transação consumidora. Ainda não há restauração final. O contrato confirmado
+mantém o texto salvo no manuscrito e recupera rascunho diferente como versão separada.

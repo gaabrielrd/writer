@@ -392,3 +392,16 @@ Rules deny, nascimento/ABA e limpeza. content-verified ainda não cria livro.
 Materialização/remapeamento/mídia e novo inventário são a próxima etapa;
 reautorização/ativação e host/UI/roundtrip/validate continuam em P1.
 Somente commits locais, sem CI/push.
+
+### P1 M20 — leitura interna do conteúdo validado
+
+O [contrato 53](53-leitura-autenticada-dos-itens-validados.md) acrescenta leitura
+por item de novo/legado e raw limitado, com origem nativa e verify(tx) para uso
+atômico pelo futuro escritor. Não cria livro, personas, mídia ou vínculo global.
+A decisão de rascunho foi confirmada: manter salvo no manuscrito e recuperar
+rascunho diferente como versão separada. Materialização/remapeamento/inventário,
+ativação e host/UI/roundtrip/validate continuam em P1. Commits locais, sem CI.
+
+[Evidência M20](../../../entregas/2026-10-22-writer-v2-leitura-autenticada-da-restauracao.md):
+71 Node, seis SDK reais distintos; dois afetados repetidos depois do pin do
+recibo inicial. Checks locais dirigidos passaram; validate integral segue em P1.
