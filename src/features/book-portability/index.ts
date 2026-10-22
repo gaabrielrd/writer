@@ -16,3 +16,8 @@ export {
   verifyBookBackupResources,
 } from './services/bookResourceCapture';
 export type { BookResourceProof, BookResourceCaptureOptions } from './services/bookResourceCapture';
+export {
+  captureBookBackupPersonas,
+  verifyBookBackupPersonas,
+  type BookPersonaProof,
+} from './services/bookPersonaCapture';

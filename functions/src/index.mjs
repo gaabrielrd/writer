@@ -38,6 +38,7 @@ import { createWorkProgressService } from './workProgress.mjs';
 import { createWorkHistoryService } from './workHistory.mjs';
 import { createBookBackupReadService } from './bookBackupRead.mjs';
 import { createBookBackupResourceService } from './bookBackupResourceRead.mjs';
+import { createBookBackupPersonaService } from './bookBackupPersonaRead.mjs';
 import { createAdventureBlocksService } from './adventureBlocks.mjs';
 import { createAdventurePreviewService } from './adventurePreview.mjs';
 import { createScenesService } from './scenes.mjs';
@@ -336,6 +337,7 @@ const callable = (method, secrets = []) =>
         const workHistory = createWorkHistoryService({ db });
         const bookBackupRead = createBookBackupReadService({ db });
         const bookBackupResources = createBookBackupResourceService({ db });
+        const bookBackupPersonas = createBookBackupPersonaService({ db });
         const adventureBlocks = createAdventureBlocksService({ db });
         const adventurePreview = createAdventurePreviewService({ db, assets });
         const scenes = createScenesService({ db });
@@ -353,6 +355,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (bookBackupPersonas[method] ? bookBackupPersonas : null) ??
           (bookBackupResources[method] ? bookBackupResources : null) ??
           (bookBackupRead[method] ? bookBackupRead : null) ??
           (adventureImport[method] ? adventureImport : null) ??
@@ -509,6 +512,8 @@ export const listBookBackupStructure = callable('listBookBackupStructure');
 export const readBookBackupStructure = callable('readBookBackupStructure');
 export const listBookBackupResources = callable('listBookBackupResources');
 export const readBookBackupResource = callable('readBookBackupResource');
+export const listBookBackupPersonaBindings = callable('listBookBackupPersonaBindings');
+export const readBookBackupPersona = callable('readBookBackupPersona');
 export const getWorkVersionSource = callable('getWorkVersionSource');
 export const listAdventureBlocks = callable('listAdventureBlocks');
 export const getAdventureBlock = callable('getAdventureBlock');

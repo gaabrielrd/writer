@@ -1,5 +1,6 @@
 import { encodeBookBackupJSON, serializeBookBackupStructure } from './bookBackupStructure.mjs';
 export const BOOK_RESOURCE_KINDS = Object.freeze([
+  'lore',
   'scene-control',
   'scene-source',
   'scene',
@@ -22,6 +23,7 @@ export const BOOK_RESOURCE_SINGLETONS = Object.freeze({
   'scene-planning': 'current',
 });
 export const BOOK_RESOURCE_ROOTS = Object.freeze([
+  'lore',
   'scene-control',
   'scene-source',
   'scene',
@@ -49,7 +51,37 @@ function reference(value) {
 /** Closed source projection, independent of authorization and the complete portable-book schema. */
 export function projectBookBackupResource(kind, value) {
   let data;
-  if (kind === 'scene')
+  if (kind === 'lore')
+    data = {
+      ...own(value, [
+        'name',
+        'aliases',
+        'category',
+        'summary',
+        'details',
+        'isPublic',
+        'createdAt',
+        'updatedAt',
+      ]),
+      ...(Object.hasOwn(value, 'structuredDetails')
+        ? {
+            structuredDetails: own(value.structuredDetails, [
+              'appearance',
+              'personality',
+              'history',
+              'notes',
+            ]),
+          }
+        : {}),
+      ...(Object.hasOwn(value, 'relations')
+        ? {
+            relations: value.relations.map((relation) =>
+              own(relation, ['targetEntityId', 'relationType', 'description']),
+            ),
+          }
+        : {}),
+    };
+  else if (kind === 'scene')
     data = own(value, [
       ...common,
       'parentId',

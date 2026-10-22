@@ -1,5 +1,6 @@
 import type { BookStructureSource, BookStructureItem } from './bookBackupStructure.mjs';
 export type BookResourceKind =
+  | 'lore'
   | 'scene-control'
   | 'scene-source'
   | 'scene'

@@ -975,3 +975,21 @@ A [entrega M5](entregas/2026-10-21-writer-v2-cenas-e-narrativa-no-backup.md)
 registra 18 testes Functions, 53 casos cliente com evidência composta, 15 SDK e
 oito cenários Chromium/emulador. Não equivale a sink persistente, UI, Auth/App
 Check produtivos ou restauração. Validate completo no fechamento P1; sem CI.
+
+## Lore e personas no backup — P1 M6
+
+```bash
+node --test functions/test/bookBackupPersonaRead.test.mjs functions/test/bookBackupResourceRead.test.mjs
+npx vitest run src/features/book-portability/tests/bookPersonaCapture.test.ts src/features/book-portability/tests/bookResourceCapture.test.ts src/features/book-portability/tests/bookStructureCallables.test.ts
+```
+
+SDK com FIRESTORE_EMULATOR_HOST local demo:
+`node --test tests/firestore/bookBackupPersonas.rules.test.mjs`.
+Inclui writer SDK de perfil/lore, proibição de exclusão de persona pelo cliente
+e recriação Admin, origem imóvel, máscaras e namespaces próprios. A descoberta
+test:rules inclui o arquivo novo. O cenário de deleção espera falha de Rules.
+
+A [entrega M6](entregas/2026-10-21-writer-v2-lore-e-personas-no-backup.md)
+registra 20 testes Functions, 30 cliente, seis SDK novos com evidência composta,
+seis SDK de regressão e 11 cenários Chromium/emulador. Distinguir esses cenários
+de sink persistente, UI, Auth/App Check produtivos e restauração P1 não entregues.

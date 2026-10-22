@@ -23,6 +23,7 @@ import {
 } from './bookBackupContext.mjs';
 
 const definitions = {
+  lore: { path: 'lore' },
   'scene-control': { path: 'sceneControls', singleton: 'unassigned' },
   'scene-source': { path: 'sceneSources' },
   scene: { path: 'scenes', owner: true },
@@ -113,6 +114,13 @@ function validateValue(context, value, snapshot, parent) {
   if (Object.hasOwn(data, 'rankSlot') && !['A', 'B'].includes(data.rankSlot)) unavailable();
   for (const field of ['rankA', 'rankB'])
     if (Object.hasOwn(data, field) && !validSceneRank(data[field])) unavailable();
+  if (
+    value.kind === 'lore' &&
+    ((Object.hasOwn(data, 'bookId') && data.bookId !== context.target.id) ||
+      Object.hasOwn(data, 'universeId') ||
+      Object.hasOwn(data, 'adventureId'))
+  )
+    unavailable();
   if (value.kind === 'scene') {
     if (
       !['planned', 'writing', 'review', 'done'].includes(data.stage) ||

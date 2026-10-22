@@ -983,3 +983,12 @@ e filhos por página, projeta referências neutras e reenumera a prova antes do 
 bookSnapshotCapture compartilha hash/partes/UTF-8 com M3b. Ordem preserva ranks e
 slot ativo; índices/jobs não são portados. Veja [ADR 0049](decisions/0049-book-resources-read-proof.md).
 Ainda não é schema integral, sink persistente ou restauração de P1.
+
+## Lore e personas na captura — P1 M6
+
+Lore próprio usa o protocolo M5 sem resolver origem global. Personas são
+capturadas por vínculo de livro/capítulo/fonte, sem listar biblioteca. O token
+inclui encarnação/versão nativa do perfil da conta, que não avança a raiz do livro.
+bookPersonaCapture emite um perfil por vínculo e confere ausências/tokens no fim;
+presets usam hash puro. Não copiar chaves ou perfil de conta. Veja
+[ADR 0050](decisions/0050-book-lore-and-personas.md). Schema/sink/restauração seguem em P1.

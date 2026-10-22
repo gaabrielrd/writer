@@ -30,6 +30,34 @@ function fixture() {
     createdAt: 3,
     updatedAt: 4,
   };
+  f.records.set('books/book/lore/entity', {
+    bookId: 'book',
+    name: 'Ana',
+    aliases: ['Aninha'],
+    category: 'character',
+    summary: 'Own',
+    details: text,
+    structuredDetails: {
+      appearance: 'Own appearance',
+      personality: '',
+      history: '',
+      notes: '',
+      name: 'MUST NOT COPY',
+    },
+    relations: [
+      {
+        targetEntityId: 'universe:gone:missing',
+        relationType: 'knows',
+        description: 'Own relation',
+        available: true,
+        name: 'MUST NOT COPY',
+      },
+    ],
+    isPublic: true,
+    createdAt: 3,
+    updatedAt: 4,
+    secret: 'secret',
+  });
   f.records.set('books/book/scenes/scene', scene);
   f.records.set('books/book/scenes/scene/body/current', {
     content: text,
@@ -158,7 +186,7 @@ async function value(f, pin, kind, parentId = null) {
   assert.equal(bytes.length, first.byteLength);
   return JSON.parse(bytes.toString('utf8'));
 }
-test('all eleven types project author data only, preserve archived/orphaned scenes/ranks and never resolve global labels', async () => {
+test('all twelve types project author data only, preserve archived/orphaned scenes/ranks and never resolve global labels', async () => {
   const f = fixture(),
     pin = await source(f),
     before = structuredClone(f.records);
@@ -179,6 +207,12 @@ test('all eleven types project author data only, preserve archived/orphaned scen
     assert.equal(JSON.stringify(row).includes('MUST NOT COPY'), false);
     rows.set(kind, row.data);
   }
+  assert.equal(rows.get('lore').details, text);
+  assert.equal(rows.get('lore').createdAt, 3);
+  assert.deepEqual(rows.get('lore').relations, [
+    { targetEntityId: 'universe:gone:missing', relationType: 'knows', description: 'Own relation' },
+  ]);
+  assert.equal('bookId' in rows.get('lore'), false);
   assert.equal(rows.get('scene').archived, true);
   assert.equal(rows.get('scene').parentId, 'removed-chapter');
   assert.equal(rows.get('scene').rankB, rankB);
@@ -296,7 +330,7 @@ test('root isolation/deletion, invalid scopes/parts and busy ordering fail expli
       code: uid ? 'not-found' : 'unauthenticated',
     });
   for (const args of [
-    ['lore', null, {}],
+    ['campaign-lore', null, {}],
     ['scene-body', null, {}],
     ['arc', 'scene', {}],
     ['arc', null, { path: 'users/other' }],
@@ -349,4 +383,30 @@ test('narrative kind and active slot corruption fail before projecting another t
   await assert.rejects(read(f, pin, 'scene-control', null, control), {
     code: 'failed-precondition',
   });
+});
+
+test('own lore keeps legacy absences and rejects explicit external/wrong-book scope', async () => {
+  const f = fixture(),
+    pin = await source(f);
+  f.records.set('books/book/lore/entity', { name: 'Legacy', details: '' });
+  const data = (await value(f, pin, 'lore')).data;
+  assert.deepEqual(data, { name: 'Legacy', details: '' });
+  for (const extra of [
+    { bookId: 'other' },
+    { universeId: 'world' },
+    { adventureId: 'adventure' },
+  ]) {
+    f.records.set('books/book/lore/entity', { name: 'Legacy', ...extra });
+    await assert.rejects(value(f, pin, 'lore'), { code: 'failed-precondition' });
+  }
+});
+test('native own-lore edit invalidates an item even when an Admin bypasses the root clock', async () => {
+  const f = fixture(),
+    pin = await source(f),
+    row = (await list(f, pin, 'lore')).items[0];
+  await f.db.runTransaction(async (tx) =>
+    tx.update(f.db.doc('books/book/lore/entity'), { details: 'Changed' }),
+  );
+  assert.deepEqual(await source(f), pin);
+  await assert.rejects(read(f, pin, 'lore', null, row), { code: 'failed-precondition' });
 });

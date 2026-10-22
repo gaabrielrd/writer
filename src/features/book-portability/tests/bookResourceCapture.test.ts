@@ -47,6 +47,11 @@ function fixture(count = 2) {
     });
   }
   if (count) {
+    put('lore', null, 'entity', {
+      name: 'Ana',
+      details: 'Own lore',
+      relations: [{ targetEntityId: 'universe:gone:missing', relationType: 'knows' }],
+    });
     put('scene-control', null, 'unassigned', { rankSlot: 'B' });
     put('scene-planning', 'scene-000', 'current', {
       objective: 'Objetivo',
@@ -163,7 +168,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
-it('captures all eleven types, archived/orphaned scenes, active ordering and colliding reference IDs with bounded pages', async () => {
+it('captures all twelve types, archived/orphaned scenes, active ordering and colliding reference IDs with bounded pages', async () => {
   const f = fixture(57),
     out = sink();
   const proof = await captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write });

@@ -259,3 +259,12 @@ e ordem A/B. Duas leituras reautorizam origem/pai e a prova reenumera identidade
 antes do selo. [Evidência M5](../../../entregas/2026-10-21-writer-v2-cenas-e-narrativa-no-backup.md):
 18 Functions, 53 casos cliente com prova composta, 15 SDK e oito cenários nativos.
 P1 segue aberto para demais capacidades, schema, sink e restauração; sem CI/push.
+
+### P1 M6 — lore próprio e personas usadas
+
+O [contrato 39](39-lore-e-personas-no-backup.md) acrescenta lore ao protocolo M5
+e captura perfis por vínculo, sem biblioteca inteira/Set ilimitado. Edição ou
+recriação de perfil externo à raiz invalida a prova. [Entrega M6](../../../entregas/2026-10-21-writer-v2-lore-e-personas-no-backup.md):
+20 Functions, 30 cliente, seis SDK novos com evidência composta, seis SDK de
+regressão e 11 cenários nativos. P1 continua aberto para universo/rascunho/mídia,
+schema, sink e restauração; avanço local, sem CI/push.

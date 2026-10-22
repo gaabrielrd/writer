@@ -85,3 +85,34 @@ it('recursos usam as novas leituras sem inicializar Firebase no import', async (
     index: 0,
   });
 });
+
+it('personas usam somente origem e vínculos autorizados pelas novas callables', async () => {
+  const { bookPersonaApi } = await import('../services/bookPersonaCallables');
+  expect(mocks.getFirebaseApp).not.toHaveBeenCalled();
+  const input = {
+    bookId: 'book',
+    sourceToken: 'a'.repeat(64),
+    kind: 'chapter' as const,
+    cursor: null,
+    limit: 50,
+  };
+  await bookPersonaApi.getSource({ bookId: 'book' });
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'getBookBackupSource');
+  await bookPersonaApi.list(input);
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith(
+    'functions',
+    'listBookBackupPersonaBindings',
+  );
+  expect(mocks.invoke).toHaveBeenLastCalledWith(input);
+  const body = {
+    bookId: 'book',
+    sourceToken: input.sourceToken,
+    kind: input.kind,
+    id: 'chapter',
+    itemToken: 'b'.repeat(64),
+    index: 0,
+  };
+  await bookPersonaApi.read(body);
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'readBookBackupPersona');
+  expect(mocks.invoke).toHaveBeenLastCalledWith(body);
+});
