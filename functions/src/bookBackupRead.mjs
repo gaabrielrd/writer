@@ -1,77 +1,20 @@
 import {
-  digest,
-  workClosed,
-  workFail,
-  workId,
-  workLimit,
-  workProject,
-  workScope,
-  initialWorkControl,
-} from './workProgressContracts.mjs';
+  bookBackupToken as token,
+  bookBackupIdentity as identity,
+  bookBackupChanged as changed,
+  bookBackupScope,
+  readBookBackupSource as source,
+} from './bookBackupContext.mjs';
+import { digest, workClosed, workFail, workId, workLimit } from './workProgressContracts.mjs';
 import { BOOK_STRUCTURE_LIMITS, serializeBookBackupStructure } from './bookBackupStructure.mjs';
 
-function token(value) {
-  if (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value))
-    workFail('invalid-argument', 'Token de captura inválido.');
-  return value;
-}
-function stamp(value) {
-  if (
-    !value ||
-    !Number.isSafeInteger(value.seconds) ||
-    value.seconds < 0 ||
-    !Number.isInteger(value.nanoseconds) ||
-    value.nanoseconds < 0 ||
-    value.nanoseconds >= 1e9
-  )
-    workFail('failed-precondition', 'Identidade nativa indisponível.');
-  return { seconds: value.seconds, nanoseconds: value.nanoseconds };
-}
-function identity(snapshot) {
-  return snapshot.exists
-    ? { created: stamp(snapshot.createTime), updated: stamp(snapshot.updateTime) }
-    : null;
-}
-function changed(item = false) {
-  workFail(
-    'failed-precondition',
-    'O livro mudou durante a captura. Faça um novo backup.',
-    item ? 'book-backup-item-changed' : 'book-backup-source-changed',
-  );
-}
 function kind(value, allowBook = false) {
   if (!(allowBook ? ['book', 'act', 'chapter'] : ['act', 'chapter']).includes(value))
     workFail('invalid-argument', 'Tipo de estrutura inválido.');
   return value;
 }
 export function createBookBackupReadService({ db }) {
-  function scope(uid, data, keys) {
-    if (!uid) workFail('unauthenticated', 'Entre na sua conta.');
-    workClosed(data, ['bookId', ...keys]);
-    return workScope(db, uid, { target: { kind: 'book', id: workId(data.bookId) } }, []);
-  }
-  async function source(tx, context, expected) {
-    const root = await workProject(tx, context),
-      snapshot = await tx.get(context.ref),
-      control = await tx.get(db.doc(context.path + '/workProgress/current')),
-      result = {
-        schemaVersion: 1,
-        bookId: context.target.id,
-        sourceToken: digest({
-          version: 1,
-          uid: context.uid,
-          bookId: context.target.id,
-          root: identity(snapshot),
-          control: identity(control),
-        }),
-      };
-    if (expected !== undefined && result.sourceToken !== expected) changed();
-    return {
-      result,
-      root,
-      control: control.data() ?? initialWorkControl(context.target, root),
-    };
-  }
+  const scope = (uid, data, keys) => bookBackupScope(db, uid, data, keys);
   function itemToken(context, sourceToken, type, snapshot) {
     return digest({
       version: 1,

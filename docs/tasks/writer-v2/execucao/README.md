@@ -250,3 +250,12 @@ positivos; [evidência e limites](../../../entregas/2026-10-21-writer-v2-histori
 O probe final compõe estrutura/histórico de 58 versões, com BOM literal, hash
 corrompido, mudança real de catálogo e abort. Continua sem pacote P1 completo,
 sink persistente ou restauração. Desenvolvimento somente local e sem CI.
+
+### P1 M5 — cenas e narrativa na captura
+
+O [contrato 38](38-cenas-e-narrativa-no-backup.md) inclui onze tipos de cenas,
+fontes e narrativa, preservando arquivo/órfãos, prosa, planos, referências neutras
+e ordem A/B. Duas leituras reautorizam origem/pai e a prova reenumera identidades
+antes do selo. [Evidência M5](../../../entregas/2026-10-21-writer-v2-cenas-e-narrativa-no-backup.md):
+18 Functions, 53 casos cliente com prova composta, 15 SDK e oito cenários nativos.
+P1 segue aberto para demais capacidades, schema, sink e restauração; sem CI/push.

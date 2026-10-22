@@ -25,6 +25,7 @@ const fields = {
     'contentMode',
     'assemblyRevision',
     'structureRevision',
+    'rankSlot',
     'createdAt',
     'updatedAt',
   ],
@@ -70,6 +71,9 @@ export function serializeBookBackupStructure(kind, value, control) {
             : { kind: value.coverUrl ? 'legacy-unavailable' : 'none' },
         }
       : item;
+  return encodeBookBackupJSON(projected);
+}
+export function encodeBookBackupJSON(projected) {
   assertJSON(projected);
   const json = JSON.stringify(projected);
   const bytes = new TextEncoder().encode(json);

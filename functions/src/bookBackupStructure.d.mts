@@ -59,3 +59,5 @@ export function serializeBookBackupStructure(
   value: Record<string, unknown>,
   control?: Record<string, unknown>,
 ): { json: string; bytes: Uint8Array };
+
+export function encodeBookBackupJSON(value: unknown): { json: string; bytes: Uint8Array };

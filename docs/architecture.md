@@ -974,3 +974,12 @@ book-portability usa somente tipos da interface pública e emite resumos/textos 
 índice final, sem controles privados. Todos os registros continuam provisórios
 até revalidar as demais capacidades e fechar M2. Preservar BOM/UTF-8 literal.
 Veja [ADR 0048](decisions/0048-history-backup-stream.md) para limites e dependência.
+
+## Cenas e narrativa na captura — P1 M5
+
+bookBackupResourceRead oferece duas leituras limitadas de cenas/fontes/narrativa,
+com origem M3b comum e tokens nativos de item/pai. book-portability percorre IDs
+e filhos por página, projeta referências neutras e reenumera a prova antes do selo.
+bookSnapshotCapture compartilha hash/partes/UTF-8 com M3b. Ordem preserva ranks e
+slot ativo; índices/jobs não são portados. Veja [ADR 0049](decisions/0049-book-resources-read-proof.md).
+Ainda não é schema integral, sink persistente ou restauração de P1.

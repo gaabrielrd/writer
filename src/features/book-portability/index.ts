@@ -11,3 +11,8 @@ export type {
 } from './services/bookStructureCapture';
 
 export { bookHistoryBackupRecords } from './services/bookHistoryBackupRecords';
+export {
+  captureBookBackupResources,
+  verifyBookBackupResources,
+} from './services/bookResourceCapture';
+export type { BookResourceProof, BookResourceCaptureOptions } from './services/bookResourceCapture';

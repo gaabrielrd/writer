@@ -1,7 +1,20 @@
 import {
+  closed,
+  invalid,
+  validId,
+  validHash,
+  validCount,
+  source,
+  matches,
+  compareIds,
+  textHash,
+  check,
+  writeSnapshotItem,
+} from './bookSnapshotCapture';
+export { BookStructureCaptureError } from './bookSnapshotCapture';
+import {
   BOOK_STRUCTURE_LIMITS,
   type BookStructureApi,
-  type BookStructureChunk,
   type BookStructureItem,
   type BookStructureKind,
   type BookStructurePage,
@@ -16,77 +29,6 @@ export interface BookStructureProof {
   acts: number;
   chapters: number;
 }
-export class BookStructureCaptureError extends Error {
-  readonly code = 'book-backup-invalid-structure';
-  constructor() {
-    super('Não foi possível conferir a estrutura completa. Faça um novo backup.');
-    this.name = 'BookStructureCaptureError';
-  }
-}
-function invalid(): never {
-  throw new BookStructureCaptureError();
-}
-function closed(value: unknown, keys: string[]): value is Record<string, unknown> {
-  return Boolean(
-    value &&
-    typeof value === 'object' &&
-    !Array.isArray(value) &&
-    Object.keys(value).length === keys.length &&
-    Object.keys(value).every((key) => keys.includes(key)),
-  );
-}
-function validId(value: unknown): value is string {
-  return (
-    typeof value === 'string' &&
-    Boolean(value) &&
-    !/[\\/]/.test(value) &&
-    !Array.from(value).some(
-      (character) => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
-    ) &&
-    !['.', '..'].includes(value) &&
-    new TextEncoder().encode(value).length <= 1500 &&
-    new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(
-      new TextEncoder().encode(value),
-    ) === value
-  );
-}
-const validHash = (value: unknown): value is string =>
-  typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
-const validCount = (value: unknown): value is number =>
-  Number.isSafeInteger(value) && Number(value) >= 0;
-function source(value: unknown, bookId: string, expected?: string): BookStructureSource {
-  if (
-    !closed(value, ['schemaVersion', 'bookId', 'sourceToken']) ||
-    value.schemaVersion !== 1 ||
-    value.bookId !== bookId ||
-    !validHash(value.sourceToken) ||
-    (expected !== undefined && value.sourceToken !== expected)
-  )
-    invalid();
-  return Object.freeze({ schemaVersion: 1, bookId, sourceToken: value.sourceToken });
-}
-function matches(value: BookStructureSource, anchor: BookStructureSource) {
-  return (
-    value.schemaVersion === 1 &&
-    value.bookId === anchor.bookId &&
-    value.sourceToken === anchor.sourceToken
-  );
-}
-function compareIds(a: string, b: string): number {
-  const first = new TextEncoder().encode(a),
-    second = new TextEncoder().encode(b);
-  for (let i = 0; i < Math.min(first.length, second.length); i++)
-    if (first[i] !== second[i]) return first[i]! - second[i]!;
-  return first.length - second.length;
-}
-async function hash(bytes: Uint8Array): Promise<string> {
-  return Array.from(
-    new Uint8Array(await crypto.subtle.digest('SHA-256', new Uint8Array(bytes))),
-    (value) => value.toString(16).padStart(2, '0'),
-  ).join('');
-}
-const textHash = (text: string) => hash(new TextEncoder().encode(text));
-const check = (signal?: AbortSignal) => signal?.throwIfAborted();
 function page(
   value: BookStructurePage,
   anchor: BookStructureSource,
@@ -160,62 +102,7 @@ async function scan(
   }
   return { digest, acts, chapters };
 }
-function chunkBytes(
-  chunk: BookStructureChunk,
-  anchor: BookStructureSource,
-  kind: BookStructureKind,
-  item: BookStructureItem,
-  index: number,
-  first?: BookStructureChunk,
-): Uint8Array {
-  if (
-    !closed(chunk, [
-      'schemaVersion',
-      'bookId',
-      'sourceToken',
-      'kind',
-      'id',
-      'itemToken',
-      'index',
-      'chunkCount',
-      'byteLength',
-      'contentHash',
-      'chunkBase64',
-    ]) ||
-    !matches(chunk, anchor) ||
-    chunk.kind !== kind ||
-    chunk.id !== item.id ||
-    chunk.itemToken !== item.itemToken ||
-    chunk.index !== index ||
-    !validCount(chunk.byteLength) ||
-    chunk.byteLength < 1 ||
-    chunk.byteLength > BOOK_STRUCTURE_LIMITS.itemBytes ||
-    chunk.chunkCount !== Math.ceil(chunk.byteLength / BOOK_STRUCTURE_LIMITS.chunkBytes) ||
-    index >= chunk.chunkCount ||
-    !validHash(chunk.contentHash) ||
-    typeof chunk.chunkBase64 !== 'string' ||
-    chunk.chunkBase64.length > 4 * Math.ceil(BOOK_STRUCTURE_LIMITS.chunkBytes / 3) ||
-    !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(chunk.chunkBase64) ||
-    (first &&
-      (chunk.byteLength !== first.byteLength ||
-        chunk.chunkCount !== first.chunkCount ||
-        chunk.contentHash !== first.contentHash))
-  )
-    invalid();
-  const binary = atob(chunk.chunkBase64);
-  if (btoa(binary) !== chunk.chunkBase64) invalid();
-  const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
-  if (
-    bytes.length !==
-    Math.min(
-      BOOK_STRUCTURE_LIMITS.chunkBytes,
-      chunk.byteLength - index * BOOK_STRUCTURE_LIMITS.chunkBytes,
-    )
-  )
-    invalid();
-  return bytes;
-}
-async function writeItem(
+function writeItem(
   api: BookStructureApi,
   anchor: BookStructureSource,
   kind: BookStructureKind,
@@ -223,46 +110,15 @@ async function writeItem(
   write: (record: BookBackupRecord) => Promise<void>,
   signal?: AbortSignal,
 ) {
-  let first: BookStructureChunk | undefined, body: Uint8Array | undefined;
-  for (let index = 0; !first || index < first.chunkCount; index++) {
-    check(signal);
-    const current = await api.read({
-      bookId: anchor.bookId,
-      sourceToken: anchor.sourceToken,
-      kind,
-      ...item,
-      index,
-    });
-    check(signal);
-    const bytes = chunkBytes(current, anchor, kind, item, index, first);
-    if (!first) {
-      first = { ...current };
-      body = new Uint8Array(current.byteLength);
-    }
-    body!.set(bytes, index * BOOK_STRUCTURE_LIMITS.chunkBytes);
-  }
-  if (!body || !first || (await hash(body)) !== first.contentHash) invalid();
-  check(signal);
-  try {
-    const parsed: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(body));
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) invalid();
-  } catch {
-    invalid();
-  }
-  for (
-    let offset = 0, part = 0;
-    offset < body.length;
-    offset += BOOK_STRUCTURE_LIMITS.chunkBytes, part++
-  ) {
-    check(signal);
-    await write({
-      kind: kind === 'book' ? 'book-metadata' : kind,
-      id: item.id,
-      part,
-      payload: body.slice(offset, offset + BOOK_STRUCTURE_LIMITS.chunkBytes),
-    });
-    check(signal);
-  }
+  return writeSnapshotItem(
+    anchor,
+    { ...item, kind },
+    (index) =>
+      api.read({ bookId: anchor.bookId, sourceToken: anchor.sourceToken, kind, ...item, index }),
+    (part, payload) =>
+      write({ kind: kind === 'book' ? 'book-metadata' : kind, id: item.id, part, payload }),
+    signal,
+  );
 }
 export interface BookStructureCaptureOptions {
   bookId: string;

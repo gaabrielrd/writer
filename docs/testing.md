@@ -956,3 +956,22 @@ A [entrega M4](entregas/2026-10-21-writer-v2-historico-por-fluxo.md) distingue
 88 cenários cliente com evidência composta e cinco casos Chromium/emulador da
 exportação/restauração P1 ainda pendente. Auditoria de produção tem três achados
 moderados idênticos à baseline; não rotulá-la como verde.
+
+## Cenas e narrativa no backup — P1 M5
+
+```bash
+node --test functions/test/bookBackupRead.test.mjs functions/test/bookBackupResourceRead.test.mjs
+npx vitest run src/features/book-portability/tests
+```
+
+Com FIRESTORE_EMULATOR_HOST local demo, executar
+`node --test --test-concurrency=1 tests/firestore/bookBackupRead.rules.test.mjs tests/firestore/bookBackupResources.rules.test.mjs`.
+A descoberta normal de test:rules inclui a nova família. SDK prova máscaras
+vazias/timestamps, origem/pai, todos os tipos, paginação e mudanças nativas.
+Cliente prova pressão de consumo, ordem, endereço por pai, hash, prova fechada,
+singleton, cancelamento e recusa de selo com prova alterada.
+
+A [entrega M5](entregas/2026-10-21-writer-v2-cenas-e-narrativa-no-backup.md)
+registra 18 testes Functions, 53 casos cliente com evidência composta, 15 SDK e
+oito cenários Chromium/emulador. Não equivale a sink persistente, UI, Auth/App
+Check produtivos ou restauração. Validate completo no fechamento P1; sem CI.

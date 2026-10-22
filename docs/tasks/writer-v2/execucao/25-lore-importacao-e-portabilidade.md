@@ -216,3 +216,11 @@ parcial; histórico grande; mistura entre contexto autorizado e snapshot do clie
 OCR, VTT, combate, compartilhar automaticamente, marketplace aberto, direitos
 comerciais inferidos de PDF, arquivos de venda, mesclar/sobrescrever projetos,
 restaurar credenciais, importar grants ou habilitar pagamento/deploy/merge.
+
+### Atualização P1 M5 — 2026-10-21
+
+Cenas, fontes e narrativa têm captura limitada e conferência nativa por item/pai;
+[contrato 38](38-cenas-e-narrativa-no-backup.md) e
+[entrega M5](../../../entregas/2026-10-21-writer-v2-cenas-e-narrativa-no-backup.md).
+P1 continua aberto: demais capacidades, schema, arquivo persistente e restauração
+não foram entregues. Avanço local, sem CI/push.

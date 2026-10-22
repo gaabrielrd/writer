@@ -64,3 +64,24 @@ it('falha de transporte é preservada sem repetir a callable', async () => {
   await expect(bookStructureApi.getSource({ bookId: 'book' })).rejects.toBe(failure);
   expect(mocks.invoke).toHaveBeenCalledTimes(1);
 });
+
+it('recursos usam as novas leituras sem inicializar Firebase no import', async () => {
+  const { bookResourceApi } = await import('../services/bookResourceCallables');
+  expect(mocks.getFirebaseApp).not.toHaveBeenCalled();
+  const scope = {
+    bookId: 'book',
+    sourceToken: 'a'.repeat(64),
+    kind: 'scene-body' as const,
+    parentId: 'scene',
+  };
+  await bookResourceApi.list({ ...scope, cursor: null, limit: 50 });
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'listBookBackupResources');
+  await bookResourceApi.read({ ...scope, id: 'current', itemToken: 'b'.repeat(64), index: 0 });
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'readBookBackupResource');
+  expect(mocks.invoke).toHaveBeenLastCalledWith({
+    ...scope,
+    id: 'current',
+    itemToken: 'b'.repeat(64),
+    index: 0,
+  });
+});
