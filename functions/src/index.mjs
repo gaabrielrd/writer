@@ -1,6 +1,11 @@
 import { createEditorChatService } from './editorChat.mjs';
 import { EditorChatContractError } from './editorChatContracts.mjs';
 import { createAdventureImportService } from './adventureImport.mjs';
+import {
+  createBookRestoreUploadService,
+  createBookRestoreRecoveryHandler,
+  setBookRestoreHeaders,
+} from './bookRestoreUpload.mjs';
 import { createAdventureImportRecoveryHandler } from './adventureImportRecovery.mjs';
 import { getAuth } from 'firebase-admin/auth';
 import { getAppCheck } from 'firebase-admin/app-check';
@@ -318,11 +323,13 @@ const callable = (method, secrets = []) =>
     async (request) => {
       setCampaignMediaHeaders(method, request);
       setBookBackupCoverHeaders(method, request);
+      setBookRestoreHeaders(method, request);
       setCampaignVariantRecoveryHeaders(method, request);
       try {
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
         const adventureImport = createAdventureImportService({ db });
+        const bookRestore = createBookRestoreUploadService({ db });
         const adventureLore = createAdventureLoreService({ db });
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
@@ -364,6 +371,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (bookRestore[method] ? bookRestore : null) ??
           (bookBackupCover[method] ? bookBackupCover : null) ??
           (bookBackupDraft[method] ? bookBackupDraft : null) ??
           (bookBackupUniverse[method] ? bookBackupUniverse : null) ??
@@ -709,6 +717,23 @@ export const getAdventureImportRecoveryKey = onRequest(
   { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
   createAdventureImportRecoveryHandler({
     service: createAdventureImportService({ db }),
+    verifyIdToken: (token) => getAuth().verifyIdToken(token),
+    verifyAppCheck: (token) => getAppCheck().verifyToken(token),
+  }),
+);
+
+export const startBookRestore = callable('startBookRestore');
+export const resolveBookRestoreStart = callable('resolveBookRestoreStart');
+export const getBookRestore = callable('getBookRestore');
+export const listBookRestores = callable('listBookRestores');
+export const appendBookRestoreChunk = callable('appendBookRestoreChunk');
+export const resolveBookRestoreOperation = callable('resolveBookRestoreOperation');
+export const cancelBookRestore = callable('cancelBookRestore');
+export const advanceBookRestoreCleanup = callable('advanceBookRestoreCleanup');
+export const getBookRestoreRecoveryKey = onRequest(
+  { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
+  createBookRestoreRecoveryHandler({
+    service: createBookRestoreUploadService({ db }),
     verifyIdToken: (token) => getAuth().verifyIdToken(token),
     verifyAppCheck: (token) => getAppCheck().verifyToken(token),
   }),

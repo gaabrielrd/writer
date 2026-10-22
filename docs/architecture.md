@@ -1049,3 +1049,15 @@ busca URL ou inventa framing/histórico/datas. Validador novo continua estrito.
 runBookValidation compartilha hash e cleanup protegido entre as duas inspeções.
 Veja [ADR 0056](decisions/0056-legacy-book-backup-review.md).
 UI e servidor de preparação/remapeamento/ativação continuam em P1.
+
+## Reserva e transferência da restauração — P1 M13
+
+bookRestoreUpload mantém raiz ausente, reserva global permanente e marcador
+tipado em deletedBooks no mesmo nascimento nativo do job. Escritores comuns
+continuam recusando o ID; ativação futura só poderá remover a barreira exata
+na transação final. Partes de 64 KiB têm hash/ordem/CAS e recibos atômicos.
+Chave somente HTTP Auth/App Check sem cache; SDK direto negado em todos os
+namespaces. Cleanup v1 remove somente partes e chave, preservando metadados.
+uploaded não valida conteúdo nem ativa livro.
+Veja [ADR 0057](decisions/0057-book-restore-upload.md). Preparação, inventário
+ampliado, materialização e ativação continuam obrigatórios em P1.

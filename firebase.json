@@ -4,6 +4,13 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/api/book-restore/recovery-key",
+        "function": {
+          "functionId": "getBookRestoreRecoveryKey",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "/api/adventure-import/recovery-key",
         "function": {
           "functionId": "getAdventureImportRecoveryKey",

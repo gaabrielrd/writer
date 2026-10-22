@@ -1,4 +1,5 @@
 export * from './model/backupContainer';
+export { fingerprintBookBackup } from './services/fingerprintBookBackup';
 export { inspectLegacyBookBackup } from './services/inspectLegacyBookBackup';
 export type { BookLegacyReviewReport } from '../../../functions/src/bookLegacyReview.mjs';
 export { inspectBookBackupContent } from './services/inspectBookBackupContent';

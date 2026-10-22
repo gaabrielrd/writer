@@ -221,7 +221,9 @@ projeto `demo-writer-backup-cover`. Se o CLI não estiver no PATH, configure
 O novo caminho de backup P1 já tem captura de estrutura, histórico, cenas,
 narrativa, lore, personas, universo, rascunho e bytes de capa, compostos em fluxo
 com envelope, validação de conteúdo, leitura JSON v1–v6 e gravação temporária em
-arquivo. Interface e restauração continuam em implementação; veja
+arquivo. O servidor já reserva um novo ID, recebe partes privadas e permite
+cancelar/limpar a transferência. Validar/materializar/ativar e a interface de
+restauração continuam em implementação; veja
 [o plano P1](docs/tasks/writer-v2/execucao/31-portabilidade-de-livros.md).
 
 ## Como usar agentes

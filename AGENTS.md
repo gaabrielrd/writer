@@ -116,6 +116,8 @@
 - Componha backups com pressão de consumo, provas reconferidas antes de footer/selo e arquivo temporário confirmado só no sucesso; envelope-only não autoriza restauração, conforme ADR 0054.
 - Valide conteúdo com DTOs fechados, hashes, partes, índices e vínculos antes de revisão; mantenha índice temporário protegido e limitado fora da RAM do projeto e limpe só a operação própria, conforme ADR 0055. Relatório do cliente não autoriza ativação.
 - Leia JSON de backup v1–v6 por spans e mantenha procedência/ausências legadas explícitas; não fabrique selo/histórico/datas, não busque URL de capa nem promova lore global inline, conforme ADR 0056.
+- Reserve restaurações de livro por nascimento nativo e marcador tipado em deletedBooks; mantenha raiz ausente e uploaded separado de validado/ativado, conforme ADR 0057.
+- Remova bytes/chave somente pelo cleanup versionado da restauração; amplie seu inventário antes de criar recursos de preparação e preserve reservas permanentes.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

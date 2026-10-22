@@ -1101,3 +1101,16 @@ Blob produzido pelo exportador real com APIs simuladas, sem provar backend/Auth.
 Scanner cobre BOM/Unicode/gramática/duplicatas/limites e corpo global de 9 MiB
 ignorado. Núcleo distingue legacy-content-only de backup novo completo, preserva
 avisos de ausência e não faz fetch. Cleanup e cancelamento usam índice M11.
+
+## Reserva e upload privado — P1 M13
+
+Node dirigido: bookRestoreUpload.test.mjs e bookRestoreRecovery.test.mjs,
+17/17. Vitest fingerprintBookBackup.test.ts: 3/3. Emulador Firestore com SDK real:
+bookRestoreUpload.rules.test.mjs, 6/6, sem pulos. Cobrem nascimento nativo,
+barreira dos criadores, Rules deny, chave perdida, CAS/retry, recibos históricos,
+fence, cleanup limitado e preservação de outro projeto.
+
+A [evidência M13](entregas/2026-10-22-writer-v2-reserva-e-transferencia-de-backups.md)
+separa verificadores HTTP simulados de transações/Rules reais. Sem UI,
+Auth/App Check produtivos, validação semântica servidor, ativação ou roundtrip.
+Validate integral no fechamento P1; sem CI/envio remoto.

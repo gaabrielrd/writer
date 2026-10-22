@@ -320,3 +320,12 @@ confere conteúdo com procedência/ausências explícitas, sem promover dados gl
 buscar capa ou fabricar histórico. [Entrega M12](../../../entregas/2026-10-22-writer-v2-leitura-dos-backups-legados.md):
 27 Node, 46 cliente e nove cenários nativos File/OPFS com arquivos do exportador.
 UI, preparação/ativação e recuperação permanecem em P1. Somente local, sem CI/push.
+
+### P1 M13 — reserva, transferência e cancelamento
+
+O [contrato 46](46-reserva-e-transferencia-da-restauracao.md) inicia o servidor
+de restauração com raiz ausente, reserva nativa/marker, partes limitadas,
+recibos, chave HTTP privada, fence e cleanup. [Evidência M13](../../../entregas/2026-10-22-writer-v2-reserva-e-transferencia-de-backups.md):
+17 Node, três cliente e seis SDK reais. uploaded não significa validado/ativado.
+P1 continua para revisão cifrada no host, validação servidor/remapeamento/mídia,
+ativação/roundtrip/UI e validate completo. Somente commits locais, sem CI/push.
