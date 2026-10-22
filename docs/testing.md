@@ -1029,3 +1029,31 @@ vazio/ausente, fronteiras UTF-8/BOM, abort na passagem de hash e retorno antecip
 A [entrega M8](entregas/2026-10-21-writer-v2-rascunho-explicito-no-backup.md)
 registra 15 Functions, 44 cliente, quatro SDK e 17 cenários Chromium/emulador.
 São provas de contrato/bytes, sem UI, sink persistente ou restauração P1.
+
+## Bytes da capa no backup — P1 M9
+
+```bash
+node --test functions/test/bookBackupAssetStorage.test.mjs functions/test/bookBackupCoverRead.test.mjs
+npx vitest run src/features/book-portability/tests/bookCoverBackupRecords.test.ts src/features/book-portability/tests/bookStructureCallables.test.ts
+npm run test:media
+```
+
+test:media exige Java 21 e Firebase CLI global (ou WRITER_FIREBASE_CLI apontando
+para lib/bin/firebase.js). Inicia somente Firestore/Storage em loopback/portas
+livres, projeto demo-writer-backup-cover e UI desabilitada. emulators:exec
+encerra os serviços depois dos testes; configuração temporária fica em .firebase
+e só é removida após verificar seu caminho e término. Não usa credenciais/
+dados de produção. O runner remove endpoints herdados antes de o CLI configurar
+os emuladores; a suite recusa endpoint GCS divergente do Storage loopback.
+Primeira execução pode precisar baixar runtimes do CLI.
+
+tests/storage/bookBackupCover.rules.test.mjs depende dos dois emuladores.
+Não entra na descoberta Firestore-only de test:rules e não usa skips por ausência
+de Storage. Executar test:media antes de habilitar este protocolo na integração
+remota; durante desenvolvimento não acompanhar CI.
+
+A [entrega M9](entregas/2026-10-21-writer-v2-bytes-da-capa-no-backup.md) registra
+12 Functions, 17 cliente, cinco SDK reais e 20 cenários nativos. Inclui 16 MiB/
+256 partes e PNG decodificado com hash independente. Há avisos reais de listeners
+em teeny-request e NPE de EOF ao encerrar runtime Java após testes positivos;
+estão documentados, sem supressão nem alegação de ausência de vazamento.

@@ -286,3 +286,12 @@ Hash/UTF-8 por partes e conferência final separam contribuição local e salvo.
 [Entrega M8](../../../entregas/2026-10-21-writer-v2-rascunho-explicito-no-backup.md):
 15 Functions, 44 cliente, quatro SDK e 17 cenários nativos. P1 continua para
 mídia, schema, sink, revisão/restauração; somente local, sem CI/push.
+
+### P1 M9 — bytes autorizados da capa
+
+O [contrato 42](42-midia-autorizada-no-backup.md) captura PNG gerenciado por
+stream/ranges, confere livro/uso/gerações antes/depois do I/O e verifica hashes.
+URL legada não é buscada; origem quebrada falha. [Entrega M9](../../../entregas/2026-10-21-writer-v2-bytes-da-capa-no-backup.md):
+12 Functions, 17 cliente, cinco SDK Firestore/Storage reais e 20 cenários nativos.
+test:media torna a prova reproduzível; avisos de streams/runtime constam na entrega.
+P1 continua para schema, sink e restauração; desenvolvimento local sem CI/push.

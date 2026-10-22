@@ -143,3 +143,17 @@ it('persona declarada do rascunho usa a callable dedicada sem inicializar Fireba
   expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'getBookBackupDraftPersona');
   expect(mocks.invoke).toHaveBeenLastCalledWith(input);
 });
+
+it('capa usa somente as três leituras privadas e não inicializa Firebase no import', async () => {
+  const { bookCoverApi } = await import('../services/bookCoverCallables');
+  expect(mocks.getFirebaseApp).not.toHaveBeenCalled();
+  const scope = { bookId: 'book', sourceToken: 'a'.repeat(64) };
+  await bookCoverApi.cover(scope);
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'getBookBackupCover');
+  const proof = { ...scope, coverToken: 'b'.repeat(64) };
+  await bookCoverApi.read({ ...proof, index: 2 });
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'readBookBackupCoverChunk');
+  await bookCoverApi.verify(proof);
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'verifyBookBackupCover');
+  expect(mocks.invoke).toHaveBeenLastCalledWith(proof);
+});

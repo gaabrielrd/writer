@@ -41,6 +41,8 @@ import { createBookBackupResourceService } from './bookBackupResourceRead.mjs';
 import { createBookBackupPersonaService } from './bookBackupPersonaRead.mjs';
 import { createBookBackupUniverseService } from './bookBackupUniverseRead.mjs';
 import { createBookBackupDraftService } from './bookBackupDraftRead.mjs';
+import { createBookBackupCoverService, setBookBackupCoverHeaders } from './bookBackupCoverRead.mjs';
+import { createBookBackupAssetStorage } from './bookBackupAssetStorage.mjs';
 import { createAdventureBlocksService } from './adventureBlocks.mjs';
 import { createAdventurePreviewService } from './adventurePreview.mjs';
 import { createScenesService } from './scenes.mjs';
@@ -210,6 +212,7 @@ async function loreGenerator(context) {
   return (data.candidates[0].content?.parts ?? []).map((part) => part.text ?? '').join('');
 }
 const bucket = () => getStorage().bucket();
+const backupStorage = createBookBackupAssetStorage(bucket);
 const assets = {
   async exists(path) {
     return (await bucket().file(path).exists())[0];
@@ -314,6 +317,7 @@ const callable = (method, secrets = []) =>
     },
     async (request) => {
       setCampaignMediaHeaders(method, request);
+      setBookBackupCoverHeaders(method, request);
       setCampaignVariantRecoveryHeaders(method, request);
       try {
         const universeService = createUniverseService({ db });
@@ -342,6 +346,7 @@ const callable = (method, secrets = []) =>
         const bookBackupPersonas = createBookBackupPersonaService({ db });
         const bookBackupUniverse = createBookBackupUniverseService({ db });
         const bookBackupDraft = createBookBackupDraftService({ db });
+        const bookBackupCover = createBookBackupCoverService({ db, assets: backupStorage });
         const adventureBlocks = createAdventureBlocksService({ db });
         const adventurePreview = createAdventurePreviewService({ db, assets });
         const scenes = createScenesService({ db });
@@ -359,6 +364,7 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
+          (bookBackupCover[method] ? bookBackupCover : null) ??
           (bookBackupDraft[method] ? bookBackupDraft : null) ??
           (bookBackupUniverse[method] ? bookBackupUniverse : null) ??
           (bookBackupPersonas[method] ? bookBackupPersonas : null) ??
@@ -522,6 +528,9 @@ export const listBookBackupPersonaBindings = callable('listBookBackupPersonaBind
 export const readBookBackupPersona = callable('readBookBackupPersona');
 export const getBookBackupUniverse = callable('getBookBackupUniverse');
 export const getBookBackupDraftPersona = callable('getBookBackupDraftPersona');
+export const getBookBackupCover = callable('getBookBackupCover');
+export const readBookBackupCoverChunk = callable('readBookBackupCoverChunk');
+export const verifyBookBackupCover = callable('verifyBookBackupCover');
 export const getWorkVersionSource = callable('getWorkVersionSource');
 export const listAdventureBlocks = callable('listAdventureBlocks');
 export const getAdventureBlock = callable('getAdventureBlock');

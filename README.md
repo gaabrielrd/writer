@@ -140,7 +140,7 @@ O Vite mostra no terminal o endereço local (algo como `http://localhost:5173`).
 
 ## Validação
 
-Antes de considerar qualquer alteração pronta, rode:
+Durante ajustes, execute os checks afetados. Ao fechar grandes blocos, rode:
 
 ```bash
 npm run validate
@@ -157,7 +157,9 @@ Esse comando executa, em sequência: verificação de skills, conformidade arqui
 | `pre-push`          | `typecheck` e `test:unit`               |
 | CI (GitHub Actions) | `validate`, auditoria e E2E no Chromium |
 
-O CI está configurado em `.github/workflows/ci.yml`.
+O CI está configurado em `.github/workflows/ci.yml`. Durante o desenvolvimento,
+mantenha commits locais e ignore a CI remota, conforme
+[processo vigente](docs/development-process.md).
 
 ## Comandos
 
@@ -178,6 +180,8 @@ O CI está configurado em `.github/workflows/ci.yml`.
 | `npm run test:setup`         | Testa o setup e as regras de arquitetura em projetos temporários |
 | `npm run test:e2e`           | Executa o fluxo crítico no Chromium com Playwright               |
 | `npm run test:e2e:update`    | Regera as imagens de referência do styleguide                    |
+| `npm run test:rules`         | Executar regras e contratos no emulador Firestore                |
+| `npm run test:media`         | Executar captura de mídia com Firestore e Storage locais         |
 | `npm run test:watch`         | Roda os testes em modo contínuo                                  |
 | `npm run setup`              | Personaliza identificadores e opções do projeto                  |
 | `npm run update:template`    | Aplica migrações conhecidas do template                          |
@@ -207,6 +211,17 @@ Detalhes em [docs/architecture.md](docs/architecture.md) e requisitos em [docs/p
 Além de `npm run validate` e dos testes Chromium, `npm run test:rules` executa
 as regras reais no emulador local do Firestore, com Java 21. O processo usa
 apenas o projeto fictício `demo-writer-rules`, nunca dados de produção.
+
+`npm run test:media` verifica bytes/permissões da capa em Firestore e Storage
+locais. Exige também Firebase CLI global; usa `emulators:exec`, portas livres e
+projeto `demo-writer-backup-cover`. Se o CLI não estiver no PATH, configure
+`WRITER_FIREBASE_CLI` com o caminho de `lib/bin/firebase.js`. Veja os
+[checks e avisos conhecidos de mídia](docs/testing.md).
+
+O novo caminho de backup P1 já tem captura de estrutura, histórico, cenas,
+narrativa, lore, personas, universo, rascunho e bytes de capa. Schema integral,
+arquivo persistente, interface e restauração continuam em implementação; veja
+[o plano P1](docs/tasks/writer-v2/execucao/31-portabilidade-de-livros.md).
 
 ## Como usar agentes
 

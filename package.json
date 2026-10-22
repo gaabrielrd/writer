@@ -36,7 +36,8 @@
     "check:styleguide": "node scripts/check-styleguide.mjs",
     "validate": "npm run check:skills && npm run check:architecture && npm run check:docs && npm run check:styleguide && npm run format:check && npm run lint && npm run test && npm run build",
     "prepare": "husky && npm run sync:skills",
-    "test:rules": "node scripts/run-firestore-rules.mjs"
+    "test:rules": "node scripts/run-firestore-rules.mjs",
+    "test:media": "node scripts/run-book-backup-media.mjs"
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",

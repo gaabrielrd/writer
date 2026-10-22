@@ -12,6 +12,12 @@ export type {
 
 export { bookHistoryBackupRecords } from './services/bookHistoryBackupRecords';
 export {
+  bookCoverBackupRecords,
+  verifyBookBackupCover,
+  type BookCoverProof,
+  type BookCoverOptions,
+} from './services/bookCoverBackupRecords';
+export {
   bookDraftBackupRecords,
   verifyBookBackupDraft,
   type BookDraftInput,

@@ -1010,3 +1010,12 @@ encodeInto/hash incremental em duas passagens limitam bytes por parte. Perfil
 declarado usa getBookBackupDraftPersona, autorizado por livro/origem e conta,
 independente do vínculo salvo M6. Conferência final reautoriza raiz/perfil.
 Veja [ADR 0052](decisions/0052-explicit-book-draft-backup.md). UI/sink/restauração seguem pendentes.
+
+## Bytes autorizados da capa — P1 M9
+
+bookBackupCoverRead confere livro/biblioteca/uso e metadata Storage antes/depois
+de I/O, com generation/metageneration no token privado. bookBackupAssetStorage
+faz hash por stream e ranges limitados; bookCoverBackupRecords verifica bytes
+incrementalmente e reautoriza antes do selo. Manifesto portátil não leva path,
+URL/token ou versão Storage. Capa apenas por URL fica legacy-unavailable.
+Veja [ADR 0053](decisions/0053-book-cover-bytes.md). Schema/sink/restauração seguem em P1.
