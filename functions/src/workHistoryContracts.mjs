@@ -8,7 +8,13 @@ import {
   readWorkMetadata,
 } from './workProgressContracts.mjs';
 import { adventureBlockState } from './adventureBlocksState.mjs';
-import { readBookChapterText } from './bookChapterText.mjs';
+import {
+  readBookChapterText,
+  openBookChapterText,
+  readBookChapterTextPart,
+  chapterTextManifest,
+  BOOK_CHAPTER_TEXT_PART_BYTES,
+} from './bookChapterText.mjs';
 import { readAdventureResource, readAdventureBody } from './adventureBlocksContracts.mjs';
 export { digest, workFail };
 export const CHUNK_BYTES = 64 * 1024;
@@ -216,10 +222,41 @@ export function versionSummary(value) {
     ].map((key) => [key, value[key]]),
   );
 }
+export function historyBodyReference(value) {
+  if (value.schemaVersion !== 2) {
+    if (
+      ![undefined, 1].includes(value.schemaVersion) ||
+      value.contentStorage != null ||
+      value.partLengths !== undefined
+    )
+      workFail('failed-precondition', 'Formato da versão inconsistente.');
+    return null;
+  }
+  const manifest = chapterTextManifest(value.contentStorage),
+    lengths = value.partLengths;
+  if (
+    value.target?.kind !== 'book' ||
+    value.resource?.kind !== 'chapter' ||
+    manifest.byteLength !== value.byteLength ||
+    manifest.contentHash !== value.contentHash ||
+    !Array.isArray(lengths) ||
+    lengths.length !== value.chunkCount ||
+    lengths.length > 129 ||
+    lengths.some((n) => !Number.isSafeInteger(n) || n < 1 || n > CHUNK_BYTES) ||
+    lengths.reduce((sum, n) => sum + n, 0) !== value.byteLength
+  )
+    workFail('failed-precondition', 'Referência da versão inconsistente.');
+  return manifest;
+}
 export async function readHistoryVersion(tx, db, context, id) {
   const snapshot = await tx.get(versionRef(db, context, id)),
     value = snapshot.data();
-  if (!value || value.deleting || digest(value.target) !== digest(context.target))
+  if (
+    !value ||
+    value.id !== id ||
+    value.deleting ||
+    digest(value.target) !== digest(context.target)
+  )
     workFail('not-found', 'Versão indisponível.');
   historyResource(value.resource, context.target);
   if (
@@ -230,9 +267,45 @@ export async function readHistoryVersion(tx, db, context, id) {
     value.chunkCount > Math.max(1, Math.ceil(value.byteLength / (CHUNK_BYTES - 3)))
   )
     workFail('failed-precondition', 'Versão inconsistente.');
+  historyBodyReference(value);
   return value;
 }
 export async function readHistoryChunk(tx, db, context, value, index) {
+  if (!Number.isSafeInteger(index) || index < 0 || index >= value.chunkCount)
+    workFail('invalid-argument', 'Parte inválida.');
+  const manifest = historyBodyReference(value);
+  if (manifest) {
+    const opened = await openBookChapterText(tx, db, {
+        uid: context.uid,
+        bookId: context.target.id,
+        chapterId: value.resource.id,
+        chapter: {
+          bookId: context.target.id,
+          ownerId: context.uid,
+          content: null,
+          contentStorage: manifest,
+        },
+      }),
+      start = value.partLengths.slice(0, index).reduce((sum, n) => sum + n, 0),
+      end = start + value.partLengths[index],
+      first = Math.floor(start / BOOK_CHAPTER_TEXT_PART_BYTES),
+      last = Math.floor((end - 1) / BOOK_CHAPTER_TEXT_PART_BYTES),
+      parts = [];
+    for (let i = first; i <= last; i++)
+      parts.push(await readBookChapterTextPart(tx, db, opened, i));
+    const bytes = Buffer.concat(parts).subarray(
+      start % BOOK_CHAPTER_TEXT_PART_BYTES,
+      (start % BOOK_CHAPTER_TEXT_PART_BYTES) + end - start,
+    );
+    try {
+      return {
+        index,
+        content: new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes),
+      };
+    } catch {
+      workFail('failed-precondition', 'Texto da versão inconsistente.');
+    }
+  }
   const chunk = (await tx.get(chunkRef(db, context, value.id, index))).data();
   if (
     !chunk ||

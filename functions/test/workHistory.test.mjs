@@ -5,12 +5,13 @@ import { createScenesService } from '../src/scenes.mjs';
 import { createWorkProgressService } from '../src/workProgress.mjs';
 import { digest, CHUNK_BYTES, splitHistoryContent } from '../src/workHistoryContracts.mjs';
 import { studioDb } from './helpers/studioDb.mjs';
+import { adventureImportDb } from './helpers/adventureImportDb.mjs';
 
 const target = { kind: 'book', id: 'book' },
   resource = { kind: 'chapter', id: 'chapter' },
   op = (id) => 'history-operation-' + id;
-function fixture() {
-  const f = studioDb();
+function fixture(native = false) {
+  const f = native ? adventureImportDb({ nativeUpdates: true }) : studioDb();
   f.records.set('books/book', {
     authorId: 'author',
     title: 'Livro',
@@ -261,7 +262,7 @@ test('legacy restoration copies predecessor and updates ledger atomically; repla
 });
 
 test('Unicode chunks and large quoted legacy prose roundtrip and restore without new scene limits or oversized body envelopes', async () => {
-  const f = fixture(),
+  const f = fixture(true),
     text = 'á😀"\\\n'.repeat(100000),
     path = 'books/book/chapters/chapter';
   assert.ok(Buffer.byteLength(text) > 800000);

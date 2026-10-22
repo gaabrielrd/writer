@@ -1274,3 +1274,19 @@ bookService conferem hidratação, metadata-only e ausência sem fallback.
 120 Node distintos, 72 Vitest distintos e dois SDK positivos. SDK monta raiz ativa pela
 fixture, não pelo restore, e prova autorização/consistência da fábrica, sem
 comprovar wrapper Auth/App Check ou jornada UI produtiva. Suite integral segue P1.
+
+## Escrita e histórico por referência (P1 M25)
+
+```bash
+node --test functions/test/bookChapterStorage.test.mjs functions/test/workHistory.test.mjs functions/test/workProgress.test.mjs
+```
+
+[Entrega M25](entregas/2026-10-22-writer-v2-escrita-e-versoes-de-capitulos-grandes.md):
+97 Node, 60 Vitest e dois SDK distintos positivos. Os casos novos incluem duas
+gerações perto de 8 MiB, pins compartilhados, versões após excluir capítulo,
+retomada de exclusão, corrupção, CAS e rollback. SDK prova falha atômica por
+parte ocupada, mantendo pin anterior e ausência de recibo; sem ativação P1.
+
+A fixture de nascimento nativo é necessária no teste legado de Unicode agora que
+restaurar grava corpos físicos. Não tratar a criação por fixture como jornada
+completa de restauração. Coleta física e validate integral continuam pendentes.

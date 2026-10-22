@@ -448,3 +448,14 @@ acesso e origem; cliente valida bytes completos, conta e confirmação final.
 Escrita/versões por referências/pins/coleta/exclusão/conversão, demais recursos,
 campos grandes, mídia/personas, ativação e host/UI/roundtrip/validate seguem P1.
 Somente commit local; CI ignorada.
+
+### P1 M25 — escrita e versões por referência
+
+O [contrato 58](58-escrita-e-versoes-dos-capitulos-grandes.md) integra escrita/CAS,
+histórico v2 e deltas compartilhados; preserva versões de capítulos removidos.
+[Evidência M25](../../../entregas/2026-10-22-writer-v2-escrita-e-versoes-de-capitulos-grandes.md):
+97 Node, 60 Vitest e dois SDK distintos positivos, incluindo duas gerações perto
+de 8 MiB e rollback por parte ocupada. Sem ativação ou deploy.
+Coleta física/exclusão integral/conversão/chat, demais recursos/campos grandes,
+personas/mídia, autorização e host/UI/roundtrip/validate seguem P1/F2-09.
+Somente commit local; CI ignorada.

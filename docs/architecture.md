@@ -1216,3 +1216,16 @@ Leitores de histórico, ledger/bootstrap, análise de lore e backup usam string
 lógica. SDK de corpo segue negado. Escritores/histórico por referência/pins/
 coleta/exclusão/conversão e ativação ainda precisam ser integrados. A callable
 usa wrapper Auth/App Check e cache privado, sem deploy neste incremento.
+
+## Escrita e versões de capítulo grande (P1 M25)
+
+[ADR 0069](decisions/0069-chapter-body-references-and-history.md) acrescenta
+bookChapterStorage: um acumulador por tentativa transacional, compartilhado por
+escritor e captura anterior. Deltas por geração evitam perder pins. Escritor mantém
+CAS lógico, reaproveita corpo idêntico e marca último pin como unreferenced.
+
+Histórico v2 referencia corpo externo e guarda comprimentos dos segmentos UTF-8,
+mantendo resumo/API e v1. Restauração prefere geração existente e confirma versão
+anterior, texto, ledger, referências e recibo juntos. Exclusão de versão libera
+pin na revogação uma vez; capítulo removido não retira as versões.
+Coleta física, exclusão integral, conversão/chat e ativação ainda exigem integração.

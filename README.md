@@ -322,3 +322,8 @@ P1 M24 integra [leitura lógica de capítulos](docs/tasks/writer-v2/execucao/57-
 ao cliente, histórico, contagem, análise e backup, com partes autorizadas e
 conferência integral. Escrita/pins/coleta, demais recursos e ativação da cópia
 continuam nas próximas tarefas; não há UI nova de restauração nem deploy.
+
+P1 M25 integra [escrita e versões dos capítulos grandes](docs/tasks/writer-v2/execucao/58-escrita-e-versoes-dos-capitulos-grandes.md):
+texto lógico com CAS e histórico por referência, incluindo versão anterior à
+restauração e preservação após excluir capítulo. Coleta física, exclusão integral,
+conversão/chat e demais recursos continuam obrigatórios antes de ativar a cópia.

@@ -13,6 +13,9 @@ import {
   readWorkMetadata,
 } from './workProgressContracts.mjs';
 
+import { readBookChapterText, BOOK_CHAPTER_TEXT_BYTES } from './bookChapterText.mjs';
+import { createBookChapterBodyPlan } from './bookChapterStorage.mjs';
+
 const presets = new Set([
   'preset-atmospheric',
   'preset-incisive',
@@ -54,7 +57,12 @@ async function validateComplement(tx, db, uid, value) {
   return value;
 }
 function contentText(value) {
-  if (typeof value !== 'string') workFail('invalid-argument', 'Texto inválido.');
+  if (
+    typeof value !== 'string' ||
+    !value.isWellFormed() ||
+    Buffer.byteLength(value) > BOOK_CHAPTER_TEXT_BYTES
+  )
+    workFail('invalid-argument', 'Texto inválido ou acima do limite.');
   return value;
 }
 function chapterTitle(value, order) {
@@ -88,26 +96,60 @@ function currentCounter(root, before, after, plan) {
 }
 export async function prepareLegacyChapterTextWrite(
   tx,
-  { db, now, countWords, ledger, context, root, id, stored, content, patch = {} },
+  {
+    db,
+    now,
+    countWords,
+    ledger,
+    context,
+    root,
+    id,
+    stored,
+    content,
+    patch = {},
+    operationId,
+    bodies,
+    preferredManifest,
+    verifiedContent,
+  },
 ) {
   contentText(content);
   if (!stored || stored.deleting) workFail('not-found', 'Capítulo indisponível.');
   if (stored.contentMode === 'scenes')
     workFail('failed-precondition', 'Abra a cena para alterar o texto deste capítulo.');
-  const words = countWords(content),
-    before = countWords(stored.content ?? ''),
+  // Callers may reuse content already verified from this snapshot in this transaction.
+  const beforeContent =
+      verifiedContent ??
+      (await readBookChapterText(tx, db, {
+        uid: context.uid,
+        bookId: context.target.id,
+        chapterId: id,
+        chapter: stored,
+      })),
+    words = countWords(content),
+    before = countWords(beforeContent),
     timestamp = workDate(now, Math.max(root.updatedAt ?? 0, stored.updatedAt ?? 0)),
     plan = await ledger.prepareChanges(tx, {
       target: context.target,
       root,
       changes: [{ kind: 'chapter', id, content }],
     });
+  const bodyPlan =
+      bodies ?? createBookChapterBodyPlan(tx, db, { uid: context.uid, bookId: context.target.id }),
+    representation = await bodyPlan.replace({
+      chapterId: id,
+      stored,
+      content,
+      operationId,
+      timestamp,
+      preferredManifest,
+    });
   return {
     result: { content, wordCount: words, updatedAt: timestamp },
     commit() {
       tx.update(db.doc(context.path + '/chapters/' + id), {
         ...patch,
-        content,
+        ...representation,
         wordCount: words,
         updatedAt: timestamp,
       });
@@ -116,6 +158,7 @@ export async function prepareLegacyChapterTextWrite(
         updatedAt: timestamp,
       });
       plan.commit();
+      if (!bodies) bodyPlan.commit();
     },
   };
 }
@@ -140,7 +183,14 @@ export function addWorkProgressLegacy(api, { db, now, countWords, ledger }) {
         existing = (await tx.get(ref)).data();
       if (prior) {
         if (!existing || existing.deleting || existing.contentMode === 'scenes') workConflict();
-        return snapshotView(bookId, op.id, existing);
+        const content = await readBookChapterText(tx, db, {
+          uid,
+          bookId,
+          chapterId: op.id,
+          chapter: existing,
+        });
+        if (digest(content) !== digest(data.input.content ?? '')) workConflict();
+        return snapshotView(bookId, op.id, { ...existing, content });
       }
       if (existing) workFail('already-exists', 'Identificador de capítulo já utilizado.');
       if (actId && !(await tx.get(db.doc(context.path + '/acts/' + actId))).exists)
@@ -191,7 +241,16 @@ export function addWorkProgressLegacy(api, { db, now, countWords, ledger }) {
           changes: [{ kind: 'chapter', id: op.id, content, contentMode: 'legacy' }],
           groupStates: [{ id: op.id, contentMode: 'legacy' }],
         });
-      tx.create(ref, value);
+      const bodies = createBookChapterBodyPlan(tx, db, { uid, bookId }),
+        representation = await bodies.replace({
+          chapterId: op.id,
+          stored: null,
+          content,
+          operationId: digest({ kind: 'legacy-create', id: op.id }),
+          timestamp,
+        });
+      tx.create(ref, { ...value, ...representation });
+      bodies.commit();
       tx.update(context.ref, {
         wordCount: currentCounter(root, 0, wordCount, plan),
         updatedAt: timestamp,
@@ -242,15 +301,21 @@ export function addWorkProgressLegacy(api, { db, now, countWords, ledger }) {
       if (!stored || stored.deleting) workFail('not-found', 'Capítulo indisponível.');
       if (stored.contentMode === 'scenes')
         workFail('failed-precondition', 'Abra a cena para alterar o texto deste capítulo.');
+      const currentContent = await readBookChapterText(tx, db, {
+        uid,
+        bookId,
+        chapterId: id,
+        chapter: stored,
+      });
       if (previous) {
-        if (digest(stored.content ?? '') !== previous.afterHash) workConflict();
+        if (digest(currentContent) !== previous.afterHash) workConflict();
         return {
-          content: stored.content ?? '',
+          content: currentContent,
           wordCount: stored.wordCount,
           updatedAt: stored.updatedAt,
         };
       }
-      if (digest(stored.content ?? '') !== data.expectedContentHash) workConflict();
+      if (digest(currentContent) !== data.expectedContentHash) workConflict();
       if ('personaComplement' in patch)
         await validateComplement(tx, db, uid, patch.personaComplement);
       const plan = await prepareLegacyChapterTextWrite(tx, {
@@ -263,6 +328,8 @@ export function addWorkProgressLegacy(api, { db, now, countWords, ledger }) {
         id,
         stored,
         content,
+        operationId: digest({ kind: 'legacy-save', id: op.id }),
+        verifiedContent: currentContent,
         patch,
       });
       plan.commit();
@@ -294,19 +361,31 @@ export function addWorkProgressLegacy(api, { db, now, countWords, ledger }) {
       const root = await workProject(tx, context),
         previous = await readWorkReceipt(tx, op);
       if (previous) return { deleted: previous.deleted };
-      const stored = [];
+      const stored = [],
+        bodies = createBookChapterBodyPlan(tx, db, { uid, bookId });
       for (const selection of chapters) {
         const ref = db.doc(context.path + '/chapters/' + selection.id),
           value = (
-            await readWorkMetadata(tx, ref, ['wordCount', 'updatedAt', 'contentMode', 'deleting'])
+            await readWorkMetadata(tx, ref, [
+              'wordCount',
+              'updatedAt',
+              'contentMode',
+              'deleting',
+              'contentStorage',
+              'ownerId',
+              'bookId',
+            ])
           ).data();
         if (
           !value ||
           value.deleting ||
+          (value.bookId && value.bookId !== bookId) ||
+          (value.ownerId && value.ownerId !== uid) ||
           value.contentMode === 'scenes' ||
           (value.updatedAt ?? 0) !== selection.expectedUpdatedAt
         )
           workConflict();
+        if (value.contentStorage != null) await bodies.pin(selection.id, value.contentStorage, -1);
         stored.push({ ref, value, id: selection.id });
       }
       const plan = await ledger.prepareChanges(tx, {
@@ -322,6 +401,7 @@ export function addWorkProgressLegacy(api, { db, now, countWords, ledger }) {
         ),
         timestamp = workDate(now, root.updatedAt ?? 0);
       for (const value of stored) tx.delete(value.ref);
+      bodies.commit();
       tx.update(context.ref, {
         wordCount: currentCounter(root, before, 0, plan),
         updatedAt: timestamp,

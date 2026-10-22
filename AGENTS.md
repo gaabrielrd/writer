@@ -222,3 +222,12 @@ concluído estiverem satisfeitos. A lista fica em
   e confirmação final antes de entregar texto ao editor, conforme ADR 0068.
 - Use texto lógico no histórico, backup, análise e contagem; leitura metadata-only
   não pode servir como texto salvo. Ativação exige integrar escritores e coleta.
+
+## Escrita e referências de capítulos grandes
+
+- Crie um bookChapterStorage por tentativa transacional e compartilhe entre
+  escritor e versões; some deltas antes do commit, conforme ADR 0069.
+- Confira CAS pelo texto lógico e preserve versões por referências; excluir
+  capítulo não exclui versões e a revogação da versão libera seu pin uma única vez.
+- Não reabra corpo com pins zero; mantenha unreferenced até coleta comprovada.
+  Integre coleta, inventário de exclusão, conversão/chat antes da ativação.

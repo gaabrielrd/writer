@@ -10,6 +10,8 @@ import { assertSceneEnvelope } from './sceneContracts.mjs';
 import { createWorkProgressService } from './workProgress.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { prepareLegacyChapterTextWrite } from './workProgressLegacy.mjs';
+import { createBookChapterBodyPlan } from './bookChapterStorage.mjs';
+import { readBookChapterText } from './bookChapterText.mjs';
 import { createScenesService } from './scenes.mjs';
 import { createAdventureBlocksService } from './adventureBlocks.mjs';
 import {
@@ -31,6 +33,7 @@ import {
   chunkRef,
   versionSummary,
   readHistoryVersion,
+  historyBodyReference,
   readHistoryChunk,
   historyCursor,
   encodeHistoryCursor,
@@ -55,7 +58,17 @@ export function createWorkHistoryService({ db, now = Date.now }) {
       workFail('invalid-argument', 'Operação usada com outros dados.');
     return value;
   }
-  function capturePlan(context, resource, id, content, reason, label, timestamp) {
+  async function capturePlan(
+    context,
+    resource,
+    id,
+    content,
+    reason,
+    label,
+    timestamp,
+    storage,
+    bodyPlan,
+  ) {
     const chunks = splitHistoryContent(content),
       value = {
         id,
@@ -69,9 +82,27 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         contentHash: digest(content),
         chunkCount: chunks.length,
       },
-      manifest = { ...value, schemaVersion: 1, resourceKey: digest(resource), deleting: false };
+      reference =
+        resource.kind === 'chapter' && storage != null
+          ? await bodyPlan.pin(resource.id, storage, 1)
+          : null,
+      manifest = {
+        ...value,
+        schemaVersion: reference ? 2 : 1,
+        resourceKey: digest(resource),
+        deleting: false,
+        ...(reference
+          ? {
+              contentStorage: reference,
+              partLengths: chunks.map((text) => Buffer.byteLength(text)),
+            }
+          : {}),
+      };
+    if (reference) historyBodyReference(manifest);
     assertSceneEnvelope(manifest);
-    const bodies = chunks.map((text, index) => ({ versionId: id, index, content: text }));
+    const bodies = reference
+      ? []
+      : chunks.map((text, index) => ({ versionId: id, index, content: text }));
     bodies.forEach(assertSceneEnvelope);
     return {
       version: value,
@@ -159,17 +190,24 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         if (current.source.sourceToken !== token) workConflict();
         if ((await tx.get(versionRef(db, context, op.id))).exists)
           workFail('already-exists', 'Identificador de versão já utilizado.');
-        const plan = capturePlan(
-          context,
-          resource,
-          op.id,
-          current.source.content,
-          'manual',
-          label,
-          workDate(now, current.root.updatedAt ?? 0),
-        );
+        const bodies =
+            resource.kind === 'chapter'
+              ? createBookChapterBodyPlan(tx, db, { uid, bookId: context.target.id })
+              : null,
+          plan = await capturePlan(
+            context,
+            resource,
+            op.id,
+            current.source.content,
+            'manual',
+            label,
+            workDate(now, current.root.updatedAt ?? 0),
+            current.record.contentStorage,
+            bodies,
+          );
         const historyRevision = nextWorkHistoryRevision(current.root);
         plan.commit(tx);
+        bodies?.commit();
         tx.update(context.ref, { historyRevision });
         tx.create(op.ref, { fingerprint: op.fingerprint, versionId: op.id });
         return { version: plan.version };
@@ -303,8 +341,24 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         if (digest(value.resource) !== digest(resource))
           workFail('invalid-argument', 'Versão pertence a outra fonte.');
         const chunks = [];
-        for (let index = 0; index < value.chunkCount; index++)
-          chunks.push((await readHistoryChunk(tx, db, context, value, index)).content);
+        const reference = historyBodyReference(value);
+        if (reference)
+          chunks.push(
+            await readBookChapterText(tx, db, {
+              uid,
+              bookId: context.target.id,
+              chapterId: resource.id,
+              chapter: {
+                bookId: context.target.id,
+                ownerId: uid,
+                content: null,
+                contentStorage: reference,
+              },
+            }),
+          );
+        else
+          for (let index = 0; index < value.chunkCount; index++)
+            chunks.push((await readHistoryChunk(tx, db, context, value, index)).content);
         const content = chunks.join('');
         if (
           Buffer.byteLength(content) !== value.byteLength ||
@@ -315,15 +369,21 @@ export function createWorkHistoryService({ db, now = Date.now }) {
           copyRef = versionRef(db, context, previousVersionId);
         if ((await tx.get(copyRef)).exists)
           workFail('already-exists', 'Cópia anterior já utilizada.');
-        const copy = capturePlan(
-          context,
-          resource,
-          previousVersionId,
-          current.source.content,
-          'before-restore',
-          null,
-          workDate(now, current.root.updatedAt ?? 0),
-        );
+        const bodies =
+            resource.kind === 'chapter'
+              ? createBookChapterBodyPlan(tx, db, { uid, bookId: context.target.id })
+              : null,
+          copy = await capturePlan(
+            context,
+            resource,
+            previousVersionId,
+            current.source.content,
+            'before-restore',
+            null,
+            workDate(now, current.root.updatedAt ?? 0),
+            current.record.contentStorage,
+            bodies,
+          );
         const write =
           resource.kind === 'block'
             ? await blocks.prepareAdventureBlockTextWrite(tx, {
@@ -343,6 +403,10 @@ export function createWorkHistoryService({ db, now = Date.now }) {
                   id: resource.id,
                   stored: current.record,
                   content,
+                  bodies,
+                  operationId: digest({ kind: 'history-restore', id: op.id }),
+                  preferredManifest: historyBodyReference(value),
+                  verifiedContent: current.source.content,
                 })
               : await scenes.prepareSceneTextWrite(tx, {
                   uid,
@@ -358,6 +422,7 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         const historyRevision = nextWorkHistoryRevision(current.root);
         copy.commit(tx);
         write.commit();
+        bodies?.commit();
         tx.update(context.ref, { historyRevision });
         const result = { fingerprint: op.fingerprint, previousVersionId, after };
         tx.create(op.ref, result);
@@ -375,10 +440,22 @@ export function createWorkHistoryService({ db, now = Date.now }) {
           previous = await receipt(tx, op),
           snapshot = await tx.get(ref);
         if (previous) return;
-        if (!snapshot.exists) workFail('not-found', 'Versão indisponível.');
+        if (
+          !snapshot.exists ||
+          snapshot.data().id !== id ||
+          digest(snapshot.data().target) !== digest(context.target)
+        )
+          workFail('not-found', 'Versão indisponível.');
         const historyRevision =
           snapshot.data().deleting === true ? null : nextWorkHistoryRevision(root);
+        const reference = historyBodyReference(snapshot.data());
+        let bodies;
+        if (reference && snapshot.data().deleting !== true) {
+          bodies = createBookChapterBodyPlan(tx, db, { uid, bookId: context.target.id });
+          await bodies.pin(snapshot.data().resource.id, reference, -1);
+        }
         tx.update(ref, { deleting: true });
+        bodies?.commit();
         if (historyRevision !== null) tx.update(context.ref, { historyRevision });
         tx.create(op.ref, { fingerprint: op.fingerprint, complete: false, processed: 0 });
       });
