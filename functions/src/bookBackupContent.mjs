@@ -28,9 +28,29 @@ function jsonDepth(value, depth = 0) {
     }
 }
 /** Content validation is not authorization. The caller owns the temporary, trusted index. */
-export async function validateBookBackupContent(source, { index, hash, signal } = {}) {
+export function validateBookBackupContent(source, options = {}) {
+  return validateRecordContent(
+    readBookBackupPackage(source, { signal: options.signal }),
+    options,
+    false,
+  );
+}
+export async function validateBookLegacyRecordContent(stream, options) {
+  const report = await validateRecordContent(stream, options, true);
+  if (
+    report.envelope?.format !== 'writer-book-backup' ||
+    ![1, 2, 3, 4, 5, 6].includes(report.envelope.version)
+  )
+    bad();
+  return {
+    validation: 'legacy-content-only',
+    source: report.envelope,
+    totals: report.totals,
+    warnings: report.warnings,
+  };
+}
+async function validateRecordContent(stream, { index, hash, signal } = {}, legacy) {
   if (!index || !hash) bad();
-  const stream = readBookBackupPackage(source, { signal });
   const check = () => signal?.throwIfAborted();
   const digest = (bytes) => {
     const h = hash.create();
@@ -72,6 +92,7 @@ export async function validateBookBackupContent(source, { index, hash, signal } 
     orphanGroups: 0,
     legacyCover: false,
   };
+  if (legacy) Object.assign(warnings, { missingPersonas: 0, unknownOverrides: 0 });
   const ended = new Set();
   const bump = (object, key, n = 1) => {
     object[key] = count(object[key] + n);
@@ -459,13 +480,19 @@ export async function validateBookBackupContent(source, { index, hash, signal } 
         continue;
       }
       const binding = await get(['binding', item.scope, item.id]);
-      if (
-        item.personaId === null
-          ? binding !== undefined
-          : binding?.personaId !== item.personaId ||
-            item.traits.some((id) => !binding.traits.includes(id))
-      )
-        bad();
+      if (item.personaId === null) {
+        if (binding !== undefined) bad();
+      } else if (!binding) {
+        if (!legacy) bad();
+        bump(warnings, 'missingPersonas');
+      } else {
+        if (binding.personaId !== item.personaId) bad();
+        const unknown = item.traits.filter((id) => !binding.traits.includes(id)).length;
+        if (unknown) {
+          if (!legacy) bad();
+          bump(warnings, 'unknownOverrides', unknown);
+        }
+      }
     }
     check();
     complete = true;

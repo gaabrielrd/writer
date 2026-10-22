@@ -1087,3 +1087,17 @@ DTOs, relações e ranks ativos; mantém avisos para ausência legítima.
 OPFS/Web Crypto reais provam cifragem, adulteração, isolamento e cleanup;
 quota é simulada no teste unitário. content-only não concede autoria/acesso/
 ativação. Não substituir testes de autorização ou restauração por esse relatório.
+
+## Leitura JSON v1–v6 — P1 M12
+
+```bash
+node --test functions/test/bookLegacyJSON.test.mjs functions/test/bookLegacyReview.test.mjs functions/test/bookBackupContent.test.mjs
+npx vitest run src/features/editor/tests/bookLegacyInterop.test.ts src/features/editor/tests/exportManuscript.test.ts src/features/book-portability/tests/inspectLegacyBookBackup.test.ts src/features/book-portability/tests/inspectBookBackupContent.test.ts src/features/book-portability/tests/bookValidationIndex.test.ts
+```
+
+A [entrega M12](entregas/2026-10-22-writer-v2-leitura-dos-backups-legados.md)
+registra 27 Node, 46 cliente e nove cenários Chromium/File/OPFS. Cada versão tem
+Blob produzido pelo exportador real com APIs simuladas, sem provar backend/Auth.
+Scanner cobre BOM/Unicode/gramática/duplicatas/limites e corpo global de 9 MiB
+ignorado. Núcleo distingue legacy-content-only de backup novo completo, preserva
+avisos de ausência e não faz fetch. Cleanup e cancelamento usam índice M11.

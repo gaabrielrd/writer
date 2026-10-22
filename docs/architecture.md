@@ -1039,3 +1039,13 @@ envelope completo, sem conferir autorização de restauração. book-portability
 sem prosa ou lista ilimitada de IDs. Cleanup é obrigatório para retorno positivo.
 Veja [ADR 0055](decisions/0055-book-backup-content-validation.md).
 Leitor legado, revisão e servidor de restauração continuam em P1.
+
+## Revisão de JSON legado — P1 M12
+
+bookLegacyJSON valida JSON/UTF-8/duplicatas/EOF e registra spans por range.
+bookLegacyCatalog fecha capacidades v1–v6; bookLegacyReview normaliza/valida dados
+próprios com procedência e ausências explícitas. Não materializa corpo global,
+busca URL ou inventa framing/histórico/datas. Validador novo continua estrito.
+runBookValidation compartilha hash e cleanup protegido entre as duas inspeções.
+Veja [ADR 0056](decisions/0056-legacy-book-backup-review.md).
+UI e servidor de preparação/remapeamento/ativação continuam em P1.

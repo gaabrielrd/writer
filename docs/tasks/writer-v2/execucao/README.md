@@ -312,3 +312,11 @@ IDs ilimitada em RAM. [Entrega M11](../../../entregas/2026-10-22-writer-v2-valid
 35 Node com regressões, lotes cliente dirigidos e dois probes nativos sobrepostos,
 incluindo adulteração/cleanup/isolamento. P1 segue aberto para JSON legado, UI e
 restauração; relatório content-only não é autorização. Sem CI/push.
+
+### P1 M12 — leitura dos JSON v1–v6
+
+O [contrato 45](45-leitura-dos-backups-json-legados.md) lê spans por ranges e
+confere conteúdo com procedência/ausências explícitas, sem promover dados globais,
+buscar capa ou fabricar histórico. [Entrega M12](../../../entregas/2026-10-22-writer-v2-leitura-dos-backups-legados.md):
+27 Node, 46 cliente e nove cenários nativos File/OPFS com arquivos do exportador.
+UI, preparação/ativação e recuperação permanecem em P1. Somente local, sem CI/push.
