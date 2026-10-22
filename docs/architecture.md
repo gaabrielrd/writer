@@ -1256,3 +1256,15 @@ Capítulo composto pode guardar campo congelado externo: bookService resolve
 somente cenas; backup hidrata esse campo sem alterar o formato. Quotas antigas
 de 800.000 bytes/cena/chat e envelopes permanecem; excesso é recusado integralmente.
 Ainda faltam demais recursos/campos grandes e ativação/host/UI/roundtrip P1.
+
+## Lore próprio na restauração (P1 M28)
+
+[ADR 0072](decisions/0072-restored-book-local-lore.md) prepara fichas nativas por
+leitor verificado e relações em páginas de até 64. Progresso v2 separa a varredura
+loreItemIndex do cursor principal: outros recursos continuam pendentes mesmo
+quando vêm intercalados. book-resources confere a contagem antes da próxima fase.
+
+Journal/recibo/ficha/cursor são atômicos e cleanup v6 certifica o namespace lore,
+mantendo compatibilidade com corpos v5 e inventários anteriores. Raiz ausente,
+nenhuma promoção global ou publicação. Campos grandes ainda precisam de
+representação e consumidores antes da ativação; falha nativa preserva a fonte.

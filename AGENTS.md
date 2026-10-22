@@ -125,6 +125,7 @@
 - Consuma itens validados somente pelo leitor interno e confira verify(tx) antes de escrever na mesma transação; preserve origem nativa e provas por unidade, conforme ADR 0064.
 - Remapeie IDs por contexto/tipo/pai fixos e chaves nativas; trate relações de lore em páginas com prova do índice, sem alterar prosa ou autorizar origem externa, conforme ADR 0065.
 - Prepare estrutura restaurada com journal nativo/cursor/recibo atômicos e clone por tentativa; preserve cleanup v4 e checkpoint fixado da validação, conforme ADR 0066.
+- Prepare lore próprio com varredura separada, relações paginadas e provas reconferidas no commit; preserve inventário v6, ausência da raiz e campos sem truncamento, conforme ADR 0072.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

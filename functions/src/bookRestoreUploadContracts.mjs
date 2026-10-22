@@ -171,7 +171,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3, 4, 5].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4, 5, 6].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -300,7 +300,7 @@ export function jobShape(uid, id, job) {
               'validation-items',
               'validation-state',
               ...(job.cleanupVersion >= 4
-                ? ['artifacts', ...(job.cleanupVersion === 5 ? ['body-artifacts'] : [])]
+                ? ['artifacts', ...(job.cleanupVersion >= 5 ? ['body-artifacts'] : [])]
                 : []),
             ]
           : []),
@@ -445,8 +445,11 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
     preparationProgress(job.preparation);
+    if ((job.cleanupVersion === 6) !== (job.preparation.schemaVersion === 2)) inconsistent();
     if (
       job.preparation.itemIndex > job.validationMeta.items ||
+      (job.preparation.schemaVersion === 2 &&
+        job.preparation.loreItemIndex >= job.validationMeta.items) ||
       job.preparation.cleanedArtifacts > job.preparation.artifactCount ||
       (job.state === 'content-verified' && job.preparation.cleanedArtifacts !== 0) ||
       (job.state === 'cancelled' &&
@@ -468,9 +471,27 @@ export function preparationProgress(value) {
     'chapterCount',
     'wordCount',
     'timestamp',
+    ...(value?.schemaVersion === 2
+      ? ['loreCount', 'loreRelationCount', 'relationOffset', 'loreItemIndex']
+      : []),
   ]);
-  if (value.schemaVersion !== 1 || !['structure', 'resources'].includes(value.phase))
+  if (
+    ![1, 2].includes(value.schemaVersion) ||
+    !(value.schemaVersion === 1 ? ['structure', 'resources'] : ['resources', 'scenes']).includes(
+      value.phase,
+    )
+  )
     inconsistent();
+  if (value.schemaVersion === 2) {
+    for (const key of ['loreCount', 'loreRelationCount', 'relationOffset', 'loreItemIndex'])
+      integer(value[key]);
+    if (
+      value.loreItemIndex < value.itemIndex ||
+      value.relationOffset > value.loreRelationCount ||
+      (value.phase === 'scenes' && value.relationOffset !== 0)
+    )
+      inconsistent();
+  }
   for (const key of [
     'itemIndex',
     'artifactCount',

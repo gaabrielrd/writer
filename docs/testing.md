@@ -1316,3 +1316,17 @@ ledger/pins atômicos, BYOK sem débito, conversão inteira, excesso sem truncam
 fonte após coleta, retomada de agrupadores mistos e campo congelado externo.
 SDK prova rollback por parte ocupada e replay concorrente; sugestões são fixtures,
 sem IA externa paga. Nenhuma prova de restauração final ou deploy; validate segue P1.
+
+## Materialização do lore próprio (P1 M28)
+
+```bash
+node --test functions/test/bookRestoreLore.test.mjs
+```
+
+A suíte dirigida cobre paginação de 130 relações, lore intercalado, alvos locais
+remapeados e externos literais, ausente/vazio, retomada/replay/concorrência,
+cancelamento durante leitura, prova do índice alterada, retry automático,
+compatibilidade JSON v1–v6 e cleanup com corpos v5. A evidência de SDK real,
+incluindo excesso do limite nativo sem perda da fonte, fica na
+[entrega M28](entregas/2026-10-22-writer-v2-materializacao-do-lore-proprio.md).
+Ainda não comprova restauração ativada, suporte integral a campos grandes ou deploy.

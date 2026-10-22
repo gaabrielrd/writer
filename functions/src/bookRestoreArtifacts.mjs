@@ -44,6 +44,13 @@ function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
       journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
     };
   }
+  if (version >= 6 && kind === 'lore') {
+    if (typeof id !== 'string' || !/^restore-[a-f0-9]{64}$/.test(id)) inconsistent();
+    return {
+      ref: db.doc('books/' + loaded.job.bookId + '/lore/' + id),
+      journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+    };
+  }
   if (!Object.hasOwn(BOOK_RESTORE_NATIVE_V4, kind)) inconsistent();
   if (
     kind === 'work-control'
@@ -69,7 +76,10 @@ async function receipt(tx, db, loaded, id) {
     value.ownerId !== loaded.job.ownerId ||
     value.restoreId !== loaded.job.restoreId ||
     value.jobToken !== loaded.view.jobToken ||
-    value.receipt?.action !== 'advanceBookRestoreStructure' ||
+    ![
+      'advanceBookRestoreStructure',
+      ...(loaded.job.cleanupVersion >= 6 ? ['advanceBookRestoreLore'] : []),
+    ].includes(value.receipt?.action) ||
     value.receipt.operationId !== id ||
     value.receipt.checkpoint > loaded.job.checkpoint ||
     !bornEqual(snapshot, { createTime: snapshot.updateTime })
@@ -121,7 +131,7 @@ export async function prepareBookRestoreArtifacts(
   version = loaded.job.cleanupVersion,
 ) {
   restoreId(operationId);
-  if (![4, 5].includes(version) || writes.length > (version === 5 ? 136 : 8)) inconsistent();
+  if (![4, 5, 6].includes(version) || writes.length > (version >= 5 ? 136 : 8)) inconsistent();
   const effects = [],
     paths = new Set();
   let created = 0;
@@ -177,6 +187,7 @@ export async function assertBookRestoreArtifactsEmpty(
   for (const name of [
     ...Object.values(BOOK_RESTORE_NATIVE_V4),
     ...(version >= 5 ? ['bookTextBodies'] : []),
+    ...(version >= 6 ? ['lore'] : []),
   ]) {
     const page = await tx.get(
       db
@@ -188,7 +199,7 @@ export async function assertBookRestoreArtifactsEmpty(
   }
 }
 export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) {
-  if (![4, 5].includes(loaded.job.cleanupVersion) || loaded.job.cleanupPhase !== 'artifacts')
+  if (![4, 5, 6].includes(loaded.job.cleanupVersion) || loaded.job.cleanupPhase !== 'artifacts')
     inconsistent();
   const page = await tx.get(
       db
@@ -252,7 +263,7 @@ export async function assertBookRestoreBodyNamespaceEmpty(tx, db, loaded) {
   if (bodies.docs.length || journals.docs.length) inconsistent();
 }
 export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, limit) {
-  if (loaded.job.cleanupVersion !== 5 || loaded.job.cleanupPhase !== 'body-artifacts')
+  if (![5, 6].includes(loaded.job.cleanupVersion) || loaded.job.cleanupPhase !== 'body-artifacts')
     inconsistent();
   integer(limit, 1);
   const bodies = await tx.get(
@@ -298,4 +309,18 @@ export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, lim
   preparation.cleanedArtifacts = sum(preparation.cleanedArtifacts, count);
   if (preparation.cleanedArtifacts > preparation.artifactCount) inconsistent();
   return { remove, patch: { preparation, state: 'cancelling', cleanupPhase: phase } };
+}
+
+/** Certify the new family before upgrading a job that could not previously own lore. */
+export async function assertBookRestoreLoreNamespaceEmpty(tx, db, loaded) {
+  const [native, journals] = await Promise.all([
+    tx.get(
+      db
+        .collection('books/' + loaded.job.bookId + '/lore')
+        .select()
+        .limit(1),
+    ),
+    tx.get(db.collection(journalPath(loaded)).where('kind', '==', 'lore').select('kind').limit(1)),
+  ]);
+  if (native.docs.length || journals.docs.length) inconsistent();
 }

@@ -178,10 +178,13 @@ export function createBookRestoreIntegrityService({
     },
   };
 }
-/** Common proof/state cleanup for v2-v5; the job commits deletes and its receipt. */
+/** Common proof/state cleanup for v2-v6; the job commits deletes and its receipt. */
 export async function prepareBookRestoreIntegrityCleanup(tx, db, loaded, limit) {
   const job = loaded.job;
-  if (![2, 3, 4, 5].includes(job.cleanupVersion) || !['proofs', 'state'].includes(job.cleanupPhase))
+  if (
+    ![2, 3, 4, 5, 6].includes(job.cleanupVersion) ||
+    !['proofs', 'state'].includes(job.cleanupPhase)
+  )
     inconsistent();
   if (job.cleanupPhase === 'proofs') {
     const page = await tx.get(

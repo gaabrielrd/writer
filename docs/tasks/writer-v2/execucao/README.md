@@ -480,3 +480,15 @@ Editor compõe cenas e backup preserva campo congelado externo, sem fallback.
 143 Node, 144 Vitest e três SDK distintos positivos; quotas anteriores preservadas.
 Demais recursos/campos grandes, personas/mídia, autorização/ativação e
 host/UI/roundtrip/validate continuam em P1/F2-09. Somente local; CI ignorada.
+
+### P1 M28 — lore próprio na preparação
+
+O [contrato 61](61-materializacao-do-lore-proprio.md) prepara fichas próprias e
+relações de até 64 por unidade, com provas no commit, retomada e inventário v6.
+Cursor de varredura separado cobre lore intercalado sem consumir cenas/narrativa.
+[Evidência M28](../../../entregas/2026-10-22-writer-v2-materializacao-do-lore-proprio.md):
+131 Node distintos e três SDK reais positivos, incluindo limite nativo com fonte
+intacta, recriação protegida e compatibilidade JSON v1–v6. Nenhuma ativação/deploy.
+Representação dos campos grandes, demais recursos, personas/mídia, histórico/
+rascunho, autorização/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
+Somente commit local; CI ignorada.

@@ -1,4 +1,5 @@
 import { createBookRestoreStructureService } from './bookRestoreStructure.mjs';
+import { createBookRestoreLoreService } from './bookRestoreLore.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
   prepareBookRestoreBodyArtifactsCleanup,
@@ -56,6 +57,7 @@ const actions = {
   advanceBookRestoreIntegrity: ['checking', 'bytes-verified', 'rejected'],
   advanceBookRestoreValidation: ['validating', 'content-verified', 'content-rejected'],
   advanceBookRestoreStructure: ['content-verified'],
+  advanceBookRestoreLore: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -253,10 +255,14 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
           'actCount',
           'chapterCount',
           'wordCount',
-        ].some((k) => r.preparation[k] > loaded.job.preparation[k])
+          'loreCount',
+          'loreRelationCount',
+          'loreItemIndex',
+        ].some((k) => (r.preparation[k] ?? 0) > (loaded.job.preparation[k] ?? 0))
       )
         inconsistent();
-    } else if (r.action === 'advanceBookRestoreStructure') inconsistent();
+    } else if (['advanceBookRestoreStructure', 'advanceBookRestoreLore'].includes(r.action))
+      inconsistent();
     if (r.action === 'startBookRestore') {
       if (
         r.expectedCheckpoint !== null ||
@@ -567,7 +573,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         state: 'cancelling',
         recoveryReady: false,
         ...(loaded.job.cleanupVersion >= 4
-          ? { cleanupPhase: loaded.job.cleanupVersion === 5 ? 'body-artifacts' : 'artifacts' }
+          ? { cleanupPhase: loaded.job.cleanupVersion >= 5 ? 'body-artifacts' : 'artifacts' }
           : {}),
       });
       tx.delete(keyRef(uid, id));
@@ -824,7 +830,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const lore = createBookRestoreLoreService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...lore,
     ...structure,
     ...validation,
     ...integrity,

@@ -337,3 +337,9 @@ P1 M27 integra [chat, conversão e remoção de capítulos](docs/tasks/writer-v2
 ao texto lógico, preservando versões e débito atômico. Editor usa somente cenas
 na composição; backup conserva campo congelado externo. Limites de cena/chat
 continuam os aprovados. Demais recursos e ativação da restauração seguem pendentes.
+
+P1 M28 prepara [lore próprio e relações](docs/tasks/writer-v2/execucao/61-materializacao-do-lore-proprio.md)
+com retomada paginada e inventário v6. A varredura aceita lore intercalado e
+preserva o cursor dos recursos ainda pendentes. Fichas maiores que o limite
+nativo continuam exigindo representação adequada antes da ativação; nenhuma
+fonte é truncada. P1/F2-09 permanecem abertos, sem nova UI ou deploy.

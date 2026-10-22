@@ -60,7 +60,7 @@ export function createBookRestoreStructureService({
     if (loaded.job.state !== 'content-verified') fail('failed-precondition', 'state-conflict');
     if (loaded.job.checkpoint !== request.expectedCheckpoint)
       fail('failed-precondition', 'checkpoint-conflict');
-    if (loaded.job.preparation?.phase === 'resources')
+    if (loaded.job.preparation && loaded.job.preparation.phase !== 'structure')
       fail('failed-precondition', 'structure-complete');
   }
   const opRef = (uid, operationId) =>
