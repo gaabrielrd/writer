@@ -1281,3 +1281,16 @@ removido após seus filhos estarem vazios. Certificação final inclui famílias
 Vínculo canônico repetido revalida prova/conteúdo e conserva journal/native intactos,
 pois no-op não avança updateTime do Firestore. Contagens derivadas, índices prontos,
 campos grandes e demais estágios continuam condições obrigatórias da ativação.
+
+## Reconciliação dos recursos preparados (P1 M30)
+
+[ADR 0074](decisions/0074-restored-resource-reconciliation.md) confere a seção pelo
+leitor verificado e autentica cada artefato/journal antes dos derivados.
+Ledger preserva legado e exclui Arquivo/sem capítulo/pai ausente do manuscrito.
+Agrupador conta cenas arquivadas; palavras somente ativas. Vínculos nativos
+únicos determinam referenceCount sem resolver origens externas.
+
+Preparação v4 separa cursor da seção e dos vínculos. Inventário v8 inclui controle
+tipado entity-index-control e conserva qualquer par idêntico sem no-op.
+O estado personas mantém raiz ausente/countReady false. A ativação futura exige
+prontidão e contagem atômicas junto da raiz, após autorização e certificação final.

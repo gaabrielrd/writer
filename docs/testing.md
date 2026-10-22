@@ -1344,3 +1344,17 @@ insere uma raiz sintética confere somente o contrato dos leitores existentes,
 sem demonstrar ativação pela restauração.
 [Entrega M29](entregas/2026-10-22-writer-v2-cenas-e-narrativa-na-preparacao.md)
 registra a evidência de Node/SDK e limites. Contagens e restauração final seguem pendentes.
+
+## Reconciliação privada dos recursos (P1 M30)
+
+```bash
+node --test functions/test/bookRestoreCounts.test.mjs
+```
+
+[Entrega M30](entregas/2026-10-22-writer-v2-reconciliacao-dos-recursos.md)
+registra contagens/ledger, Arquivo e cenas sem pai, chaves únicas, baseline e
+índice, replay/CAS, prova nativa, rollback/retry, ausência de controle portátil,
+compatibilidade JSON v1–v6 e corpos congelados grandes/pins.
+Harness de raiz sintética confere somente leitores, sem ativação real.
+SDK dedicado cobre disputa, no-op, limpeza v8 e fonte recriada.
+P1 continua aberto e validate integral reservado ao fechamento do grande bloco.

@@ -172,7 +172,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3, 4, 5, 6, 7].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -452,7 +452,13 @@ export function jobShape(uid, id, job) {
     preparationProgress(job.preparation);
     if (
       job.preparation.schemaVersion !==
-      (job.cleanupVersion === 7 ? 3 : job.cleanupVersion === 6 ? 2 : 1)
+      (job.cleanupVersion === 8
+        ? 4
+        : job.cleanupVersion === 7
+          ? 3
+          : job.cleanupVersion === 6
+            ? 2
+            : 1)
     )
       inconsistent();
     if (
@@ -483,16 +489,19 @@ export function preparationProgress(value) {
     ...(value?.schemaVersion >= 2
       ? ['loreCount', 'loreRelationCount', 'relationOffset', 'loreItemIndex']
       : []),
-    ...(value?.schemaVersion === 3 ? ['resourceStartIndex', 'resourceCounts'] : []),
+    ...(value?.schemaVersion >= 3 ? ['resourceStartIndex', 'resourceCounts'] : []),
+    ...(value?.schemaVersion === 4 ? ['counts'] : []),
   ]);
   if (
-    ![1, 2, 3].includes(value.schemaVersion) ||
+    ![1, 2, 3, 4].includes(value.schemaVersion) ||
     !(
       value.schemaVersion === 1
         ? ['structure', 'resources']
         : value.schemaVersion === 2
           ? ['resources', 'scenes']
-          : ['scenes', 'resource-counts']
+          : value.schemaVersion === 3
+            ? ['scenes', 'resource-counts']
+            : ['resource-counts', 'personas']
     ).includes(value.phase)
   )
     inconsistent();
@@ -502,7 +511,8 @@ export function preparationProgress(value) {
     if (
       (value.schemaVersion === 2 && value.loreItemIndex < value.itemIndex) ||
       value.relationOffset > value.loreRelationCount ||
-      (['scenes', 'resource-counts'].includes(value.phase) && value.relationOffset !== 0)
+      (['scenes', 'resource-counts', 'personas'].includes(value.phase) &&
+        value.relationOffset !== 0)
     )
       inconsistent();
   }
@@ -517,7 +527,7 @@ export function preparationProgress(value) {
   ])
     integer(value[key]);
   if (!Number.isFinite(new Date(value.timestamp).getTime())) inconsistent();
-  if (value.schemaVersion === 3) {
+  if (value.schemaVersion >= 3) {
     integer(value.resourceStartIndex);
     closed(value.resourceCounts, BOOK_RESOURCE_KINDS);
     let total = 0;
@@ -529,8 +539,38 @@ export function preparationProgress(value) {
       (value.phase === 'scenes'
         ? value.itemIndex > value.loreItemIndex
         : value.itemIndex !== value.loreItemIndex + 1) ||
-      total !==
-        value.itemIndex - value.resourceStartIndex - (value.phase === 'resource-counts' ? 1 : 0)
+      total !== value.itemIndex - value.resourceStartIndex - (value.phase === 'scenes' ? 0 : 1)
+    )
+      inconsistent();
+  }
+  if (value.schemaVersion === 4) {
+    const c = value.counts;
+    closed(c, [
+      'schemaVersion',
+      'step',
+      'itemIndex',
+      'sceneCount',
+      'linkCount',
+      'linkId',
+      'linkCursor',
+    ]);
+    if (c.schemaVersion !== 1 || !['scenes', 'links', 'finish', 'done'].includes(c.step))
+      inconsistent();
+    for (const key of ['itemIndex', 'sceneCount', 'linkCount']) integer(c[key]);
+    if (c.linkId !== null) restoreHash(c.linkId);
+    if (c.linkCursor !== null) restoreHash(c.linkCursor);
+    if (
+      (c.linkCount === 0
+        ? c.linkId !== null || c.linkCursor !== null
+        : c.linkId === null || c.linkCursor !== digest(['narrative-link', c.linkId])) ||
+      c.itemIndex < value.resourceStartIndex ||
+      c.itemIndex > value.itemIndex ||
+      c.sceneCount > value.resourceCounts.scene ||
+      c.linkCount > value.resourceCounts['narrative-link'] ||
+      (c.step === 'scenes'
+        ? c.itemIndex > value.loreItemIndex || c.linkCount !== 0
+        : c.itemIndex !== value.itemIndex || c.sceneCount !== value.resourceCounts.scene) ||
+      (value.phase === 'personas') !== (c.step === 'done')
     )
       inconsistent();
   }

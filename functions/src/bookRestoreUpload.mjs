@@ -1,6 +1,7 @@
 import { createBookRestoreStructureService } from './bookRestoreStructure.mjs';
 import { createBookRestoreLoreService } from './bookRestoreLore.mjs';
 import { createBookRestoreResourcesService } from './bookRestoreResources.mjs';
+import { createBookRestoreCountsService } from './bookRestoreCounts.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
   prepareBookRestoreBodyArtifactsCleanup,
@@ -61,6 +62,7 @@ const actions = {
   advanceBookRestoreStructure: ['content-verified'],
   advanceBookRestoreLore: ['content-verified'],
   advanceBookRestoreResources: ['content-verified'],
+  advanceBookRestoreCounts: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -274,11 +276,19 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         )
       )
         inconsistent();
+      if (
+        r.preparation.counts &&
+        ['itemIndex', 'sceneCount', 'linkCount'].some(
+          (key) => r.preparation.counts[key] > (loaded.job.preparation.counts?.[key] ?? 0),
+        )
+      )
+        inconsistent();
     } else if (
       [
         'advanceBookRestoreStructure',
         'advanceBookRestoreLore',
         'advanceBookRestoreResources',
+        'advanceBookRestoreCounts',
       ].includes(r.action)
     )
       inconsistent();
@@ -876,7 +886,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const counts = createBookRestoreCountsService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...counts,
     ...resources,
     ...lore,
     ...structure,

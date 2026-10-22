@@ -127,6 +127,7 @@
 - Prepare estrutura restaurada com journal nativo/cursor/recibo atômicos e clone por tentativa; preserve cleanup v4 e checkpoint fixado da validação, conforme ADR 0066.
 - Prepare lore próprio com varredura separada, relações paginadas e provas reconferidas no commit; preserve inventário v6, ausência da raiz e campos sem truncamento, conforme ADR 0072.
 - Prepare cenas/narrativa sob inventário v7, limpando filhos registrados antes dos pais; reutilize vínculos idênticos sem regravar o journal e reconcilie contagens antes da raiz, conforme ADR 0073.
+- Reconcilie restauração de livro pelo ledger e artefatos comprovados; preserve inventário v8, no-op integral e countReady false enquanto a raiz estiver ausente, conforme ADR 0074.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

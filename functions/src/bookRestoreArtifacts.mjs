@@ -32,6 +32,13 @@ const context = (loaded) => ({
   jobToken: loaded.view.jobToken,
 });
 function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
+  if (version >= 8 && kind === 'entity-index-control') {
+    if (id !== 'entity-scenes') inconsistent();
+    return {
+      ref: db.doc('books/' + loaded.job.bookId + '/narrativeControls/entity-scenes'),
+      journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+    };
+  }
   if (version >= 7) {
     const suffix = bookRestoreResourcePath(kind, id);
     if (suffix)
@@ -95,6 +102,7 @@ async function receipt(tx, db, loaded, id) {
       'advanceBookRestoreStructure',
       ...(loaded.job.cleanupVersion >= 6 ? ['advanceBookRestoreLore'] : []),
       ...(loaded.job.cleanupVersion >= 7 ? ['advanceBookRestoreResources'] : []),
+      ...(loaded.job.cleanupVersion >= 8 ? ['advanceBookRestoreCounts'] : []),
     ].includes(value.receipt?.action) ||
     value.receipt.operationId !== id ||
     value.receipt.checkpoint > loaded.job.checkpoint ||
@@ -147,7 +155,8 @@ export async function prepareBookRestoreArtifacts(
   version = loaded.job.cleanupVersion,
 ) {
   restoreId(operationId);
-  if (![4, 5, 6, 7].includes(version) || writes.length > (version >= 5 ? 136 : 8)) inconsistent();
+  if (![4, 5, 6, 7, 8].includes(version) || writes.length > (version >= 5 ? 136 : 8))
+    inconsistent();
   const effects = [],
     paths = new Set();
   let created = 0;
@@ -163,6 +172,10 @@ export async function prepareBookRestoreArtifacts(
     if (snapshot.exists || target.exists) {
       if (!snapshot.exists || !target.exists || !write.replace) inconsistent();
       first = (await authentic(tx, db, loaded, snapshot, target)).createdByOperationId;
+      if (version >= 8) {
+        const current = await tx.get(at.ref);
+        if (digest(current.data()) === digest(write.value)) continue;
+      }
       if (
         version >= 7 &&
         ['scene-reference', 'scene-lore-link', 'narrative-link'].includes(write.kind)
@@ -225,7 +238,10 @@ export async function assertBookRestoreArtifactsEmpty(
   }
 }
 export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) {
-  if (![4, 5, 6, 7].includes(loaded.job.cleanupVersion) || loaded.job.cleanupPhase !== 'artifacts')
+  if (
+    ![4, 5, 6, 7, 8].includes(loaded.job.cleanupVersion) ||
+    loaded.job.cleanupPhase !== 'artifacts'
+  )
     inconsistent();
   const page = await tx.get(
       db
@@ -303,7 +319,7 @@ export async function assertBookRestoreBodyNamespaceEmpty(tx, db, loaded) {
 }
 export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![5, 6, 7].includes(loaded.job.cleanupVersion) ||
+    ![5, 6, 7, 8].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'body-artifacts'
   )
     inconsistent();
@@ -388,7 +404,10 @@ export async function assertBookRestoreResourceNamespacesEmpty(tx, db, loaded) {
 }
 /** Drain journaled nested children even when their parent has not been prepared yet. */
 export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, limit) {
-  if (loaded.job.cleanupVersion !== 7 || loaded.job.cleanupPhase !== 'resource-children')
+  if (
+    ![7, 8].includes(loaded.job.cleanupVersion) ||
+    loaded.job.cleanupPhase !== 'resource-children'
+  )
     inconsistent();
   integer(limit, 1);
   const page = await tx.get(
@@ -428,4 +447,18 @@ export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, 
       cleanupPhase: selected.length === 0 ? 'body-artifacts' : 'resource-children',
     },
   };
+}
+
+/** Read only artifacts born with their journal/receipt and last updated together. */
+export async function readBookRestoreArtifact(tx, db, loaded, kind, id, { optional = false } = {}) {
+  const at = address(db, loaded, kind, id),
+    [target, journal] = await Promise.all([tx.get(at.ref), tx.get(at.journal)]);
+  if (!target.exists && !journal.exists && optional) return null;
+  await authentic(tx, db, loaded, journal, target);
+  return { ref: at.ref, value: target.data() };
+}
+export async function assertBookRestoreEntityIndexEmpty(tx, db, loaded) {
+  const at = address(db, loaded, 'entity-index-control', 'entity-scenes', 8),
+    [target, journal] = await Promise.all([readWorkMetadata(tx, at.ref, []), tx.get(at.journal)]);
+  if (target.exists || journal.exists) inconsistent();
 }

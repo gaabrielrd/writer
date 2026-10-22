@@ -348,3 +348,8 @@ P1 M29 prepara [cenas e narrativa](docs/tasks/writer-v2/execucao/62-cenas-e-narr
 corpos, planos, fontes, referências/índices, arcos, marcos e cronologia. Inventário
 v7 remove filhos antes dos pais, inclusive após interrupção anterior ao cabeçalho.
 A cópia continua sem raiz; reconciliação de contagens e fluxo final seguem pendentes.
+
+P1 M30 acrescenta [reconciliação dos recursos](docs/tasks/writer-v2/execucao/63-reconciliacao-dos-recursos.md):
+palavras pelo ledger, contagens de agrupadores e vínculos únicos, com índice
+estrutural pronto e inventário v8. A cópia continua sem raiz e countReady false;
+personas e demais condições de ativação permanecem pendentes.

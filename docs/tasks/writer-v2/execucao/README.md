@@ -503,3 +503,15 @@ resource-counts; inventário v7 limpa filhos antes dos pais, mesmo sem cabeçalh
 foi corrigido e o cenário afetado repetido; conteúdo/journal idênticos são reutilizados.
 Reconciliação, campos grandes, personas, histórico/rascunho/capa, autorização/
 ativação e host/UI/roundtrip/validate seguem P1/F2-09. Somente local; CI ignorada.
+
+### P1 M30 — reconciliação dos recursos
+
+O [contrato 63](63-reconciliacao-dos-recursos.md) recalcula cenas/agrupadores/ledger
+e vínculos únicos, conferindo artefatos antes de preparar o índice. Progresso v4
+termina em personas com raiz ausente/countReady false; inventário v8 preserva
+no-op integral e limpeza compatível.
+[Evidência M30](../../../entregas/2026-10-22-writer-v2-reconciliacao-dos-recursos.md):
+175 Node e dois cenários SDK distintos positivos. Corrupção Unicode na expectativa
+do teste foi corrigida e apenas o cenário afetado repetido.
+Personas, histórico/rascunho/capa, campos grandes, autorização/ativação e
+host/UI/roundtrip/validate continuam em P1/F2-09. Somente local; CI ignorada.
