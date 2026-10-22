@@ -1290,3 +1290,16 @@ parte ocupada, mantendo pin anterior e ausência de recibo; sem ativação P1.
 A fixture de nascimento nativo é necessária no teste legado de Unicode agora que
 restaurar grava corpos físicos. Não tratar a criação por fixture como jornada
 completa de restauração. Coleta física e validate integral continuam pendentes.
+
+## Coleta e exclusão dos corpos (P1 M26)
+
+```bash
+node --test functions/test/bookChapterCleanup.test.mjs
+```
+
+[Entrega M26](entregas/2026-10-22-writer-v2-coleta-e-exclusao-dos-corpos.md):
+100 Node e três SDK positivos, cobrindo máscaras/lotes, continuidade, versões
+referenciadas, eventos repetidos/concorrentes, ABA e rollback, inventário v2 e
+finish legado. O SDK testa o handler com snapshots nativos e transações reais;
+não comprova entrega Eventarc ou implantação. Metadados conferem pertencimento,
+sem download de prosa na limpeza. Validate integral continua no fechamento P1.

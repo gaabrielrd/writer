@@ -16,7 +16,8 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https';
 import { onSchedule } from 'firebase-functions/v2/scheduler';
-import { onDocumentDeleted } from 'firebase-functions/v2/firestore';
+import { onDocumentDeleted, onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { createBookChapterCleanupHandler } from './bookChapterCleanup.mjs';
 import * as functionsV1 from 'firebase-functions/v1';
 import { defineSecret, defineString, defineInt } from 'firebase-functions/params';
 import { createImageLibraryService } from './imageLibrary.mjs';
@@ -128,6 +129,17 @@ export const editorChat = onCall(
       );
     }
   },
+);
+export const collectUnusedBookChapterText = onDocumentUpdated(
+  {
+    document: 'books/{bookId}/bookTextBodies/{bodyId}',
+    region: 'us-central1',
+    retry: true,
+    maxInstances: 3,
+    concurrency: 1,
+    memory: '256MiB',
+  },
+  createBookChapterCleanupHandler({ db }),
 );
 export const cleanupDeletedChapterChat = onDocumentDeleted(
   { document: 'books/{bookId}/chapters/{chapterId}', region: 'us-central1', retry: true },

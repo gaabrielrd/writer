@@ -327,3 +327,8 @@ P1 M25 integra [escrita e versões dos capítulos grandes](docs/tasks/writer-v2/
 texto lógico com CAS e histórico por referência, incluindo versão anterior à
 restauração e preservação após excluir capítulo. Coleta física, exclusão integral,
 conversão/chat e demais recursos continuam obrigatórios antes de ativar a cópia.
+
+P1 M26 acrescenta [coleta física e exclusão dos corpos](docs/tasks/writer-v2/execucao/59-coleta-e-exclusao-dos-corpos.md):
+worker preparado para gerações sem referências e inventário v2 de exclusão do
+livro, com retomada de jobs antigos. Não houve deploy. Conversão/chat e fluxo
+completo de restauração continuam nas próximas tarefas.

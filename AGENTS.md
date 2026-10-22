@@ -231,3 +231,12 @@ concluído estiverem satisfeitos. A lista fica em
   capítulo não exclui versões e a revogação da versão libera seu pin uma única vez.
 - Não reabra corpo com pins zero; mantenha unreferenced até coleta comprovada.
   Integre coleta, inventário de exclusão, conversão/chat antes da ativação.
+
+## Coleta e exclusão de corpos de capítulo
+
+- Colete somente unreferenced/pins zero com origem nativa fixada pelo evento,
+  por máscaras e lotes limitados; confirme gcRevision com os deletes (ADR 0070).
+- Preserve filhos antes do pai, gerações referenciadas e compatibilidade dos jobs
+  de exclusão: inventário v2 inclui text-bodies e reconfere corpos no finish.
+- Implante leitores/coletor/exclusão antes dos produtores; drene invocações antigas.
+  Não habilite novos corpos com handler antigo de exclusão ainda em execução.

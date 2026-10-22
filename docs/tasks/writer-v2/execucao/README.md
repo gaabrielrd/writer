@@ -459,3 +459,14 @@ de 8 MiB e rollback por parte ocupada. Sem ativação ou deploy.
 Coleta física/exclusão integral/conversão/chat, demais recursos/campos grandes,
 personas/mídia, autorização e host/UI/roundtrip/validate seguem P1/F2-09.
 Somente commit local; CI ignorada.
+
+### P1 M26 — coleta e exclusão física
+
+O [contrato 59](59-coleta-e-exclusao-dos-corpos.md) prepara worker por evento,
+lotes/máscaras e exclusão v2 com finish legado compatível.
+[Evidência M26](../../../entregas/2026-10-22-writer-v2-coleta-e-exclusao-dos-corpos.md):
+100 Node e três SDK distintos positivos. Worker ainda sem deploy; entrega
+Eventarc não foi verificada. Implantação exige drenar handlers antigos antes de
+habilitar produtores do formato. Conversão/chat, demais recursos/campos grandes,
+personas/mídia, autorização/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
+Somente commit local; CI ignorada.

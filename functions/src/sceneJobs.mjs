@@ -8,6 +8,35 @@ import {
   digest,
 } from './sceneContracts.mjs';
 import { sceneRankBetween, rebalancedSceneRank } from './sceneRanks.mjs';
+import { BOOK_CHAPTER_BODY_FIELDS, prepareBookChapterBodyCleanup } from './bookChapterCleanup.mjs';
+
+const BOOK_DELETE_FLAT_PHASES = [
+  'chapters',
+  'lore',
+  'acts',
+  'sceneControls',
+  'sceneSources',
+  'sceneJobs',
+  'timelineEvents',
+  'narrativeLinks',
+  'sceneLoreLinks',
+  'narrativeControls',
+  'narrativeJobs',
+  'workProgress',
+  'workWordSources',
+  'workWordGroups',
+  'workChecklist',
+  'workVersionBodies',
+  'workVersions',
+];
+const BOOK_DELETE_PHASES = [
+  'scenes',
+  'revisions',
+  'arcs',
+  ...BOOK_DELETE_FLAT_PHASES,
+  'text-bodies',
+  'finish',
+];
 
 const progress = (record) => ({
   complete: record.complete ?? false,
@@ -260,6 +289,10 @@ export function addSceneJobs(api, helpers) {
           sceneFail('failed-precondition', 'Checkpoint da exclusão indisponível.');
         previous = checkpoint;
       }
+      if (previous?.kind === 'delete-book' && !BOOK_DELETE_PHASES.includes(previous.phase))
+        sceneFail('failed-precondition', 'Fase da exclusão indisponível.');
+      if (previous && ![undefined, 1, 2].includes(previous.cleanupVersion))
+        sceneFail('failed-precondition', 'Versão da exclusão indisponível.');
       if (!rootSnapshot.exists && previous?.complete) return progress(previous);
       const p = await project(context, tx, true),
         publicRoot = await tx.get(db.doc(`publicBooks/${context.target.id}`));
@@ -277,7 +310,10 @@ export function addSceneJobs(api, helpers) {
         ...previous,
       };
       delete state.fingerprint;
+      state.cleanupVersion = 2;
       if (state.complete) return progress(state);
+      if (!Number.isSafeInteger(state.processed) || state.processed < 0)
+        sceneFail('failed-precondition', 'Contagem da exclusão inválida.');
       let deleted = [];
       if (state.phase === 'scenes' || state.phase === 'revisions' || state.phase === 'arcs') {
         const base =
@@ -303,6 +339,8 @@ export function addSceneJobs(api, helpers) {
                 ? ['milestones']
                 : ['chapters', 'lore', 'acts'];
           const childPhase = state.childPhase ?? 0;
+          if (!Number.isInteger(childPhase) || childPhase < 0 || childPhase > children.length)
+            sceneFail('failed-precondition', 'Fase da exclusão indisponível.');
           if (childPhase < children.length) {
             const page = await tx.get(
               db
@@ -317,53 +355,65 @@ export function addSceneJobs(api, helpers) {
             state.childPhase = 0;
           }
         }
+      } else if (state.phase === 'text-bodies') {
+        const bodies = await tx.get(
+          db
+            .collection(context.path + '/bookTextBodies')
+            .orderBy('__name__')
+            .select(...BOOK_CHAPTER_BODY_FIELDS)
+            .limit(1),
+        );
+        if (!bodies.docs.length) state.phase = 'finish';
+        else {
+          const plan = await prepareBookChapterBodyCleanup(tx, db, {
+            uid,
+            bookId: context.target.id,
+            body: bodies.docs[0],
+            limit,
+            requireUnreferenced: false,
+          });
+          deleted = plan.remove;
+        }
       } else {
-        const phases = [
-          'chapters',
-          'lore',
-          'acts',
-          'sceneControls',
-          'sceneSources',
-          'sceneJobs',
-          'timelineEvents',
-          'narrativeLinks',
-          'sceneLoreLinks',
-          'narrativeControls',
-          'narrativeJobs',
-          'workProgress',
-          'workWordSources',
-          'workWordGroups',
-          'workChecklist',
-          'workVersionBodies',
-          'workVersions',
-        ];
+        const phases = BOOK_DELETE_FLAT_PHASES;
         const at = phases.indexOf(state.phase);
         if (at >= 0) {
           const page = await tx.get(
             db.collection(`${context.path}/${state.phase}`).orderBy('__name__').limit(limit),
           );
           deleted = page.docs.map((item) => item.ref);
-          if (page.docs.length < limit) state.phase = phases[at + 1] ?? 'finish';
-        } else {
-          let universe, link;
-          if (p.universeId) {
-            universe = await tx.get(db.doc(`universes/${sceneId(p.universeId)}`));
-            link = await tx.get(db.doc(`${universe.ref.path}/books/${context.target.id}`));
+          if (page.docs.length < limit) state.phase = phases[at + 1] ?? 'text-bodies';
+        } else if (state.phase === 'finish') {
+          const remaining = await tx.get(
+            db
+              .collection(context.path + '/bookTextBodies')
+              .select()
+              .limit(1),
+          );
+          if (remaining.docs.length) state.phase = 'text-bodies';
+          else {
+            let universe, link;
+            if (p.universeId) {
+              universe = await tx.get(db.doc(`universes/${sceneId(p.universeId)}`));
+              link = await tx.get(db.doc(`${universe.ref.path}/books/${context.target.id}`));
+            }
+            if (link?.exists) {
+              tx.delete(link.ref);
+              if (universe.exists)
+                tx.update(universe.ref, {
+                  bookCount: Math.max(0, (universe.data().bookCount ?? 0) - 1),
+                });
+            }
+            tx.set(db.doc(`deletedBooks/${context.target.id}`), {
+              deletedAt: sceneDate(now, p.updatedAt ?? 0),
+            });
+            tx.delete(context.ref);
+            state.complete = true;
           }
-          if (link?.exists) {
-            tx.delete(link.ref);
-            if (universe.exists)
-              tx.update(universe.ref, {
-                bookCount: Math.max(0, (universe.data().bookCount ?? 0) - 1),
-              });
-          }
-          tx.set(db.doc(`deletedBooks/${context.target.id}`), {
-            deletedAt: sceneDate(now, p.updatedAt ?? 0),
-          });
-          tx.delete(context.ref);
-          state.complete = true;
-        }
+        } else sceneFail('failed-precondition', 'Fase da exclusão indisponível.');
       }
+      if (!Number.isSafeInteger(state.processed + deleted.length))
+        sceneFail('failed-precondition', 'Contagem da exclusão inválida.');
       for (const ref of deleted) tx.delete(ref);
       state.processed += deleted.length;
       if (!state.complete) tx.update(context.ref, { sceneDeletionOperationId: effective.id });

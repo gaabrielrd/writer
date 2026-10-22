@@ -283,3 +283,20 @@ conferidas e Hosting publicado. Os 15 arquivos coincidem com o build local;
 a abertura anônima e a rota de login passaram no Chromium.
 A implantação não ativa os workflows acima. Consulte o
 [registro e os limites da verificação](entregas/2026-10-11-deploy-atos-servicos.md).
+
+## Corpos grandes de capítulo — implantação futura P1
+
+[ADR 0070](decisions/0070-book-chapter-body-cleanup.md) prepara o trigger
+collectUnusedBookChapterText (Firestore onDocumentUpdated), leitores e exclusão v2.
+Nenhuma dessas mudanças foi implantada nesta etapa.
+
+Antes de liberar os escritores que criam bookTextBodies: implantar leitores,
+deleteSceneBook v2 e coletor; confirmar a revisão ativa e drenar invocações antigas
+de exclusão. Depois, habilitar produtores e clientes compatíveis. Não combinar
+formato novo com handler antigo que ainda não conhece a fase text-bodies.
+Conversão/chat e demais integrações P1 ainda são gates antes dessa liberação.
+
+A prova SDK local cobre transações e o handler, não entrega Eventarc nem IAM
+produtivos. Conferir evento real/continuidade antes de declarar coleta operacional.
+Qualquer deploy continua exigindo instrução própria; desenvolvimento mantém
+commits locais e ignora CI remota.

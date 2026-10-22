@@ -1229,3 +1229,17 @@ mantendo resumo/API e v1. Restauração prefere geração existente e confirma v
 anterior, texto, ledger, referências e recibo juntos. Exclusão de versão libera
 pin na revogação uma vez; capítulo removido não retira as versões.
 Coleta física, exclusão integral, conversão/chat e ativação ainda exigem integração.
+
+## Coleta e exclusão física dos corpos (P1 M26)
+
+[ADR 0070](decisions/0070-book-chapter-body-cleanup.md) acrescenta bookChapterCleanup:
+helper limitado e mascarado, serviço e handler onDocumentUpdated. Cada lote
+remove até 50 partes de corpo unreferenced/pins zero e atualiza gcRevision
+atomicamente para a próxima execução; cabeçalho somente após página vazia.
+Evento fixa nascimento e reautoriza raiz/corpo, preservando gerações referenciadas.
+
+deleteSceneBook usa inventário v2, fase text-bodies e certificação final. Jobs
+antigos preservam cursor e passam a drenar corpos antes da raiz. Worker normal
+adia raiz ausente/em exclusão; o protocolo integral drena todos os corpos próprios
+após revogar o livro. Nenhum índice/Rule/callable novo; trigger ainda não implantado.
+Leitores/coletor/exclusão devem preceder produtores, drenando invocações antigas.
