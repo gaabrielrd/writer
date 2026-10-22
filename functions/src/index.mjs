@@ -315,7 +315,9 @@ const callable = (method, secrets = []) =>
     {
       region: 'us-central1',
       enforceAppCheck: true,
-      timeoutSeconds: method === 'analyzeChapterLore' ? 540 : 120,
+      timeoutSeconds: ['analyzeChapterLore', 'advanceBookRestoreValidation'].includes(method)
+        ? 540
+        : 120,
       memory: '512MiB',
       maxInstances: 5,
       secrets,
@@ -740,3 +742,5 @@ export const getBookRestoreRecoveryKey = onRequest(
 );
 
 export const advanceBookRestoreIntegrity = callable('advanceBookRestoreIntegrity');
+
+export const advanceBookRestoreValidation = callable('advanceBookRestoreValidation');

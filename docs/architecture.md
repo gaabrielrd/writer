@@ -1084,3 +1084,15 @@ framing antes de compor content-only; resultado interno é semantic-only.
 Checkpoint/índice são controle confiável do host, sem autorização própria.
 Veja [ADR 0059](decisions/0059-book-content-checkpoints.md).
 Persistência/parser servidor, preparação e ativação continuam em P1.
+
+## Validação servidor do contêiner — P1 M16
+
+Container/Package agora compartilham passos e cursores com seus generators.
+advanceBookRestoreValidation liga fonte M14 e núcleo M15 a índice/checkpoint
+privados, preparando uma unidade e reconferindo leituras nativas na transação
+final. Índice/item/checkpoint/recibo nascem juntos; índice imutável e checkpoint
+recusam ABA por vínculo nativo com seus recibos.
+Cleanup v3 acrescenta validationIndex/Items/State, com inventário e EOF limitados.
+content-verified não cria livro nem reautoriza universo. JSON legado servidor,
+remapeamento/mídia, ativação e host ainda pendentes.
+Veja [ADR 0060](decisions/0060-book-restore-server-validation.md).

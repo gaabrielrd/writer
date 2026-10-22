@@ -1,3 +1,4 @@
+import { VALIDATION_COLLECTIONS } from './bookRestoreValidationCleanup.mjs';
 import { createSHA256 } from 'hash-wasm';
 import { digest } from './sceneContracts.mjs';
 import {
@@ -179,7 +180,8 @@ export function createBookRestoreIntegrityService({
 /** v2 cleanup only; writes are committed by the original job service with its receipt. */
 export async function prepareBookRestoreIntegrityCleanup(tx, db, loaded, limit) {
   const job = loaded.job;
-  if (job.cleanupVersion !== 2 || !['proofs', 'state'].includes(job.cleanupPhase)) inconsistent();
+  if (![2, 3].includes(job.cleanupVersion) || !['proofs', 'state'].includes(job.cleanupPhase))
+    inconsistent();
   if (job.cleanupPhase === 'proofs') {
     const page = await tx.get(
       db
@@ -230,6 +232,17 @@ export async function prepareBookRestoreIntegrityCleanup(tx, db, loaded, limit) 
   ]);
   if (chunks.docs.length || proofs.docs.length || key.exists || states.docs.length > 1)
     inconsistent();
+  if (job.cleanupVersion === 3) {
+    for (const name of VALIDATION_COLLECTIONS) {
+      const page = await tx.get(
+        db
+          .collection(loaded.ref.path + '/' + name)
+          .select('schemaVersion')
+          .limit(1),
+      );
+      if (page.docs.length) inconsistent();
+    }
+  }
   for (const item of states.docs) {
     if (item.id !== 'current') inconsistent();
     stateContext(item.data(), loaded);

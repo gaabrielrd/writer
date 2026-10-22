@@ -1,4 +1,4 @@
-import { BookBackupFormatError, decodeBookBackup } from './bookBackupContainer.mjs';
+import { BookBackupFormatError, readBookBackupFrame } from './bookBackupContainer.mjs';
 export const BOOK_PACKAGE_FORMAT = 'writer-book-archive';
 export const BOOK_PACKAGE_VERSION = 1;
 export const BOOK_PACKAGE_SECTIONS = Object.freeze([
@@ -171,58 +171,124 @@ function header(record) {
     sections: BOOK_PACKAGE_SECTIONS,
   });
 }
-/** Exposed data remain provisional until the returned report proves footer, seal and exact EOF. */
-export async function* readBookBackupPackage(source, options = {}) {
-  const stream = decodeBookBackup(source, options),
-    counts = createBookPackageCounts();
-  let complete = false,
-    manifest,
-    ended = false,
-    sectionIndex = -1;
-  try {
-    const first = await stream.next();
-    if (first.done) invalid();
-    manifest = header(first.value);
-    yield { type: 'manifest', manifest };
-    for (;;) {
-      options.signal?.throwIfAborted();
-      const next = await stream.next();
-      if (next.done) {
-        if (!ended || !next.value) invalid();
-        complete = true;
-        return Object.freeze({
-          validation: 'envelope-only',
-          manifest,
-          sections: countsCopy(counts),
-          seal: Object.freeze({ ...next.value }),
-        });
-      }
-      const record = next.value;
-      if (ended) invalid();
-      if (record.kind === 'book-package-end') {
-        if (record.id !== manifest.bookId || sectionIndex !== BOOK_PACKAGE_SECTIONS.length - 1)
-          invalid();
-        const parsed = control(record);
-        if (
-          !closed(parsed.value, ['schemaVersion', 'sections']) ||
-          parsed.value.schemaVersion !== 1 ||
-          JSON.stringify(countsCopy(parsed.value.sections)) !==
-            JSON.stringify(countsCopy(counts)) ||
-          parsed.text !== decoder.decode(bookPackageEnd(manifest.bookId, counts).payload)
-        )
-          invalid();
-        ended = true;
-        continue;
-      }
-      const section = bookPackageSection(record.kind),
-        index = BOOK_PACKAGE_SECTIONS.indexOf(section);
-      if (!section || index < sectionIndex || index > sectionIndex + 1) invalid();
-      sectionIndex = index;
-      countBookPackageRecord(counts, section, record);
-      yield { type: 'record', section, record };
+/** A bounded frame/package transition. Cursor must come from the trusted host. */
+export async function readBookPackageStep(source, cursor = null, options = {}) {
+  let state;
+  if (cursor === null)
+    state = {
+      schemaVersion: 1,
+      container: null,
+      manifest: null,
+      counts: createBookPackageCounts(),
+      sectionIndex: -1,
+      ended: false,
+      done: false,
+    };
+  else {
+    try {
+      state = structuredClone(cursor);
+    } catch {
+      invalid();
     }
-  } finally {
-    if (!complete) await stream.return(undefined);
+    if (
+      !closed(state, [
+        'schemaVersion',
+        'container',
+        'manifest',
+        'counts',
+        'sectionIndex',
+        'ended',
+        'done',
+      ]) ||
+      state.schemaVersion !== 1 ||
+      !Number.isInteger(state.sectionIndex) ||
+      state.sectionIndex < -1 ||
+      state.sectionIndex >= BOOK_PACKAGE_SECTIONS.length ||
+      typeof state.ended !== 'boolean' ||
+      state.done !== false
+    )
+      invalid();
+    state.counts = structuredClone(countsCopy(state.counts, false));
+    if (state.manifest === null) {
+      if (
+        state.container !== null ||
+        state.sectionIndex !== -1 ||
+        state.ended ||
+        Object.values(state.counts).some((v) => v.records || v.payloadBytes)
+      )
+        invalid();
+    } else {
+      if (
+        JSON.stringify(state.manifest) !==
+        JSON.stringify(header(bookPackageHeader(state.manifest.bookId)))
+      )
+        invalid();
+      if (
+        !state.container ||
+        state.container.records !==
+          1 +
+            (state.ended ? 1 : 0) +
+            Object.values(state.counts).reduce((sum, v) => sum + v.records, 0)
+      )
+        invalid();
+      if (state.ended && state.sectionIndex !== BOOK_PACKAGE_SECTIONS.length - 1) invalid();
+    }
+  }
+  const next = await readBookBackupFrame(source, state.container, options);
+  state.container = next.cursor;
+  if (state.manifest === null) {
+    if (next.seal || !next.record) invalid();
+    state.manifest = header(next.record);
+    return { cursor: state, event: { type: 'manifest', manifest: state.manifest } };
+  }
+  if (next.seal) {
+    if (!state.ended) invalid();
+    state.done = true;
+    return {
+      cursor: state,
+      report: Object.freeze({
+        validation: 'envelope-only',
+        manifest: header(bookPackageHeader(state.manifest.bookId)),
+        sections: countsCopy(state.counts),
+        seal: Object.freeze({ ...next.seal }),
+      }),
+    };
+  }
+  const record = next.record;
+  if (state.ended) invalid();
+  if (record.kind === 'book-package-end') {
+    if (
+      record.id !== state.manifest.bookId ||
+      state.sectionIndex !== BOOK_PACKAGE_SECTIONS.length - 1
+    )
+      invalid();
+    const parsed = control(record);
+    if (
+      !closed(parsed.value, ['schemaVersion', 'sections']) ||
+      parsed.value.schemaVersion !== 1 ||
+      JSON.stringify(countsCopy(parsed.value.sections)) !==
+        JSON.stringify(countsCopy(state.counts)) ||
+      parsed.text !== decoder.decode(bookPackageEnd(state.manifest.bookId, state.counts).payload)
+    )
+      invalid();
+    state.ended = true;
+    return { cursor: state, event: { type: 'footer' } };
+  }
+  const section = bookPackageSection(record.kind),
+    index = BOOK_PACKAGE_SECTIONS.indexOf(section);
+  if (!section || index < state.sectionIndex || index > state.sectionIndex + 1) invalid();
+  state.sectionIndex = index;
+  countBookPackageRecord(state.counts, section, record);
+  return { cursor: state, event: { type: 'record', section, record }, span: next.span };
+}
+/** The generator and server checkpoints share exactly the same framing rules. */
+export async function* readBookBackupPackage(source, options = {}) {
+  let cursor = null;
+  for (;;) {
+    const step = await readBookPackageStep(source, cursor, options);
+    cursor = step.cursor;
+    if (step.report) return step.report;
+    if (step.event.type !== 'footer') yield step.event;
   }
 }
 export async function inspectBookBackupPackage(source, options = {}) {

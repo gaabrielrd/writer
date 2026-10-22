@@ -350,3 +350,13 @@ Resultado interno semantic-only não autoriza framing nem restauração.
 Parser e coordenação de persistência servidor são a próxima ligação necessária;
 remapeamento/mídia, ativação, host/UI/roundtrip e validate seguem em P1.
 Somente commits locais, sem CI/push.
+
+### P1 M16 — validação servidor do contêiner novo
+
+O [contrato 49](49-validacao-servidor-do-conteiner.md) liga cursores e núcleo à
+fonte/índice privados, reconferindo leituras e confirmando estado/efeitos/recibo
+atomicamente. [Entrega M16](../../../entregas/2026-10-22-writer-v2-validacao-servidor-do-conteiner.md):
+104 Node distintos, 46 cliente, nove SDK e 11 cenários nativos positivos.
+Cleanup v3 inclui índice/itens/estado; content-verified não ativa livro.
+JSON v1–v6 no servidor é a próxima etapa, ainda obrigatória em P1 junto de
+remapeamento/mídia, ativação, host/UI/roundtrip e validate. Somente local, sem CI.

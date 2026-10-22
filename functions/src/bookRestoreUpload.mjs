@@ -1,3 +1,5 @@
+import { createBookRestoreValidationService } from './bookRestoreValidation.mjs';
+import { prepareBookRestoreValidationCleanup } from './bookRestoreValidationCleanup.mjs';
 import {
   createBookRestoreIntegrityService,
   prepareBookRestoreIntegrityCleanup,
@@ -27,6 +29,8 @@ import {
   bornEqual,
   progress,
   integrityProgress,
+  validationProgress,
+  restoreValidationMeta,
   BOOK_RESTORE_SEED,
   BOOK_RESTORE_CHUNK_BYTES,
   chunkChain,
@@ -43,6 +47,7 @@ const actions = {
   cancelBookRestore: ['cancelling'],
   advanceBookRestoreCleanup: ['cancelling', 'cancelled'],
   advanceBookRestoreIntegrity: ['checking', 'bytes-verified', 'rejected'],
+  advanceBookRestoreValidation: ['validating', 'content-verified', 'content-rejected'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -136,7 +141,8 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       uploadedChunks: job.uploadedChunks,
       uploadedBytes: job.uploadedBytes,
       cleanedChunks: job.cleanedChunks,
-      ...(job.cleanupVersion === 2 ? { integrity: integrityProgress(job) } : {}),
+      ...(job.cleanupVersion >= 2 ? { integrity: integrityProgress(job) } : {}),
+      ...(job.cleanupVersion === 3 ? { validation: job.validationMeta } : {}),
     };
   }
   function writeOp(tx, uid, id, action, request, job, token, sequence = null) {
@@ -176,7 +182,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         'uploadedBytes',
         'cleanedChunks',
       ],
-      ['integrity'],
+      ['integrity', 'validation'],
     );
     if (
       r.schemaVersion !== 1 ||
@@ -203,10 +209,28 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         r.integrity.checkedChunks > loaded.view.integrity.checkedChunks ||
         r.integrity.checkedBytes > loaded.view.integrity.checkedBytes ||
         ![null, 'file-hash-mismatch', 'upload-chain-mismatch'].includes(r.integrity.failure) ||
-        !['chunks', 'proofs', 'state', 'done'].includes(r.integrity.cleanupPhase)
+        ![
+          'chunks',
+          'proofs',
+          'state',
+          'done',
+          'validation-index',
+          'validation-items',
+          'validation-state',
+        ].includes(r.integrity.cleanupPhase)
       )
         inconsistent();
     } else if (r.action === 'advanceBookRestoreIntegrity') inconsistent();
+    if (r.validation !== undefined) {
+      restoreValidationMeta(r.validation);
+      if (
+        !loaded.job.validationMeta ||
+        ['frames', 'items', 'checkedChunks'].some(
+          (k) => r.validation[k] > loaded.job.validationMeta[k],
+        )
+      )
+        inconsistent();
+    } else if (r.action === 'advanceBookRestoreValidation') inconsistent();
     if (r.action === 'startBookRestore') {
       if (
         r.expectedCheckpoint !== null ||
@@ -469,6 +493,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     uploadedBytes: job.uploadedBytes,
     cleanedChunks: job.cleanedChunks,
     integrity: integrityProgress(job),
+    validation: validationProgress(job),
     recoveryReady: job.recoveryReady,
     updatedAt: job.updatedAt,
   });
@@ -497,9 +522,16 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         op = await tx.get(opRef(uid, request.operationId));
       if (op.exists) return confirmed(loaded, readOp(op, uid, id, fingerprint, loaded));
       if (
-        !['uploading', 'uploaded', 'checking', 'bytes-verified', 'rejected'].includes(
-          loaded.job.state,
-        )
+        ![
+          'uploading',
+          'uploaded',
+          'checking',
+          'bytes-verified',
+          'rejected',
+          'validating',
+          'content-verified',
+          'content-rejected',
+        ].includes(loaded.job.state)
       )
         fail('failed-precondition', 'state-conflict');
       const key = await tx.get(keyRef(uid, id));
@@ -524,8 +556,10 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       if (loaded.job.state !== 'cancelling') fail('failed-precondition', 'state-conflict');
       if (request.expectedCheckpoint !== loaded.job.checkpoint)
         fail('failed-precondition', 'checkpoint-conflict');
-      if (loaded.job.cleanupVersion === 2 && loaded.job.cleanupPhase !== 'chunks') {
-        const prepared = await prepareBookRestoreIntegrityCleanup(tx, db, loaded, request.limit);
+      if (loaded.job.cleanupVersion >= 2 && loaded.job.cleanupPhase !== 'chunks') {
+        const prepared = loaded.job.cleanupPhase.startsWith('validation-')
+          ? await prepareBookRestoreValidationCleanup(tx, db, loaded, request.limit)
+          : await prepareBookRestoreIntegrityCleanup(tx, db, loaded, request.limit);
         const record = next(loaded.job, request, prepared.patch);
         for (const ref of prepared.remove) tx.delete(ref);
         tx.update(loaded.ref, record);
@@ -581,8 +615,15 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
           page.docs.length <= request.limit && loaded.job.cleanupVersion === 1
             ? 'cancelled'
             : 'cancelling',
-        ...(loaded.job.cleanupVersion === 2
-          ? { cleanupPhase: page.docs.length <= request.limit ? 'proofs' : 'chunks' }
+        ...(loaded.job.cleanupVersion >= 2
+          ? {
+              cleanupPhase:
+                page.docs.length <= request.limit
+                  ? loaded.job.cleanupVersion === 3
+                    ? 'validation-index'
+                    : 'proofs'
+                  : 'chunks',
+            }
           : {}),
       });
       if (record.cleanedChunks > record.uploadedChunks) inconsistent();
@@ -611,7 +652,18 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     return db.runTransaction(async (tx) => {
       const loaded = await load(tx, uid, id, token),
         job = loaded.job;
-      if (!['uploading', 'uploaded', 'checking', 'bytes-verified', 'rejected'].includes(job.state))
+      if (
+        ![
+          'uploading',
+          'uploaded',
+          'checking',
+          'bytes-verified',
+          'rejected',
+          'validating',
+          'content-verified',
+          'content-rejected',
+        ].includes(job.state)
+      )
         fail('failed-precondition', 'state-conflict');
       if (job.reviewHash !== reviewHash) fail('failed-precondition', 'review-mismatch');
       if (expected !== undefined && job.keyId !== expected)
@@ -715,7 +767,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const validation = createBookRestoreValidationService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...validation,
     ...integrity,
     async openVerifiedBookRestoreSource(uid, input) {
       authorize(uid);

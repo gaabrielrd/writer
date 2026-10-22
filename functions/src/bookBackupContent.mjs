@@ -72,55 +72,23 @@ async function validateRecordContent(stream, { index, hash, signal } = {}, legac
       bytes.set(payload, offset);
       offset += payload.length;
     }
-    let text, value;
-    try {
-      text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
-      value = JSON.parse(text);
-    } catch {
-      bad();
-    }
-    if (JSON.stringify(value) !== text) bad();
-    return { record: first, value };
+    return { record: first, value: decodeBookContentJSON(bytes) };
   }
   async function raw(kind, id, manifest, binary = false) {
-    const hasher = hash.create(),
-      decoder = binary ? null : new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
+    const hasher = hash.create();
     let bytes = 0;
     try {
       for (let part = 0; part < manifest.chunkCount; part++) {
         check();
-        if (!current || current.kind !== kind || current.id !== id || current.part !== part) bad();
-        const payload = current.payload;
-        if (
-          !binary &&
-          (manifest.byteLength === 0
-            ? manifest.chunkCount !== 1 || payload.length !== 0
-            : payload.length === 0 || (part < manifest.chunkCount - 1 && payload.length < 65533))
-        )
-          bad();
-        if (
-          binary &&
-          (payload.length !== Math.min(65536, manifest.byteLength - part * 65536) ||
-            (part === 0 &&
-              Array.from(payload.subarray(0, 8), (v) => v.toString(16).padStart(2, '0')).join(
-                '',
-              ) !== '89504e470d0a1a0a'))
-        )
-          bad();
+        const payload = validateBookContentRawPart(
+          { kind, id, ...manifest, binary },
+          current,
+          part,
+        );
         bytes += payload.length;
         if (bytes > manifest.byteLength) bad();
         hasher.update(payload);
-        try {
-          decoder?.decode(payload);
-        } catch {
-          bad();
-        }
         current = await next();
-      }
-      try {
-        decoder?.decode();
-      } catch {
-        bad();
       }
       const contentHash = hasher.digest();
       if (bytes !== manifest.byteLength || contentHash !== manifest.contentHash) bad();
@@ -166,4 +134,53 @@ async function validateRecordContent(stream, { index, hash, signal } = {}, legac
   } finally {
     if (!complete) await stream.return(undefined);
   }
+}
+
+/** Shared canonical item decoder; semantic DTO checks remain in the machine. */
+export function decodeBookContentJSON(bytes) {
+  if (
+    !(bytes instanceof Uint8Array) ||
+    bytes.length === 0 ||
+    bytes.length > BOOK_CONTENT_ITEM_BYTES
+  )
+    bad();
+  let text, value;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes);
+    value = JSON.parse(text);
+  } catch {
+    bad();
+  }
+  if (JSON.stringify(value) !== text) bad();
+  return value;
+}
+/** Each raw part is UTF-8 complete (or one PNG segment), including literal BOMs. */
+export function validateBookContentRawPart(manifest, record, part) {
+  const { kind, id, byteLength, chunkCount, binary } = manifest;
+  if (!record || record.kind !== kind || record.id !== id || record.part !== part) bad();
+  const payload = record.payload;
+  if (!(payload instanceof Uint8Array)) bad();
+  if (
+    !binary &&
+    (byteLength === 0
+      ? chunkCount !== 1 || payload.length !== 0
+      : payload.length === 0 || (part < chunkCount - 1 && payload.length < 65533))
+  )
+    bad();
+  if (
+    binary &&
+    (payload.length !== Math.min(65536, byteLength - part * 65536) ||
+      (part === 0 &&
+        Array.from(payload.subarray(0, 8), (v) => v.toString(16).padStart(2, '0')).join('') !==
+          '89504e470d0a1a0a'))
+  )
+    bad();
+  if (!binary) {
+    try {
+      new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(payload);
+    } catch {
+      bad();
+    }
+  }
+  return payload;
 }

@@ -196,8 +196,8 @@ export async function* encodeBookBackup(records, { signal } = {}) {
   };
 }
 
-/** Records are provisional until the consumer reaches the verified end/EOF. */
-export async function* decodeBookBackup(source, { signal } = {}) {
+/** Host-trusted cursor; it is not a file signature or authorization proof. */
+export async function readBookBackupFrame(source, cursor = null, { signal } = {}) {
   signal?.throwIfAborted();
   if (
     !source ||
@@ -206,74 +206,123 @@ export async function* decodeBookBackup(source, { signal } = {}) {
     typeof source.read !== 'function'
   )
     fail('invalid-format', 'Invalid archive source.');
-  const size = source.size;
-  const read = source.read.bind(source);
-  let offset = 0;
+  const size = source.size,
+    read = source.read.bind(source);
+  let offset = 0,
+    count = 0,
+    payloadBytes = 0,
+    previous;
+  if (cursor !== null) {
+    const keys = ['schemaVersion', 'size', 'offset', 'records', 'payloadBytes', 'previous', 'done'];
+    if (
+      !cursor ||
+      typeof cursor !== 'object' ||
+      Array.isArray(cursor) ||
+      Object.keys(cursor).length !== keys.length ||
+      keys.some((k) => !Object.hasOwn(cursor, k)) ||
+      cursor.schemaVersion !== 1 ||
+      cursor.size !== size ||
+      !Number.isSafeInteger(cursor.offset) ||
+      cursor.offset < HEADER_BYTES ||
+      cursor.offset > size ||
+      !uint32(cursor.records) ||
+      !Number.isSafeInteger(cursor.payloadBytes) ||
+      cursor.payloadBytes < 0 ||
+      typeof cursor.previous !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(cursor.previous) ||
+      cursor.done !== false
+    )
+      fail('invalid-format', 'Invalid archive cursor.');
+    offset = cursor.offset;
+    count = cursor.records;
+    payloadBytes = cursor.payloadBytes;
+    previous = Uint8Array.from(cursor.previous.match(/../g), (v) => parseInt(v, 16));
+  }
   async function take(length) {
     signal?.throwIfAborted();
     const next = safeSum(offset, length);
     if (next > size) fail('incomplete-archive', 'Archive is truncated.');
     const result = await read(offset, length);
     signal?.throwIfAborted();
-    if (!isBytes(result) || result.length !== length) {
+    if (source.size !== size || !isBytes(result) || result.length !== length)
       fail('incomplete-archive', 'Archive read did not return the requested bytes.');
-    }
     offset = next;
     return new Uint8Array(result);
   }
-  const fileHeader = await take(HEADER_BYTES);
-  if (!equal(fileHeader.subarray(0, 12), encoder.encode(MAGIC))) {
-    fail('invalid-format', 'Unknown archive signature.');
+  if (cursor === null) {
+    const fileHeader = await take(HEADER_BYTES);
+    if (!equal(fileHeader.subarray(0, 12), encoder.encode(MAGIC)))
+      fail('invalid-format', 'Unknown archive signature.');
+    if (new DataView(fileHeader.buffer).getUint32(12) !== VERSION)
+      fail('unsupported-version', 'Unknown archive version.');
+    previous = await digest(fileHeader, signal);
   }
-  if (new DataView(fileHeader.buffer).getUint32(12) !== VERSION) {
-    fail('unsupported-version', 'Unknown archive version.');
-  }
-  let previous = await digest(fileHeader, signal);
-  let count = 0;
-  let payloadBytes = 0;
-  while (offset < size) {
-    const prefix = await take(PREFIX_BYTES);
-    const view = new DataView(prefix.buffer);
-    const sequence = view.getUint32(0);
-    const metadataLength = view.getUint32(4);
-    const payloadLength = view.getUint32(8);
-    if (sequence !== count) fail('invalid-format', 'Frame sequence is out of order.');
+  if (offset >= size) fail('incomplete-archive', 'Archive has no final seal.');
+  const output = (done, hash) => ({
+    schemaVersion: 1,
+    size,
+    offset,
+    records: count,
+    payloadBytes,
+    previous: hex(hash),
+    done,
+  });
+  const prefix = await take(PREFIX_BYTES);
+  const view = new DataView(prefix.buffer);
+  const sequence = view.getUint32(0);
+  const metadataLength = view.getUint32(4);
+  const payloadLength = view.getUint32(8);
+  if (sequence !== count) fail('invalid-format', 'Frame sequence is out of order.');
+  if (
+    metadataLength === 0 ||
+    metadataLength > BOOK_BACKUP_LIMITS.maxMetadataBytes ||
+    payloadLength > BOOK_BACKUP_LIMITS.maxPayloadBytes
+  )
+    fail('limit-exceeded', 'Frame length is out of bounds.');
+  const payloadOffset = offset + metadataLength;
+  const body = await take(metadataLength + payloadLength);
+  const trailer = await take(DIGEST_BYTES);
+  const hash = await digest(concat([previous, prefix, body]), signal);
+  if (!equal(hash, trailer)) fail('integrity-mismatch', 'Frame digest does not match.');
+  const metadata = canonicalMetadata(body.subarray(0, metadataLength));
+  if (metadata.type === 'end') {
     if (
-      metadataLength === 0 ||
-      metadataLength > BOOK_BACKUP_LIMITS.maxMetadataBytes ||
-      payloadLength > BOOK_BACKUP_LIMITS.maxPayloadBytes
+      payloadLength !== 0 ||
+      metadata.records !== count ||
+      metadata.payloadBytes !== payloadBytes ||
+      metadata.chain !== hex(previous)
     )
-      fail('limit-exceeded', 'Frame length is out of bounds.');
-    const body = await take(metadataLength + payloadLength);
-    const trailer = await take(DIGEST_BYTES);
-    const hash = await digest(concat([previous, prefix, body]), signal);
-    if (!equal(hash, trailer)) fail('integrity-mismatch', 'Frame digest does not match.');
-    const metadata = canonicalMetadata(body.subarray(0, metadataLength));
-    if (metadata.type === 'end') {
-      if (
-        payloadLength !== 0 ||
-        metadata.records !== count ||
-        metadata.payloadBytes !== payloadBytes ||
-        metadata.chain !== hex(previous)
-      )
-        fail('invalid-format', 'Archive seal does not match the records.');
-      if (offset !== size) fail('invalid-format', 'Unexpected bytes after the seal.');
-      signal?.throwIfAborted();
-      return { records: count, payloadBytes, archiveBytes: size, chainHash: hex(hash) };
-    }
-    if (count === BOOK_BACKUP_LIMITS.maxRecords) {
-      fail('limit-exceeded', 'Too many records.');
-    }
-    payloadBytes = safeSum(payloadBytes, payloadLength);
-    previous = hash;
-    count += 1;
+      fail('invalid-format', 'Archive seal does not match the records.');
+    if (offset !== size) fail('invalid-format', 'Unexpected bytes after the seal.');
     signal?.throwIfAborted();
-    yield {
+    return {
+      cursor: output(true, hash),
+      seal: { records: count, payloadBytes, archiveBytes: size, chainHash: hex(hash) },
+    };
+  }
+
+  if (count === BOOK_BACKUP_LIMITS.maxRecords) fail('limit-exceeded', 'Too many records.');
+  payloadBytes = safeSum(payloadBytes, payloadLength);
+  count++;
+  signal?.throwIfAborted();
+  return {
+    cursor: output(false, hash),
+    record: {
       kind: metadata.kind,
       id: metadata.id,
       part: metadata.part,
       payload: body.slice(metadataLength),
-    };
+    },
+    span: { offset: payloadOffset, length: payloadLength },
+  };
+}
+/** Records remain provisional until the shared cursor decoder verifies seal/EOF. */
+export async function* decodeBookBackup(source, options = {}) {
+  let cursor = null;
+  for (;;) {
+    const step = await readBookBackupFrame(source, cursor, options);
+    cursor = step.cursor;
+    if (step.seal) return step.seal;
+    yield step.record;
   }
-  fail('incomplete-archive', 'Archive has no final seal.');
 }

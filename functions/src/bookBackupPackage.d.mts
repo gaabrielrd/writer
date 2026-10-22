@@ -47,3 +47,23 @@ export function inspectBookBackupPackage(
   source: BookBackupByteSource,
   options?: { signal?: AbortSignal },
 ): Promise<BookPackageReport>;
+
+export interface BookPackageCursor {
+  schemaVersion: 1;
+  container: import('./bookBackupContainer.mjs').BookBackupCursor | null;
+  manifest: BookPackageManifest | null;
+  counts: BookPackageCounts;
+  sectionIndex: number;
+  ended: boolean;
+  done: boolean;
+}
+export function readBookPackageStep(
+  source: BookBackupByteSource,
+  cursor?: BookPackageCursor | null,
+  options?: { signal?: AbortSignal },
+): Promise<{
+  cursor: BookPackageCursor;
+  event?: BookPackageEvent | { type: 'footer' };
+  span?: { offset: number; length: number };
+  report?: BookPackageReport;
+}>;

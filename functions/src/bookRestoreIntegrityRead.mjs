@@ -1,4 +1,5 @@
 import { digest } from './sceneContracts.mjs';
+import { readWorkMetadata } from './workProgressContracts.mjs';
 import { BOOK_BACKUP_LIMITS } from './bookBackupContainer.mjs';
 export const BOOK_RESTORE_READ_BYTES =
   BOOK_BACKUP_LIMITS.maxMetadataBytes + BOOK_BACKUP_LIMITS.maxPayloadBytes;
@@ -11,7 +12,9 @@ import {
   integer,
   BOOK_RESTORE_CHUNK_BYTES,
 } from './bookRestoreUploadContracts.mjs';
-export function restoreChunkProof(snapshot, loaded, index) {
+export const nativeRestoreToken = (snapshot) =>
+  digest({ born: born(snapshot), updated: born({ createTime: snapshot.updateTime }) });
+export function restoreChunkMetadata(snapshot, loaded, index) {
   const value = snapshot.data(),
     job = loaded.job;
   if (
@@ -28,29 +31,51 @@ export function restoreChunkProof(snapshot, loaded, index) {
       Math.min(BOOK_RESTORE_CHUNK_BYTES, job.source.byteLength - index * BOOK_RESTORE_CHUNK_BYTES)
   )
     inconsistent();
+  return {
+    schemaVersion: 1,
+    ownerId: job.ownerId,
+    restoreId: job.restoreId,
+    jobToken: loaded.view.jobToken,
+    index,
+    byteLength: value.byteLength,
+    chunkHash: value.chunkHash,
+    chunkToken: nativeRestoreToken(snapshot),
+  };
+}
+
+export function restoreChunkProof(snapshot, loaded, index) {
+  const proof = restoreChunkMetadata(snapshot, loaded, index);
   let bytes;
   try {
-    bytes = decodeRestoreBytes(value.chunkBase64, value.chunkHash);
+    bytes = decodeRestoreBytes(snapshot.data().chunkBase64, proof.chunkHash);
   } catch {
     inconsistent();
   }
-  if (bytes.length !== value.byteLength) inconsistent();
-  return {
-    bytes,
-    proof: {
-      schemaVersion: 1,
-      ownerId: job.ownerId,
-      restoreId: job.restoreId,
-      jobToken: loaded.view.jobToken,
-      index,
-      byteLength: value.byteLength,
-      chunkHash: value.chunkHash,
-      chunkToken: digest({
-        born: born(snapshot),
-        updated: born({ createTime: snapshot.updateTime }),
-      }),
-    },
-  };
+  if (bytes.length !== proof.byteLength) inconsistent();
+  return { bytes, proof };
+}
+export async function assertRestoreObservation(tx, db, loaded, observation) {
+  const index = observation.proof.index;
+  const [chunk, proof] = await Promise.all([
+    readWorkMetadata(tx, db.doc(loaded.ref.path + '/chunks/' + chunkId(index)), [
+      'schemaVersion',
+      'ownerId',
+      'restoreId',
+      'jobToken',
+      'index',
+      'byteLength',
+      'chunkHash',
+    ]),
+    tx.get(db.doc(loaded.ref.path + '/integrityProofs/' + chunkId(index))),
+  ]);
+  const actual = restoreChunkMetadata(chunk, loaded, index),
+    checked = checkRestoreProof(proof.data(), loaded, index);
+  if (
+    digest(actual) !== digest(checked) ||
+    digest(actual) !== digest(observation.proof) ||
+    nativeRestoreToken(proof) !== observation.proofToken
+  )
+    inconsistent();
 }
 export function checkRestoreProof(value, loaded, index) {
   if (
@@ -73,9 +98,17 @@ export function checkRestoreProof(value, loaded, index) {
   return value;
 }
 /** Internal capability for validators. No HTTP/callable exports raw uploaded bytes. */
-export async function createVerifiedBookRestoreSource({ db, uid, id, token, load }) {
+export async function createVerifiedBookRestoreSource({
+  db,
+  uid,
+  id,
+  token,
+  load,
+  allowedStates = ['bytes-verified'],
+  onRead,
+}) {
   const first = await db.runTransaction((tx) => load(tx, uid, id, token));
-  if (first.job.state !== 'bytes-verified') inconsistent();
+  if (!allowedStates.includes(first.job.state)) inconsistent();
   const size = first.job.source.byteLength;
   return {
     size,
@@ -88,11 +121,11 @@ export async function createVerifiedBookRestoreSource({ db, uid, id, token, load
         offset + length > size
       )
         invalid('invalid-range');
-      return db.runTransaction(async (tx) => {
+      const result = await db.runTransaction(async (tx) => {
         const loaded = await load(tx, uid, id, token);
-        if (loaded.job.state !== 'bytes-verified' || loaded.job.source.byteLength !== size)
+        if (!allowedStates.includes(loaded.job.state) || loaded.job.source.byteLength !== size)
           inconsistent();
-        if (length === 0) return new Uint8Array();
+        if (length === 0) return { bytes: new Uint8Array(), observations: [] };
         const from = Math.floor(offset / BOOK_RESTORE_CHUNK_BYTES),
           to = Math.floor((offset + length - 1) / BOOK_RESTORE_CHUNK_BYTES);
         const items = [];
@@ -104,7 +137,11 @@ export async function createVerifiedBookRestoreSource({ db, uid, id, token, load
           const current = restoreChunkProof(chunk, loaded, index),
             checked = checkRestoreProof(proof.data(), loaded, index);
           if (digest(current.proof) !== digest(checked)) inconsistent();
-          items.push({ index, bytes: current.bytes });
+          items.push({
+            index,
+            bytes: current.bytes,
+            observation: { proof: current.proof, proofToken: nativeRestoreToken(proof) },
+          });
         }
         const bytes = new Uint8Array(length);
         for (const item of items) {
@@ -118,8 +155,10 @@ export async function createVerifiedBookRestoreSource({ db, uid, id, token, load
             begin - offset,
           );
         }
-        return bytes;
+        return { bytes, observations: items.map((item) => item.observation) };
       });
+      onRead?.(result.observations);
+      return result.bytes;
     },
   };
 }

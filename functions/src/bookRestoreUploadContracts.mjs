@@ -10,6 +10,7 @@ export const BOOK_RESTORE_METHODS = [
   'listBookRestores',
   'appendBookRestoreChunk',
   'advanceBookRestoreIntegrity',
+  'advanceBookRestoreValidation',
   'resolveBookRestoreOperation',
   'cancelBookRestore',
   'advanceBookRestoreCleanup',
@@ -170,13 +171,16 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2].includes(job.cleanupVersion) ||
+    ![1, 2, 3].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
       'checking',
       'bytes-verified',
       'rejected',
+      'validating',
+      'content-verified',
+      'content-rejected',
       'cancelling',
       'cancelled',
     ].includes(job.state)
@@ -220,7 +224,15 @@ export function jobShape(uid, id, job) {
     inconsistent();
   if (['cancelling', 'cancelled'].includes(job.state) && job.recoveryReady) inconsistent();
   if (
-    ['uploaded', 'checking', 'bytes-verified', 'rejected'].includes(job.state) &&
+    [
+      'uploaded',
+      'checking',
+      'bytes-verified',
+      'rejected',
+      'validating',
+      'content-verified',
+      'content-rejected',
+    ].includes(job.state) &&
     (job.uploadedBytes !== job.source.byteLength ||
       job.uploadedChunks !== Math.ceil(job.source.byteLength / BOOK_RESTORE_CHUNK_BYTES))
   )
@@ -277,15 +289,37 @@ export function jobShape(uid, id, job) {
         (job.checkedChunks === job.uploadedChunks
           ? job.source.byteLength
           : job.checkedChunks * BOOK_RESTORE_CHUNK_BYTES) ||
-      !['chunks', 'proofs', 'state', 'done'].includes(job.cleanupPhase) ||
+      ![
+        'chunks',
+        'proofs',
+        'state',
+        'done',
+        ...(job.cleanupVersion === 3
+          ? ['validation-index', 'validation-items', 'validation-state']
+          : []),
+      ].includes(job.cleanupPhase) ||
       ![null, 'file-hash-mismatch', 'upload-chain-mismatch'].includes(job.integrityFailure) ||
-      !['checking', 'bytes-verified', 'rejected', 'cancelling', 'cancelled'].includes(job.state)
+      ![
+        'checking',
+        'bytes-verified',
+        'rejected',
+        'cancelling',
+        'cancelled',
+        ...(job.cleanupVersion === 3 ? ['validating', 'content-verified', 'content-rejected'] : []),
+      ].includes(job.state)
     )
       inconsistent();
     if (job.integrityStateHash !== null) restoreHash(job.integrityStateHash);
     if (job.integrityDigest !== null) restoreHash(job.integrityDigest);
     if (
-      ['checking', 'bytes-verified', 'rejected'].includes(job.state) &&
+      [
+        'checking',
+        'bytes-verified',
+        'rejected',
+        'validating',
+        'content-verified',
+        'content-rejected',
+      ].includes(job.state) &&
       (job.cleanupPhase !== 'chunks' || job.cleanedChunks !== 0)
     )
       inconsistent();
@@ -305,7 +339,9 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
     if (
-      job.state === 'bytes-verified' &&
+      ['bytes-verified', 'validating', 'content-verified', 'content-rejected'].includes(
+        job.state,
+      ) &&
       (job.integrityFailure !== null ||
         job.integrityDigest !== job.source.sha256 ||
         job.checkedChainHash !== job.uploadedChainHash)
@@ -318,8 +354,99 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
   }
+  if (job.cleanupVersion === 3) {
+    if (
+      job.validationVersion !== 1 ||
+      !Object.hasOwn(job, 'validationStateHash') ||
+      !Object.hasOwn(job, 'validationSummary')
+    )
+      inconsistent();
+    restoreId(job.validationBirthOperationId);
+    restoreValidationMeta(job.validationMeta);
+    if (
+      !['validating', 'content-verified', 'content-rejected', 'cancelling', 'cancelled'].includes(
+        job.state,
+      ) ||
+      job.validationMeta.checkedChunks > job.checkedChunks
+    )
+      inconsistent();
+    if (job.validationStateHash !== null) restoreHash(job.validationStateHash);
+    if (
+      job.state === 'validating' &&
+      (!['frames', 'semantic', 'recheck'].includes(job.validationMeta.phase) ||
+        job.validationStateHash === null ||
+        job.validationSummary !== null)
+    )
+      inconsistent();
+    if (
+      job.state === 'content-verified' &&
+      (job.validationMeta.phase !== 'done' ||
+        job.validationMeta.checkedChunks !== job.checkedChunks ||
+        job.validationMeta.reportHash === null ||
+        job.validationStateHash === null ||
+        !job.validationSummary)
+    )
+      inconsistent();
+    if (
+      job.state === 'content-rejected' &&
+      (job.validationMeta.phase !== 'rejected' ||
+        job.validationMeta.failure === null ||
+        job.validationStateHash !== null ||
+        job.validationSummary !== null)
+    )
+      inconsistent();
+    if (job.state === 'cancelled' && job.validationStateHash !== null) inconsistent();
+    if (job.validationSummary !== null) {
+      closed(job.validationSummary, ['sourceBookId', 'totals', 'warnings']);
+      if (
+        typeof job.validationSummary.sourceBookId !== 'string' ||
+        !job.validationSummary.sourceBookId ||
+        !job.validationSummary.totals ||
+        !job.validationSummary.warnings ||
+        Buffer.byteLength(JSON.stringify(job.validationSummary)) > 16384
+      )
+        inconsistent();
+    }
+  } else if (
+    [
+      'validationVersion',
+      'validationBirthOperationId',
+      'validationMeta',
+      'validationStateHash',
+      'validationSummary',
+    ].some((k) => Object.hasOwn(job, k))
+  )
+    inconsistent();
   return job;
 }
+export function restoreValidationMeta(value) {
+  closed(value, ['phase', 'frames', 'items', 'checkedChunks', 'failure', 'reportHash']);
+  if (!['frames', 'semantic', 'recheck', 'done', 'rejected'].includes(value.phase)) inconsistent();
+  for (const key of ['frames', 'items', 'checkedChunks']) integer(value[key]);
+  if (
+    ![
+      null,
+      'invalid-format',
+      'unsupported-version',
+      'invalid-record',
+      'limit-exceeded',
+      'integrity-mismatch',
+      'incomplete-archive',
+    ].includes(value.failure)
+  )
+    inconsistent();
+  if (value.reportHash !== null) restoreHash(value.reportHash);
+  if (
+    value.phase === 'done'
+      ? value.failure !== null || value.reportHash === null
+      : value.reportHash !== null
+  )
+    inconsistent();
+  if (value.phase === 'rejected' ? value.failure === null : value.failure !== null) inconsistent();
+  return value;
+}
+export const validationProgress = (job) =>
+  job.cleanupVersion === 3 ? { ...job.validationMeta, summary: job.validationSummary } : null;
 export const integrityProgress = (job) => ({
   checkedChunks: job.checkedChunks ?? 0,
   checkedBytes: job.checkedBytes ?? 0,
@@ -345,6 +472,7 @@ export function progress(uid, id, snapshot) {
     uploadedBytes: job.uploadedBytes,
     cleanedChunks: job.cleanedChunks,
     integrity: integrityProgress(job),
+    validation: validationProgress(job),
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };

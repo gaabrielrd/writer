@@ -224,8 +224,9 @@ com envelope, validação de conteúdo, leitura JSON v1–v6 e gravação tempor
 arquivo. O servidor já reserva um novo ID, recebe partes privadas e permite
 cancelar/limpar a transferência. A integridade dos bytes é conferida em lotes
 retomáveis no servidor. Os leitores novo e legado compartilham um núcleo
-semântico com checkpoints; sua persistência remota, a preparação/ativação do livro
-e a interface de restauração continuam em implementação; veja
+semântico com checkpoints. O servidor valida o contêiner novo em etapas, com
+índice privado e limpeza limitada. JSON legado no servidor, preparação/ativação
+e interface de restauração continuam em implementação; veja
 [o plano P1](docs/tasks/writer-v2/execucao/31-portabilidade-de-livros.md).
 
 ## Como usar agentes

@@ -1137,3 +1137,13 @@ cenários de pacote novo e nove de JSON v1–v6, com emuladores locais no primei
 separa fixtures, APIs simuladas, navegador/serviços reais e resultados de comandos.
 Não há prova de parser/persistência retomável no servidor, restauração ou Auth
 produtivos. Validate completo no fechamento P1; CI ignorada.
+
+## Validação servidor de contêiner — P1 M16
+
+104 casos Node distintos dirigidos, 46 cliente, quatro SDK novos e cinco SDK
+de regressão positivos; mais 11 cenários Chromium/OPFS do reader. A
+[entrega M16](entregas/2026-10-22-writer-v2-validacao-servidor-do-conteiner.md)
+registra lotes, tempos e provas separadas. Testes conferem paridade, limites,
+retomada, commit nativo conjunto, Rules deny, ABA, corridas, rejeição e cleanup.
+Não há implantação/Auth produtivos, legado servidor, materialização ou roundtrip.
+Validate integral permanece para fechamento P1; sem CI.

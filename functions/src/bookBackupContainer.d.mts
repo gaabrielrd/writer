@@ -40,3 +40,23 @@ export function decodeBookBackup(
   source: BookBackupByteSource,
   options?: { signal?: AbortSignal },
 ): AsyncGenerator<BookBackupRecord, BookBackupReadSeal>;
+
+export interface BookBackupCursor {
+  schemaVersion: 1;
+  size: number;
+  offset: number;
+  records: number;
+  payloadBytes: number;
+  previous: string;
+  done: boolean;
+}
+export function readBookBackupFrame(
+  source: BookBackupByteSource,
+  cursor?: BookBackupCursor | null,
+  options?: { signal?: AbortSignal },
+): Promise<{
+  cursor: BookBackupCursor;
+  record?: BookBackupRecord;
+  span?: { offset: number; length: number };
+  seal?: BookBackupReadSeal;
+}>;
