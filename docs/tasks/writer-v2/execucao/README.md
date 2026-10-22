@@ -360,3 +360,14 @@ atomicamente. [Entrega M16](../../../entregas/2026-10-22-writer-v2-validacao-ser
 Cleanup v3 inclui índice/itens/estado; content-verified não ativa livro.
 JSON v1–v6 no servidor é a próxima etapa, ainda obrigatória em P1 junto de
 remapeamento/mídia, ativação, host/UI/roundtrip e validate. Somente local, sem CI.
+
+### P1 M17 — scanner legado com cursor
+
+O [contrato 50](50-scanner-json-legado-com-cursor.md) torna a gramática JSON
+estrita retomável em passos limitados, preservando scanner cliente e formatos.
+[Entrega M17](../../../entregas/2026-10-22-writer-v2-scanner-legado-com-cursor.md):
+26 Node, oito cliente, 11 cenários nativos e comparação diferencial lexical.
+Cursor de até 512 KiB não acumula prosa/lista de itens. Catálogo/normalização e
+snapshot servidor ainda precisam ser adaptados antes de ligar o legado ao job.
+P1/F2-09 permanecem abertos, com materialização/mídia, ativação e host/UI/
+roundtrip/validate pendentes. Somente local, CI ignorada.

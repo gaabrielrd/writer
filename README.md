@@ -225,7 +225,9 @@ arquivo. O servidor já reserva um novo ID, recebe partes privadas e permite
 cancelar/limpar a transferência. A integridade dos bytes é conferida em lotes
 retomáveis no servidor. Os leitores novo e legado compartilham um núcleo
 semântico com checkpoints. O servidor valida o contêiner novo em etapas, com
-índice privado e limpeza limitada. JSON legado no servidor, preparação/ativação
+índice privado e limpeza limitada. O scanner JSON legado também já é retomável,
+compartilhando a gramática estrita com o leitor existente. Catálogo/normalização
+legados no servidor, preparação/ativação
 e interface de restauração continuam em implementação; veja
 [o plano P1](docs/tasks/writer-v2/execucao/31-portabilidade-de-livros.md).
 

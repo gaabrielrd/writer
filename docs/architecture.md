@@ -1096,3 +1096,15 @@ Cleanup v3 acrescenta validationIndex/Items/State, com inventário e EOF limitad
 content-verified não cria livro nem reautoriza universo. JSON legado servidor,
 remapeamento/mídia, ativação e host ainda pendentes.
 Veja [ADR 0060](decisions/0060-book-restore-server-validation.md).
+
+## Scanner JSON com continuação — P1 M17
+
+bookLegacyJSON compartilha uma única gramática entre readBookLegacyJSONStep e
+scanBookLegacyJSON. Passo de até 64 KiB/64 valores mantém pilha, chaves limitadas
+e estado lexical/UTF-8; cursor fechado de até 512 KiB não acumula prosa/arrays.
+Callbacks recebem spans e hash usa só bytes consumidos, mesmo relendo sobras.
+O tamanho no cursor não autentica origem. Antes da ligação ao job, catálogo/
+normalização precisam de passos e snapshot M16 deve ser ampliado/versionado;
+limite atual de 64 KiB não pode reduzir compatibilidade.
+Veja [ADR 0061](decisions/0061-legacy-book-json-cursor.md). Legado servidor,
+materialização/ativação e host/UI continuam pendentes.

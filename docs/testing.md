@@ -1147,3 +1147,17 @@ registra lotes, tempos e provas separadas. Testes conferem paridade, limites,
 retomada, commit nativo conjunto, Rules deny, ABA, corridas, rejeição e cleanup.
 Não há implantação/Auth produtivos, legado servidor, materialização ou roundtrip.
 Validate integral permanece para fechamento P1; sem CI.
+
+## Cursor lexical legado — P1 M17
+
+```bash
+node --test functions/test/bookLegacyJSONCursor.test.mjs functions/test/bookLegacyJSON.test.mjs functions/test/bookLegacyReview.test.mjs
+npx vitest run src/features/editor/tests/bookLegacyInterop.test.ts src/features/book-portability/tests/inspectLegacyBookBackup.test.ts
+```
+
+[Entrega M17](entregas/2026-10-22-writer-v2-scanner-legado-com-cursor.md):
+26 Node, oito cliente e 11 cenários Chromium/File/OPFS positivos. Cursor
+serializado atravessa cortes em UTF-8/escapes/números; casos combinam limites
+antigos sem truncar compatibilidade. Probe privado comparou 4.500 entradas
+determinísticas ao scanner anterior. Não comprova integração servidor do legado,
+restauração ou aprovação remota. Validate integral no fechamento P1.
