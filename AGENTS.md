@@ -111,6 +111,7 @@
 - Capture cenas/fontes/narrativa com tokens nativos de item/pai e conferência final; preserve slot de ordem, recuse manutenção e projete referências somente por IDs, conforme ADR 0049.
 - Capture lore próprio sem resolver global e personas somente por vínculo autorizado; confira identidades nativas externas, inclusive perfis arquivados, antes do selo, conforme ADR 0050.
 - Capture universo por vínculo da raiz, sem metadata global; confira encarnação/autorização e não promova descriptor indisponível ao restaurar, conforme ADR 0051.
+- Congele rascunho explícito antes de await, inclusive vazio/removido; reautorize seu perfil declarado próprio e não salve nem recrie capítulo ao capturar, conforme ADR 0052.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

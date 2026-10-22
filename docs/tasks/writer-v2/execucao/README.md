@@ -277,3 +277,12 @@ metadata/lore global; edição/recriação/revogação invalida a prova antes do
 [Entrega M7](../../../entregas/2026-10-21-writer-v2-origem-de-universo-no-backup.md):
 oito Functions, 14 cliente, cinco SDK e 14 cenários nativos. P1 segue aberto para
 rascunho/mídia, schema, sink e restauração; avanço local, sem CI/push.
+
+### P1 M8 — contribuição explícita do editor
+
+O [contrato 41](41-rascunho-explicito-no-backup.md) congela rascunho antes de
+next/await, preserva vazio/removido e captura seu estilo declarado sem autosave.
+Hash/UTF-8 por partes e conferência final separam contribuição local e salvo.
+[Entrega M8](../../../entregas/2026-10-21-writer-v2-rascunho-explicito-no-backup.md):
+15 Functions, 44 cliente, quatro SDK e 17 cenários nativos. P1 continua para
+mídia, schema, sink, revisão/restauração; somente local, sem CI/push.

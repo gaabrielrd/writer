@@ -129,3 +129,17 @@ it('universo usa somente vínculo da raiz, com token esperado, sem inicializar F
   expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'getBookBackupUniverse');
   expect(mocks.invoke).toHaveBeenLastCalledWith(input);
 });
+
+it('persona declarada do rascunho usa a callable dedicada sem inicializar Firebase no import', async () => {
+  const { bookDraftApi } = await import('../services/bookDraftCallables');
+  expect(mocks.getFirebaseApp).not.toHaveBeenCalled();
+  const input = {
+    bookId: 'book',
+    sourceToken: 'a'.repeat(64),
+    personaId: 'custom-draft',
+    expectedPersonaToken: 'b'.repeat(64),
+  };
+  await bookDraftApi.persona(input);
+  expect(mocks.httpsCallable).toHaveBeenLastCalledWith('functions', 'getBookBackupDraftPersona');
+  expect(mocks.invoke).toHaveBeenLastCalledWith(input);
+});

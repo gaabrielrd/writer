@@ -50,7 +50,7 @@ function binding(type, value) {
   if (id !== null && (typeof id !== 'string' || !/^[a-zA-Z0-9-]{1,100}$/.test(id))) unavailable();
   return id;
 }
-async function profileIdentity(tx, context, id) {
+export async function readBookBackupPersonaIdentity(tx, context, id) {
   if (id === null) return { identity: null, preset: null, snapshot: null };
   const preset = DEFAULT_PERSONAS.find((value) => value.id === id);
   if (preset) return { identity: { presetHash: digest(preset) }, preset, snapshot: null };
@@ -66,7 +66,7 @@ async function profileIdentity(tx, context, id) {
 async function item(tx, context, sourceToken, type, snapshot) {
   if (!snapshot.exists) bookBackupChanged(true);
   const id = binding(type, snapshot.data()),
-    profile = await profileIdentity(tx, context, id);
+    profile = await readBookBackupPersonaIdentity(tx, context, id);
   return {
     row: {
       id: snapshot.id,

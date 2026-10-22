@@ -1001,3 +1001,12 @@ unavailable sem copiar metadata/lore global. Token indisponível exclui identida
 alheia; origem autorizada fixa versão/encarnação. bookUniverseCapture escreve um
 registro e revalida a prova antes do selo. Veja [ADR 0051](decisions/0051-book-universe-origin.md).
 A religação na ativação do restaurador ainda é requisito de P1.
+
+## Rascunho explícito na captura — P1 M8
+
+bookDraftBackupRecords congela contribuição de capítulo legado antes de next/await,
+sem consultar sua existência nem salvar. Manifesto distingue none de vazio;
+encodeInto/hash incremental em duas passagens limitam bytes por parte. Perfil
+declarado usa getBookBackupDraftPersona, autorizado por livro/origem e conta,
+independente do vínculo salvo M6. Conferência final reautoriza raiz/perfil.
+Veja [ADR 0052](decisions/0052-explicit-book-draft-backup.md). UI/sink/restauração seguem pendentes.

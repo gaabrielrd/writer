@@ -1011,3 +1011,21 @@ exclusão SDK comprova a Rules existente, não uma falha a contornar.
 A [entrega M7](entregas/2026-10-21-writer-v2-origem-de-universo-no-backup.md)
 registra oito Functions, 14 cliente, cinco SDK e 14 cenários Chromium/emulador.
 Distinguir captura/framing da religação/restauração, UI e sink ainda pendentes.
+
+## Rascunho explícito no backup — P1 M8
+
+```bash
+node --test functions/test/bookBackupDraftRead.test.mjs functions/test/bookBackupPersonaRead.test.mjs
+npx vitest run src/features/book-portability/tests/bookDraftBackupRecords.test.ts src/features/book-portability/tests/bookStructureCallables.test.ts src/features/editor/tests/exportManuscript.test.ts
+```
+
+SDK com FIRESTORE_EMULATOR_HOST local demo:
+`node --test tests/firestore/bookBackupDraft.rules.test.mjs`.
+Sem capítulo salvo, confere estilo declarado, namespace próprio, mutações SDK,
+recriação Admin e raiz. Descoberta test:rules inclui esse arquivo.
+Cliente verifica 20 MiB/320 partes sem encode integral, congelamento síncrono,
+vazio/ausente, fronteiras UTF-8/BOM, abort na passagem de hash e retorno antecipado.
+
+A [entrega M8](entregas/2026-10-21-writer-v2-rascunho-explicito-no-backup.md)
+registra 15 Functions, 44 cliente, quatro SDK e 17 cenários Chromium/emulador.
+São provas de contrato/bytes, sem UI, sink persistente ou restauração P1.
