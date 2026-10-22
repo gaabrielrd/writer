@@ -240,3 +240,13 @@ concluído estiverem satisfeitos. A lista fica em
   de exclusão: inventário v2 inclui text-bodies e reconfere corpos no finish.
 - Implante leitores/coletor/exclusão antes dos produtores; drene invocações antigas.
   Não habilite novos corpos com handler antigo de exclusão ainda em execução.
+
+## Consumidores do texto lógico
+
+- Aplique sugestões do chat legado pelo escritor compartilhado, com CAS lógico e
+  corpo/pins/ledger/crédito/recibo atômicos; preserve os limites atuais (ADR 0071).
+- Converta texto completo somente quando couber; congele fonte autossuficiente,
+  limpe ponteiro físico e libere apenas o pin do capítulo, preservando versões.
+- Libere pin também na revogação por agrupadores mistos; retomada usa metadados
+  e não reabre corpo já liberado. Capítulo composto usa cenas como texto canônico;
+  backup deve preservar seu campo legado congelado, inclusive externo.

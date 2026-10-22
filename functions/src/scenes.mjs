@@ -24,6 +24,8 @@ import {
 import { sceneRankBetween, validSceneRank } from './sceneRanks.mjs';
 import { writeSceneLoreIndex } from './sceneLoreIndex.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
+import { readBookChapterText } from './bookChapterText.mjs';
+import { createBookChapterBodyPlan } from './bookChapterStorage.mjs';
 import { adventureBlockState, adventureSceneFields } from './adventureBlocksState.mjs';
 
 const stages = ['planned', 'writing', 'review', 'done'];
@@ -883,13 +885,22 @@ export function createScenesService({ db, now = Date.now }) {
         return await db.runTransaction(async (tx) => {
           await project(context, tx);
           const entry = await group(context, id, tx, { deleting: true });
-          const original = entry.snapshot.data() ?? {};
+          const original = entry.snapshot.data() ?? {},
+            content =
+              entry.value.contentMode === 'legacy' && !entry.value.deleting
+                ? await readBookChapterText(tx, db, {
+                    uid,
+                    bookId: context.target.id,
+                    chapterId: id,
+                    chapter: original,
+                  })
+                : null;
           return {
             group: entry.value,
             sourceVersion: digest(original),
             legacy:
-              entry.value.contentMode === 'legacy'
-                ? { content: original.content ?? '', hash: digest(original.content ?? '') }
+              entry.value.contentMode === 'legacy' && !entry.value.deleting
+                ? { content, hash: digest(content) }
                 : null,
           };
         });
@@ -964,19 +975,28 @@ export function createScenesService({ db, now = Date.now }) {
           source = db.doc(`${context.path}/sceneSources/${id}`);
         if ((await tx.get(ref)).exists || (await tx.get(source)).exists)
           sceneFail('failed-precondition', 'Identidade de conversão já utilizada.');
+        const content = await readBookChapterText(tx, db, {
+            uid,
+            bookId: context.target.id,
+            chapterId: id,
+            chapter: original,
+          }),
+          sourceOriginal = { ...original };
+        delete sourceOriginal.contentStorage;
+        if (original.contentStorage != null) sourceOriginal.content = content;
         const timestamp = sceneDate(now, p.updatedAt ?? 0),
           { record, body } = newScene(
             context,
             op.id,
             sceneText(original.title, 300, true),
             id,
-            original.content ?? '',
+            content,
             timestamp,
             sceneRankBetween(),
           );
         const sourceRecord = {
-          original,
-          hash: digest(original.content ?? ''),
+          original: sourceOriginal,
+          hash: digest(content),
           id,
           sourceVersion: data.expectedSourceVersion,
           createdAt: timestamp,
@@ -1000,12 +1020,18 @@ export function createScenesService({ db, now = Date.now }) {
           ],
           groupStates: [{ id, contentMode: 'scenes' }],
         });
+        const bodies = createBookChapterBodyPlan(tx, db, { uid, bookId: context.target.id });
+        if (original.contentStorage != null) await bodies.pin(id, original.contentStorage, -1);
         tx.create(ref, record);
         tx.set(db.doc(`${ref.path}/body/current`), body);
         tx.set(db.doc(`${ref.path}/planning/current`), planning());
         tx.create(source, sourceRecord);
+        bodies.commit();
         writeGroup(tx, entry, value);
-        tx.update(entry.ref, { contentMode: 'scenes' });
+        tx.update(entry.ref, {
+          contentMode: 'scenes',
+          ...(original.contentStorage != null ? { content, contentStorage: null } : {}),
+        });
         const projectRevision = writeProject(
           tx,
           context,

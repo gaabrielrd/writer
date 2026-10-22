@@ -332,3 +332,8 @@ P1 M26 acrescenta [coleta física e exclusão dos corpos](docs/tasks/writer-v2/e
 worker preparado para gerações sem referências e inventário v2 de exclusão do
 livro, com retomada de jobs antigos. Não houve deploy. Conversão/chat e fluxo
 completo de restauração continuam nas próximas tarefas.
+
+P1 M27 integra [chat, conversão e remoção de capítulos](docs/tasks/writer-v2/execucao/60-chat-e-conversao-com-texto-logico.md)
+ao texto lógico, preservando versões e débito atômico. Editor usa somente cenas
+na composição; backup conserva campo congelado externo. Limites de cena/chat
+continuam os aprovados. Demais recursos e ativação da restauração seguem pendentes.

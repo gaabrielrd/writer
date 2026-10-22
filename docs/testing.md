@@ -1303,3 +1303,16 @@ referenciadas, eventos repetidos/concorrentes, ABA e rollback, inventário v2 e
 finish legado. O SDK testa o handler com snapshots nativos e transações reais;
 não comprova entrega Eventarc ou implantação. Metadados conferem pertencimento,
 sem download de prosa na limpeza. Validate integral continua no fechamento P1.
+
+## Chat, conversão e remoção com texto lógico (P1 M27)
+
+```bash
+node --test functions/test/bookChapterConsumers.test.mjs
+```
+
+[Entrega M27](entregas/2026-10-22-writer-v2-consumidores-do-texto-logico.md):
+143 Node, 144 Vitest e três SDK distintos positivos. Cobre aplicação/recibo/crédito/
+ledger/pins atômicos, BYOK sem débito, conversão inteira, excesso sem truncamento,
+fonte após coleta, retomada de agrupadores mistos e campo congelado externo.
+SDK prova rollback por parte ocupada e replay concorrente; sugestões são fixtures,
+sem IA externa paga. Nenhuma prova de restauração final ou deploy; validate segue P1.

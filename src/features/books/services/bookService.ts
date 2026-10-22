@@ -269,9 +269,10 @@ async function storedChapterText(
   chapterId: string,
   data: StoredChapterDoc,
 ): Promise<string> {
+  // Composed chapters resolve canonical prose from scenes; frozen fields are backup data.
+  if (data.contentMode === 'scenes') return '';
   if (data.contentStorage != null) {
-    if (data.content !== null || data.contentMode === 'scenes')
-      throw new Error('Representação do texto do capítulo inconsistente.');
+    if (data.content !== null) throw new Error('Representação do texto do capítulo inconsistente.');
     return readServerLegacyChapterText(bookId, chapterId, data.contentStorage);
   }
   if (data.content === null || (data.content !== undefined && typeof data.content !== 'string'))

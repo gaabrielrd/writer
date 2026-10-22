@@ -120,7 +120,7 @@ export function createBookBackupReadService({ db }) {
         let encoded;
         try {
           const logical =
-            type === 'chapter' && value.contentMode !== 'scenes'
+            type === 'chapter' && (value.contentMode !== 'scenes' || value.contentStorage != null)
               ? {
                   ...value,
                   content: await readBookChapterText(tx, db, {

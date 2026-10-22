@@ -286,3 +286,15 @@ horas humanas ou prometer calendário antes de fechar o recorte.
 Mesclar/sobrescrever projeto, publicar/vender, arquivo comercial, IA, OCR,
 restauração de aventura/campanha, importação de chat/chaves/recibos/grants ou
 reconstrução de dados que nunca existiram nos JSON legados. A implementação P1 começa pelo marco interno M1; não há entrega de pacote ou restauração neste checkpoint.
+
+## Atualização local P1 — M23 a M27
+
+Após a estrutura M22, foram implementados corpos de capítulos grandes, leitura
+lógica, escrita/histórico por referências, coleta e exclusão compatível. O
+[contrato M27](60-chat-e-conversao-com-texto-logico.md) integra os consumidores de
+chat/conversão/remoção e preserva o campo congelado de capítulos compostos no
+backup. Não houve ativação da cópia, restauração final no UI, deploy ou CI.
+
+Continuam obrigatórios os demais recursos e campos grandes, personas/mídia,
+autorização/ativação e host/UI/roundtrip/validate integral. Esta atualização não
+fecha P1/F2-09 nem altera decisões confirmadas ou o escopo aprovado.

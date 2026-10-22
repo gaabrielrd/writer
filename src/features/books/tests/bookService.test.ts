@@ -42,6 +42,7 @@ vi.mock('../services/legacyChapterService', () => ({
 }));
 import type { Book } from '../model/book';
 import { readServerLegacyChapterText } from '../services/chapterTextReadService';
+import * as compositionService from '../services/chapterCompositionService';
 vi.mock('../services/chapterTextReadService', () => ({ readServerLegacyChapterText: vi.fn() }));
 
 vi.mock('firebase/firestore', () => ({
@@ -865,4 +866,40 @@ describe('capítulos com corpo externo', () => {
     }
     expect(readServerLegacyChapterText).not.toHaveBeenCalled();
   });
+});
+
+it('resolve capítulo composto pelas cenas sem usar o corpo legado congelado como fallback', async () => {
+  vi.mocked(readServerLegacyChapterText).mockClear();
+  const compose = vi
+    .spyOn(compositionService, 'resolveChapterContent')
+    .mockImplementation((_book, chapter) =>
+      Promise.resolve({ ...chapter, content: 'Actual scene prose' }),
+    );
+  vi.mocked(firestoreModule.getDoc).mockResolvedValue({
+    id: 'chapter',
+    exists: () => true,
+    data: () => ({
+      title: 'Composto',
+      contentMode: 'scenes',
+      content: null,
+      contentStorage: {
+        schemaVersion: 1,
+        bodyId: 'a'.repeat(64),
+        contentHash: 'b'.repeat(64),
+        byteLength: 600000,
+        chunkCount: 10,
+      },
+      assemblyRevision: 3,
+    }),
+  } as unknown as firestoreModule.DocumentSnapshot);
+  try {
+    expect((await getChapter('book', 'chapter'))?.content).toBe('Actual scene prose');
+    expect(compose).toHaveBeenCalledWith(
+      'book',
+      expect.objectContaining({ content: '', contentMode: 'scenes' }),
+    );
+    expect(readServerLegacyChapterText).not.toHaveBeenCalled();
+  } finally {
+    compose.mockRestore();
+  }
 });

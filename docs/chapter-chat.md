@@ -169,3 +169,14 @@ Não há nova dependência, segredo ou índice composto. Verificação da qualid
 literária e conectividade dos provedores no destino continua sendo uma etapa
 de liberação controlada. As ferramentas antigas de autocomplete mantêm seus
 contratos de geração e cobrança.
+
+## Texto lógico e corpos externos — P1 M27
+
+[ADR 0071](decisions/0071-logical-chapter-consumers.md) integra o aceite ao escritor
+compartilhado: hash do texto lógico e corpo/pins/ledger/crédito/recibo na mesma
+transação. A representação externa não muda provedor, preço, contrato de replay,
+recuperação ou limite anterior de 800000 bytes no resultado aplicado.
+Capítulo em remoção é indisponível. [Evidência](entregas/2026-10-22-writer-v2-consumidores-do-texto-logico.md)
+inclui falha nativa de gravação sem débito e repetição concorrente com cobrança
+única; sugestões são fixtures, sem nova validação de IA externa em produção.
+Não houve deploy; a implantação segue a ordem e os gates P1 da ADR 0070.

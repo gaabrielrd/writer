@@ -470,3 +470,13 @@ Eventarc não foi verificada. Implantação exige drenar handlers antigos antes 
 habilitar produtores do formato. Conversão/chat, demais recursos/campos grandes,
 personas/mídia, autorização/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
 Somente commit local; CI ignorada.
+
+### P1 M27 — consumidores do texto lógico
+
+O [contrato 60](60-chat-e-conversao-com-texto-logico.md) integra chat, conversão e
+remoção por agrupadores mistos, mantendo pins, versões, fonte e débito atômicos.
+Editor compõe cenas e backup preserva campo congelado externo, sem fallback.
+[Evidência M27](../../../entregas/2026-10-22-writer-v2-consumidores-do-texto-logico.md):
+143 Node, 144 Vitest e três SDK distintos positivos; quotas anteriores preservadas.
+Demais recursos/campos grandes, personas/mídia, autorização/ativação e
+host/UI/roundtrip/validate continuam em P1/F2-09. Somente local; CI ignorada.

@@ -1243,3 +1243,16 @@ antigos preservam cursor e passam a drenar corpos antes da raiz. Worker normal
 adia raiz ausente/em exclusão; o protocolo integral drena todos os corpos próprios
 após revogar o livro. Nenhum índice/Rule/callable novo; trigger ainda não implantado.
 Leitores/coletor/exclusão devem preceder produtores, drenando invocações antigas.
+
+## Consumidores do texto lógico (P1 M27)
+
+[ADR 0071](decisions/0071-logical-chapter-consumers.md) integra chat legado ao
+escritor compartilhado e mantém corpo/pins/ledger/crédito/recibo atômicos.
+Conversão copia fonte completa inline, conserva o campo legado congelado e libera
+o pin do capítulo, preservando versões. Remoção por agrupadores mistos libera
+esse pin na revogação e retoma por metadados mesmo após coleta.
+
+Capítulo composto pode guardar campo congelado externo: bookService resolve
+somente cenas; backup hidrata esse campo sem alterar o formato. Quotas antigas
+de 800.000 bytes/cena/chat e envelopes permanecem; excesso é recusado integralmente.
+Ainda faltam demais recursos/campos grandes e ativação/host/UI/roundtrip P1.

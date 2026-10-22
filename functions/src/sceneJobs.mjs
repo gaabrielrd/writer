@@ -9,6 +9,7 @@ import {
 } from './sceneContracts.mjs';
 import { sceneRankBetween, rebalancedSceneRank } from './sceneRanks.mjs';
 import { BOOK_CHAPTER_BODY_FIELDS, prepareBookChapterBodyCleanup } from './bookChapterCleanup.mjs';
+import { createBookChapterBodyPlan } from './bookChapterStorage.mjs';
 
 const BOOK_DELETE_FLAT_PHASES = [
   'chapters',
@@ -151,6 +152,15 @@ export function addSceneJobs(api, helpers) {
         changes: [],
         disableGroups: entries.map((entry) => entry.value.id),
       });
+      const bodies =
+        context.target.kind === 'book'
+          ? createBookChapterBodyPlan(tx, db, { uid, bookId: context.target.id })
+          : null;
+      if (bodies)
+        for (const entry of entries) {
+          const manifest = entry.snapshot.data()?.contentStorage;
+          if (manifest != null) await bodies.pin(entry.value.id, manifest, -1);
+        }
       for (const entry of entries)
         tx.update(entry.ref, {
           deleting: true,
@@ -159,6 +169,7 @@ export function addSceneJobs(api, helpers) {
           structureRevision: entry.value.structureRevision + 1,
           updatedAt: timestamp,
         });
+      bodies?.commit();
       writeProject(tx, context, p, timestamp, -removedWords);
       wordProgress.commit();
       const state = {
