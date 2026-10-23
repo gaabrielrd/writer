@@ -1321,3 +1321,18 @@ Chamador futuro deverá confirmar vínculo e raiz juntos. Contador/uso inconsist
 falha inteiro; perda de acesso retorna universeId null. Harness sintético de SDK
 não demonstra ativação P1. Histórico/rascunho/capa, personas, campos grandes,
 certificação e host/UI/roundtrip/validate seguem pendentes.
+
+## Histórico na preparação (P1 M33)
+
+[ADR 0077](decisions/0077-restored-history-stream.md) acrescenta readRawPart interno
+com cursor encadeado e provas por unidade. advanceBookRestoreHistory prepara uma
+parte de origem por vez e confere SHA/tamanho integrais antes do manifesto.
+workVersions/workVersionBodies seguem o contrato dos leitores existentes,
+preservando datas/razão/rótulo e recursos históricos removidos sem recriá-los.
+
+Inventário v10 inclui as duas famílias planas antes dos recursos, com namespaces
+vazios, journal/recibo/cursor atômicos e cleanup mascarado limitado. Progresso v7
+fecha totais do relatório antes de draft. Corpos podem existir antes do manifesto;
+raiz ausente/countReady false impedem exposição. Certificação de todos os
+artefatos antes da ativação, rascunho/capa, personas, campos grandes e host/UI
+continuam obrigatórios. A raiz sintética dos testes não é ativação P1.

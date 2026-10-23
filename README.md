@@ -363,3 +363,8 @@ P1 M32 prepara a [origem do universo](docs/tasks/writer-v2/execucao/65-universo-
 sem copiar lore global. O plano para a ativação reautoriza a mesma encarnação e
 compõe vínculo/contador estritos junto da futura raiz; observação não é grant.
 Progresso v6 mantém inventário v9 e termina em history, sem ativar a cópia.
+
+P1 M33 prepara o [histórico por partes](docs/tasks/writer-v2/execucao/66-historico-na-preparacao.md):
+versões manuais e anteriores a restaurações, inclusive de recursos removidos,
+com texto/datas/razão/rótulo preservados. Inventário v10/progresso v7 mantêm
+corpos parciais privados e terminam em draft, sem ativar a cópia.

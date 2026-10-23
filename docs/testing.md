@@ -1385,3 +1385,17 @@ promoção, CAS/replay/rollback/retry, cancelamento e preservação global.
 SDK prova reautorização/ABA e raiz/vínculo/contador num commit nativo ou nenhum
 efeito no rollback. A raiz é sintética: não prova ativação pelo restaurador.
 P1/F2-09 continuam abertos; validate integral no fechamento do grande bloco.
+
+## Histórico preparado por partes (P1 M33)
+
+```bash
+node --test functions/test/bookRestoreHistory.test.mjs
+```
+
+[Entrega M33](entregas/2026-10-22-writer-v2-historico-na-preparacao.md):
+284 Node e dois SDK distintos positivos; 18 cenários de histórico restaurado.
+Cobre texto vazio/BOM/Unicode, datas/rótulo/razão, versões de recursos removidos,
+17 partes maiores que um documento no total, hash/prova alterados, CAS/replay,
+rollback/retry, JSON v1–v6, corpos sem manifesto, namespaces e cleanup v10/ABA.
+SDK confirma sigilo, corpo ocupado sem avanço e leitura exata após raiz sintética;
+não demonstra restauração ativada nem validação integral P1.

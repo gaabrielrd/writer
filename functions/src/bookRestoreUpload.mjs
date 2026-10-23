@@ -4,6 +4,7 @@ import { createBookRestoreResourcesService } from './bookRestoreResources.mjs';
 import { createBookRestoreCountsService } from './bookRestoreCounts.mjs';
 import { createBookRestorePersonasService } from './bookRestorePersonas.mjs';
 import { createBookRestoreUniverseService } from './bookRestoreUniverse.mjs';
+import { createBookRestoreHistoryService } from './bookRestoreHistory.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
@@ -68,6 +69,7 @@ const actions = {
   advanceBookRestoreCounts: ['content-verified'],
   advanceBookRestorePersonas: ['content-verified'],
   advanceBookRestoreUniverse: ['content-verified'],
+  advanceBookRestoreHistory: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -300,6 +302,19 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       )
         inconsistent();
       if (
+        r.preparation.history &&
+        (!loaded.job.preparation.history ||
+          ['versions', 'byteLength', 'sourceChunks', 'bodyCount'].some(
+            (k) => r.preparation.history[k] > loaded.job.preparation.history[k],
+          ) ||
+          r.preparation.history.startIndex !== loaded.job.preparation.history.startIndex ||
+          (r.preparation.itemIndex === loaded.job.preparation.itemIndex &&
+            r.preparation.history.pending &&
+            (!loaded.job.preparation.history.pending ||
+              r.preparation.history.pending.part > loaded.job.preparation.history.pending.part)))
+      )
+        inconsistent();
+      if (
         r.preparation.universe &&
         (!loaded.job.preparation.universe ||
           r.preparation.universe.itemIndex !== loaded.job.preparation.universe.itemIndex ||
@@ -314,6 +329,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         'advanceBookRestoreCounts',
         'advanceBookRestorePersonas',
         'advanceBookRestoreUniverse',
+        'advanceBookRestoreHistory',
       ].includes(r.action)
     )
       inconsistent();
@@ -938,7 +954,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const history = createBookRestoreHistoryService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...history,
     ...universe,
     ...personas,
     ...counts,

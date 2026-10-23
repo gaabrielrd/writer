@@ -1,4 +1,5 @@
 import { digest } from './sceneContracts.mjs';
+import { validateBookRestoreRawPosition } from './bookRestoreHistoryContracts.mjs';
 import { createBookRestoreRemapper, BOOK_RESTORE_RELATION_ITEMS } from './bookRestoreRemap.mjs';
 import { inconsistent, integer } from './bookRestoreUploadContracts.mjs';
 import {
@@ -164,6 +165,7 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
         record: mapped.record,
         value: mapped.value,
         raw: item.raw,
+        readRawPart: item.readRawPart,
         rawIdentity,
         loreRelations,
         verify: item.verify,
@@ -230,22 +232,41 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
       }
       // Never return bytes prepared against an already-stale pointer/control.
       await db.runTransaction(verify);
-      const raw = pointer.raw
-        ? () =>
-            readRaw(pointer.raw, async () => {
-              const observations = observationSet();
-              return {
-                source: await bytesSource(observations),
-                async verify(tx) {
-                  const current = await pinned(tx);
-                  await store.verify(tx);
-                  await observed.verify(tx, current);
-                  await observations.verify(tx, current);
-                },
-              };
-            })
+      async function rawSource() {
+        const observations = observationSet();
+        return {
+          source: await bytesSource(observations),
+          async verify(tx) {
+            const current = await pinned(tx);
+            await store.verify(tx);
+            await observed.verify(tx, current);
+            await observations.verify(tx, current);
+          },
+        };
+      }
+      const raw = pointer.raw ? () => readRaw(pointer.raw, rawSource) : null;
+      const readRawPart = pointer.raw
+        ? async ({ part, cursor = null }) => {
+            integer(part);
+            if (part >= pointer.raw.manifest.chunkCount || (part === 0) !== (cursor === null))
+              inconsistent();
+            if (cursor !== null) validateBookRestoreRawPosition(cursor);
+            const unit = await rawSource(),
+              step = await readBookBackupFrame(
+                unit.source,
+                part === 0 ? pointer.raw.cursor : cursor,
+              ),
+              bytes = validateBookContentRawPart(pointer.raw.manifest, step.record, part);
+            return {
+              part,
+              bytes,
+              cursor: step.cursor,
+              done: part === pointer.raw.manifest.chunkCount - 1,
+              verify: unit.verify,
+            };
+          }
         : null;
-      return { record: structuredClone(pointer.record), value, raw, verify };
+      return { record: structuredClone(pointer.record), value, raw, readRawPart, verify };
     },
   };
   return Object.freeze(api);

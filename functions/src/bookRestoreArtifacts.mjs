@@ -32,6 +32,24 @@ const context = (loaded) => ({
   jobToken: loaded.view.jobToken,
 });
 function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
+  if (version >= 10 && ['history-version', 'history-body'].includes(kind)) {
+    if (
+      typeof id !== 'string' ||
+      !(kind === 'history-version' ? /^restore-[a-f0-9]{64}$/ : /^[a-f0-9]{64}$/).test(id)
+    )
+      inconsistent();
+    return {
+      ref: db.doc(
+        'books/' +
+          loaded.job.bookId +
+          '/' +
+          (kind === 'history-version' ? 'workVersions' : 'workVersionBodies') +
+          '/' +
+          id,
+      ),
+      journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+    };
+  }
   if (version >= 9 && ['persona-definition', 'persona-binding'].includes(kind)) {
     if (
       typeof id !== 'string' ||
@@ -121,6 +139,7 @@ async function receipt(tx, db, loaded, id) {
       ...(loaded.job.cleanupVersion >= 7 ? ['advanceBookRestoreResources'] : []),
       ...(loaded.job.cleanupVersion >= 8 ? ['advanceBookRestoreCounts'] : []),
       ...(loaded.job.cleanupVersion >= 9 ? ['advanceBookRestorePersonas'] : []),
+      ...(loaded.job.cleanupVersion >= 10 ? ['advanceBookRestoreHistory'] : []),
     ].includes(value.receipt?.action) ||
     value.receipt.operationId !== id ||
     value.receipt.checkpoint > loaded.job.checkpoint ||
@@ -173,7 +192,7 @@ export async function prepareBookRestoreArtifacts(
   version = loaded.job.cleanupVersion,
 ) {
   restoreId(operationId);
-  if (![4, 5, 6, 7, 8, 9].includes(version) || writes.length > (version >= 5 ? 136 : 8))
+  if (![4, 5, 6, 7, 8, 9, 10].includes(version) || writes.length > (version >= 5 ? 136 : 8))
     inconsistent();
   const effects = [],
     paths = new Set();
@@ -251,6 +270,7 @@ export async function assertBookRestoreArtifactsEmpty(
     ...(version >= 5 ? ['bookTextBodies'] : []),
     ...(version >= 6 ? ['lore'] : []),
     ...(version >= 7 ? Object.values(BOOK_RESTORE_RESOURCE_FLAT) : []),
+    ...(version >= 10 ? ['workVersions', 'workVersionBodies'] : []),
   ]) {
     const page = await tx.get(
       db
@@ -263,7 +283,7 @@ export async function assertBookRestoreArtifactsEmpty(
 }
 export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![4, 5, 6, 7, 8, 9].includes(loaded.job.cleanupVersion) ||
+    ![4, 5, 6, 7, 8, 9, 10].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'artifacts'
   )
     inconsistent();
@@ -343,7 +363,7 @@ export async function assertBookRestoreBodyNamespaceEmpty(tx, db, loaded) {
 }
 export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![5, 6, 7, 8, 9].includes(loaded.job.cleanupVersion) ||
+    ![5, 6, 7, 8, 9, 10].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'body-artifacts'
   )
     inconsistent();
@@ -429,7 +449,7 @@ export async function assertBookRestoreResourceNamespacesEmpty(tx, db, loaded) {
 /** Drain journaled nested children even when their parent has not been prepared yet. */
 export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, limit) {
   if (
-    ![7, 8, 9].includes(loaded.job.cleanupVersion) ||
+    ![7, 8, 9, 10].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'resource-children'
   )
     inconsistent();
@@ -501,6 +521,27 @@ export async function assertBookRestorePersonaNamespacesEmpty(tx, db, loaded) {
     db
       .collection(journalPath(loaded))
       .where('kind', 'in', ['persona-definition', 'persona-binding'])
+      .select('kind')
+      .limit(1),
+  );
+  if (journals.docs.length) inconsistent();
+}
+
+/** Certify both flat history families before upgrading a job's cleanup inventory. */
+export async function assertBookRestoreHistoryNamespacesEmpty(tx, db, loaded) {
+  for (const name of ['workVersions', 'workVersionBodies']) {
+    const page = await tx.get(
+      db
+        .collection('books/' + loaded.job.bookId + '/' + name)
+        .select()
+        .limit(1),
+    );
+    if (page.docs.length) inconsistent();
+  }
+  const journals = await tx.get(
+    db
+      .collection(journalPath(loaded))
+      .where('kind', 'in', ['history-version', 'history-body'])
       .select('kind')
       .limit(1),
   );

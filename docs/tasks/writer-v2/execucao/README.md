@@ -539,3 +539,15 @@ promoção de unavailable, revogação/ABA, CAS/replay/cleanup e rollback/commit
 com raiz sintética. Não demonstra ativação integral da cópia.
 Histórico/rascunho/capa, personas, campos grandes, autorização/certificação final
 e host/UI/roundtrip/validate seguem P1/F2-09. Somente local; CI ignorada.
+
+### P1 M33 — histórico por partes
+
+O [contrato 66](66-historico-na-preparacao.md) prepara todas as versões, inclusive
+de recursos removidos, com hash incremental e manifesto depois do último corpo.
+Inventário v10/progresso v7 mantêm compatibilidade e encerram em draft.
+[Evidência M33](../../../entregas/2026-10-22-writer-v2-historico-na-preparacao.md):
+284 Node e dois SDK reais positivos. Vazio/BOM/Unicode, datas/rótulo/razão,
+retomada limitada, CAS/replay/rollback, partes sem manifesto e proteção contra ABA.
+Raiz sintética confere somente o leitor existente. Rascunho/capa, personas,
+campos grandes, certificação/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
+Somente local; CI ignorada.
