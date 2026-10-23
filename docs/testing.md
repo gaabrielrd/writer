@@ -1526,3 +1526,26 @@ Instrumentação Node registrou 361 leituras de partes em 19 páginas de backup;
 SDK confirma fidelidade, não desempenho isolado. Otimização da exportação e
 suporte aos outros campos grandes continuam pendentes antes de P1. Tipos,
 arquitetura, sintaxe e bundle/smoke positivos; sem jornada de ativação ou deploy.
+
+## Backup indexado das fontes congeladas (P1 M37b)
+
+```bash
+node --test functions/test/bookSceneSourceEncoding.test.mjs functions/test/bookBackupResourceRead.test.mjs
+npm run test:unit -- src/features/book-portability/tests/bookResourceCapture.test.ts
+```
+
+[Entrega M37b](entregas/2026-10-23-writer-v2-backup-indexado-das-fontes.md):
+104 backend distintos, 22 Vitest e três SDK positivos. Compara bytes com JSON
+legado, atravessa fronteiras Unicode/BOM/escapes, verifica índices inválidos,
+fonte sem índice, corrupção e tokens após alteração/ABA/recriação integral.
+Cliente recusa hash integral errado e prova alterada antes do selo.
+
+SDK mediu 19 páginas/37 get de partes pelo fluxo real de restauração e
+128 páginas/255 get no teste de capacidade próximo de 8 MiB. Esses números não
+representam faturamento ou benchmark isolado de latência. Sem mudança de API
+ou bundle cliente; sintaxe/arquitetura/lint dirigidos positivos. Jobs antigos
+sem índice e outros campos grandes continuam pendentes de P1.
+
+O Node pode ignorar um caminho de teste inexistente quando há outros válidos.
+Confira a existência de todos os caminhos de um lote dirigido antes de executá-lo;
+a entrega M37b registra a correção factual da contagem de arquivos de M37a.

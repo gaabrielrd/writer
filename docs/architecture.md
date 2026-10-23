@@ -1462,3 +1462,21 @@ Implantar leitor/callable/cliente antes do produtor. Fonte grande ainda é
 recomposta a cada página do backup: otimizar o custo quadrático antes de
 habilitar P1 integralmente. Demais campos grandes, capa/biblioteca,
 certificação/ativação e host/UI/roundtrip/validate continuam obrigatórios.
+
+## Backup indexado das fontes congeladas (P1 M37b)
+
+[ADR 0086](decisions/0086-indexed-scene-source-backup.md) guarda sceneSourceEncoding
+no manifesto já criado com a fonte: hash/tamanho do JSON completo, hashes de
+prefixo/sufixo e offsets/carries UTF-8 de até 128 segmentos. Não duplica prosa
+nem cria namespace/inventário. Índice presente e inválido falha fechado; ausência
+mantém a leitura legada.
+
+Cada página recompõe apenas o intervalo pedido, com até quatro partes nativas e
+memoização local à transação. Hash/escopo/nascimento/imutabilidade das partes
+permanecem; cliente confere o JSON integral antes dos registros provisórios e
+revalida provas antes do selo. O itemToken da fonte externa inclui nascimento
+e última alteração do corpo; lista mascarada e varredura final também o observam.
+
+Sem API/DTO/Rule/cliente de produção novo. Fontes M37a sem índice exigem migração/
+certificação antes da habilitação completa; outros campos grandes e orçamento
+após remapeamento continuam pendentes, assim como ativação/host/roundtrip/validate.

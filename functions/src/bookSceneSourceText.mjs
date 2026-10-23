@@ -1,4 +1,5 @@
 import { digest } from './sceneContracts.mjs';
+import { createBookSceneSourceEncoding } from './bookSceneSourceEncoding.mjs';
 import { prepareRestoredChapterText, readBookChapterText } from './bookChapterText.mjs';
 import { inconsistent, restoreHash } from './bookRestoreUploadContracts.mjs';
 function original(source) {
@@ -33,6 +34,13 @@ export function prepareRestoredBookSceneSource({
     timestamp,
     content,
   });
+  if (body)
+    body.writes[0].value.sceneSourceEncoding = createBookSceneSourceEncoding(
+      sourceId,
+      source,
+      body.manifest,
+      body.writes.slice(1).map((write) => write.value.bytes),
+    );
   return body
     ? { value: { ...source, original: { ...chapter, ...body.patch } }, writes: body.writes }
     : { value: source, writes: [] };

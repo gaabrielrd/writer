@@ -39,7 +39,7 @@ AGENTS, README, arquitetura/testes, plano/registro e ADR completam o incremento.
 
 ## Testes e validações reais
 
-**110 casos backend distintos positivos**, sete arquivos em lotes dirigidos:
+**110 casos backend distintos positivos**, seis arquivos em lotes dirigidos:
 
 ```text
 # Recursos, contagens, consumidores e backup

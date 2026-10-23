@@ -139,6 +139,7 @@
 - Mantenha lote/recibos ativos de personas após excluir o livro e implante gates/Rules/cliente antes de instalar cópias globais.
 - Instale personas restauradas por unidades sob inventário v14, sem sobrescrever biblioteca; revogue o lote antes da limpeza e preserve o marcador cancelled permanente, conforme ADR 0084.
 - Preserve texto lógico e pin próprio das fontes congeladas nos corpos de capítulo existentes; reconfira origem/revisão em cada parte e omita ponteiros físicos no backup, conforme ADR 0085.
+- Gere o índice JSON das fontes com a própria geração e leia somente o intervalo autorizado; inclua a identidade nativa do corpo no token e recuse índice inválido sem fallback, conforme ADR 0086.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.
@@ -204,6 +205,7 @@
 - Use `WRITER_VISUAL_PORT` distinto por checkout nas execuções visuais paralelas.
 - Mantenha protótipos demonstrativos em `e2e/visual`; não registre fixtures como evidência de autorização, pagamento ou piloto reais.
 - Repita apenas os testes afetados pelo ajuste; amplie a validação quando houver risco de integração ou falha sem causa resolvida.
+- Confira a existência dos caminhos explícitos de arquivos nos lotes de teste dirigidos antes de executá-los.
 - Durante o desenvolvimento, ignore a CI remota: não acompanhe, dispare ou repita workflows; registre a validação local realizada.
 
 ## Documentação

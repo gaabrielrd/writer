@@ -645,3 +645,17 @@ O backup ainda recompõe cada item por página; otimizar as leituras antes de P1
 M37 segue com lore, outros campos de cenas/narrativa, metadados e labels/metadata
 de versões/rascunho. Capa/biblioteca, certificação/ativação, limpeza pós-ativação e
 host/UI/roundtrip/validate permanecem. P1/F2-09 e Writer V2 abertos, somente local.
+
+### P1 M37b — leitura indexada do backup das fontes
+
+O [contrato 75](75-backup-indexado-das-fontes.md) grava offsets/carries e hashes no
+corpo já existente, sem texto duplicado ou inventário novo. As páginas continuam
+idênticas, com até quatro partes nativas por leitura; tokens/varredura final
+incluem nascimento/última alteração do corpo. Índice inválido falha fechado.
+[Evidência M37b](../../../entregas/2026-10-23-writer-v2-backup-indexado-das-fontes.md):
+104 backend distintos, 22 Vitest e três SDK positivos. Casos de 19 páginas/37
+leituras e 128 páginas/255 leituras confirmados no SDK. A compatibilidade sem
+índice permanece, com migração/certificação pendente antes de P1 integral.
+Demais campos grandes, orçamento após remapeamento, capa/biblioteca,
+certificação/ativação, limpeza pós-ativação e host/UI/roundtrip/validate seguem
+obrigatórios. P1/F2-09 e Writer V2 continuam abertos; somente commits locais.

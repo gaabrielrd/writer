@@ -318,3 +318,35 @@ it('malformed singleton rows and proof counts fail before further I/O', async ()
   }
   expect(empty.api.list).toHaveBeenCalledTimes(calls);
 });
+
+it('refuses a source with a wrong integral JSON hash before emitting its provisional source records', async () => {
+  const f = fixture(),
+    out = sink(),
+    text = '\ufeff' + 'frozen source '.repeat(90000);
+  f.put('scene-source', null, 'old-chapter', {
+    hash: digest(text),
+    original: { title: 'Original', order: 1, content: text },
+  });
+  const read = vi.mocked(f.api.read).getMockImplementation()!;
+  vi.mocked(f.api.read).mockImplementation(async (input) => {
+    const value = await read(input);
+    return input.kind === 'scene-source' ? { ...value, contentHash: 'f'.repeat(64) } : value;
+  });
+  await expect(
+    captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write }),
+  ).rejects.toThrow('estrutura completa');
+  expect(out.records.some((record) => record.kind === 'book-scene-source')).toBe(false);
+  expect(out.records.some((record) => record.kind === 'book-resources')).toBe(false);
+});
+it('final verification rejects a source body token change even with identical portable content', async () => {
+  const f = fixture(),
+    out = sink(),
+    proof = await captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write }),
+    row = f.rows.get(JSON.stringify(['scene-source', null, 'old-chapter']))!,
+    reads = vi.mocked(f.api.read).mock.calls.length;
+  row.token = 'f'.repeat(64);
+  await expect(verifyBookBackupResources(proof, { api: f.api })).rejects.toThrow(
+    'estrutura completa',
+  );
+  expect(f.api.read).toHaveBeenCalledTimes(reads);
+});

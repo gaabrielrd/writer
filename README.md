@@ -410,3 +410,10 @@ em corpos de capítulo imutáveis, inclusive acima de 1 MiB. Leitura privada e
 novo backup recompõem a fonte sem exigir o capítulo atual ou exportar ponteiros
 físicos. Outros campos grandes e a otimização das leituras de backup continuam
 pendentes antes da ativação completa de P1.
+
+P1 M37b acrescenta [backup indexado das fontes](docs/tasks/writer-v2/execucao/75-backup-indexado-das-fontes.md):
+fontes externas novas usam um índice pequeno no corpo existente, mantendo os
+mesmos bytes JSON e a autorização por página. O caso de 19 páginas caiu de 361
+para 37 leituras de partes; near-8 MiB passou com 128 páginas/255 leituras no SDK.
+Fontes antigas sem índice continuam compatíveis e precisam de migração antes
+da habilitação integral. Demais campos grandes e ativação de P1 seguem pendentes.

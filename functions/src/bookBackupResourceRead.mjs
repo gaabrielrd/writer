@@ -8,6 +8,8 @@ import {
 } from './workProgressContracts.mjs';
 import { resource, loreReference, reference } from './narrativeContracts.mjs';
 import { readBookSceneSource } from './bookSceneSourceText.mjs';
+import { openBookChapterText, chapterTextManifest } from './bookChapterText.mjs';
+import { readIndexedBookSceneSource } from './bookSceneSourceEncoding.mjs';
 import { validSceneRank } from './sceneRanks.mjs';
 import { BOOK_STRUCTURE_LIMITS } from './bookBackupStructure.mjs';
 import {
@@ -54,7 +56,7 @@ const path = (context, value) =>
   '/' +
   (value.definition.parent ? value.definition.parent + '/' + value.parentId + '/' : '') +
   value.definition.path;
-function itemToken(context, source, value, item, parent) {
+function itemToken(context, source, value, item, parent, body = null) {
   return digest({
     version: 1,
     uid: context.uid,
@@ -65,7 +67,21 @@ function itemToken(context, source, value, item, parent) {
     id: item.id,
     native: bookBackupIdentity(item),
     parent: parent ? bookBackupIdentity(parent) : null,
+    ...(body === null ? {} : { body }),
   });
+}
+async function sourceBodyIdentity(tx, context, value, snapshot) {
+  const descriptor =
+    value.kind === 'scene-source' ? snapshot.data()?.original?.contentStorage : null;
+  if (descriptor == null) return null;
+  const manifest = chapterTextManifest(descriptor),
+    body = await readWorkMetadata(
+      tx,
+      context.db.doc(context.path + '/bookTextBodies/' + manifest.bodyId),
+      [],
+    );
+  if (!body.exists) unavailable();
+  return bookBackupIdentity(body);
 }
 async function parentSnapshot(tx, context, value) {
   if (!value.definition.parent) return null;
@@ -101,7 +117,14 @@ function readCursor(value, context, descriptor, token) {
     workFail('invalid-argument', 'Página de outro escopo.');
   return workId(parsed.id);
 }
-function validateValue(context, value, snapshot, parent, logical = snapshot.data()) {
+function validateValue(
+  context,
+  value,
+  snapshot,
+  parent,
+  logical = snapshot.data(),
+  sourceTextVerified = false,
+) {
   const data = logical;
   if (!data) bookBackupChanged(true);
   if (data.deleting || data.rebalancing) unavailable();
@@ -146,7 +169,8 @@ function validateValue(context, value, snapshot, parent, logical = snapshot.data
     if (!data.original || typeof data.original !== 'object' || Array.isArray(data.original))
       unavailable();
     const text = data.original.content ?? '';
-    if (typeof text !== 'string' || digest(text) !== data.hash) unavailable();
+    if (!sourceTextVerified && (typeof text !== 'string' || digest(text) !== data.hash))
+      unavailable();
   }
   try {
     if (value.kind === 'scene-reference')
@@ -194,7 +218,7 @@ export function createBookBackupResourceService({ db }) {
             .collection(path(context, value))
             .orderBy('__name__')
             .limit(limit + 1)
-            .select();
+            .select(...(value.kind === 'scene-source' ? ['original.contentStorage'] : []));
           if (after !== null) query = query.startAfter(after);
           const page = await tx.get(query);
           selected = page.docs.slice(0, limit);
@@ -204,10 +228,19 @@ export function createBookBackupResourceService({ db }) {
           ...current.result,
           kind: value.kind,
           parentId: value.parentId,
-          items: selected.map((snapshot) => ({
-            id: snapshot.id,
-            itemToken: itemToken(context, token, value, snapshot, parent),
-          })),
+          items: await Promise.all(
+            selected.map(async (snapshot) => ({
+              id: snapshot.id,
+              itemToken: itemToken(
+                context,
+                token,
+                value,
+                snapshot,
+                parent,
+                await sourceBodyIdentity(tx, context, value, snapshot),
+              ),
+            })),
+          ),
           nextCursor: hasMore
             ? Buffer.from(
                 JSON.stringify({
@@ -239,8 +272,47 @@ export function createBookBackupResourceService({ db }) {
         const current = await readBookBackupSource(tx, context, token),
           parent = await parentSnapshot(tx, context, value),
           snapshot = await tx.get(db.doc(path(context, value) + '/' + id));
-        const actual = itemToken(context, token, value, snapshot, parent);
+        const actual = itemToken(
+          context,
+          token,
+          value,
+          snapshot,
+          parent,
+          await sourceBodyIdentity(tx, context, value, snapshot),
+        );
         if (!snapshot.exists || actual !== expected) bookBackupChanged(true);
+        if (value.kind === 'scene-source')
+          validateValue(context, value, snapshot, parent, snapshot.data(), true);
+        if (value.kind === 'scene-source' && snapshot.data().original?.contentStorage != null) {
+          const record = snapshot.data(),
+            opened = await openBookChapterText(tx, db, {
+              uid,
+              bookId: context.target.id,
+              chapterId: id,
+              chapter: record.original,
+            });
+          if ('inline' in opened || opened.manifest.contentHash !== record.hash) unavailable();
+          const indexed = await readIndexedBookSceneSource(tx, db, {
+            sourceId: id,
+            source: record,
+            opened,
+            index: data.index,
+          });
+          if (indexed) {
+            return {
+              ...current.result,
+              kind: value.kind,
+              parentId: value.parentId,
+              id,
+              itemToken: actual,
+              index: data.index,
+              chunkCount: indexed.chunkCount,
+              byteLength: indexed.byteLength,
+              contentHash: indexed.contentHash,
+              chunkBase64: indexed.bytes.toString('base64'),
+            };
+          }
+        }
         const logical =
           value.kind === 'scene-source'
             ? await readBookSceneSource(tx, db, {

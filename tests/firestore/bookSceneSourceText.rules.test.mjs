@@ -17,6 +17,7 @@ import {
   finishRestoreCounts,
 } from '../../functions/test/helpers/bookRestoreCountsFixture.mjs';
 import { cleanupLegacyRestore } from '../../functions/test/helpers/bookLegacyRestoreFixture.mjs';
+import { observeSceneSourcePartReads } from '../../functions/test/helpers/bookSceneSourceEncodingFixture.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-scene-source-text',
@@ -55,7 +56,7 @@ after(async () => {
   await env?.cleanup();
 });
 
-test('SDK restores a >1 MiB frozen source, serves exact pages/backup and cancels through existing inventories', async () => {
+test('SDK restores a >1 MiB frozen source, serves exact pages/backup and cancels through existing inventories', async (t) => {
   const p = await ready(),
     base = 'books/' + p.bookId,
     source = (await admin.collection(base + '/sceneSources').get()).docs[0],
@@ -66,6 +67,7 @@ test('SDK restores a >1 MiB frozen source, serves exact pages/backup and cancels
   assert.equal((await admin.doc(base).get()).exists, false);
   assert.equal((await admin.doc(base + '/workProgress/current').get()).data().countReady, false);
   assert.ok(body.createTime.isEqual(source.createTime));
+  assert.equal(body.data().sceneSourceEncoding.schemaVersion, 1);
   assert.ok(chunks.every((d) => d.createTime.isEqual(source.createTime)));
   const own = env.authenticatedContext(uid).firestore();
   await assertFails(getDoc(doc(own, body.ref.path)));
@@ -105,11 +107,23 @@ test('SDK restores a >1 MiB frozen source, serves exact pages/backup and cancels
     item = (await resources.listBookBackupResources(uid, scope)).items[0],
     parts = [];
   let count;
-  for (let index = 0; count === undefined || index < count; index++) {
-    const result = await resources.readBookBackupResource(uid, { ...scope, ...item, index });
-    count = result.chunkCount;
-    parts.push(Buffer.from(result.chunkBase64, 'base64'));
+  const observer = observeSceneSourcePartReads(admin);
+  try {
+    for (let index = 0; count === undefined || index < count; index++) {
+      const result = await resources.readBookBackupResource(uid, { ...scope, ...item, index });
+      count = result.chunkCount;
+      parts.push(Buffer.from(result.chunkBase64, 'base64'));
+    }
+  } finally {
+    observer.stop();
   }
+  assert.ok(observer.counts.every((n) => n <= 4));
+  t.diagnostic(
+    count +
+      ' output pages, ' +
+      observer.counts.reduce((a, b) => a + b, 0) +
+      ' raw-part get requests',
+  );
   const portable = JSON.parse(Buffer.concat(parts).toString('utf8'));
   assert.equal(portable.data.original.content, sourceText);
   assert.equal('contentStorage' in portable.data.original, false);
