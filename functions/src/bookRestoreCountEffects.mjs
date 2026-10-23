@@ -1,5 +1,6 @@
 import { digest } from './sceneContracts.mjs';
 import { readBookSceneSource } from './bookSceneSourceText.mjs';
+import { checkRestoredLorePayload } from './bookRestoreLorePayloadRead.mjs';
 import { countVisibleWords } from './visibleWordCount.mjs';
 import { inconsistent, sum } from './bookRestoreUploadContracts.mjs';
 import { readBookRestoreArtifact } from './bookRestoreArtifacts.mjs';
@@ -12,11 +13,25 @@ export function createBookRestoreCountEffects({ db }) {
   const read = (tx, loaded, kind, id, optional = false) =>
     readBookRestoreArtifact(tx, db, loaded, kind, id, { optional });
   return {
-    async check(tx, loaded, item) {
+    async check(tx, loaded, item, preparation = loaded.job.preparation, page = null) {
       const found = new Map(),
-        p = loaded.job.preparation;
+        p = preparation;
       if (item.record.kind === 'book-lore') {
-        const native = await read(tx, loaded, 'lore', item.value.id),
+        const artifact = await read(tx, loaded, 'lore', item.value.id);
+        if (Object.hasOwn(artifact.value, 'payloadStorage')) {
+          const pending = await checkRestoredLorePayload(
+            tx,
+            db,
+            loaded,
+            item,
+            artifact,
+            preparation,
+            page,
+          );
+          return { native: found, pending };
+        }
+        if (preparation.counts?.lorePayloadOffset) inconsistent();
+        const native = artifact,
           expected = {
             ...item.value.data,
             bookId: loaded.job.bookId,
@@ -31,7 +46,7 @@ export function createBookRestoreCountEffects({ db }) {
             : !Array.isArray(relations) || relations.length !== item.loreRelations.count)
         )
           inconsistent();
-        return found;
+        return { native: found, pending: false };
       }
       const writes = projectBookRestoreResource(item.value, loaded.job.ownerId, p.timestamp);
       for (const write of writes) {
@@ -62,7 +77,7 @@ export function createBookRestoreCountEffects({ db }) {
         if (digest(actual) !== digest(expected)) inconsistent();
         found.set(write.kind, native);
       }
-      return found;
+      return { native: found, pending: false };
     },
     async scene(tx, loaded, native, preparation) {
       const uid = loaded.job.ownerId,

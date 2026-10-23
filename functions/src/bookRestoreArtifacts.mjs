@@ -33,6 +33,25 @@ const context = (loaded) => ({
   jobToken: loaded.view.jobToken,
 });
 function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
+  if (
+    version >= 6 &&
+    loaded.job.payloadInventoryVersion === 1 &&
+    ['payload-body', 'payload-chunk', 'lore-segment'].includes(kind)
+  ) {
+    let suffix;
+    if (kind === 'lore-segment') {
+      if (!/^[a-f0-9]{64}$/.test(id)) inconsistent();
+      suffix = 'bookLoreSegments/' + id;
+    } else {
+      const match = typeof id === 'string' && /^([a-f0-9]{64})(?::([0-9]{15}))?$/.exec(id);
+      if (!match || (kind === 'payload-chunk') !== Boolean(match[2])) inconsistent();
+      suffix = kind === 'payload-body' ? 'bookResourceBodies/' + id : 'bookResourceChunks/' + id;
+    }
+    return {
+      ref: db.doc('books/' + loaded.job.bookId + '/' + suffix),
+      journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+    };
+  }
   if (version >= 14 && kind === 'persona-library-profile') {
     if (typeof id !== 'string' || !/^custom-[a-f0-9]{64}$/.test(id)) inconsistent();
     return {
@@ -322,6 +341,8 @@ export async function assertBookRestoreArtifactsEmpty(
   if (version >= 12) await assertBookRestoreCoverNamespacesEmpty(tx, db, loaded);
   if (version >= 13) await assertBookRestoreCoverStorageNamespaceEmpty(tx, db, loaded);
   if (version >= 14) await assertBookRestorePersonaLibraryClean(tx, db, loaded);
+  if (loaded.job.payloadInventoryVersion === 1)
+    await assertBookRestorePayloadNamespacesEmpty(tx, db, loaded);
   for (const name of [
     ...Object.values(BOOK_RESTORE_NATIVE_V4),
     ...(version >= 5 ? ['bookTextBodies'] : []),
@@ -425,6 +446,10 @@ export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, lim
   )
     inconsistent();
   integer(limit, 1);
+  if (loaded.job.payloadInventoryVersion === 1) {
+    const payloads = await prepareBookRestorePayloadCleanup(tx, db, loaded, limit);
+    if (payloads) return payloads;
+  }
   const bodies = await tx.get(
       db
         .collection('books/' + loaded.job.bookId + '/bookTextBodies')
@@ -551,9 +576,19 @@ export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, 
 }
 
 /** Read only artifacts born with their journal/receipt and last updated together. */
-export async function readBookRestoreArtifact(tx, db, loaded, kind, id, { optional = false } = {}) {
+export async function readBookRestoreArtifact(
+  tx,
+  db,
+  loaded,
+  kind,
+  id,
+  { optional = false, metadataOnly = false } = {},
+) {
   const at = address(db, loaded, kind, id),
-    [target, journal] = await Promise.all([tx.get(at.ref), tx.get(at.journal)]);
+    [target, journal] = await Promise.all([
+      metadataOnly ? readWorkMetadata(tx, at.ref, []) : tx.get(at.ref),
+      tx.get(at.journal),
+    ]);
   if (!target.exists && !journal.exists && optional) return null;
   await authentic(tx, db, loaded, journal, target);
   const observed = { createTime: target.createTime, updateTime: target.updateTime };
@@ -678,4 +713,65 @@ export async function assertBookRestoreCoverStorageNamespaceEmpty(tx, db, loaded
     ),
   ]);
   if (native.docs.length || journals.docs.length) inconsistent();
+}
+
+export { receipt as readBookRestoreArtifactReceipt };
+const payloadFamilies = [
+  ['lore-segment', 'bookLoreSegments'],
+  ['payload-chunk', 'bookResourceChunks'],
+  ['payload-body', 'bookResourceBodies'],
+];
+export async function assertBookRestorePayloadNamespacesEmpty(tx, db, loaded) {
+  for (const [, collection] of payloadFamilies) {
+    const page = await tx.get(
+      db
+        .collection('books/' + loaded.job.bookId + '/' + collection)
+        .select()
+        .limit(1),
+    );
+    if (page.docs.length) inconsistent();
+  }
+  const journals = await tx.get(
+    db
+      .collection(journalPath(loaded))
+      .where(
+        'kind',
+        'in',
+        payloadFamilies.map(([kind]) => kind),
+      )
+      .select('kind')
+      .limit(1),
+  );
+  if (journals.docs.length) inconsistent();
+}
+async function prepareBookRestorePayloadCleanup(tx, db, loaded, limit) {
+  for (const [kind, collection] of payloadFamilies) {
+    const page = await tx.get(
+      db
+        .collection('books/' + loaded.job.bookId + '/' + collection)
+        .orderBy('__name__')
+        .select()
+        .limit(limit + 1),
+    );
+    if (!page.docs.length) {
+      const orphan = await tx.get(
+        db.collection(journalPath(loaded)).where('kind', '==', kind).select().limit(1),
+      );
+      if (orphan.docs.length) inconsistent();
+      continue;
+    }
+    const selected = page.docs.slice(0, limit),
+      remove = [];
+    for (const target of selected) {
+      const at = address(db, loaded, kind, target.id),
+        journal = await tx.get(at.journal);
+      await authentic(tx, db, loaded, journal, target);
+      remove.push(target.ref, journal.ref);
+    }
+    const preparation = structuredClone(loaded.job.preparation);
+    preparation.cleanedArtifacts = sum(preparation.cleanedArtifacts, selected.length);
+    if (preparation.cleanedArtifacts > preparation.artifactCount) inconsistent();
+    return { remove, patch: { preparation, state: 'cancelling', cleanupPhase: 'body-artifacts' } };
+  }
+  return null;
 }

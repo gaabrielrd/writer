@@ -1583,3 +1583,18 @@ use alteração real seguida de retorno para testar ABA, sem fabricar timestamps
 M38b/M38c ainda precisam de jornadas de produção/cleanup/consumidores. Nenhum
 endpoint ou acesso ao namespace foi habilitado. Validate integral permanece no
 fechamento de P1; CI ignorada, commits locais.
+
+## P1 M38b — produção e reconciliação de lore grande
+
+[Entrega M38b](entregas/2026-10-23-writer-v2-producao-privada-de-lore-grande.md):
+487 backend distintos em 35 arquivos e quatro SDK distintos positivos. Incluem
+codec em caminho plano, upload/validação/produção/contagem/cancelamento de lore
+acima de 1 MiB e 130 relações, Rules sem grant novo e preservação de parte recriada.
+Node inclui 5000 relações em 79 páginas, até 16 partes/34 writes por commit,
+rollback/retry/CAS e segmento ausente. Um objeto sintético de 141 partes é teste
+do codec, não evidência de restore/remapeamento completo de arquivo de 8 MiB.
+
+Não fabricar identidades nativas para simular legado. A migração de prefixos
+inline permanece pendente e exige fixture do protocolo anterior com criação
+nativa real de lore/journal/recibo/cursor. Validate integral no fechamento de P1;
+sem CI/push/PR/deploy.

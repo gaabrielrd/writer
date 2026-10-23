@@ -141,7 +141,7 @@
 - Preserve texto lógico e pin próprio das fontes congeladas nos corpos de capítulo existentes; reconfira origem/revisão em cada parte e omita ponteiros físicos no backup, conforme ADR 0085.
 - Gere o índice JSON das fontes com a própria geração e leia somente o intervalo autorizado; inclua a identidade nativa do corpo no token e recuse índice inválido sem fallback, conforme ADR 0086.
 - Migre índices de fontes somente por partes/journals/recibos nativos e progresso v12; preserve no-op, artifactCount e cancelamento v14, conforme ADR 0087.
-- Mantenha payloads de recursos grandes internos e sem produtor até ampliar inventário/cleanup; fixe o nascimento nativo do cabeçalho, conforme ADR 0088.
+- Grave payloads de lore sob payloadInventoryVersion 1 com journals/cleanup e birth fixado; mantenha a raiz ausente até integrar consumidores e exclusão, conforme ADR 0089.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

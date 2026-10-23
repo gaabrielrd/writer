@@ -303,6 +303,18 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
         )
       )
         inconsistent();
+      if (Object.hasOwn(r.preparation, 'lorePayload') && loaded.job.payloadInventoryVersion !== 1)
+        inconsistent();
+      const oldLorePage = r.preparation.counts?.lorePayloadOffset,
+        currentLorePage = loaded.job.preparation.counts?.lorePayloadOffset;
+      if (
+        oldLorePage &&
+        r.preparation.counts.itemIndex === loaded.job.preparation.counts?.itemIndex &&
+        (!currentLorePage ||
+          oldLorePage.entityId !== currentLorePage.entityId ||
+          oldLorePage.offset > currentLorePage.offset)
+      )
+        inconsistent();
       if (
         r.preparation.personas &&
         (r.preparation.personas.profileCount >

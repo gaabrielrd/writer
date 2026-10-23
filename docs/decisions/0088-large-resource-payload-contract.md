@@ -1,8 +1,15 @@
 # ADR 0088 — Payloads lógicos de recursos grandes
 
-- Status: contrato interno aceito; produtor ainda não habilitado
+- Status: contrato aceito; endereço físico e produção emendados pela ADR 0089
 - Data: 2026-10-23
 - Plano: [M38](../tasks/writer-v2/execucao/77-campos-grandes-de-recursos-e-metadados.md)
+
+## Emenda posterior
+
+A [ADR 0089](0089-private-paged-lore-payloads.md) introduziu a produção privada
+com inventário/cleanup e trocou partes aninhadas por coleção plana. As condições
+abaixo descrevem o momento M38a; codec e provas permanecem. Consumidores/ativação
+continuam pendentes.
 
 ## Contexto
 

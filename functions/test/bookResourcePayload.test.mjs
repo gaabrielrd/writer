@@ -17,7 +17,7 @@ import {
 } from '../src/bookResourcePayloadRead.mjs';
 import { adventureImportDb } from './helpers/adventureImportDb.mjs';
 import { payloadInput, seedResourcePayload } from './helpers/bookResourcePayloadFixture.mjs';
-import { chunkId } from '../src/bookRestoreUploadContracts.mjs';
+import { resourcePayloadChunkPath as payloadChunk } from '../src/bookResourcePayloadPaths.mjs';
 const sha = (data) => createHash('sha256').update(data).digest('hex');
 const f = () => adventureImportDb({ nativeUpdates: true });
 const read = (db, opening) =>
@@ -76,7 +76,10 @@ test('one random page reads only the header and that part, no catalogue or compl
     const part = await readBookResourcePayloadPart(observed, fixture.db, opened, 7);
     assert.equal(part.length, 65536);
   });
-  assert.deepEqual(reads, [seeded.path, seeded.path + '/chunks/' + chunkId(7)]);
+  assert.deepEqual(reads, [
+    seeded.path,
+    payloadChunk(seeded.opening.bookId, seeded.prepared.manifest.bodyId, 7),
+  ]);
 });
 test('partial outputs and input mutations cannot change an already prepared generation', () => {
   const input = payloadInput({ text: 'x'.repeat(180000) }),
@@ -228,7 +231,7 @@ for (const change of [
     const fixture = f(),
       seeded = await seedResourcePayload(fixture.db, payloadInput({ text: 'x'.repeat(180000) })),
       opening = structuredClone(seeded.opening),
-      partPath = seeded.path + '/chunks/' + chunkId(0);
+      partPath = payloadChunk(seeded.opening.bookId, seeded.prepared.manifest.bodyId, 0);
     if (change === 'owner') opening.uid = 'other';
     if (change === 'book') opening.bookId = 'other';
     if (change === 'resource') opening.resource.id = 'other';
@@ -275,7 +278,9 @@ test('pure native validation refuses snapshots from another document before byte
     seeded = await seedResourcePayload(fixture.db);
   await fixture.db.runTransaction(async (tx) => {
     const opened = await openBookResourcePayload(tx, fixture.db, seeded.opening),
-      source = await tx.get(fixture.db.doc(seeded.path + '/chunks/' + chunkId(0)));
+      source = await tx.get(
+        fixture.db.doc(payloadChunk(seeded.opening.bookId, seeded.prepared.manifest.bodyId, 0)),
+      );
     assert.throws(() =>
       validateBookResourcePayloadSnapshot(opened, 0, {
         ...source,
@@ -329,7 +334,7 @@ for (const [name, bytes] of [
       path = 'books/' + input.bookId + '/bookResourceBodies/' + manifest.bodyId,
       part = { ...prepared.part(0), bytes, proof: [] };
     await fixture.db.runTransaction(async (tx) => {
-      tx.create(fixture.db.doc(path + '/chunks/' + chunkId(0)), part);
+      tx.create(fixture.db.doc(payloadChunk(input.bookId, manifest.bodyId, 0)), part);
     });
     await fixture.db.runTransaction(async (tx) => {
       tx.create(fixture.db.doc(path), { ...prepared.header, ...manifest });

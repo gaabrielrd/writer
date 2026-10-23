@@ -69,7 +69,7 @@ export function createBookRestoreCountsService({
               },
             }
           : structuredClone(initial.loaded.job.preparation);
-      let item;
+      let item, lorePage;
       if (cursor.counts.step === 'scenes') {
         try {
           const reader = await createVerifiedBookRestoreContent({
@@ -80,6 +80,10 @@ export function createBookRestoreCountsService({
             load,
           });
           item = await reader.readMappedItem(cursor.counts.itemIndex);
+          if (cursor.counts.lorePayloadOffset) {
+            if (!item.loreRelations) inconsistent();
+            lorePage = await item.loreRelations.read(cursor.counts.lorePayloadOffset.offset);
+          }
         } catch (error) {
           const result = await db.runTransaction(async (tx) =>
             resolved(tx, await load(tx, uid, request.restoreId, request.jobToken)),
@@ -94,23 +98,27 @@ export function createBookRestoreCountsService({
         if (result) return result;
         available(loaded, request);
         if (item) await item.verify(tx);
+        if (lorePage) await lorePage.verify(tx);
         if (loaded.job.cleanupVersion < 8) await assertBookRestoreEntityIndexEmpty(tx, db, loaded);
         const preparation = structuredClone(cursor),
           counts = preparation.counts,
           writes = [];
+        let itemPending = false;
         if (counts.step === 'scenes') {
           if (item.record.kind === 'book-resources') {
             if (counts.sceneCount !== preparation.resourceCounts.scene) inconsistent();
             counts.step = 'links';
           } else {
-            const native = await effects.check(tx, loaded, item);
+            const checked = await effects.check(tx, loaded, item, preparation, lorePage);
+            const native = checked.native;
+            itemPending = checked.pending;
             if (item.record.kind === 'book-scene') {
               writes.push(...(await effects.scene(tx, loaded, native.get('scene'), preparation)));
               counts.sceneCount = sum(counts.sceneCount, 1);
             } else if (['book-arc', 'book-event', 'book-milestone'].includes(item.record.kind))
               writes.push(...(await effects.sequence(tx, loaded, native.get(item.value.kind))));
           }
-          counts.itemIndex = sum(counts.itemIndex, 1);
+          if (!itemPending) counts.itemIndex = sum(counts.itemIndex, 1);
         } else {
           if (counts.linkId !== null)
             await readBookRestoreArtifact(tx, db, loaded, 'narrative-link', counts.linkId);

@@ -1,4 +1,4 @@
-import { chunkId } from '../../src/bookRestoreUploadContracts.mjs';
+import { resourcePayloadChunkPath as payloadChunk } from '../../src/bookResourcePayloadPaths.mjs';
 import { prepareBookResourcePayload } from '../../src/bookResourcePayload.mjs';
 export const payloadInput = (
   value = {
@@ -23,7 +23,10 @@ export async function seedResourcePayload(db, input = payloadInput()) {
   for (let from = 0; from < prepared.manifest.chunkCount; from += 32)
     await db.runTransaction(async (tx) => {
       for (let index = from; index < Math.min(from + 32, prepared.manifest.chunkCount); index++)
-        tx.create(db.doc(path + '/chunks/' + chunkId(index)), prepared.part(index));
+        tx.create(
+          db.doc(payloadChunk(input.bookId, prepared.manifest.bodyId, index)),
+          prepared.part(index),
+        );
     });
   await db.runTransaction(async (tx) => {
     tx.create(db.doc(path), prepared.header);

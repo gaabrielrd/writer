@@ -94,3 +94,15 @@ e a [ADR 0088](../../../decisions/0088-large-resource-payload-contract.md).
 
 Somente a primeira etapa técnica está implementada. M38b é a próxima tarefa;
 nenhuma restauração grande de lore ou ativação foi comprovada por esta evidência.
+
+## Evidência M38b e sequência restante
+
+O [plano 78](78-producao-privada-de-lore-grande.md) materializa novos lores grandes
+privadamente, com dados gerais e páginas de relações, inventário/cleanup e
+reconciliação. [Evidência](../../../entregas/2026-10-23-writer-v2-producao-privada-de-lore-grande.md):
+487 backend e quatro SDK distintos positivos. A emenda da ADR 0089 usa coleções
+planas para que partes sem cabeçalho também sejam enumeráveis/canceláveis.
+
+A etapa de compatibilidade continua aberta no [plano 79](79-migracao-dos-prefixos-de-lore.md).
+Depois, M38c deve integrar consumidores e mutações antes de ativar qualquer raiz.
+O resultado técnico não fecha o conjunto M38, P1/F2-09 nem Writer V2.

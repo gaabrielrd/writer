@@ -425,6 +425,11 @@ nativos. Preparação v12 mantém texto, pins e inventário v14; índice correto
 Demais campos grandes e certificação/ativação continuam pendentes.
 
 O contrato interno M38a prepara payloads de recursos grandes em partes, com
-leitura verificável acima de 8 MiB/128 partes. Ainda não há produtor habilitado
-nem restauração/edição de lore grande pela UI; inventário/cleanup e consumidores
-são os próximos passos do [plano M38](docs/tasks/writer-v2/execucao/77-campos-grandes-de-recursos-e-metadados.md).
+leitura verificável acima de 8 MiB/128 partes. O produtor privado e seu cleanup
+foram integrados em M38b; a restauração/edição de lore grande pela UI ainda depende
+dos consumidores previstos no [plano M38](docs/tasks/writer-v2/execucao/77-campos-grandes-de-recursos-e-metadados.md).
+
+M38b materializa lore grande privadamente, com dados gerais em partes e relações
+em páginas, reconciliação e cancelamento com prova nativa. Ainda faltam a
+migração dos prefixos inline antigos e a integração de leitura/edição/backup;
+nenhum livro foi ativado. Veja a [entrega M38b](docs/entregas/2026-10-23-writer-v2-producao-privada-de-lore-grande.md).

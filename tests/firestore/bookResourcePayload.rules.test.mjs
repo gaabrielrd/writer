@@ -11,7 +11,7 @@ import {
   readBookResourcePayload,
   readBookResourcePayloadPart,
 } from '../../functions/src/bookResourcePayloadRead.mjs';
-import { chunkId } from '../../functions/src/bookRestoreUploadContracts.mjs';
+import { resourcePayloadChunkPath as payloadChunk } from '../../functions/src/bookResourcePayloadPaths.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-resource-payload';
@@ -55,7 +55,10 @@ test('SDK seals a payload beyond 8 MiB and 128 parts, reads one page independent
     return readBookResourcePayloadPart(observed, admin, opened, 83);
   });
   assert.equal(page.length, 65536);
-  assert.deepEqual(calls, [seeded.path, seeded.path + '/chunks/' + chunkId(83)]);
+  assert.deepEqual(calls, [
+    seeded.path,
+    payloadChunk(seeded.opening.bookId, seeded.prepared.manifest.bodyId, 83),
+  ]);
   const value = await admin.runTransaction(async (tx) =>
     readBookResourcePayload(tx, admin, seeded.opening),
   );
@@ -71,7 +74,7 @@ test('SDK seals a payload beyond 8 MiB and 128 parts, reads one page independent
 test('SDK rejects identical part/header recreations and value ABA through native identity, preserving foreign generations', async () => {
   const input = payloadInput({ text: 'x'.repeat(200000) }),
     seeded = await seedResourcePayload(admin, input),
-    ref = admin.doc(seeded.path + '/chunks/' + chunkId(0)),
+    ref = admin.doc(payloadChunk(seeded.opening.bookId, seeded.prepared.manifest.bodyId, 0)),
     original = await ref.get();
   await ref.delete();
   await ref.create(original.data());

@@ -10,6 +10,7 @@ import { validateBookRestoreCover } from './bookRestoreCoverContracts.mjs';
 import { validateBookRestoreCoverStorageProgress } from './bookRestoreCoverStorageContracts.mjs';
 import { validateBookRestorePersonaLibrary } from './bookRestorePersonaLibraryContracts.mjs';
 import { validateBookRestoreSourceIndexes } from './bookRestoreSourceIndexesContracts.mjs';
+import { lorePayloadProgress } from './bookRestoreLorePayloadContracts.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
 export const BOOK_RESTORE_METHODS = [
@@ -193,6 +194,26 @@ export function jobShape(uid, id, job) {
       'cancelling',
       'cancelled',
     ].includes(job.state)
+  )
+    inconsistent();
+  if (Object.hasOwn(job, 'payloadInventoryVersion')) {
+    if (
+      job.payloadInventoryVersion !== 1 ||
+      job.cleanupVersion < 6 ||
+      !Object.hasOwn(job.preparation ?? {}, 'lorePayload')
+    )
+      inconsistent();
+  } else if (Object.hasOwn(job.preparation ?? {}, 'lorePayload')) inconsistent();
+  if (
+    job.preparation?.counts &&
+    Object.hasOwn(job.preparation.counts, 'lorePayloadOffset') &&
+    job.payloadInventoryVersion !== 1
+  )
+    inconsistent();
+  if (
+    job.preparation?.lorePayload &&
+    (job.preparation.lorePayload.pages !== Math.ceil(job.preparation.relationOffset / 64) ||
+      (job.preparation.lorePayload.base === null && job.preparation.relationOffset !== 0))
   )
     inconsistent();
   source(job.source);
@@ -589,30 +610,39 @@ export function jobShape(uid, id, job) {
   return job;
 }
 export function preparationProgress(value) {
-  closed(value, [
-    'schemaVersion',
-    'phase',
-    'itemIndex',
-    'artifactCount',
-    'cleanedArtifacts',
-    'actCount',
-    'chapterCount',
-    'wordCount',
-    'timestamp',
-    ...(value?.schemaVersion >= 2
-      ? ['loreCount', 'loreRelationCount', 'relationOffset', 'loreItemIndex']
-      : []),
-    ...(value?.schemaVersion >= 3 ? ['resourceStartIndex', 'resourceCounts'] : []),
-    ...(value?.schemaVersion >= 4 ? ['counts'] : []),
-    ...(value?.schemaVersion >= 5 ? ['resourceEndIndex', 'personas'] : []),
-    ...(value?.schemaVersion >= 6 ? ['universe'] : []),
-    ...(value?.schemaVersion >= 7 ? ['history'] : []),
-    ...(value?.schemaVersion >= 8 ? ['draft'] : []),
-    ...(value?.schemaVersion >= 9 ? ['cover'] : []),
-    ...(value?.schemaVersion >= 10 ? ['coverStorage'] : []),
-    ...(value?.schemaVersion >= 11 ? ['personaLibrary'] : []),
-    ...(value?.schemaVersion === 12 ? ['sourceIndexes'] : []),
-  ]);
+  closed(
+    value,
+    [
+      'schemaVersion',
+      'phase',
+      'itemIndex',
+      'artifactCount',
+      'cleanedArtifacts',
+      'actCount',
+      'chapterCount',
+      'wordCount',
+      'timestamp',
+      ...(value?.schemaVersion >= 2
+        ? ['loreCount', 'loreRelationCount', 'relationOffset', 'loreItemIndex']
+        : []),
+      ...(value?.schemaVersion >= 3 ? ['resourceStartIndex', 'resourceCounts'] : []),
+      ...(value?.schemaVersion >= 4 ? ['counts'] : []),
+      ...(value?.schemaVersion >= 5 ? ['resourceEndIndex', 'personas'] : []),
+      ...(value?.schemaVersion >= 6 ? ['universe'] : []),
+      ...(value?.schemaVersion >= 7 ? ['history'] : []),
+      ...(value?.schemaVersion >= 8 ? ['draft'] : []),
+      ...(value?.schemaVersion >= 9 ? ['cover'] : []),
+      ...(value?.schemaVersion >= 10 ? ['coverStorage'] : []),
+      ...(value?.schemaVersion >= 11 ? ['personaLibrary'] : []),
+      ...(value?.schemaVersion === 12 ? ['sourceIndexes'] : []),
+    ],
+    ['lorePayload'],
+  );
+  if (Object.hasOwn(value, 'lorePayload')) {
+    lorePayloadProgress(value.lorePayload);
+    if (value.schemaVersion < 2 || (value.phase !== 'resources' && value.lorePayload !== null))
+      inconsistent();
+  }
   if (
     ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(value.schemaVersion) ||
     !(
@@ -697,15 +727,18 @@ export function preparationProgress(value) {
   if (value.schemaVersion >= 4) {
     const c = value.counts,
       end = value.schemaVersion >= 5 ? value.resourceEndIndex : value.itemIndex;
-    closed(c, [
-      'schemaVersion',
-      'step',
-      'itemIndex',
-      'sceneCount',
-      'linkCount',
-      'linkId',
-      'linkCursor',
-    ]);
+    closed(
+      c,
+      ['schemaVersion', 'step', 'itemIndex', 'sceneCount', 'linkCount', 'linkId', 'linkCursor'],
+      ['lorePayloadOffset'],
+    );
+    if (Object.hasOwn(c, 'lorePayloadOffset') && c.lorePayloadOffset !== null) {
+      closed(c.lorePayloadOffset, ['entityId', 'offset']);
+      if (!/^restore-[a-f0-9]{64}$/.test(c.lorePayloadOffset.entityId) || c.step !== 'scenes')
+        inconsistent();
+      integer(c.lorePayloadOffset.offset);
+      if (c.lorePayloadOffset.offset % 64 !== 0) inconsistent();
+    }
     if (c.schemaVersion !== 1 || !['scenes', 'links', 'finish', 'done'].includes(c.step))
       inconsistent();
     for (const key of ['itemIndex', 'sceneCount', 'linkCount']) integer(c[key]);

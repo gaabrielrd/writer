@@ -15,6 +15,8 @@ import {
   assertBookRestoreBodyNamespaceEmpty,
 } from './bookRestoreArtifacts.mjs';
 
+import { prepareBookRestoreLorePayload } from './bookRestoreLorePayload.mjs';
+
 const action = 'advanceBookRestoreLore';
 export function createBookRestoreLoreService({
   db,
@@ -73,7 +75,11 @@ export function createBookRestoreLoreService({
           load,
         });
         item = await reader.readMappedItem(cursor.loreItemIndex);
-        if (item.record.kind === 'book-lore' && item.loreRelations !== null)
+        if (
+          item.record.kind === 'book-lore' &&
+          item.loreRelations !== null &&
+          (cursor.lorePayload?.base != null || (!item.lorePayloadRequired && !cursor.lorePayload))
+        )
           page = await item.loreRelations.read(cursor.relationOffset);
       } catch (error) {
         const result = await db.runTransaction(async (tx) =>
@@ -97,7 +103,23 @@ export function createBookRestoreLoreService({
         // A new clone for every SDK callback attempt; never advance a captured cursor.
         const preparation = structuredClone(cursor),
           writes = [];
-        if (item.record.kind === 'book-lore') {
+        let artifactScope = loaded;
+        if (
+          item.record.kind === 'book-lore' &&
+          (item.lorePayloadRequired || preparation.lorePayload)
+        ) {
+          const payload = await prepareBookRestoreLorePayload(
+            tx,
+            db,
+            loaded,
+            request,
+            preparation,
+            item,
+            page,
+          );
+          artifactScope = payload.loaded;
+          writes.push(...payload.writes);
+        } else if (item.record.kind === 'book-lore') {
           if (item.value.kind !== 'lore' || item.value.parentId !== null) inconsistent();
           const id = item.value.id,
             value = {
@@ -149,13 +171,19 @@ export function createBookRestoreLoreService({
         const effects = await prepareBookRestoreArtifacts(
           tx,
           db,
-          loaded,
+          artifactScope,
           request.operationId,
           writes,
           6,
         );
         preparation.artifactCount = sum(preparation.artifactCount, effects.created);
-        const record = next(loaded.job, request, { cleanupVersion: 6, preparation });
+        const record = next(loaded.job, request, {
+          cleanupVersion: 6,
+          preparation,
+          ...(artifactScope.job.payloadInventoryVersion === 1
+            ? { payloadInventoryVersion: 1 }
+            : {}),
+        });
         effects.commit();
         tx.update(loaded.ref, record);
         const receipt = writeOp(

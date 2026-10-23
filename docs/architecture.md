@@ -1507,7 +1507,23 @@ parte deve ser imutável e anterior/igual ao fechamento. Uma página usa dois do
 a leitura completa acrescenta SHA integral e JSON/UTF-8 estritos. Autorização do
 livro/recurso e prova de fonte/journals continuam a cargo do chamador.
 
-Módulos ainda sem chamador de produto. Não habilitar gravação em bookResourceBodies
-até ampliar inventário, cancelamento e exclusão/coleta. O SDK usa somente um
-harness isolado. O [plano M38](tasks/writer-v2/execucao/77-campos-grandes-de-recursos-e-metadados.md)
+Na entrega M38a, os módulos ainda não tinham chamador de produto. M38b habilita
+somente a preparação privada com inventário/cancelamento próprios; consumidores
+e exclusão do livro ativo continuam obrigatórios antes da ativação. O [plano M38](tasks/writer-v2/execucao/77-campos-grandes-de-recursos-e-metadados.md)
 prossegue com lore, demais campos, saída portátil ampliada e certificação.
+
+## P1 M38b — materialização privada de lore grande
+
+A [ADR 0089](decisions/0089-private-paged-lore-payloads.md) emenda o endereço das
+partes de M38a para bookResourceChunks, plano, antes de qualquer produtor real.
+Cabeçalhos ficam em bookResourceBodies e páginas em bookLoreSegments.
+payloadInventoryVersion 1 amplia o inventário independentemente das fases 6–14.
+Cada segmento passa por partes, cabeçalho e ponteiro nativo; só depois de todos
+o lore recebe stub de geração/base/contagens/sealBirth. Não oferecer esse stub
+como LoreEntity. A reconciliação lê base e uma página de relações por operação.
+Cancelamento autentica e remove as três famílias por consultas limitadas, incluindo
+partes sem cabeçalho. Raiz e countReady continuam ausentes/false.
+
+A [migração de prefixos antigos](tasks/writer-v2/execucao/79-migracao-dos-prefixos-de-lore.md)
+é a próxima tarefa. Consumidores, edição, backup e exclusão do livro ativo ainda
+precisam conhecer os payloads antes de qualquer ativação. Nenhum deploy ocorreu.

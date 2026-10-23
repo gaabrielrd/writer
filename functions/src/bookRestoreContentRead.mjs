@@ -168,6 +168,12 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
         readRawPart: item.readRawPart,
         rawIdentity,
         loreRelations,
+        lorePayloadRequired:
+          item.record.kind === 'book-lore' &&
+          Buffer.byteLength(JSON.stringify(item.value)) +
+            (mapped.relations?.length ?? 0) * 72 +
+            1024 >
+            512 * 1024,
         verify: item.verify,
       };
     },

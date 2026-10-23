@@ -1,19 +1,13 @@
 import { createHash } from 'node:crypto';
 import { digest } from './sceneContracts.mjs';
-import {
-  born,
-  bornEqual,
-  chunkId,
-  closed,
-  inconsistent,
-  integer,
-} from './bookRestoreUploadContracts.mjs';
+import { born, bornEqual, closed, inconsistent, integer } from './bookRestoreUploadContracts.mjs';
 import {
   resourcePayloadScope,
   resourcePayloadManifest,
   resourcePayloadPartIndex,
 } from './bookResourcePayloadContracts.mjs';
 import { verifyBookResourcePayloadPart } from './bookResourcePayload.mjs';
+import { resourcePayloadBodyPath, resourcePayloadChunkPath } from './bookResourcePayloadPaths.mjs';
 
 const transactions = new WeakMap();
 const immutable = (snapshot) => bornEqual(snapshot, { createTime: snapshot.updateTime });
@@ -29,7 +23,7 @@ function notAfter(a, b) {
 export async function openBookResourcePayload(tx, db, input) {
   const scope = resourcePayloadScope(input),
     manifest = resourcePayloadManifest(input.manifest),
-    path = 'books/' + scope.bookId + '/bookResourceBodies/' + manifest.bodyId,
+    path = resourcePayloadBodyPath(scope.bookId, manifest.bodyId),
     header = await tx.get(db.doc(path)),
     value = header.data();
   closed(input.expectedBirth, ['seconds', 'nanoseconds']);
@@ -61,7 +55,7 @@ export function validateBookResourcePayloadSnapshot(opened, index, snapshot) {
   resourcePayloadPartIndex(opened.manifest, index);
   if (
     !snapshot.exists ||
-    snapshot.ref?.path !== opened.path + '/chunks/' + chunkId(index) ||
+    snapshot.ref?.path !== resourcePayloadChunkPath(opened.bookId, opened.manifest.bodyId, index) ||
     !immutable(snapshot) ||
     !notAfter(snapshot, opened.header)
   )
@@ -85,7 +79,9 @@ export function validateBookResourcePayloadSnapshot(opened, index, snapshot) {
 export async function readBookResourcePayloadPart(tx, db, opened, index) {
   if (transactions.get(opened) !== tx) inconsistent();
   resourcePayloadPartIndex(opened.manifest, index);
-  const snapshot = await tx.get(db.doc(opened.path + '/chunks/' + chunkId(index)));
+  const snapshot = await tx.get(
+    db.doc(resourcePayloadChunkPath(opened.bookId, opened.manifest.bodyId, index)),
+  );
   return validateBookResourcePayloadSnapshot(opened, index, snapshot);
 }
 /** Complete logical object. Domain schema/authorization remains the caller's responsibility. */

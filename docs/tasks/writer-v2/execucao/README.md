@@ -686,3 +686,18 @@ A restauração de lore grande ainda depende de M38b (inventário/cleanup e escr
 e M38c (consumidores/mutações); M38d, saída portátil ampliada e certificação seguem.
 Capa/biblioteca, ativação, limpeza posterior, host/UI/roundtrip e validate continuam
 em P1/F2-09. Writer V2 aberto, somente commits locais, sem CI/push/PR/deploy.
+
+### P1 M38b — produção privada de lore grande
+
+O [plano 78](78-producao-privada-de-lore-grande.md) implementa dados gerais e
+páginas de relações em payloads, inventário de capacidade v1, reconciliação por
+página e cancelamento limitado com provas nativas. Partes são planas para cobrir
+órfãs sem cabeçalho. [Evidência M38b](../../../entregas/2026-10-23-writer-v2-producao-privada-de-lore-grande.md):
+487 backend/35 arquivos e quatro SDK distintos positivos; nenhum produtor real
+de dados de usuário ou ativação ocorreu.
+
+A [próxima tarefa 79](79-migracao-dos-prefixos-de-lore.md) deve migrar prefixos inline
+antigos preservando recibos e contadores antes de alegar compatibilidade integral.
+M38c cobre consumidores/edição/backup/exclusão; demais campos grandes, saída
+portátil ampliada, capa/biblioteca, certificação/ativação e host/UI/roundtrip/
+validate continuam P1/F2-09. Writer V2 aberto, somente commits locais e CI ignorada.
