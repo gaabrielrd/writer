@@ -179,6 +179,26 @@ export async function readBookLoreRecordPart(tx, opened, section, page, index, f
       throw error;
     }
   }
+  try {
+    const { body, offset, count } = await openBookLoreRelationPage(tx, opened, page);
+    if (index >= body.manifest.chunkCount)
+      workFail(
+        'invalid-argument',
+        'Parte fora da página de relações.',
+        'book-lore-part-out-of-range',
+      );
+    const bytes = await readBookResourcePayloadPart(tx, opened.c.db, body, index);
+    return { manifest: loreTransportManifest(body.manifest), offset, count, bytes };
+  } catch (error) {
+    if (error instanceof GenerationError && error.details?.reason !== 'book-lore-part-out-of-range')
+      loreChanged();
+    throw error;
+  }
+}
+/** Native metadata opening only, bound to the same authorized lore transaction. */
+export async function openBookLoreRelationPage(tx, opened, page) {
+  if (transactions.get(opened) !== tx) loreChanged();
+  loreReadInteger(page);
   if (opened.mode !== 'payload' || page >= opened.storage.relations.pages)
     workFail('invalid-argument', 'Página de relações inválida.');
   const { c, id, storage } = opened,
@@ -224,17 +244,9 @@ export async function readBookLoreRecordPart(tx, opened, section, page, index, f
           : loreFieldPointer(value.payload),
       body = await openBookResourcePayload(tx, c.db, { ...scoped(c, id), ...pointer });
     if (!before(body.header, born(snapshot))) loreChanged();
-    if (index >= body.manifest.chunkCount)
-      workFail(
-        'invalid-argument',
-        'Parte fora da página de relações.',
-        'book-lore-part-out-of-range',
-      );
-    const bytes = await readBookResourcePayloadPart(tx, c.db, body, index);
-    return { manifest: loreTransportManifest(body.manifest), offset, count, bytes };
+    return { body, offset, count, pointer, snapshot };
   } catch (error) {
-    if (error instanceof GenerationError && error.details?.reason !== 'book-lore-part-out-of-range')
-      loreChanged();
+    if (error instanceof GenerationError) loreChanged();
     throw error;
   }
 }

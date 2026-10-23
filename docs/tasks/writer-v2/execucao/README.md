@@ -792,3 +792,17 @@ Próximo: adoção CAS certificada com leases/inventário/clock/privacidade;
 criação/exclusão/GC e integração cliente/writers ainda seguem obrigatórios.
 Nenhum endpoint/adoção/ativação habilitados. M38c/P1/F2-09/V2 abertos.
 Somente commits locais e CI ignorada.
+
+### P1 M38c3e — núcleo de alcance e coleta de fontes
+
+O [plano 82](82-alcance-e-coleta-dos-corpos-de-lore.md) implementa o pré-requisito
+de inventário para a adoção CAS. Registro de fonte e coleta interna usam
+controles/referências nativos, varredura da cabeça atual por lotes e fences.
+[Evidência](../../../entregas/2026-10-23-writer-v2-alcance-e-coleta-do-lore.md):
+102 Node e quatro SDK distintos positivos, incluindo 141 partes, páginas
+deslocadas, cabeça idêntica recriada e referência tardia na 19ª página.
+
+Próximo: reservar uploads/leases sob geração preparing, cancelamento e adoção
+CAS/clock/privacidade; materialização inline e exclusão do livro/lore seguem.
+Qualquer lease ou livro deleting/ausente adia a coleta. Nenhum endpoint,
+worker, adoção ou ativação habilitados. M38c/P1/F2-09/V2 abertos; commits locais.

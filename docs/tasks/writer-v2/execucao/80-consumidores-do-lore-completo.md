@@ -152,5 +152,7 @@ Sem endpoint de escrita, UI ou adoção. M38c3c preparou os leitores v2:
 [evidência](../../../entregas/2026-10-23-writer-v2-leitura-das-geracoes-de-lore.md).
 M38c3d implementou a inspeção privada da metadata de origem:
 [evidência](../../../entregas/2026-10-23-writer-v2-inspecao-da-origem-do-lore.md).
-Próximos passos: adoção CAS/privacidade/leases, criação/exclusão/GC,
-inventário do livro e cliente. A etapa 3 não está concluída; M38c/P1/F2-09/V2 abertos.
+O [plano 82](82-alcance-e-coleta-dos-corpos-de-lore.md) detalha a dependência de
+inventário/coleta antes da adoção; seu núcleo de fontes foi validado em M38c3e.
+Próximos passos: leases/geração em preparação, adoção CAS/privacidade,
+criação/exclusão, inventário do livro e cliente. A etapa 3 não está concluída; M38c/P1/F2-09/V2 abertos.

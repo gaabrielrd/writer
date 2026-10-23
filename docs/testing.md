@@ -1706,3 +1706,20 @@ negado. Certificado histórico não é disponibilidade atual dos corpos.
 
 Lint/arquitetura/sintaxe positivos. Sem código cliente/visual, não foram
 repetidos tipos/Vitest/build/browser; validate integral segue no fim de P1.
+
+### P1 M38c3e — alcance e coleta dos corpos de lore
+
+[Entrega](entregas/2026-10-23-writer-v2-alcance-e-coleta-do-lore.md):
+102 Node distintos em três arquivos (30 novos e 72 leitores existentes)
+e quatro cenários SDK positivos. Repetições dirigidas não aumentam os casos.
+
+Cobrem 141 partes, metadata-only/header por último, inicialização, registro
+concorrente/duplicado, ref nova durante varredura, cabeça recriada com dados
+idênticos, página deslocada e referência tardia na 19ª página. Controles/
+referências/header/chunks recriados são preservados; leases e cabeça ativa
+protegem o corpo. Namespace inteiro negado ao SDK. Abertura metadata-only
+continua ligada à transação nativa, com readers v1/v2 compatíveis.
+
+Lint/arquitetura/sintaxe positivos. Sem cliente/visual novo, não foram repetidos
+tipos/Vitest/build/browser. Preparação/adoção de leases e exclusão do livro
+continuam pendentes; validate integral segue no fechamento de P1.

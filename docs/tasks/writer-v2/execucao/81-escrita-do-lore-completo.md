@@ -244,3 +244,16 @@ Certificado ready não comprova disponibilidade atual de todos os corpos/página
 e não concede leitura. Consumir a abertura interna na futura adoção com provas,
 leases/inventário e CAS/clock/privacidade atômicos. Criação/exclusão/GC e cliente
 seguem pendentes; passo 3 completo e P1/F2-09/V2 continuam abertos.
+
+## Dependência de adoção — M38c3e
+
+A inspeção de metadata está pronta, mas a limpeza atual de livros não cobre
+corpos/segmentos/leases de lore. O [plano 82](82-alcance-e-coleta-dos-corpos-de-lore.md)
+prepara inventário, reserva e coleta antes de habilitar troca ativa.
+Seu núcleo de fontes passou em 102 Node e quatro SDK distintos, conforme a
+[entrega](../../../entregas/2026-10-23-writer-v2-alcance-e-coleta-do-lore.md).
+
+Adoção completa permanece pendente: reservar uploads em preparing, certificar
+campos/páginas, coordenar leases e trocar cabeça/clock/privacidade/recibo juntos.
+Materialização inline, criação/exclusão e integração cliente/writers continuam
+obrigatórias. Nenhuma etapa de P1/F2-09/V2 foi encerrada por esse pré-requisito.

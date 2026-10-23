@@ -525,6 +525,8 @@ service cloud.firestore {
 
     match /books/{bookId} {
       match /bookResourceLeases/{id} { allow read, write: if false; }
+      match /bookLoreGenerations/{document=**} { allow read, write: if false; }
+      match /bookResourceInventory/{document=**} { allow read, write: if false; }
       match /workVersions/{id} { allow read, write: if false; }
       match /workVersionBodies/{id} { allow read, write: if false; }
       // Allow an authenticated creator to read an absent ID before the atomic create.

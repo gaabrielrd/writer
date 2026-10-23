@@ -1631,3 +1631,22 @@ Certificado é prova de metadata histórica sob o mesmo contexto, não grant ou
 disponibilidade atual de todos os corpos. Adoção deve revalidar origem e provas
 e coordenar leases/inventário/clock/privacidade. Não há endpoint, produtor v2,
 adoção ou migração habilitados por este incremento.
+
+## P1 M38c3e — alcance e coleta dos corpos de lore
+
+[ADR 0097](decisions/0097-lore-resource-reachability.md) prepara inventário
+nativo em bookLoreGenerations e bookResourceInventory. Fonte observada gera
+controles imutáveis, estado/eventos e referências pareadas por nascimento.
+Initializing protege antes da primeira referência; collecting fecha registros
+novos. Geração aposentada e corpo coletado não podem voltar ao estado ativo.
+
+A coleta examina toda a cabeça atual por lotes, inclusive páginas deslocadas,
+e fixa sua identidade nativa. Alteração/recriação reinicia essa verificação
+antes dos deletes. Referência nova invalida a varredura de gerações. Chunks
+saem por metadata, em lotes; header só após ausência de extras. Recriados e
+qualquer lease presente são preservados.
+
+O [plano 82](tasks/writer-v2/execucao/82-alcance-e-coleta-dos-corpos-de-lore.md)
+mantém reserva/adoção de leases, preparing, materialização inline e exclusão
+do livro pendentes. Livro ausente/deleting adia a coleta. Serviço é interno,
+sem endpoint, worker automático, adoção de cabeça ou rollout habilitados.

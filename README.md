@@ -455,4 +455,8 @@ Adoção CAS/privacidade/leases, criação/exclusão/GC e cliente de escrita con
 pendentes. M38c3d acrescenta a inspeção privada da metadata de origem por unidades,
 sem inferir privacidade/datas pelo stub ou confiar no cliente.
 [Evidência](docs/entregas/2026-10-23-writer-v2-inspecao-da-origem-do-lore.md).
-A edição de payloads não foi habilitada. Somente commits locais, sem deploy.
+M38c3e iniciou o inventário de alcance e a coleta privada dos corpos de fonte,
+com guardas da cabeça por lotes, referências nativas e header por último.
+[Evidência](docs/entregas/2026-10-23-writer-v2-alcance-e-coleta-do-lore.md).
+Leases reservadas/adotadas, adoção CAS e exclusão do livro ainda precisam de
+integração. A edição de payloads não foi habilitada. Somente commits locais, sem deploy.
