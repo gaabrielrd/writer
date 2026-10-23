@@ -1650,3 +1650,19 @@ O [plano 82](tasks/writer-v2/execucao/82-alcance-e-coleta-dos-corpos-de-lore.md)
 mantém reserva/adoção de leases, preparing, materialização inline e exclusão
 do livro pendentes. Livro ausente/deleting adia a coleta. Serviço é interno,
 sem endpoint, worker automático, adoção de cabeça ou rollout habilitados.
+
+## P1 M38c3f — reserva e cancelamento da edição de lore
+
+[ADR 0098](decisions/0098-private-lore-edit-reservations.md) liga tentativa
+privada bookLoreEdits, geração preparing, slots, uploads e leases por recibos/
+nascimentos nativos. Reserva e inventário são atômicos; prosa não entra no pai.
+Cancelamento fecha a geração e coordena coleta do corpo/upload/pai por unidades.
+
+Capacidade opaca ligada à transação permite somente limpar bytes staged próprios
+após ausência/deleting/revogação. Cabeça/referências e recriações continuam
+protegidas; coleta genérica preserva leases sem essa prova. Fences permanecem.
+O runner de sintaxe percorre todos os módulos .mjs de functions/src separadamente,
+evitando o limite de linha do Windows.
+
+Compilação completa, referências da geração, leases adopted, adoção CAS e
+exclusão ainda pendentes. Sem endpoint/UI/ativação. P1/F2-09/V2 continuam abertos.

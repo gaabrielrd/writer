@@ -458,5 +458,8 @@ sem inferir privacidade/datas pelo stub ou confiar no cliente.
 M38c3e iniciou o inventário de alcance e a coleta privada dos corpos de fonte,
 com guardas da cabeça por lotes, referências nativas e header por último.
 [Evidência](docs/entregas/2026-10-23-writer-v2-alcance-e-coleta-do-lore.md).
-Leases reservadas/adotadas, adoção CAS e exclusão do livro ainda precisam de
-integração. A edição de payloads não foi habilitada. Somente commits locais, sem deploy.
+M38c3f acrescenta reserva de uploads sob geração preparing e cancelamento com
+coleta coordenada, inclusive após revogação da origem. Adoção ativa, leases
+adopted e exclusão do livro ainda precisam de integração.
+[Evidência](docs/entregas/2026-10-23-writer-v2-reserva-dos-uploads-de-lore.md).
+A edição de payloads não foi habilitada. Somente commits locais, sem deploy.

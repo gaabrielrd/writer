@@ -3,6 +3,7 @@ import { bookContentId } from './bookBackupSchema.mjs';
 import { lorePayloadPointer } from './bookRestoreLorePayloadContracts.mjs';
 import { loreFieldPointer, BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
 import { digest, workFail } from './workProgressContracts.mjs';
+import { editPreparationRef, editGenerationId } from './bookLoreEditReservationContracts.mjs';
 export const inventoryConflict = () =>
   workFail(
     'failed-precondition',
@@ -69,17 +70,21 @@ export const inventoryToken = (at, snapshot, context) =>
     contextHash: digest(context),
   });
 export function validateInventoryContext(at, value) {
-  closed(value, [
-    'schemaVersion',
-    'kind',
-    'ownerId',
-    'bookId',
-    'bookBirth',
-    'loreId',
-    ...(at.kind === 'generation'
-      ? ['generationId', 'sourceBirth', 'sourceUpdate', 'storageHash']
-      : ['bodyId', 'pointer', 'selector', 'initialGeneration']),
-  ]);
+  closed(
+    value,
+    [
+      'schemaVersion',
+      'kind',
+      'ownerId',
+      'bookId',
+      'bookBirth',
+      'loreId',
+      ...(at.kind === 'generation'
+        ? ['generationId', 'sourceBirth', 'sourceUpdate', 'storageHash']
+        : ['bodyId', 'pointer', 'selector', 'initialGeneration']),
+    ],
+    at.kind === 'generation' ? ['preparation'] : [],
+  );
   if (
     value.schemaVersion !== 1 ||
     value.kind !== at.kind ||
@@ -94,6 +99,10 @@ export function validateInventoryContext(at, value) {
     inventoryStamp(value.sourceBirth);
     inventoryStamp(value.sourceUpdate);
     restoreHash(value.storageHash);
+    if (Object.hasOwn(value, 'preparation')) {
+      editPreparationRef(value.preparation);
+      if (editGenerationId(value.preparation.editToken) !== value.generationId) inventoryConflict();
+    }
   } else {
     if (value.bodyId !== at.id || value.pointer?.manifest?.bodyId !== at.id) inventoryConflict();
     inventoryPointer(value.pointer);
@@ -117,7 +126,12 @@ export function validateInventoryState(at, context, s) {
   integer(s.revision);
   if (s.schemaVersion !== 1) inventoryConflict();
   if (at.kind === 'generation') {
-    if (!['active', 'retired'].includes(s.phase) || (s.revision === 0 && s.phase !== 'active'))
+    const prepared = Object.hasOwn(context, 'preparation');
+    if (
+      !['active', 'retired', 'preparing', 'cancelled'].includes(s.phase) ||
+      (s.revision === 0 && s.phase !== (prepared ? 'preparing' : 'active')) ||
+      (!prepared && ['preparing', 'cancelled'].includes(s.phase))
+    )
       inventoryConflict();
   } else {
     if (!['initializing', 'live', 'scanning', 'collecting', 'collected'].includes(s.phase))
@@ -151,9 +165,9 @@ export function validateInventoryState(at, context, s) {
   }
   return s;
 }
-export const inventoryInitialState = (kind) =>
+export const inventoryInitialState = (kind, context = {}) =>
   kind === 'generation'
-    ? { schemaVersion: 1, phase: 'active', revision: 0 }
+    ? { schemaVersion: 1, phase: context.preparation ? 'preparing' : 'active', revision: 0 }
     : {
         schemaVersion: 1,
         phase: 'initializing',

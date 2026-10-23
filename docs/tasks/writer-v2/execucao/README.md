@@ -806,3 +806,15 @@ Próximo: reservar uploads/leases sob geração preparing, cancelamento e adoç�
 CAS/clock/privacidade; materialização inline e exclusão do livro/lore seguem.
 Qualquer lease ou livro deleting/ausente adia a coleta. Nenhum endpoint,
 worker, adoção ou ativação habilitados. M38c/P1/F2-09/V2 abertos; commits locais.
+
+### P1 M38c3f — reserva dos uploads de lore
+
+[Plano 83](83-reserva-dos-uploads-de-lore.md) e
+[evidência](../../../entregas/2026-10-23-writer-v2-reserva-dos-uploads-de-lore.md):
+113 Node e cinco SDK distintos positivos, com reserva preparing e cancelamento/
+coleta coordenados por provas nativas. Inclui 141 partes, revogação, concorrência,
+recriações e rollback, sem alterar cabeça/clock/publicação.
+
+Próximo: compilar campos/páginas e materializar inline; referências completas e
+adoção CAS/leases/clock/privacidade ainda pendentes, assim como exclusão e cliente.
+Nenhum endpoint/UI/ativação. P1/F2-09/V2 abertos; somente commits locais.

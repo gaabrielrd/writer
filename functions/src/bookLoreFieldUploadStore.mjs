@@ -13,6 +13,11 @@ import {
   uploadImmutable,
   uploadAtMost,
 } from './bookLoreFieldUploadContracts.mjs';
+import { editUploadReservation } from './bookLoreEditReservationContracts.mjs';
+const openings = new WeakMap();
+export const assertFieldUploadOpening = (tx, loaded) => {
+  if (openings.get(loaded) !== tx) conflict();
+};
 const identityUpdate = (s) => born({ createTime: s.updateTime });
 export const uploadStateFields = [
   'schemaVersion',
@@ -132,28 +137,32 @@ export async function loadFieldUpload(tx, c, r) {
       conflict();
     return { c, snapshot, job: j, token: null };
   }
-  closed(j, [
-    'schemaVersion',
-    'kind',
-    'inventoryVersion',
-    'ownerId',
-    'uploadId',
-    'startHash',
-    'context',
-    'phase',
-    'revision',
-    'nextIndex',
-    'byteLength',
-    'sealIndex',
-    'sealed',
-    'artifactCount',
-    'cleanupIndex',
-    'cleanedCount',
-    'stateHash',
-    'createdAt',
-    'lastOperationId',
-    'sealBarrierOperationId',
-  ]);
+  closed(
+    j,
+    [
+      'schemaVersion',
+      'kind',
+      'inventoryVersion',
+      'ownerId',
+      'uploadId',
+      'startHash',
+      'context',
+      'phase',
+      'revision',
+      'nextIndex',
+      'byteLength',
+      'sealIndex',
+      'sealed',
+      'artifactCount',
+      'cleanupIndex',
+      'cleanedCount',
+      'stateHash',
+      'createdAt',
+      'lastOperationId',
+      'sealBarrierOperationId',
+    ],
+    ['reservation'],
+  );
   closed(j.context, [
     'bookId',
     'loreId',
@@ -170,7 +179,9 @@ export async function loadFieldUpload(tx, c, r) {
     j.inventoryVersion !== 1 ||
     j.context.uploadId !== c.uploadId ||
     fieldUploadStartHash(fieldUploadIntent(c.uid, intent)) !== j.startHash ||
-    !['uploading', 'verifying', 'sealed', 'cancelling', 'cancelled'].includes(j.phase) ||
+    !['uploading', 'verifying', 'sealed', 'reserved', 'cancelling', 'cancelled'].includes(
+      j.phase,
+    ) ||
     typeof j.sealed !== 'boolean'
   )
     conflict();
@@ -185,7 +196,13 @@ export async function loadFieldUpload(tx, c, r) {
     'createdAt',
   ])
     integer(j[key]);
+  if (Object.hasOwn(j, 'reservation')) {
+    editUploadReservation(j.reservation);
+    if (!['reserved', 'cancelling', 'cancelled'].includes(j.phase)) conflict();
+  } else if (j.phase === 'reserved') conflict();
   const m = j.context.manifest;
+  if (j.reservation && (!j.sealed || j.nextIndex !== m.chunkCount || j.sealIndex !== m.chunkCount))
+    conflict();
   if (
     !Number.isFinite(new Date(j.createdAt).getTime()) ||
     j.nextIndex > m.chunkCount ||
@@ -211,7 +228,7 @@ export async function loadFieldUpload(tx, c, r) {
   )
     conflict();
   if (
-    j.phase === 'sealed' &&
+    ['sealed', 'reserved'].includes(j.phase) &&
     (!j.sealed || j.nextIndex !== m.chunkCount || j.sealIndex !== m.chunkCount)
   )
     conflict();
@@ -233,17 +250,21 @@ export async function loadFieldUpload(tx, c, r) {
     digest(identityUpdate(snapshot)) !== digest(identityUpdate(lease))
   )
     conflict();
-  closed(v, [
-    'schemaVersion',
-    'ownerId',
-    'uploadId',
-    'startHash',
-    'bookId',
-    'loreId',
-    'bodyId',
-    'phase',
-    'revision',
-  ]);
+  closed(
+    v,
+    [
+      'schemaVersion',
+      'ownerId',
+      'uploadId',
+      'startHash',
+      'bookId',
+      'loreId',
+      'bodyId',
+      'phase',
+      'revision',
+    ],
+    ['reservation'],
+  );
   if (
     digest(v) !==
     digest({
@@ -256,6 +277,7 @@ export async function loadFieldUpload(tx, c, r) {
       bodyId: m.bodyId,
       phase: j.phase,
       revision: j.revision,
+      ...(j.reservation ? { reservation: j.reservation } : {}),
     })
   )
     conflict();
@@ -273,6 +295,7 @@ export async function loadFieldUpload(tx, c, r) {
     )
       conflict();
   }
+  openings.set(loaded, tx);
   return loaded;
 }
 export async function loadFieldState(tx, loaded) {
@@ -309,8 +332,23 @@ export async function replayFieldOperation(tx, loaded, method, r) {
   return { receipt: pair.record.progress, progress: uploadView(loaded) };
 }
 export function commitFieldOperation(tx, loaded, method, r, patch) {
+  assertFieldUploadOpening(tx, loaded);
   const { c, job } = loaded,
     revision = job.revision + 1;
+  if (job.reservation && patch.reservation && digest(job.reservation) !== digest(patch.reservation))
+    conflict();
+  if (
+    job.phase === 'reserved' &&
+    patch.phase &&
+    patch.phase !== 'reserved' &&
+    method !== 'cancelReservedBookLoreEditUpload'
+  )
+    conflict();
+  if (
+    patch.phase === 'reserved' &&
+    (job.phase !== 'sealed' || method !== 'reserveBookLoreEditUpload' || !patch.reservation)
+  )
+    conflict();
   if (!Number.isSafeInteger(revision)) conflict();
   const next = { ...job, ...patch, revision, lastOperationId: r.operationId },
     progress = uploadView({ ...loaded, job: next }),
@@ -337,7 +375,11 @@ export function commitFieldOperation(tx, loaded, method, r, patch) {
       receiptHash: digest(record),
     };
   tx.update(c.ref, next);
-  tx.update(loaded.leaseRef, { phase: next.phase, revision });
+  tx.update(loaded.leaseRef, {
+    phase: next.phase,
+    revision,
+    ...(next.reservation ? { reservation: next.reservation } : {}),
+  });
   tx.create(c.db.doc(c.path + '/operations/' + r.operationId), record);
   tx.create(c.db.doc(c.path + '/operationProofs/' + r.operationId), anchor);
   return { receipt: progress, progress };

@@ -1723,3 +1723,20 @@ continua ligada à transação nativa, com readers v1/v2 compatíveis.
 Lint/arquitetura/sintaxe positivos. Sem cliente/visual novo, não foram repetidos
 tipos/Vitest/build/browser. Preparação/adoção de leases e exclusão do livro
 continuam pendentes; validate integral segue no fechamento de P1.
+
+### P1 M38c3f — reserva dos uploads de lore
+
+[Entrega](entregas/2026-10-23-writer-v2-reserva-dos-uploads-de-lore.md):
+113 Node distintos positivos (38 reserva, 45 upload, 30 inventário) e cinco
+cenários SDK distintos positivos, em rodadas dirigidas. Dois SDK foram repetidos
+após separar IDs das fixtures; não houve uma nova rodada de todos os cinco.
+
+Inclui 141 partes/8 MiB, CAS/concorrência, campos/páginas/remoções, cancelamento
+antes do início e após revogação, replay histórico, recriações, cabeça tardia,
+rollback e cleanup independente do filho confirmado uma vez pelo pai.
+SDK verifica nascimentos/transações reais, namespace negado e header por último.
+
+Lint, arquitetura e sintaxe dos 191 módulos de Functions positivos. Check usa
+runner por arquivo para evitar limite de linha do Windows. Sem cliente/visual,
+não repetimos tipos/Vitest/build/browser. Validate integral permanece no fim de P1.
+Adoção ativa, leases adopted e exclusão continuam pendentes.

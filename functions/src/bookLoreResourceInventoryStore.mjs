@@ -80,7 +80,7 @@ export async function prepareInventoryInitialization(tx, c, context) {
       context.kind,
       context.kind === 'generation' ? context.generationId : context.bodyId,
     ),
-    state = inventoryInitialState(context.kind),
+    state = inventoryInitialState(context.kind, context),
     refs = eventRefs(at, 0);
   validateInventoryContext(at, context);
   validateInventoryState(at, context, state);
@@ -114,10 +114,13 @@ export async function prepareInventoryChange(tx, loaded, operation, patch, paylo
   validateInventoryState(at, context, next);
   if (at.kind === 'generation') {
     if (
-      operation !== 'retire' ||
-      state.phase !== 'active' ||
-      next.phase !== 'retired' ||
-      payloadHash !== null
+      payloadHash !== null ||
+      !(
+        (operation === 'retire' && state.phase === 'active' && next.phase === 'retired') ||
+        (operation === 'cancel-preparation' &&
+          state.phase === 'preparing' &&
+          next.phase === 'cancelled')
+      )
     )
       conflict();
   } else {

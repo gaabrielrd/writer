@@ -73,3 +73,15 @@ nenhuma lease é liberada/coletada por um phase alegado, nenhum livro deleting
 é limpo aqui e nenhuma troca ativa de edição foi habilitada.
 Próximo é o passo 3: reserva de uploads/geração com cancelamento coordenado,
 antes de compor e adotar a geração completa. P1/F2-09/V2 permanecem abertos.
+
+## Reserva e cancelamento — M38c3f
+
+O [plano 83](83-reserva-dos-uploads-de-lore.md) implementou a parte de reserva
+preparing/cancelamento do passo 3, com coleta própria ligada à transação nativa.
+[Evidência](../../../entregas/2026-10-23-writer-v2-reserva-dos-uploads-de-lore.md):
+113 Node e cinco SDK distintos positivos. Ausência/deleting/revogação permitem
+apenas limpar staged próprio comprovado; a coleta genérica mantém seus guardas.
+
+Leases adopted completam o passo 3 junto da adoção do passo 5. Passos 4–6 ainda
+pendentes: compilar/referenciar geração completa, materializar inline, CAS/
+clock/privacidade/recibo, exclusão e integração. Não habilitar troca ativa antes.

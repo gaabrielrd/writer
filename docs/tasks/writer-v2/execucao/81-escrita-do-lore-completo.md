@@ -257,3 +257,14 @@ Adoção completa permanece pendente: reservar uploads em preparing, certificar
 campos/páginas, coordenar leases e trocar cabeça/clock/privacidade/recibo juntos.
 Materialização inline, criação/exclusão e integração cliente/writers continuam
 obrigatórias. Nenhuma etapa de P1/F2-09/V2 foi encerrada por esse pré-requisito.
+
+## Reserva privada — M38c3f
+
+O [plano 83](83-reserva-dos-uploads-de-lore.md) ligou uploads selados à geração
+preparing com cancelamento/coleta coordenados e provas nativas. Fonte,
+clock e publicação permanecem intactos. [Evidência](../../../entregas/2026-10-23-writer-v2-reserva-dos-uploads-de-lore.md):
+113 Node e cinco SDK distintos positivos, em rodadas dirigidas.
+
+Agora falta compilar campos/páginas, materializar inline e ligar as referências;
+adotar leases/cabeça/clock/privacidade/recibo atomicamente; integrar exclusão e
+demais writers/cliente. Nenhum endpoint/UI/ativação foi habilitado.
