@@ -1659,3 +1659,17 @@ SDK confirma a proteção por presença de payloadStorage, inclusive inválido/n
 replace/delete e deleting, mantendo CRUD inline/privacidade e corpos privados.
 Fixtures de presença não são prova de certificação/ativação. Nenhuma Rule foi
 implantada, nenhum cliente mudou e o produtor continua pendente.
+
+## P1 M38c3b — upload privado e limpeza de campos
+
+[Entrega](entregas/2026-10-23-writer-v2-upload-privado-dos-campos-de-lore.md):
+124 Node distintos (45 novos, 79 existentes) e três cenários SDK distintos.
+Regressão 119 seguida de conjunto final 45: não somar repetições. SDK confirmou
+141 partes, reenvio concorrente real, origem intacta e cleanup após remover raiz;
+casos dirigidos repetiram somente fixture corrigida e provas alteradas.
+
+Job/estado/recibos/lease/chunks/corpos continuam privados. SHA serializado pode
+conter buffer interno, por isso fica separado e nunca é retornado; EOF/cancel
+remove esse estado. Recriação depois da verificação falha na leitura pela
+barreira nativa, mesmo se anterior ao header; sealed não é grant atual.
+Sem endpoint/cliente/adoção. Validate e roundtrip completos de P1 pendentes.

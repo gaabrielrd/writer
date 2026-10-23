@@ -445,5 +445,7 @@ contextos e backup ainda estão pendentes, sem ativação de livros restaurados.
 
 M38c3a prepara a [escrita do lore completo](docs/tasks/writer-v2/execucao/81-escrita-do-lore-completo.md)
 com validação incremental dos campos e Rules que impedem mutação SDK de stubs.
-Upload, recibos, troca de geração e coleta ainda estão pendentes; a edição de
-payloads não foi habilitada. Somente commits locais, sem deploy.
+M38c3b acrescenta upload privado interno com recibos, selo e cancelamento/cleanup.
+Ele preserva a ficha ativa e ainda não tem endpoint ou UI; troca de geração,
+criação/exclusão/coleta e rollout continuam pendentes. [Evidência](docs/entregas/2026-10-23-writer-v2-upload-privado-dos-campos-de-lore.md).
+A edição de payloads não foi habilitada. Somente commits locais, sem deploy.

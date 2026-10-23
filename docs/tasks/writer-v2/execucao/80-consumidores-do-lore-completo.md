@@ -146,5 +146,7 @@ O [plano 81](81-escrita-do-lore-completo.md) detalha a escrita completa, do pars
 até upload, recibos, geração/CAS, criação/exclusão/GC e cliente. O passo M38c3a
 validou parser incremental e guardas nas Rules: 93 Node e sete SDK distintos.
 [Evidência](../../../entregas/2026-10-23-writer-v2-validacao-dos-campos-de-lore.md).
-Próximo passo é o upload privado com inventário/cancelamento/cleanup, antes de
-qualquer troca ativa. A etapa 3 não está concluída; M38c/P1/F2-09/V2 abertos.
+O upload privado interno com inventário/cancelamento/cleanup foi validado em
+M38c3b: [evidência](../../../entregas/2026-10-23-writer-v2-upload-privado-dos-campos-de-lore.md).
+Sem endpoint, UI ou adoção. Próximos passos: geração/readers v2, CAS/privacidade,
+criação/exclusão/GC e cliente. A etapa 3 não está concluída; M38c/P1/F2-09/V2 abertos.

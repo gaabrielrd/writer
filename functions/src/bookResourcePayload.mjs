@@ -53,6 +53,20 @@ function jsonValue(value, depth = 0) {
     jsonValue(field.value, depth + 1);
   }
 }
+export function resourcePayloadBodyId(scopeInput, { operationId, contentHash, merkleRoot }) {
+  const scope = resourcePayloadScope(scopeInput);
+  restoreId(operationId);
+  restoreHash(contentHash);
+  restoreHash(merkleRoot);
+  return digest({
+    domain: 'writer-book-resource-payload',
+    schemaVersion: 1,
+    ...scope,
+    operationId,
+    contentHash,
+    merkleRoot,
+  });
+}
 /** Pure staging codec. The producer must authenticate its input and journal each write. */
 export function prepareBookResourcePayload({
   uid,
@@ -88,14 +102,7 @@ export function prepareBookResourcePayload({
     layers.push(next);
   }
   const merkleRoot = layers.at(-1)[0],
-    bodyId = digest({
-      domain: 'writer-book-resource-payload',
-      schemaVersion: 1,
-      ...scope,
-      operationId,
-      contentHash,
-      merkleRoot,
-    }),
+    bodyId = resourcePayloadBodyId(scope, { operationId, contentHash, merkleRoot }),
     manifest = Object.freeze(
       resourcePayloadManifest({
         schemaVersion: 1,

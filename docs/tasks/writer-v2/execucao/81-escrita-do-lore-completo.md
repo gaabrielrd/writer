@@ -90,3 +90,57 @@ Node e sete SDK distintos positivos. Controles positivos isolam os denies de
 payload dos outros gates. Estado não guarda texto livre nem listas completas;
 EOF continua sem valor de autorização/hash/selo. Nenhum produtor foi habilitado.
 Próximo passo é o 2; o conjunto de escrita continua pendente.
+
+## Execução do passo 2 — M38c3b
+
+Implementar serviço interno bookLoreFieldUpload (start/get/append/seal/cancel/
+cleanup), contratos, store e limpeza, sem callable ou cliente habilitado ainda.
+Neste incremento a origem é uma ficha existente, inline ou payload, com
+readToken observado. Criação por reserva e adoção da geração vêm nos passos 3/4.
+Nenhuma alteração da ficha ativa, clock, privacidade, créditos ou publicação.
+
+Registrar job sob users/uid/bookLoreFieldUploads e lease permanente sob
+books/bookId/bookResourceLeases antes de gravar bytes. Inventário v1 enumera
+chunks e header próprios por provas imutáveis. IDs derivam de UID/livro/lore/
+upload/alvo/hash/Merkle; colisões ou chunks órfãos existentes impedem início.
+
+Estados uploading, verifying, sealed, cancelling e cancelled. Uma chamada
+append recebe uma parte de até 64 KiB, verifica Merkle, avança SHA e parser
+incrementais e grava chunk/prova/estado/recibo/CAS atomicamente. Jobs/recibos
+são metadata; o estado SHA privado separado pode conter buffer interno, nunca
+é retornado e deve ser excluído no EOF/cancelamento. Sem teto de 8 MiB/128 partes.
+
+Após SHA/EOF, verificar provas nativas dos chunks em lotes de até 16. O último
+recibo de append fixa partSealBirth antes dessa varredura; só depois criar
+header imutável. Leitores internos devem conferir esse limite além do header,
+impedindo adotar parte recriada depois de já ter sido verificada. Esse ponteiro
+interno não deve ser exposto ao navegador. Provas/recibos têm âncoras nativas
+pareadas e vínculo com a identidade original do job/lease.
+
+Reenvio confirma o recibo sem reaplicar bytes, inclusive depois de revogação
+ou cancelamento. get também confirma somente metadata própria. Operações novas
+append/seal reautorizam livro/lore/clock/encarnação em cada unidade. Cancelamento
+usa intenção/hash próprios, cria fence mesmo antes do start e revoga a lease
+antes da limpeza. Cleanup independe do acesso atual, mas preserva livro/artefato
+recriado; usa metadata, no máximo 16 chunks por unidade e header por último.
+Manter fences/recibos sem corpo após cancelar; recusar lease adotada.
+
+Modificar generic reader somente com partSealBirth opcional e compatível,
+adicionar módulo ao check e manter namespaces SDK negados. Testar estados,
+rollback, replay/CAS, corrupção, revogação, cancel antes/durante/depois,
+SHA/JSON inválidos, grandes campos, recriações e SDK real. Sem SDK global,
+produção, deploy ou UI. Passos 3–6 e Writer V2 continuam pendentes.
+
+## Evidência de M38c3b
+
+[Entrega](../../../entregas/2026-10-23-writer-v2-upload-privado-dos-campos-de-lore.md)
+e [ADR 0094](../../../decisions/0094-private-lore-field-uploads.md): 124 Node
+distintos em três arquivos e três cenários SDK positivos, incluindo 141 partes,
+retry concorrente real, revogação, barreira nativa e limpeza da tentativa.
+Serviço interno do passo 2 validado para ficha existente; não há endpoint,
+criação por reserva, adoção ou UI. Próximo passo é o 3, com readers v2 e troca
+ativa certificada. Incorporar inventário à exclusão do livro antes do rollout.
+
+O estado SHA privado separado pode conter buffer interno; nunca retorná-lo e
+excluí-lo no EOF/cancelamento. Job e recibos ficam somente com metadata.
+sealed/prepared informa evento, não disponibilidade física/grant atuais.

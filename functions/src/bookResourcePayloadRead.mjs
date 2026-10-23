@@ -46,7 +46,13 @@ export async function openBookResourcePayload(tx, db, input) {
       digest(manifest)
   )
     inconsistent();
-  const opened = { ...scope, manifest, path, header };
+  let partSealBirth;
+  if (Object.hasOwn(input, 'partSealBirth')) {
+    closed(input.partSealBirth, ['seconds', 'nanoseconds']);
+    partSealBirth = born({ createTime: input.partSealBirth });
+    if (!notAfter({ createTime: partSealBirth }, header)) inconsistent();
+  }
+  const opened = { ...scope, manifest, path, header, ...(partSealBirth ? { partSealBirth } : {}) };
   transactions.set(opened, tx);
   return opened;
 }
@@ -57,7 +63,8 @@ export function validateBookResourcePayloadSnapshot(opened, index, snapshot) {
     !snapshot.exists ||
     snapshot.ref?.path !== resourcePayloadChunkPath(opened.bookId, opened.manifest.bodyId, index) ||
     !immutable(snapshot) ||
-    !notAfter(snapshot, opened.header)
+    !notAfter(snapshot, opened.header) ||
+    (opened.partSealBirth && !notAfter(snapshot, { createTime: opened.partSealBirth }))
   )
     inconsistent();
   const part = snapshot.data();

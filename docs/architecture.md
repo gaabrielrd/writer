@@ -1582,3 +1582,18 @@ null/inválido, replace e deleting; CRUD inline conserva os gates anteriores.
 O [plano 81](tasks/writer-v2/execucao/81-escrita-do-lore-completo.md) exige upload,
 inventário/cancelamento/cleanup, geração/CAS/recibos, readers e GC antes de
 habilitar a edição completa. Nenhum produtor novo ou geração v2 foi ativado.
+
+## P1 M38c3b — upload privado dos campos
+
+[ADR 0094](decisions/0094-private-lore-field-uploads.md) implementa um serviço
+interno para origem existente, sem callable ou troca ativa. Job/lease e inventário
+precedem bytes; append fixa CAS, Merkle, SHA/parser e recibos. SHA serializado fica
+em estado privado separado e é excluído no EOF/cancelamento. Corpo fecha após
+verificação de metadata por lotes, com partSealBirth anterior à varredura.
+
+O reader exige essa barreira além do header para os campos novos; ponteiros v1
+seguem compatíveis. Confirmação histórica não concede disponibilidade/grant.
+Cancelamento usa intenção própria, fence permanente e cleanup limitado por
+provas nativas, preservando recriados e a origem. Namespaces SDK negados.
+Adoção/readers v2, privacidade/clock, criação/exclusão/GC e inventário do livro
+continuam obrigatórios antes da habilitação.
