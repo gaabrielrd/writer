@@ -560,3 +560,14 @@ reconcilia exatamente a persona usada somente pelo rascunho, sem copiar a biblio
 93 Node distintos e um cenário SDK novo positivos. Campo opcional conserva jobs/recibos e
 permite avançar até draft; texto/perfil exclusivos ainda serão preparados em M34.
 Raiz ausente; P1/F2-09 e Writer V2 abertos. Somente local; CI ignorada.
+
+### P1 M34b — texto e estilo do rascunho preparados
+
+O [contrato 68](68-rascunho-na-preparacao-privada.md) preserva a contribuição em
+partes sem sobrescrever salvo/recriar capítulo. Inventário v11/progresso v8
+terminam em draft-finalize. Perfil exclusivo é copiado privadamente; igual ao
+salvo evita corpos duplicados.
+[Evidência M34b](../../../entregas/2026-10-22-writer-v2-rascunho-na-preparacao-privada.md):
+105 Node e dois SDK reais positivos. M34c deve conferir contagem/portabilidade
+antes do manifesto da versão e da capa. Sem raiz; P1/F2-09 e Writer V2 abertos.
+Somente local; CI ignorada.

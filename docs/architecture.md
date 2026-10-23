@@ -1349,3 +1349,17 @@ O campo opcional preserva progresso v5–v7/recibos antigos e permanece estável
 nos novos replays. Não é grant nem cria definição. A continuação M34 deverá
 preparar texto/perfil e a certificação final conferir todas as definições antes
 da raiz. Inventários/arquivo/relatório semântico permanecem os mesmos.
+
+## Rascunho na preparação privada (P1 M34b)
+
+[ADR 0079](decisions/0079-restored-draft-preparation.md) prepara uma parte raw por
+unidade com SHA/tamanho/provas. Compara com capítulo legado inline/lógico
+comprovado; nunca usa campo congelado composto como manuscrito atual.
+Texto igual não duplica corpos; diferente/removido usa domínio próprio de versão.
+
+Perfil exclusivo é preparado sob o job; compartilhado mantém prova sem no-op.
+preparedDrafts/current conserva metadados/vínculo/hash, sem prosa completa.
+Inventário v11 inclui esse namespace antes da escrita e certifica limpeza com
+nascimento nativo. Progresso v8 termina em draft-finalize, sem raiz/countReady
+ou manifesto workVersions. M34c deverá conferir contagem, portabilidade de
+metadados/perfil e todos os corpos antes de finalizar a versão e seguir para capa.

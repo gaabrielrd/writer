@@ -1409,3 +1409,16 @@ rascunho, recibo antes/depois de identidade alterada, continuidade até draft e
 cleanup compatível. Somente o novo caso SDK foi executado neste ajuste.
 Texto/perfil exclusivos e restauração final continuam pendentes; validate integral
 segue reservado ao fechamento P1.
+
+## Rascunho preparado por partes (P1 M34b)
+
+```bash
+node --test functions/test/bookRestoreDraft.test.mjs
+```
+
+[Entrega M34b](entregas/2026-10-22-writer-v2-rascunho-na-preparacao-privada.md):
+105 Node distintos e dois SDK reais positivos, incluindo 12 cenários de rascunho.
+Cobre vazio/ausência, mesmo texto inline/lógico, campo composto, recurso removido,
+partes/Unicode/BOM, metadados/perfis exatos, replay/CAS, falhas, cancelamento,
+inventário v11 e descriptor recriado. SDK prova sigilo, rollback e cleanup.
+Não demonstra versão recuperada utilizável ou restauração ativada; M34c/P1 abertos.

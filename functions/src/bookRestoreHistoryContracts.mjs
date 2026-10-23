@@ -50,7 +50,10 @@ export function validateBookRestoreHistory(value) {
     value.versions > value.bodyCount
   )
     throw new TypeError('Invalid private history progress.');
-  const p = value.pending;
+  validateBookRestorePendingRaw(value.pending);
+  return structuredClone(value);
+}
+export function validateBookRestorePendingRaw(p) {
   if (p !== null) {
     if (
       !closed(p, ['id', 'part', 'bytes', 'chunkCount', 'algorithm', 'hashState', 'cursor']) ||
@@ -67,5 +70,5 @@ export function validateBookRestoreHistory(value) {
       throw new TypeError('Invalid pending history version.');
     validateBookRestoreRawPosition(p.cursor);
   }
-  return structuredClone(value);
+  return structuredClone(p);
 }

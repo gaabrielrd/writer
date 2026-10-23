@@ -5,6 +5,7 @@ import { createBookRestoreCountsService } from './bookRestoreCounts.mjs';
 import { createBookRestorePersonasService } from './bookRestorePersonas.mjs';
 import { createBookRestoreUniverseService } from './bookRestoreUniverse.mjs';
 import { createBookRestoreHistoryService } from './bookRestoreHistory.mjs';
+import { createBookRestoreDraftService } from './bookRestoreDraft.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
@@ -70,6 +71,7 @@ const actions = {
   advanceBookRestorePersonas: ['content-verified'],
   advanceBookRestoreUniverse: ['content-verified'],
   advanceBookRestoreHistory: ['content-verified'],
+  advanceBookRestoreDraft: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -308,6 +310,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       )
         inconsistent();
       if (
+        r.preparation.draft &&
+        (!loaded.job.preparation.draft ||
+          r.preparation.draft.startIndex !== loaded.job.preparation.draft.startIndex ||
+          ['parts', 'bytes', 'bodyCount'].some(
+            (k) => r.preparation.draft[k] > loaded.job.preparation.draft[k],
+          ) ||
+          (r.preparation.draft.match !== null &&
+            r.preparation.draft.match !== loaded.job.preparation.draft.match))
+      )
+        inconsistent();
+      if (
         r.preparation.history &&
         (!loaded.job.preparation.history ||
           ['versions', 'byteLength', 'sourceChunks', 'bodyCount'].some(
@@ -336,6 +349,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         'advanceBookRestorePersonas',
         'advanceBookRestoreUniverse',
         'advanceBookRestoreHistory',
+        'advanceBookRestoreDraft',
       ].includes(r.action)
     )
       inconsistent();
@@ -969,7 +983,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const draft = createBookRestoreDraftService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...draft,
     ...history,
     ...universe,
     ...personas,

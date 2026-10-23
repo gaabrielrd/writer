@@ -373,3 +373,8 @@ P1 M34a corrige a [persona exclusiva do rascunho](docs/tasks/writer-v2/execucao/
 a preparação reconhece a contribuição verificada sem copiar perfil atual e
 chega a draft com contagem exata. Texto e definição exclusivos ainda serão
 preparados na continuação M34; nenhuma cópia foi ativada.
+
+P1 M34b prepara [texto e estilo do rascunho](docs/tasks/writer-v2/execucao/68-rascunho-na-preparacao-privada.md)
+sem sobrescrever o salvo. Igualdade evita corpos duplicados; vazio/removido é
+preservado. Inventário v11/progresso v8 terminam em draft-finalize: contagem,
+metadados portáteis e manifesto da versão ainda precisam de finalização.
