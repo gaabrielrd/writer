@@ -3,6 +3,8 @@ import {
   doc,
   getDoc,
   getDocs,
+  getDocFromServer,
+  getDocsFromServer,
   query,
   orderBy,
   runTransaction,
@@ -11,6 +13,8 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { firestore, getFirebaseApp } from '@/shared/lib';
 import { asLoreScope, loreEntityDocumentId, universeEntityId } from '../model/loreScope';
+import { bookLoreReadSession, hasBookLorePayload } from './bookLoreReadService';
+import { subscribeBookLore } from './bookLoreSubscription';
 import type {
   CreateLoreEntityInput,
   LoreCategory,
@@ -56,6 +60,7 @@ function loreCollection(source: string | LoreScope) {
 }
 
 function mapLocal(id: string, bookId: string, data: Partial<StoredLoreDoc>): LoreEntity {
+  if (hasBookLorePayload(data)) throw new Error('A ficha exige leitura completa.');
   return {
     id,
     bookId,
@@ -111,16 +116,18 @@ export function subscribeLoreEntities(
 ) {
   const scope = asLoreScope(source);
   if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
+  if (scope.kind === 'book')
+    return subscribeBookLore(
+      scope.id,
+      (id, data) => mapLocal(id, scope.id, data),
+      onChange,
+      onError,
+      (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+    );
   return onSnapshot(
     query(loreCollection(source), orderBy('name', 'asc')),
     (snapshot) => {
-      onChange(
-        snapshot.docs.map((item) =>
-          scope.kind === 'universe'
-            ? mapGlobal(item.id, scope.id, item.data())
-            : mapLocal(item.id, scope.id, item.data()),
-        ),
-      );
+      onChange(snapshot.docs.map((item) => mapGlobal(item.id, scope.id, item.data())));
     },
     onError,
   );
@@ -131,14 +138,25 @@ export async function listLoreEntities(source: string | LoreScope): Promise<Lore
   if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   const loreRef = loreCollection(source);
-  const q = query(loreRef, orderBy('name', 'asc'));
-  const snapshot = await getDocs(q);
+  const read = scope.kind === 'book' ? bookLoreReadSession() : null;
+  const q = scope.kind === 'book' ? query(loreRef) : query(loreRef, orderBy('name', 'asc'));
+  const snapshot = read ? await getDocsFromServer(q) : await getDocs(q);
+  read?.guard();
+  if (read && snapshot.docs.some((item) => hasBookLorePayload(item.data()))) {
+    return (await read.list(bookId))
+      .map((item) => mapLocal(item.id, bookId, item.data))
+      .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+  }
 
-  return snapshot.docs.map((docSnap) => {
-    const data = docSnap.data() as StoredLoreDoc;
-    if (scope.kind === 'universe') return mapGlobal(docSnap.id, scope.id, data);
-    return mapLocal(docSnap.id, bookId, data);
-  });
+  return snapshot.docs
+    .map((docSnap) => {
+      const data = docSnap.data() as StoredLoreDoc;
+      if (scope.kind === 'universe') return mapGlobal(docSnap.id, scope.id, data);
+      return mapLocal(docSnap.id, bookId, data);
+    })
+    .sort((a, b) =>
+      scope.kind === 'book' ? a.name.localeCompare(b.name) || a.id.localeCompare(b.id) : 0,
+    );
 }
 
 export async function getLoreEntity(
@@ -149,7 +167,9 @@ export async function getLoreEntity(
   if (scope.kind === 'adventure') throw new Error('Use o contexto autorizado de lore da aventura.');
   const bookId = scope.id;
   const entityDocRef = doc(loreCollection(source), loreEntityDocumentId(scope, entityId));
-  const snap = await getDoc(entityDocRef);
+  const read = scope.kind === 'book' ? bookLoreReadSession() : null;
+  const snap = read ? await getDocFromServer(entityDocRef) : await getDoc(entityDocRef);
+  read?.guard();
 
   if (!snap.exists()) {
     return null;
@@ -157,7 +177,12 @@ export async function getLoreEntity(
 
   const data = snap.data() as StoredLoreDoc;
   if (scope.kind === 'universe') return mapGlobal(snap.id, scope.id, data);
-  return mapLocal(snap.id, bookId, data);
+  if (hasBookLorePayload(data)) {
+    const value = await read!.get(bookId, entityId);
+    if (!value) throw new Error('Entidade indisponível.');
+    return mapLocal(entityId, bookId, value.data);
+  }
+  return mapLocal(snap.id ?? entityId, bookId, data);
 }
 
 export async function createLoreEntity(
@@ -195,19 +220,27 @@ export async function createLoreEntity(
   };
 
   const bookRef = doc(firestore, 'books', bookId);
-  return runTransaction(firestore, async (transaction) => {
+  const read = bookLoreReadSession();
+  const saved = await runTransaction(firestore, async (transaction) => {
     const [book, existing] = await Promise.all([
       transaction.get(bookRef),
       transaction.get(newEntityDoc),
     ]);
     if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
     localLoreVersion(book.data());
-    if (existing.exists()) return mapLocal(newEntityDoc.id, bookId, existing.data());
+    if (existing.exists()) return existing.data();
     const version = nextLocalLoreVersion(book.data());
     transaction.set(newEntityDoc, entityDocData);
     transaction.update(bookRef, { localLoreVersion: version });
-    return mapLocal(newEntityDoc.id, bookId, entityDocData);
+    return entityDocData;
   });
+  read.guard();
+  if (hasBookLorePayload(saved)) {
+    const value = await read.get(bookId, newEntityDoc.id);
+    if (!value) throw new Error('Entidade indisponível.');
+    return mapLocal(newEntityDoc.id, bookId, value.data);
+  }
+  return mapLocal(newEntityDoc.id, bookId, saved);
 }
 
 export async function updateLoreEntity(
@@ -253,6 +286,8 @@ export async function updateLoreEntity(
     ]);
     if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
     if (!current.exists()) throw new Error('Entidade indisponível.');
+    if (hasBookLorePayload(current.data()))
+      throw new Error('Esta ficha exige o editor de lore completo.');
     const version = nextLocalLoreVersion(book.data());
     const revokePublication = input.isPublic === false && current.data().isPublic === true;
     transaction.update(bookRef, {
@@ -294,6 +329,8 @@ export async function deleteLoreEntity(
     if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
     localLoreVersion(book.data());
     if (!current.exists()) return;
+    if (hasBookLorePayload(current.data()))
+      throw new Error('Esta ficha exige o editor de lore completo.');
     const version = nextLocalLoreVersion(book.data());
     const revokePublication = current.data().isPublic === true;
     transaction.update(bookRef, {

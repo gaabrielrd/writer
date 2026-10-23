@@ -99,6 +99,43 @@ e [ADR 0091](../../../decisions/0091-private-complete-lore-reads.md).
 corrigido percorreu 141 partes, com 130 relações em três páginas.
 Limites medidos de quatro/seis leituras nativas e um chunk por unidade.
 
-Nenhum cliente ou novo escritor foi conectado. Próxima etapa: hidratador completo
-com SHA/UTF-8/schema, guards e confirmação final, antes de integrar get/list/
-assinatura e criação idempotente. Etapas 2–7, P1/F2-09 e Writer V2 permanecem abertas.
+A etapa 2 foi implementada e validada em M38c2: hidratador, get/list/assinatura
+e criação existente. Próxima etapa 3: escritores/Rules com geração/CAS/recibos e
+coleta. Etapas 3–7, P1/F2-09 e Writer V2 permanecem abertas.
+
+## Execução da etapa 2 — leitor cliente
+
+Primeiro implementar bookLoreReadClient e seu contrato puro de transporte dentro
+da feature lore. Reutilizar o schema lógico portátil puro pela declaração TS,
+sem duplicar regras de campos. Receber uma função RPC e uma guarda de contexto
+para conferir autorização de conta/cancelamento antes e depois de cada await.
+Sem cache persistente. Montar bytes por até quatro chamadas concorrentes,
+validar base64 canônico, tamanho/hash integral, UTF-8 estrito e JSON canônico.
+Validar todo o domínio sem teto de 8 MiB; preservar ausências e duplicados.
+
+A base payload deve declarar o mesmo bookId e não conter relações inline;
+relações devem chegar em páginas de 64 com offset/count exatos. Header final
+precisa ser igual ao inicial sob o mesmo token. Lista completa usa todas as
+páginas, abre cada entidade com o token listado e repete a varredura metadata
+para comparar IDs/tokens antes de retornar. Cursor repetido/IDs duplicados,
+falha parcial ou alteração de origem rejeitam a operação inteira.
+
+Testes dirigidos do cliente cobrirão conteúdo literal >8 MiB/128 partes,
+relações opcionais/paginadas, corrupção, escopos/tokens/manifest/índices, conta,
+cancelamento e respostas tardias, lista completa/alterada e concorrência real.
+O adaptador Firebase e get/list/assinatura/criação existente foram conectados,
+com testes de serviço e hosts. Livros totalmente inline mantêm SDK servidor;
+payload presente usa protocolo completo, sem fallback em erro. Assinaturas
+aguardam raiz/coleção confirmadas e ignoram cache/escritas pendentes, recebendo
+metadata-only. O lote concorrente é drenado mesmo em erro antes de outro refresh.
+Escritores legados recusam payload, mas segurança/edição plena ainda exigem
+escritores/Rules/contextos/backup/coleta das etapas 3–7.
+
+## Evidência de M38c2
+
+[Entrega](../../../entregas/2026-10-23-writer-v2-lore-completo-no-cliente.md) e
+[ADR 0092](../../../decisions/0092-complete-lore-client.md): 149 testes distintos
+em nove arquivos, incluindo 85 novos. Leitor puro, bindings/adaptador, regressões
+de serviços/hosts e produtor/API/cliente em memória positivos. Setup suporta
+DOM e Node; bundle/smoke e checks dirigidos aprovados. Nenhuma raiz de job foi
+certificada ou ativada. Próxima etapa continua a 3; M38c inteiro permanece aberto.

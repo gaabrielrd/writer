@@ -18,6 +18,8 @@ const transaction = vi.hoisted(() => ({
 }));
 
 vi.mock('firebase/firestore', () => {
+  const getDoc = vi.fn(),
+    getDocs = vi.fn();
   return {
     collection: vi.fn((_db: unknown, ...segments: string[]) => ({ path: segments.join('/') })),
     doc: vi.fn((base: { path?: string }, ...segments: string[]) => ({
@@ -26,8 +28,10 @@ vi.mock('firebase/firestore', () => {
         .filter(Boolean)
         .join('/'),
     })),
-    getDoc: vi.fn(),
-    getDocs: vi.fn(),
+    getDoc,
+    getDocFromServer: getDoc,
+    getDocs,
+    getDocsFromServer: getDocs,
     setDoc: vi.fn(),
     updateDoc: vi.fn(),
     deleteDoc: vi.fn(),
@@ -42,6 +46,7 @@ vi.mock('firebase/firestore', () => {
 
 vi.mock('@/shared/lib', () => ({
   firestore: {},
+  auth: { currentUser: { uid: 'author' } },
   getFirebaseApp: () => ({}),
 }));
 

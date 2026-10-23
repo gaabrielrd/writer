@@ -7,3 +7,5 @@ export function projectBookVersionDraft(
   value: unknown,
   resource?: { kind: string; id: string },
 ): RecoveredBookDraft;
+export function bookContentId(value: unknown): string;
+export function validateBookBackupJSONItem(kind: string, value: unknown, bookId: string): unknown;

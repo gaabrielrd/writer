@@ -1552,6 +1552,20 @@ conferir SHA/UTF-8/schema e reconfirmar origem. API compatível com inline e
 sealBirth de fichas migradas. Não há grant SDK novo ou ativação.
 
 O [plano 80](tasks/writer-v2/execucao/80-consumidores-do-lore-completo.md) mantém
-as integrações cliente/escritores/Rules/contextos/backup/coleta abertas.
-Leitura/assinaturas/edição/backup/exclusão de livro ativo e demais gates de P1
-continuam pendentes. Parsers novos e drenagem de handlers antigos precedem rollout.
+as integrações de escritores/Rules/contextos/backup/coleta abertas; o cliente
+foi conectado em M38c2, conforme a ADR 0092.
+Edição/backup/exclusão de livro ativo e demais gates de P1 continuam pendentes. Parsers novos e drenagem de handlers antigos precedem rollout.
+
+## P1 M38c2 — cliente do lore completo
+
+[ADR 0092](decisions/0092-complete-lore-client.md) liga get/list/assinatura e criação
+existente ao hidratador privado. Base/relações passam por SHA/UTF-8/JSON/schema
+compartilhado; header e IDs/tokens finais são reconferidos. Até quatro partes por
+lote, drenadas também em erro. Conta exata/epoch/unsubscribe descartam respostas
+antigas; raiz e coleção aguardam confirmação servidor, inclusive metadata-only.
+
+Livros inline usam SDK servidor sem depender das novas Functions; universos e
+aventuras conservam seus contratos. Stub nunca entra em mapLocal e writers SDK
+atuais recusam update/delete de payloads. Esse bloqueio cliente não substitui
+Rules, escritores/GC nem autoriza ativação. Fluxos de leitura exigem conexão;
+cache autoral existente não é fallback de autorização.

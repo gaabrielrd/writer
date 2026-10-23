@@ -728,3 +728,17 @@ Somente a etapa 1 está validada. Cliente/lista/assinatura, escritores/Rules,
 contextos, backup lógico e coleta/exclusão seguem nas etapas 2–7 de M38c.
 Outros campos grandes, saída portátil ampliada e certificação/ativação de P1
 continuam pendentes. Writer V2 aberto, sem push/PR/deploy ou CI remota.
+
+### P1 M38c2 — lore completo nos serviços cliente
+
+O [plano 80, etapa 2](80-consumidores-do-lore-completo.md) agora monta e confere
+base/relações antes de get/list/assinatura e criação existente. Conta/epoch,
+root/metadata e unsubscribe preservam o contexto. Inline mantém SDK servidor;
+payload exige API completa. Writers antigos bloqueiam update/delete de payload.
+[Evidência](../../../entregas/2026-10-23-writer-v2-lore-completo-no-cliente.md):
+149 casos distintos em nove arquivos, tipos/lint/arquitetura/bundle/smoke positivos,
+com produtor/API/cliente em memória. Harness não representa ativação ou browser.
+
+Próxima etapa 3: escritores/Rules/GC; contextos, backup e exclusão seguem em M38c.
+Demais campos grandes, saída portátil ampliada e todos os gates finais de P1
+continuam pendentes. Writer V2 aberto; somente commits locais e CI ignorada.

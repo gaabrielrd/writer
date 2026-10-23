@@ -1627,3 +1627,21 @@ uma parte usa quatro/seis leituras nativas e apenas um chunk. Os harnesses de
 leitura têm raiz sintética explícita e não comprovam ativação de um job.
 Cliente/assinatura/mutações/contextos/backup e roundtrip continuam pendentes.
 Sem validação visual nova; validate no fechamento de P1.
+
+## P1 M38c2 — leitura cliente completa
+
+[Entrega M38c2](entregas/2026-10-23-writer-v2-lore-completo-no-cliente.md):
+149 casos distintos em nove arquivos, 85 novos e 64 de regressão. Leitor final
+51, serviços/hosts 88, adaptador 8 e integração em memória 2. Totais não somam
+repetições. Testes DOM/Node passaram juntos após setup condicional.
+
+bookLoreReadRoundtrip.test.mjs usa ambiente Node para o produtor/API/cliente
+reais, com DB em memória e raiz explicitamente sintética. Não prova SDK, Rules,
+ativação ou jornada browser. A data esperada vem da preparação monotônica.
+Os testes puros exercitam Unicode >8 MiB/128 partes e SHA/domínio; bindings
+exercitam cache inicial, escrita pendente, conta/epoch, coalescência e revogação.
+Lotes com erro são drenados para não acumular chamadas no refresh seguinte.
+
+Tipos, lint, arquitetura, bundle e smoke passaram. As Rules e o backend não
+mudaram; não repetir seus testes por essa etapa cliente. Validate integral e
+roundtrip de P1 continuam pendentes.
