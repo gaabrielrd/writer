@@ -1336,3 +1336,16 @@ fecha totais do relatório antes de draft. Corpos podem existir antes do manifes
 raiz ausente/countReady false impedem exposição. Certificação de todos os
 artefatos antes da ativação, rascunho/capa, personas, campos grandes e host/UI
 continuam obrigatórios. A raiz sintética dos testes não é ativação P1.
+
+## Persona exclusiva do rascunho (P1 M34a)
+
+[ADR 0078](decisions/0078-draft-only-persona-reconciliation.md) corrige a igualdade
+prematura de M31: totals.profiles inclui o perfil exclusivo do rascunho.
+No manifesto, o leitor confere book-draft penúltimo e sua prova, exigindo igualdade
+com definição preparada ou registrando personas.draftProfileId remapeado.
+profileCount dos vínculos salvos + contribuição exclusiva = total validado.
+
+O campo opcional preserva progresso v5–v7/recibos antigos e permanece estável
+nos novos replays. Não é grant nem cria definição. A continuação M34 deverá
+preparar texto/perfil e a certificação final conferir todas as definições antes
+da raiz. Inventários/arquivo/relatório semântico permanecem os mesmos.

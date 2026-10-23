@@ -368,3 +368,8 @@ P1 M33 prepara o [histórico por partes](docs/tasks/writer-v2/execucao/66-histor
 versões manuais e anteriores a restaurações, inclusive de recursos removidos,
 com texto/datas/razão/rótulo preservados. Inventário v10/progresso v7 mantêm
 corpos parciais privados e terminam em draft, sem ativar a cópia.
+
+P1 M34a corrige a [persona exclusiva do rascunho](docs/tasks/writer-v2/execucao/67-persona-exclusiva-do-rascunho.md):
+a preparação reconhece a contribuição verificada sem copiar perfil atual e
+chega a draft com contagem exata. Texto e definição exclusivos ainda serão
+preparados na continuação M34; nenhuma cópia foi ativada.

@@ -65,7 +65,7 @@ export function createBookRestorePersonasService({
               },
             }
           : structuredClone(initial.loaded.job.preparation);
-      let item, metadata;
+      let item, metadata, draft;
       try {
         const reader = await createVerifiedBookRestoreContent({
           db,
@@ -75,6 +75,11 @@ export function createBookRestorePersonasService({
           load,
         });
         item = await reader.readMappedItem(cursor.itemIndex);
+        if (item.record.kind === 'book-personas') {
+          draft = await reader.readMappedItem(reader.itemCount - 2);
+          if (draft.record.kind !== 'book-draft' || draft.record.id !== initial.loaded.job.bookId)
+            inconsistent();
+        }
         if (item.record.kind === 'book-persona' && item.value.scope === 'book')
           metadata = await reader.readMappedItem(0);
       } catch (error) {
@@ -91,6 +96,7 @@ export function createBookRestorePersonasService({
         available(loaded, request);
         await item.verify(tx);
         if (metadata) await metadata.verify(tx);
+        if (draft) await draft.verify(tx);
         if (loaded.job.cleanupVersion < 9)
           await assertBookRestorePersonaNamespacesEmpty(tx, db, loaded);
         const preparation = structuredClone(cursor),
@@ -140,6 +146,25 @@ export function createBookRestorePersonasService({
           profileItem = true;
         } else if (item.record.kind === 'book-personas') {
           const totals = loaded.job.validationSummary.totals;
+          state.draftProfileId = null;
+          const profile = draft.value.state === 'present' ? draft.value.persona : null;
+          if (profile) {
+            const prepared = await readBookRestoreArtifact(
+              tx,
+              db,
+              loaded,
+              'persona-definition',
+              profile.id,
+              { optional: true },
+            );
+            if (prepared) {
+              if (
+                digest(prepared.value.profile) !== digest(profile) ||
+                prepared.value.profileHash !== digest(profile)
+              )
+                inconsistent();
+            } else state.draftProfileId = profile.id;
+          }
           if (
             BOOK_PERSONA_SCOPES.some(
               (scope) =>
@@ -147,7 +172,7 @@ export function createBookRestorePersonasService({
                 item.value.bindings[scope] !== totals.bindings[scope] ||
                 state.bindings[scope] !== item.value.bindings[scope],
             ) ||
-            state.profileCount !== totals.profiles
+            sum(state.profileCount, state.draftProfileId === null ? 0 : 1) !== totals.profiles
           )
             inconsistent();
           preparation.phase = 'universe';

@@ -302,6 +302,12 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       )
         inconsistent();
       if (
+        r.preparation.personas &&
+        Object.hasOwn(r.preparation.personas, 'draftProfileId') &&
+        r.preparation.personas.draftProfileId !== loaded.job.preparation.personas?.draftProfileId
+      )
+        inconsistent();
+      if (
         r.preparation.history &&
         (!loaded.job.preparation.history ||
           ['versions', 'byteLength', 'sourceChunks', 'bodyCount'].some(

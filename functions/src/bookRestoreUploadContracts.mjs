@@ -460,7 +460,7 @@ export function jobShape(uid, id, job) {
       const p = job.preparation.personas,
         totals = job.validationSummary.totals;
       if (
-        p.profileCount !== totals.profiles ||
+        sum(p.profileCount, p.draftProfileId == null ? 0 : 1) !== totals.profiles ||
         BOOK_PERSONA_SCOPES.some((scope) => p.bindings[scope] !== totals.bindings[scope])
       )
         inconsistent();
@@ -628,7 +628,12 @@ export function preparationProgress(value) {
   }
   if (value.schemaVersion >= 5) {
     const p = value.personas;
-    closed(p, ['schemaVersion', 'profileCount', 'bindings']);
+    closed(p, ['schemaVersion', 'profileCount', 'bindings'], ['draftProfileId']);
+    if (
+      p.draftProfileId != null &&
+      (typeof p.draftProfileId !== 'string' || !/^custom-[a-f0-9]{64}$/.test(p.draftProfileId))
+    )
+      inconsistent();
     if (p.schemaVersion !== 1) inconsistent();
     integer(p.profileCount);
     closed(p.bindings, BOOK_PERSONA_SCOPES);

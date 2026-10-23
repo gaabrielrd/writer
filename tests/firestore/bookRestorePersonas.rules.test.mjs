@@ -8,9 +8,11 @@ import { createBookRestoreUploadService } from '../../functions/src/bookRestoreU
 import { createBookRestoreRemapper } from '../../functions/src/bookRestoreRemap.mjs';
 import {
   personasRestoreFixture,
+  personasWithDraftFixture,
   readyRestorePersonas,
   finishRestorePersonas,
 } from '../../functions/test/helpers/bookRestorePersonasFixture.mjs';
+import { finishRestoreHistory } from '../../functions/test/helpers/bookRestoreHistoryFixture.mjs';
 import {
   cleanupLegacyRestore,
   legacyMutation as mutation,
@@ -155,4 +157,37 @@ test('SDK rejects recreated staged persona before deduplicating or committing an
     false,
   );
   assert.equal((await definition.ref.get()).exists, true);
+});
+
+test('SDK reconciles draft-only persona exactly without copying a current profile and continues through history', async () => {
+  const { records, profile } = personasWithDraftFixture(),
+    initial = await readyRestorePersonas(factory, uid, id, records),
+    m = createBookRestoreRemapper({
+      schemaVersion: 1,
+      jobToken: initial.jobToken,
+      sourceBookId: 'book',
+      bookId: initial.bookId,
+    }),
+    profileId = m.identity('persona', profile.id),
+    library = admin.doc('users/' + uid + '/aiPersonas/' + profileId);
+  await library.create({ instructions: 'CURRENT LIBRARY MUST NOT COPY' });
+  const p = await finishRestorePersonas(factory, uid, id, initial),
+    stored = await admin.doc(root).get();
+  assert.equal(stored.data().validationSummary.totals.profiles, 3);
+  assert.equal(p.preparation.personas.profileCount, 2);
+  assert.equal(p.preparation.personas.draftProfileId, profileId);
+  assert.equal((await admin.doc(root + '/preparedPersonas/' + profileId).get()).exists, false);
+  assert.equal((await admin.collection(root + '/preparedPersonas').get()).size, 2);
+  const universe = (
+      await api.advanceBookRestoreUniverse(uid, mutation(id, p, 'draft-only-sdk-universe'))
+    ).progress,
+    completed = await finishRestoreHistory(factory, uid, id, universe);
+  assert.equal(completed.preparation.phase, 'draft');
+  assert.equal(completed.preparation.personas.draftProfileId, profileId);
+  assert.equal((await library.get()).data().instructions, 'CURRENT LIBRARY MUST NOT COPY');
+  assert.equal((await admin.doc('books/' + completed.bookId).get()).exists, false);
+  const terminal = await cleanupLegacyRestore(api, uid, id, completed, { limit: 5 });
+  assert.equal(terminal.state, 'cancelled');
+  assert.equal((await admin.collection(root + '/preparedPersonas').get()).empty, true);
+  assert.equal((await library.get()).exists, true);
 });

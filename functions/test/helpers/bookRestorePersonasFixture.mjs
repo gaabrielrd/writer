@@ -103,3 +103,22 @@ export async function finishRestorePersonas(
   }
   return progress;
 }
+
+export function personasWithDraftFixture({ exclusive = true } = {}) {
+  const fixture = personasRestoreFixture(),
+    { records, shared } = fixture,
+    profile = exclusive
+      ? {
+          ...structuredClone(shared),
+          id: 'custom-draft-exclusive',
+          name: 'Draft only',
+          instructions: '\ufeff  Draft exact\nOnly here  ',
+        }
+      : structuredClone(shared),
+    at = records.findIndex((r) => r.kind === 'book-draft'),
+    value = JSON.parse(new TextDecoder().decode(records[at].payload));
+  value.chapter.personaComplement = { personaId: profile.id, overrides: [] };
+  value.persona = profile;
+  records[at] = record('book-draft', 'book', value);
+  return { ...fixture, profile };
+}

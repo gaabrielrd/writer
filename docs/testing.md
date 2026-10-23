@@ -1399,3 +1399,13 @@ Cobre texto vazio/BOM/Unicode, datas/rótulo/razão, versões de recursos removi
 rollback/retry, JSON v1–v6, corpos sem manifesto, namespaces e cleanup v10/ABA.
 SDK confirma sigilo, corpo ocupado sem avanço e leitura exata após raiz sintética;
 não demonstra restauração ativada nem validação integral P1.
+
+## Persona exclusiva na contribuição do rascunho (P1 M34a)
+
+[Entrega M34a](entregas/2026-10-22-writer-v2-persona-exclusiva-do-rascunho.md):
+93 Node distintos e um cenário SDK novo positivos. Cobre perfil exclusivo/compartilhado,
+contagem exata, ausência de empréstimo da biblioteca, cancelamento na leitura do
+rascunho, recibo antes/depois de identidade alterada, continuidade até draft e
+cleanup compatível. Somente o novo caso SDK foi executado neste ajuste.
+Texto/perfil exclusivos e restauração final continuam pendentes; validate integral
+segue reservado ao fechamento P1.

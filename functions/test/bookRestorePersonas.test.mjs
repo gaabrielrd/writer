@@ -12,10 +12,12 @@ import { digest } from '../src/sceneContracts.mjs';
 import { adventureImportDb } from './helpers/adventureImportDb.mjs';
 import {
   personasRestoreFixture,
+  personasWithDraftFixture,
   readyRestorePersonas,
   finishRestorePersonas,
 } from './helpers/bookRestorePersonasFixture.mjs';
 import { bookLegacyFixture } from './helpers/bookLegacyFixture.mjs';
+import { finishRestoreHistory } from './helpers/bookRestoreHistoryFixture.mjs';
 import { finishRestoreStructure } from './helpers/bookRestoreStructureFixture.mjs';
 import { finishRestoreLore } from './helpers/bookRestoreLoreFixture.mjs';
 import { finishRestoreResources } from './helpers/bookRestoreResourcesFixture.mjs';
@@ -507,4 +509,160 @@ test('cleanup preserves a recreated definition and its old journal instead of de
   });
   assert.equal(f.records.has(path), true);
   assert.equal(f.records.has(journal[0]), true);
+});
+
+test('a draft-only persona is reconciled exactly and survives universe/history without a borrowed definition', async () => {
+  const f = setup(),
+    { records, profile } = personasWithDraftFixture(),
+    initial = await readyRestorePersonas(f.factory, uid, id, records),
+    m = mapper(initial),
+    profileId = m.identity('persona', profile.id),
+    library = 'users/' + uid + '/aiPersonas/' + profileId;
+  f.records.set(library, { instructions: 'CURRENT LIBRARY MUST NOT COPY' });
+  const p = await finishRestorePersonas(f.factory, uid, id, initial);
+  assert.equal(p.preparation.personas.profileCount, 2);
+  assert.equal(p.preparation.personas.draftProfileId, profileId);
+  assert.equal(f.records.get(root).validationSummary.totals.profiles, 3);
+  assert.equal(f.records.has(root + '/preparedPersonas/' + profileId), false);
+  assert.equal(
+    [...f.records.keys()].filter((k) => k.startsWith(root + '/preparedPersonas/')).length,
+    2,
+  );
+  const universe = (
+      await f.api.advanceBookRestoreUniverse(uid, mutation(id, p, 'draft-profile-universe01'))
+    ).progress,
+    completed = await finishRestoreHistory(f.factory, uid, id, universe);
+  assert.equal(completed.preparation.phase, 'draft');
+  assert.equal(completed.preparation.personas.draftProfileId, profileId);
+  assert.equal(f.records.get(library).instructions, 'CURRENT LIBRARY MUST NOT COPY');
+  assert.equal(f.records.has('books/' + completed.bookId), false);
+  const terminal = await cleanupLegacyRestore(f.api, uid, id, completed, { limit: 5 });
+  assert.equal(terminal.state, 'cancelled');
+  assert.equal(f.records.has(library), true);
+});
+test('a draft sharing a prepared persona adds no extra profile and preserves its exact definition', async () => {
+  const f = setup(),
+    { records, profile } = personasWithDraftFixture({ exclusive: false }),
+    initial = await readyRestorePersonas(f.factory, uid, id, records),
+    p = await finishRestorePersonas(f.factory, uid, id, initial),
+    profileId = mapper(p).identity('persona', profile.id);
+  assert.equal(p.preparation.personas.draftProfileId, null);
+  assert.equal(p.preparation.personas.profileCount, 2);
+  assert.equal(f.records.get(root).validationSummary.totals.profiles, 2);
+  assert.deepEqual(f.records.get(root + '/preparedPersonas/' + profileId).profile, {
+    ...profile,
+    id: profileId,
+  });
+});
+test('cancellation while the verified draft descriptor is read prevents the persona manifest receipt', async () => {
+  const f = setup(),
+    { records } = personasWithDraftFixture(),
+    initial = await readyRestorePersonas(f.factory, uid, id, records);
+  let p = initial,
+    unit = 0;
+  while (
+    p.preparation.personas?.bindings.chapter !== 2 ||
+    p.preparation.personas?.bindings['scene-source'] !== 1
+  ) {
+    p = (
+      await f.api.advanceBookRestorePersonas(uid, mutation(id, p, 'draft-profiles-bind-' + unit++))
+    ).progress;
+  }
+  const reader = await f.api.openVerifiedBookRestoreContent(uid, {
+      restoreId: id,
+      jobToken: p.jobToken,
+    }),
+    path = root + '/validationItems/' + String(reader.itemCount - 2).padStart(15, '0'),
+    doc = f.db.doc.bind(f.db),
+    request = mutation(id, p, 'draft-descriptor-read01');
+  let intercepted = false;
+  f.db.doc = (value) => {
+    const ref = doc(value);
+    if (value === path)
+      return {
+        ...ref,
+        get: async () => {
+          const snapshot = await ref.get();
+          if (!intercepted) {
+            intercepted = true;
+            await f.api.cancelBookRestore(uid, mutation(id, p, 'draft-descriptor-cancel'));
+          }
+          return snapshot;
+        },
+      };
+    return ref;
+  };
+  await assert.rejects(() => f.api.advanceBookRestorePersonas(uid, request));
+  assert.equal(intercepted, true);
+  assert.equal(
+    f.records.has('users/' + uid + '/bookRestoreOperations/' + request.operationId),
+    false,
+  );
+});
+test('historic manifest receipt rejects an altered exclusive draft identity while old fields stay optional', async () => {
+  const f = setup(),
+    { records } = personasWithDraftFixture(),
+    initial = await readyRestorePersonas(f.factory, uid, id, records),
+    p = await finishRestorePersonas(f.factory, uid, id, initial),
+    operation = [...f.records].find(
+      ([k, v]) =>
+        k.startsWith('users/' + uid + '/bookRestoreOperations/') &&
+        v.receipt?.preparation?.personas?.draftProfileId,
+    ),
+    [path, record] = operation,
+    job = structuredClone(f.records.get(root)),
+    request = {
+      restoreId: id,
+      jobToken: p.jobToken,
+      operationId: path.split('/').at(-1),
+      requestHash: record.fingerprint,
+    };
+  assert.deepEqual((await f.api.resolveBookRestoreOperation(uid, request)).receipt, record.receipt);
+  job.preparation.personas.draftProfileId = 'custom-' + 'a'.repeat(64);
+  f.records.set(root, job);
+  await assert.rejects(
+    () => f.api.resolveBookRestoreOperation(uid, request),
+    (e) => e.code === 'failed-precondition' && e.details.reason === 'identity-conflict',
+  );
+  assert.equal(
+    f.records.get(path).receipt.preparation.personas.draftProfileId,
+    p.preparation.personas.draftProfileId,
+  );
+});
+
+test('completed jobs and historic receipts without draftProfileId stay readable and cancelable', async () => {
+  const f = setup(),
+    initial = await readyRestorePersonas(f.factory, uid, id),
+    p = await finishRestorePersonas(f.factory, uid, id, initial),
+    job = structuredClone(f.records.get(root));
+  delete job.preparation.personas.draftProfileId;
+  f.records.set(root, job);
+  let manifest;
+  for (const [path, value] of f.records) {
+    if (
+      !path.startsWith('users/' + uid + '/bookRestoreOperations/') ||
+      !Object.hasOwn(value.receipt?.preparation?.personas ?? {}, 'draftProfileId')
+    )
+      continue;
+    const legacy = structuredClone(value);
+    delete legacy.receipt.preparation.personas.draftProfileId;
+    f.records.set(path, legacy);
+    if (legacy.receipt.action === 'advanceBookRestorePersonas') manifest = { path, value: legacy };
+  }
+  assert.ok(manifest);
+  const request = mutation(
+    id,
+    { ...p, checkpoint: manifest.value.receipt.expectedCheckpoint },
+    manifest.path.split('/').at(-1),
+  );
+  assert.deepEqual(
+    (await f.api.advanceBookRestorePersonas(uid, request)).receipt,
+    manifest.value.receipt,
+  );
+  const terminal = await cleanupLegacyRestore(f.api, uid, id, p, { limit: 5 });
+  assert.equal(terminal.state, 'cancelled');
+  assert.deepEqual(
+    (await f.api.advanceBookRestorePersonas(uid, request)).receipt,
+    manifest.value.receipt,
+  );
 });

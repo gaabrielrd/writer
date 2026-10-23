@@ -129,6 +129,7 @@
 - Prepare cenas/narrativa sob inventário v7, limpando filhos registrados antes dos pais; reutilize vínculos idênticos sem regravar o journal e reconcilie contagens antes da raiz, conforme ADR 0073.
 - Reconcilie restauração de livro pelo ledger e artefatos comprovados; preserve inventário v8, no-op integral e countReady false enquanto a raiz estiver ausente, conforme ADR 0074.
 - Prepare definições de persona sob o job com inventário v9, conferindo vínculos e igualdade; preserve ausências e arquivo sem adotar perfis atuais da biblioteca, conforme ADR 0075.
+- Reconcilie personas dos vínculos salvos com a contribuição exclusiva do rascunho verificado; preserve draftProfileId no replay e certifique a definição antes da raiz, conforme ADR 0078.
 - Reautorize a encarnação do universo na transação final de restauração e componha vínculo estrito com a raiz; não promova unavailable nem use observação como grant, conforme ADR 0076.
 - Prepare histórico por partes com hash integral antes do manifesto e inventário v10; preserve versões de recursos removidos sem recriá-los e certifique artefatos antes da raiz, conforme ADR 0077.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.

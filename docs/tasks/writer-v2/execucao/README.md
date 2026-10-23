@@ -551,3 +551,12 @@ retomada limitada, CAS/replay/rollback, partes sem manifesto e proteção contra
 Raiz sintética confere somente o leitor existente. Rascunho/capa, personas,
 campos grandes, certificação/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
 Somente local; CI ignorada.
+
+### P1 M34a — contribuição exclusiva do rascunho
+
+O [contrato 67](67-persona-exclusiva-do-rascunho.md) corrige o pré-requisito de M31:
+reconcilia exatamente a persona usada somente pelo rascunho, sem copiar a biblioteca.
+[Evidência M34a](../../../entregas/2026-10-22-writer-v2-persona-exclusiva-do-rascunho.md):
+93 Node distintos e um cenário SDK novo positivos. Campo opcional conserva jobs/recibos e
+permite avançar até draft; texto/perfil exclusivos ainda serão preparados em M34.
+Raiz ausente; P1/F2-09 e Writer V2 abertos. Somente local; CI ignorada.
