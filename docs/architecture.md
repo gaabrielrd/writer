@@ -1613,3 +1613,21 @@ leituras nativas para campo sem/com base e seis para relação com base.
 Nenhum produtor v2 está habilitado. Harnesses de leitura não representam adoção.
 Metadata da origem, CAS/leases/privacidade/clock, criação/exclusão/GC, inventário
 do livro e integração dos demais consumidores precedem o rollout.
+
+## P1 M38c3d — metadata lógica da origem do lore
+
+[ADR 0096](decisions/0096-private-lore-source-inspection.md) resolve presença,
+isPublic e datas no servidor, por inspeção privada. O indexador valida base v1
+em unidades com o parser de campo existente, sem guardar prosa. Ranges pertencem
+à base original, não aos valores substituídos pela geração v2.
+
+users/uid/bookLoreSourceInspections guarda job/recibos/certificado privados.
+SHA serializado fica em state/current, separado e excluído no EOF/cancelamento.
+Cada unidade reautoriza a mesma origem; CAS e provas nativas autenticam progresso
+e reenvios. V2 lê override de privacidade separadamente; inline mantém ausência
+de campos/datas. O cliente não declara valores da fonte.
+
+Certificado é prova de metadata histórica sob o mesmo contexto, não grant ou
+disponibilidade atual de todos os corpos. Adoção deve revalidar origem e provas
+e coordenar leases/inventário/clock/privacidade. Não há endpoint, produtor v2,
+adoção ou migração habilitados por este incremento.

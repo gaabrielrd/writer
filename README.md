@@ -452,4 +452,7 @@ M38c3c prepara leitores backend/cliente de geração v2: base opcional, campos
 achatados, remoções/datas e relações independentes, com checagem nativa por parte.
 [Evidência](docs/entregas/2026-10-23-writer-v2-leitura-das-geracoes-de-lore.md).
 Adoção CAS/privacidade/leases, criação/exclusão/GC e cliente de escrita continuam
-pendentes. A edição de payloads não foi habilitada. Somente commits locais, sem deploy.
+pendentes. M38c3d acrescenta a inspeção privada da metadata de origem por unidades,
+sem inferir privacidade/datas pelo stub ou confiar no cliente.
+[Evidência](docs/entregas/2026-10-23-writer-v2-inspecao-da-origem-do-lore.md).
+A edição de payloads não foi habilitada. Somente commits locais, sem deploy.

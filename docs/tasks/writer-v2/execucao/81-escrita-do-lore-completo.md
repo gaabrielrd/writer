@@ -195,3 +195,52 @@ Próximo incremento do passo 3: resolver metadata lógica da origem no servidor
 por unidades e implementar a adoção certificada, CAS/leases/privacidade/clock.
 Criação/exclusão/GC, inventário do livro, cliente de escrita e integração Admin
 seguem obrigatórios. Conclusão do passo 3 e de P1/F2-09/V2 continua pendente.
+
+## Execução do passo 3b — M38c3d: metadata lógica da origem
+
+Antes de adotar uma edição, resolver privacidade/datas/presença da fonte no
+servidor, inclusive quando a base excede 8 MiB. Não inferir pelo stub v1 nem
+aceitar alegação do cliente. Arquivos previstos: prefixo no validador de campo,
+novo indexador da base, serviço/store/contratos da inspeção privada, fixture e
+testes Node/SDK, Rules do namespace, check e documentação.
+
+O indexador puro processa até 64 KiB por unidade, reutiliza domínio/UTF-8/JSON
+canônico dos campos e valida bookId/datas. Estado limita-se a sintaxe,
+presença/offsets, ID esperado e pequenos valores de controle, sem prosa.
+Base v1 exige seus campos/datas; o resultado não é autorização nem prova SHA.
+
+Serviço interno começa por bookId/loreId/sourceToken, cria job privado e estado
+SHA separado, e lê a origem autorizada por unidade. Nunca recebe bytes,
+isPublic ou datas do cliente. Jobs/progresso/recibos não guardam prosa; estado
+SHA pode conter buffer e é excluído no EOF/cancelamento. V1 lê e confere toda
+a base. V2 aplica presença/datas declaradas e lê isPublic substituído numa
+unidade própria; inline usa a projeção validada, limitada pelo documento nativo.
+Relações ficam somente com contagem/presença; isso não certifica suas páginas.
+
+CAS e recibos/âncoras nativas vinculam cada unidade ao job original. Reenvio
+confirma evento próprio, sem reexecutar a fonte; avanço novo sempre reautoriza.
+Cancelamento mantém fence permanente e pode ocorrer sem acesso atual à origem,
+inclusive antes de começar. Certificado final permanece metadata histórica;
+abertura interna exige origem atual e prova nativa. Não concede leitura de
+conteúdo nem comprova disponibilidade física de todas as partes/páginas agora.
+
+Aceites: base acima de 8 MiB/128 partes, campos em todas as fronteiras, datas e
+presença literais, base v1/v2 e inline, override/remoção de isPublic, SHA/JSON
+inválido, corrupção nativa, retry/rollback/CAS, revogação e cancelamento.
+Namespace SDK permanece negado e não haverá callable, UI ou adoção neste
+incremento. Próximo: consumir a inspeção na adoção CAS com leases/clock/
+privacidade e inventário; criação/exclusão/GC e cliente continuam pendentes.
+
+## Evidência do passo 3b — M38c3d
+
+[Entrega](../../../entregas/2026-10-23-writer-v2-inspecao-da-origem-do-lore.md)
+e [ADR 0096](../../../decisions/0096-private-lore-source-inspection.md):
+205 Node distintos e quatro SDK positivos. Inspeção privada calcula metadata
+lógica da origem por unidades, sem receber valores do cliente, com validação,
+SHA, provas nativas e cancelamento. Fonte/clock permanecem intactos.
+
+Ranges identificam a base original; não são índice dos campos v2 substituídos.
+Certificado ready não comprova disponibilidade atual de todos os corpos/páginas
+e não concede leitura. Consumir a abertura interna na futura adoção com provas,
+leases/inventário e CAS/clock/privacidade atômicos. Criação/exclusão/GC e cliente
+seguem pendentes; passo 3 completo e P1/F2-09/V2 continuam abertos.

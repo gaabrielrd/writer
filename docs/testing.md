@@ -1690,3 +1690,19 @@ rejeitados pelo cutoff anterior. Leitura positiva precede a recriação.
 Tipos/lint/arquitetura/sintaxe/bundle/smoke positivos. O harness de cabeça v2
 não entrega adoção/CAS/leases/ativação. Não houve produção/deploy, UI nova ou
 browser declarado; validate integral permanece no encerramento de P1.
+
+### P1 M38c3d — inspeção da metadata de origem do lore
+
+[Entrega](entregas/2026-10-23-writer-v2-inspecao-da-origem-do-lore.md):
+205 Node distintos em quatro arquivos (67 novos, 138 existentes) e quatro
+cenários SDK reais positivos. Repetições dirigidas não aumentam essa contagem.
+
+Indexador exercita todas as fronteiras, domínio/UTF-8/JSON, datas/presença,
+ranges e checkpoint sem prosa acima de 8 MiB/128 partes. Serviço cobre v1/v2/
+inline, SHA integral, privacidade substituída/removida, estado, retry/rollback,
+CAS, fonte revogada/recriada, cancelamento/fence e prova nativa do certificado.
+SDK percorre 141 partes e retry concorrente real; namespace privado permanece
+negado. Certificado histórico não é disponibilidade atual dos corpos.
+
+Lint/arquitetura/sintaxe positivos. Sem código cliente/visual, não foram
+repetidos tipos/Vitest/build/browser; validate integral segue no fim de P1.

@@ -778,3 +778,17 @@ Próximo passo: metadata da origem e adoção CAS certificada com leases,
 privacidade/clock; depois criação/exclusão/GC, inventário do livro e cliente.
 Nenhum produtor v2 habilitado, migração ou ativação. M38c/P1/F2-09/V2 abertos.
 Somente commits locais, CI ignorada.
+
+### P1 M38c3d — inspeção privada da metadata de origem
+
+O [plano 81, passo 3b](81-escrita-do-lore-completo.md) agora resolve no servidor
+presença, privacidade e datas da fonte, inclusive bases grandes, com checkpoints
+privados, SHA e recibos nativos. [Evidência](../../../entregas/2026-10-23-writer-v2-inspecao-da-origem-do-lore.md):
+205 Node distintos e quatro SDK positivos; fonte/clock preservados, 141 partes
+e retry concorrente real. Certificado histórico não concede leitura ou
+disponibilidade atual de todos os corpos.
+
+Próximo: adoção CAS certificada com leases/inventário/clock/privacidade;
+criação/exclusão/GC e integração cliente/writers ainda seguem obrigatórios.
+Nenhum endpoint/adoção/ativação habilitados. M38c/P1/F2-09/V2 abertos.
+Somente commits locais e CI ignorada.

@@ -321,7 +321,7 @@ function syntaxByte(state, byte) {
   bad();
 }
 /** Check one storage unit. Checkpoints contain syntax/IDs, never string prose. */
-export function advanceBookLoreFieldValidation(input, bytes) {
+function advanceField(input, bytes, prefix) {
   checkpoint(input);
   if (
     !(bytes instanceof Uint8Array) ||
@@ -330,9 +330,13 @@ export function advanceBookLoreFieldValidation(input, bytes) {
   )
     bad();
   const state = structuredClone(input);
-  state.byteLength += bytes.length;
+  let consumed = 0;
   for (const byte of bytes) {
-    if (state.mode === 'done') bad();
+    if (state.mode === 'done') {
+      if (prefix) break;
+      bad();
+    }
+    consumed++;
     if (state.mode === 'literal') {
       if (byte !== state.literal.charCodeAt(state.literalIndex++)) bad();
       if (state.literalIndex === state.literal.length) {
@@ -343,8 +347,14 @@ export function advanceBookLoreFieldValidation(input, bytes) {
     } else if (state.mode === 'syntax') syntaxByte(state, byte);
     else stringByte(state, byte);
   }
-  return state;
+  state.byteLength += consumed;
+  return { state, consumed };
 }
+export const advanceBookLoreFieldValidation = (input, bytes) =>
+  advanceField(input, bytes, false).state;
+/** Parse exactly one value, leaving its root delimiter for the base indexer. */
+export const advanceBookLoreFieldPrefixValidation = (input, bytes) =>
+  advanceField(input, bytes, true);
 /** Syntax/domain proof only. Native authorization, SHA, receipts and CAS are separate. */
 export function finishBookLoreFieldValidation(state) {
   checkpoint(state);

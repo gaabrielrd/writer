@@ -148,6 +148,7 @@
 - Valide campos de lore por unidades sem reter texto livre no checkpoint; Rules não permitem mutação SDK de payloadStorage/stubs, inclusive deleting, conforme ADR 0093.
 - Prepare campos sob job/lease com recibos nativos, SHA privado e partSealBirth; preserve fences e incorpore cleanup/exclusão antes de habilitar adoção, conforme ADR 0094.
 - Leia gerações v2 por campos achatados, datas explícitas e relações com selo próprio; exija partSealBirth nos ponteiros novos e não habilite produtores antes de CAS/leases/privacidade/GC, conforme ADR 0095.
+- Resolva metadata de origem no servidor por inspeção privada, com SHA/recibos e cancelamento; preserve ausências/datas e não use certificado histórico como grant ou disponibilidade física dos corpos, conforme ADR 0096.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.
