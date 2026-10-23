@@ -417,3 +417,9 @@ mesmos bytes JSON e a autorização por página. O caso de 19 páginas caiu de 3
 para 37 leituras de partes; near-8 MiB passou com 128 páginas/255 leituras no SDK.
 Fontes antigas sem índice continuam compatíveis e precisam de migração antes
 da habilitação integral. Demais campos grandes e ativação de P1 seguem pendentes.
+
+P1 M37c implementa a [migração dos índices de fontes preparadas](docs/tasks/writer-v2/execucao/76-migracao-dos-indices-das-fontes.md):
+jobs antigos podem receber o índice por fonte, conferindo partes/journals/recibos
+nativos. Preparação v12 mantém texto, pins e inventário v14; índice correto não
+é regravado. A operação ainda é interna e não executou migrações de produção.
+Demais campos grandes e certificação/ativação continuam pendentes.

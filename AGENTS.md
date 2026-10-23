@@ -140,6 +140,7 @@
 - Instale personas restauradas por unidades sob inventário v14, sem sobrescrever biblioteca; revogue o lote antes da limpeza e preserve o marcador cancelled permanente, conforme ADR 0084.
 - Preserve texto lógico e pin próprio das fontes congeladas nos corpos de capítulo existentes; reconfira origem/revisão em cada parte e omita ponteiros físicos no backup, conforme ADR 0085.
 - Gere o índice JSON das fontes com a própria geração e leia somente o intervalo autorizado; inclua a identidade nativa do corpo no token e recuse índice inválido sem fallback, conforme ADR 0086.
+- Migre índices de fontes somente por partes/journals/recibos nativos e progresso v12; preserve no-op, artifactCount e cancelamento v14, conforme ADR 0087.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

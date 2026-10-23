@@ -1480,3 +1480,20 @@ e última alteração do corpo; lista mascarada e varredura final também o obse
 Sem API/DTO/Rule/cliente de produção novo. Fontes M37a sem índice exigem migração/
 certificação antes da habilitação completa; outros campos grandes e orçamento
 após remapeamento continuam pendentes, assim como ativação/host/roundtrip/validate.
+
+## Migração dos índices de fontes preparadas (P1 M37c)
+
+[ADR 0087](decisions/0087-prepared-source-index-migration.md) acrescenta operação
+interna após resources-finalize. Preparação v12 acompanha scanned/backfilled/
+after/complete, um source por transação e total exato antes do EOF concluído.
+Fonte/corpo/partes exigem prova nativa; snapshots de artefatos são somente
+internos, e o validador puro de partes evita repetir a leitura de bytes.
+
+Somente o índice ausente é acrescentado ao manifesto, com journal/recibo/cursor
+atômicos. Texto, partes, pins, nascimento e artifactCount permanecem. Índice
+existente divergente falha; correto não regrava manifesto/journal. Inventário
+v14 e cancelamento continuam, com parser dos recibos novos e progresso v11/v12.
+
+Implantar parsers/cleanup e drenar handlers antigos antes da migração. A
+operação não ativa a raiz; complete não substitui certificação integral de
+namespaces/fontes/índices. Outros campos grandes e host/roundtrip seguem em P1.

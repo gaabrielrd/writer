@@ -150,13 +150,16 @@ export async function openBookChapterText(tx, db, { uid, bookId, chapterId, chap
     inconsistent();
   return { manifest, body, path, uid, bookId, chapterId };
 }
-/** Must use an opening from this same transaction; never accepts a client opening. */
-export async function readBookChapterTextPart(tx, db, opened, index) {
-  const { manifest, body, path, uid, bookId, chapterId } = opened;
+function partPath(opened, index) {
   integer(index);
-  if (index >= manifest.chunkCount) inconsistent();
-  const snapshot = await tx.get(db.doc(path + '/chunks/' + chunkId(index))),
-    part = snapshot.data(),
+  if (index >= opened.manifest.chunkCount) inconsistent();
+  return opened.path + '/chunks/' + chunkId(index);
+}
+/** Pure validation of a native snapshot obtained in the authorized transaction. */
+export function validateBookChapterTextPart(opened, index, snapshot) {
+  const { manifest, body, uid, bookId, chapterId } = opened;
+  if (snapshot.ref?.path !== partPath(opened, index)) inconsistent();
+  const part = snapshot.data(),
     expected = Math.min(
       BOOK_CHAPTER_TEXT_PART_BYTES,
       manifest.byteLength - index * BOOK_CHAPTER_TEXT_PART_BYTES,
@@ -178,6 +181,11 @@ export async function readBookChapterTextPart(tx, db, opened, index) {
   )
     inconsistent();
   return part.bytes;
+}
+/** Must use an opening from this same transaction; never accepts a client opening. */
+export async function readBookChapterTextPart(tx, db, opened, index) {
+  const snapshot = await tx.get(db.doc(partPath(opened, index)));
+  return validateBookChapterTextPart(opened, index, snapshot);
 }
 /** Internal reader: caller must authorize the owning project before calling. */
 export async function readBookChapterText(tx, db, input) {

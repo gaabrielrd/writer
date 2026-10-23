@@ -659,3 +659,16 @@ leituras e 128 páginas/255 leituras confirmados no SDK. A compatibilidade sem
 Demais campos grandes, orçamento após remapeamento, capa/biblioteca,
 certificação/ativação, limpeza pós-ativação e host/UI/roundtrip/validate seguem
 obrigatórios. P1/F2-09 e Writer V2 continuam abertos; somente commits locais.
+
+### P1 M37c — índices de fontes dos jobs antigos
+
+O [contrato 76](76-migracao-dos-indices-das-fontes.md) acrescenta migração interna
+por fonte com preparação v12, preservando inventário v14. Journals/recibos e cada
+parte são autenticados antes de completar o índice; no-op conserva updateTime,
+e cancelamento reconhece os recibos novos sem recriar corpos.
+[Evidência M37c](../../../entregas/2026-10-23-writer-v2-migracao-dos-indices-das-fontes.md):
+430 backend distintos/33 arquivos e dois SDK positivos, incluindo representação
+anterior no nascimento nativo e preservação de parte recriada. Índice disponível
+não significa migração de produção ou ativação. Certificação integral, demais
+campos grandes/orçamento, capa/biblioteca, limpeza pós-ativação e host/UI/
+roundtrip/validate seguem P1/F2-09. Writer V2 aberto, somente commits locais.

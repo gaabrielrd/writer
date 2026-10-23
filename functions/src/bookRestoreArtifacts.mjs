@@ -181,7 +181,9 @@ async function receipt(tx, db, loaded, id) {
       ...(loaded.job.cleanupVersion >= 9 ? ['advanceBookRestorePersonas'] : []),
       ...(loaded.job.cleanupVersion >= 10 ? ['advanceBookRestoreHistory'] : []),
       ...(loaded.job.cleanupVersion >= 12 ? ['advanceBookRestoreCover'] : []),
-      ...(loaded.job.cleanupVersion >= 14 ? ['advanceBookRestorePersonaLibrary'] : []),
+      ...(loaded.job.cleanupVersion >= 14
+        ? ['advanceBookRestorePersonaLibrary', 'advanceBookRestoreSourceIndexes']
+        : []),
       ...(loaded.job.cleanupVersion >= 13
         ? ['reserveBookRestoreCover', 'materializeBookRestoreCover', 'advanceBookRestoreCleanup']
         : []),
@@ -557,6 +559,7 @@ export async function readBookRestoreArtifact(tx, db, loaded, kind, id, { option
   const observed = { createTime: target.createTime, updateTime: target.updateTime };
   return {
     ref: at.ref,
+    snapshot: target,
     value: target.data(),
     async verify(tx) {
       const [current, metadata] = await Promise.all([

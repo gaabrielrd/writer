@@ -1549,3 +1549,22 @@ sem índice e outros campos grandes continuam pendentes de P1.
 O Node pode ignorar um caminho de teste inexistente quando há outros válidos.
 Confira a existência de todos os caminhos de um lote dirigido antes de executá-lo;
 a entrega M37b registra a correção factual da contagem de arquivos de M37a.
+
+## Migração dos índices de fontes preparadas (P1 M37c)
+
+```bash
+node --test functions/test/bookRestoreSourceIndexes.test.mjs
+```
+
+[Entrega M37c](entregas/2026-10-23-writer-v2-migracao-dos-indices-das-fontes.md):
+430 backend distintos em 33 arquivos e dois SDK reais positivos. Cobre fonte
+nascida sem índice, no-op, inline/zero/múltiplas fontes, 8 MiB/128 partes,
+replay/CAS/retry, rollback, contagens fechadas, origem alheia/ausente e registros
+recriados. Partes exigem caminho/escopo/SHA/imutabilidade e journals nativos.
+
+SDK confirma manifesto/journal/recibo no mesmo update nativo, partes preservadas,
+backup indexado de 19 páginas/37 get de partes e cancelamento v12. Uma parte
+recriada bloqueia migração/limpeza sem ser apagada. Raiz de leitura é harness,
+sem ativação; o caso de 8 MiB foi executado no Node, não neste SDK.
+A entrega registra a fixture corrigida após OOM; comparações grandes usam provas
+compactas com tipos/bytes/SHA. Sem alterações cliente, CI ou deploy.

@@ -9,6 +9,7 @@ import { validateBookRestoreDraft } from './bookRestoreDraftContracts.mjs';
 import { validateBookRestoreCover } from './bookRestoreCoverContracts.mjs';
 import { validateBookRestoreCoverStorageProgress } from './bookRestoreCoverStorageContracts.mjs';
 import { validateBookRestorePersonaLibrary } from './bookRestorePersonaLibraryContracts.mjs';
+import { validateBookRestoreSourceIndexes } from './bookRestoreSourceIndexesContracts.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
 export const BOOK_RESTORE_METHODS = [
@@ -483,7 +484,7 @@ export function jobShape(uid, id, job) {
     if (
       !(
         job.cleanupVersion === 14
-          ? [11]
+          ? [11, 12]
           : job.cleanupVersion === 13
             ? [10]
             : job.cleanupVersion === 12
@@ -555,6 +556,12 @@ export function jobShape(uid, id, job) {
       )
         inconsistent();
     }
+    if (job.preparation.schemaVersion === 12) {
+      const progress = job.preparation.sourceIndexes,
+        total = job.preparation.resourceCounts['scene-source'];
+      if (progress.scanned > total || (progress.complete && progress.scanned !== total))
+        inconsistent();
+    }
     if (job.cleanupVersion >= 13) {
       const mustFence =
         job.state === 'cancelled' ||
@@ -603,10 +610,11 @@ export function preparationProgress(value) {
     ...(value?.schemaVersion >= 8 ? ['draft'] : []),
     ...(value?.schemaVersion >= 9 ? ['cover'] : []),
     ...(value?.schemaVersion >= 10 ? ['coverStorage'] : []),
-    ...(value?.schemaVersion === 11 ? ['personaLibrary'] : []),
+    ...(value?.schemaVersion >= 11 ? ['personaLibrary'] : []),
+    ...(value?.schemaVersion === 12 ? ['sourceIndexes'] : []),
   ]);
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(value.schemaVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(value.schemaVersion) ||
     !(
       value.schemaVersion === 1
         ? ['structure', 'resources']
@@ -628,7 +636,9 @@ export function preparationProgress(value) {
                         ? ['cover', 'cover-finalize']
                         : value.schemaVersion === 10
                           ? ['cover-finalize', 'personas-integrate']
-                          : ['personas-integrate', 'resources-finalize']
+                          : value.schemaVersion === 11
+                            ? ['personas-integrate', 'resources-finalize']
+                            : ['resources-finalize']
     ).includes(value.phase)
   )
     inconsistent();
@@ -815,9 +825,16 @@ export function preparationProgress(value) {
     )
       inconsistent();
   }
-  if (value.schemaVersion === 11) {
+  if (value.schemaVersion >= 11) {
     try {
       validateBookRestorePersonaLibrary(value.personaLibrary);
+    } catch {
+      inconsistent();
+    }
+  }
+  if (value.schemaVersion === 12) {
+    try {
+      validateBookRestoreSourceIndexes(value.sourceIndexes);
     } catch {
       inconsistent();
     }

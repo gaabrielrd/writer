@@ -9,6 +9,7 @@ import { createBookRestoreDraftService } from './bookRestoreDraft.mjs';
 import { createBookRestoreDraftFinalizeService } from './bookRestoreDraftFinalize.mjs';
 import { createBookRestoreCoverService } from './bookRestoreCover.mjs';
 import { createBookRestorePersonaLibraryService } from './bookRestorePersonaLibrary.mjs';
+import { createBookRestoreSourceIndexesService } from './bookRestoreSourceIndexes.mjs';
 import { createBookRestoreCoverMaterializationService } from './bookRestoreCoverMaterialization.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
@@ -81,6 +82,7 @@ const actions = {
   reserveBookRestoreCover: ['content-verified'],
   materializeBookRestoreCover: ['content-verified'],
   advanceBookRestorePersonaLibrary: ['content-verified'],
+  advanceBookRestoreSourceIndexes: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, restoreAssets, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -355,6 +357,18 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
           (r.preparation.personaLibrary.revoked && !loaded.job.preparation.personaLibrary.revoked))
       )
         inconsistent();
+      if (r.preparation.sourceIndexes) {
+        const p = r.preparation.sourceIndexes,
+          current = loaded.job.preparation.sourceIndexes;
+        if (
+          !current ||
+          p.scanned > current.scanned ||
+          p.backfilled > current.backfilled ||
+          (p.scanned === current.scanned && p.after !== current.after) ||
+          (p.complete && !current.complete)
+        )
+          inconsistent();
+      }
       if (
         r.preparation.coverStorage &&
         (!loaded.job.preparation.coverStorage ||
@@ -401,6 +415,7 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
         'reserveBookRestoreCover',
         'materializeBookRestoreCover',
         'advanceBookRestorePersonaLibrary',
+        'advanceBookRestoreSourceIndexes',
       ].includes(r.action)
     )
       inconsistent();
@@ -1092,7 +1107,17 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
     next,
     pickProgress,
   });
+  const sourceIndexes = createBookRestoreSourceIndexesService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...sourceIndexes,
     ...personaLibrary,
     ...coverMaterialization,
     ...cover,
