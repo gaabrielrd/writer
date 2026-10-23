@@ -9,6 +9,7 @@ import {
 import { BOOK_RESOURCE_KINDS } from './bookBackupResources.mjs';
 import { createVerifiedBookRestoreContent } from './bookRestoreContentRead.mjs';
 import { projectBookRestoreResource } from './bookRestoreResourceProjection.mjs';
+import { prepareRestoredBookSceneSource } from './bookSceneSourceText.mjs';
 import {
   prepareBookRestoreArtifacts,
   assertBookRestoreResourceNamespacesEmpty,
@@ -99,8 +100,22 @@ export function createBookRestoreResourcesService({
           const kind = item.value.kind;
           if (!BOOK_RESOURCE_KINDS.includes(kind) || item.record.kind !== 'book-' + kind)
             inconsistent();
-          if (kind !== 'lore')
-            writes.push(...projectBookRestoreResource(item.value, uid, preparation.timestamp));
+          if (kind !== 'lore') {
+            const projected = projectBookRestoreResource(item.value, uid, preparation.timestamp);
+            if (kind === 'scene-source') {
+              const source = prepareRestoredBookSceneSource({
+                uid,
+                bookId: loaded.job.bookId,
+                sourceId: item.value.id,
+                operationId: request.operationId,
+                timestamp: preparation.timestamp,
+                source: projected[0].value,
+              });
+              projected[0].value = source.value;
+              writes.push(...source.writes);
+            }
+            writes.push(...projected);
+          }
           preparation.resourceCounts[kind] = sum(preparation.resourceCounts[kind], 1);
         }
         preparation.itemIndex = sum(preparation.itemIndex, 1);

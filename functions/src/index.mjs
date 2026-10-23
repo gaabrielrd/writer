@@ -609,6 +609,7 @@ export const convertChapterToScenes = callable('convertChapterToScenes');
 export const setSceneReference = callable('setSceneReference');
 export const listSceneReferences = callable('listSceneReferences');
 export const listSceneSources = callable('listSceneSources');
+export const readSceneSourceText = callable('readSceneSourceText');
 export const readSceneAssembly = callable('readSceneAssembly');
 export const rebalanceSceneRanks = callable('rebalanceSceneRanks');
 export const deleteSceneGroup = callable('deleteSceneGroup');

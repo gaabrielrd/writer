@@ -25,6 +25,7 @@ import { sceneRankBetween, validSceneRank } from './sceneRanks.mjs';
 import { writeSceneLoreIndex } from './sceneLoreIndex.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { readBookChapterText } from './bookChapterText.mjs';
+import { bookSceneSourceView, addBookSceneSourceRead } from './bookSceneSourceRead.mjs';
 import { createBookChapterBodyPlan } from './bookChapterStorage.mjs';
 import { adventureBlockState, adventureSceneFields } from './adventureBlocksState.mjs';
 
@@ -849,14 +850,12 @@ export function createScenesService({ db, now = Date.now }) {
           items = [];
         let last;
         for (const item of page.docs.slice(0, limit)) {
-          const record = item.data(),
-            { content = '', ...original } = record.original;
-          const value = {
-            id: item.id,
-            content,
-            hash: record.hash,
-            original: JSON.parse(JSON.stringify(original)),
-          };
+          const value = await bookSceneSourceView(tx, db, {
+            uid,
+            bookId: context.target.id,
+            bookSnapshot: p.snapshot,
+            snapshot: item,
+          });
           const candidate = {
             items: [...items, value],
             nextCursor: cursorFor(c, expected, item.id, item.id),
@@ -1177,6 +1176,7 @@ export function createScenesService({ db, now = Date.now }) {
     receipt,
     writeReceipt,
   });
+  addBookSceneSourceRead(api, { db, scope, project });
   return api;
 }
 

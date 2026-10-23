@@ -7,6 +7,7 @@ import {
   readWorkMetadata,
 } from './workProgressContracts.mjs';
 import { resource, loreReference, reference } from './narrativeContracts.mjs';
+import { readBookSceneSource } from './bookSceneSourceText.mjs';
 import { validSceneRank } from './sceneRanks.mjs';
 import { BOOK_STRUCTURE_LIMITS } from './bookBackupStructure.mjs';
 import {
@@ -100,8 +101,8 @@ function readCursor(value, context, descriptor, token) {
     workFail('invalid-argument', 'Página de outro escopo.');
   return workId(parsed.id);
 }
-function validateValue(context, value, snapshot, parent) {
-  const data = snapshot.data();
+function validateValue(context, value, snapshot, parent, logical = snapshot.data()) {
+  const data = logical;
   if (!data) bookBackupChanged(true);
   if (data.deleting || data.rebalancing) unavailable();
   if (value.definition.owner && data.ownerId !== context.uid)
@@ -240,7 +241,16 @@ export function createBookBackupResourceService({ db }) {
           snapshot = await tx.get(db.doc(path(context, value) + '/' + id));
         const actual = itemToken(context, token, value, snapshot, parent);
         if (!snapshot.exists || actual !== expected) bookBackupChanged(true);
-        const record = validateValue(context, value, snapshot, parent);
+        const logical =
+          value.kind === 'scene-source'
+            ? await readBookSceneSource(tx, db, {
+                uid,
+                bookId: context.target.id,
+                sourceId: id,
+                source: snapshot.data(),
+              })
+            : snapshot.data();
+        const record = validateValue(context, value, snapshot, parent, logical);
         let encoded;
         try {
           encoded = serializeBookBackupResource(value.kind, value.parentId, id, record);

@@ -1,5 +1,6 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getFirebaseApp } from '@/shared/lib';
+import { auth, getFirebaseApp } from '@/shared/lib';
+import { hydrateSceneSource, type ExternalSceneSource } from './sceneSourceText';
 import type {
   SceneJob,
   DeleteSceneGroupInput,
@@ -91,8 +92,19 @@ export const deleteSceneGroups = (input: DeleteSceneGroupsInput): Promise<SceneJ
   call('deleteSceneGroups', input);
 export const deleteSceneBook = (input: SceneJobInput): Promise<SceneJobProgress> =>
   call('deleteSceneBook', input);
-export const listSceneSources = (input: SceneSourceListInput): Promise<ScenePage<SceneSource>> =>
-  call('listSceneSources', input);
+export async function listSceneSources(
+  input: SceneSourceListInput,
+): Promise<ScenePage<SceneSource>> {
+  const uid = auth.currentUser?.uid;
+  if (!uid) throw new Error('Entre na sua conta para ler as fontes.');
+  const page = await call<ScenePage<SceneSource | ExternalSceneSource>>('listSceneSources', input);
+  if (!Array.isArray(page.items) || page.projectRevision !== input.expectedProjectRevision)
+    throw new Error('Não foi possível conferir a lista de fontes.');
+  const items: SceneSource[] = [];
+  for (const source of page.items) items.push(await hydrateSceneSource(source, input, uid, call));
+  if (auth.currentUser?.uid !== uid) throw new Error('A conta mudou. Reabra as fontes.');
+  return { ...page, items };
+}
 
 export const getSceneJob = (input: {
   target: SceneProject;

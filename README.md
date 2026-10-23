@@ -404,3 +404,9 @@ novas cópias literais na biblioteca, uma por transação, sem substituir perfis
 existentes. Inventário v14/progresso v11 mantêm lote pendente e revogação antes
 da limpeza. Preparação chega a resources-finalize, sem raiz/countReady;
 liberação da capa/personas e ativação integral continuam em P1.
+
+P1 M37a preserva o [texto lógico das fontes de conversão](docs/tasks/writer-v2/execucao/74-texto-logico-das-fontes-de-conversao.md)
+em corpos de capítulo imutáveis, inclusive acima de 1 MiB. Leitura privada e
+novo backup recompõem a fonte sem exigir o capítulo atual ou exportar ponteiros
+físicos. Outros campos grandes e a otimização das leituras de backup continuam
+pendentes antes da ativação completa de P1.

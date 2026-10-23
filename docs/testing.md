@@ -1506,3 +1506,23 @@ transações/timestamps e Rules no Firestore 1.22.0 local; regressão M36a prese
 os gates ativos/legados. Lote permanece pendente no instalador. Typecheck,
 arquitetura, sintaxe e build/smoke positivos; validate integral e roundtrip/UI
 continuam pendentes para fechamento de P1.
+
+## Texto lógico das fontes de conversão (P1 M37a)
+
+```bash
+node --test functions/test/bookSceneSourceText.test.mjs
+npm run test:unit -- src/features/scenes/tests/sceneSourceText.test.ts
+```
+
+[Entrega M37a](entregas/2026-10-23-writer-v2-texto-logico-das-fontes-de-conversao.md):
+110 backend distintos, 58 Vitest e três cenários SDK reais positivos. Cobre fonte
+acima de 1 MiB, item perto de 8 MiB/128 partes, hash/Unicode/BOM, backup após
+remoção do capítulo, colisão/retry/replay, revogação/recriação nativa e limpeza.
+Cliente cobre resposta malformada, mudança de conta, UTF-8 inválido e confirmação
+final; contratos inline permanecem. SDK usa Firestore 1.22.0 local e verifica
+bloqueio direto com raiz própria e preservação de parte recriada.
+
+Instrumentação Node registrou 361 leituras de partes em 19 páginas de backup;
+SDK confirma fidelidade, não desempenho isolado. Otimização da exportação e
+suporte aos outros campos grandes continuam pendentes antes de P1. Tipos,
+arquitetura, sintaxe e bundle/smoke positivos; sem jornada de ativação ou deploy.

@@ -632,3 +632,16 @@ proteção nativa contra registros recriados. Ativação ainda não é implement
 Disponibilização da capa, campos grandes/consumidores, certificação/ativação,
 limpeza pós-ativação e host/UI/roundtrip/validate seguem P1/F2-09.
 Somente local; CI ignorada. Writer V2 permanece aberto.
+
+### P1 M37a — texto lógico das fontes congeladas
+
+O [contrato 74](74-texto-logico-das-fontes-de-conversao.md) preserva original.content
+em corpos de capítulo existentes, sem novo namespace/inventário. Restauração e
+reconciliação admitem fonte acima de 1 MiB e item perto de 8 MiB; leitor privado
+por token nativo/revisão e cliente mantêm o texto literal, sem ponteiros no backup.
+[Evidência M37a](../../../entregas/2026-10-23-writer-v2-texto-logico-das-fontes-de-conversao.md):
+110 backend distintos, 58 Vitest e três SDK positivos; tipos/build/smoke OK.
+O backup ainda recompõe cada item por página; otimizar as leituras antes de P1.
+M37 segue com lore, outros campos de cenas/narrativa, metadados e labels/metadata
+de versões/rascunho. Capa/biblioteca, certificação/ativação, limpeza pós-ativação e
+host/UI/roundtrip/validate permanecem. P1/F2-09 e Writer V2 abertos, somente local.

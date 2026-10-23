@@ -1442,3 +1442,23 @@ Ativação ainda não existe: futura limpeza pós-ativação deverá aposentar j
 sem apagar biblioteca/lote/recibos ativos. Implantar gates/Rules/cliente antes dos
 produtores. Capa/biblioteca, campos grandes/consumidores, certificação/ativação
 e host/UI/roundtrip/validate integral seguem em P1/F2-09.
+
+## Texto lógico das fontes de conversão (P1 M37a)
+
+[ADR 0085](decisions/0085-frozen-scene-source-text.md) reutiliza bookTextBodies e
+resource chapter para original.content congelado. Acima de 512 KiB, fonte guarda
+manifesto e null; corpo/pin/partes/fonte/journals/cursor/recibo nascem juntos.
+Inventários v5/v7 e delete-book v2 já cobrem a família, sem namespace novo.
+Reconciliação e backup usam texto lógico, preservando ausência e hash e omitindo
+contentStorage. A fonte é independente da existência atual do capítulo.
+
+Lista mantém inline legado e projeta descriptor/token nas fontes externas.
+Callable readSceneSourceText reautoriza UID/raiz/revisão e a identidade nativa de
+fonte/corpo por parte; cliente confere bytes/hash/UTF-8/BOM e confirmação final,
+sem persistência ou mudança do contrato público SceneSource com texto completo.
+SDK direto permanece fechado, inclusive com raiz própria existente.
+
+Implantar leitor/callable/cliente antes do produtor. Fonte grande ainda é
+recomposta a cada página do backup: otimizar o custo quadrático antes de
+habilitar P1 integralmente. Demais campos grandes, capa/biblioteca,
+certificação/ativação e host/UI/roundtrip/validate continuam obrigatórios.

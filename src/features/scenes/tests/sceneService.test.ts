@@ -3,7 +3,10 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import * as api from '../services/sceneService';
 import { target } from './sceneFixtures';
 const app = vi.hoisted(() => ({ name: 'auth-app' }));
-vi.mock('@/shared/lib', () => ({ getFirebaseApp: () => app }));
+vi.mock('@/shared/lib', () => ({
+  getFirebaseApp: () => app,
+  auth: { currentUser: { uid: 'author' } },
+}));
 vi.mock('firebase/functions', () => ({
   getFunctions: vi.fn().mockReturnValue({}),
   httpsCallable: vi.fn(),
@@ -164,7 +167,12 @@ const cases: [string, () => Promise<unknown>, unknown][] = [
 it.each(cases)(
   '%s preserva pedido tipado e resposta no app autenticado',
   async (name, invoke, input) => {
-    expect(await invoke()).toEqual({ confirmed: true });
+    const response =
+      name === 'listSceneSources'
+        ? { items: [], nextCursor: null, projectRevision: 3 }
+        : { confirmed: true };
+    call.mockResolvedValueOnce({ data: response });
+    expect(await invoke()).toEqual(response);
     expect(getFunctions).toHaveBeenCalledWith(app, 'us-central1');
     expect(httpsCallable).toHaveBeenCalledWith({}, name);
     expect(call).toHaveBeenCalledWith(input);

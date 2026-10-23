@@ -1,4 +1,5 @@
 import { digest } from './sceneContracts.mjs';
+import { readBookSceneSource } from './bookSceneSourceText.mjs';
 import { countVisibleWords } from './visibleWordCount.mjs';
 import { inconsistent, sum } from './bookRestoreUploadContracts.mjs';
 import { readBookRestoreArtifact } from './bookRestoreArtifacts.mjs';
@@ -34,8 +35,19 @@ export function createBookRestoreCountEffects({ db }) {
       }
       const writes = projectBookRestoreResource(item.value, loaded.job.ownerId, p.timestamp);
       for (const write of writes) {
-        const native = await read(tx, loaded, write.kind, write.id),
-          actual = { ...native.value },
+        const native = await read(tx, loaded, write.kind, write.id);
+        let logical = native.value;
+        if (write.kind === 'scene-source') {
+          const descriptor = native.value.original?.contentStorage;
+          if (descriptor != null) await read(tx, loaded, 'text-body', descriptor.bodyId);
+          logical = await readBookSceneSource(tx, db, {
+            uid: loaded.job.ownerId,
+            bookId: loaded.job.bookId,
+            sourceId: write.id,
+            source: native.value,
+          });
+        }
+        const actual = { ...logical },
           expected = { ...write.value };
         const derived =
           write.kind === 'scene-control'
