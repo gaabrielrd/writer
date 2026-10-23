@@ -1,3 +1,4 @@
+import { createBookLoreEditAdoptionService } from './bookLoreEditAdoption.mjs';
 import { createBookLoreEditCompilationService } from './bookLoreEditCompilation.mjs';
 import { born, date } from './bookRestoreUploadContracts.mjs';
 import { digest } from './workProgressContracts.mjs';
@@ -188,6 +189,7 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
     },
     ...createBookLoreEditReservationCleanup({ db }),
     ...createBookLoreEditCompilationService({ db, now }),
+    ...createBookLoreEditAdoptionService({ db, now }),
   };
   return service;
 }

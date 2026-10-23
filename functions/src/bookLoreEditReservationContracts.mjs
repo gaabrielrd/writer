@@ -2,6 +2,7 @@ import { authorize, born, closed, integer, restoreHash } from './bookRestoreUplo
 import { bookContentId } from './bookBackupSchema.mjs';
 import { BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
 import { digest, workFail } from './workProgressContracts.mjs';
+import { editAdoptionView } from './bookLoreEditAdoptionContracts.mjs';
 import { compilationView } from './bookLoreEditCompilationContracts.mjs';
 export const editReservationConflict = () =>
   workFail(
@@ -130,6 +131,7 @@ export const editReservationView = (loaded) => {
     releasedCount: fence ? 0 : j.releasedCount,
     blockedReason: fence ? null : j.blockedReason,
     ...(j.compilation ? { compilation: compilationView(j.compilation) } : {}),
+    ...(j.adoption ? { adoption: editAdoptionView(j.adoption) } : {}),
   };
 };
 export function editPreparationRef(v) {

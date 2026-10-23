@@ -546,6 +546,7 @@ service cloud.firestore {
         && request.resource.data.get('hasNarrativeResources', false) == false
         && request.resource.data.get('narrativeRevision', 0) == 0
         && request.resource.data.get('hasProgressResources', false) == false
+        && request.resource.data.get('hasLoreResources', false) == false
         && request.resource.data.get('editorialState', null) == null
         && request.resource.data.get('sceneDeletionOperationId', null) == null
         && validStudioDate(request.resource.data.get('createdAt', null))
@@ -566,6 +567,7 @@ service cloud.firestore {
         && request.resource.data.get('hasNarrativeResources', false) == resource.data.get('hasNarrativeResources', false)
         && request.resource.data.get('narrativeRevision', 0) == resource.data.get('narrativeRevision', 0)
         && request.resource.data.get('hasProgressResources', false) == resource.data.get('hasProgressResources', false)
+        && request.resource.data.get('hasLoreResources', false) == resource.data.get('hasLoreResources', false)
         && request.resource.data.get('editorialState', null) == resource.data.get('editorialState', null)
         && (resource.data.get('hasProgressResources', false) != true
           || request.resource.data.get('wordCount', 0) == resource.data.get('wordCount', 0))
@@ -584,6 +586,7 @@ service cloud.firestore {
         && resource.data.get('hasSceneResources', false) != true
         && resource.data.get('hasNarrativeResources', false) != true
         && resource.data.get('hasProgressResources', false) != true
+        && resource.data.get('hasLoreResources', false) != true
         && resource.data.get('deleting', false) == true
         && existsAfter(/databases/$(database)/documents/deletedBooks/$(bookId))
         && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId));

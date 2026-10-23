@@ -113,15 +113,22 @@ export async function prepareInventoryChange(tx, loaded, operation, patch, paylo
     next = { ...state, ...patch, revision: state.revision + 1 };
   validateInventoryState(at, context, next);
   if (at.kind === 'generation') {
-    if (
-      payloadHash !== null ||
-      !(
-        (operation === 'retire' && state.phase === 'active' && next.phase === 'retired') ||
-        (operation === 'cancel-preparation' &&
-          state.phase === 'preparing' &&
-          next.phase === 'cancelled')
-      )
-    )
+    if (!(
+      (payloadHash === null &&
+        operation === 'retire' &&
+        state.phase === 'active' &&
+        next.phase === 'retired') ||
+      (payloadHash === null &&
+        operation === 'cancel-preparation' &&
+        state.phase === 'preparing' &&
+        next.phase === 'cancelled') ||
+      (operation === 'adopt-preparation' &&
+        state.phase === 'preparing' &&
+        next.phase === 'active' &&
+        state.revision === 0 &&
+        typeof payloadHash === 'string' &&
+        context.preparation)
+    ))
       conflict();
   } else {
     if (

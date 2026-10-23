@@ -304,5 +304,13 @@ export async function openBookLoreSourceInspection(tx, c, r) {
     digest(certificate.data()) !== digest(expected)
   )
     conflict();
+  const opened = source.opened,
+    privacy = loaded.job.metadata.isPublic;
+  if (
+    opened.mode === 'payload' &&
+    Object.hasOwn(opened.value, 'isPublic') &&
+    (!privacy.present || opened.value.isPublic !== privacy.value)
+  )
+    conflict();
   return { loaded, source, metadata: structuredClone(loaded.job.metadata) };
 }

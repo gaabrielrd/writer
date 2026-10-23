@@ -71,6 +71,7 @@ export function createBookLoreEditReservationCleanup({ db }) {
         const replay = await replayEditReservation(tx, loaded, 'cancelBookLoreEditReservation', r);
         if (replay) return replay;
         const j = loaded.job;
+        if (j.phase === 'adopted') conflict();
         if (['cancelling', 'cancelled'].includes(j.phase))
           return { receipt: null, progress: editReservationView(loaded) };
         if (j.generationId === null) {

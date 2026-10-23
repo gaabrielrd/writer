@@ -1692,3 +1692,19 @@ Cancelamento limpa primeiro o filho ainda não reservado, sem recontagem, depois
 slots/descritores. Preparação cobre inline e payload v1/v2; certificado ready
 continua privado e sem ativação/grant. Adoção e integração de exclusão/
 consumidores/backup/cliente permanecem obrigatórias. P1/F2-09/V2 abertos.
+
+## P1 M38c3i — adoção atômica das gerações de lore
+
+[ADR 0101](decisions/0101-atomic-lore-generation-adoption.md) ativa geração
+preparada e troca cabeça/clock/datas/privacidade/recibo no mesmo CAS.
+Consentimento público exige true explícito; espelho do stub é projetado no
+servidor, enquanto a inspeção valida o valor lógico.
+
+Leases reserved são adotadas logicamente pelo evento nativo da geração, sem N
+writes por página. Só a prova original de pai/slot/lease/geração permite reconhecer
+aposentadoria na coleta; cabeça/referências ainda protegem os corpos.
+Registro de fonte preparada confere o evento/recibo e a cabeça nativos.
+
+Marca servidor hasLoreResources impede exclusão legada. Serviço interno, sem
+endpoint/UI/worker; criação/exclusão, consumidores/backup/cliente e rollout
+continuam pendentes. P1/F2-09/V2 abertos.

@@ -1774,3 +1774,20 @@ origem intacta e rollback do append seguido de cleanup após excluir livro.
 Lint, arquitetura e sintaxe de 196 módulos positivos. Sem cliente novo,
 não repetimos tipos/Vitest/build/browser; validate integral no fim de P1.
 Adoção, exclusão e integração de consumidores continuam pendentes.
+
+### P1 M38c3i — adoção atômica das gerações
+
+[Entrega](entregas/2026-10-23-writer-v2-adocao-atomica-das-geracoes-de-lore.md):
+277 Node distintos positivos em rodadas dirigidas (239 regressão, 38 novos) e
+três SDK positivos. Três comparações de timestamp do mock foram corrigidas e
+somente esses casos repetidos; novos casos extensos foram validados isoladamente.
+
+Inclui consentimento/ausência/remoção, CAS/rollback/replay, clocks inválidos,
+native head/recibo/geração acoplados, segunda edição real, aposentadoria/coleta,
+141 partes/129 páginas e 129 leases com writes limitados de metadata.
+
+SDK verifica revogação pública com controles positivos, marca servidor/exclusão
+legada, projeção pública por consentimento, leases físicas preservadas,
+concorrência e retry após excluir raiz. Sintaxe de 200 módulos, arquitetura e
+lint positivos. Sem cliente novo, não repetimos tipos/Vitest/build/browser;
+validate integral no fim de P1. Exclusão/consumidores/backup/cliente pendentes.

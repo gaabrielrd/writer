@@ -289,3 +289,14 @@ de filhos ainda não reservados.
 
 Preparação agora cobre inline/payload; adoção CAS, leases adopted, exclusão,
 demais writers/consumidores/backup/cliente ainda seguem pendentes.
+
+## Adoção interna — M38c3i
+
+[Plano 86](86-adocao-atomica-das-geracoes-de-lore.md) implementou CAS de cabeça/
+geração/leases lógicas/clock/privacidade/recibo, com consentimento explícito,
+segunda edição real e aposentadoria/coleta por prova nativa.
+[Evidência](../../../entregas/2026-10-23-writer-v2-adocao-atomica-das-geracoes-de-lore.md):
+277 Node e três SDK distintos positivos.
+
+Criação/exclusão, inventário do livro e todos os writers/consumidores/backup/
+cliente ainda obrigatórios antes do rollout. Nenhum endpoint/UI habilitado.

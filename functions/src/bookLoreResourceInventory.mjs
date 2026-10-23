@@ -1,3 +1,4 @@
+import { assertPreparedGenerationHead } from './bookLoreEditAdoptionProofs.mjs';
 import { born, bornEqual, closed, restoreHash } from './bookRestoreUploadContracts.mjs';
 import { digest, readWorkMetadata } from './workProgressContracts.mjs';
 import { bookContentId } from './bookBackupSchema.mjs';
@@ -54,7 +55,7 @@ async function sourceBody(tx, c, input) {
     sourceUpdate: born({ createTime: snapshot.updateTime }),
     storageHash: digest(opened.storage),
   };
-  return { generationContext, pointer, selector };
+  return { generationContext, pointer, selector, head: snapshot, storage: opened.storage };
 }
 export function createBookLoreResourceInventoryService({ db }) {
   return {
@@ -65,7 +66,11 @@ export function createBookLoreResourceInventoryService({ db }) {
       restoreHash(input.sourceToken);
       inventorySelector(input.selector);
       return db.runTransaction(async (tx) => {
-        const { generationContext, pointer, selector } = await sourceBody(tx, c, input),
+        const { generationContext, pointer, selector, head, storage } = await sourceBody(
+            tx,
+            c,
+            input,
+          ),
           bodyId = pointer.manifest.bodyId,
           body = await loadInventoryControl(tx, c, 'body', bodyId),
           generation = await loadInventoryControl(
@@ -90,11 +95,10 @@ export function createBookLoreResourceInventoryService({ db }) {
           plan.commit();
           return { phase: 'generation-initialized', registered: false };
         }
-        if (
-          digest(generation.context) !== digest(generationContext) ||
-          generation.state.phase !== 'active'
-        )
-          conflict();
+        if (generation.state.phase !== 'active') conflict();
+        if (generation.context.preparation)
+          await assertPreparedGenerationHead(tx, c, generation, head, storage);
+        else if (digest(generation.context) !== digest(generationContext)) conflict();
         if (!body) {
           const plan = await prepareInventoryInitialization(tx, c, {
             schemaVersion: 1,

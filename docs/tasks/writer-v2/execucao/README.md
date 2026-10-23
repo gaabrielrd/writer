@@ -842,3 +842,15 @@ coordena cleanup antes da reserva, sem escrita da cabeça/clock/publicação.
 Próximo: adoção CAS/leases/clock/privacidade/recibo e integração da exclusão/
 consumidores/backup/cliente. O núcleo de composição cobre inline e payload;
 P1/F2-09/V2 continuam abertos. Somente commits locais.
+
+### P1 M38c3i — adoção atômica das gerações
+
+[Plano 86](86-adocao-atomica-das-geracoes-de-lore.md) e
+[evidência](../../../entregas/2026-10-23-writer-v2-adocao-atomica-das-geracoes-de-lore.md):
+277 Node e três SDK distintos positivos em rodadas dirigidas. Serviço interno
+troca cabeça/geração/leases lógicas/clock/privacidade/recibo atomicamente,
+reconhece segunda edição e coleta de corpos retirados com provas nativas.
+
+Próximo: criação/exclusão coordenadas, inventário do livro/lore, todos os
+writers/consumidores, backup lógico/indexado e cliente antes de endpoint/UI.
+P1/F2-09/V2 continuam abertos; somente commits locais.

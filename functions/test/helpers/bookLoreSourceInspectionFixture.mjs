@@ -16,6 +16,7 @@ export async function sourceInspectionFixture(
     id = 'entity',
     inspectionId = 'source-inspection-0001',
     mode = 'v1',
+    existingSeed = null,
     data = {
       name: 'Original',
       category: 'other',
@@ -28,7 +29,8 @@ export async function sourceInspectionFixture(
   } = {},
 ) {
   const seed =
-      mode === 'v2'
+      existingSeed ??
+      (mode === 'v2'
         ? await seedBookLoreGeneration(db, { uid, bookId, id, baseData: data, ...options })
         : await seedBookLoreRead(db, {
             uid,
@@ -37,7 +39,7 @@ export async function sourceInspectionFixture(
             data,
             inline: mode === 'inline',
             ...options,
-          }),
+          })),
     view = await createBookLoreReadService({ db }).getBookLoreRead(uid, { bookId, id }),
     intent = inspectionIntent(uid, {
       bookId,

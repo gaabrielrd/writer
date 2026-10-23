@@ -20,6 +20,7 @@ import {
   assertIntentReservation,
 } from './bookLoreEditReservationContracts.mjs';
 import { verifyMaterializedSlot } from './bookLoreEditInline.mjs';
+import { validateParentAdoption } from './bookLoreEditAdoptionProofs.mjs';
 import { compilationState } from './bookLoreEditCompilationContracts.mjs';
 const openings = new WeakMap();
 export const assertEditReservationOpening = (tx, l) => {
@@ -113,7 +114,7 @@ export async function editReservationPair(tx, loaded, id) {
       'releasedCount',
       'blockedReason',
     ],
-    ['compilation'],
+    ['compilation', 'adoption'],
   );
   integer(r.revision, 1);
   if (
@@ -187,8 +188,10 @@ export async function loadEditReservation(tx, c, r) {
       'lastOperationId',
       'createdAt',
     ],
-    ['compilation'],
+    ['compilation', 'adoption'],
   );
+  if ((j.phase === 'adopted') !== Object.hasOwn(j, 'adoption')) conflict();
+  if (j.phase === 'adopted' && j.compilation?.phase !== 'ready') conflict();
   if (Object.hasOwn(j, 'compilation')) {
     compilationState(j.compilation);
     if (j.generationId === null) conflict();
@@ -208,7 +211,7 @@ export async function loadEditReservation(tx, c, r) {
     j.kind !== 'reservation' ||
     intent.editId !== c.id ||
     editReservationStartHash(intent) !== j.startHash ||
-    !['initializing', 'preparing', 'cancelling', 'cancelled'].includes(j.phase) ||
+    !['initializing', 'preparing', 'cancelling', 'cancelled', 'adopted'].includes(j.phase) ||
     !['inline', 'payload'].includes(j.context.sourceMode)
   )
     conflict();
@@ -234,7 +237,7 @@ export async function loadEditReservation(tx, c, r) {
   )
     conflict();
   if (
-    ['initializing', 'preparing'].includes(j.phase) &&
+    ['initializing', 'preparing', 'adopted'].includes(j.phase) &&
     (j.releasedCount !== 0 ||
       j.cleanupSlot !== null ||
       j.cleanupCursor !== null ||
@@ -294,7 +297,9 @@ export async function loadEditReservation(tx, c, r) {
     if (
       j.phase === 'preparing'
         ? generation.state.phase !== 'preparing'
-        : generation.state.phase !== 'cancelled'
+        : j.phase === 'adopted'
+          ? !['active', 'retired'].includes(generation.state.phase)
+          : generation.state.phase !== 'cancelled'
     )
       conflict();
     loaded.generation = generation;
@@ -310,6 +315,7 @@ export async function loadEditReservation(tx, c, r) {
     )
       conflict();
   }
+  if (j.phase === 'adopted') await validateParentAdoption(tx, loaded);
   openings.set(loaded, tx);
   return loaded;
 }

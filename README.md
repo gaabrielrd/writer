@@ -475,3 +475,9 @@ pelo cliente e com cancelamento de filhos ainda não reservados.
 [Evidência](docs/entregas/2026-10-23-writer-v2-materializacao-das-fichas-inline.md).
 A preparação cobre inline e payload v1/v2; adoção ativa, exclusão e integração
 de consumidores/backup/cliente ainda seguem pendentes.
+
+M38c3i implementa adoção interna por CAS: cabeça/geração/leases lógicas/clock/
+privacidade/recibo atômicos, com segunda edição real e coleta de corpos retirados.
+[Evidência](docs/entregas/2026-10-23-writer-v2-adocao-atomica-das-geracoes-de-lore.md).
+hasLoreResources é marca servidor e impede exclusão legada. Criação/exclusão
+coordenadas, consumidores/backup/cliente e rollout ainda pendentes.

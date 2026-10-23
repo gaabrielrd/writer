@@ -107,3 +107,14 @@ reservados. [Evidência](../../../entregas/2026-10-23-writer-v2-materializacao-d
 O núcleo do passo 4 cobre inline e payload v1/v2. Adoção do passo 5, leases
 adopted e integração de exclusão/writers/clientes do passo 6 continuam pendentes.
 Nenhuma troca ativa ou UI foi habilitada.
+
+## Adoção interna — M38c3i
+
+[Plano 86](86-adocao-atomica-das-geracoes-de-lore.md) implementou o núcleo do
+passo 5 e a adoção lógica das leases do passo 3: ativação nativa única protege
+todas as reservas, sem writes por lease. Aposentadoria permite somente prosseguir
+os guards de cabeça/referências. [Evidência](../../../entregas/2026-10-23-writer-v2-adocao-atomica-das-geracoes-de-lore.md):
+277 Node e três SDK distintos positivos.
+
+Passo 6 e rollout continuam pendentes: exclusão/inventário completo e integração
+de writers/consumidores/backup/cliente. hasLoreResources bloqueia exclusão legada.

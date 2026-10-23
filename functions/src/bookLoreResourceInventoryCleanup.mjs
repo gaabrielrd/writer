@@ -1,5 +1,6 @@
 import { born, bornEqual, closed, restoreHash } from './bookRestoreUploadContracts.mjs';
 import { digest, readWorkMetadata } from './workProgressContracts.mjs';
+import { resolveAdoptedInventoryLease } from './bookLoreAdoptedLease.mjs';
 import { stagedEditUploadProof } from './bookLoreEditLeaseProofs.mjs';
 import {
   loreGenerationStorage,
@@ -145,7 +146,10 @@ export async function collectBookLoreInventoryUnit(tx, c, input, access = null) 
       digest(lease.data()) !== staging.leaseHash
     )
       conflict();
-  } else if (lease.exists) return deferred('lease');
+  } else if (lease.exists) {
+    const adopted = await resolveAdoptedInventoryLease(tx, c, body, lease);
+    if (!adopted || adopted.phase !== 'retired') return deferred('lease');
+  }
   const state = body.state;
   if (state.phase === 'initializing') {
     const initial = body.context.initialGeneration,

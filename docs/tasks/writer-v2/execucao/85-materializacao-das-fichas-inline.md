@@ -61,3 +61,9 @@ apropriação/cancelamento isolados por outro fluxo.
 
 Adoção ativa, leases adopted, exclusão e integração de consumidores/backup/
 cliente ainda pendentes. Nenhum endpoint/UI/worker/deploy. P1/F2-09/V2 abertos.
+
+## Continuidade
+
+[Plano 86](86-adocao-atomica-das-geracoes-de-lore.md) integrou adoção interna,
+incluindo filhos materializados, consentimento lógico e leases por estado nativo
+da geração. Criação/exclusão e integração cliente/consumidores seguem pendentes.

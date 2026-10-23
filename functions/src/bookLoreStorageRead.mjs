@@ -75,7 +75,12 @@ export async function openBookLoreRecord(tx, c, snapshot) {
       opened = { c, id, snapshot, value, mode: 'inline', ...encoded, relations: null };
     } else {
       const storage = loreGenerationStorage(value.payloadStorage);
-      closed(value, ['bookId', 'updatedAt', 'payloadStorage'], ['createdAt', 'deleting']);
+      closed(
+        value,
+        ['bookId', 'updatedAt', 'payloadStorage'],
+        ['createdAt', 'deleting', 'isPublic'],
+      );
+      if (Object.hasOwn(value, 'isPublic') && typeof value.isPublic !== 'boolean') loreChanged();
       if (storage.schemaVersion === 1 && !Object.hasOwn(value, 'createdAt')) loreChanged();
       for (const key of ['createdAt', 'updatedAt'].filter((key) => Object.hasOwn(value, key))) {
         if (
