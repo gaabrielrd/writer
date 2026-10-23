@@ -1306,3 +1306,18 @@ Inventário v9 inclui ambas as coleções antes da escrita, com prova nativa e
 cleanup final. Progresso v5 fixa resourceEndIndex e confere manifesto/relatório,
 terminando em universe. Raiz/countReady continuam pendentes. Biblioteca e
 consumidores ainda precisam de integração e disponibilidade atômica antes da cópia ativa.
+
+## Universo original na restauração (P1 M32)
+
+[ADR 0076](decisions/0076-restored-universe-link.md) mantém none/unavailable/reference
+sem promover ID indisponível nem copiar universo/lore. Reference exige nascimento
+nativo exato e acesso próprio atual, com máscara authorId/deleting na observação.
+Progresso v6 mantém cleanup v9 e termina em history; nenhuma raiz/uso/contador é
+alterado durante a preparação.
+
+O helper de ativação confere job atual e item M21 verificado, reautoriza a origem
+na mesma transação e compõe prepareUniverseProjectLink estrito com commit separado.
+Chamador futuro deverá confirmar vínculo e raiz juntos. Contador/uso inconsistente
+falha inteiro; perda de acesso retorna universeId null. Harness sintético de SDK
+não demonstra ativação P1. Histórico/rascunho/capa, personas, campos grandes,
+certificação e host/UI/roundtrip/validate seguem pendentes.

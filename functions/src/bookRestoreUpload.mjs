@@ -3,6 +3,8 @@ import { createBookRestoreLoreService } from './bookRestoreLore.mjs';
 import { createBookRestoreResourcesService } from './bookRestoreResources.mjs';
 import { createBookRestoreCountsService } from './bookRestoreCounts.mjs';
 import { createBookRestorePersonasService } from './bookRestorePersonas.mjs';
+import { createBookRestoreUniverseService } from './bookRestoreUniverse.mjs';
+import { digest } from './sceneContracts.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
   prepareBookRestoreBodyArtifactsCleanup,
@@ -65,6 +67,7 @@ const actions = {
   advanceBookRestoreResources: ['content-verified'],
   advanceBookRestoreCounts: ['content-verified'],
   advanceBookRestorePersonas: ['content-verified'],
+  advanceBookRestoreUniverse: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -296,6 +299,13 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
           ))
       )
         inconsistent();
+      if (
+        r.preparation.universe &&
+        (!loaded.job.preparation.universe ||
+          r.preparation.universe.itemIndex !== loaded.job.preparation.universe.itemIndex ||
+          digest(r.preparation.universe.origin) !== digest(loaded.job.preparation.universe.origin))
+      )
+        inconsistent();
     } else if (
       [
         'advanceBookRestoreStructure',
@@ -303,6 +313,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         'advanceBookRestoreResources',
         'advanceBookRestoreCounts',
         'advanceBookRestorePersonas',
+        'advanceBookRestoreUniverse',
       ].includes(r.action)
     )
       inconsistent();
@@ -918,7 +929,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const universe = createBookRestoreUniverseService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...universe,
     ...personas,
     ...counts,
     ...resources,

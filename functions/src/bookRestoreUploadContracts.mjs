@@ -3,6 +3,7 @@ import { GenerationError, validateId } from './generation.mjs';
 import { digest } from './sceneContracts.mjs';
 import { BOOK_RESOURCE_KINDS } from './bookBackupResources.mjs';
 import { BOOK_PERSONA_SCOPES } from './bookBackupPersonas.mjs';
+import { validateBookRestoreUniverseSelection } from './bookRestoreUniverseContracts.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
 export const BOOK_RESTORE_METHODS = [
@@ -451,7 +452,7 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
     preparationProgress(job.preparation);
-    if (job.cleanupVersion === 9 && job.preparation.phase === 'universe') {
+    if (job.cleanupVersion === 9 && ['universe', 'history'].includes(job.preparation.phase)) {
       const p = job.preparation.personas,
         totals = job.validationSummary.totals;
       if (
@@ -461,16 +462,19 @@ export function jobShape(uid, id, job) {
         inconsistent();
     }
     if (
-      job.preparation.schemaVersion !==
-      (job.cleanupVersion === 9
-        ? 5
-        : job.cleanupVersion === 8
-          ? 4
-          : job.cleanupVersion === 7
-            ? 3
-            : job.cleanupVersion === 6
-              ? 2
-              : 1)
+      !(
+        job.cleanupVersion === 9
+          ? [5, 6]
+          : [
+              job.cleanupVersion === 8
+                ? 4
+                : job.cleanupVersion === 7
+                  ? 3
+                  : job.cleanupVersion === 6
+                    ? 2
+                    : 1,
+            ]
+      ).includes(job.preparation.schemaVersion)
     )
       inconsistent();
     if (
@@ -503,10 +507,11 @@ export function preparationProgress(value) {
       : []),
     ...(value?.schemaVersion >= 3 ? ['resourceStartIndex', 'resourceCounts'] : []),
     ...(value?.schemaVersion >= 4 ? ['counts'] : []),
-    ...(value?.schemaVersion === 5 ? ['resourceEndIndex', 'personas'] : []),
+    ...(value?.schemaVersion >= 5 ? ['resourceEndIndex', 'personas'] : []),
+    ...(value?.schemaVersion === 6 ? ['universe'] : []),
   ]);
   if (
-    ![1, 2, 3, 4, 5].includes(value.schemaVersion) ||
+    ![1, 2, 3, 4, 5, 6].includes(value.schemaVersion) ||
     !(
       value.schemaVersion === 1
         ? ['structure', 'resources']
@@ -516,7 +521,9 @@ export function preparationProgress(value) {
             ? ['scenes', 'resource-counts']
             : value.schemaVersion === 4
               ? ['resource-counts', 'personas']
-              : ['personas', 'universe']
+              : value.schemaVersion === 5
+                ? ['personas', 'universe']
+                : ['history']
     ).includes(value.phase)
   )
     inconsistent();
@@ -526,7 +533,7 @@ export function preparationProgress(value) {
     if (
       (value.schemaVersion === 2 && value.loreItemIndex < value.itemIndex) ||
       value.relationOffset > value.loreRelationCount ||
-      (['scenes', 'resource-counts', 'personas', 'universe'].includes(value.phase) &&
+      (['scenes', 'resource-counts', 'personas', 'universe', 'history'].includes(value.phase) &&
         value.relationOffset !== 0)
     )
       inconsistent();
@@ -594,7 +601,7 @@ export function preparationProgress(value) {
     )
       inconsistent();
   }
-  if (value.schemaVersion === 5) {
+  if (value.schemaVersion >= 5) {
     const p = value.personas;
     closed(p, ['schemaVersion', 'profileCount', 'bindings']);
     if (p.schemaVersion !== 1) inconsistent();
@@ -608,6 +615,16 @@ export function preparationProgress(value) {
       p.bindings.chapter > value.chapterCount ||
       p.bindings['scene-source'] > value.resourceCounts['scene-source']
     )
+      inconsistent();
+  }
+  if (value.schemaVersion === 6) {
+    let selection;
+    try {
+      selection = validateBookRestoreUniverseSelection(value.universe);
+    } catch {
+      inconsistent();
+    }
+    if (selection.itemIndex < value.resourceEndIndex || selection.itemIndex !== value.itemIndex - 1)
       inconsistent();
   }
   return structuredClone(value);

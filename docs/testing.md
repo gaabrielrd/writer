@@ -1371,3 +1371,17 @@ ausências legadas sem empréstimo da biblioteca, replay/CAS/rollback/retry,
 vínculos conferidos, namespaces privados e limpeza parcial/final v9.
 SDK real cobre sigilo, no-op, recibos nativos e definição recriada.
 Não demonstra perfil ativo na biblioteca/IA nem restauração concluída.
+
+## Universo e plano de vínculo da restauração (P1 M32)
+
+```bash
+node --test functions/test/bookRestoreUniverse.test.mjs
+```
+
+[Entrega M32](entregas/2026-10-22-writer-v2-universo-na-restauracao.md):
+233 Node e dois SDK distintos positivos. Cobre descriptors fechados, máscara,
+nanossegundos, origens alheias/públicas/deleting/recriadas, revogação, legado sem
+promoção, CAS/replay/rollback/retry, cancelamento e preservação global.
+SDK prova reautorização/ABA e raiz/vínculo/contador num commit nativo ou nenhum
+efeito no rollback. A raiz é sintética: não prova ativação pelo restaurador.
+P1/F2-09 continuam abertos; validate integral no fechamento do grande bloco.

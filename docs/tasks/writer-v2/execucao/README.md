@@ -527,3 +527,15 @@ ausências legadas, deduplicação, CAS e cleanup protegido. Estado final univer
 com raiz ausente. Integração de personas, universo, histórico/rascunho/capa,
 campos grandes, autorização/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
 Somente local; CI ignorada.
+
+### P1 M32 — universo original e vínculo estrito
+
+O [contrato 65](65-universo-na-restauracao.md) prepara a origem sem copiar universo
+ou lore e oferece composição transacional estrita para a futura ativação.
+Progresso v6 mantém inventário v9, termina em history e não altera contadores.
+[Evidência M32](../../../entregas/2026-10-22-writer-v2-universo-na-restauracao.md):
+233 Node e dois SDK reais positivos. Reautorização/nascimento exato, ausência de
+promoção de unavailable, revogação/ABA, CAS/replay/cleanup e rollback/commit nativo
+com raiz sintética. Não demonstra ativação integral da cópia.
+Histórico/rascunho/capa, personas, campos grandes, autorização/certificação final
+e host/UI/roundtrip/validate seguem P1/F2-09. Somente local; CI ignorada.
