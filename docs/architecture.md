@@ -1380,3 +1380,17 @@ item maior; cursor segue último entregue e clientes aceitam página curta não 
 Inventário v11 permanece. Progresso v8 finalizado chega a cover sem consumir capa,
 com raiz ausente/countReady false. Capa, personas globais, campos grandes,
 certificação/ativação e host/UI/roundtrip/validate seguem obrigatórios em P1.
+
+## Bytes da capa na preparação privada (P1 M35a)
+
+[ADR 0081](decisions/0081-restored-cover-byte-preparation.md) prepara uma parte
+raw M21 por operação e reconfere suas provas no commit. SHA integral/tamanho
+precedem preparedCovers/current; preparedCoverChunks guarda frames privados.
+ID é remapeado, metadados são literais e ausência/legado não promovem URLs.
+O contrato puro recusa nomes Unicode malformados para evitar perda em UTF-8.
+
+Inventário v12 certifica namespaces vazios antes da migração e limpa por
+journal/recibo/nascimento nativos, preservando encarnações recriadas. Progresso v9
+termina em cover-finalize, sem imagem inteira no cursor, raiz ou countReady.
+Materialização Storage/validação do formato, integração de personas, campos
+grandes/consumidores, certificação/ativação e host/UI/roundtrip/validate seguem P1.

@@ -1436,3 +1436,18 @@ rascunho de 20 MiB/320 partes, provas por máscara/ABA depois da leitura, rollba
 retry/replay, metadata fechada/remapeada/congelada, JSON multipart e orçamento de
 páginas. Build cliente e smoke passaram; avisos de chunks/imports constam da entrega.
 Raiz sintética prova somente leitor/listagem. P1/F2-09 e host/UI continuam abertos.
+
+## Preparação privada dos bytes da capa (P1 M35a)
+
+```bash
+node --test functions/test/bookRestoreCover.test.mjs
+node --test functions/test/bookRestoreCoverLarge.test.mjs
+```
+
+[Entrega M35a](entregas/2026-10-22-writer-v2-bytes-da-capa-na-preparacao.md):
+150 Node distintos, 9 Vitest e dois cenários SDK reais positivos. Cobre limite
+16 MiB/256 partes, hash/bytes/metadata, marcadores, CAS/replay/retry, namespace
+ocupado, cancelamento, máscaras e proteção de registros recriados. SDK usa PNG
+real 1200×1800, confere bytes/pixels metadata com sharp e privacidade nas regras.
+O teste grande prova protocolo de bytes; não valida formato completo. Nenhum
+objeto Storage é criado; M35b/ativação e fechamento P1 permanecem pendentes.

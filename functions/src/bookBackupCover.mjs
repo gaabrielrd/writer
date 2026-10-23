@@ -27,7 +27,10 @@ export function validateBookBackupCover(value) {
     !/^[a-f0-9]{64}$/.test(value.contentHash)
   )
     throw new TypeError('Manifesto de capa inválido.');
-  if (Object.hasOwn(value, 'name') && (typeof value.name !== 'string' || value.name.length > 300))
+  if (
+    Object.hasOwn(value, 'name') &&
+    (typeof value.name !== 'string' || !value.name.isWellFormed() || value.name.length > 300)
+  )
     throw new TypeError('Nome de capa inválido.');
   for (const key of ['createdAt', 'updatedAt'])
     if (Object.hasOwn(value, key) && (!Number.isSafeInteger(value[key]) || value[key] < 0))

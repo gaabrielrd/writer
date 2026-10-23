@@ -383,3 +383,8 @@ P1 M34c finaliza a [versão recuperada do rascunho](docs/tasks/writer-v2/execuca
 com contagem real e metadados/estilo portáteis. Provas das partes são reconferidas
 antes do commit; o manuscrito salvo permanece. A preparação chega a cover,
 ainda sem ativar o livro. Captura do histórico admite páginas por orçamento.
+
+P1 M35a preserva [bytes e metadados da capa](docs/tasks/writer-v2/execucao/70-bytes-da-capa-na-preparacao.md)
+na preparação privada, em partes com SHA integral e inventário v12. None e capa
+legada indisponível permanecem explícitos. A fase cover-finalize ainda não cria
+imagem na biblioteca/Storage; materialização segura e ativação seguem pendentes.

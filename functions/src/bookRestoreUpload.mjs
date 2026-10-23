@@ -7,6 +7,7 @@ import { createBookRestoreUniverseService } from './bookRestoreUniverse.mjs';
 import { createBookRestoreHistoryService } from './bookRestoreHistory.mjs';
 import { createBookRestoreDraftService } from './bookRestoreDraft.mjs';
 import { createBookRestoreDraftFinalizeService } from './bookRestoreDraftFinalize.mjs';
+import { createBookRestoreCoverService } from './bookRestoreCover.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
@@ -74,6 +75,7 @@ const actions = {
   advanceBookRestoreHistory: ['content-verified'],
   advanceBookRestoreDraft: ['content-verified'],
   finalizeBookRestoreDraft: ['content-verified'],
+  advanceBookRestoreCover: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -329,6 +331,15 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       )
         inconsistent();
       if (
+        r.preparation.cover &&
+        (!loaded.job.preparation.cover ||
+          r.preparation.cover.startIndex !== loaded.job.preparation.cover.startIndex ||
+          r.preparation.cover.kind !== loaded.job.preparation.cover.kind ||
+          r.preparation.cover.imageId !== loaded.job.preparation.cover.imageId ||
+          ['parts', 'bytes'].some((k) => r.preparation.cover[k] > loaded.job.preparation.cover[k]))
+      )
+        inconsistent();
+      if (
         r.preparation.history &&
         (!loaded.job.preparation.history ||
           ['versions', 'byteLength', 'sourceChunks', 'bodyCount'].some(
@@ -359,6 +370,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         'advanceBookRestoreHistory',
         'advanceBookRestoreDraft',
         'finalizeBookRestoreDraft',
+        'advanceBookRestoreCover',
       ].includes(r.action)
     )
       inconsistent();
@@ -1010,7 +1022,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const cover = createBookRestoreCoverService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...cover,
     ...draftFinalize,
     ...draft,
     ...history,

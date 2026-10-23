@@ -6,6 +6,7 @@ import { BOOK_PERSONA_SCOPES } from './bookBackupPersonas.mjs';
 import { validateBookRestoreUniverseSelection } from './bookRestoreUniverseContracts.mjs';
 import { validateBookRestoreHistory } from './bookRestoreHistoryContracts.mjs';
 import { validateBookRestoreDraft } from './bookRestoreDraftContracts.mjs';
+import { validateBookRestoreCover } from './bookRestoreCoverContracts.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
 export const BOOK_RESTORE_METHODS = [
@@ -176,7 +177,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -456,7 +457,9 @@ export function jobShape(uid, id, job) {
     preparationProgress(job.preparation);
     if (
       job.cleanupVersion >= 9 &&
-      ['universe', 'history', 'draft', 'draft-finalize', 'cover'].includes(job.preparation.phase)
+      ['universe', 'history', 'draft', 'draft-finalize', 'cover', 'cover-finalize'].includes(
+        job.preparation.phase,
+      )
     ) {
       const p = job.preparation.personas,
         totals = job.validationSummary.totals;
@@ -468,21 +471,23 @@ export function jobShape(uid, id, job) {
     }
     if (
       !(
-        job.cleanupVersion === 11
-          ? [8]
-          : job.cleanupVersion === 10
-            ? [7]
-            : job.cleanupVersion === 9
-              ? [5, 6]
-              : [
-                  job.cleanupVersion === 8
-                    ? 4
-                    : job.cleanupVersion === 7
-                      ? 3
-                      : job.cleanupVersion === 6
-                        ? 2
-                        : 1,
-                ]
+        job.cleanupVersion === 12
+          ? [9]
+          : job.cleanupVersion === 11
+            ? [8]
+            : job.cleanupVersion === 10
+              ? [7]
+              : job.cleanupVersion === 9
+                ? [5, 6]
+                : [
+                    job.cleanupVersion === 8
+                      ? 4
+                      : job.cleanupVersion === 7
+                        ? 3
+                        : job.cleanupVersion === 6
+                          ? 2
+                          : 1,
+                  ]
       ).includes(job.preparation.schemaVersion)
     )
       inconsistent();
@@ -493,7 +498,7 @@ export function jobShape(uid, id, job) {
         h.versions > t.versions ||
         h.byteLength > t.historyBytes ||
         h.sourceChunks > t.historyChunks ||
-        (['draft', 'draft-finalize', 'cover'].includes(job.preparation.phase) &&
+        (['draft', 'draft-finalize', 'cover', 'cover-finalize'].includes(job.preparation.phase) &&
           (h.versions !== t.versions ||
             h.byteLength !== t.historyBytes ||
             h.sourceChunks !== t.historyChunks))
@@ -504,10 +509,15 @@ export function jobShape(uid, id, job) {
       const d = job.preparation.draft;
       if (
         d.bytes > job.validationSummary.totals.draftBytes ||
-        (['draft-finalize', 'cover'].includes(job.preparation.phase) &&
+        (['draft-finalize', 'cover', 'cover-finalize'].includes(job.preparation.phase) &&
           d.bytes !== job.validationSummary.totals.draftBytes)
       )
         inconsistent();
+    }
+    if (job.cleanupVersion >= 12) {
+      const c = job.preparation.cover,
+        total = job.validationSummary.totals.coverBytes;
+      if (c.bytes > total || (c.state === 'prepared' && c.bytes !== total)) inconsistent();
     }
     if (
       job.preparation.itemIndex > job.validationMeta.items ||
@@ -542,10 +552,11 @@ export function preparationProgress(value) {
     ...(value?.schemaVersion >= 5 ? ['resourceEndIndex', 'personas'] : []),
     ...(value?.schemaVersion >= 6 ? ['universe'] : []),
     ...(value?.schemaVersion >= 7 ? ['history'] : []),
-    ...(value?.schemaVersion === 8 ? ['draft'] : []),
+    ...(value?.schemaVersion >= 8 ? ['draft'] : []),
+    ...(value?.schemaVersion === 9 ? ['cover'] : []),
   ]);
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8].includes(value.schemaVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(value.schemaVersion) ||
     !(
       value.schemaVersion === 1
         ? ['structure', 'resources']
@@ -561,7 +572,9 @@ export function preparationProgress(value) {
                   ? ['history']
                   : value.schemaVersion === 7
                     ? ['history', 'draft']
-                    : ['draft', 'draft-finalize', 'cover']
+                    : value.schemaVersion === 8
+                      ? ['draft', 'draft-finalize', 'cover']
+                      : ['cover', 'cover-finalize']
     ).includes(value.phase)
   )
     inconsistent();
@@ -580,6 +593,7 @@ export function preparationProgress(value) {
         'draft',
         'draft-finalize',
         'cover',
+        'cover-finalize',
       ].includes(value.phase) &&
         value.relationOffset !== 0)
     )
@@ -700,7 +714,7 @@ export function preparationProgress(value) {
     )
       inconsistent();
   }
-  if (value.schemaVersion === 8) {
+  if (value.schemaVersion >= 8) {
     let d;
     try {
       d = validateBookRestoreDraft(value.draft);
@@ -708,9 +722,24 @@ export function preparationProgress(value) {
       inconsistent();
     }
     if (
-      value.itemIndex !== d.startIndex + (value.phase === 'draft' ? 0 : 1) ||
+      (value.schemaVersion === 8
+        ? value.itemIndex !== d.startIndex + (value.phase === 'draft' ? 0 : 1)
+        : value.cover?.startIndex !== d.startIndex + 1) ||
       (value.phase === 'draft') !== (d.outcome === 'preparing') ||
-      (value.phase === 'cover') !== Object.hasOwn(d, 'finalized')
+      (value.phase === 'cover' || value.schemaVersion >= 9) !== Object.hasOwn(d, 'finalized')
+    )
+      inconsistent();
+  }
+  if (value.schemaVersion === 9) {
+    let c;
+    try {
+      c = validateBookRestoreCover(value.cover);
+    } catch {
+      inconsistent();
+    }
+    if (
+      value.itemIndex !== c.startIndex + (c.state === 'prepared' ? 1 : 0) ||
+      (value.phase === 'cover-finalize') !== (c.state === 'prepared')
     )
       inconsistent();
   }

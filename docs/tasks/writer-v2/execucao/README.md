@@ -582,3 +582,14 @@ Inventário v11 mantém compatibilidade; fase cover sem consumir a capa.
 rollback, remapeamento e captura congelada em páginas por orçamento. Build/smoke OK.
 Sem raiz ativada. Capa, personas globais, campos grandes, certificação/ativação e
 host/UI/roundtrip/validate seguem P1/F2-09. Somente local; CI ignorada.
+
+### P1 M35a — bytes da capa preparados privadamente
+
+O [contrato 70](70-bytes-da-capa-na-preparacao.md) conserva partes e descriptor
+com SHA integral, metadados exatos e marcadores explícitos. Inventário v12 e
+progresso v9 terminam em cover-finalize, sem raiz ou imagem na biblioteca/Storage.
+[Evidência M35a](../../../entregas/2026-10-22-writer-v2-bytes-da-capa-na-preparacao.md):
+150 Node distintos, 9 Vitest e dois SDK positivos. M35b deve validar formato e
+materializar objeto privado com proteção a I/O tardio/geração/limpeza. Personas,
+campos grandes, certificação/ativação e host/UI/roundtrip/validate seguem P1.
+P1/F2-09 e Writer V2 abertos. Somente local; CI ignorada.
