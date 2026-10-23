@@ -434,3 +434,8 @@ em páginas, reconciliação e cancelamento com prova nativa. M38b2 migra prefix
 inline antigos com seus contadores/recibos preservados. Ainda falta integrar
 leitura/edição/backup;
 nenhum livro foi ativado. Veja a [entrega M38b](docs/entregas/2026-10-23-writer-v2-producao-privada-de-lore-grande.md).
+
+M38c1 acrescenta a [API privada de leitura do lore completo](docs/tasks/writer-v2/execucao/80-consumidores-do-lore-completo.md),
+com lista por IDs e partes autorizadas inclusive acima de 8 MiB/128 partes.
+A integração com cliente, mutações, contexto e backup ainda está pendente;
+esta API não ativa livros restaurados. [Evidência](docs/entregas/2026-10-23-writer-v2-leitura-privada-do-lore-completo.md).

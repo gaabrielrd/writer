@@ -7,6 +7,9 @@ import {
   restoreHash,
   restoreId,
 } from './bookRestoreUploadContracts.mjs';
+import { digest } from './sceneContracts.mjs';
+export const lorePayloadSegmentId = (generationId, offset) =>
+  digest(['lore-payload-segment', generationId, offset]);
 export const BOOK_LORE_PAYLOAD_RELATIONS = 64;
 export function lorePayloadPointer(value) {
   closed(value, ['manifest', 'expectedBirth']);

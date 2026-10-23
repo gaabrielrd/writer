@@ -1,7 +1,6 @@
 import { digest } from './sceneContracts.mjs';
 import { born, bornEqual, closed, inconsistent } from './bookRestoreUploadContracts.mjs';
-import { lorePayloadStorage } from './bookRestoreLorePayloadContracts.mjs';
-import { lorePayloadSegmentId } from './bookRestoreLorePayload.mjs';
+import { lorePayloadStorage, lorePayloadSegmentId } from './bookRestoreLorePayloadContracts.mjs';
 import { readBookRestoreArtifact } from './bookRestoreArtifacts.mjs';
 import { readBookResourcePayload } from './bookResourcePayloadRead.mjs';
 function notAfter(snapshot, birth) {

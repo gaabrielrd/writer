@@ -715,3 +715,16 @@ A próxima etapa é M38c, com consumidores/assinaturas/mutações/backup e exclu
 livro ativo. Demais campos grandes, saída portátil ampliada, certificação,
 capa/biblioteca, ativação, limpeza posterior e host/UI/roundtrip/validate seguem
 em P1/F2-09. Writer V2 aberto, somente commits locais; CI ignorada.
+
+### P1 M38c1 — API privada para ler lore completo
+
+O [plano 80](80-consumidores-do-lore-completo.md) começou pela leitura servidor:
+lista metadata-only por ID, abertura e partes autorizadas, inline ou payload.
+[Evidência](../../../entregas/2026-10-23-writer-v2-leitura-privada-do-lore-completo.md):
+118 backend distintos e três SDK reais; Unicode em 141 partes e três páginas
+de relações. Cada parte usa um chunk e quatro/seis leituras nativas.
+
+Somente a etapa 1 está validada. Cliente/lista/assinatura, escritores/Rules,
+contextos, backup lógico e coleta/exclusão seguem nas etapas 2–7 de M38c.
+Outros campos grandes, saída portátil ampliada e certificação/ativação de P1
+continuam pendentes. Writer V2 aberto, sem push/PR/deploy ou CI remota.

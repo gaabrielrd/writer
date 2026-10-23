@@ -1540,5 +1540,18 @@ artifactCount. sealBirth continua sendo o limite temporal dos segmentos novos.
 
 O [plano 79](tasks/writer-v2/execucao/79-migracao-dos-prefixos-de-lore.md) passou em
 Node/SDK e permite seguir M38c. Nenhuma migração de produção ou ativação ocorreu.
+
+## P1 M38c1 — leitura privada do lore lógico
+
+[ADR 0091](decisions/0091-private-complete-lore-reads.md) define lista metadata-only
+por ID, abertura e leitura de uma parte. Tokens fixam clock da coleção e
+identidade nativa da ficha; cada chamada reautoriza o livro. Base e relações
+usam quatro/seis leituras nativas por parte, um chunk, sem teto de 128 partes.
+Ponteiros/birth/Merkle ficam internos; o consumidor completo ainda deve montar,
+conferir SHA/UTF-8/schema e reconfirmar origem. API compatível com inline e
+sealBirth de fichas migradas. Não há grant SDK novo ou ativação.
+
+O [plano 80](tasks/writer-v2/execucao/80-consumidores-do-lore-completo.md) mantém
+as integrações cliente/escritores/Rules/contextos/backup/coleta abertas.
 Leitura/assinaturas/edição/backup/exclusão de livro ativo e demais gates de P1
 continuam pendentes. Parsers novos e drenagem de handlers antigos precedem rollout.

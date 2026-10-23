@@ -55,6 +55,7 @@ import { createAdventurePreviewService } from './adventurePreview.mjs';
 import { createScenesService } from './scenes.mjs';
 import { createNarrativePlanningService } from './narrativePlanning.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
+import { createBookLoreReadService, setBookLoreReadHeaders } from './bookLoreRead.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createChapterChatService } from './chapterChat.mjs';
@@ -339,6 +340,7 @@ const callable = (method, secrets = []) =>
       setCampaignMediaHeaders(method, request);
       setBookBackupCoverHeaders(method, request);
       setBookRestoreHeaders(method, request);
+      setBookLoreReadHeaders(method, request);
       if (method === 'readLegacyChapterText') {
         request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
         request.rawRequest?.res?.setHeader('Vary', 'Authorization');
@@ -371,6 +373,7 @@ const callable = (method, secrets = []) =>
         const workProgress = createWorkProgressService({ db });
         const workHistory = createWorkHistoryService({ db });
         const bookBackupRead = createBookBackupReadService({ db });
+        const bookLoreRead = createBookLoreReadService({ db });
         const bookBackupResources = createBookBackupResourceService({ db });
         const bookBackupPersonas = createBookBackupPersonaService({ db });
         const bookBackupUniverse = createBookBackupUniverseService({ db });
@@ -394,6 +397,7 @@ const callable = (method, secrets = []) =>
             : null;
         const handler =
           (bookRestore[method] ? bookRestore : null) ??
+          (bookLoreRead[method] ? bookLoreRead : null) ??
           (bookBackupCover[method] ? bookBackupCover : null) ??
           (bookBackupDraft[method] ? bookBackupDraft : null) ??
           (bookBackupUniverse[method] ? bookBackupUniverse : null) ??
@@ -610,6 +614,9 @@ export const setSceneReference = callable('setSceneReference');
 export const listSceneReferences = callable('listSceneReferences');
 export const listSceneSources = callable('listSceneSources');
 export const readSceneSourceText = callable('readSceneSourceText');
+export const listBookLoreRead = callable('listBookLoreRead');
+export const getBookLoreRead = callable('getBookLoreRead');
+export const readBookLorePart = callable('readBookLorePart');
 export const readSceneAssembly = callable('readSceneAssembly');
 export const rebalanceSceneRanks = callable('rebalanceSceneRanks');
 export const deleteSceneGroup = callable('deleteSceneGroup');

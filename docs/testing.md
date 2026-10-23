@@ -1612,3 +1612,18 @@ e journal inicial, total global 130 para 202 e encarnação recriada recusada.
 
 Nenhum cliente, Rule ou namespace novo; validate integral no fechamento de P1.
 M38c e ativação continuam pendentes. CI ignorada, commits locais.
+
+## P1 M38c1 — leitura privada do lore completo
+
+[Entrega M38c1](entregas/2026-10-23-writer-v2-leitura-privada-do-lore-completo.md):
+118 backend distintos (116 em regressão mais dois adicionais) e três cenários
+SDK reais. O cenário Unicode foi corrigido na fixture e repetido isoladamente:
+141 partes da base/130 relações em três páginas, SHA literal conferido.
+Os outros dois cenários SDK confirmam recriações e autorização por unidade.
+Não contar a repetição como um quarto cenário.
+
+Há prova de lista metadata-only, tokens, ausência/vazio, escopos e ABA;
+uma parte usa quatro/seis leituras nativas e apenas um chunk. Os harnesses de
+leitura têm raiz sintética explícita e não comprovam ativação de um job.
+Cliente/assinatura/mutações/contextos/backup e roundtrip continuam pendentes.
+Sem validação visual nova; validate no fechamento de P1.

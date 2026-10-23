@@ -12,8 +12,8 @@ import {
   readBookRestoreArtifactReceipt,
   assertBookRestorePayloadNamespacesEmpty,
 } from './bookRestoreArtifacts.mjs';
-export const lorePayloadSegmentId = (generationId, offset) =>
-  digest(['lore-payload-segment', generationId, offset]);
+import { lorePayloadSegmentId } from './bookRestoreLorePayloadContracts.mjs';
+export { lorePayloadSegmentId };
 const resource = (id) => ({ kind: 'lore', parentId: null, id });
 const baseValue = (loaded, item, p) => ({
   ...item.value.data,
