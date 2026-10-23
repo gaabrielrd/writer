@@ -44,7 +44,9 @@ test('explicit removed-chapter style resolves only owned archived profile withou
   assert.equal(result.profileHash, digest(JSON.stringify(result.profile)));
   assert.equal(JSON.stringify(result).includes('DO NOT COPY'), false);
   assert.equal(f.reads.length, 0);
-  assert.deepEqual(f.metadataReads, [{ path: 'users/author/aiPersonas/custom-draft', fields: [] }]);
+  assert.deepEqual(f.metadataReads, [
+    { path: 'users/author/aiPersonas/custom-draft', fields: ['restoreOrigin'] },
+  ]);
   assert.deepEqual(f.records, before);
 });
 test('preset is captured from pure catalogue, never a user document of same ID', async () => {

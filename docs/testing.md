@@ -1472,3 +1472,18 @@ exatos, CRC/SHA, geração além de Number.MAX_SAFE_INTEGER, exclusão versionad
 HTTP 412. SDK contra emulador cobre bytes/Rules/fence observado antes do envio;
 sem execução GCS de produção. A entrega registra falhas investigadas, correção
 do helper/fixture e avisos reais. Testes/UI de ativação continuam pendentes.
+
+## Disponibilidade das personas restauradas (P1 M36a)
+
+```bash
+node --test functions/test/personaAvailability.test.mjs
+npm run test:unit -- src/features/ai-assistant/tests/personaRestoreAvailabilityService.test.ts src/features/ai-assistant/tests/personaService.test.ts
+```
+
+[Entrega M36a](entregas/2026-10-23-writer-v2-disponibilidade-das-personas-restauradas.md):
+114 backend distintos, 15 Vitest e 14 cenários SDK reais positivos. Cobre estados/
+origem, recibos e ABA, snapshots sem metadata, perguntas preservadas sem corpo,
+assinaturas sob demanda, invalidação, CAS e ausência de notificações sem mudança
+visível. SDK verifica Rules novas e compatibilidade legada; ativações são fixtures.
+Typecheck, sintaxe, arquitetura, bundle/smoke e lint dirigidos positivos.
+Instalação global/ativação pelo restaurador e jornadas completas continuam pendentes.

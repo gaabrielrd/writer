@@ -1,3 +1,4 @@
+import { readAvailablePersonaMetadata } from './personaAvailability.mjs';
 import {
   digest,
   workFail,
@@ -36,7 +37,7 @@ async function validateComplement(tx, db, uid, value) {
   if (!presets.has(value.personaId)) {
     if (
       !/^custom-[a-zA-Z0-9-]{1,93}$/.test(value.personaId) ||
-      !(await tx.get(db.doc('users/' + uid + '/aiPersonas/' + value.personaId))).exists
+      !(await readAvailablePersonaMetadata(tx, db, uid, value.personaId))
     )
       workFail('invalid-argument', 'Persona indisponível.');
   }

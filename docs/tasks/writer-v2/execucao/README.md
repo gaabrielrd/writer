@@ -606,3 +606,15 @@ personas-integrate, sem biblioteca/uso/raiz.
 estão registradas. Disponibilização da mídia, personas, campos grandes,
 certificação/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
 Somente local; CI ignorada. Writer V2 continua aberto.
+
+### P1 M36a — disponibilidade antes da instalação de personas
+
+O [contrato 72](72-disponibilidade-das-personas-restauradas.md) prepara biblioteca,
+Rules e consumidores para perfis restaurados pendentes/ativos. Gates nativos
+exigem recibos imutáveis; edição conserva origem e eventos sem mudança visível
+não reiniciam a apresentação. Nenhum lote/perfil global novo é criado pelo produto.
+[Evidência M36a](../../../entregas/2026-10-23-writer-v2-disponibilidade-das-personas-restauradas.md):
+114 backend distintos, 15 Vitest e 14 SDK positivos; build/smoke OK.
+M36b deverá instalar cópias sob inventário ampliado; ativação final libera o lote.
+Capa/biblioteca, campos grandes, certificação/ativação e host/UI/roundtrip/validate
+seguem em P1/F2-09. Somente local; CI ignorada. Writer V2 continua aberto.

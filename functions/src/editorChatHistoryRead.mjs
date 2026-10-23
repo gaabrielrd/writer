@@ -1,3 +1,4 @@
+import { readAvailablePersonaMetadata } from './personaAvailability.mjs';
 // History is private. A manifest is permission input; a body is never permission input.
 import {
   editorChatClosed,
@@ -21,7 +22,6 @@ import {
   editorChatNativeStamp,
   readEditorChatPersona,
 } from './editorChatContextRead.mjs';
-import { readWorkMetadata } from './workProgressContracts.mjs';
 const same = (a, b) => canonicalEditorChatJSON(a) === canonicalEditorChatJSON(b);
 const fail = () => editorChatFail('inconsistent');
 const requireOpen = (conversation) => {
@@ -316,10 +316,8 @@ async function freshness(tx, db, uid, authorized, body, turn) {
   }
   for (const profile of [body.context.persona.base, body.context.persona.complement])
     if (profile?.kind === 'custom') {
-      const snapshot = await readWorkMetadata(tx, db.doc(`users/${uid}/aiPersonas/${profile.id}`), [
-        'revision',
-      ]);
-      if (snapshot.data()?.revision !== profile.revision) return 'stale';
+      const snapshot = await readAvailablePersonaMetadata(tx, db, uid, profile.id, ['revision']);
+      if (snapshot?.data()?.revision !== profile.revision) return 'stale';
     }
   // Context capture may be older even if its selected origins have not changed.
   if (!same(authorized.environment, turn.record.proofCoverage.environment)) return 'stale';

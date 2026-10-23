@@ -251,9 +251,10 @@ service cloud.firestore {
       return traits.size() <= index || (trait is map && trait.value is int && trait.value >= 0 && trait.value <= 100);
     }
     function validAIPersona(data, personaId) {
-      return data.keys().hasOnly(['id', 'schemaVersion', 'name', 'description', 'instructions', 'traits', 'revision', 'archived', 'createdAt', 'updatedAt'])
+      return data.keys().hasOnly(['id', 'schemaVersion', 'name', 'description', 'instructions', 'traits', 'revision', 'archived', 'createdAt', 'updatedAt', 'restoreOrigin'])
         && data.id == personaId && personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$')
         && data.schemaVersion == 1
+        && (!data.keys().hasAny(['restoreOrigin']) || validPersonaRestoreOrigin(data.restoreOrigin))
         && data.name is string && data.name.size() > 0 && data.name.size() <= 80
         && data.description is string && data.description.size() <= 500
         && data.instructions is string && data.instructions.size() > 0 && data.instructions.size() <= 6000
@@ -277,9 +278,28 @@ service cloud.firestore {
         && validPersonaTraitAt(data.traits, 14)
         && validPersonaTraitAt(data.traits, 15);
     }
+    function validPersonaRestoreOrigin(origin) {
+      return origin is map && origin.keys().hasOnly(['schemaVersion','bookId','restoreId','jobToken'])
+        && origin.schemaVersion == 1 && origin.bookId is string && origin.bookId.matches('^restore-[a-f0-9]{64}$')
+        && origin.restoreId is string && origin.restoreId.matches('^[a-zA-Z0-9-]{16,80}$')
+        && origin.jobToken is string && origin.jobToken.matches('^[a-f0-9]{64}$');
+    }
+    function personaRestoreBatchActive(userId, origin) {
+      let batch = getAfter(/databases/$(database)/documents/users/$(userId)/aiPersonaRestoreBatches/$(origin.bookId)).data;
+      return batch.schemaVersion == 1 && batch.ownerId == userId && batch.bookId == origin.bookId
+        && batch.restoreId == origin.restoreId && batch.jobToken == origin.jobToken && batch.state == 'active';
+    }
+    function personaRestoreAvailable(userId, data) {
+      return !data.keys().hasAny(['restoreOrigin']) || (data.id is string && data.id.matches('^custom-[a-f0-9]{64}$')
+        && validPersonaRestoreOrigin(data.restoreOrigin) && personaRestoreBatchActive(userId, data.restoreOrigin));
+    }
+    function customPersonaAvailable(userId, personaId) {
+      return existsAfter(/databases/$(database)/documents/users/$(userId)/aiPersonas/$(personaId))
+        && personaRestoreAvailable(userId, getAfter(/databases/$(database)/documents/users/$(userId)/aiPersonas/$(personaId)).data);
+    }
     function validPersonaReference(personaId) {
       return personaId == null || (personaId is string && (personaId in ['preset-atmospheric', 'preset-incisive', 'preset-intimate', 'preset-ironic', 'preset-epic', 'preset-unsettling']
-        || (personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$') && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid)/aiPersonas/$(personaId)))));
+        || (personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$') && customPersonaAvailable(request.auth.uid,personaId))));
     }
     function validPersonaOverride(item) {
       return item.keys().hasOnly(['traitId', 'value'])
@@ -329,12 +349,15 @@ service cloud.firestore {
       match /editorChatCleanup/{id} { allow read, write: if false; }
       match /editorChats/{document=**} { allow read, write: if false; }
       match /editorChatCatalogs/{id} { allow read, write: if false; }
+      match /aiPersonaRestoreBatches/{bookId} { allow read: if isOwner(userId); allow write: if false; }
       match /aiPersonas/{personaId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && validAIPersona(request.resource.data, personaId)
-          && (request.method == 'create' ? request.resource.data.revision == 1
+          && (request.method == 'create' ? request.resource.data.revision == 1 && !request.resource.data.keys().hasAny(['restoreOrigin'])
             : request.resource.data.revision == resource.data.revision + 1
-              && request.resource.data.createdAt == resource.data.createdAt);
+              && request.resource.data.createdAt == resource.data.createdAt
+              && request.resource.data.get('restoreOrigin', null) == resource.data.get('restoreOrigin', null)
+              && personaRestoreAvailable(userId,resource.data));
         allow delete: if false;
       }
 

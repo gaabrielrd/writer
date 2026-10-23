@@ -1408,3 +1408,18 @@ preservada como string nas requisições SDK. Não remover fence por lifecycle o
 manutenção. Progresso v10 termina em personas-integrate. Antes da ativação,
 reconferir Storage e integrar biblioteca/uso. Personas, campos grandes,
 certificação/ativação e host/UI/roundtrip/validate seguem P1.
+
+## Disponibilidade das personas restauradas (P1 M36a)
+
+[ADR 0083](decisions/0083-restored-persona-availability.md) define restoreOrigin
+operacional e lotes por restauração. Servidor confere origem própria ativa,
+recibos imutáveis e nascimento/última alteração nativos antes de IA/backup.
+Histórico oculta respostas revogadas antes do corpo e preserva perguntas próprias.
+Snapshots portáteis continuam sem metadata operacional.
+
+Biblioteca assina lotes somente quando necessários, invalida callbacks antigos e
+não notifica listas visíveis idênticas. Edição conserva a origem dentro do CAS.
+Rules bloqueiam falsificação/edição/vínculo pendentes; leitura própria de registros
+continua permitida. Excluir o livro não deve recolher lotes/recibos ativos.
+Nenhum produtor ou inventário novo é habilitado aqui: M36b deverá instalar as
+cópias e a futura ativação liberar o lote atomicamente com a raiz.

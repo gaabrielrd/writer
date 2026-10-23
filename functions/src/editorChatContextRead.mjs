@@ -1,3 +1,4 @@
+import { readAvailablePersonaMetadata } from './personaAvailability.mjs';
 // Server-only origin readers. Tokens below identify births, never document revisions.
 import {
   editorChatFail,
@@ -345,8 +346,13 @@ async function readProfile(tx, db, uid, id, full) {
     };
   }
   const ref = db.doc(`users/${uid}/aiPersonas/${id}`);
-  const snapshot = await readWorkMetadata(tx, ref, ['id', 'schemaVersion', 'revision', 'archived']);
-  const value = snapshot.data();
+  const snapshot = await readAvailablePersonaMetadata(tx, db, uid, id, [
+    'id',
+    'schemaVersion',
+    'revision',
+    'archived',
+  ]);
+  const value = snapshot?.data();
   if (!value || value.archived === true) editorChatFail('provenance-revoked');
   if (
     value.id !== id ||

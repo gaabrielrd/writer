@@ -393,3 +393,8 @@ P1 M35b acrescenta a [materialização privada da capa](docs/tasks/writer-v2/exe
 PNG íntegra no Storage, intenção durável, retomada e fence vazio permanente no
 cancelamento. Inventário v13/progresso v10 chegam a personas-integrate. Capa
 continua privada, sem biblioteca/uso; disponibilização e ativação seguem pendentes.
+
+P1 M36a prepara a [disponibilidade das personas restauradas](docs/tasks/writer-v2/execucao/72-disponibilidade-das-personas-restauradas.md):
+biblioteca, edição, referências e consumidores de IA/backup reconhecem lotes
+pendentes/ativos e provas nativas. O fluxo legado permanece compatível.
+A instalação das novas cópias globais e a ativação do livro seguem em P1.

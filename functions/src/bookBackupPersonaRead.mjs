@@ -1,3 +1,4 @@
+import { readAvailablePersonaMetadata } from './personaAvailability.mjs';
 import {
   digest,
   workClosed,
@@ -55,12 +56,8 @@ export async function readBookBackupPersonaIdentity(tx, context, id) {
   const preset = DEFAULT_PERSONAS.find((value) => value.id === id);
   if (preset) return { identity: { presetHash: digest(preset) }, preset, snapshot: null };
   if (!/^custom-[a-zA-Z0-9-]{1,93}$/.test(id)) unavailable();
-  const snapshot = await readWorkMetadata(
-    tx,
-    context.db.doc('users/' + context.uid + '/aiPersonas/' + id),
-    [],
-  );
-  if (!snapshot.exists) unavailable();
+  const snapshot = await readAvailablePersonaMetadata(tx, context.db, context.uid, id);
+  if (!snapshot) unavailable();
   return { identity: bookBackupIdentity(snapshot), preset: null, snapshot };
 }
 async function item(tx, context, sourceToken, type, snapshot) {
