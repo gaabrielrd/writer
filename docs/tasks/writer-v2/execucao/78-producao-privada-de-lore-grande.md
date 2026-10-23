@@ -51,5 +51,5 @@ somente commits locais, sem push/PR/deploy.
 Produção nova, capacidade/inventário, reconciliação e cancelamento implementados.
 [Entrega M38b](../../../entregas/2026-10-23-writer-v2-producao-privada-de-lore-grande.md):
 487 backend e quatro SDK distintos positivos. Raiz ausente/countReady false.
-A compatibilidade de avanço dos prefixos antigos ainda não foi implementada;
-prosseguir no [plano 79](79-migracao-dos-prefixos-de-lore.md) antes de M38c.
+A compatibilidade dos prefixos antigos foi acrescentada e validada em M38b2,
+conforme o [plano 79](79-migracao-dos-prefixos-de-lore.md). Prosseguir com M38c.

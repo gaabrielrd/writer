@@ -1525,5 +1525,20 @@ Cancelamento autentica e remove as três famílias por consultas limitadas, incl
 partes sem cabeçalho. Raiz e countReady continuam ausentes/false.
 
 A [migração de prefixos antigos](tasks/writer-v2/execucao/79-migracao-dos-prefixos-de-lore.md)
-é a próxima tarefa. Consumidores, edição, backup e exclusão do livro ativo ainda
+foi implementada em M38b2 com contador autenticado pelo recibo original e replace
+que preserva o nascimento do lore. Consumidores, edição, backup e exclusão do livro ativo ainda
 precisam conhecer os payloads antes de qualquer ativação. Nenhum deploy ocorreu.
+
+## P1 M38b2 — migração dos prefixos inline
+
+[ADR 0090](decisions/0090-legacy-lore-prefix-migration.md) acrescenta legacy opcional
+fechado ao progresso de payloads. Capturar prefixo próprio e contador global pelo
+último recibo imutável; conferir metadata a cada unidade e hash completo antes do
+replace. Repercorrer desde zero aumenta só o excedente ao prefixo já contado.
+Preservar nascimento do lore e primeiro journal/recibo, sem reduzir contadores ou
+artifactCount. sealBirth continua sendo o limite temporal dos segmentos novos.
+
+O [plano 79](tasks/writer-v2/execucao/79-migracao-dos-prefixos-de-lore.md) passou em
+Node/SDK e permite seguir M38c. Nenhuma migração de produção ou ativação ocorreu.
+Leitura/assinaturas/edição/backup/exclusão de livro ativo e demais gates de P1
+continuam pendentes. Parsers novos e drenagem de handlers antigos precedem rollout.

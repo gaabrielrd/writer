@@ -81,11 +81,11 @@ cleanedArtifacts igual a artifactCount. Nenhum lote atual de personas é apagado
 
 ## Compatibilidade, rollout e pendências
 
-Jobs anteriores continuam legíveis e canceláveis. Um prefixo inline de relações
-já iniciado e cujo lore agora requer payload recebe erro explícito de migração,
-preservando prefixo, recibos e contadores. A migração desses jobs está pendente
-no [plano seguinte](../tasks/writer-v2/execucao/79-migracao-dos-prefixos-de-lore.md);
-não declarar compatibilidade integral de avanço antes disso.
+Jobs anteriores continuam legíveis e canceláveis. Na entrega M38b, prefixos
+inline que exigiam payload recebiam erro explícito de migração. A
+[ADR 0090](0090-legacy-lore-prefix-migration.md) acrescenta essa migração com
+contador autenticado pelo recibo original e prefixo preservado até a troca final.
+A evidência está no [plano 79](../tasks/writer-v2/execucao/79-migracao-dos-prefixos-de-lore.md).
 
 Implantar parsers/capacidade/cleanup novos e drenar handlers antigos antes de
 habilitar o produtor. Sem deploy nesta entrega. Novas gravações continuam

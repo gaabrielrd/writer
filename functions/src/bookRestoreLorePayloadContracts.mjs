@@ -17,16 +17,47 @@ export function lorePayloadPointer(value) {
 }
 export function lorePayloadProgress(value) {
   if (value === null) return null;
-  closed(value, [
-    'schemaVersion',
-    'entityId',
-    'generationId',
-    'generationOperationId',
-    'base',
-    'pages',
-    'sealOperationId',
-    'segment',
-  ]);
+  closed(
+    value,
+    [
+      'schemaVersion',
+      'entityId',
+      'generationId',
+      'generationOperationId',
+      'base',
+      'pages',
+      'sealOperationId',
+      'segment',
+    ],
+    ['legacy'],
+  );
+  if (Object.hasOwn(value, 'legacy')) {
+    const old = value.legacy;
+    closed(old, [
+      'schemaVersion',
+      'relations',
+      'counted',
+      'operationId',
+      'birth',
+      'update',
+      'valueHash',
+    ]);
+    if (old.schemaVersion !== 1) inconsistent();
+    integer(old.relations, 1);
+    integer(old.counted, old.relations);
+    restoreId(old.operationId);
+    if (old.relations % BOOK_LORE_PAYLOAD_RELATIONS !== 0) inconsistent();
+    restoreHash(old.valueHash);
+    for (const stamp of [old.birth, old.update]) {
+      closed(stamp, ['seconds', 'nanoseconds']);
+      born({ createTime: stamp });
+    }
+    if (
+      old.update.seconds < old.birth.seconds ||
+      (old.update.seconds === old.birth.seconds && old.update.nanoseconds < old.birth.nanoseconds)
+    )
+      inconsistent();
+  }
   if (value.schemaVersion !== 1 || !/^restore-[a-f0-9]{64}$/.test(value.entityId)) inconsistent();
   restoreHash(value.generationId);
   restoreId(value.generationOperationId);

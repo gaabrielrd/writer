@@ -430,6 +430,7 @@ foram integrados em M38b; a restauração/edição de lore grande pela UI ainda 
 dos consumidores previstos no [plano M38](docs/tasks/writer-v2/execucao/77-campos-grandes-de-recursos-e-metadados.md).
 
 M38b materializa lore grande privadamente, com dados gerais em partes e relações
-em páginas, reconciliação e cancelamento com prova nativa. Ainda faltam a
-migração dos prefixos inline antigos e a integração de leitura/edição/backup;
+em páginas, reconciliação e cancelamento com prova nativa. M38b2 migra prefixos
+inline antigos com seus contadores/recibos preservados. Ainda falta integrar
+leitura/edição/backup;
 nenhum livro foi ativado. Veja a [entrega M38b](docs/entregas/2026-10-23-writer-v2-producao-privada-de-lore-grande.md).

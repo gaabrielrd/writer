@@ -103,6 +103,6 @@ reconciliação. [Evidência](../../../entregas/2026-10-23-writer-v2-producao-pr
 487 backend e quatro SDK distintos positivos. A emenda da ADR 0089 usa coleções
 planas para que partes sem cabeçalho também sejam enumeráveis/canceláveis.
 
-A etapa de compatibilidade continua aberta no [plano 79](79-migracao-dos-prefixos-de-lore.md).
-Depois, M38c deve integrar consumidores e mutações antes de ativar qualquer raiz.
+A etapa de compatibilidade foi validada em M38b2 no [plano 79](79-migracao-dos-prefixos-de-lore.md).
+M38c deve integrar consumidores e mutações antes de ativar qualquer raiz.
 O resultado técnico não fecha o conjunto M38, P1/F2-09 nem Writer V2.

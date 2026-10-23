@@ -34,7 +34,24 @@ Uma lista anterior não deve ser descartada ou declarada completa por seu tamanh
 A fonte validada é a verdade semântica; o prefixo é preservado até a troca atômica.
 Recriação/alteração fora do protocolo falha sem adotar ou apagar a encarnação nova.
 
-A tarefa está pendente. A implementação M38b atual retorna
-legacy-lore-payload-migration-required nesse caso e permite cancelamento seguro.
+Implementação técnica validada em M38b2: 60 backend distintos e dois SDK reais
+positivos. Os prefixos podem avançar com contadores e recibos preservados, sem
+executar migração de produção. Consultar a
+[entrega](../../../entregas/2026-10-23-writer-v2-migracao-dos-prefixos-de-lore.md) e
+[ADR 0090](../../../decisions/0090-legacy-lore-prefix-migration.md).
+A próxima etapa é M38c: integrar consumidores e mutações antes da ativação.
 P1/F2-09 e Writer V2 abertos. Somente commits locais, CI ignorada e testes dirigidos;
 validate no fechamento de P1. Sem push/PR/deploy.
+
+## Evidência de fechamento técnico
+
+[Entrega M38b2](../../../entregas/2026-10-23-writer-v2-migracao-dos-prefixos-de-lore.md):
+58 testes na regressão mais dois cenários adicionais, 60 backend distintos; dois
+SDK reais positivos. A fixture v6 grava nativamente alvo/journal/job/recibo e
+não simula identidades por alteração de timestamps. Contagem original é ancorada
+no recibo, e o prefixo é reconferido por metadata em cada unidade/hash na troca.
+
+Compatibilidade sem legacy, conservação/replay de recibos, contador anterior de
+outros lores, falhas após writes preparados, CAS/retry e cancelamento por estágio
+foram verificados. Um prefixo migrado atravessou todas as fases até v14/v12 e
+cancelou com contagem exata de artefatos. Nenhuma migração real foi executada.

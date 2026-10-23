@@ -696,8 +696,22 @@ página e cancelamento limitado com provas nativas. Partes são planas para cobr
 487 backend/35 arquivos e quatro SDK distintos positivos; nenhum produtor real
 de dados de usuário ou ativação ocorreu.
 
-A [próxima tarefa 79](79-migracao-dos-prefixos-de-lore.md) deve migrar prefixos inline
-antigos preservando recibos e contadores antes de alegar compatibilidade integral.
+A [tarefa 79](79-migracao-dos-prefixos-de-lore.md), entregue em M38b2, migra prefixos
+inline antigos preservando recibos e contadores.
 M38c cobre consumidores/edição/backup/exclusão; demais campos grandes, saída
 portátil ampliada, capa/biblioteca, certificação/ativação e host/UI/roundtrip/
 validate continuam P1/F2-09. Writer V2 aberto, somente commits locais e CI ignorada.
+
+### P1 M38b2 — prefixos inline migrados sem recontagem
+
+O [plano 79](79-migracao-dos-prefixos-de-lore.md) autentica o contador inicial pelo
+recibo original, conserva o prefixo até replace e conta só as relações adicionais.
+[Evidência](../../../entregas/2026-10-23-writer-v2-migracao-dos-prefixos-de-lore.md):
+60 backend distintos e dois SDK positivos, com replay, rollback, recriação,
+cancelamento e avanço até v14/v12. Nascimento do lore e primeiro journal/recibo
+permanecem. Sem migração em produção, raiz ativada ou UI pronta.
+
+A próxima etapa é M38c, com consumidores/assinaturas/mutações/backup e exclusão de
+livro ativo. Demais campos grandes, saída portátil ampliada, certificação,
+capa/biblioteca, ativação, limpeza posterior e host/UI/roundtrip/validate seguem
+em P1/F2-09. Writer V2 aberto, somente commits locais; CI ignorada.

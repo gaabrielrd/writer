@@ -2,13 +2,11 @@ import { digest } from './sceneContracts.mjs';
 import { prepareBookResourcePayload } from './bookResourcePayload.mjs';
 import { openBookResourcePayload } from './bookResourcePayloadRead.mjs';
 import {
-  born,
-  bornEqual,
-  chunkId,
-  inconsistent,
-  sum,
-  restoreFail as fail,
-} from './bookRestoreUploadContracts.mjs';
+  captureBookRestoreLorePrefix,
+  verifyBookRestoreLorePrefix,
+  newlyPreparedLoreRelations,
+} from './bookRestoreLorePrefix.mjs';
+import { born, bornEqual, chunkId, inconsistent, sum } from './bookRestoreUploadContracts.mjs';
 import {
   readBookRestoreArtifact,
   readBookRestoreArtifactReceipt,
@@ -81,8 +79,9 @@ export async function prepareBookRestoreLorePayload(
   item,
   page,
 ) {
-  if (preparation.relationOffset > 0 && !preparation.lorePayload)
-    fail('failed-precondition', 'legacy-lore-payload-migration-required');
+  const legacy = !preparation.lorePayload
+    ? await captureBookRestoreLorePrefix(tx, db, loaded, item, preparation)
+    : null;
   if (loaded.job.payloadInventoryVersion !== 1)
     await assertBookRestorePayloadNamespacesEmpty(tx, db, loaded);
   const scoped = {
@@ -90,7 +89,8 @@ export async function prepareBookRestoreLorePayload(
     job: { ...loaded.job, payloadInventoryVersion: 1, cleanupVersion: 6 },
   };
   if (!Object.hasOwn(preparation, 'lorePayload')) preparation.lorePayload = null;
-  if (preparation.lorePayload === null)
+  if (preparation.lorePayload === null) {
+    if (legacy) preparation.relationOffset = 0;
     preparation.lorePayload = {
       schemaVersion: 1,
       entityId: item.value.id,
@@ -100,7 +100,9 @@ export async function prepareBookRestoreLorePayload(
       pages: 0,
       sealOperationId: null,
       segment: null,
+      ...(legacy ? { legacy } : {}),
     };
+  }
   const p = preparation.lorePayload,
     total = item.loreRelations?.count ?? 0,
     writes = [];
@@ -108,10 +110,14 @@ export async function prepareBookRestoreLorePayload(
     p.entityId !== item.value.id ||
     p.generationId !== generation(loaded, p.entityId, p.generationOperationId) ||
     preparation.relationOffset > total ||
-    p.pages !== Math.ceil(preparation.relationOffset / 64)
+    p.pages !== Math.ceil(preparation.relationOffset / 64) ||
+    (p.legacy &&
+      (p.legacy.relations >= total || p.legacy.relations > preparation.loreRelationCount))
   )
     inconsistent();
-  if (p.base !== null && preparation.relationOffset === total && p.segment === null) {
+  const finishing = p.base !== null && preparation.relationOffset === total && p.segment === null;
+  await verifyBookRestoreLorePrefix(tx, db, scoped, p.entityId, preparation, p.legacy, finishing);
+  if (finishing) {
     const base = await body(tx, db, scoped, p.entityId, p.base),
       expected = prepareBookResourcePayload({
         uid: loaded.job.ownerId,
@@ -149,6 +155,7 @@ export async function prepareBookRestoreLorePayload(
     writes.push({
       kind: 'lore',
       id: p.entityId,
+      ...(p.legacy ? { replace: true } : {}),
       value: {
         bookId: loaded.job.bookId,
         createdAt: preparation.timestamp,
@@ -234,8 +241,12 @@ export async function prepareBookRestoreLorePayload(
         },
       });
       p.pages = sum(p.pages, 1);
-      preparation.relationOffset = sum(preparation.relationOffset, page.values.length);
-      preparation.loreRelationCount = sum(preparation.loreRelationCount, page.values.length);
+      const before = preparation.relationOffset;
+      preparation.relationOffset = sum(before, page.values.length);
+      preparation.loreRelationCount = sum(
+        preparation.loreRelationCount,
+        newlyPreparedLoreRelations(before, preparation.relationOffset, p.legacy),
+      );
     }
     p.sealOperationId = request.operationId;
     p.segment = null;

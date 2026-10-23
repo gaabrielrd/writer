@@ -1595,6 +1595,20 @@ rollback/retry/CAS e segmento ausente. Um objeto sintético de 141 partes é tes
 do codec, não evidência de restore/remapeamento completo de arquivo de 8 MiB.
 
 Não fabricar identidades nativas para simular legado. A migração de prefixos
-inline permanece pendente e exige fixture do protocolo anterior com criação
+inline foi validada em M38b2 com fixture do protocolo anterior e criação
 nativa real de lore/journal/recibo/cursor. Validate integral no fechamento de P1;
 sem CI/push/PR/deploy.
+
+## P1 M38b2 — migração conservando o prefixo
+
+[Entrega M38b2](entregas/2026-10-23-writer-v2-migracao-dos-prefixos-de-lore.md):
+60 backend distintos (58 na regressão de três escritores, mais dois cenários
+adicionais) e dois SDK reais positivos. Reproduzir v6 com transação real de
+lore/journal/job/recibo, sem editar timestamps nativos. A fixture não é um binário
+antigo em execução. Confirmar contador global pelo recibo original, replay
+antigo em cada unidade, prefixo intacto até replace, rollback após writes já
+preparados, concorrência/retry e cancelamento nas etapas. SDK preserva nascimento
+e journal inicial, total global 130 para 202 e encarnação recriada recusada.
+
+Nenhum cliente, Rule ou namespace novo; validate integral no fechamento de P1.
+M38c e ativação continuam pendentes. CI ignorada, commits locais.
