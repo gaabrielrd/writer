@@ -69,7 +69,7 @@ export async function finishLegacyRestore(
 ) {
   let unit = 0;
   while (['bytes-verified', 'validating'].includes(progress.state)) {
-    if (unit > 1000) throw new Error('Validation did not finish');
+    if (unit > 10000) throw new Error('Validation did not finish');
     const request = legacyMutation(id, progress, prefix + unit++);
     progress = (await factory().advanceBookRestoreValidation(uid, request)).progress;
     await onStep?.(progress, request);

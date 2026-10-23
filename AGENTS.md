@@ -137,6 +137,7 @@
 - Materialize capa privada somente após intenção v13; cancele por fence vazio permanente antes dos recursos, preserve geração decimal exata e nunca remova o marcador por cleanup/lifecycle, conforme ADR 0082.
 - Preserve restoreOrigin nos escritores de persona; IA/backup exigem lote ativo com recibos nativos, SDK não altera a origem nem edita/vincula perfis pendentes, conforme ADR 0083.
 - Mantenha lote/recibos ativos de personas após excluir o livro e implante gates/Rules/cliente antes de instalar cópias globais.
+- Instale personas restauradas por unidades sob inventário v14, sem sobrescrever biblioteca; revogue o lote antes da limpeza e preserve o marcador cancelled permanente, conforme ADR 0084.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

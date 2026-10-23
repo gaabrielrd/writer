@@ -1487,3 +1487,22 @@ assinaturas sob demanda, invalidação, CAS e ausência de notificações sem mu
 visível. SDK verifica Rules novas e compatibilidade legada; ativações são fixtures.
 Typecheck, sintaxe, arquitetura, bundle/smoke e lint dirigidos positivos.
 Instalação global/ativação pelo restaurador e jornadas completas continuam pendentes.
+
+## Instalação das personas restauradas (P1 M36b)
+
+```bash
+node --test functions/test/bookRestorePersonaLibrary.test.mjs functions/test/bookRestorePersonaLibraryMany.test.mjs
+```
+
+[Entrega M36b](entregas/2026-10-23-writer-v2-instalacao-das-personas-restauradas.md):
+341 backend distintos, 39 Vitest e sete cenários SDK reais positivos.
+Cobre snapshots literais/arquivo/rascunho exclusivo, ausência de perfis, 501
+perfis validados, unidades com até cinco gravações, colisões, replay/CAS/retry,
+revogação antes da limpeza, metadados sem instruções, outros jobs/UIDs e
+recriação nativa de perfil/lote. Unicode malformado/revisão insegura são recusados.
+
+SDK em tests/firestore/bookRestorePersonaLibrary.rules.test.mjs verifica
+transações/timestamps e Rules no Firestore 1.22.0 local; regressão M36a preserva
+os gates ativos/legados. Lote permanece pendente no instalador. Typecheck,
+arquitetura, sintaxe e build/smoke positivos; validate integral e roundtrip/UI
+continuam pendentes para fechamento de P1.

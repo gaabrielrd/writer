@@ -1423,3 +1423,22 @@ Rules bloqueiam falsificação/edição/vínculo pendentes; leitura própria de 
 continua permitida. Excluir o livro não deve recolher lotes/recibos ativos.
 Nenhum produtor ou inventário novo é habilitado aqui: M36b deverá instalar as
 cópias e a futura ativação liberar o lote atomicamente com a raiz.
+
+## Instalação das personas restauradas (P1 M36b)
+
+[ADR 0084](decisions/0084-restored-persona-installation.md) instala cada definição
+privada autenticada como cópia global literal, com restoreOrigin, journal,
+contador/cursor/lote/recibo atômicos. Nenhuma colisão é adotada ou sobrescrita.
+Inventário v14/progresso v11 antecedem o primeiro perfil; total validado precisa
+ser exato antes de resources-finalize. Raiz ausente/countReady false permanecem.
+
+Lote é controle permanente fora de artifactCount. Prova nativa compartilhada
+reconhece preparing/active/cancelled, mas consumidores só aceitam active.
+Cancelamento revoga o lote antes de Storage/artefatos; limpeza metadata-only
+confere journals/nascimento/última alteração e certifica o namespace vazio,
+preservando marcador cancelled, outros jobs/UIDs e registros recriados.
+
+Ativação ainda não existe: futura limpeza pós-ativação deverá aposentar journals
+sem apagar biblioteca/lote/recibos ativos. Implantar gates/Rules/cliente antes dos
+produtores. Capa/biblioteca, campos grandes/consumidores, certificação/ativação
+e host/UI/roundtrip/validate integral seguem em P1/F2-09.

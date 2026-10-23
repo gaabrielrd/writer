@@ -11,7 +11,7 @@ const owner = (v) =>
   !v.includes('\\') &&
   !['.', '..'].includes(v) &&
   ![...v].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127);
-function origin(value) {
+export function parsePersonaRestoreOrigin(value) {
   if (
     !closed(value, ['schemaVersion', 'bookId', 'restoreId', 'jobToken']) ||
     value.schemaVersion !== 1 ||
@@ -29,7 +29,7 @@ export function projectPersonaRestoreOrigin(record) {
   if (!Object.hasOwn(record, 'restoreOrigin')) return null;
   if (typeof record.id !== 'string' || !/^custom-[a-f0-9]{64}$/.test(record.id))
     throw new TypeError('Identidade de persona restaurada inválida.');
-  return origin(record.restoreOrigin);
+  return parsePersonaRestoreOrigin(record.restoreOrigin);
 }
 export function projectPersonaRestoreBatch(value) {
   const keys = [
@@ -54,7 +54,7 @@ export function projectPersonaRestoreBatch(value) {
     !id(value.lastOperationId)
   )
     throw new TypeError('Lote de personas inválido.');
-  origin({
+  parsePersonaRestoreOrigin({
     schemaVersion: value.schemaVersion,
     bookId: value.bookId,
     restoreId: value.restoreId,
@@ -65,7 +65,7 @@ export function projectPersonaRestoreBatch(value) {
 export function isPersonaRestoreBatchAvailable(ownerId, value, batch) {
   if (value === null) return true;
   try {
-    const o = origin(value),
+    const o = parsePersonaRestoreOrigin(value),
       b = projectPersonaRestoreBatch(batch);
     return (
       owner(ownerId) &&

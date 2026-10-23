@@ -12,6 +12,7 @@ export interface PersonaRestoreBatch extends PersonaRestoreOrigin {
   lastOperationId: string;
 }
 export function projectPersonaRestoreOrigin(record: unknown): PersonaRestoreOrigin | null;
+export function parsePersonaRestoreOrigin(value: unknown): PersonaRestoreOrigin;
 export function projectPersonaRestoreBatch(value: unknown): PersonaRestoreBatch;
 export function isPersonaRestoreBatchAvailable(
   ownerId: string,

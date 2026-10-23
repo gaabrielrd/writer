@@ -398,3 +398,9 @@ P1 M36a prepara a [disponibilidade das personas restauradas](docs/tasks/writer-v
 biblioteca, edição, referências e consumidores de IA/backup reconhecem lotes
 pendentes/ativos e provas nativas. O fluxo legado permanece compatível.
 A instalação das novas cópias globais e a ativação do livro seguem em P1.
+
+P1 M36b implementa a [instalação das personas restauradas](docs/tasks/writer-v2/execucao/73-instalacao-das-personas-restauradas.md):
+novas cópias literais na biblioteca, uma por transação, sem substituir perfis
+existentes. Inventário v14/progresso v11 mantêm lote pendente e revogação antes
+da limpeza. Preparação chega a resources-finalize, sem raiz/countReady;
+liberação da capa/personas e ativação integral continuam em P1.

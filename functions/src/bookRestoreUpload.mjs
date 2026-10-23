@@ -8,6 +8,7 @@ import { createBookRestoreHistoryService } from './bookRestoreHistory.mjs';
 import { createBookRestoreDraftService } from './bookRestoreDraft.mjs';
 import { createBookRestoreDraftFinalizeService } from './bookRestoreDraftFinalize.mjs';
 import { createBookRestoreCoverService } from './bookRestoreCover.mjs';
+import { createBookRestorePersonaLibraryService } from './bookRestorePersonaLibrary.mjs';
 import { createBookRestoreCoverMaterializationService } from './bookRestoreCoverMaterialization.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
@@ -79,6 +80,7 @@ const actions = {
   advanceBookRestoreCover: ['content-verified'],
   reserveBookRestoreCover: ['content-verified'],
   materializeBookRestoreCover: ['content-verified'],
+  advanceBookRestorePersonaLibrary: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, restoreAssets, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -343,6 +345,17 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
       )
         inconsistent();
       if (
+        r.preparation.personaLibrary &&
+        (!loaded.job.preparation.personaLibrary ||
+          r.preparation.personaLibrary.installed >
+            loaded.job.preparation.personaLibrary.installed ||
+          (r.preparation.personaLibrary.installed ===
+            loaded.job.preparation.personaLibrary.installed &&
+            r.preparation.personaLibrary.after !== loaded.job.preparation.personaLibrary.after) ||
+          (r.preparation.personaLibrary.revoked && !loaded.job.preparation.personaLibrary.revoked))
+      )
+        inconsistent();
+      if (
         r.preparation.coverStorage &&
         (!loaded.job.preparation.coverStorage ||
           (r.preparation.coverStorage.state === 'prepared' &&
@@ -387,6 +400,7 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
         'advanceBookRestoreCover',
         'reserveBookRestoreCover',
         'materializeBookRestoreCover',
+        'advanceBookRestorePersonaLibrary',
       ].includes(r.action)
     )
       inconsistent();
@@ -702,13 +716,15 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
         ...(loaded.job.cleanupVersion >= 4
           ? {
               cleanupPhase:
-                loaded.job.cleanupVersion >= 13
-                  ? 'cover-storage'
-                  : loaded.job.cleanupVersion >= 7
-                    ? 'resource-children'
-                    : loaded.job.cleanupVersion >= 5
-                      ? 'body-artifacts'
-                      : 'artifacts',
+                loaded.job.cleanupVersion >= 14
+                  ? 'persona-library'
+                  : loaded.job.cleanupVersion >= 13
+                    ? 'cover-storage'
+                    : loaded.job.cleanupVersion >= 7
+                      ? 'resource-children'
+                      : loaded.job.cleanupVersion >= 5
+                        ? 'body-artifacts'
+                        : 'artifacts',
             }
           : {}),
       });
@@ -731,6 +747,7 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
       if (loaded.job.state !== 'cancelling') fail('failed-precondition', 'state-conflict');
       if (request.expectedCheckpoint !== loaded.job.checkpoint)
         fail('failed-precondition', 'checkpoint-conflict');
+      if (loaded.job.cleanupPhase === 'persona-library') return { personaLibraryCleanup: true };
       if (loaded.job.cleanupPhase === 'cover-storage') return { coverStorageCleanup: true };
       if (loaded.job.cleanupVersion >= 2 && loaded.job.cleanupPhase !== 'chunks') {
         const prepared =
@@ -823,7 +840,11 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
       );
       return confirmed({ ...loaded, view: { ...loaded.view, ...pickProgress(record) } }, r);
     });
-    return result.coverStorageCleanup ? cleanupCoverStorage(uid, input) : result;
+    return result.personaLibraryCleanup
+      ? cleanupPersonaLibrary(uid, input)
+      : result.coverStorageCleanup
+        ? cleanupCoverStorage(uid, input)
+        : result;
   }
   async function recovery(uid, input) {
     authorize(uid);
@@ -1062,7 +1083,17 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
       next,
       pickProgress,
     });
+  const { cleanupPersonaLibrary, ...personaLibrary } = createBookRestorePersonaLibraryService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...personaLibrary,
     ...coverMaterialization,
     ...cover,
     ...draftFinalize,

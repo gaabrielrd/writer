@@ -618,3 +618,17 @@ não reiniciam a apresentação. Nenhum lote/perfil global novo é criado pelo p
 M36b deverá instalar cópias sob inventário ampliado; ativação final libera o lote.
 Capa/biblioteca, campos grandes, certificação/ativação e host/UI/roundtrip/validate
 seguem em P1/F2-09. Somente local; CI ignorada. Writer V2 continua aberto.
+
+### P1 M36b — instalação das cópias globais de personas
+
+O [contrato 73](73-instalacao-das-personas-restauradas.md) instala snapshots
+literais por definição autenticada e unidade transacional, sem adotar biblioteca
+atual. Inventário v14/progresso v11 e lote pendente antecedem as cópias; término
+exige contagem exata e chega a resources-finalize, com raiz ausente/countReady false.
+Cancelamento revoga antes de mídia/artefatos e conserva lote cancelled permanente.
+[Evidência M36b](../../../entregas/2026-10-23-writer-v2-instalacao-das-personas-restauradas.md):
+341 backend distintos, 39 Vitest e sete SDK positivos, incluindo 501 perfis e
+proteção nativa contra registros recriados. Ativação ainda não é implementada.
+Disponibilização da capa, campos grandes/consumidores, certificação/ativação,
+limpeza pós-ativação e host/UI/roundtrip/validate seguem P1/F2-09.
+Somente local; CI ignorada. Writer V2 permanece aberto.

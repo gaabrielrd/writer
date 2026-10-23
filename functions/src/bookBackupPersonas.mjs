@@ -23,6 +23,21 @@ export function projectBookBackupPersona(value) {
     ),
   };
   validatePersona(result);
+  const strings = [
+    result.id,
+    result.name,
+    result.description,
+    result.instructions,
+    ...result.traits.flatMap((trait) => [
+      trait.id,
+      trait.name,
+      trait.description,
+      trait.low,
+      trait.high,
+    ]),
+  ];
+  if (!Number.isSafeInteger(result.revision) || strings.some((value) => !value.isWellFormed()))
+    throw new TypeError('Snapshot de persona não pode ser representado sem perda.');
   return result;
 }
 export function serializeBookBackupPersona(scope, ownerId, personaId, profile) {
