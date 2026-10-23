@@ -292,6 +292,38 @@ function counts(value, keys) {
   bookContentClosed(value, keys);
   Object.values(value).forEach(bookContentCount);
 }
+export function projectBookVersionDraft(value, resource) {
+  bookContentClosed(value, ['schemaVersion', 'chapter', 'persona']);
+  if (value.schemaVersion !== 1) bad();
+  chapter(value.chapter, true);
+  if (resource && (resource.kind !== 'chapter' || resource.id !== value.chapter.id)) bad();
+  if (value.persona !== null) profile(value.persona);
+  const complement = value.chapter.personaComplement;
+  if (
+    (value.persona?.id ?? null) !== (complement?.personaId ?? null) ||
+    (value.persona &&
+      (complement?.overrides ?? []).some(
+        (o) => !value.persona.traits.some((t) => t.id === o.traitId),
+      ))
+  )
+    bad();
+  const metadata = Object.fromEntries(
+    ['id', ...chapterFields]
+      .filter((k) => Object.hasOwn(value.chapter, k))
+      .map((k) => [k, structuredClone(value.chapter[k])]),
+  );
+  if (complement)
+    metadata.personaComplement = {
+      personaId: complement.personaId,
+      overrides: complement.overrides.map((o) => ({ traitId: o.traitId, value: o.value })),
+    };
+  return {
+    schemaVersion: 1,
+    chapter: metadata,
+    persona: value.persona === null ? null : projectBookBackupPersona(value.persona),
+  };
+}
+
 export function validateBookBackupJSONItem(kind, value, bookId) {
   bookContentId(bookId);
   if (kind === 'book-metadata') {
@@ -349,18 +381,23 @@ export function validateBookBackupJSONItem(kind, value, bookId) {
       bad();
     }
   } else if (kind === 'work-version') {
-    bookContentClosed(value, [
-      'id',
-      'target',
-      'resource',
-      'createdAt',
-      'reason',
-      'label',
-      'wordCount',
-      'byteLength',
-      'contentHash',
-      'chunkCount',
-    ]);
+    bookContentClosed(
+      value,
+      [
+        'id',
+        'target',
+        'resource',
+        'createdAt',
+        'reason',
+        'label',
+        'wordCount',
+        'byteLength',
+        'contentHash',
+        'chunkCount',
+      ],
+      ['draft'],
+    );
+    if (Object.hasOwn(value, 'draft')) projectBookVersionDraft(value.draft, value.resource);
     bookContentId(value.id);
     bookContentClosed(value.target, ['kind', 'id']);
     if (value.target.kind !== 'book' || value.target.id !== bookId) bad();

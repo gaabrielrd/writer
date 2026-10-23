@@ -258,12 +258,22 @@ export function createWorkHistoryService({ db, now = Date.now }) {
         if (cursor)
           query = byId ? query.startAfter(cursor.id) : query.startAfter(cursor.date, cursor.id);
         const page = await tx.get(query),
-          selected = page.docs.slice(0, limit),
-          last = selected.at(-1);
+          selected = [],
+          items = [];
+        let bytes = 0;
+        for (const snapshot of page.docs.slice(0, limit)) {
+          const summary = versionSummary(snapshot.data()),
+            size = Buffer.byteLength(JSON.stringify(summary));
+          if (selected.length && bytes + size > 512 * 1024) break;
+          selected.push(snapshot);
+          items.push(summary);
+          bytes += size;
+        }
+        const last = selected.at(-1);
         return {
-          items: selected.map((snapshot) => versionSummary(snapshot.data())),
+          items,
           nextCursor:
-            page.docs.length > limit
+            page.docs.length > selected.length
               ? encodeHistoryCursor({
                   scope,
                   ...(byId ? {} : { date: last.data().createdAt }),

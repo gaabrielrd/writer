@@ -147,7 +147,9 @@ async function receipt(tx, db, loaded, id) {
       ...(loaded.job.cleanupVersion >= 8 ? ['advanceBookRestoreCounts'] : []),
       ...(loaded.job.cleanupVersion >= 9 ? ['advanceBookRestorePersonas'] : []),
       ...(loaded.job.cleanupVersion >= 10 ? ['advanceBookRestoreHistory'] : []),
-      ...(loaded.job.cleanupVersion >= 11 ? ['advanceBookRestoreDraft'] : []),
+      ...(loaded.job.cleanupVersion >= 11
+        ? ['advanceBookRestoreDraft', 'finalizeBookRestoreDraft']
+        : []),
     ].includes(value.receipt?.action) ||
     value.receipt.operationId !== id ||
     value.receipt.checkpoint > loaded.job.checkpoint ||
@@ -508,7 +510,23 @@ export async function readBookRestoreArtifact(tx, db, loaded, kind, id, { option
     [target, journal] = await Promise.all([tx.get(at.ref), tx.get(at.journal)]);
   if (!target.exists && !journal.exists && optional) return null;
   await authentic(tx, db, loaded, journal, target);
-  return { ref: at.ref, value: target.data() };
+  const observed = { createTime: target.createTime, updateTime: target.updateTime };
+  return {
+    ref: at.ref,
+    value: target.data(),
+    async verify(tx) {
+      const [current, metadata] = await Promise.all([
+        readWorkMetadata(tx, at.ref, []),
+        tx.get(at.journal),
+      ]);
+      await authentic(tx, db, loaded, metadata, current);
+      if (
+        !bornEqual(current, observed) ||
+        !bornEqual({ createTime: current.updateTime }, { createTime: observed.updateTime })
+      )
+        inconsistent();
+    },
+  };
 }
 export async function assertBookRestoreEntityIndexEmpty(tx, db, loaded) {
   const at = address(db, loaded, 'entity-index-control', 'entity-scenes', 8),

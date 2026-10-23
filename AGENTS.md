@@ -132,7 +132,7 @@
 - Reconcilie personas dos vínculos salvos com a contribuição exclusiva do rascunho verificado; preserve draftProfileId no replay e certifique a definição antes da raiz, conforme ADR 0078.
 - Reautorize a encarnação do universo na transação final de restauração e componha vínculo estrito com a raiz; não promova unavailable nem use observação como grant, conforme ADR 0076.
 - Prepare histórico por partes com hash integral antes do manifesto e inventário v10; preserve versões de recursos removidos sem recriá-los e certifique artefatos antes da raiz, conforme ADR 0077.
-- Prepare rascunho e estilo sob inventário v11, preservando o texto salvo; finalize contagem, metadados portáteis e versão antes de seguir para capa ou ativação, conforme ADR 0079.
+- Prepare rascunho sob inventário v11 e preserve o salvo; finalize com contagem real, provas por máscara e metadata draft portátil antes da capa, conforme ADR 0080.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

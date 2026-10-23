@@ -29,7 +29,7 @@ export function restoredDraftVersionId(loaded, chapterId) {
     })
   );
 }
-function matchesChapter(chapter, value) {
+export function matchesRestoredDraftChapter(chapter, value) {
   if (!chapter || chapter.contentMode === 'scenes') return false;
   if (chapter.contentStorage != null) {
     const manifest = chapterTextManifest(chapter.contentStorage);
@@ -173,7 +173,7 @@ export function createBookRestoreDraftService({
               value.chapter.id,
               { optional: true },
             ),
-            match = matchesChapter(chapter?.value, value),
+            match = matchesRestoredDraftChapter(chapter?.value, value),
             versionId = restoredDraftVersionId(loaded, value.chapter.id),
             profile = value.persona,
             exclusive = preparation.personas.draftProfileId;

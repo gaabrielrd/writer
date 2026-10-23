@@ -6,6 +6,7 @@ import { createBookRestorePersonasService } from './bookRestorePersonas.mjs';
 import { createBookRestoreUniverseService } from './bookRestoreUniverse.mjs';
 import { createBookRestoreHistoryService } from './bookRestoreHistory.mjs';
 import { createBookRestoreDraftService } from './bookRestoreDraft.mjs';
+import { createBookRestoreDraftFinalizeService } from './bookRestoreDraftFinalize.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
@@ -72,6 +73,7 @@ const actions = {
   advanceBookRestoreUniverse: ['content-verified'],
   advanceBookRestoreHistory: ['content-verified'],
   advanceBookRestoreDraft: ['content-verified'],
+  finalizeBookRestoreDraft: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -321,6 +323,12 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       )
         inconsistent();
       if (
+        r.preparation.draft?.finalized &&
+        (!loaded.job.preparation.draft?.finalized ||
+          digest(r.preparation.draft.finalized) !== digest(loaded.job.preparation.draft.finalized))
+      )
+        inconsistent();
+      if (
         r.preparation.history &&
         (!loaded.job.preparation.history ||
           ['versions', 'byteLength', 'sourceChunks', 'bodyCount'].some(
@@ -350,6 +358,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         'advanceBookRestoreUniverse',
         'advanceBookRestoreHistory',
         'advanceBookRestoreDraft',
+        'finalizeBookRestoreDraft',
       ].includes(r.action)
     )
       inconsistent();
@@ -992,7 +1001,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const draftFinalize = createBookRestoreDraftFinalizeService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...draftFinalize,
     ...draft,
     ...history,
     ...universe,

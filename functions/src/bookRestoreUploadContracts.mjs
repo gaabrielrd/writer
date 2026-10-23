@@ -456,7 +456,7 @@ export function jobShape(uid, id, job) {
     preparationProgress(job.preparation);
     if (
       job.cleanupVersion >= 9 &&
-      ['universe', 'history', 'draft', 'draft-finalize'].includes(job.preparation.phase)
+      ['universe', 'history', 'draft', 'draft-finalize', 'cover'].includes(job.preparation.phase)
     ) {
       const p = job.preparation.personas,
         totals = job.validationSummary.totals;
@@ -493,7 +493,7 @@ export function jobShape(uid, id, job) {
         h.versions > t.versions ||
         h.byteLength > t.historyBytes ||
         h.sourceChunks > t.historyChunks ||
-        (['draft', 'draft-finalize'].includes(job.preparation.phase) &&
+        (['draft', 'draft-finalize', 'cover'].includes(job.preparation.phase) &&
           (h.versions !== t.versions ||
             h.byteLength !== t.historyBytes ||
             h.sourceChunks !== t.historyChunks))
@@ -504,7 +504,7 @@ export function jobShape(uid, id, job) {
       const d = job.preparation.draft;
       if (
         d.bytes > job.validationSummary.totals.draftBytes ||
-        (job.preparation.phase === 'draft-finalize' &&
+        (['draft-finalize', 'cover'].includes(job.preparation.phase) &&
           d.bytes !== job.validationSummary.totals.draftBytes)
       )
         inconsistent();
@@ -561,7 +561,7 @@ export function preparationProgress(value) {
                   ? ['history']
                   : value.schemaVersion === 7
                     ? ['history', 'draft']
-                    : ['draft', 'draft-finalize']
+                    : ['draft', 'draft-finalize', 'cover']
     ).includes(value.phase)
   )
     inconsistent();
@@ -579,6 +579,7 @@ export function preparationProgress(value) {
         'history',
         'draft',
         'draft-finalize',
+        'cover',
       ].includes(value.phase) &&
         value.relationOffset !== 0)
     )
@@ -707,8 +708,9 @@ export function preparationProgress(value) {
       inconsistent();
     }
     if (
-      value.itemIndex !== d.startIndex + (value.phase === 'draft-finalize' ? 1 : 0) ||
-      (value.phase === 'draft') !== (d.outcome === 'preparing')
+      value.itemIndex !== d.startIndex + (value.phase === 'draft' ? 0 : 1) ||
+      (value.phase === 'draft') !== (d.outcome === 'preparing') ||
+      (value.phase === 'cover') !== Object.hasOwn(d, 'finalized')
     )
       inconsistent();
   }

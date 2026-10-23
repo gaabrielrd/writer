@@ -1,24 +1,28 @@
 import { validateBookRestorePendingRaw } from './bookRestoreHistoryContracts.mjs';
-const closed = (v, keys) =>
+const closed = (v, keys, optional = []) =>
   v &&
   typeof v === 'object' &&
   !Array.isArray(v) &&
-  Object.keys(v).length === keys.length &&
+  Object.keys(v).every((k) => [...keys, ...optional].includes(k)) &&
   keys.every((k) => Object.hasOwn(v, k));
 const integer = (v) => Number.isSafeInteger(v) && v >= 0;
 export function validateBookRestoreDraft(value) {
   if (
-    !closed(value, [
-      'schemaVersion',
-      'startIndex',
-      'parts',
-      'bytes',
-      'bodyCount',
-      'match',
-      'pending',
-      'outcome',
-      'versionId',
-    ]) ||
+    !closed(
+      value,
+      [
+        'schemaVersion',
+        'startIndex',
+        'parts',
+        'bytes',
+        'bodyCount',
+        'match',
+        'pending',
+        'outcome',
+        'versionId',
+      ],
+      ['finalized'],
+    ) ||
     value.schemaVersion !== 1 ||
     ['startIndex', 'parts', 'bytes', 'bodyCount'].some((k) => !integer(value[k])) ||
     ![null, true, false].includes(value.match) ||
@@ -57,5 +61,15 @@ export function validateBookRestoreDraft(value) {
     (value.outcome === 'version' && (value.match !== false || value.versionId === null))
   )
     throw new TypeError('Invalid prepared draft.');
+  if (Object.hasOwn(value, 'finalized')) {
+    const f = value.finalized;
+    if (
+      !closed(f, ['schemaVersion', 'wordCount']) ||
+      f.schemaVersion !== 1 ||
+      value.outcome === 'preparing' ||
+      (value.outcome === 'version' ? !integer(f.wordCount) : f.wordCount !== null)
+    )
+      throw new TypeError('Invalid finalized draft.');
+  }
   return structuredClone(value);
 }

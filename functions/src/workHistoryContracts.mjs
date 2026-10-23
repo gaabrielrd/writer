@@ -8,6 +8,7 @@ import {
   readWorkMetadata,
 } from './workProgressContracts.mjs';
 import { adventureBlockState } from './adventureBlocksState.mjs';
+import { projectBookVersionDraft } from './bookBackupSchema.mjs';
 import {
   readBookChapterText,
   openBookChapterText,
@@ -207,6 +208,8 @@ export const versionRef = (db, context, id) => db.doc(context.path + '/workVersi
 export const chunkRef = (db, context, id, index) =>
   db.doc(context.path + '/workVersionBodies/' + digest({ versionId: id, index }));
 export function versionSummary(value) {
+  if (Object.hasOwn(value, 'draft') && value.target?.kind !== 'book')
+    workFail('failed-precondition', 'Metadata de versão inconsistente.');
   return Object.fromEntries(
     [
       'id',
@@ -219,7 +222,11 @@ export function versionSummary(value) {
       'byteLength',
       'contentHash',
       'chunkCount',
-    ].map((key) => [key, value[key]]),
+      ...(Object.hasOwn(value, 'draft') ? ['draft'] : []),
+    ].map((key) => [
+      key,
+      key === 'draft' ? projectBookVersionDraft(value.draft, value.resource) : value[key],
+    ]),
   );
 }
 export function historyBodyReference(value) {

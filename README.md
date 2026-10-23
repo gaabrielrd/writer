@@ -378,3 +378,8 @@ P1 M34b prepara [texto e estilo do rascunho](docs/tasks/writer-v2/execucao/68-ra
 sem sobrescrever o salvo. Igualdade evita corpos duplicados; vazio/removido é
 preservado. Inventário v11/progresso v8 terminam em draft-finalize: contagem,
 metadados portáteis e manifesto da versão ainda precisam de finalização.
+
+P1 M34c finaliza a [versão recuperada do rascunho](docs/tasks/writer-v2/execucao/69-finalizacao-da-versao-recuperada.md)
+com contagem real e metadados/estilo portáteis. Provas das partes são reconferidas
+antes do commit; o manuscrito salvo permanece. A preparação chega a cover,
+ainda sem ativar o livro. Captura do histórico admite páginas por orçamento.

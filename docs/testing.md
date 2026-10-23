@@ -1422,3 +1422,17 @@ Cobre vazio/ausência, mesmo texto inline/lógico, campo composto, recurso remov
 partes/Unicode/BOM, metadados/perfis exatos, replay/CAS, falhas, cancelamento,
 inventário v11 e descriptor recriado. SDK prova sigilo, rollback e cleanup.
 Não demonstra versão recuperada utilizável ou restauração ativada; M34c/P1 abertos.
+
+## Versão recuperada e metadata portátil (P1 M34c)
+
+```bash
+node --test functions/test/bookRestoreDraftFinalize.test.mjs
+node --test functions/test/bookRestoreDraftLargeFinalize.test.mjs
+```
+
+[Entrega M34c](entregas/2026-10-22-writer-v2-finalizacao-da-versao-recuperada.md):
+197 Node, 68 Vitest distintos e dois SDK reais positivos. Cobre contagem real,
+rascunho de 20 MiB/320 partes, provas por máscara/ABA depois da leitura, rollback/
+retry/replay, metadata fechada/remapeada/congelada, JSON multipart e orçamento de
+páginas. Build cliente e smoke passaram; avisos de chunks/imports constam da entrega.
+Raiz sintética prova somente leitor/listagem. P1/F2-09 e host/UI continuam abertos.

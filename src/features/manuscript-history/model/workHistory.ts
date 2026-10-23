@@ -12,6 +12,7 @@ export interface VersionSource {
   sceneWordCount?: number;
 }
 export interface VersionSummary {
+  draft?: import('../../../../functions/src/bookBackupSchema.mjs').RecoveredBookDraft;
   id: string;
   target: VersionTarget;
   resource: VersionResource;

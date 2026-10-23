@@ -4,6 +4,8 @@ import type {
   WorkHistoryStreamProof,
 } from '@/features/manuscript-history';
 import { BookBackupFormatError, type BookBackupRecord } from '../model/backupContainer';
+import { projectBookVersionDraft } from '../../../../functions/src/bookBackupSchema.mjs';
+import { encodeBookBackupJSON } from '../../../../functions/src/bookBackupStructure.mjs';
 
 function invalid(): never {
   throw new BookBackupFormatError(
@@ -23,6 +25,9 @@ function header(value: VersionSummary) {
     byteLength: value.byteLength,
     contentHash: value.contentHash,
     chunkCount: value.chunkCount,
+    ...(value.draft === undefined
+      ? {}
+      : { draft: projectBookVersionDraft(value.draft, value.resource) }),
   };
 }
 /** Maps a verified history stream; records remain provisional until every section and the M2 seal. */
@@ -81,12 +86,14 @@ export async function* bookHistoryBackupRecords(
         versions++;
         index = 0;
         length = 0;
-        yield {
-          kind: 'work-version',
-          id: current.id,
-          part: 0,
-          payload: new TextEncoder().encode(JSON.stringify(current)),
-        };
+        const encoded = encodeBookBackupJSON(current).bytes;
+        for (let offset = 0, part = 0; offset < encoded.length; offset += 65536, part++)
+          yield {
+            kind: 'work-version',
+            id: current.id,
+            part,
+            payload: encoded.slice(offset, offset + 65536),
+          };
       } else {
         if (
           !current ||

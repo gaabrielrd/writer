@@ -1363,3 +1363,20 @@ Inventário v11 inclui esse namespace antes da escrita e certifica limpeza com
 nascimento nativo. Progresso v8 termina em draft-finalize, sem raiz/countReady
 ou manifesto workVersions. M34c deverá conferir contagem, portabilidade de
 metadados/perfil e todos os corpos antes de finalizar a versão e seguir para capa.
+
+## Finalização da versão recuperada (P1 M34c)
+
+[ADR 0080](decisions/0080-restored-draft-version-finalization.md) autentica corpos,
+conta um rascunho com a semântica existente e reconfere observações por máscara
+antes do manifesto/recibo. Corpo contado alterado/recriado impede o commit.
+RAM proporcional a uma contribuição; não é contador incremental de HTML/Markdown.
+
+work-version/VersionSummary aceitam draft opcional fechado, com metadados/perfil
+originais. Projeção canônica, remapeamento, congelamento e frames JSON limitados
+preservam a contribuição no próximo backup. Perfil histórico não é vínculo ativo.
+Listagem mantém limite de linhas e orçamento de 512 KiB, admitindo um primeiro
+item maior; cursor segue último entregue e clientes aceitam página curta não vazia.
+
+Inventário v11 permanece. Progresso v8 finalizado chega a cover sem consumir capa,
+com raiz ausente/countReady false. Capa, personas globais, campos grandes,
+certificação/ativação e host/UI/roundtrip/validate seguem obrigatórios em P1.

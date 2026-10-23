@@ -1,4 +1,5 @@
 import type { VersionSummary, VersionTarget, WorkHistoryBackupSource } from './workHistory';
+import { projectBookVersionDraft } from '../../../../functions/src/bookBackupSchema.mjs';
 
 export function summaryIdentity(version: VersionSummary): string {
   return JSON.stringify([
@@ -14,6 +15,9 @@ export function summaryIdentity(version: VersionSummary): string {
     version.byteLength,
     version.contentHash,
     version.chunkCount,
+    ...(version.draft === undefined
+      ? []
+      : [projectBookVersionDraft(version.draft, version.resource)]),
   ]);
 }
 export function invalidBackup(): never {
@@ -67,6 +71,7 @@ export function backupSummary(value: unknown, target: VersionTarget): VersionSum
       'byteLength',
       'contentHash',
       'chunkCount',
+      ...(value && typeof value === 'object' && Object.hasOwn(value, 'draft') ? ['draft'] : []),
     ]) ||
     !validBackupId(value.id) ||
     !closedBackupValue(value.target, ['kind', 'id']) ||
@@ -94,5 +99,13 @@ export function backupSummary(value: unknown, target: VersionTarget): VersionSum
     !/^[a-f0-9]{64}$/.test(value.contentHash)
   )
     invalidBackup();
+  if (Object.hasOwn(value, 'draft')) {
+    if (target.kind !== 'book') invalidBackup();
+    try {
+      projectBookVersionDraft(value.draft, value.resource as { kind: string; id: string });
+    } catch {
+      invalidBackup();
+    }
+  }
   return value as unknown as VersionSummary;
 }

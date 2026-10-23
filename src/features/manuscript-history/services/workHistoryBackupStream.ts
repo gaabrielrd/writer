@@ -1,4 +1,5 @@
 import { sha256 } from '@noble/hashes/sha2.js';
+import { projectBookVersionDraft } from '../../../../functions/src/bookBackupSchema.mjs';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import type {
   VersionTarget,
@@ -54,6 +55,13 @@ function sourceCopy(value: unknown): WorkHistoryBackupSource {
 function sameSource(a: WorkHistoryBackupSource, b: WorkHistoryBackupSource) {
   return a.sourceToken === b.sourceToken && a.historyRevision === b.historyRevision;
 }
+function freezeMetadata<T>(value: T): T {
+  if (value && typeof value === 'object') {
+    Object.values(value).forEach(freezeMetadata);
+    Object.freeze(value);
+  }
+  return value;
+}
 function summaryCopy(value: unknown, target: VersionTarget): VersionSummary {
   const item = backupSummary(value, target);
   if (
@@ -68,6 +76,9 @@ function summaryCopy(value: unknown, target: VersionTarget): VersionSummary {
     ...item,
     target: Object.freeze({ ...item.target }),
     resource: Object.freeze({ ...item.resource }),
+    ...(item.draft === undefined
+      ? {}
+      : { draft: freezeMetadata(projectBookVersionDraft(item.draft, item.resource)) }),
   });
 }
 function compareIds(a: string, b: string): number {
@@ -123,7 +134,7 @@ export async function* streamWorkHistoryBackup(
     )
       invalidBackup();
     const next: string | null = nextCursor(page.nextCursor, cursor);
-    if (next !== null && page.items.length !== 50) invalidBackup();
+    if (next !== null && page.items.length === 0) invalidBackup();
     // Copy one bounded page before yielding control to the consumer.
     const items = page.items.map((item: unknown) => summaryCopy(item, target));
     for (const summary of items) {

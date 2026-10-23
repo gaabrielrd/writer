@@ -571,3 +571,14 @@ salvo evita corpos duplicados.
 105 Node e dois SDK reais positivos. M34c deve conferir contagem/portabilidade
 antes do manifesto da versão e da capa. Sem raiz; P1/F2-09 e Writer V2 abertos.
 Somente local; CI ignorada.
+
+### P1 M34c — versão recuperada finalizada e portátil
+
+O [contrato 69](69-finalizacao-da-versao-recuperada.md) cria manifesto manual com
+contagem real, metadata/estilo portáteis e provas reconferidas após a leitura.
+Inventário v11 mantém compatibilidade; fase cover sem consumir a capa.
+[Evidência M34c](../../../entregas/2026-10-22-writer-v2-finalizacao-da-versao-recuperada.md):
+197 Node, 68 Vitest distintos e dois SDK positivos; 20 MiB/320 partes, ABA,
+rollback, remapeamento e captura congelada em páginas por orçamento. Build/smoke OK.
+Sem raiz ativada. Capa, personas globais, campos grandes, certificação/ativação e
+host/UI/roundtrip/validate seguem P1/F2-09. Somente local; CI ignorada.

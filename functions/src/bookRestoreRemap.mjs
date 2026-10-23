@@ -142,6 +142,11 @@ export function createBookRestoreRemapper(input) {
       newId = value.id = identity('version', value.id);
       value.target.id = context.bookId;
       value.resource.id = identity(value.resource.kind, value.resource.id);
+      if (value.draft) {
+        value.draft.chapter.id = identity('chapter', value.draft.chapter.id);
+        chapter(value.draft.chapter);
+        if (value.draft.persona) profile(value.draft.persona);
+      }
     } else {
       const type = value.kind,
         data = value.data,
