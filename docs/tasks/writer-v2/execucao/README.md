@@ -515,3 +515,15 @@ no-op integral e limpeza compatível.
 do teste foi corrigida e apenas o cenário afetado repetido.
 Personas, histórico/rascunho/capa, campos grandes, autorização/ativação e
 host/UI/roundtrip/validate continuam em P1/F2-09. Somente local; CI ignorada.
+
+### P1 M31 — personas e vínculos privados
+
+O [contrato 64](64-personas-na-preparacao-privada.md) prepara definições e vínculos
+dos três scopes sem tocar a biblioteca. Inventário v9/progresso v5 conferem
+manifesto/relatório e preservam a fronteira anterior de recursos.
+[Evidência M31](../../../entregas/2026-10-22-writer-v2-personas-na-preparacao-privada.md):
+197 Node distintos e dois SDK reais positivos; 53 perfis, conteúdo exato/arquivo,
+ausências legadas, deduplicação, CAS e cleanup protegido. Estado final universe,
+com raiz ausente. Integração de personas, universo, histórico/rascunho/capa,
+campos grandes, autorização/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
+Somente local; CI ignorada.

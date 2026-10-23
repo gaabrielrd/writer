@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { GenerationError, validateId } from './generation.mjs';
 import { digest } from './sceneContracts.mjs';
 import { BOOK_RESOURCE_KINDS } from './bookBackupResources.mjs';
+import { BOOK_PERSONA_SCOPES } from './bookBackupPersonas.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
 export const BOOK_RESTORE_METHODS = [
@@ -172,7 +173,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3, 4, 5, 6, 7, 8].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -450,15 +451,26 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
     preparationProgress(job.preparation);
+    if (job.cleanupVersion === 9 && job.preparation.phase === 'universe') {
+      const p = job.preparation.personas,
+        totals = job.validationSummary.totals;
+      if (
+        p.profileCount !== totals.profiles ||
+        BOOK_PERSONA_SCOPES.some((scope) => p.bindings[scope] !== totals.bindings[scope])
+      )
+        inconsistent();
+    }
     if (
       job.preparation.schemaVersion !==
-      (job.cleanupVersion === 8
-        ? 4
-        : job.cleanupVersion === 7
-          ? 3
-          : job.cleanupVersion === 6
-            ? 2
-            : 1)
+      (job.cleanupVersion === 9
+        ? 5
+        : job.cleanupVersion === 8
+          ? 4
+          : job.cleanupVersion === 7
+            ? 3
+            : job.cleanupVersion === 6
+              ? 2
+              : 1)
     )
       inconsistent();
     if (
@@ -490,10 +502,11 @@ export function preparationProgress(value) {
       ? ['loreCount', 'loreRelationCount', 'relationOffset', 'loreItemIndex']
       : []),
     ...(value?.schemaVersion >= 3 ? ['resourceStartIndex', 'resourceCounts'] : []),
-    ...(value?.schemaVersion === 4 ? ['counts'] : []),
+    ...(value?.schemaVersion >= 4 ? ['counts'] : []),
+    ...(value?.schemaVersion === 5 ? ['resourceEndIndex', 'personas'] : []),
   ]);
   if (
-    ![1, 2, 3, 4].includes(value.schemaVersion) ||
+    ![1, 2, 3, 4, 5].includes(value.schemaVersion) ||
     !(
       value.schemaVersion === 1
         ? ['structure', 'resources']
@@ -501,7 +514,9 @@ export function preparationProgress(value) {
           ? ['resources', 'scenes']
           : value.schemaVersion === 3
             ? ['scenes', 'resource-counts']
-            : ['resource-counts', 'personas']
+            : value.schemaVersion === 4
+              ? ['resource-counts', 'personas']
+              : ['personas', 'universe']
     ).includes(value.phase)
   )
     inconsistent();
@@ -511,7 +526,7 @@ export function preparationProgress(value) {
     if (
       (value.schemaVersion === 2 && value.loreItemIndex < value.itemIndex) ||
       value.relationOffset > value.loreRelationCount ||
-      (['scenes', 'resource-counts', 'personas'].includes(value.phase) &&
+      (['scenes', 'resource-counts', 'personas', 'universe'].includes(value.phase) &&
         value.relationOffset !== 0)
     )
       inconsistent();
@@ -529,22 +544,25 @@ export function preparationProgress(value) {
   if (!Number.isFinite(new Date(value.timestamp).getTime())) inconsistent();
   if (value.schemaVersion >= 3) {
     integer(value.resourceStartIndex);
+    const end = value.schemaVersion >= 5 ? integer(value.resourceEndIndex) : value.itemIndex;
     closed(value.resourceCounts, BOOK_RESOURCE_KINDS);
     let total = 0;
     for (const kind of BOOK_RESOURCE_KINDS) total = sum(total, value.resourceCounts[kind]);
     if (
-      value.resourceStartIndex > value.itemIndex ||
+      value.resourceStartIndex > end ||
+      end > value.itemIndex ||
       value.resourceStartIndex > value.loreItemIndex ||
       value.resourceCounts.lore > value.loreCount ||
       (value.phase === 'scenes'
         ? value.itemIndex > value.loreItemIndex
-        : value.itemIndex !== value.loreItemIndex + 1) ||
-      total !== value.itemIndex - value.resourceStartIndex - (value.phase === 'scenes' ? 0 : 1)
+        : end !== value.loreItemIndex + 1) ||
+      total !== end - value.resourceStartIndex - (value.phase === 'scenes' ? 0 : 1)
     )
       inconsistent();
   }
-  if (value.schemaVersion === 4) {
-    const c = value.counts;
+  if (value.schemaVersion >= 4) {
+    const c = value.counts,
+      end = value.schemaVersion >= 5 ? value.resourceEndIndex : value.itemIndex;
     closed(c, [
       'schemaVersion',
       'step',
@@ -564,13 +582,31 @@ export function preparationProgress(value) {
         ? c.linkId !== null || c.linkCursor !== null
         : c.linkId === null || c.linkCursor !== digest(['narrative-link', c.linkId])) ||
       c.itemIndex < value.resourceStartIndex ||
-      c.itemIndex > value.itemIndex ||
+      c.itemIndex > end ||
       c.sceneCount > value.resourceCounts.scene ||
       c.linkCount > value.resourceCounts['narrative-link'] ||
       (c.step === 'scenes'
         ? c.itemIndex > value.loreItemIndex || c.linkCount !== 0
-        : c.itemIndex !== value.itemIndex || c.sceneCount !== value.resourceCounts.scene) ||
-      (value.phase === 'personas') !== (c.step === 'done')
+        : c.itemIndex !== end || c.sceneCount !== value.resourceCounts.scene) ||
+      (value.schemaVersion >= 5
+        ? c.step !== 'done'
+        : (value.phase === 'personas') !== (c.step === 'done'))
+    )
+      inconsistent();
+  }
+  if (value.schemaVersion === 5) {
+    const p = value.personas;
+    closed(p, ['schemaVersion', 'profileCount', 'bindings']);
+    if (p.schemaVersion !== 1) inconsistent();
+    integer(p.profileCount);
+    closed(p.bindings, BOOK_PERSONA_SCOPES);
+    let total = 0;
+    for (const scope of BOOK_PERSONA_SCOPES) total = sum(total, p.bindings[scope]);
+    if (
+      p.profileCount > total ||
+      p.bindings.book > 1 ||
+      p.bindings.chapter > value.chapterCount ||
+      p.bindings['scene-source'] > value.resourceCounts['scene-source']
     )
       inconsistent();
   }

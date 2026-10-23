@@ -353,3 +353,8 @@ P1 M30 acrescenta [reconciliação dos recursos](docs/tasks/writer-v2/execucao/6
 palavras pelo ledger, contagens de agrupadores e vínculos únicos, com índice
 estrutural pronto e inventário v8. A cópia continua sem raiz e countReady false;
 personas e demais condições de ativação permanecem pendentes.
+
+P1 M31 prepara [personas e vínculos privados](docs/tasks/writer-v2/execucao/64-personas-na-preparacao-privada.md):
+definições usadas, deduplicadas por ID/hash, sem tocar a biblioteca atual.
+Inventário v9/progresso v5 preservam snapshots arquivados e ausências legadas.
+A integração dos perfis e as demais condições de ativação continuam pendentes.

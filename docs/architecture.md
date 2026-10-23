@@ -1294,3 +1294,15 @@ Preparação v4 separa cursor da seção e dos vínculos. Inventário v8 inclui 
 tipado entity-index-control e conserva qualquer par idêntico sem no-op.
 O estado personas mantém raiz ausente/countReady false. A ativação futura exige
 prontidão e contagem atômicas junto da raiz, após autorização e certificação final.
+
+## Personas na preparação privada (P1 M31)
+
+[ADR 0075](decisions/0075-restored-persona-definitions.md) mantém definições e
+vínculos em preparedPersonas/personaBindings sob o job privado. Perfis portáteis
+preservam texto/atributos/arquivo/revisão/datas, com identidade remapeada; corpo
+compartilhado não é regravado. Nenhuma biblioteca atual é consultada/copiada.
+
+Inventário v9 inclui ambas as coleções antes da escrita, com prova nativa e
+cleanup final. Progresso v5 fixa resourceEndIndex e confere manifesto/relatório,
+terminando em universe. Raiz/countReady continuam pendentes. Biblioteca e
+consumidores ainda precisam de integração e disponibilidade atômica antes da cópia ativa.

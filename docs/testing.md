@@ -1358,3 +1358,16 @@ compatibilidade JSON v1–v6 e corpos congelados grandes/pins.
 Harness de raiz sintética confere somente leitores, sem ativação real.
 SDK dedicado cobre disputa, no-op, limpeza v8 e fonte recriada.
 P1 continua aberto e validate integral reservado ao fechamento do grande bloco.
+
+## Personas preparadas e vínculos (P1 M31)
+
+```bash
+node --test functions/test/bookRestorePersonas.test.mjs
+```
+
+[Entrega M31](entregas/2026-10-22-writer-v2-personas-na-preparacao-privada.md)
+cobre snapshots exatos/arquivados, 53 perfis distintos, deduplicação entre scopes,
+ausências legadas sem empréstimo da biblioteca, replay/CAS/rollback/retry,
+vínculos conferidos, namespaces privados e limpeza parcial/final v9.
+SDK real cobre sigilo, no-op, recibos nativos e definição recriada.
+Não demonstra perfil ativo na biblioteca/IA nem restauração concluída.

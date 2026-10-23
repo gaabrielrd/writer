@@ -32,6 +32,23 @@ const context = (loaded) => ({
   jobToken: loaded.view.jobToken,
 });
 function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
+  if (version >= 9 && ['persona-definition', 'persona-binding'].includes(kind)) {
+    if (
+      typeof id !== 'string' ||
+      !(kind === 'persona-definition' ? /^custom-[a-f0-9]{64}$/ : /^[a-f0-9]{64}$/).test(id)
+    )
+      inconsistent();
+    return {
+      ref: db.doc(
+        loaded.ref.path +
+          '/' +
+          (kind === 'persona-definition' ? 'preparedPersonas' : 'personaBindings') +
+          '/' +
+          id,
+      ),
+      journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+    };
+  }
   if (version >= 8 && kind === 'entity-index-control') {
     if (id !== 'entity-scenes') inconsistent();
     return {
@@ -103,6 +120,7 @@ async function receipt(tx, db, loaded, id) {
       ...(loaded.job.cleanupVersion >= 6 ? ['advanceBookRestoreLore'] : []),
       ...(loaded.job.cleanupVersion >= 7 ? ['advanceBookRestoreResources'] : []),
       ...(loaded.job.cleanupVersion >= 8 ? ['advanceBookRestoreCounts'] : []),
+      ...(loaded.job.cleanupVersion >= 9 ? ['advanceBookRestorePersonas'] : []),
     ].includes(value.receipt?.action) ||
     value.receipt.operationId !== id ||
     value.receipt.checkpoint > loaded.job.checkpoint ||
@@ -155,7 +173,7 @@ export async function prepareBookRestoreArtifacts(
   version = loaded.job.cleanupVersion,
 ) {
   restoreId(operationId);
-  if (![4, 5, 6, 7, 8].includes(version) || writes.length > (version >= 5 ? 136 : 8))
+  if (![4, 5, 6, 7, 8, 9].includes(version) || writes.length > (version >= 5 ? 136 : 8))
     inconsistent();
   const effects = [],
     paths = new Set();
@@ -178,7 +196,12 @@ export async function prepareBookRestoreArtifacts(
       }
       if (
         version >= 7 &&
-        ['scene-reference', 'scene-lore-link', 'narrative-link'].includes(write.kind)
+        [
+          'scene-reference',
+          'scene-lore-link',
+          'narrative-link',
+          ...(version >= 9 ? ['persona-definition', 'persona-binding'] : []),
+        ].includes(write.kind)
       ) {
         // Firestore preserves native updateTime on a no-op. Keep both artifact and journal unchanged.
         const existing = await tx.get(at.ref);
@@ -222,6 +245,7 @@ export async function assertBookRestoreArtifactsEmpty(
 ) {
   const journal = await tx.get(db.collection(journalPath(loaded)).select('schemaVersion').limit(1));
   if (journal.docs.length) inconsistent();
+  if (version >= 9) await assertBookRestorePersonaNamespacesEmpty(tx, db, loaded);
   for (const name of [
     ...Object.values(BOOK_RESTORE_NATIVE_V4),
     ...(version >= 5 ? ['bookTextBodies'] : []),
@@ -239,7 +263,7 @@ export async function assertBookRestoreArtifactsEmpty(
 }
 export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![4, 5, 6, 7, 8].includes(loaded.job.cleanupVersion) ||
+    ![4, 5, 6, 7, 8, 9].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'artifacts'
   )
     inconsistent();
@@ -319,7 +343,7 @@ export async function assertBookRestoreBodyNamespaceEmpty(tx, db, loaded) {
 }
 export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![5, 6, 7, 8].includes(loaded.job.cleanupVersion) ||
+    ![5, 6, 7, 8, 9].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'body-artifacts'
   )
     inconsistent();
@@ -405,7 +429,7 @@ export async function assertBookRestoreResourceNamespacesEmpty(tx, db, loaded) {
 /** Drain journaled nested children even when their parent has not been prepared yet. */
 export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, limit) {
   if (
-    ![7, 8].includes(loaded.job.cleanupVersion) ||
+    ![7, 8, 9].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'resource-children'
   )
     inconsistent();
@@ -461,4 +485,24 @@ export async function assertBookRestoreEntityIndexEmpty(tx, db, loaded) {
   const at = address(db, loaded, 'entity-index-control', 'entity-scenes', 8),
     [target, journal] = await Promise.all([readWorkMetadata(tx, at.ref, []), tx.get(at.journal)]);
   if (target.exists || journal.exists) inconsistent();
+}
+
+export async function assertBookRestorePersonaNamespacesEmpty(tx, db, loaded) {
+  for (const name of ['preparedPersonas', 'personaBindings']) {
+    const page = await tx.get(
+      db
+        .collection(loaded.ref.path + '/' + name)
+        .select()
+        .limit(1),
+    );
+    if (page.docs.length) inconsistent();
+  }
+  const journals = await tx.get(
+    db
+      .collection(journalPath(loaded))
+      .where('kind', 'in', ['persona-definition', 'persona-binding'])
+      .select('kind')
+      .limit(1),
+  );
+  if (journals.docs.length) inconsistent();
 }

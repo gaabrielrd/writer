@@ -2,6 +2,7 @@ import { createBookRestoreStructureService } from './bookRestoreStructure.mjs';
 import { createBookRestoreLoreService } from './bookRestoreLore.mjs';
 import { createBookRestoreResourcesService } from './bookRestoreResources.mjs';
 import { createBookRestoreCountsService } from './bookRestoreCounts.mjs';
+import { createBookRestorePersonasService } from './bookRestorePersonas.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
   prepareBookRestoreBodyArtifactsCleanup,
@@ -63,6 +64,7 @@ const actions = {
   advanceBookRestoreLore: ['content-verified'],
   advanceBookRestoreResources: ['content-verified'],
   advanceBookRestoreCounts: ['content-verified'],
+  advanceBookRestorePersonas: ['content-verified'],
 };
 export function createBookRestoreUploadService({ db, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
@@ -283,12 +285,24 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         )
       )
         inconsistent();
+      if (
+        r.preparation.personas &&
+        (r.preparation.personas.profileCount >
+          (loaded.job.preparation.personas?.profileCount ?? 0) ||
+          Object.keys(r.preparation.personas.bindings).some(
+            (scope) =>
+              r.preparation.personas.bindings[scope] >
+              (loaded.job.preparation.personas?.bindings[scope] ?? 0),
+          ))
+      )
+        inconsistent();
     } else if (
       [
         'advanceBookRestoreStructure',
         'advanceBookRestoreLore',
         'advanceBookRestoreResources',
         'advanceBookRestoreCounts',
+        'advanceBookRestorePersonas',
       ].includes(r.action)
     )
       inconsistent();
@@ -895,7 +909,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const personas = createBookRestorePersonasService({
+    db,
+    load,
+    readOp,
+    writeOp,
+    confirmed,
+    next,
+    pickProgress,
+  });
   return {
+    ...personas,
     ...counts,
     ...resources,
     ...lore,
