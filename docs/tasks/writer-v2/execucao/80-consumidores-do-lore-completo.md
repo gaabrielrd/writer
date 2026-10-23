@@ -148,5 +148,7 @@ validou parser incremental e guardas nas Rules: 93 Node e sete SDK distintos.
 [Evidência](../../../entregas/2026-10-23-writer-v2-validacao-dos-campos-de-lore.md).
 O upload privado interno com inventário/cancelamento/cleanup foi validado em
 M38c3b: [evidência](../../../entregas/2026-10-23-writer-v2-upload-privado-dos-campos-de-lore.md).
-Sem endpoint, UI ou adoção. Próximos passos: geração/readers v2, CAS/privacidade,
-criação/exclusão/GC e cliente. A etapa 3 não está concluída; M38c/P1/F2-09/V2 abertos.
+Sem endpoint de escrita, UI ou adoção. M38c3c preparou os leitores v2:
+[evidência](../../../entregas/2026-10-23-writer-v2-leitura-das-geracoes-de-lore.md).
+Próximos passos: metadata da origem, adoção CAS/privacidade/leases,
+criação/exclusão/GC, inventário do livro e cliente. A etapa 3 não está concluída; M38c/P1/F2-09/V2 abertos.

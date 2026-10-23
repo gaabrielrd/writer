@@ -1673,3 +1673,20 @@ conter buffer interno, por isso fica separado e nunca é retornado; EOF/cancel
 remove esse estado. Recriação depois da verificação falha na leitura pela
 barreira nativa, mesmo se anterior ao header; sealed não é grant atual.
 Sem endpoint/cliente/adoção. Validate e roundtrip completos de P1 pendentes.
+
+### P1 M38c3c — leitura de gerações achatadas de lore
+
+[Entrega](entregas/2026-10-23-writer-v2-leitura-das-geracoes-de-lore.md):
+72 Node distintos (34 novos, 38 antigos), 85 Vitest (32 novos, 53 existentes)
+e três SDK reais positivos. Repetições não aumentam a quantidade de casos.
+
+Backend/cliente exercitam base e campo acima de 8 MiB/128 partes, geração sem
+base, remoções/ausências/datas/false, relações antigas/novas, falhas nativas,
+domínio e transporte inválidos, reconferência final e chamadas em voo.
+Instrumentação mede um chunk por unidade e quatro/cinco/seis leituras nativas.
+SDK isola a barreira: parte e novo header com mesmo nascimento continuam
+rejeitados pelo cutoff anterior. Leitura positiva precede a recriação.
+
+Tipos/lint/arquitetura/sintaxe/bundle/smoke positivos. O harness de cabeça v2
+não entrega adoção/CAS/leases/ativação. Não houve produção/deploy, UI nova ou
+browser declarado; validate integral permanece no encerramento de P1.

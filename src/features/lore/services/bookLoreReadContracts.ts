@@ -6,15 +6,39 @@ export interface LoreReadManifest {
   byteLength: number;
   chunkCount: number;
 }
-export interface LoreReadHeader {
-  schemaVersion: 1;
+export const loreReadFields = [
+  'name',
+  'category',
+  'summary',
+  'details',
+  'aliases',
+  'structuredDetails',
+  'isPublic',
+] as const;
+export type LoreReadField = (typeof loreReadFields)[number];
+interface LoreReadIdentity {
   bookId: string;
   id: string;
   readToken: string;
-  mode: 'inline' | 'payload';
-  base: LoreReadManifest;
-  relations: null | { present: boolean; count: number; pages: number };
 }
+type LoreRelations = { present: boolean; count: number; pages: number };
+export type LoreReadHeader = LoreReadIdentity &
+  (
+    | {
+        schemaVersion: 1;
+        mode: 'inline' | 'payload';
+        base: LoreReadManifest;
+        relations: null | LoreRelations;
+      }
+    | {
+        schemaVersion: 2;
+        mode: 'payload';
+        base: LoreReadManifest | null;
+        relations: LoreRelations;
+        fields: Partial<Record<LoreReadField, LoreReadManifest | null>>;
+        dates: { updatedAt: number; createdAt?: number };
+      }
+  );
 export interface LoreReadItem {
   id: string;
   readToken: string;
@@ -74,6 +98,11 @@ export function readHeader(
   id: string,
   token?: string,
 ): LoreReadHeader {
+  const version = readObject(
+    value,
+    [],
+    ['schemaVersion', 'bookId', 'id', 'readToken', 'mode', 'base', 'relations', 'fields', 'dates'],
+  ).schemaVersion;
   const r = readObject(value, [
     'schemaVersion',
     'bookId',
@@ -82,10 +111,11 @@ export function readHeader(
     'mode',
     'base',
     'relations',
+    ...(version === 2 ? ['fields', 'dates'] : []),
   ]);
   const readToken = readHash(r.readToken);
   if (
-    r.schemaVersion !== 1 ||
+    ![1, 2].includes(r.schemaVersion as number) ||
     r.bookId !== bookId ||
     r.id !== id ||
     (token !== undefined && readToken !== token) ||
@@ -105,6 +135,34 @@ export function readHeader(
       throw invalidLoreRead();
     relations = { present: rel.present, count, pages };
   } else if (r.relations !== null) throw invalidLoreRead();
+  if (r.schemaVersion === 2) {
+    if (r.mode !== 'payload' || relations === null) throw invalidLoreRead();
+    const rawFields = readObject(r.fields, [], [...loreReadFields]),
+      fields: Partial<Record<LoreReadField, LoreReadManifest | null>> = {};
+    for (const field of loreReadFields) {
+      if (!Object.hasOwn(rawFields, field)) continue;
+      const value = rawFields[field];
+      if (value === null && (field === 'name' || field === 'category')) throw invalidLoreRead();
+      fields[field] = value === null ? null : readManifest(value);
+    }
+    if (r.base === null && (!fields.name || !fields.category)) throw invalidLoreRead();
+    const d = readObject(r.dates, ['updatedAt'], ['createdAt']),
+      dates: { updatedAt: number; createdAt?: number } = { updatedAt: readCount(d.updatedAt) };
+    if (Object.hasOwn(d, 'createdAt')) dates.createdAt = readCount(d.createdAt);
+    if (Object.values(dates).some((value) => !Number.isFinite(new Date(value).getTime())))
+      throw invalidLoreRead();
+    return {
+      schemaVersion: 2,
+      bookId,
+      id,
+      readToken,
+      mode: 'payload',
+      base: r.base === null ? null : readManifest(r.base),
+      relations,
+      fields,
+      dates,
+    };
+  }
   return {
     schemaVersion: 1,
     bookId,

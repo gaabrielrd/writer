@@ -6,6 +6,8 @@ import {
   readManifest,
   readHeader,
   readList,
+  loreReadFields,
+  type LoreReadField,
   type LoreReadCall,
   type LoreReadGuard,
   type LoreReadHeader,
@@ -18,6 +20,17 @@ export interface CompleteBookLore {
   data: Record<string, unknown>;
 }
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+function validateData(id: string, bookId: string, data: Record<string, unknown>) {
+  try {
+    validateBookBackupJSONItem(
+      'book-lore',
+      { schemaVersion: 1, kind: 'lore', parentId: null, id, data },
+      bookId,
+    );
+  } catch {
+    throw invalidLoreRead();
+  }
+}
 /** In-memory authorized transport. No persistent cache and no partial collection result. */
 export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuard) {
   const rpc = async (method: string, input: unknown) => {
@@ -35,16 +48,27 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
     if (value === null && readToken === undefined) return null;
     return readHeader(value, bookId, id, readToken);
   }
-  async function section(view: LoreReadHeader, kind: 'base' | 'relations', page: number) {
-    let manifest: LoreReadManifest | undefined = kind === 'base' ? view.base : undefined;
-    const offset = kind === 'base' ? null : page * 64;
-    const count = kind === 'base' ? null : Math.min(64, view.relations!.count - page * 64);
+  async function section(
+    view: LoreReadHeader,
+    kind: 'base' | 'relations' | 'field',
+    page: number,
+    field?: LoreReadField,
+  ) {
+    let manifest: LoreReadManifest | undefined =
+      kind === 'base'
+        ? (view.base ?? undefined)
+        : kind === 'field' && view.schemaVersion === 2 && field
+          ? (view.fields[field] ?? undefined)
+          : undefined;
+    const offset = kind === 'relations' ? page * 64 : null;
+    const count = kind === 'relations' ? Math.min(64, view.relations!.count - page * 64) : null;
     const part = async (index: number) => {
       const raw = await rpc('readBookLorePart', {
         bookId: view.bookId,
         id: view.id,
         readToken: view.readToken,
         section: kind,
+        ...(kind === 'field' ? { field } : {}),
         page,
         index,
       });
@@ -60,6 +84,7 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
         'offset',
         'count',
         'chunkBase64',
+        ...(kind === 'field' ? ['field'] : []),
       ]);
       const actual = readManifest(r.manifest);
       if (
@@ -68,6 +93,7 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
         r.id !== view.id ||
         r.readToken !== view.readToken ||
         r.section !== kind ||
+        (kind === 'field' && r.field !== field) ||
         r.page !== page ||
         r.index !== index ||
         r.offset !== offset ||
@@ -132,17 +158,35 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
     guard();
     const view = await header(bookId, id, readToken);
     if (!view) return null;
-    const raw = await section(view, 'base', 0);
+    const raw = view.base === null ? null : await section(view, 'base', 0);
     let data: Record<string, unknown>;
     if (view.mode === 'payload') {
-      const base = readObject(
-        raw,
-        ['bookId', 'name', 'category', 'createdAt', 'updatedAt'],
-        ['aliases', 'summary', 'details', 'isPublic', 'structuredDetails'],
-      );
-      if (base.bookId !== bookId) throw invalidLoreRead();
-      data = { ...base };
+      const base =
+        raw === null && view.schemaVersion === 2
+          ? null
+          : readObject(
+              raw,
+              ['bookId', 'name', 'category', 'createdAt', 'updatedAt'],
+              ['aliases', 'summary', 'details', 'isPublic', 'structuredDetails'],
+            );
+      if (base && base.bookId !== bookId) throw invalidLoreRead();
+      data = base ? { ...base } : {};
       delete data.bookId;
+      if (view.schemaVersion === 2) {
+        if (base) validateData(id, bookId, data);
+        for (const field of loreReadFields) {
+          if (!Object.hasOwn(view.fields, field)) continue;
+          if (view.fields[field] === null) delete data[field];
+          else {
+            const value = await section(view, 'field', 0, field);
+            validateData(id, bookId, { name: '', category: 'other', [field]: value });
+            data[field] = value;
+          }
+        }
+        delete data.createdAt;
+        delete data.updatedAt;
+        Object.assign(data, view.dates);
+      }
       const rel = view.relations!;
       if (rel.present) {
         const relations: unknown[] = [];
@@ -159,15 +203,7 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
       if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw invalidLoreRead();
       data = raw as Record<string, unknown>;
     }
-    try {
-      validateBookBackupJSONItem(
-        'book-lore',
-        { schemaVersion: 1, kind: 'lore', parentId: null, id, data },
-        bookId,
-      );
-    } catch {
-      throw invalidLoreRead();
-    }
+    validateData(id, bookId, data);
     const final = await header(bookId, id, view.readToken);
     if (!equal(final, view)) throw invalidLoreRead();
     guard();

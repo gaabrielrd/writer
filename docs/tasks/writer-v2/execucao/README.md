@@ -765,3 +765,16 @@ preservação de recriados. Metadata de selo não é grant atual.
 Próximos passos: readers/geração v2 e adoção CAS/privacidade; criação/exclusão/GC,
 inventário do livro e cliente. Sem endpoint, UI, troca ativa ou deploy.
 M38c/P1/F2-09 e Writer V2 abertos; somente commits locais, CI ignorada.
+
+### P1 M38c3c — leitores de gerações v2
+
+O [plano 81, passo 3a](81-escrita-do-lore-completo.md) prepara leitores backend
+e cliente para base v1, campos achatados, remoções/datas explícitas e relações
+da geração anterior ou novas. [Evidência](../../../entregas/2026-10-23-writer-v2-leitura-das-geracoes-de-lore.md):
+72 Node, 85 Vitest e três SDK distintos positivos, com base/campo grandes,
+identidade nativa, cutoff e custo constante por unidade.
+
+Próximo passo: metadata da origem e adoção CAS certificada com leases,
+privacidade/clock; depois criação/exclusão/GC, inventário do livro e cliente.
+Nenhum produtor v2 habilitado, migração ou ativação. M38c/P1/F2-09/V2 abertos.
+Somente commits locais, CI ignorada.

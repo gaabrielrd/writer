@@ -3,16 +3,18 @@ import { GenerationError } from './generation.mjs';
 import { born, bornEqual, closed } from './bookRestoreUploadContracts.mjs';
 import { projectBookBackupResource } from './bookBackupResources.mjs';
 import { validateBookBackupJSONItem } from './bookBackupSchema.mjs';
-import {
-  lorePayloadStorage,
-  lorePayloadPointer,
-  lorePayloadSegmentId,
-} from './bookRestoreLorePayloadContracts.mjs';
+import { lorePayloadPointer, lorePayloadSegmentId } from './bookRestoreLorePayloadContracts.mjs';
 import {
   openBookResourcePayload,
   readBookResourcePayloadPart,
 } from './bookResourcePayloadRead.mjs';
 import { loreChanged, loreReadInteger, loreTransportManifest } from './bookLoreReadContracts.mjs';
+import {
+  loreGenerationStorage,
+  loreGenerationRelations,
+  loreFieldPointer,
+  loreReadRelations,
+} from './bookLoreGenerationContracts.mjs';
 const transactions = new WeakMap();
 const before = (snapshot, birth) => {
   const current = born(snapshot);
@@ -72,9 +74,10 @@ export async function openBookLoreRecord(tx, c, snapshot) {
       const encoded = inline(c, id, value);
       opened = { c, id, snapshot, value, mode: 'inline', ...encoded, relations: null };
     } else {
-      closed(value, ['bookId', 'createdAt', 'updatedAt', 'payloadStorage'], ['deleting']);
-      const storage = lorePayloadStorage(value.payloadStorage);
-      for (const key of ['createdAt', 'updatedAt']) {
+      const storage = loreGenerationStorage(value.payloadStorage);
+      closed(value, ['bookId', 'updatedAt', 'payloadStorage'], ['createdAt', 'deleting']);
+      if (storage.schemaVersion === 1 && !Object.hasOwn(value, 'createdAt')) loreChanged();
+      for (const key of ['createdAt', 'updatedAt'].filter((key) => Object.hasOwn(value, key))) {
         if (
           !Number.isSafeInteger(value[key]) ||
           value[key] < 0 ||
@@ -82,8 +85,21 @@ export async function openBookLoreRecord(tx, c, snapshot) {
         )
           loreChanged();
       }
-      const base = await openBookResourcePayload(tx, c.db, { ...scoped(c, id), ...storage.base });
-      if (!before(base.header, storage.sealBirth)) loreChanged();
+      if (storage.schemaVersion === 2) {
+        if (!before({ createTime: storage.sealBirth }, born({ createTime: snapshot.updateTime })))
+          loreChanged();
+        for (const key of ['createdAt', 'updatedAt'])
+          if (
+            Object.hasOwn(storage.dates, key) !== Object.hasOwn(value, key) ||
+            storage.dates[key] !== value[key]
+          )
+            loreChanged();
+      }
+      const base =
+        storage.base === null
+          ? null
+          : await openBookResourcePayload(tx, c.db, { ...scoped(c, id), ...storage.base });
+      if (base && !before(base.header, storage.sealBirth)) loreChanged();
       opened = {
         c,
         id,
@@ -92,8 +108,19 @@ export async function openBookLoreRecord(tx, c, snapshot) {
         storage,
         mode: 'payload',
         base,
-        manifest: loreTransportManifest(base.manifest),
-        relations: storage.relations,
+        manifest: base ? loreTransportManifest(base.manifest) : null,
+        relations: loreReadRelations(storage.relations),
+        ...(storage.schemaVersion === 2
+          ? {
+              fields: Object.fromEntries(
+                Object.entries(storage.fields).map(([field, pointer]) => [
+                  field,
+                  pointer === null ? null : loreTransportManifest(pointer.manifest),
+                ]),
+              ),
+              dates: storage.dates,
+            }
+          : {}),
       };
     }
     transactions.set(opened, tx);
@@ -103,14 +130,43 @@ export async function openBookLoreRecord(tx, c, snapshot) {
     throw error;
   }
 }
-export async function readBookLoreRecordPart(tx, opened, section, page, index) {
+export async function readBookLoreRecordPart(tx, opened, section, page, index, field) {
   if (transactions.get(opened) !== tx) loreChanged();
   loreReadInteger(index);
   loreReadInteger(page);
-  if (!['base', 'relations'].includes(section))
+  if (!['base', 'relations', 'field'].includes(section))
     workFail('invalid-argument', 'Seção de lore inválida.');
+  if (section === 'field') {
+    if (
+      page !== 0 ||
+      opened.storage?.schemaVersion !== 2 ||
+      !Object.hasOwn(opened.storage.fields, field) ||
+      opened.storage.fields[field] === null
+    )
+      workFail('invalid-argument', 'Campo fora da ficha.');
+    try {
+      const pointer = opened.storage.fields[field];
+      if (index >= pointer.manifest.chunkCount)
+        workFail('invalid-argument', 'Parte fora do campo.', 'book-lore-part-out-of-range');
+      const body = await openBookResourcePayload(tx, opened.c.db, {
+        ...scoped(opened.c, opened.id),
+        ...pointer,
+      });
+      if (!before(body.header, opened.storage.sealBirth)) loreChanged();
+      const bytes = await readBookResourcePayloadPart(tx, opened.c.db, body, index);
+      return { manifest: loreTransportManifest(body.manifest), offset: null, count: null, bytes };
+    } catch (error) {
+      if (
+        error instanceof GenerationError &&
+        error.details?.reason !== 'book-lore-part-out-of-range'
+      )
+        loreChanged();
+      throw error;
+    }
+  }
+  if (field !== undefined) workFail('invalid-argument', 'Campo fora da seção.');
   if (section === 'base') {
-    if (page !== 0 || index >= opened.manifest.chunkCount)
+    if (page !== 0 || !opened.manifest || index >= opened.manifest.chunkCount)
       workFail('invalid-argument', 'Parte fora da ficha.');
     try {
       const bytes =
@@ -126,19 +182,20 @@ export async function readBookLoreRecordPart(tx, opened, section, page, index) {
   if (opened.mode !== 'payload' || page >= opened.storage.relations.pages)
     workFail('invalid-argument', 'Página de relações inválida.');
   const { c, id, storage } = opened,
+    relation = loreGenerationRelations(storage),
     offset = page * 64,
     count = Math.min(64, storage.relations.count - offset);
   try {
     const snapshot = await tx.get(
         c.db.doc(
-          c.path + '/bookLoreSegments/' + lorePayloadSegmentId(storage.generationId, offset),
+          c.path + '/bookLoreSegments/' + lorePayloadSegmentId(relation.generationId, offset),
         ),
       ),
       value = snapshot.data();
     if (
       !snapshot.exists ||
       !bornEqual(snapshot, { createTime: snapshot.updateTime }) ||
-      !before(snapshot, storage.sealBirth)
+      !before(snapshot, relation.sealBirth)
     )
       loreChanged();
     closed(value, [
@@ -152,16 +209,19 @@ export async function readBookLoreRecordPart(tx, opened, section, page, index) {
       'payload',
     ]);
     if (
-      value.schemaVersion !== 1 ||
+      ![1, ...(storage.schemaVersion === 2 ? [2] : [])].includes(value.schemaVersion) ||
       value.ownerId !== c.uid ||
       value.bookId !== c.bookId ||
       value.loreId !== id ||
-      value.generationId !== storage.generationId ||
+      value.generationId !== relation.generationId ||
       value.offset !== offset ||
       value.count !== count
     )
       loreChanged();
-    const pointer = lorePayloadPointer(value.payload),
+    const pointer =
+        value.schemaVersion === 1
+          ? lorePayloadPointer(value.payload)
+          : loreFieldPointer(value.payload),
       body = await openBookResourcePayload(tx, c.db, { ...scoped(c, id), ...pointer });
     if (!before(body.header, born(snapshot))) loreChanged();
     if (index >= body.manifest.chunkCount)

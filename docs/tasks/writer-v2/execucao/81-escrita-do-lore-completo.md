@@ -144,3 +144,54 @@ ativa certificada. Incorporar inventário à exclusão do livro antes do rollout
 O estado SHA privado separado pode conter buffer interno; nunca retorná-lo e
 excluí-lo no EOF/cancelamento. Job e recibos ficam somente com metadata.
 sealed/prepared informa evento, não disponibilidade física/grant atuais.
+
+## Execução do passo 3a — M38c3c: readers da geração v2
+
+Preparar o contrato e os leitores antes de produzir uma geração v2 ativa.
+Arquivos previstos: novo bookLoreGenerationContracts.mjs; bookLoreStorageRead,
+bookLoreRead/Contracts e check de Functions; bookLoreReadContracts/Client do
+cliente; fixture e testes Node, Vitest integrado e SDK; ADR e documentação.
+
+Storage v2 contém generationId, base v1 opcional, fields achatado dos sete
+campos não relacionais (ponteiro selado ou null para remoção), dates autoritativas,
+relations com generationId/sealBirth próprios e sealBirth da geração.
+Campos name/category não podem ser removidos e devem existir quando não há base.
+Nenhuma cadeia de overlays ou ponteiro físico chega ao navegador.
+Ponteiros novos de campo/página carregam partSealBirth obrigatório; base v1 e
+páginas antigas conservam contrato e origem anteriores. Segmentos novos usam
+schemaVersion 2, sem relaxar a validação dos segmentos v1.
+
+Cabeçalho de transporte v2 usa base opcional, fields de manifestos/remoções,
+dates e relações públicas somente de contagem/presença. Seção field identifica
+explicitamente o campo; as seções base/relations v1 permanecem compatíveis.
+Cada unidade reautoriza o livro e o token nativo/clock antes de ler bytes,
+abre o header da base e do corpo solicitado e valida nascimento, imutabilidade e
+Merkle. Cada unidade lê somente um chunk, nunca todos os campos.
+Datas do descriptor e stub devem coincidir; não inferir data pela base antiga.
+
+Cliente verifica cada seção por SHA/UTF-8/JSON canônico, aplica somente campos
+explícitos e remoções, datas/presença, relações e valida domínio completo.
+Confere novamente o cabeçalho/token no final; não retorna ficha parcial.
+Conservar limites de 64 KiB e concorrência quatro, sem teto total menor.
+
+Aceites: base grande intocada, campo grande acima de 8 MiB/128 partes,
+ausência/vazio/false/duplicatas, criação lógica sem base, datas ausentes,
+relações da geração anterior e novas páginas com cutoff, contexto revogado,
+recriação de header/parte/segmento, descriptor inválido e transporte corrompido.
+SDK deve provar nascimento/partSealBirth e revogação reais. Não há produtor,
+adoção/CAS, ativação de restauração, UI, deploy ou nova dependência nesta etapa.
+Depois implementar adoção certificada com inventário/leases e resolver
+privacidade/datas por leitura limitada no servidor; passos 3b–6 seguem abertos.
+
+## Evidência do passo 3a — M38c3c
+
+[Entrega](../../../entregas/2026-10-23-writer-v2-leitura-das-geracoes-de-lore.md)
+e [ADR 0095](../../../decisions/0095-flat-lore-generation-readers.md):
+72 Node, 85 Vitest e três SDK distintos positivos. Storage e transporte v2,
+leitores e montagem cliente preparados, com base/campo grandes, datas/remoções,
+relações independentes e prova nativa por unidade. Nenhum produtor foi habilitado.
+
+Próximo incremento do passo 3: resolver metadata lógica da origem no servidor
+por unidades e implementar a adoção certificada, CAS/leases/privacidade/clock.
+Criação/exclusão/GC, inventário do livro, cliente de escrita e integração Admin
+seguem obrigatórios. Conclusão do passo 3 e de P1/F2-09/V2 continua pendente.

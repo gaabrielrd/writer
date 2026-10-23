@@ -1597,3 +1597,19 @@ Cancelamento usa intenção própria, fence permanente e cleanup limitado por
 provas nativas, preservando recriados e a origem. Namespaces SDK negados.
 Adoção/readers v2, privacidade/clock, criação/exclusão/GC e inventário do livro
 continuam obrigatórios antes da habilitação.
+
+## P1 M38c3c — leitores de gerações achatadas de lore
+
+[ADR 0095](decisions/0095-flat-lore-generation-readers.md) prepara storage v2
+com base v1 opcional, sete campos substituídos/retirados explicitamente e datas
+autoritativas. Relações conservam generationId/sealBirth próprios; segmentos
+novos exigem partSealBirth. Nenhuma cadeia de overlays ou origem física no wire.
+
+API privada existente reautoriza cada unidade e fornece manifestos por campo.
+Cliente confere SHA/UTF-8/JSON/domínio, preserva presença/datas e reconfirma a
+cabeça; não retorna ficha parcial. Cada unidade lê um chunk, com quatro/cinco
+leituras nativas para campo sem/com base e seis para relação com base.
+
+Nenhum produtor v2 está habilitado. Harnesses de leitura não representam adoção.
+Metadata da origem, CAS/leases/privacidade/clock, criação/exclusão/GC, inventário
+do livro e integração dos demais consumidores precedem o rollout.

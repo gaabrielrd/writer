@@ -1,4 +1,5 @@
 import { openBookLoreRecord, readBookLoreRecordPart } from './bookLoreStorageRead.mjs';
+import { BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
 import {
   BOOK_LORE_READ_METHODS,
   loreChanged,
@@ -74,35 +75,50 @@ export function createBookLoreReadService({ db }) {
         if (data.readToken !== undefined && data.readToken !== token) loreChanged();
         const opened = await openBookLoreRecord(tx, c, snapshot);
         return {
-          schemaVersion: 1,
+          schemaVersion: opened.storage?.schemaVersion === 2 ? 2 : 1,
           bookId: c.bookId,
           id,
           readToken: token,
           mode: opened.mode,
           base: opened.manifest,
           relations: opened.relations,
+          ...(opened.fields ? { fields: opened.fields, dates: opened.dates } : {}),
         };
       });
     },
     async readBookLorePart(uid, data) {
-      const c = loreReadScope(db, uid, data, ['id', 'readToken', 'section', 'page', 'index']),
+      const c = loreReadScope(db, uid, data, [
+          'id',
+          'readToken',
+          'section',
+          'page',
+          'index',
+          'field',
+        ]),
         id = loreReadId(data.id),
         token = loreReadToken(data.readToken),
         page = loreReadInteger(data.page),
         index = loreReadInteger(data.index);
-      if (!['base', 'relations'].includes(data.section)) loreInvalid();
+      if (
+        !['base', 'relations', 'field'].includes(data.section) ||
+        (data.section === 'field'
+          ? !BOOK_LORE_GENERATION_FIELDS.includes(data.field)
+          : Object.hasOwn(data, 'field'))
+      )
+        loreInvalid();
       return db.runTransaction(async (tx) => {
         const book = await readLoreBook(tx, c),
           snapshot = await tx.get(db.doc(c.path + '/lore/' + id));
         if (!snapshot.exists || loreEntityToken(c, book, snapshot) !== token) loreChanged();
         const opened = await openBookLoreRecord(tx, c, snapshot),
-          part = await readBookLoreRecordPart(tx, opened, data.section, page, index);
+          part = await readBookLoreRecordPart(tx, opened, data.section, page, index, data.field);
         return {
           schemaVersion: 1,
           bookId: c.bookId,
           id,
           readToken: token,
           section: data.section,
+          ...(data.section === 'field' ? { field: data.field } : {}),
           page,
           index,
           manifest: part.manifest,
