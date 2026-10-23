@@ -1569,3 +1569,16 @@ aventuras conservam seus contratos. Stub nunca entra em mapLocal e writers SDK
 atuais recusam update/delete de payloads. Esse bloqueio cliente não substitui
 Rules, escritores/GC nem autoriza ativação. Fluxos de leitura exigem conexão;
 cache autoral existente não é fallback de autorização.
+
+## P1 M38c3a — pré-requisitos da escrita de lore
+
+[ADR 0093](decisions/0093-streamed-lore-field-validation.md) define validação pura
+por até 64 KiB, com sintaxe/UTF-8/JSON canônico e domínio sem montar campos
+inteiros. Estado contém apenas sintaxe e IDs/chaves/categoria limitados;
+texto livre/listas não são guardados. O EOF não comprova SHA, origem ou grant.
+
+Rules negam mutações SDK sempre que payloadStorage está presente, inclusive
+null/inválido, replace e deleting; CRUD inline conserva os gates anteriores.
+O [plano 81](tasks/writer-v2/execucao/81-escrita-do-lore-completo.md) exige upload,
+inventário/cancelamento/cleanup, geração/CAS/recibos, readers e GC antes de
+habilitar a edição completa. Nenhum produtor novo ou geração v2 foi ativado.

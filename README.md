@@ -442,3 +442,8 @@ criação idempotente. Livros inline continuam pelo SDK, com confirmação servi
 payloads são montados e conferidos antes de mapear/ordenar. Escritores novos,
 contextos e backup ainda estão pendentes, sem ativação de livros restaurados.
 [Evidência cliente](docs/entregas/2026-10-23-writer-v2-lore-completo-no-cliente.md).
+
+M38c3a prepara a [escrita do lore completo](docs/tasks/writer-v2/execucao/81-escrita-do-lore-completo.md)
+com validação incremental dos campos e Rules que impedem mutação SDK de stubs.
+Upload, recibos, troca de geração e coleta ainda estão pendentes; a edição de
+payloads não foi habilitada. Somente commits locais, sem deploy.

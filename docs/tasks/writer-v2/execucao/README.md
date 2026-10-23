@@ -742,3 +742,14 @@ com produtor/API/cliente em memória. Harness não representa ativação ou brow
 Próxima etapa 3: escritores/Rules/GC; contextos, backup e exclusão seguem em M38c.
 Demais campos grandes, saída portátil ampliada e todos os gates finais de P1
 continuam pendentes. Writer V2 aberto; somente commits locais e CI ignorada.
+
+### P1 M38c3a — campos incrementais e guardas dos stubs
+
+O [plano 81](81-escrita-do-lore-completo.md) começou pelo parser sem texto livre
+no checkpoint e pela proteção contra mutação SDK de payloadStorage, inclusive
+inválido/null e deleting. [Evidência](../../../entregas/2026-10-23-writer-v2-validacao-dos-campos-de-lore.md):
+93 Node e sete SDK distintos positivos, com controles inline sob os mesmos gates.
+
+O editor ainda exige upload/inventário/cancelamento/cleanup, geração/CAS/recibos,
+criação/exclusão/coleta e integração cliente. Etapa 3 e todo M38c permanecem abertos,
+assim como P1/F2-09/V2. Nenhuma Rule ou produtor foi implantado; commits locais.

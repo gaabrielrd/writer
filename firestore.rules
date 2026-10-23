@@ -671,17 +671,21 @@ service cloud.firestore {
               || getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0)
                 == get(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0) + 1);
         }
+        function inlineLore(data) { return !data.keys().hasAny(['payloadStorage']); }
         allow read: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId)
+          && inlineLore(request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
           && bookLocalLoreAdvanced(bookId);
         allow update: if isBookAuthor(bookId)
+          && inlineLore(resource.data) && inlineLore(request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
           && bookLocalLoreAdvanced(bookId)
           && (resource.data.get('isPublic', false) != true
             || request.resource.data.get('isPublic', false) == true
             || publicationRevoked());
         allow delete: if isBookAuthor(bookId)
+          && inlineLore(resource.data)
           && (get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
             || bookLocalLoreAdvanced(bookId))
           && (resource.data.get('isPublic', false) != true || publicationRevoked());

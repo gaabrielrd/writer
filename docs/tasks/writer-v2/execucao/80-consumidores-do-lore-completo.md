@@ -139,3 +139,12 @@ em nove arquivos, incluindo 85 novos. Leitor puro, bindings/adaptador, regressõ
 de serviços/hosts e produtor/API/cliente em memória positivos. Setup suporta
 DOM e Node; bundle/smoke e checks dirigidos aprovados. Nenhuma raiz de job foi
 certificada ou ativada. Próxima etapa continua a 3; M38c inteiro permanece aberto.
+
+## Execução da etapa 3
+
+O [plano 81](81-escrita-do-lore-completo.md) detalha a escrita completa, do parser
+até upload, recibos, geração/CAS, criação/exclusão/GC e cliente. O passo M38c3a
+validou parser incremental e guardas nas Rules: 93 Node e sete SDK distintos.
+[Evidência](../../../entregas/2026-10-23-writer-v2-validacao-dos-campos-de-lore.md).
+Próximo passo é o upload privado com inventário/cancelamento/cleanup, antes de
+qualquer troca ativa. A etapa 3 não está concluída; M38c/P1/F2-09/V2 abertos.

@@ -1645,3 +1645,17 @@ Lotes com erro são drenados para não acumular chamadas no refresh seguinte.
 Tipos, lint, arquitetura, bundle e smoke passaram. As Rules e o backend não
 mudaram; não repetir seus testes por essa etapa cliente. Validate integral e
 roundtrip de P1 continuam pendentes.
+
+## P1 M38c3a — campos incrementais e Rules de stubs
+
+[Entrega](entregas/2026-10-23-writer-v2-validacao-dos-campos-de-lore.md):
+93 Node distintos positivos e sete cenários SDK distintos (quatro existentes,
+três novos). Os três novos foram repetidos com controles inline positivos sob
+o mesmo clock/revogação; não somar repetições. Parser cobre >8 MiB/128 partes,
+50.000 aliases, páginas extensas, todos os splits de Unicode/escapes/chaves,
+EOF, checkpoint sem texto livre e comparação com o schema portátil.
+
+SDK confirma a proteção por presença de payloadStorage, inclusive inválido/null,
+replace/delete e deleting, mantendo CRUD inline/privacidade e corpos privados.
+Fixtures de presença não são prova de certificação/ativação. Nenhuma Rule foi
+implantada, nenhum cliente mudou e o produtor continua pendente.

@@ -145,6 +145,7 @@
 - Migre prefixos de lore com contador autenticado pelo recibo original; preserve o prefixo até a troca atômica e contadores monotônicos, conforme ADR 0090.
 - Leia payloads de lore por unidades reautorizadas, com tokens, escopo nativo e sealBirth; não exponha stubs como fichas completas, conforme ADR 0091.
 - Hidrate lore antes de mapear/ordenar; confira SHA/schema/origem final, conta exata e epoch, aguardando confirmação servidor nas assinaturas, conforme ADR 0092.
+- Valide campos de lore por unidades sem reter texto livre no checkpoint; Rules não permitem mutação SDK de payloadStorage/stubs, inclusive deleting, conforme ADR 0093.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

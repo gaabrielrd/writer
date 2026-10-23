@@ -305,3 +305,107 @@ test('SDK clock de lore local: cleanup deleting e revogação pública preservam
   assert.equal(revoked.lore.public.details, published.lore.public.details);
   assert.equal((await getDoc(doc(database, 'publicBooks', 'published'))).exists(), false);
 });
+
+// These are Rules presence fixtures, not proofs of payload certification/activation.
+test('SDK payload guard: cannot create a pointer or mixed stub even with the correct clock', async () => {
+  const database = db();
+  for (const [index, payloadStorage] of [
+    null,
+    {},
+    { schemaVersion: 1, base: { manifest: { bodyId: 'a'.repeat(64) } } },
+  ].entries()) {
+    const id = 'pointer-create-' + index;
+    await seed(id, { localLoreVersion: 0 });
+    const before = await observe(id);
+    for (const entity of [{ bookId: id, payloadStorage }, entityData({ payloadStorage })])
+      await assertFails(
+        mutation(database, id, 1, (batch) => batch.set(loreRef(database, id, 'new'), entity)),
+      );
+    assert.deepEqual(await observe(id), before);
+    await assertSucceeds(
+      mutation(database, id, 1, (batch) => batch.set(loreRef(database, id, 'new'), entityData())),
+    );
+    assert.equal((await observe(id)).book.localLoreVersion, 1);
+  }
+});
+test('SDK payload guard: no update, replacement, pointer removal or delete despite valid clock and revocation', async () => {
+  const database = db(),
+    id = 'pointer-edit';
+  for (const payloadStorage of [
+    null,
+    {},
+    { schemaVersion: 1, base: { manifest: { bodyId: 'a'.repeat(64) } } },
+  ]) {
+    await seed(id, { localLoreVersion: 0, status: 'published', publicationPrivacyVersion: 0 }, [
+      ['existing', entityData({ payloadStorage, isPublic: true })],
+      ['control', entityData()],
+    ]);
+    await environment.withSecurityRulesDisabled((context) =>
+      setDoc(doc(context.firestore(), 'publicBooks', id), {
+        schemaVersion: 1,
+        title: 'Publicado',
+        authorName: 'Autor',
+        revisionId: 'revision',
+        publishedAt: 1,
+      }),
+    );
+    const before = await observe(id);
+    const attempts = [
+      (batch) => batch.update(loreRef(database, id), { name: 'Changed' }),
+      (batch) => batch.update(loreRef(database, id), { details: 'Changed' }),
+      (batch) => batch.update(loreRef(database, id), { payloadStorage: { new: true } }),
+      (batch) => batch.update(loreRef(database, id), { payloadStorage: deleteField() }),
+      (batch) => batch.set(loreRef(database, id), entityData()),
+      (batch) => batch.update(loreRef(database, id), { isPublic: false }),
+      (batch) => batch.delete(loreRef(database, id)),
+    ];
+    for (const change of attempts) {
+      const batch = writeBatch(database);
+      batch.update(bookRef(database, id), {
+        localLoreVersion: 1,
+        status: 'draft',
+        publicationPrivacyVersion: 1,
+      });
+      batch.delete(doc(database, 'publicBooks', id));
+      change(batch);
+      await assertFails(batch.commit());
+      assert.deepEqual(await observe(id), before);
+    }
+    const control = writeBatch(database);
+    control.update(bookRef(database, id), {
+      localLoreVersion: 1,
+      status: 'draft',
+      publicationPrivacyVersion: 1,
+    });
+    control.delete(doc(database, 'publicBooks', id));
+    control.update(loreRef(database, id, 'control'), { summary: 'Allowed inline edit' });
+    await assertSucceeds(control.commit());
+    const after = await observe(id);
+    assert.equal(after.book.localLoreVersion, 1);
+    assert.deepEqual(after.lore.existing, before.lore.existing);
+  }
+});
+test('SDK payload guard: deleting cleanup preserves payloads and private bodies while legacy inline cleanup works', async () => {
+  const database = db(),
+    id = 'pointer-cleanup';
+  await seed(id, { localLoreVersion: 7, deleting: true }, [
+    ['existing', { bookId: id, payloadStorage: null }],
+    ['inline', entityData()],
+  ]);
+  const before = await observe(id);
+  await assertFails(deleteDoc(loreRef(database, id)));
+  await assertFails(mutation(database, id, 8, (batch) => batch.delete(loreRef(database, id))));
+  assert.deepEqual(await observe(id), before);
+  await assertSucceeds(deleteDoc(loreRef(database, id, 'inline')));
+  assert.equal((await observe(id)).book.localLoreVersion, 7);
+  assert.ok((await observe(id)).lore.existing);
+  for (const namespace of ['bookResourceBodies', 'bookResourceChunks', 'bookLoreSegments']) {
+    const ref = doc(database, 'books', id, namespace, 'private');
+    await environment.withSecurityRulesDisabled((context) =>
+      setDoc(doc(context.firestore(), 'books', id, namespace, 'private'), { private: true }),
+    );
+    await assertFails(getDoc(ref));
+    await assertFails(setDoc(ref, { forged: true }));
+    await assertFails(deleteDoc(ref));
+  }
+});
