@@ -278,3 +278,14 @@ com base/campos achatados e diff de páginas, sem mutar a origem.
 
 Materialização inline ainda obrigatória antes de concluir a preparação completa;
 adoção, leases adopted, exclusão, consumidores e cliente continuam pendentes.
+
+## Materialização inline — M38c3h
+
+[Plano 85](85-materializacao-das-fichas-inline.md) integrou campos/páginas
+herdados de inline ao compositor, por uploads privados e cleanup coordenado
+de filhos ainda não reservados.
+[Evidência](../../../entregas/2026-10-23-writer-v2-materializacao-das-fichas-inline.md):
+134 Node e três SDK distintos positivos em rodadas dirigidas.
+
+Preparação agora cobre inline/payload; adoção CAS, leases adopted, exclusão,
+demais writers/consumidores/backup/cliente ainda seguem pendentes.

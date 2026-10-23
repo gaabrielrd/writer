@@ -1679,3 +1679,16 @@ Checkpoint privado sai no EOF/cancelamento. Certificado ready é metadata
 histórica, não ativação/grant. Cancelamento limpa slots e descritores próprios
 com guard de cabeça atual; herdados e fences permanecem. Materialização inline,
 adoção e exclusão/consumidores/cliente ainda pendentes. P1/F2-09/V2 abertos.
+
+## P1 M38c3h — materialização servidor do lore inline
+
+[ADR 0100](decisions/0100-server-lore-inline-materialization.md) materializa
+valores herdados em uploads privados derivados do pai/alvo. O serviço de upload
+pode executar internamente na transação nativa do pai, sem nested transaction.
+Job/lease materialization e slot materialized ligam início e reserva originais.
+
+Checkpoint do pai guarda só metadata; fonte é reautorizada a cada unidade.
+Cancelamento limpa primeiro o filho ainda não reservado, sem recontagem, depois
+slots/descritores. Preparação cobre inline e payload v1/v2; certificado ready
+continua privado e sem ativação/grant. Adoção e integração de exclusão/
+consumidores/backup/cliente permanecem obrigatórias. P1/F2-09/V2 abertos.

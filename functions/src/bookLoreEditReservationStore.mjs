@@ -19,6 +19,7 @@ import {
   editReservationTarget,
   assertIntentReservation,
 } from './bookLoreEditReservationContracts.mjs';
+import { verifyMaterializedSlot } from './bookLoreEditInline.mjs';
 import { compilationState } from './bookLoreEditCompilationContracts.mjs';
 const openings = new WeakMap();
 export const assertEditReservationOpening = (tx, l) => {
@@ -360,17 +361,21 @@ export async function readEditReservationSlot(tx, loaded, idOrSnapshot) {
         : idOrSnapshot,
     slot = snapshot.data();
   if (!immutable(snapshot)) conflict();
-  closed(slot, [
-    'schemaVersion',
-    'ownerId',
-    'editId',
-    'editToken',
-    'slotId',
-    'target',
-    'upload',
-    'pointer',
-    'operationId',
-  ]);
+  closed(
+    slot,
+    [
+      'schemaVersion',
+      'ownerId',
+      'editId',
+      'editToken',
+      'slotId',
+      'target',
+      'upload',
+      'pointer',
+      'operationId',
+    ],
+    ['materialized'],
+  );
   const target = editReservationTarget(slot.target),
     upload = editUploadRef(slot.upload);
   if (
@@ -382,12 +387,14 @@ export async function readEditReservationSlot(tx, loaded, idOrSnapshot) {
     snapshot.ref.path !== c.path + '/slots/' + slot.slotId
   )
     conflict();
-  assertIntentReservation(j.context.intent, target, upload);
+  if (slot.materialized) await verifyMaterializedSlot(tx, loaded, slot);
+  else assertIntentReservation(j.context.intent, target, upload);
   loreFieldPointer(slot.pointer);
   const claim = await editReservationPair(tx, loaded, slot.operationId);
   if (
     !claim ||
-    claim.record.method !== 'reserveBookLoreEditUpload' ||
+    claim.record.method !==
+      (slot.materialized ? 'advanceBookLoreEditCompilation' : 'reserveBookLoreEditUpload') ||
     !bornEqual(snapshot, claim.snapshot) ||
     claim.record.requestHash !==
       digest({
@@ -396,8 +403,7 @@ export async function readEditReservationSlot(tx, loaded, idOrSnapshot) {
         jobToken: loaded.token,
         operationId: slot.operationId,
         expectedRevision: claim.record.revision - 1,
-        target,
-        upload,
+        ...(slot.materialized ? {} : { target, upload }),
       })
   )
     conflict();

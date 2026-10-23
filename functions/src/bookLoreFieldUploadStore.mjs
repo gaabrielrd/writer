@@ -13,7 +13,7 @@ import {
   uploadImmutable,
   uploadAtMost,
 } from './bookLoreFieldUploadContracts.mjs';
-import { editUploadReservation } from './bookLoreEditReservationContracts.mjs';
+import { editUploadReservation, editPreparationRef } from './bookLoreEditReservationContracts.mjs';
 const openings = new WeakMap();
 export const assertFieldUploadOpening = (tx, loaded) => {
   if (openings.get(loaded) !== tx) conflict();
@@ -161,8 +161,12 @@ export async function loadFieldUpload(tx, c, r) {
       'lastOperationId',
       'sealBarrierOperationId',
     ],
-    ['reservation'],
+    ['reservation', 'materialization'],
   );
+  if (Object.hasOwn(j, 'materialization')) {
+    editPreparationRef(j.materialization);
+    if (j.materialization.sourceToken !== j.context.sourceToken) conflict();
+  }
   closed(j.context, [
     'bookId',
     'loreId',
@@ -263,7 +267,7 @@ export async function loadFieldUpload(tx, c, r) {
       'phase',
       'revision',
     ],
-    ['reservation'],
+    ['reservation', 'materialization'],
   );
   if (
     digest(v) !==
@@ -278,6 +282,7 @@ export async function loadFieldUpload(tx, c, r) {
       phase: j.phase,
       revision: j.revision,
       ...(j.reservation ? { reservation: j.reservation } : {}),
+      ...(j.materialization ? { materialization: j.materialization } : {}),
     })
   )
     conflict();

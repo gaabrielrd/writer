@@ -1757,3 +1757,20 @@ tipos/Vitest/build/browser. Validate integral permanece no fim de P1.
 
 Inline ainda exige materialização servidor; o teste de recusa sem mutação
 não comprova suporte final. Adoção e integração de exclusão continuam pendentes.
+
+### P1 M38c3h — materialização das fichas inline
+
+[Entrega](entregas/2026-10-23-writer-v2-materializacao-das-fichas-inline.md):
+134 Node distintos positivos em rodadas dirigidas (45 upload, 38 reserva,
+31 compositor e 20 inline) e três SDK positivos. Uma entrada inválida de teste
+foi corrigida e somente esse caso repetido; um caso novo foi validado isoladamente.
+
+Cobrem campos literais/ausentes/removidos/substituídos, diff de relações,
+JSON escapado acima de 16 partes, cancelamento de filho antes da reserva após
+revogação/deleting/ausência, vínculo privado, apropriação recusada, recriações,
+rollback e reconciliação independente. SDK comprova nascimento/transação reais,
+origem intacta e rollback do append seguido de cleanup após excluir livro.
+
+Lint, arquitetura e sintaxe de 196 módulos positivos. Sem cliente novo,
+não repetimos tipos/Vitest/build/browser; validate integral no fim de P1.
+Adoção, exclusão e integração de consumidores continuam pendentes.

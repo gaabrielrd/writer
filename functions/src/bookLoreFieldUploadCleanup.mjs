@@ -42,7 +42,7 @@ export function createBookLoreFieldUploadCleanup({ db }) {
         if (loaded.job.kind === 'fence') return { receipt: null, progress: uploadView(loaded) };
         const replay = await replayFieldOperation(tx, loaded, 'cancelBookLoreFieldUpload', r);
         if (replay) return replay;
-        if (loaded.job.phase === 'reserved') conflict();
+        if (loaded.job.phase === 'reserved' || loaded.job.materialization) conflict();
         if (['cancelling', 'cancelled'].includes(loaded.job.phase))
           return { receipt: null, progress: uploadView(loaded) };
         const state = await loadFieldState(tx, loaded);

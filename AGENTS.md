@@ -152,6 +152,7 @@
 - Registre alcance dos corpos de lore com provas nativas; reconfira toda a cabeça por lotes antes dos deletes, preserve leases/recriados e mantenha fences de coleta sem reativação, conforme ADR 0097.
 - Reserve uploads de lore em geração preparing com slot/job/lease/recibo nativos; cancele a geração antes de coletar seus bytes e exija capacidade interna ligada à transação para limpar após revogação, preservando cabeça ativa e recriações, conforme ADR 0098.
 - Congele reservas ao compor lore, vincule corpos à geração preparing e audite por partes com SHA/recibos nativos; certificado ready não ativa cabeça nem substitui autorização e cleanup deve preservar descritores alcançados, conforme ADR 0099.
+- Materialize lore inline somente da origem reautorizada no servidor; mantenha filho/pai na mesma transação, marque job/lease privados e limpe filhos ainda não reservados antes dos slots, conforme ADR 0100.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

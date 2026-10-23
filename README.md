@@ -469,3 +469,9 @@ diff de páginas, referências da geração preparing e auditoria por partes.
 [Evidência](docs/entregas/2026-10-23-writer-v2-composicao-das-geracoes-de-lore.md).
 Materialização inline, adoção ativa e integração de exclusão/cliente continuam
 pendentes; este incremento não habilita escrita de payloads na interface.
+
+M38c3h integra a materialização servidor de fichas inline, sem reenviar prosa
+pelo cliente e com cancelamento de filhos ainda não reservados.
+[Evidência](docs/entregas/2026-10-23-writer-v2-materializacao-das-fichas-inline.md).
+A preparação cobre inline e payload v1/v2; adoção ativa, exclusão e integração
+de consumidores/backup/cliente ainda seguem pendentes.

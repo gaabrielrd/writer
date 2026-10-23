@@ -1,3 +1,4 @@
+import { editPreparationRef } from './bookLoreEditReservationContracts.mjs';
 import { createSHA256 } from 'hash-wasm';
 import { born, date, integer } from './bookRestoreUploadContracts.mjs';
 import { digest, readWorkMetadata } from './workProgressContracts.mjs';
@@ -38,14 +39,22 @@ import {
   uploadSealBarrier,
 } from './bookLoreFieldUploadProofs.mjs';
 import { createBookLoreFieldUploadCleanup } from './bookLoreFieldUploadCleanup.mjs';
-export function createBookLoreFieldUploadService({ db, now = () => Date.now() }) {
+// A native transaction may be supplied only by an internal parent coordinator.
+export function createBookLoreFieldUploadService({
+  db,
+  now = () => Date.now(),
+  transaction = null,
+  materialization = null,
+}) {
+  if (materialization) editPreparationRef(materialization);
+  const transact = (fn) => (transaction ? fn(transaction) : db.runTransaction(fn));
   const service = {
     async startBookLoreFieldUpload(uid, input) {
       const intent = fieldUploadIntent(uid, input),
         startHash = fieldUploadStartHash(intent),
         c = fieldUploadPaths(db, uid, intent.uploadId),
         hasher = await createSHA256();
-      const result = await db.runTransaction(async (tx) => {
+      const result = await transact(async (tx) => {
         const old = await loadFieldUpload(tx, c, { startHash });
         if (old) return uploadView(old);
         const origin = await uploadSource(tx, c, intent, true),
@@ -84,6 +93,7 @@ export function createBookLoreFieldUploadService({ db, now = () => Date.now() })
             createdAt: date(now),
             lastOperationId: null,
             sealBarrierOperationId: null,
+            ...(materialization ? { materialization } : {}),
           },
           leaseRef = uploadLeaseRef(c, job);
         const lease = await tx.get(leaseRef),
@@ -113,15 +123,17 @@ export function createBookLoreFieldUploadService({ db, now = () => Date.now() })
           bodyId: intent.manifest.bodyId,
           phase: 'uploading',
           revision: 0,
+          ...(materialization ? { materialization } : {}),
         });
         return null;
       });
+      if (transaction) return result;
       return result ?? service.getBookLoreFieldUpload(uid, { uploadId: c.uploadId, startHash });
     },
     async getBookLoreFieldUpload(uid, input) {
       const r = fieldUploadRequest(uid, input),
         c = fieldUploadPaths(db, uid, r.uploadId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadFieldUpload(tx, c, r);
         return loaded ? uploadView(loaded) : null;
       });
@@ -141,11 +153,16 @@ export function createBookLoreFieldUploadService({ db, now = () => Date.now() })
       const c = fieldUploadPaths(db, uid, r.uploadId),
         hasher = await createSHA256(),
         stateLength = hasher.save().length;
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadFieldUpload(tx, c, r);
         if (!loaded || loaded.job.kind === 'fence') conflict();
         const replay = await replayFieldOperation(tx, loaded, 'appendBookLoreFieldUpload', r);
         if (replay) return replay;
+        if (
+          loaded.job.materialization &&
+          (!transaction || digest(loaded.job.materialization) !== digest(materialization))
+        )
+          conflict();
         const j = loaded.job,
           m = j.context.manifest;
         if (j.phase !== 'uploading' || r.expectedRevision !== j.revision || r.index !== j.nextIndex)
@@ -194,11 +211,16 @@ export function createBookLoreFieldUploadService({ db, now = () => Date.now() })
       const r = fieldUploadRequest(uid, input, ['expectedRevision'], true);
       fieldUploadCAS(r);
       const c = fieldUploadPaths(db, uid, r.uploadId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadFieldUpload(tx, c, r);
         if (!loaded || loaded.job.kind === 'fence') conflict();
         const replay = await replayFieldOperation(tx, loaded, 'advanceBookLoreFieldSeal', r);
         if (replay) return replay;
+        if (
+          loaded.job.materialization &&
+          (!transaction || digest(loaded.job.materialization) !== digest(materialization))
+        )
+          conflict();
         const j = loaded.job,
           m = j.context.manifest;
         if (j.phase !== 'verifying' || r.expectedRevision !== j.revision) conflict();

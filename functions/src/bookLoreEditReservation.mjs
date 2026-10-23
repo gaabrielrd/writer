@@ -123,6 +123,7 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
           opening = await openSealedBookLoreFieldUpload(tx, uploadContext, r.upload),
           field = opening.loaded;
         if (
+          field.job.materialization ||
           field.job.context.bookId !== intent.bookId ||
           field.job.context.loreId !== intent.loreId ||
           field.job.context.sourceToken !== intent.sourceToken ||

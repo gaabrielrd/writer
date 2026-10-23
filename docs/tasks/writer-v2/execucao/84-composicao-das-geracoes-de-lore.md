@@ -68,3 +68,11 @@ com 129 páginas e campo acima de 8 MiB/128 partes.
 
 Materialização inline continua na sequência obrigatória do passo 4; adoção
 ativa e integração de exclusão ainda pendentes. Somente commit local.
+
+## Continuidade inline
+
+[Plano 85](85-materializacao-das-fichas-inline.md) substituiu a recusa temporária
+por materialização servidor com filhos privados e cancelamento antes da reserva.
+[Evidência](../../../entregas/2026-10-23-writer-v2-materializacao-das-fichas-inline.md):
+134 Node e três SDK distintos positivos. Preparação inline/payload implementada;
+adoção e integração de exclusão/consumidores/backup/cliente continuam pendentes.

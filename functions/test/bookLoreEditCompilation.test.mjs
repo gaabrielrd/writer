@@ -180,11 +180,14 @@ test('compilation freezes new reservations while exact historical claims remain 
   );
   assert.deepEqual((await f.factory().reserveBookLoreEditUpload(f.uid, r)).receipt, claim.receipt);
 });
-test('inline materialization remains required and does not mutate preparation when unavailable', async () => {
+test('inline source compiles through server materialization without changing the origin', async () => {
   const f = await setup({ mode: 'inline' }),
-    before = structuredClone([...f.records]);
-  await assert.rejects(() => advanceCompilation(f, f.progress));
-  assert.deepEqual([...f.records], before);
+    before = structuredClone(f.records.get(f.source.seed.path));
+  await finishCompilation(f);
+  const { storage } = await openCompilation(f);
+  assert.equal(storage.base, null);
+  assert.equal(await pointerValue(f, storage.fields.name), 'Original');
+  assert.deepEqual(f.records.get(f.source.seed.path), before);
 });
 test('a field above 8 MiB/128 parts is audited one part at a time and loses its private SHA checkpoint at EOF', async () => {
   const f = await setup({

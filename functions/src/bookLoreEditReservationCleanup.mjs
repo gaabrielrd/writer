@@ -1,3 +1,4 @@
+import { cleanupInlineMaterialization } from './bookLoreEditInline.mjs';
 import { cleanupEditCompilation } from './bookLoreEditCompilationCleanup.mjs';
 import { digest } from './workProgressContracts.mjs';
 import {
@@ -118,6 +119,15 @@ export function createBookLoreEditReservationCleanup({ db }) {
         if (j.phase === 'cancelled')
           return { receipt: null, progress: editReservationView(loaded) };
         if (j.phase !== 'cancelling' || r.expectedRevision !== j.revision) conflict();
+        const inline = await cleanupInlineMaterialization(tx, loaded, r);
+        if (inline)
+          return commitEditReservation(
+            tx,
+            loaded,
+            'advanceBookLoreEditReservationCleanup',
+            r,
+            inline,
+          );
         if (j.cleanupSlot === null) {
           let query = db
             .collection(c.path + '/slots')

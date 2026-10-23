@@ -96,3 +96,14 @@ por partes implementados para fontes v1/v2. [Evidência](../../../entregas/2026-
 O passo 4 continua aberto até integrar materialização inline e cleanup de seus
 filhos parciais. Passos 3 (leases adopted), 5 e 6 também continuam pendentes.
 Não habilitar troca ativa antes da integração.
+
+## Materialização inline — M38c3h
+
+[Plano 85](85-materializacao-das-fichas-inline.md) implementou a materialização
+servidor de campos/páginas inline, incluindo cleanup dos filhos ainda não
+reservados. [Evidência](../../../entregas/2026-10-23-writer-v2-materializacao-das-fichas-inline.md):
+134 Node e três SDK distintos positivos em rodadas dirigidas.
+
+O núcleo do passo 4 cobre inline e payload v1/v2. Adoção do passo 5, leases
+adopted e integração de exclusão/writers/clientes do passo 6 continuam pendentes.
+Nenhuma troca ativa ou UI foi habilitada.

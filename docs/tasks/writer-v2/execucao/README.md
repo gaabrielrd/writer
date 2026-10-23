@@ -830,3 +830,15 @@ Fonte/clock/publicação intactos; sem adoção ou UI.
 Próximo: materialização servidor de inline, incluindo filhos em preparação;
 depois adoção CAS/leases/clock/privacidade/recibo e integração de exclusão/
 consumidores/cliente. Passo 4 completo, P1/F2-09/V2 continuam pendentes.
+
+### P1 M38c3h — materialização servidor das fichas inline
+
+[Plano 85](85-materializacao-das-fichas-inline.md) e
+[evidência](../../../entregas/2026-10-23-writer-v2-materializacao-das-fichas-inline.md):
+134 Node e três SDK distintos positivos em rodadas dirigidas.
+Compositor prepara inline por filhos privados, preserva valores/ausências e
+coordena cleanup antes da reserva, sem escrita da cabeça/clock/publicação.
+
+Próximo: adoção CAS/leases/clock/privacidade/recibo e integração da exclusão/
+consumidores/backup/cliente. O núcleo de composição cobre inline e payload;
+P1/F2-09/V2 continuam abertos. Somente commits locais.

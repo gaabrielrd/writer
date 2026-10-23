@@ -5,27 +5,43 @@ import {
   BOOK_LORE_GENERATION_FIELDS,
 } from './bookLoreGenerationContracts.mjs';
 import { lorePayloadPointer } from './bookRestoreLorePayloadContracts.mjs';
-import { editReservationConflict as conflict } from './bookLoreEditReservationContracts.mjs';
+import { bookContentId } from './bookBackupSchema.mjs';
+import {
+  editReservationTarget,
+  editReservationConflict as conflict,
+} from './bookLoreEditReservationContracts.mjs';
 export const COMPILATION_ALGORITHM = 'sha256-hash-wasm-lore-compilation-v1';
 export const compilationPointer = (p) =>
   Object.hasOwn(p, 'partSealBirth') ? loreFieldPointer(p) : lorePayloadPointer(p);
 export function compilationState(c) {
-  closed(c, [
-    'schemaVersion',
-    'phase',
-    'timestamp',
-    'base',
-    'fields',
-    'fieldIndex',
-    'page',
-    'relations',
-    'auditSelector',
-    'auditIndex',
-    'auditedParts',
-    'auditHash',
-    'cleanupPage',
-    'storage',
-  ]);
+  closed(
+    c,
+    [
+      'schemaVersion',
+      'phase',
+      'timestamp',
+      'base',
+      'fields',
+      'fieldIndex',
+      'page',
+      'relations',
+      'auditSelector',
+      'auditIndex',
+      'auditedParts',
+      'auditHash',
+      'cleanupPage',
+      'storage',
+    ],
+    ['inlineWork'],
+  );
+  if (c.inlineWork !== undefined && c.inlineWork !== null) {
+    closed(c.inlineWork, ['target', 'uploadId', 'startHash', 'operationId']);
+    editReservationTarget(c.inlineWork.target);
+    bookContentId(c.inlineWork.uploadId);
+    restoreHash(c.inlineWork.startHash);
+    bookContentId(c.inlineWork.operationId);
+    if (!['fields', 'relations'].includes(c.phase)) conflict();
+  }
   if (
     c.schemaVersion !== 1 ||
     !['base', 'fields', 'relations', 'audit', 'finalize', 'ready'].includes(c.phase)
@@ -89,4 +105,5 @@ export const compilationView = (c) => ({
   auditIndex: c.auditIndex,
   auditedParts: c.auditedParts,
   cleanupPage: c.cleanupPage,
+  ...(Object.hasOwn(c, 'inlineWork') ? { materializing: c.inlineWork?.target ?? null } : {}),
 });

@@ -1,3 +1,4 @@
+import { advanceInlineMaterialization } from './bookLoreEditInline.mjs';
 import { createSHA256 } from 'hash-wasm';
 import { born, date } from './bookRestoreUploadContracts.mjs';
 import { digest } from './workProgressContracts.mjs';
@@ -54,16 +55,21 @@ export function createBookLoreEditCompilationService({ db, now = () => Date.now(
           intent = j.context.intent;
         let s = j.compilation ? structuredClone(j.compilation) : null;
         if (!s) {
-          const copied = Object.hasOwn(intent, 'relations'),
-            relations = copied ? intent.relations : sourceRelations(source),
+          const copied = Object.hasOwn(intent, 'relations') || opened.mode === 'inline',
+            relations = Object.hasOwn(intent, 'relations')
+              ? intent.relations
+              : sourceRelations(source),
             old = sourceRelations(source);
           s = {
             schemaVersion: 1,
             phase: 'base',
             timestamp: date(now),
-            base: opened.storage.base,
+            base: opened.mode === 'payload' ? opened.storage.base : null,
             fields:
-              opened.storage.schemaVersion === 2 ? structuredClone(opened.storage.fields) : {},
+              opened.mode === 'payload' && opened.storage.schemaVersion === 2
+                ? structuredClone(opened.storage.fields)
+                : {},
+            ...(opened.mode === 'inline' ? { inlineWork: null } : {}),
             fieldIndex: 0,
             page: 0,
             relations: {
@@ -116,6 +122,11 @@ export function createBookLoreEditCompilationService({ db, now = () => Date.now(
           }
           const field = BOOK_LORE_GENERATION_FIELDS[s.fieldIndex];
           let pointer = s.fields[field];
+          if (opened.mode === 'inline' && !Object.hasOwn(intent.fields, field)) {
+            pointer = (await compilationSlot(tx, l, { field })) ?? undefined;
+            if (!pointer && source.metadata.fields.includes(field))
+              return advanceInlineMaterialization(tx, l, r, s, { field }, opened.data[field]);
+          }
           if (Object.hasOwn(intent.fields, field))
             pointer =
               intent.fields[field] === null ? null : await compilationSlot(tx, l, { field }, true);
@@ -146,6 +157,15 @@ export function createBookLoreEditCompilationService({ db, now = () => Date.now(
           if (!pointer) {
             const old = sourceRelations(source);
             if (page >= old.pages || Math.min(64, old.count - page * 64) !== count) conflict();
+            if (opened.mode === 'inline')
+              return advanceInlineMaterialization(
+                tx,
+                l,
+                r,
+                s,
+                target,
+                opened.data.relations.slice(page * 64, page * 64 + count),
+              );
             pointer = (await openBookLoreRelationPage(tx, opened, page)).pointer;
           }
           const plan = await prepareCompilationReference(tx, l, pointer, {
