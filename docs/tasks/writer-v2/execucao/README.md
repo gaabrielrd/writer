@@ -593,3 +593,16 @@ progresso v9 terminam em cover-finalize, sem raiz ou imagem na biblioteca/Storag
 materializar objeto privado com proteção a I/O tardio/geração/limpeza. Personas,
 campos grandes, certificação/ativação e host/UI/roundtrip/validate seguem P1.
 P1/F2-09 e Writer V2 abertos. Somente local; CI ignorada.
+
+### P1 M35b — capa materializada em Storage privado
+
+O [contrato 71](71-materializacao-privada-da-capa.md) reserva intenção antes de
+I/O, valida PNG e preserva bytes com prova de geração. Cancelamento v13 instala
+fence vazio permanente antes da limpeza nativa; progresso v10 termina em
+personas-integrate, sem biblioteca/uso/raiz.
+[Evidência M35b](../../../entregas/2026-10-22-writer-v2-materializacao-privada-da-capa.md):
+301 backend distintos, dois guards e cenários SDK positivos; limite válido de
+16 MiB e contrato HTTP do SDK real. Limitações do emulador e falhas anteriores
+estão registradas. Disponibilização da mídia, personas, campos grandes,
+certificação/ativação e host/UI/roundtrip/validate seguem P1/F2-09.
+Somente local; CI ignorada. Writer V2 continua aberto.

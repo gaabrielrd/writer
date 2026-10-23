@@ -83,8 +83,9 @@ export async function cleanupLegacyRestore(
   progress,
   { limit = 25, prefix = id + '-cleanup-' } = {},
 ) {
-  progress = (await api.cancelBookRestore(uid, legacyMutation(id, progress, prefix + 'cancel')))
-    .progress;
+  if (!['cancelling', 'cancelled'].includes(progress.state))
+    progress = (await api.cancelBookRestore(uid, legacyMutation(id, progress, prefix + 'cancel')))
+      .progress;
   let unit = 0;
   while (progress.state !== 'cancelled') {
     if (unit > 1000) throw new Error('Cleanup did not finish');

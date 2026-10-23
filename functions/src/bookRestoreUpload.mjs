@@ -8,6 +8,7 @@ import { createBookRestoreHistoryService } from './bookRestoreHistory.mjs';
 import { createBookRestoreDraftService } from './bookRestoreDraft.mjs';
 import { createBookRestoreDraftFinalizeService } from './bookRestoreDraftFinalize.mjs';
 import { createBookRestoreCoverService } from './bookRestoreCover.mjs';
+import { createBookRestoreCoverMaterializationService } from './bookRestoreCoverMaterialization.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
   prepareBookRestoreArtifactsCleanup,
@@ -76,8 +77,10 @@ const actions = {
   advanceBookRestoreDraft: ['content-verified'],
   finalizeBookRestoreDraft: ['content-verified'],
   advanceBookRestoreCover: ['content-verified'],
+  reserveBookRestoreCover: ['content-verified'],
+  materializeBookRestoreCover: ['content-verified'],
 };
-export function createBookRestoreUploadService({ db, now = Date.now }) {
+export function createBookRestoreUploadService({ db, restoreAssets, now = Date.now }) {
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
   const opRef = (uid, id) => db.doc('users/' + uid + '/bookRestoreOperations/' + id);
   const fenceRef = (uid, id) => db.doc('users/' + uid + '/bookRestoreStartFences/' + id);
@@ -340,6 +343,17 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       )
         inconsistent();
       if (
+        r.preparation.coverStorage &&
+        (!loaded.job.preparation.coverStorage ||
+          (r.preparation.coverStorage.state === 'prepared' &&
+            digest(r.preparation.coverStorage.proof) !==
+              digest(loaded.job.preparation.coverStorage.proof)) ||
+          (r.preparation.coverStorage.fence !== null &&
+            digest(r.preparation.coverStorage.fence) !==
+              digest(loaded.job.preparation.coverStorage.fence)))
+      )
+        inconsistent();
+      if (
         r.preparation.history &&
         (!loaded.job.preparation.history ||
           ['versions', 'byteLength', 'sourceChunks', 'bodyCount'].some(
@@ -371,6 +385,8 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         'advanceBookRestoreDraft',
         'finalizeBookRestoreDraft',
         'advanceBookRestoreCover',
+        'reserveBookRestoreCover',
+        'materializeBookRestoreCover',
       ].includes(r.action)
     )
       inconsistent();
@@ -686,11 +702,13 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
         ...(loaded.job.cleanupVersion >= 4
           ? {
               cleanupPhase:
-                loaded.job.cleanupVersion >= 7
-                  ? 'resource-children'
-                  : loaded.job.cleanupVersion >= 5
-                    ? 'body-artifacts'
-                    : 'artifacts',
+                loaded.job.cleanupVersion >= 13
+                  ? 'cover-storage'
+                  : loaded.job.cleanupVersion >= 7
+                    ? 'resource-children'
+                    : loaded.job.cleanupVersion >= 5
+                      ? 'body-artifacts'
+                      : 'artifacts',
             }
           : {}),
       });
@@ -706,13 +724,14 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       id = request.restoreId;
     if (request.limit > 50) invalid();
     const fingerprint = requestHash('advanceBookRestoreCleanup', request);
-    return db.runTransaction(async (tx) => {
+    const result = await db.runTransaction(async (tx) => {
       const loaded = await load(tx, uid, id, request.jobToken),
         op = await tx.get(opRef(uid, request.operationId));
       if (op.exists) return confirmed(loaded, readOp(op, uid, id, fingerprint, loaded));
       if (loaded.job.state !== 'cancelling') fail('failed-precondition', 'state-conflict');
       if (request.expectedCheckpoint !== loaded.job.checkpoint)
         fail('failed-precondition', 'checkpoint-conflict');
+      if (loaded.job.cleanupPhase === 'cover-storage') return { coverStorageCleanup: true };
       if (loaded.job.cleanupVersion >= 2 && loaded.job.cleanupPhase !== 'chunks') {
         const prepared =
           loaded.job.cleanupPhase === 'resource-children'
@@ -804,6 +823,7 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
       );
       return confirmed({ ...loaded, view: { ...loaded.view, ...pickProgress(record) } }, r);
     });
+    return result.coverStorageCleanup ? cleanupCoverStorage(uid, input) : result;
   }
   async function recovery(uid, input) {
     authorize(uid);
@@ -1031,7 +1051,19 @@ export function createBookRestoreUploadService({ db, now = Date.now }) {
     next,
     pickProgress,
   });
+  const { cleanupCoverStorage, ...coverMaterialization } =
+    createBookRestoreCoverMaterializationService({
+      db,
+      assets: restoreAssets,
+      load,
+      readOp,
+      writeOp,
+      confirmed,
+      next,
+      pickProgress,
+    });
   return {
+    ...coverMaterialization,
     ...cover,
     ...draftFinalize,
     ...draft,

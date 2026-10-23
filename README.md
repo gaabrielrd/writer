@@ -388,3 +388,8 @@ P1 M35a preserva [bytes e metadados da capa](docs/tasks/writer-v2/execucao/70-by
 na preparação privada, em partes com SHA integral e inventário v12. None e capa
 legada indisponível permanecem explícitos. A fase cover-finalize ainda não cria
 imagem na biblioteca/Storage; materialização segura e ativação seguem pendentes.
+
+P1 M35b acrescenta a [materialização privada da capa](docs/tasks/writer-v2/execucao/71-materializacao-privada-da-capa.md):
+PNG íntegra no Storage, intenção durável, retomada e fence vazio permanente no
+cancelamento. Inventário v13/progresso v10 chegam a personas-integrate. Capa
+continua privada, sem biblioteca/uso; disponibilização e ativação seguem pendentes.

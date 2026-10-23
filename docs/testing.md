@@ -1451,3 +1451,24 @@ ocupado, cancelamento, máscaras e proteção de registros recriados. SDK usa PN
 real 1200×1800, confere bytes/pixels metadata com sharp e privacidade nas regras.
 O teste grande prova protocolo de bytes; não valida formato completo. Nenhum
 objeto Storage é criado; M35b/ativação e fechamento P1 permanecem pendentes.
+
+## Materialização privada da capa (P1 M35b)
+
+```bash
+node --test functions/test/bookRestoreCoverMaterialization.test.mjs functions/test/bookRestoreCoverStorage.test.mjs functions/test/bookRestoreCoverStorageSdk.test.mjs functions/test/bookRestoreCoverLargeMaterialization.test.mjs
+node --test scripts/run-book-backup-media.test.mjs
+npm run test:media -- tests/storage/bookRestoreCover.rules.test.mjs
+npm run test:media -- --test-name-pattern=materializes tests/storage/bookRestoreCover.rules.test.mjs
+```
+
+[Entrega M35b](entregas/2026-10-22-writer-v2-materializacao-privada-da-capa.md):
+301 backend distintos e dois guards do runner positivos, mais dois cenários
+SDK Firestore/Storage e uma repetição dirigida de ABA nativo. PNG válida de
+16 MiB/256 partes, resposta perdida, CAS, cancelamento, fence e replay cobertos.
+
+Emulador Storage instalado ignora precondições/geração no DELETE: não usar como
+prova das corridas GCS. SDK real contra servidor HTTP local verifica parâmetros
+exatos, CRC/SHA, geração além de Number.MAX_SAFE_INTEGER, exclusão versionada e
+HTTP 412. SDK contra emulador cobre bytes/Rules/fence observado antes do envio;
+sem execução GCS de produção. A entrega registra falhas investigadas, correção
+do helper/fixture e avisos reais. Testes/UI de ativação continuam pendentes.

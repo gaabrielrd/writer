@@ -1394,3 +1394,17 @@ journal/recibo/nascimento nativos, preservando encarnações recriadas. Progress
 termina em cover-finalize, sem imagem inteira no cursor, raiz ou countReady.
 Materialização Storage/validação do formato, integração de personas, campos
 grandes/consumidores, certificação/ativação e host/UI/roundtrip/validate seguem P1.
+
+## Materialização privada da capa (P1 M35b)
+
+[ADR 0082](decisions/0082-restored-cover-private-storage.md) instala intenção
+nativa antes de I/O, reconfere frames/provas e decodifica uma PNG de até 16 MiB
+sem recomprimir. Escrita create-only privada, sem token/URL; confirmação guarda
+prova de geração/metageração com journal/progresso/recibo, sem biblioteca ou raiz.
+
+Inventário v13 inicia cancelamento em cover-storage. Fence vazio permanente
+impede recriação tardia; a versão anterior é conferida/excluída por geração exata,
+preservada como string nas requisições SDK. Não remover fence por lifecycle ou
+manutenção. Progresso v10 termina em personas-integrate. Antes da ativação,
+reconferir Storage e integrar biblioteca/uso. Personas, campos grandes,
+certificação/ativação e host/UI/roundtrip/validate seguem P1.

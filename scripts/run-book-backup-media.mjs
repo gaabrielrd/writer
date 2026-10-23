@@ -36,7 +36,27 @@ function firebaseEntry() {
     'Instale Firebase CLI global para test:media, ou configure WRITER_FIREBASE_CLI com o caminho de lib/bin/firebase.js.',
   );
 }
-export async function runBookBackupMedia() {
+export async function runBookBackupMedia(
+  testFiles = ['tests/storage/bookBackupCover.rules.test.mjs'],
+  namePattern,
+) {
+  if (namePattern !== undefined && !/^[A-Za-z0-9_-]{1,80}$/.test(namePattern))
+    throw new Error('Filtro de teste deve ser uma palavra simples.');
+  if (
+    !Array.isArray(testFiles) ||
+    !testFiles.length ||
+    testFiles.length > 8 ||
+    testFiles.some(
+      (file) =>
+        typeof file !== 'string' ||
+        file.split('/').length !== 3 ||
+        file.split('/')[0] !== 'tests' ||
+        file.split('/')[1] !== 'storage' ||
+        !/^[A-Za-z0-9_.-]+[.]test[.]mjs$/.test(file.split('/')[2]) ||
+        !existsSync(resolve(root, file)),
+    )
+  )
+    throw new Error('Selecione arquivos locais de tests/storage.');
   const cli = firebaseEntry(),
     temporaryRoot = resolve(root, '.firebase');
   await mkdir(temporaryRoot, { recursive: true });
@@ -86,7 +106,9 @@ export async function runBookBackupMedia() {
         '--config',
         config,
         '--non-interactive',
-        'node --test tests/storage/bookBackupCover.rules.test.mjs',
+        'node --test --test-concurrency=1 --test-reporter=tap ' +
+          (namePattern ? '--test-name-pattern=' + namePattern + ' ' : '') +
+          testFiles.join(' '),
       ],
       {
         cwd: root,
@@ -114,7 +136,14 @@ export async function runBookBackupMedia() {
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    process.exitCode = await runBookBackupMedia();
+    const args = process.argv.slice(2),
+      patterns = args.filter((arg) => arg.startsWith('--test-name-pattern='));
+    if (patterns.length > 1) throw new Error('Use somente um filtro de teste.');
+    const files = args.filter((arg) => !patterns.includes(arg));
+    process.exitCode = await runBookBackupMedia(
+      files.length ? files : undefined,
+      patterns[0]?.slice('--test-name-pattern='.length),
+    );
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

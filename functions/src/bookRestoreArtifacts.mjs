@@ -32,6 +32,13 @@ const context = (loaded) => ({
   jobToken: loaded.view.jobToken,
 });
 function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
+  if (version >= 13 && kind === 'cover-storage') {
+    if (id !== 'current') inconsistent();
+    return {
+      ref: db.doc(loaded.ref.path + '/preparedCoverStorage/current'),
+      journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+    };
+  }
   if (version >= 12 && ['cover-definition', 'cover-chunk'].includes(kind)) {
     if (
       kind === 'cover-definition'
@@ -166,6 +173,9 @@ async function receipt(tx, db, loaded, id) {
       ...(loaded.job.cleanupVersion >= 9 ? ['advanceBookRestorePersonas'] : []),
       ...(loaded.job.cleanupVersion >= 10 ? ['advanceBookRestoreHistory'] : []),
       ...(loaded.job.cleanupVersion >= 12 ? ['advanceBookRestoreCover'] : []),
+      ...(loaded.job.cleanupVersion >= 13
+        ? ['reserveBookRestoreCover', 'materializeBookRestoreCover', 'advanceBookRestoreCleanup']
+        : []),
       ...(loaded.job.cleanupVersion >= 11
         ? ['advanceBookRestoreDraft', 'finalizeBookRestoreDraft']
         : []),
@@ -221,7 +231,10 @@ export async function prepareBookRestoreArtifacts(
   version = loaded.job.cleanupVersion,
 ) {
   restoreId(operationId);
-  if (![4, 5, 6, 7, 8, 9, 10, 11, 12].includes(version) || writes.length > (version >= 5 ? 136 : 8))
+  if (
+    ![4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(version) ||
+    writes.length > (version >= 5 ? 136 : 8)
+  )
     inconsistent();
   const effects = [],
     paths = new Set();
@@ -296,6 +309,7 @@ export async function assertBookRestoreArtifactsEmpty(
   if (version >= 9) await assertBookRestorePersonaNamespacesEmpty(tx, db, loaded);
   if (version >= 11) await assertBookRestoreDraftNamespaceEmpty(tx, db, loaded);
   if (version >= 12) await assertBookRestoreCoverNamespacesEmpty(tx, db, loaded);
+  if (version >= 13) await assertBookRestoreCoverStorageNamespaceEmpty(tx, db, loaded);
   for (const name of [
     ...Object.values(BOOK_RESTORE_NATIVE_V4),
     ...(version >= 5 ? ['bookTextBodies'] : []),
@@ -314,7 +328,7 @@ export async function assertBookRestoreArtifactsEmpty(
 }
 export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![4, 5, 6, 7, 8, 9, 10, 11, 12].includes(loaded.job.cleanupVersion) ||
+    ![4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'artifacts'
   )
     inconsistent();
@@ -394,7 +408,7 @@ export async function assertBookRestoreBodyNamespaceEmpty(tx, db, loaded) {
 }
 export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![5, 6, 7, 8, 9, 10, 11, 12].includes(loaded.job.cleanupVersion) ||
+    ![5, 6, 7, 8, 9, 10, 11, 12, 13].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'body-artifacts'
   )
     inconsistent();
@@ -480,7 +494,7 @@ export async function assertBookRestoreResourceNamespacesEmpty(tx, db, loaded) {
 /** Drain journaled nested children even when their parent has not been prepared yet. */
 export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, limit) {
   if (
-    ![7, 8, 9, 10, 11, 12].includes(loaded.job.cleanupVersion) ||
+    ![7, 8, 9, 10, 11, 12, 13].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'resource-children'
   )
     inconsistent();
@@ -632,4 +646,23 @@ export async function assertBookRestoreCoverNamespacesEmpty(tx, db, loaded) {
       .limit(1),
   );
   if (journals.docs.length) inconsistent();
+}
+
+export async function assertBookRestoreCoverStorageNamespaceEmpty(tx, db, loaded) {
+  const [native, journals] = await Promise.all([
+    tx.get(
+      db
+        .collection(loaded.ref.path + '/preparedCoverStorage')
+        .select()
+        .limit(1),
+    ),
+    tx.get(
+      db
+        .collection(journalPath(loaded))
+        .where('kind', '==', 'cover-storage')
+        .select('kind')
+        .limit(1),
+    ),
+  ]);
+  if (native.docs.length || journals.docs.length) inconsistent();
 }

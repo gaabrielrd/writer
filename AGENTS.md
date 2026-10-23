@@ -134,6 +134,7 @@
 - Prepare histórico por partes com hash integral antes do manifesto e inventário v10; preserve versões de recursos removidos sem recriá-los e certifique artefatos antes da raiz, conforme ADR 0077.
 - Prepare rascunho sob inventário v11 e preserve o salvo; finalize com contagem real, provas por máscara e metadata draft portátil antes da capa, conforme ADR 0080.
 - Prepare bytes da capa somente sob o job com inventário v12, SHA integral e nascimento nativo; não exponha imagem/URL antes da materialização e ativação autorizadas, conforme ADR 0081.
+- Materialize capa privada somente após intenção v13; cancele por fence vazio permanente antes dos recursos, preserve geração decimal exata e nunca remova o marcador por cleanup/lifecycle, conforme ADR 0082.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

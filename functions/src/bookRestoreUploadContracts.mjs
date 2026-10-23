@@ -7,6 +7,7 @@ import { validateBookRestoreUniverseSelection } from './bookRestoreUniverseContr
 import { validateBookRestoreHistory } from './bookRestoreHistoryContracts.mjs';
 import { validateBookRestoreDraft } from './bookRestoreDraftContracts.mjs';
 import { validateBookRestoreCover } from './bookRestoreCoverContracts.mjs';
+import { validateBookRestoreCoverStorageProgress } from './bookRestoreCoverStorageContracts.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
 export const BOOK_RESTORE_METHODS = [
@@ -177,7 +178,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -310,6 +311,7 @@ export function jobShape(uid, id, job) {
                     'artifacts',
                     ...(job.cleanupVersion >= 5 ? ['body-artifacts'] : []),
                     ...(job.cleanupVersion >= 7 ? ['resource-children'] : []),
+                    ...(job.cleanupVersion >= 13 ? ['cover-storage'] : []),
                   ]
                 : []),
             ]
@@ -457,9 +459,15 @@ export function jobShape(uid, id, job) {
     preparationProgress(job.preparation);
     if (
       job.cleanupVersion >= 9 &&
-      ['universe', 'history', 'draft', 'draft-finalize', 'cover', 'cover-finalize'].includes(
-        job.preparation.phase,
-      )
+      [
+        'universe',
+        'history',
+        'draft',
+        'draft-finalize',
+        'cover',
+        'cover-finalize',
+        'personas-integrate',
+      ].includes(job.preparation.phase)
     ) {
       const p = job.preparation.personas,
         totals = job.validationSummary.totals;
@@ -471,23 +479,25 @@ export function jobShape(uid, id, job) {
     }
     if (
       !(
-        job.cleanupVersion === 12
-          ? [9]
-          : job.cleanupVersion === 11
-            ? [8]
-            : job.cleanupVersion === 10
-              ? [7]
-              : job.cleanupVersion === 9
-                ? [5, 6]
-                : [
-                    job.cleanupVersion === 8
-                      ? 4
-                      : job.cleanupVersion === 7
-                        ? 3
-                        : job.cleanupVersion === 6
-                          ? 2
-                          : 1,
-                  ]
+        job.cleanupVersion === 13
+          ? [10]
+          : job.cleanupVersion === 12
+            ? [9]
+            : job.cleanupVersion === 11
+              ? [8]
+              : job.cleanupVersion === 10
+                ? [7]
+                : job.cleanupVersion === 9
+                  ? [5, 6]
+                  : [
+                      job.cleanupVersion === 8
+                        ? 4
+                        : job.cleanupVersion === 7
+                          ? 3
+                          : job.cleanupVersion === 6
+                            ? 2
+                            : 1,
+                    ]
       ).includes(job.preparation.schemaVersion)
     )
       inconsistent();
@@ -498,7 +508,9 @@ export function jobShape(uid, id, job) {
         h.versions > t.versions ||
         h.byteLength > t.historyBytes ||
         h.sourceChunks > t.historyChunks ||
-        (['draft', 'draft-finalize', 'cover', 'cover-finalize'].includes(job.preparation.phase) &&
+        (['draft', 'draft-finalize', 'cover', 'cover-finalize', 'personas-integrate'].includes(
+          job.preparation.phase,
+        ) &&
           (h.versions !== t.versions ||
             h.byteLength !== t.historyBytes ||
             h.sourceChunks !== t.historyChunks))
@@ -509,10 +521,18 @@ export function jobShape(uid, id, job) {
       const d = job.preparation.draft;
       if (
         d.bytes > job.validationSummary.totals.draftBytes ||
-        (['draft-finalize', 'cover', 'cover-finalize'].includes(job.preparation.phase) &&
+        (['draft-finalize', 'cover', 'cover-finalize', 'personas-integrate'].includes(
+          job.preparation.phase,
+        ) &&
           d.bytes !== job.validationSummary.totals.draftBytes)
       )
         inconsistent();
+    }
+    if (job.cleanupVersion >= 13) {
+      const mustFence =
+        job.state === 'cancelled' ||
+        (job.state === 'cancelling' && job.cleanupPhase !== 'cover-storage');
+      if ((job.preparation.coverStorage.fence !== null) !== mustFence) inconsistent();
     }
     if (job.cleanupVersion >= 12) {
       const c = job.preparation.cover,
@@ -553,10 +573,11 @@ export function preparationProgress(value) {
     ...(value?.schemaVersion >= 6 ? ['universe'] : []),
     ...(value?.schemaVersion >= 7 ? ['history'] : []),
     ...(value?.schemaVersion >= 8 ? ['draft'] : []),
-    ...(value?.schemaVersion === 9 ? ['cover'] : []),
+    ...(value?.schemaVersion >= 9 ? ['cover'] : []),
+    ...(value?.schemaVersion === 10 ? ['coverStorage'] : []),
   ]);
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(value.schemaVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(value.schemaVersion) ||
     !(
       value.schemaVersion === 1
         ? ['structure', 'resources']
@@ -574,7 +595,9 @@ export function preparationProgress(value) {
                     ? ['history', 'draft']
                     : value.schemaVersion === 8
                       ? ['draft', 'draft-finalize', 'cover']
-                      : ['cover', 'cover-finalize']
+                      : value.schemaVersion === 9
+                        ? ['cover', 'cover-finalize']
+                        : ['cover-finalize', 'personas-integrate']
     ).includes(value.phase)
   )
     inconsistent();
@@ -594,6 +617,7 @@ export function preparationProgress(value) {
         'draft-finalize',
         'cover',
         'cover-finalize',
+        'personas-integrate',
       ].includes(value.phase) &&
         value.relationOffset !== 0)
     )
@@ -730,7 +754,7 @@ export function preparationProgress(value) {
     )
       inconsistent();
   }
-  if (value.schemaVersion === 9) {
+  if (value.schemaVersion >= 9) {
     let c;
     try {
       c = validateBookRestoreCover(value.cover);
@@ -739,9 +763,20 @@ export function preparationProgress(value) {
     }
     if (
       value.itemIndex !== c.startIndex + (c.state === 'prepared' ? 1 : 0) ||
-      (value.phase === 'cover-finalize') !== (c.state === 'prepared')
+      (value.schemaVersion === 9 &&
+        (value.phase === 'cover-finalize') !== (c.state === 'prepared')) ||
+      (value.schemaVersion === 10 && c.state !== 'prepared')
     )
       inconsistent();
+  }
+  if (value.schemaVersion === 10) {
+    let s;
+    try {
+      s = validateBookRestoreCoverStorageProgress(value.coverStorage, value.cover.kind);
+    } catch {
+      inconsistent();
+    }
+    if ((value.phase === 'personas-integrate') !== (s.state === 'prepared')) inconsistent();
   }
   return structuredClone(value);
 }

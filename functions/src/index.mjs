@@ -49,6 +49,7 @@ import { createBookBackupUniverseService } from './bookBackupUniverseRead.mjs';
 import { createBookBackupDraftService } from './bookBackupDraftRead.mjs';
 import { createBookBackupCoverService, setBookBackupCoverHeaders } from './bookBackupCoverRead.mjs';
 import { createBookBackupAssetStorage } from './bookBackupAssetStorage.mjs';
+import { createBookRestoreCoverStorage } from './bookRestoreCoverStorage.mjs';
 import { createAdventureBlocksService } from './adventureBlocks.mjs';
 import { createAdventurePreviewService } from './adventurePreview.mjs';
 import { createScenesService } from './scenes.mjs';
@@ -347,7 +348,10 @@ const callable = (method, secrets = []) =>
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
         const adventureImport = createAdventureImportService({ db });
-        const bookRestore = createBookRestoreUploadService({ db });
+        const bookRestore = createBookRestoreUploadService({
+          db,
+          restoreAssets: createBookRestoreCoverStorage(bucket),
+        });
         const adventureLore = createAdventureLoreService({ db });
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
@@ -752,7 +756,10 @@ export const advanceBookRestoreCleanup = callable('advanceBookRestoreCleanup');
 export const getBookRestoreRecoveryKey = onRequest(
   { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
   createBookRestoreRecoveryHandler({
-    service: createBookRestoreUploadService({ db }),
+    service: createBookRestoreUploadService({
+      db,
+      restoreAssets: createBookRestoreCoverStorage(bucket),
+    }),
     verifyIdToken: (token) => getAuth().verifyIdToken(token),
     verifyAppCheck: (token) => getAppCheck().verifyToken(token),
   }),
