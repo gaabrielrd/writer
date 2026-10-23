@@ -672,3 +672,17 @@ anterior no nascimento nativo e preservação de parte recriada. Índice dispon�
 não significa migração de produção ou ativação. Certificação integral, demais
 campos grandes/orçamento, capa/biblioteca, limpeza pós-ativação e host/UI/
 roundtrip/validate seguem P1/F2-09. Writer V2 aberto, somente commits locais.
+
+### P1 M38a — contrato dos recursos grandes
+
+O [plano 77](77-campos-grandes-de-recursos-e-metadados.md) preserva o escopo de
+todos os campos grandes, inclusive crescimento após remapeamento. Sua primeira
+etapa define codec/leitura interna com provas por página, cabeçalho constante e
+birth nativo fixado. [Evidência M38a](../../../entregas/2026-10-23-writer-v2-contrato-de-payloads-grandes.md):
+41 Node e dois SDK distintos positivos; objeto sintético de 141 partes, dois docs
+por página e rejeição de recriação/ABA. Nenhum produtor/callable/Rule habilitado.
+
+A restauração de lore grande ainda depende de M38b (inventário/cleanup e escrita)
+e M38c (consumidores/mutações); M38d, saída portátil ampliada e certificação seguem.
+Capa/biblioteca, ativação, limpeza posterior, host/UI/roundtrip e validate continuam
+em P1/F2-09. Writer V2 aberto, somente commits locais, sem CI/push/PR/deploy.

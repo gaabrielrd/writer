@@ -423,3 +423,8 @@ jobs antigos podem receber o índice por fonte, conferindo partes/journals/recib
 nativos. Preparação v12 mantém texto, pins e inventário v14; índice correto não
 é regravado. A operação ainda é interna e não executou migrações de produção.
 Demais campos grandes e certificação/ativação continuam pendentes.
+
+O contrato interno M38a prepara payloads de recursos grandes em partes, com
+leitura verificável acima de 8 MiB/128 partes. Ainda não há produtor habilitado
+nem restauração/edição de lore grande pela UI; inventário/cleanup e consumidores
+são os próximos passos do [plano M38](docs/tasks/writer-v2/execucao/77-campos-grandes-de-recursos-e-metadados.md).

@@ -1568,3 +1568,18 @@ recriada bloqueia migração/limpeza sem ser apagada. Raiz de leitura é harness
 sem ativação; o caso de 8 MiB foi executado no Node, não neste SDK.
 A entrega registra a fixture corrigida após OOM; comparações grandes usam provas
 compactas com tipos/bytes/SHA. Sem alterações cliente, CI ou deploy.
+
+## P1 M38a — payloads grandes sem habilitação do produtor
+
+[Entrega M38a](entregas/2026-10-23-writer-v2-contrato-de-payloads-grandes.md):
+41 Node e dois SDK distintos positivos para codec/leitura interna. O SDK grava
+objeto sintético acima de 8 MiB em 141 partes, verifica página aleatória com dois
+gets e SHA integral, recriação e ABA nativos. Não é teste do restore/remapeamento
+completo nem de Rules novas; somente Admin em emulador dedicado. Node acrescenta
+vetor fixo, árvores ímpares, entrada não JSON, JSON/UTF-8 malformados, escopo e
+nascimento exato. Gravação nativa sem mudança de valor pode preservar updateTime;
+use alteração real seguida de retorno para testar ABA, sem fabricar timestamps.
+
+M38b/M38c ainda precisam de jornadas de produção/cleanup/consumidores. Nenhum
+endpoint ou acesso ao namespace foi habilitado. Validate integral permanece no
+fechamento de P1; CI ignorada, commits locais.

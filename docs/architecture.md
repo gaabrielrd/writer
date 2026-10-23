@@ -1497,3 +1497,17 @@ v14 e cancelamento continuam, com parser dos recibos novos e progresso v11/v12.
 Implantar parsers/cleanup e drenar handlers antigos antes da migração. A
 operação não ativa a raiz; complete não substitui certificação integral de
 namespaces/fontes/índices. Outros campos grandes e host/roundtrip seguem em P1.
+
+## P1 M38a — contrato interno para recursos grandes
+
+[ADR 0088](decisions/0088-large-resource-payload-contract.md) define JSON imutável
+em partes de 64 KiB, cabeçalho constante e prova binária por página, separado dos
+corpos de capítulos. A identidade nativa do cabeçalho é fixada no ponteiro; cada
+parte deve ser imutável e anterior/igual ao fechamento. Uma página usa dois docs;
+a leitura completa acrescenta SHA integral e JSON/UTF-8 estritos. Autorização do
+livro/recurso e prova de fonte/journals continuam a cargo do chamador.
+
+Módulos ainda sem chamador de produto. Não habilitar gravação em bookResourceBodies
+até ampliar inventário, cancelamento e exclusão/coleta. O SDK usa somente um
+harness isolado. O [plano M38](tasks/writer-v2/execucao/77-campos-grandes-de-recursos-e-metadados.md)
+prossegue com lore, demais campos, saída portátil ampliada e certificação.
