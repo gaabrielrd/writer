@@ -1,3 +1,4 @@
+import { cleanupEditCompilation } from './bookLoreEditCompilationCleanup.mjs';
 import { digest } from './workProgressContracts.mjs';
 import {
   editReservationRequest,
@@ -126,9 +127,11 @@ export function createBookLoreEditReservationCleanup({ db }) {
           const next = (await tx.get(query)).docs[0];
           if (!next) {
             if (j.releasedCount !== j.reservedCount) conflict();
+            const compiled = await cleanupEditCompilation(tx, loaded);
             return commitEditReservation(tx, loaded, 'advanceBookLoreEditReservationCleanup', r, {
-              phase: 'cancelled',
+              phase: compiled.complete ? 'cancelled' : 'cancelling',
               blockedReason: null,
+              ...compiled.patch,
             });
           }
           const record = await readEditReservationSlot(tx, loaded, next),

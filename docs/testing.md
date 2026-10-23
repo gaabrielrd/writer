@@ -1740,3 +1740,20 @@ Lint, arquitetura e sintaxe dos 191 módulos de Functions positivos. Check usa
 runner por arquivo para evitar limite de linha do Windows. Sem cliente/visual,
 não repetimos tipos/Vitest/build/browser. Validate integral permanece no fim de P1.
 Adoção ativa, leases adopted e exclusão continuam pendentes.
+
+### P1 M38c3g — composição de lore em payload
+
+[Entrega](entregas/2026-10-23-writer-v2-composicao-das-geracoes-de-lore.md):
+69 Node distintos positivos (31 novos, 38 de reserva) em rodadas dirigidas,
+e três cenários SDK positivos. Inclui 141 partes/8 MiB, 129 páginas, fonte v1/v2
+sem base, diff/remoção/cauda, domínio inválido, reautorização, CAS/replay/rollback
+e cancelamento parcial. Provas nativas cobrem estados/segmentos/journals/
+certificados recriados, clone/outra transação e cabeça tardia protetora.
+
+SDK verifica concorrência real, metadata privada, origem nativa intacta,
+revogação e rollback. Sintaxe de 195 módulos/arquitetura positivas; lint,
+formatação, docs e diff finais conferidos. Sem cliente novo, não repetimos
+tipos/Vitest/build/browser. Validate integral permanece no fim de P1.
+
+Inline ainda exige materialização servidor; o teste de recusa sem mutação
+não comprova suporte final. Adoção e integração de exclusão continuam pendentes.

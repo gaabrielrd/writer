@@ -74,3 +74,9 @@ cancelamento internos implementados; nenhuma adoção ativa.
 O check de Functions ultrapassou o limite de linha do Windows; o runner por
 arquivo preserva a checagem e cobre os 191 módulos .mjs atuais. Regra correspondente
 registrada na ADR. Compilação completa, leases adopted e passos 4–6 seguem pendentes.
+
+## Continuidade
+
+O [plano 84](84-composicao-das-geracoes-de-lore.md) integrou composição de fontes
+payload com congelamento de slots, vínculos de inventário, auditoria e cleanup
+dos descritores próprios. Inline e adoção ainda pendentes; reserva não é edição ativa.

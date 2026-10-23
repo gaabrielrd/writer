@@ -85,3 +85,14 @@ apenas limpar staged próprio comprovado; a coleta genérica mantém seus guarda
 Leases adopted completam o passo 3 junto da adoção do passo 5. Passos 4–6 ainda
 pendentes: compilar/referenciar geração completa, materializar inline, CAS/
 clock/privacidade/recibo, exclusão e integração. Não habilitar troca ativa antes.
+
+## Composição em payload — M38c3g
+
+[Plano 84](84-composicao-das-geracoes-de-lore.md):
+base/campos achatados, diff de páginas, vínculos à geração preparing e auditoria
+por partes implementados para fontes v1/v2. [Evidência](../../../entregas/2026-10-23-writer-v2-composicao-das-geracoes-de-lore.md):
+69 Node e três SDK distintos positivos.
+
+O passo 4 continua aberto até integrar materialização inline e cleanup de seus
+filhos parciais. Passos 3 (leases adopted), 5 e 6 também continuam pendentes.
+Não habilitar troca ativa antes da integração.

@@ -1666,3 +1666,16 @@ evitando o limite de linha do Windows.
 
 Compilação completa, referências da geração, leases adopted, adoção CAS e
 exclusão ainda pendentes. Sem endpoint/UI/ativação. P1/F2-09/V2 continuam abertos.
+
+## P1 M38c3g — composição das gerações de lore
+
+[ADR 0099](decisions/0099-private-lore-generation-compilation.md) congela slots
+e compõe fontes payload v1/v2 sob a geração preparing. Base/campos são achatados;
+páginas mudadas usam descritores próprios com journals/recibos nativos. Cada
+corpo é vinculado ao inventário antes da seleção; auditoria verifica partes,
+SHA integral e domínio de campos/páginas por unidades.
+
+Checkpoint privado sai no EOF/cancelamento. Certificado ready é metadata
+histórica, não ativação/grant. Cancelamento limpa slots e descritores próprios
+com guard de cabeça atual; herdados e fences permanecem. Materialização inline,
+adoção e exclusão/consumidores/cliente ainda pendentes. P1/F2-09/V2 abertos.

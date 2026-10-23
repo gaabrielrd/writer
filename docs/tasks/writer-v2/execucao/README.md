@@ -818,3 +818,15 @@ recriações e rollback, sem alterar cabeça/clock/publicação.
 Próximo: compilar campos/páginas e materializar inline; referências completas e
 adoção CAS/leases/clock/privacidade ainda pendentes, assim como exclusão e cliente.
 Nenhum endpoint/UI/ativação. P1/F2-09/V2 abertos; somente commits locais.
+
+### P1 M38c3g — composição de gerações em payload
+
+[Plano 84](84-composicao-das-geracoes-de-lore.md) e
+[evidência](../../../entregas/2026-10-23-writer-v2-composicao-das-geracoes-de-lore.md):
+69 Node e três SDK distintos positivos. Campos achatados, referências preparing,
+diff de páginas e auditoria por partes preparam um certificado privado ready.
+Fonte/clock/publicação intactos; sem adoção ou UI.
+
+Próximo: materialização servidor de inline, incluindo filhos em preparação;
+depois adoção CAS/leases/clock/privacidade/recibo e integração de exclusão/
+consumidores/cliente. Passo 4 completo, P1/F2-09/V2 continuam pendentes.

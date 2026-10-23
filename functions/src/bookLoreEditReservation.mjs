@@ -1,3 +1,4 @@
+import { createBookLoreEditCompilationService } from './bookLoreEditCompilation.mjs';
 import { born, date } from './bookRestoreUploadContracts.mjs';
 import { digest } from './workProgressContracts.mjs';
 import {
@@ -114,7 +115,8 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
         if (replay) return replay;
         const j = loaded.job,
           intent = j.context.intent;
-        if (j.phase !== 'preparing' || j.revision !== r.expectedRevision) conflict();
+        if (j.phase !== 'preparing' || j.revision !== r.expectedRevision || j.compilation)
+          conflict();
         assertIntentReservation(intent, r.target, r.upload);
         await editReservationSource(tx, c, intent, j.context);
         const uploadContext = fieldUploadPaths(db, uid, r.upload.uploadId),
@@ -184,6 +186,7 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
       });
     },
     ...createBookLoreEditReservationCleanup({ db }),
+    ...createBookLoreEditCompilationService({ db, now }),
   };
   return service;
 }

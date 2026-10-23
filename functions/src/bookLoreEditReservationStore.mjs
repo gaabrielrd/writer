@@ -19,6 +19,11 @@ import {
   editReservationTarget,
   assertIntentReservation,
 } from './bookLoreEditReservationContracts.mjs';
+import { compilationState } from './bookLoreEditCompilationContracts.mjs';
+const openings = new WeakMap();
+export const assertEditReservationOpening = (tx, l) => {
+  if (openings.get(l) !== tx) conflict();
+};
 const immutable = (s) => s.exists && bornEqual(s, { createTime: s.updateTime });
 const update = (s) => born({ createTime: s.updateTime });
 const atMost = (a, b) =>
@@ -95,16 +100,20 @@ export async function editReservationPair(tx, loaded, id) {
     operationId: id,
   }))
     if (r[key] !== value || a[key] !== value) conflict();
-  closed(r.progress, [
-    'editId',
-    'startHash',
-    'jobToken',
-    'phase',
-    'revision',
-    'reservedCount',
-    'releasedCount',
-    'blockedReason',
-  ]);
+  closed(
+    r.progress,
+    [
+      'editId',
+      'startHash',
+      'jobToken',
+      'phase',
+      'revision',
+      'reservedCount',
+      'releasedCount',
+      'blockedReason',
+    ],
+    ['compilation'],
+  );
   integer(r.revision, 1);
   if (
     a.receiptHash !== digest(r) ||
@@ -155,26 +164,34 @@ export async function loadEditReservation(tx, c, r) {
     if (!immutable(snapshot) || j.phase !== 'cancelled' || r.jobToken !== undefined) conflict();
     return { c, snapshot, job: j, token: null, generation: null };
   }
-  closed(j, [
-    'schemaVersion',
-    'kind',
-    'ownerId',
-    'editId',
-    'startHash',
-    'context',
-    'phase',
-    'revision',
-    'reservedCount',
-    'releasedCount',
-    'cleanupSlot',
-    'cleanupCursor',
-    'blockedReason',
-    'generationId',
-    'generationOperationId',
-    'cancelOperationId',
-    'lastOperationId',
-    'createdAt',
-  ]);
+  closed(
+    j,
+    [
+      'schemaVersion',
+      'kind',
+      'ownerId',
+      'editId',
+      'startHash',
+      'context',
+      'phase',
+      'revision',
+      'reservedCount',
+      'releasedCount',
+      'cleanupSlot',
+      'cleanupCursor',
+      'blockedReason',
+      'generationId',
+      'generationOperationId',
+      'cancelOperationId',
+      'lastOperationId',
+      'createdAt',
+    ],
+    ['compilation'],
+  );
+  if (Object.hasOwn(j, 'compilation')) {
+    compilationState(j.compilation);
+    if (j.generationId === null) conflict();
+  }
   closed(j.context, [
     'intent',
     'bookBirth',
@@ -292,6 +309,7 @@ export async function loadEditReservation(tx, c, r) {
     )
       conflict();
   }
+  openings.set(loaded, tx);
   return loaded;
 }
 export async function replayEditReservation(tx, loaded, method, r) {

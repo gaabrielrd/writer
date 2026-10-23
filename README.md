@@ -463,3 +463,9 @@ coleta coordenada, inclusive após revogação da origem. Adoção ativa, leases
 adopted e exclusão do livro ainda precisam de integração.
 [Evidência](docs/entregas/2026-10-23-writer-v2-reserva-dos-uploads-de-lore.md).
 A edição de payloads não foi habilitada. Somente commits locais, sem deploy.
+
+M38c3g acrescenta composição interna de fontes payload v1/v2: campos achatados,
+diff de páginas, referências da geração preparing e auditoria por partes.
+[Evidência](docs/entregas/2026-10-23-writer-v2-composicao-das-geracoes-de-lore.md).
+Materialização inline, adoção ativa e integração de exclusão/cliente continuam
+pendentes; este incremento não habilita escrita de payloads na interface.

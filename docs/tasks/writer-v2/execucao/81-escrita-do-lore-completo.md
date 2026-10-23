@@ -268,3 +268,13 @@ clock e publicação permanecem intactos. [Evidência](../../../entregas/2026-10
 Agora falta compilar campos/páginas, materializar inline e ligar as referências;
 adotar leases/cabeça/clock/privacidade/recibo atomicamente; integrar exclusão e
 demais writers/cliente. Nenhum endpoint/UI/ativação foi habilitado.
+
+## Composição em payload — M38c3g
+
+O [plano 84](84-composicao-das-geracoes-de-lore.md) compõe e audita fonte v1/v2
+com base/campos achatados e diff de páginas, sem mutar a origem.
+[Evidência](../../../entregas/2026-10-23-writer-v2-composicao-das-geracoes-de-lore.md):
+69 Node e três SDK distintos positivos.
+
+Materialização inline ainda obrigatória antes de concluir a preparação completa;
+adoção, leases adopted, exclusão, consumidores e cliente continuam pendentes.

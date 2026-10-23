@@ -2,6 +2,7 @@ import { authorize, born, closed, integer, restoreHash } from './bookRestoreUplo
 import { bookContentId } from './bookBackupSchema.mjs';
 import { BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
 import { digest, workFail } from './workProgressContracts.mjs';
+import { compilationView } from './bookLoreEditCompilationContracts.mjs';
 export const editReservationConflict = () =>
   workFail(
     'failed-precondition',
@@ -128,6 +129,7 @@ export const editReservationView = (loaded) => {
     reservedCount: fence ? 0 : j.reservedCount,
     releasedCount: fence ? 0 : j.releasedCount,
     blockedReason: fence ? null : j.blockedReason,
+    ...(j.compilation ? { compilation: compilationView(j.compilation) } : {}),
   };
 };
 export function editPreparationRef(v) {
