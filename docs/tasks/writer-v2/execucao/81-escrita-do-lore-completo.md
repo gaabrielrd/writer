@@ -537,3 +537,19 @@ os writers/consumidores. Próximo é coordenar criação no cliente com ticket
 descobrível e recuperação cifrada antes de qualquer produção. Entradas nativas
 no compêndio, exclusão/ciclo de chaves, demais consumidores/backup/rollout e
 validate de P1 continuam obrigatórios. P1/F2-09/V2 e fases restantes abertos.
+
+## Coordenador cliente da criação — M38c5n
+
+[Plano 112](112-coordenador-cliente-da-criacao-de-lore.md) e
+[ADR 0127](../../../decisions/0127-client-native-lore-creation-coordinator.md):
+criação por unidades com dados congelados, ready sem cabeça, apply explícito,
+checkpoint privado restaurável e controles até 50. Cancel usa a reserva
+nativa sem esperar produtor e confirma adoção própria por metadata.
+Conflito preserva controles/texto e não autoriza liberar chave ou purgar.
+
+209 Vitest positivos (50 novos), com campos grandes e relações paginadas;
+[evidência](../../../entregas/2026-10-24-writer-v2-coordenador-cliente-da-criacao-de-lore.md).
+Sessão Auth compõe o port, sem fallback SDK. Não há persistência automática
+da criação ou entrada nova no compêndio. Ticket antes de RPC, chave/cópia cifrada,
+checkpoint durável, cancel/descarte/host e demais portões continuam obrigatórios.
+P1/F2-09/V2 e fases restantes abertos; validate integral no fechamento de P1.

@@ -2196,3 +2196,13 @@ SDK demo verifica provas/nascimentos, denies e AES-GCM; retake do cancel
 comprova que obter chave não libera upload. Cliente protege a allowlist
 anterior do journal. HTTP usa verificadores locais, sem provar credenciais
 reais. Sem UI nova, Chromium ou ativação; validate integral no fechamento de P1.
+
+### P1 M38c5n — coordenação cliente da criação de lore
+
+[Plano 112](tasks/writer-v2/execucao/112-coordenador-cliente-da-criacao-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-coordenador-cliente-da-criacao-de-lore.md):
+209 Vitest dirigidos cobrem criação nativa/retomada, grande campo, controles,
+literais, pedidos perdidos e cancel concorrente, junto das regressões de
+edição/plano/checkpoint. Guardas Auth protegem wire privado após troca de actor.
+Funções reais rodam sobre double, sem comprovar SDK/browser/persistência real;
+nenhuma UI foi ativada. Validate integral permanece no fechamento de P1.

@@ -128,6 +128,15 @@ function validateData(data: unknown) {
     }
   }
 }
+/** New creation has no prior entity or caller-authored dates. */
+export function freezeBookLoreCreationData(input: unknown): Readonly<Record<string, unknown>> {
+  const data = freezeLoreEditValue(input);
+  validateData(data);
+  if (Object.hasOwn(data as object, 'createdAt') || Object.hasOwn(data as object, 'updatedAt'))
+    invalidLoreEdit();
+  return data as Readonly<Record<string, unknown>>;
+}
+
 /** In-memory observed CAS only. The server independently reauthorizes every operation. */
 export function freezeBookLoreEditSource(input: unknown): BookLoreEditSource {
   const source = keys(freezeLoreEditValue(input), ['bookId', 'id', 'sourceToken', 'data']);

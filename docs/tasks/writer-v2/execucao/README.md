@@ -1219,3 +1219,21 @@ Próximo: coordenador e ticket duráveis da criação no cliente, junto da recup
 cifrada; criação/exclusão e demais portões antes da entrada no compêndio.
 Lifecycle de chaves, outros writers/consumidores/backup/rollout, P1/F2-09/V2,
 fases 3–5 e condições humanas/comerciais abertos. Sem CI ou envio remoto.
+
+### P1 M38c5n — coordenador cliente da criação de lore
+
+[Plano 112](112-coordenador-cliente-da-criacao-de-lore.md),
+[ADR 0127](../../../decisions/0127-client-native-lore-creation-coordinator.md) e
+[entrega](../../../entregas/2026-10-24-writer-v2-coordenador-cliente-da-criacao-de-lore.md).
+Coordenador percorre reserva/uploads/composição e apply explícito, repete wire
+incerto e cancela sem esperar produtor. Checkpoint privado restaurável e controles
+até 50; sessão Auth protege I/O e leitura privada por actor/host capturados.
+Adoção estrangeira preserva conflito/cópia, sem sucesso próprio ou purge.
+
+209 Vitest distintos positivos (50 novos), com >8 MiB/128 partes e 3.265 relações;
+tipos/build/smoke e lint dirigidos verdes. Sem UI, backend ou Rules alterados.
+
+Próximo: ticket e cópia cifrada/checkpoint persistidos da criação, reserva
+incerta, cancel/descarte por metadata e depois host. Não confundir memória com
+recuperação durável. Exclusão/lifecycle/consumidores/backup/rollout, P1/F2-09/V2,
+fases 3–5 e gates humanos/comerciais continuam abertos; somente commits locais.

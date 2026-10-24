@@ -172,6 +172,8 @@
 - Encaminhe escrita manual preparada pela callable bookLoreEdit com UID autenticado e operações/IDs/filhos fechados; não exponha jobs da análise, namespaces internos ou fallback SDK, conforme ADRs 0116 e 0126.
 - Vincule recuperação da criação à reserva/livro originais antes da cabeça e ao nascimento da adoção depois dela; cancel conserva só chave existente, sem liberar upload, conforme ADR 0126.
 - Preserve os 18 métodos do journal de edição até suporte explícito à criação; a lista de 22 métodos do transporte manual não amplia o formato persistido, conforme ADR 0126.
+- Coordene criação de lore pela reserva nativa e apply explícito; congele input/bytes e confira checkpoint privado/grant fresco sem anunciar estado em memória como recuperação durável, conforme ADR 0127.
+- Não finalize descarte/liberação de chave por phase conflict: confirme jobs próprios fechados e preserve a cabeça adotada por outra tentativa, conforme ADR 0127.
 - Libere chave de recuperação de lore só por HTTP autenticado, com prova/nascimento/fingerprint originais e origem reautorizada; preserve fences, não regenere chave ausente e não confunda revogação da chave com cancelamento dos jobs, conforme ADR 0117.
 - Preserve journal de edição de lore em partes cifradas com manifesto privado, chave não persistida, reautorização fresca antes/depois da leitura e CAS/oncomplete local; mantenha cleanup metadata sem chave e não envie ou descarte pedidos ao abrir, conforme ADR 0118.
 - Restaure o coordenador de lore somente de checkpoint privado e controles paginados coerentes com o input/CAS original; confira pedidos/bytes/cursores, preserve reconciliação e nunca persista checkpoint com wire em claro ou envie ao reconstruir, conforme ADR 0119.

@@ -421,3 +421,43 @@ it('keeps the existing edit journal closed to creation controls even in legacy-s
     ).toThrow();
   }
 });
+
+it('prepares creation with the authenticated UID and fences private reads after actor replacement', async () => {
+  const input = {
+    uid: 'spoofed',
+    writeId: 'auth-creation',
+    bookId: 'book',
+    data: { name: 'Own', category: 'other' },
+  };
+  const op = await bookLoreEditSession().prepareCreation(input);
+  expect(op.snapshot().uid).toBe('author');
+  expect(state.call).not.toHaveBeenCalled();
+  state.auth.currentUser = { uid: 'author' };
+  expect(() => op.snapshot()).toThrow('contexto mudou');
+  expect(() => op.checkpoint()).toThrow('contexto mudou');
+  expect(() => op.controlsPage()).toThrow('contexto mudou');
+  await expect(op.advance()).rejects.toThrow('contexto mudou');
+  expect(state.call).not.toHaveBeenCalled();
+});
+
+it('preserves the host guard captured for creation without depending on the mutable options object', async () => {
+  let current = true;
+  const options = {
+    guard: () => {
+      if (!current) throw Error('host changed');
+    },
+  };
+  const op = await bookLoreEditSession().prepareCreation(
+    {
+      writeId: 'host-creation',
+      bookId: 'book',
+      data: { name: 'Own', category: 'other' },
+    },
+    options,
+  );
+  options.guard = () => {};
+  current = false;
+  expect(() => op.checkpoint()).toThrow('host changed');
+  await expect(op.advance()).rejects.toThrow('host changed');
+  expect(state.call).not.toHaveBeenCalled();
+});

@@ -2208,3 +2208,14 @@ adoção. Cancel conserva chave existente, sem autorizar produção nova.
 Hash antigo e DTO metadata permanecem compatíveis; chave só por HTTP protegido.
 Lista manual tem 22 métodos; journal de edição mantém explicitamente os 18
 anteriores. Cliente de criação durável/host e rollout continuam pendentes.
+
+## P1 M38c5n — coordenador cliente da criação nativa
+
+[ADR 0127](decisions/0127-client-native-lore-creation-coordinator.md):
+coordenador próprio reutiliza schema/codec/progressos, deriva IDs antes de RPC
+e dirige reserva/uploads/composição/apply explícito. Cleanup da reserva é
+independente do produtor; wire incerto permanece exato e adoção é correlacionada
+ao evento próprio. Snapshot é limitado; checkpoint privado e controles até 50
+permitem reconstrução verificada sem RPC. Sessão Auth captura UID/actor/host.
+Persistência de criação/host e demais portões seguem pendentes; journal de
+edição permanece separado e conflito não é prova de fechamento para purge.

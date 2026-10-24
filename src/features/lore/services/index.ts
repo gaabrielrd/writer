@@ -43,3 +43,12 @@ export type { PersistedBookLoreSnapshot } from './bookLorePersistedOperation';
 
 export type { BookLoreManualSnapshot } from './bookLoreManualOperation';
 export type { LorePreparationHead, LorePreparationIntent } from './bookLorePreparationContracts';
+
+export { prepareBookLoreCreationOperation } from './bookLoreCreationOperation';
+export type {
+  BookLoreCreationPhase,
+  BookLoreCreationSnapshot,
+  BookLoreCreationRecovery,
+  BookLoreCreationCheckpoint,
+} from './bookLoreCreationOperation';
+export type { BookLoreCreationInput } from './bookLoreCreationPlan';
