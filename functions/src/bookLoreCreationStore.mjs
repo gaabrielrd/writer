@@ -9,6 +9,16 @@ import {
   creationLoreId,
   creationView,
 } from './bookLoreCreationContracts.mjs';
+import { loadCreationCancelRequest } from './bookLoreCreationCancelRequest.mjs';
+const records = new WeakMap();
+export const assertCreationRecord = (tx, l) => {
+  if (records.get(l) !== tx) conflict();
+};
+async function nativeRecord(tx, l) {
+  l.cancelRequest = await loadCreationCancelRequest(tx, l);
+  records.set(l, tx);
+  return l;
+}
 const immutable = (s) => s.exists && bornEqual(s, { createTime: s.updateTime }),
   openings = new WeakMap();
 export const assertCreationOpening = (tx, l) => {
@@ -72,7 +82,7 @@ export async function loadCreationReservation(tx, c, request = {}) {
     proof = await tx.get(c.proofRef);
   if (!event.exists && !proof.exists) {
     if (context.kind === 'fence') conflict();
-    return loaded;
+    return nativeRecord(tx, loaded);
   }
   if (
     !immutable(event) ||
@@ -109,7 +119,8 @@ export async function loadCreationReservation(tx, c, request = {}) {
   creationIntent(c.uid, { bookId: intent.bookId, creationId: r.creationId });
   if (typeof r.operationId !== 'string' || !/^[a-f0-9]{64}$/.test(r.requestHash)) conflict();
   loaded.cancellation = r;
-  return loaded;
+  loaded.cancellationSnapshot = event;
+  return nativeRecord(tx, loaded);
 }
 export async function creationBook(tx, c) {
   const root = await readWorkMetadata(tx, c.db.doc('books/' + c.intent.bookId), [
@@ -182,7 +193,14 @@ export function createCreationContext(tx, c, bookBirth = null) {
   if (bookBirth) tx.create(c.reservationRef, marker(context));
   return context;
 }
-export function writeCreationCancellation(tx, c, context, jobToken, request) {
+export function writeCreationCancellation(
+  tx,
+  c,
+  context,
+  jobToken,
+  request,
+  frozenRequestHash = null,
+) {
   const event = {
     schemaVersion: 1,
     ownerId: c.uid,
@@ -190,7 +208,7 @@ export function writeCreationCancellation(tx, c, context, jobToken, request) {
     startHash: context.startHash,
     jobToken,
     operationId: request.operationId,
-    requestHash: digest(request),
+    requestHash: frozenRequestHash ?? digest(request),
     contextHash: digest(context),
   };
   tx.create(c.cancelRef, event);
@@ -205,7 +223,7 @@ export async function cancelCreationInTransaction(tx, l, request) {
       conflict();
     return creationView(l);
   }
-  if (l.context.kind !== 'reservation') conflict();
+  if (l.context.kind !== 'reservation' || l.cancelRequest) conflict();
   const head = await readWorkMetadata(
     tx,
     l.c.db.doc('books/' + l.c.intent.bookId + '/lore/' + l.c.loreId),
@@ -219,7 +237,7 @@ export async function cancelCreationInTransaction(tx, l, request) {
 /** Future producers must consume this native opening, not a client token alone. */
 export async function openCreationReservation(tx, c, request) {
   const l = await loadCreationReservation(tx, c, request);
-  if (!l || l.context.kind !== 'reservation' || l.cancellation) conflict();
+  if (!l || l.context.kind !== 'reservation' || l.cancellation || l.cancelRequest) conflict();
   const root = await creationBook(tx, c),
     head = await readWorkMetadata(
       tx,

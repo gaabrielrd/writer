@@ -5,6 +5,7 @@ import { digest, workFail } from './workProgressContracts.mjs';
 import { createBookLoreFieldValidation } from './bookLoreFieldValidation.mjs';
 import { resourcePayloadBodyId } from './bookResourcePayload.mjs';
 
+import { creationRef } from './bookLoreCreationContracts.mjs';
 export const FIELD_UPLOAD_ALGORITHM = 'sha256/hash-wasm@4.12.0';
 export const fieldUploadConflict = () =>
   workFail(
@@ -51,7 +52,11 @@ export const fieldUploadResource = (c) => ({
 });
 export function fieldUploadIntent(uid, input) {
   authorize(uid);
-  closed(input, ['bookId', 'loreId', 'uploadId', 'sourceToken', 'target', 'manifest']);
+  closed(
+    input,
+    ['bookId', 'loreId', 'uploadId', 'sourceToken', 'target', 'manifest'],
+    ['creation'],
+  );
   const intent = {
     bookId: bookContentId(input.bookId),
     loreId: bookContentId(input.loreId),
@@ -59,7 +64,9 @@ export function fieldUploadIntent(uid, input) {
     sourceToken: hash(input.sourceToken),
     target: fieldTarget(input.target),
     manifest: resourcePayloadManifest(input.manifest),
+    ...(Object.hasOwn(input, 'creation') ? { creation: creationRef(input.creation) } : {}),
   };
+  if (intent.creation && intent.creation.jobToken !== intent.sourceToken) fieldUploadInvalid();
   const operationId = fieldUploadOperationId(
     uid,
     intent.bookId,

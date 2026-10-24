@@ -42,6 +42,29 @@ export function creationRequest(uid, r, cancel = false) {
   if (Object.hasOwn(r, 'jobToken')) v.jobToken = restoreHash(r.jobToken);
   return v;
 }
+export function creationRef(v) {
+  closed(v, ['creationId', 'startHash', 'jobToken']);
+  return {
+    creationId: bookContentId(v.creationId),
+    startHash: restoreHash(v.startHash),
+    jobToken: restoreHash(v.jobToken),
+  };
+}
+export function creationCleanupRequest(uid, r) {
+  closed(r, ['bookId', 'creationId', 'jobToken', 'expectedRevision', 'operationId']);
+  const v = creationRequest(
+    uid,
+    {
+      bookId: r.bookId,
+      creationId: r.creationId,
+      jobToken: r.jobToken,
+      operationId: r.operationId,
+    },
+    true,
+  );
+  if (!Number.isSafeInteger(r.expectedRevision) || r.expectedRevision < 0) creationConflict();
+  return { ...v, expectedRevision: r.expectedRevision };
+}
 export const creationView = (l) => ({
   schemaVersion: 1,
   creationId: l.c.intent.creationId,
@@ -49,6 +72,14 @@ export const creationView = (l) => ({
   loreId: l.c.loreId,
   startHash: l.context.startHash,
   jobToken: l.context.kind === 'fence' ? null : l.token,
-  phase: l.cancellation ? 'cancelled' : 'preparing',
+  phase: l.cancellation ? 'cancelled' : l.cancelRequest ? 'cancelling' : 'preparing',
+  ...(l.cancelRequest
+    ? {
+        cleanupRevision: l.cancelRequest.state.revision,
+        cleanupPhase: l.cancelRequest.state.phase,
+        coordinatedUnits: l.cancelRequest.state.coordinatedUnits,
+        completedUploads: l.cancelRequest.state.completedUploads,
+      }
+    : {}),
   cancellationOperationId: l.cancellation?.operationId ?? null,
 });

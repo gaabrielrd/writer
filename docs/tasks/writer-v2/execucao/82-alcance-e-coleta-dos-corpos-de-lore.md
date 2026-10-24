@@ -153,3 +153,15 @@ Etapa creations do inventário v3 preserva ID/fences e cancela junto do checkpoi
 Inventário/cancelamento de filhos L2 precisam existir antes do primeiro byte.
 Composição/ativação L3 e todas as integrações continuam pendentes.
 P1/F2-09/V2 abertos; reserva isolada não conclui criação.
+
+## Inventário dos campos da criação — M38c3m / L2
+
+O [plano 90](90-uploads-vinculados-a-criacao-de-lore.md) vincula cada upload
+à reserva original e fecha novos writes com intenção nativa antes do cleanup.
+Journal/filhos/recibos são coordenados; a exclusão do livro confirma também
+filhos já cancelados. [Evidência](../../../entregas/2026-10-24-writer-v2-uploads-vinculados-a-criacao-de-lore.md):
+294 Node e quatro SDK distintos positivos, incluindo 141 partes.
+
+L3 deve estender cancelamento para tentativas/gerações/filhos reserved antes
+de habilitar a composição e adoção da criação. Sem cabeça ativa, endpoint ou UI;
+demais integrações e P1/F2-09/V2 permanecem pendentes.

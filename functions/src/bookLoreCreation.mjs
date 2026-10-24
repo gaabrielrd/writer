@@ -6,6 +6,7 @@ import {
   creationPaths,
   creationRequest,
   creationView,
+  creationCleanupRequest,
 } from './bookLoreCreationContracts.mjs';
 import {
   loadCreationReservation,
@@ -14,9 +15,12 @@ import {
   creationSlots,
   createCreationContext,
   writeCreationCancellation,
-  cancelCreationInTransaction,
 } from './bookLoreCreationStore.mjs';
 import { assertDeletionOpening, deletionScopeCheck } from './bookLoreDeletionStore.mjs';
+import {
+  requestCreationCancellation,
+  advanceCreationCleanupInTransaction,
+} from './bookLoreCreationCleanup.mjs';
 export const creationBookQuery = (db, uid, bookId) =>
   db.collection('users/' + uid + '/bookLoreCreations').where('intent.bookId', '==', bookId);
 export function createBookLoreCreationReservationService({ db }) {
@@ -30,6 +34,15 @@ export function createBookLoreCreationReservationService({ db }) {
   };
   return {
     getBookLoreCreationReservation: get,
+    async advanceBookLoreCreationCleanup(uid, input) {
+      const r = creationCleanupRequest(uid, input),
+        c = creationPaths(db, uid, r);
+      return db.runTransaction(async (tx) => {
+        const l = await loadCreationReservation(tx, c, r);
+        if (!l) conflict();
+        return advanceCreationCleanupInTransaction(tx, l, r);
+      });
+    },
     async startBookLoreCreationReservation(uid, input) {
       const intent = creationIntent(uid, input),
         c = creationPaths(db, uid, intent);
@@ -52,7 +65,7 @@ export function createBookLoreCreationReservationService({ db }) {
         c = creationPaths(db, uid, intent);
       const result = await db.runTransaction(async (tx) => {
         const l = await loadCreationReservation(tx, c, r);
-        if (l) return cancelCreationInTransaction(tx, l, r);
+        if (l) return requestCreationCancellation(tx, l, r);
         if (r.jobToken !== undefined) conflict();
         const slots = await creationSlots(tx, c);
         if (slots.reservation.exists || slots.cancel.exists || slots.proof.exists) conflict();
@@ -85,13 +98,26 @@ export async function advanceBookLoreCreationCleanup(tx, l, next) {
       !bornEqual(l.root, { createTime: job.context.bookBirth }))
   )
     conflict();
-  next.cursor = s.id;
-  if (job.cancellation) return;
+  if (job.cancellation) {
+    next.cursor = s.id;
+    return;
+  }
   const r = {
     ...intent,
     jobToken: job.token,
-    operationId: digest(['book-lore-creation-book-cancel', l.token, s.id]),
+    operationId: digest([
+      'book-lore-creation-book-cancel',
+      l.token,
+      s.id,
+      job.cancelRequest?.state.revision ?? null,
+    ]),
   };
-  await cancelCreationInTransaction(tx, job, r);
+  const result = job.cancelRequest
+    ? await advanceCreationCleanupInTransaction(tx, job, {
+        ...r,
+        expectedRevision: job.cancelRequest.state.revision,
+      })
+    : { progress: await requestCreationCancellation(tx, job, r) };
+  if (result.progress.phase === 'cancelled') next.cursor = s.id;
   next.coordinatedUnits++;
 }

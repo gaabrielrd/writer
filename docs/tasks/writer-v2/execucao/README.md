@@ -892,3 +892,16 @@ Próximo obrigatório L2: inventário/cancelamento de filhos e fonte privada dos
 uploads antes do primeiro byte. L3: composição/auditoria e ativação atômica,
 com sucesso histórico não cancelável. A reserva isolada não entrega criação.
 M38c/P1/F2-09/V2 seguem abertos, com commits locais e CI ignorada.
+
+### P1 M38c3m / criação L2 — uploads vinculados à reserva
+
+[Plano 90](90-uploads-vinculados-a-criacao-de-lore.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-uploads-vinculados-a-criacao-de-lore.md):
+294 Node e quatro SDK distintos positivos em rodadas dirigidas.
+Campos/páginas são preparados sem cabeça/inspeção fictícias; cancel fecha novos
+writes e limpa filhos por unidades, junto dos checkpoints, preservando fences.
+
+Próximo L3: tentativas/seleção congelada, reserva dos uploads para geração,
+cleanup de reserved, composição/auditoria sem base e ativação atômica de cabeça/
+geração/leases/clock/datas/recibo. Nenhum endpoint/UI novo; criação completa,
+demais integrações e P1/F2-09/V2 permanecem abertos. Commits somente locais.

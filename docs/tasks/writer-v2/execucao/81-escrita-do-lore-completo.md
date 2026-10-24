@@ -334,3 +334,15 @@ Criação completa exige L2 com uploads/inventário/cancelamento de filhos antes
 de gravar bytes, e L3 com composição/auditoria/ativação/sucesso histórico.
 Nenhuma cabeça ou endpoint/UI de criação foi habilitado. Demais writers/
 consumidores/backup/cliente e P1/F2-09/V2 permanecem pendentes.
+
+## Uploads da criação — M38c3m / L2
+
+[Plano 90](90-uploads-vinculados-a-criacao-de-lore.md) prepara campos/páginas
+pela reserva nativa, sem cabeça existente, e amplia o cancelamento antes de
+habilitar esses bytes. [Evidência](../../../entregas/2026-10-24-writer-v2-uploads-vinculados-a-criacao-de-lore.md):
+294 Node e quatro SDK distintos positivos.
+
+L3 deve integrar tentativas/filhos reserved ao cleanup, compor/auditar sem base
+e ativar cabeça/geração/leases/clock/datas/recibo atomicamente, preservando sucesso
+histórico. Criação completa e integrações de writers/consumidores/backup/cliente
+continuam pendentes. M38c/P1/F2-09/V2 abertos.

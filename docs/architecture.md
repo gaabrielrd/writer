@@ -1773,3 +1773,25 @@ L1 não é criação completa: L2 precisa inventário/cancelamento de filhos e f
 privada dos uploads antes do primeiro byte; L3 precisa composição/auditoria/
 ativação e reconhecimento de sucesso histórico. Sem endpoint/UI/deploy.
 Demais integrações de P1/F2-09/V2 continuam obrigatórias.
+
+## P1 M38c3m / criação L2 — campos sem cabeça ativa
+
+[ADR 0105](decisions/0105-native-creation-field-uploads.md) estende o protocolo
+de campos com creationRef e inventoryVersion 2, mantendo v1. Fonte reabre reserva/
+livro originais e bloqueia cabeça/tombstone/cancel; binding/prova são criados
+junto do job/lease/estado SHA e conferidos em cada load histórico.
+
+Com filhos, cancel registra intenção e journal nativos antes de limpar.
+Novas unidades/leitura selada são bloqueadas; advance coordena um filho por vez
+com CAS/recibo/checkpoint, até 16 partes e header por último. Auditorias limitadas
+verificam jobs/leases e ausência de conteúdo inesperado. Fences permanecem.
+Provas órfãs, controles/bytes recriados e recursos sem vínculo bloqueiam concluir.
+
+Store da criação depende só do journal de metadata; fonte/binding não importam
+o coordenador de cleanup. A etapa creations do inventário do livro usa o mesmo
+cancel/advance e confirma filhos já encerrados por fields, sem nova remoção.
+
+L2 não ativa ficha. L3 deve integrar tentativas/filhos reserved ao cancelamento,
+compor/auditar sem base e ativar cabeça/geração/leases/clock/datas/recibo juntos.
+Criação adotada é sucesso histórico não cancelável. Sem callable/UI/deploy;
+demais writers/consumidores/backup/cliente e P1/F2-09/V2 continuam pendentes.

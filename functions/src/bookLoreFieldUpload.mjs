@@ -39,6 +39,7 @@ import {
   uploadSealBarrier,
 } from './bookLoreFieldUploadProofs.mjs';
 import { createBookLoreFieldUploadCleanup } from './bookLoreFieldUploadCleanup.mjs';
+import { prepareCreationUploadBinding } from './bookLoreCreationUploads.mjs';
 // A native transaction may be supplied only by an internal parent coordinator.
 export function createBookLoreFieldUploadService({
   db,
@@ -75,7 +76,7 @@ export function createBookLoreFieldUploadService({
           job = {
             schemaVersion: 1,
             kind: 'upload',
-            inventoryVersion: 1,
+            inventoryVersion: intent.creation ? 2 : 1,
             ownerId: uid,
             uploadId: c.uploadId,
             startHash,
@@ -111,6 +112,11 @@ export function createBookLoreFieldUploadService({
           ),
           orphanState = await tx.get(c.stateRef);
         if (lease.exists || body.exists || chunks.docs.length || orphanState.exists) conflict();
+        if (intent.creation && materialization) conflict();
+        const binding = intent.creation
+          ? await prepareCreationUploadBinding(tx, c, context, startHash)
+          : null;
+        binding?.commit();
         tx.create(c.ref, job);
         tx.create(c.stateRef, state);
         tx.create(leaseRef, {

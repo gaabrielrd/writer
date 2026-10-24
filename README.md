@@ -503,3 +503,9 @@ servidor, cancelamento permanente e integração à exclusão do livro.
 A reserva não cria uma ficha visível. Uploads sem fonte existente, inventário
 dos filhos e composição/ativação L2/L3 continuam antes de habilitar a criação
 ao cliente. P1/F2-09/V2 permanecem abertos.
+
+M38c3m/L2 prepara campos e páginas sob a reserva, sem ficha ativa. Vínculos
+nativos e intenção de cancelamento coordenam uploads/cleanup e exclusão do livro.
+[Evidência](docs/entregas/2026-10-24-writer-v2-uploads-vinculados-a-criacao-de-lore.md).
+Ainda falta L3: composição/auditoria, cleanup de tentativas e ativação atômica.
+Nenhum endpoint/UI habilitado; demais integrações de P1/F2-09/V2 seguem abertas.

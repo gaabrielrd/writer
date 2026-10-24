@@ -14,6 +14,8 @@ import {
   uploadAtMost,
 } from './bookLoreFieldUploadContracts.mjs';
 import { editUploadReservation, editPreparationRef } from './bookLoreEditReservationContracts.mjs';
+import { openCreationUploadSource } from './bookLoreCreationSource.mjs';
+import { verifyCreationUploadBinding } from './bookLoreCreationUploads.mjs';
 const openings = new WeakMap();
 export const assertFieldUploadOpening = (tx, loaded) => {
   if (openings.get(loaded) !== tx) conflict();
@@ -31,6 +33,7 @@ export const uploadStateFields = [
 export const uploadLeaseRef = (c, j) =>
   c.db.doc('books/' + j.context.bookId + '/bookResourceLeases/' + j.context.manifest.bodyId);
 export async function uploadSource(tx, c, context, full = false) {
+  if (context.creation) return (await openCreationUploadSource(tx, c, context)).origin;
   const scope = { db: c.db, uid: c.uid, bookId: context.bookId, path: 'books/' + context.bookId },
     book = await readLoreBook(tx, scope),
     ref = c.db.doc(scope.path + '/lore/' + context.loreId),
@@ -167,20 +170,20 @@ export async function loadFieldUpload(tx, c, r) {
     editPreparationRef(j.materialization);
     if (j.materialization.sourceToken !== j.context.sourceToken) conflict();
   }
-  closed(j.context, [
-    'bookId',
-    'loreId',
-    'uploadId',
-    'sourceToken',
-    'target',
-    'manifest',
-    'bookBirth',
-  ]);
-  const { bookBirth, ...intent } = j.context;
+  closed(
+    j.context,
+    ['bookId', 'loreId', 'uploadId', 'sourceToken', 'target', 'manifest', 'bookBirth'],
+    ['creation', 'creationBirth'],
+  );
+  if (Object.hasOwn(j.context, 'creation') !== Object.hasOwn(j.context, 'creationBirth'))
+    conflict();
+  if (j.context.creationBirth) born({ createTime: j.context.creationBirth });
+  const { bookBirth, creationBirth, ...intent } = j.context;
+  void creationBirth;
   born({ createTime: bookBirth });
   if (
     j.kind !== 'upload' ||
-    j.inventoryVersion !== 1 ||
+    j.inventoryVersion !== (j.context.creation ? 2 : 1) ||
     j.context.uploadId !== c.uploadId ||
     fieldUploadStartHash(fieldUploadIntent(c.uid, intent)) !== j.startHash ||
     !['uploading', 'verifying', 'sealed', 'reserved', 'cancelling', 'cancelled'].includes(
@@ -299,6 +302,10 @@ export async function loadFieldUpload(tx, c, r) {
       digest(identityUpdate(snapshot)) !== digest(born(proof.snapshot))
     )
       conflict();
+  }
+  if (j.context.creation) {
+    if (j.materialization) conflict();
+    await verifyCreationUploadBinding(tx, loaded);
   }
   openings.set(loaded, tx);
   return loaded;

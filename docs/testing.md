@@ -1843,3 +1843,20 @@ Reader confere retirada e reserva, mantendo um chunk: v1 base 6/relações 8;
 v2 campo com base 7/relações 8, campo sem base 6 leituras. Arquitetura e
 sintaxe dos 213 módulos passaram. Sem UI/TS novos, não repetimos tipos/Vitest/
 build/browser; validate integral no fechamento de P1. L2/L3 pendentes.
+
+### P1 M38c3m / criação L2 — uploads e cancelamento dos filhos
+
+[Entrega](entregas/2026-10-24-writer-v2-uploads-vinculados-a-criacao-de-lore.md):
+294 Node distintos positivos em rodadas dirigidas (32 novos, 31 de reserva L1,
+45 de campos e 186 de edição/exclusões). Quatro SDK positivos, com bindings
+nativos acoplados, fonte sem cabeça, bloqueio por cancel, 141 partes em lotes/
+header por último, rollback, retry concorrente e retomada pela exclusão do livro.
+Binding/parte recriados são preservados; SDK nega controles/payloads.
+
+O teste extenso não relê corpo grande inteiro numa transação nativa. Journal
+do pai contém só metadata; SHA técnico do campo é privado e sai no EOF/cancel.
+Coleta de payload consulta metadata e provas de escrita, sem bytes/proof de chunk.
+
+Lint dirigido passou após remover dois imports de testes; arquitetura e sintaxe
+dos 217 módulos passaram. Sem TS/UI, não repetimos tipos/Vitest/build/browser.
+Validate integral no fechamento de P1. L3 e demais integrações seguem pendentes.

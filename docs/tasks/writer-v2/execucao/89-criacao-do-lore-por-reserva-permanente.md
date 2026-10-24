@@ -79,3 +79,17 @@ que impeça novos writes e limpar filhos antes do evento terminal. Somente entã
 habilitar bytes de criação. L3 deve reconhecer adoção nativa, recusar cancelá-la
 e preservar esse sucesso na exclusão do livro. Criação completa e as integrações
 continuam pendentes. Validate integral no fim de P1, sem CI/push/deploy.
+
+## Evidência e estado de L2
+
+[Plano 90](90-uploads-vinculados-a-criacao-de-lore.md),
+[entrega](../../../entregas/2026-10-24-writer-v2-uploads-vinculados-a-criacao-de-lore.md)
+e [ADR 0105](../../../decisions/0105-native-creation-field-uploads.md):
+294 Node e quatro SDK distintos positivos. L2 prepara campos/páginas sob
+reserva nativa, com intenção de cancel, inventário e cleanup coordenado.
+Não cria cabeça ou inspeção falsa.
+
+Próximo L3: congelar seleção/tentativa, reservar uploads para geração e ampliar
+cleanup de filhos reserved, compor/auditar sem base e ativar cabeça/geração/
+leases/clock/datas/recibo atomicamente. Adoção preserva sucesso histórico.
+Criação completa e demais integrações continuam pendentes, sem endpoint/UI.
