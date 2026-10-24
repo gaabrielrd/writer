@@ -317,9 +317,18 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
           seen.add(target.path);
           if (
             change.scope === 'local' &&
-            (await tx.get(db.doc(context.bookRef.path + '/bookLoreTombstones/' + target.id))).exists
+            (
+              await Promise.all(
+                ['bookLoreTombstones', 'bookLoreReservations'].map((name) =>
+                  tx.get(db.doc(context.bookRef.path + '/' + name + '/' + target.id)),
+                ),
+              )
+            ).some((s) => s.exists)
           )
-            fail('failed-precondition', 'Esta ficha foi excluída. Use outro identificador.');
+            fail(
+              'failed-precondition',
+              'Esta ficha foi retirada ou reservada. Use outro identificador.',
+            );
           if (!existing && (!input.name || !input.summary || !input.category))
             fail('invalid-argument', 'Preencha nome, categoria e resumo da entidade nova.');
           if (

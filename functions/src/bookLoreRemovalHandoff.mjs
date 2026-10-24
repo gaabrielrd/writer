@@ -15,7 +15,7 @@ export async function advanceBookLoreRemovalHandoff(tx, l, next) {
   if (next.cursor) query = query.startAfter(next.cursor);
   const s = (await tx.get(query)).docs[0];
   if (!s) {
-    next.phase = 'heads';
+    next.phase = 'creations';
     next.cursor = null;
     return;
   }

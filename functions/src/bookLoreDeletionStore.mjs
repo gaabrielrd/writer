@@ -25,6 +25,7 @@ export const deletionPhases = [
   'fields',
   'inspections',
   'removals',
+  'creations',
   'heads',
   'generations',
   'segments',

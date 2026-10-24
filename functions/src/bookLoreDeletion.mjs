@@ -10,6 +10,7 @@ import {
 import { deletionJobQueries } from './bookLoreDeletionJobs.mjs';
 import { prepareLoreCleanupUnit } from './bookLoreCleanup.mjs';
 import { advanceBookLoreRemovalHandoff, removalBookQuery } from './bookLoreRemovalHandoff.mjs';
+import { creationBookQuery, advanceBookLoreCreationCleanup } from './bookLoreCreation.mjs';
 async function activity(tx, l) {
   const base = 'books/' + l.c.bookId + '/',
     queries = [
@@ -23,6 +24,7 @@ async function activity(tx, l) {
       ].map((name) => l.c.db.collection(base + name)),
       ...deletionJobQueries(l.c.db, l.c.uid, l.c.bookId),
       removalBookQuery(l.c.db, l.c.uid, l.c.bookId),
+      creationBookQuery(l.c.db, l.c.uid, l.c.bookId),
     ];
   const pages = await Promise.all(queries.map((q) => tx.get(q.limit(1).select())));
   return pages.some((p) => p.docs.length > 0);
@@ -39,6 +41,7 @@ export async function prepareBookLoreDeletion(tx, { db, uid, bookId, operationId
     next = deletionNextState(l);
   let unit = { remove: [], commit() {} };
   if (next.phase === 'removals') await advanceBookLoreRemovalHandoff(tx, l, next);
+  else if (next.phase === 'creations') await advanceBookLoreCreationCleanup(tx, l, next);
   else if (next.phase === 'finish') {
     await assertBookLorePayloadsEmpty(tx, db, bookId);
     next.complete = true;

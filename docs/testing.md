@@ -1825,3 +1825,21 @@ As falhas iniciais do relógio, custo, expectativa de ausência e variável da
 Rule estão registradas e corrigidas na entrega, com repetição dirigida.
 Lint, arquitetura e sintaxe dos 210 módulos passaram. Sem UI/TS novos,
 não repetimos Vitest/tipos/build/browser; validate integral no fechamento de P1.
+
+### P1 M38c3l L1 — reserva permanente da criação
+
+[Entrega](entregas/2026-10-24-writer-v2-reserva-permanente-da-criacao-de-lore.md):
+336 Node distintos positivos em duas rodadas sem falha (90 reserva/exclusões,
+246 leitores/upload/inspeção/adoção/inventário/análise). Três SDK distintos
+positivos em rodadas dirigidas, com reserva realmente concorrente, clock/
+publicação preservados, controle positivo de outro ID, negação do reservado,
+cancel prévio privado, marcador recriado e rollback do checkpoint do livro.
+
+Uma fixture SDK reutilizava creationId entre livros; corrigido só o ID da
+fixture e repetido o caso afetado. A rejeição do servidor foi preservada.
+Dois imports não usados do teste foram removidos; lint corrigido passou.
+
+Reader confere retirada e reserva, mantendo um chunk: v1 base 6/relações 8;
+v2 campo com base 7/relações 8, campo sem base 6 leituras. Arquitetura e
+sintaxe dos 213 módulos passaram. Sem UI/TS novos, não repetimos tipos/Vitest/
+build/browser; validate integral no fechamento de P1. L2/L3 pendentes.

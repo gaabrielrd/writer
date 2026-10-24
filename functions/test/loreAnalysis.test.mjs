@@ -427,3 +427,32 @@ for (const existing of [false, true])
       assert.equal(f.records.get('users/author').credits, 5);
     },
   );
+
+for (const existing of [false, true])
+  test(
+    'a server creation reservation blocks ' +
+      (existing ? 'updating a premature head' : 'reusing an analysis target') +
+      ' before charging',
+    async () => {
+      const f = fixture(),
+        id = existing ? 'arthur' : request.requestId + '-0';
+      if (existing)
+        f.records.set('books/book/lore/' + id, { ...input, summary: 'Antes', updatedAt: 1 });
+      await f.service.analyzeChapterLore('author', {
+        ...request,
+        loreVersions: existing ? [[id, 1]] : [],
+      });
+      f.records.set('books/book/bookLoreReservations/' + id, { serverReserved: true });
+      const before = structuredClone([...f.records]);
+      await assert.rejects(
+        () =>
+          apply(
+            f.service,
+            existing ? [{ scope: 'local', entityId: id, input: { summary: 'Depois' } }] : local,
+          ),
+        { code: 'failed-precondition' },
+      );
+      assert.deepEqual([...f.records], before);
+      assert.equal(f.records.get('users/author').credits, 5);
+    },
+  );

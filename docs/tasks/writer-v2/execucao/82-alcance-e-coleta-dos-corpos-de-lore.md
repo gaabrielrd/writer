@@ -141,3 +141,15 @@ Deleting do livro passa a limpeza ao inventário v3, sem dois cursores concorren
 [Evidência](../../../entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md):
 303 Node e cinco SDK distintos positivos. Criação por reserva, demais writers/
 consumidores/backup/cliente e rollout mantêm o passo 6 e P1 abertos.
+
+## Preparação para criar lore — M38c3l L1
+
+O [plano 89](89-criacao-do-lore-por-reserva-permanente.md) acrescenta reserva
+privada e cancelamento vazio antes de qualquer produtor sem ficha existente.
+Etapa creations do inventário v3 preserva ID/fences e cancela junto do checkpoint.
+[Evidência](../../../entregas/2026-10-24-writer-v2-reserva-permanente-da-criacao-de-lore.md):
+336 Node e três SDK distintos positivos.
+
+Inventário/cancelamento de filhos L2 precisam existir antes do primeiro byte.
+Composição/ativação L3 e todas as integrações continuam pendentes.
+P1/F2-09/V2 abertos; reserva isolada não conclui criação.

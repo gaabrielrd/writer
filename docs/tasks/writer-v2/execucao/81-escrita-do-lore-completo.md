@@ -322,3 +322,15 @@ atômicos, cleanup limitado e handoff nativo para o inventário do livro.
 Criação por reserva e integração completa de writers/consumidores/backup/
 cliente continuam obrigatórias. Não habilitar o editor/endpoint ainda.
 M38c/P1/F2-09/V2 permanecem abertos.
+
+## Reserva de criação — M38c3l L1
+
+O [plano 89](89-criacao-do-lore-por-reserva-permanente.md) implementa somente
+a reserva vazia, cancelamento/fences e integração à exclusão do livro.
+[Evidência](../../../entregas/2026-10-24-writer-v2-reserva-permanente-da-criacao-de-lore.md):
+336 Node e três SDK distintos positivos.
+
+Criação completa exige L2 com uploads/inventário/cancelamento de filhos antes
+de gravar bytes, e L3 com composição/auditoria/ativação/sucesso histórico.
+Nenhuma cabeça ou endpoint/UI de criação foi habilitado. Demais writers/
+consumidores/backup/cliente e P1/F2-09/V2 permanecem pendentes.

@@ -302,8 +302,8 @@ test('v2 field and relation units use constant native reads and exactly one requ
       }),
     );
   for (const [section, expected] of [
-    ['field', 6],
-    ['relations', 7],
+    ['field', 7],
+    ['relations', 8],
   ]) {
     paths.length = 0;
     const result = await f.api.readBookLorePart(s.uid, {
@@ -347,7 +347,7 @@ test('field-only units do not open an unrelated base or another field body', asy
       }),
     );
   await f.api.readBookLorePart(s.uid, req(s, v));
-  assert.equal(paths.length, 5);
+  assert.equal(paths.length, 6);
   assert.equal(
     paths.filter((p) => p === 'books/' + s.bookId + '/bookLoreTombstones/' + s.id).length,
     1,

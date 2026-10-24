@@ -496,3 +496,10 @@ fichas e transfere a responsabilidade ao inventário do livro se ele for excluí
 [Evidência](docs/entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md).
 Não habilita UI/endpoint. Criação por reserva, demais writers/consumidores,
 backup/cliente e ativação de P1 continuam pendentes.
+
+M38c3l L1 acrescenta a reserva privada para criação de lore, com ID derivado no
+servidor, cancelamento permanente e integração à exclusão do livro.
+[Evidência](docs/entregas/2026-10-24-writer-v2-reserva-permanente-da-criacao-de-lore.md).
+A reserva não cria uma ficha visível. Uploads sem fonte existente, inventário
+dos filhos e composição/ativação L2/L3 continuam antes de habilitar a criação
+ao cliente. P1/F2-09/V2 permanecem abertos.

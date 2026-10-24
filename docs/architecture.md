@@ -1751,3 +1751,25 @@ originais depois da raiz sair, sem reabrir origem ou executar cursor antigo.
 O leitor completo acrescenta uma consulta constante ao tombstone por abertura.
 Criação por reserva, demais writers/consumidores/backup/cliente e rollout seguem
 obrigatórios antes de endpoint/UI. P1/F2-09/V2 abertos, sem deploy.
+
+## P1 M38c3l L1 — reserva da criação de lore
+
+[ADR 0104](decisions/0104-permanent-book-lore-creation-reservation.md) fixa
+intenção bookId/creationId e loreId derivado no servidor. Contexto privado
+bookLoreCreations e bookLoreReservations/loreId compartilham nascimento;
+hasLoreResources é marcado atomicamente, sem cabeça, clock/prosa/datas ou
+publicação novos.
+
+Cancelamento cria evento/prova imutáveis e preserva marcadores. Cancel prévio
+cria somente fence privado do UID. Abertura nativa ligada à transação exige
+reserva/livro originais autorizados e ausência de cabeça/tombstone; token
+histórico sozinho não é grant. Recursos inesperados bloqueiam cancel vazio.
+
+Etapa creations do inventário v3 cancela reservas vazias junto do checkpoint
+do livro. Rules, leitor e análise protegem IDs reservados de cabeça prematura.
+O reader acrescenta uma consulta constante ao marcador.
+
+L1 não é criação completa: L2 precisa inventário/cancelamento de filhos e fonte
+privada dos uploads antes do primeiro byte; L3 precisa composição/auditoria/
+ativação e reconhecimento de sucesso histórico. Sem endpoint/UI/deploy.
+Demais integrações de P1/F2-09/V2 continuam obrigatórias.

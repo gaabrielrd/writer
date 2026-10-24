@@ -879,3 +879,16 @@ fichas preservadas e handoff nativo para a exclusão do livro. Sem UI/endpoint.
 Próximo: criação por reserva, depois demais writers/consumidores/backup/cliente
 e roteamento de preparações sem marca antes da exposição. Validate integral
 no fechamento de P1. P1/F2-09/V2 abertos; somente commits locais.
+
+### P1 M38c3l L1 — reserva permanente da criação de lore
+
+[Plano 89](89-criacao-do-lore-por-reserva-permanente.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-reserva-permanente-da-criacao-de-lore.md):
+336 Node e três SDK distintos positivos em rodadas dirigidas.
+Reserva vazia e cancelamento são nativos, com ID servidor e fences; etapa
+creations coordena a exclusão do livro. Sem cabeça/bytes ou UI habilitados.
+
+Próximo obrigatório L2: inventário/cancelamento de filhos e fonte privada dos
+uploads antes do primeiro byte. L3: composição/auditoria e ativação atômica,
+com sucesso histórico não cancelável. A reserva isolada não entrega criação.
+M38c/P1/F2-09/V2 seguem abertos, com commits locais e CI ignorada.
