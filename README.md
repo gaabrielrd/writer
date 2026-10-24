@@ -535,3 +535,10 @@ reautorização após a resposta e ao reutilizar texto. Preserva fichas de orige
 e recibos; escrita payload continua exigindo a integração preparada A2.
 [Evidência](docs/entregas/2026-10-24-writer-v2-leitura-logica-da-analise-de-lore.md).
 Sem implantação; demais writers/consumidores/backup/cliente e P1/F2-09/V2 abertos.
+
+M38c4b/A2a acrescenta adoção interna de 1..50 fichas preparadas no mesmo
+commit, com clock/privacidade agregados e comprovante nativo conjunto.
+Reedição/retirada/exclusão preservam confirmação sem recriar fichas.
+[Evidência](docs/entregas/2026-10-24-writer-v2-adocao-conjunta-das-geracoes-de-lore.md).
+A2b/A2c ainda precisam preparar o lote da análise e compor débito/recibo
+reais. Sem nova UI ou implantação; P1/F2-09/Writer V2 permanecem abertos.

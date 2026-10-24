@@ -1929,3 +1929,23 @@ para conflito de origem após os casos negativos detectarem o código incorreto.
 Arquitetura, lint dirigido e sintaxe dos 226 módulos passaram. Sem UI/TS novos,
 não repetimos Vitest/tipos/build/browser. Validate/cobertura no fechamento de P1.
 A2 e demais integrações permanecem pendentes, sem CI/push/deploy.
+
+### P1 M38c4b / A2a — adoção conjunta de lore
+
+[Entrega](entregas/2026-10-24-writer-v2-adocao-conjunta-das-geracoes-de-lore.md):
+37 novos Node e 206 de regressão positivos; quatro SDK distintos positivos
+em duas rodadas, emulador 1.22.0 verificado demo/loopback. Testes cobrem
+1/50 membros, inline/v1/v2/criação, CAS/autorizações, clock/privacidade únicos,
+prova nativa conjunta, reedição/GC/retirada/exclusão e rollback composto.
+
+Primeira rodada confirmou lote misto concorrente e rollback nativo do recibo.
+Timeout no caso stale revelou leituras irmãs após rejeição; o teste seguinte
+não iniciou por falha no clearFirestore. Ajustamos espera das leituras,
+acrescentamos prova determinística e repetimos somente os dois afetados:
+2/2 positivos, 88784.6045 ms. O caso nativo de 50 payloads confirma um commit
+com mais de 500 writes metadata, uma escrita da raiz e nenhum corpo/lease
+individual gravado. Saldo/recibo usados são de um caller de teste.
+
+Lint dirigido, arquitetura e sintaxe dos 227 módulos positivos. Sem TS/UI
+novos, não repetimos tipos/Vitest/build/browser. Validate/cobertura no fim
+de P1. A2b/A2c e demais integrações pendentes; sem CI/push/deploy.

@@ -958,3 +958,17 @@ Próximo A2: preparar/adotar lote multi-item com crédito/recibo atômicos.
 Writer payload ainda é recusado explicitamente, sem campos inline misturados.
 Demais consumidores/backup/cliente e M38c/P1/F2-09/V2 permanecem abertos.
 Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.
+
+### P1 M38c4b / A2a — adoção conjunta das gerações de lore
+
+[Plano 95](95-adocao-conjunta-das-geracoes-de-lore.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-adocao-conjunta-das-geracoes-de-lore.md):
+37 novos Node, 206 regressões Node e quatro casos SDK distintos positivos.
+Lote de até 50 fichas adota cabeças/gerações/recibos/criadores com um clock;
+prova conjunta nativa confirma metadata após GC/retirada/exclusão.
+Rejeição aguarda leituras irmãs; retomada SDK dos dois afetados foi positiva.
+
+Próximos A2b/A2c: preparação/inventário/cancelamento e ligação real do lote
+local/global/novo com crédito/recibo. applyLoreAnalysis ainda recusa payload.
+Demais integrações e P1/F2-09/V2 seguem abertos. Validate integral no fim
+de P1; somente commits locais, sem CI/push/deploy.

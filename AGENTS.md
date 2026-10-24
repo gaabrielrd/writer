@@ -162,6 +162,7 @@
 - Ative criação somente com cabeça/geração/leases lógicas/clock/datas/recibo e prova histórica do criador no mesmo commit; cabeça reservada exige nascimento original, e sucesso não pode ser cancelado nem recriado por replay, conforme ADR 0107.
 - Encaminhe toda exclusão de livro ao protocolo servidor, inclusive sem flags; SDK não finaliza raiz nem grava deletedBooks, e falhas não executam fallback de cleanup, conforme ADR 0108.
 - Monte contexto da análise por lore lógico com budgets agregados e origem nativa; reautorize após resposta e antes de reutilizar corpo, preserve recibo metadata e recuse writer inline sobre payload até adoção preparada, conforme ADR 0109.
+- Adote lotes preparados de até 50 fichas na transação do caller, com clock/privacidade agregados e prova conjunta de nascimento; aguarde leituras irmãs antes de rejeitar, preserve replay metadata sem inferir atomicidade de sucessos individuais, conforme ADR 0110.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

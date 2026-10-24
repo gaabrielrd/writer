@@ -249,7 +249,7 @@ export async function replayEditReservation(tx, loaded, method, r) {
   if (proof.record.method !== method || proof.record.requestHash !== digest(r)) conflict();
   return { receipt: proof.record.progress, progress: editReservationView(loaded) };
 }
-export function commitEditReservation(tx, loaded, method, r, patch) {
+export function prepareEditReservationCommit(tx, loaded, method, r, patch) {
   const { c, job: j } = loaded,
     next = { ...j, ...patch, revision: j.revision + 1, lastOperationId: r.operationId };
   integer(next.revision, 1);
@@ -270,18 +270,28 @@ export function commitEditReservation(tx, loaded, method, r, patch) {
       jobHash: digest(next),
       progress,
     };
-  tx.update(c.ref, next);
-  tx.create(c.db.doc(c.path + '/operations/' + r.operationId), record);
-  tx.create(c.db.doc(c.path + '/operationProofs/' + r.operationId), {
-    schemaVersion: 1,
-    ownerId: c.uid,
-    editId: c.id,
-    editToken: loaded.token,
-    startHash: j.startHash,
-    operationId: r.operationId,
-    receiptHash: digest(record),
-  });
-  return { receipt: progress, progress };
+  const proof = {
+      schemaVersion: 1,
+      ownerId: c.uid,
+      editId: c.id,
+      editToken: loaded.token,
+      startHash: j.startHash,
+      operationId: r.operationId,
+      receiptHash: digest(record),
+    },
+    result = { receipt: progress, progress };
+  return {
+    result,
+    commit() {
+      tx.update(c.ref, next);
+      tx.create(c.db.doc(c.path + '/operations/' + r.operationId), record);
+      tx.create(c.db.doc(c.path + '/operationProofs/' + r.operationId), proof);
+      return result;
+    },
+  };
+}
+export function commitEditReservation(tx, loaded, method, r, patch) {
+  return prepareEditReservationCommit(tx, loaded, method, r, patch).commit();
 }
 export async function readEditReservationSlot(tx, loaded, idOrSnapshot) {
   const { c, job: j } = loaded,

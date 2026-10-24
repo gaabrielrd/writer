@@ -1887,3 +1887,29 @@ applyLoreAnalysis não mistura campo inline em payload. A2 ainda deve preparar
 e adotar o lote inteiro com crédito/recibo atômicos. Inline/global mantêm o
 contrato vigente; escritor completo, demais consumidores/backup/cliente e
 ativação de P1 seguem pendentes. Sem novo endpoint/Rule/índice/dependência.
+
+## P1 M38c4b / A2a — adoção conjunta de lore
+
+[ADR 0110](decisions/0110-atomic-book-lore-adoption-batches.md):
+prepareBookLoreEditAdoption e prepareBookLoreEditAdoptionBatch separam
+leitura/validação dos writes na transação do caller. Serviço singular usa
+o mesmo plano, preservando hashes e recibos. Lote aceita 1..50 CAS canônicos,
+com edições/alvos distintos e mesmo UID/livro/nascimento.
+
+Timestamp comum monotônico, um avanço localLoreVersion e no máximo uma
+revogação/versão de privacidade por lote. Cada membro conserva before/after
+próprios. Cabeças/gerações/aposentadorias/leases lógicas/recibos/criadores
+confirmam juntos, sem writes de partes/headers/leases individuais.
+Falha de um membro aguarda as leituras irmãs antes de rejeitar a transação.
+
+Comprovante/prova imutáveis em adoptionBatches/adoptionBatchProofs sob a
+primeira edição fixam intenção ordenada e metadata. Nascem junto dos recibos/
+eventos de todos os membros. Replay exige a prova conjunta original; não
+infere atomicidade de sucessos individuais. GC/retirada/exclusão conservam
+confirmação sem prosa nem ressurreição. Não há novo inventário de preparação:
+metadata só nasce no sucesso sob o job permanente existente.
+
+Caller pode ler saldo/recibo após preparar e gravá-los no mesmo commit.
+A primitiva não cobra nem integra ainda applyLoreAnalysis: A2b/A2c precisam
+preparação/cancelamento/inventário e aplicação local/global/nova com débito/
+recibo reais. Demais integrações e certificação de P1 permanecem abertas.

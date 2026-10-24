@@ -17,8 +17,14 @@ import {
 import {
   loadEditReservation,
   replayEditReservation,
-  commitEditReservation,
+  prepareEditReservationCommit,
 } from './bookLoreEditReservationStore.mjs';
+import {
+  adoptionBatchScope,
+  readAdoptionBatch,
+  replayAdoptionBatch,
+  prepareAdoptionBatchReceipt,
+} from './bookLoreEditAdoptionBatch.mjs';
 async function finalPrivacy(tx, l, compiled) {
   const s = compiled.storage,
     source = compiled.source.metadata.isPublic;
@@ -83,95 +89,189 @@ async function oldGeneration(tx, l, compiled) {
     conflict();
   return prepareInventoryChange(tx, old, 'retire', { phase: 'retired' });
 }
+// A rejected member must not leave sibling reads running after the SDK rolls back.
+async function settleReads(operations) {
+  const results = await Promise.allSettled(operations),
+    failure = results.find((result) => result.status === 'rejected');
+  if (failure) throw failure.reason;
+  return results.map((result) => result.value);
+}
+async function openCandidate(tx, db, uid, r) {
+  const c = editReservationPaths(db, uid, r.editId),
+    l = await loadEditReservation(tx, c, r);
+  if (!l || l.job.kind === 'fence') conflict();
+  const replay = await replayEditReservation(tx, l, 'adoptBookLoreEditGeneration', r);
+  if (replay) return { l, r, replay };
+  if (l.job.phase !== 'preparing' || l.job.revision !== r.expectedRevision) conflict();
+  const compiled = await openBookLoreEditCompilation(tx, l),
+    root = await readWorkMetadata(tx, db.doc('books/' + l.job.context.intent.bookId), [
+      'authorId',
+      'deleting',
+      'localLoreVersion',
+      'publicationPrivacyVersion',
+      'updatedAt',
+      'status',
+      'hasLoreResources',
+    ]),
+    book = root.data(),
+    before = compiled.source.metadata.isPublic,
+    after = await finalPrivacy(tx, l, compiled);
+  if (Object.hasOwn(book, 'hasLoreResources') && typeof book.hasLoreResources !== 'boolean')
+    conflict();
+  return {
+    l,
+    r,
+    compiled,
+    book,
+    before,
+    after,
+    revoked: before.present && before.value === true && !(after.present && after.value === true),
+  };
+}
+function adoptionFrame(candidates, now) {
+  const book = candidates[0].book,
+    revoked = candidates.some((c) => c.revoked),
+    privacyVersion = epoch(
+      Object.hasOwn(book, 'publicationPrivacyVersion') ? book.publicationPrivacyVersion : 0,
+    ),
+    publicationPrivacyVersion = revoked ? privacyVersion + 1 : privacyVersion;
+  integer(publicationPrivacyVersion);
+  for (const c of candidates) if (digest(c.book) !== digest(book)) conflict();
+  return {
+    timestamp: Math.max(...candidates.map((c) => nextTimestamp(now, c.compiled, book))),
+    localLoreVersion: nextBookLocalLoreVersion(book),
+    publicationPrivacyVersion,
+    revoked,
+  };
+}
+async function prepareCandidate(tx, candidate, frame) {
+  const { l, r, compiled, before, after, revoked } = candidate,
+    { timestamp, localLoreVersion, publicationPrivacyVersion } = frame,
+    { db } = l.c,
+    intent = l.job.context.intent,
+    creating = l.job.context.sourceMode === 'creation',
+    storage = loreGenerationStorage({
+      ...compiled.storage,
+      dates: {
+        ...compiled.storage.dates,
+        ...(creating ? { createdAt: timestamp } : {}),
+        updatedAt: timestamp,
+      },
+    }),
+    adoption = {
+      schemaVersion: 1,
+      operationId: r.operationId,
+      generationRevision: 1,
+      storage,
+      timestamp,
+      localLoreVersion,
+      publicationPrivacyVersion,
+      revoked,
+      privacy: { before, after },
+    },
+    old = await oldGeneration(tx, l, compiled),
+    active = await prepareInventoryChange(
+      tx,
+      l.generation,
+      'adopt-preparation',
+      { phase: 'active' },
+      digest(adoption),
+    ),
+    creation = creating ? await prepareCreationActivation(tx, l, compiled, adoption) : null,
+    edit = prepareEditReservationCommit(tx, l, 'adoptBookLoreEditGeneration', r, {
+      phase: 'adopted',
+      adoption,
+    });
+  return {
+    result: edit.result,
+    commit() {
+      creation?.commit();
+      active.commit();
+      old?.commit();
+      const writeHead = creating ? tx.create.bind(tx) : tx.set.bind(tx);
+      writeHead(db.doc('books/' + intent.bookId + '/lore/' + intent.loreId), {
+        bookId: intent.bookId,
+        ...storage.dates,
+        payloadStorage: storage,
+        ...(after.present ? { isPublic: after.value } : {}),
+      });
+      return edit.commit();
+    },
+  };
+}
+function commitBook(tx, db, bookId, frame) {
+  const { timestamp, localLoreVersion, publicationPrivacyVersion, revoked } = frame;
+  tx.update(db.doc('books/' + bookId), {
+    localLoreVersion,
+    hasLoreResources: true,
+    updatedAt: timestamp,
+    ...(revoked ? { status: 'draft', publicationPrivacyVersion } : {}),
+  });
+  if (revoked) tx.delete(db.doc('publicBooks/' + bookId));
+}
+/** Caller owns the transaction; preparing performs reads only, commit performs writes only. */
+export async function prepareBookLoreEditAdoption(tx, { db, now = () => Date.now() }, uid, input) {
+  const r = editReservationRequest(uid, input, [], true, true),
+    candidate = await openCandidate(tx, db, uid, r);
+  if (candidate.replay) return { result: candidate.replay, commit: () => candidate.replay };
+  const frame = adoptionFrame([candidate], now),
+    plan = await prepareCandidate(tx, candidate, frame);
+  return {
+    result: plan.result,
+    commit() {
+      const result = plan.commit();
+      commitBook(tx, db, candidate.l.job.context.intent.bookId, frame);
+      return result;
+    },
+  };
+}
+/** Internal all-or-nothing adoption; no credit is charged by this primitive. */
+export async function prepareBookLoreEditAdoptionBatch(
+  tx,
+  { db, now = () => Date.now() },
+  uid,
+  input,
+) {
+  const scope = adoptionBatchScope(db, uid, input),
+    candidates = await settleReads(
+      scope.request.requests.map((r) => openCandidate(tx, db, uid, r)),
+    ),
+    first = candidates[0].l.job.context,
+    ids = new Set();
+  for (const { l } of candidates) {
+    const context = l.job.context;
+    if (
+      context.intent.bookId !== first.intent.bookId ||
+      digest(context.bookBirth) !== digest(first.bookBirth) ||
+      ids.has(context.intent.loreId)
+    )
+      conflict();
+    ids.add(context.intent.loreId);
+  }
+  const previous = await readAdoptionBatch(tx, scope);
+  if (previous) {
+    const result = await replayAdoptionBatch(tx, scope, previous, candidates);
+    return { result, commit: () => result };
+  }
+  if (candidates.some((c) => c.replay)) conflict();
+  const frame = adoptionFrame(candidates, now),
+    plans = await settleReads(candidates.map((c) => prepareCandidate(tx, c, frame))),
+    batch = prepareAdoptionBatchReceipt(tx, scope, candidates, frame, plans);
+  return {
+    result: batch.result,
+    commit() {
+      for (const plan of plans) plan.commit();
+      commitBook(tx, db, first.intent.bookId, frame);
+      return batch.commit();
+    },
+  };
+}
 export function createBookLoreEditAdoptionService({ db, now = () => Date.now() }) {
   return {
     async adoptBookLoreEditGeneration(uid, input) {
-      const r = editReservationRequest(uid, input, [], true, true),
-        c = editReservationPaths(db, uid, r.editId);
-      return db.runTransaction(async (tx) => {
-        const l = await loadEditReservation(tx, c, r);
-        if (!l || l.job.kind === 'fence') conflict();
-        const replay = await replayEditReservation(tx, l, 'adoptBookLoreEditGeneration', r);
-        if (replay) return replay;
-        if (l.job.phase !== 'preparing' || l.job.revision !== r.expectedRevision) conflict();
-        const compiled = await openBookLoreEditCompilation(tx, l),
-          intent = l.job.context.intent,
-          creating = l.job.context.sourceMode === 'creation',
-          root = await readWorkMetadata(tx, db.doc('books/' + intent.bookId), [
-            'authorId',
-            'deleting',
-            'localLoreVersion',
-            'publicationPrivacyVersion',
-            'updatedAt',
-            'status',
-            'hasLoreResources',
-          ]),
-          book = root.data(),
-          before = compiled.source.metadata.isPublic,
-          after = await finalPrivacy(tx, l, compiled),
-          localLoreVersion = nextBookLocalLoreVersion(book),
-          privacyVersion = epoch(
-            Object.hasOwn(book, 'publicationPrivacyVersion') ? book.publicationPrivacyVersion : 0,
-          ),
-          revoked =
-            before.present && before.value === true && !(after.present && after.value === true),
-          publicationPrivacyVersion = revoked ? privacyVersion + 1 : privacyVersion,
-          timestamp = nextTimestamp(now, compiled, book);
-        integer(publicationPrivacyVersion);
-        if (Object.hasOwn(book, 'hasLoreResources') && typeof book.hasLoreResources !== 'boolean')
-          conflict();
-        const storage = loreGenerationStorage({
-            ...compiled.storage,
-            dates: {
-              ...compiled.storage.dates,
-              ...(creating ? { createdAt: timestamp } : {}),
-              updatedAt: timestamp,
-            },
-          }),
-          adoption = {
-            schemaVersion: 1,
-            operationId: r.operationId,
-            generationRevision: 1,
-            storage,
-            timestamp,
-            localLoreVersion,
-            publicationPrivacyVersion,
-            revoked,
-            privacy: { before, after },
-          },
-          old = await oldGeneration(tx, l, compiled),
-          active = await prepareInventoryChange(
-            tx,
-            l.generation,
-            'adopt-preparation',
-            { phase: 'active' },
-            digest(adoption),
-          );
-        const creation = creating
-          ? await prepareCreationActivation(tx, l, compiled, adoption)
-          : null;
-        creation?.commit();
-        active.commit();
-        old?.commit();
-        const writeHead = creating ? tx.create.bind(tx) : tx.set.bind(tx);
-        writeHead(db.doc('books/' + intent.bookId + '/lore/' + intent.loreId), {
-          bookId: intent.bookId,
-          ...storage.dates,
-          payloadStorage: storage,
-          ...(after.present ? { isPublic: after.value } : {}),
-        });
-        tx.update(db.doc('books/' + intent.bookId), {
-          localLoreVersion,
-          hasLoreResources: true,
-          updatedAt: timestamp,
-          ...(revoked ? { status: 'draft', publicationPrivacyVersion } : {}),
-        });
-        if (revoked) tx.delete(db.doc('publicBooks/' + intent.bookId));
-        return commitEditReservation(tx, l, 'adoptBookLoreEditGeneration', r, {
-          phase: 'adopted',
-          adoption,
-        });
-      });
+      return db.runTransaction(async (tx) =>
+        (await prepareBookLoreEditAdoption(tx, { db, now }, uid, input)).commit(),
+      );
     },
   };
 }
