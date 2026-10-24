@@ -369,3 +369,15 @@ Próximo obrigatório: integrar os demais escritores Admin/regras e roteamento
 das preparações sem flag, depois consumidores/backup/cliente/recuperação e
 rollout coordenado. Criação na interface e o conjunto M38c/P1/F2-09/V2
 continuam pendentes. Validate integral no fechamento de P1.
+
+## Roteamento da exclusão sem marca — M38c3p
+
+[Plano 93](93-roteamento-integral-da-exclusao-de-livros.md) elimina a decisão
+cliente por flags: todo livro é finalizado pelo protocolo servidor. SDK não
+remove raiz nem grava deletedBooks. Backend descobre preparações privadas
+sem marca e conserva checkpoint/controles. A pendência de roteamento do plano 87
+foi coberta; rollout conjunto/drenagem continuam obrigatórios.
+
+Próximo: demais escritores Admin/regras, consumidores/backup/cliente e
+certificação/ativação de P1. Outros namespaces de exclusão ainda exigem
+auditoria própria. M38c/P1/F2-09/V2 permanecem abertos.

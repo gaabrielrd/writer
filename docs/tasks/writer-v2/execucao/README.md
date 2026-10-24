@@ -932,3 +932,16 @@ Backend interno de criação concluído com L1/L2/L3A/L3B, sem endpoint/UI.
 Próximos: demais writers/regras, consumidores, backup/cliente/recuperação,
 roteamento de preparações sem flag e rollout. M38c/P1/F2-09/V2 continuam
 abertos. Validate integral no fim de P1; somente commits locais, sem CI.
+
+### P1 M38c3p — roteamento integral da exclusão de livros
+
+[Plano 93](93-roteamento-integral-da-exclusao-de-livros.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-roteamento-integral-da-exclusao-de-livros.md):
+92 Vitest, 23 Node e 17 SDK positivos.
+Todo livro é finalizado pelo servidor; flags ausentes/false não escondem
+preparações. SDK não remove raiz nem grava tombstone, com controles positivos
+de início/metadata/limpeza nativa, retomada e contadores de universo.
+
+Pendentes: rollout/drenagem, demais escritores, consumidores/backup/cliente e
+auditoria dos outros namespaces. M38c/P1/F2-09/V2 continuam abertos.
+Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.

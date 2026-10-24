@@ -109,7 +109,7 @@ test('SDK consent removal atomically revokes public access and protects the serv
       updatedAt: book.data().updatedAt + 3,
     }),
   );
-  await assertSucceeds(deleteDoc(doc(client, 'books/' + control)));
+  await assertFails(deleteDoc(doc(client, 'books/' + control)));
 });
 test('SDK a real second adoption preserves explicit consent checks and only collects retired unreferenced leased bytes', async () => {
   const f = await adoptionFixture(admin, { mode: 'v1' });

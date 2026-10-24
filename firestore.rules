@@ -427,11 +427,7 @@ service cloud.firestore {
 
     // Irreversible IDs prevent a deleted book from reattaching orphaned snapshots.
     match /deletedBooks/{bookId} {
-      allow read, update, delete: if false;
-      allow create: if isBookAuthor(bookId)
-        && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
-        && request.resource.data.keys().hasOnly(['deletedAt'])
-        && request.resource.data.deletedAt == request.time;
+      allow read, write: if false;
     }
 
     // Originals are always private, including published books and public lore.
@@ -587,14 +583,8 @@ service cloud.firestore {
         && (request.resource.data.status == 'draft'
           || resource.data.status == 'published'
           || existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)));
-      allow delete: if isOwner(resource.data.authorId)
-        && resource.data.get('hasSceneResources', false) != true
-        && resource.data.get('hasNarrativeResources', false) != true
-        && resource.data.get('hasProgressResources', false) != true
-        && resource.data.get('hasLoreResources', false) != true
-        && resource.data.get('deleting', false) == true
-        && existsAfter(/databases/$(database)/documents/deletedBooks/$(bookId))
-        && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId));
+      // A missing flag cannot prove that private preparations or bodies are absent.
+      allow delete: if false;
 
       match /acts/{actId} {
         allow read: if isBookAuthor(bookId);

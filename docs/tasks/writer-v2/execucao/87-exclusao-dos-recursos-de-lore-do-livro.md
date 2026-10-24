@@ -92,3 +92,13 @@ a conclusão individual confere o checkpoint original após a raiz sair.
 [Evidência](../../../entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md):
 303 Node e cinco SDK distintos positivos, incluindo rollback/handoff reais.
 Criação e demais integrações continuam pendentes; P1/F2-09/V2 abertos.
+
+## Roteamento posterior — M38c3p
+
+O [plano 93](93-roteamento-integral-da-exclusao-de-livros.md) fecha o caminho
+de exclusão de preparações sem marca no cliente. Todos os livros passam pelo
+protocolo servidor; finalização SDK de raiz/tombstone é negada. Metadata/início,
+retomada e preservação de outros livros têm controles positivos reais.
+
+92 Vitest, 23 Node e 17 SDK passaram. Demais namespaces, writers/consumidores/
+backup/cliente e rollout/drenagem permanecem pendentes; P1/F2-09/V2 abertos.

@@ -160,6 +160,7 @@
 - Vincule uploads de criação à reserva nativa antes dos bytes; intenção de cancel bloqueia novas unidades, e filho/journal/recibo compartilham transação, preservando bindings e leases, conforme ADR 0105.
 - Componha criação por origem explícita sem cabeça/inspeção fictícia; vincule tentativas nativamente e limpe reserved antes de auditar controles, conforme ADR 0106.
 - Ative criação somente com cabeça/geração/leases lógicas/clock/datas/recibo e prova histórica do criador no mesmo commit; cabeça reservada exige nascimento original, e sucesso não pode ser cancelado nem recriado por replay, conforme ADR 0107.
+- Encaminhe toda exclusão de livro ao protocolo servidor, inclusive sem flags; SDK não finaliza raiz nem grava deletedBooks, e falhas não executam fallback de cleanup, conforme ADR 0108.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

@@ -7,7 +7,6 @@ import {
   getDocs,
   setDoc,
   updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
@@ -15,7 +14,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { auth, firestore } from '@/shared/lib';
-import { deleteSceneBook, deleteSceneGroup } from '@/features/scenes';
+import { deleteSceneGroup } from '@/features/scenes';
 import { resolveChapterContent } from './chapterCompositionService';
 import { readServerLegacyChapterText } from './chapterTextReadService';
 import {
@@ -29,12 +28,7 @@ import {
   listActs,
 } from './chapterOrganizationService';
 import { createBookWithGeneratedCover, saveBookLibraryCover } from './generatedBookService';
-import {
-  beginBookDeletion,
-  deletePublicationRevisions,
-  finishBookDeletion,
-  unpublishBook,
-} from './publicationService';
+import { beginBookDeletion, finishBookDeletion, unpublishBook } from './publicationService';
 import { groupChapters } from '../model/act';
 import type { Book, CreateBookInput, UpdateBookInput } from '../model/book';
 import {
@@ -236,33 +230,6 @@ export async function updateBook(bookId: string, input: UpdateBookInput): Promis
 export async function deleteBook(bookId: string): Promise<void> {
   // Revoke public access first, even if a later cleanup operation fails.
   await beginBookDeletion(bookId);
-  const parent = await getDocFromServer(doc(firestore, 'books', bookId));
-  if (
-    parent.exists() &&
-    (parent.data().hasSceneResources ||
-      parent.data().hasNarrativeResources ||
-      parent.data().hasProgressResources ||
-      parent.data().hasLoreResources)
-  ) {
-    const request = {
-      target: { kind: 'book' as const, id: bookId },
-      operationId: crypto.randomUUID(),
-      limit: 50,
-    };
-    while (!(await deleteSceneBook(request)).complete) {
-      /* Server checkpoint resumes after interruption. */
-    }
-    return;
-  }
-  await deletePublicationRevisions(bookId);
-  const [chapters, lore, acts] = await Promise.all([
-    getDocs(collection(firestore, 'books', bookId, 'chapters')),
-    getDocs(collection(firestore, 'books', bookId, 'lore')),
-    getDocs(collection(firestore, 'books', bookId, 'acts')),
-  ]);
-  for (const snapshot of [...chapters.docs, ...lore.docs, ...acts.docs]) {
-    await deleteDoc(snapshot.ref);
-  }
   await finishBookDeletion(bookId);
 }
 

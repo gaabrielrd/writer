@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import * as firestoreModule from 'firebase/firestore';
-import { deleteSceneBook, deleteSceneGroup } from '@/features/scenes';
+import { deleteSceneGroup } from '@/features/scenes';
 import {
   beginBookDeletion,
   finishBookDeletion,
@@ -9,7 +9,7 @@ import {
 } from '../services/publicationService';
 
 vi.mock('@/shared/lib', () => ({ firestore: {} }));
-vi.mock('@/features/scenes', () => ({ deleteSceneBook: vi.fn(), deleteSceneGroup: vi.fn() }));
+vi.mock('@/features/scenes', () => ({ deleteSceneGroup: vi.fn() }));
 
 vi.mock('../services/publicationService', () => ({
   unpublishBook: vi.fn(),
@@ -183,42 +183,37 @@ describe('bookService', () => {
   });
 
   it.each([
+    {},
+    { hasLoreResources: false },
     { hasSceneResources: true },
     { hasNarrativeResources: true },
     { hasProgressResources: true },
     { hasLoreResources: true },
   ])(
-    'livro com recursos %j revoga acesso e limpa no servidor com o mesmo pedido em todas as páginas',
+    'todo livro %j revoga acesso e finaliza no servidor sem depender de flags',
     async (resources) => {
       vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
         exists: () => true,
         data: () => ({ ...resources, deleting: true }),
       } as unknown as firestoreModule.DocumentSnapshot);
-      vi.mocked(deleteSceneBook)
-        .mockResolvedValueOnce({ complete: false, processed: 50 })
-        .mockResolvedValueOnce({ complete: true, processed: 51 });
-      await deleteBook('book-scenes');
-      expect(beginBookDeletion).toHaveBeenCalledWith('book-scenes');
-      expect(deleteSceneBook).toHaveBeenCalledTimes(2);
-      expect(vi.mocked(deleteSceneBook).mock.calls[1]?.[0]).toEqual(
-        vi.mocked(deleteSceneBook).mock.calls[0]?.[0],
-      );
+      await deleteBook('book-any');
+      expect(beginBookDeletion).toHaveBeenCalledWith('book-any');
+      expect(finishBookDeletion).toHaveBeenCalledWith('book-any');
       expect(vi.mocked(beginBookDeletion).mock.invocationCallOrder[0]).toBeLessThan(
-        vi.mocked(deleteSceneBook).mock.invocationCallOrder[0]!,
+        vi.mocked(finishBookDeletion).mock.invocationCallOrder[0]!,
       );
+      expect(firestoreModule.getDocFromServer).not.toHaveBeenCalled();
+      expect(firestoreModule.getDocs).not.toHaveBeenCalled();
       expect(deletePublicationRevisions).not.toHaveBeenCalled();
-      expect(finishBookDeletion).not.toHaveBeenCalled();
       expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
     },
   );
-  it('falha de limpeza das cenas não executa finish legado nem apaga capítulos por cliente', async () => {
-    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
-      exists: () => true,
-      data: () => ({ hasSceneResources: true }),
-    } as unknown as firestoreModule.DocumentSnapshot);
-    vi.mocked(deleteSceneBook).mockRejectedValueOnce(new Error('Retome a limpeza'));
-    await expect(deleteBook('book-scenes')).rejects.toThrow(/Retome/);
-    expect(finishBookDeletion).not.toHaveBeenCalled();
+  it('falha da limpeza no servidor não executa fallback SDK', async () => {
+    vi.mocked(finishBookDeletion).mockRejectedValueOnce(new Error('Retome a limpeza'));
+    await expect(deleteBook('book-any')).rejects.toThrow(/Retome/);
+    expect(beginBookDeletion).toHaveBeenCalledWith('book-any');
+    expect(deletePublicationRevisions).not.toHaveBeenCalled();
+    expect(firestoreModule.getDocs).not.toHaveBeenCalled();
     expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
   });
   it('excluir agrupador composto desvincula por servidor sem apagar suas cenas', async () => {
@@ -598,28 +593,13 @@ describe('bookService', () => {
       expect(deletePublicationRevisions).not.toHaveBeenCalled();
     });
 
-    it('exclui livro, lore e todos os seus capitulos associados', async () => {
-      vi.mocked(firestoreModule.getDocs).mockResolvedValue({
-        docs: [
-          {
-            id: 'ch-1',
-            data: () => ({ title: 'Cap 1', order: 1, wordCount: 100 }),
-          },
-        ],
-      } as unknown as firestoreModule.QuerySnapshot);
-
-      vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
-        docs: [],
-      } as unknown as firestoreModule.QuerySnapshot);
+    it('confia a exclusão dos filhos e da raiz ao protocolo servidor', async () => {
       await deleteBook('book-1');
-
       expect(beginBookDeletion).toHaveBeenCalledWith('book-1');
-      expect(deletePublicationRevisions).toHaveBeenCalledWith('book-1');
-      expect(firestoreModule.deleteDoc).toHaveBeenCalledTimes(2); // capítulo e lore
       expect(finishBookDeletion).toHaveBeenCalledWith('book-1');
-      expect(vi.mocked(beginBookDeletion).mock.invocationCallOrder[0]).toBeLessThan(
-        vi.mocked(firestoreModule.deleteDoc).mock.invocationCallOrder[0]!,
-      );
+      expect(deletePublicationRevisions).not.toHaveBeenCalled();
+      expect(firestoreModule.getDocs).not.toHaveBeenCalled();
+      expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
     });
   });
 

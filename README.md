@@ -523,3 +523,9 @@ reedição/retirada/exclusão conservam o sucesso, sem recriação por retry.
 [Plano](docs/tasks/writer-v2/execucao/92-ativacao-atomica-da-criacao-de-lore.md).
 Criação ainda não está exposta na interface: faltam os demais writers,
 consumidores, backup e cliente antes de habilitar. P1/F2-09/V2 continuam abertos.
+
+M38c3p encaminha a exclusão de todos os livros ao servidor, inclusive legados
+sem hasLoreResources. Preserva revogação inicial e retomada; o navegador não
+finaliza a raiz nem grava tombstone. [Evidência](docs/entregas/2026-10-24-writer-v2-roteamento-integral-da-exclusao-de-livros.md).
+Cliente/backend/Rules precisam de rollout conjunto, ainda não realizado.
+Demais escritores/consumidores e gates de P1/F2-09/V2 continuam pendentes.

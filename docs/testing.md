@@ -1896,3 +1896,19 @@ Metadata histórica não reautoriza texto ou recria ficha.
 Arquitetura, sintaxe dos 225 módulos, guarda final individual e lint passaram.
 Sem TS/UI novos, não repetimos tipos/Vitest/build/browser. Validate/cobertura
 completos no fechamento de P1. Sem CI remota, push ou deploy.
+
+### P1 M38c3p — livros sem flag e finalização servidor
+
+[Entrega](entregas/2026-10-24-writer-v2-roteamento-integral-da-exclusao-de-livros.md):
+92 Vitest de livros/publicação, 23 Node de exclusão de lore e 17 SDK positivos.
+Rodada SDK dirigida: três novos casos de roteamento, um de adoção/flag e
+13 de publicação, 53401.5139 ms. Emulador verificado 1.22.0 demo/loopback.
+
+Flags ausentes/false não permitem bypass; metadata/início legítimos passam.
+Backend limpa preparação privada e livro vazio, retoma por nova operação,
+preserva outro livro e atualiza vínculo/contador de universo. Testes de
+revogação/publicação permanecem. Lint/tipos corrigidos e arquitetura positivos.
+
+Após ajuste de asserção tipada, somente seu caso Vitest foi repetido.
+Sem UI visual/backend novos, não repetimos browser/build/sintaxe Functions.
+Validate/cobertura completos no fim de P1; sem CI/push/deploy.

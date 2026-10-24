@@ -1848,3 +1848,19 @@ Leitura de fichas sem reserva conserva os custos anteriores. Fichas criadas
 pela reserva validam um conjunto fixo adicional de metadata/provas, independente
 do tamanho dos campos/páginas; continuam baixando uma parte por unidade.
 Demais writers/consumidores/backup/cliente e ativação de P1 seguem pendentes.
+
+## P1 M38c3p — finalização de livros pelo servidor
+
+[ADR 0108](decisions/0108-server-only-book-deletion-finalization.md):
+deleteBook sempre revoga/marca deleting e delega a finishBookDeletion.
+A assinatura é conservada, mas o finalizador pagina deleteSceneBook com
+pedido fixo; não consulta flags, não lista/remove filhos nem grava deletedBooks
+pelo SDK. O servidor já descobre preparações privadas sem hasLoreResources.
+
+Rules negam todo root delete SDK e todo acesso/escrita SDK de deletedBooks.
+Metadata e início continuam possíveis. Erro remoto não aciona fallback;
+checkpoint canônico e tombstone ficam sob autoridade do protocolo servidor.
+
+Rollout conjunto e drenagem de clientes antigos permanecem obrigatórios.
+Não há endpoint/índice/dependência novo. Auditoria dos outros namespaces e
+demais writers/consumidores/backup/cliente/ativação de P1 seguem pendentes.

@@ -341,8 +341,11 @@ describe('publicação segura no Firestore', { concurrency: false }, () => {
     const remove = writeBatch(owner);
     remove.set(doc(owner, `deletedBooks/${bookId}`), { deletedAt: serverTimestamp() });
     remove.delete(doc(owner, bookPath));
-    await assertSucceeds(remove.commit());
-    await assertFails(setDoc(doc(owner, bookPath), { ...privateBook, status: 'draft' }));
+    await assertFails(remove.commit());
+    await assertSucceeds(getDoc(doc(owner, bookPath)));
+    await assertFails(
+      setDoc(doc(owner, `deletedBooks/${bookId}`), { deletedAt: serverTimestamp() }),
+    );
     await assertFails(deleteDoc(doc(owner, `deletedBooks/${bookId}`)));
     await assertFails(getDoc(doc(db(), `${revisionPath}/chapters/ch-1`)));
   });

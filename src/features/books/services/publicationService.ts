@@ -1,10 +1,10 @@
+import { deleteSceneBook } from '@/features/scenes';
 import {
   collection,
   doc,
   getDocFromServer,
   getDocsFromServer,
   runTransaction,
-  serverTimestamp,
   writeBatch,
   type DocumentData,
   type DocumentReference,
@@ -272,21 +272,16 @@ export async function beginBookDeletion(bookId: string): Promise<void> {
   await batch.commit();
 }
 
-/** Retain a private ID tombstone so orphaned revisions can never be reattached. */
+/** Only the server can certify cleanup and retain the permanent deleted ID. */
 export async function finishBookDeletion(bookId: string): Promise<void> {
-  const parent = await getDocFromServer(doc(firestore, 'books', bookId));
-  if (
-    parent.exists() &&
-    (parent.data().hasSceneResources ||
-      parent.data().hasNarrativeResources ||
-      parent.data().hasProgressResources ||
-      parent.data().hasLoreResources)
-  )
-    throw new Error('Conclua a limpeza dos recursos do projeto no servidor.');
-  const batch = writeBatch(firestore);
-  batch.set(doc(firestore, 'deletedBooks', bookId), { deletedAt: serverTimestamp() });
-  batch.delete(doc(firestore, 'books', bookId));
-  await batch.commit();
+  const request = {
+    target: { kind: 'book' as const, id: bookId },
+    operationId: crypto.randomUUID(),
+    limit: 50,
+  };
+  while (!(await deleteSceneBook(request)).complete) {
+    /* The server checkpoint resumes after interruption, including legacy books. */
+  }
 }
 
 /** Called before deleting the private parent so ownership can still be checked. */

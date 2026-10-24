@@ -1,3 +1,5 @@
+import { deleteSceneBook } from '@/features/scenes';
+vi.mock('@/features/scenes', () => ({ deleteSceneBook: vi.fn() }));
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as composition from '../services/chapterCompositionService';
 import {
@@ -73,6 +75,7 @@ let lore: ReturnType<typeof snapshot>[];
 
 beforeEach(() => {
   vi.resetAllMocks();
+  vi.mocked(deleteSceneBook).mockResolvedValue({ complete: true, processed: 0 });
   vi.spyOn(Date, 'now').mockReturnValue(1000);
   mocks.batches.length = 0;
   mocks.getBook.mockResolvedValue(snapshot(originalBook));
@@ -317,18 +320,30 @@ describe('publicationService', () => {
     expect(mocks.commit).toHaveBeenCalledTimes(1);
   });
 
-  it.each([
-    { hasSceneResources: true },
-    { hasNarrativeResources: true },
-    { hasLoreResources: true },
-  ])('finish antigo não apaga pai com recursos %j', async (resources) => {
-    mocks.getBook.mockResolvedValue(snapshot({ ...originalBook, ...resources, deleting: true }));
-    await expect(finishBookDeletion('book')).rejects.toThrow(/limpeza/);
+  it('finaliza livros legados e atuais com o mesmo pedido em todas as páginas, sem inventário SDK', async () => {
+    mocks.getBook.mockRejectedValueOnce(new Error('SDK indisponível'));
+    vi.mocked(deleteSceneBook)
+      .mockResolvedValueOnce({ complete: false, processed: 50 })
+      .mockResolvedValueOnce({ complete: true, processed: 51 });
+    await finishBookDeletion('book');
+    expect(deleteSceneBook).toHaveBeenCalledTimes(2);
+    const request = vi.mocked(deleteSceneBook).mock.calls[0]![0];
+    expect(request.target).toEqual({ kind: 'book', id: 'book' });
+    expect(request.operationId).toMatch(/^[a-f0-9-]{36}$/);
+    expect(request.limit).toBe(50);
+    expect(vi.mocked(deleteSceneBook).mock.calls[1]![0]).toEqual(request);
+    expect(mocks.getBook).not.toHaveBeenCalled();
+    expect(mocks.getCollection).not.toHaveBeenCalled();
+    expect(mocks.batches).toEqual([]);
+  });
+  it('erro remoto interrompe a finalização sem tombstone ou delete SDK', async () => {
+    vi.mocked(deleteSceneBook).mockRejectedValueOnce(new Error('unavailable'));
+    await expect(finishBookDeletion('book')).rejects.toThrow('unavailable');
+    expect(deleteSceneBook).toHaveBeenCalledTimes(1);
     expect(mocks.batches).toEqual([]);
     expect(mocks.commit).not.toHaveBeenCalled();
   });
-
-  it('marca exclusão irreversível e depois retém somente o ID apagado', async () => {
+  it('revoga publicação e marca deleting antes da limpeza, sem finalizar a raiz no cliente', async () => {
     await beginBookDeletion('book');
     await finishBookDeletion('book');
     expect(mocks.batches).toEqual([
@@ -340,11 +355,10 @@ describe('publicationService', () => {
         },
         { operation: 'delete', path: 'publicBooks/book' },
       ],
-      [
-        { operation: 'set', path: 'deletedBooks/book', data: { deletedAt: 'SERVER_TIMESTAMP' } },
-        { operation: 'delete', path: 'books/book' },
-      ],
     ]);
+    expect(vi.mocked(mocks.commit).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deleteSceneBook).mock.invocationCallOrder[0]!,
+    );
   });
 
   it.each([{ deleting: true }, { publicationPrivacyVersion: -1 }])(
