@@ -281,6 +281,8 @@ function cleanupJournal(uid = 'author') {
     diagnostic: null,
     checkpoint: null,
     controls: null,
+    checkpointOutcome: null,
+    checkpointOutcomeReceipt: null,
   };
   return {
     inspect: vi.fn(() => Promise.resolve(head)),
@@ -337,4 +339,56 @@ it('drops a late authenticated cleanup response after a context change', async (
   });
   await expect(session.cleanup(j)).rejects.toThrow('contexto mudou');
   expect(state.call).toHaveBeenCalledTimes(1);
+});
+
+type PersistentJournal = Parameters<ReturnType<typeof bookLoreEditSession>['persistent']>[0];
+it('binds a persistent journal without starting storage, crypto or network', async () => {
+  const j = cleanupJournal(),
+    session = bookLoreEditSession();
+  const op = await session.persistent(j as unknown as PersistentJournal, request());
+  expect(j.inspect).toHaveBeenCalledTimes(1);
+  expect(state.call).not.toHaveBeenCalled();
+  expect(op.snapshot().phase).toBe('opening');
+  await op.initialize();
+  expect(op.snapshot().phase).toBe('cancelling');
+  expect(j.advanceControlCleanup).not.toHaveBeenCalled();
+  expect(state.call).not.toHaveBeenCalled();
+});
+it('rejects binding a persistent journal owned by another account', async () => {
+  const j = cleanupJournal('other');
+  await expect(
+    bookLoreEditSession().persistent(j as unknown as PersistentJournal, request()),
+  ).rejects.toThrow('conta');
+  expect(state.call).not.toHaveBeenCalled();
+});
+it('rejects an actor replaced with the same UID while binding persistent storage', async () => {
+  const j = cleanupJournal(),
+    session = bookLoreEditSession(),
+    inspect = j.inspect;
+  j.inspect = vi.fn(() => {
+    state.auth.currentUser = { uid: 'author' };
+    return inspect();
+  });
+  await expect(session.persistent(j as unknown as PersistentJournal, request())).rejects.toThrow(
+    'contexto mudou',
+  );
+  expect(state.call).not.toHaveBeenCalled();
+});
+it('captures the host guard before awaiting persistent binding and checks it on every snapshot', async () => {
+  let current = true;
+  const j = cleanupJournal(),
+    options = {
+      guard: () => {
+        if (!current) throw Error('host changed');
+      },
+    };
+  const op = await bookLoreEditSession().persistent(
+    j as unknown as PersistentJournal,
+    request(),
+    options,
+  );
+  options.guard = () => {};
+  current = false;
+  expect(() => op.snapshot()).toThrow('host changed');
+  expect(state.call).not.toHaveBeenCalled();
 });

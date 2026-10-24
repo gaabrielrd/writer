@@ -2155,3 +2155,13 @@ Sessão Auth confere UID do journal e guards antes/depois de I/O. Worker não
 remove draft/checkpoint/chave/recibos, nem repete produtor para cancelar.
 Composição automática de write-ahead/acks, reserva/host/ciclo de vida e demais
 integrações/rollout de P1/F2-09/V2 continuam necessárias.
+
+## P1 M38c5i — coordenador persistido da edição de lore
+
+[ADR 0122](decisions/0122-persisted-coordination-of-manual-lore-edits.md):
+adaptador salva mapa/draft/baseline antes de produção e checkpoint do wire
+antes de cada RPC. Ponte metadata de resultado validado reconstrói o post-save
+sem repetir RPC; swap/ACK/receipt/remoção são atômicos. Prefixos e active
+idempotente são verificados antes de salvo/coleta. Dívida local bloqueia avanço.
+Cancel usa worker sem chave; sessão Auth vincula journal reservado.
+Bootstrap/host visual e ciclo de vida integrado seguem pendentes; P1 aberto.

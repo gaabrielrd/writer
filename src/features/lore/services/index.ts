@@ -37,3 +37,6 @@ export type {
   BookLoreWriteManifest,
   BookLoreWritePart,
 } from './bookLoreWritePayload';
+
+export { createPersistedBookLoreEditOperation } from './bookLorePersistedOperation';
+export type { PersistedBookLoreSnapshot } from './bookLorePersistedOperation';

@@ -471,3 +471,12 @@ Passo 5 segue aberto: composição automática de write-ahead/acks, reserva e
 host ainda precisa integrar as APIs; não habilitar legado sem mapa como
 recuperável. Descarte/ciclo de vida, demais writers/consumidores/backup/
 ativação/rollout e P1/F2-09/V2 continuam necessários.
+
+## Coordenador persistido — M38c5i
+
+[Plano 107](107-coordenador-persistido-da-edicao-de-lore.md) compõe core,
+journal e port com checkpoint antes de RPC, resultado metadata sem prosa,
+swap/ACK atômicos e recuperação automática; cancela sem depender de chave
+ou produtor pendente. Antecessora é preservada no retry corrompido.
+Bootstrap e host visual/ciclo de vida integrado seguem próximos; demais
+writers/consumidores/backup/ativação/rollout e P1/F2-09/V2 seguem abertos.

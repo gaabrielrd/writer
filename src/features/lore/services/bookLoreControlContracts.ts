@@ -87,7 +87,9 @@ export const loreControlUnitId = (
     id,
     revision,
   });
-export function loreInspectionControl(i: LoreJournalIdentity): LoreControlRef {
+export function loreInspectionControl(
+  i: Pick<LoreJournalIdentity, 'uid' | 'writeId' | 'bookId' | 'loreId' | 'sourceToken'>,
+): LoreControlRef {
   const id = loreControlJobId(i, 'lore-source'),
     intent = { bookId: i.bookId, loreId: i.loreId, inspectionId: id, sourceToken: i.sourceToken };
   return {
@@ -163,7 +165,7 @@ export function loreControlProgress(
     byteLength: next === total ? readCount(v.byteLength) : total * 65536,
   });
 }
-function restoredProgress(
+export function readLoreControlStoredProgress(
   value: unknown,
   kind: 'inspection' | 'upload' | 'edit',
   expected: LoreControlRef,
@@ -307,7 +309,7 @@ export function readLoreJournalControls(
       : w.stage === 'inspection'
         ? inspection
         : { id: loreControlJobId(i, 'lore-field', index), startHash: readHash(raw.startHash) };
-    progress = restoredProgress(
+    progress = readLoreControlStoredProgress(
       raw,
       editStage ? 'edit' : w.stage === 'inspection' ? 'inspection' : 'upload',
       expected,

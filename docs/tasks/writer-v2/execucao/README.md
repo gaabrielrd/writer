@@ -1139,3 +1139,17 @@ Próximo: compor write-ahead/acks automáticos com reserva/journal/coordenador/
 sessão/host. Legado sem mapa não é automaticamente recuperável. Descarte/ciclo
 de vida da chave, demais writers/consumidores/backup/ativação/rollout e
 P1/F2-09/V2 continuam pendentes. Validate no fim de P1; só commit local.
+
+### P1 M38c5i — coordenação persistida da edição manual
+
+[Plano 107](107-coordenador-persistido-da-edicao-de-lore.md),
+[ADR 0122](../../../decisions/0122-persisted-coordination-of-manual-lore-edits.md)
+e [evidência](../../../entregas/2026-10-24-writer-v2-coordenador-persistido-da-edicao-de-lore.md):
+mapa/draft/baseline automáticos, checkpoint antes do envio, ponte metadata
+do resultado e ACK/swap/receipt atômicos; retomada e dívida local preservadas.
+Cancel em voo/sem chave e prefixos/cópia idempotente corrompidos cobertos.
+
+Próximo: bootstrap da reserva/chave e host visual, com fechamento antes de
+descarte e ciclo de vida integrado. Demais writers/consumidores/backup/
+ativação/rollout e P1/F2-09/V2 continuam abertos; validate no fechamento de P1.
+Sem CI/push/deploy.

@@ -202,6 +202,22 @@ export function journalControlMap({ inspect, mutate }: LoreControlContext) {
       writing = false;
     }
   }
+  async function readControlMapPage(offset: number): Promise<BookLoreEditControlPage> {
+    const h = await inspect(),
+      c = h.controls;
+    if (!c?.ready || readCount(offset) % 50 !== 0 || offset >= c.count) journalFail();
+    const p = await readJournalControlRecord(key(h.identity, c.generation, offset / 50));
+    await inspect();
+    const end = Math.min(offset + 50, c.count);
+    if (p.kind !== 'page' || p.offset !== offset || p.items.length !== end - offset) journalFail();
+    for (const [n, item] of p.items.entries())
+      if (item.id !== loreControlJobId(h.identity, 'lore-field', offset + n)) journalFail();
+    return freezeLoreEditValue({
+      intentHash: h.identity.intentHash,
+      items: p.items.map((item) => ({ ...item, progress: null })),
+      nextOffset: end < c.count ? end : null,
+    }) as BookLoreEditControlPage;
+  }
   async function uploadAt(index: number): Promise<LoreControlRef> {
     const head = await inspect(),
       c = head.controls;
@@ -284,5 +300,12 @@ export function journalControlMap({ inspect, mutate }: LoreControlContext) {
     if (parsed.wire.method === 'reserveBookLoreEditUpload')
       await verifyUploadRef(parsed.wire.input.upload);
   }
-  return { writeControlMap, registerControlEdit, uploadAt, controlById, verifyControlProduction };
+  return {
+    writeControlMap,
+    readControlMapPage,
+    registerControlEdit,
+    uploadAt,
+    controlById,
+    verifyControlProduction,
+  };
 }

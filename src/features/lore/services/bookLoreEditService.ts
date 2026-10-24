@@ -1,3 +1,5 @@
+import { createPersistedBookLoreEditOperation } from './bookLorePersistedOperation';
+import { freezeLoreEditValue } from './bookLoreWritePlan';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth, getFirebaseApp } from '@/shared/lib';
 import { BOOK_LORE_EDIT_CALLABLE } from '../../../../functions/src/bookLoreEditTransportMethods.mjs';
@@ -9,7 +11,7 @@ import type { BookLoreWriteOptions } from './bookLoreWritePayload';
 import type { BookLoreEditRecovery } from './bookLoreEditCheckpoint';
 import type { openBookLoreJournal } from './bookLoreJournal';
 
-/** No persistence or automatic sending: the host drives the returned operation. */
+/** Auth-bound ports; the host explicitly drives pure or persistent operations. */
 export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
   const actor = auth.currentUser;
   if (!actor?.uid) throw new Error('Entre na sua conta para editar o lore.');
@@ -71,5 +73,31 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     guard();
     return result;
   }
-  return Object.freeze({ actor, guard, prepare, restore, cleanup });
+  async function persistent(
+    journal: Awaited<ReturnType<typeof openBookLoreJournal>>,
+    input?: Omit<BookLoreEditOperationInput, 'uid'>,
+    options: BookLoreWriteOptions = {},
+  ) {
+    guard();
+    const hostGuard = options.guard;
+    const frozen = input
+      ? (freezeLoreEditValue(input) as Omit<BookLoreEditOperationInput, 'uid'>)
+      : undefined;
+    if ((await journal.inspect()).identity.uid !== uid)
+      throw Error('Entre na conta que iniciou a edição.');
+    guard();
+    return createPersistedBookLoreEditOperation(
+      journal,
+      port,
+      frozen ? { ...frozen, uid } : undefined,
+      {
+        ...options,
+        guard: () => {
+          guard();
+          hostGuard?.();
+        },
+      },
+    );
+  }
+  return Object.freeze({ actor, guard, prepare, restore, cleanup, persistent });
 }

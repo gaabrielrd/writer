@@ -1,6 +1,7 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { readObject } from './bookLoreReadContracts';
+import { checkpointOutcomeJournal } from './bookLoreCheckpointOutcome';
 import { checkpointJournal } from './bookLoreCheckpointJournal';
 import { journalControlMap } from './bookLoreControlMap';
 import { journalControlCleanup } from './bookLoreControlCleanup';
@@ -66,6 +67,8 @@ export async function createBookLoreJournal(
     diagnostic: null,
     checkpoint: null,
     controls: null,
+    checkpointOutcome: null,
+    checkpointOutcomeReceipt: null,
   };
   const saved = await commitJournalHead(i, null, head);
   journalCheck(options);
@@ -435,12 +438,17 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
   const controls = journalControlMap({ inspect, mutate });
   const cleanup = journalControlCleanup({ inspect, mutate }, controls);
   const checkpoints = checkpointJournal({ options, inspect, mutate });
+  const outcomes = checkpointOutcomeJournal(
+    { inspect, mutate },
+    checkpoints,
+    controls.readControlMapPage,
+  );
   async function restoreCheckpointOperation(
     port: BookLoreEditPort,
     writeOptions: BookLoreWriteOptions = {},
   ) {
     const input = await readDraft(),
-      bundle = await checkpoints.readCheckpoint();
+      bundle = await outcomes.recoverCheckpointOutcome();
     if (!bundle) journalFail();
     const recoveryStamp = (await inspect()).stamp;
     const operation = await restoreBookLoreEditOperation(
@@ -469,6 +477,7 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
   }
   return Object.freeze({
     ...checkpoints,
+    ...outcomes,
     ...cleanup,
     writeControlMap: controls.writeControlMap,
     registerControlEdit: controls.registerControlEdit,

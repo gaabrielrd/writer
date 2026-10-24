@@ -621,3 +621,10 @@ draft, produtor incerto e recibos.
 [Evidência](docs/entregas/2026-10-24-writer-v2-controles-e-cancelamento-de-lore-sem-chave.md):
 114 Vitest distintos e dois cenários Chromium positivos em harness da mesma
 origem. Write-ahead automático e host seguem pendentes; P1/F2-09/V2 abertos.
+
+M38c5i compõe journal e coordenador: checkpoint antes de RPC, resultado
+validado recuperável sem repetir envio, confirmação atômica e cancel sem chave.
+[Evidência](docs/entregas/2026-10-24-writer-v2-coordenador-persistido-da-edicao-de-lore.md):
+testes dirigidos e três cenários Chromium em harness da mesma origem.
+Bootstrap da reserva/chave e host visual seguem pendentes; a interface
+existente ainda não usa este adaptador. P1/F2-09/V2 permanecem abertos.

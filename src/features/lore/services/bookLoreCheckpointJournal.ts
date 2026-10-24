@@ -22,8 +22,17 @@ import {
   type JournalFrameKey,
   type commitJournalHead,
 } from './bookLoreJournalDb';
+import {
+  checkCheckpointOutcome,
+  finishCheckpointOutcome,
+} from './bookLoreCheckpointOutcomeContracts';
 import { readBookLoreCheckpointBundle } from './bookLoreCheckpointBundle';
 import type { LoreJournalOptions } from './bookLoreJournal';
+export class LoreCheckpointCollectionRequired extends Error {
+  constructor() {
+    super('Conclua a coleta da cópia anterior antes de salvar outro progresso.');
+  }
+}
 interface CheckpointContext {
   options: LoreJournalOptions;
   inspect(this: void): Promise<LoreJournalHead>;
@@ -66,6 +75,22 @@ export function checkpointJournal({ options, inspect, mutate }: CheckpointContex
       return journalFail();
     }
   }
+  async function verifyFrame(
+    head: LoreJournalHead,
+    blob: LoreJournalBlob,
+    key: CryptoKey,
+    index: number,
+    expected: Uint8Array,
+    cleanup: boolean,
+  ) {
+    const stored = await readJournalFrame(
+      journalFrameKey(head.identity, 'checkpoint', blob.generation, index),
+    );
+    check(cleanup);
+    const bytes = await openJournalFrame(key, head.identity, 'checkpoint', blob, index, stored);
+    check(cleanup);
+    if (bytes.length !== expected.length || bytes.some((b, n) => b !== expected[n])) journalFail();
+  }
   async function promote(
     generation: string,
     bundle: ReturnType<typeof readBookLoreCheckpointBundle>,
@@ -88,7 +113,7 @@ export function checkpointJournal({ options, inspect, mutate }: CheckpointContex
         if (!unit || unit.requestHash !== c.requestHash || unit.state === 'sealing') journalFail();
         next = { ...next, [c.lane]: { ...unit, state: 'confirmed' } };
       }
-      return next;
+      return finishCheckpointOutcome(h, next, bundle);
     });
   }
   async function writeCheckpoint(value: unknown) {
@@ -107,10 +132,18 @@ export function checkpointJournal({ options, inspect, mutate }: CheckpointContex
         cp = current.checkpoint;
       if (!cp?.pending && cp?.active) {
         const prior = await encryptedDigest(current, cp.active, key, cleanup);
-        if (prior.contentHash === prepared.manifest.contentHash) return current;
+        if (prior.contentHash === prepared.manifest.contentHash) {
+          let n = 0;
+          for (const bytes of bookLoreJSONParts(prepared.value, io))
+            await verifyFrame(current, cp.active, key, n++, bytes, cleanup);
+          const latest = await inspect();
+          if (latest.checkpoint?.active?.generation !== cp.active.generation) journalFail();
+          checkCheckpointOutcome(latest, bundle);
+          return latest;
+        }
       }
-      if (cp?.garbage)
-        throw Error('Conclua a coleta da cópia anterior antes de salvar outro progresso.');
+      checkCheckpointOutcome(current, bundle);
+      if (cp?.garbage) throw new LoreCheckpointCollectionRequired();
       if (cp?.pending) {
         const prior = await encryptedDigest(current, cp.pending, key, cleanup);
         if (
@@ -177,6 +210,7 @@ export function checkpointJournal({ options, inspect, mutate }: CheckpointContex
             ],
           );
         } else {
+          await verifyFrame(current, blob, key, index, bytes, cleanup);
           await (options.yieldControl?.() ??
             new Promise<void>((resolve) => setTimeout(resolve, 0)));
           check(cleanup);

@@ -1,5 +1,11 @@
 import { readObject, readId, readHash, readCount } from './bookLoreReadContracts';
 import { readLoreJournalControls, type LoreJournalControls } from './bookLoreControlContracts';
+import {
+  readCheckpointOutcome,
+  readCheckpointOutcomeReceipt,
+  type LoreCheckpointOutcome,
+  type LoreCheckpointOutcomeReceipt,
+} from './bookLoreCheckpointOutcomeContracts';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
 import { bookLoreWriteHash } from './bookLoreWritePayload';
 import { BOOK_LORE_EDIT_ROUTES } from '../../../../functions/src/bookLoreEditTransportMethods.mjs';
@@ -52,6 +58,8 @@ export interface LoreJournalHead {
   diagnostic: LoreJournalUnit | null;
   checkpoint: LoreJournalCheckpointState | null;
   controls: LoreJournalControls | null;
+  checkpointOutcome: LoreCheckpointOutcome | null;
+  checkpointOutcomeReceipt: LoreCheckpointOutcomeReceipt | null;
 }
 export interface LoreJournalFrame {
   nonce: ArrayBuffer;
@@ -154,7 +162,7 @@ export function journalHead(value: unknown, uid: string, writeId: string): LoreJ
         'cleanup',
         'diagnostic',
       ],
-      ['checkpoint', 'controls'],
+      ['checkpoint', 'controls', 'checkpointOutcome', 'checkpointOutcomeReceipt'],
     ),
     identity = journalIdentity(v.identity);
   if (
@@ -185,11 +193,27 @@ export function journalHead(value: unknown, uid: string, writeId: string): LoreJ
         journalFail();
     }
   }
-  const controls = readLoreJournalControls(v.controls, identity);
+  const controls = readLoreJournalControls(v.controls, identity),
+    checkpointOutcome = readCheckpointOutcome(v.checkpointOutcome, {
+      uid: identity.uid,
+      writeId: identity.writeId,
+      bookId: identity.bookId,
+      loreId: identity.loreId,
+      sourceToken: identity.sourceToken,
+      intentHash: identity.intentHash,
+    }),
+    checkpointOutcomeReceipt = readCheckpointOutcomeReceipt(v.checkpointOutcomeReceipt);
+  if (
+    checkpointOutcome &&
+    (!controls?.ready || checkpointOutcome.checkpoint.uploadCount !== controls.count)
+  )
+    journalFail();
   return freezeLoreEditValue({
     ...v,
     checkpoint: v.checkpoint ?? null,
     controls,
+    checkpointOutcome,
+    checkpointOutcomeReceipt,
   }) as LoreJournalHead;
 }
 const controlKeys = (key: string, method: string) => {

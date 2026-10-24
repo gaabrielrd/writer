@@ -2151,3 +2151,14 @@ corpos ativos. Não é prova de interface ou tokens reais.
 registra falha inicial de get null, ERR_INSUFFICIENT_RESOURCES na navegação da
 aplicação completa e os checks efetivos. Lint/tipos/build/smoke/arquitetura
 dirigidos; backend/SDK não repetidos. Validate/cobertura no fim de P1.
+
+### P1 M38c5i — coordenação persistida de lore
+
+[Plano 107](tasks/writer-v2/execucao/107-coordenador-persistido-da-edicao-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-coordenador-persistido-da-edicao-de-lore.md):
+testes do controller com serviços reais sobre double e harness transacional
+verificam write-ahead, perda de respostas, init/pre/post/ACK interrompidos,
+pontes inválidas, corrupção antes de coleta, literal multipart e cancel.
+Sessão verifica vínculo por conta/guard; regressões cobrem journal/checkpoint/
+mapa e chave. Três cenários Chromium usam IDB/Web Locks reais em harness leve.
+Não equivale a UI/SDK/App Check reais. Validate integral no fechamento de P1.
