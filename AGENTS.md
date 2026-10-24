@@ -169,6 +169,7 @@
 - Planeje edição de lore da captura C1 bruta com CAS e campos tocados explícitos; preserve literais/presenças, envie só campos/páginas alterados em partes de 64 KiB e trate o plano/manifesto cliente somente como intenção, conforme ADR 0114.
 - Coordene edição de lore por unidade com pedido/CAS/bytes imutáveis, apply explícito e cleanup independente de RPC pendente; limite status/controles e não trate metadata em memória como recuperação durável, conforme ADR 0115.
 - Encaminhe edição manual preparada pela callable bookLoreEdit com UID autenticado e operações/IDs/filhos fechados; preserve conta/contexto e não exponha jobs de análise/criação ou use fallback SDK, conforme ADR 0116.
+- Libere chave de recuperação de lore só por HTTP autenticado, com prova/nascimento/fingerprint originais e origem reautorizada; preserve fences, não regenere chave ausente e não confunda revogação da chave com cancelamento dos jobs, conforme ADR 0117.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

@@ -2042,3 +2042,25 @@ guard do host. SDK regional usa timeout 130 s e confere contexto antes/depois
 de I/O. Troca de conta invalida resposta sem resolver a pendência por fallback.
 Sem mudança de armazenamento, Rules ou persistência; host/recuperação e
 rollout coordenado ainda necessários. Export novo não autoriza deploy.
+
+## P1 M38c5d — chave da recuperação manual de lore
+
+[ADR 0117](decisions/0117-private-lore-edit-recovery-keys.md): reserva permanente por
+UID/writeId/intenção/CAS em bookLoreWriteRecoveries. Raiz/prova/chave de 32
+bytes nascem juntos; token e fingerprint fixam identidade. Metadata não
+concede chave ou acesso atual. Ausente/recriada nunca é regenerada.
+
+Key exige token original, nascimento/provas e reautorização do livro/ficha
+ativos da mesma encarnação. Revisão posterior permite recuperar rascunho
+sem alterar seu CAS; deleting/tombstone/exclusão/recriação/dono diferente negam.
+Revogação apaga só a chave original e cria prova/fence permanentes.
+
+Três callables metadata, key só HTTP POST text/plain UTF-8 de até 8 KiB
+com Auth/App Check/no-store e rewrite /api/book-lore/recovery-key. Rules negam
+SDK do namespace. Não modifica livro, clock, créditos ou produtores de bytes.
+Chave retida inacessível após origem perdida exige revogação explícita;
+coleta pela exclusão do livro não está implementada.
+
+Journal cifrado/retomada/host e ciclo de vida integrado ainda necessários.
+Nunca persistir chave no navegador; aguardar IDB oncomplete antes de envio.
+Revogar chave não cancela jobs nem autoriza apagar journal incerto.

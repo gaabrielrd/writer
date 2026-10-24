@@ -4,6 +4,13 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/api/book-lore/recovery-key",
+        "function": {
+          "functionId": "getBookLoreEditRecoveryKey",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "/api/book-restore/recovery-key",
         "function": {
           "functionId": "getBookRestoreRecoveryKey",

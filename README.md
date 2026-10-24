@@ -586,3 +586,10 @@ manuais fechados, UID autenticado e sessão SDK vinculada à conta/contexto.
 SDK real no Chromium valida multipart/retry/cancelamento via HTTP local com
 dados fictícios. Host visual, recuperação protegida e aceite com tokens reais
 continuam pendentes; sem implantação ou conclusão de P1/F2-09/V2.
+
+M38c5d prepara a recuperação protegida aprovada para edições de lore:
+reserva/prova/chave servidor, reautorização da mesma ficha original e
+revogação permanente, com HTTP privado e Rules.
+[Evidência](docs/entregas/2026-10-24-writer-v2-chave-protegida-da-recuperacao-do-lore.md).
+Ainda não persiste rascunhos no navegador: journal cifrado, retomada,
+host visual e ciclo de vida integrado continuam necessários. Sem implantação.

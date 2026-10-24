@@ -1060,3 +1060,18 @@ Middleware exportado recusa App Check ausente/inválido e serve preflight.
 SDK real em HTTP local usa Auth fixa/double; não certifica tokens reais.
 Host visual/recuperação, demais integrações/backup/ativação/rollout e
 P1/F2-09/V2 continuam abertos. Validate no fim de P1; só commits locais.
+
+### P1 M38c5d — reserva e chave protegida da recuperação de lore
+
+[Plano 102](102-reserva-e-chave-da-recuperacao-do-lore.md),
+[ADR 0117](../../../decisions/0117-private-lore-edit-recovery-keys.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-chave-protegida-da-recuperacao-do-lore.md):
+37 Node e três SDK distintos positivos em rodadas. Reserva/prova/chave
+originais, metadata sem prosa, reautorização da mesma encarnação e revogação/
+fence permanentes. Key só HTTP com Auth/App Check; namespace SDK negado.
+
+Operador aprovou cópia cifrada no dispositivo, ainda não implementada:
+journal por partes/retomada/host e ciclo de vida integrado seguem necessários.
+Revogar chave não cancela jobs ou autoriza descartar controles incertos.
+Demais integrações/backup/ativação/rollout e P1/F2-09/V2 continuam abertos.
+Validate no fim de P1; sem CI/push/deploy.

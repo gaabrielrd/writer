@@ -2057,3 +2057,20 @@ O harness de browser usa projeto fictício/loopback, Auth fixa e App Check
 desabilitado somente no teste. Sucesso com tokens reais, UI, emulador
 Firestore/Rules e certificação integrada não foram inferidos desses smokes.
 Tipos/lint/build/arquitetura/sintaxe positivos; validate integral no fim de P1.
+
+### P1 M38c5d — reserva e chave da recuperação de lore
+
+bookLoreWriteRecovery.test.mjs cobre inline/v1/v2/criação, intenção/CAS/UID,
+chave única, origem/revisão, provas/chaves recriadas, fence, revogação e
+rollback sobre double transacional. HTTP testa credenciais/limites/UTF8/
+erros/no-store com verificadores injetados e onRequest real em loopback.
+
+bookLoreWriteRecovery.rules.test.mjs usa Firestore nativo demo/loopback:
+reserva concorrente, nascimento conjunto, denies SDK para dono/terceiro/
+anônimo, fonte/clock/crédito intactos, recriação e rollback do último write.
+A [evidência](entregas/2026-10-24-writer-v2-chave-protegida-da-recuperacao-do-lore.md)
+registra 37 Node distintos e três SDK positivos em rodadas dirigidas,
+sintaxe/lint/arquitetura. Não são prova de login real ou journal/retomada/UI.
+
+Sem cliente/TS/UI novos, não repetimos Vitest/tipos/build/Chromium.
+Validate/cobertura no fim de P1; ciclo de vida integrado ainda pendente.

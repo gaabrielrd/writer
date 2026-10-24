@@ -406,3 +406,15 @@ Passo 5 continua aberto: host visual e recuperação protegida após recarga
 ainda precisam ser integrados. Criar/excluir/análise no cliente, demais
 escritores/consumidores/backup e rollout conjunto também permanecem necessários.
 Exportação de endpoint não habilita implantação; P1/F2-09/V2 continuam abertos.
+
+## Recuperação protegida — M38c5d
+
+Operador aprovou a cópia cifrada no dispositivo para edição manual. O
+[plano 102](102-reserva-e-chave-da-recuperacao-do-lore.md) implementa reserva/
+prova/chave servidor e reautorização da mesma encarnação, sem rebase.
+Metadata/fence/revogação e HTTP/Rules passaram em Node e SDK nativos.
+
+Passo 5 segue aberto: journal cifrado por partes, checkpoints/retomada,
+Web Locks/IDB, descoberta dos pedidos incertos e host visual ainda necessários.
+Chave não pode ser persistida no navegador; revogá-la não cancela filhos.
+Ciclo de vida integrado e demais integrações/rollout continuam pendentes.

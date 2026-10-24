@@ -57,6 +57,12 @@ import { createNarrativePlanningService } from './narrativePlanning.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createBookLoreReadService, setBookLoreReadHeaders } from './bookLoreRead.mjs';
 import {
+  createBookLoreWriteRecoveryService,
+  setBookLoreWriteRecoveryHeaders,
+  BOOK_LORE_RECOVERY_METHODS,
+} from './bookLoreWriteRecovery.mjs';
+import { createBookLoreWriteRecoveryHandler } from './bookLoreWriteRecoveryHttp.mjs';
+import {
   createBookLoreEditTransportService,
   setBookLoreEditHeaders,
 } from './bookLoreEditTransport.mjs';
@@ -346,12 +352,18 @@ const callable = (method, secrets = []) =>
       setBookRestoreHeaders(method, request);
       setBookLoreReadHeaders(method, request);
       setBookLoreEditHeaders(method, request);
+      setBookLoreWriteRecoveryHeaders(method, request);
       if (method === 'readLegacyChapterText') {
         request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
         request.rawRequest?.res?.setHeader('Vary', 'Authorization');
       }
       setCampaignVariantRecoveryHeaders(method, request);
       try {
+        if (BOOK_LORE_RECOVERY_METHODS.includes(method))
+          return await createBookLoreWriteRecoveryService({ db })[method](
+            request.auth?.uid,
+            request.data,
+          );
         if (method === 'bookLoreEdit')
           return await createBookLoreEditTransportService({ db }).bookLoreEdit(
             request.auth?.uid,
@@ -628,6 +640,17 @@ export const listBookLoreRead = callable('listBookLoreRead');
 export const getBookLoreRead = callable('getBookLoreRead');
 export const readBookLorePart = callable('readBookLorePart');
 export const bookLoreEdit = callable('bookLoreEdit');
+export const reserveBookLoreEditRecovery = callable('reserveBookLoreEditRecovery');
+export const getBookLoreEditRecovery = callable('getBookLoreEditRecovery');
+export const revokeBookLoreEditRecovery = callable('revokeBookLoreEditRecovery');
+export const getBookLoreEditRecoveryKey = onRequest(
+  { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
+  createBookLoreWriteRecoveryHandler({
+    service: createBookLoreWriteRecoveryService({ db }),
+    verifyIdToken: (token) => getAuth().verifyIdToken(token),
+    verifyAppCheck: (token) => getAppCheck().verifyToken(token),
+  }),
+);
 export const readSceneAssembly = callable('readSceneAssembly');
 export const rebalanceSceneRanks = callable('rebalanceSceneRanks');
 export const deleteSceneGroup = callable('deleteSceneGroup');
