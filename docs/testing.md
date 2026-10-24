@@ -2094,3 +2094,22 @@ reais, Rules, UI ou reconstrução de todo o coordenador.
 registra as rodadas e limites. Lint/tipos/build/smoke/arquitetura dirigidos;
 sem repetir backend/SDK, sem mudança de servidor. Validate/cobertura no fim
 de P1; somente commits locais.
+
+### P1 M38c5f — checkpoints restauráveis do coordenador de lore
+
+48 casos novos de bookLoreEditCheckpoint.test.mjs e cinco novos da sessão
+cobrem restauração entre unidades e após resposta perdida, incluindo callbacks
+de inicialização/reserva/reconciliação, cancelamento concorrente, falsificação
+de root/páginas/wire, 53 uploads paginados, multipart/quatro slots, signal e
+conta/contexto. Regressões da operação, sessão e journal completam 143 casos
+distintos positivos em rodadas; não somar retakes como casos novos.
+
+Chromium recarrega com rascunho/pedido em IDB cifrado e checkpoint/páginas na
+memória externa do harness: replay exato de append e cursor inicializado,
+ready/apply explícito, failedCancel/get e terminal adotado. Dois smokes
+positivos no código final; não é persistência automática do coordenador.
+
+[Evidência](entregas/2026-10-24-writer-v2-checkpoints-restauraveis-da-edicao-de-lore.md)
+distingue serviços reais/double/Auth fictícia e registra falhas corrigidas,
+incluindo execução parcial do wrapper npx sem resultado. Lint/tipos/build/
+smoke/arquitetura dirigidos; SDK/backend não repetidos. Validate no fim de P1.

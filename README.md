@@ -600,3 +600,10 @@ com recuperação após recarga, chave fresca, Web Locks/CAS e partes de 64 KiB.
 51 Vitest distintos e quatro cenários Chromium positivos. A reconstrução do
 coordenador completo, host visual e ciclo de vida integrado seguem pendentes;
 a edição existente ainda não usa o journal. Sem implantação ou conclusão de P1.
+
+M38c5f acrescenta checkpoint privado e reconstrução validada do coordenador,
+incluindo cursores e pedidos incertos, sem envio no restore.
+[Evidência](docs/entregas/2026-10-24-writer-v2-checkpoints-restauraveis-da-edicao-de-lore.md):
+143 Vitest distintos e dois cenários Chromium positivos em rodadas.
+Checkpoint ainda precisa ser conectado à persistência cifrada/atômica e ao
+host; não há retomada visual automática. P1/F2-09/V2 permanecem abertos.

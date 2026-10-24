@@ -189,3 +189,70 @@ it('aborted production retains explicit cleanup through the same authenticated t
   expect(state.call.mock.calls[0]![0].method).toBe('cancelBookLoreFieldUpload');
   expect(op.snapshot().phase).toBe('cancelling');
 });
+
+it('restores a pending unit without transport and then explicitly repeats the exact request', async () => {
+  state.call.mockRejectedValueOnce(Error('lost reply'));
+  const session = bookLoreEditSession(),
+    input = request(),
+    op = await session.prepare(input, { yieldControl: async () => {} });
+  await expect(op.advance()).rejects.toThrow('lost reply');
+  const checkpoint = op.checkpoint(),
+    count = state.call.mock.calls.length;
+  const restored = await session.restore(
+    input,
+    {
+      checkpoint,
+      controlsPage: (offset, limit) => Promise.resolve(op.controlsPage(offset, limit)),
+    },
+    { yieldControl: async () => {} },
+  );
+  expect(state.call).toHaveBeenCalledTimes(count);
+  expect(restored.snapshot()).toEqual(op.snapshot());
+  await restored.advance();
+  expect(state.call.mock.calls[1]![0]).toEqual(state.call.mock.calls[0]![0]);
+});
+it.each(['account', 'context', 'host'])(
+  'rejects a late %s change during checkpoint page read',
+  async (kind) => {
+    let current = true,
+      host = true;
+    const session = bookLoreEditSession(() => current),
+      input = request(),
+      op = await session.prepare(input, { yieldControl: async () => {} });
+    await expect(
+      session.restore(
+        input,
+        {
+          checkpoint: op.checkpoint(),
+          controlsPage: (offset, limit) => {
+            const page = op.controlsPage(offset, limit);
+            if (kind === 'account') state.auth.currentUser = { uid: 'author' };
+            else if (kind === 'context') current = false;
+            else host = false;
+            return Promise.resolve(page);
+          },
+        },
+        {
+          yieldControl: async () => {},
+          guard: () => {
+            if (!host) throw Error('host changed');
+          },
+        },
+      ),
+    ).rejects.toThrow(kind === 'host' ? 'host changed' : 'contexto mudou');
+    expect(state.call).not.toHaveBeenCalled();
+  },
+);
+it('forces actor UID on restore and refuses a checkpoint owned by another account', async () => {
+  const session = bookLoreEditSession(),
+    input = request(),
+    op = await session.prepare(input),
+    checkpoint = { ...op.checkpoint(), uid: 'other' };
+  await expect(
+    session.restore({ ...input, uid: 'other' } as ReturnType<typeof request>, {
+      checkpoint,
+      controlsPage: (offset, limit) => Promise.resolve(op.controlsPage(offset, limit)),
+    }),
+  ).rejects.toThrow();
+  expect(state.call).not.toHaveBeenCalled();
+});

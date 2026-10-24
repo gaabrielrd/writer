@@ -6,6 +6,7 @@ import {
   type BookLoreEditOperationInput,
 } from './bookLoreEditOperation';
 import type { BookLoreWriteOptions } from './bookLoreWritePayload';
+import type { BookLoreEditRecovery } from './bookLoreEditCheckpoint';
 
 /** No persistence or automatic sending: the host drives the returned operation. */
 export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
@@ -31,6 +32,7 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
   async function prepare(
     input: Omit<BookLoreEditOperationInput, 'uid'>,
     options: BookLoreWriteOptions = {},
+    recovery?: BookLoreEditRecovery,
   ) {
     const { guard: hostGuard, signal, yieldControl } = options;
     const check = () => {
@@ -38,11 +40,21 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
       hostGuard?.();
     };
     check();
-    return prepareBookLoreEditOperation({ ...input, uid }, port, {
-      signal,
-      yieldControl,
-      guard: check,
-    });
+    return prepareBookLoreEditOperation(
+      { ...input, uid },
+      port,
+      {
+        signal,
+        yieldControl,
+        guard: check,
+      },
+      recovery,
+    );
   }
-  return Object.freeze({ actor, guard, prepare });
+  const restore = (
+    input: Omit<BookLoreEditOperationInput, 'uid'>,
+    recovery: BookLoreEditRecovery,
+    options: BookLoreWriteOptions = {},
+  ) => prepare(input, options, recovery);
+  return Object.freeze({ actor, guard, prepare, restore });
 }

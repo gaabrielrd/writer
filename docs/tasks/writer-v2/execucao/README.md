@@ -1092,3 +1092,20 @@ controles de todos os jobs e composição com reserva/host. Fechamento nativo an
 de coleta local e ciclo de vida da chave na exclusão continuam pendentes.
 API ainda não integrada à edição visual. Demais integrações/backup/ativação/
 rollout e P1/F2-09/V2 abertos; validate no fim de P1. Só commit local.
+
+### P1 M38c5f — checkpoints e reconstrução do coordenador
+
+[Plano 104](104-checkpoints-restauraveis-da-edicao-de-lore.md),
+[ADR 0119](../../../decisions/0119-restorable-manual-lore-edit-checkpoints.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-checkpoints-restauraveis-da-edicao-de-lore.md):
+143 Vitest distintos e dois cenários Chromium positivos em rodadas. Coordenador
+pode ser reconstruído do input/checkpoint privados e controles paginados,
+com cursores e pedidos exatos, sem RPC inicial. Sessão Auth protege restore.
+Snapshot continua sem bytes; checkpoint com wire exige cifragem.
+
+Próximo: composição da persistência cifrada/atômica de root/páginas e controles
+metadata de todos os jobs, inclusive cleanup sem chave, com reserva/host.
+Checkpoints ainda não são automaticamente guardados pelo journal. Fechamento
+nativo antes de coleta, ciclo de vida da chave na exclusão e demais integrações/
+backup/ativação/rollout permanecem pendentes. P1/F2-09/V2 abertos; validate no
+fim de P1. Só commit local, sem CI/push/deploy.

@@ -172,7 +172,10 @@ const controlKeys = (key: string, method: string) => {
     optional: get || cancel ? ['jobToken'] : [],
   };
 };
-export function journalWire(value: unknown, identity: LoreJournalIdentity) {
+export function journalWire(
+  value: unknown,
+  identity: Pick<LoreJournalIdentity, 'bookId' | 'loreId' | 'sourceToken'>,
+) {
   const v = readObject(freezeLoreEditValue(value), ['method', 'input']);
   if (typeof v.method !== 'string') journalFail();
   const method = v.method,

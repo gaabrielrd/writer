@@ -1,4 +1,7 @@
 import { bookContentId } from '../../../../functions/src/bookBackupSchema.mjs';
+import { readObject, readCount } from './bookLoreReadContracts';
+import { journalWire } from './bookLoreJournalContracts';
+import type { BookLoreEditCheckpoint, BookLoreEditRecovery } from './bookLoreEditCheckpoint';
 import {
   freezeLoreEditValue,
   freezeBookLoreEditSource,
@@ -22,6 +25,7 @@ import {
   type LoreUploadProgress,
   type LoreEditProgress,
   type LoreCleanupBlock,
+  loreCleanupBlocks,
 } from './bookLoreWriteProgress';
 
 export interface BookLoreEditPort {
@@ -119,12 +123,21 @@ const conflictCode = (error: unknown) =>
   'code' in error &&
   ['failed-precondition', 'functions/failed-precondition'].includes(String(error.code));
 
-/** Explicit in-memory operation; the host owns durable recovery and public RPC wiring. */
+/** Explicit operation; checkpoint recovery never sends. The host owns durable storage. */
 export async function prepareBookLoreEditOperation(
   input: BookLoreEditOperationInput,
   port: BookLoreEditPort,
   options: BookLoreWriteOptions = {},
+  recovery?: BookLoreEditRecovery,
 ) {
+  const saved = recovery ? freezeLoreEditValue(recovery.checkpoint) : null,
+    readControls = recovery?.controlsPage,
+    restoringCleanup =
+      !!saved &&
+      typeof saved === 'object' &&
+      'cancelRequested' in saved &&
+      saved.cancelRequested === true;
+  if (recovery && typeof readControls !== 'function') invalidLoreEdit();
   const uid = bookContentId(input.uid),
     writeId = bookContentId(input.writeId);
   if (uid.length > 128) invalidLoreEdit();
@@ -152,12 +165,12 @@ export async function prepareBookLoreEditOperation(
     options.guard?.();
     if (production) options.signal?.throwIfAborted();
   }
-  check();
+  check(!restoringCleanup);
   for (const [index, item] of plannedUploads.entries()) {
     const uploadId = derived('lore-field', index),
       codec = await prepareBookLoreWritePayload(
         { uid, bookId: plan.bookId, loreId: plan.loreId, uploadId, ...item },
-        options,
+        restoringCleanup ? { ...options, signal: undefined } : options,
       ),
       intent = Object.freeze({
         bookId: plan.bookId,
@@ -359,6 +372,33 @@ export async function prepareBookLoreEditOperation(
       },
     }) as BookLoreEditOperationSnapshot;
   }
+  function checkpoint(): BookLoreEditCheckpoint {
+    const wire = (t: Task | null) => (t ? { method: t.method, input: t.input } : null);
+    return freezeLoreEditValue({
+      schemaVersion: 1,
+      ...identity,
+      sourceToken: plan.sourceToken,
+      intentHash,
+      phase,
+      completedCalls,
+      blockedReason,
+      cancelRequested,
+      initialized,
+      reservationIndex,
+      productionUploadIndex,
+      cleanupUploadIndex,
+      uploadCount: uploads.length,
+      hasEditIntent: editIntent !== null,
+      controlsHash: controlsHash(),
+      inspection,
+      edit,
+      pending: {
+        production: wire(pendingProduction),
+        cleanup: wire(pendingCleanup),
+        failedCancel: wire(failedCancel),
+      },
+    }) as BookLoreEditCheckpoint;
+  }
   function requestCancel() {
     if (phase === 'empty') phase = 'cancelled';
     else if (!['applied', 'cancelled'].includes(phase)) {
@@ -367,6 +407,320 @@ export async function prepareBookLoreEditOperation(
     }
     return snapshot();
   }
+  function controlsHash() {
+    let digest = hash({
+      domain: 'writer-lore-edit-control-pages',
+      intentHash,
+      count: uploads.length,
+    });
+    for (const u of uploads)
+      digest = hash({ previous: digest, id: u.id, startHash: u.startHash, progress: u.progress });
+    return digest;
+  }
+  function ensureEditIntent() {
+    if (editIntent) return;
+    if (!inspection?.jobToken || uploads.some((u) => !u.progress?.jobToken)) invalidLoreEdit();
+    const fields = Object.fromEntries(
+      plan.fields.map((f) => [
+        f.field,
+        'remove' in f
+          ? null
+          : {
+              uploadId: uploads[f.upload]!.id,
+              startHash: uploads[f.upload]!.startHash,
+              jobToken: uploads[f.upload]!.progress!.jobToken,
+            },
+      ]),
+    );
+    editIntent = freezeLoreEditValue({
+      bookId: plan.bookId,
+      loreId: plan.loreId,
+      editId,
+      sourceToken: plan.sourceToken,
+      inspection: { inspectionId, startHash: inspectionHash, jobToken: inspection.jobToken },
+      fields,
+      ...(plan.relations ? { relations: plan.relations } : {}),
+    }) as Record<string, unknown>;
+    editHash = hash({ domain: 'writer-lore-edit-start', schemaVersion: 1, intent: editIntent });
+  }
+  function restoredProgress(kind: Task['kind'], value: unknown, index?: number) {
+    const { id, ...raw } = readObject(
+      value,
+      ['id'],
+      [
+        'startHash',
+        'jobToken',
+        'phase',
+        'revision',
+        'nextIndex',
+        'byteLength',
+        'totalParts',
+        'ready',
+        'sealIndex',
+        'cleanupIndex',
+        'cleanedCount',
+        'prepared',
+        'reservedCount',
+        'releasedCount',
+        'blockedReason',
+        'compilation',
+        'adoption',
+      ],
+    );
+    if (kind === 'inspection')
+      return inspectionProgress(
+        { ...raw, inspectionId: id },
+        { id: inspectionId, startHash: inspectionHash },
+      );
+    if (kind === 'upload') {
+      const u = uploads[index!]!;
+      return uploadProgress(
+        { ...raw, uploadId: id },
+        { id: u.id, startHash: u.startHash },
+        u.manifest,
+      );
+    }
+    return parse({ kind: 'edit' } as Task, { ...raw, editId: id });
+  }
+  async function restoredTask(
+    value: unknown,
+    slot: 'production' | 'cleanup' | 'failedCancel',
+  ): Promise<Task | null> {
+    if (value === null) return null;
+    const { wire, metadata } = journalWire(value, {
+      bookId: plan.bookId,
+      loreId: plan.loreId,
+      sourceToken: plan.sourceToken,
+    });
+    const { method, input: request } = wire;
+    if (
+      !Object.values(names).includes(method) ||
+      (slot === 'production' ? metadata.lane !== 'production' : metadata.lane === 'production') ||
+      (slot === 'failedCancel' && method !== names.editCancel) ||
+      (metadata.lane === 'diagnostic' && method !== names.editGet)
+    )
+      invalidLoreEdit();
+    const index = uploads.findIndex((u) => u.id === metadata.id);
+    const kind: Task['kind'] =
+      metadata.id === inspectionId ? 'inspection' : metadata.id === editId ? 'edit' : 'upload';
+    if (kind === 'upload' && index < 0) invalidLoreEdit();
+    const expectedHash =
+        kind === 'inspection'
+          ? inspectionHash
+          : kind === 'edit'
+            ? editHash
+            : uploads[index]!.startHash,
+      p = kind === 'inspection' ? inspection : kind === 'edit' ? edit : uploads[index]!.progress;
+    if (
+      metadata.startHash !== expectedHash ||
+      (metadata.jobToken !== null && metadata.jobToken !== p?.jobToken)
+    )
+      invalidLoreEdit();
+    if (method.startsWith('start')) {
+      const intent =
+        kind === 'inspection'
+          ? inspectionIntent
+          : kind === 'edit'
+            ? editIntent
+            : uploads[index]!.intent;
+      if (hash(request) !== hash(intent)) invalidLoreEdit();
+    } else if (method !== names.editGet) {
+      const cancel = method.startsWith('cancel');
+      if (
+        metadata.operationId !==
+        unitId(method, metadata.id, cancel ? null : metadata.expectedRevision)
+      )
+        invalidLoreEdit();
+      if (
+        !cancel &&
+        (!p || metadata.expectedRevision === null || metadata.expectedRevision > p.revision)
+      )
+        invalidLoreEdit();
+    }
+    if (method === names.append) {
+      const u = uploads[index]!;
+      if (!u.codec) invalidLoreEdit();
+      const at = readCount(request.index);
+      if (!cancelRequested && at !== u.progress?.nextIndex) invalidLoreEdit();
+      const part = await u.codec.parts(at).next();
+      check(!cancelRequested);
+      if (part.done || !part.value || hash({ ...request, ...part.value }) !== hash(request))
+        invalidLoreEdit();
+    }
+    let commit: Task['commit'];
+    if (method === names.initialize) {
+      if (initialized || metadata.expectedRevision !== 0) invalidLoreEdit();
+      commit = () => {
+        initialized = true;
+      };
+    } else if (method === names.reserve) {
+      const u = uploads[reservationIndex];
+      if (
+        !initialized ||
+        !u ||
+        metadata.expectedRevision !== 1 + reservationIndex ||
+        hash(request.target) !== hash(u.intent.target) ||
+        hash(request.upload) !==
+          hash({ uploadId: u.id, startHash: u.startHash, jobToken: u.progress?.jobToken })
+      )
+        invalidLoreEdit();
+      commit = () => {
+        reservationIndex++;
+      };
+    } else if (method === names.editGet) {
+      if (!failedCancel) invalidLoreEdit();
+      commit = () => {
+        if (edit?.phase === 'adopted') return;
+        pendingCleanup = failedCancel;
+        failedCancel = null;
+      };
+    }
+    return task(method, request, kind, kind === 'upload' ? index : undefined, commit);
+  }
+  async function hydrate(value: unknown, reader: BookLoreEditRecovery['controlsPage']) {
+    check(!restoringCleanup);
+    const v = readObject(value, [
+      'schemaVersion',
+      'uid',
+      'writeId',
+      'bookId',
+      'loreId',
+      'sourceToken',
+      'intentHash',
+      'phase',
+      'completedCalls',
+      'blockedReason',
+      'cancelRequested',
+      'initialized',
+      'reservationIndex',
+      'productionUploadIndex',
+      'cleanupUploadIndex',
+      'uploadCount',
+      'controlsHash',
+      'hasEditIntent',
+      'inspection',
+      'edit',
+      'pending',
+    ]);
+    if (
+      v.schemaVersion !== 1 ||
+      v.uid !== uid ||
+      v.writeId !== writeId ||
+      v.bookId !== plan.bookId ||
+      v.loreId !== plan.loreId ||
+      v.sourceToken !== plan.sourceToken ||
+      v.intentHash !== intentHash ||
+      !['empty', 'preparing', 'ready', 'applied', 'cancelling', 'cancelled'].includes(
+        v.phase as string,
+      ) ||
+      typeof v.cancelRequested !== 'boolean' ||
+      typeof v.initialized !== 'boolean' ||
+      typeof v.hasEditIntent !== 'boolean' ||
+      v.uploadCount !== uploads.length ||
+      (v.blockedReason !== null && !loreCleanupBlocks.includes(v.blockedReason as LoreCleanupBlock))
+    )
+      invalidLoreEdit();
+    for (const key of [
+      'completedCalls',
+      'reservationIndex',
+      'productionUploadIndex',
+      'cleanupUploadIndex',
+    ])
+      readCount(v[key]);
+    if (
+      [v.reservationIndex, v.productionUploadIndex, v.cleanupUploadIndex].some(
+        (n) => (n as number) > uploads.length,
+      ) ||
+      (!v.initialized && v.reservationIndex !== 0) ||
+      (!v.hasEditIntent && (v.initialized || v.reservationIndex !== 0 || v.edit !== null))
+    )
+      invalidLoreEdit();
+    // Bind every bounded page to this root, including pages read during a concurrent change.
+    for (let offset = 0; offset < uploads.length; offset += 50) {
+      const limit = Math.min(50, uploads.length - offset);
+      const page = readObject(freezeLoreEditValue(await reader(offset, limit)), [
+        'intentHash',
+        'items',
+        'nextOffset',
+      ]);
+      check(!restoringCleanup);
+      const end = offset + limit;
+      if (
+        page.intentHash !== intentHash ||
+        !Array.isArray(page.items) ||
+        page.items.length !== limit ||
+        page.nextOffset !== (end < uploads.length ? end : null)
+      )
+        invalidLoreEdit();
+      for (const [local, raw] of page.items.entries()) {
+        const item = readObject(raw, ['id', 'startHash', 'progress']),
+          index = offset + local,
+          u = uploads[index]!;
+        if (item.id !== u.id || item.startHash !== u.startHash) invalidLoreEdit();
+        u.progress =
+          item.progress === null
+            ? null
+            : (restoredProgress('upload', item.progress, index) as LoreUploadProgress);
+      }
+    }
+    if (v.controlsHash !== controlsHash()) invalidLoreEdit();
+    inspection =
+      v.inspection === null
+        ? null
+        : (restoredProgress('inspection', v.inspection) as LoreInspectionProgress);
+    if (v.hasEditIntent) ensureEditIntent();
+    edit = v.edit === null ? null : (restoredProgress('edit', v.edit) as LoreEditProgress);
+    if (v.initialized && !edit?.jobToken) invalidLoreEdit();
+    phase = v.phase as BookLoreEditPhase;
+    cancelRequested = v.cancelRequested;
+    initialized = v.initialized;
+    completedCalls = v.completedCalls as number;
+    blockedReason = v.blockedReason as LoreCleanupBlock | null;
+    reservationIndex = v.reservationIndex as number;
+    productionUploadIndex = v.productionUploadIndex as number;
+    cleanupUploadIndex = v.cleanupUploadIndex as number;
+    if (
+      (phase === 'empty' && !plan.empty) ||
+      (plan.empty && !['empty', 'cancelled'].includes(phase)) ||
+      (phase === 'cancelling' && !cancelRequested) ||
+      (cancelRequested && !['cancelling', 'cancelled', 'applied'].includes(phase)) ||
+      (phase === 'applied' && edit?.phase !== 'adopted') ||
+      (phase === 'ready' &&
+        (edit?.compilation?.phase !== 'ready' ||
+          !initialized ||
+          reservationIndex !== uploads.length ||
+          productionUploadIndex !== uploads.length)) ||
+      (phase === 'cancelled' &&
+        !plan.empty &&
+        (cleanupUploadIndex !== uploads.length ||
+          inspection?.phase !== 'cancelled' ||
+          (editIntent !== null && edit?.phase !== 'cancelled')))
+    )
+      invalidLoreEdit();
+    for (const [index, u] of uploads.entries()) {
+      if (
+        (index < cleanupUploadIndex && u.progress?.phase !== 'cancelled') ||
+        (!cancelRequested &&
+          index < productionUploadIndex &&
+          !['sealed', 'reserved'].includes(u.progress?.phase ?? ''))
+      )
+        invalidLoreEdit();
+    }
+    const pending = readObject(v.pending, ['production', 'cleanup', 'failedCancel']);
+    if (
+      (['empty', 'applied', 'cancelled'].includes(phase) &&
+        Object.values(pending).some((p) => p !== null)) ||
+      (!cancelRequested && (pending.cleanup !== null || pending.failedCancel !== null))
+    )
+      invalidLoreEdit();
+    failedCancel = await restoredTask(pending.failedCancel, 'failedCancel');
+    pendingProduction = await restoredTask(pending.production, 'production');
+    pendingCleanup = await restoredTask(pending.cleanup, 'cleanup');
+    if (failedCancel && pendingCleanup?.method !== names.editGet) invalidLoreEdit();
+    check(!restoringCleanup);
+    if (phase === 'applied' || phase === 'cancelled') releaseValues();
+  }
+
   async function productionTask(): Promise<Task | null> {
     if (!inspection) return task(names.inspectStart, inspectionIntent, 'inspection');
     if (inspection.phase === 'cancelled') {
@@ -413,31 +767,8 @@ export async function prepareBookLoreEditOperation(
       if (!['sealed', 'reserved'].includes(p.phase)) invalidLoreEdit();
       productionUploadIndex++;
     }
-    if (!editIntent) {
-      const fields = Object.fromEntries(
-        plan.fields.map((f) => [
-          f.field,
-          'remove' in f
-            ? null
-            : {
-                uploadId: uploads[f.upload]!.id,
-                startHash: uploads[f.upload]!.startHash,
-                jobToken: uploads[f.upload]!.progress!.jobToken,
-              },
-        ]),
-      );
-      editIntent = freezeLoreEditValue({
-        bookId: plan.bookId,
-        loreId: plan.loreId,
-        editId,
-        sourceToken: plan.sourceToken,
-        inspection: { inspectionId, startHash: inspectionHash, jobToken: inspection.jobToken },
-        fields,
-        ...(plan.relations ? { relations: plan.relations } : {}),
-      }) as Record<string, unknown>;
-      editHash = hash({ domain: 'writer-lore-edit-start', schemaVersion: 1, intent: editIntent });
-    }
-    if (!edit) return task(names.editStart, editIntent, 'edit');
+    ensureEditIntent();
+    if (!edit) return task(names.editStart, editIntent!, 'edit');
     if (edit.phase === 'adopted') {
       applied(edit);
       return null;
@@ -595,5 +926,16 @@ export async function prepareBookLoreEditOperation(
       runningProduction = false;
     }
   }
-  return Object.freeze({ snapshot, controlsPage, advance, apply, requestCancel });
+  if (recovery) await hydrate(saved, readControls!);
+  return Object.freeze({ snapshot, checkpoint, controlsPage, advance, apply, requestCancel });
+}
+
+/** Restores protected data already reauthorized by the host. Performs no RPC. */
+export function restoreBookLoreEditOperation(
+  input: BookLoreEditOperationInput,
+  recovery: BookLoreEditRecovery,
+  port: BookLoreEditPort,
+  options: BookLoreWriteOptions = {},
+) {
+  return prepareBookLoreEditOperation(input, port, options, recovery);
 }

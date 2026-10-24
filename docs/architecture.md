@@ -2089,3 +2089,25 @@ Barrel expõe bookLoreJournalSession/listBookLoreJournals e tipos. Nenhum host
 existente adota automaticamente a API. Reconstrução completa de checkpoints,
 controles de todos os jobs, fechamento antes de coleta e revogação integrada
 na exclusão do livro continuam necessários. Rollout/P1/F2-09/V2 abertos.
+
+## P1 M38c5f — checkpoints restauráveis da edição de lore
+
+[ADR 0119](decisions/0119-restorable-manual-lore-edit-checkpoints.md):
+BookLoreEditCheckpoint é privado e distinto do snapshot. Root guarda identidade/
+intenção/CAS, fases/cancelamento, cursores de inicialização/reserva/produção/
+cleanup, inspeção/edição e wires exatos pendentes. ControlsPage fornece até 50
+uploads; digest encadeado de metadata liga páginas ao root e recusa mistura
+de estados da mesma intenção. Não serializa corpos/relações no root.
+
+restoreBookLoreEditOperation recompõe codecs/manifests do input original
+reautorizado, valida progressos/cursores/wire e reconstrói callbacks locais.
+Não envia RPC ao restaurar. Append deve coincidir com codec/prova/índice;
+ready não adota. Preserva produção incerta durante cleanup, reconciliação
+failedCancel/get e terminais. Intenção cancel permite cleanup com signal
+abortado, mantendo guards. Sessão Auth oferece restore com UID capturado.
+
+Checkpoint contém bytes privados e não deve ser persistido em claro.
+Persistência atômica/cifrada de root/páginas, metadata para cleanup sem chave
+e composição reserva/journal/host ainda não estão ligadas. Digest requer
+passagem linear por controles; codecs são recompostos do input em memória.
+Fechamento/coleta/ciclo de vida e rollout/P1/F2-09/V2 continuam abertos.

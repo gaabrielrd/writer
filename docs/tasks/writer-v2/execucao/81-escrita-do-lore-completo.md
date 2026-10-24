@@ -432,3 +432,16 @@ Persistir/reconstruir cursores e controles de todos os jobs e compor reserva/
 journal/host são os próximos passos. Sem integração automática na edição visual,
 fechamento/coleta local ou ciclo de vida da chave na exclusão do livro.
 Demais writers/consumidores/backup/ativação/rollout e P1/F2-09/V2 abertos.
+
+## Checkpoints e reconstrução — M38c5f
+
+[Plano 104](104-checkpoints-restauraveis-da-edicao-de-lore.md) acrescenta
+checkpoint privado distinto do status e restore validado com controles
+paginados. Cursores, pedidos exatos e callbacks de reconciliação sobrevivem
+à reconstrução; sessão Auth força UID e guards, sem RPC inicial.
+
+143 Vitest distintos e dois cenários Chromium positivos em rodadas.
+Passo 5 continua aberto: ligar checkpoints ao journal cifrado/atômico e
+controles completos de cleanup sem chave, depois compor reserva/host.
+Fechamento/coleta/ciclo de vida, demais writers/consumidores/backup/ativação/
+rollout e P1/F2-09/V2 seguem necessários. Sem recuperação visual anunciada.
