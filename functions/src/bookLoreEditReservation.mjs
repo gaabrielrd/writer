@@ -28,6 +28,7 @@ import { fieldUploadPaths } from './bookLoreFieldUploadContracts.mjs';
 import { openSealedBookLoreFieldUpload } from './bookLoreFieldUploadProofs.mjs';
 import { commitFieldOperation } from './bookLoreFieldUploadStore.mjs';
 import { createBookLoreEditReservationCleanup } from './bookLoreEditReservationCleanup.mjs';
+import { prepareCreationAttemptBinding } from './bookLoreCreationAttempts.mjs';
 export function createBookLoreEditReservationService({ db, now = () => Date.now() }) {
   const service = {
     async startBookLoreEditReservation(uid, input) {
@@ -45,6 +46,10 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
               .select(),
           );
         if (orphans.docs.length) conflict();
+        const binding = intent.creation
+          ? await prepareCreationAttemptBinding(tx, c, sourceContext, startHash)
+          : null;
+        binding?.commit();
         tx.create(c.ref, {
           schemaVersion: 1,
           kind: 'reservation',
@@ -125,6 +130,9 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
           field = opening.loaded;
         if (
           field.job.materialization ||
+          (intent.creation &&
+            (digest(field.job.context.creation) !== digest(intent.creation) ||
+              digest(field.job.context.creationBirth) !== digest(j.context.creationBirth))) ||
           field.job.context.bookId !== intent.bookId ||
           field.job.context.loreId !== intent.loreId ||
           field.job.context.sourceToken !== intent.sourceToken ||

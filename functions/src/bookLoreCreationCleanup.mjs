@@ -15,6 +15,11 @@ import {
 import { fieldUploadPaths } from './bookLoreFieldUploadContracts.mjs';
 import { loadFieldUpload } from './bookLoreFieldUploadStore.mjs';
 import { createBookLoreFieldUploadCleanup } from './bookLoreFieldUploadCleanup.mjs';
+import {
+  advanceCreationAttempt,
+  auditCreationAttempts,
+} from './bookLoreCreationAttemptCleanup.mjs';
+import { cancelledEditUploadAccess } from './bookLoreEditLeaseProofs.mjs';
 import { resourcePayloadBodyPath } from './bookResourcePayloadPaths.mjs';
 const beforeRequest = (l, s) => {
   if (!s.exists || !deletionAtMost(born(s), born(l.cancelRequest.snapshot))) conflict();
@@ -29,11 +34,14 @@ async function field(tx, l, id, startHash) {
     j.job.context.loreId !== l.c.loreId ||
     j.job.context.creation?.creationId !== l.c.intent.creationId ||
     j.job.context.creation?.jobToken !== l.token ||
-    !bornEqual(l.snapshot, { createTime: j.job.context.creationBirth }) ||
-    j.job.reservation
+    !bornEqual(l.snapshot, { createTime: j.job.context.creationBirth })
   )
     conflict();
   beforeRequest(l, j.snapshot);
+  if (j.job.reservation) {
+    if (j.job.phase !== 'cancelled') conflict();
+    await cancelledEditUploadAccess(tx, j);
+  }
   return j;
 }
 async function emptyField(tx, l, j) {
@@ -74,8 +82,19 @@ export async function requestCreationCancellation(tx, l, r) {
       .limit(1)
       .select(),
   );
-  if (!children.docs.length) return cancelCreationInTransaction(tx, l, r);
-  const plan = await prepareCreationCancelRequest(tx, l, r);
+  const attempts = await tx.get(
+    l.c.db
+      .collection(l.c.path + '/attempts')
+      .limit(1)
+      .select(),
+  );
+  if (!children.docs.length && !attempts.docs.length) return cancelCreationInTransaction(tx, l, r);
+  const plan = await prepareCreationCancelRequest(
+    tx,
+    l,
+    r,
+    attempts.docs.length ? 'attempts' : 'uploads',
+  );
   plan.commit();
   return creationView({ ...l, cancelRequest: { state: plan.state, request: plan.request } });
 }
@@ -138,7 +157,7 @@ async function audit(tx, l, next) {
   if (next.cursor) query = query.startAfter(next.cursor);
   const s = (await tx.get(query)).docs[0];
   if (!s) {
-    next.phase = leases ? 'jobs' : 'finish';
+    next.phase = leases ? 'jobs' : 'edits';
     next.cursor = null;
     return;
   }
@@ -162,12 +181,8 @@ async function payloadsGone(tx, l) {
       .collection(base + 'bookResourceBodies')
       .where('resource.kind', '==', 'lore')
       .where('resource.id', '==', l.c.loreId),
-    ...['bookLoreSegments', 'bookLoreGenerations', 'bookResourceInventory'].map((n) =>
-      db.collection(base + n).where('loreId', '==', l.c.loreId),
-    ),
-    db
-      .collection('users/' + l.c.uid + '/bookLoreEdits')
-      .where('context.intent.loreId', '==', l.c.loreId),
+    ...['bookLoreSegments'].map((n) => db.collection(base + n).where('loreId', '==', l.c.loreId)),
+
     db
       .collection('users/' + l.c.uid + '/bookLoreSourceInspections')
       .where('context.loreId', '==', l.c.loreId),
@@ -188,8 +203,11 @@ export async function advanceCreationCleanupInTransaction(tx, l, r) {
   const reserve = await reserveCreationCleanupCommit(tx, l, r),
     next = structuredClone(x.state);
   let terminal = false;
-  if (next.phase === 'uploads') await advanceUpload(tx, l, next);
+  if (next.phase === 'attempts') await advanceCreationAttempt(tx, l, next);
+  else if (next.phase === 'uploads') await advanceUpload(tx, l, next);
   else if (['leases', 'jobs'].includes(next.phase)) await audit(tx, l, next);
+  else if (['edits', 'generations', 'bodies'].includes(next.phase))
+    await auditCreationAttempts(tx, l, next);
   else if (next.phase === 'finish') {
     await payloadsGone(tx, l);
     next.phase = 'complete';

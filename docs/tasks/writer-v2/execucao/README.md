@@ -905,3 +905,16 @@ Próximo L3: tentativas/seleção congelada, reserva dos uploads para geração,
 cleanup de reserved, composição/auditoria sem base e ativação atômica de cabeça/
 geração/leases/clock/datas/recibo. Nenhum endpoint/UI novo; criação completa,
 demais integrações e P1/F2-09/V2 permanecem abertos. Commits somente locais.
+
+### P1 M38c3n / criação L3A — composição sem cabeça e cleanup de tentativas
+
+[Plano 91](91-composicao-do-lore-a-partir-da-reserva.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-composicao-do-lore-a-partir-da-reserva.md): 314 Node distintos e quatro SDK positivos.
+Composição certifica campos/páginas por origem creation e tentativa nativa,
+sem base/cabeça/inspeção fictícias. Cancel limpa reserved e audita controles
+preservados; exclusão do livro retoma o mesmo fluxo.
+
+Próximo L3B: ativação atômica e sucesso histórico, com reader/reedição/retirada/
+exclusão do livro preservando a origem. Adoção creation segue bloqueada,
+sem UI/endpoint. M38c/P1/F2-09/V2 continuam abertos; validate no fim de P1.
+Somente commits locais, sem CI remota ou deploy.

@@ -346,3 +346,14 @@ L3 deve integrar tentativas/filhos reserved ao cleanup, compor/auditar sem base
 e ativar cabeça/geração/leases/clock/datas/recibo atomicamente, preservando sucesso
 histórico. Criação completa e integrações de writers/consumidores/backup/cliente
 continuam pendentes. M38c/P1/F2-09/V2 abertos.
+
+## Composição da criação — M38c3n / L3A
+
+[Plano 91](91-composicao-do-lore-a-partir-da-reserva.md) amplia cancelamento
+de tentativas/filhos reserved antes de compor sem base. Origem creation
+não usa cabeça/inspeção fictícias e o inventário distingue sua procedência.
+
+Próximo L3B: ativação atômica e prova histórica do criador, com reader,
+segunda edição, retirada e exclusão do livro preservando sucesso.
+Adoção creation segue bloqueada, sem endpoint/UI. Demais integrações e
+M38c/P1/F2-09/V2 permanecem abertos.

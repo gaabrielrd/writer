@@ -1,4 +1,5 @@
 import { authorize, born, closed, integer, restoreHash } from './bookRestoreUploadContracts.mjs';
+import { creationRef } from './bookLoreCreationContracts.mjs';
 import { bookContentId } from './bookBackupSchema.mjs';
 import { BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
 import { digest, workFail } from './workProgressContracts.mjs';
@@ -47,7 +48,12 @@ export const editGenerationId = (token) =>
   digest({ domain: 'writer-lore-edit-generation', editToken: restoreHash(token) });
 export function editReservationIntent(uid, v) {
   authorize(uid);
-  closed(v, ['bookId', 'loreId', 'editId', 'sourceToken', 'inspection', 'fields'], ['relations']);
+  const creating = Object.hasOwn(v, 'creation');
+  closed(
+    v,
+    ['bookId', 'loreId', 'editId', 'sourceToken', creating ? 'creation' : 'inspection', 'fields'],
+    ['relations'],
+  );
   closed(v.fields, [], BOOK_LORE_GENERATION_FIELDS);
   const fields = {};
   for (const field of BOOK_LORE_GENERATION_FIELDS)
@@ -62,7 +68,9 @@ export function editReservationIntent(uid, v) {
     loreId: bookContentId(v.loreId),
     editId: bookContentId(v.editId),
     sourceToken: restoreHash(v.sourceToken),
-    inspection: editInspectionRef(v.inspection),
+    ...(creating
+      ? { creation: creationRef(v.creation) }
+      : { inspection: editInspectionRef(v.inspection) }),
     fields,
   };
   if (Object.hasOwn(v, 'relations')) {
@@ -75,6 +83,14 @@ export function editReservationIntent(uid, v) {
       editReservationConflict();
     intent.relations = { present: v.relations.present, count: v.relations.count };
   }
+  if (
+    creating &&
+    (intent.sourceToken !== intent.creation.jobToken ||
+      !fields.name ||
+      !fields.category ||
+      !Object.hasOwn(intent, 'relations'))
+  )
+    editReservationConflict();
   if (!Object.keys(fields).length && !Object.hasOwn(intent, 'relations')) editReservationConflict();
   return intent;
 }

@@ -25,7 +25,17 @@ function state(v) {
   ]);
   if (
     v.schemaVersion !== 1 ||
-    !['uploads', 'leases', 'jobs', 'finish', 'complete'].includes(v.phase)
+    ![
+      'attempts',
+      'uploads',
+      'leases',
+      'jobs',
+      'edits',
+      'generations',
+      'bodies',
+      'finish',
+      'complete',
+    ].includes(v.phase)
   )
     conflict();
   for (const k of ['revision', 'coordinatedUnits', 'completedUploads']) integer(v[k]);
@@ -153,7 +163,7 @@ export async function loadCreationCancelRequest(tx, l) {
   } else if (x.state.phase === 'complete') conflict();
   return x;
 }
-export async function prepareCreationCancelRequest(tx, l, r) {
+export async function prepareCreationCancelRequest(tx, l, r, initialPhase = 'uploads') {
   const at = creationCancelPaths(l.c),
     event = refs(l.c, 0);
   if (
@@ -181,7 +191,7 @@ export async function prepareCreationCancelRequest(tx, l, r) {
     value = state({
       schemaVersion: 1,
       revision: 0,
-      phase: 'uploads',
+      phase: initialPhase,
       cursor: null,
       coordinatedUnits: 0,
       completedUploads: 0,

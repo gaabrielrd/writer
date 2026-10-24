@@ -1795,3 +1795,27 @@ L2 não ativa ficha. L3 deve integrar tentativas/filhos reserved ao cancelamento
 compor/auditar sem base e ativar cabeça/geração/leases/clock/datas/recibo juntos.
 Criação adotada é sucesso histórico não cancelável. Sem callable/UI/deploy;
 demais writers/consumidores/backup/cliente e P1/F2-09/V2 continuam pendentes.
+
+## P1 M38c3n / criação L3A — composição e cancelamento das tentativas
+
+[ADR 0106](decisions/0106-creation-lore-composition-and-attempt-cleanup.md):
+intenção creation substitui inspection, exige name/category e relações explícitos,
+e fixa bookBirth/creationBirth sem timestamps de uma ficha inexistente.
+Cada unidade abre reserva/livro originais, com cabeça e tombstone ausentes.
+
+Start acopla job da tentativa e binding/prova imutáveis no criador.
+Compositor reutiliza auditoria/parser/SHA por parte, sem base ou campos herdados.
+Inventário de geração schemaVersion 2 representa creationSource explicitamente;
+schemaVersion 1 das edições existentes continua idêntico. Corpos e
+payloadStorage não mudam de versão por causa dessa distinção.
+
+Cancel inicia em attempts quando necessário, coordena um passo do filho junto
+do journal/recibo do pai, depois limpa uploads não reservados. Até 16 partes,
+header por último; reserved exige prova nativa do slot e geração cancelada.
+Audita edits/generations/bodies por cursor e preserva metadata/provas conhecidas.
+Órfãos ou recriados bloqueiam conclusão. A exclusão do livro usa o mesmo fluxo.
+
+Criação permanece interna: adoção creation é recusada explicitamente até
+L3B implementar a ativação e seu sucesso histórico. Reader segue recusando
+cabeça prematura reservada. Sem callable/UI, Rule, índice ou dependência novos.
+Demais writers/consumidores/backup/cliente e ativação de P1 seguem abertos.

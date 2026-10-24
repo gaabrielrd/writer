@@ -509,3 +509,10 @@ nativos e intenção de cancelamento coordenam uploads/cleanup e exclusão do li
 [Evidência](docs/entregas/2026-10-24-writer-v2-uploads-vinculados-a-criacao-de-lore.md).
 Ainda falta L3: composição/auditoria, cleanup de tentativas e ativação atômica.
 Nenhum endpoint/UI habilitado; demais integrações de P1/F2-09/V2 seguem abertas.
+
+M38c3n/L3A compõe uma geração de lore sem ficha anterior, com campos
+obrigatórios e páginas explícitos, auditoria e tentativas nativamente vinculadas.
+Cancelamento coordena as tentativas antes dos uploads e preserva comprovantes.
+[Plano](docs/tasks/writer-v2/execucao/91-composicao-do-lore-a-partir-da-reserva.md).
+Ativação atômica L3B e integração com cliente/consumidores continuam pendentes;
+a criação ainda não está disponível na interface. P1/F2-09/V2 seguem abertos.

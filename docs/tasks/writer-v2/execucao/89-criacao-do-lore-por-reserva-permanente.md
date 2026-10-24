@@ -93,3 +93,11 @@ Próximo L3: congelar seleção/tentativa, reservar uploads para geração e amp
 cleanup de filhos reserved, compor/auditar sem base e ativar cabeça/geração/
 leases/clock/datas/recibo atomicamente. Adoção preserva sucesso histórico.
 Criação completa e demais integrações continuam pendentes, sem endpoint/UI.
+
+## Avanço de L3 — composição e cancelamento
+
+[Plano 91](91-composicao-do-lore-a-partir-da-reserva.md) e [evidência](../../../entregas/2026-10-24-writer-v2-composicao-do-lore-a-partir-da-reserva.md):
+L3A compõe/audita sem base, fixa tentativas nativas e coordena cleanup de reserved.
+314 Node distintos e quatro SDK positivos. L3B ainda deve ativar cabeça/geração/
+leases/clock/datas/recibo e conservar sucesso histórico após edição/retirada/
+exclusão do livro. Criação completa permanece pendente, sem endpoint/UI.

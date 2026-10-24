@@ -1860,3 +1860,21 @@ Coleta de payload consulta metadata e provas de escrita, sem bytes/proof de chun
 Lint dirigido passou após remover dois imports de testes; arquitetura e sintaxe
 dos 217 módulos passaram. Sem TS/UI, não repetimos tipos/Vitest/build/browser.
 Validate integral no fechamento de P1. L3 e demais integrações seguem pendentes.
+
+### P1 M38c3n / criação L3A — composição e tentativas
+
+[Entrega](entregas/2026-10-24-writer-v2-composicao-do-lore-a-partir-da-reserva.md):
+314 Node distintos positivos em rodadas dirigidas: 26 casos novos de composição/
+origem/cleanup/isolamento/replay e 288 regressões em nove arquivos existentes.
+A primeira injeção de rollback do teste interceptava set em vez de update;
+corrigida a fixture, o caso isolado passou. Sem falha pendente.
+
+Quatro SDK positivos (295504.3951 ms) no emulador verificado 1.22.0, demo/loopback:
+nascimento acoplado de tentativa/binding/prova, conteúdo literal e relações,
+negação SDK de controles/head prematuro, cleanup reservado em lotes de até 16
+partes/header por último após revogação, rollback/retry concorrente/retomada
+pela exclusão do livro e binding/geração recriados preservados.
+
+Arquitetura, sintaxe dos 220 módulos e lint dirigido passaram.
+Sem TS/UI novos, não repetimos Vitest/tipos/build/browser. Validate integral
+no fechamento de P1; L3B, integrações e ativação permanecem pendentes.

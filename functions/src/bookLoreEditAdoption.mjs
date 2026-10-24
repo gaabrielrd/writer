@@ -89,7 +89,7 @@ export function createBookLoreEditAdoptionService({ db, now = () => Date.now() }
         c = editReservationPaths(db, uid, r.editId);
       return db.runTransaction(async (tx) => {
         const l = await loadEditReservation(tx, c, r);
-        if (!l || l.job.kind === 'fence') conflict();
+        if (!l || l.job.kind === 'fence' || l.job.context.sourceMode === 'creation') conflict();
         const replay = await replayEditReservation(tx, l, 'adoptBookLoreEditGeneration', r);
         if (replay) return replay;
         if (l.job.phase !== 'preparing' || l.job.revision !== r.expectedRevision) conflict();

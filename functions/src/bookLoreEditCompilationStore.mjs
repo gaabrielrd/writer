@@ -35,7 +35,7 @@ export const compilationAuditRef = (l) => l.c.db.doc(l.c.path + '/compilationSta
 export async function compilationSource(tx, l) {
   assertEditReservationOpening(tx, l);
   const source = await editReservationSource(tx, l.c, l.job.context.intent, l.job.context);
-  return source.inspection;
+  return source.source ?? source.inspection;
 }
 export async function compilationSlot(tx, l, target, required = false) {
   const s = await tx.get(l.c.db.doc(l.c.path + '/slots/' + editSlotId(target)));
@@ -299,10 +299,12 @@ export async function openBookLoreEditCompilation(tx, l) {
   return { storage: structuredClone(c.storage), source, certificate: snapshot };
 }
 export const sourceRelations = (source) =>
-  source.source.opened.mode === 'inline'
-    ? {
-        ...source.metadata.relations,
-        generationId: digest(['inline-source', source.loaded.token]),
-        sealBirth: born(source.source.opened.snapshot),
-      }
-    : loreGenerationRelations(source.source.opened.storage);
+  source.source.opened.mode === 'creation'
+    ? { ...source.metadata.relations, generationId: null, sealBirth: null }
+    : source.source.opened.mode === 'inline'
+      ? {
+          ...source.metadata.relations,
+          generationId: digest(['inline-source', source.loaded.token]),
+          sealBirth: born(source.source.opened.snapshot),
+        }
+      : loreGenerationRelations(source.source.opened.storage);

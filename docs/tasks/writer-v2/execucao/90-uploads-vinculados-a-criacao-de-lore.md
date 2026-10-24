@@ -69,3 +69,11 @@ cleanup/auditoria e coordenação com o livro. L3 deve ampliar cleanup de
 tentativas/reserved e compor/auditar/ativar a geração antes de endpoint/UI.
 Validate integral no fim de P1; P1/F2-09/Writer V2 permanecem abertos.
 Somente commits locais, sem CI remota ou deploy.
+
+## Avanço de L3
+
+[Plano 91](91-composicao-do-lore-a-partir-da-reserva.md) e [evidência](../../../entregas/2026-10-24-writer-v2-composicao-do-lore-a-partir-da-reserva.md):
+L3A integrou tentativas/filhos reserved ao cancelamento e composição/auditoria
+sem base. 314 Node distintos e quatro SDK positivos. L3B ainda deve ativar
+cabeça/geração/leases/clock/datas/recibo e manter o sucesso histórico;
+criação completa e integrações continuam pendentes, sem endpoint/UI.

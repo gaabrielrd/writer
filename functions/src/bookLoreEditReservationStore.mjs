@@ -22,6 +22,8 @@ import {
 import { verifyMaterializedSlot } from './bookLoreEditInline.mjs';
 import { validateParentAdoption } from './bookLoreEditAdoptionProofs.mjs';
 import { compilationState } from './bookLoreEditCompilationContracts.mjs';
+import { creationCompositionSource } from './bookLoreCreationComposition.mjs';
+import { verifyCreationAttemptBinding } from './bookLoreCreationAttempts.mjs';
 const openings = new WeakMap();
 export const assertEditReservationOpening = (tx, l) => {
   if (openings.get(l) !== tx) conflict();
@@ -31,6 +33,7 @@ const update = (s) => born({ createTime: s.updateTime });
 const atMost = (a, b) =>
   a.seconds < b.seconds || (a.seconds === b.seconds && a.nanoseconds <= b.nanoseconds);
 export async function editReservationSource(tx, c, intent, context = null) {
+  if (intent.creation) return creationCompositionSource(tx, c, intent, context);
   const p = inspectionPaths(c.db, c.uid, intent.inspection.inspectionId),
     result = await openBookLoreSourceInspection(tx, p, intent.inspection),
     original = result.loaded.job.context,
@@ -131,16 +134,20 @@ export const expectedEditGeneration = (loaded) => {
     ctx = j.context,
     intent = ctx.intent;
   return {
-    schemaVersion: 1,
+    schemaVersion: intent.creation ? 2 : 1,
     kind: 'generation',
     ownerId: c.uid,
     bookId: intent.bookId,
     bookBirth: ctx.bookBirth,
     loreId: intent.loreId,
     generationId: editGenerationId(loaded.token),
-    sourceBirth: ctx.sourceBirth,
-    sourceUpdate: ctx.sourceUpdate,
-    storageHash: ctx.sourceStorageHash,
+    ...(intent.creation
+      ? { creationSource: { reference: intent.creation, birth: ctx.creationBirth } }
+      : {
+          sourceBirth: ctx.sourceBirth,
+          sourceUpdate: ctx.sourceUpdate,
+          storageHash: ctx.sourceStorageHash,
+        }),
     preparation: {
       editId: c.id,
       editToken: loaded.token,
@@ -196,15 +203,15 @@ export async function loadEditReservation(tx, c, r) {
     compilationState(j.compilation);
     if (j.generationId === null) conflict();
   }
+  const creating = Object.hasOwn(j.context.intent, 'creation');
   closed(j.context, [
     'intent',
     'bookBirth',
-    'sourceBirth',
-    'sourceUpdate',
     'sourceMode',
-    'sourceStorageHash',
-    'inspectionBirth',
     'metadataHash',
+    ...(creating
+      ? ['creationBirth']
+      : ['sourceBirth', 'sourceUpdate', 'sourceStorageHash', 'inspectionBirth']),
   ]);
   const intent = editReservationIntent(c.uid, j.context.intent);
   if (
@@ -212,12 +219,16 @@ export async function loadEditReservation(tx, c, r) {
     intent.editId !== c.id ||
     editReservationStartHash(intent) !== j.startHash ||
     !['initializing', 'preparing', 'cancelling', 'cancelled', 'adopted'].includes(j.phase) ||
-    !['inline', 'payload'].includes(j.context.sourceMode)
+    !(creating
+      ? j.context.sourceMode === 'creation'
+      : ['inline', 'payload'].includes(j.context.sourceMode))
   )
     conflict();
-  for (const key of ['bookBirth', 'sourceBirth', 'sourceUpdate', 'inspectionBirth'])
+  for (const key of creating
+    ? ['bookBirth', 'creationBirth']
+    : ['bookBirth', 'sourceBirth', 'sourceUpdate', 'inspectionBirth'])
     editStamp(j.context[key]);
-  restoreHash(j.context.sourceStorageHash);
+  if (!creating) restoreHash(j.context.sourceStorageHash);
   restoreHash(j.context.metadataHash);
   for (const key of ['revision', 'reservedCount', 'releasedCount', 'createdAt']) integer(j[key]);
   if (!Number.isFinite(new Date(j.createdAt).getTime()) || j.releasedCount > j.reservedCount)
@@ -315,6 +326,7 @@ export async function loadEditReservation(tx, c, r) {
     )
       conflict();
   }
+  if (creating) await verifyCreationAttemptBinding(tx, loaded);
   if (j.phase === 'adopted') await validateParentAdoption(tx, loaded);
   openings.set(loaded, tx);
   return loaded;

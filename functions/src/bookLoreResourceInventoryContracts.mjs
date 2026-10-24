@@ -1,4 +1,5 @@
 import { authorize, born, closed, integer, restoreHash } from './bookRestoreUploadContracts.mjs';
+import { creationRef } from './bookLoreCreationContracts.mjs';
 import { bookContentId } from './bookBackupSchema.mjs';
 import { lorePayloadPointer } from './bookRestoreLorePayloadContracts.mjs';
 import { loreFieldPointer, BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
@@ -80,13 +81,15 @@ export function validateInventoryContext(at, value) {
       'bookBirth',
       'loreId',
       ...(at.kind === 'generation'
-        ? ['generationId', 'sourceBirth', 'sourceUpdate', 'storageHash']
+        ? value.schemaVersion === 2
+          ? ['generationId', 'creationSource', 'preparation']
+          : ['generationId', 'sourceBirth', 'sourceUpdate', 'storageHash']
         : ['bodyId', 'pointer', 'selector', 'initialGeneration']),
     ],
-    at.kind === 'generation' ? ['preparation'] : [],
+    at.kind === 'generation' && value.schemaVersion !== 2 ? ['preparation'] : [],
   );
   if (
-    value.schemaVersion !== 1 ||
+    !(value.schemaVersion === 1 || (at.kind === 'generation' && value.schemaVersion === 2)) ||
     value.kind !== at.kind ||
     value.ownerId !== at.uid ||
     value.bookId !== at.bookId
@@ -96,9 +99,17 @@ export function validateInventoryContext(at, value) {
   inventoryStamp(value.bookBirth);
   if (at.kind === 'generation') {
     if (value.generationId !== at.id) inventoryConflict();
-    inventoryStamp(value.sourceBirth);
-    inventoryStamp(value.sourceUpdate);
-    restoreHash(value.storageHash);
+    if (value.schemaVersion === 2) {
+      closed(value.creationSource, ['reference', 'birth']);
+      creationRef(value.creationSource.reference);
+      inventoryStamp(value.creationSource.birth);
+      if (value.creationSource.reference.jobToken !== value.preparation.sourceToken)
+        inventoryConflict();
+    } else {
+      inventoryStamp(value.sourceBirth);
+      inventoryStamp(value.sourceUpdate);
+      restoreHash(value.storageHash);
+    }
     if (Object.hasOwn(value, 'preparation')) {
       editPreparationRef(value.preparation);
       if (editGenerationId(value.preparation.editToken) !== value.generationId) inventoryConflict();
