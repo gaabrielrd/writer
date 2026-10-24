@@ -315,6 +315,11 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
             : db.doc(`${root.path}/lore/${data.id}-${index}`);
           if (seen.has(target.path)) fail('invalid-argument', 'Entidade repetida no lote.');
           seen.add(target.path);
+          if (
+            change.scope === 'local' &&
+            (await tx.get(db.doc(context.bookRef.path + '/bookLoreTombstones/' + target.id))).exists
+          )
+            fail('failed-precondition', 'Esta ficha foi excluída. Use outro identificador.');
           if (!existing && (!input.name || !input.summary || !input.category))
             fail('invalid-argument', 'Preencha nome, categoria e resumo da entidade nova.');
           if (

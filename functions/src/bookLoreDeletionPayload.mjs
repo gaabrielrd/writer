@@ -6,11 +6,11 @@ import { inventoryScope } from './bookLoreResourceInventoryContracts.mjs';
 import { loadInventoryControl, prepareInventoryChange } from './bookLoreResourceInventoryStore.mjs';
 import { resolveAdoptedInventoryLease } from './bookLoreAdoptedLease.mjs';
 import {
-  assertDeletionOpening,
   deletionConflict as conflict,
   deletionAtMost,
   deletionScopeCheck,
 } from './bookLoreDeletionStore.mjs';
+import { assertLoreCleanupOpening, loreCleanupQuery } from './bookLoreCleanupScope.mjs';
 export const DELETION_PAYLOAD_FIELDS = [
   'schemaVersion',
   'bodyId',
@@ -25,7 +25,7 @@ export const DELETION_PAYLOAD_FIELDS = [
 ];
 const immutable = (s) => s.exists && bornEqual(s, { createTime: s.updateTime });
 export async function prepareDeletionPayload(tx, l, next, limit) {
-  assertDeletionOpening(tx, l);
+  assertLoreCleanupOpening(tx, l);
   const { db, uid, bookId } = l.c;
   let snapshot;
   if (next.body)
@@ -37,8 +37,7 @@ export async function prepareDeletionPayload(tx, l, next, limit) {
   else
     snapshot = (
       await tx.get(
-        db
-          .collection('books/' + bookId + '/bookResourceBodies')
+        loreCleanupQuery(l, 'bookResourceBodies')
           .orderBy('__name__')
           .select(...DELETION_PAYLOAD_FIELDS)
           .limit(1),
@@ -63,7 +62,13 @@ export async function prepareDeletionPayload(tx, l, next, limit) {
       bookId: value.bookId,
       resource: value.resource,
     });
-  if (scoped.uid !== uid || scoped.bookId !== bookId || snapshot.id !== manifest.bodyId) conflict();
+  if (
+    scoped.uid !== uid ||
+    scoped.bookId !== bookId ||
+    snapshot.id !== manifest.bodyId ||
+    (l.c.loreId && (scoped.resource.kind !== 'lore' || scoped.resource.id !== l.c.loreId))
+  )
+    conflict();
   closed(value, DELETION_PAYLOAD_FIELDS);
   integer(value.createdAt);
   const c = inventoryScope(db, uid, bookId),

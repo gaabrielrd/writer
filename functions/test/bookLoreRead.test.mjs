@@ -443,7 +443,7 @@ test('a genuine pointer from another entity or book never authorizes its payload
   await assert.rejects(() => f.api.getBookLoreRead('author', scope(otherBook)));
 });
 
-test('a random base part uses four native reads and a relation part uses six, with exactly one raw chunk each', async () => {
+test('a random base part uses five native reads and a relation part uses seven, including the deletion fence and one raw chunk each', async () => {
   const f = setup(),
     seed = await seedBookLoreRead(f.db),
     view = await f.api.getBookLoreRead(seed.uid, scope(seed)),
@@ -464,12 +464,16 @@ test('a random base part uses four native reads and a relation part uses six, wi
       }),
     );
   for (const [section, index, expected] of [
-    ['base', 7, 4],
-    ['relations', 0, 6],
+    ['base', 7, 5],
+    ['relations', 0, 7],
   ]) {
     paths.length = 0;
     const part = await f.api.readBookLorePart(seed.uid, request(view, section, 0, index));
     assert.equal(paths.length, expected);
+    assert.equal(
+      paths.filter((p) => p === 'books/' + seed.bookId + '/bookLoreTombstones/' + seed.id).length,
+      1,
+    );
     assert.equal(paths.filter((p) => p.includes('/bookResourceChunks/')).length, 1);
     assert.ok(Buffer.from(part.chunkBase64, 'base64').length <= 65536);
   }

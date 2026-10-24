@@ -1728,3 +1728,26 @@ O cliente encaminha hasLoreResources ao servidor. Preparações ainda sem marca
 exigem roteamento completo antes da exposição de uploads/escrita. Exclusão por
 ficha, criação, consumidores/backup/cliente e rollout permanecem pendentes.
 P1/F2-09/V2 abertos; sem endpoint/UI/worker ou deploy.
+
+## P1 M38c3k — exclusão individual do lore completo
+
+[ADR 0103](decisions/0103-individual-book-lore-removal.md) retira a ficha com
+inspeção ready/CAS, clock/datas/privacidade e tombstone nativos no mesmo commit.
+Contexto privado bookLoreRemovals fixa a origem; eventos/âncoras/recibos tornam
+a limpeza retomável sem reutilizar IDs. Rules, leitor completo e análise Admin
+conferem a reserva permanente.
+
+Unidades compartilhadas aceitam somente abertura nativa do controlador na mesma
+transação. Escopo individual preserva outras fichas/jobs, cancela preparações,
+aposenta gerações e limpa descritores/partes/headers por metadata/cutoff.
+Inventário conhecido é auditado; objetos divergentes ou recriados ficam intactos.
+Consulta de corpos por resource.kind/resource.id/nome tem índice declarado.
+
+Coletor genérico adia por lore-removal. Deleting do livro bloqueia coleta
+individual; etapa removals do inventário v3 registra handoff nativo antes de
+limpar os recursos. Conclusão histórica confere o controlador/checkpoint
+originais depois da raiz sair, sem reabrir origem ou executar cursor antigo.
+
+O leitor completo acrescenta uma consulta constante ao tombstone por abertura.
+Criação por reserva, demais writers/consumidores/backup/cliente e rollout seguem
+obrigatórios antes de endpoint/UI. P1/F2-09/V2 abertos, sem deploy.

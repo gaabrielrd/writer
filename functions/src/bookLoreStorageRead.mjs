@@ -69,6 +69,7 @@ export async function openBookLoreRecord(tx, c, snapshot) {
       Object.hasOwn(value, 'adventureId')
     )
       loreChanged();
+    if ((await tx.get(c.db.doc(c.path + '/bookLoreTombstones/' + id))).exists) loreChanged();
     let opened;
     if (!Object.hasOwn(value, 'payloadStorage')) {
       const encoded = inline(c, id, value);

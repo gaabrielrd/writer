@@ -310,3 +310,15 @@ recibos permanecem fences; cliente reconhece hasLoreResources.
 Criação/exclusão individual e roteamento de preparações ainda sem a marca
 continuam obrigatórios antes de habilitar uploads/escrita ao cliente. Demais
 writers/consumidores/backup/cliente e rollout mantêm M38c/P1/F2-09/V2 abertos.
+
+## Exclusão individual — M38c3k
+
+O [plano 88](88-exclusao-individual-do-lore-completo.md) implementa a retirada
+e limpeza internas por ficha: inspeção/CAS, clock/privacidade e tombstone
+atômicos, cleanup limitado e handoff nativo para o inventário do livro.
+[Evidência](../../../entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md):
+303 Node e cinco SDK distintos positivos.
+
+Criação por reserva e integração completa de writers/consumidores/backup/
+cliente continuam obrigatórias. Não habilitar o editor/endpoint ainda.
+M38c/P1/F2-09/V2 permanecem abertos.

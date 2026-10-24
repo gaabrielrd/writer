@@ -489,3 +489,10 @@ headers saem depois das partes e controles de recuperação permanecem.
 O cliente reconhece hasLoreResources. Preparações ainda sem essa marca exigem
 roteamento adicional antes de habilitar uploads/escrita. Criação/exclusão por
 ficha, consumidores/backup/cliente e ativação continuam pendentes.
+
+M38c3k acrescenta serviço interno de exclusão individual do lore completo.
+Retirada atômica cria registro permanente do ID; limpeza limitada preserva outras
+fichas e transfere a responsabilidade ao inventário do livro se ele for excluído.
+[Evidência](docs/entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md).
+Não habilita UI/endpoint. Criação por reserva, demais writers/consumidores,
+backup/cliente e ativação de P1 continuam pendentes.

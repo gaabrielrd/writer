@@ -9,11 +9,8 @@ import { createBookLoreFieldUploadCleanup } from './bookLoreFieldUploadCleanup.m
 import { inspectionPaths } from './bookLoreSourceInspectionContracts.mjs';
 import { loadSourceInspection } from './bookLoreSourceInspectionStore.mjs';
 import { createBookLoreSourceInspectionService } from './bookLoreSourceInspection.mjs';
-import {
-  assertDeletionOpening,
-  deletionConflict as conflict,
-  deletionScopeCheck,
-} from './bookLoreDeletionStore.mjs';
+import { deletionConflict as conflict, deletionScopeCheck } from './bookLoreDeletionStore.mjs';
+import { assertLoreCleanupOpening } from './bookLoreCleanupScope.mjs';
 export const deletionJobQueries = (db, uid, bookId) => [
   db.collection('users/' + uid + '/bookLoreEdits').where('context.intent.bookId', '==', bookId),
   db.collection('users/' + uid + '/bookLoreFieldUploads').where('context.bookId', '==', bookId),
@@ -22,15 +19,20 @@ export const deletionJobQueries = (db, uid, bookId) => [
     .where('context.bookId', '==', bookId),
 ];
 export async function advanceDeletionJob(tx, l, next) {
-  assertDeletionOpening(tx, l);
+  assertLoreCleanupOpening(tx, l);
   const index = ['edits', 'fields', 'inspections'].indexOf(next.phase);
   if (index < 0) conflict();
   let query = deletionJobQueries(l.c.db, l.c.uid, l.c.bookId)[index].orderBy('__name__').limit(1);
   if (next.cursor) query = query.startAfter(next.cursor);
   const document = (await tx.get(query)).docs[0];
   if (!document) {
-    next.phase = ['fields', 'inspections', 'heads'][index];
+    next.phase = ['fields', 'inspections', l.c.loreId ? 'heads' : 'removals'][index];
     next.cursor = null;
+    return;
+  }
+  const context = document.data().context;
+  if (l.c.loreId && (index === 0 ? context?.intent?.loreId : context?.loreId) !== l.c.loreId) {
+    next.cursor = document.id;
     return;
   }
   deletionScopeCheck(l, document);

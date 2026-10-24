@@ -1806,3 +1806,22 @@ na entrega. Nenhuma falha fica escondida por contagem de repetições. Lint,
 typecheck, arquitetura e sintaxe dos 204 módulos passaram. Sem UI nova,
 não repetimos build/browser ou validate/coverage integrais; estes ficam em P1.
 Exclusão por ficha e demais writers/consumidores/backup/cliente seguem pendentes.
+
+### P1 M38c3k — exclusão individual do lore completo
+
+[Entrega](entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md):
+303 Node distintos positivos em rodadas dirigidas (36 do novo arquivo, 23 da
+exclusão do livro e 244 de leitores/inventário/edição/upload/inspeção/análise).
+Cinco SDK distintos positivos comprovam retirada concorrente atômica, revogação
+pública, criação positiva de outra ficha, negação de reuso do ID, rollback nativo,
+handoff ao livro, 141 partes/header por último e tombstone recriado.
+
+A leitura do registro permanente acrescenta uma consulta nativa por abertura.
+Contratos exatos atualizados: v1 base 5/relações 7; v2 campo com base 6/relações 7,
+campo sem base 5 leituras, sempre um chunk. Coletor genérico adia a remoção
+individual, preservando a capacidade de cancelamento staged própria.
+
+As falhas iniciais do relógio, custo, expectativa de ausência e variável da
+Rule estão registradas e corrigidas na entrega, com repetição dirigida.
+Lint, arquitetura e sintaxe dos 210 módulos passaram. Sem UI/TS novos,
+não repetimos Vitest/tipos/build/browser; validate integral no fechamento de P1.

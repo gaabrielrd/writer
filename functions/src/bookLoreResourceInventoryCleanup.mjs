@@ -135,6 +135,11 @@ export async function collectBookLoreInventoryUnit(tx, c, input, access = null) 
       cleanupIndex: body.context.pointer.manifest.chunkCount,
       headerRemoved: true,
     };
+  if (
+    !staging &&
+    (await tx.get(db.doc(c.path + '/bookLoreTombstones/' + body.context.loreId))).exists
+  )
+    return deferred('lore-removal');
   const head = await inspectCurrentHead(tx, c, body, limit);
   if (head.referenced) return deferred('active-head');
   const lease = await tx.get(db.doc(c.path + '/bookResourceLeases/' + body.at.id));

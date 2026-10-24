@@ -867,3 +867,15 @@ Próximo: criação/exclusão individual de lore e roteamento das preparações 
 sem marca, depois writers/consumidores/backup/cliente antes de endpoint/UI.
 Validate integral no fechamento de P1. P1/F2-09/V2 continuam abertos;
 somente commits locais, sem CI remota/deploy.
+
+### P1 M38c3k — exclusão individual do lore completo
+
+[Plano 88](88-exclusao-individual-do-lore-completo.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md):
+303 Node e cinco SDK distintos positivos em rodadas dirigidas.
+Retirada por inspeção/CAS e tombstone atômicos; cleanup por metadata, outras
+fichas preservadas e handoff nativo para a exclusão do livro. Sem UI/endpoint.
+
+Próximo: criação por reserva, depois demais writers/consumidores/backup/cliente
+e roteamento de preparações sem marca antes da exposição. Validate integral
+no fechamento de P1. P1/F2-09/V2 abertos; somente commits locais.

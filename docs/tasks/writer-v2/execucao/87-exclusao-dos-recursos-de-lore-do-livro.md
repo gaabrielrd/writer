@@ -81,3 +81,14 @@ O núcleo backend de exclusão do livro e roteamento de hasLoreResources estão
 implementados. A exposição de uploads/escrita ainda depende do roteamento das
 preparações sem marca, criação/exclusão por ficha e demais integrações listadas.
 Não se declara o passo 6 inteiro, P1/F2-09 ou V2 concluídos. Sem deploy/CI remota.
+
+## Coordenação posterior com a ficha — M38c3k
+
+O [plano 88](88-exclusao-individual-do-lore-completo.md) acrescenta removals ao
+inventário v3: jobs individuais em curso entregam a limpeza ao contexto nativo
+do livro antes de heads/gerações/payloads. Fences e sucesso histórico permanecem;
+a conclusão individual confere o checkpoint original após a raiz sair.
+
+[Evidência](../../../entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md):
+303 Node e cinco SDK distintos positivos, incluindo rollback/handoff reais.
+Criação e demais integrações continuam pendentes; P1/F2-09/V2 abertos.

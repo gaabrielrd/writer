@@ -12,6 +12,7 @@ export const deletionAtMost = (a, b) =>
   a.seconds < b.seconds || (a.seconds === b.seconds && a.nanoseconds <= b.nanoseconds);
 const immutable = (s) => s.exists && bornEqual(s, { createTime: s.updateTime });
 const openings = new WeakMap();
+export const isDeletionOpening = (tx, l) => openings.get(l) === tx;
 export const assertDeletionOpening = (tx, l) => {
   if (openings.get(l) !== tx) deletionConflict();
 };
@@ -23,6 +24,7 @@ export const deletionPhases = [
   'edits',
   'fields',
   'inspections',
+  'removals',
   'heads',
   'generations',
   'segments',
@@ -49,7 +51,7 @@ const refs = (c, n) => ({
   event: c.db.doc(c.path + '/events/' + eventId(n)),
   proof: c.db.doc(c.path + '/proofs/' + eventId(n)),
 });
-function state(v) {
+export function validateLoreDeletionState(v) {
   closed(v, [
     'schemaVersion',
     'revision',
@@ -121,7 +123,7 @@ export async function loadBookLoreDeletion(tx, db, uid, bookId, operationId) {
   )
     deletionConflict();
   const stateSnapshot = await tx.get(c.stateRef),
-    value = state(stateSnapshot.data()),
+    value = validateLoreDeletionState(stateSnapshot.data()),
     at = refs(c, value.revision),
     event = await tx.get(at.event),
     proof = await tx.get(at.proof),
@@ -202,7 +204,7 @@ export async function reserveBookLoreDeletionCommit(tx, l) {
   const at = refs(l.c, revision);
   if ((await tx.get(at.event)).exists || (await tx.get(at.proof)).exists) deletionConflict();
   return (value) => {
-    value = state({ ...value, revision });
+    value = validateLoreDeletionState({ ...value, revision });
     const event = { schemaVersion: 1, token: l.token, revision, stateHash: digest(value) };
     return {
       complete: value.complete,

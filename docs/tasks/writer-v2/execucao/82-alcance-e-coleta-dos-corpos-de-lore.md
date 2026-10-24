@@ -130,3 +130,14 @@ Esta barreira própria do livro deleting não altera a coleta genérica por
 alcance. Exclusão por ficha, criação e roteamento completo de livros ainda
 não marcados seguem pendentes antes de exposição ao cliente, assim como
 writers/consumidores/backup/recuperação e rollout. Passo 6 e P1 continuam abertos.
+
+## Exclusão individual e coordenação dos coletores — M38c3k
+
+O [plano 88](88-exclusao-individual-do-lore-completo.md) retira a ficha e fixa
+cutoff/tombstone nativos antes de limpar suas preparações/gerações/bytes.
+Coletor genérico adia lore-removal; capacidade staged própria continua válida.
+Deleting do livro passa a limpeza ao inventário v3, sem dois cursores concorrentes.
+
+[Evidência](../../../entregas/2026-10-24-writer-v2-exclusao-individual-do-lore-completo.md):
+303 Node e cinco SDK distintos positivos. Criação por reserva, demais writers/
+consumidores/backup/cliente e rollout mantêm o passo 6 e P1 abertos.

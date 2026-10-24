@@ -155,6 +155,7 @@
 - Materialize lore inline somente da origem reautorizada no servidor; mantenha filho/pai na mesma transação, marque job/lease privados e limpe filhos ainda não reservados antes dos slots, conforme ADR 0100.
 - Adote cabeça/geração/leases lógicas/clock/privacidade/recibo atomicamente; exija consentimento explícito lógico e provas nativas para liberar leases aposentadas, preserve hasLoreResources como marca servidor e bloqueie exclusão legada, conforme ADR 0101.
 - Limpe lore do livro já deleting pelo inventário v3 e cutoff nativo; coordene filhos/checkpoints na mesma transação, remova partes antes do header e preserve jobs/leases/controles como fences, conforme ADR 0102.
+- Retire lore individual com inspeção/CAS, clock/privacidade e tombstone permanentes; adie o coletor genérico e entregue a limpeza ao inventário do livro ao entrar em deleting, preservando recibos nativos, conforme ADR 0103.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.
