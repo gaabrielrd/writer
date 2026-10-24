@@ -458,3 +458,16 @@ Passo 5 segue aberto: compor write-ahead/acks automáticos e controles de todos
 os jobs metadata sem chave, reserva/host e fechamento nativo antes de descarte.
 Ciclo de vida da chave, demais writers/consumidores/backup/ativação/rollout
 e P1/F2-09/V2 continuam pendentes; validate integral no fechamento de P1.
+
+## Controles e cleanup sem chave — M38c5h
+
+[Plano 106](106-controles-e-cancelamento-de-lore-sem-chave.md) persiste mapa
+paginado completo e worker metadata com pedido exato antes de RPC.
+Reconcilia pai/filhos/inspeção ou confirma adoção própria, sem chave/decrypt,
+com guarda de conta e preservação de draft/produtor incerto/recibos.
+114 Vitest distintos e dois cenários Chromium positivos em rodadas.
+
+Passo 5 segue aberto: composição automática de write-ahead/acks, reserva e
+host ainda precisa integrar as APIs; não habilitar legado sem mapa como
+recuperável. Descarte/ciclo de vida, demais writers/consumidores/backup/
+ativação/rollout e P1/F2-09/V2 continuam necessários.

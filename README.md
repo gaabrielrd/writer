@@ -614,3 +614,10 @@ somente do IDB protegido, sem RPC no restore.
 [Evidência](docs/entregas/2026-10-24-writer-v2-persistencia-cifrada-dos-checkpoints-de-lore.md):
 50 Vitest distintos e dois cenários Chromium positivos. Write-ahead automático,
 mapa completo de cleanup sem chave e host ainda pendentes; P1/F2-09/V2 abertos.
+
+M38c5h acrescenta mapa persistido de todos os jobs e cancelamento por metadata,
+sem chave/decrypt após revogar a origem. Reconhece adoção própria e preserva
+draft, produtor incerto e recibos.
+[Evidência](docs/entregas/2026-10-24-writer-v2-controles-e-cancelamento-de-lore-sem-chave.md):
+114 Vitest distintos e dois cenários Chromium positivos em harness da mesma
+origem. Write-ahead automático e host seguem pendentes; P1/F2-09/V2 abertos.

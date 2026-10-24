@@ -7,6 +7,7 @@ import {
 } from './bookLoreEditOperation';
 import type { BookLoreWriteOptions } from './bookLoreWritePayload';
 import type { BookLoreEditRecovery } from './bookLoreEditCheckpoint';
+import type { openBookLoreJournal } from './bookLoreJournal';
 
 /** No persistence or automatic sending: the host drives the returned operation. */
 export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
@@ -56,5 +57,19 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     recovery: BookLoreEditRecovery,
     options: BookLoreWriteOptions = {},
   ) => prepare(input, options, recovery);
-  return Object.freeze({ actor, guard, prepare, restore });
+  async function cleanup(
+    journal: Pick<
+      Awaited<ReturnType<typeof openBookLoreJournal>>,
+      'inspect' | 'advanceControlCleanup'
+    >,
+  ) {
+    guard();
+    if ((await journal.inspect()).identity.uid !== uid)
+      throw Error('Entre na conta que iniciou a edição.');
+    guard();
+    const result = await journal.advanceControlCleanup(port);
+    guard();
+    return result;
+  }
+  return Object.freeze({ actor, guard, prepare, restore, cleanup });
 }

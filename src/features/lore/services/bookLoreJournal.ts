@@ -2,6 +2,8 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { readObject } from './bookLoreReadContracts';
 import { checkpointJournal } from './bookLoreCheckpointJournal';
+import { journalControlMap } from './bookLoreControlMap';
+import { journalControlCleanup } from './bookLoreControlCleanup';
 import { restoreBookLoreEditOperation } from './bookLoreEditOperation';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
 import { bookLoreJSONParts, type BookLoreWriteOptions } from './bookLoreWritePayload';
@@ -31,7 +33,6 @@ import {
   commitJournalHead,
   readJournalFrame,
   journalFrameKey,
-  type JournalFrameKey,
 } from './bookLoreJournalDb';
 import {
   journalCheck,
@@ -64,6 +65,7 @@ export async function createBookLoreJournal(
     cleanup: null,
     diagnostic: null,
     checkpoint: null,
+    controls: null,
   };
   const saved = await commitJournalHead(i, null, head);
   journalCheck(options);
@@ -114,7 +116,7 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
   function mutate(
     update: (h: LoreJournalHead) => LoreJournalHead,
     adds: Parameters<typeof commitJournalHead>[3] = [],
-    removes: JournalFrameKey[] = [],
+    removes: Parameters<typeof commitJournalHead>[4] = [],
   ) {
     const result = queue.then(async () => {
       check(true);
@@ -410,8 +412,13 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
     });
   }
   async function send(port: BookLoreEditPort, value: LoreJournalWire) {
-    const { wire, metadata } = journalWire(value, head.identity),
-      pending = await stagePending(wire),
+    const { wire, metadata } = journalWire(value, head.identity);
+    if (metadata.lane === 'production') {
+      if (head.controls && wire.method === 'startBookLoreEditReservation')
+        await controls.registerControlEdit(wire);
+      await controls.verifyControlProduction(wire);
+    }
+    const pending = await stagePending(wire),
       current = await inspect();
     check(metadata.lane !== 'production');
     if (
@@ -425,6 +432,8 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
     // The coordinator must parse/accept the response before confirmPending.
     return response;
   }
+  const controls = journalControlMap({ inspect, mutate });
+  const cleanup = journalControlCleanup({ inspect, mutate }, controls);
   const checkpoints = checkpointJournal({ options, inspect, mutate });
   async function restoreCheckpointOperation(
     port: BookLoreEditPort,
@@ -460,6 +469,9 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
   }
   return Object.freeze({
     ...checkpoints,
+    ...cleanup,
+    writeControlMap: controls.writeControlMap,
+    registerControlEdit: controls.registerControlEdit,
     restoreCheckpointOperation,
     inspect,
     writeDraft,

@@ -6,6 +6,8 @@ export {
 } from './bookLoreEditOperation';
 export type { BookLoreEditCheckpoint, BookLoreEditRecovery } from './bookLoreEditCheckpoint';
 export { captureBookLoreEditCheckpoint } from './bookLoreCheckpointBundle';
+export { captureBookLoreControlMap } from './bookLoreControlMap';
+export type { BookLoreControlMap } from './bookLoreControlMap';
 export type {
   BookLoreCheckpointBundle,
   LoreCheckpointConfirmation,

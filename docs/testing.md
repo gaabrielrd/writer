@@ -2131,3 +2131,23 @@ Serviços reais sobre double/Auth fictícia; não certifica tokens, Rules ou UI.
 [Evidência](entregas/2026-10-24-writer-v2-persistencia-cifrada-dos-checkpoints-de-lore.md)
 registra rodadas/limites/falhas corrigidas. Lint/tipos/build/smoke/arquitetura
 dirigidos; sem backend/SDK repetidos. Validate/cobertura no fechamento de P1.
+
+### P1 M38c5h — mapa e cleanup de lore sem chave
+
+bookLoreControlCleanup.test.mjs tem 42 casos novos e sessão tem cinco novos.
+Com 17 antigos da sessão e 50 regressões do journal/proteção/checkpoint,
+114 casos distintos passaram em rodadas. Testam nove momentos de cancel,
+seis classes de resposta perdida, 53 uploads paginados, adoção vencedora,
+conflitos/fences, produtores em voo, ACK abortado, legado, corrupção/conta/
+signal, mapa parcial e dependências de pai/slot fora do mapa.
+
+Dois cenários Chromium em página leve da mesma origem usam IDB/Web Locks
+reais, serviços reais sobre double/Auth fictícia e reload entre passos:
+fechamento de três uploads após revogação sem getKey/decrypt, com replay exato
+e draft/produção preservados; e reconhecimento de adoção própria sem limpar
+corpos ativos. Não é prova de interface ou tokens reais.
+
+[Evidência](entregas/2026-10-24-writer-v2-controles-e-cancelamento-de-lore-sem-chave.md)
+registra falha inicial de get null, ERR_INSUFFICIENT_RESOURCES na navegação da
+aplicação completa e os checks efetivos. Lint/tipos/build/smoke/arquitetura
+dirigidos; backend/SDK não repetidos. Validate/cobertura no fim de P1.

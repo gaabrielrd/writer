@@ -1,4 +1,5 @@
 import { readObject, readId, readHash, readCount } from './bookLoreReadContracts';
+import { readLoreJournalControls, type LoreJournalControls } from './bookLoreControlContracts';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
 import { bookLoreWriteHash } from './bookLoreWritePayload';
 import { BOOK_LORE_EDIT_ROUTES } from '../../../../functions/src/bookLoreEditTransportMethods.mjs';
@@ -50,6 +51,7 @@ export interface LoreJournalHead {
   cleanup: LoreJournalUnit | null;
   diagnostic: LoreJournalUnit | null;
   checkpoint: LoreJournalCheckpointState | null;
+  controls: LoreJournalControls | null;
 }
 export interface LoreJournalFrame {
   nonce: ArrayBuffer;
@@ -152,7 +154,7 @@ export function journalHead(value: unknown, uid: string, writeId: string): LoreJ
         'cleanup',
         'diagnostic',
       ],
-      ['checkpoint'],
+      ['checkpoint', 'controls'],
     ),
     identity = journalIdentity(v.identity);
   if (
@@ -183,7 +185,12 @@ export function journalHead(value: unknown, uid: string, writeId: string): LoreJ
         journalFail();
     }
   }
-  return freezeLoreEditValue({ ...v, checkpoint: v.checkpoint ?? null }) as LoreJournalHead;
+  const controls = readLoreJournalControls(v.controls, identity);
+  return freezeLoreEditValue({
+    ...v,
+    checkpoint: v.checkpoint ?? null,
+    controls,
+  }) as LoreJournalHead;
 }
 const controlKeys = (key: string, method: string) => {
   const get = method.startsWith('get'),

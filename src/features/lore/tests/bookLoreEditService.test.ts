@@ -1,6 +1,7 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { bookLoreEditSession } from '../services/bookLoreEditService';
 import { bookLoreWriteHash } from '../services/bookLoreWritePayload';
+import type { BookLoreEditPort } from '../services/bookLoreEditOperation';
 
 interface WireRequest {
   method: string;
@@ -255,4 +256,85 @@ it('forces actor UID on restore and refuses a checkpoint owned by another accoun
     }),
   ).rejects.toThrow();
   expect(state.call).not.toHaveBeenCalled();
+});
+
+function cleanupJournal(uid = 'author') {
+  const head = {
+    schemaVersion: 1 as const,
+    identity: {
+      schemaVersion: 1 as const,
+      uid,
+      writeId: 'session-cleanup',
+      bookId: 'book',
+      loreId: 'entity',
+      sourceToken: 'a'.repeat(64),
+      intentHash: 'b'.repeat(64),
+      requestHash: 'c'.repeat(64),
+      jobToken: 'd'.repeat(64),
+      keyId: 'e'.repeat(64),
+    },
+    stamp: 'cleanup-stamp',
+    cancelRequested: true,
+    draft: null,
+    production: null,
+    cleanup: null,
+    diagnostic: null,
+    checkpoint: null,
+    controls: null,
+  };
+  return {
+    inspect: vi.fn(() => Promise.resolve(head)),
+    advanceControlCleanup: vi.fn(async (port: BookLoreEditPort) => {
+      await port.call('cancelBookLoreSourceInspection', {
+        inspectionId: 'lore-source-' + 'f'.repeat(64),
+        startHash: 'a'.repeat(64),
+        operationId: 'cleanup-unit',
+      });
+      return head;
+    }),
+  };
+}
+it('delegates keyless cleanup to the captured authenticated regional transport', async () => {
+  const j = cleanupJournal(),
+    session = bookLoreEditSession();
+  expect(await session.cleanup(j)).toEqual(await j.inspect());
+  expect(j.advanceControlCleanup).toHaveBeenCalledTimes(1);
+  expect(state.call).toHaveBeenCalledTimes(1);
+  expect(state.call.mock.calls[0]![0].method).toBe('cancelBookLoreSourceInspection');
+});
+it('rejects cleanup journal of another account before calling its RPC', async () => {
+  const j = cleanupJournal('other');
+  await expect(bookLoreEditSession().cleanup(j)).rejects.toThrow('conta');
+  expect(j.advanceControlCleanup).not.toHaveBeenCalled();
+  expect(state.call).not.toHaveBeenCalled();
+});
+it('refuses a replaced actor before inspecting the cleanup journal', async () => {
+  const j = cleanupJournal(),
+    session = bookLoreEditSession();
+  state.auth.currentUser = { uid: 'author' };
+  await expect(session.cleanup(j)).rejects.toThrow('contexto mudou');
+  expect(j.inspect).not.toHaveBeenCalled();
+  expect(state.call).not.toHaveBeenCalled();
+});
+it('drops a late account change while inspecting cleanup metadata', async () => {
+  const j = cleanupJournal(),
+    inspect = j.inspect;
+  j.inspect = vi.fn(() => {
+    state.auth.currentUser = { uid: 'author' };
+    return inspect();
+  });
+  await expect(bookLoreEditSession().cleanup(j)).rejects.toThrow('contexto mudou');
+  expect(j.advanceControlCleanup).not.toHaveBeenCalled();
+  expect(state.call).not.toHaveBeenCalled();
+});
+it('drops a late authenticated cleanup response after a context change', async () => {
+  let current = true;
+  const j = cleanupJournal(),
+    session = bookLoreEditSession(() => current);
+  state.call.mockImplementation((data) => {
+    current = false;
+    return Promise.resolve(response(data));
+  });
+  await expect(session.cleanup(j)).rejects.toThrow('contexto mudou');
+  expect(state.call).toHaveBeenCalledTimes(1);
 });

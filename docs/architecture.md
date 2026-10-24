@@ -2131,3 +2131,27 @@ confere stamp/contexto e aplica cancel monotônico. Não envia ou adota ao
 abrir. Captura e digest percorrem metadata; leitura reconstrói JSON em memória.
 Persistência automática antes/depois de RPC, mapa metadata completo sem chave,
 reserva/host/ciclo de vida e rollout/P1/F2-09/V2 continuam pendentes.
+
+## P1 M38c5h — controles e cancelamento sem chave
+
+[ADR 0121](decisions/0121-keyless-cleanup-of-manual-lore-edits.md):
+captureBookLoreControlMap captura identidade/intenção, páginas de IDs/hashes
+e pai conhecido/incerto. Namespace controls no store existente separa records
+metadata de ciphertext. Página/lookups/written/ready confirmam juntos em
+oncomplete/CAS; sem upgrade do banco ou prosa/segredos no mapa.
+
+Com mapa presente, produção exige ready/idle/cancel falso, IDs/hashes e
+dependências de pai/slot conhecidas. Journal registra pai antes de start.
+writeControlMap/registerControlEdit congelam entrada antes de await; legado
+sem mapa não ganha promessa automática de recuperação.
+
+advanceControlCleanup mantém pedido/progresso metadata próprios, um RPC por
+passo, sem lock durante rede/getKey/decrypt/signal. Consulta pai, trata ausência
+como necessidade de fence, reconcilia cancel/get e reconhece adoção própria.
+Pendências legadas conhecidas são repetidas sem sobrescrita, com ACK atômico;
+desconhecidas ficam preservadas. Cursor/lookup evitam varredura por avanço.
+
+Sessão Auth confere UID do journal e guards antes/depois de I/O. Worker não
+remove draft/checkpoint/chave/recibos, nem repete produtor para cancelar.
+Composição automática de write-ahead/acks, reserva/host/ciclo de vida e demais
+integrações/rollout de P1/F2-09/V2 continuam necessárias.

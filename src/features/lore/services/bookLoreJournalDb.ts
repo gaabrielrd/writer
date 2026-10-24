@@ -7,10 +7,13 @@ import {
   type LoreJournalSection,
   type LoreJournalFrame,
 } from './bookLoreJournalContracts';
+import { readLoreControlRecord, type LoreControlRecord } from './bookLoreControlContracts';
 export const LORE_JOURNAL_DB = 'writer.book-lore-journal';
 const HEADS = 'heads',
   FRAMES = 'frames';
 export type JournalFrameKey = [string, string, LoreJournalSection, string, number];
+export type JournalControlKey = [string, string, 'controls', string, number | string];
+export type JournalRecordKey = JournalFrameKey | JournalControlKey;
 export const journalFrameKey = (
   i: LoreJournalIdentity,
   s: LoreJournalSection,
@@ -105,8 +108,8 @@ export async function commitJournalHead(
   identity: LoreJournalIdentity,
   expected: string | null,
   next: LoreJournalHead,
-  adds: { key: JournalFrameKey; value: LoreJournalFrame }[] = [],
-  removes: JournalFrameKey[] = [],
+  adds: { key: JournalRecordKey; value: LoreJournalFrame | LoreControlRecord }[] = [],
+  removes: JournalRecordKey[] = [],
 ) {
   if (!journalStorageAvailable()) throw Error('A recuperação protegida não está disponível.');
   return navigator.locks.request(
@@ -124,7 +127,15 @@ export async function commitJournalHead(
             const checked = journalHead(next, identity.uid, identity.writeId);
             store.put(checked, [identity.uid, identity.writeId]);
             const frames = tx.objectStore(FRAMES);
-            for (const add of adds) frames.add(add.value, add.key);
+            for (const add of adds) {
+              if (add.key[0] !== identity.uid || add.key[1] !== identity.writeId) journalFail();
+              frames.add(
+                add.key[2] === 'controls'
+                  ? readLoreControlRecord(add.value)
+                  : journalFrame(add.value),
+                add.key,
+              );
+            }
             for (const key of removes) frames.delete(key);
             done(checked);
           } catch {
@@ -181,4 +192,18 @@ export async function listJournalHeads(uid: string, after?: string, limit = 50) 
       };
     },
   );
+}
+
+export async function readJournalControlRecord(key: JournalControlKey): Promise<LoreControlRecord> {
+  const db = await open();
+  return operation(db, [FRAMES], 'readonly', (tx, done) => {
+    const r: IDBRequest<unknown> = tx.objectStore(FRAMES).get(key);
+    r.onsuccess = () => {
+      try {
+        done(readLoreControlRecord(r.result));
+      } catch {
+        tx.abort();
+      }
+    };
+  });
 }

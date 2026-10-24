@@ -1124,3 +1124,18 @@ os jobs para cleanup sem chave, com reserva/sessão/host. Coleta local não
 fecha jobs nativos; ciclo de vida da chave, demais writers/consumidores/
 backup/ativação/rollout e P1/F2-09/V2 continuam necessários. Validate no fim
 de P1; somente commit local, sem CI/push/deploy.
+
+### P1 M38c5h — controles completos e cancelamento sem chave
+
+[Plano 106](106-controles-e-cancelamento-de-lore-sem-chave.md),
+[ADR 0121](../../../decisions/0121-keyless-cleanup-of-manual-lore-edits.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-controles-e-cancelamento-de-lore-sem-chave.md):
+114 Vitest distintos e dois cenários Chromium positivos em rodadas. Mapa de
+todos os IDs/hashes, referências fechadas de pai/filhos, worker metadata por
+passo, replay/ACK, conta/contexto e reconhecimento de adoção implementados.
+Sem chave/decrypt, preservando draft, produtor incerto, corpos ativos e recibos.
+
+Próximo: compor write-ahead/acks automáticos com reserva/journal/coordenador/
+sessão/host. Legado sem mapa não é automaticamente recuperável. Descarte/ciclo
+de vida da chave, demais writers/consumidores/backup/ativação/rollout e
+P1/F2-09/V2 continuam pendentes. Validate no fim de P1; só commit local.
