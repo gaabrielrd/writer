@@ -2024,3 +2024,21 @@ Operação em memória, port injetado e writeId exclusivo por intenção. Intent
 não é reserva global nem recuperação após recarga. Terminal libera referências
 de codecs, sem prometer apagar memória/RPC em andamento. Host/UI/endpoints,
 recuperação e integrações de P1/F2-09/V2 seguem pendentes, sem bypass SDK legado.
+
+## P1 M38c5c — transporte autenticado da edição manual
+
+[ADR 0116](decisions/0116-authenticated-manual-lore-edit-transport.md): bookLoreEdit recebe envelope
+fechado method/input, autoriza UID de request.auth e despacha somente 18
+operações de inspeção/campo/edição manuais. IDs e referências exigem prefixos
+do coordenador; criação e namespaces reservados da análise não são expostos,
+inclusive get/cancel/cleanup. O input segue literal aos serviços existentes.
+
+Entry roteia antes dos serviços alheios e usa wrapper regional/App Check,
+sem segredo/provedor. Handler/erros de domínio recebem no-store/Vary; rejeições
+prévias do SDK são genéricas, sem eco. Preflight fica no middleware Firebase.
+
+bookLoreEditSession captura conta/UID/contexto, força UID no prepare e combina
+guard do host. SDK regional usa timeout 130 s e confere contexto antes/depois
+de I/O. Troca de conta invalida resposta sem resolver a pendência por fallback.
+Sem mudança de armazenamento, Rules ou persistência; host/recuperação e
+rollout coordenado ainda necessários. Export novo não autoriza deploy.

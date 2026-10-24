@@ -2038,3 +2038,22 @@ Chromium com serviços reais/bridge sobre double, tipos/lint/build e checks
 dirigidos. Fixture de cleanup corrigida para preservar provas permanentes.
 Não certifica HTTP, SDK/Rules ou UI humana; backend/Rules não mudaram.
 Host/recuperação/endpoints pendentes; validate/cobertura no fechamento de P1.
+
+### P1 M38c5c — transporte autenticado da edição manual
+
+bookLoreEditTransport.test.mjs verifica allowlist/envelope/UID/namespaces/
+filhos, fences e get reais. bookLoreEditTransportHttp.test.mjs verifica a
+callable exportada rejeitando App Check ausente/inválido, handler sem auth
+e preflight CORS real. Harness HTTP com autor fixo verifica cache/domínio;
+não é prova de login/attestation válidos.
+
+bookLoreEditService.test.ts cobre SDK regional, UID forçado, no-op, guards,
+resposta tardia, falha/retry e cleanup após abort. Os 47 casos do coordenador
+agora passam pelo roteador novo. A [evidência](entregas/2026-10-24-writer-v2-transporte-autenticado-da-edicao-de-lore.md)
+registra 59 Vitest e 17 Node distintos positivos em rodadas e três smokes
+Chromium com SDK/HTTP reais sobre double, incluindo multipart e RPC pendente.
+
+O harness de browser usa projeto fictício/loopback, Auth fixa e App Check
+desabilitado somente no teste. Sucesso com tokens reais, UI, emulador
+Firestore/Rules e certificação integrada não foram inferidos desses smokes.
+Tipos/lint/build/arquitetura/sintaxe positivos; validate integral no fim de P1.

@@ -56,6 +56,10 @@ import { createScenesService } from './scenes.mjs';
 import { createNarrativePlanningService } from './narrativePlanning.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createBookLoreReadService, setBookLoreReadHeaders } from './bookLoreRead.mjs';
+import {
+  createBookLoreEditTransportService,
+  setBookLoreEditHeaders,
+} from './bookLoreEditTransport.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createChapterChatService } from './chapterChat.mjs';
@@ -341,12 +345,18 @@ const callable = (method, secrets = []) =>
       setBookBackupCoverHeaders(method, request);
       setBookRestoreHeaders(method, request);
       setBookLoreReadHeaders(method, request);
+      setBookLoreEditHeaders(method, request);
       if (method === 'readLegacyChapterText') {
         request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
         request.rawRequest?.res?.setHeader('Vary', 'Authorization');
       }
       setCampaignVariantRecoveryHeaders(method, request);
       try {
+        if (method === 'bookLoreEdit')
+          return await createBookLoreEditTransportService({ db }).bookLoreEdit(
+            request.auth?.uid,
+            request.data,
+          );
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
         const adventureImport = createAdventureImportService({ db });
@@ -617,6 +627,7 @@ export const readSceneSourceText = callable('readSceneSourceText');
 export const listBookLoreRead = callable('listBookLoreRead');
 export const getBookLoreRead = callable('getBookLoreRead');
 export const readBookLorePart = callable('readBookLorePart');
+export const bookLoreEdit = callable('bookLoreEdit');
 export const readSceneAssembly = callable('readSceneAssembly');
 export const rebalanceSceneRanks = callable('rebalanceSceneRanks');
 export const deleteSceneGroup = callable('deleteSceneGroup');

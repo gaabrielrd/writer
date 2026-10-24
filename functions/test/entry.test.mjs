@@ -19,6 +19,7 @@ test('server entry loads all deployment exports without a provider secret or net
     'analyzeChapterLore',
     'prepareBYOKLore',
     'applyLoreAnalysis',
+    'bookLoreEdit',
   ])
     assert.equal(typeof entry[name], 'function');
 });

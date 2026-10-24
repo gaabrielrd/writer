@@ -168,6 +168,7 @@
 - Confirme o lote ready da análise com adoção integral, globais, crédito e recibo no mesmo commit; exija abertura opaca do batch e prova conjunta original no replay, preserve recibos legados e nunca use o ticket novo como fallback, conforme ADR 0113.
 - Planeje edição de lore da captura C1 bruta com CAS e campos tocados explícitos; preserve literais/presenças, envie só campos/páginas alterados em partes de 64 KiB e trate o plano/manifesto cliente somente como intenção, conforme ADR 0114.
 - Coordene edição de lore por unidade com pedido/CAS/bytes imutáveis, apply explícito e cleanup independente de RPC pendente; limite status/controles e não trate metadata em memória como recuperação durável, conforme ADR 0115.
+- Encaminhe edição manual preparada pela callable bookLoreEdit com UID autenticado e operações/IDs/filhos fechados; preserve conta/contexto e não exponha jobs de análise/criação ou use fallback SDK, conforme ADR 0116.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

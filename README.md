@@ -579,3 +579,10 @@ explícito adota. Status limitado e controles paginados não expõem prosa.
 [Evidência](docs/entregas/2026-10-24-writer-v2-coordenacao-da-edicao-de-lore.md).
 Operação em memória, sem novo host visual/endpoints ou recuperação após recarga.
 Demais integrações/rollout e P1/F2-09/V2 permanecem abertos.
+
+M38c5c liga o coordenador à callable privada bookLoreEdit: operações/IDs
+manuais fechados, UID autenticado e sessão SDK vinculada à conta/contexto.
+[Evidência](docs/entregas/2026-10-24-writer-v2-transporte-autenticado-da-edicao-de-lore.md).
+SDK real no Chromium valida multipart/retry/cancelamento via HTTP local com
+dados fictícios. Host visual, recuperação protegida e aceite com tokens reais
+continuam pendentes; sem implantação ou conclusão de P1/F2-09/V2.

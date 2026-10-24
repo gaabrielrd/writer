@@ -393,3 +393,16 @@ e preserva atomicidade ao recusar lote misto antes de débito.
 adotar os até 50 itens com crédito/recibo no mesmo commit, sem perder campos/
 relações intocados. Não declarar writer payload entregue por esta guarda.
 Demais escritores/consumidores/backup/cliente e M38c/P1/F2-09/V2 abertos.
+
+## Cliente manual — M38c5a/M38c5b/M38c5c
+
+Capture/diff/codec e coordenação por unidade já têm integração privada de RPC
+pelo [plano 101](101-transporte-autenticado-da-edicao-de-lore.md).
+Callable bookLoreEdit limita métodos/IDs/filhos manuais e usa UID autenticado;
+sessão regional preserva conta/contexto, pedido/CAS/bytes e cleanup independente.
+SDK real em Chromium percorre HTTP no harness local, com dados fictícios.
+
+Passo 5 continua aberto: host visual e recuperação protegida após recarga
+ainda precisam ser integrados. Criar/excluir/análise no cliente, demais
+escritores/consumidores/backup e rollout conjunto também permanecem necessários.
+Exportação de endpoint não habilita implantação; P1/F2-09/V2 continuam abertos.

@@ -1046,3 +1046,17 @@ Em memória, writeId exclusivo por intenção; não recupera após recarga.
 Host/UI/endpoints/recuperação, demais integrações/backup/ativação/rollout,
 P1/F2-09/V2 e condições humanas/comerciais seguem abertos.
 Validate integral no fim de P1; só commits locais.
+
+### P1 M38c5c — transporte autenticado da edição manual
+
+[Plano 101](101-transporte-autenticado-da-edicao-de-lore.md),
+[ADR 0116](../../../decisions/0116-authenticated-manual-lore-edit-transport.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-transporte-autenticado-da-edicao-de-lore.md):
+59 Vitest, 17 Node distintos e três smokes Chromium positivos em rodadas.
+Callable bookLoreEdit fecha operações/IDs manuais, usa UID autenticado e
+preserva input literal. Sessão SDK captura conta/contexto sem fallback.
+Middleware exportado recusa App Check ausente/inválido e serve preflight.
+
+SDK real em HTTP local usa Auth fixa/double; não certifica tokens reais.
+Host visual/recuperação, demais integrações/backup/ativação/rollout e
+P1/F2-09/V2 continuam abertos. Validate no fim de P1; só commits locais.

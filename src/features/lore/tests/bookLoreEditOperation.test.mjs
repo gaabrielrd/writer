@@ -4,9 +4,7 @@ import { webcrypto } from 'node:crypto';
 import { prepareBookLoreEditOperation } from '../services/bookLoreEditOperation.ts';
 import { createBookLoreReadClient } from '../services/bookLoreReadClient.ts';
 import { createBookLoreReadService } from '../../../../functions/src/bookLoreRead.mjs';
-import { createBookLoreSourceInspectionService } from '../../../../functions/src/bookLoreSourceInspection.mjs';
-import { createBookLoreFieldUploadService } from '../../../../functions/src/bookLoreFieldUpload.mjs';
-import { createBookLoreEditReservationService } from '../../../../functions/src/bookLoreEditReservation.mjs';
+import { createBookLoreEditTransportService } from '../../../../functions/src/bookLoreEditTransport.mjs';
 import { adventureImportDb } from '../../../../functions/test/helpers/adventureImportDb.mjs';
 import { loreLogicalFixture } from '../../../../functions/test/helpers/bookLoreLogicalFixture.mjs';
 afterEach(() => vi.unstubAllGlobals());
@@ -22,17 +20,13 @@ async function setup({
     read = createBookLoreReadService({ db: f.db }),
     client = createBookLoreReadClient((name, input) => read[name](seed.uid, input), guard),
     source = await client.capture(seed.bookId, seed.entityId),
-    server = {
-      ...createBookLoreSourceInspectionService({ db: f.db, now: () => 8000 }),
-      ...createBookLoreFieldUploadService({ db: f.db, now: () => 8000 }),
-      ...createBookLoreEditReservationService({ db: f.db, now: () => 8000 }),
-    },
+    server = createBookLoreEditTransportService({ db: f.db, now: () => 8000 }),
     calls = [];
   let intercept = null;
   const port = {
     call: async (method, input) => {
       calls.push({ method, input: structuredClone(input) });
-      const invoke = () => server[method](seed.uid, input);
+      const invoke = () => server.bookLoreEdit(seed.uid, { method, input });
       return intercept ? intercept(method, input, invoke) : invoke();
     },
   };
