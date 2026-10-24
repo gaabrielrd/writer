@@ -2002,3 +2002,25 @@ Memória auxiliar contém uma parte e hashes, além do valor congelado.
 Esta infraestrutura não concede autorização nem habilita o CRUD legado para
 payloads. Host, orquestração, recuperação e demais consumidores/backup/
 ativação/rollout permanecem obrigatórios para concluir P1/F2-09/V2.
+
+## P1 M38c5b — coordenação cliente da edição preparada
+
+[ADR 0115](decisions/0115-unit-coordination-of-book-lore-edits.md): prepareBookLoreEditOperation
+congela captura/diff/manifestos antes de RPC e avança até uma unidade por vez.
+Ready não adota; apply explícito autoriza adoção. Pedido integral permanece
+antes de await; retry repete método/operationId/CAS/bytes, sem rebasing.
+
+DTOs fechados validam progresso. Snapshot tem contadores/controle atual;
+controlsPage limita consulta explícita a 50 controles. Cursores atravessam
+uploads uma vez; iteradores não repetem prefixo por parte. Metadata privada
+não contém prosa e não concede autorização.
+
+Cancel síncrono fecha produção; canal separado limpa mesmo com RPC pendente.
+Pai precede campos/inspeção; cercas são preservadas. Resposta tardia não
+reabre; conflito com adoção exige confirmação metadata própria. Guard vale
+antes/depois de RPC; abort permite cleanup explícito autorizado.
+
+Operação em memória, port injetado e writeId exclusivo por intenção. IntentHash
+não é reserva global nem recuperação após recarga. Terminal libera referências
+de codecs, sem prometer apagar memória/RPC em andamento. Host/UI/endpoints,
+recuperação e integrações de P1/F2-09/V2 seguem pendentes, sem bypass SDK legado.

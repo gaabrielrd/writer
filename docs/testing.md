@@ -2023,3 +2023,18 @@ do codec, tipos/lint/arquitetura/build e seus avisos. Captura reconfirmada e
 revogação não são substituídas por um token fabricado pelo cliente.
 Backend/Rules não mudaram e SDK não foi repetido. UI/host/recuperação e
 certificação integrada permanecem pendentes; validate integral no fim de P1.
+
+### P1 M38c5b — coordenação da edição de lore
+
+bookLoreEditOperation.test.mjs integra C1 e serviços reais sobre double
+transacional: preparo sem adoção, apply, literal/CAS, privacidade, no-op,
+retries de cada classe e cleanup em marcos diferentes. Inclui revogação/
+abort/conta, RPC pendente, respostas tardias, corridas aplicar/cancelar,
+DTOs inválidos, 9 MiB sequenciais e 100 uploads com status limitado/páginas.
+
+A [evidência M38c5b](entregas/2026-10-24-writer-v2-coordenacao-da-edicao-de-lore.md)
+registra 47 novos e 18 regressões Vitest distintos positivos, três smokes
+Chromium com serviços reais/bridge sobre double, tipos/lint/build e checks
+dirigidos. Fixture de cleanup corrigida para preservar provas permanentes.
+Não certifica HTTP, SDK/Rules ou UI humana; backend/Rules não mudaram.
+Host/recuperação/endpoints pendentes; validate/cobertura no fechamento de P1.

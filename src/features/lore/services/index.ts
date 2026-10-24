@@ -1,5 +1,14 @@
 export * from './loreService';
 export * as loreService from './loreService';
+export { prepareBookLoreEditOperation } from './bookLoreEditOperation';
+export type {
+  BookLoreEditPort,
+  BookLoreEditOperationInput,
+  BookLoreEditOperationSnapshot,
+  BookLoreEditPhase,
+  BookLoreEditUploadControl,
+  BookLoreEditControlPage,
+} from './bookLoreEditOperation';
 export { planBookLoreEdit } from './bookLoreWritePlan';
 export type {
   BookLoreEditSource,

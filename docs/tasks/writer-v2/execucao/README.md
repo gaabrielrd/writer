@@ -1031,3 +1031,18 @@ antigo/revogação. Não habilita UI ou escritor SDK legado para payloads.
 Host/orquestração/recuperação, demais consumidores/backup/ativação/rollout,
 P1/F2-09/V2 e aceites humanos/comerciais continuam abertos.
 Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.
+
+### P1 M38c5b — coordenação da edição preparada de lore
+
+[Plano 100](100-coordenacao-da-edicao-preparada-de-lore.md),
+[ADR 0115](../../../decisions/0115-unit-coordination-of-book-lore-edits.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-coordenacao-da-edicao-de-lore.md):
+47 novos e 18 regressões Vitest distintos positivos, três smokes Chromium.
+Operação por unidade preserva pedido/CAS/bytes após resposta perdida,
+ready sem adoção, apply explícito e cleanup independente de RPC pendente.
+Status limitado e controles paginados evitam copiar lista por parte.
+
+Em memória, writeId exclusivo por intenção; não recupera após recarga.
+Host/UI/endpoints/recuperação, demais integrações/backup/ativação/rollout,
+P1/F2-09/V2 e condições humanas/comerciais seguem abertos.
+Validate integral no fim de P1; só commits locais.

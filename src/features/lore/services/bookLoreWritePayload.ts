@@ -41,7 +41,7 @@ function canonical(value: unknown): unknown {
     );
   return value;
 }
-const metadataHash = (value: unknown) =>
+export const bookLoreWriteHash = (value: unknown) =>
   bytesToHex(sha256(encoder.encode(JSON.stringify(canonical(value)))));
 function* jsonAtoms(value: unknown): Generator<Uint8Array> {
   if (typeof value === 'string') {
@@ -138,7 +138,7 @@ export async function prepareBookLoreWritePayload(
   const upload = freezeBookLoreUpload({ target: input.target, value: input.value }),
     target = upload.target,
     value = upload.value,
-    operationId = metadataHash({
+    operationId = bookLoreWriteHash({
       domain: 'writer-lore-field-operation',
       uid,
       bookId,
@@ -170,7 +170,7 @@ export async function prepareBookLoreWritePayload(
     check(options);
   }
   const merkleRoot = bytesToHex(layers[layers.length - 1]![0]!),
-    bodyId = metadataHash({
+    bodyId = bookLoreWriteHash({
       domain: 'writer-book-resource-payload',
       schemaVersion: 1,
       uid,

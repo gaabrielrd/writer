@@ -572,3 +572,10 @@ no roundtrip; campos alterados acima de 128 partes mantêm hashes/provas.
 [Evidência](docs/entregas/2026-10-24-writer-v2-diff-e-transporte-do-lore.md).
 Host visual, RPCs/recuperação, demais integrações e rollout seguem pendentes;
 não habilita o formulário antigo sobre payloads. P1/F2-09/V2 continuam abertos.
+
+M38c5b coordena a edição preparada por unidade, retry do pedido exato e
+cancelamento independente de RPC pendente. Ready preserva a fonte; apply
+explícito adota. Status limitado e controles paginados não expõem prosa.
+[Evidência](docs/entregas/2026-10-24-writer-v2-coordenacao-da-edicao-de-lore.md).
+Operação em memória, sem novo host visual/endpoints ou recuperação após recarga.
+Demais integrações/rollout e P1/F2-09/V2 permanecem abertos.
