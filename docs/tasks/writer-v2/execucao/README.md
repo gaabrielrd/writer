@@ -1183,3 +1183,20 @@ Próximo: writers Admin/Rules/drenagem coordenados e depois ativar a entrada
 no compêndio. Ciclo da chave na exclusão do livro, consumidores/backup/
 ativação/rollout e P1/F2-09/V2, fases 3–5 e gates humanos/comerciais continuam
 abertos. Validate no fechamento de P1; somente commits locais.
+
+### P1 M38c5l — barreira dos escritores legados de lore
+
+[Plano 110](110-coordenacao-dos-escritores-legados-de-lore.md),
+[ADR 0125](../../../decisions/0125-legacy-lore-writer-barrier.md) e
+[entrega](../../../entregas/2026-10-24-writer-v2-barreira-dos-escritores-legados-de-lore.md).
+hasLoreResources controlado pelo servidor bloqueia mutações antigas inclusive
+em fichas inline irmãs, pelo SDK/serviço e aplicação Admin legada da análise.
+Recibos, leitura, legado false/ausente e rota nativa preparada preservados.
+155 testes distintos positivos (24 novos): 97 Node, 43 Vitest e 15 SDK/Rules;
+tipos, lint e sintaxe de 248 módulos positivos. Matriz de writers no plano 81.
+
+Barreira preparada, sem drenagem real ou deploy isolado. Próximos passos
+continuam a integração dos caminhos nativos de criação/exclusão/recuperação,
+demais writers/consumidores e somente depois a entrada no compêndio.
+P1/F2-09/V2, fases 3–5, exclusão de chaves e gates humanos/comerciais abertos.
+Validate no fechamento de P1; servidor local mantido e nenhum envio remoto.

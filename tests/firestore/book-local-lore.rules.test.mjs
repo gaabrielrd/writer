@@ -409,3 +409,123 @@ test('SDK payload guard: deleting cleanup preserves payloads and private bodies 
     await assertFails(deleteDoc(ref));
   }
 });
+
+test('SDK native writer barrier: inline siblings reject all mutations atomically', async () => {
+  const database = db(),
+    id = 'native-mixed';
+  await seed(
+    id,
+    {
+      localLoreVersion: 7,
+      hasLoreResources: true,
+      status: 'published',
+      publicationPrivacyVersion: 3,
+    },
+    [
+      ['existing', entityData({ isPublic: true, details: '\ufeff  Literal\r\n' })],
+      ['private', entityData()],
+      ['native', { bookId: id, payloadStorage: null }],
+    ],
+  );
+  await environment.withSecurityRulesDisabled(async (context) => {
+    await setDoc(doc(context.firestore(), 'publicBooks', id), { title: 'Published' });
+  });
+  const before = await observe(id);
+  const changes = [
+    (b) => b.set(loreRef(database, id, 'new'), entityData()),
+    (b) => b.update(loreRef(database, id, 'private'), { summary: 'Changed' }),
+    (b) => b.set(loreRef(database, id, 'private'), entityData({ summary: 'Replacement' })),
+    (b) => b.delete(loreRef(database, id, 'private')),
+    (b) => b.update(loreRef(database, id), { isPublic: false }),
+    (b) => b.delete(loreRef(database, id)),
+    (b) => {
+      b.update(loreRef(database, id, 'private'), { details: 'Changed' });
+      b.delete(loreRef(database, id));
+      b.set(loreRef(database, id, 'new'), entityData());
+    },
+  ];
+  for (const change of changes) {
+    const batch = writeBatch(database);
+    batch.update(bookRef(database, id), {
+      localLoreVersion: 8,
+      status: 'draft',
+      publicationPrivacyVersion: 4,
+    });
+    batch.delete(doc(database, 'publicBooks', id));
+    change(batch);
+    await assertFails(batch.commit());
+    assert.deepEqual(await observe(id), before);
+    assert.equal((await assertSucceeds(getDoc(doc(database, 'publicBooks', id)))).exists(), true);
+  }
+  assert.equal((await assertSucceeds(getDocs(collection(database, 'books', id, 'lore')))).size, 3);
+  await assertFails(getDoc(loreRef(db('other'), id)));
+});
+
+test('SDK native writer barrier: cannot clear or forge the server marker in the same batch', async () => {
+  const database = db(),
+    id = 'native-marker';
+  await seed(id, { localLoreVersion: 7, hasLoreResources: true });
+  const before = await observe(id);
+  for (const marker of [false, null, deleteField()]) {
+    const batch = writeBatch(database);
+    batch.update(bookRef(database, id), { localLoreVersion: 8, hasLoreResources: marker });
+    batch.update(loreRef(database, id), { summary: 'Bypass' });
+    await assertFails(batch.commit());
+    assert.deepEqual(await observe(id), before);
+  }
+  await assertFails(
+    setDoc(
+      bookRef(database, 'forged-native'),
+      bookData({
+        localLoreVersion: 0,
+        hasLoreResources: true,
+      }),
+    ),
+  );
+});
+
+test('SDK native writer barrier: deleting does not reopen legacy cleanup', async () => {
+  const database = db(),
+    id = 'native-deleting';
+  await seed(id, { localLoreVersion: 7, hasLoreResources: true, deleting: true });
+  const before = await observe(id);
+  await assertFails(deleteDoc(loreRef(database, id)));
+  await assertFails(mutation(database, id, 8, (b) => b.delete(loreRef(database, id))));
+  assert.deepEqual(await observe(id), before);
+});
+
+test('SDK native writer barrier: malformed present markers fail closed', async () => {
+  const database = db();
+  for (const [index, marker] of [null, 1, 'true', {}, []].entries()) {
+    const id = 'invalid-marker-' + index;
+    await seed(id, { localLoreVersion: 7, hasLoreResources: marker });
+    const before = await observe(id);
+    for (const change of [
+      (b) => b.set(loreRef(database, id, 'new'), entityData()),
+      (b) => b.update(loreRef(database, id), { summary: 'Changed' }),
+      (b) => b.delete(loreRef(database, id)),
+    ]) {
+      await assertFails(mutation(database, id, 8, change));
+      assert.deepEqual(await observe(id), before);
+    }
+    await assertSucceeds(getDoc(loreRef(database, id)));
+  }
+});
+
+test('SDK native writer barrier: explicit false retains inline CRUD with its clock', async () => {
+  const database = db(),
+    id = 'inline-marker';
+  await seed(id, { localLoreVersion: 7, hasLoreResources: false });
+  await assertSucceeds(
+    mutation(database, id, 8, (b) => {
+      b.update(loreRef(database, id), { summary: 'Updated' });
+      b.set(loreRef(database, id, 'new'), entityData());
+    }),
+  );
+  await assertSucceeds(mutation(database, id, 9, (b) => b.delete(loreRef(database, id, 'new'))));
+  const result = await observe(id);
+  assert.equal(result.book.localLoreVersion, 9);
+  assert.equal(result.book.hasLoreResources, false);
+  assert.equal(result.lore.existing.summary, 'Updated');
+  assert.equal(Object.hasOwn(result.lore, 'new'), false);
+});

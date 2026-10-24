@@ -77,6 +77,7 @@
 - Mantenha o journal de editorChat somente com metadados, CAS integral e Web Locks curtos; não perca ponteiros antes de consumo ou cleanup confirmado.
 - Use captura/aceite pelo host e bridge públicos; adote metadados sem resetar o editor e não habilite débito legado nos novos alvos.
 - Incremente o clock local de lore do livro na mesma transação de cada writer; coordene writers/regras e drene clientes antigos antes do rollout.
+- Preserve hasLoreResources como barreira permanente do servidor: depois dela use writers nativos, inclusive em fichas inline irmãs; não implante Rules de bloqueio isoladamente (ADR 0125).
 - Na criação assistida, mantenha sessões, entrevista, validação e confirmação do livro/lore/capa com débito atômico em `functions`.
 - Mantenha vínculos e exclusão de imagens da biblioteca no servidor; todo seletor de imagem deve oferecer `ImageLibraryPicker` pela interface pública da feature.
 - Mantenha universos, vínculos de livros e mutações de lore global em `functions`.

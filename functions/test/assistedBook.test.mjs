@@ -391,3 +391,25 @@ test('proposal validation rejects duplicate names, malformed fields and self rel
   c.entities[0].summary = 'x'.repeat(141);
   assert.throws(() => validateProposal(c));
 });
+
+test('assisted creation never overwrites an existing native-managed book or its inline lore', async () => {
+  const f = fixture();
+  await f.ready();
+  const id = f.session().id;
+  f.records.set('books/' + id, {
+    authorId: 'author',
+    hasLoreResources: true,
+    localLoreVersion: 7,
+    title: '\ufeff  Existing\r\n',
+    status: 'draft',
+  });
+  f.records.set('books/' + id + '/lore/' + f.session().proposal.entities[0].id, {
+    name: 'Original',
+    details: '\ufeff  Literal\r\n',
+    summary: 'Preserved',
+  });
+  const before = structuredClone([...f.records]);
+  await assert.rejects(f.commit(), { code: 'failed-precondition' });
+  assert.deepEqual([...f.records], before);
+  assert.equal(f.records.get('users/author').credits, 20);
+});

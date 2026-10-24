@@ -2,8 +2,12 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { readFile } from 'node:fs/promises';
 import { before, beforeEach, after, test } from 'node:test';
-import { initializeTestEnvironment, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import {
+  initializeTestEnvironment,
+  assertFails,
+  assertSucceeds,
+} from '@firebase/rules-unit-testing';
+import { doc, getDoc, setDoc, deleteDoc, updateDoc, writeBatch } from 'firebase/firestore';
 import {
   applicationPreparationFixture,
   prepareApplication,
@@ -278,4 +282,47 @@ test('SDK legacy apply versus reservation has exactly one winner and cannot bypa
     assert.deepEqual(await data(f.seed.path), original);
     await assert.rejects(() => apply(f));
   }
+});
+
+test('SDK native writer barrier permits native mixed adoption while inline siblings stay protected', async () => {
+  const f = await applicationPreparationFixture(admin, {
+    mode: 'inline',
+    globals: true,
+    changes: [localNew(1), globalNew(1)],
+  });
+  await admin.doc('books/book').update({ hasLoreResources: true, status: 'draft' });
+  const client = env.authenticatedContext(f.uid).firestore();
+  // Positive root control prevents an unrelated root rule from masking the lore deny.
+  await assertSucceeds(updateDoc(doc(client, 'books/book'), { localLoreVersion: 0 }));
+  const mutate = () => {
+    const b = writeBatch(client);
+    b.update(doc(client, 'books/book'), { localLoreVersion: 1 });
+    b.update(doc(client, 'books/book/lore/arthur'), { summary: 'Old SDK' });
+    return b.commit();
+  };
+  const original = await data('books/book/lore/arthur');
+  await assertFails(mutate());
+  await prepareApplication(f);
+  assert.deepEqual(await apply(f), { applied: 2, credits: 4 });
+  const context = await data(f.path);
+  assert.ok((await data('books/book/lore/' + context.members[0].targetId)).payloadStorage);
+  assert.deepEqual(await data('books/book/lore/arthur'), original);
+  await assertSucceeds(updateDoc(doc(client, 'books/book'), { localLoreVersion: 1 }));
+  const beforeBook = await data('books/book');
+  const beforeUser = await data('users/author');
+  const before = await f.get();
+  const b = writeBatch(client);
+  b.update(doc(client, 'books/book'), { localLoreVersion: 2 });
+  b.update(doc(client, 'books/book/lore/arthur'), { summary: 'After native adoption' });
+  await assertFails(b.commit());
+  await assertFails(updateDoc(doc(client, 'books/book'), { hasLoreResources: false }));
+  assert.deepEqual(await data('books/book/lore/arthur'), original);
+  assert.deepEqual(await data('books/book'), beforeBook);
+  assert.deepEqual(await data('users/author'), beforeUser);
+  assert.deepEqual(await apply(f), { applied: 2, credits: 4 });
+  assert.deepEqual(await f.get(), before);
+  assert.equal(
+    (await getDoc(doc(client, 'books/book/lore/arthur'))).data().summary,
+    original.summary,
+  );
 });

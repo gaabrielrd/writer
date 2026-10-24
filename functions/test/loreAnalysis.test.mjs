@@ -473,3 +473,78 @@ for (const existing of [false, true])
       assert.equal(f.records.get('users/author').credits, 5);
     },
   );
+
+for (const marker of [true, null, 1, 'true'])
+  test(
+    'legacy analysis cannot mutate an inline native-managed book: ' + JSON.stringify(marker),
+    async () => {
+      for (const changes of [
+        local,
+        [...local, { scope: 'global', input: { ...input, name: 'Global new' } }],
+      ]) {
+        const f = fixture();
+        f.records.get('books/book').hasLoreResources = marker;
+        await f.service.analyzeChapterLore('author', request);
+        const before = structuredClone([...f.records]);
+        await assert.rejects(apply(f.service, changes), {
+          code: 'failed-precondition',
+          message: /exige escrita preparada/,
+        });
+        assert.deepEqual([...f.records], before);
+        assert.equal(f.records.get('users/author').credits, 5);
+      }
+    },
+  );
+
+test('legacy analysis also fences updates of inline siblings after native resources exist', async () => {
+  const f = fixture();
+  f.records.set('books/book/lore/arthur', {
+    ...input,
+    summary: '\ufeff  Before\r\n',
+    details: '\ufeff  Secret\r\n',
+    updatedAt: 1,
+  });
+  await f.service.analyzeChapterLore('author', { ...request, loreVersions: [['arthur', 1]] });
+  f.records.get('books/book').hasLoreResources = true;
+  const before = structuredClone([...f.records]);
+  await assert.rejects(
+    apply(f.service, [{ scope: 'local', entityId: 'arthur', input: { summary: 'Changed' } }]),
+    { code: 'failed-precondition', message: /exige escrita preparada/ },
+  );
+  assert.deepEqual([...f.records], before);
+});
+
+test('legacy applied receipt remains confirmable after the native barrier without a second debit', async () => {
+  const f = fixture();
+  await f.service.analyzeChapterLore('author', request);
+  const result = await apply(f.service);
+  f.records.get('books/book').hasLoreResources = true;
+  const before = structuredClone([...f.records]);
+  assert.deepEqual(await apply(f.service), result);
+  assert.deepEqual([...f.records], before);
+  await assert.rejects(
+    apply(f.service, [{ scope: 'local', input: { ...input, name: 'Changed' } }]),
+    {
+      code: 'failed-precondition',
+    },
+  );
+  assert.deepEqual([...f.records], before);
+});
+
+test('native barrier leaves legacy global-only batches and explicit false local books functional', async () => {
+  const f = fixture();
+  f.records.get('books/book').hasLoreResources = true;
+  await f.service.analyzeChapterLore('author', request);
+  const beforeBook = structuredClone(f.records.get('books/book'));
+  assert.deepEqual(await apply(f.service, [{ scope: 'global', input }]), {
+    applied: 1,
+    credits: 4,
+  });
+  assert.deepEqual(f.records.get('books/book'), beforeBook);
+  assert.equal(f.records.get('universes/world').loreVersion, 4);
+  const legacy = fixture();
+  legacy.records.get('books/book').hasLoreResources = false;
+  await legacy.service.analyzeChapterLore('author', request);
+  assert.deepEqual(await apply(legacy.service), { applied: 1, credits: 4 });
+  assert.equal(legacy.records.get('books/book').localLoreVersion, 1);
+});

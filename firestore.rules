@@ -680,14 +680,20 @@ service cloud.firestore {
                 == get(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0) + 1);
         }
         function inlineLore(data) { return !data.keys().hasAny(['payloadStorage']); }
+        // Server-owned, permanent barrier: native resources require native writers.
+        function inlineLoreWriter() {
+          return get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false;
+        }
         allow read: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId)
+          && inlineLoreWriter()
           && !exists(/databases/$(database)/documents/books/$(bookId)/bookLoreTombstones/$(loreId))
           && !exists(/databases/$(database)/documents/books/$(bookId)/bookLoreReservations/$(loreId))
           && inlineLore(request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
           && bookLocalLoreAdvanced(bookId);
         allow update: if isBookAuthor(bookId)
+          && inlineLoreWriter()
           && !exists(/databases/$(database)/documents/books/$(bookId)/bookLoreTombstones/$(loreId))
           && !exists(/databases/$(database)/documents/books/$(bookId)/bookLoreReservations/$(loreId))
           && inlineLore(resource.data) && inlineLore(request.resource.data)
@@ -697,6 +703,7 @@ service cloud.firestore {
             || request.resource.data.get('isPublic', false) == true
             || publicationRevoked());
         allow delete: if isBookAuthor(bookId)
+          && inlineLoreWriter()
           && inlineLore(resource.data)
           && (get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
             || bookLocalLoreAdvanced(bookId))

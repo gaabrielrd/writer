@@ -501,3 +501,22 @@ Entrada produtora permanece pendente do passo 6: writers Admin/Rules e
 drenagem coordenados. Depois integrar ao compêndio; não habilitar v2 antes.
 Ciclo da chave na exclusão, consumidores/backup/ativação/rollout e P1/F2-09/V2
 continuam abertos; validate integral no fechamento de P1.
+
+## Matriz de escritores inspecionados — M38c5l
+
+| Caminho                                   | Comportamento após a barreira                                                                              | Evidência e pendência                                                            |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| SDK antigo e loreService local            | Nega mutação inline e payload com hasLoreResources true/inválido; false/ausente conserva legado            | Rules/cliente dirigidos; entrada nativa no compêndio ainda pendente              |
+| applyLoreAnalysis legado                  | Lote com qualquer destino local é recusado antes de write/débito; recibo já aplicado permanece confirmável | Node e SDK de análise; não é migração automática do pedido                       |
+| Aplicação nativa preparada da análise     | Continua por grants/adoption batch e troca atômica, sem rota legada de escape                              | Node e SDK nativos; orquestração visual da análise ainda própria                 |
+| bookLoreCreation / EditAdoption / Removal | Servidor fixa marcador permanentemente; criação o faz na reserva, antes de corpos                          | Contratos existentes inspecionados; este incremento não recertifica todo o ciclo |
+| assistedBook                              | Somente livro novo com tx.create; raiz preexistente impede sobrescrita e cobrança                          | Regressão Node adicionada; budgets pertencem à proposta gerada                   |
+| bookRestoreLore / Artifacts               | Materialização privada pela reserva/artefatos de restore                                                   | Inspecionada, sem alteração ou certificação/ativação neste incremento            |
+| universes                                 | Escrita global autorizada separada do livro                                                                | Regressões global-only preservadas; não recebe grant local implícito             |
+
+A barreira é preparada para implantação coordenada. Não significa drenagem
+real, integração de todos os consumidores, editor ativado ou CRUD entregue.
+Faltam entradas nativas de criação/exclusão, orquestração dos demais writers,
+ciclo de chaves na exclusão do livro, contextos/publicação/backup completos,
+rollout e validate de P1. Ver [plano 110](110-coordenacao-dos-escritores-legados-de-lore.md)
+e [ADR 0125](../../../decisions/0125-legacy-lore-writer-barrier.md).

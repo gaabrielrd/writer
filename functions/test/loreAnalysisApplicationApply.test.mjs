@@ -471,3 +471,22 @@ test('future global timestamp determines the common local/global/credit timestam
   ])
     assert.equal(f.records.get(path).updatedAt, 9001, path);
 });
+
+test('prepared native batch remains writable behind the permanent legacy barrier', async () => {
+  const f = await setup({ mode: 'inline', globals: true, changes: mixed });
+  await f.db.runTransaction(async (tx) => {
+    tx.update(f.db.doc('books/book'), { hasLoreResources: true });
+  });
+  await prepareApplication(f);
+  const original = structuredClone(f.expected);
+  assert.deepEqual(await apply(f), { applied: 4, credits: 4 });
+  const logical = await f.read();
+  assert.equal(logical.data.summary, 'Confirmed');
+  for (const [key, value] of Object.entries(original))
+    if (!['summary', 'updatedAt'].includes(key)) assert.deepEqual(logical.data[key], value, key);
+  assert.equal(f.records.get('books/book').hasLoreResources, true);
+  assert.equal(f.records.get('books/book').localLoreVersion, 1);
+  const before = all(f);
+  assert.deepEqual(await apply(f), { applied: 4, credits: 4 });
+  assert.deepEqual(all(f), before);
+});

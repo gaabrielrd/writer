@@ -2187,3 +2187,13 @@ Purga após fechamento/revogação remove até 50 records do UID/writeId e fence
 head no mesmo commit; tombstone impede recriação e conclusão é conferida no IDB.
 Componentes exportados, sem entrada produtora ativada até writers/Rules/
 drenagem. P1 e demais gates continuam abertos.
+
+## P1 M38c5l — barreira dos escritores legados de lore
+
+[ADR 0125](decisions/0125-legacy-lore-writer-barrier.md): hasLoreResources é
+marcador permanente controlado pelo servidor. Rules/serviço cliente e aplicação
+Admin legada recusam mutações locais antigas após true; valor presente inválido
+falha fechado. false/ausência preservam CRUD inline. Recibos aplicados e rota
+nativa preparada continuam possíveis, sem repetir alteração/débito.
+Não implantar a barreira isolada nem ativar o editor antes dos caminhos nativos
+e da drenagem coordenada. Proteção intermediária não encerra escrita/P1/V2.

@@ -513,3 +513,71 @@ describe('localLoreVersion', () => {
     expect(callable).toHaveBeenCalledTimes(3);
   });
 });
+
+describe('native lore writer barrier', () => {
+  it.each([true, null, 1, 'true', {}, []])(
+    'rejects old inline mutations with marker %j before writes',
+    async (marker) => {
+      for (const mutate of localMutations) {
+        const store = localStore(
+          { localLoreVersion: 7, hasLoreResources: marker, status: 'published' },
+          { name: 'Literal', summary: '\ufeff  Before\r\n', isPublic: true },
+        );
+        store.records.set('publicBooks/book', { title: 'Published' });
+        const before = structuredClone(store.records);
+        await expect(mutate()).rejects.toThrow('editor de lore completo');
+        expect(store.records).toEqual(before);
+        expect(transaction.set).not.toHaveBeenCalled();
+        expect(transaction.update).not.toHaveBeenCalled();
+        expect(transaction.delete).not.toHaveBeenCalled();
+      }
+    },
+  );
+
+  it('retains confirmation of existing creation and missing deletion without writes', async () => {
+    const stored = {
+      bookId: 'book',
+      name: 'Existing',
+      summary: '\ufeff  Original\r\n',
+      category: 'character',
+      isPublic: false,
+      updatedAt: 3,
+    };
+    const store = localStore({ localLoreVersion: 7, hasLoreResources: true }, stored);
+    store.records.set('books/book/lore/' + newLore.creationId, structuredClone(stored));
+    const before = structuredClone(store.records);
+    expect((await createLoreEntity('book', newLore)).summary).toBe(stored.summary);
+    await deleteLoreEntity('book', 'absent');
+    expect(store.records).toEqual(before);
+    expect(transaction.set).not.toHaveBeenCalled();
+    expect(transaction.update).not.toHaveBeenCalled();
+    expect(transaction.delete).not.toHaveBeenCalled();
+  });
+
+  it('keeps false-marker legacy CRUD functional', async () => {
+    const store = localStore({ localLoreVersion: 7, hasLoreResources: false });
+    await createLoreEntity('book', newLore);
+    await updateLoreEntity('book', 'entity', { summary: 'Updated' });
+    await deleteLoreEntity('book', 'entity');
+    expect(store.records.get('books/book')).toEqual({
+      localLoreVersion: 10,
+      hasLoreResources: false,
+    });
+    expect(store.records.has('books/book/lore/entity')).toBe(false);
+  });
+
+  it('rechecks the barrier after a concurrent native writer forces transaction retry', async () => {
+    const store = localStore({ localLoreVersion: 7 });
+    store.retryOnce(() => {
+      store.records.set('books/book', { localLoreVersion: 7, hasLoreResources: true });
+    });
+    await expect(updateLoreEntity('book', 'entity', { summary: 'Stale' })).rejects.toThrow(
+      'editor de lore completo',
+    );
+    expect(store.records.get('books/book/lore/entity')).toEqual({ isPublic: false });
+    expect(store.records.get('books/book')).toEqual({
+      localLoreVersion: 7,
+      hasLoreResources: true,
+    });
+  });
+});

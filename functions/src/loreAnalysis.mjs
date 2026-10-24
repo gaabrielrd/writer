@@ -238,6 +238,15 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
           context.chapterHash !== record.contentHash
         )
           fail('failed-precondition', 'O capítulo salvo mudou. Recarregue e analise novamente.');
+        if (
+          data.changes.some((change) => change?.scope === 'local') &&
+          Object.hasOwn(context.book, 'hasLoreResources') &&
+          context.book.hasLoreResources !== false
+        )
+          fail(
+            'failed-precondition',
+            'Este livro exige escrita preparada. Nenhuma alteração ou cobrança ocorreu.',
+          );
         const userRef = db.doc(`users/${uid}`);
         const user = (await tx.get(userRef)).data();
         const cost = record.provider === 'platform' ? 1 : 0;

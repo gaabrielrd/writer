@@ -46,6 +46,11 @@ function localLoreVersion(book: Record<string, unknown>): number {
   return value;
 }
 
+function assertInlineLoreWriter(book: Record<string, unknown>): void {
+  if (Object.hasOwn(book, 'hasLoreResources') && book.hasLoreResources !== false)
+    throw new Error('Este livro exige o editor de lore completo. Nenhuma alteração foi salva.');
+}
+
 function nextLocalLoreVersion(book: Record<string, unknown>): number {
   const value = localLoreVersion(book);
   if (value === Number.MAX_SAFE_INTEGER)
@@ -229,6 +234,7 @@ export async function createLoreEntity(
     if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
     localLoreVersion(book.data());
     if (existing.exists()) return existing.data();
+    assertInlineLoreWriter(book.data());
     const version = nextLocalLoreVersion(book.data());
     transaction.set(newEntityDoc, entityDocData);
     transaction.update(bookRef, { localLoreVersion: version });
@@ -286,6 +292,7 @@ export async function updateLoreEntity(
     ]);
     if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
     if (!current.exists()) throw new Error('Entidade indisponível.');
+    assertInlineLoreWriter(book.data());
     if (hasBookLorePayload(current.data()))
       throw new Error('Esta ficha exige o editor de lore completo.');
     const version = nextLocalLoreVersion(book.data());
@@ -329,6 +336,7 @@ export async function deleteLoreEntity(
     if (!book.exists() || book.data().deleting) throw new Error('Livro indisponível.');
     localLoreVersion(book.data());
     if (!current.exists()) return;
+    assertInlineLoreWriter(book.data());
     if (hasBookLorePayload(current.data()))
       throw new Error('Esta ficha exige o editor de lore completo.');
     const version = nextLocalLoreVersion(book.data());
