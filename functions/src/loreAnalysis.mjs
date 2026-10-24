@@ -1,26 +1,15 @@
-import { born } from './bookRestoreUploadContracts.mjs';
-import {
-  createBookLoreLogicalBudget,
-  readBookLoreLogical,
-  bookLoreLogicalOrigin,
-} from './bookLoreLogicalRead.mjs';
-import { readBookLocalLoreVersion, nextBookLocalLoreVersion } from './bookLoreVersion.mjs';
+import { nextBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { createHash } from 'node:crypto';
 import { GenerationError, validateId } from './generation.mjs';
-import { universeDocumentId } from './universes.mjs';
 import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
-import { readBookChapterText } from './bookChapterText.mjs';
+import { readLoreAnalysisContext } from './loreAnalysisContext.mjs';
+import { text, aliases, patch, categories } from './loreAnalysisFields.mjs';
+import { createLoreAnalysisApplicationService } from './loreAnalysisApplication.mjs';
 
 const fail = (code, message) => {
   throw new GenerationError(code, message);
 };
 const hash = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-const categories = ['character', 'location', 'concept', 'other'];
-function text(value, max, required = true) {
-  if (typeof value !== 'string' || value.length > max || (required && !value.trim()))
-    fail('invalid-argument', 'Texto ou ficha inválida.');
-  return value;
-}
 export function validateDetectedLore(items, source) {
   if (!Array.isArray(items) || items.length > 50)
     fail('invalid-argument', 'Analise no máximo 50 entidades por capítulo.');
@@ -45,126 +34,10 @@ export function validateDetectedLore(items, source) {
     };
   });
 }
-function aliases(value) {
-  if (!Array.isArray(value) || value.length > 20) fail('invalid-argument', 'Apelidos inválidos.');
-  return value.map((item) => text(item, 200));
-}
-function patch(input) {
-  if (
-    !input ||
-    typeof input !== 'object' ||
-    Array.isArray(input) ||
-    Object.keys(input).length === 0 ||
-    Object.keys(input).some(
-      (key) => !['name', 'category', 'summary', 'details', 'aliases'].includes(key),
-    )
-  )
-    fail('invalid-argument', 'Campos inválidos para atualização.');
-  const result = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (key === 'category') {
-      if (!categories.includes(value)) fail('invalid-argument', 'Categoria inválida.');
-      result[key] = value;
-    } else if (key === 'aliases') result[key] = aliases(value);
-    else
-      result[key] = text(value, { name: 200, summary: 140, details: 8000 }[key], key !== 'details');
-  }
-  return result;
-}
-
 export function createLoreAnalysisService({ db, generator, now = Date.now }) {
   const ticketRef = (uid, id) => db.doc(`users/${uid}/loreAnalyses/${validateId(id)}`);
-  async function snapshot(tx, uid, bookId, chapterId) {
-    const bookRef = db.doc(`books/${universeDocumentId(bookId)}`);
-    const chapterRef = db.doc(`${bookRef.path}/chapters/${universeDocumentId(chapterId)}`);
-    const [bookDoc, chapter] = await Promise.all([tx.get(bookRef), tx.get(chapterRef)]);
-    const book = bookDoc.data();
-    if (
-      !book ||
-      book.authorId !== uid ||
-      book.deleting ||
-      !chapter.exists ||
-      chapter.data().deleting
-    )
-      fail('permission-denied', 'Livro ou capítulo indisponível.');
-    const localLoreVersion = readBookLocalLoreVersion(book);
-    const worldRef = book.universeId
-      ? db.doc(`universes/${universeDocumentId(book.universeId)}`)
-      : null;
-    const worldSnapshot = worldRef ? await tx.get(worldRef) : null;
-    const world = worldSnapshot?.data() ?? null;
-    if (worldRef && (!world || world.authorId !== uid || world.deleting))
-      fail('failed-precondition', 'Universo indisponível.');
-    const budget = createBookLoreLogicalBudget(),
-      entities = [],
-      localPayloadIds = new Set();
-    const localScope = { db, uid, bookId, path: bookRef.path };
-    let contextBytes = 2;
-    async function append(root, scope) {
-      let cursor = null;
-      for (;;) {
-        let q = db
-          .collection(root.path + '/lore')
-          .orderBy('__name__')
-          .limit(16);
-        if (cursor) q = q.startAfter(cursor);
-        const page = await tx.get(q);
-        for (const item of page.docs) {
-          if (entities.length >= 500)
-            fail('resource-exhausted', 'Compêndio grande demais para esta análise.');
-          let data, origin;
-          if (scope === 'local') {
-            const logical = await readBookLoreLogical(tx, localScope, item, budget);
-            data = logical.data;
-            origin = logical.origin;
-            if (logical.mode === 'payload') localPayloadIds.add(item.id);
-          } else {
-            data = item.data();
-            budget.reserve({ bytes: Buffer.byteLength(JSON.stringify(data), 'utf8') });
-            origin = bookLoreLogicalOrigin(item, data);
-          }
-          const entity = {
-            id: scope === 'global' ? 'universe:' + book.universeId + ':' + item.id : item.id,
-            scope,
-            path: item.ref.path,
-            data,
-            origin,
-          };
-          contextBytes +=
-            Buffer.byteLength(JSON.stringify(entity), 'utf8') + (entities.length ? 1 : 0);
-          entities.push(entity);
-          if (contextBytes > 300000)
-            fail('resource-exhausted', 'Compêndio grande demais para esta análise.');
-        }
-        if (page.docs.length < 16) break;
-        cursor = page.docs.at(-1).id;
-      }
-    }
-    await append(bookRef, 'local');
-    if (worldRef) await append(worldRef, 'global');
-    entities.sort((a, b) => a.id.localeCompare(b.id));
-    return {
-      book,
-      bookRef,
-      worldRef,
-      world,
-      entities,
-      localPayloadIds,
-      revision: hash([
-        born(bookDoc),
-        worldSnapshot ? born(worldSnapshot) : null,
-        book.universeId ?? null,
-        localLoreVersion,
-        world?.loreVersion ?? 0,
-        entities,
-      ]),
-      chapterHash: hash(
-        chapter.data().contentMode === 'scenes'
-          ? (chapter.data().content ?? '')
-          : await readBookChapterText(tx, db, { uid, bookId, chapterId, chapter: chapter.data() }),
-      ),
-    };
-  }
+  const snapshot = (tx, uid, bookId, chapterId) =>
+    readLoreAnalysisContext(tx, db, uid, bookId, chapterId);
   async function verifyAnalysisContext(tx, uid, record) {
     const current = await snapshot(tx, uid, record.bookId, record.chapterId);
     if (
@@ -318,6 +191,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
     }
   }
   return {
+    ...createLoreAnalysisApplicationService({ db, now }),
     analyzeChapterLore: (uid, data) => prepare(uid, data, 'platform'),
     prepareBYOKLore: (uid, data) => prepare(uid, data, 'byok'),
     async applyLoreAnalysis(uid, data) {

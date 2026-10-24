@@ -542,3 +542,10 @@ Reedição/retirada/exclusão preservam confirmação sem recriar fichas.
 [Evidência](docs/entregas/2026-10-24-writer-v2-adocao-conjunta-das-geracoes-de-lore.md).
 A2b/A2c ainda precisam preparar o lote da análise e compor débito/recibo
 reais. Sem nova UI ou implantação; P1/F2-09/Writer V2 permanecem abertos.
+
+M38c4c/A2b1 registra a reserva interna do lote da análise: até 50 alvos e IDs
+de preparação fixos, com provas nativas e cancelamento sem filhos. A exclusão
+do livro descobre e fecha a reserva preservando metadata.
+[Evidência](docs/entregas/2026-10-24-writer-v2-reserva-nativa-do-lote-da-analise.md).
+Produtores/bindings/cleanup A2b2 e aplicação com débito/recibo A2c continuam
+pendentes. Sem novo callable/UI ou implantação; P1/F2-09/V2 seguem abertos.

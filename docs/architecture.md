@@ -1913,3 +1913,24 @@ Caller pode ler saldo/recibo após preparar e gravá-los no mesmo commit.
 A primitiva não cobra nem integra ainda applyLoreAnalysis: A2b/A2c precisam
 preparação/cancelamento/inventário e aplicação local/global/nova com débito/
 recibo reais. Demais integrações e certificação de P1 permanecem abertas.
+
+## P1 M38c4c / A2b1 — reserva nativa da aplicação
+
+[ADR 0111](decisions/0111-native-lore-analysis-application-reservation.md):
+loreAnalysisContext/Fields extraem leitor e validadores existentes sem mudar
+a revisão. Serviço interno de aplicação registra 1..50 alvos e todos os IDs
+de criação/inspeção/edição/uploads antes dos produtores. Contexto fixa análise/
+provedor/origens/hash/expiração; manifesto só contém metadata/hash dos patches.
+
+Contexto/estado/evento/prova nascem juntos, com marca hasLoreResources mas
+sem clock/cabeça/bytes/débito. Retry/get são metadata após revogação e não
+concedem leitura ou escrita. Cancel-before-start é fence; cancelamento sem
+filhos é atômico. Filho encontrado bloqueia para reconciliação, sem delete
+inferido. Exclusão descobre por bookId e fecha a reserva pela fase applications
+antes de edições, com cutoff/nascimento e checkpoint na mesma transação.
+Checkpoints anteriores permanecem válidos; Rules negam SDK em toda a árvore.
+
+A2b2 deve habilitar produtores somente com bindings e checkpoints do pai
+na mesma transação e cleanup dos filhos coordenado. A2c deve compor aplicação
+local/global/nova, crédito e recibo reais. Não há novo callable ou UI;
+applyLoreAnalysis continua recusando payload. P1/F2-09/V2 seguem abertos.

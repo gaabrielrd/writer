@@ -972,3 +972,17 @@ Próximos A2b/A2c: preparação/inventário/cancelamento e ligação real do lot
 local/global/novo com crédito/recibo. applyLoreAnalysis ainda recusa payload.
 Demais integrações e P1/F2-09/V2 seguem abertos. Validate integral no fim
 de P1; somente commits locais, sem CI/push/deploy.
+
+### P1 M38c4c / A2b1 — reserva nativa do lote da análise
+
+[Plano 96](96-reserva-nativa-do-lote-da-analise.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-reserva-nativa-do-lote-da-analise.md):
+220 casos Node distintos e três SDK positivos em rodadas dirigidas.
+Manifesto metadata de até 50 alvos fixa origens/provedor/IDs/hash antes de
+produtores; get/retry e cancel-before-start preservam provas. Exclusão fecha
+reservas sem filhos antes de edições. Filho encontrado exige reconciliação.
+
+Próximo A2b2: produtores e cleanup ligados ao pai na mesma transação.
+A2c deve confirmar locais/globais/novos com crédito/recibo reais; demais
+integrações e P1/F2-09/V2 continuam abertos. Validate integral no fim de P1.
+Somente commits locais, sem CI/push/deploy.

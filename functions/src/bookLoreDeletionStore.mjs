@@ -21,6 +21,7 @@ const stamp = (s) => {
   born({ createTime: s });
 };
 export const deletionPhases = [
+  'applications',
   'edits',
   'fields',
   'inspections',
@@ -179,7 +180,7 @@ export async function initializeBookLoreDeletion(tx, missing, active) {
     value = {
       schemaVersion: 1,
       revision: 0,
-      phase: active ? 'edits' : 'finish',
+      phase: active ? 'applications' : 'finish',
       cursor: null,
       body: null,
       processed: 0,

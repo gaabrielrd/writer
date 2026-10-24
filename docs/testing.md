@@ -1949,3 +1949,21 @@ individual gravado. Saldo/recibo usados são de um caller de teste.
 Lint dirigido, arquitetura e sintaxe dos 227 módulos positivos. Sem TS/UI
 novos, não repetimos tipos/Vitest/build/browser. Validate/cobertura no fim
 de P1. A2b/A2c e demais integrações pendentes; sem CI/push/deploy.
+
+### P1 M38c4c / A2b1 — reserva nativa da análise
+
+[Entrega](entregas/2026-10-24-writer-v2-reserva-nativa-do-lote-da-analise.md):
+218 Node positivos na integração (37 novos/181 regressões), seguidos de
+39/39 da reserva após fixar provedor/relações/IDs qualificados; 220 casos
+distintos positivos. Hash de texto foi corrigido para o JSON histórico.
+
+Três SDK distintos positivos, demo/loopback com emulador verificado 1.22.0.
+Rodada final passou nos dois primeiros (50 alvos/Rules/exclusão e fence/prova
+recriada); OOM nativo de V8/JVM interrompeu o terceiro. Processos terminaram,
+logs foram preservados fora do Git e somente esse caso foi repetido com
+recursos limitados: 1/1 positivo, 4862.6753 ms. O rollback é falha nativa no
+último write, preservando manifesto/flag/saldo antes do retry.
+
+Lint/arquitetura e sintaxe dos 233 módulos positivos. Sem UI/TS novos,
+não repetimos tipos/Vitest/build/browser. Validate/cobertura no fim de P1.
+Produtores/cleanup A2b2 e aplicação/cobrança A2c pendentes, sem CI/push/deploy.

@@ -1,3 +1,7 @@
+import {
+  applicationBookQuery,
+  advanceDeletionApplication,
+} from './loreAnalysisApplicationDeletion.mjs';
 import { integer } from './bookRestoreUploadContracts.mjs';
 import {
   loadBookLoreDeletion,
@@ -25,6 +29,7 @@ async function activity(tx, l) {
       ...deletionJobQueries(l.c.db, l.c.uid, l.c.bookId),
       removalBookQuery(l.c.db, l.c.uid, l.c.bookId),
       creationBookQuery(l.c.db, l.c.uid, l.c.bookId),
+      applicationBookQuery(l.c.db, l.c.uid, l.c.bookId),
     ];
   const pages = await Promise.all(queries.map((q) => tx.get(q.limit(1).select())));
   return pages.some((p) => p.docs.length > 0);
@@ -40,7 +45,8 @@ export async function prepareBookLoreDeletion(tx, { db, uid, bookId, operationId
   const finish = await reserveBookLoreDeletionCommit(tx, l),
     next = deletionNextState(l);
   let unit = { remove: [], commit() {} };
-  if (next.phase === 'removals') await advanceBookLoreRemovalHandoff(tx, l, next);
+  if (next.phase === 'applications') await advanceDeletionApplication(tx, l, next);
+  else if (next.phase === 'removals') await advanceBookLoreRemovalHandoff(tx, l, next);
   else if (next.phase === 'creations') await advanceBookLoreCreationCleanup(tx, l, next);
   else if (next.phase === 'finish') {
     await assertBookLorePayloadsEmpty(tx, db, bookId);
