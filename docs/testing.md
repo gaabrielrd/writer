@@ -1985,3 +1985,26 @@ retry, exclusão e provas recriadas. Não demonstram aplicação/cobrança reais
 Lint/arquitetura/sintaxe dos 240 módulos positivos. Sem UI/TS novos, não
 repetimos tipos/Vitest/build/browser; validate/cobertura no fim de P1.
 A2c e demais integrações pendentes, somente commits locais, sem CI/deploy.
+
+### P1 M38c4e / A2c — aplicação integral preparada
+
+functions/test/loreAnalysisApplicationApply.test.mjs cobre aplicação pelo
+contrato real em inline/v1/v2/criação, mistura de destinos, globais apenas,
+BYOK/saldo, hash canônico versus legado, recusas de bypass, provas ausentes/
+recriadas, mudanças de origem, rollback e replay após exclusão.
+Inclui 50 fichas locais novas reais, uma cobrança e um clock. O grant completo
+não libera adoção singular/subconjunto ou produção, mesmo após abrir o batch.
+
+tests/firestore/loreAnalysisApplicationApply.rules.test.mjs verifica commit
+e rollback nativos, 50 mistos, chamadas concorrentes, cancelamento, Rules,
+nascimento conjunto de crédito/cabeças/recibo, BYOK e confirmação após limpeza.
+Exige emulador dedicado demo/loopback. O resultado real da execução deve ser
+conferido na evidência, sem confundir a existência do teste com aprovação.
+
+Validate integral no fim de P1. Sem novo fluxo de interface ou implantação;
+cliente/endpoints de preparo e demais integrações permanecem pendentes.
+
+A [evidência A2c](entregas/2026-10-24-writer-v2-aplicacao-atomica-da-analise-preparada.md)
+registra 47 novos Node distintos, 201 regressões e cinco SDK positivos em
+rodadas dirigidas. Node cobriu 50 locais; SDK cobriu 50 mistos e a corrida
+adicional aplicar/reservar. Isso não substitui a certificação integrada de P1.

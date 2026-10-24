@@ -165,6 +165,7 @@
 - Adote lotes preparados de até 50 fichas na transação do caller, com clock/privacidade agregados e prova conjunta de nascimento; aguarde leituras irmãs antes de rejeitar, preserve replay metadata sem inferir atomicidade de sucessos individuais, conforme ADR 0110.
 - Reserve todo o manifesto/IDs da análise com origem/provedor e provas nativas antes de habilitar filhos; get/retry são metadata, cancel sem filhos exige ausência conferida e exclusão fecha a reserva pelo cutoff, sem presumir cleanup de filhos desconhecidos, conforme ADR 0111.
 - Produza filhos reservados da análise somente com capacidade nativa da unidade e vínculo de nascimento a proprietário/prova/evento/pai; cancelar fecha antes de limpar, leitura de dependência não concede escrita e adoção individual permanece bloqueada, conforme ADR 0112.
+- Confirme o lote ready da análise com adoção integral, globais, crédito e recibo no mesmo commit; exija abertura opaca do batch e prova conjunta original no replay, preserve recibos legados e nunca use o ticket novo como fallback, conforme ADR 0113.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

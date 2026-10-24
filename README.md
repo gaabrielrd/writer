@@ -556,3 +556,12 @@ filhos após revogação; exclusão do livro coordena o mesmo protocolo.
 [Evidência](docs/entregas/2026-10-24-writer-v2-preparacao-vinculada-do-lote-da-analise.md).
 Aplicação conjunta local/global/nova com débito/recibo reais fica em A2c.
 Sem novo callable/UI ou implantação; P1/F2-09/V2 permanecem abertos.
+
+M38c4e/A2c integra aplicação de lote ready ao contrato applyLoreAnalysis:
+locais/globais/novos, débito único e comprovantes permanentes confirmam na
+mesma transação. Preparação em andamento/cancelada bloqueia o caminho legado;
+recibos continuam confirmáveis após exclusão sem nova cobrança.
+[Plano](docs/tasks/writer-v2/execucao/98-aplicacao-integral-da-analise-preparada.md).
+[Evidência](docs/entregas/2026-10-24-writer-v2-aplicacao-atomica-da-analise-preparada.md).
+Cliente/endpoints de preparo, demais integrações e rollout permanecem
+pendentes; sem nova UI ou implantação. P1/F2-09/V2 continuam abertos.

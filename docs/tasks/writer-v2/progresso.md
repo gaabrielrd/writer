@@ -58,3 +58,16 @@ Fontes: [registro de execução](execucao/README.md), índices das fases
 [4](fase-04-publicar-e-comercializar/README.md) e
 [5](fase-05-validar-e-lancar/README.md), além da
 [entrega S3](../../entregas/2026-10-21-writer-v2-pistas-e-missoes.md).
+
+## Atualização local de P1 em 2026-10-24
+
+A2c acrescenta aplicação transacional do lote preparado com crédito/recibo
+reais, sobre reserva/preparo A2b e adoção A2a. Consulte o
+[plano 98](execucao/98-aplicacao-integral-da-analise-preparada.md) e o
+[registro de execução](execucao/README.md) para a validação efetiva.
+
+Esse avanço interno não conclui F2-09: cliente/endpoints, demais escritores/
+consumidores, backup, ativação/rollout e validação integrada de P1 continuam
+necessários. A contagem histórica de tarefas não avança por subincremento.
+Fases 3–5 e condições humanas/comerciais continuam abertas. O desenvolvimento
+segue por commits locais, sem acompanhar CI, conforme orientação atual.

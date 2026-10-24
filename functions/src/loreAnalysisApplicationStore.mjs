@@ -1,3 +1,4 @@
+import { readApplicationSuccess } from './loreAnalysisApplicationReceipt.mjs';
 import {
   validateApplicationState,
   applicationWorkflowState,
@@ -172,6 +173,7 @@ export async function loadApplication(tx, c, request) {
     digest(current.record.progress) !== digest(applicationView(l))
   )
     conflict();
+  if (state.phase === 'applied') l.success = await readApplicationSuccess(tx, l, current);
   openings.set(l, tx);
   return l;
 }
@@ -284,6 +286,7 @@ export async function reserveApplicationCommit(tx, l, method, r) {
 export async function prepareApplicationCancellation(tx, l, operationId) {
   assertApplicationOpening(tx, l);
   bookContentId(operationId);
+  if (l.state.phase === 'applied') conflict();
   const r = { id: l.c.id, requestHash: l.context.requestHash, jobToken: l.token, operationId },
     replay = await replayApplicationOperation(tx, l, 'cancelLoreAnalysisApplication', r);
   if (replay) return { result: replay.progress, commit() {} };

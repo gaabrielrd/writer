@@ -1,4 +1,7 @@
-import { assertAnalysisChildUnit } from './loreAnalysisApplicationChildBindings.mjs';
+import {
+  assertAnalysisChildUnit,
+  beginAnalysisAdoptionBatch,
+} from './loreAnalysisApplicationChildBindings.mjs';
 import { prepareCreationActivation } from './bookLoreCreationActivation.mjs';
 import { createHash } from 'node:crypto';
 import { date, integer } from './bookRestoreUploadContracts.mjs';
@@ -97,13 +100,13 @@ async function settleReads(operations) {
   if (failure) throw failure.reason;
   return results.map((result) => result.value);
 }
-async function openCandidate(tx, db, uid, r) {
+async function openCandidate(tx, db, uid, r, batchPermit = null) {
   const c = editReservationPaths(db, uid, r.editId),
     l = await loadEditReservation(tx, c, r);
   if (!l || l.job.kind === 'fence') conflict();
   const replay = await replayEditReservation(tx, l, 'adoptBookLoreEditGeneration', r);
   if (replay) return { l, r, replay };
-  assertAnalysisChildUnit(tx, db, uid, 'edit', c.id, 'adopt');
+  assertAnalysisChildUnit(tx, db, uid, 'edit', c.id, 'adopt', batchPermit);
   if (l.job.phase !== 'preparing' || l.job.revision !== r.expectedRevision) conflict();
   const compiled = await openBookLoreEditCompilation(tx, l),
     root = await readWorkMetadata(tx, db.doc('books/' + l.job.context.intent.bookId), [
@@ -235,8 +238,9 @@ export async function prepareBookLoreEditAdoptionBatch(
   input,
 ) {
   const scope = adoptionBatchScope(db, uid, input),
+    permit = beginAnalysisAdoptionBatch(tx, db, uid, scope.request),
     candidates = await settleReads(
-      scope.request.requests.map((r) => openCandidate(tx, db, uid, r)),
+      scope.request.requests.map((r) => openCandidate(tx, db, uid, r, permit)),
     ),
     first = candidates[0].l.job.context,
     ids = new Set();

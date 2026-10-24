@@ -1,3 +1,4 @@
+import { validateAppliedStateSummary } from './loreAnalysisApplicationApplyContracts.mjs';
 import { closed, integer } from './bookRestoreUploadContracts.mjs';
 import { applicationConflict as conflict } from './loreAnalysisApplicationContracts.mjs';
 export const initialApplicationCursor = () => ({ member: 0, stage: 'source', field: 0 });
@@ -7,19 +8,25 @@ export function validateApplicationState(state, context) {
     closed(state, ['schemaVersion', 'phase', 'revision', 'lastOperationId']);
     if (!['preparing', 'cancelled'].includes(state.phase)) conflict();
   } else {
-    closed(state, [
-      'schemaVersion',
-      'phase',
-      'revision',
-      'lastOperationId',
-      'cursor',
-      'cleanup',
-      'preparedCount',
-    ]);
+    closed(
+      state,
+      [
+        'schemaVersion',
+        'phase',
+        'revision',
+        'lastOperationId',
+        'cursor',
+        'cleanup',
+        'preparedCount',
+      ],
+      state?.phase === 'applied' ? ['application'] : [],
+    );
+    if (state.phase === 'applied')
+      validateAppliedStateSummary(state.application, context.members.length);
     if (
       state.schemaVersion !== 2 ||
       context.kind !== 'reservation' ||
-      !['preparing', 'ready', 'cancelling', 'cancelled'].includes(state.phase)
+      !['preparing', 'ready', 'applied', 'cancelling', 'cancelled'].includes(state.phase)
     )
       conflict();
     const count = context.members.length;
@@ -36,7 +43,7 @@ export function validateApplicationState(state, context) {
     integer(state.preparedCount);
     if (
       state.preparedCount !== state.cursor.member ||
-      (state.phase === 'ready' && state.preparedCount !== count) ||
+      (['ready', 'applied'].includes(state.phase) && state.preparedCount !== count) ||
       (state.phase === 'preparing' && state.preparedCount === count) ||
       (state.phase === 'cancelled' && state.cleanup.member !== count)
     )

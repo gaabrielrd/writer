@@ -217,6 +217,7 @@ export const applicationView = (l) => ({
   jobToken: l.token,
   bookId: l.context.bookId,
   phase: l.state.phase,
+  ...(l.state.application ? { application: l.state.application } : {}),
   revision: l.state.revision,
   memberCount: l.context.kind === 'reservation' ? l.context.members.length : 0,
   ...(l.state.schemaVersion === 2

@@ -1,3 +1,7 @@
+import { digest } from './workProgressContracts.mjs';
+import { applicationPaths, applicationConflict } from './loreAnalysisApplicationContracts.mjs';
+import { loadApplication } from './loreAnalysisApplicationStore.mjs';
+import { applyPreparedAnalysisInTransaction } from './loreAnalysisApplicationApply.mjs';
 import { nextBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { createHash } from 'node:crypto';
 import { GenerationError, validateId } from './generation.mjs';
@@ -203,12 +207,20 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       const requestHash = hash([source, data.changes]);
       return db.runTransaction(async (tx) => {
         const record = (await tx.get(ref)).data();
-        if (!record) fail('not-found', 'Análise não encontrada.');
-        if (record.state === 'applied') {
+        // Legacy receipts remain confirmable even when a cancellation fence was created later.
+        if (record?.state === 'applied' && !Object.hasOwn(record, 'application')) {
           if (record.requestHash !== requestHash)
             fail('failed-precondition', 'Este lote já foi aplicado com outras alterações.');
           return record.result;
         }
+        const application = await loadApplication(tx, applicationPaths(db, uid, data.id), {
+          requestHash: digest([source, data.changes]),
+        });
+        if (application?.state.phase === 'applied') return application.success.record.result;
+        if (record && Object.hasOwn(record, 'application')) applicationConflict();
+        if (application)
+          return applyPreparedAnalysisInTransaction(tx, { db, now }, application, data);
+        if (!record) fail('not-found', 'Análise não encontrada.');
         if (
           record.state !== 'ready' ||
           record.expiresAt <= now() ||

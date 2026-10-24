@@ -1958,3 +1958,26 @@ Revogação não impede cleanup nativo nem concede prosa. Estrangeiros/recriados
 são preservados. Exclusão coordena cleanup da aplicação com seu checkpoint.
 A2c deve compor aplicação integral local/global/nova e crédito/recibo reais;
 demais integrações e certificação de P1 continuam pendentes.
+
+## P1 M38c4e / A2c — aplicação preparada com débito e recibo
+
+[ADR 0113](decisions/0113-atomic-prepared-lore-analysis-application.md):
+applyLoreAnalysis confere a reserva no mesmo TX do ticket; ready passa pelo
+finalizador, preparação/cancelamento não permitem fallback legado. Sem reserva
+o comportamento inline/global anterior continua, recusando payload sem preparo.
+Hash canônico da reserva não substitui o hash JSON dos recibos legados.
+
+Grant de adoção exige todos os certificados/provas e proprietários originais.
+O batch exato recebe abertura opaca por transação; singular e produtores
+continuam bloqueados. A2a planeja os locais; patches globais/defaults privados,
+um clock por domínio, data comum, invalidação global e crédito/recibo reais
+confirmam juntos. Todas as leituras precedem writes. BYOK não debita.
+
+Applied só carrega com recibo/prova imutáveis nascidos junto do evento final,
+estado e grupo A2a. Replay exige o grupo original antes do replay dos membros,
+sem reabrir prosa/saldo/ticket ou preparar nova adoção. Sobrevive a revogação,
+retirada/GC e exclusão. Marca nova no ticket nunca substitui prova; cancelar
+sucesso é recusado e exclusão preserva metadata antes da limpeza geral.
+
+Orquestração de preparo/recuperação no cliente/endpoints, outros escritores/
+consumidores, backup, rollout e certificação de P1/F2-09/V2 seguem pendentes.

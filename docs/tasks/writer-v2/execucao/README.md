@@ -999,3 +999,19 @@ as unidades. Guards singulares impedem bypass e adoção individual.
 Próximo A2c: prontidão/origem e aplicação integral local/global/nova junto
 de crédito/recibo reais. Demais integrações e P1/F2-09/V2 seguem abertos.
 Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.
+
+### P1 M38c4e / A2c — aplicação integral do lote preparado
+
+[Plano 98](98-aplicacao-integral-da-analise-preparada.md) e
+[ADR 0113](../../../decisions/0113-atomic-prepared-lore-analysis-application.md):
+ready integra locais/globais/novos, débito único e recibo permanente no mesmo
+commit. Grant agregado exato mantém singular/produção bloqueados; metadata
+confirma após limpeza sem nova cobrança. Preparação/cancelamento bloqueiam
+fallback legado, cujos recibos originais continuam confirmáveis.
+
+47 casos Node novos distintos, 201 regressões relacionadas e cinco casos SDK
+distintos positivos em rodadas dirigidas; confira a
+[evidência](../../../entregas/2026-10-24-writer-v2-aplicacao-atomica-da-analise-preparada.md).
+Cliente/endpoints de preparo/recuperação, demais writers/consumidores/backup,
+rollout, P1/F2-09/V2 e condições humanas/comerciais continuam pendentes.
+Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.

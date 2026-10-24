@@ -13,7 +13,7 @@ import {
 } from './bookLoreDeletionStore.mjs';
 export const applicationBookQuery = (db, uid, bookId) =>
   db.collection('users/' + uid + '/loreAnalysisApplications').where('bookId', '==', bookId);
-/** Parent closes before child cleanup; B1 has not enabled any byte producer. */
+/** Pending parents close before cleanup; successful batches retain their native receipts. */
 export async function advanceDeletionApplication(tx, l, next) {
   assertDeletionOpening(tx, l);
   let query = applicationBookQuery(l.c.db, l.c.uid, l.c.bookId).orderBy('__name__').limit(1);
@@ -34,7 +34,7 @@ export async function advanceDeletionApplication(tx, l, next) {
     !bornEqual({ createTime: app.context.bookBirth }, l.root)
   )
     conflict();
-  if (app.state.phase !== 'cancelled') {
+  if (!['cancelled', 'applied'].includes(app.state.phase)) {
     const operationId = digest(['book-lore-delete-application', l.token, l.state.revision]);
     if (app.state.phase === 'cancelling') {
       await advanceApplicationCleanupInTransaction(tx, app, {
