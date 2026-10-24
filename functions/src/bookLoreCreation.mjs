@@ -68,7 +68,14 @@ export function createBookLoreCreationReservationService({ db }) {
         if (l) return requestCreationCancellation(tx, l, r);
         if (r.jobToken !== undefined) conflict();
         const slots = await creationSlots(tx, c);
-        if (slots.reservation.exists || slots.cancel.exists || slots.proof.exists) conflict();
+        if (
+          slots.reservation.exists ||
+          slots.cancel.exists ||
+          slots.proof.exists ||
+          slots.adoption.exists ||
+          slots.adoptionProof.exists
+        )
+          conflict();
         const context = createCreationContext(tx, c);
         writeCreationCancellation(tx, c, context, null, r);
         return null;
@@ -98,7 +105,7 @@ export async function advanceBookLoreCreationCleanup(tx, l, next) {
       !bornEqual(l.root, { createTime: job.context.bookBirth }))
   )
     conflict();
-  if (job.cancellation) {
+  if (job.cancellation || job.adoption) {
     next.cursor = s.id;
     return;
   }

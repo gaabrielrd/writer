@@ -77,3 +77,10 @@ L3A integrou tentativas/filhos reserved ao cancelamento e composição/auditoria
 sem base. 314 Node distintos e quatro SDK positivos. L3B ainda deve ativar
 cabeça/geração/leases/clock/datas/recibo e manter o sucesso histórico;
 criação completa e integrações continuam pendentes, sem endpoint/UI.
+
+## Ativação de L3B
+
+[Plano 92](92-ativacao-atomica-da-criacao-de-lore.md) confirma geração/cabeça e
+criador atomicamente. Reserva adotada fecha novos uploads/tentativas; cancel
+do criador é recusado. Tentativas não usadas continuam limpáveis pela origem
+histórica e o livro reconhece sucesso sem apagá-lo. Demais integrações pendentes.

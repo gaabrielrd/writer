@@ -516,3 +516,10 @@ Cancelamento coordena as tentativas antes dos uploads e preserva comprovantes.
 [Plano](docs/tasks/writer-v2/execucao/91-composicao-do-lore-a-partir-da-reserva.md).
 Ativação atômica L3B e integração com cliente/consumidores continuam pendentes;
 a criação ainda não está disponível na interface. P1/F2-09/V2 seguem abertos.
+
+M38c3o/L3B acrescenta ativação atômica interna da criação de lore e comprovante
+histórico permanente. Leituras exigem o nascimento original da ficha;
+reedição/retirada/exclusão conservam o sucesso, sem recriação por retry.
+[Plano](docs/tasks/writer-v2/execucao/92-ativacao-atomica-da-criacao-de-lore.md).
+Criação ainda não está exposta na interface: faltam os demais writers,
+consumidores, backup e cliente antes de habilitar. P1/F2-09/V2 continuam abertos.

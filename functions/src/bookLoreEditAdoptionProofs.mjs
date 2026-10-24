@@ -45,7 +45,8 @@ export async function assertPreparedGenerationHead(tx, c, generation, head, stor
     generation.state.phase !== 'active' ||
     p.job.context.intent.bookId !== c.bookId ||
     p.job.context.intent.loreId !== head.id ||
-    !bornEqual(head, { createTime: p.job.context.sourceBirth }) ||
+    (p.job.context.sourceMode !== 'creation' &&
+      !bornEqual(head, { createTime: p.job.context.sourceBirth })) ||
     digest(p.job.adoption.storage) !== digest(storage) ||
     !bornEqual(
       { createTime: p.job.context.bookBirth },
@@ -54,6 +55,10 @@ export async function assertPreparedGenerationHead(tx, c, generation, head, stor
   )
     conflict();
   const original = await validateParentAdoption(tx, p);
-  if (!bornEqual(original.proof.snapshot, { createTime: head.updateTime })) conflict();
+  if (
+    !bornEqual(original.proof.snapshot, { createTime: head.updateTime }) ||
+    (p.job.context.sourceMode === 'creation' && !bornEqual(head, original.proof.snapshot))
+  )
+    conflict();
   return p;
 }

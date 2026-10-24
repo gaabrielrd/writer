@@ -918,3 +918,17 @@ Próximo L3B: ativação atômica e sucesso histórico, com reader/reedição/re
 exclusão do livro preservando a origem. Adoção creation segue bloqueada,
 sem UI/endpoint. M38c/P1/F2-09/V2 continuam abertos; validate no fim de P1.
 Somente commits locais, sem CI remota ou deploy.
+
+### P1 M38c3o / criação L3B — ativação e sucesso histórico
+
+[Plano 92](92-ativacao-atomica-da-criacao-de-lore.md) e [evidência](../../../entregas/2026-10-24-writer-v2-ativacao-atomica-da-criacao-de-lore.md):
+454 Node e seis SDK distintos positivos em rodadas dirigidas.
+Cabeça/geração/leases lógicas/clock/datas/recibo/criador são atômicos;
+reader exige nascimento original e cancel não apaga sucesso. Reedição/
+coleta/retirada/exclusão preservam confirmação sem recriar ficha.
+Guarda de revisão exige comprovante do criador também no replay da edição.
+
+Backend interno de criação concluído com L1/L2/L3A/L3B, sem endpoint/UI.
+Próximos: demais writers/regras, consumidores, backup/cliente/recuperação,
+roteamento de preparações sem flag e rollout. M38c/P1/F2-09/V2 continuam
+abertos. Validate integral no fim de P1; somente commits locais, sem CI.

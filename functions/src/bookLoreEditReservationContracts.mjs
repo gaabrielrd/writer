@@ -200,3 +200,32 @@ export function assertIntentReservation(intent, target, upload) {
   )
     editReservationConflict();
 }
+
+export const expectedEditGeneration = (loaded) => {
+  const { c, job: j } = loaded,
+    ctx = j.context,
+    intent = ctx.intent;
+  return {
+    schemaVersion: intent.creation ? 2 : 1,
+    kind: 'generation',
+    ownerId: c.uid,
+    bookId: intent.bookId,
+    bookBirth: ctx.bookBirth,
+    loreId: intent.loreId,
+    generationId: editGenerationId(loaded.token),
+    ...(intent.creation
+      ? { creationSource: { reference: intent.creation, birth: ctx.creationBirth } }
+      : {
+          sourceBirth: ctx.sourceBirth,
+          sourceUpdate: ctx.sourceUpdate,
+          storageHash: ctx.sourceStorageHash,
+        }),
+    preparation: {
+      editId: c.id,
+      editToken: loaded.token,
+      editBirth: born(loaded.snapshot),
+      startHash: j.startHash,
+      sourceToken: intent.sourceToken,
+    },
+  };
+};

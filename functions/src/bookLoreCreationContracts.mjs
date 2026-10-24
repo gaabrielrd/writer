@@ -72,7 +72,24 @@ export const creationView = (l) => ({
   loreId: l.c.loreId,
   startHash: l.context.startHash,
   jobToken: l.context.kind === 'fence' ? null : l.token,
-  phase: l.cancellation ? 'cancelled' : l.cancelRequest ? 'cancelling' : 'preparing',
+  phase: l.adoption
+    ? 'adopted'
+    : l.cancellation
+      ? 'cancelled'
+      : l.cancelRequest
+        ? 'cancelling'
+        : 'preparing',
+  ...(l.adoption
+    ? {
+        adoption: {
+          operationId: l.adoption.record.operationId,
+          editId: l.adoption.record.edit.editId,
+          generationId: l.adoption.record.generationId,
+          timestamp: l.adoption.adoption.timestamp,
+          localLoreVersion: l.adoption.adoption.localLoreVersion,
+        },
+      }
+    : {}),
   ...(l.cancelRequest
     ? {
         cleanupRevision: l.cancelRequest.state.revision,

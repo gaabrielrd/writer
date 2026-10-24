@@ -85,7 +85,10 @@ test('creation compiles required literal fields without a head, inspection, base
   assert.deepEqual(generation.creationSource.reference, f.intent.creation);
   assert.equal(Object.hasOwn(generation, 'sourceBirth'), false);
   await assert.rejects(() =>
-    f.factory().adoptBookLoreEditGeneration(f.uid, editControl(f, p, 'no-premature-activation')),
+    f.factory().adoptBookLoreEditGeneration(f.uid, {
+      ...editControl(f, p, 'stale-creation-activation'),
+      expectedRevision: p.revision + 1,
+    }),
   );
   assert.equal((await end(f)).phase, 'cancelled');
   assert.equal(bytes(f).length, 0);

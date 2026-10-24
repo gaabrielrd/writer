@@ -9,6 +9,7 @@ import {
   creationLoreId,
   creationView,
 } from './bookLoreCreationContracts.mjs';
+import { loadCreationAdoption, creationAdoptionPaths } from './bookLoreCreationAdoption.mjs';
 import { loadCreationCancelRequest } from './bookLoreCreationCancelRequest.mjs';
 const records = new WeakMap();
 export const assertCreationRecord = (tx, l) => {
@@ -16,6 +17,7 @@ export const assertCreationRecord = (tx, l) => {
 };
 async function nativeRecord(tx, l) {
   l.cancelRequest = await loadCreationCancelRequest(tx, l);
+  l.adoption = await loadCreationAdoption(tx, l);
   records.set(l, tx);
   return l;
 }
@@ -166,7 +168,8 @@ export async function assertCreationEmpty(tx, c) {
     conflict();
 }
 export async function creationSlots(tx, c) {
-  const [reservation, cancel, proof, head, tombstone] = await Promise.all([
+  const adoptionAt = creationAdoptionPaths(c);
+  const [reservation, cancel, proof, head, tombstone, adoption, adoptionProof] = await Promise.all([
     tx.get(c.reservationRef),
     tx.get(c.cancelRef),
     tx.get(c.proofRef),
@@ -176,8 +179,10 @@ export async function creationSlots(tx, c) {
       c.db.doc('books/' + c.intent.bookId + '/bookLoreTombstones/' + c.loreId),
       [],
     ),
+    tx.get(adoptionAt.record),
+    tx.get(adoptionAt.proof),
   ]);
-  return { reservation, cancel, proof, head, tombstone };
+  return { reservation, cancel, proof, head, tombstone, adoption, adoptionProof };
 }
 export function createCreationContext(tx, c, bookBirth = null) {
   const context = {
@@ -223,7 +228,7 @@ export async function cancelCreationInTransaction(tx, l, request) {
       conflict();
     return creationView(l);
   }
-  if (l.context.kind !== 'reservation' || l.cancelRequest) conflict();
+  if (l.context.kind !== 'reservation' || l.cancelRequest || l.adoption) conflict();
   const head = await readWorkMetadata(
     tx,
     l.c.db.doc('books/' + l.c.intent.bookId + '/lore/' + l.c.loreId),
@@ -237,7 +242,8 @@ export async function cancelCreationInTransaction(tx, l, request) {
 /** Future producers must consume this native opening, not a client token alone. */
 export async function openCreationReservation(tx, c, request) {
   const l = await loadCreationReservation(tx, c, request);
-  if (!l || l.context.kind !== 'reservation' || l.cancellation || l.cancelRequest) conflict();
+  if (!l || l.context.kind !== 'reservation' || l.cancellation || l.cancelRequest || l.adoption)
+    conflict();
   const root = await creationBook(tx, c),
     head = await readWorkMetadata(
       tx,

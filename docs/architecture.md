@@ -1819,3 +1819,32 @@ Criação permanece interna: adoção creation é recusada explicitamente até
 L3B implementar a ativação e seu sucesso histórico. Reader segue recusando
 cabeça prematura reservada. Sem callable/UI, Rule, índice ou dependência novos.
 Demais writers/consumidores/backup/cliente e ativação de P1 seguem abertos.
+
+## P1 M38c3o / criação L3B — ativação e comprovação histórica
+
+[ADR 0107](decisions/0107-native-book-lore-creation-activation.md): adoção
+creation cria cabeça e comprovante/prova privados do criador na mesma transação
+da geração ativa, leases lógicas, clock/datas/flag e recibo da edição.
+Timestamp de criação nasce na confirmação; ausência de consentimento continua
+privada e true exige campo explícito auditado. Não publica nem gera débito.
+
+CreatorStore valida o sucesso com binding/prova da tentativa, intenção/contexto,
+recibo/prova e evento original da geração; não abre livro/cabeça/corpos atuais.
+Contratos puros e prova de recibos foram extraídos preservando reexports/hashes.
+O núcleo da prova de tentativa não importa o store, evitando recursão.
+Confirmação da edição adotada de criação exige também o comprovante do criador.
+
+Reader de ID reservado exige nascimento nativo da cabeça igual ao da ativação,
+createdAt original e livro original autorizado. Primeira geração valida esse
+nascimento em reedições; gerações seguintes mantêm o contrato de edição.
+Comprovantes continuam válidos após aposentar/coletar a primeira geração.
+
+Criador adopted recusa cancel e novos produtores. Tentativas não usadas ainda
+possuem cleanup próprio; a exclusão do livro reconhece o sucesso e preserva
+controles, leases, recibos e marcadores. Retry histórico não recria raiz/ficha
+nem concede leitura atual. Sem endpoint/UI, Rules, índice ou dependência novos.
+
+Leitura de fichas sem reserva conserva os custos anteriores. Fichas criadas
+pela reserva validam um conjunto fixo adicional de metadata/provas, independente
+do tamanho dos campos/páginas; continuam baixando uma parte por unidade.
+Demais writers/consumidores/backup/cliente e ativação de P1 seguem pendentes.

@@ -101,3 +101,11 @@ L3A compõe/audita sem base, fixa tentativas nativas e coordena cleanup de reser
 314 Node distintos e quatro SDK positivos. L3B ainda deve ativar cabeça/geração/
 leases/clock/datas/recibo e conservar sucesso histórico após edição/retirada/
 exclusão do livro. Criação completa permanece pendente, sem endpoint/UI.
+
+## Ativação de L3 — L3B
+
+[Plano 92](92-ativacao-atomica-da-criacao-de-lore.md) implementa ativação interna
+de cabeça/geração/leases lógicas/clock/datas/recibo e sucesso do criador juntos.
+Reader exige nascimento original; reedição/retirada/exclusão preservam a prova
+histórica e retry não recria ficha. Demais writers/consumidores/backup/cliente e
+habilitação continuam obrigatórios, sem endpoint/UI neste passo.

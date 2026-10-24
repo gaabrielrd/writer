@@ -15,6 +15,7 @@ import {
   loreFieldPointer,
   loreReadRelations,
 } from './bookLoreGenerationContracts.mjs';
+import { assertCreationHead } from './bookLoreCreationHead.mjs';
 const transactions = new WeakMap();
 const before = (snapshot, birth) => {
   const current = born(snapshot);
@@ -70,7 +71,8 @@ export async function openBookLoreRecord(tx, c, snapshot) {
     )
       loreChanged();
     if ((await tx.get(c.db.doc(c.path + '/bookLoreTombstones/' + id))).exists) loreChanged();
-    if ((await tx.get(c.db.doc(c.path + '/bookLoreReservations/' + id))).exists) loreChanged();
+    const reservation = await tx.get(c.db.doc(c.path + '/bookLoreReservations/' + id));
+    if (reservation.exists) await assertCreationHead(tx, c, reservation, snapshot);
     let opened;
     if (!Object.hasOwn(value, 'payloadStorage')) {
       const encoded = inline(c, id, value);

@@ -1,3 +1,4 @@
+import { prepareCreationActivation } from './bookLoreCreationActivation.mjs';
 import { createHash } from 'node:crypto';
 import { date, integer } from './bookRestoreUploadContracts.mjs';
 import { digest, readWorkMetadata } from './workProgressContracts.mjs';
@@ -89,12 +90,13 @@ export function createBookLoreEditAdoptionService({ db, now = () => Date.now() }
         c = editReservationPaths(db, uid, r.editId);
       return db.runTransaction(async (tx) => {
         const l = await loadEditReservation(tx, c, r);
-        if (!l || l.job.kind === 'fence' || l.job.context.sourceMode === 'creation') conflict();
+        if (!l || l.job.kind === 'fence') conflict();
         const replay = await replayEditReservation(tx, l, 'adoptBookLoreEditGeneration', r);
         if (replay) return replay;
         if (l.job.phase !== 'preparing' || l.job.revision !== r.expectedRevision) conflict();
         const compiled = await openBookLoreEditCompilation(tx, l),
           intent = l.job.context.intent,
+          creating = l.job.context.sourceMode === 'creation',
           root = await readWorkMetadata(tx, db.doc('books/' + intent.bookId), [
             'authorId',
             'deleting',
@@ -120,7 +122,11 @@ export function createBookLoreEditAdoptionService({ db, now = () => Date.now() }
           conflict();
         const storage = loreGenerationStorage({
             ...compiled.storage,
-            dates: { ...compiled.storage.dates, updatedAt: timestamp },
+            dates: {
+              ...compiled.storage.dates,
+              ...(creating ? { createdAt: timestamp } : {}),
+              updatedAt: timestamp,
+            },
           }),
           adoption = {
             schemaVersion: 1,
@@ -141,9 +147,14 @@ export function createBookLoreEditAdoptionService({ db, now = () => Date.now() }
             { phase: 'active' },
             digest(adoption),
           );
+        const creation = creating
+          ? await prepareCreationActivation(tx, l, compiled, adoption)
+          : null;
+        creation?.commit();
         active.commit();
         old?.commit();
-        tx.set(db.doc('books/' + intent.bookId + '/lore/' + intent.loreId), {
+        const writeHead = creating ? tx.create.bind(tx) : tx.set.bind(tx);
+        writeHead(db.doc('books/' + intent.bookId + '/lore/' + intent.loreId), {
           bookId: intent.bookId,
           ...storage.dates,
           payloadStorage: storage,

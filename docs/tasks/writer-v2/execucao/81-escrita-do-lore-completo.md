@@ -357,3 +357,15 @@ Próximo L3B: ativação atômica e prova histórica do criador, com reader,
 segunda edição, retirada e exclusão do livro preservando sucesso.
 Adoção creation segue bloqueada, sem endpoint/UI. Demais integrações e
 M38c/P1/F2-09/V2 permanecem abertos.
+
+## Ativação da criação — M38c3o / L3B
+
+[Plano 92](92-ativacao-atomica-da-criacao-de-lore.md) confirma cabeça/geração/
+leases lógicas/clock/datas/recibo/criador atomicamente. Reader reconhece
+nascimento original; reedição/retirada/exclusão preservam sucesso histórico.
+L1/L2/L3A/L3B cobrem a criação interna, sem endpoint/UI expostos.
+
+Próximo obrigatório: integrar os demais escritores Admin/regras e roteamento
+das preparações sem flag, depois consumidores/backup/cliente/recuperação e
+rollout coordenado. Criação na interface e o conjunto M38c/P1/F2-09/V2
+continuam pendentes. Validate integral no fechamento de P1.

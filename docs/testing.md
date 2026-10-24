@@ -1878,3 +1878,21 @@ pela exclusão do livro e binding/geração recriados preservados.
 Arquitetura, sintaxe dos 220 módulos e lint dirigido passaram.
 Sem TS/UI novos, não repetimos Vitest/tipos/build/browser. Validate integral
 no fechamento de P1; L3B, integrações e ativação permanecem pendentes.
+
+### P1 M38c3o / criação L3B — ativação nativa e histórico
+
+[Entrega](entregas/2026-10-24-writer-v2-ativacao-atomica-da-criacao-de-lore.md):
+454 Node distintos positivos: 40 novos da criação e 414 regressões de 13
+arquivos existentes. Rodada final dos 40 passou após guarda de revisão:
+recibo isolado não confirma edição adopted se faltam provas do criador.
+
+Seis SDK distintos positivos: cinco na primeira rodada (428369.1325 ms),
+incluindo a regressão de composição com CAS inválido, e um dirigido após
+a correção da guarda (48809.6144 ms). Emulador 1.22.0 verificado, demo/loopback.
+Provam nascimento atômico, conteúdo literal/relações, retry/concorrência/cancel,
+rollback, reedição/retirada/exclusão, recriados e perda dos comprovantes.
+Metadata histórica não reautoriza texto ou recria ficha.
+
+Arquitetura, sintaxe dos 225 módulos, guarda final individual e lint passaram.
+Sem TS/UI novos, não repetimos tipos/Vitest/build/browser. Validate/cobertura
+completos no fechamento de P1. Sem CI remota, push ou deploy.

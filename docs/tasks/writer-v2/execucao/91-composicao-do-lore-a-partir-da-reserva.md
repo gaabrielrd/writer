@@ -61,3 +61,11 @@ L3A implementado internamente: composição certificada sem cabeça e cleanup de
 tentativas/filhos reserved. L3B ainda deve ativar e comprovar sucesso histórico.
 Nenhum endpoint/UI; criação completa e P1/F2-09/V2 permanecem abertos.
 Validate integral no fechamento de P1, commits somente locais, CI ignorada.
+
+## Portão de ativação implementado em L3B
+
+O [plano 92](92-ativacao-atomica-da-criacao-de-lore.md) substitui o bloqueio
+temporário de adoção creation pela ativação com comprovante nativo do criador.
+Cabeça/geração/leases lógicas/clock/datas/recibo/criador compartilham transação.
+Composição continua sem ativação automática. Demais writers/consumidores/
+backup/cliente e exposição ao usuário permanecem pendentes.

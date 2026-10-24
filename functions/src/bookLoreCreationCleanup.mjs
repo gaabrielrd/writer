@@ -61,6 +61,7 @@ async function emptyField(tx, l, j) {
 }
 export async function requestCreationCancellation(tx, l, r) {
   assertCreationRecord(tx, l);
+  if (l.adoption) conflict();
   if (l.cancellation) return cancelCreationInTransaction(tx, l, r);
   if (l.cancelRequest) {
     if (

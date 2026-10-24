@@ -112,7 +112,10 @@ test('SDK creation attempt native proof and certified composition preserve liter
     setDoc(doc(client, 'books/book/lore/' + f.loreId), { name: 'Bypass', category: 'other' }),
   );
   await assert.rejects(() =>
-    f.factory().adoptBookLoreEditGeneration(f.uid, editControl(f, p, 'sdk-no-activation')),
+    f.factory().adoptBookLoreEditGeneration(f.uid, {
+      ...editControl(f, p, 'sdk-stale-activation'),
+      expectedRevision: p.revision + 1,
+    }),
   );
   const cancelled = await f.parent.cancel();
   assert.equal(cancelled.cleanupPhase, 'attempts');
