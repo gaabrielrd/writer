@@ -2,6 +2,7 @@ import { randomBytes, createHash } from 'node:crypto';
 import { born, bornEqual, closed, date, integer } from './bookRestoreUploadContracts.mjs';
 import { digest, readWorkMetadata } from './workProgressContracts.mjs';
 import { readLoreBook, loreEntityToken } from './bookLoreReadContracts.mjs';
+import { readCreationRecoveryOrigin } from './bookLoreWriteRecoveryCreation.mjs';
 import {
   BOOK_LORE_RECOVERY_METHODS,
   recoveryIntent,
@@ -121,15 +122,13 @@ async function load(tx, c, r) {
 }
 async function origin(tx, c, intent, pinned = null) {
   const scope = { db: c.db, uid: c.uid, bookId: intent.bookId, path: 'books/' + intent.bookId },
-    book = await readLoreBook(tx, scope),
-    [source, tombstone, deleted] = await reads([
-      readWorkMetadata(tx, c.db.doc(scope.path + '/lore/' + intent.loreId), [
-        'deleting',
-        'deleted',
-      ]),
-      readWorkMetadata(tx, c.db.doc(scope.path + '/bookLoreTombstones/' + intent.loreId), []),
-      readWorkMetadata(tx, c.db.doc('deletedBooks/' + intent.bookId), []),
-    ]);
+    book = await readLoreBook(tx, scope);
+  if (intent.creation) return readCreationRecoveryOrigin(tx, scope, book, intent, pinned);
+  const [source, tombstone, deleted] = await reads([
+    readWorkMetadata(tx, c.db.doc(scope.path + '/lore/' + intent.loreId), ['deleting', 'deleted']),
+    readWorkMetadata(tx, c.db.doc(scope.path + '/bookLoreTombstones/' + intent.loreId), []),
+    readWorkMetadata(tx, c.db.doc('deletedBooks/' + intent.bookId), []),
+  ]);
   if (
     !source.exists ||
     tombstone.exists ||

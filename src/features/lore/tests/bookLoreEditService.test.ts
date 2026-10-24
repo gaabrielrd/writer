@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { journalWire } from '../services/bookLoreJournalContracts';
 import { bookLoreEditSession } from '../services/bookLoreEditService';
 import { bookLoreWriteHash } from '../services/bookLoreWritePayload';
 import type { BookLoreEditPort } from '../services/bookLoreEditOperation';
@@ -391,4 +392,32 @@ it('captures the host guard before awaiting persistent binding and checks it on 
   current = false;
   expect(() => op.snapshot()).toThrow('host changed');
   expect(state.call).not.toHaveBeenCalled();
+});
+
+it('keeps the existing edit journal closed to creation controls even in legacy-shaped envelopes', () => {
+  const identity = request().source;
+  for (const method of [
+    'getBookLoreCreationReservation',
+    'cancelBookLoreCreationReservation',
+    'advanceBookLoreCreationCleanup',
+  ]) {
+    const get = method.startsWith('get'),
+      cancel = method.startsWith('cancel');
+    const input = {
+      creationId: 'lore-creation-' + 'a'.repeat(64),
+      startHash: 'b'.repeat(64),
+      ...(!get ? { operationId: 'old-control' } : {}),
+      ...(!get && !cancel ? { jobToken: 'c'.repeat(64), expectedRevision: 0 } : {}),
+    };
+    expect(() =>
+      journalWire(
+        { method, input },
+        {
+          bookId: identity.bookId,
+          loreId: identity.id,
+          sourceToken: identity.sourceToken,
+        },
+      ),
+    ).toThrow();
+  }
 });

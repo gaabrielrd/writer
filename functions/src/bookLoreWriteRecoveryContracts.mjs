@@ -1,5 +1,6 @@
 import { authorize, closed, restoreHash, born, bornEqual } from './bookRestoreUploadContracts.mjs';
 import { bookContentId } from './bookBackupSchema.mjs';
+import { creationRef } from './bookLoreCreationContracts.mjs';
 import { digest, workFail } from './workProgressContracts.mjs';
 export const BOOK_LORE_RECOVERY_METHODS = Object.freeze([
   'reserveBookLoreEditRecovery',
@@ -19,13 +20,21 @@ export function recoveryId(value) {
 }
 export function recoveryIntent(uid, input) {
   authorize(uid);
-  closed(input, ['writeId', 'bookId', 'loreId', 'sourceToken', 'intentHash']);
+  closed(input, ['writeId', 'bookId', 'loreId', 'sourceToken', 'intentHash'], ['creation']);
+  const creation = Object.hasOwn(input, 'creation') ? creationRef(input.creation) : null;
+  if (
+    creation &&
+    (!/^lore-creation-[a-f0-9]{64}$/.test(creation.creationId) ||
+      creation.jobToken !== input.sourceToken)
+  )
+    recoveryInvalid();
   return {
     writeId: recoveryId(input.writeId),
     bookId: recoveryId(input.bookId),
     loreId: recoveryId(input.loreId),
     sourceToken: restoreHash(input.sourceToken),
     intentHash: restoreHash(input.intentHash),
+    ...(creation ? { creation } : {}),
   };
 }
 export const recoveryRequestHash = (uid, intent) =>

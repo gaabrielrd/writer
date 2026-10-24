@@ -2197,3 +2197,14 @@ falha fechado. false/ausência preservam CRUD inline. Recibos aplicados e rota
 nativa preparada continuam possíveis, sem repetir alteração/débito.
 Não implantar a barreira isolada nem ativar o editor antes dos caminhos nativos
 e da drenagem coordenada. Proteção intermediária não encerra escrita/P1/V2.
+
+## P1 M38c5m — criação manual e origem da recuperação
+
+[ADR 0126](decisions/0126-manual-lore-creation-recovery-origin.md):
+bookLoreEdit inclui quatro operações do criador sob IDs lore-creation.
+Intenção de recuperação pode vincular reserva original em vez de cabeça:
+autoriza livro/reserva antes da criação e exige cabeça nativa original após
+adoção. Cancel conserva chave existente, sem autorizar produção nova.
+Hash antigo e DTO metadata permanecem compatíveis; chave só por HTTP protegido.
+Lista manual tem 22 métodos; journal de edição mantém explicitamente os 18
+anteriores. Cliente de criação durável/host e rollout continuam pendentes.

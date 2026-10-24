@@ -520,3 +520,20 @@ Faltam entradas nativas de criação/exclusão, orquestração dos demais writer
 ciclo de chaves na exclusão do livro, contextos/publicação/backup completos,
 rollout e validate de P1. Ver [plano 110](110-coordenacao-dos-escritores-legados-de-lore.md)
 e [ADR 0125](../../../decisions/0125-legacy-lore-writer-barrier.md).
+
+## Criação manual — transporte e recuperação / M38c5m
+
+[Plano 111](111-transporte-e-recuperacao-da-criacao-de-lore.md) e
+[ADR 0126](../../../decisions/0126-manual-lore-creation-recovery-origin.md):
+quatro operações do criador na callable existente e referência manual em
+uploads/composição. Chave se vincula à reserva original antes de existir ficha;
+após adoção exige nascimento original da cabeça. Cancel conserva draft/chave
+já existentes sem novo upload. Journal anterior mantém sua lista de 18 métodos.
+
+143 testes distintos positivos (32 novos), incluindo cinco SDK; ver a
+[entrega](../../../entregas/2026-10-24-writer-v2-transporte-e-recuperacao-da-criacao-de-lore.md).
+Isto amplia os caminhos de servidor da matriz M38c5l, sem certificar todos
+os writers/consumidores. Próximo é coordenar criação no cliente com ticket
+descobrível e recuperação cifrada antes de qualquer produção. Entradas nativas
+no compêndio, exclusão/ciclo de chaves, demais consumidores/backup/rollout e
+validate de P1 continuam obrigatórios. P1/F2-09/V2 e fases restantes abertos.

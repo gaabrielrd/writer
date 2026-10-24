@@ -13,6 +13,18 @@ import {
   recoveryControl,
 } from '../../functions/test/helpers/bookLoreWriteRecoveryFixture.mjs';
 import { createBookLoreWriteRecoveryService } from '../../functions/src/bookLoreWriteRecovery.mjs';
+import { webcrypto } from 'node:crypto';
+import { bookLoreCreationRecoveryFixture } from '../../functions/test/helpers/bookLoreCreationRecoveryFixture.mjs';
+import {
+  creationAdoptionFixture,
+  adoptCreation,
+} from '../../functions/test/helpers/bookLoreCreationAdoptionFixture.mjs';
+import {
+  finishCreationUploads,
+  creationUploadFixture,
+} from '../../functions/test/helpers/bookLoreCreationUploadFixture.mjs';
+import { createBookLoreEditTransportService } from '../../functions/src/bookLoreEditTransport.mjs';
+
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-lore-recovery';
@@ -160,4 +172,108 @@ test('SDK final native write failure rolls back reservation and revoke, and retr
     'revoked',
   );
   assert.equal((await f.c.key.get()).exists, false);
+});
+
+test('SDK creation recovery protects a draft before a head exists and survives native cancel without granting uploads', async () => {
+  const f = await bookLoreCreationRecoveryFixture(admin);
+  const book = await admin.doc('books/book').get();
+  const [a, b] = await Promise.all([
+    f.service.reserveBookLoreEditRecovery(f.uid, f.intent),
+    f.service.reserveBookLoreEditRecovery(f.uid, f.intent),
+  ]);
+  assert.deepEqual(a, b);
+  const original = await key(f, a),
+    root = await f.c.root.get();
+  for (const snapshot of [await f.c.proof.get(), await f.c.key.get()])
+    assert.equal(snapshot.createTime.isEqual(root.createTime), true);
+  assert.equal((await admin.doc('books/book/lore/' + f.intent.loreId).get()).exists, false);
+  assert.equal((await admin.doc('books/book').get()).updateTime.isEqual(book.updateTime), true);
+  const imported = await webcrypto.subtle.importKey(
+    'raw',
+    Buffer.from(original.keyBase64, 'base64'),
+    'AES-GCM',
+    false,
+    ['encrypt', 'decrypt'],
+  );
+  const iv = webcrypto.getRandomValues(new Uint8Array(12)),
+    text = '\ufeff  Draft 🌙\r\n  ';
+  const cipher = await webcrypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    imported,
+    Buffer.from(text),
+  );
+  for (const client of [
+    env.authenticatedContext(f.uid).firestore(),
+    env.authenticatedContext('other').firestore(),
+    env.unauthenticatedContext().firestore(),
+  ])
+    for (const path of [f.c.key.path, f.parent.c.path, f.parent.c.reservationPath]) {
+      await assertFails(getDoc(doc(client, path)));
+      await assertFails(setDoc(doc(client, path), { forged: true }));
+      await assertFails(deleteDoc(doc(client, path)));
+    }
+  const transport = createBookLoreEditTransportService({ db: admin });
+  const cancelled = await transport.bookLoreEdit(f.uid, {
+    method: 'cancelBookLoreCreationReservation',
+    input: {
+      ...f.parent.intent,
+      jobToken: f.progress.jobToken,
+      operationId: 'cancel-sdk-creation',
+    },
+  });
+  await finishCreationUploads(f.parent, cancelled);
+  const cold = createBookLoreWriteRecoveryService({ db: admin });
+  const secret = await cold.getBookLoreEditRecoveryKey(f.uid, recoveryControl(a));
+  assert.deepEqual(secret, original);
+  const restored = await webcrypto.subtle.importKey(
+    'raw',
+    Buffer.from(secret.keyBase64, 'base64'),
+    'AES-GCM',
+    false,
+    ['decrypt'],
+  );
+  assert.equal(
+    Buffer.from(await webcrypto.subtle.decrypt({ name: 'AES-GCM', iv }, restored, cipher)).toString(
+      'utf8',
+    ),
+    text,
+  );
+  assert.equal((await f.parent.get()).phase, 'cancelled');
+  const field = await creationUploadFixture(admin, {
+    parent: f.parent,
+    uploadId: 'lore-field-' + 'f'.repeat(64),
+  });
+  await assert.rejects(
+    transport.bookLoreEdit(f.uid, { method: 'startBookLoreFieldUpload', input: field.intent }),
+    { code: 'failed-precondition' },
+  );
+  assert.equal((await field.c.ref.get()).exists, false);
+  await assert.rejects(
+    cold.reserveBookLoreEditRecovery(f.uid, { ...f.intent, writeId: 'new-key-after-cancel' }),
+  );
+  assert.equal((await admin.doc('books/book/lore/' + f.intent.loreId).get()).exists, false);
+});
+
+test('SDK creation key follows the original native head after adoption and refuses identical recreation', async () => {
+  const f = await bookLoreCreationRecoveryFixture(admin);
+  const p = await f.service.reserveBookLoreEditRecovery(f.uid, f.intent),
+    original = await key(f, p);
+  const prepared = await creationAdoptionFixture(admin, { parent: f.parent });
+  await adoptCreation(prepared);
+  const cold = createBookLoreWriteRecoveryService({ db: admin });
+  assert.deepEqual(await cold.getBookLoreEditRecoveryKey(f.uid, recoveryControl(p)), original);
+  assert.equal(original.sourceToken, f.progress.jobToken);
+  const head = await admin.doc('books/book/lore/' + f.intent.loreId).get();
+  const adoption = await admin.doc(f.parent.c.path + '/adoptions/current').get();
+  assert.equal(head.createTime.isEqual(adoption.createTime), true);
+  await head.ref.delete();
+  await head.ref.create(head.data());
+  const replacement = await head.ref.get();
+  assert.equal(replacement.createTime.isEqual(head.createTime), false);
+  await assert.rejects(cold.getBookLoreEditRecoveryKey(f.uid, recoveryControl(p)));
+  assert.deepEqual(await cold.getBookLoreEditRecovery(f.uid, recoveryControl(p)), p);
+  assert.equal((await cold.revokeBookLoreEditRecovery(f.uid, recoveryControl(p))).phase, 'revoked');
+  assert.equal((await f.c.key.get()).exists, false);
+  assert.equal((await head.ref.get()).updateTime.isEqual(replacement.updateTime), true);
+  assert.equal((await f.parent.get()).phase, 'adopted');
 });

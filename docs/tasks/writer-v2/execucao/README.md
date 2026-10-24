@@ -1200,3 +1200,22 @@ continuam a integração dos caminhos nativos de criação/exclusão/recuperaç�
 demais writers/consumidores e somente depois a entrada no compêndio.
 P1/F2-09/V2, fases 3–5, exclusão de chaves e gates humanos/comerciais abertos.
 Validate no fechamento de P1; servidor local mantido e nenhum envio remoto.
+
+### P1 M38c5m — transporte e recuperação da criação de lore
+
+[Plano 111](111-transporte-e-recuperacao-da-criacao-de-lore.md),
+[ADR 0126](../../../decisions/0126-manual-lore-creation-recovery-origin.md) e
+[entrega](../../../entregas/2026-10-24-writer-v2-transporte-e-recuperacao-da-criacao-de-lore.md).
+Servidor oferece reserva/get/cancel/cleanup da criação na callable existente.
+Chave protege draft antes da cabeça, conserva recuperação após cancel sem
+liberar upload e exige a cabeça original após adoção. Hashes antigos preservados;
+journal continua com seus 18 métodos, separados dos 22 do transporte manual.
+
+143 testes distintos positivos (32 novos): 82 Node, 56 Vitest e cinco SDK,
+com controles de origem/recriação/escopo, AES-GCM e upload pós-cancel recusado.
+Lint/typecheck/sintaxe dirigida positivos. Sem ativar entrada no compêndio.
+
+Próximo: coordenador e ticket duráveis da criação no cliente, junto da recuperação
+cifrada; criação/exclusão e demais portões antes da entrada no compêndio.
+Lifecycle de chaves, outros writers/consumidores/backup/rollout, P1/F2-09/V2,
+fases 3–5 e condições humanas/comerciais abertos. Sem CI ou envio remoto.

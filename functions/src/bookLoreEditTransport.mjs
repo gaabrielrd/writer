@@ -1,9 +1,13 @@
 import { authorize, closed } from './bookRestoreUploadContracts.mjs';
 import { workFail } from './workProgressContracts.mjs';
+import { createBookLoreCreationReservationService } from './bookLoreCreation.mjs';
 import { createBookLoreSourceInspectionService } from './bookLoreSourceInspection.mjs';
 import { createBookLoreFieldUploadService } from './bookLoreFieldUpload.mjs';
 import { createBookLoreEditReservationService } from './bookLoreEditReservation.mjs';
-import { BOOK_LORE_EDIT_CALLABLE, BOOK_LORE_EDIT_ROUTES } from './bookLoreEditTransportMethods.mjs';
+import {
+  BOOK_LORE_EDIT_CALLABLE,
+  BOOK_LORE_MANUAL_ROUTES,
+} from './bookLoreEditTransportMethods.mjs';
 
 const invalid = () => workFail('invalid-argument', 'Pedido de edição de lore inválido.');
 const manualId = (value, prefix) => {
@@ -18,6 +22,7 @@ export function setBookLoreEditHeaders(method, request) {
 /** Public manual-edition boundary; never a generic dispatcher for internal jobs. */
 export function createBookLoreEditTransportService({ db, now }) {
   const factories = {
+    creationId: createBookLoreCreationReservationService,
     inspectionId: createBookLoreSourceInspectionService,
     uploadId: createBookLoreFieldUploadService,
     editId: createBookLoreEditReservationService,
@@ -26,11 +31,14 @@ export function createBookLoreEditTransportService({ db, now }) {
     async bookLoreEdit(uid, data) {
       authorize(uid);
       closed(data, ['method', 'input']);
-      const route = BOOK_LORE_EDIT_ROUTES.find((r) => r.methods.includes(data.method)),
+      const route = BOOK_LORE_MANUAL_ROUTES.find((r) => r.methods.includes(data.method)),
         input = data.input;
       if (!route || !input || typeof input !== 'object' || Array.isArray(input)) invalid();
       manualId(input[route.key], route.prefix);
-      if (Object.hasOwn(input, 'creation')) invalid();
+      if (Object.hasOwn(input, 'creation')) {
+        if (!['uploadId', 'editId'].includes(route.key)) invalid();
+        manualId(input.creation?.creationId, 'lore-creation');
+      }
       if (Object.hasOwn(input, 'inspection'))
         manualId(input.inspection?.inspectionId, 'lore-source');
       if (Object.hasOwn(input, 'upload')) manualId(input.upload?.uploadId, 'lore-field');

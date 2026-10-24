@@ -2185,3 +2185,14 @@ marker completo contra armazenamento. Três jornadas Chromium usam host real
 com IDB/Web Locks/serviços de fixture, temas/mobile e processo reiniciado.
 Não comprova entrada no compêndio, SDK/Auth/App Check reais ou testes manuais
 de leitor de tela/zoom físico/segundo dispositivo. Validate no fim de P1.
+
+### P1 M38c5m — recuperação antes da criação da ficha
+
+[Plano 111](tasks/writer-v2/execucao/111-transporte-e-recuperacao-da-criacao-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-transporte-e-recuperacao-da-criacao-de-lore.md):
+Node cobre chave antes da cabeça, cancel/adoção/recriação, escopos e hashes;
+transporte executa uploads multipart/relações paginadas até adoção.
+SDK demo verifica provas/nascimentos, denies e AES-GCM; retake do cancel
+comprova que obter chave não libera upload. Cliente protege a allowlist
+anterior do journal. HTTP usa verificadores locais, sem provar credenciais
+reais. Sem UI nova, Chromium ou ativação; validate integral no fechamento de P1.
