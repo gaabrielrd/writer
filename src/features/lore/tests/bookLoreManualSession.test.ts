@@ -11,6 +11,7 @@ const state = vi.hoisted(() => ({
   createJournal: vi.fn(),
   openJournal: vi.fn(),
   list: vi.fn(),
+  read: vi.fn(),
 }));
 vi.mock('@/shared/lib', () => ({ auth: state.auth, getFirebaseApp: () => ({ app: 'writer' }) }));
 vi.mock('firebase/functions', () => ({
@@ -26,6 +27,7 @@ vi.mock('../services/bookLoreJournalSession', () => ({
 vi.mock('../services/bookLoreJournalDb', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../services/bookLoreJournalDb')>()),
   listJournalPreparations: state.list,
+  readJournalPreparation: state.read,
 }));
 const input = () => ({
   writeId: 'operation',
@@ -49,6 +51,7 @@ beforeEach(() => {
   state.journalSession.mockReturnValue({ create: state.createJournal, open: state.openJournal });
   state.manual.mockReturnValue({ snapshot: () => ({ phase: 'opening' }) });
   state.list.mockResolvedValue({ items: [], next: null });
+  state.read.mockResolvedValue(null);
 });
 it('binds manual creation with captured UID and immutable input without storage or RPC', () => {
   const session = bookLoreEditSession(),
@@ -158,4 +161,24 @@ it('keeps the host guard captured before async session work', async () => {
     'host changed',
   );
   expect(state.call).not.toHaveBeenCalled();
+});
+
+it('looks up only the captured account preparation without a key or RPC', async () => {
+  await expect(bookLoreEditSession().preparation('operation')).resolves.toBeNull();
+  expect(state.read).toHaveBeenCalledWith('author', 'operation');
+  expect(state.call).not.toHaveBeenCalled();
+});
+it('rejects a preparation lookup before storage after account replacement', async () => {
+  const session = bookLoreEditSession();
+  state.auth.currentUser = { uid: 'other' };
+  await expect(session.preparation('operation')).rejects.toThrow('contexto mudou');
+  expect(state.read).not.toHaveBeenCalled();
+});
+it('drops a preparation lookup result after a same-UID actor replacement', async () => {
+  const session = bookLoreEditSession();
+  state.read.mockImplementation(() => {
+    state.auth.currentUser = { uid: 'author' };
+    return Promise.resolve(null);
+  });
+  await expect(session.preparation('operation')).rejects.toThrow('contexto mudou');
 });

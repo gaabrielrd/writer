@@ -126,33 +126,59 @@ export async function commitJournalHead(
     'writer.book-lore-journal:' + JSON.stringify([identity.uid, identity.writeId]),
     async () => {
       const db = await open();
-      return operation<LoreJournalHead>(db, [HEADS, FRAMES], 'readwrite', (tx, done) => {
-        const store = tx.objectStore(HEADS),
-          r: IDBRequest<unknown> = store.get([identity.uid, identity.writeId]);
-        r.onsuccess = () => {
-          try {
-            const current =
-              r.result === undefined ? null : journalHead(r.result, identity.uid, identity.writeId);
-            if ((current?.stamp ?? null) !== expected) journalFail();
-            const checked = journalHead(next, identity.uid, identity.writeId);
-            store.put(checked, [identity.uid, identity.writeId]);
-            const frames = tx.objectStore(FRAMES);
-            for (const add of adds) {
-              if (add.key[0] !== identity.uid || add.key[1] !== identity.writeId) journalFail();
-              frames.add(
-                add.key[2] === 'controls'
-                  ? readLoreControlRecord(add.value)
-                  : journalFrame(add.value),
-                add.key,
-              );
+      return operation<LoreJournalHead>(
+        db,
+        [HEADS, FRAMES, PREPARATIONS],
+        'readwrite',
+        (tx, done) => {
+          const store = tx.objectStore(HEADS),
+            r: IDBRequest<unknown> = store.get([identity.uid, identity.writeId]);
+          r.onsuccess = () => {
+            try {
+              const current =
+                r.result === undefined
+                  ? null
+                  : journalHead(r.result, identity.uid, identity.writeId);
+              if ((current?.stamp ?? null) !== expected) journalFail();
+              const checked = journalHead(next, identity.uid, identity.writeId);
+              const save = () => {
+                store.put(checked, [identity.uid, identity.writeId]);
+                const frames = tx.objectStore(FRAMES);
+                for (const add of adds) {
+                  if (add.key[0] !== identity.uid || add.key[1] !== identity.writeId) journalFail();
+                  frames.add(
+                    add.key[2] === 'controls'
+                      ? readLoreControlRecord(add.value)
+                      : journalFrame(add.value),
+                    add.key,
+                  );
+                }
+                for (const key of removes) frames.delete(key);
+                done(checked);
+              };
+              if (expected === null) {
+                const p: IDBRequest<unknown> = tx
+                  .objectStore(PREPARATIONS)
+                  .get([identity.uid, identity.writeId]);
+                p.onsuccess = () => {
+                  try {
+                    if (
+                      p.result !== undefined &&
+                      preparationHead(p.result, identity.uid, identity.writeId).discard
+                    )
+                      journalFail();
+                    save();
+                  } catch {
+                    tx.abort();
+                  }
+                };
+              } else save();
+            } catch {
+              tx.abort();
             }
-            for (const key of removes) frames.delete(key);
-            done(checked);
-          } catch {
-            tx.abort();
-          }
-        };
-      });
+          };
+        },
+      );
     },
   );
 }
@@ -259,6 +285,11 @@ export async function commitJournalPreparation(next: LorePreparationHead, expect
                   (current.closed && hash(current.closed) !== hash(checked.closed)) ||
                   (current.reserveState === 'confirmed' && checked.reserveState !== 'confirmed') ||
                   (current.jobsClosed !== null && current.jobsClosed !== checked.jobsClosed) ||
+                  (current.discard &&
+                    (!checked.discard ||
+                      ['requested', 'purging', 'complete'].indexOf(checked.discard.phase) <
+                        ['requested', 'purging', 'complete'].indexOf(current.discard.phase) ||
+                      checked.discard.deleted < current.discard.deleted)) ||
                   (current.revoke &&
                     (!checked.revoke || hash(current.revoke.wire) !== hash(checked.revoke.wire))) ||
                   (current.revoke?.state === 'confirmed' &&
@@ -309,5 +340,119 @@ export async function listJournalPreparations(uid: string, after?: string, limit
         }
       };
     },
+  );
+}
+
+export async function advanceJournalDiscard(
+  uid: string,
+  writeId: string,
+  expected: string,
+  limit = 50,
+) {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) journalFail();
+  return navigator.locks.request(
+    'writer.book-lore-preparation:' + JSON.stringify([uid, writeId]),
+    () =>
+      navigator.locks.request(
+        'writer.book-lore-journal:' + JSON.stringify([uid, writeId]),
+        async () => {
+          const db = await open();
+          return operation<LorePreparationHead>(
+            db,
+            [PREPARATIONS, HEADS, FRAMES],
+            'readwrite',
+            (tx, done) => {
+              const preparations = tx.objectStore(PREPARATIONS),
+                request: IDBRequest<unknown> = preparations.get([uid, writeId]);
+              request.onsuccess = () => {
+                try {
+                  const p = preparationHead(request.result, uid, writeId);
+                  if (
+                    p.stamp !== expected ||
+                    !p.discard ||
+                    !p.closed ||
+                    p.jobsClosed === null ||
+                    !p.releaseRequested
+                  )
+                    journalFail();
+                  const heads = tx.objectStore(HEADS),
+                    headRequest: IDBRequest<unknown> = heads.get([uid, writeId]);
+                  headRequest.onsuccess = () => {
+                    try {
+                      if (headRequest.result !== undefined) {
+                        const j = journalHead(headRequest.result, uid, writeId);
+                        if (
+                          p.discard!.phase !== 'requested' ||
+                          !p.identity ||
+                          !sameJournalIdentity(j.identity, p.identity)
+                        )
+                          journalFail();
+                      }
+                      if (p.discard!.phase !== 'complete') heads.delete([uid, writeId]);
+                      const frames = tx.objectStore(FRAMES),
+                        range = IDBKeyRange.bound([uid, writeId], [uid, writeId, []], false, true),
+                        cursor = frames.openCursor(range);
+                      let removed = 0;
+                      cursor.onsuccess = () => {
+                        try {
+                          const c = cursor.result;
+                          if (p.discard!.phase === 'complete') {
+                            if (c) journalFail();
+                            done(p);
+                            return;
+                          }
+                          if (!c || removed === limit) {
+                            const next = preparationHead(
+                              {
+                                ...p,
+                                stamp: crypto.randomUUID(),
+                                discard: {
+                                  phase: c ? 'purging' : 'complete',
+                                  deleted: p.discard!.deleted + removed,
+                                },
+                              },
+                              uid,
+                              writeId,
+                            );
+                            preparations.put(next, [uid, writeId]);
+                            done(next);
+                            return;
+                          }
+                          const key = c.key;
+                          if (
+                            !Array.isArray(key) ||
+                            key.length !== 5 ||
+                            key[0] !== uid ||
+                            key[1] !== writeId ||
+                            typeof key[2] !== 'string' ||
+                            !['draft', 'production', 'checkpoint', 'controls'].includes(key[2]) ||
+                            typeof key[3] !== 'string' ||
+                            !(
+                              (typeof key[4] === 'string' && key[2] === 'controls') ||
+                              (typeof key[4] === 'number' &&
+                                Number.isSafeInteger(key[4]) &&
+                                key[4] >= -1)
+                            )
+                          )
+                            journalFail();
+                          frames.delete(key);
+                          removed++;
+                          c.continue();
+                        } catch {
+                          tx.abort();
+                        }
+                      };
+                    } catch {
+                      tx.abort();
+                    }
+                  };
+                } catch {
+                  tx.abort();
+                }
+              };
+            },
+          );
+        },
+      ),
   );
 }

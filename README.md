@@ -636,3 +636,10 @@ Cancel fecha jobs e conserva o rascunho recuperável; encerrar a recuperação
 [Evidência](docs/entregas/2026-10-24-writer-v2-reserva-descobrivel-da-edicao-de-lore.md):
 208 Vitest distintos em rodadas e três cenários Chromium positivos.
 Host visual/purga local e rollout seguem pendentes; P1/F2-09/V2 abertos.
+
+M38c5k acrescenta o host visual literal, lista de recuperações e descarte
+local em lotes, com confirmação, fence e preservação do lore já aplicado.
+[Evidência](docs/entregas/2026-10-24-writer-v2-interface-e-descarte-do-lore.md):
+241 Vitest distintos em rodadas e três jornadas Chromium, com temas/mobile.
+Componentes exportados; entrada no compêndio ainda depende de writers/Rules/
+drenagem coordenados. O formulário legado permanece; P1/F2-09/V2 abertos.

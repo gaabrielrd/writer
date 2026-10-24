@@ -490,3 +490,14 @@ Cancel conserva chave e rascunho; liberação explícita fecha jobs antes de
 revogar. Sem texto inventado se a primeira cópia ainda não confirmou.
 Host visual/purga local/ciclo de exclusão da chave e demais writers/Rules/
 consumidores/backup/ativação/rollout seguem pendentes; P1/F2-09/V2 abertos.
+
+## Host literal e descarte local — M38c5k
+
+[Plano 109](109-interface-e-descarte-da-edicao-manual-de-lore.md) implementa
+componentes reais de edição/recuperação e purga explícita após jobs/chave,
+com batches/fence/tombstone. Texto e presença intocados são preservados;
+cancel mantém cópia, apply e descarte exigem cliques próprios.
+Entrada produtora permanece pendente do passo 6: writers Admin/Rules e
+drenagem coordenados. Depois integrar ao compêndio; não habilitar v2 antes.
+Ciclo da chave na exclusão, consumidores/backup/ativação/rollout e P1/F2-09/V2
+continuam abertos; validate integral no fechamento de P1.

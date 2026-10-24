@@ -18,6 +18,7 @@ import {
   readJournalHead,
   readJournalPreparation,
   commitJournalPreparation,
+  advanceJournalDiscard,
 } from './bookLoreJournalDb';
 import {
   preparationIntent,
@@ -64,6 +65,8 @@ export interface BookLoreManualSnapshot {
   readonly keyReleaseRequested: boolean;
   readonly keyReleased: boolean;
   readonly canDiscard: boolean;
+  readonly copyDiscarded: boolean;
+  readonly discardPhase: 'requested' | 'purging' | 'complete' | null;
   readonly operation: ReturnType<Controller['snapshot']>['operation'];
 }
 /** Metadata bootstrap is durable before reservation; keep this handle across failures. */
@@ -73,8 +76,8 @@ export function createBookLoreManualOperation(
   input?: BookLoreEditOperationInput,
   options: BookLoreWriteOptions = {},
 ) {
-  const frozen = input ? (freezeLoreEditValue(input) as BookLoreEditOperationInput) : undefined,
-    { uid, guard: actor, recovery, edit, createJournal, openJournal } = environment,
+  let frozen = input ? (freezeLoreEditValue(input) as BookLoreEditOperationInput) : undefined;
+  const { uid, guard: actor, recovery, edit, createJournal, openJournal } = environment,
     { guard: hostGuard, signal, yieldControl } = options;
   const guard = () => {
     actor();
@@ -85,6 +88,7 @@ export function createBookLoreManualOperation(
     controller: Controller | null = null,
     journalHead: LoreJournalHead | null = null,
     requiresInput = false,
+    discardVerified = false,
     closing = false,
     releasing = false,
     closingBusy = false,
@@ -174,6 +178,7 @@ export function createBookLoreManualOperation(
           jobsClosed: null,
           revoke: null,
           closed: null,
+          discard: null,
         },
         null,
       );
@@ -285,6 +290,8 @@ export function createBookLoreManualOperation(
       keyReleaseRequested: !!head?.releaseRequested,
       keyReleased: !!head?.closed,
       canDiscard: !!head?.closed && head.jobsClosed !== null,
+      copyDiscarded: head?.discard?.phase === 'complete' && discardVerified,
+      discardPhase: head?.discard?.phase ?? null,
       operation: child?.operation ?? null,
     });
   }
@@ -316,6 +323,12 @@ export function createBookLoreManualOperation(
   }
   async function initializeWork() {
     let h = await ensureTicket();
+    if (h.discard?.phase === 'complete') {
+      head = await advanceJournalDiscard(uid, writeId, h.stamp);
+      guard();
+      discardVerified = true;
+      return snapshot();
+    }
     if (h.cancelRequested || h.closed || closing) {
       closing = true;
       await getJournal(false);
@@ -412,40 +425,75 @@ export function createBookLoreManualOperation(
     if (closingBusy)
       return Promise.reject(Error('Uma unidade do encerramento já está em andamento.'));
     closingBusy = true;
+    return closeWork().finally(() => {
+      closingBusy = false;
+    });
+  }
+  async function closeWork() {
+    await ensureTicket();
+    if (!head!.cancelRequested || (releasing && !head!.releaseRequested))
+      await mutate((h) => ({
+        ...h,
+        cancelRequested: true,
+        releaseRequested: h.releaseRequested || releasing,
+      }));
+    const j = await getJournal(false);
+    if (!head!.closed && head!.jobsClosed === null) {
+      if (j) {
+        journalHead = await j.requestCancel();
+        await inspect();
+        if (journalHead.controls?.ready) {
+          const before = journalHead.controls.worker.completedCalls;
+          journalHead = await j.advanceControlCleanup(guardedPort);
+          await inspect();
+          const worker = journalHead.controls!.worker;
+          if (!['cancelled', 'applied'].includes(worker.phase)) return snapshot();
+          await mutate((h) => ({ ...h, jobsClosed: worker.phase as 'cancelled' | 'applied' }));
+          if (worker.completedCalls !== before) return snapshot();
+        } else {
+          if (
+            journalHead.production ||
+            journalHead.cleanup ||
+            journalHead.diagnostic ||
+            (journalHead.controls && journalHead.controls.worker.phase !== 'idle')
+          )
+            journalFail();
+          await mutate((h) => ({ ...h, jobsClosed: 'none' }));
+        }
+      } else await mutate((h) => ({ ...h, jobsClosed: 'none' }));
+    }
+    if (head!.releaseRequested) await revoke();
+    return snapshot();
+  }
+  function discard(limit = 50) {
+    guard();
+    if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50)
+      return Promise.reject(Error('Lote de descarte inválido.'));
+    if (closingBusy)
+      return Promise.reject(Error('Uma unidade do encerramento já está em andamento.'));
+    closing = true;
+    releasing = true;
+    discardVerified = false;
+    controller?.requestCancel();
+    closingBusy = true;
     return (async () => {
       await ensureTicket();
-      if (!head!.cancelRequested || (releasing && !head!.releaseRequested))
+      if (!head!.discard)
         await mutate((h) => ({
           ...h,
           cancelRequested: true,
-          releaseRequested: h.releaseRequested || releasing,
+          releaseRequested: true,
+          discard: { phase: 'requested', deleted: 0 },
         }));
-      const j = await getJournal(false);
-      if (!head!.closed && head!.jobsClosed === null) {
-        if (j) {
-          journalHead = await j.requestCancel();
-          await inspect();
-          if (journalHead.controls?.ready) {
-            const before = journalHead.controls.worker.completedCalls;
-            journalHead = await j.advanceControlCleanup(guardedPort);
-            await inspect();
-            const worker = journalHead.controls!.worker;
-            if (!['cancelled', 'applied'].includes(worker.phase)) return snapshot();
-            await mutate((h) => ({ ...h, jobsClosed: worker.phase as 'cancelled' | 'applied' }));
-            if (worker.completedCalls !== before) return snapshot();
-          } else {
-            if (
-              journalHead.production ||
-              journalHead.cleanup ||
-              journalHead.diagnostic ||
-              (journalHead.controls && journalHead.controls.worker.phase !== 'idle')
-            )
-              journalFail();
-            await mutate((h) => ({ ...h, jobsClosed: 'none' }));
-          }
-        } else await mutate((h) => ({ ...h, jobsClosed: 'none' }));
-      }
-      if (head!.releaseRequested) await revoke();
+      await closeWork();
+      if (!head!.closed) return snapshot();
+      head = await advanceJournalDiscard(uid, writeId, head!.stamp, limit);
+      guard();
+      controller = null;
+      journal = null;
+      journalHead = null;
+      discardVerified = head.discard?.phase === 'complete';
+      if (discardVerified) frozen = undefined;
       return snapshot();
     })().finally(() => {
       closingBusy = false;
@@ -474,6 +522,7 @@ export function createBookLoreManualOperation(
     apply: () => run(true),
     cancel,
     releaseRecovery,
+    discard,
     readDraft,
   });
 }

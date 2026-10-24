@@ -2173,3 +2173,15 @@ signal/CAS/paginação/corrupção e SDK boundary. Registros locais sem texto/ch
 Três cenários Chromium provam migração v1 → v2, processo reiniciado e recuperação
 de draft após cancel e reautorização. Harness de armazenamento/serviços, sem
 prova da UI ou SDK/App Check reais. Validate integral no fechamento de P1.
+
+### P1 M38c5k — interface literal e descarte de lore
+
+[Plano 109](tasks/writer-v2/execucao/109-interface-e-descarte-da-edicao-manual-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-interface-e-descarte-do-lore.md):
+UI/Testing Library cobre literais, ausência/vazio, grandes campos intocados,
+retry, cancel em voo, confirmação, router/foco, conta/perfil e paginação.
+Purga cobre batches, abort/reload, writer tardio, recriação, isolamento e
+marker completo contra armazenamento. Três jornadas Chromium usam host real
+com IDB/Web Locks/serviços de fixture, temas/mobile e processo reiniciado.
+Não comprova entrada no compêndio, SDK/Auth/App Check reais ou testes manuais
+de leitor de tela/zoom físico/segundo dispositivo. Validate no fim de P1.

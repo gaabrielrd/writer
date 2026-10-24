@@ -20,3 +20,8 @@ export * from './model/adventureLore';
 export { useAdventureLoreContext } from './hooks/useAdventureLoreContext';
 export type { AdventureLoreContextValue } from './hooks/useAdventureLoreContext';
 export { AdventureLoreReader } from './components/AdventureLoreReader';
+
+export { BookLoreManualEditor } from './components/BookLoreManualEditor';
+export type { BookLoreManualEditorProps } from './components/BookLoreManualEditor';
+
+export { BookLoreRecoveries } from './components/BookLoreRecoveries';

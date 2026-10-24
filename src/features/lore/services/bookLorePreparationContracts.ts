@@ -1,4 +1,4 @@
-import { readObject, readId, readHash } from './bookLoreReadContracts';
+import { readObject, readId, readHash, readCount } from './bookLoreReadContracts';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
 import { bookLoreWriteHash as hash } from './bookLoreWritePayload';
 import { journalIdentity, journalFail, type LoreJournalIdentity } from './bookLoreJournalContracts';
@@ -39,6 +39,7 @@ export interface LorePreparationHead {
   jobsClosed: 'none' | 'cancelled' | 'applied' | null;
   revoke: { wire: LoreRecoveryControl; state: 'pending' | 'confirmed' } | null;
   closed: LoreRecoveryView | null;
+  discard: { phase: 'requested' | 'purging' | 'complete'; deleted: number } | null;
 }
 export function preparationIntent(value: unknown): LorePreparationIntent {
   const v = readObject(freezeLoreEditValue(value), [
@@ -120,20 +121,24 @@ export function identityFromRecovery(v: LoreRecoveryView, uid: string): LoreJour
   return journalIdentity({ uid, ...metadata });
 }
 export function preparationHead(value: unknown, uid: string, writeId: string): LorePreparationHead {
-  const v = readObject(freezeLoreEditValue(value), [
-      'schemaVersion',
-      'uid',
-      'stamp',
-      'intent',
-      'requestHash',
-      'cancelRequested',
-      'releaseRequested',
-      'reserveState',
-      'identity',
-      'jobsClosed',
-      'revoke',
-      'closed',
-    ]),
+  const v = readObject(
+      freezeLoreEditValue(value),
+      [
+        'schemaVersion',
+        'uid',
+        'stamp',
+        'intent',
+        'requestHash',
+        'cancelRequested',
+        'releaseRequested',
+        'reserveState',
+        'identity',
+        'jobsClosed',
+        'revoke',
+        'closed',
+      ],
+      ['discard'],
+    ),
     intent = preparationIntent(v.intent);
   readId(uid);
   readId(v.stamp);
@@ -193,5 +198,18 @@ export function preparationHead(value: unknown, uid: string, writeId: string): L
     ((v.revoke as { state?: string } | null)?.state === 'confirmed' && !closed)
   )
     journalFail();
-  return v as unknown as LorePreparationHead;
+  const discard =
+    v.discard === undefined || v.discard === null
+      ? null
+      : readObject(v.discard, ['phase', 'deleted']);
+  if (
+    discard &&
+    (!['requested', 'purging', 'complete'].includes(discard.phase as string) ||
+      readCount(discard.deleted) < 0 ||
+      !v.cancelRequested ||
+      !v.releaseRequested ||
+      (discard.phase !== 'requested' && !closed))
+  )
+    journalFail();
+  return freezeLoreEditValue({ ...v, discard }) as LorePreparationHead;
 }

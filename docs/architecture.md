@@ -2176,3 +2176,14 @@ Sessão Auth compõe reserva/journal/controller; cold resume não inventa draft
 quando a primeira cópia ainda não confirmou. Cancel conserva chave/draft;
 releaseRecovery registra intenção explícita e fecha jobs antes de revogar.
 Nenhuma purga local ou ativação da UI por este incremento; P1 segue aberto.
+
+## P1 M38c5k — host literal e descarte local
+
+[ADR 0124](decisions/0124-literal-lore-editor-and-local-discard.md):
+diálogo e lista compõem sessão/captura bruta, campos tocados, revisão/aplicação
+explícita e recuperação por conta/escopo. Actor SDK fenceia a UI; metadata do
+perfil não reinicia draft. Router e beforeunload guardam saída.
+Purga após fechamento/revogação remove até 50 records do UID/writeId e fenceia
+head no mesmo commit; tombstone impede recriação e conclusão é conferida no IDB.
+Componentes exportados, sem entrada produtora ativada até writers/Rules/
+drenagem. P1 e demais gates continuam abertos.

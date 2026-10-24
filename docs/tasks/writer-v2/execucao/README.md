@@ -1168,3 +1168,18 @@ Próximo: host visual e purga local com fence de escritas antigas. Exclusão
 integrada da chave no livro, demais writers/Rules/drenagem/consumidores/
 backup/ativação/rollout e P1/F2-09/V2 continuam abertos. Validate no fim de P1;
 somente commits locais, sem CI/push/deploy.
+
+### P1 M38c5k — interface literal e descarte da recuperação
+
+[Plano 109](109-interface-e-descarte-da-edicao-manual-de-lore.md),
+[ADR 0124](../../../decisions/0124-literal-lore-editor-and-local-discard.md)
+e [evidência](../../../entregas/2026-10-24-writer-v2-interface-e-descarte-do-lore.md):
+host e lista exportados, campos brutos/tocados, revisão/apply, retomada,
+cancel e confirmação de descarte. Purga limitada/provada, fence e tombstone
+atômicos; mantém original, corpos adotados e outras operações.
+241 Vitest distintos em rodadas e três jornadas Chromium com temas/mobile.
+
+Próximo: writers Admin/Rules/drenagem coordenados e depois ativar a entrada
+no compêndio. Ciclo da chave na exclusão do livro, consumidores/backup/
+ativação/rollout e P1/F2-09/V2, fases 3–5 e gates humanos/comerciais continuam
+abertos. Validate no fechamento de P1; somente commits locais.

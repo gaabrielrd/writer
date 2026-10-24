@@ -1,6 +1,6 @@
 import { createBookLoreManualOperation } from './bookLoreManualOperation';
 import { bookLoreJournalSession } from './bookLoreJournalSession';
-import { listJournalPreparations } from './bookLoreJournalDb';
+import { readJournalPreparation, listJournalPreparations } from './bookLoreJournalDb';
 import { createPersistedBookLoreEditOperation } from './bookLorePersistedOperation';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -13,6 +13,8 @@ import {
 import type { BookLoreWriteOptions } from './bookLoreWritePayload';
 import type { BookLoreEditRecovery } from './bookLoreEditCheckpoint';
 import type { openBookLoreJournal } from './bookLoreJournal';
+
+export const currentBookLoreActor = () => auth.currentUser;
 
 /** Auth-bound ports; the host explicitly drives pure or persistent operations. */
 export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
@@ -166,6 +168,12 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     guard();
     return result;
   }
+  async function preparation(writeId: string) {
+    guard();
+    const p = await readJournalPreparation(uid, writeId);
+    guard();
+    return p;
+  }
   return Object.freeze({
     actor,
     guard,
@@ -176,5 +184,6 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     manual,
     resumeManual,
     preparations,
+    preparation,
   });
 }
