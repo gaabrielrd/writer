@@ -593,3 +593,10 @@ revogação permanente, com HTTP privado e Rules.
 [Evidência](docs/entregas/2026-10-24-writer-v2-chave-protegida-da-recuperacao-do-lore.md).
 Ainda não persiste rascunhos no navegador: journal cifrado, retomada,
 host visual e ciclo de vida integrado continuam necessários. Sem implantação.
+
+M38c5e acrescenta journal local cifrado para rascunho e pedido exato de lore,
+com recuperação após recarga, chave fresca, Web Locks/CAS e partes de 64 KiB.
+[Evidência](docs/entregas/2026-10-24-writer-v2-journal-cifrado-das-edicoes-de-lore.md):
+51 Vitest distintos e quatro cenários Chromium positivos. A reconstrução do
+coordenador completo, host visual e ciclo de vida integrado seguem pendentes;
+a edição existente ainda não usa o journal. Sem implantação ou conclusão de P1.

@@ -1075,3 +1075,20 @@ journal por partes/retomada/host e ciclo de vida integrado seguem necessários.
 Revogar chave não cancela jobs ou autoriza descartar controles incertos.
 Demais integrações/backup/ativação/rollout e P1/F2-09/V2 continuam abertos.
 Validate no fim de P1; sem CI/push/deploy.
+
+### P1 M38c5e — journal cifrado e recuperação literal
+
+[Plano 103](103-journal-cifrado-das-edicoes-de-lore.md),
+[ADR 0118](../../../decisions/0118-partitioned-local-lore-edit-journal.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-journal-cifrado-das-edicoes-de-lore.md):
+51 Vitest distintos e quatro cenários Chromium positivos. Journal por partes
+cifradas, grant fresco, CAS/oncomplete, descoberta por conta, rascunho literal,
+pedido exato/replay e metadata de cleanup/diagnóstico sem chave implementados.
+Recuperar todas as partes com último selo abortado exige validar e confirmar
+localmente antes de expor; abrir não envia.
+
+Próximo incremento obrigatório: checkpoints/restauração do coordenador completo,
+controles de todos os jobs e composição com reserva/host. Fechamento nativo antes
+de coleta local e ciclo de vida da chave na exclusão continuam pendentes.
+API ainda não integrada à edição visual. Demais integrações/backup/ativação/
+rollout e P1/F2-09/V2 abertos; validate no fim de P1. Só commit local.

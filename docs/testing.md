@@ -2074,3 +2074,23 @@ sintaxe/lint/arquitetura. Não são prova de login real ou journal/retomada/UI.
 
 Sem cliente/TS/UI novos, não repetimos Vitest/tipos/build/Chromium.
 Validate/cobertura no fim de P1; ciclo de vida integrado ainda pendente.
+
+### P1 M38c5e — journal local cifrado da edição de lore
+
+bookLoreJournal.test.mjs usa harness de eventos/atomicidade IndexedDB e
+WebCrypto real: 17 casos. bookLoreJournalSession.test.mjs cobre o adaptador
+HTTP/key/conta em 14; bookLoreJournalCrypto.test.mjs cobre partes/AAD/SHA/grant
+em seis. Os 14 do codec existente conferem ausência de regressão no serializer.
+51 casos distintos positivos em rodadas; journal+sessão final 31/31 em 1.02 s.
+
+Chromium real verifica quatro cenários: >9 MiB/reinício de processo/literalidade,
+append aceito com resposta perdida e replay após reload/cleanup sem chave,
+CAS de duas abas/tamper/isolamento, e abort da transação final com recuperação
+após reload sem o input original. IDB/Web Locks são reais; serviços servidor
+rodam sobre double e Auth/provedor de chave são fixtures. Não inferir tokens
+reais, Rules, UI ou reconstrução de todo o coordenador.
+
+[Evidência](entregas/2026-10-24-writer-v2-journal-cifrado-das-edicoes-de-lore.md)
+registra as rodadas e limites. Lint/tipos/build/smoke/arquitetura dirigidos;
+sem repetir backend/SDK, sem mudança de servidor. Validate/cobertura no fim
+de P1; somente commits locais.

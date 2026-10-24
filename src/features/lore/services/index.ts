@@ -2,6 +2,8 @@ export * from './loreService';
 export * as loreService from './loreService';
 export { prepareBookLoreEditOperation } from './bookLoreEditOperation';
 export { bookLoreEditSession } from './bookLoreEditService';
+export { bookLoreJournalSession, listBookLoreJournals } from './bookLoreJournalSession';
+export type { LoreJournalIdentity, LoreJournalWire } from './bookLoreJournalContracts';
 export type {
   BookLoreEditPort,
   BookLoreEditOperationInput,

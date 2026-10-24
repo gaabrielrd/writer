@@ -2064,3 +2064,28 @@ coleta pela exclusão do livro não está implementada.
 Journal cifrado/retomada/host e ciclo de vida integrado ainda necessários.
 Nunca persistir chave no navegador; aguardar IDB oncomplete antes de envio.
 Revogar chave não cancela jobs nem autoriza apagar journal incerto.
+
+## P1 M38c5e — journal local cifrado da edição de lore
+
+[ADR 0118](decisions/0118-partitioned-local-lore-edit-journal.md): serviços da
+feature lore compõem sessão Auth/App Check, serializer existente, AES-GCM e
+IndexedDB writer.book-lore-journal. Heads separados de frames permitem
+descoberta por conta sem decrypt. Manifesto com SHA é cifrado; chave importada
+não extraível nunca é persistida. Grant fresco antes e ao fim da leitura
+revalida a mesma origem sem mudar o CAS congelado.
+
+Partes até 64 KiB, AAD por identidade/seção/geração/índice e transações
+confirmadas só no oncomplete. Web Locks/stamp CAS bloqueiam abas antigas.
+Prefixos incompletos ficam preservados. Se só o selo final faltou, validar
+todos os bytes/schema/intenção e autorização permite concluir o checkpoint
+local antes de expor texto. Leitura reconstrói JSON em memória.
+
+Unidade RPC fechada/congelada é protegida antes de envio. Produção e cleanup
+são independentes, com slot diagnóstico separado; metadata de get/cancel/
+cleanup permite agir sem chave. Confirmação local explícita não é recibo
+nativo. Abrir/recuperar não envia, rebaseia, revoga chave ou descarta dados.
+
+Barrel expõe bookLoreJournalSession/listBookLoreJournals e tipos. Nenhum host
+existente adota automaticamente a API. Reconstrução completa de checkpoints,
+controles de todos os jobs, fechamento antes de coleta e revogação integrada
+na exclusão do livro continuam necessários. Rollout/P1/F2-09/V2 abertos.

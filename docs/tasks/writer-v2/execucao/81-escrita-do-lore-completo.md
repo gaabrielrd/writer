@@ -418,3 +418,17 @@ Passo 5 segue aberto: journal cifrado por partes, checkpoints/retomada,
 Web Locks/IDB, descoberta dos pedidos incertos e host visual ainda necessários.
 Chave não pode ser persistida no navegador; revogá-la não cancela filhos.
 Ciclo de vida integrado e demais integrações/rollout continuam pendentes.
+
+## Journal local — M38c5e
+
+[Plano 103](103-journal-cifrado-das-edicoes-de-lore.md) implementa descoberta
+e armazenamento cifrado por partes, chave fresca, CAS/oncomplete e recuperação
+literal/de pedido exato após recarga. Cleanup/diagnóstico metadata não exigem
+chave. 51 Vitest distintos e quatro cenários Chromium positivos; último selo
+local abortado pode ser concluído depois de validar bytes/intenção/origem.
+
+Passo 5 continua aberto: snapshot do coordenador não é checkpoint restaurável.
+Persistir/reconstruir cursores e controles de todos os jobs e compor reserva/
+journal/host são os próximos passos. Sem integração automática na edição visual,
+fechamento/coleta local ou ciclo de vida da chave na exclusão do livro.
+Demais writers/consumidores/backup/ativação/rollout e P1/F2-09/V2 abertos.

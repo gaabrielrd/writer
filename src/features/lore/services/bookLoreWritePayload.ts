@@ -83,7 +83,10 @@ function* jsonAtoms(value: unknown): Generator<Uint8Array> {
   }
   yield encoder.encode('}');
 }
-function* jsonParts(value: unknown, options: BookLoreWriteOptions): Generator<Uint8Array> {
+export function* bookLoreJSONParts(
+  value: unknown,
+  options: BookLoreWriteOptions,
+): Generator<Uint8Array> {
   check(options);
   let bytes = new Uint8Array(PART_BYTES),
     length = 0;
@@ -151,7 +154,7 @@ export async function prepareBookLoreWritePayload(
   let byteLength = 0;
   const yieldControl =
     options.yieldControl ?? (() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
-  for (const bytes of jsonParts(value, options)) {
+  for (const bytes of bookLoreJSONParts(value, options)) {
     byteLength += bytes.length;
     if (!Number.isSafeInteger(byteLength)) invalidLoreEdit();
     content.update(bytes);
@@ -200,7 +203,7 @@ export async function prepareBookLoreWritePayload(
       if (from === chunkCount) return;
       let index = 0;
       // One sequential pass per resume, rather than rescanning the prefix for each part.
-      for (const bytes of jsonParts(value, options)) {
+      for (const bytes of bookLoreJSONParts(value, options)) {
         if (index >= from) {
           let position = index;
           const proof: string[] = [];
