@@ -1,3 +1,4 @@
+import { assertAnalysisChildUnit } from './loreAnalysisApplicationChildBindings.mjs';
 import { advanceInlineMaterialization } from './bookLoreEditInline.mjs';
 import { createSHA256 } from 'hash-wasm';
 import { born, date } from './bookRestoreUploadContracts.mjs';
@@ -37,17 +38,23 @@ import {
   compilationAuditRef,
   sourceRelations,
 } from './bookLoreEditCompilationStore.mjs';
-export function createBookLoreEditCompilationService({ db, now = () => Date.now() }) {
+export function createBookLoreEditCompilationService({
+  db,
+  now = () => Date.now(),
+  transaction = null,
+}) {
+  const transact = (fn) => (transaction ? fn(transaction) : db.runTransaction(fn));
   return {
     async advanceBookLoreEditCompilation(uid, input) {
       const r = editReservationRequest(uid, input, [], true, true),
         c = editReservationPaths(db, uid, r.editId),
         hasher = await createSHA256();
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const l = await loadEditReservation(tx, c, r);
         if (!l || l.job.kind === 'fence') conflict();
         const replay = await replayEditReservation(tx, l, 'advanceBookLoreEditCompilation', r);
         if (replay) return replay;
+        assertAnalysisChildUnit(tx, db, uid, 'edit', c.id);
         const j = l.job;
         if (j.phase !== 'preparing' || j.revision !== r.expectedRevision) conflict();
         const source = await compilationSource(tx, l),

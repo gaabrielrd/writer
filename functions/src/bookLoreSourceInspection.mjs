@@ -1,3 +1,4 @@
+import { assertAnalysisChildUnit } from './loreAnalysisApplicationChildBindings.mjs';
 import { createHash } from 'node:crypto';
 import { createSHA256 } from 'hash-wasm';
 import { born, date } from './bookRestoreUploadContracts.mjs';
@@ -80,15 +81,17 @@ export function createBookLoreSourceInspectionService({
   now = () => Date.now(),
   transaction = null,
 }) {
+  const transact = (fn) => (transaction ? fn(transaction) : db.runTransaction(fn));
   const service = {
     async startBookLoreSourceInspection(uid, input) {
       const intent = inspectionIntent(uid, input),
         startHash = inspectionStartHash(intent),
         c = inspectionPaths(db, uid, intent.inspectionId),
         hasher = await createSHA256();
-      const result = await db.runTransaction(async (tx) => {
+      const result = await transact(async (tx) => {
         const old = await loadSourceInspection(tx, c, { startHash });
         if (old) return inspectionView(old);
+        assertAnalysisChildUnit(tx, db, uid, 'inspection', intent.inspectionId);
         const { book, opened } = await inspectionSource(tx, c, intent),
           context = {
             ...intent,
@@ -130,12 +133,14 @@ export function createBookLoreSourceInspectionService({
         if (state) tx.create(c.stateRef, state);
         return null;
       });
-      return result ?? service.getBookLoreSourceInspection(uid, { inspectionId: c.id, startHash });
+      return transaction
+        ? result
+        : (result ?? service.getBookLoreSourceInspection(uid, { inspectionId: c.id, startHash }));
     },
     async getBookLoreSourceInspection(uid, input) {
       const r = inspectionRequest(uid, input),
         c = inspectionPaths(db, uid, r.inspectionId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadSourceInspection(tx, c, r);
         return loaded ? inspectionView(loaded) : null;
       });
@@ -145,7 +150,7 @@ export function createBookLoreSourceInspectionService({
         c = inspectionPaths(db, uid, r.inspectionId),
         hasher = await createSHA256(),
         stateLength = hasher.save().length;
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadSourceInspection(tx, c, r);
         if (!loaded || loaded.job.kind !== 'inspection') conflict();
         const replay = await replaySourceInspection(
@@ -155,6 +160,7 @@ export function createBookLoreSourceInspectionService({
           r,
         );
         if (replay) return replay;
+        assertAnalysisChildUnit(tx, db, uid, 'inspection', c.id);
         const j = loaded.job;
         if (j.revision !== r.expectedRevision || !['base', 'checking', 'privacy'].includes(j.phase))
           conflict();

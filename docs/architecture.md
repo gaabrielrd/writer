@@ -1934,3 +1934,27 @@ A2b2 deve habilitar produtores somente com bindings e checkpoints do pai
 na mesma transação e cleanup dos filhos coordenado. A2c deve compor aplicação
 local/global/nova, crédito e recibo reais. Não há novo callable ou UI;
 applyLoreAnalysis continua recusando payload. P1/F2-09/V2 seguem abertos.
+
+## P1 M38c4d / A2b2 — preparação e cleanup vinculados
+
+[ADR 0112](decisions/0112-bound-lore-analysis-application-preparation.md):
+workflow v2 mantém cursor/contagem, ready, intenção cancelling e cleanup por
+unidade, preservando v1. Reabre análise/provedor/origens/contexto por unidade
+e confirma filho, proprietário/prova, evento e checkpoint na mesma transação.
+
+IDs analysis-<hash> e analysis-source/edit/field-<hash> são reservados.
+loreAnalysisChildOwners/OwnerProofs fixam a criação do filho no pai; produtores
+singulares exigem capacidade nativa da unidade. Criação/inspeção vinculadas
+só permitem filhos planejados. Edição pode ler campo selado previsto como
+dependência, sem ganhar capacidade para produzir bytes nele.
+
+Serviços existentes aceitam transação injetada. Preparação percorre fonte,
+campo/parte/selo, reserva/geração e composição/auditoria; certificado/prova
+do membro fixa referência CAS pronta. Globais permanecem metadata, sem escrita.
+Nenhuma cabeça, clock ou crédito muda; adoção individual continua bloqueada.
+
+Cancelamento fecha primeiro e limpa edição, campos e origem, auditando provas.
+Revogação não impede cleanup nativo nem concede prosa. Estrangeiros/recriados
+são preservados. Exclusão coordena cleanup da aplicação com seu checkpoint.
+A2c deve compor aplicação integral local/global/nova e crédito/recibo reais;
+demais integrações e certificação de P1 continuam pendentes.

@@ -1,3 +1,4 @@
+import { assertAnalysisSourceChild } from './loreAnalysisApplicationChildBindings.mjs';
 import { editReservationPair } from './bookLoreEditOperationProofs.mjs';
 export { editReservationPair } from './bookLoreEditOperationProofs.mjs';
 export { expectedEditGeneration } from './bookLoreEditReservationContracts.mjs';
@@ -35,6 +36,14 @@ const immutable = (s) => s.exists && bornEqual(s, { createTime: s.updateTime });
 const update = (s) => born({ createTime: s.updateTime });
 export async function editReservationSource(tx, c, intent, context = null) {
   if (intent.creation) return creationCompositionSource(tx, c, intent, context);
+  await assertAnalysisSourceChild(
+    tx,
+    c,
+    'inspection',
+    intent.inspection.inspectionId,
+    'edit',
+    c.id,
+  );
   const p = inspectionPaths(c.db, c.uid, intent.inspection.inspectionId),
     result = await openBookLoreSourceInspection(tx, p, intent.inspection),
     original = result.loaded.job.context,

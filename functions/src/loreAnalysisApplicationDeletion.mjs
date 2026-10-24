@@ -1,3 +1,4 @@
+import { advanceApplicationCleanupInTransaction } from './loreAnalysisApplicationPreparation.mjs';
 import { bornEqual } from './bookRestoreUploadContracts.mjs';
 import { digest } from './workProgressContracts.mjs';
 import { applicationPaths } from './loreAnalysisApplicationContracts.mjs';
@@ -34,13 +35,21 @@ export async function advanceDeletionApplication(tx, l, next) {
   )
     conflict();
   if (app.state.phase !== 'cancelled') {
-    const plan = await prepareApplicationCancellation(
-      tx,
-      app,
-      digest(['book-lore-delete-application', l.token, l.state.revision]),
-    );
-    plan.commit();
+    const operationId = digest(['book-lore-delete-application', l.token, l.state.revision]);
+    if (app.state.phase === 'cancelling') {
+      await advanceApplicationCleanupInTransaction(tx, app, {
+        id: app.c.id,
+        requestHash: app.context.requestHash,
+        jobToken: app.token,
+        operationId,
+        expectedRevision: app.state.revision,
+      });
+    } else {
+      const plan = await prepareApplicationCancellation(tx, app, operationId);
+      plan.commit();
+    }
     next.coordinatedUnits++;
+    return;
   }
   next.cursor = document.id;
 }

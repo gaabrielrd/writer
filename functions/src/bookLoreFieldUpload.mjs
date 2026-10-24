@@ -1,3 +1,4 @@
+import { assertAnalysisChildUnit } from './loreAnalysisApplicationChildBindings.mjs';
 import { editPreparationRef } from './bookLoreEditReservationContracts.mjs';
 import { createSHA256 } from 'hash-wasm';
 import { born, date, integer } from './bookRestoreUploadContracts.mjs';
@@ -58,6 +59,7 @@ export function createBookLoreFieldUploadService({
       const result = await transact(async (tx) => {
         const old = await loadFieldUpload(tx, c, { startHash });
         if (old) return uploadView(old);
+        assertAnalysisChildUnit(tx, db, uid, 'field', intent.uploadId);
         const origin = await uploadSource(tx, c, intent, true),
           context = { ...intent, ...origin },
           state = {
@@ -164,6 +166,7 @@ export function createBookLoreFieldUploadService({
         if (!loaded || loaded.job.kind === 'fence') conflict();
         const replay = await replayFieldOperation(tx, loaded, 'appendBookLoreFieldUpload', r);
         if (replay) return replay;
+        assertAnalysisChildUnit(tx, db, uid, 'field', c.uploadId);
         if (
           loaded.job.materialization &&
           (!transaction || digest(loaded.job.materialization) !== digest(materialization))
@@ -222,6 +225,7 @@ export function createBookLoreFieldUploadService({
         if (!loaded || loaded.job.kind === 'fence') conflict();
         const replay = await replayFieldOperation(tx, loaded, 'advanceBookLoreFieldSeal', r);
         if (replay) return replay;
+        assertAnalysisChildUnit(tx, db, uid, 'field', c.uploadId);
         if (
           loaded.job.materialization &&
           (!transaction || digest(loaded.job.materialization) !== digest(materialization))
@@ -254,7 +258,7 @@ export function createBookLoreFieldUploadService({
         });
       });
     },
-    ...createBookLoreFieldUploadCleanup({ db }),
+    ...createBookLoreFieldUploadCleanup({ db, transaction }),
   };
   return service;
 }

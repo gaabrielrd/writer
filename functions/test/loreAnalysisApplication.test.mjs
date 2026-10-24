@@ -269,20 +269,29 @@ for (const point of ['context', 'event', 'flag'])
     f.db.runTransaction = run;
     assert.equal((await f.reserve()).phase, 'preparing');
   });
-test('an unknown child is preserved and blocks cancellation or book deletion until reconciliation', async () => {
+test('cancel intent closes the parent before an unknown child blocks cleanup or book deletion', async () => {
   const f = await setup();
   await f.reserve();
   const path = childPaths(f)[0];
   await f.db.runTransaction((tx) => tx.create(f.db.doc(path), { foreign: true }));
-  const before = all(f);
-  await assert.rejects(() => f.cancel());
-  assert.deepEqual(all(f), before);
+  assert.equal((await f.cancel()).phase, 'cancelling');
+  assert.deepEqual(f.records.get(path), { foreign: true });
   const deletion = bookLoreDeletionFixture(f.db);
   await markBookDeleting(deletion);
   await deletion.step();
-  const beforeStep = all(f);
-  await assert.rejects(() => deletion.step());
-  assert.deepEqual(all(f), beforeStep);
+  let blocked = false;
+  for (let unit = 0; unit < 12 && !blocked; unit++) {
+    const beforeStep = all(f);
+    try {
+      await deletion.step();
+    } catch (error) {
+      assert.equal(error.code, 'failed-precondition');
+      assert.deepEqual(all(f), beforeStep);
+      blocked = true;
+    }
+  }
+  assert.equal(blocked, true);
+  assert.equal((await f.get()).phase, 'cancelling');
   assert.deepEqual(f.records.get(path), { foreign: true });
 });
 test('whole-book deletion closes a reservation and preserves only metadata receipts after all source bytes are removed', async () => {

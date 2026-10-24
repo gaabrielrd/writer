@@ -1,3 +1,4 @@
+import { assertAnalysisChildUnit } from './loreAnalysisApplicationChildBindings.mjs';
 import { prepareCreationActivation } from './bookLoreCreationActivation.mjs';
 import { createHash } from 'node:crypto';
 import { date, integer } from './bookRestoreUploadContracts.mjs';
@@ -102,6 +103,7 @@ async function openCandidate(tx, db, uid, r) {
   if (!l || l.job.kind === 'fence') conflict();
   const replay = await replayEditReservation(tx, l, 'adoptBookLoreEditGeneration', r);
   if (replay) return { l, r, replay };
+  assertAnalysisChildUnit(tx, db, uid, 'edit', c.id, 'adopt');
   if (l.job.phase !== 'preparing' || l.job.revision !== r.expectedRevision) conflict();
   const compiled = await openBookLoreEditCompilation(tx, l),
     root = await readWorkMetadata(tx, db.doc('books/' + l.job.context.intent.bookId), [

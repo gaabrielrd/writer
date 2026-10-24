@@ -1,3 +1,4 @@
+import { createLoreAnalysisApplicationPreparationService } from './loreAnalysisApplicationPreparation.mjs';
 import { born } from './bookRestoreUploadContracts.mjs';
 import { digest } from './workProgressContracts.mjs';
 import { readLoreAnalysisContext } from './loreAnalysisContext.mjs';
@@ -25,6 +26,7 @@ export function createLoreAnalysisApplicationService({ db, now = () => Date.now(
   };
   return {
     getLoreAnalysisApplication: get,
+    ...createLoreAnalysisApplicationPreparationService({ db, now }),
     async reserveLoreAnalysisApplication(uid, input) {
       const r = reserveApplicationInput(uid, input),
         c = applicationPaths(db, uid, r.id);

@@ -549,3 +549,10 @@ do livro descobre e fecha a reserva preservando metadata.
 [Evidência](docs/entregas/2026-10-24-writer-v2-reserva-nativa-do-lote-da-analise.md).
 Produtores/bindings/cleanup A2b2 e aplicação com débito/recibo A2c continuam
 pendentes. Sem novo callable/UI ou implantação; P1/F2-09/V2 seguem abertos.
+
+M38c4d/A2b2 prepara os filhos do lote da análise por unidades reautorizadas,
+com vínculos nativos e retomada até ready. Cancelamento fecha o pai e limpa
+filhos após revogação; exclusão do livro coordena o mesmo protocolo.
+[Evidência](docs/entregas/2026-10-24-writer-v2-preparacao-vinculada-do-lote-da-analise.md).
+Aplicação conjunta local/global/nova com débito/recibo reais fica em A2c.
+Sem novo callable/UI ou implantação; P1/F2-09/V2 permanecem abertos.

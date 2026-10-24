@@ -219,6 +219,14 @@ export const applicationView = (l) => ({
   phase: l.state.phase,
   revision: l.state.revision,
   memberCount: l.context.kind === 'reservation' ? l.context.members.length : 0,
+  ...(l.state.schemaVersion === 2
+    ? {
+        preparedCount: l.state.preparedCount,
+        nextMember: l.state.cursor.member,
+        nextStage: l.state.cursor.stage,
+        cleanupMember: l.state.cleanup.member,
+      }
+    : {}),
 });
 export function applicationChildPaths(c, context) {
   return context.members.flatMap((member) => {

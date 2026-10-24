@@ -1,3 +1,4 @@
+import { assertAnalysisChildUnit } from './loreAnalysisApplicationChildBindings.mjs';
 import { born, bornEqual } from './bookRestoreUploadContracts.mjs';
 import { digest } from './workProgressContracts.mjs';
 import {
@@ -23,11 +24,12 @@ import {
 } from './bookLoreCreationCleanup.mjs';
 export const creationBookQuery = (db, uid, bookId) =>
   db.collection('users/' + uid + '/bookLoreCreations').where('intent.bookId', '==', bookId);
-export function createBookLoreCreationReservationService({ db }) {
+export function createBookLoreCreationReservationService({ db, transaction = null }) {
+  const transact = (fn) => (transaction ? fn(transaction) : db.runTransaction(fn));
   const get = (uid, input) => {
     const r = creationRequest(uid, input),
       c = creationPaths(db, uid, r);
-    return db.runTransaction(async (tx) => {
+    return transact(async (tx) => {
       const l = await loadCreationReservation(tx, c, r);
       return l ? creationView(l) : null;
     });
@@ -37,7 +39,7 @@ export function createBookLoreCreationReservationService({ db }) {
     async advanceBookLoreCreationCleanup(uid, input) {
       const r = creationCleanupRequest(uid, input),
         c = creationPaths(db, uid, r);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const l = await loadCreationReservation(tx, c, r);
         if (!l) conflict();
         return advanceCreationCleanupInTransaction(tx, l, r);
@@ -46,9 +48,10 @@ export function createBookLoreCreationReservationService({ db }) {
     async startBookLoreCreationReservation(uid, input) {
       const intent = creationIntent(uid, input),
         c = creationPaths(db, uid, intent);
-      const result = await db.runTransaction(async (tx) => {
+      const result = await transact(async (tx) => {
         const l = await loadCreationReservation(tx, c);
         if (l) return creationView(l);
+        assertAnalysisChildUnit(tx, db, uid, 'creation', intent.creationId);
         const root = await creationBook(tx, c),
           slots = await creationSlots(tx, c);
         if (Object.values(slots).some((s) => s.exists)) conflict();
@@ -57,13 +60,13 @@ export function createBookLoreCreationReservationService({ db }) {
         if (root.data().hasLoreResources !== true) tx.update(root.ref, { hasLoreResources: true });
         return null;
       });
-      return result ?? get(uid, intent);
+      return transaction ? result : (result ?? get(uid, intent));
     },
     async cancelBookLoreCreationReservation(uid, input) {
       const r = creationRequest(uid, input, true),
         intent = creationIntent(uid, { bookId: r.bookId, creationId: r.creationId }),
         c = creationPaths(db, uid, intent);
-      const result = await db.runTransaction(async (tx) => {
+      const result = await transact(async (tx) => {
         const l = await loadCreationReservation(tx, c, r);
         if (l) return requestCreationCancellation(tx, l, r);
         if (r.jobToken !== undefined) conflict();
@@ -80,7 +83,7 @@ export function createBookLoreCreationReservationService({ db }) {
         writeCreationCancellation(tx, c, context, null, r);
         return null;
       });
-      return result ?? get(uid, intent);
+      return transaction ? result : (result ?? get(uid, intent));
     },
   };
 }

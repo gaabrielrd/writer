@@ -1967,3 +1967,21 @@ recursos limitados: 1/1 positivo, 4862.6753 ms. O rollback é falha nativa no
 Lint/arquitetura e sintaxe dos 233 módulos positivos. Sem UI/TS novos,
 não repetimos tipos/Vitest/build/browser. Validate/cobertura no fim de P1.
 Produtores/cleanup A2b2 e aplicação/cobrança A2c pendentes, sem CI/push/deploy.
+
+### P1 M38c4d / A2b2 — preparação vinculada da análise
+
+[Entrega](entregas/2026-10-24-writer-v2-preparacao-vinculada-do-lote-da-analise.md):
+454 casos Node distintos positivos: 182 produtores, 198 ciclos, 39 reservas
+e 35 do workflow novo (33 na rodada completa e dois ramos adicionais dirigidos). A rodada nova levou 98120.3907 ms; 50 locais reais
+foram preparados/limpos, com fontes/headers/crédito intactos. Novos testes
+detectaram e corrigiram a leitura de campo selado como dependência da edição,
+sem liberar sua escrita. Dois símbolos sem uso foram removidos após lint.
+
+3/3 SDK, 322344.0348 ms, emulador 1.22.0 verificado demo/loopback com recursos
+limitados desde o início. Cobrem 50 mistos até ready, nascimento de todos os
+vínculos, Rules, cleanup após revogação, rollback nativo de parte/checkpoint,
+retry, exclusão e provas recriadas. Não demonstram aplicação/cobrança reais.
+
+Lint/arquitetura/sintaxe dos 240 módulos positivos. Sem UI/TS novos, não
+repetimos tipos/Vitest/build/browser; validate/cobertura no fim de P1.
+A2c e demais integrações pendentes, somente commits locais, sem CI/deploy.

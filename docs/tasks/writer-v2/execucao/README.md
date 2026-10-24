@@ -986,3 +986,16 @@ Próximo A2b2: produtores e cleanup ligados ao pai na mesma transação.
 A2c deve confirmar locais/globais/novos com crédito/recibo reais; demais
 integrações e P1/F2-09/V2 continuam abertos. Validate integral no fim de P1.
 Somente commits locais, sem CI/push/deploy.
+
+### P1 M38c4d / A2b2 — preparação vinculada do lote da análise
+
+[Plano 97](97-preparacao-vinculada-do-lote-da-analise.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-preparacao-vinculada-do-lote-da-analise.md):
+454 Node distintos e três SDK positivos. Workflow prepara até ready com
+reautorização, filhos e checkpoints nativamente vinculados, sem aplicar ou
+cobrar. Cancelamento fecha o pai e limpa após revogação; exclusão coordena
+as unidades. Guards singulares impedem bypass e adoção individual.
+
+Próximo A2c: prontidão/origem e aplicação integral local/global/nova junto
+de crédito/recibo reais. Demais integrações e P1/F2-09/V2 seguem abertos.
+Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.

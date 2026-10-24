@@ -1,3 +1,4 @@
+import { assertAnalysisChildUnit } from './loreAnalysisApplicationChildBindings.mjs';
 import { createBookLoreEditAdoptionService } from './bookLoreEditAdoption.mjs';
 import { createBookLoreEditCompilationService } from './bookLoreEditCompilation.mjs';
 import { born, date } from './bookRestoreUploadContracts.mjs';
@@ -29,15 +30,21 @@ import { openSealedBookLoreFieldUpload } from './bookLoreFieldUploadProofs.mjs';
 import { commitFieldOperation } from './bookLoreFieldUploadStore.mjs';
 import { createBookLoreEditReservationCleanup } from './bookLoreEditReservationCleanup.mjs';
 import { prepareCreationAttemptBinding } from './bookLoreCreationAttempts.mjs';
-export function createBookLoreEditReservationService({ db, now = () => Date.now() }) {
+export function createBookLoreEditReservationService({
+  db,
+  now = () => Date.now(),
+  transaction = null,
+}) {
+  const transact = (fn) => (transaction ? fn(transaction) : db.runTransaction(fn));
   const service = {
     async startBookLoreEditReservation(uid, input) {
       const intent = editReservationIntent(uid, input),
         startHash = editReservationStartHash(intent),
         c = editReservationPaths(db, uid, intent.editId);
-      const result = await db.runTransaction(async (tx) => {
+      const result = await transact(async (tx) => {
         const old = await loadEditReservation(tx, c, { startHash });
         if (old) return editReservationView(old);
+        assertAnalysisChildUnit(tx, db, uid, 'edit', intent.editId);
         const { sourceContext } = await editReservationSource(tx, c, intent),
           orphans = await tx.get(
             db
@@ -72,12 +79,14 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
         });
         return null;
       });
-      return result ?? service.getBookLoreEditReservation(uid, { editId: c.id, startHash });
+      return transaction
+        ? result
+        : (result ?? service.getBookLoreEditReservation(uid, { editId: c.id, startHash }));
     },
     async getBookLoreEditReservation(uid, input) {
       const r = editReservationRequest(uid, input),
         c = editReservationPaths(db, uid, r.editId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadEditReservation(tx, c, r);
         return loaded ? editReservationView(loaded) : null;
       });
@@ -85,7 +94,7 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
     async initializeBookLoreEditGeneration(uid, input) {
       const r = editReservationRequest(uid, input, [], true, true),
         c = editReservationPaths(db, uid, r.editId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadEditReservation(tx, c, r);
         if (!loaded || loaded.job.kind === 'fence') conflict();
         const replay = await replayEditReservation(
@@ -95,6 +104,7 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
           r,
         );
         if (replay) return replay;
+        assertAnalysisChildUnit(tx, db, uid, 'edit', c.id);
         if (loaded.job.phase !== 'initializing' || loaded.job.revision !== r.expectedRevision)
           conflict();
         await editReservationSource(tx, c, loaded.job.context.intent, loaded.job.context);
@@ -114,11 +124,12 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
       r.target = editReservationTarget(r.target);
       r.upload = editUploadRef(r.upload);
       const c = editReservationPaths(db, uid, r.editId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadEditReservation(tx, c, r);
         if (!loaded || loaded.job.kind === 'fence') conflict();
         const replay = await replayEditReservation(tx, loaded, 'reserveBookLoreEditUpload', r);
         if (replay) return replay;
+        assertAnalysisChildUnit(tx, db, uid, 'edit', c.id);
         const j = loaded.job,
           intent = j.context.intent;
         if (j.phase !== 'preparing' || j.revision !== r.expectedRevision || j.compilation)
@@ -195,9 +206,9 @@ export function createBookLoreEditReservationService({ db, now = () => Date.now(
         });
       });
     },
-    ...createBookLoreEditReservationCleanup({ db }),
-    ...createBookLoreEditCompilationService({ db, now }),
-    ...createBookLoreEditAdoptionService({ db, now }),
+    ...createBookLoreEditReservationCleanup({ db, transaction }),
+    ...createBookLoreEditCompilationService({ db, now, transaction }),
+    ...(!transaction ? createBookLoreEditAdoptionService({ db, now }) : {}),
   };
   return service;
 }

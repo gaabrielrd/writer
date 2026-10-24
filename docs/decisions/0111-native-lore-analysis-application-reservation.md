@@ -67,3 +67,10 @@ recibo reais juntos, preservando até 50 itens. applyLoreAnalysis mantém seu
 contrato atual e continua recusando payload. Demais consumidores, backup,
 cliente, rollout e certificação de P1 permanecem abertos. Sem novo endpoint,
 índice, dependência ou implantação.
+
+## Evolução em 2026-10-24
+
+[ADR 0112](0112-bound-lore-analysis-application-preparation.md) acrescenta
+produtores, vínculos nativos e cleanup coordenado. Cancelling fecha o pai
+antes de limpar filhos; dados sem prova original continuam preservados para
+reconciliação. A2c e as demais integrações permanecem pendentes.
