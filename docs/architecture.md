@@ -1981,3 +1981,24 @@ sucesso é recusado e exclusão preserva metadata antes da limpeza geral.
 
 Orquestração de preparo/recuperação no cliente/endpoints, outros escritores/
 consumidores, backup, rollout e certificação de P1/F2-09/V2 seguem pendentes.
+
+## P1 M38c5a — captura CAS, diff literal e codec cliente
+
+[ADR 0114](decisions/0114-literal-book-lore-client-edits.md): capture do leitor
+C1 conserva dados brutos e readToken da montagem reconfirmada em snapshot
+imutável. Get/list mantêm sua interface anterior; não há persistência nova.
+
+planBookLoreEdit recebe operações explícitas por campo, sem modelo normalizado
+do formulário antigo. Plano contém apenas identidade/CAS, remoções e uploads
+alterados. Presenças, valores literais, datas e ordem/duplicatas são preservados.
+Relações usam páginas de 64, com contagem/forma final explícitas.
+
+Codec congela valores antes de await, escapa strings em fatias e agrega partes
+de 64 KiB. Duas passagens lineares produzem SHA/Merkle/manifesto e provas,
+com IDs canônicos do servidor. Noble já instalado substitui APIs Node;
+retomada percorre o prefixo uma vez e preserva abort/guard por unidade.
+Memória auxiliar contém uma parte e hashes, além do valor congelado.
+
+Esta infraestrutura não concede autorização nem habilita o CRUD legado para
+payloads. Host, orquestração, recuperação e demais consumidores/backup/
+ativação/rollout permanecem obrigatórios para concluir P1/F2-09/V2.

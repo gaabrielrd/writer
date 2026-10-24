@@ -1,3 +1,4 @@
+import { freezeBookLoreEditSource, type BookLoreEditSource } from './bookLoreWritePlan';
 import { validateBookBackupJSONItem } from '../../../../functions/src/bookBackupSchema.mjs';
 import {
   invalidLoreRead,
@@ -148,11 +149,11 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
     }
     return data;
   }
-  async function get(
+  async function capture(
     bookId: string,
     id: string,
     readToken?: string,
-  ): Promise<CompleteBookLore | null> {
+  ): Promise<BookLoreEditSource | null> {
     readId(bookId);
     readId(id);
     guard();
@@ -207,7 +208,15 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
     const final = await header(bookId, id, view.readToken);
     if (!equal(final, view)) throw invalidLoreRead();
     guard();
-    return { id, data };
+    return freezeBookLoreEditSource({ bookId, id, sourceToken: view.readToken, data });
+  }
+  async function get(
+    bookId: string,
+    id: string,
+    readToken?: string,
+  ): Promise<CompleteBookLore | null> {
+    const source = await capture(bookId, id, readToken);
+    return source ? { id: source.id, data: structuredClone(source.data) } : null;
   }
   async function ids(bookId: string, expectedToken?: string) {
     const items: LoreReadItem[] = [],
@@ -255,5 +264,5 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
     guard();
     return result;
   }
-  return { get, list };
+  return { get, list, capture };
 }

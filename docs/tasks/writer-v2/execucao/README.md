@@ -1015,3 +1015,19 @@ distintos positivos em rodadas dirigidas; confira a
 Cliente/endpoints de preparo/recuperação, demais writers/consumidores/backup,
 rollout, P1/F2-09/V2 e condições humanas/comerciais continuam pendentes.
 Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.
+
+### P1 M38c5a — diff e transporte literal do cliente de lore
+
+[Plano 99](99-diff-e-transporte-dos-campos-de-lore.md),
+[ADR 0114](../../../decisions/0114-literal-book-lore-client-edits.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-diff-e-transporte-do-lore.md):
+175 casos Vitest distintos e cinco smokes Chromium positivos. Captura C1
+preserva CAS/dados brutos; diff envia somente campos/páginas alterados.
+Codec de duas passagens produz partes de 64 KiB, SHA/Merkle/IDs iguais ao
+servidor, sem teto de 128 partes e com cancelamento por unidade.
+
+Roundtrip real de serviços preserva corpo intocado de 9 MiB e recusa CAS
+antigo/revogação. Não habilita UI ou escritor SDK legado para payloads.
+Host/orquestração/recuperação, demais consumidores/backup/ativação/rollout,
+P1/F2-09/V2 e aceites humanos/comerciais continuam abertos.
+Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.

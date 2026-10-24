@@ -565,3 +565,10 @@ recibos continuam confirmáveis após exclusão sem nova cobrança.
 [Evidência](docs/entregas/2026-10-24-writer-v2-aplicacao-atomica-da-analise-preparada.md).
 Cliente/endpoints de preparo, demais integrações e rollout permanecem
 pendentes; sem nova UI ou implantação. P1/F2-09/V2 continuam abertos.
+
+M38c5a acrescenta captura bruta/CAS, diff literal por campo/página e codec
+cliente de 64 KiB para o editor completo. Corpo intocado de 9 MiB é preservado
+no roundtrip; campos alterados acima de 128 partes mantêm hashes/provas.
+[Evidência](docs/entregas/2026-10-24-writer-v2-diff-e-transporte-do-lore.md).
+Host visual, RPCs/recuperação, demais integrações e rollout seguem pendentes;
+não habilita o formulário antigo sobre payloads. P1/F2-09/V2 continuam abertos.

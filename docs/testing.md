@@ -2008,3 +2008,18 @@ A [evidência A2c](entregas/2026-10-24-writer-v2-aplicacao-atomica-da-analise-pr
 registra 47 novos Node distintos, 201 regressões e cinco SDK positivos em
 rodadas dirigidas. Node cobriu 50 locais; SDK cobriu 50 mistos e a corrida
 adicional aplicar/reservar. Isso não substitui a certificação integrada de P1.
+
+### P1 M38c5a — diff literal e transporte cliente do lore
+
+bookLoreWritePlan.test.ts e bookLoreWritePayload.test.mjs verificam presença/
+valor, no-op, snapshots e páginas de relações, JSON/UTF-8 limitado, aborto,
+retomada e igualdade integral de hashes/provas com o codec real do servidor.
+bookLoreWriteRoundtrip.test.mjs integra C1 e produtores/selo/reserva/composição/
+adoção reais sobre double transacional, incluindo base intocada de 9 MiB.
+
+A [evidência M38c5a](entregas/2026-10-24-writer-v2-diff-e-transporte-do-lore.md)
+registra 175 casos Vitest distintos positivos em rodadas, cinco smokes Chromium
+do codec, tipos/lint/arquitetura/build e seus avisos. Captura reconfirmada e
+revogação não são substituídas por um token fabricado pelo cliente.
+Backend/Rules não mudaram e SDK não foi repetido. UI/host/recuperação e
+certificação integrada permanecem pendentes; validate integral no fim de P1.

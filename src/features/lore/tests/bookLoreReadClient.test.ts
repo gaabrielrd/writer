@@ -409,3 +409,41 @@ it('drains every in-flight part after a failure before the operation can finish 
   await rejected;
   expect(f.call.mock.calls.filter(([method]) => method === 'readBookLorePart')).toHaveLength(5);
 });
+
+it('capture retains the reconfirmed readToken and raw immutable presences for an edit', async () => {
+  const f = fixture({
+      entity: { mode: 'inline', data: { name: '  🌙 ', category: 'other', relations: [] } },
+    }),
+    captured = await f.client.capture('book', 'entity');
+  expect(captured).toEqual({
+    bookId: 'book',
+    id: 'entity',
+    sourceToken: token('entity'),
+    data: { name: '  🌙 ', category: 'other', relations: [] },
+  });
+  expect(Object.isFrozen(captured)).toBe(true);
+  expect(Object.isFrozen(captured!.data.relations)).toBe(true);
+  expect(Object.hasOwn(captured!.data, 'details')).toBe(false);
+  expect(f.call.mock.calls.at(-1)).toEqual([
+    'getBookLoreRead',
+    { bookId: 'book', id: 'entity', readToken: token('entity') },
+  ]);
+});
+it('capture never returns an observed CAS when final reconfirmation changes', async () => {
+  const f = fixture();
+  let headers = 0;
+  f.intercept((method, _input, result) =>
+    method === 'getBookLoreRead' && ++headers === 2
+      ? { ...(result as Record<string, unknown>), readToken: 'b'.repeat(64) }
+      : result,
+  );
+  await expect(f.client.capture('book', 'entity')).rejects.toThrow();
+});
+it('capture respects account revocation while assembling source bytes', async () => {
+  const f = fixture();
+  f.intercept((method, _input, result) => {
+    if (method === 'readBookLorePart') f.revoke();
+    return result;
+  });
+  await expect(f.client.capture('book', 'entity')).rejects.toThrow('Context changed');
+});
