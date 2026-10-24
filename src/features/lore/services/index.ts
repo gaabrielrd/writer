@@ -5,6 +5,11 @@ export {
   restoreBookLoreEditOperation,
 } from './bookLoreEditOperation';
 export type { BookLoreEditCheckpoint, BookLoreEditRecovery } from './bookLoreEditCheckpoint';
+export { captureBookLoreEditCheckpoint } from './bookLoreCheckpointBundle';
+export type {
+  BookLoreCheckpointBundle,
+  LoreCheckpointConfirmation,
+} from './bookLoreCheckpointBundle';
 export { bookLoreEditSession } from './bookLoreEditService';
 export { bookLoreJournalSession, listBookLoreJournals } from './bookLoreJournalSession';
 export type { LoreJournalIdentity, LoreJournalWire } from './bookLoreJournalContracts';

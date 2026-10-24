@@ -2113,3 +2113,21 @@ positivos no código final; não é persistência automática do coordenador.
 distingue serviços reais/double/Auth fictícia e registra falhas corrigidas,
 incluindo execução parcial do wrapper npx sem resultado. Lint/tipos/build/
 smoke/arquitetura dirigidos; SDK/backend não repetidos. Validate no fim de P1.
+
+### P1 M38c5g — checkpoints persistidos no journal cifrado
+
+bookLoreCheckpointJournal.test.mjs tem 19 casos novos; 31 regressões do
+journal/sessão completam 50 distintos positivos em rodadas. Cobrem gerações,
+oncomplete/abort/CAS, acks atômicos, ciphertext, preservação de parcial/
+divergência/corrupção, grants, legado, cancel e reconstrução por storage.
+Capacidade acima de 8 MiB/128 frames usa 55 mil controles sintéticos,
+sem alegar preparo nativo equivalente; coleta elimina até 50 por passo.
+
+Chromium real verifica dois fluxos somente de IDB cifrado: reload com wire/
+cursores/terminal e adoção explícita única; abort da promoção, recuperação e
+acks atômicos, revogação da origem e coleta local sem chave preservando draft.
+Serviços reais sobre double/Auth fictícia; não certifica tokens, Rules ou UI.
+
+[Evidência](entregas/2026-10-24-writer-v2-persistencia-cifrada-dos-checkpoints-de-lore.md)
+registra rodadas/limites/falhas corrigidas. Lint/tipos/build/smoke/arquitetura
+dirigidos; sem backend/SDK repetidos. Validate/cobertura no fechamento de P1.

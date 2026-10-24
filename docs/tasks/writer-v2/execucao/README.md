@@ -1109,3 +1109,18 @@ Checkpoints ainda não são automaticamente guardados pelo journal. Fechamento
 nativo antes de coleta, ciclo de vida da chave na exclusão e demais integrações/
 backup/ativação/rollout permanecem pendentes. P1/F2-09/V2 abertos; validate no
 fim de P1. Só commit local, sem CI/push/deploy.
+
+### P1 M38c5g — persistência cifrada dos checkpoints
+
+[Plano 105](105-persistencia-cifrada-dos-checkpoints-de-lore.md),
+[ADR 0120](../../../decisions/0120-encrypted-persistence-of-lore-checkpoints.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-persistencia-cifrada-dos-checkpoints-de-lore.md):
+50 Vitest distintos e dois cenários Chromium positivos. Captura privada,
+gerações/partes cifradas, troca+acks atômicos, recuperação da falha final,
+coleta limitada e reconstrução somente do storage protegido implementados.
+
+Próximo: composição automática de write-ahead/acks e mapa metadata de todos
+os jobs para cleanup sem chave, com reserva/sessão/host. Coleta local não
+fecha jobs nativos; ciclo de vida da chave, demais writers/consumidores/
+backup/ativação/rollout e P1/F2-09/V2 continuam necessários. Validate no fim
+de P1; somente commit local, sem CI/push/deploy.

@@ -445,3 +445,16 @@ Passo 5 continua aberto: ligar checkpoints ao journal cifrado/atômico e
 controles completos de cleanup sem chave, depois compor reserva/host.
 Fechamento/coleta/ciclo de vida, demais writers/consumidores/backup/ativação/
 rollout e P1/F2-09/V2 seguem necessários. Sem recuperação visual anunciada.
+
+## Checkpoints no journal — M38c5g
+
+[Plano 105](105-persistencia-cifrada-dos-checkpoints-de-lore.md) persiste
+root/páginas em gerações cifradas, com swap/acks atômicos e coleta limitada.
+Reload recompõe operação sem depender de checkpoint na memória externa;
+cancel monotônico e contexto são preservados. 50 Vitest distintos e dois
+cenários Chromium positivos em rodadas.
+
+Passo 5 segue aberto: compor write-ahead/acks automáticos e controles de todos
+os jobs metadata sem chave, reserva/host e fechamento nativo antes de descarte.
+Ciclo de vida da chave, demais writers/consumidores/backup/ativação/rollout
+e P1/F2-09/V2 continuam pendentes; validate integral no fechamento de P1.

@@ -14,7 +14,7 @@ export interface LoreJournalIdentity {
   jobToken: string;
   keyId: string;
 }
-export type LoreJournalSection = 'draft' | 'production';
+export type LoreJournalSection = 'draft' | 'production' | 'checkpoint';
 export type LoreJournalLane = 'production' | 'cleanup' | 'diagnostic';
 export interface LoreJournalBlob {
   generation: string;
@@ -35,6 +35,11 @@ export interface LoreJournalUnit {
   state: 'sealing' | 'pending' | 'confirmed';
   blob: LoreJournalBlob | null;
 }
+export interface LoreJournalCheckpointState {
+  active: LoreJournalBlob | null;
+  pending: LoreJournalBlob | null;
+  garbage: { blob: LoreJournalBlob; next: number } | null;
+}
 export interface LoreJournalHead {
   schemaVersion: 1;
   identity: LoreJournalIdentity;
@@ -44,6 +49,7 @@ export interface LoreJournalHead {
   production: LoreJournalUnit | null;
   cleanup: LoreJournalUnit | null;
   diagnostic: LoreJournalUnit | null;
+  checkpoint: LoreJournalCheckpointState | null;
 }
 export interface LoreJournalFrame {
   nonce: ArrayBuffer;
@@ -134,16 +140,20 @@ function unit(value: unknown, lane: LoreJournalLane): LoreJournalUnit | null {
   return v as unknown as LoreJournalUnit;
 }
 export function journalHead(value: unknown, uid: string, writeId: string): LoreJournalHead {
-  const v = readObject(freezeLoreEditValue(value), [
-      'schemaVersion',
-      'identity',
-      'stamp',
-      'cancelRequested',
-      'draft',
-      'production',
-      'cleanup',
-      'diagnostic',
-    ]),
+  const v = readObject(
+      freezeLoreEditValue(value),
+      [
+        'schemaVersion',
+        'identity',
+        'stamp',
+        'cancelRequested',
+        'draft',
+        'production',
+        'cleanup',
+        'diagnostic',
+      ],
+      ['checkpoint'],
+    ),
     identity = journalIdentity(v.identity);
   if (
     v.schemaVersion !== 1 ||
@@ -157,7 +167,23 @@ export function journalHead(value: unknown, uid: string, writeId: string): LoreJ
   unit(v.production, 'production');
   unit(v.cleanup, 'cleanup');
   unit(v.diagnostic, 'diagnostic');
-  return v as unknown as LoreJournalHead;
+  if (v.checkpoint !== undefined && v.checkpoint !== null) {
+    const cp = readObject(v.checkpoint, ['active', 'pending', 'garbage']),
+      generations = new Set();
+    for (const kind of ['active', 'pending'] as const)
+      if (cp[kind] !== null) {
+        const b = journalBlob(cp[kind]);
+        if (b.complete !== (kind === 'active') || generations.has(b.generation)) journalFail();
+        generations.add(b.generation);
+      }
+    if (cp.garbage !== null) {
+      const g = readObject(cp.garbage, ['blob', 'next']),
+        b = journalBlob(g.blob);
+      if (!b.complete || readCount(g.next) > b.chunkCount + 1 || generations.has(b.generation))
+        journalFail();
+    }
+  }
+  return freezeLoreEditValue({ ...v, checkpoint: v.checkpoint ?? null }) as LoreJournalHead;
 }
 const controlKeys = (key: string, method: string) => {
   const get = method.startsWith('get'),

@@ -2111,3 +2111,23 @@ Persistência atômica/cifrada de root/páginas, metadata para cleanup sem chave
 e composição reserva/journal/host ainda não estão ligadas. Digest requer
 passagem linear por controles; codecs são recompostos do input em memória.
 Fechamento/coleta/ciclo de vida e rollout/P1/F2-09/V2 continuam abertos.
+
+## P1 M38c5g — persistência cifrada dos checkpoints
+
+[ADR 0120](decisions/0120-encrypted-persistence-of-lore-checkpoints.md):
+captureBookLoreEditCheckpoint reúne root/páginas/acks em bundle privado.
+Journal oferece writeCheckpoint/readCheckpoint/restoreCheckpointOperation e
+advanceCheckpointCleanup. Seção checkpoint usa JSON de 64 KiB/AES-GCM/AAD e
+manifesto privado; banco/stores/versão permanecem iguais.
+
+Header opcional active/pending/garbage preserva geração anterior até
+oncomplete final. Troca e acks explícitos são atômicos; prefixo divergente é
+preservado. Staging completa pode ser verificada/promovida após falha final.
+Coleta só de geração substituída, até 50 frames por transação/cursor/CAS,
+sem chave. Não é cleanup dos jobs nativos ou exclusão de draft/pedido.
+
+Leitura usa grants frescos; restore recompõe do input protegido, reautoriza,
+confere stamp/contexto e aplica cancel monotônico. Não envia ou adota ao
+abrir. Captura e digest percorrem metadata; leitura reconstrói JSON em memória.
+Persistência automática antes/depois de RPC, mapa metadata completo sem chave,
+reserva/host/ciclo de vida e rollout/P1/F2-09/V2 continuam pendentes.

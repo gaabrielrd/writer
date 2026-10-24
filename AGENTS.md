@@ -172,6 +172,7 @@
 - Libere chave de recuperação de lore só por HTTP autenticado, com prova/nascimento/fingerprint originais e origem reautorizada; preserve fences, não regenere chave ausente e não confunda revogação da chave com cancelamento dos jobs, conforme ADR 0117.
 - Preserve journal de edição de lore em partes cifradas com manifesto privado, chave não persistida, reautorização fresca antes/depois da leitura e CAS/oncomplete local; mantenha cleanup metadata sem chave e não envie ou descarte pedidos ao abrir, conforme ADR 0118.
 - Restaure o coordenador de lore somente de checkpoint privado e controles paginados coerentes com o input/CAS original; confira pedidos/bytes/cursores, preserve reconciliação e nunca persista checkpoint com wire em claro ou envie ao reconstruir, conforme ADR 0119.
+- Grave checkpoints de lore em gerações cifradas independentes; troque active e acks no mesmo oncomplete, preserve staging divergente e colete apenas cópias substituídas em lotes até 50; reautorize a leitura e aplique cancel monotônico ao reconstruir, conforme ADR 0120.
 - Restaure texto, cópia anterior, contagens e recibo na mesma transação; compare o token preciso da fonte observada e revalide replay.
 - Bloqueie restauração com texto ou operação pendentes; aceite corpo, revisão e bases do autosave juntos e limpe versões/corpos ao excluir livros.
 - Preserve o corpo da cena de aventura como Texto principal; adicionais têm identidade própria, audiência privada por padrão e escritores transacionais em `functions`.

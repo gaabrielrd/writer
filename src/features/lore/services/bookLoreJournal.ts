@@ -1,6 +1,8 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import { readObject } from './bookLoreReadContracts';
+import { checkpointJournal } from './bookLoreCheckpointJournal';
+import { restoreBookLoreEditOperation } from './bookLoreEditOperation';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
 import { bookLoreJSONParts, type BookLoreWriteOptions } from './bookLoreWritePayload';
 import {
@@ -44,6 +46,7 @@ export interface LoreJournalOptions extends BookLoreWriteOptions {
   guard: () => void;
   getKey: () => Promise<LoreJournalGrant>;
 }
+type TextJournalSection = Exclude<LoreJournalSection, 'checkpoint'>;
 const stamp = () => crypto.randomUUID();
 export async function createBookLoreJournal(
   identity: LoreJournalIdentity,
@@ -60,6 +63,7 @@ export async function createBookLoreJournal(
     production: null,
     cleanup: null,
     diagnostic: null,
+    checkpoint: null,
   };
   const saved = await commitJournalHead(i, null, head);
   journalCheck(options);
@@ -83,11 +87,11 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
   let head = initial,
     queue = Promise.resolve(),
     encryptionKey: CryptoKey | null = null;
-  const active = new Set<LoreJournalSection>();
+  const active = new Set<TextJournalSection>();
   const io = (cleanup = false): BookLoreWriteOptions =>
     cleanup ? { ...options, signal: undefined } : options;
   const check = (cleanup = false) => journalCheck(io(cleanup));
-  const blobAt = (h: LoreJournalHead, s: LoreJournalSection) =>
+  const blobAt = (h: LoreJournalHead, s: TextJournalSection) =>
     s === 'draft' ? h.draft : (h.production?.blob ?? null);
   async function freshKey() {
     check();
@@ -172,7 +176,7 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
     return input;
   }
   async function write(
-    section: LoreJournalSection,
+    section: TextJournalSection,
     value: unknown,
     metadata?: Omit<LoreJournalUnit, 'state' | 'blob'>,
   ) {
@@ -279,7 +283,7 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
       active.delete(section);
     }
   }
-  async function read(section: LoreJournalSection) {
+  async function read(section: TextJournalSection) {
     const current = await inspect(),
       blob = blobAt(current, section);
     if (!blob || blob.written !== blob.chunkCount) journalFail();
@@ -322,7 +326,7 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
       return journalFail();
     }
   }
-  async function sealRecovered(section: LoreJournalSection, original: LoreJournalBlob) {
+  async function sealRecovered(section: TextJournalSection, original: LoreJournalBlob) {
     const latest = await inspect(),
       current = blobAt(latest, section);
     if (
@@ -421,7 +425,42 @@ function handle(initial: LoreJournalHead, options: LoreJournalOptions) {
     // The coordinator must parse/accept the response before confirmPending.
     return response;
   }
+  const checkpoints = checkpointJournal({ options, inspect, mutate });
+  async function restoreCheckpointOperation(
+    port: BookLoreEditPort,
+    writeOptions: BookLoreWriteOptions = {},
+  ) {
+    const input = await readDraft(),
+      bundle = await checkpoints.readCheckpoint();
+    if (!bundle) journalFail();
+    const recoveryStamp = (await inspect()).stamp;
+    const operation = await restoreBookLoreEditOperation(
+      input,
+      {
+        checkpoint: bundle.checkpoint,
+        controlsPage: (offset) => Promise.resolve(bundle.pages[offset / 50]),
+      },
+      port,
+      {
+        ...writeOptions,
+        guard: () => {
+          check(true);
+          writeOptions.guard?.();
+        },
+      },
+    );
+    await freshKey();
+    writeOptions.guard?.();
+    const latest = await inspect();
+    writeOptions.guard?.();
+    if (latest.stamp !== recoveryStamp) journalFail();
+    if (latest.cancelRequested) operation.requestCancel();
+    else if (!bundle.checkpoint.cancelRequested) writeOptions.signal?.throwIfAborted();
+    return operation;
+  }
   return Object.freeze({
+    ...checkpoints,
+    restoreCheckpointOperation,
     inspect,
     writeDraft,
     readDraft,

@@ -607,3 +607,10 @@ incluindo cursores e pedidos incertos, sem envio no restore.
 143 Vitest distintos e dois cenários Chromium positivos em rodadas.
 Checkpoint ainda precisa ser conectado à persistência cifrada/atômica e ao
 host; não há retomada visual automática. P1/F2-09/V2 permanecem abertos.
+
+M38c5g conecta checkpoints ao journal cifrado, com gerações independentes,
+troca/acks atômicos e coleta limitada. Reload já pode reconstruir o coordenador
+somente do IDB protegido, sem RPC no restore.
+[Evidência](docs/entregas/2026-10-24-writer-v2-persistencia-cifrada-dos-checkpoints-de-lore.md):
+50 Vitest distintos e dois cenários Chromium positivos. Write-ahead automático,
+mapa completo de cleanup sem chave e host ainda pendentes; P1/F2-09/V2 abertos.
