@@ -2165,3 +2165,14 @@ sem repetir RPC; swap/ACK/receipt/remoção são atômicos. Prefixos e active
 idempotente são verificados antes de salvo/coleta. Dívida local bloqueia avanço.
 Cancel usa worker sem chave; sessão Auth vincula journal reservado.
 Bootstrap/host visual e ciclo de vida integrado seguem pendentes; P1 aberto.
+
+## P1 M38c5j — reserva descobrível e encerramento da recuperação
+
+[ADR 0123](decisions/0123-discoverable-lore-recovery-reservations.md):
+store preparations no IDB v2 conserva ticket sem prosa antes de reserve,
+com identidade/hash/ACK e lanes de cancel/liberação independentes.
+Upgrade aditivo conserva ciphertext v1; downgrade é recusado.
+Sessão Auth compõe reserva/journal/controller; cold resume não inventa draft
+quando a primeira cópia ainda não confirmou. Cancel conserva chave/draft;
+releaseRecovery registra intenção explícita e fecha jobs antes de revogar.
+Nenhuma purga local ou ativação da UI por este incremento; P1 segue aberto.

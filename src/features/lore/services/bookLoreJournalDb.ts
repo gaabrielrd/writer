@@ -2,15 +2,19 @@ import {
   journalHead,
   journalFrame,
   journalFail,
+  sameJournalIdentity,
   type LoreJournalHead,
   type LoreJournalIdentity,
   type LoreJournalSection,
   type LoreJournalFrame,
 } from './bookLoreJournalContracts';
 import { readLoreControlRecord, type LoreControlRecord } from './bookLoreControlContracts';
+import { bookLoreWriteHash as hash } from './bookLoreWritePayload';
+import { preparationHead, type LorePreparationHead } from './bookLorePreparationContracts';
 export const LORE_JOURNAL_DB = 'writer.book-lore-journal';
 const HEADS = 'heads',
-  FRAMES = 'frames';
+  FRAMES = 'frames',
+  PREPARATIONS = 'preparations';
 export type JournalFrameKey = [string, string, LoreJournalSection, string, number];
 export type JournalControlKey = [string, string, 'controls', string, number | string];
 export type JournalRecordKey = JournalFrameKey | JournalControlKey;
@@ -32,14 +36,20 @@ function open(): Promise<IDBDatabase> {
     );
   return new Promise((resolve, reject) => {
     let failed = false;
-    const r = indexedDB.open(LORE_JOURNAL_DB, 1);
+    const r = indexedDB.open(LORE_JOURNAL_DB, 2);
     r.onupgradeneeded = () => {
-      r.result.createObjectStore(HEADS);
-      r.result.createObjectStore(FRAMES);
+      for (const store of [HEADS, FRAMES, PREPARATIONS])
+        if (!r.result.objectStoreNames.contains(store)) r.result.createObjectStore(store);
     };
     r.onerror = () => {
       failed = true;
-      reject(Error('Não foi possível abrir a cópia protegida.'));
+      reject(
+        Error(
+          r.error?.name === 'VersionError'
+            ? 'Atualize o Writer para abrir a recuperação deste dispositivo.'
+            : 'Não foi possível abrir a cópia protegida.',
+        ),
+      );
     };
     r.onblocked = () => {
       failed = true;
@@ -206,4 +216,98 @@ export async function readJournalControlRecord(key: JournalControlKey): Promise<
       }
     };
   });
+}
+
+export async function readJournalPreparation(
+  uid: string,
+  writeId: string,
+): Promise<LorePreparationHead | null> {
+  const db = await open();
+  return operation(db, [PREPARATIONS], 'readonly', (tx, done) => {
+    const r: IDBRequest<unknown> = tx.objectStore(PREPARATIONS).get([uid, writeId]);
+    r.onsuccess = () => {
+      try {
+        done(r.result === undefined ? null : preparationHead(r.result, uid, writeId));
+      } catch {
+        tx.abort();
+      }
+    };
+  });
+}
+export async function commitJournalPreparation(next: LorePreparationHead, expected: string | null) {
+  if (!journalStorageAvailable()) throw Error('A recuperação protegida não está disponível.');
+  const checked = preparationHead(next, next.uid, next.intent.writeId);
+  return navigator.locks.request(
+    'writer.book-lore-preparation:' + JSON.stringify([next.uid, next.intent.writeId]),
+    async () => {
+      const db = await open();
+      return operation<LorePreparationHead>(db, [PREPARATIONS], 'readwrite', (tx, done) => {
+        const store = tx.objectStore(PREPARATIONS),
+          r: IDBRequest<unknown> = store.get([next.uid, next.intent.writeId]);
+        r.onsuccess = () => {
+          try {
+            const current =
+              r.result === undefined
+                ? null
+                : preparationHead(r.result, next.uid, next.intent.writeId);
+            if (
+              (current?.stamp ?? null) !== expected ||
+              (current &&
+                (current.requestHash !== checked.requestHash ||
+                  (current.cancelRequested && !checked.cancelRequested) ||
+                  (current.releaseRequested && !checked.releaseRequested) ||
+                  (current.closed && hash(current.closed) !== hash(checked.closed)) ||
+                  (current.reserveState === 'confirmed' && checked.reserveState !== 'confirmed') ||
+                  (current.jobsClosed !== null && current.jobsClosed !== checked.jobsClosed) ||
+                  (current.revoke &&
+                    (!checked.revoke || hash(current.revoke.wire) !== hash(checked.revoke.wire))) ||
+                  (current.revoke?.state === 'confirmed' &&
+                    checked.revoke?.state !== 'confirmed') ||
+                  (current.identity &&
+                    (!checked.identity ||
+                      !sameJournalIdentity(current.identity, checked.identity)))))
+            )
+              journalFail();
+            store.put(checked, [next.uid, next.intent.writeId]);
+            done(checked);
+          } catch {
+            tx.abort();
+          }
+        };
+      });
+    },
+  );
+}
+export async function listJournalPreparations(uid: string, after?: string, limit = 50) {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) journalFail();
+  const db = await open();
+  return operation<{ items: LorePreparationHead[]; next: string | null }>(
+    db,
+    [PREPARATIONS],
+    'readonly',
+    (tx, done) => {
+      const items: LorePreparationHead[] = [],
+        range = IDBKeyRange.bound([uid, after ?? ''], [uid, []], after !== undefined, true),
+        r = tx.objectStore(PREPARATIONS).openCursor(range);
+      r.onsuccess = () => {
+        try {
+          const c = r.result;
+          if (!c) {
+            done({ items, next: null });
+            return;
+          }
+          if (items.length === limit) {
+            done({ items, next: items.at(-1)!.intent.writeId });
+            return;
+          }
+          const key = c.key;
+          if (!Array.isArray(key) || key[0] !== uid || typeof key[1] !== 'string') journalFail();
+          items.push(preparationHead(c.value, uid, key[1]));
+          c.continue();
+        } catch {
+          tx.abort();
+        }
+      };
+    },
+  );
 }

@@ -40,3 +40,6 @@ export type {
 
 export { createPersistedBookLoreEditOperation } from './bookLorePersistedOperation';
 export type { PersistedBookLoreSnapshot } from './bookLorePersistedOperation';
+
+export type { BookLoreManualSnapshot } from './bookLoreManualOperation';
+export type { LorePreparationHead, LorePreparationIntent } from './bookLorePreparationContracts';

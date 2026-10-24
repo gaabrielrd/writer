@@ -239,10 +239,13 @@ export function createPersistedBookLoreEditOperation(
     actor();
     return snapshot();
   }
-  function cancel(): Promise<PersistedBookLoreSnapshot> {
+  function requestCancel() {
     actor();
     closing = true;
     op?.requestCancel();
+  }
+  function cancel(): Promise<PersistedBookLoreSnapshot> {
+    requestCancel();
     return cleanup();
   }
   async function run(apply: boolean) {
@@ -305,5 +308,6 @@ export function createPersistedBookLoreEditOperation(
     advance: () => run(false).then(() => snapshot()),
     apply: () => run(true).then(() => snapshot()),
     cancel,
+    requestCancel,
   });
 }

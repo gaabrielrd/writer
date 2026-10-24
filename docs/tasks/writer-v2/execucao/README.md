@@ -1153,3 +1153,18 @@ Próximo: bootstrap da reserva/chave e host visual, com fechamento antes de
 descarte e ciclo de vida integrado. Demais writers/consumidores/backup/
 ativação/rollout e P1/F2-09/V2 continuam abertos; validate no fechamento de P1.
 Sem CI/push/deploy.
+
+### P1 M38c5j — reserva descobrível e encerramento explícito
+
+[Plano 108](108-reserva-descobrivel-e-encerramento-da-edicao-de-lore.md),
+[ADR 0123](../../../decisions/0123-discoverable-lore-recovery-reservations.md)
+e [evidência](../../../entregas/2026-10-24-writer-v2-reserva-descobrivel-da-edicao-de-lore.md):
+reserva/journal/controller compostos pela sessão Auth, ticket durável antes de
+RPC, replay exato e descoberta por conta. Migração aditiva IDB v2 preserva
+cópias v1. Cancel conserva chave; releaseRecovery fecha jobs antes de revogar.
+208 Vitest distintos em rodadas e três cenários Chromium positivos.
+
+Próximo: host visual e purga local com fence de escritas antigas. Exclusão
+integrada da chave no livro, demais writers/Rules/drenagem/consumidores/
+backup/ativação/rollout e P1/F2-09/V2 continuam abertos. Validate no fim de P1;
+somente commits locais, sem CI/push/deploy.

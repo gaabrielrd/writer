@@ -26,6 +26,7 @@ export function installLoreJournalHarness() {
     return a < b ? -1 : a > b ? 1 : 0;
   }
   const db = {
+    objectStoreNames: { contains: (name) => stores.has(name) },
     close() {
       closed++;
     },

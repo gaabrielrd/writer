@@ -628,3 +628,11 @@ validado recuperável sem repetir envio, confirmação atômica e cancel sem cha
 testes dirigidos e três cenários Chromium em harness da mesma origem.
 Bootstrap da reserva/chave e host visual seguem pendentes; a interface
 existente ainda não usa este adaptador. P1/F2-09/V2 permanecem abertos.
+
+M38c5j conecta reserva nativa e coordenador pela sessão Auth, com ticket
+metadata descobrível antes do primeiro RPC e migração aditiva do IDB.
+Cancel fecha jobs e conserva o rascunho recuperável; encerrar a recuperação
+é uma ação explícita separada.
+[Evidência](docs/entregas/2026-10-24-writer-v2-reserva-descobrivel-da-edicao-de-lore.md):
+208 Vitest distintos em rodadas e três cenários Chromium positivos.
+Host visual/purga local e rollout seguem pendentes; P1/F2-09/V2 abertos.

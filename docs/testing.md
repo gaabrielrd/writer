@@ -2162,3 +2162,14 @@ pontes inválidas, corrupção antes de coleta, literal multipart e cancel.
 Sessão verifica vínculo por conta/guard; regressões cobrem journal/checkpoint/
 mapa e chave. Três cenários Chromium usam IDB/Web Locks reais em harness leve.
 Não equivale a UI/SDK/App Check reais. Validate integral no fechamento de P1.
+
+### P1 M38c5j — bootstrap e liberação explícita de lore
+
+[Plano 108](tasks/writer-v2/execucao/108-reserva-descobrivel-e-encerramento-da-edicao-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-reserva-descobrivel-da-edicao-de-lore.md):
+47 casos novos verificam ticket/RPC/ACK, cold resume com/sem draft, espera de
+chave/reserve/produtor, cancel separado de liberação, adoção vencedora, conta/
+signal/CAS/paginação/corrupção e SDK boundary. Registros locais sem texto/chave.
+Três cenários Chromium provam migração v1 → v2, processo reiniciado e recuperação
+de draft após cancel e reautorização. Harness de armazenamento/serviços, sem
+prova da UI ou SDK/App Check reais. Validate integral no fechamento de P1.

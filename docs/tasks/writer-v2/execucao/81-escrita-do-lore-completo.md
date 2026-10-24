@@ -480,3 +480,13 @@ swap/ACK atômicos e recuperação automática; cancela sem depender de chave
 ou produtor pendente. Antecessora é preservada no retry corrompido.
 Bootstrap e host visual/ciclo de vida integrado seguem próximos; demais
 writers/consumidores/backup/ativação/rollout e P1/F2-09/V2 seguem abertos.
+
+## Reserva descobrível e liberação explícita — M38c5j
+
+[Plano 108](108-reserva-descobrivel-e-encerramento-da-edicao-de-lore.md)
+compõe reserva nativa/journal/controller pela sessão Auth, com ticket metadata
+antes de reserve e descoberta após resposta perdida. IDB v2 mantém cópias v1.
+Cancel conserva chave e rascunho; liberação explícita fecha jobs antes de
+revogar. Sem texto inventado se a primeira cópia ainda não confirmou.
+Host visual/purga local/ciclo de exclusão da chave e demais writers/Rules/
+consumidores/backup/ativação/rollout seguem pendentes; P1/F2-09/V2 abertos.

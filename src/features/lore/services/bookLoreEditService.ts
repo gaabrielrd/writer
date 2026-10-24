@@ -1,3 +1,6 @@
+import { createBookLoreManualOperation } from './bookLoreManualOperation';
+import { bookLoreJournalSession } from './bookLoreJournalSession';
+import { listJournalPreparations } from './bookLoreJournalDb';
 import { createPersistedBookLoreEditOperation } from './bookLorePersistedOperation';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -99,5 +102,79 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
       },
     );
   }
-  return Object.freeze({ actor, guard, prepare, restore, cleanup, persistent });
+  function manualEnvironment(hostGuard?: () => void) {
+    const check = () => {
+      guard();
+      hostGuard?.();
+    };
+    return {
+      uid,
+      guard: check,
+      edit: port,
+      recovery: {
+        async call(
+          method: 'reserveBookLoreEditRecovery' | 'revokeBookLoreEditRecovery',
+          input: unknown,
+        ) {
+          check();
+          const response = await httpsCallable<unknown, unknown>(
+            getFunctions(getFirebaseApp(), 'us-central1'),
+            method,
+            { timeout: 130000 },
+          )(input);
+          check();
+          return response.data;
+        },
+      },
+      createJournal: (identity: Parameters<typeof bookLoreJournalSession>[0]) =>
+        bookLoreJournalSession(identity, () => {
+          check();
+          return true;
+        }).create(),
+      openJournal: (identity: Parameters<typeof bookLoreJournalSession>[0]) =>
+        bookLoreJournalSession(identity, () => {
+          check();
+          return true;
+        }).open(),
+    };
+  }
+  function manual(
+    input: Omit<BookLoreEditOperationInput, 'uid'>,
+    options: BookLoreWriteOptions = {},
+  ) {
+    guard();
+    const frozen = freezeLoreEditValue(input) as Omit<BookLoreEditOperationInput, 'uid'>;
+    return createBookLoreManualOperation(
+      frozen.writeId,
+      manualEnvironment(options.guard),
+      { ...frozen, uid },
+      options,
+    );
+  }
+  function resumeManual(writeId: string, options: BookLoreWriteOptions = {}) {
+    guard();
+    return createBookLoreManualOperation(
+      writeId,
+      manualEnvironment(options.guard),
+      undefined,
+      options,
+    );
+  }
+  async function preparations(after?: string, limit = 50) {
+    guard();
+    const result = await listJournalPreparations(uid, after, limit);
+    guard();
+    return result;
+  }
+  return Object.freeze({
+    actor,
+    guard,
+    prepare,
+    restore,
+    cleanup,
+    persistent,
+    manual,
+    resumeManual,
+    preparations,
+  });
 }
