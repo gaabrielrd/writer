@@ -279,7 +279,8 @@ export async function finishBookDeletion(bookId: string): Promise<void> {
     parent.exists() &&
     (parent.data().hasSceneResources ||
       parent.data().hasNarrativeResources ||
-      parent.data().hasProgressResources)
+      parent.data().hasProgressResources ||
+      parent.data().hasLoreResources)
   )
     throw new Error('Conclua a limpeza dos recursos do projeto no servidor.');
   const batch = writeBatch(firestore);

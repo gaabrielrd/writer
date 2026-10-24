@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { studioDb } from './helpers/studioDb.mjs';
+import { adventureImportDb } from './helpers/adventureImportDb.mjs';
 import { createScenesService } from '../src/scenes.mjs';
 import { digest, prose } from '../src/sceneContracts.mjs';
 import { sceneRankBetween, validSceneRank } from '../src/sceneRanks.mjs';
@@ -8,7 +8,7 @@ import { sceneRankBetween, validSceneRank } from '../src/sceneRanks.mjs';
 const target = { kind: 'book', id: 'book' };
 const op = (n) => `scene-operation-${String(n).padStart(4, '0')}`;
 function fixture() {
-  const fixture = studioDb();
+  const fixture = adventureImportDb({ nativeUpdates: true });
   fixture.records.set('books/book', {
     authorId: 'author',
     title: 'Livro',

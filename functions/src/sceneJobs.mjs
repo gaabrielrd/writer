@@ -1,3 +1,5 @@
+import { prepareBookLoreDeletion } from './bookLoreDeletion.mjs';
+import { assertBookLorePayloadsEmpty } from './bookLoreDeletionStore.mjs';
 import {
   sceneFail,
   conflict,
@@ -31,6 +33,7 @@ const BOOK_DELETE_FLAT_PHASES = [
   'workVersions',
 ];
 const BOOK_DELETE_PHASES = [
+  'lore-resources',
   'scenes',
   'revisions',
   'arcs',
@@ -302,7 +305,7 @@ export function addSceneJobs(api, helpers) {
       }
       if (previous?.kind === 'delete-book' && !BOOK_DELETE_PHASES.includes(previous.phase))
         sceneFail('failed-precondition', 'Fase da exclusão indisponível.');
-      if (previous && ![undefined, 1, 2].includes(previous.cleanupVersion))
+      if (previous && ![undefined, 1, 2, 3].includes(previous.cleanupVersion))
         sceneFail('failed-precondition', 'Versão da exclusão indisponível.');
       if (!rootSnapshot.exists && previous?.complete) return progress(previous);
       const p = await project(context, tx, true),
@@ -321,12 +324,43 @@ export function addSceneJobs(api, helpers) {
         ...previous,
       };
       delete state.fingerprint;
-      state.cleanupVersion = 2;
+      state.cleanupVersion = 3;
       if (state.complete) return progress(state);
       if (!Number.isSafeInteger(state.processed) || state.processed < 0)
         sceneFail('failed-precondition', 'Contagem da exclusão inválida.');
+      const lore = await prepareBookLoreDeletion(tx, {
+        db,
+        uid,
+        bookId: context.target.id,
+        operationId: effective.id,
+        limit,
+      });
+      const priorLore = state.loreProcessed ?? 0;
+      if (!Number.isSafeInteger(priorLore) || priorLore < 0 || lore.processed < priorLore)
+        conflict();
+      state.processed += lore.processed - priorLore;
+      state.loreProcessed = lore.processed;
+      if (!lore.complete && state.phase !== 'lore-resources') {
+        state.loreResumePhase = state.phase;
+        state.phase = 'lore-resources';
+      }
+      if (lore.complete && state.phase === 'lore-resources') {
+        if (
+          !BOOK_DELETE_PHASES.includes(state.loreResumePhase) ||
+          state.loreResumePhase === 'lore-resources'
+        )
+          conflict();
+        state.phase = state.loreResumePhase;
+        delete state.loreResumePhase;
+      }
       let deleted = [];
-      if (state.phase === 'scenes' || state.phase === 'revisions' || state.phase === 'arcs') {
+      if (state.phase === 'lore-resources') {
+        // Child protocols have already read their inputs; only checkpoint writes follow.
+      } else if (
+        state.phase === 'scenes' ||
+        state.phase === 'revisions' ||
+        state.phase === 'arcs'
+      ) {
         const base =
           state.phase === 'scenes'
             ? `${context.path}/scenes`
@@ -403,6 +437,7 @@ export function addSceneJobs(api, helpers) {
           );
           if (remaining.docs.length) state.phase = 'text-bodies';
           else {
+            await assertBookLorePayloadsEmpty(tx, db, context.target.id);
             let universe, link;
             if (p.universeId) {
               universe = await tx.get(db.doc(`universes/${sceneId(p.universeId)}`));
@@ -425,6 +460,7 @@ export function addSceneJobs(api, helpers) {
       }
       if (!Number.isSafeInteger(state.processed + deleted.length))
         sceneFail('failed-precondition', 'Contagem da exclusão inválida.');
+      lore.commit();
       for (const ref of deleted) tx.delete(ref);
       state.processed += deleted.length;
       if (!state.complete) tx.update(context.ref, { sceneDeletionOperationId: effective.id });

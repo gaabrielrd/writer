@@ -187,7 +187,7 @@ test('an interrupted continuation update rolls back every child deletion and fre
   assert.equal(f.records.has(f.body), true);
   assert.equal((await f.handler(e)).complete, true);
 });
-test('book inventory v2 removes all referenced bodies before root, preserves other books and replays without recreation', async () => {
+test('book inventory v3 removes all referenced bodies before root, preserves other books and replays without recreation', async () => {
   const f = await fixture(),
     { version } = await f.capture('cleanup-book-version01');
   await f.save(B, 'cleanup-book-second01');
@@ -197,7 +197,7 @@ test('book inventory v2 removes all referenced bodies before root, preserves oth
   await untilBodies(f);
   assert.equal(
     f.records.get('users/author/sceneOperations/cleanup-delete-book01').cleanupVersion,
-    2,
+    3,
   );
   const e = await event(f);
   assert.equal(await f.handler(e), null);

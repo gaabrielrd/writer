@@ -69,3 +69,11 @@ aposentada por prova nativa; phase físico reserved permanece fence.
 Nenhum endpoint/UI/worker ou deploy. Criação/exclusão, inventário completo,
 writers/consumidores/backup/cliente e rollout continuam pendentes.
 P1/F2-09/V2 permanecem abertos.
+
+## Integração posterior — exclusão do livro
+
+O [plano 87](87-exclusao-dos-recursos-de-lore-do-livro.md) agora coordena o
+inventário de lore na exclusão do livro inteiro, incluindo reservas em preparação
+e sucessos adopted preservados. Criação/exclusão por ficha, roteamento completo
+de preparações e writers/consumidores/backup/cliente permanecem obrigatórios
+antes de habilitar a adoção ao cliente. P1/F2-09/V2 continuam abertos.

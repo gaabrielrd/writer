@@ -52,6 +52,7 @@ interface StoredBookDoc {
   hasNarrativeResources?: boolean;
   narrativeRevision?: number;
   hasProgressResources?: boolean;
+  hasLoreResources?: boolean;
   editorialState?: 'draft' | 'review' | 'ready';
   universeId?: string | null;
   personaId?: string | null;
@@ -240,7 +241,8 @@ export async function deleteBook(bookId: string): Promise<void> {
     parent.exists() &&
     (parent.data().hasSceneResources ||
       parent.data().hasNarrativeResources ||
-      parent.data().hasProgressResources)
+      parent.data().hasProgressResources ||
+      parent.data().hasLoreResources)
   ) {
     const request = {
       target: { kind: 'book' as const, id: bookId },

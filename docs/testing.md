@@ -1791,3 +1791,18 @@ legada, projeção pública por consentimento, leases físicas preservadas,
 concorrência e retry após excluir raiz. Sintaxe de 200 módulos, arquitetura e
 lint positivos. Sem cliente novo, não repetimos tipos/Vitest/build/browser;
 validate integral no fim de P1. Exclusão/consumidores/backup/cliente pendentes.
+
+### P1 M38c3j — exclusão coordenada dos recursos de lore do livro
+
+[Entrega](entregas/2026-10-24-writer-v2-exclusao-dos-recursos-de-lore-do-livro.md):
+248 Node distintos positivos em rodadas dirigidas (23 novos, 225 de regressão),
+91 Vitest e cinco SDK positivos. SDK em loopback/demo com Firestore 1.22.0
+verificado comprova rollback de bytes/inventário/checkpoints, cancelamento de
+filho inline parcial, aliases/fences, 141 partes/header por último e recriações
+nativas preservadas. Rules negam controlador e reativação de deleting.
+
+As falhas iniciais de fixture/expectativa antiga e sua correção estão registradas
+na entrega. Nenhuma falha fica escondida por contagem de repetições. Lint,
+typecheck, arquitetura e sintaxe dos 204 módulos passaram. Sem UI nova,
+não repetimos build/browser ou validate/coverage integrais; estes ficam em P1.
+Exclusão por ficha e demais writers/consumidores/backup/cliente seguem pendentes.

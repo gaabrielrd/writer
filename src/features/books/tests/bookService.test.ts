@@ -186,6 +186,7 @@ describe('bookService', () => {
     { hasSceneResources: true },
     { hasNarrativeResources: true },
     { hasProgressResources: true },
+    { hasLoreResources: true },
   ])(
     'livro com recursos %j revoga acesso e limpa no servidor com o mesmo pedido em todas as páginas',
     async (resources) => {

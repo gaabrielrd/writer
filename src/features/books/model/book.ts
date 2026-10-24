@@ -14,6 +14,7 @@ export interface Book {
   status: BookStatus;
   editorialState?: 'draft' | 'review' | 'ready';
   hasProgressResources?: boolean;
+  hasLoreResources?: boolean;
   wordCount: number;
   hasSceneResources?: boolean;
   sceneRevision?: number;

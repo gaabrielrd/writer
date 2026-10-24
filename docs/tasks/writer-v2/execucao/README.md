@@ -854,3 +854,16 @@ reconhece segunda edição e coleta de corpos retirados com provas nativas.
 Próximo: criação/exclusão coordenadas, inventário do livro/lore, todos os
 writers/consumidores, backup lógico/indexado e cliente antes de endpoint/UI.
 P1/F2-09/V2 continuam abertos; somente commits locais.
+
+### P1 M38c3j — exclusão dos recursos de lore do livro
+
+[Plano 87](87-exclusao-dos-recursos-de-lore-do-livro.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-exclusao-dos-recursos-de-lore-do-livro.md):
+248 Node distintos, 91 Vitest e cinco SDK positivos em rodadas dirigidas.
+Inventário v3 coordena preparações e limpeza por metadata sob cutoff nativo;
+partes antes dos headers, raiz por último e controles/leases/recibos preservados.
+
+Próximo: criação/exclusão individual de lore e roteamento das preparações ainda
+sem marca, depois writers/consumidores/backup/cliente antes de endpoint/UI.
+Validate integral no fechamento de P1. P1/F2-09/V2 continuam abertos;
+somente commits locais, sem CI remota/deploy.

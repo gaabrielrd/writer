@@ -1,13 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { studioDb } from './helpers/studioDb.mjs';
+import { adventureImportDb } from './helpers/adventureImportDb.mjs';
 import { createNarrativePlanningService } from '../src/narrativePlanning.mjs';
 import { createScenesService } from '../src/scenes.mjs';
 import { digest } from '../src/narrativeContracts.mjs';
 const target = { kind: 'book', id: 'book' },
   op = (n) => `narrative-operation-${String(n).padStart(4, '0')}`;
-function fixture() {
-  const f = studioDb();
+function fixture(native = false) {
+  const f = native ? adventureImportDb({ nativeUpdates: true }) : studioDb();
   f.records.set('books/book', {
     authorId: 'author',
     title: 'Livro',
@@ -616,7 +617,7 @@ test('lore options are paginated and current-scope-only; adventure without unive
   assert.equal([...f.records.keys()].filter((path) => /^books\/[^/]+$/.test(path)).length, 1);
 });
 test('book cleanup includes narrative-only resources and children, leaving private receipts of unrelated projects intact', async () => {
-  const f = fixture(),
+  const f = fixture(true),
     arc = await create(f.api, 1);
   await create(f.api, 2, 'event');
   await f.api.createNarrativeItem('author', {

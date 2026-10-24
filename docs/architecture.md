@@ -1708,3 +1708,23 @@ Registro de fonte preparada confere o evento/recibo e a cabeça nativos.
 Marca servidor hasLoreResources impede exclusão legada. Serviço interno, sem
 endpoint/UI/worker; criação/exclusão, consumidores/backup/cliente e rollout
 continuam pendentes. P1/F2-09/V2 abertos.
+
+## P1 M38c3j — exclusão coordenada dos recursos de lore do livro
+
+[ADR 0102](decisions/0102-coordinated-book-lore-deletion.md) acrescenta
+lore-resources ao inventário v3 de deleteSceneBook. Contexto privado nativo
+bookLoreDeletions fixa livro/checkpoint/cutoff; eventos/âncoras e cursores
+coordenam cancelamentos e limpeza na mesma transação do checkpoint externo.
+
+A barreira deleting/publicação revogada antecede o contexto. Preparações são
+resolvidas antes de remover cabeças e aposentar gerações. Descritores, partes
+e headers são removidos por metadata; até 16 partes por unidade, header por
+último. Corpos controlados validam inventário/lease nativos; legados sem controle
+usam header imutável/cutoff, sem inventar geração. Dados recriados, escopo
+divergente e chunks órfãos bloqueiam terminar; fences não entram no purge legado.
+
+Migração v1/v2 preserva fase e aliases; finish reconfere ausência de conteúdo.
+O cliente encaminha hasLoreResources ao servidor. Preparações ainda sem marca
+exigem roteamento completo antes da exposição de uploads/escrita. Exclusão por
+ficha, criação, consumidores/backup/cliente e rollout permanecem pendentes.
+P1/F2-09/V2 abertos; sem endpoint/UI/worker ou deploy.

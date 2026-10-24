@@ -481,3 +481,11 @@ privacidade/recibo atômicos, com segunda edição real e coleta de corpos retir
 [Evidência](docs/entregas/2026-10-23-writer-v2-adocao-atomica-das-geracoes-de-lore.md).
 hasLoreResources é marca servidor e impede exclusão legada. Criação/exclusão
 coordenadas, consumidores/backup/cliente e rollout ainda pendentes.
+
+M38c3j integra a exclusão dos recursos de lore ao inventário v3 de livros:
+preparações são resolvidas antes de cabeças/gerações/descritores/payloads;
+headers saem depois das partes e controles de recuperação permanecem.
+[Contrato](docs/tasks/writer-v2/execucao/87-exclusao-dos-recursos-de-lore-do-livro.md).
+O cliente reconhece hasLoreResources. Preparações ainda sem essa marca exigem
+roteamento adicional antes de habilitar uploads/escrita. Criação/exclusão por
+ficha, consumidores/backup/cliente e ativação continuam pendentes.

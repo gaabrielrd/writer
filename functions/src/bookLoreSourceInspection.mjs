@@ -75,7 +75,11 @@ function resolveMetadata(opened, base, privacy) {
         : { present: true, value: privacy };
   return { metadata, needsPrivacy: false };
 }
-export function createBookLoreSourceInspectionService({ db, now = () => Date.now() }) {
+export function createBookLoreSourceInspectionService({
+  db,
+  now = () => Date.now(),
+  transaction = null,
+}) {
   const service = {
     async startBookLoreSourceInspection(uid, input) {
       const intent = inspectionIntent(uid, input),
@@ -218,8 +222,9 @@ export function createBookLoreSourceInspectionService({ db, now = () => Date.now
     },
     async cancelBookLoreSourceInspection(uid, input) {
       const r = inspectionRequest(uid, input, true),
-        c = inspectionPaths(db, uid, r.inspectionId);
-      return db.runTransaction(async (tx) => {
+        c = inspectionPaths(db, uid, r.inspectionId),
+        run = (fn) => (transaction ? fn(transaction) : db.runTransaction(fn));
+      return run(async (tx) => {
         const loaded = await loadSourceInspection(tx, c, r);
         if (!loaded) {
           if (r.jobToken !== undefined) conflict();

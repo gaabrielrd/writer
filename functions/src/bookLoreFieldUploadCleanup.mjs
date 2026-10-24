@@ -19,12 +19,13 @@ import { readUploadArtifact } from './bookLoreFieldUploadProofs.mjs';
 import { cancelledEditUploadAccess } from './bookLoreEditLeaseProofs.mjs';
 import { collectBookLoreInventoryUnit } from './bookLoreResourceInventoryCleanup.mjs';
 import { inventoryScope } from './bookLoreResourceInventoryContracts.mjs';
-export function createBookLoreFieldUploadCleanup({ db }) {
+export function createBookLoreFieldUploadCleanup({ db, transaction = null }) {
+  const transact = (fn) => (transaction ? fn(transaction) : db.runTransaction(fn));
   return {
     async cancelBookLoreFieldUpload(uid, input) {
       const r = fieldUploadRequest(uid, input, [], true),
         c = fieldUploadPaths(db, uid, r.uploadId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadFieldUpload(tx, c, r);
         if (!loaded) {
           if (r.jobToken !== undefined) conflict();
@@ -57,7 +58,7 @@ export function createBookLoreFieldUploadCleanup({ db }) {
       const r = fieldUploadRequest(uid, input, ['expectedRevision'], true);
       fieldUploadCAS(r);
       const c = fieldUploadPaths(db, uid, r.uploadId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadFieldUpload(tx, c, r);
         return advanceBookLoreFieldCleanupInTransaction(tx, loaded, r);
       });

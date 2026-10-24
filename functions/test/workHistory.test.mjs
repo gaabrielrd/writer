@@ -490,7 +490,7 @@ test('version deletion revokes a preview before resumable bounded cleanup and ne
 });
 
 test('project cleanup removes flat history bodies/manifests before tombstone and cannot recreate through receipts', async () => {
-  const f = fixture(),
+  const f = fixture(true),
     { version } = await capture(f, 'project-cleanup');
   f.records.get('books/book').deleting = true;
   let result;

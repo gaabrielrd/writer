@@ -337,6 +337,7 @@ service cloud.firestore {
       match /bookLoreFieldUploads/{document=**} { allow read, write: if false; }
       match /bookLoreSourceInspections/{document=**} { allow read, write: if false; }
       match /bookLoreEdits/{document=**} { allow read, write: if false; }
+      match /bookLoreDeletions/{document=**} { allow read, write: if false; }
       match /bookRestoreRecoveryKeys/{id} { allow read, write: if false; }
       match /bookRestoreOperations/{id} { allow read, write: if false; }
       match /bookRestoreStartFences/{id} { allow read, write: if false; }

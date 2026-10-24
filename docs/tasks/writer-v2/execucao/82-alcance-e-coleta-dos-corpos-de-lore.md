@@ -118,3 +118,15 @@ os guards de cabeça/referências. [Evidência](../../../entregas/2026-10-23-wri
 
 Passo 6 e rollout continuam pendentes: exclusão/inventário completo e integração
 de writers/consumidores/backup/cliente. hasLoreResources bloqueia exclusão legada.
+
+## Inventário de exclusão do livro — M38c3j
+
+O [plano 87](87-exclusao-dos-recursos-de-lore-do-livro.md) implementa a parte
+de exclusão do livro do passo 6: contexto/cutoff nativos e etapa v3 resolvem
+preparações, removem cabeças, aposentam gerações e limpam descritores/payloads
+por metadata. Root sai por último; jobs/leases/controles/recibos permanecem.
+
+Esta barreira própria do livro deleting não altera a coleta genérica por
+alcance. Exclusão por ficha, criação e roteamento completo de livros ainda
+não marcados seguem pendentes antes de exposição ao cliente, assim como
+writers/consumidores/backup/recuperação e rollout. Passo 6 e P1 continuam abertos.

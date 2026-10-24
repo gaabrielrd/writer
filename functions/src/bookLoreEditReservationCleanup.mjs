@@ -35,12 +35,13 @@ async function slotField(tx, loaded, record) {
     conflict();
   return field;
 }
-export function createBookLoreEditReservationCleanup({ db }) {
+export function createBookLoreEditReservationCleanup({ db, transaction = null }) {
+  const transact = (fn) => (transaction ? fn(transaction) : db.runTransaction(fn));
   return {
     async cancelBookLoreEditReservation(uid, input) {
       const r = editReservationRequest(uid, input, [], true),
         c = editReservationPaths(db, uid, r.editId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadEditReservation(tx, c, r);
         if (!loaded) {
           if (r.jobToken !== undefined) conflict();
@@ -106,7 +107,7 @@ export function createBookLoreEditReservationCleanup({ db }) {
     async advanceBookLoreEditReservationCleanup(uid, input) {
       const r = editReservationRequest(uid, input, [], true, true),
         c = editReservationPaths(db, uid, r.editId);
-      return db.runTransaction(async (tx) => {
+      return transact(async (tx) => {
         const loaded = await loadEditReservation(tx, c, r);
         if (!loaded || loaded.job.kind === 'fence') conflict();
         const replay = await replayEditReservation(

@@ -300,3 +300,13 @@ segunda edição real e aposentadoria/coleta por prova nativa.
 
 Criação/exclusão, inventário do livro e todos os writers/consumidores/backup/
 cliente ainda obrigatórios antes do rollout. Nenhum endpoint/UI habilitado.
+
+## Exclusão do livro — M38c3j
+
+O [plano 87](87-exclusao-dos-recursos-de-lore-do-livro.md) integra preparações
+e recursos de lore ao inventário v3 de exclusão do livro. Controles/leases/
+recibos permanecem fences; cliente reconhece hasLoreResources.
+
+Criação/exclusão individual e roteamento de preparações ainda sem a marca
+continuam obrigatórios antes de habilitar uploads/escrita ao cliente. Demais
+writers/consumidores/backup/cliente e rollout mantêm M38c/P1/F2-09/V2 abertos.
