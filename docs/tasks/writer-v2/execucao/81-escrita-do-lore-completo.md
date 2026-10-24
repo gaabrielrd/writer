@@ -381,3 +381,15 @@ foi coberta; rollout conjunto/drenagem continuam obrigatórios.
 Próximo: demais escritores Admin/regras, consumidores/backup/cliente e
 certificação/ativação de P1. Outros namespaces de exclusão ainda exigem
 auditoria própria. M38c/P1/F2-09/V2 permanecem abertos.
+
+## Pré-requisito do writer de análise — M38c4a / A1
+
+[Plano 94](94-leitura-logica-da-analise-de-lore.md) substitui leitura de stubs
+por contexto lógico e budgets explícitos; respostas e reutilização de corpo
+revalidam origem nativa. Apply não adiciona campos inline a uma cabeça payload
+e preserva atomicidade ao recusar lote misto antes de débito.
+
+54 Node e seis SDK positivos. Próximo A2 exige preparar campos/gerações e
+adotar os até 50 itens com crédito/recibo no mesmo commit, sem perder campos/
+relações intocados. Não declarar writer payload entregue por esta guarda.
+Demais escritores/consumidores/backup/cliente e M38c/P1/F2-09/V2 abertos.

@@ -156,3 +156,13 @@ O [plano 82](82-alcance-e-coleta-dos-corpos-de-lore.md) detalha a dependência d
 inventário/coleta antes da adoção; seu núcleo de fontes foi validado em M38c3e.
 Próximos passos: leases/geração em preparação, adoção CAS/privacidade,
 criação/exclusão, inventário do livro e cliente. A etapa 3 não está concluída; M38c/P1/F2-09/V2 abertos.
+
+## Contexto da análise — M38c4a / A1
+
+[Plano 94](94-leitura-logica-da-analise-de-lore.md) integra leitor lógico de
+inline/v1/v2/criação ao snapshot da análise, com budgets, consulta paginada,
+revisão nativa e reautorização de respostas/corpos. Escrita payload/mista é
+recusada sem alteração/débito até A2 preparar/adotar o lote atomicamente.
+
+54 Node e seis SDK positivos. Demais leitores, writer A2, backup lógico/indexado,
+cliente/recuperação e P1/F2-09/V2 continuam pendentes. Sem endpoint/deploy novo.

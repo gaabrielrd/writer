@@ -945,3 +945,16 @@ de início/metadata/limpeza nativa, retomada e contadores de universo.
 Pendentes: rollout/drenagem, demais escritores, consumidores/backup/cliente e
 auditoria dos outros namespaces. M38c/P1/F2-09/V2 continuam abertos.
 Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.
+
+### P1 M38c4a / A1 — leitura lógica da análise de lore
+
+[Plano 94](94-leitura-logica-da-analise-de-lore.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-leitura-logica-da-analise-de-lore.md):
+54 Node e seis SDK positivos. Contexto lógico substitui stubs, com budgets,
+origens nativas e reautorização após resposta/reutilização. Fonte não é
+reescrita e recibos aplicados continuam metadata confirmável.
+
+Próximo A2: preparar/adotar lote multi-item com crédito/recibo atômicos.
+Writer payload ainda é recusado explicitamente, sem campos inline misturados.
+Demais consumidores/backup/cliente e M38c/P1/F2-09/V2 permanecem abertos.
+Validate integral no fim de P1; somente commits locais, sem CI/push/deploy.

@@ -96,11 +96,25 @@ function fixture(generator = async () => JSON.stringify({ entities: [detected] }
     ref,
     id: ref.id,
     exists: records.has(ref.path),
+    createTime: { seconds: 1, nanoseconds: 0 },
+    updateTime: { seconds: 1, nanoseconds: 0 },
     data: () => structuredClone(records.get(ref.path)),
   });
   const db = {
     doc,
-    collection: (path) => ({ path, query: true }),
+    collection: (path) => ({
+      path,
+      query: true,
+      orderBy() {
+        return this;
+      },
+      limit(take) {
+        return { ...this, take };
+      },
+      startAfter(after) {
+        return { ...this, after };
+      },
+    }),
     runTransaction(operation) {
       const result = queue.then(async () => {
         const writes = [];
@@ -115,6 +129,9 @@ function fixture(generator = async () => JSON.stringify({ entities: [detected] }
                         path.startsWith(ref.path + '/') &&
                         !path.slice(ref.path.length + 1).includes('/'),
                     )
+                    .sort()
+                    .filter((path) => !ref.after || path.split('/').at(-1) > ref.after)
+                    .slice(0, ref.take ?? Infinity)
                     .map((path) => snap(doc(path))),
                 }
               : snap(ref);

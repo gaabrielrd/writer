@@ -1912,3 +1912,20 @@ revogação/publicação permanecem. Lint/tipos corrigidos e arquitetura positiv
 Após ajuste de asserção tipada, somente seu caso Vitest foi repetido.
 Sem UI visual/backend novos, não repetimos browser/build/sintaxe Functions.
 Validate/cobertura completos no fim de P1; sem CI/push/deploy.
+
+### P1 M38c4a / A1 — lore lógico da análise
+
+[Entrega](entregas/2026-10-24-writer-v2-leitura-logica-da-analise-de-lore.md):
+54 Node positivos (30 novos e 24 existentes), 372.5111 ms; seis SDK positivos,
+43310.8667 ms, emulador verificado 1.22.0 demo/loopback. Gerador stub, sem IA paga.
+
+Testes conferem inline/v1/v2/criação, BOM/presenças/relações/datas, SHA independente
+do Merkle, domínio, budgets antes de chunks, 501 fichas com páginas de 16,
+recriação nativa, escrita payload/mista recusada sem débito e inline atômico.
+Após I/O, revogação descarta resposta antes do próximo chunk; corpo repetido
+reautoriza e recibo metadata sobrevive. Erro de schema portátil foi traduzido
+para conflito de origem após os casos negativos detectarem o código incorreto.
+
+Arquitetura, lint dirigido e sintaxe dos 226 módulos passaram. Sem UI/TS novos,
+não repetimos Vitest/tipos/build/browser. Validate/cobertura no fechamento de P1.
+A2 e demais integrações permanecem pendentes, sem CI/push/deploy.

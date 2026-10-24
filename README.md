@@ -529,3 +529,9 @@ sem hasLoreResources. Preserva revogação inicial e retomada; o navegador não
 finaliza a raiz nem grava tombstone. [Evidência](docs/entregas/2026-10-24-writer-v2-roteamento-integral-da-exclusao-de-livros.md).
 Cliente/backend/Rules precisam de rollout conjunto, ainda não realizado.
 Demais escritores/consumidores e gates de P1/F2-09/V2 continuam pendentes.
+
+M38c4a/A1 resolve lore lógico na análise assistida, com orçamento agregado e
+reautorização após a resposta e ao reutilizar texto. Preserva fichas de origem
+e recibos; escrita payload continua exigindo a integração preparada A2.
+[Evidência](docs/entregas/2026-10-24-writer-v2-leitura-logica-da-analise-de-lore.md).
+Sem implantação; demais writers/consumidores/backup/cliente e P1/F2-09/V2 abertos.

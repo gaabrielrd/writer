@@ -1864,3 +1864,26 @@ checkpoint canônico e tombstone ficam sob autoridade do protocolo servidor.
 Rollout conjunto e drenagem de clientes antigos permanecem obrigatórios.
 Não há endpoint/índice/dependência novo. Auditoria dos outros namespaces e
 demais writers/consumidores/backup/cliente/ativação de P1 seguem pendentes.
+
+## P1 M38c4a / A1 — análise por contexto lógico
+
+[ADR 0109](decisions/0109-logical-lore-analysis-context.md): bookLoreLogicalRead
+usa C1 para compor inline/base/campos flat/relações com JSON/SHA/Merkle/domínio/
+origens nativas. Caller autoriza livro na transação. Presenças, valores literais,
+datas e privacidade não são normalizados ou escritos na origem.
+
+Análise pagina local/global por ID (16 documentos), agrega budget de 300000
+bytes JSON, 512 partes externas/512 páginas e contexto final de 300000 bytes
+UTF-8/500 entidades. Corpo externo acima do saldo é recusado antes dos chunks;
+prefetch de inline/global/metadata tem sua própria página física. Não é limite
+de autoria, portabilidade ou C1. Contabilização de contexto é linear.
+
+Revisão fixa nascimento de livro/universo e nascimento/atualização/representação
+das entidades. Retornos do provedor e body replays reabrem o contexto; mudança
+impede próximo chunk/reparo e persistência de resposta. Ticket guarda hashes/
+resultado próprio, sem cópia dos corpos do compêndio. Recibo aplicado é metadata.
+
+applyLoreAnalysis não mistura campo inline em payload. A2 ainda deve preparar
+e adotar o lote inteiro com crédito/recibo atômicos. Inline/global mantêm o
+contrato vigente; escritor completo, demais consumidores/backup/cliente e
+ativação de P1 seguem pendentes. Sem novo endpoint/Rule/índice/dependência.
