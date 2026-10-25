@@ -333,3 +333,15 @@ concluído estiverem satisfeitos. A lista fica em
 - Callback separa applied/unchanged e exige provas completas, sem dívida,
   uma vez por seleção/host. Releia valores atuais antes de atualizar o compêndio:
   efeito histórico não congela privacidade, publica ou certifica coleta.
+
+## Composição do compêndio de livros
+
+- Escopos book de LoreCollection usam C1/v2 e hosts nativos; universos e aventuras
+  mantêm seus próprios contratos (ADR 0143). Nunca faça fallback para writer inline.
+- Use captureList para tokens/fontes originais e apresente defaults somente na UI,
+  sem fabricar datas ou converter projeção de apresentação em fonte de escrita.
+  Reautorize a ficha pelo token ao abri-la; conta/livro e epoch limitam resultados.
+- Mantenha cinco retomadas acessíveis mesmo quando a lista de fichas falhar.
+  Releia valores atuais após provas e preserve falhas selecionadas. Lateral,
+  menções e revisão assistida exigem migração própria antes do rollout; não
+  enfraqueça hasLoreResources para contornar entradas ainda antigas.

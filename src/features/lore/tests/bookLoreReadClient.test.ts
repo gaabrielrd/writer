@@ -447,3 +447,29 @@ it('capture respects account revocation while assembling source bytes', async ()
   });
   await expect(f.client.capture('book', 'entity')).rejects.toThrow('Context changed');
 });
+
+it('captureList keeps each original immutable C1 token and absent fields after whole-list verification', async () => {
+  const f = fixture({
+    first: { mode: 'inline', data: { name: '  literal ', category: 'other' } },
+    second: { mode: 'payload', data: { ...basic(), relations: [] } },
+  });
+  const values = await f.client.captureList('book');
+  expect(values.map((v) => [v.id, v.sourceToken])).toEqual([
+    ['first', token('first')],
+    ['second', token('second')],
+  ]);
+  expect(values[0]!.data).toEqual({ name: '  literal ', category: 'other' });
+  expect(Object.isFrozen(values)).toBe(true);
+  expect(Object.isFrozen(values[1]!.data)).toBe(true);
+  expect(f.call.mock.calls.at(-1)?.[0]).toBe('listBookLoreRead');
+});
+it('captureList cannot return a partial collection after final list changes', async () => {
+  const f = fixture();
+  let lists = 0;
+  f.intercept((method, _input, result) =>
+    method === 'listBookLoreRead' && ++lists === 2
+      ? { ...(result as Record<string, unknown>), listToken: 'f'.repeat(64) }
+      : result,
+  );
+  await expect(f.client.captureList('book')).rejects.toThrow();
+});

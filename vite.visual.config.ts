@@ -75,6 +75,7 @@ const replacements = new Map(
     ['src/features/books/services/publicBookService.ts', 'publicBookService.ts'],
     ['src/features/books/services/publicationService.ts', 'publicationService.ts'],
     ['src/features/lore/services/loreService.ts', 'loreService.ts'],
+    ['src/features/lore/services/bookLoreReadService.ts', 'bookLoreReadFixture.ts'],
     ['src/features/lore/services/adventureLoreCallables.ts', 'adventureLoreFixture.ts'],
     ['src/features/lore/services/adventureLoreContext.ts', 'adventureLoreFixture.ts'],
     ['src/features/lore/services/loreAnalysisService.ts', 'loreAnalysisService.ts'],

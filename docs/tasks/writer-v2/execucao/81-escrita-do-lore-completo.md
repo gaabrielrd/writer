@@ -777,3 +777,18 @@ Filhos preservados fora da lista manual isolada; host deve reler valores atuais.
 Etapa 4 implementada; compêndio com todas as ações e demais lifecycle/
 consumidores/backup/rollout/validate de P1 e fases/gates seguem no objetivo.
 Sem CI/envio remoto/deploy; somente commit local.
+
+## Composição do compêndio, marco D — M38c6d
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md) e
+[ADR 0143](../../../decisions/0143-native-book-compendium-composition.md):
+BookPage/LorePage usam C1/v2 com tokens e UI nativa protegida, cinco retomadas,
+seleção filtrada sem cap de 50 e callback que relê valores atuais. Projeção
+somente visual, sem datas fictícias ou fonte de escrita; actor/livro/epoch fixos.
+
+115 casos distintos e 18 Chromium positivos; três temas/320px/foco, build2976
+e [evidência](../../../entregas/2026-10-25-writer-v2-compendio-nativo-dos-livros.md).
+Ainda faltam EditorLoreSidebar, menções e revisão assistida no plano 125,
+preservando nome inicial, retorno e escopo. Não enfraquecer hasLoreResources.
+Lifecycle/consumidores/backup/restauração/rollout/drain/validate de P1 e fases/
+gates humanos/comerciais continuam necessários. Sem CI/remoto/deploy.

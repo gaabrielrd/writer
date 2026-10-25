@@ -259,20 +259,26 @@ export function createBookLoreReadClient(
     } while (cursor !== null);
     return { listToken: listToken, items };
   }
-  async function list(bookId: string): Promise<CompleteBookLore[]> {
+  async function captureList(bookId: string): Promise<readonly BookLoreEditSource[]> {
     readId(bookId);
     guard();
     const initial = await ids(bookId),
-      result: CompleteBookLore[] = [];
+      result: BookLoreEditSource[] = [];
     for (const item of initial.items) {
-      const entity = await get(bookId, item.id, item.readToken);
+      const entity = await capture(bookId, item.id, item.readToken);
       if (!entity) throw invalidLoreRead();
       result.push(entity);
     }
     const final = await ids(bookId, initial.listToken);
     if (!equal(final, initial)) throw invalidLoreRead();
     guard();
-    return result;
+    return Object.freeze(result);
+  }
+  async function list(bookId: string): Promise<CompleteBookLore[]> {
+    return (await captureList(bookId)).map((source) => ({
+      id: source.id,
+      data: structuredClone(source.data),
+    }));
   }
   async function metadata(bookId: string, id: string, readToken?: string) {
     readId(bookId);
@@ -281,5 +287,5 @@ export function createBookLoreReadClient(
     guard();
     return header(bookId, id, readToken);
   }
-  return { get, list, capture, metadata };
+  return { get, list, capture, captureList, metadata };
 }

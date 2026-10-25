@@ -3,12 +3,18 @@ import { Badge, Button, Dialog } from '@/shared/ui';
 import type { LoreCategory, LoreEntity, LoreMentionEntity } from '../model/loreEntity';
 import styles from './LoreDrawer.module.css';
 
-export interface LoreDrawerProps {
-  entity: LoreEntity | null;
-  allEntities: LoreMentionEntity[];
+type ReadableLore = Pick<
+  LoreEntity,
+  'id' | 'name' | 'category' | 'aliases' | 'summary' | 'details' | 'relations' | 'isPublic'
+> & {
+  structuredDetails?: Partial<NonNullable<LoreEntity['structuredDetails']>>;
+};
+export interface LoreDrawerProps<T extends ReadableLore = LoreEntity> {
+  entity: T | null;
+  allEntities: readonly LoreMentionEntity[];
   open: boolean;
   onClose: () => void;
-  onEdit?: (entity: LoreEntity) => void;
+  onEdit?: (entity: T) => void;
 }
 
 const CATEGORY_LABELS: Record<LoreCategory, string> = {
@@ -28,7 +34,13 @@ const CATEGORY_BADGES: Record<
   other: 'neutral',
 };
 
-export function LoreDrawer({ entity, allEntities, open, onClose, onEdit }: LoreDrawerProps) {
+export function LoreDrawer<T extends ReadableLore>({
+  entity,
+  allEntities,
+  open,
+  onClose,
+  onEdit,
+}: LoreDrawerProps<T>) {
   if (!open || !entity) return null;
 
   const entityMap = new Map(allEntities.map((e) => [e.id, e]));

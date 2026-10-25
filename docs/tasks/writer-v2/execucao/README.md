@@ -1455,3 +1455,18 @@ Filhos preservados fora da lista manual isolada.
 tipos/lint/bundle/smoke/styleguide positivos. Etapa 4 implementada; montagem
 coordenada do compêndio e demais lifecycle/consumidores/backup/rollout/validate
 de P1 e fases/gates ainda necessários. Somente commit local; sem CI/remoto/deploy.
+
+### P1 M38c6d — compêndio nativo em BookPage/LorePage
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md), marco D,
+[ADR 0143](../../../decisions/0143-native-book-compendium-composition.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-compendio-nativo-dos-livros.md).
+Leitura C1/v2 com tokens brutos, ficha reautorizada, hosts protegidos e cinco
+retomadas montados. Busca/grid/lista/seleção/portal e universos preservados;
+callback relê valores atuais. 115 casos dirigidos e 18 Chromium positivos,
+três temas/320px/foco, tipos/lint/build2976/smoke e checks locais positivos.
+
+Plano 125 não concluído: faltam lateral do editor, menções e revisão assistida
+antes da migração/drain de todos os writers. Lifecycle/consumidores/backup/
+restauração/rollout/validate de P1 e fases/gates seguem no objetivo.
+Somente commit local; sem CI/envio remoto/deploy.

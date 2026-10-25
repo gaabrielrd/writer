@@ -1,4 +1,7 @@
 import type { Auth, User } from 'firebase/auth';
+import type { FirebaseApp } from 'firebase/app';
+import type { AppCheck } from 'firebase/app-check';
+const nativeLoreEnabled = () => typeof window.__writerVisualNativeLoreCall === 'function';
 import { subscribeToAuthState } from './authService';
 import { author, FIXTURE_SESSION_KEY } from './data';
 
@@ -13,7 +16,12 @@ function currentIdentity(): User | null {
       : author.uid;
   let user = identities.get(uid);
   if (!user) {
-    user = { uid, email: author.email, displayName: author.displayName } as User;
+    user = {
+      uid,
+      email: author.email,
+      displayName: author.displayName,
+      getIdToken: () => Promise.resolve('visual-native-id-' + uid),
+    } as User;
     identities.set(uid, user);
   }
   return user;
@@ -33,11 +41,14 @@ export const auth = {
 } as unknown as Auth;
 export const firestore = null;
 export const firebaseAI = null;
-export const appCheck = null;
-
-export function getFirebaseApp(): never {
+export const appCheck = nativeLoreEnabled() ? ({} as AppCheck) : null;
+function unexpectedFirebase(): never {
   throw new Error('Firebase está desativado na prévia visual isolada.');
 }
-
-export const getFirebaseAI = getFirebaseApp;
-export const getAppCheck = getFirebaseApp;
+export function getFirebaseApp(): FirebaseApp {
+  if (nativeLoreEnabled())
+    return { name: 'visual-native-lore', options: {}, automaticDataCollectionEnabled: false };
+  return unexpectedFirebase();
+}
+export const getFirebaseAI = unexpectedFirebase;
+export const getAppCheck = unexpectedFirebase;

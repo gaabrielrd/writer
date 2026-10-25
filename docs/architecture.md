@@ -2471,3 +2471,22 @@ sem perder registros, paginação ou cópias.
 Etapa 4 do [plano 125](tasks/writer-v2/execucao/125-visibilidade-duravel-da-selecao-de-lore.md)
 implementada, sem montagem no compêndio. A composição com todas as ações e
 lifecycle/consumidores/backup/rollout/validate de P1 e fases/gates seguem abertos.
+
+## P1 M38c6d — compêndio nativo em BookPage/LorePage
+
+[ADR 0143](decisions/0143-native-book-compendium-composition.md):
+LoreCollection encaminha livros para BookLoreCollection; universos/aventuras
+mantêm seus fluxos. captureList preserva C1 bruto e tokens por ficha com prova
+da coleção inteira. Hook limita actor/livro/epoch; projeção visual sem datas
+fictícias ou fonte de escrita, consentimento ausente privado.
+
+Workspace compõe cinco retomadas e hosts protegidos de criação/edição/retirada/
+seleções. Escolha de visibilidade é separada da confirmação; callback relê dados
+atuais e retira somente concluídos da seleção. Ficha aberta exige mesma origem.
+A prévia visual mantém rede/produção isoladas e confere os protocolos nativos
+com Firestore em memória, SDK/Auth/App Check em fixtures.
+
+[Plano 125](tasks/writer-v2/execucao/125-visibilidade-duravel-da-selecao-de-lore.md)
+continua aberto: lateral do editor, menções e revisão assistida ainda precisam
+migrar sem perder ações/retornos/rascunhos. Demais lifecycle/consumidores/backup/
+rollout/drain/validate de P1 e fases/gates seguem no objetivo. Sem deploy.

@@ -2471,3 +2471,22 @@ capturas inspecionadas. Timeout inicial de 60s no caso 53; repetição de 180s
 positiva sem mudar produto. Não comprova performance, credenciais ou implantação.
 Tipos/lint/bundle 2971/smoke/styleguide positivos; validate no fim de P1.
 Sem CI/remoto/deploy; compêndio e demais fases/gates continuam pendentes.
+
+### P1 M38c6d — composição do compêndio em BookPage/LorePage
+
+[ADR 0143](decisions/0143-native-book-compendium-composition.md) e
+[evidência](entregas/2026-10-25-writer-v2-compendio-nativo-dos-livros.md):
+115 casos distintos em oito arquivos positivos (113 no relatório principal
+mais dois de LoreDrawer), incluindo 26 de composição/captura/projeção e 89
+regressões. Actor/livro/epoch, fontes literais, 53 alvos, cinco retomadas e
+valores atuais após efeitos históricos conferidos.
+
+18/18 Chromium nos seis projetos, sem skipped/flaky: leitura reautorizada,
+visibilidade/retirada com confirmação e criação/edição/recuperação reais,
+layout/teclado/foco e 320px. IDB/locks/AES e handlers nativos com Firestore em
+memória; SDK/Auth/App Check/HTTP de chave em fixtures, rede externa bloqueada.
+Sessenta imagens preservadas, seis inspecionadas; build2976/smoke e checks locais
+positivos. Não prova produção, piloto humano ou performance real.
+
+EditorLoreSidebar, menções/revisão assistida e demais entradas ainda pendentes.
+Validate no fim de P1; fases/gates humanos/comerciais mantidos. Sem CI/remoto/deploy.

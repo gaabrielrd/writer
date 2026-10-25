@@ -106,3 +106,51 @@ Filhos de visibilidade não aparecem como edição isolada; cópias preservadas.
 Etapa 4 implementada; etapa 5, montagem coordenada do compêndio com todas as
 ações, continua necessária. Demais lifecycle/consumidores/backup/rollout/validate
 de P1 e fases/gates humanos/comerciais preservados. Sem integração remota.
+
+## Marco D — plano de composição coordenada
+
+Escopo da etapa 5: todo escopo book (string ou objeto) de LoreCollection e
+LoreTab usa o compêndio nativo. Universe e adventure mantêm seus próprios fluxos.
+Nenhum fallback de escrita inline, seleção limitada a 50 ou edição isolada
+dos filhos da seleção.
+
+1. Expor captura C1 da coleção com tokens originais e revalidação integral,
+   preservando a API list existente. Hook por actor/livro com estados de
+   carregando/vazio/erro, invalidação de respostas tardias e refresh explícito.
+2. Projetar dados completos somente para apresentação, com ausência de
+   consentimento privada; nunca usar defaults visuais como fonte de writer.
+   Reautorizar o token original ao abrir a ficha.
+3. Compor criação/edição/retirada singular e seleções de retirada/visibilidade
+   com confirmação e as cinco listas de recuperação. Manter filtro/categorias,
+   grid/lista, seleção filtrada, portal de ações e relações locais/globais.
+4. Congelar seleção/valor antes de abrir o diálogo. Após prova, remover somente
+   IDs concluídos da seleção e reler a coleção; não projetar valor histórico.
+   Invalidar a UI antiga em mudança de actor/livro/escopo.
+5. Testes de captura/hook/projeção/composição, regressões de universo e aventuras,
+   Chromium real com IDB/AES e serviços nativos; temas/mobile/teclado.
+   Documentar checks reais e commit local, sem concluir P1/V2 antecipadamente.
+
+Arquivos previstos: bookLoreReadClient, useBookLoreCollection, projeção de
+apresentação, BookLoreCollection e seus diálogos/listas compostos, LoreTab e
+tipagem do LoreDrawer, testes desses fluxos e fixtures visuais afetadas,
+ADR/AGENTS/arquitetura/testes/evidência. Sem backend/Rules/env/deps.
+
+## Marco D — BookPage/LorePage compostos; demais entradas pendentes
+
+BookLoreCollection encaminha os dois formatos de escopo book para leitura C1/v2,
+apresentação literal, ficha reautorizada, busca/categorias/grid/lista e seleção.
+Hosts de criação/edição/retirada e seleções e cinco retomadas montados.
+Callback relê valores atuais, sem projetar efeito histórico; actor/livro/epoch
+invalidam respostas antigas. Universos e aventuras mantêm contratos próprios.
+[ADR 0143](../../../decisions/0143-native-book-compendium-composition.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-compendio-nativo-dos-livros.md).
+
+Etapa 5 ainda não é integral: EditorLoreSidebar tem formulário próprio, incluindo
+nome inicial e retornos por menções; revisão assistida também deve ser migrada.
+Inventariar essas entradas, preservar escopo global/local e rascunhos e usar as
+mesmas operações nativas, sem enfraquecer a barreira hasLoreResources. Não
+declarar o plano 125 concluído nem habilitar rollout com writers antigos.
+
+Lifecycle de chaves/exclusão, demais escritores e consumidores, backup/
+restauração, rollout/drain/validate de P1 e fases/gates humanos/comerciais
+continuam necessários. Somente commit local; sem CI/envio remoto/deploy.

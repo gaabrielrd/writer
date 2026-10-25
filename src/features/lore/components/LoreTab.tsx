@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { BookLoreCollection } from './BookLoreCollection';
 import { createPortal } from 'react-dom';
 import { BookOpen, LayoutGrid, List, MapPin, Plus, Search, Tag, User, X } from 'lucide-react';
 import {
@@ -51,14 +52,14 @@ export function LoreTab({ book, ...props }: LoreTabProps) {
 function BookLoreScopes({ book, actionsContainer, onEntitiesChanged, onBusyChange }: LoreTabProps) {
   const [selected, setSelected] = useState('local');
   const [busy, setBusy] = useState(false);
-  const collectionProps = {
-    actionsContainer,
-    onEntitiesChanged,
-    onBusyChange: (value: boolean) => {
+  const reportBusy = useCallback(
+    (value: boolean) => {
       setBusy(value);
       onBusyChange?.(value);
     },
-  };
+    [onBusyChange],
+  );
+  const collectionProps = { actionsContainer, onEntitiesChanged, onBusyChange: reportBusy };
   const globalScope = useMemo(
     () => (book.universeId ? { kind: 'universe' as const, id: book.universeId } : null),
     [book.universeId],
@@ -506,6 +507,11 @@ export function LoreCollection(props: {
       active={props.active}
       onBusyChange={props.onBusyChange}
       onEntitiesChanged={props.onEntitiesChanged}
+    />
+  ) : typeof props.scope === 'string' || props.scope.kind === 'book' ? (
+    <BookLoreCollection
+      {...props}
+      bookId={typeof props.scope === 'string' ? props.scope : props.scope.id}
     />
   ) : (
     <LegacyLoreCollection {...props} />
