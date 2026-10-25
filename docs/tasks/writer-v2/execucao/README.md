@@ -1528,3 +1528,13 @@ Leitor C1 autorizado, projeções RAM limitadas, base em fluxo e v2 seletivo.
 156 Node e quatro SDK positivos. Não integra chat; marco B é o próximo passo.
 Demais consumidores/backup/restauração/rollout/drain/validate de P1, fases/gates
 humanos e comerciais continuam necessários. Somente commit local.
+
+### P1 M38c9 B — lore lógico no contexto do chat
+
+[Plano 128](128-projecao-logica-do-lore-para-contextos.md) concluído localmente;
+[ADR 0148](../../../decisions/0148-logical-lore-in-editor-chat-context.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-lore-nativo-no-contexto-do-chat.md).
+Página/snapshot lógicos e budget por avanço; história por origem sem corpo de
+lore. 99 Node e sete cenários SDK distintos positivos (dois retakes de fixtures).
+Demais consumidores da etapa 4, namespaces/escritores, backup/restauração,
+drain/rollout/validate de P1 e fases/gates permanecem necessários. Sem remoto.

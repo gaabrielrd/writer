@@ -72,3 +72,19 @@ e quatro SDK no emulador verificado. Lint/sintaxe/formato/checks locais positivo
 Marco B não implementado: editorChatContextRead/Context continuam legados.
 Próximo passo é integrá-los sem carregar corpo para reautorizar histórico ou
 mudar matcher/precedência/tokens. Este plano e P1 permanecem abertos.
+
+## Marco B — conclusão local em 2026-10-25
+
+Integração de editorChatContextRead/Context implementada: página e snapshot
+lógicos, budget por avanço compartilhado e história por metadata/tombstone/
+prova original, sem baixar corpos ou alterar tokens de nascimento.
+Nome/aliases/categoria do matcher e precedência local/global preservados.
+
+99/99 Node (16 novos/83 regressões) e sete cenários SDK distintos positivos:
+cinco iniciais e dois retakes de setups, sem enfraquecer Rules. Lint/sintaxe/
+formato/docs/arquitetura/diff positivos. [ADR 0148](../../../decisions/0148-logical-lore-in-editor-chat-context.md)
+e [evidência](../../../entregas/2026-10-25-writer-v2-lore-nativo-no-contexto-do-chat.md).
+
+Este estado atualiza a pendência anterior do marco A. Plano 128 concluído
+localmente; etapa 4 inteira, P1/F2-09/V2 e demais consumidores/gates continuam
+abertos. Commit local somente, sem deploy ou garantia de uso remoto imediato.

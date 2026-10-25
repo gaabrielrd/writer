@@ -1,6 +1,6 @@
 # ADR 0147 — Projeção seletiva do lore nos contextos
 
-- Status: marco A implementado localmente; integração do chat pendente.
+- Status: marco A implementado; integração posterior registrada na ADR 0148.
 - Data: 2026-10-25.
 - Plano: [128](../tasks/writer-v2/execucao/128-projecao-logica-do-lore-para-contextos.md).
 

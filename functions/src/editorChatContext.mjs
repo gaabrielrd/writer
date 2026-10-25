@@ -36,6 +36,7 @@ import {
   readEditorChatScene,
   readEditorChatLorePage,
   readEditorChatLoreSnapshot,
+  createEditorChatLoreBudget,
   editorChatDirectClosure,
   authorizeEditorChatManifest,
   editorChatNativeStamp,
@@ -551,6 +552,7 @@ export function createEditorChatContextService({
       // Access/coherence have been proved before reading terms from an earlier page.
       const body = await readTemporaryBody(tx, db, uid, context);
       const text = body.capture.text + '\n' + body.capture.surroundingText;
+      const loreBudget = createEditorChatLoreBudget();
       const page = await readEditorChatLorePage(
         tx,
         db,
@@ -558,6 +560,7 @@ export function createEditorChatContextService({
         proof.environment,
         context.summary.phase,
         context.record.cursor,
+        loreBudget,
       );
       const accumulator = advanceEditorChatLoreAccumulator(text, body.accumulator, page.entities);
       const summary = {
@@ -587,7 +590,14 @@ export function createEditorChatContextService({
           const term = accumulator.terms.find((t) => t.id === id);
           if (!term?.reference) editorChatFail('inconsistent');
           lore.push(
-            await readEditorChatLoreSnapshot(tx, db, source, proof.environment, term.reference),
+            await readEditorChatLoreSnapshot(
+              tx,
+              db,
+              source,
+              proof.environment,
+              term.reference,
+              loreBudget,
+            ),
           );
         }
         const persona = await readEditorChatPersona(tx, db, source, { full: true });

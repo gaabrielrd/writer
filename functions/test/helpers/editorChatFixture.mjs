@@ -11,8 +11,8 @@ export const reason = (v) => (e) => e.details?.reason === v;
 export async function signed(request) {
   return { ...request, requestHash: await editorChatRequestHash(request) };
 }
-export async function editorChatFixture(kind = 'adventure', block = false) {
-  const f = studioDb(),
+export async function editorChatFixture(kind = 'adventure', block = false, database = studioDb()) {
+  const f = database,
     events = [],
     original = f.db.runTransaction;
   f.db.runTransaction = (callback) =>

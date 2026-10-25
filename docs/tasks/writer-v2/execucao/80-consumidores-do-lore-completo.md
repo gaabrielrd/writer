@@ -176,3 +176,13 @@ RAM/budget explícito e contagens literais. 156 Node e quatro SDK positivos.
 Marco A não integra chat ou fecha etapa 4. Próximo é matcher/snapshot/proveniência
 no marco B. Demais consumidores/backup/restauração/rollout/drain/validate e gates
 permanecem necessários.
+
+## Contexto de chat integrado — M38c9 B
+
+[Plano 128](128-projecao-logica-do-lore-para-contextos.md) concluído localmente:
+página/snapshot usam C1 lógico, matcher/precedência preservados, budget agregado
+por avanço e autorização histórica sem baixar corpos de lore. 99 Node e sete
+cenários SDK distintos positivos; [evidência](../../../entregas/2026-10-25-writer-v2-lore-nativo-no-contexto-do-chat.md).
+Só o consumidor de chat desta etapa 4 foi integrado. Referências/cenas,
+planejamento, publicação e captura de campanhas continuam pendentes, assim como
+inventário/escritores/backup/restauração/drain/rollout/validate e demais gates.

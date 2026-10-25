@@ -8,9 +8,10 @@ export async function editorChatConversationFixture({
   kind = 'book',
   block = false,
   world = false,
+  database,
   setup,
 } = {}) {
-  const f = await editorChatFixture(kind, block);
+  const f = await editorChatFixture(kind, block, database);
   if (world) {
     f.records.get(f.path).universeId = 'world';
     f.records.set('universes/world', { authorId: uid, loreVersion: 0, privacyVersion: 0 });

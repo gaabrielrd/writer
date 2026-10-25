@@ -392,3 +392,8 @@ concluído estiverem satisfeitos. A lista fica em
   explícito de I/O/retenção pertence ao consumidor, sem teto de autoria/backup.
 - Autorização histórica conserva nascimento: integração do chat revalida origem
   sem transformar revisão atual em identidade da conversa.
+
+- No chat de livros, compartilhe o budget de lore entre página e snapshots por
+  avanço (ADR 0148). Não trunque aliases do matcher para contornar complexidade.
+- Revalide histórico por metadata, tombstone e prova original de criação, sem
+  baixar corpos de lore. DTO privado e defaults de contexto não são fonte de escrita.

@@ -2571,3 +2571,18 @@ I/O/retenção pertence ao consumidor, sem limitar autoria ou backup.
 156 Node e quatro SDK positivos. A não integra editorChat; matcher/snapshot/
 proveniência/budget por avanço seguem no marco B. Demais P1, fases 3–5 e gates
 humanos/comerciais permanecem necessários. Sem rollout/deploy.
+
+## P1 M38c9 B — contexto do chat com lore lógico
+
+[ADR 0148](decisions/0148-logical-lore-in-editor-chat-context.md) conecta página
+local/snapshot à projeção C1. Todos os aliases chegam ao matcher, preservando
+precedência local/global; snapshots usam limites anteriores e contagens exatas.
+Avanço compartilha 32 MiB/512 partes/900000 bytes lógicos entre página e snapshots.
+Esgotamento é explícito e atômico, sem mudar limites de autoria/backup.
+
+Histórico de livros usa metadata/escopo/tombstone/prova original, sem corpo de
+lore ou mudança de tokens de nascimento. Edição marca stale; revogação precede
+qualquer corpo derivado, preservando a pergunta própria. Universos e aventuras
+mantêm seus contratos. 99 Node e sete cenários SDK distintos positivos.
+Atualiza a pendência do marco A: plano 128 concluído localmente; demais
+consumidores e P1/fases/gates continuam abertos. Sem deploy/rollout.

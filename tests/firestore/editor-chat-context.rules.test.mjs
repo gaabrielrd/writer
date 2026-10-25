@@ -16,6 +16,12 @@ import {
   limit,
 } from 'firebase/firestore';
 import { createEditorChatContextService } from '../../functions/src/editorChatContext.mjs';
+import { seedBookLoreRead } from '../../functions/test/helpers/bookLoreReadFixture.mjs';
+import { seedBookLoreGeneration } from '../../functions/test/helpers/bookLoreGenerationFixture.mjs';
+import {
+  creationAdoptionFixture,
+  adoptCreation,
+} from '../../functions/test/helpers/bookLoreCreationAdoptionFixture.mjs';
 import {
   editorChatRequestHash,
   editorChatTextHash,
@@ -372,12 +378,16 @@ test('SDK contexto editor: paginação local completa, aliases qualificados e st
   const f = await fixture('book', worldId),
     service = api();
   const database = client(),
-    batch = writeBatch(database);
+    batch = writeBatch(database),
+    historical = admin.batch();
+  // Seed the pre-existing catalog. A 52-write client batch exceeds the current
+  // per-document tombstone/reservation Rules lookup budget; it is not this test's API.
   for (let n = 0; n < 52; n++)
-    batch.set(
-      doc(database, rootPath(f.target), 'lore', 'filler_' + String(n).padStart(2, '0')),
+    historical.set(
+      admin.doc(rootPath(f.target) + '/lore/filler_' + String(n).padStart(2, '0')),
       entity({ name: 'Other' + n, aliases: [] }),
     );
+  await historical.commit();
   batch.set(
     doc(database, rootPath(f.target), 'lore', 'zz_same'),
     entity({ name: 'Local', aliases: ['Aria'], details: 'PRIVATE-LOCAL-WINNER' }),
@@ -645,4 +655,102 @@ test('SDK contexto editor: persona raiz sem cena, CAS, recibos, fence e cleanup 
   assert.equal((await admin.doc(`adventures/${adventure.id}`).get()).exists, false);
   assert.deepEqual((await savedBody.ref.get()).data(), savedBody.data());
   assert.equal((await admin.doc(`users/${uid}`).get()).data().credits, 9);
+});
+
+test('SDK contexto nativo: base >8 MiB/128 partes chega ao snapshot sem alterar origem ou créditos', async () => {
+  const f = await fixture(),
+    seed = await seedBookLoreRead(admin, {
+      uid,
+      bookId: f.target.id,
+      id: 'native-base',
+      data: entity({ details: '\ufeff' + '🌙'.repeat(2300000), aliases: Array(25).fill('Mundo') }),
+    });
+  const observed = observedDb(admin),
+    service = api(observed),
+    current = await ready(service, f);
+  const frozen = (await inspect(service, f, current)).frozen;
+  assert.equal(frozen.lore[0].detailsExcerpt, '\ufeff' + '🌙'.repeat(999));
+  assert.equal(frozen.lore[0].detailsTruncated, true);
+  assert.equal(frozen.lore[0].aliasesOmitted, 5);
+  assert.ok(seed.base.prepared.manifest.chunkCount > 128);
+  observed.clear();
+  assert.deepEqual((await inspect(service, f, current)).frozen, frozen);
+  assert.equal(
+    observed.reads.some((v) => v.path.includes('/bookResourceChunks/')),
+    false,
+  );
+  assert.equal((await admin.doc('users/' + uid).get()).data().credits, 9);
+});
+test('SDK contexto nativo: v2 seletivo, revisão histórica e tombstone antes de qualquer corpo derivado', async () => {
+  const f = await fixture(),
+    seed = await seedBookLoreGeneration(admin, {
+      uid,
+      bookId: f.target.id,
+      id: 'native-flat',
+      noBase: true,
+      fields: {
+        name: 'Aria',
+        category: 'character',
+        details: 'Literal 🌙',
+        aliases: ['', 'Mundo', 'Mundo'],
+        isPublic: false,
+      },
+    });
+  const other = await seedBookLoreGeneration(admin, {
+    uid,
+    bookId: f.target.id,
+    id: 'unrelated',
+    noBase: true,
+    fields: { name: 'Unrelated', category: 'other', details: 'PRIVATE_' + 'x'.repeat(200000) },
+  });
+  const observed = observedDb(admin),
+    service = api(observed),
+    current = await ready(service, f);
+  const frozen = (await inspect(service, f, current)).frozen;
+  assert.equal(frozen.lore[0].detailsExcerpt, 'Literal 🌙');
+  assert.equal(
+    observed.reads.some((v) => v.path.includes(other.bodies.details.prepared.manifest.bodyId)),
+    false,
+  );
+  await admin.doc(seed.path).update({ updatedAt: 3000 });
+  await admin.doc(rootPath(f.target)).update({ localLoreVersion: 1 });
+  observed.clear();
+  const view = await inspect(service, f, current);
+  assert.equal(view.freshness, 'stale');
+  assert.deepEqual(view.frozen, frozen);
+  assert.equal(
+    observed.reads.some((v) => v.path.includes('/bookResourceChunks/')),
+    false,
+  );
+  await admin.doc(rootPath(f.target) + '/bookLoreTombstones/native-flat').create({ removed: true });
+  observed.clear();
+  await assert.rejects(inspect(service, f, current), reason('provenance-revoked'));
+  assert.equal(derivedReads(observed).length, 0);
+  assert.equal(
+    observed.reads.some((v) => v.path.includes('/bookResourceChunks/')),
+    false,
+  );
+});
+test('SDK contexto nativo: criação real conserva prova original durante captura e autorização histórica', async () => {
+  const f = await fixture(),
+    creation = await creationAdoptionFixture(admin, {
+      uid,
+      bookId: f.target.id,
+      changes: [
+        { target: { field: 'name' }, value: 'Aria' },
+        { target: { field: 'category' }, value: 'character' },
+        { target: { field: 'details' }, value: '\ufeffLiteral 🌙' },
+      ],
+    });
+  await adoptCreation(creation);
+  const observed = observedDb(admin),
+    service = api(observed),
+    current = await ready(service, f);
+  observed.clear();
+  const view = await inspect(service, f, current);
+  assert.equal(view.frozen.lore[0].detailsExcerpt, '\ufeffLiteral 🌙');
+  assert.equal(
+    observed.reads.some((v) => v.path.includes('/bookResourceChunks/')),
+    false,
+  );
 });

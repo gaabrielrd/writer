@@ -2558,3 +2558,19 @@ real/tombstone e orçamento sem escrita. Retenção lógica não mede pico de he
 Lint/sintaxe/formato e checks locais; validate integral no fechamento de P1.
 [Evidência](entregas/2026-10-25-writer-v2-projecao-seletiva-do-lore.md).
 Chat ainda não integrado; nenhum endpoint/Rule/deploy ou validação humana nova.
+
+## P1 M38c9 B — lore lógico no chat
+
+99/99 Node em editorChatBookLore, Context, ContextRead, HistoryRead, Matcher,
+Generation e Apply: 16 novos e 83 regressões. Quatro representações, criação
+real, >8MiB/128 partes, snapshot exato, budgets/rollback e história por origem
+conferidos. Sem provedor pago ou SDK de produção.
+
+Sete cenários SDK distintos positivos no arquivo editor-chat-context: cinco
+passaram inicialmente; dois setups corrigidos repetidos isoladamente passaram
+2/2. Não é uma execução única de sete positivos. Fixture v2 tinha relations
+entre fields; batch legado de 52 creates excedia consultas das Rules. Catálogo
+histórico passou a ser semeado com Admin; vencedor/relógio/retirada continuam no
+cliente. Nenhuma Rule foi enfraquecida. Lint/sintaxe/formato e checks locais;
+validate integral só no fechamento de P1. Sem UI/build/CI/deploy novos.
+[Evidência](entregas/2026-10-25-writer-v2-lore-nativo-no-contexto-do-chat.md).

@@ -1,7 +1,12 @@
 import { readAvailablePersonaMetadata } from './personaAvailability.mjs';
+import { GenerationError } from './generation.mjs';
+import { createBookLoreContextReader } from './bookLoreContextRead.mjs';
+import { createBookLoreProjectionBudget } from './bookLoreTextProjection.mjs';
+import { assertCreationHead } from './bookLoreCreationHead.mjs';
 // Server-only origin readers. Tokens below identify births, never document revisions.
 import {
   editorChatFail,
+  EDITOR_CHAT_LIMITS,
   editorChatHash,
   editorChatProjectToken,
   editorChatResourceToken,
@@ -476,7 +481,54 @@ export async function readEditorChatPersona(tx, db, source, { full = false } = {
 }
 
 const loreFields = ['name', 'aliases', 'category', 'summary', 'isPublic', 'deleting', 'deleted'];
-export async function readEditorChatLorePage(tx, db, source, environment, phase, cursor) {
+const bookOriginFields = [
+  'bookId',
+  'ownerId',
+  'universeId',
+  'adventureId',
+  'deleting',
+  'deleted',
+  'rebalancing',
+  'createdAt',
+  'payloadStorage',
+];
+// Per advance, not an authorship/backup limit. Shared by page and final snapshots.
+export const createEditorChatLoreBudget = () =>
+  createBookLoreProjectionBudget({
+    bytes: 32 * 1024 * 1024,
+    parts: 512,
+    retainedBytes: EDITOR_CHAT_LIMITS.envelopeBytes,
+  });
+function contextLoreError(error) {
+  if (error instanceof GenerationError) {
+    if (error.code === 'resource-exhausted') editorChatFail('context-too-complex');
+    fail();
+  }
+  throw error;
+}
+async function bookContextReader(tx, db, source) {
+  try {
+    const reader = await createBookLoreContextReader(tx, db, source.uid, source.target.id);
+    return async (id, selection, budget) => {
+      try {
+        return await reader.read(id, selection, budget);
+      } catch (error) {
+        contextLoreError(error);
+      }
+    };
+  } catch (error) {
+    contextLoreError(error);
+  }
+}
+export async function readEditorChatLorePage(
+  tx,
+  db,
+  source,
+  environment,
+  phase,
+  cursor,
+  budget = createEditorChatLoreBudget(),
+) {
   const global = phase === 'global';
   if (global && !environment.world?.available) fail();
   const scope = {
@@ -488,10 +540,18 @@ export async function readEditorChatLorePage(tx, db, source, environment, phase,
     .collection(path)
     .orderBy('__name__')
     .limit(50)
-    .select(...(scope.kind === 'adventure' ? metadataFields : loreFields));
+    .select(
+      ...(scope.kind === 'adventure'
+        ? metadataFields
+        : scope.kind === 'book'
+          ? ['deleted', 'deleting']
+          : loreFields),
+    );
   if (cursor !== null) query = query.startAfter(editorChatSourceId(cursor));
   const docs = (await tx.get(query)).docs;
   const entities = [];
+  const bookReader =
+    scope.kind === 'book' && docs.length ? await bookContextReader(tx, db, source) : null;
   for (const snapshot of docs) {
     const reference = { kind: scope.kind, scopeId: scope.id, entityId: snapshot.id };
     let value = snapshot.data();
@@ -507,6 +567,17 @@ export async function readEditorChatLorePage(tx, db, source, environment, phase,
         snapshot.id,
       );
     if (value.deleted || value.deleting) continue;
+    if (bookReader) {
+      const projected = await bookReader(
+        snapshot.id,
+        { name: null, category: null, aliases: { items: null, characters: null } },
+        budget,
+      );
+      value = Object.fromEntries(
+        Object.entries(projected.fields).map(([key, field]) => [key, field.value]),
+      );
+      if (projected.privacy.present) value.isPublic = projected.privacy.value;
+    }
     entities.push(loreMetadata(value, reference));
   }
   return {
@@ -556,11 +627,38 @@ export async function readEditorChatLore(tx, db, source, environment, reference)
   const snapshot = await readWorkMetadata(
     tx,
     db.doc(`${path}/lore/${reference.entityId}`),
-    reference.kind === 'adventure' ? metadataFields : loreFields,
+    reference.kind === 'adventure'
+      ? metadataFields
+      : reference.kind === 'book'
+        ? bookOriginFields
+        : loreFields,
   );
   let record = snapshot.data();
   if (!record || record.deleted || record.deleting) editorChatFail('provenance-revoked');
   let c = null;
+  if (reference.kind === 'book') {
+    c = { db, uid: source.uid, bookId: scope.id, path };
+    if (
+      ['deleted', 'deleting', 'rebalancing'].some(
+        (key) => Object.hasOwn(record, key) && record[key] !== false,
+      ) ||
+      (record.bookId !== undefined && record.bookId !== scope.id) ||
+      (record.ownerId !== undefined && record.ownerId !== source.uid) ||
+      Object.hasOwn(record, 'universeId') ||
+      Object.hasOwn(record, 'adventureId') ||
+      (await tx.get(db.doc(path + '/bookLoreTombstones/' + reference.entityId))).exists
+    )
+      editorChatFail('provenance-revoked');
+    const reservation = await tx.get(db.doc(path + '/bookLoreReservations/' + reference.entityId));
+    if (reservation.exists) {
+      try {
+        await assertCreationHead(tx, c, reservation, snapshot);
+      } catch (error) {
+        if (error instanceof GenerationError) editorChatFail('provenance-revoked');
+        throw error;
+      }
+    }
+  }
   if (reference.kind === 'adventure') {
     c = {
       uid: source.uid,
@@ -570,7 +668,7 @@ export async function readEditorChatLore(tx, db, source, environment, reference)
     };
     record = storedMetadata(record, c, reference.entityId);
   }
-  const metadata = loreMetadata(record, reference),
+  const metadata = reference.kind === 'book' ? null : loreMetadata(record, reference),
     scopeToken = await editorChatScopeIdentity(source.uid, scope, rootSnapshot);
   const entityIdentityToken = await editorChatEntityIdentity(reference, scopeToken, snapshot);
   return {
@@ -582,8 +680,44 @@ export async function readEditorChatLore(tx, db, source, environment, reference)
     leaf: { kind: 'lore', reference, scopeToken, entityIdentityToken },
   };
 }
-export async function readEditorChatLoreSnapshot(tx, db, source, environment, reference) {
+export async function readEditorChatLoreSnapshot(
+  tx,
+  db,
+  source,
+  environment,
+  reference,
+  budget = createEditorChatLoreBudget(),
+) {
   const found = await readEditorChatLore(tx, db, source, environment, reference);
+  if (reference.kind === 'book') {
+    const read = await bookContextReader(tx, db, source),
+      projected = await read(
+        reference.entityId,
+        {
+          name: 200,
+          category: null,
+          summary: 140,
+          details: 2000,
+          aliases: { items: 20, characters: 200 },
+        },
+        budget,
+      ),
+      fields = projected.fields;
+    const snapshot = {
+      reference,
+      identityToken: found.leaf.entityIdentityToken,
+      capturedRevision: null,
+      capturedStamp: editorChatNativeStamp(projected.snapshot, 'updateTime'),
+      name: fields.name?.value ?? '',
+      aliases: fields.aliases?.value ?? [],
+      category: fields.category?.value,
+      summary: fields.summary?.value ?? '',
+      detailsExcerpt: fields.details?.value ?? '',
+      aliasesOmitted: fields.aliases?.omitted ?? 0,
+      detailsTruncated: fields.details?.truncated ?? false,
+    };
+    return { snapshot: normalizeEditorChatDTO('lore', snapshot), leaf: found.leaf };
+  }
   let body;
   if (reference.kind === 'adventure')
     body = storedBody(
