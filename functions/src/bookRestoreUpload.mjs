@@ -13,6 +13,9 @@ import { createBookRestorePersonaLibraryService } from './bookRestorePersonaLibr
 import { createBookRestoreSourceIndexesService } from './bookRestoreSourceIndexes.mjs';
 import { createBookRestoreAuditService } from './bookRestoreAudit.mjs';
 import { createBookRestoreActivationReviewService } from './bookRestoreActivationReview.mjs';
+import { createBookRestoreActivationService } from './bookRestoreActivation.mjs';
+import { readBookRestoreActivationProof } from './bookRestoreActivationProof.mjs';
+import { validateBookRestoreActivation } from './bookRestoreActivationContracts.mjs';
 import { createBookRestoreCoverMaterializationService } from './bookRestoreCoverMaterialization.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
@@ -87,6 +90,7 @@ const actions = {
   advanceBookRestorePersonaLibrary: ['content-verified'],
   advanceBookRestoreSourceIndexes: ['content-verified'],
   advanceBookRestoreAudit: ['content-verified'],
+  activateBookRestore: ['activated'],
 };
 export function createBookRestoreUploadService({
   db,
@@ -166,6 +170,11 @@ export function createBookRestoreUploadService({
       job = snapshot.data();
     if (token !== undefined && token !== view.jobToken)
       fail('failed-precondition', 'identity-conflict');
+    if (job.state === 'activated') {
+      const loaded = { ref: jobRef(uid, id), snapshot, job, view };
+      await readBookRestoreActivationProof(tx, db, loaded, readOp);
+      return loaded;
+    }
     const [reserved, marked, root] = await Promise.all([
       tx.get(resRef(job.bookId)),
       tx.get(markerRef(job.bookId)),
@@ -190,6 +199,7 @@ export function createBookRestoreUploadService({
       ...(job.cleanupVersion >= 2 ? { integrity: integrityProgress(job) } : {}),
       ...(job.cleanupVersion >= 3 ? { validation: job.validationMeta } : {}),
       ...(job.cleanupVersion >= 4 ? { preparation: job.preparation } : {}),
+      ...(job.state === 'activated' ? { activation: job.activation } : {}),
     };
   }
   function writeOp(tx, uid, id, action, request, job, token, sequence = null) {
@@ -229,7 +239,7 @@ export function createBookRestoreUploadService({
         'uploadedBytes',
         'cleanedChunks',
       ],
-      ['integrity', 'validation', 'preparation'],
+      ['integrity', 'validation', 'preparation', 'activation'],
     );
     if (
       r.schemaVersion !== 1 ||
@@ -238,6 +248,14 @@ export function createBookRestoreUploadService({
       !actions[r.action].includes(r.state)
     )
       inconsistent();
+    if (r.action === 'activateBookRestore') {
+      validateBookRestoreActivation(r.activation);
+      if (
+        loaded.job.state !== 'activated' ||
+        digest(r.activation) !== digest(loaded.job.activation)
+      )
+        inconsistent();
+    } else if (Object.hasOwn(r, 'activation')) inconsistent();
     ['checkpoint', 'uploadedChunks', 'uploadedBytes', 'cleanedChunks'].forEach((k) =>
       integer(r[k]),
     );
@@ -456,6 +474,7 @@ export function createBookRestoreUploadService({
         'advanceBookRestorePersonaLibrary',
         'advanceBookRestoreSourceIndexes',
         'advanceBookRestoreAudit',
+        'activateBookRestore',
       ].includes(r.action)
     )
       inconsistent();
@@ -724,6 +743,9 @@ export function createBookRestoreUploadService({
     validation: validationProgress(job),
     ...(job.cleanupVersion >= 4 ? { preparation: preparationProgress(job.preparation) } : {}),
     recoveryReady: job.recoveryReady,
+    ...(job.state === 'activated'
+      ? { activation: validateBookRestoreActivation(job.activation) }
+      : {}),
     updatedAt: job.updatedAt,
   });
   async function resolveOperation(uid, input) {
@@ -1160,6 +1182,17 @@ export function createBookRestoreUploadService({
   return {
     ...createBookRestorePreparedLoreService({ db, load }),
     ...createBookRestoreActivationReviewService({ db, load, readOp, assets: restoreAssets }),
+    ...createBookRestoreActivationService({
+      db,
+      assets: restoreAssets,
+      load,
+      readOp,
+      writeOp,
+      confirmed,
+      next,
+      pickProgress,
+      keyContext,
+    }),
     ...sourceIndexes,
     ...createBookRestoreAuditService({ db, load, readOp, writeOp, confirmed, next, pickProgress }),
     ...personaLibrary,

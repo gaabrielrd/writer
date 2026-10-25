@@ -2847,3 +2847,17 @@ reviewToken fixam decisões e identidades; Storage é verificado fora da transa�
 seguido de nova autorização e comparação. Não há writes ou raiz ativa. Token
 não concede acesso nem substitui a futura confirmação atômica. Passos restantes
 no [plano 133](tasks/writer-v2/execucao/133-revisao-e-ativacao-do-livro.md).
+
+## P1 — núcleo de ativação privada de livros
+
+[ADR 0154](decisions/0154-atomic-private-book-activation.md): serviço interno
+revalida revisão/CAS/itens/Storage e cria raiz, countReady, lote de personas,
+vínculo/contador de universo, capa/uso, job/recibo atomicamente. Remove marcador
+bloqueante/chave; mantém reserva e provas. Flags nativas impedem atalhos SDK.
+Dados literais completos e corpos preparados não são regravados.
+
+Loader de activated confere recibo/job/reserva originais e retorna somente
+histórico, mesmo após exclusão da raiz. Não regrave esse job nos futuros passos
+de mídia/limpeza. Capa fica preparando, URL null e accepted false até finalização;
+registro e uso já existem no commit. Rules preservam procedência. Sem novo endpoint
+ou host; [limites/evidência](entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).

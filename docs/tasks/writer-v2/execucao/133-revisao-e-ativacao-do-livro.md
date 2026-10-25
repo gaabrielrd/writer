@@ -65,3 +65,54 @@ real positivo; formato/lint/arquitetura/docs/diff verificados. Consulte a
 [evidência](../../../entregas/2026-10-25-writer-v2-revisao-da-ativacao-de-livros.md)
 para falhas corrigidas, durações e limites. A revisão não altera a preparação,
 não publica imagem ou ativa a raiz. Passos 2–5 continuam obrigatórios.
+
+## Contrato do núcleo de ativação antes da implementação
+
+activateBookRestore é interno. Entrada fechada: restoreId/jobToken/operationId/
+expectedCheckpoint/reviewToken. Resolver recibo antes de repetir efeitos.
+Reabrir itens autenticados, comparar revisão, verificar Storage fora da transação
+e reconferir o mesmo token na transação final. Vínculo usa contrato estrito atual.
+
+Criar raiz privada com identidade nova, título e dados próprios literais, clocks
+iniciais e barreiras nativas de cenas/narrativa/progresso/lore. Preservar persona
+declarada remapeada; vínculo existente exige perfil preparado original. Não
+inventar perfil ausente. countReady passa a true sem recontar/alterar textos.
+Ativar lote de personas no mesmo commit, com recibo de ativação como última prova.
+Remover deletedBooks somente nessa transação; reserva permanente continua.
+
+Job activated guarda descritor fechado da operação/revisão/checkpoint/origem.
+Confirmação exige recibo imutável e updateTime original do job no mesmo commit,
+reserva imutável do nascimento original e fingerprint recomputado. Job terminal
+não é regravado pelos próximos protocolos. Consulta/replay histórico não lê raiz
+nem retorna conteúdo; continua possível após edição/exclusão normal do livro.
+Cancelamento, preparação e limpeza anteriores recusam novos efeitos em activated.
+Chave de recuperação do upload é removida no commit, sem apagar provas/arquivos
+necessários antes da limpeza pós-ativação própria.
+
+Capa library: criar registro preparando, url null, caminho/prova nativos e uso
+bookId com useCount 1 no commit. Recusar registro/uso estrangeiro, inclusive uso
+órfão. Enquanto preparando não é selecionável nem aceita no Storage; accepted
+continua false e sem download token. A conclusão de mídia do passo 4 deve
+publicar com precondições e, após reautorização, preencher registro/URL do livro.
+O núcleo não declara mídia pronta ou restauração integral antes desse passo.
+Sem capa/legacy-unavailable cria livro sem URL; procedência continua no job.
+
+Rules preservam restoreOrigin e recusam sua forja pelo cliente. Testar transação/
+retry/rollback/replay/resposta perdida, CAS/revisão/origens/Storage mudados,
+contadores/lote/capa/uso, livro privado, consumidores normais reais, histórico
+após exclusão e impossibilidade de cancel/cleanup apagar destino ativo.
+SDK dirigido deve provar a mesma transação nativa e a barreira de acesso.
+
+## Estado do núcleo de ativação
+
+- [x] Criação atômica da raiz/controle/lote/universo/capa e uso com revisão/CAS.
+- [x] Descritor/recibo/job/reserva originais e consulta histórica após exclusão.
+- [x] Cancelamento/limpeza anteriores recusados após ativação; origem protegida.
+- [x] 55 Node distintos, dois SDK e checks dirigidos; evidência e commit locais.
+- [ ] Finalização da mídia: capa permanece preparando e accepted false.
+- [ ] Limpeza pós-ativação com progresso próprio, sem apagar provas necessárias.
+- [ ] Host/UI/roundtrip integral e demais inventários/legados/rollout/validate.
+
+[Evidência do núcleo](../../../entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
+Passos 2–3 têm núcleo implementado; cleanup próprio do passo 3 e passos 4–5
+continuam obrigatórios. Isso não fecha P1/D3/F2-09/V2 ou fases/gates posteriores.

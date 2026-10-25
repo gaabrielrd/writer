@@ -522,3 +522,13 @@ concluído estiverem satisfeitos. A lista fica em
 - Verifique a geração Storage e reautorize job/dependências após a espera externa;
   mudanças invalidam a resposta. Não confunda isso com atomicidade distribuída.
 - Prévia limitada do título não trunca o título original ou o manuscrito.
+
+## Ativação de livros restaurados
+
+- Ative raiz privada, countReady, lote de personas, universo e registro/uso de
+  capa junto com job/recibo; revalide CAS/revisão/Storage/origens (ADR 0154).
+- Preserve job/recibo/reserva originais após activated. Consulta histórica não
+  abre a raiz nem concede conteúdo; cancel/cleanup anteriores não removem livro ativo.
+- Rules preservam restoreOrigin; procedência não é autorização atual.
+- Capa preparing/url null não é selecionável ou aceita. Finalização de mídia e
+  limpeza pós-ativação exigem progresso próprio e reautorização; não use cancel.

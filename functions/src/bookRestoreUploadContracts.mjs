@@ -11,6 +11,7 @@ import { validateBookRestoreCoverStorageProgress } from './bookRestoreCoverStora
 import { validateBookRestorePersonaLibrary } from './bookRestorePersonaLibraryContracts.mjs';
 import { validateBookRestoreSourceIndexes } from './bookRestoreSourceIndexesContracts.mjs';
 import { validateBookRestoreAudit } from './bookRestoreAuditContracts.mjs';
+import { validateBookRestoreActivation } from './bookRestoreActivationContracts.mjs';
 import { lorePayloadProgress } from './bookRestoreLorePayloadContracts.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
@@ -172,6 +173,7 @@ export function jobShape(uid, id, job) {
       'rejected',
       'validating',
       'content-verified',
+      'activated',
       'content-rejected',
       'cancelling',
       'cancelled',
@@ -234,7 +236,8 @@ export function jobShape(uid, id, job) {
       : job.keyFingerprint !== null || job.recoveryReady
   )
     inconsistent();
-  if (['cancelling', 'cancelled'].includes(job.state) && job.recoveryReady) inconsistent();
+  if (['cancelling', 'cancelled', 'activated'].includes(job.state) && job.recoveryReady)
+    inconsistent();
   if (
     [
       'uploaded',
@@ -243,6 +246,7 @@ export function jobShape(uid, id, job) {
       'rejected',
       'validating',
       'content-verified',
+      'activated',
       'content-rejected',
     ].includes(job.state) &&
     (job.uploadedBytes !== job.source.byteLength ||
@@ -330,7 +334,9 @@ export function jobShape(uid, id, job) {
         'rejected',
         'cancelling',
         'cancelled',
-        ...(job.cleanupVersion >= 3 ? ['validating', 'content-verified', 'content-rejected'] : []),
+        ...(job.cleanupVersion >= 3
+          ? ['validating', 'content-verified', 'activated', 'content-rejected']
+          : []),
       ].includes(job.state)
     )
       inconsistent();
@@ -343,6 +349,7 @@ export function jobShape(uid, id, job) {
         'rejected',
         'validating',
         'content-verified',
+        'activated',
         'content-rejected',
       ].includes(job.state) &&
       (job.cleanupPhase !== 'chunks' || job.cleanedChunks !== 0)
@@ -364,9 +371,13 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
     if (
-      ['bytes-verified', 'validating', 'content-verified', 'content-rejected'].includes(
-        job.state,
-      ) &&
+      [
+        'bytes-verified',
+        'validating',
+        'content-verified',
+        'activated',
+        'content-rejected',
+      ].includes(job.state) &&
       (job.integrityFailure !== null ||
         job.integrityDigest !== job.source.sha256 ||
         job.checkedChainHash !== job.uploadedChainHash)
@@ -390,9 +401,14 @@ export function jobShape(uid, id, job) {
     restoreId(job.validationBirthOperationId);
     restoreValidationMeta(job.validationMeta, job.validationVersion);
     if (
-      !['validating', 'content-verified', 'content-rejected', 'cancelling', 'cancelled'].includes(
-        job.state,
-      ) ||
+      ![
+        'validating',
+        'content-verified',
+        'activated',
+        'content-rejected',
+        'cancelling',
+        'cancelled',
+      ].includes(job.state) ||
       job.validationMeta.checkedChunks > job.checkedChunks
     )
       inconsistent();
@@ -411,7 +427,7 @@ export function jobShape(uid, id, job) {
     )
       inconsistent();
     if (
-      job.state === 'content-verified' &&
+      ['content-verified', 'activated'].includes(job.state) &&
       (job.validationMeta.phase !== 'done' ||
         job.validationMeta.checkedChunks !== job.checkedChunks ||
         job.validationMeta.reportHash === null ||
@@ -459,7 +475,7 @@ export function jobShape(uid, id, job) {
     integer(job.validationCheckpoint);
     if (
       job.validationCheckpoint >= job.checkpoint ||
-      !['content-verified', 'cancelling', 'cancelled'].includes(job.state)
+      !['content-verified', 'activated', 'cancelling', 'cancelled'].includes(job.state)
     )
       inconsistent();
     preparationProgress(job.preparation);
@@ -592,12 +608,26 @@ export function jobShape(uid, id, job) {
       bookRestoreArtifactBalance(job.preparation) < 0 ||
       (Object.hasOwn(job.preparation, 'loreStaging') &&
         (job.payloadInventoryVersion !== 1 || job.cleanupVersion < 8)) ||
-      (job.state === 'content-verified' && job.preparation.cleanedArtifacts !== 0) ||
+      (['content-verified', 'activated'].includes(job.state) &&
+        job.preparation.cleanedArtifacts !== 0) ||
       (job.state === 'cancelled' && bookRestoreArtifactBalance(job.preparation) !== 0)
     )
       inconsistent();
   } else if (Object.hasOwn(job, 'preparation') || Object.hasOwn(job, 'validationCheckpoint'))
     inconsistent();
+  if (job.state === 'activated') {
+    const a = validateBookRestoreActivation(job.activation);
+    if (
+      job.cleanupVersion !== 14 ||
+      job.preparation.schemaVersion !== 13 ||
+      job.preparation.phase !== 'activation-ready' ||
+      job.preparation.audit.phase !== 'done' ||
+      job.checkpoint !== sum(a.sourceCheckpoint, 1) ||
+      a.activatedAt !== job.updatedAt ||
+      a.mediaState !== (job.preparation.cover.kind === 'library' ? 'pending' : 'none')
+    )
+      inconsistent();
+  } else if (Object.hasOwn(job, 'activation')) inconsistent();
   return job;
 }
 /** Created remains monotonic; successful retirement and cancellation are separate debits. */
@@ -988,6 +1018,9 @@ export function progress(uid, id, snapshot) {
     integrity: integrityProgress(job),
     validation: validationProgress(job),
     ...(job.cleanupVersion >= 4 ? { preparation: preparationProgress(job.preparation) } : {}),
+    ...(job.state === 'activated'
+      ? { activation: validateBookRestoreActivation(job.activation) }
+      : {}),
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
   };

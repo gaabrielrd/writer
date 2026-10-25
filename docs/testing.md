@@ -2824,3 +2824,14 @@ cancelamento/raiz concorrentes e preservação do manuscrito/histórico/rascunho
 Três regressões de replay/cancelamento de auditoria também passaram. Resultados
 SDK, correções de fixtures e limites na
 [evidência](entregas/2026-10-25-writer-v2-revisao-da-ativacao-de-livros.md).
+
+## P1 — núcleo da ativação privada
+
+bookRestoreActivation.test.mjs: 22 casos distintos positivos em seleções; revisão
+mais upload: 33/33. Conferem transação, leitores normais, literalidade, CAS,
+rollback/retry/replay, origens/usos recriados, capa pendente e histórico após
+exclusão. Dois SDK reais provam timestamps do commit, vínculos/Rules/procedência
+e registro/uso da capa. Sharp é resolvido pelo pacote functions já instalado.
+Resultados e limites na
+[evidência](entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
+Mídia/host/roundtrip/validate de P1 continuam pendentes.

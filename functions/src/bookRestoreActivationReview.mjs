@@ -166,6 +166,9 @@ export async function prepareBookRestoreActivationReview(tx, db, loaded, items, 
   });
   return {
     result: { ...result, reviewToken },
+    control,
+    batch,
+    universe,
     cover,
     storageProof: p.coverStorage.proof,
     storageContext:

@@ -1720,3 +1720,12 @@ preparação final, token de identidade, universo autorizado, verificação da c
 e reautorização após a espera. Vinte Node distintos e três regressões positivos;
 resultados SDK na [evidência](../../../entregas/2026-10-25-writer-v2-revisao-da-ativacao-de-livros.md).
 Ativação/estado terminal/mídia/host/roundtrip e demais P1/V2/fases/gates pendentes.
+
+### P1 — núcleo de ativação privada (plano 133)
+
+[Plano 133](133-revisao-e-ativacao-do-livro.md): raiz/controle/lote/universo e
+registro/uso da capa ativados atomicamente; consulta histórica e bloqueio de
+cancelamento após ativação. 55 Node distintos e dois SDK positivos; veja a
+[evidência](../../../entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
+Capa ainda preparando, limpeza pós-ativação/host/roundtrip integral e demais
+P1/V2/fases/gates pendentes. Não exposto como endpoint ou UI final.
