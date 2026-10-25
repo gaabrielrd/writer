@@ -2557,3 +2557,17 @@ produz resultados confirmados e erro sanitizado para retomada.
 endpoint/Rule/writer. Não certifica inventário global vazio ou limpeza integral.
 Demais consumidores/backup/restauração/rollout/drain/validate de P1 e fases/gates
 continuam necessários.
+
+## P1 M38c9 A — projeção seletiva de contexto
+
+[ADR 0147](decisions/0147-selective-book-lore-context-projection.md) e
+[plano 128](tasks/writer-v2/execucao/128-projecao-logica-do-lore-para-contextos.md):
+parsers observáveis conservam checkpoints/gramática. Projeção RAM preserva
+literais/ausências/contagens. Leitor autoriza livro e C1 na mesma transação,
+verifica partes nativas e SHA de cada corpo consumido. Base v1 é percorrida em
+fluxo; campos/relações v2 não pedidos não são baixados. Budget explícito de
+I/O/retenção pertence ao consumidor, sem limitar autoria ou backup.
+
+156 Node e quatro SDK positivos. A não integra editorChat; matcher/snapshot/
+proveniência/budget por avanço seguem no marco B. Demais P1, fases 3–5 e gates
+humanos/comerciais permanecem necessários. Sem rollout/deploy.

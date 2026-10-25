@@ -1518,3 +1518,13 @@ sintaxe259/CLI e checks locais positivos. Ferramenta implementada; nenhuma conta
 de produção auditada. Operação real e reconciliação, demais namespaces/
 consumidores/backup/restauração/rollout/drain/validate de P1 e fases/gates
 continuam necessários. Somente commit local, sem CI/push/PR/merge/deploy.
+
+### P1 M38c9 A — projeção seletiva para contextos
+
+[Plano 128](128-projecao-logica-do-lore-para-contextos.md),
+[ADR 0147](../../../decisions/0147-selective-book-lore-context-projection.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-projecao-seletiva-do-lore.md).
+Leitor C1 autorizado, projeções RAM limitadas, base em fluxo e v2 seletivo.
+156 Node e quatro SDK positivos. Não integra chat; marco B é o próximo passo.
+Demais consumidores/backup/restauração/rollout/drain/validate de P1, fases/gates
+humanos e comerciais continuam necessários. Somente commit local.

@@ -148,7 +148,7 @@ function endValue(s) {
   s.phase = 'after';
 }
 /** One bounded canonical-JSON unit. The checkpoint stores metadata and syntax, never prose. */
-export function advanceBookLoreBaseIndex(input, bytes) {
+export function advanceBookLoreBaseIndex(input, bytes, observers) {
   checkpoint(input);
   if (
     !(bytes instanceof Uint8Array) ||
@@ -174,7 +174,11 @@ export function advanceBookLoreBaseIndex(input, bytes) {
           endValue(s);
         }
       } else {
-        const result = advanceBookLoreFieldPrefixValidation(s.child, bytes.subarray(at)),
+        const result = advanceBookLoreFieldPrefixValidation(
+            s.child,
+            bytes.subarray(at),
+            observers?.[key],
+          ),
           end = at + result.consumed;
         if (!result.consumed) bad();
         if (key === 'bookId') {

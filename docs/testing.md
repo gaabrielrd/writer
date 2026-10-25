@@ -2543,3 +2543,18 @@ JAR verificado/demo/loopback. Sem produção ou certificado de inventário globa
 Sintaxe259 e CLI, lint/arquitetura/docs/formato/diff positivos. Sem alteração
 de cliente/writers normais; browser/build/Vitest não repetidos. Validate no
 fechamento de P1; sem CI/envio remoto/deploy.
+
+## P1 M38c9 A — projeção seletiva do lore
+
+156/156 Node em bookLoreFieldValidation, bookLoreBaseIndex,
+bookLoreTextProjection e bookLoreContextRead: 123 regressões e 33 novos casos.
+Observação não muda checkpoints; literais/aliases/ausências preservados.
+Base >8MiB/128 partes em fluxo, corrupção após prefixo, v2 seletivo, origem,
+privacidade e budgets antes do download/retenção conferidos.
+
+4/4 SDK em tests/firestore/bookLoreContextRead.rules.test.mjs, emulador verificado
+1.22.0/demo/loopback: base grande, campos não baixados, parte recriada, produtor
+real/tombstone e orçamento sem escrita. Retenção lógica não mede pico de heap.
+Lint/sintaxe/formato e checks locais; validate integral no fechamento de P1.
+[Evidência](entregas/2026-10-25-writer-v2-projecao-seletiva-do-lore.md).
+Chat ainda não integrado; nenhum endpoint/Rule/deploy ou validação humana nova.

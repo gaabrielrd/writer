@@ -381,3 +381,14 @@ concluído estiverem satisfeitos. A lista fica em
 - Mantenha a CLI em modo de leitura por padrão, com projeto/UID explícitos,
   arquivo limitado e resultados parciais sanitizados; execução real é operação
   própria e não decorre dos testes locais.
+
+## Projeções de lore para contextos
+
+- Use leitura nativa autorizada na mesma transação; observadores dos parsers
+  não certificam bytes nem persistem prosa no checkpoint (ADR 0147).
+- Retenha somente campos/prefixos pedidos em RAM, preservando ausências/contagens.
+  Não baixe relações/campos v2 não selecionados nem monte base v1 inteira.
+- Certifique todo corpo utilizado, mesmo após truncar a apresentação. Budget
+  explícito de I/O/retenção pertence ao consumidor, sem teto de autoria/backup.
+- Autorização histórica conserva nascimento: integração do chat revalida origem
+  sem transformar revisão atual em identidade da conversa.

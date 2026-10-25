@@ -166,3 +166,13 @@ recusada sem alteração/débito até A2 preparar/adotar o lote atomicamente.
 
 54 Node e seis SDK positivos. Demais leitores, writer A2, backup lógico/indexado,
 cliente/recuperação e P1/F2-09/V2 continuam pendentes. Sem endpoint/deploy novo.
+
+## Preparação da etapa 4 — M38c9 A
+
+[Plano 128](128-projecao-logica-do-lore-para-contextos.md) prepara leitura
+seletiva para contextos: C1 autorizado, base em fluxo, v2 por campos, projeção
+RAM/budget explícito e contagens literais. 156 Node e quatro SDK positivos.
+[Evidência](../../../entregas/2026-10-25-writer-v2-projecao-seletiva-do-lore.md).
+Marco A não integra chat ou fecha etapa 4. Próximo é matcher/snapshot/proveniência
+no marco B. Demais consumidores/backup/restauração/rollout/drain/validate e gates
+permanecem necessários.

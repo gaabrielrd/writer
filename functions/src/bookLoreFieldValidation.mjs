@@ -168,14 +168,18 @@ function complete(state) {
   frame.phase = 'after';
   state.mode = 'syntax';
 }
-function collect(state, code) {
-  if (state.role === 'text') return;
+function collect(state, code, observer) {
+  if (state.role === 'text') {
+    observer?.text?.(code, state.role);
+    return;
+  }
   if ((state.role === 'key' || state.role === 'category') && (code < 0x20 || code > 0x7e)) bad();
   if (state.role === 'target' && (code < 32 || code === 127 || code === 47 || code === 92)) bad();
   state.text += String.fromCodePoint(code);
   state.textBytes += code < 0x80 ? 1 : code < 0x800 ? 2 : code < 0x10000 ? 3 : 4;
   const maximum = state.role === 'key' ? 16 : state.role === 'category' ? 9 : 3011;
   if (state.textBytes > maximum) bad();
+  observer?.text?.(code, state.role);
 }
 function target(value) {
   try {
@@ -188,9 +192,10 @@ function target(value) {
     bad();
   }
 }
-function closeString(state) {
+function closeString(state, observer) {
   const role = state.role,
     value = state.text;
+  observer?.end?.(role);
   state.role = null;
   state.text = '';
   state.textBytes = 0;
@@ -210,7 +215,7 @@ function closeString(state) {
     complete(state);
   }
 }
-function stringByte(state, byte) {
+function stringByte(state, byte, observer) {
   if (state.mode === 'unicode') {
     const char = String.fromCharCode(byte);
     if (!/^[0-9a-f]$/.test(char)) bad();
@@ -218,7 +223,7 @@ function stringByte(state, byte) {
     if (state.unicode.length === 4) {
       const code = parseInt(state.unicode, 16);
       if (code > 31 || [8, 9, 10, 12, 13].includes(code)) bad();
-      collect(state, code);
+      collect(state, code, observer);
       state.unicode = '';
       state.mode = 'string';
     }
@@ -231,7 +236,7 @@ function stringByte(state, byte) {
     }
     const escapes = { 34: 34, 92: 92, 98: 8, 102: 12, 110: 10, 114: 13, 116: 9 };
     if (!Object.hasOwn(escapes, byte)) bad();
-    collect(state, escapes[byte]);
+    collect(state, escapes[byte], observer);
     state.mode = 'string';
     return;
   }
@@ -243,13 +248,13 @@ function stringByte(state, byte) {
     u.min = 0x80;
     u.max = 0xbf;
     if (!u.remaining) {
-      collect(state, u.code);
+      collect(state, u.code, observer);
       u.code = 0;
     }
     return;
   }
   if (byte === 34) {
-    closeString(state);
+    closeString(state, observer);
     return;
   }
   if (byte === 92) {
@@ -258,7 +263,7 @@ function stringByte(state, byte) {
   }
   if (byte < 32) bad();
   if (byte < 128) {
-    collect(state, byte);
+    collect(state, byte, observer);
     return;
   }
   if (byte >= 0xc2 && byte <= 0xdf) {
@@ -276,7 +281,7 @@ function stringByte(state, byte) {
     u.max = byte === 0xf4 ? 0x8f : 0xbf;
   } else bad();
 }
-function syntaxByte(state, byte) {
+function syntaxByte(state, byte, observer) {
   const frame = state.stack.at(-1),
     object = frame && ['structured', 'relation'].includes(frame.kind);
   if (byte === 44) {
@@ -302,6 +307,7 @@ function syntaxByte(state, byte) {
     if (!roles.includes(role)) bad();
     state.role = role;
     state.mode = 'string';
+    observer?.start?.(role);
     return;
   }
   const kind = expected(state);
@@ -321,7 +327,7 @@ function syntaxByte(state, byte) {
   bad();
 }
 /** Check one storage unit. Checkpoints contain syntax/IDs, never string prose. */
-function advanceField(input, bytes, prefix) {
+function advanceField(input, bytes, prefix, observer) {
   checkpoint(input);
   if (
     !(bytes instanceof Uint8Array) ||
@@ -344,17 +350,17 @@ function advanceField(input, bytes, prefix) {
         state.literalIndex = 0;
         complete(state);
       }
-    } else if (state.mode === 'syntax') syntaxByte(state, byte);
-    else stringByte(state, byte);
+    } else if (state.mode === 'syntax') syntaxByte(state, byte, observer);
+    else stringByte(state, byte, observer);
   }
   state.byteLength += consumed;
   return { state, consumed };
 }
-export const advanceBookLoreFieldValidation = (input, bytes) =>
-  advanceField(input, bytes, false).state;
+export const advanceBookLoreFieldValidation = (input, bytes, observer) =>
+  advanceField(input, bytes, false, observer).state;
 /** Parse exactly one value, leaving its root delimiter for the base indexer. */
-export const advanceBookLoreFieldPrefixValidation = (input, bytes) =>
-  advanceField(input, bytes, true);
+export const advanceBookLoreFieldPrefixValidation = (input, bytes, observer) =>
+  advanceField(input, bytes, true, observer);
 /** Syntax/domain proof only. Native authorization, SHA, receipts and CAS are separate. */
 export function finishBookLoreFieldValidation(state) {
   checkpoint(state);
