@@ -2835,3 +2835,13 @@ e registro/uso da capa. Sharp é resolvido pelo pacote functions já instalado.
 Resultados e limites na
 [evidência](entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
 Mídia/host/roundtrip/validate de P1 continuam pendentes.
+
+## P1 — finalização da capa restaurada
+
+47 Node distintos positivos em seleções: 24 serviço e 23 Storage; cinco usam SDK
+GCS real/HTTP loopback, incluindo geração/metageração >2^53, PATCH perdido e 412.
+Um SDK Firestore real prova commit da imagem/raiz/conclusão/recibo, retomada,
+Rules privadas e preservação da ativação. Estados atuais e imagem recriada
+cobertos pelo Node. Correções de fixtures/asserções e escopo dos mocks na
+[evidência](entregas/2026-10-25-writer-v2-finalizacao-da-capa-restaurada.md).
+Sem UI nova ou validate global repetido; fechamento de P1 continua obrigatório.

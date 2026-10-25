@@ -28,6 +28,7 @@ export function bookRestoreStorageBucket() {
     return v;
   }
   const bucket = {
+    name: 'demo-restore-memory',
     file(path, options = {}) {
       return {
         interceptors: [],
@@ -60,6 +61,32 @@ export function bookRestoreStorageBucket() {
           const v = put(path, bytes, options.metadata);
           await hooks.afterSave?.(path, v, options);
           return [];
+        },
+        async setMetadata(metadata) {
+          events.push({
+            method: 'patch',
+            path,
+            metadata: structuredClone(metadata),
+            options: structuredClone(options),
+          });
+          await hooks.beforePatch?.(path, metadata, options);
+          const v = version(path, options.generation),
+            p = options.preconditionOpts ?? {};
+          if (
+            (p.ifGenerationMatch !== undefined &&
+              String(p.ifGenerationMatch) !== v.metadata.generation) ||
+            (p.ifMetagenerationMatch !== undefined &&
+              String(p.ifMetagenerationMatch) !== v.metadata.metageneration)
+          )
+            throw error(412);
+          v.metadata = {
+            ...v.metadata,
+            ...structuredClone(metadata),
+            metadata: { ...v.metadata.metadata, ...metadata.metadata },
+            metageneration: String(BigInt(v.metadata.metageneration) + 1n),
+          };
+          await hooks.afterPatch?.(path, v, options);
+          return [structuredClone(v.metadata)];
         },
         createReadStream(options) {
           events.push({

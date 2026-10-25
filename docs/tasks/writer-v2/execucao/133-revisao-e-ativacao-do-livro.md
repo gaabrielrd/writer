@@ -109,10 +109,10 @@ SDK dirigido deve provar a mesma transação nativa e a barreira de acesso.
 - [x] Descritor/recibo/job/reserva originais e consulta histórica após exclusão.
 - [x] Cancelamento/limpeza anteriores recusados após ativação; origem protegida.
 - [x] 55 Node distintos, dois SDK e checks dirigidos; evidência e commit locais.
-- [ ] Finalização da mídia: capa permanece preparando e accepted false.
+- [x] Finalização da mídia pelo [plano 134](134-finalizacao-da-capa-restaurada.md), com retomada própria.
 - [ ] Limpeza pós-ativação com progresso próprio, sem apagar provas necessárias.
 - [ ] Host/UI/roundtrip integral e demais inventários/legados/rollout/validate.
 
 [Evidência do núcleo](../../../entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
-Passos 2–3 têm núcleo implementado; cleanup próprio do passo 3 e passos 4–5
-continuam obrigatórios. Isso não fecha P1/D3/F2-09/V2 ou fases/gates posteriores.
+Passos 2–3 têm núcleo implementado e o passo 4 foi implementado no plano 134;
+cleanup próprio do passo 3 e passo 5 continuam obrigatórios. Isso não fecha P1/D3/F2-09/V2 ou fases/gates posteriores.

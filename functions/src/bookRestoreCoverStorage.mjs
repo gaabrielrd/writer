@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { createBookBackupAssetStorage } from './bookBackupAssetStorage.mjs';
 import {
   bookRestoreCoverStorageContext,
@@ -9,10 +9,13 @@ const fail = () => {
 };
 const same = (a, b) => a.generation === b.generation && a.metageneration === b.metageneration;
 export function createBookRestoreCoverStorage(bucket) {
-  function pinned(path, generation) {
+  function pinned(path, generation, metageneration = null) {
     const file = bucket().file(path, {
       generation,
-      preconditionOpts: { ifGenerationMatch: generation },
+      preconditionOpts: {
+        ifGenerationMatch: generation,
+        ...(metageneration === null ? {} : { ifMetagenerationMatch: metageneration }),
+      },
     });
     // The SDK coerces constructor generation to Number. Keep the exact decimal on the wire.
     file.interceptors.push({
@@ -103,7 +106,71 @@ export function createBookRestoreCoverStorage(bucket) {
         },
       });
   }
+  function accepted(c, expected, metadata) {
+    const extra = metadata?.metadata,
+      base = { ...identity(c), accepted: 'true' },
+      token = extra?.firebaseStorageDownloadTokens,
+      name = bucket().name;
+    if (
+      !extra ||
+      Object.entries(base).some(([key, value]) => extra[key] !== value) ||
+      Object.keys(extra).length !== Object.keys(base).length + 3 ||
+      extra.restoreState !== 'active' ||
+      extra.preparedMetageneration !== expected.metageneration ||
+      typeof token !== 'string' ||
+      !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/.test(token) ||
+      metadata.cacheControl !== 'private, no-store' ||
+      metadata.contentType !== 'image/png' ||
+      Number(metadata.size) !== c.byteLength ||
+      typeof name !== 'string' ||
+      !name
+    )
+      fail();
+    const proof = bookRestoreStorageProof({
+      generation: String(metadata.generation),
+      metageneration: String(metadata.metageneration),
+    });
+    if (
+      proof.generation !== expected.generation ||
+      proof.metageneration !== String(BigInt(expected.metageneration) + 1n)
+    )
+      fail();
+    return {
+      proof,
+      url:
+        'https://firebasestorage.googleapis.com/v0/b/' +
+        encodeURIComponent(name) +
+        '/o/' +
+        encodeURIComponent(path(c)) +
+        '?alt=media&token=' +
+        token,
+    };
+  }
   return {
+    async accept(input, proof) {
+      const c = bookRestoreCoverStorageContext(input),
+        expected = bookRestoreStorageProof(proof);
+      const [metadata] = await bucket().file(path(c)).getMetadata();
+      if (metadata?.metadata?.restoreState === 'active') return accepted(c, expected, metadata);
+      const current = inspect(c, metadata);
+      if (current.state !== 'prepared' || !same(current.proof, expected)) fail();
+      if (typeof bucket().name !== 'string' || !bucket().name) fail();
+      try {
+        await pinned(path(c), expected.generation, expected.metageneration).setMetadata({
+          metadata: {
+            ...identity(c),
+            accepted: 'true',
+            restoreState: 'active',
+            preparedMetageneration: expected.metageneration,
+            firebaseStorageDownloadTokens: randomUUID(),
+          },
+        });
+      } catch (error) {
+        if (error.code !== 412) throw error;
+      }
+      const [after] = await bucket().file(path(c)).getMetadata();
+      return accepted(c, expected, after);
+    },
     async stage(input, bytes) {
       const c = bookRestoreCoverStorageContext(input);
       if (

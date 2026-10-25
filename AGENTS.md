@@ -532,3 +532,13 @@ concluído estiverem satisfeitos. A lista fica em
 - Rules preservam restoreOrigin; procedência não é autorização atual.
 - Capa preparing/url null não é selecionável ou aceita. Finalização de mídia e
   limpeza pós-ativação exigem progresso próprio e reautorização; não use cancel.
+
+## Finalização da capa restaurada
+
+- Autorize job/imagem/definições originais antes e depois do PATCH Storage;
+  preserve geração decimal exata, duas precondições e token de retomada (ADR 0155).
+- Grave conclusão/recibo separados sem URL; não regrave a prova de ativação.
+- Atualize URL da raiz só se nascimento/origem/capa/uso originais ainda coincidirem;
+  exclusão, troca ou recriação não são desfeitas. Não repare usos estrangeiros.
+- Separe conclusão histórica de disponibilidade atual; replay não concede URL.
+  Limpeza posterior conserva provas e não usa cancelamento de um livro ativo.

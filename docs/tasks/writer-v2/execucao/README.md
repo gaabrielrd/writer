@@ -1729,3 +1729,11 @@ cancelamento após ativação. 55 Node distintos e dois SDK positivos; veja a
 [evidência](../../../entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
 Capa ainda preparando, limpeza pós-ativação/host/roundtrip integral e demais
 P1/V2/fases/gates pendentes. Não exposto como endpoint ou UI final.
+
+### P1 — finalização recuperável da capa (plano 134)
+
+[Plano 134](134-finalizacao-da-capa-restaurada.md): PATCH condicional retomável,
+conclusão da biblioteca/raiz aplicável, recibos sem URL e disponibilidade atual
+separada do histórico. 47 Node distintos, cinco GCS/HTTP já incluídos e um SDK
+Firestore positivos; [evidência](../../../entregas/2026-10-25-writer-v2-finalizacao-da-capa-restaurada.md).
+Limpeza própria/host/UI/roundtrip e demais P1/V2/fases/gates continuam pendentes.

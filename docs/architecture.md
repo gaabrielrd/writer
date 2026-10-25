@@ -2861,3 +2861,16 @@ histórico, mesmo após exclusão da raiz. Não regrave esse job nos futuros pas
 de mídia/limpeza. Capa fica preparando, URL null e accepted false até finalização;
 registro e uso já existem no commit. Rules preservam procedência. Sem novo endpoint
 ou host; [limites/evidência](entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
+
+## P1 — finalização recuperável da capa
+
+[ADR 0155](decisions/0155-restored-book-cover-completion.md): serviço interno
+reautoriza job/imagem/definições e uso antes/depois do PATCH condicional de
+metadata Storage, sem regravar bytes. Ativa imagem/URL, raiz ainda aplicável,
+conclusão e recibo próprios juntos. Job/recibo/reserva de ativação ficam intactos.
+
+Conclusão privada imutável em activationMedia/current e recibos em
+bookRestoreMediaOperations não guardam URL ou token. Estado histórico é separado
+de imageState atual; livro alterado/excluído/recriado e imagem retirada não são
+readotados. Sem novo endpoint; host/limpeza/roundtrip integral pendentes.
+[Evidência](entregas/2026-10-25-writer-v2-finalizacao-da-capa-restaurada.md).
