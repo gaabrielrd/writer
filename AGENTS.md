@@ -487,3 +487,8 @@ concluído estiverem satisfeitos. A lista fica em
   somente em geração sem base; ausência e zero não recebem timestamp inventado.
 - Não regrave controle de geração sem mudança. Retome jobs streamed mesmo com
   novas adesões desligadas; habilite-as somente após Counts/drain/roundtrip (ADR 0151).
+
+- Reconcilie lore restaurado por intervalos da fonte projetada e até três partes
+  nativas por transação, com journals/Merkle e SHA/tamanho finais por campo/página.
+- Fixe identidade nativa da cabeça e origem no controle privado de reconciliação;
+  não use o leitor lógico integral de testes no Counts de produção (ADR 0151).

@@ -1675,3 +1675,11 @@ com SDK na [evidência parcial](../../../entregas/2026-10-25-writer-v2-geracao-i
 
 Counts/drenagem/roundtrip e habilitação coordenada da opção interna continuam
 obrigatórios. Sem raiz ativada; D3/P1/F2-09/V2, validate, fases/gates abertos.
+
+### P1 M38c12 D3 em andamento — Counts indexado
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): comparação por campo/página,
+bytes e SHA com até três partes nativas por transação, controle nativo limitado,
+provas e compatibilidade anterior. 34 Node distintos positivos; SDK na
+[evidência](../../../entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md).
+Drenagem/roundtrip/habilitação coordenada e demais P1/V2/fases/gates continuam.

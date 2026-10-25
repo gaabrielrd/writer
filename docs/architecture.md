@@ -2786,3 +2786,16 @@ Novas adesões dependem da opção interna indexedLoreBodies, temporariamente fa
 até Counts/drenagem/roundtrip; jobs streamed existentes sempre retomam. Não há
 opção de request, namespace, Rule ou endpoint novo. D3/P1/ativação geral continuam
 abertos. [Evidência](entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
+
+## P1 M38c12 D3 em andamento — reconciliação indexada
+
+Counts integra a projeção D2 ao comparador de intervalos nativos. Cada avanço
+confere até três partes de payload com journal/recibo, imutabilidade e Merkle;
+o fim de campo/página exige SHA/tamanho integrais iguais ao manifesto. Controle
+privado no payload-body já inventariado fixa origem e identidade da cabeça,
+sem prosa/catálogo. verify explícito e CAS precedem escrita atômica.
+
+34 Node distintos positivos; SDK discriminado na
+[evidência](entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md).
+Sem habilitar novas gerações, raiz, rollout ou conclusão de D3/P1. Drenagem e
+roundtrip permanecem obrigatórios.

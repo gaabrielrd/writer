@@ -16,6 +16,7 @@ import {
   cleanupLegacyRestore,
 } from '../../functions/test/helpers/bookLegacyRestoreFixture.mjs';
 import { finishRestoreResources } from '../../functions/test/helpers/bookRestoreResourcesFixture.mjs';
+import { finishRestoreCounts } from '../../functions/test/helpers/bookRestoreCountsFixture.mjs';
 import { createBookRestoreUploadService } from '../../functions/src/bookRestoreUpload.mjs';
 import { createBookLoreReadService } from '../../functions/src/bookLoreRead.mjs';
 
@@ -86,6 +87,15 @@ test('SDK lore generation: actual advanceLore resumes with new-job option disabl
   const next = await finishRestoreResources(f.factory, uid, id, p);
   assert.equal(next.preparation.phase, 'resource-counts');
   assert.equal(next.preparation.resourceCounts.lore, 1);
+  const reconciled = await finishRestoreCounts(f.factory, uid, id, next);
+  assert.equal(reconciled.preparation.phase, 'personas');
+  const reconcileControls = await admin
+    .collection('books/' + p.bookId + '/bookResourceBodies')
+    .where('stageKind', '==', 'restore-lore-reconcile')
+    .limit(2)
+    .get();
+  assert.equal(reconcileControls.size, 1);
+  assert.equal(reconcileControls.docs[0].data().phase, 'done');
   const nativeControls = await controls(next);
   assert.equal(nativeControls.size, 1);
   assert.equal(nativeControls.docs[0].data().phase, 'done');
@@ -103,6 +113,7 @@ test('SDK lore generation: actual advanceLore resumes with new-job option disabl
     ).docs[0],
     paths = [
       nativeControls.docs[0].ref.path,
+      reconcileControls.docs[0].ref.path,
       segment.ref.path,
       chunk.ref.path,
       'books/' + p.bookId + '/lore/' + f.mapper.identity('lore', 'entity'),

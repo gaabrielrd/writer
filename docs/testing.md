@@ -2774,3 +2774,13 @@ portátil. Fixtures de geração usam advanceLore real e reabrem o serviço em c
 unidade. Leitor preparado é harness privado, sem raiz ou ativação geral.
 SDK e contagem discriminada na [evidência](entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
 Counts/drenagem/roundtrip, habilitação coordenada e validate de P1 continuam.
+
+## P1 M38c12 D3 em andamento — reconciliação indexada
+
+34 Node distintos positivos (22 Counts anteriores, 12 novos), em lotes dirigidos:
+campos/descrições >8 MiB e orçamento <=3 partes por transação, replay, rollback/
+retry, cancelamento concorrente, bytes inválidos e seis dependências recriadas.
+A instrumentação exclui o oráculo integral privado executado depois de Counts;
+falha inicial e repetição seletiva registradas na
+[evidência](entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md), junto ao SDK.
+Sem nova fronteira browser; validate global permanece no fechamento de P1.

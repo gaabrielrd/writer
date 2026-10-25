@@ -14,6 +14,10 @@ import {
   assertBookRestoreEntityIndexEmpty,
 } from './bookRestoreArtifacts.mjs';
 import { createBookRestoreCountEffects } from './bookRestoreCountEffects.mjs';
+import {
+  prepareBookRestoreLoreReconciliationSource,
+  prepareBookRestoreLoreReconciliation,
+} from './bookRestoreLoreReconcile.mjs';
 const action = 'advanceBookRestoreCounts';
 
 export function createBookRestoreCountsService({
@@ -69,7 +73,9 @@ export function createBookRestoreCountsService({
               },
             }
           : structuredClone(initial.loaded.job.preparation);
-      let item, lorePage;
+      let item,
+        lorePage,
+        loreReconciliation = null;
       if (cursor.counts.step === 'scenes') {
         try {
           const reader = await createVerifiedBookRestoreContent({
@@ -79,7 +85,16 @@ export function createBookRestoreCountsService({
             token: request.jobToken,
             load,
           });
-          item = await reader.readMappedItem(cursor.counts.itemIndex);
+          const indexed = await reader.openMappedIndexedLore(cursor.counts.itemIndex);
+          if (indexed)
+            loreReconciliation = await prepareBookRestoreLoreReconciliationSource(
+              db,
+              initial.loaded,
+              indexed,
+            );
+          item = loreReconciliation
+            ? indexed
+            : await reader.readMappedItem(cursor.counts.itemIndex);
           if (cursor.counts.lorePayloadOffset) {
             if (!item.loreRelations) inconsistent();
             lorePage = await item.loreRelations.read(cursor.counts.lorePayloadOffset.offset);
@@ -108,6 +123,16 @@ export function createBookRestoreCountsService({
           if (item.record.kind === 'book-resources') {
             if (counts.sceneCount !== preparation.resourceCounts.scene) inconsistent();
             counts.step = 'links';
+          } else if (loreReconciliation) {
+            const checked = await prepareBookRestoreLoreReconciliation(
+              tx,
+              db,
+              loaded,
+              item,
+              loreReconciliation,
+            );
+            writes.push(...checked.writes);
+            itemPending = checked.pending;
           } else {
             const checked = await effects.check(tx, loaded, item, preparation, lorePage);
             const native = checked.native;

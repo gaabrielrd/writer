@@ -225,3 +225,18 @@ Opção de composição indexedLoreBodies inicia false enquanto Counts/drenagem/
 roundtrip não foram integrados. Não é opção de request; jobs streamed existentes
 retomam mesmo desligada. Habilitação coordenada continua obrigatória em D3.
 Raiz ausente e gates de P1 continuam. [Evidência parcial](../entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
+
+## Reconciliação D3 — fonte projetada e corpo nativo
+
+Counts distingue a cabeça v2 sem base dos protocolos anteriores. Controle
+privado restore-lore-reconcile no inventário existente fixa origem e cabeça
+nativa; D2 produz uma unidade antes da escrita, e todas as observações são
+reconferidas no commit. A transação compara somente o intervalo correspondente
+da saída (até três partes), com journals/recibos e provas Merkle nativas.
+No fim do campo/página, SHA e tamanho totais conferem o manifesto. Presenças,
+datas, privacidade, segmentos e contagens também são obrigatórios.
+
+Sem ficha inteira, catálogo de provas, novo DTO/Rule/namespace/índice de query.
+O leitor lógico completo permanece oráculo privado dos testes. Drenagem,
+roundtrip e habilitação coordenada de D3/P1 continuam.
+[Evidência](../entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md).

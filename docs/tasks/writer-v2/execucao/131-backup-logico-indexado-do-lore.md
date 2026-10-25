@@ -552,3 +552,44 @@ parte obrigatória de D3, não é aceite adiado para fora do escopo.
 
 [Evidência parcial de geração](../../../entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
 D3/P1/validate/fases/gates continuam abertos; não há ativação geral.
+
+### Contrato D3 — reconciliação por unidades antes do código
+
+Counts abre metadata indexada primeiro e distingue explicitamente a cabeça
+nativa v2 sem base criada pelo restore dos caminhos inline/monolíticos anteriores.
+Ausência de índice original ou cabeça/ponteiro inválidos não permite fallback.
+Manter a API integral limitada para protocolos anteriores.
+
+Um controle privado restore-lore-reconcile, em payload-body já inventariado,
+fixa dono/job/origem/ID e token nativo da cabeça (birth/update/conteúdo). Estado
+limitado contém apenas fase/índices e cursor D2/página; nenhum campo de prosa,
+catálogo ou lista de provas. Uma unidade da fonte é preparada antes da escrita;
+verify(tx) reconfirma origem e controle/cabeça antes de cada avanço.
+
+Na transação, conferir cabeça/metadata/datas/presenças, header e até três partes
+nativas tocadas pelos <=80 KiB da unidade. Cada parte requer journal/recibo
+original, imutabilidade, barreira de nascimento e prova Merkle. Comparar bytes
+literais no offset de saída; no fim do campo/página comparar SHA/tamanho totais
+da fonte projetada ao manifesto. Segmentos conferem escopo/offset/contagem/selo.
+Sem remontar campo, descrição ou ficha; sem usar o harness lógico de testes.
+
+Counts mantém o item pendente enquanto o controle avança, com clone por retry,
+escritas/recibo/journal/job atômicos e replay. Sem novo DTO, namespace, Rule ou
+índice de consulta. Protocolos anteriores continuam com seus testes próprios.
+A raiz segue ausente e a opção de novas gerações continua false até drenagem/
+roundtrip/consumidores. Cancelamento e ABA devem ser conferidos também nessa
+etapa; fechamento de D3/P1 e demais fases/gates continuam obrigatórios.
+
+## D3 em andamento — Counts integrado
+
+Reconciliação indexada por campo/página implementada no advanceCounts real.
+Metadata/presenças/datas e origem nativa fixadas; byte a byte, SHA/tamanho e
+até três partes nativas por transação. Controle privado no inventário existente,
+com verify explícito, retry/replay e limpeza de produção. Protocolos anteriores
+permanecem distintos.
+
+34 Node distintos positivos, discriminados com SDK na
+[evidência parcial](../../../entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md).
+Drenagem de staging/contabilidade, leitura preparada/recaptura/roundtrip e
+habilitação coordenada continuam obrigatórios; opção false para novos jobs.
+D3/P1/validate/fases/gates e ativação geral permanecem abertos.
