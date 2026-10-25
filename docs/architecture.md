@@ -2686,3 +2686,21 @@ C2 integra validadores/ponteiros, C3 captura/selo e D leitor/remap/materializaç
 260 Node distintos, 26 Vitest do bridge, três Chromium, bundle de 11 módulos e
 declarações TS positivos. [Evidência C1](entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md).
 Plano 131/P1/fases/gates abertos; nenhum caminho final habilitado neste passo.
+
+## P1 M38c12 C2 — validação de lore por unidades
+
+ContentMachine controla begin/advance/finish e indexa até 64 referências por
+transição. Validador local não concatena o lore. No servidor, um cursor inicial,
+SHA serializado, part/último tamanho e um span/offset de frame permitem retomar
+sem guardar ficha ou lista de spans no estado. ValidationItems recebe ponteiro
+constante com cursor/partes/SHA e metadata; provas nativas/recibos/cleanup v3
+existentes permanecem obrigatórios no commit.
+
+Compatibilidade cobre checkpoints antigos e leitura integral pequena pelo novo
+ponteiro, com o orçamento anterior. Leitura grande/remap/materialização ainda
+exigem D; captura/revalidação/selo C1 exigem C3. Rollout futuro coordenado deve
+drenar validadores/leitores antigos antes da emissão de novos ponteiros.
+
+232 Node, 13 Vitest, seis SDK distintos, três Chromium e build/smoke positivos.
+[Evidência C2](entregas/2026-10-25-writer-v2-validacao-incremental-do-lore.md).
+Sem nova API/Rule/namespace/dependência; P1/fases/gates continuam abertos.

@@ -106,3 +106,25 @@ e à validação semântica; C3 à captura/selo e D ao leitor/remap/materializa�
 260 Node distintos positivos (43 novos/217 regressões), 26 Vitest do bridge,
 três Chromium, bundle browser de 11 módulos e declarações TS conferidas.
 Nenhuma fronteira remota nova, SDK ou build geral neste passo puro.
+
+## Integração semântica C2 — arquivo validado sem recomposição de lore
+
+ContentMachine controla o item incremental e bloqueia operações intercaladas.
+O nó/contagem do lore só entram após EOF/domínio/endereço. Referências são
+indexadas em até 64 por avanço. O validador local usa esse caminho para lore.
+
+No servidor, SHA/cursor/part/último tamanho e um único span/offset pendente
+substituem o catálogo de spans do lore novo. O framing avança uma vez por frame;
+sufixos densos podem ser relidos por unidades autenticadas limitadas. Metadata
+do item contém cursor, partes, SHA e ranges constantes. Não há namespace novo:
+provas nativas, transação, recibos e cleanup v3 existentes cobrem o ponteiro.
+
+Checkpoints antigos sem lore ou já coletando spans continuam válidos.
+O leitor integral pequeno reconhece o ponteiro e conserva seu orçamento anterior;
+não é o leitor grande de D. Instâncias antigas devem ser drenadas com rollout
+coordenado antes de emitir novos ponteiros. C3/D/P1 continuam obrigatórios.
+
+[Evidência C2](../entregas/2026-10-25-writer-v2-validacao-incremental-do-lore.md):
+232 Node distintos, 13 Vitest, seis SDK distintos e três Chromium positivos;
+build/typecheck/smoke (2989 módulos) e checks locais. Fonte de 10 MB/1000 relações
+com snapshot de 3313 bytes e ponteiro de 1566 bytes, sem ativar livro.

@@ -1610,3 +1610,14 @@ e declarações TS. [Evidência C1](../../../entregas/2026-10-25-writer-v2-envel
 
 C2 deve ligar ContentMachine/validadores e ponteiros; C3 captura/selo; D leitor/
 remap/materialização/roundtrip. Plano 131/P1/V2/fases/gates continuam abertos.
+
+### P1 M38c12 C2 — validação local/servidor sem montar o lore
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): máquina semântica e ambos os
+validadores integrados; ponteiro constante, um frame pendente, SHA/EOF/endereço
+e até 64 referências por avanço. Provas/cleanup nativos e compatibilidade antiga.
+232 Node, 13 Vitest, seis SDK distintos e três Chromium positivos; build/smoke.
+[Evidência C2](../../../entregas/2026-10-25-writer-v2-validacao-incremental-do-lore.md).
+
+C3 captura/selo, D leitura/remap/materialização grande e demais inventários/
+roundtrip/drain/rollout/validate de P1/V2/fases/gates permanecem obrigatórios.

@@ -19,6 +19,52 @@ import { BOOK_CONTENT_ITEM_BYTES } from './bookContentMachine.mjs';
 import { readBookBackupFrame } from './bookBackupContainer.mjs';
 import { decodeBookContentJSON, validateBookContentRawPart } from './bookBackupContent.mjs';
 
+/** Compatibility API only: full-item reads retain their existing bounded allocation. */
+async function readIndexedLoreBytes(source, pointer) {
+  const lore = pointer.lore;
+  if (
+    pointer.record.kind !== 'book-lore' ||
+    pointer.legacy ||
+    pointer.spans ||
+    pointer.raw !== null ||
+    !Number.isSafeInteger(pointer.byteLength) ||
+    pointer.byteLength < 1 ||
+    pointer.byteLength > BOOK_CONTENT_ITEM_BYTES ||
+    !lore ||
+    lore.schemaVersion !== 1 ||
+    lore.chunkCount !== Math.ceil(pointer.byteLength / 65536) ||
+    !/^[a-f0-9]{64}$/.test(lore.contentHash) ||
+    lore.metadata?.byteLength !== pointer.byteLength
+  )
+    inconsistent();
+  validateBookRestoreRawPosition(lore.cursor);
+  const bytes = new Uint8Array(pointer.byteLength),
+    hasher = hash.create();
+  let cursor = structuredClone(lore.cursor),
+    position = 0;
+  try {
+    for (let part = 0; part < lore.chunkCount; part++) {
+      const step = await readBookBackupFrame(source, cursor),
+        record = step.record;
+      if (
+        !record ||
+        record.kind !== pointer.record.kind ||
+        record.id !== pointer.record.id ||
+        record.part !== part ||
+        record.payload.length !== Math.min(65536, bytes.length - position)
+      )
+        inconsistent();
+      bytes.set(record.payload, position);
+      position += record.payload.length;
+      hasher.update(record.payload);
+      cursor = step.cursor;
+    }
+    if (position !== bytes.length || hasher.digest() !== lore.contentHash) inconsistent();
+    return bytes;
+  } finally {
+    hasher.destroy();
+  }
+}
 function finalReport(state, loaded, index) {
   if (
     state.phase !== 'done' ||
@@ -205,6 +251,8 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
         )
           inconsistent();
         value = item.value;
+      } else if (pointer.lore) {
+        value = decodeBookContentJSON(await readIndexedLoreBytes(source, pointer));
       } else {
         if (
           pointer.legacy ||

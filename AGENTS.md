@@ -447,3 +447,9 @@ concluído estiverem satisfeitos. A lista fica em
   semântica do lore; não suponha que 64 KiB limitam o número de escritas.
 - Preserve a validação do envelope/EOF e vincule índice/offsets ao mesmo arquivo
   e item antes de usar spans; o parser puro não certifica SHA nem autorização.
+
+- Na validação servidor do lore, guarde só cursor/SHA e um frame pendente;
+  confirme origem/índice/checkpoint/recibo atomicamente antes do ponteiro final.
+- Preserve checkpoints antigos em andamento; não use a API integral pequena
+  como substituta do leitor grande por spans nem emita ponteiros novos em rollout
+  com validadores/leitores antigos ainda ativos.

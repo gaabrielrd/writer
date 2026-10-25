@@ -111,6 +111,32 @@ async function validateRecordContent(stream, { index, hash, signal } = {}, legac
     });
     current = await next();
     while (current) {
+      if (current.kind === 'book-lore') {
+        const first = current;
+        await machine.beginLore({ kind: first.kind, id: first.id, part: first.part });
+        let part = 0,
+          previous;
+        do {
+          if (
+            current.part !== part++ ||
+            current.payload.length === 0 ||
+            current.payload.length > 65536 ||
+            (previous !== undefined && previous !== 65536)
+          )
+            bad();
+          for (let at = 0; at < current.payload.length;) {
+            const result = await machine.advanceLore(
+              current.payload.subarray(at),
+              BOOK_CONTENT_STEP_ITEMS,
+            );
+            at += result.consumed;
+          }
+          previous = current.payload.length;
+          current = await next();
+        } while (current && current.kind === first.kind && current.id === first.id);
+        await machine.finishLore();
+        continue;
+      }
       const { record, value } = await json();
       await machine.acceptJSON({ kind: record.kind, id: record.id, part: record.part }, value);
       while (machine.checkpoint().relations)

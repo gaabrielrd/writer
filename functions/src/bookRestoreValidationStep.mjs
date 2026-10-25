@@ -10,6 +10,12 @@ import { decodeBookContentJSON, validateBookContentRawPart } from './bookBackupC
 import { bookContentInvalid as bad } from './bookBackupSchema.mjs';
 import { inconsistent } from './bookRestoreUploadContracts.mjs';
 import { digest } from './sceneContracts.mjs';
+import {
+  beginBookRestoreLoreValidation,
+  acceptBookRestoreLoreFrame,
+  resumeBookRestoreLoreFrame,
+  finishBookRestoreLoreValidation,
+} from './bookRestoreLoreValidation.mjs';
 const hash = {
   create() {
     const h = createHash('sha256');
@@ -87,6 +93,13 @@ export async function prepareBookValidationStep(state, source, store) {
     if (state.machine.phase === 'done') state.phase = 'recheck';
     return;
   }
+  if (state.lore?.frame) {
+    if (!machine || state.json || state.relations || state.raw) inconsistent();
+    store.setItemIndex(state.items);
+    await resumeBookRestoreLoreFrame(state.lore, source, machine);
+    state.machine = machine.checkpoint();
+    return;
+  }
   if (state.relations) {
     if (!machine) inconsistent();
     const pending = state.relations;
@@ -131,6 +144,26 @@ export async function prepareBookValidationStep(state, source, store) {
     // Lookahead is deliberately not committed: the next unit reads the same frame.
     return;
   }
+  if (
+    state.lore &&
+    (!record || record.kind !== state.lore.record.kind || record.id !== state.lore.record.id)
+  ) {
+    if (!machine || state.json || state.relations || state.raw) inconsistent();
+    store.setItemIndex(state.items);
+    const pending = state.lore,
+      lore = await finishBookRestoreLoreValidation(pending, machine);
+    await store.addItem(state.items, {
+      record: pending.record,
+      byteLength: lore.metadata.byteLength,
+      raw: null,
+      lore,
+    });
+    state.items++;
+    state.machine = machine.checkpoint();
+    delete state.lore;
+    // Keep the lookahead frame uncommitted until the next operation.
+    return;
+  }
   if (state.raw) {
     if (!machine || !state.machine.raw || state.raw.algorithm !== 'sha256/hash-wasm@4.12.0')
       inconsistent();
@@ -167,6 +200,21 @@ export async function prepareBookValidationStep(state, source, store) {
     state.parser = step.cursor;
     return;
   }
+  if (record?.kind === 'book-lore' && !state.json) {
+    if (!machine || state.json || state.relations || state.raw) bad();
+    store.setItemIndex(state.items);
+    if (!state.lore) {
+      await machine.beginLore({ kind: record.kind, id: record.id, part: record.part });
+      state.lore = await beginBookRestoreLoreValidation(
+        { kind: record.kind, id: record.id, part: 0 },
+        before.container,
+      );
+    }
+    await acceptBookRestoreLoreFrame(state.lore, record, step.span, machine);
+    state.machine = machine.checkpoint();
+    state.parser = step.cursor;
+    return;
+  }
   if (record) {
     if (!machine || record.payload.length === 0) bad();
     if (state.json) {
@@ -187,7 +235,7 @@ export async function prepareBookValidationStep(state, source, store) {
     return;
   }
   if (step.report) {
-    if (!machine || state.json) bad();
+    if (!machine || state.json || state.lore) bad();
     await machine.beginFinish();
     state.machine = machine.checkpoint();
     state.envelope = step.report;

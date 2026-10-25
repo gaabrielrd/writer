@@ -5,8 +5,13 @@ import { before, beforeEach, after, test } from 'node:test';
 import { initializeTestEnvironment, assertFails } from '@firebase/rules-unit-testing';
 import { doc, collection, getDoc, getDocs, setDoc } from 'firebase/firestore';
 import { createBookRestoreUploadService } from '../../functions/src/bookRestoreUpload.mjs';
-import { sha256 } from '../../functions/src/bookRestoreUploadContracts.mjs';
+import { sha256, chunkId } from '../../functions/src/bookRestoreUploadContracts.mjs';
 import { validateBookBackupContent } from '../../functions/src/bookBackupContent.mjs';
+import {
+  indexedLoreData,
+  indexedLoreArchive,
+  PRIVATE_LORE_BODY,
+} from '../../functions/test/helpers/bookLoreContentFixture.mjs';
 import {
   fixture,
   source,
@@ -27,8 +32,8 @@ const mutation = (p, operationId, extra = {}) => ({
   expectedCheckpoint: p.checkpoint,
   ...extra,
 });
-async function ready() {
-  const src = await source(fixture()),
+async function ready(records = fixture()) {
+  const src = await source(records),
     bytes = await src.read(0, src.size);
   let p = (
     await api.startBookRestore(uid, {
@@ -60,9 +65,14 @@ async function ready() {
       )
     ).progress;
   }
-  p = (
-    await api.advanceBookRestoreIntegrity(uid, mutation(p, 'validation-sdk-hash01', { limit: 16 }))
-  ).progress;
+  let hashStep = 0;
+  while (p.state !== 'bytes-verified')
+    p = (
+      await api.advanceBookRestoreIntegrity(
+        uid,
+        mutation(p, 'validation-sdk-hash-' + hashStep++, { limit: 16 }),
+      )
+    ).progress;
   return { p, src };
 }
 async function steps(p, count, prefix = 'validation-sdk-step') {
@@ -284,4 +294,101 @@ test('recreated index data cannot substitute for the original receipt-bound gene
   assert.equal(rejected, true);
   assert.equal((await api.getBookRestore(uid, { restoreId: id })).state, 'validating');
   await clean(p);
+});
+
+test('SDK streamed lore above 8 MiB validates with constant pointers and private metadata without activating the book', async () => {
+  const records = indexedLoreArchive(indexedLoreData({ large: true, count: 130 })),
+    expected = await validateBookBackupContent(await source(indexedLoreArchive()), {
+      index: indexFixture(),
+      hash: hashPort,
+    });
+  let { p } = await ready(records),
+    maximum = 0,
+    resumed = 0,
+    count = 0;
+  while (['bytes-verified', 'validating'].includes(p.state)) {
+    api = createBookRestoreUploadService({ db: admin });
+    p = (
+      await api.advanceBookRestoreValidation(uid, mutation(p, 'validation-sdk-large-' + count++))
+    ).progress;
+    const snapshot = (await admin.doc(root + '/validationState/current').get()).data()?.state;
+    maximum = Math.max(maximum, Buffer.byteLength(JSON.stringify(snapshot)));
+    assert.equal(JSON.stringify(snapshot).includes(PRIVATE_LORE_BODY), false);
+    if (snapshot.lore?.frame) resumed++;
+    if (snapshot.lore) assert.equal(Object.hasOwn(snapshot.lore, 'spans'), false);
+    assert.ok(count < 1000);
+  }
+  assert.equal(p.state, 'content-verified');
+  assert.deepEqual(p.validation.summary.totals, expected.totals);
+  assert.deepEqual(p.validation.summary.warnings, expected.warnings);
+  assert.ok(maximum < 65536 && resumed > 0);
+  const pointer = (
+      await admin
+        .collection(root + '/validationItems')
+        .where('record.kind', '==', 'book-lore')
+        .get()
+    ).docs[0],
+    value = pointer.data();
+  assert.equal(Object.hasOwn(value, 'spans'), false);
+  assert.ok(value.byteLength > 8 * 1024 * 1024);
+  assert.ok(Buffer.byteLength(JSON.stringify(value)) < 16384);
+  assert.ok(value.lore.chunkCount > 128);
+  assert.equal(value.lore.metadata.index.relations.count, 130);
+  assert.equal((await admin.doc('books/' + p.bookId).get()).exists, false);
+  await assertFails(getDoc(doc(env.authenticatedContext(uid).firestore(), pointer.ref.path)));
+});
+test('SDK dense-frame retry binds rows to the atomic receipt and a recreated source cannot resume', async () => {
+  let { p } = await ready(indexedLoreArchive(indexedLoreData({ count: 205 }))),
+    frame;
+  for (let step = 0; step < 100; step++) {
+    p = (await api.advanceBookRestoreValidation(uid, mutation(p, 'validation-sdk-dense-' + step)))
+      .progress;
+    frame = (await admin.doc(root + '/validationState/current').get()).data().state.lore?.frame;
+    if (frame) break;
+  }
+  assert.ok(frame);
+  const request = mutation(p, 'validation-sdk-dense-retry'),
+    values = await Promise.all([
+      api.advanceBookRestoreValidation(uid, request),
+      api.advanceBookRestoreValidation(uid, request),
+    ]);
+  assert.deepEqual(values[0].receipt, values[1].receipt);
+  p = values[0].progress;
+  const rows = (
+      await admin
+        .collection(root + '/validationIndex')
+        .where('createdByOperationId', '==', request.operationId)
+        .get()
+    ).docs,
+    receipt = await admin
+      .doc('users/' + uid + '/bookRestoreOperations/' + request.operationId)
+      .get(),
+    snapshot = await admin.doc(root + '/validationState/current').get();
+  assert.equal(rows.filter((r) => r.data().value.kind === 'lore-relation').length, 64);
+  for (const row of rows) assert.ok(row.createTime.isEqual(receipt.createTime));
+  assert.ok(snapshot.updateTime.isEqual(receipt.createTime));
+  assert.ok(snapshot.data().state.lore.frame);
+  const race = await Promise.allSettled([
+    api.advanceBookRestoreValidation(uid, mutation(p, 'validation-sdk-dense-race-a')),
+    api.advanceBookRestoreValidation(uid, mutation(p, 'validation-sdk-dense-race-b')),
+  ]);
+  assert.equal(race.filter((r) => r.status === 'fulfilled').length, 1);
+  assert.equal(race.find((r) => r.status === 'rejected').reason.code, 'failed-precondition');
+  p = await api.getBookRestore(uid, { restoreId: id });
+  const current = (await admin.doc(root + '/validationState/current').get()).data().state;
+  assert.ok(current.lore.frame);
+  const chunk = Math.floor(current.lore.frame.span.offset / 65536),
+    ref = admin.doc(root + '/chunks/' + chunkId(chunk)),
+    old = await ref.get();
+  assert.ok(old.exists);
+  await ref.delete();
+  await ref.create(old.data());
+  const before = await admin.doc(root).get();
+  await assert.rejects(
+    api.advanceBookRestoreValidation(uid, mutation(p, 'validation-sdk-dense-source-aba')),
+    { code: 'failed-precondition' },
+  );
+  assert.ok(before.updateTime.isEqual((await admin.doc(root).get()).updateTime));
+  assert.equal((await api.getBookRestore(uid, { restoreId: id })).state, 'validating');
+  await clean(p, 'validation-sdk-dense-clean-');
 });

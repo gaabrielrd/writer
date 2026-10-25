@@ -9,6 +9,11 @@ import {
   bookContentHash as validHash,
   validateBookBackupJSONItem,
 } from './bookBackupSchema.mjs';
+import {
+  createBookPortableLoreItemIndex,
+  advanceBookPortableLoreItemIndex,
+  finishBookPortableLoreItemIndex,
+} from './bookPortableLoreItemIndex.mjs';
 const encoder = new TextEncoder();
 export const BOOK_CONTENT_ITEM_BYTES = 8 * 1024 * 1024;
 export const BOOK_CONTENT_CHECKPOINT_BYTES = 16384;
@@ -123,10 +128,12 @@ export function createBookContentState(bookId, legacy = false) {
     ended: [],
     raw: null,
     relations: null,
+    lore: null,
   };
 }
 function checkpoint(value) {
   const state = jsonCopy(value, BOOK_CONTENT_CHECKPOINT_BYTES);
+  if (!Object.hasOwn(state, 'lore')) state.lore = null;
   closed(state, [
     'schemaVersion',
     'bookId',
@@ -144,6 +151,7 @@ function checkpoint(value) {
     'ended',
     'raw',
     'relations',
+    'lore',
   ]);
   if (
     state.schemaVersion !== 1 ||
@@ -231,7 +239,21 @@ function checkpoint(value) {
     )
       bad();
   }
-  if (state.raw !== null && state.relations !== null) bad();
+  if (state.lore !== null) {
+    const pending = state.lore;
+    closed(pending, ['record', 'index']);
+    closed(pending.record, ['kind', 'id', 'part']);
+    validHash(pending.record.id);
+    if (
+      pending.record.kind !== 'book-lore' ||
+      pending.record.part !== 0 ||
+      state.phase !== 'records' ||
+      state.ended.includes('book-resources')
+    )
+      bad();
+    advanceBookPortableLoreItemIndex(pending.index, new Uint8Array());
+  }
+  if ([state.raw, state.relations, state.lore].filter((item) => item !== null).length > 1) bad();
   if (
     state.phase !== 'records' &&
     (!state.book || !state.origin || !state.cover || tags.some((k) => !state.ended.includes(k)))
@@ -330,8 +352,9 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
       check();
       busy = true;
       try {
-        await fn(...args);
+        const result = await fn(...args);
         check();
+        return result;
       } catch (error) {
         failed = true;
         throw error;
@@ -345,7 +368,7 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
     return checkpoint({ ...state, edgeCount, rowCount, book, origin, cover, ended: [...ended] });
   };
   const acceptJSON = operation(async (record, input) => {
-    if (state.phase !== 'records' || state.raw || state.relations) bad();
+    if (state.phase !== 'records' || state.raw || state.relations || state.lore) bad();
     closed(record, ['kind', 'id', 'part']);
     id(record.id);
     if (record.part !== 0) bad();
@@ -514,6 +537,44 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
       }
     }
   });
+  const beginLore = operation(async (record) => {
+    if (
+      state.phase !== 'records' ||
+      state.raw ||
+      state.relations ||
+      state.lore ||
+      ended.has('book-resources')
+    )
+      bad();
+    closed(record, ['kind', 'id', 'part']);
+    validHash(record.id);
+    if (record.kind !== 'book-lore' || record.part !== 0) bad();
+    state.lore = { record: structuredClone(record), index: createBookPortableLoreItemIndex() };
+  });
+  const advanceLore = operation(async (bytes, limit = BOOK_CONTENT_STEP_ITEMS) => {
+    if (
+      state.phase !== 'records' ||
+      !state.lore ||
+      !(bytes instanceof Uint8Array) ||
+      bytes.length === 0
+    )
+      bad();
+    const result = advanceBookPortableLoreItemIndex(state.lore.index, bytes, limit);
+    for (const reference of result.references)
+      await row({ kind: 'lore-relation', target: reference.targetEntityId });
+    state.lore.index = result.state;
+    return { consumed: result.consumed, references: result.references.length };
+  });
+  const finishLore = operation(async () => {
+    if (state.phase !== 'records' || !state.lore) bad();
+    const metadata = finishBookPortableLoreItemIndex(state.lore.index);
+    if (state.lore.record.id !== hashAddress(['lore', null, metadata.id])) bad();
+    await add(nodeKey('lore', metadata.id), {});
+    bump(totals.resources, 'lore');
+    dates(metadata.index.dates);
+    state.lore = null;
+    return metadata;
+  });
   const advanceRelations = operation(async (record, input, limit = BOOK_CONTENT_STEP_ITEMS) => {
     if (state.phase !== 'records' || !state.relations) bad();
     count(limit);
@@ -553,7 +614,7 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
     state.raw = null;
   });
   const beginFinish = operation(async () => {
-    if (state.phase !== 'records' || state.raw || state.relations) bad();
+    if (state.phase !== 'records' || state.raw || state.relations || state.lore) bad();
     if (
       !book ||
       !origin ||
@@ -661,6 +722,9 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
   });
   return {
     acceptJSON,
+    beginLore,
+    advanceLore,
+    finishLore,
     advanceRelations,
     acceptRawProof,
     beginFinish,

@@ -2682,3 +2682,23 @@ Bundle browser: 11 módulos/26742 bytes/zero imports externos. Declarações TS,
 lint/sintaxe/formato/docs/arquitetura/diff positivos. Sem SDK novo/build geral/
 validate neste passo puro. C2/C3/D obrigatórios, sem prova de arquivo/restauração
 integrados. [Evidência C1](entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md).
+
+## P1 M38c12 C2 — validação integrada do lore
+
+232 Node distintos positivos: 15 novos do protocolo incremental e 217 regressões
+nos validadores, leitura legada/pequena e consumidores da restauração.
+Snapshot servidor máximo 3313 bytes, ponteiro 1566 bytes, 156 partes/10200950 bytes
+e mil relações; até 64 referências/commit. EOF/endereço/ordem, replay/CAS,
+origem alterada antes do commit, cancel/cleanup e checkpoint antigo cobertos.
+
+13/13 Vitest de runtime/índice e seis SDK distintos positivos. Lote SDK inicial
+teve 5/6, com erro de endereço no fixture do chunk; após usar chunkId oficial,
+somente o caso afetado foi repetido: 1/1, zero skipped. Emulador verificado,
+demo/loopback, provas/recibos/Rules reais; sem Auth/App Check em produção.
+
+Três Chromium pelo serviço público com OPFS cifrado: arquivo 20368971 bytes,
+1015 reads/maior 65655 bytes, relatório equivalente e limpeza confirmada; abort
+durante lore grande; conteúdo malformado sob selo válido. Build/typecheck/smoke
+2989 módulos e checks locais positivos. Não comprova captura/restauração grande:
+C3/D/P1/gates continuam. Sem CI/validate global.
+[Evidência C2](entregas/2026-10-25-writer-v2-validacao-incremental-do-lore.md).

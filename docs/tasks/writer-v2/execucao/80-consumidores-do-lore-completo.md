@@ -265,3 +265,14 @@ consumed exato, <=64 referências, checkpoint sem prosa/lista e domínio portát
 [Evidência C1](../../../entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md).
 C2/C3 ainda devem integrar validadores/captura/selo; D remap/materialização.
 Etapa 5, plano 131, P1 e demais fases/gates permanecem abertos.
+
+## Validação da etapa 5 — M38c12 C2
+
+Lore novo é validado por unidades no cliente/servidor, com EOF/endereço/hash,
+referências limitadas e ponteiro constante. Checkpoints/reader pequenos antigos
+continuam compatíveis. 232 Node, 13 Vitest, seis SDK distintos e três Chromium
+positivos; build/smoke. [Evidência C2](../../../entregas/2026-10-25-writer-v2-validacao-incremental-do-lore.md).
+
+C3 deve ligar captura/revalidação/selo. D deve ler/remapear/materializar grande,
+sem usar o orçamento da API integral pequena como limite de autoria. Etapa 5,
+plano 131/P1/fases/gates continuam abertos, sem rollout ou operação de produção.

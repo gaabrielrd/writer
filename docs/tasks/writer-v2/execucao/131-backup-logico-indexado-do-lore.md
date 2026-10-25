@@ -219,3 +219,59 @@ Entrada anterior continua integral e estados nativos continuam separados.
 C ainda aberto: implementar C2 (ContentMachine/validadores/ponteiros), C3
 (captura/revalidação/selo), depois D e inventários/roundtrip/validate de P1.
 Não habilitar arquivo/restauração por esse parser isolado.
+
+## Contrato C2 antes da implementação — validação integrada
+
+ContentMachine passa a controlar begin/advance/finish do lore incremental,
+bloqueando JSON/raw/finish durante um item aberto. Guarda somente envelope/
+sintaxe/IDs/metadata e escreve no máximo 64 referências por transição. EOF
+confere endereço lógico e datas/contagens antes de reservar o nó do lore.
+Checkpoints antigos sem lore são normalizados para lore:null.
+
+O validador local usa esse caminho somente para book-lore, sem concatenar
+payloads. Os demais tipos e o normalizador legado mantêm seus contratos.
+O pacote/framing/selo continua obrigatório além da validação semântica.
+
+No servidor, state.lore guarda record/cursor inicial, part/tamanho anterior,
+hash SHA serializado e no máximo um span/offset de frame em processamento.
+Cada avanço processa <=64 KiB e <=64 referências. Um frame denso pode exigir
+retomadas autenticadas do sufixo, com amplificação limitada pelo tamanho fixo
+do frame; nunca reconstruir o item inteiro nem acumular um catálogo de spans.
+Parser do pacote avança uma vez por frame; não seguir ao próximo enquanto o
+frame atual não tiver sido consumido semanticamente.
+
+Ao EOF, ValidationItems recebe ponteiro constante do item com cursor, número
+de partes, hash integral e metadata de ranges. Usar os namespaces existentes
+validationState/validationIndex/validationItems, com provas nativas/recibos/
+cleanup atuais e raiz ausente. Não criar cache de prosa ou novo namespace.
+
+BookRestoreContentRead deve reconhecer esse ponteiro para manter seu contrato
+anterior de leitura integral de itens pequenos, ainda limitado pelo orçamento
+já existente. Isso não implementa o leitor/remap grande D. Arquivos grandes
+podem ser validados; ativação/restauração integral continua pendente até D.
+
+Arquivos: BookContentMachine, BookBackupContent, BookRestoreValidationStep,
+novo helper BookRestoreLoreValidation para o estado/cursor/hash limitados,
+BookRestoreContentRead para compatibilidade do ponteiro; testes dirigidos de
+máquina/validação/serviço/reader/SDK/Chromium e documentação/ADR/AGENTS/evidência.
+
+Aceites: equivalência de relatórios com o caminho anterior, grande >8 MiB/128
+partes e relações densas, estado sem prosa/spans integrais, até 64 escritas de
+referências por passo, JSON checkpoint em cada transição, EOF/endereço/domínio/
+SHA/framing/sequência rejeitados quando inválidos. Validar fonte e índices
+nativos no commit/replay/conflito/recriação/cancel/cleanup, sem conceder acesso
+por índices. Compatibilidade pequena/legada e root ausente preservadas.
+Sem UI, Rule, endpoint, captura/selo C3 ou materialização D novos.
+
+## Estado C2 — 2026-10-25
+
+Máquina/validador local/servidor integrados. Lore novo usa cursor, SHA serializado
+e um frame pendente; ponteiro final constante, sem ficha/spans integrais.
+Checkpoints em andamento e leitura integral pequena mantidos. 232 Node distintos,
+13 Vitest, seis SDK distintos, três Chromium e build/smoke positivos.
+[Evidência C2](../../../entregas/2026-10-25-writer-v2-validacao-incremental-do-lore.md).
+
+C ainda aberto para C3: ligar captura C1 e provas finais ao selo. D deve consumir
+o ponteiro por spans e remapear/materializar grandes, incluindo crescimento do
+JSON após remap. Rollout coordenado/drenagem de instâncias antigas, inventários/
+legacy/roundtrip/validate de P1, fases e gates continuam pendentes.
