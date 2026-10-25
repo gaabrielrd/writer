@@ -553,3 +553,20 @@ Sessão Auth compõe o port, sem fallback SDK. Não há persistência automátic
 da criação ou entrada nova no compêndio. Ticket antes de RPC, chave/cópia cifrada,
 checkpoint durável, cancel/descarte/host e demais portões continuam obrigatórios.
 P1/F2-09/V2 e fases restantes abertos; validate integral no fechamento de P1.
+
+## Preparação protegida da criação — M38c5o
+
+[Plano 113](113-preparacao-e-copia-protegida-da-criacao-de-lore.md) e
+[ADR 0128](../../../decisions/0128-protected-lore-creation-preparation.md):
+ticket metadata antes de RPC, chave/cópia cifrada imutável, IDB v3 aditivo e
+cancel/release/descarte limitados. Hash pode aguardar o input sem bloquear
+cancel; reserva perdida é retomada sem outra intenção nem rascunho inventado.
+Sessão Auth captura actor/host e compartilha provider HTTP da chave.
+
+221 Vitest e quatro jornadas Chromium positivos; veja a
+[evidência](../../../entregas/2026-10-24-writer-v2-preparacao-protegida-da-criacao-de-lore.md).
+Cópia inicial não persiste checkpoint produtor: próxima integração precisa
+write-ahead privado, controles e ponte de resultado antes de advance/apply.
+Host/entrada no compêndio, exclusão/lifecycle, outros writers/consumidores/
+backup/rollout e validate integral de P1 continuam pendentes. P1/F2-09/V2,
+fases 3–5 e gates humanos/comerciais abertos; sem envio remoto.

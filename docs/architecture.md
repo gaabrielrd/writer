@@ -2219,3 +2219,20 @@ ao evento próprio. Snapshot é limitado; checkpoint privado e controles até 50
 permitem reconstrução verificada sem RPC. Sessão Auth captura UID/actor/host.
 Persistência de criação/host e demais portões seguem pendentes; journal de
 edição permanece separado e conflito não é prova de fechamento para purge.
+
+## P1 M38c5o — preparação protegida da criação
+
+[ADR 0128](decisions/0128-protected-lore-creation-preparation.md):
+IndexedDB v3 adiciona creationTickets/creationFrames sem reescrever journals
+de edição. Ticket metadata antecede a reserva; hash é fixado após hashing do
+input, preservando cancel independente durante essa etapa. CAS/stamp e Web
+Locks curtos fenceiam instâncias anteriores; confirmação depende de oncomplete.
+Draft imutável de 64 KiB tem digest cifrado, prefixo conferido e autorização
+fresca antes/depois de ler. Provider HTTP Auth/App Check é compartilhado.
+
+Sessão oferece creationPreparation/resumeCreationPreparation/creationPreparations.
+Cancel conserva cópia/chave; release fecha criador antes da chave e descarte
+confere ausência com deletes/contador/tombstone atômicos até 50. Conflito de
+adoção preserva dados e não concede fechamento. Bootstrap não produz;
+checkpoint write-ahead integrado e host precedem advance/apply pela UI.
+Lifecycle/consumidores/backup/rollout e validate de P1 continuam pendentes.

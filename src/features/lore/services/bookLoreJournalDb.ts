@@ -36,9 +36,9 @@ function open(): Promise<IDBDatabase> {
     );
   return new Promise((resolve, reject) => {
     let failed = false;
-    const r = indexedDB.open(LORE_JOURNAL_DB, 2);
+    const r = indexedDB.open(LORE_JOURNAL_DB, 3);
     r.onupgradeneeded = () => {
-      for (const store of [HEADS, FRAMES, PREPARATIONS])
+      for (const store of [HEADS, FRAMES, PREPARATIONS, 'creationTickets', 'creationFrames'])
         if (!r.result.objectStoreNames.contains(store)) r.result.createObjectStore(store);
     };
     r.onerror = () => {
@@ -456,3 +456,6 @@ export async function advanceJournalDiscard(
       ),
   );
 }
+
+// Shared only by the creation stores; formats and keys of the edit stores stay unchanged.
+export { open as openLoreJournalDatabase, operation as runLoreJournalTransaction };

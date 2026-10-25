@@ -12,6 +12,26 @@ export interface BookLoreCreationInput {
   readonly bookId: string;
   readonly data: Readonly<Record<string, unknown>>;
 }
+export function bookLoreCreationIdentity(uid: string, writeId: string, bookId: string) {
+  readId(uid);
+  readId(writeId);
+  readId(bookId);
+  if (uid.length > 128) throw Error('Conta inválida.');
+  const creationId =
+    'lore-creation-' + hash({ domain: 'writer-book-lore-creation-client', uid, bookId, writeId });
+  const intent = Object.freeze({ bookId, creationId });
+  const loreId = 'lore-' + hash({ domain: 'book-lore-creation-id', uid, intent });
+  return {
+    uid,
+    writeId,
+    bookId,
+    loreId,
+    creationId,
+    intent,
+    startHash: hash({ domain: 'book-lore-creation-start', intent }),
+  };
+}
+
 /** Immutable input is captured before hashing yields; no server access. */
 export async function prepareBookLoreCreationPlan(
   input: BookLoreCreationInput,
@@ -21,12 +41,8 @@ export async function prepareBookLoreCreationPlan(
   const uid = readId(value.uid),
     writeId = readId(value.writeId),
     bookId = readId(value.bookId);
-  if (uid.length > 128) throw Error('Conta inválida.');
   const data = freezeBookLoreCreationData(value.data);
-  const creationId =
-    'lore-creation-' + hash({ domain: 'writer-book-lore-creation-client', uid, bookId, writeId });
-  const intent = Object.freeze({ bookId, creationId });
-  const loreId = 'lore-' + hash({ domain: 'book-lore-creation-id', uid, intent });
+  const { creationId, intent, loreId } = bookLoreCreationIdentity(uid, writeId, bookId);
   const identity = { uid, writeId, bookId, loreId };
   const derived = (kind: string, index = 0) =>
     kind + '-' + hash({ domain: 'writer-book-lore-client-job', ...identity, kind, index });

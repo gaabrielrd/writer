@@ -52,3 +52,5 @@ export type {
   BookLoreCreationCheckpoint,
 } from './bookLoreCreationOperation';
 export type { BookLoreCreationInput } from './bookLoreCreationPlan';
+
+export type { BookLoreCreationPreparationSnapshot } from './bookLoreCreationPreparation';

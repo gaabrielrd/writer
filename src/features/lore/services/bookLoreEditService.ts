@@ -5,6 +5,9 @@ import {
 import type { BookLoreCreationInput } from './bookLoreCreationPlan';
 import { createBookLoreManualOperation } from './bookLoreManualOperation';
 import { bookLoreJournalSession } from './bookLoreJournalSession';
+import { bookLoreRecoveryKeySession } from './bookLoreRecoveryKeyClient';
+import { prepareCreationRecovery } from './bookLoreCreationPreparation';
+import { listCreationTickets } from './bookLoreCreationTicketDb';
 import { readJournalPreparation, listJournalPreparations } from './bookLoreJournalDb';
 import { createPersistedBookLoreEditOperation } from './bookLorePersistedOperation';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
@@ -138,7 +141,19 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     return {
       uid,
       guard: check,
-      edit: port,
+      edit: {
+        async call(method: string, input: unknown) {
+          check();
+          const result = await port.call(method, input);
+          check();
+          return result;
+        },
+      },
+      getKey: (identity: Parameters<typeof bookLoreRecoveryKeySession>[0]) =>
+        bookLoreRecoveryKeySession(identity, () => {
+          check();
+          return true;
+        }).getKey(),
       recovery: {
         async call(
           method: 'reserveBookLoreEditRecovery' | 'revokeBookLoreEditRecovery',
@@ -188,6 +203,29 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
       options,
     );
   }
+  function creationPreparation(
+    input: Omit<BookLoreCreationInput, 'uid'>,
+    options: BookLoreWriteOptions = {},
+  ) {
+    guard();
+    const frozen = freezeLoreEditValue(input) as Omit<BookLoreCreationInput, 'uid'>;
+    return prepareCreationRecovery(
+      frozen.writeId,
+      manualEnvironment(options.guard),
+      { ...frozen, uid },
+      options,
+    );
+  }
+  function resumeCreationPreparation(writeId: string, options: BookLoreWriteOptions = {}) {
+    guard();
+    return prepareCreationRecovery(writeId, manualEnvironment(options.guard), undefined, options);
+  }
+  async function creationPreparations(after?: string, limit = 50) {
+    guard();
+    const result = await listCreationTickets(uid, after, limit);
+    guard();
+    return result;
+  }
   async function preparations(after?: string, limit = 50) {
     guard();
     const result = await listJournalPreparations(uid, after, limit);
@@ -205,6 +243,9 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     guard,
     prepare,
     prepareCreation,
+    creationPreparation,
+    resumeCreationPreparation,
+    creationPreparations,
     restore,
     cleanup,
     persistent,

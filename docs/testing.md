@@ -2206,3 +2206,20 @@ literais, pedidos perdidos e cancel concorrente, junto das regressões de
 edição/plano/checkpoint. Guardas Auth protegem wire privado após troca de actor.
 Funções reais rodam sobre double, sem comprovar SDK/browser/persistência real;
 nenhuma UI foi ativada. Validate integral permanece no fechamento de P1.
+
+### P1 M38c5o — preparação protegida da criação de lore
+
+[Plano 113](tasks/writer-v2/execucao/113-preparacao-e-copia-protegida-da-criacao-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-preparacao-protegida-da-criacao-de-lore.md):
+221 Vitest dirigidos em dez arquivos, 38 novos. CreationPreparation/CreationSession
+cobrem ticket antes de RPC, cópia cifrada, oncomplete/abort/prefixo, reautorização,
+takeover, cancel independente, release/purge limitados e adoção conflitante.
+Regressões: CreationOperation, ManualOperation/ManualSession, Journal/
+JournalCrypto/JournalSession/CheckpointJournal e EditService.
+
+Quatro jornadas Chromium de armazenamento passaram com migração v2→v3,
+recuperação >9 MiB após reinício de processo, cancel e purge em lotes e reserva
+incerta sem texto inventado. IndexedDB/WebCrypto/Web Locks reais; Functions
+sobre fixtures de banco/identidade, sem provar SDK/Auth/App Check/UI reais.
+O bootstrap não oferece advance/apply nem certifica checkpoint persistido.
+Validate integral continua no fechamento de P1, sem CI ou envio remoto.

@@ -1237,3 +1237,18 @@ Próximo: ticket e cópia cifrada/checkpoint persistidos da criação, reserva
 incerta, cancel/descarte por metadata e depois host. Não confundir memória com
 recuperação durável. Exclusão/lifecycle/consumidores/backup/rollout, P1/F2-09/V2,
 fases 3–5 e gates humanos/comerciais continuam abertos; somente commits locais.
+
+### P1 M38c5o — preparação e cópia protegida da criação
+
+[Plano 113](113-preparacao-e-copia-protegida-da-criacao-de-lore.md),
+[ADR 0128](../../../decisions/0128-protected-lore-creation-preparation.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-preparacao-protegida-da-criacao-de-lore.md).
+Ticket antes de RPC, reserva incerta, draft imutável cifrado e cancel/release/
+purge independentes. IDB v3 preserva edição v2; sessão Auth captura actor/host.
+
+221 Vitest distintos positivos (38 novos), quatro jornadas Chromium com
+reinícios/migração/>9 MiB/purge, build/smoke e lint/arquitetura positivos.
+Bootstrap não oferece advance/apply: próximo é write-ahead privado do coordenador,
+controles e ponte de resultado, antes do host. Exclusão/lifecycle, demais
+writers/consumidores/backup/rollout e validate de P1 continuam necessários.
+P1/F2-09/V2, fases 3–5 e gates humanos/comerciais abertos; somente commits locais.
