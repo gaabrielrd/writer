@@ -353,3 +353,19 @@ concluído estiverem satisfeitos. A lista fica em
 - A revisão assistida anterior à criação edita a proposta em RAM; preserve esse
   contrato. Não enfraqueça hasLoreResources nem habilite rollout antes do
   inventário/drain de todos os produtores e consumidores.
+
+## Chaves de recuperação na exclusão do livro
+
+- Inventarie novas chaves de lore atomicamente com reserva/prova/chave;
+  exija o índice imutável original para liberar ou revogar (ADR 0145).
+  Controles legados sem declaração não recebem índice fictício.
+- Na exclusão, revalide abertura nativa, livro/cutoff/provas; visite um controle
+  por unidade e leia da chave somente schema/timestamps, nunca material AES.
+  Terminal, deletes e checkpoints devem compartilhar o commit.
+- Verifique o estado v1 antes de migrar para v2, mesmo se o controlador de lore
+  já estiver completo com a raiz presente. Preserve fases/contadores e aliases.
+- Exija inventário de chaves vazio antes de finalizar o livro; resíduo
+  desconhecido/recriado bloqueia, sem varrer controles, recibos ou outros livros.
+- A exclusão integral já autorizada por deleting pode revogar a chave antes da
+  limpeza dos produtores; termine a limpeza pelo controlador do livro e conserve
+  recibos. O descarte de uma preparação no cliente mantém sua ordem própria.

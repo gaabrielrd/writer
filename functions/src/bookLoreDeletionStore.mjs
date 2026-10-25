@@ -63,15 +63,25 @@ export function validateLoreDeletionState(v) {
     'processed',
     'coordinatedUnits',
     'complete',
+    ...(v?.schemaVersion === 2 ? ['recoveryCursor', 'recoveriesComplete'] : []),
   ]);
   if (
-    v.schemaVersion !== 1 ||
+    ![1, 2].includes(v.schemaVersion) ||
     !deletionPhases.includes(v.phase) ||
     typeof v.complete !== 'boolean' ||
     (v.complete && v.phase !== 'finish')
   )
     deletionConflict();
   for (const key of ['revision', 'processed', 'coordinatedUnits']) integer(v[key]);
+  if (v.schemaVersion === 2) {
+    if (
+      typeof v.recoveriesComplete !== 'boolean' ||
+      (v.complete && !v.recoveriesComplete) ||
+      (v.recoveriesComplete && v.recoveryCursor !== null)
+    )
+      deletionConflict();
+    if (v.recoveryCursor !== null) bookContentId(v.recoveryCursor);
+  }
   if (v.cursor !== null) bookContentId(v.cursor);
   if (v.body !== null) {
     closed(v.body, ['bodyId', 'birth', 'manifest', 'resource', 'controlled', 'index']);
@@ -178,7 +188,9 @@ export async function initializeBookLoreDeletion(tx, missing, active) {
       sceneBirth: scene.exists ? born(scene) : null,
     },
     value = {
-      schemaVersion: 1,
+      schemaVersion: 2,
+      recoveryCursor: null,
+      recoveriesComplete: !active,
       revision: 0,
       phase: active ? 'applications' : 'finish',
       cursor: null,
@@ -219,12 +231,28 @@ export async function reserveBookLoreDeletionCommit(tx, l) {
     };
   };
 }
-export const deletionNextState = (l) => structuredClone(l.state);
+export const deletionNextState = (l) => {
+  const next = structuredClone(l.state);
+  if (next.schemaVersion === 1)
+    Object.assign(next, {
+      schemaVersion: 2,
+      recoveryCursor: null,
+      recoveriesComplete: false,
+      complete: false,
+    });
+  return next;
+};
 export function deletionScopeCheck(l, snapshot) {
   if (!snapshot.exists || !deletionAtMost(born(snapshot), l.cutoff)) deletionConflict();
 }
 export async function assertBookLorePayloadsEmpty(tx, db, bookId) {
-  for (const name of ['bookResourceBodies', 'bookResourceChunks', 'bookLoreSegments', 'lore'])
+  for (const name of [
+    'bookResourceBodies',
+    'bookResourceChunks',
+    'bookLoreSegments',
+    'lore',
+    'bookLoreRecoveryKeys',
+  ])
     if (
       (
         await tx.get(

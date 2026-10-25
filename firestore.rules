@@ -529,6 +529,7 @@ service cloud.firestore {
 
     match /books/{bookId} {
       match /bookResourceLeases/{id} { allow read, write: if false; }
+      match /bookLoreRecoveryKeys/{document=**} { allow read, write: if false; }
       match /bookLoreGenerations/{document=**} { allow read, write: if false; }
       match /bookLoreTombstones/{document=**} { allow read, write: if false; }
       match /bookLoreReservations/{document=**} { allow read, write: if false; }

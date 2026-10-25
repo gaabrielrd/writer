@@ -63,3 +63,15 @@ Veja [ADR 0117](../../../decisions/0117-private-lore-edit-recovery-keys.md) e
 Journal/retomada/host e ciclo de vida integrado permanecem pendentes.
 Não há rascunho persistido no navegador ou autorização de rollout.
 P1/F2-09/V2 abertos; validate integral no fechamento de P1. Só commit local.
+
+## Integração posterior à exclusão — M38c7
+
+[Plano 126](126-ciclo-das-chaves-na-exclusao-do-livro.md) e
+[ADR 0145](../../../decisions/0145-book-lore-recovery-key-deletion.md)
+integram a revogação na exclusão do livro. Novas reservas declaram índice
+privado imutável, conferido na liberação/revogação; versões anteriores sem
+índice continuam compatíveis. Chaves e índices originais são removidos com
+terminal/prova/checkpoints, antes da raiz, preservando metadata histórica.
+85 Node e 12 SDK positivos; [evidência](../../../entregas/2026-10-25-writer-v2-chaves-de-lore-na-exclusao-do-livro.md).
+Chaves de livros já apagados pelo fluxo antigo exigem auditoria própria.
+Sem implantação/CI/remoto; demais pendências de P1 e V2 preservadas.

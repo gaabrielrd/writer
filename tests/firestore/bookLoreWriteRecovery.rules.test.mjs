@@ -13,6 +13,17 @@ import {
   recoveryControl,
 } from '../../functions/test/helpers/bookLoreWriteRecoveryFixture.mjs';
 import { createBookLoreWriteRecoveryService } from '../../functions/src/bookLoreWriteRecovery.mjs';
+import {
+  bookLoreDeletionFixture,
+  markBookDeleting,
+  finishBookLoreDeletion,
+} from '../../functions/test/helpers/bookLoreDeletionFixture.mjs';
+import { recoveryKeyInventoryRef } from '../../functions/src/bookLoreWriteRecoveryInventory.mjs';
+import {
+  recoveryPaths,
+  recoveryRequestHash,
+} from '../../functions/src/bookLoreWriteRecoveryContracts.mjs';
+import { digest } from '../../functions/src/workProgressContracts.mjs';
 import { webcrypto } from 'node:crypto';
 import { bookLoreCreationRecoveryFixture } from '../../functions/test/helpers/bookLoreCreationRecoveryFixture.mjs';
 import {
@@ -85,6 +96,7 @@ test('SDK concurrent reserve creates one original key and denies every private a
       f.c.key.path,
       f.c.closed.path,
       f.c.closedProof.path,
+      recoveryKeyInventoryRef(f.c, f.bookId).path,
     ]) {
       await assertFails(getDoc(doc(client, path)));
       await assertFails(setDoc(doc(client, path), { forged: true }));
@@ -276,4 +288,96 @@ test('SDK creation key follows the original native head after adoption and refus
   assert.equal((await f.c.key.get()).exists, false);
   assert.equal((await head.ref.get()).updateTime.isEqual(replacement.updateTime), true);
   assert.equal((await f.parent.get()).phase, 'adopted');
+});
+
+test('SDK book deletion revokes indexed and legacy keys with native proofs and preserves another book', async () => {
+  const f = await bookLoreWriteRecoveryFixture(admin, { mode: 'inline' }),
+    p = await f.service.reserveBookLoreEditRecovery(f.uid, f.intent),
+    original = (await f.c.root.get()).data(),
+    keyData = (await f.c.key.get()).data(),
+    legacyIntent = { ...f.intent, writeId: 'legacy-recovery' },
+    legacy = recoveryPaths(admin, f.uid, legacyIntent.writeId),
+    value = {
+      ...original,
+      writeId: legacyIntent.writeId,
+      intent: legacyIntent,
+      requestHash: recoveryRequestHash(f.uid, legacyIntent),
+    };
+  delete value.keyInventory;
+  await admin.runTransaction(async (tx) => {
+    tx.create(legacy.root, value);
+    tx.create(legacy.proof, { schemaVersion: 1, hash: digest(value) });
+    tx.create(legacy.key, keyData);
+    tx.create(admin.doc('books/other/bookLoreRecoveryKeys/preserved'), { preserved: true });
+  });
+  const deletion = bookLoreDeletionFixture(admin);
+  await markBookDeleting(deletion);
+  await assert.rejects(
+    f.service.reserveBookLoreEditRecovery(f.uid, { ...f.intent, writeId: 'after-mark' }),
+  );
+  await deletion.step();
+  await deletion.step();
+  assert.equal((await admin.doc('books/book').get()).exists, true);
+  assert.equal((await legacy.key.get()).exists, false);
+  assert.equal((await legacy.closed.get()).exists, true);
+  await deletion.step();
+  const terminal = await f.c.closed.get(),
+    checkpoint = await admin.doc(deletion.path + '/state/current').get();
+  assert.equal(terminal.createTime.isEqual(checkpoint.updateTime), true);
+  assert.equal((await f.c.key.get()).exists, false);
+  assert.equal((await recoveryKeyInventoryRef(f.c, f.bookId).get()).exists, false);
+  await finishBookLoreDeletion(deletion);
+  assert.equal((await admin.doc('books/book').get()).exists, false);
+  assert.equal((await admin.doc('books/other/bookLoreRecoveryKeys/preserved').get()).exists, true);
+  const closed = await f.service.getBookLoreEditRecovery(f.uid, recoveryControl(p));
+  assert.equal(closed.phase, 'revoked');
+  assert.equal(closed.jobToken, p.jobToken);
+  assert.equal((await legacy.root.get()).exists, true);
+});
+test('SDK final checkpoint failure rolls back key deletion, terminal and inventory together', async () => {
+  const f = await bookLoreWriteRecoveryFixture(admin, { mode: 'inline' }),
+    p = await f.service.reserveBookLoreEditRecovery(f.uid, f.intent),
+    deletion = bookLoreDeletionFixture(admin),
+    index = recoveryKeyInventoryRef(f.c, f.bookId);
+  await markBookDeleting(deletion);
+  await deletion.step();
+  const before = await admin.doc(deletion.path + '/state/current').get();
+  const db = {
+    doc: admin.doc.bind(admin),
+    collection: admin.collection.bind(admin),
+    runTransaction: (callback) =>
+      admin.runTransaction((tx) =>
+        callback(
+          new Proxy(tx, {
+            get(target, name) {
+              const method = target[name];
+              if (typeof method !== 'function') return method;
+              return (...args) => {
+                if (
+                  name === 'set' &&
+                  args[0]?.path === 'users/author/sceneOperations/' + deletion.operationId
+                ) {
+                  target.update(admin.doc(deletion.path + '/rollback/missing'), { fail: true });
+                  return target;
+                }
+                return method.apply(target, args);
+              };
+            },
+          }),
+        ),
+      ),
+  };
+  await assert.rejects(bookLoreDeletionFixture(db).step());
+  assert.equal((await f.c.key.get()).exists, true);
+  assert.equal((await index.get()).exists, true);
+  assert.equal((await f.c.closed.get()).exists, false);
+  assert.equal(
+    (await admin.doc(deletion.path + '/state/current').get()).updateTime.isEqual(before.updateTime),
+    true,
+  );
+  await finishBookLoreDeletion(deletion);
+  assert.equal(
+    (await f.service.getBookLoreEditRecovery(f.uid, recoveryControl(p))).phase,
+    'revoked',
+  );
 });

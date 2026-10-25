@@ -1489,3 +1489,17 @@ Somente commit local, sem CI/envio remoto/deploy.
 [Evidência M38c6e](../../../entregas/2026-10-25-writer-v2-lore-nativo-na-lateral-do-editor.md):
 124 casos dirigidos distintos e 30 jornadas Chromium distintas positivos;
 build2979 e checks locais positivos. Retomada após recarga conferida nos seis projetos.
+
+### P1 M38c7 — chaves na exclusão do livro
+
+[Plano 126](126-ciclo-das-chaves-na-exclusao-do-livro.md),
+[ADR 0145](../../../decisions/0145-book-lore-recovery-key-deletion.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-chaves-de-lore-na-exclusao-do-livro.md).
+Inventário privado da chave, revogação coordenada por unidade e migração v1/v2;
+controladores avançados/completos não pulam chaves com raiz ainda existente.
+Índice órfão/tardio/recriado bloqueia; recibos/metadata preservados.
+
+85 Node distintos e 12 SDK positivos; sintaxe258/lint/arquitetura/checks locais.
+Auditoria das chaves históricas de livros já apagados, demais namespaces,
+escritores/consumidores, backup/restauração, drain/rollout/validate de P1 e
+fases/gates humanos/comerciais seguem no objetivo. Sem CI/envio remoto/deploy.

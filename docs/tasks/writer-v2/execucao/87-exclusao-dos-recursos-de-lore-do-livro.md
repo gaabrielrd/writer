@@ -102,3 +102,14 @@ retomada e preservação de outros livros têm controles positivos reais.
 
 92 Vitest, 23 Node e 17 SDK passaram. Demais namespaces, writers/consumidores/
 backup/cliente e rollout/drenagem permanecem pendentes; P1/F2-09/V2 abertos.
+
+## Coordenação posterior das chaves — M38c7
+
+[Plano 126](126-ciclo-das-chaves-na-exclusao-do-livro.md) e
+[ADR 0145](../../../decisions/0145-book-lore-recovery-key-deletion.md):
+inventário privado das novas chaves, revogação por unidade e estado v2 com
+migração verificada do estado v1. Ambos os finish exigem inventário vazio.
+Controles/recibos são preservados, sem material AES na coleta.
+85 Node e 12 SDK positivos; [evidência](../../../entregas/2026-10-25-writer-v2-chaves-de-lore-na-exclusao-do-livro.md).
+Chaves históricas de livros já apagados e demais namespaces/rollout seguem
+pendentes. Nenhuma execução em produção.

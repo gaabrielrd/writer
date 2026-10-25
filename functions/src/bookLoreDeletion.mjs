@@ -2,6 +2,7 @@ import {
   applicationBookQuery,
   advanceDeletionApplication,
 } from './loreAnalysisApplicationDeletion.mjs';
+import { recoveryBookQuery, prepareBookLoreRecoveryDeletion } from './bookLoreRecoveryDeletion.mjs';
 import { integer } from './bookRestoreUploadContracts.mjs';
 import {
   loadBookLoreDeletion,
@@ -25,8 +26,10 @@ async function activity(tx, l) {
         'bookLoreGenerations',
         'bookResourceInventory',
         'bookResourceLeases',
+        'bookLoreRecoveryKeys',
       ].map((name) => l.c.db.collection(base + name)),
       ...deletionJobQueries(l.c.db, l.c.uid, l.c.bookId),
+      recoveryBookQuery(l.c.db, l.c.uid, l.c.bookId),
       removalBookQuery(l.c.db, l.c.uid, l.c.bookId),
       creationBookQuery(l.c.db, l.c.uid, l.c.bookId),
       applicationBookQuery(l.c.db, l.c.uid, l.c.bookId),
@@ -41,11 +44,13 @@ export async function prepareBookLoreDeletion(tx, { db, uid, bookId, operationId
   const l = await loadBookLoreDeletion(tx, db, uid, bookId, operationId);
   if (l.missing) return initializeBookLoreDeletion(tx, l, await activity(tx, l));
   assertDeletionOpening(tx, l);
-  if (l.state.complete) return { complete: true, processed: l.state.processed, commit() {} };
+  if (l.state.complete && l.state.schemaVersion === 2)
+    return { complete: true, processed: l.state.processed, commit() {} };
   const finish = await reserveBookLoreDeletionCommit(tx, l),
     next = deletionNextState(l);
   let unit = { remove: [], commit() {} };
-  if (next.phase === 'applications') await advanceDeletionApplication(tx, l, next);
+  if (!next.recoveriesComplete) unit = await prepareBookLoreRecoveryDeletion(tx, l, next);
+  else if (next.phase === 'applications') await advanceDeletionApplication(tx, l, next);
   else if (next.phase === 'removals') await advanceBookLoreRemovalHandoff(tx, l, next);
   else if (next.phase === 'creations') await advanceBookLoreCreationCleanup(tx, l, next);
   else if (next.phase === 'finish') {

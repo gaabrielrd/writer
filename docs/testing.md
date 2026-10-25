@@ -2510,3 +2510,19 @@ memória e SDK/Auth/App Check/HTTP de chave em fixtures isoladas. Capturas
 inspecionadas nos três temas e celular; não comprova produção ou piloto humano.
 Tipos/lint/build2979/smoke/arquitetura/styleguide/docs/formatação positivos.
 Validate no fechamento de P1; sem CI ou envio remoto.
+
+### P1 M38c7 — ciclo das chaves na exclusão
+
+[ADR 0145](decisions/0145-book-lore-recovery-key-deletion.md) e
+[evidência](entregas/2026-10-25-writer-v2-chaves-de-lore-na-exclusao-do-livro.md):
+85 Node distintos em quatro arquivos e 12 SDK em duas famílias, todos positivos.
+Inventário, controles antigos, criação/edição, 20 recuperações, origem ausente,
+recriação, cutoff, v1 avançado/completo, rollback e índices residuais cobertos.
+Coleta confere fieldMask e nunca lê keyBase64.
+
+SDK 7/7 recuperação e 5/5 exclusão em Firestore Emulator 1.22.0 demo/loopback,
+JAR verificado. Denies incluem índice privado, com controle positivo e
+rollback real no último checkpoint. Não comprova produção ou rollout.
+Sintaxe258/lint/arquitetura/docs/formato/diff positivos; validate no fim de P1.
+Sem repetir browser/Vitest/build para essa alteração de backend/Rules.
+Sem CI/envio remoto/deploy; demais fases/gates preservados.

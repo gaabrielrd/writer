@@ -811,3 +811,18 @@ Sem CI/envio remoto/deploy.
 
 [Evidência M38c6e](../../../entregas/2026-10-25-writer-v2-lore-nativo-na-lateral-do-editor.md):
 124 casos distintos, 30 jornadas Chromium distintas e build2979 positivos.
+
+## Ciclo das chaves na exclusão — M38c7
+
+[Plano 126](126-ciclo-das-chaves-na-exclusao-do-livro.md) e
+[ADR 0145](../../../decisions/0145-book-lore-recovery-key-deletion.md):
+novas reservas inventariam a chave; liberação e revogação exigem o índice
+original. Exclusão visita recuperações antigas/atuais por unidades sem ler
+material AES, e migra estado v1 antes de continuar. Índice residual bloqueia
+ambos os finish; metadata e recibos são preservados.
+
+85 Node distintos e 12 SDK positivos, sintaxe258/lint/arquitetura/checks;
+[entrega](../../../entregas/2026-10-25-writer-v2-chaves-de-lore-na-exclusao-do-livro.md).
+Chaves históricas de livros já apagados, demais namespaces/escritores/
+consumidores/backup/restauração/rollout/drain/validate de P1 e fases/gates
+continuam necessários. Somente commit local; sem CI/remoto/deploy.

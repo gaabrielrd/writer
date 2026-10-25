@@ -2514,3 +2514,24 @@ esses contratos por uma operação manual de uma raiz ainda inexistente.
 Esta seção atualiza a pendência manual do marco D. Lifecycle de chaves/exclusão,
 demais escritores/consumidores, backup/restauração, drain/rollout/validate de P1 e
 fases/gates humanos/comerciais seguem necessários. Sem deploy ou alteração remota.
+
+## P1 M38c7 — chaves de recuperação na exclusão do livro
+
+[ADR 0145](decisions/0145-book-lore-recovery-key-deletion.md):
+novas reservas criam índice privado imutável bookLoreRecoveryKeys no livro,
+junto com raiz/prova/chave. keyInventory:1 é declaração privada; respostas
+públicas e ciphertext do navegador permanecem compatíveis. Liberação/revogação
+conferem o índice; controles antigos sem índice continuam válidos.
+
+BookLoreRecoveryDeletion visita um controle por unidade, exige abertura nativa
+na mesma transação e confere bookBirth/cutoff/provas. Lê da chave somente
+schema/timestamps, sem keyBase64 ou prosa. Revogação e remoção do índice/chave
+compartilham o commit dos checkpoints. Estados v1 são conferidos antes da
+migração v2, incluindo controladores completos com raiz ainda existente.
+
+Descoberta sem flags e os dois finish incluem o inventário. Resíduo órfão/
+tardio/recriado bloqueia. Metadados e recibos sobrevivem; nenhuma limpeza por
+namespace. Rules negam SDK. Produtores recusam deleting dentro da transação.
+Chaves históricas de livros já apagados exigem auditoria específica.
+Demais consumidores/backup/restauração/rollout/drain/validate de P1 e fases/gates
+seguem no objetivo. Sem CI/envio remoto/deploy.
