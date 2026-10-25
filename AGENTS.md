@@ -563,3 +563,13 @@ concluído estiverem satisfeitos. A lista fica em
   não seleciona método. Chave conserva HTTP separado; não exponha-a por callable.
 - Comandos públicos recebem private no-store e Vary Authorization no handler;
   mocks de verificação existem apenas nos testes, sem bypass em runtime.
+
+## Preparação de livros no cliente
+
+- Execute uma unidade com intenção completa salva por CAS antes de RPC;
+  reenvie dívida antes de selecionar novo passo e limpe só por confirmação própria
+  e CAS estrutural, preservando-a em erros (ADR 0158).
+- Projete identidade/fase/checkpoint somente; valide schema e completude dos
+  índices antes de escolher auditoria. Nunca ative automaticamente em activation-ready.
+- Revalide conta/vida útil após waits; instância não executa unidades concorrentes.
+  Port de journal não comprova persistência cifrada ou recuperação após recarga.

@@ -61,3 +61,14 @@ export {
   verifyBookBackupPersonas,
   type BookPersonaProof,
 } from './services/bookPersonaCapture';
+
+export { createBookRestorePreparationDriver } from './services/bookRestorePreparationDriver';
+export { bookRestorePreparationApi } from './services/bookRestorePreparationCallables';
+export type {
+  BookRestoreIdentity,
+  BookRestorePreparationApi,
+  BookRestorePreparationJournal,
+  BookRestorePreparationIntent,
+  BookRestorePreparationProgress,
+  BookRestorePreparationStep,
+} from './model/bookRestorePreparation';

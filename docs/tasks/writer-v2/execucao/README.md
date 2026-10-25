@@ -1756,3 +1756,12 @@ chave não expostos por callable. Cem Node distintos positivos, incluindo
 HTTP Functions loopback e regressões dirigidas; veja a
 [evidência](../../../entregas/2026-10-25-writer-v2-transporte-da-restauracao.md).
 Sem deploy; driver/journal/UI/roundtrip e demais P1/V2/fases/gates continuam.
+
+### P1 — preparação do cliente em unidades (plano 137)
+
+[Plano 137](137-preparacao-retomavel-no-cliente.md): sequenciador com intenção/CAS,
+replay exato e uma unidade por chamada; pausa antes de ativar. Adaptador adia
+Firebase. 75 Vitest distintos positivos, incluindo preparações atual/JSON v6 com
+serviço real até revisão; [evidência](../../../entregas/2026-10-25-writer-v2-preparacao-retomavel-no-cliente.md).
+Journal durável/cifrado concreto, upload/revisão/ativação/mídia/limpeza do cliente,
+UI/roundtrip integral e demais P1/V2/fases/gates continuam obrigatórios.

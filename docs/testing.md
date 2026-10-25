@@ -2867,3 +2867,14 @@ verificados. Serviço real confirma consulta/mídia/limpeza sem alterar a raiz.
 Falha de asserção corrigida e limites dos verificadores na
 [evidência](entregas/2026-10-25-writer-v2-transporte-da-restauracao.md).
 Não comprova credenciais ou Callable de produção; validate integral de P1 pendente.
+
+## P1 — sequenciador de preparação do cliente
+
+75 Vitest distintos positivos em seleções: 52 driver/contratos, 21 adaptador e
+duas integrações com serviço real. Conferem fases, intenção/CAS antes de envio,
+resposta perdida/replay, concorrência/conta/identidade/recibo e parada antes da
+ativação. Arquivo atual e JSON v6 chegam à revisão privada real com raiz ausente.
+Falha de seleção corrigida para índices completos, ajuste da asserção do double,
+durações e alcance na
+[evidência](entregas/2026-10-25-writer-v2-preparacao-retomavel-no-cliente.md).
+Journal em memória não comprova recuperação após recarga; UI/validate pendentes.

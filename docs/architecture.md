@@ -2902,3 +2902,16 @@ App Check obrigatório e configuração existente preservados; handler adiciona
 no-store privado e Vary Authorization. Registro local não implica deploy.
 Driver/UI/roundtrip e demais P1/fases/gates continuam; veja a
 [evidência](entregas/2026-10-25-writer-v2-transporte-da-restauracao.md).
+
+## P1 — preparação retomável no cliente
+
+[ADR 0158](decisions/0158-single-unit-restore-preparation-client.md):
+book-portability expõe sequenciador de uma unidade, projeção metadata validada,
+17 comandos preparatórios e getter com Firebase adiado. Journal injetado exige
+CAS estrutural da intenção antes de enviar e para limpar confirmação própria;
+dívida é repetida exatamente antes de selecionar novo passo. Checks de vida útil
+e conta impedem entrega tardia; revisão para sem ativação automática.
+
+Completude de índices decide a passagem à auditoria dentro de resources-finalize.
+Ainda faltam journal cifrado concreto, upload/revisão/ativação/mídia/limpeza do
+cliente e UI; [evidência](entregas/2026-10-25-writer-v2-preparacao-retomavel-no-cliente.md).
