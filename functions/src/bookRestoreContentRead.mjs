@@ -4,6 +4,7 @@ import { createBookRestoreRemapper, BOOK_RESTORE_RELATION_ITEMS } from './bookRe
 import { inconsistent, integer, chunkId } from './bookRestoreUploadContracts.mjs';
 import { BOOK_PORTABLE_LORE_FIELDS } from './bookPortableLoreIndex.mjs';
 import { readMappedBookRestoreLoreField } from './bookRestoreLoreProjection.mjs';
+import { readMappedBookRestoreLorePage } from './bookRestoreLorePages.mjs';
 import {
   bookRestoreIndexedLore,
   readBookRestoreLoreRange,
@@ -273,6 +274,23 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
           bookId: api.bookId,
           id,
         });
+      async function project(read) {
+        const store = createBookRestoreValidationStore(db, initial.loaded, null),
+          unit = await read(async (targetEntityId) => {
+            const value = await mapper.mapLoreRelation(
+              { targetEntityId, relationType: '' },
+              async (original) =>
+                (await store.index.get(['node', 'lore', '', original])) !== undefined,
+            );
+            return value.targetEntityId;
+          });
+        async function verify(tx) {
+          await unit.verify(tx);
+          await store.verify(tx);
+        }
+        await db.runTransaction(verify);
+        return { ...unit, verify };
+      }
       return Object.freeze({
         schemaVersion: 1,
         sourceToken,
@@ -282,28 +300,29 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
         sourceMetadata: lore.metadata,
         verify: lore.verify,
         async readField(field, { cursor = null, limit = 65536 } = {}) {
-          const store = createBookRestoreValidationStore(db, initial.loaded, null),
-            unit = await readMappedBookRestoreLoreField({
+          return project((mapTarget) =>
+            readMappedBookRestoreLoreField({
               lore,
               contextToken: sourceToken,
               field,
               cursor,
               limit,
-              async mapTarget(targetEntityId) {
-                const mapped = await mapper.mapLoreRelation(
-                  { targetEntityId, relationType: '' },
-                  async (original) =>
-                    (await store.index.get(['node', 'lore', '', original])) !== undefined,
-                );
-                return mapped.targetEntityId;
-              },
-            });
-          async function verify(tx) {
-            await unit.verify(tx);
-            await store.verify(tx);
-          }
-          await db.runTransaction(verify);
-          return { ...unit, verify };
+              mapTarget,
+            }),
+          );
+        },
+        async readRelationPage(page, { cursor = null, source = null, limit = 65536 } = {}) {
+          return project((mapTarget) =>
+            readMappedBookRestoreLorePage({
+              lore,
+              sourceToken,
+              page,
+              cursor,
+              source,
+              limit,
+              mapTarget,
+            }),
+          );
         },
       });
     },

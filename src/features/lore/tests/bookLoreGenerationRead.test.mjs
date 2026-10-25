@@ -315,3 +315,39 @@ it('drops a late field response when the captured session changes', async () => 
   });
   await expect(f.client.get('book', 'entity')).rejects.toThrow('context changed');
 });
+
+for (const portableDates of [
+  {},
+  { createdAt: 0 },
+  { updatedAt: 0 },
+  { createdAt: 1, updatedAt: 2 },
+])
+  it(
+    'preserves portable date presence independently of physical generation timestamps ' +
+      JSON.stringify(portableDates),
+    async () => {
+      const f = await fixture({
+          noBase: true,
+          fields: { name: '', category: 'other', summary: '' },
+          relations: [],
+          dates: { createdAt: 1000, updatedAt: 2000 },
+          transform: (storage) => ({ ...storage, portableDates }),
+        }),
+        value = await f.client.get('book', 'entity'),
+        head = (await f.db.doc(f.seed.path).get()).data();
+      expect(value.data).toEqual({
+        name: '',
+        category: 'other',
+        summary: '',
+        relations: [],
+        ...portableDates,
+      });
+      expect(head.createdAt).toBe(1000);
+      expect(head.updatedAt).toBe(2000);
+      const parts = [];
+      await f.client.writePortable('book', 'entity', async (_, bytes) => {
+        parts.push(Buffer.from(bytes));
+      });
+      expect(JSON.parse(Buffer.concat(parts).toString()).data).toEqual(value.data);
+    },
+  );

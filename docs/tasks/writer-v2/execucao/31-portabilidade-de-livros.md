@@ -298,3 +298,11 @@ backup. Não houve ativação da cópia, restauração final no UI, deploy ou CI
 Continuam obrigatórios os demais recursos e campos grandes, personas/mídia,
 autorização/ativação e host/UI/roundtrip/validate integral. Esta atualização não
 fecha P1/F2-09 nem altera decisões confirmadas ou o escopo aprovado.
+
+## Atualização parcial P1 — M38c12 D3
+
+AdvanceLore agora prepara geração grande por campos/páginas e preserva datas
+lógicas; Resources usa metadata. Integração e limites na
+[evidência parcial](../../../entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
+Counts/drenagem/roundtrip e habilitação coordenada ainda pendentes; D3/P1/
+validate/fases/gates continuam abertos. Não é restauração ativada nem entrega de UI.

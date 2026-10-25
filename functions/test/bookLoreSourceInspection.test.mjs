@@ -496,3 +496,19 @@ test('persisted native identities reject extra timestamp keys and invalid receip
     );
   }
 });
+
+test('restored field-only generation inspection preserves portable missing dates and zero independently of physical dates', async () => {
+  for (const portableDates of [{}, { createdAt: 0 }, { updatedAt: 0 }]) {
+    const f = await setup({
+        mode: 'v2',
+        noBase: true,
+        fields: { name: 'Restored', category: 'other' },
+        dates: { createdAt: 1000, updatedAt: 2000 },
+        transform: (storage) => ({ ...storage, portableDates }),
+      }),
+      done = await finishSourceInspection(f),
+      metadata = await sourceInspectionMetadata(f, done);
+    assert.deepEqual(metadata.dates, portableDates);
+    assert.equal(f.records.get(f.seed.path).updatedAt, 2000);
+  }
+});

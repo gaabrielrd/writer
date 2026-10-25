@@ -2765,3 +2765,12 @@ não substitui a integração completa D3. Três SDK positivos, zero skipped,
 182884.5849 ms: partial/Merkle/partes reais, Rules em alvos existentes, fragmentos
 vazios/updateTime/cleanup e controle recriado preservado. Checks locais na
 [evidência](entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).
+
+## P1 M38c12 D3 em andamento — geração e datas portáteis
+
+365 Node distintos positivos em lotes dirigidos, 63 Vitest e quatro jornadas
+Chromium para páginas completas, datas lógicas ausentes/zero, C1 e produtor
+portátil. Fixtures de geração usam advanceLore real e reabrem o serviço em cada
+unidade. Leitor preparado é harness privado, sem raiz ou ativação geral.
+SDK e contagem discriminada na [evidência](entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
+Counts/drenagem/roundtrip, habilitação coordenada e validate de P1 continuam.

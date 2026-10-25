@@ -334,7 +334,14 @@ function syntaxByte(state, byte, observer) {
   bad();
 }
 /** Check one storage unit. Checkpoints contain syntax/IDs, never string prose. */
-function advanceField(input, bytes, prefix, observer, referenceLimit = Infinity) {
+function advanceField(
+  input,
+  bytes,
+  prefix,
+  observer,
+  referenceLimit = Infinity,
+  relationEnd = null,
+) {
   checkpoint(input);
   if (
     !(bytes instanceof Uint8Array) ||
@@ -375,7 +382,11 @@ function advanceField(input, bytes, prefix, observer, referenceLimit = Infinity)
       }
     } else if (state.mode === 'syntax') syntaxByte(state, byte, events);
     else stringByte(state, byte, events);
-    if (references === referenceLimit) break;
+    if (
+      references === referenceLimit ||
+      (relationEnd !== null && state.relationCount === relationEnd)
+    )
+      break;
   }
   state.byteLength += consumed;
   return { state, consumed };
@@ -438,4 +449,24 @@ export function advanceBookPortableLoreRelationsPrefixValidation(
 export function finishBookPortableLoreRelationsValidation(state) {
   version(state, 2);
   return finishField(state);
+}
+
+/** Portable array prefix ending after one complete relation object; does not consume its delimiter. */
+export function advanceBookPortableLoreRelationsPageValidation(
+  input,
+  bytes,
+  observer,
+  relationEnd,
+  referenceLimit = 64,
+) {
+  version(input, 2);
+  if (
+    !safe(relationEnd) ||
+    relationEnd <= input.relationCount ||
+    !Number.isInteger(referenceLimit) ||
+    referenceLimit < 1 ||
+    referenceLimit > 64
+  )
+    bad();
+  return advanceField(input, bytes, true, observer, referenceLimit, relationEnd);
 }

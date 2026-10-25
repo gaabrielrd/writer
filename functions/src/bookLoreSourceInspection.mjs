@@ -3,7 +3,10 @@ import { createHash } from 'node:crypto';
 import { createSHA256 } from 'hash-wasm';
 import { born, date } from './bookRestoreUploadContracts.mjs';
 import { digest } from './workProgressContracts.mjs';
-import { BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
+import {
+  BOOK_LORE_GENERATION_FIELDS,
+  loreGenerationDates,
+} from './bookLoreGenerationContracts.mjs';
 import {
   createBookLoreBaseIndex,
   advanceBookLoreBaseIndex,
@@ -76,7 +79,7 @@ function resolveMetadata(opened, base, privacy) {
   metadata.fields = BOOK_LORE_GENERATION_FIELDS.filter((k) =>
     Object.hasOwn(fields, k) ? fields[k] !== null : metadata.fields.includes(k),
   );
-  metadata.dates = structuredClone(opened.storage.dates);
+  metadata.dates = structuredClone(loreGenerationDates(opened.storage));
   if (Object.hasOwn(fields, 'isPublic'))
     metadata.isPublic =
       fields.isPublic === null

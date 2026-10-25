@@ -14,6 +14,7 @@ import {
   loreGenerationRelations,
   loreFieldPointer,
   loreReadRelations,
+  loreGenerationDates,
 } from './bookLoreGenerationContracts.mjs';
 import { assertCreationHead } from './bookLoreCreationHead.mjs';
 const transactions = new WeakMap();
@@ -127,7 +128,7 @@ export async function openBookLoreRecord(tx, c, snapshot) {
                   pointer === null ? null : loreTransportManifest(pointer.manifest),
                 ]),
               ),
-              dates: storage.dates,
+              dates: loreGenerationDates(storage),
             }
           : {}),
       };

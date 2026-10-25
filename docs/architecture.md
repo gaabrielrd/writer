@@ -2772,3 +2772,17 @@ para Resources. Gravador ainda não integrado à geração completa v2/advanceLo
 Counts; coordenador de teste não comprova essas entregas. 84 Node distintos e
 três SDK positivos. D3/roundtrip/P1 abertos.
 [Evidência do núcleo](entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).
+
+## P1 M38c12 D3 em andamento — geração indexada
+
+AdvanceLore integra o gravador por sete campos e páginas nativas de 64 relações.
+Controlador privado autentica origem/cursor por journal/recibo; cada unidade
+reconfere a fonte no commit. Página termina após o objeto inteiro, inclusive
+descrição grande depois do alvo. Timestamps físicos continuam obrigatórios;
+portableDates sem base preserva datas lógicas opcionais em C1/lógico/inspeção.
+Resources atravessa lore por metadata indexada.
+
+Novas adesões dependem da opção interna indexedLoreBodies, temporariamente false
+até Counts/drenagem/roundtrip; jobs streamed existentes sempre retomam. Não há
+opção de request, namespace, Rule ou endpoint novo. D3/P1/ativação geral continuam
+abertos. [Evidência](entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).

@@ -36,7 +36,7 @@ export type LoreReadHeader = LoreReadIdentity &
         base: LoreReadManifest | null;
         relations: LoreRelations;
         fields: Partial<Record<LoreReadField, LoreReadManifest | null>>;
-        dates: { updatedAt: number; createdAt?: number };
+        dates: Partial<Record<'createdAt' | 'updatedAt', number>>;
       }
   );
 export interface LoreReadItem {
@@ -146,9 +146,10 @@ export function readHeader(
       fields[field] = value === null ? null : readManifest(value);
     }
     if (r.base === null && (!fields.name || !fields.category)) throw invalidLoreRead();
-    const d = readObject(r.dates, ['updatedAt'], ['createdAt']),
-      dates: { updatedAt: number; createdAt?: number } = { updatedAt: readCount(d.updatedAt) };
-    if (Object.hasOwn(d, 'createdAt')) dates.createdAt = readCount(d.createdAt);
+    const d = readObject(r.dates, [], ['createdAt', 'updatedAt']),
+      dates: Partial<Record<'createdAt' | 'updatedAt', number>> = {};
+    for (const key of ['createdAt', 'updatedAt'] as const)
+      if (Object.hasOwn(d, key)) dates[key] = readCount(d[key]);
     if (Object.values(dates).some((value) => !Number.isFinite(new Date(value).getTime())))
       throw invalidLoreRead();
     return {

@@ -1665,3 +1665,13 @@ checks/limites na
 [evidência](../../../entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).
 Geração completa/páginas/Resources/Counts/drenagem/roundtrip ainda obrigatórios;
 núcleo não conclui D3/P1/F2-09/V2, validate ou fases/gates.
+
+### P1 M38c12 D3 em andamento — geração indexada e Resources
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): advanceLore real integra
+campos/páginas com datas lógicas originais e controles nativos; Resources usa
+metadata. 365 Node distintos, 63 Vitest e quatro Chromium positivos, discriminados
+com SDK na [evidência parcial](../../../entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
+
+Counts/drenagem/roundtrip e habilitação coordenada da opção interna continuam
+obrigatórios. Sem raiz ativada; D3/P1/F2-09/V2, validate, fases/gates abertos.

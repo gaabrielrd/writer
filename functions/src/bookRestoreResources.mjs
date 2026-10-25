@@ -69,7 +69,14 @@ export function createBookRestoreResourcesService({
           token: request.jobToken,
           load,
         });
-        item = await reader.readMappedItem(cursor.itemIndex);
+        const indexed = await reader.openMappedIndexedLore(cursor.itemIndex);
+        item = indexed
+          ? {
+              record: indexed.record,
+              value: { kind: 'lore', parentId: null, id: indexed.id },
+              verify: indexed.verify,
+            }
+          : await reader.readMappedItem(cursor.itemIndex);
       } catch (error) {
         const result = await db.runTransaction(async (tx) =>
           resolved(tx, await load(tx, uid, request.restoreId, request.jobToken)),

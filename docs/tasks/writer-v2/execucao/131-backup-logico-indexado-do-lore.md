@@ -518,3 +518,37 @@ sem novo namespace. Estrutura usa metadata na fronteira e preserva legado.
 D3 continua aberto: integrar geração v2/campos/datas/páginas, Resources/Counts,
 drenagem e roundtrip. O coordenador de testes não prova advanceLore integrado.
 P1/validate/fases/gates continuam obrigatórios, sem ativação geral.
+
+### Contrato de integração D3 — páginas e datas
+
+O limite de página nativa é o objeto completo da 64ª relação, não o fechamento
+do alvo. A gramática terá entrada explícita de prefixo para esse limite, mantendo
+as entradas anteriores. Projeção de páginas conserva parser global e offset,
+troca somente delimitadores entre páginas e mede SHA/bytes sem reunir descrições.
+Cursor/origem da página seguinte ficam protegidos nos controles nativos.
+
+A geração v2 mantém timestamps físicos obrigatórios. Metadata portableDates
+opcional, somente sem base, deve preservar datas lógicas ausentes nos leitores
+lógicos/C1/inspeção sem inventá-las na recaptura. Transporte C1 deve aceitar
+createdAt/updatedAt lógicos opcionais e preservar zero. Writers físicos atuais
+continuam com seus invariantes; rollout/drain coordenados seguem obrigatórios.
+
+Novos corpos grandes usam o gravador; jobs monolíticos em andamento mantêm
+protocolo explícito. Seleção e compatibilidade pequena/legada devem ser conferidas
+nos testes sem fallback após erro nativo. D3 continua aberto até geração,
+Resources/Counts, drenagem e roundtrip comprovados.
+
+## D3 em andamento — geração completa e passagem Resources
+
+AdvanceLore integra o gravador com campos independentes, páginas delimitadas
+por objeto completo e datas lógicas portáteis separadas das físicas. Metadata
+indexada em Resources evita recompor a ficha. Nova geração usa controles nativos
+limitados, recibos/verify por unidade, replay e cleanup de produção.
+
+Barreira coordenada temporária: indexedLoreBodies=false na composição do servidor
+até integrar Counts, drenagem e roundtrip; cliente não escolhe. Jobs streamed já
+iniciados sempre retomam. Habilitar/remover a barreira após os consumidores faz
+parte obrigatória de D3, não é aceite adiado para fora do escopo.
+
+[Evidência parcial de geração](../../../entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
+D3/P1/validate/fases/gates continuam abertos; não há ativação geral.

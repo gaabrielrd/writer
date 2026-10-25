@@ -74,3 +74,12 @@ export function finishBookPortableLoreRelationsValidation(input: BookPortableLor
   byteLength: number;
   count: number;
 };
+
+/** Stop after the specified complete relation object, before its following comma. */
+export function advanceBookPortableLoreRelationsPageValidation(
+  input: BookPortableLoreRelationsState,
+  bytes: Uint8Array,
+  observer: BookLoreFieldObserver | undefined,
+  relationEnd: number,
+  referenceLimit?: number,
+): { state: BookPortableLoreRelationsState; consumed: number };

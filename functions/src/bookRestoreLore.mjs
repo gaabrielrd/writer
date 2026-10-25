@@ -16,10 +16,15 @@ import {
 } from './bookRestoreArtifacts.mjs';
 
 import { prepareBookRestoreLorePayload } from './bookRestoreLorePayload.mjs';
+import {
+  prepareBookRestoreLoreStream,
+  prepareBookRestoreLoreStreamSource,
+} from './bookRestoreLoreStream.mjs';
 
 const action = 'advanceBookRestoreLore';
 export function createBookRestoreLoreService({
   db,
+  indexedLoreBodies = false,
   load,
   readOp,
   writeOp,
@@ -65,7 +70,10 @@ export function createBookRestoreLoreService({
               loreItemIndex: initial.loaded.job.preparation.itemIndex,
             }
           : structuredClone(initial.loaded.job.preparation);
-      let item, page;
+      let item,
+        page,
+        streamed = null,
+        streamSource = null;
       try {
         const reader = await createVerifiedBookRestoreContent({
           db,
@@ -74,8 +82,24 @@ export function createBookRestoreLoreService({
           token: request.jobToken,
           load,
         });
-        item = await reader.readMappedItem(cursor.loreItemIndex);
+        const indexed = await reader.openMappedIndexedLore(cursor.loreItemIndex);
+        if (cursor.lorePayload?.streamed && !indexed) inconsistent();
         if (
+          indexed &&
+          (cursor.lorePayload?.streamed ||
+            (indexedLoreBodies &&
+              !cursor.lorePayload &&
+              indexed.sourceMetadata.byteLength +
+                indexed.sourceMetadata.index.relations.count * 74 +
+                1024 >
+                512 * 1024))
+        ) {
+          streamed = indexed;
+          item = indexed;
+          streamSource = await prepareBookRestoreLoreStreamSource(db, initial.loaded, indexed);
+        } else item = await reader.readMappedItem(cursor.loreItemIndex);
+        if (
+          !streamed &&
           item.record.kind === 'book-lore' &&
           item.loreRelations !== null &&
           (cursor.lorePayload?.base != null || (!item.lorePayloadRequired && !cursor.lorePayload))
@@ -104,7 +128,19 @@ export function createBookRestoreLoreService({
         const preparation = structuredClone(cursor),
           writes = [];
         let artifactScope = loaded;
-        if (
+        if (streamed) {
+          const payload = await prepareBookRestoreLoreStream(
+            tx,
+            db,
+            loaded,
+            request,
+            preparation,
+            streamed,
+            streamSource,
+          );
+          artifactScope = payload.loaded;
+          writes.push(...payload.writes);
+        } else if (
           item.record.kind === 'book-lore' &&
           (item.lorePayloadRequired || preparation.lorePayload)
         ) {

@@ -2,6 +2,7 @@ import {
   createBookPortableLoreRelationsValidation,
   advanceBookPortableLoreRelationsPrefixValidation,
   finishBookPortableLoreRelationsValidation,
+  advanceBookPortableLoreRelationsPageValidation,
 } from './bookLoreFieldValidation.mjs';
 import { bookContentClosed as closed, bookContentInvalid as bad } from './bookBackupSchema.mjs';
 export const BOOK_RESTORE_LORE_FRAGMENT_BYTES = 80 * 1024;
@@ -17,7 +18,12 @@ export function checkBookRestoreLoreTransform(input) {
   return input;
 }
 /** Source syntax only. Mapping/source authorization and durable cursor proof belong to the host. */
-export async function advanceBookRestoreLoreTransform(input, bytes, mapTarget) {
+export async function advanceBookRestoreLoreTransform(
+  input,
+  bytes,
+  mapTarget,
+  { relationEnd = null } = {},
+) {
   checkBookRestoreLoreTransform(input);
   if (!(bytes instanceof Uint8Array) || bytes.length > 65536 || typeof mapTarget !== 'function')
     bad();
@@ -27,7 +33,18 @@ export async function advanceBookRestoreLoreTransform(input, bytes, mapTarget) {
     base = state.parser.byteLength;
   let from = state.parser.role === 'target' ? null : 0,
     target = state.parser.role === 'target' ? state.parser.text : '';
-  const result = advanceBookPortableLoreRelationsPrefixValidation(
+  const advance =
+    relationEnd === null
+      ? advanceBookPortableLoreRelationsPrefixValidation
+      : (state, value, observer, referenceLimit) =>
+          advanceBookPortableLoreRelationsPageValidation(
+            state,
+            value,
+            observer,
+            relationEnd,
+            referenceLimit,
+          );
+  const result = advance(
     state.parser,
     unit,
     {
@@ -89,5 +106,12 @@ export async function advanceBookRestoreLoreTransform(input, bytes, mapTarget) {
     const end = finishBookPortableLoreRelationsValidation(state.parser);
     if (state.targets !== end.count) bad();
   }
-  return { state, consumed: result.consumed, bytes: projected, references, done };
+  return {
+    state,
+    consumed: result.consumed,
+    bytes: projected,
+    references,
+    done,
+    ...(relationEnd === null ? {} : { boundary: state.parser.relationCount === relationEnd }),
+  };
 }

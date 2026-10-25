@@ -8,6 +8,7 @@ import { projectBookBackupResource } from './bookBackupResources.mjs';
 import { readBookResourcePayload } from './bookResourcePayloadRead.mjs';
 import { openBookLoreRecord, openBookLoreRelationPage } from './bookLoreStorageRead.mjs';
 import { loreChanged } from './bookLoreReadContracts.mjs';
+import { loreGenerationDates } from './bookLoreGenerationContracts.mjs';
 const exhausted = () =>
   workFail(
     'resource-exhausted',
@@ -77,8 +78,9 @@ export async function readBookLoreLogical(tx, c, snapshot, budget) {
           if (pointer === null) delete data[field];
           else data[field] = await body(tx, c, opened.id, pointer, budget);
         }
+        const logicalDates = loreGenerationDates(storage);
         for (const key of ['createdAt', 'updatedAt'])
-          if (Object.hasOwn(storage.dates, key)) data[key] = storage.dates[key];
+          if (Object.hasOwn(logicalDates, key)) data[key] = logicalDates[key];
           else delete data[key];
       }
       if (storage.relations.present) {

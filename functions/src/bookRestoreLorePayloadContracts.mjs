@@ -32,8 +32,18 @@ export function lorePayloadProgress(value) {
       'sealOperationId',
       'segment',
     ],
-    ['legacy'],
+    ['legacy', 'streamed'],
   );
+  if (
+    Object.hasOwn(value, 'streamed') &&
+    (value.streamed !== true ||
+      Object.hasOwn(value, 'legacy') ||
+      value.base !== null ||
+      value.pages !== 0 ||
+      value.sealOperationId !== null ||
+      value.segment !== null)
+  )
+    inconsistent();
   if (Object.hasOwn(value, 'legacy')) {
     const old = value.legacy;
     closed(old, [

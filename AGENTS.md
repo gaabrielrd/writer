@@ -480,3 +480,10 @@ concluído estiverem satisfeitos. A lista fica em
   sem prosa no checkpoint; copie partes finais imutáveis e confira SHA/Merkle.
 - Não regrave acumulador sem mudança: preserve o updateTime nativo e seu journal.
   Reconciliação/geração/roundtrip completos continuam obrigatórios (ADR 0151).
+
+- Materialize lore indexado por campos/páginas com controles nativos e verify(tx)
+  explícito antes do commit; página fecha após o objeto completo da 64ª relação.
+- Preserve datas físicas obrigatórias e datas lógicas originais em portableDates
+  somente em geração sem base; ausência e zero não recebem timestamp inventado.
+- Não regrave controle de geração sem mudança. Retome jobs streamed mesmo com
+  novas adesões desligadas; habilite-as somente após Counts/drain/roundtrip (ADR 0151).

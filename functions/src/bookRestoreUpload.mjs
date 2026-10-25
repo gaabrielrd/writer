@@ -84,7 +84,14 @@ const actions = {
   advanceBookRestorePersonaLibrary: ['content-verified'],
   advanceBookRestoreSourceIndexes: ['content-verified'],
 };
-export function createBookRestoreUploadService({ db, restoreAssets, now = Date.now }) {
+export function createBookRestoreUploadService({
+  db,
+  restoreAssets,
+  now = Date.now,
+  indexedLoreBodies = false,
+}) {
+  // Coordinated D3 rollout: existing streamed jobs always resume; enable new ones after reconciliation.
+  if (typeof indexedLoreBodies !== 'boolean') inconsistent();
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
   const opRef = (uid, id) => db.doc('users/' + uid + '/bookRestoreOperations/' + id);
   const fenceRef = (uid, id) => db.doc('users/' + uid + '/bookRestoreStartFences/' + id);
@@ -1020,6 +1027,7 @@ export function createBookRestoreUploadService({ db, restoreAssets, now = Date.n
   });
   const lore = createBookRestoreLoreService({
     db,
+    indexedLoreBodies,
     load,
     readOp,
     writeOp,

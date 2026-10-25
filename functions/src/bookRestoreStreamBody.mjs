@@ -547,3 +547,18 @@ export async function prepareBookRestoreStreamBody(tx, db, loaded, request, inpu
     });
   return { writes, progress: p, pointer: p.pointer, controlId: a.control };
 }
+
+/** Native metadata opening used before producing the next bounded source unit. */
+export async function readBookRestoreStreamBody(tx, db, loaded, input) {
+  const c = context(loaded, input),
+    a = ids(c),
+    artifact = await readBookRestoreArtifact(tx, db, loaded, 'payload-body', a.control, {
+      optional: true,
+    });
+  if (!artifact) return null;
+  const progress = structuredClone(
+    checkedRecord(c, 'control', artifact.value, ['progress']).progress,
+  );
+  checkedProgress(progress, c);
+  return { progress, controlId: a.control, verify: artifact.verify };
+}

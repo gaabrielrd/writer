@@ -208,3 +208,20 @@ metadata na fronteira de lore, preservando o caminho integral dos legados.
 geração/campos/páginas, Resources/Counts, drenagem de staging e roundtrip.
 O harness não é o orquestrador completo.
 [Evidência](../entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).
+
+## Geração D3 — integração parcial do orquestrador
+
+AdvanceLore prepara v2 sem base por campos/páginas sob controle privado
+restore-lore-generation, no inventário existente. O prefixo streamed distingue
+jobs novos dos protocolos monolíticos anteriores. A gramática delimita página
+após o objeto completo da 64ª relação, sem reter descrições no checkpoint.
+
+Datas físicas permanecem requeridas; portableDates opcional somente sem base
+preserva presença das datas originais em C1/leitura lógica/inspeção/recaptura.
+Resources usa metadata indexada. O controle só é substituído quando mudou,
+preservando updateTime/journal nativos nas etapas exclusivas dos corpos.
+
+Opção de composição indexedLoreBodies inicia false enquanto Counts/drenagem/
+roundtrip não foram integrados. Não é opção de request; jobs streamed existentes
+retomam mesmo desligada. Habilitação coordenada continua obrigatória em D3.
+Raiz ausente e gates de P1 continuam. [Evidência parcial](../entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).

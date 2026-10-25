@@ -32,15 +32,11 @@ export function loreFieldPointer(value) {
 /** A flat generation is storage metadata, never authorization or a portable book record. */
 export function loreGenerationStorage(value) {
   if (value?.schemaVersion === 1) return lorePayloadStorage(value);
-  closed(value, [
-    'schemaVersion',
-    'generationId',
-    'base',
-    'fields',
-    'dates',
-    'relations',
-    'sealBirth',
-  ]);
+  closed(
+    value,
+    ['schemaVersion', 'generationId', 'base', 'fields', 'dates', 'relations', 'sealBirth'],
+    ['portableDates'],
+  );
   if (value.schemaVersion !== 2) inconsistent();
   restoreHash(value.generationId);
   stamp(value.sealBirth);
@@ -61,6 +57,11 @@ export function loreGenerationStorage(value) {
     inconsistent();
   closed(value.dates, ['updatedAt'], ['createdAt']);
   for (const number of Object.values(value.dates)) date(number);
+  if (Object.hasOwn(value, 'portableDates')) {
+    if (value.base !== null) inconsistent();
+    closed(value.portableDates, [], ['createdAt', 'updatedAt']);
+    for (const number of Object.values(value.portableDates)) date(number);
+  }
   const r = value.relations;
   closed(r, ['present', 'count', 'pages', 'generationId', 'sealBirth']);
   integer(r.count);
@@ -81,3 +82,6 @@ export const loreGenerationRelations = (storage) =>
     ? { ...storage.relations, generationId: storage.generationId, sealBirth: storage.sealBirth }
     : storage.relations;
 export const loreReadRelations = (r) => ({ present: r.present, count: r.count, pages: r.pages });
+
+/** Logical portable dates can differ from physical restoration timestamps. */
+export const loreGenerationDates = (storage) => storage.portableDates ?? storage.dates;
