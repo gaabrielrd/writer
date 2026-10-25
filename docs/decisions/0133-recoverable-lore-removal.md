@@ -1,6 +1,6 @@
 # ADR 0133 — Retirada recuperável de lore
 
-- Estado: aceita e implementada localmente; host/compêndio pendentes.
+- Estado: aceita; host acrescentado pela ADR 0134; compêndio pendente.
 - Data: 2026-10-24.
 - Plano: [118 / M38c5t](../tasks/writer-v2/execucao/118-retirada-recuperavel-de-lore.md).
 
@@ -51,7 +51,7 @@ após a correção final e build/tipos/smoke/lint positivos. Browser usa Indexed
 Web Locks reais e reinício de perfil; Functions nativas usam banco/identidade
 de fixture. Sem comprovar rede Functions/Auth/App Check em produção.
 
-API interna pronta para confirmação visual e lista de retomada; ainda não
-montada no compêndio. Lifecycle/chaves, consumidores/backup/rollout e validate
+O host e a lista foram acrescentados na [ADR 0134](0134-recoverable-lore-removal-ui.md).
+Composição no compêndio e ações em lote continuam pendentes. Lifecycle/chaves, consumidores/backup/rollout e validate
 de P1 continuam necessários. P1/F2-09/V2/fases 3–5 e gates humanos/comerciais
 abertos. Sem Rules/deps/env, CI, envio remoto ou deploy.

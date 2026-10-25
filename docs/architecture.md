@@ -2319,3 +2319,17 @@ Handoff consulta metadata e conclusão fria exige nova verificação servidor.
 
 API interna pronta para host de confirmação/retomada, ainda fora do compêndio.
 Lifecycle/consumidores/backup/rollout/validate de P1 e demais gates abertos.
+
+## P1 M38c5u — interface da retirada recuperável
+
+[ADR 0134](decisions/0134-recoverable-lore-removal-ui.md):
+BookLoreRemovalDialog/RemovalRecoveries são exportados. Origem C1 fixa e
+metadata revalidada antes da confirmação; verificar/salvar dívida não reaplica
+start. Handle fresco resolve cancelamento sem esperar RPC antiga e o driver
+antigo perde a UI. Callback único exige prova própria e ACK local confirmado.
+
+Lista pagina metadata por conta/livro sem prosa. UI distingue registro local
+de resultado remoto, preserva perfil e fenceia outro actor. Kit/temas/foco e
+nomes literais longos são mantidos. Sem montagem no compêndio: adaptar também
+ações em lote com captura/revisão próprias antes da composição final.
+Lifecycle/consumidores/backup/rollout/validate de P1 e demais gates abertos.

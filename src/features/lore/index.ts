@@ -30,3 +30,8 @@ export { BookLoreCreationEditor } from './components/BookLoreCreationEditor';
 export type { BookLoreCreationEditorProps } from './components/BookLoreCreationEditor';
 export { BookLoreCreationRecoveries } from './components/BookLoreCreationRecoveries';
 export type { BookLoreCreationRecoveriesProps } from './components/BookLoreCreationRecoveries';
+
+export { BookLoreRemovalDialog } from './components/BookLoreRemovalDialog';
+export type { BookLoreRemovalDialogProps } from './components/BookLoreRemovalDialog';
+export { BookLoreRemovalRecoveries } from './components/BookLoreRemovalRecoveries';
+export type { BookLoreRemovalRecoveriesProps } from './components/BookLoreRemovalRecoveries';

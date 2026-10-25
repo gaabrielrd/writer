@@ -2302,3 +2302,18 @@ IndexedDB/Web Locks reais, cinco sentinelas antigas preservadas e clocks
 unitários. Functions/banco/identidade são fixtures; não comprovam rede SDK/
 Auth/App Check de produção. Build/tipos/smoke/lint positivos; host/compêndio
 e validate integral de P1 continuam pendentes.
+
+### P1 M38c5u — interface da retirada recuperável
+
+[Plano 119](tasks/writer-v2/execucao/119-interface-da-retirada-recuperavel-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-interface-da-retirada-recuperavel-de-lore.md):
+67 Vitest distintos positivos em rodadas (24 novos). Integração 66/66,
+retake UI 23/23 e novo guard de token 1/1, com 23 não executados nesse retake.
+Preparar/revisar/confirmar, incerteza, dívida, actor/perfil, foco, descoberta,
+cancel independente e respostas tardias.
+
+Quatro jornadas Chromium: confirmação explícita/temas/mobile, reinício com
+resposta perdida, apply/cancel com respostas retidas/perdidas e nome de 400
+caracteres sem overflow a 390 px. UI/executor/IDB/Web Locks reais; SDK/Auth/
+banco são fixtures e não comprovam produção. Dark/mobile inspecionados.
+Tipos/build/smoke/lint positivos; compêndio/lotes/validate de P1 pendentes.

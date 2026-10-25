@@ -31,3 +31,8 @@
   border-radius: var(--radius-md);
   padding: var(--space-3, 0.75rem);
 }
+
+.label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}

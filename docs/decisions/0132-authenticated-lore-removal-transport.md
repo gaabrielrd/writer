@@ -1,6 +1,6 @@
 # ADR 0132 — Transporte autenticado da retirada de lore
 
-- Estado: aceita; executor recuperável acrescentado pela ADR 0133; UI pendente.
+- Estado: aceita; executor ADR 0133 e host ADR 0134 locais; compêndio pendente.
 - Data: 2026-10-24.
 - Plano: [117 / M38c5s](../tasks/writer-v2/execucao/117-transporte-autenticado-da-retirada-de-lore.md).
 
@@ -41,7 +41,8 @@ concorrência, timestamps, Rules privadas, cleanup e cancelamento separado.
 Dispatch de callable integrado, sem exercitar Auth/App Check em produção.
 
 Journal metadata e executor recuperável foram acrescentados posteriormente
-na [ADR 0133](0133-recoverable-lore-removal.md). Confirmação visual e composição
-no compêndio continuam pendentes; não ativar entrada antes dessa composição.
+na [ADR 0133](0133-recoverable-lore-removal.md). O host foi acrescentado na
+[ADR 0134](0134-recoverable-lore-removal-ui.md). Composição no compêndio e ações
+em lote permanecem pendentes; não ativar entrada antes dessa composição.
 Lifecycle, consumidores/backup/rollout e validate de P1 seguem necessários.
 P1/F2-09/V2/fases 3–5/gates humanos/comerciais abertos. Somente commits locais.

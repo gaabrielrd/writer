@@ -1328,3 +1328,17 @@ persistência/concorrência e tipos/build/smoke/lint positivos. Próximo: host
 visual de retirada/retomada e composição no compêndio. Lifecycle/consumidores/
 backup/rollout/validate de P1 e demais fases/gates continuam abertos.
 Somente commit local; sem CI/envio remoto/deploy.
+
+### P1 M38c5u — interface da retirada recuperável
+
+[Plano 119](119-interface-da-retirada-recuperavel-de-lore.md),
+[ADR 0134](../../../decisions/0134-recoverable-lore-removal-ui.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-interface-da-retirada-recuperavel-de-lore.md).
+Host/lista exportados usam origem C1 fixa, confirmação explícita, dívida,
+prova própria e cancel com handle fresco independente da RPC antiga.
+
+67 Vitest distintos positivos (24 novos), quatro jornadas Chromium, três
+temas/mobile/foco e tipos/build/smoke/lint positivos. Próximo: composição no
+compêndio com criação/edição/retirada e ações em lote nativas; preservar lote
+e revisar origem antes de aplicar. Lifecycle/consumidores/backup/rollout/
+validate de P1 e demais fases/gates abertos. Somente commit local, sem remoto.

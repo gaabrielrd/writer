@@ -159,6 +159,7 @@
 - Retire lore individual com inspeção/CAS, clock/privacidade e tombstone permanentes; adie o coletor genérico e entregue a limpeza ao inventário do livro ao entrar em deleting, preservando recibos nativos, conforme ADR 0103.
 - Encaminhe retirada manual somente por bookLoreRemoval e namespaces lore-removal-source/lore-removal; preserve os 18/22 métodos antigos e não envie start destrutivo ao abrir a interface, conforme ADR 0132.
 - Grave wire da retirada em journal metadata antes da RPC; start incerto só consulta por advance e reenvia por apply explícito. Cancel fecha inspeção e confere retirada original, sem restaurar cabeça; preserve CAS/oncomplete e bloqueie ACK tardio, conforme ADR 0133.
+- Exija origem C1/revisão/confirmação na UI de retirada; verificar ou salvar dívida não autoriza reenvio. Invalide o driver antigo ao cancelar e notifique retirada só por prova própria confirmada, conforme ADR 0134.
 - Reserve criação de lore por ID servidor e prova nativa, mantendo cabeça ausente; preserve fences e amplie inventário/cancelamento antes do primeiro byte, conforme ADR 0104.
 - Vincule uploads de criação à reserva nativa antes dos bytes; intenção de cancel bloqueia novas unidades, e filho/journal/recibo compartilham transação, preservando bindings e leases, conforme ADR 0105.
 - Componha criação por origem explícita sem cabeça/inspeção fictícia; vincule tentativas nativamente e limpe reserved antes de auditar controles, conforme ADR 0106.

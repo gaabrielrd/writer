@@ -642,3 +642,16 @@ e consulta do evento original. ACK tardio não reabre produtor nem desfaz retira
 preservados; [evidência](../../../entregas/2026-10-24-writer-v2-retirada-recuperavel-de-lore.md).
 Próximo: confirmação/listagem visual e compêndio. Lifecycle, consumidores/
 backup/rollout/validate integral e demais fases/gates permanecem abertos.
+
+## Interface da retirada recuperável — M38c5u
+
+[Plano 119](119-interface-da-retirada-recuperavel-de-lore.md) e
+[ADR 0134](../../../decisions/0134-recoverable-lore-removal-ui.md):
+host/lista exportados com revisão C1 e confirmação, prova própria, dívida
+e cancelamento independente. Nenhum reenvio ao abrir/verificar; callback único.
+
+67 Vitest distintos positivos e quatro jornadas Chromium; veja a
+[evidência](../../../entregas/2026-10-24-writer-v2-interface-da-retirada-recuperavel-de-lore.md).
+Antes do compêndio, adaptar também visibilidade/exclusão em lote por captura
+e revisão nativas. Lifecycle/consumidores/backup/rollout/validate e demais
+fases/gates permanecem abertos. Sem CI/envio remoto/deploy.
