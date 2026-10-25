@@ -1313,3 +1313,18 @@ Tipos/build/smoke/lint positivos. Próximo: journal/executor recuperável da
 retirada, confirmação visual e compêndio. Lifecycle/consumidores/backup/
 rollout/validate de P1 ainda necessários. P1/F2-09/V2/fases 3–5 e gates
 humanos/comerciais abertos; somente commit local, sem CI/remoto.
+
+### P1 M38c5t — retirada recuperável de lore
+
+[Plano 118](118-retirada-recuperavel-de-lore.md),
+[ADR 0133](../../../decisions/0133-recoverable-lore-removal.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-retirada-recuperavel-de-lore.md).
+Journal metadata próprio e executor na sessão Auth preservam wire/CAS/
+oncomplete, apply explícito, cancel independente, dívida e handoff.
+Reabrir não envia RPC; start incerto só consulta em advance.
+
+43 Vitest distintos positivos (30 novos), três jornadas Chromium reais de
+persistência/concorrência e tipos/build/smoke/lint positivos. Próximo: host
+visual de retirada/retomada e composição no compêndio. Lifecycle/consumidores/
+backup/rollout/validate de P1 e demais fases/gates continuam abertos.
+Somente commit local; sem CI/envio remoto/deploy.

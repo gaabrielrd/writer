@@ -629,3 +629,16 @@ Sessão Auth consulta metadata sem prosa e congela wire sem retry.
 [evidência](../../../entregas/2026-10-24-writer-v2-transporte-da-retirada-de-lore.md).
 Journal/executor recuperável e confirmação visual precedem compêndio.
 Lifecycle/consumidores/backup/rollout/validate integral e demais gates abertos.
+
+## Retirada recuperável — M38c5t
+
+[Plano 118](118-retirada-recuperavel-de-lore.md) e
+[ADR 0133](../../../decisions/0133-recoverable-lore-removal.md):
+createRemoval/resumeRemoval/recoveries compõem journal metadata próprio e
+executor Auth. Wire durável antes da RPC, apply explícito, cancel independente
+e consulta do evento original. ACK tardio não reabre produtor nem desfaz retirada.
+
+43 Vitest positivos e três jornadas Chromium, com cinco stores antigos
+preservados; [evidência](../../../entregas/2026-10-24-writer-v2-retirada-recuperavel-de-lore.md).
+Próximo: confirmação/listagem visual e compêndio. Lifecycle, consumidores/
+backup/rollout/validate integral e demais fases/gates permanecem abertos.

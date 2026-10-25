@@ -2303,3 +2303,19 @@ captura actor/host e não faz retry/fallback. Inspeção conserva a ficha; start
 retira irreversivelmente. Journal/executor recuperável e confirmação visual
 precedem compêndio. Lifecycle/consumidores/backup/rollout/validate de P1 e
 demais fases/gates continuam abertos.
+
+## P1 M38c5t — retirada recuperável de lore
+
+[ADR 0133](decisions/0133-recoverable-lore-removal.md):
+RemovalService oferece createRemoval/resumeRemoval/recoveries. Journal próprio
+writer.book-lore-removals v1 guarda metadata fechada, com CAS/Web Locks curtos
+e oncomplete antes de RPC. Não altera os stores cifrados v3 de edição/criação.
+
+Advance prepara sem retirar; apply explícito grava a intenção original.
+Start incerto só consulta em advance, sem reenvio automático. Dívida local
+só é gravada no retry; cancel independente fecha inspeção e consulta retirada
+original, preservando sucesso aceito. ACK/RPC tardios não retomam produção.
+Handoff consulta metadata e conclusão fria exige nova verificação servidor.
+
+API interna pronta para host de confirmação/retomada, ainda fora do compêndio.
+Lifecycle/consumidores/backup/rollout/validate de P1 e demais gates abertos.

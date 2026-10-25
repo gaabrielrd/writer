@@ -2286,3 +2286,19 @@ SDK confirma timestamps/retirada concorrente/Rules privadas e cancelamento
 separado de edição. Admin/cliente Firestore reais em emulador não comprovam
 rede Functions/Auth/App Check de produção. Sem mudança de UI.
 Build/tipos/smoke/lint positivos; validate integral no fechamento de P1.
+
+### P1 M38c5t — retirada recuperável de lore
+
+[Plano 118](tasks/writer-v2/execucao/118-retirada-recuperavel-de-lore.md) e
+[evidência](entregas/2026-10-24-writer-v2-retirada-recuperavel-de-lore.md):
+43 Vitest distintos positivos em RemovalOperation/RemovalSession/RemovalService,
+30 novos. Cobrem inline/v1/v2, preparar/apply, start perdido, dívida/oncomplete,
+cancel independente e ACK tardio, duas abas, paginação, conta/origem e handoff.
+Serviços nativos usam ambiente Node; não alterar servidor por diferença de realm.
+
+Três jornadas Chromium distintas repetidas após ajuste final: processo
+reiniciado com start perdido, cancel com resposta aceita retida e duas abas.
+IndexedDB/Web Locks reais, cinco sentinelas antigas preservadas e clocks
+unitários. Functions/banco/identidade são fixtures; não comprovam rede SDK/
+Auth/App Check de produção. Build/tipos/smoke/lint positivos; host/compêndio
+e validate integral de P1 continuam pendentes.
