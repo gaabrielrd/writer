@@ -35,7 +35,7 @@ export async function prepareBookRestorePendingMedia(tx, db, loaded) {
       byteLength: cover.byteLength,
       proof: sourceProof,
     };
-  if (!image.exists || value.state !== 'preparing')
+  if (!image.exists || !['preparing', 'deleted'].includes(value.state))
     fail('failed-precondition', 'media-unavailable');
   if (
     !bornEqual(image, { createTime: loaded.snapshot.updateTime }) ||
@@ -65,12 +65,15 @@ export async function prepareBookRestorePendingMedia(tx, db, loaded) {
     )
   )
     inconsistent();
+  const unavailable = value.state === 'deleted';
+  if (unavailable && value.useCount !== 0) inconsistent();
   const rootRef = db.doc('books/' + j.bookId),
     root = await tx.get(rootRef),
     book = root.data(),
     { bookId: ignoredBookId, ...rootOrigin } = mediaOrigin(loaded);
   if (ignoredBookId !== j.bookId) inconsistent();
   const attach = Boolean(
+    !unavailable &&
     root.exists &&
     uses.docs.length === 1 &&
     book.authorId === j.ownerId &&
@@ -81,6 +84,7 @@ export async function prepareBookRestorePendingMedia(tx, db, loaded) {
     digest(book.restoreOrigin ?? null) === digest(rootOrigin),
   );
   return {
+    unavailable,
     cover,
     sourceProof,
     path,
@@ -101,6 +105,7 @@ export async function prepareBookRestorePendingMedia(tx, db, loaded) {
       definition: nativeRestoreToken(definition.snapshot),
       intent: nativeRestoreToken(intent.snapshot),
       imageBirth: born(image),
+      unavailable,
       path,
       storage: expectedStorage,
       origin: mediaOrigin(loaded),

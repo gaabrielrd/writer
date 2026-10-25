@@ -55,7 +55,7 @@ export function validateBookRestoreMediaOutcome(value, loaded) {
     value.jobToken !== loaded.view.jobToken ||
     value.bookId !== j.bookId ||
     value.activationOperationId !== j.activation.operationId ||
-    value.state !== (library ? 'ready' : 'none') ||
+    !(library ? ['ready', 'unavailable'] : ['none']).includes(value.state) ||
     value.imageId !== (library ? j.preparation.cover.imageId : null) ||
     typeof value.rootUpdated !== 'boolean' ||
     !Number.isSafeInteger(value.completedAt) ||
@@ -66,9 +66,14 @@ export function validateBookRestoreMediaOutcome(value, loaded) {
   restoreId(value.operationId);
   if (library) {
     bookRestoreStorageProof(value.sourceProof);
+    if (digest(value.sourceProof) !== digest(j.preparation.coverStorage.proof)) inconsistent();
+    if (value.state === 'unavailable') {
+      if (value.storageProof !== null || value.urlHash !== null || value.rootUpdated)
+        inconsistent();
+      return value;
+    }
     bookRestoreStorageProof(value.storageProof);
     if (
-      digest(value.sourceProof) !== digest(j.preparation.coverStorage.proof) ||
       value.sourceProof.generation !== value.storageProof.generation ||
       value.storageProof.metageneration !== String(BigInt(value.sourceProof.metageneration) + 1n)
     )

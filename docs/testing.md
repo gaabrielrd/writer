@@ -2845,3 +2845,14 @@ Rules privadas e preservação da ativação. Estados atuais e imagem recriada
 cobertos pelo Node. Correções de fixtures/asserções e escopo dos mocks na
 [evidência](entregas/2026-10-25-writer-v2-finalizacao-da-capa-restaurada.md).
 Sem UI nova ou validate global repetido; fechamento de P1 continua obrigatório.
+
+## P1 — limpeza após ativação
+
+27 casos Node de limpeza e cinco de mídia positivos em seleções dirigidas,
+incluindo origens recriadas, replay/CAS/retry/rollback, exclusão durante I/O,
+totais exatos, livro editado/excluído, lore/fontes grandes e JSON v1–v6.
+Um SDK Firestore real prova remoção normal da capa, preservação de dados e
+timestamps, leitores normais, 13 namespaces vazios, Rules privadas e recusa
+do controle recriado. Resultados e limites na
+[evidência](entregas/2026-10-25-writer-v2-limpeza-pos-ativacao.md).
+Sem nova UI ou validate global; fechamento de P1 e inventário completo pendentes.

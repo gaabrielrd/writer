@@ -777,3 +777,30 @@ async function prepareBookRestorePayloadCleanup(tx, db, loaded, limit) {
   }
   return null;
 }
+
+/** Post-activation archive metadata only. This does not authenticate or authorize the current target. */
+export async function readBookRestoreArtifactJournal(tx, db, loaded, snapshot) {
+  if (loaded.job.state !== 'activated') inconsistent();
+  const data = snapshot.data();
+  validationContext(data, loaded);
+  closed(data, [
+    'schemaVersion',
+    'ownerId',
+    'restoreId',
+    'jobToken',
+    'kind',
+    'id',
+    'createdByOperationId',
+    'lastOperationId',
+  ]);
+  const expected = address(db, loaded, data.kind, data.id);
+  if (expected.journal.path !== snapshot.ref.path) inconsistent();
+  const first = await receipt(tx, db, loaded, data.createdByOperationId),
+    last =
+      data.lastOperationId === data.createdByOperationId
+        ? first
+        : await receipt(tx, db, loaded, data.lastOperationId);
+  if (!bornEqual(snapshot, first) || !bornEqual({ createTime: snapshot.updateTime }, last))
+    inconsistent();
+  return { value: data, ref: expected.ref, journal: snapshot.ref };
+}

@@ -57,7 +57,7 @@ export function createBookRestoreMediaService({ db, assets, load, now }) {
       if (initial.answer) return initial.answer;
       let accepted = null;
       try {
-        if (initial.pending) {
+        if (initial.pending && !initial.pending.unavailable) {
           if (typeof assets?.accept !== 'function') inconsistent();
           accepted = validateBookRestoreAcceptedMedia(
             await assets.accept(initial.pending.context, initial.pending.sourceProof),
@@ -69,7 +69,7 @@ export function createBookRestoreMediaService({ db, assets, load, now }) {
           if (s.outcome) return confirmed(tx, s, s.op.exists ? 'confirmed' : 'already-complete');
           const pending = await prepareBookRestorePendingMedia(tx, db, s.loaded);
           if ((pending?.token ?? null) !== (initial.pending?.token ?? null)) inconsistent();
-          if (pending) validateBookRestoreAcceptedMedia(accepted, pending);
+          if (pending && !pending.unavailable) validateBookRestoreAcceptedMedia(accepted, pending);
           const completedAt = date(
               now,
               Math.max(
@@ -87,7 +87,7 @@ export function createBookRestoreMediaService({ db, assets, load, now }) {
                 bookId: j.bookId,
                 activationOperationId: j.activation.operationId,
                 operationId: request.operationId,
-                state: pending ? 'ready' : 'none',
+                state: pending ? (pending.unavailable ? 'unavailable' : 'ready') : 'none',
                 imageId: pending?.cover.imageId ?? null,
                 sourceProof: pending?.sourceProof ?? null,
                 storageProof: accepted?.proof ?? null,
@@ -98,7 +98,7 @@ export function createBookRestoreMediaService({ db, assets, load, now }) {
               s.loaded,
             ),
             outcomeRef = db.doc(s.loaded.ref.path + '/activationMedia/current');
-          if (pending) {
+          if (pending && !pending.unavailable) {
             tx.update(pending.imageRef, {
               state: 'active',
               url: accepted.url,
@@ -128,8 +128,8 @@ export function createBookRestoreMediaService({ db, assets, load, now }) {
             media: {
               state: value.state,
               imageId: value.imageId,
-              imageAvailable: Boolean(pending),
-              imageState: pending ? 'available' : 'none',
+              imageAvailable: Boolean(pending && !pending.unavailable),
+              imageState: pending ? (pending.unavailable ? 'unavailable' : 'available') : 'none',
               completedAt,
             },
           };

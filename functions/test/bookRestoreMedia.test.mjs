@@ -272,7 +272,9 @@ test('deleting the own detached image during external work prevents resurrection
   assert.equal(f.records.get('books/' + f.p.bookId).coverUrl, null);
   f.hooks.after = null;
   const at = f.storage.events.length;
-  await assert.rejects(() => finishMedia(f));
+  const unavailable = await finishMedia(f);
+  assert.equal(unavailable.media.state, 'unavailable');
+  assert.equal(unavailable.media.imageAvailable, false);
   assert.equal(f.storage.events.length, at);
 });
 for (const dependency of ['image', 'definition', 'intent', 'use'])
@@ -427,4 +429,46 @@ test('historical readiness never re-adopts a recreated active image or exposes i
   assert.equal(f.storage.events.length, at);
   assert.equal(JSON.stringify(answer).includes(value.url), false);
   assert.deepEqual(f.records.get(path), value);
+});
+
+test('a confirmed original owner deletion completes media as unavailable without Storage I/O or reconstruction', async () => {
+  const f = await readyMedia(),
+    imageId = f.p.preparation.cover.imageId,
+    library = createImageLibraryService({
+      db: f.db,
+      assets: { remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }) },
+    });
+  await library.detach(uid, f.p.bookId, imageId);
+  await library.remove(uid, { id: imageId });
+  const before = structuredClone([...f.records]),
+    at = f.storage.events.length,
+    result = await finishMedia(f);
+  assert.equal(result.media.state, 'unavailable');
+  assert.equal(result.media.imageState, 'unavailable');
+  assert.equal(f.storage.events.length, at);
+  for (const [path, value] of before) assert.deepEqual(f.records.get(path), value);
+  assert.deepEqual(await finishMedia(f), result);
+});
+test('a deleting or recreated deleted image is not treated as an original owner tombstone', async () => {
+  for (const recreated of [false, true]) {
+    const f = await readyMedia(),
+      imageId = f.p.preparation.cover.imageId,
+      path = 'users/' + uid + '/imageLibrary/' + imageId,
+      library = createImageLibraryService({
+        db: f.db,
+        assets: { remove: (p) => f.storage.bucket().file(p).delete({ ignoreNotFound: true }) },
+      });
+    await library.detach(uid, f.p.bookId, imageId);
+    if (recreated) {
+      await library.remove(uid, { id: imageId });
+      const value = structuredClone(f.records.get(path));
+      await f.db.runTransaction((tx) => tx.delete(f.db.doc(path)));
+      await f.db.runTransaction((tx) => tx.create(f.db.doc(path), value));
+    } else await f.db.runTransaction((tx) => tx.update(f.db.doc(path), { state: 'deleting' }));
+    const before = structuredClone([...f.records]),
+      at = f.storage.events.length;
+    await assert.rejects(() => finishMedia(f));
+    assert.deepEqual([...f.records], before);
+    assert.equal(f.storage.events.length, at);
+  }
 });

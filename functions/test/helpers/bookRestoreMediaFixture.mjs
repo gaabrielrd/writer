@@ -18,6 +18,7 @@ function mediaMemoryDb() {
 export async function readyMedia({
   db: provided = null,
   none = false,
+  records = null,
   id = 'media-restore-0001',
 } = {}) {
   const base = provided ? { db: provided } : mediaMemoryDb(),
@@ -33,7 +34,7 @@ export async function readyMedia({
       ...(await readyActivation({
         db: base.db,
         id,
-        records: coverRestoreFixture({ kind: none ? 'none' : 'library', bytes: png }),
+        records: records ?? coverRestoreFixture({ kind: none ? 'none' : 'library', bytes: png }),
         restoreAssets: {
           ...assets,
           async accept(...args) {

@@ -2874,3 +2874,18 @@ bookRestoreMediaOperations não guardam URL ou token. Estado histórico é separ
 de imageState atual; livro alterado/excluído/recriado e imagem retirada não são
 readotados. Sem novo endpoint; host/limpeza/roundtrip integral pendentes.
 [Evidência](entregas/2026-10-25-writer-v2-finalizacao-da-capa-restaurada.md).
+
+## P1 — limpeza após ativação
+
+[ADR 0156](decisions/0156-activated-book-archive-cleanup.md): controle privado
+archiveCleanup/current e recibos bookRestoreArchiveOperations autenticam avanço
+por revisão e timestamps nativos, sem regravar ativação ou mídia. Journals de
+recursos ativos são apagados sem tocar seus alvos; famílias privadas do job,
+chunks/provas e validação exigem origem e totais exatos. Unidades limitadas,
+sem prosa ou catálogo crescente, terminam conferindo 13 namespaces conhecidos.
+
+Capa retirada pelo dono pode concluir unavailable somente por tombstone original
+deleted sem usos, sem I/O ou reconstrução. Namespaces novos exigem evolução do
+contrato; não é snapshot global contra mutações Admin. Host/UI/roundtrip integral
+e demais P1/fases/gates continuam. Veja a
+[evidência](entregas/2026-10-25-writer-v2-limpeza-pos-ativacao.md).

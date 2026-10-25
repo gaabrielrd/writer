@@ -542,3 +542,14 @@ concluído estiverem satisfeitos. A lista fica em
   exclusão, troca ou recriação não são desfeitas. Não repare usos estrangeiros.
 - Separe conclusão histórica de disponibilidade atual; replay não concede URL.
   Limpeza posterior conserva provas e não usa cancelamento de um livro ativo.
+
+## Limpeza após ativação de livros
+
+- Use controle/recibos próprios após mídia concluída; preserve job/recibo/reserva
+  de ativação, mídia e provas de personas originais (ADR 0156).
+- Autentique journals antes de removê-los; para recursos ativos não consulte ou
+  apague o alvo atual. Deletes somente nas famílias privadas originais do job.
+- Percorra recibos originais sem apagá-los; exija nascimentos e totais exatos
+  para chunks/provas/itens, limites fixos e namespaces conhecidos vazios.
+- Retirada confirmada da capa só conclui unavailable pelo tombstone original
+  deleted, sem usos/URL/I/O Storage. Ausência/recriação não substitui essa prova.

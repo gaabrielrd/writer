@@ -1737,3 +1737,13 @@ conclusão da biblioteca/raiz aplicável, recibos sem URL e disponibilidade atua
 separada do histórico. 47 Node distintos, cinco GCS/HTTP já incluídos e um SDK
 Firestore positivos; [evidência](../../../entregas/2026-10-25-writer-v2-finalizacao-da-capa-restaurada.md).
 Limpeza própria/host/UI/roundtrip e demais P1/V2/fases/gates continuam pendentes.
+
+### P1 — limpeza retomável após ativação (plano 135)
+
+[Plano 135](135-limpeza-pos-ativacao.md): apaga arquivo/preparação privados por
+unidades nativas e contagem exata, preservando conteúdo ativo e provas originais.
+Capa originalmente retirada conclui unavailable sem reconstrução. 27 Node de
+limpeza, cinco de mídia e um SDK Firestore positivos; veja a
+[evidência](../../../entregas/2026-10-25-writer-v2-limpeza-pos-ativacao.md).
+Host/UI/roundtrip integral/inventários/legados/rollout/validate de P1, fases 3–5
+e condições humanas/comerciais continuam obrigatórios.

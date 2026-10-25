@@ -348,6 +348,7 @@ service cloud.firestore {
       match /bookRestoreRecoveryKeys/{id} { allow read, write: if false; }
       match /bookRestoreOperations/{id} { allow read, write: if false; }
       match /bookRestoreMediaOperations/{id} { allow read, write: if false; }
+      match /bookRestoreArchiveOperations/{id} { allow read, write: if false; }
       match /bookRestoreStartFences/{id} { allow read, write: if false; }
       match /adventureImportRecoveryKeys/{id} { allow read, write: if false; }
       match /adventureImportOperations/{id} { allow read, write: if false; }

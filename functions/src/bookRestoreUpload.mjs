@@ -15,6 +15,7 @@ import { createBookRestoreAuditService } from './bookRestoreAudit.mjs';
 import { createBookRestoreActivationReviewService } from './bookRestoreActivationReview.mjs';
 import { createBookRestoreActivationService } from './bookRestoreActivation.mjs';
 import { createBookRestoreMediaService } from './bookRestoreMedia.mjs';
+import { createBookRestoreArchiveService } from './bookRestoreArchive.mjs';
 import { readBookRestoreActivationProof } from './bookRestoreActivationProof.mjs';
 import { validateBookRestoreActivation } from './bookRestoreActivationContracts.mjs';
 import { createBookRestoreCoverMaterializationService } from './bookRestoreCoverMaterialization.mjs';
@@ -1183,6 +1184,7 @@ export function createBookRestoreUploadService({
   return {
     ...createBookRestorePreparedLoreService({ db, load }),
     ...createBookRestoreMediaService({ db, assets: restoreAssets, load, now }),
+    ...createBookRestoreArchiveService({ db, load, readOp, now }),
     ...createBookRestoreActivationReviewService({ db, load, readOp, assets: restoreAssets }),
     ...createBookRestoreActivationService({
       db,
