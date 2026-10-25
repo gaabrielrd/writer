@@ -136,3 +136,34 @@ it('storage failure blocks all readers, recovery grants and child production wit
   expect(s.calls).toHaveLength(0);
   expect(f.parent.rows()).toHaveLength(0);
 });
+
+it('review uses the actor-bound v2 reader and full literal sources without child or key production', async () => {
+  const f = await setup({ count: 2, publics: [false, true] }),
+    session = bookLoreVisibilitySelectionSession(),
+    op = await session.createSelection(f.input);
+  const result = await session.review(op);
+  expect(result.members.map((m) => [m.name, m.currentValue])).toEqual([
+    ['Literal 🌙 0', false],
+    ['Literal 🌙 1', true],
+  ]);
+  expect(
+    s.calls
+      .filter((c) => c.method === 'getBookLoreRead')
+      .every(
+        (c) =>
+          c.data.tokenVersion === 2 ||
+          c.data.readToken === f.input.members.find((m) => m.loreId === c.data.id)?.sourceToken,
+      ),
+  ).toBe(true);
+  expect(
+    s.calls.every((c) =>
+      [
+        'getBookLoreRead',
+        'readBookLoreFieldPage',
+        'readBookLorePart',
+        'readBookLoreRelationPage',
+      ].includes(c.method),
+    ),
+  ).toBe(true);
+  expect(JSON.stringify(f.parent.rows())).not.toContain('Literal');
+});

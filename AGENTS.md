@@ -322,3 +322,14 @@ concluído estiverem satisfeitos. A lista fica em
 - Libere pin também na revogação por agrupadores mistos; retomada usa metadados
   e não reabre corpo já liberado. Capítulo composto usa cenas como texto canônico;
   backup deve preservar seu campo legado congelado, inclusive externo.
+
+## Revisão da visibilidade de seleções
+
+- Fixe bool e origens da tentativa; ao retomar use o manifesto, não props novas.
+  Nomes/consentimento vêm de C1/v2 autorizado e ficam só em RAM (ADR 0142).
+- Verifique antes de revisar retry e reenvie apenas o membro original explícito.
+  Oculte filhos de visibilidade da lista manual isolada, preservando cópias e
+  paginação; retomada do grupo deve dirigir apply/cancel e dívida.
+- Callback separa applied/unchanged e exige provas completas, sem dívida,
+  uma vez por seleção/host. Releia valores atuais antes de atualizar o compêndio:
+  efeito histórico não congela privacidade, publica ou certifica coleta.

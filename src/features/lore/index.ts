@@ -43,3 +43,11 @@ export type {
 } from './components/BookLoreRemovalSelectionDialog';
 export { BookLoreRemovalSelectionRecoveries } from './components/BookLoreRemovalSelectionRecoveries';
 export type { BookLoreRemovalSelectionRecoveriesProps } from './components/BookLoreRemovalSelectionRecoveries';
+
+export { BookLoreVisibilitySelectionDialog } from './components/BookLoreVisibilitySelectionDialog';
+export type {
+  BookLoreVisibilitySelectionDialogProps,
+  BookLoreVisibilitySelectionResult,
+} from './components/BookLoreVisibilitySelectionDialog';
+export { BookLoreVisibilitySelectionRecoveries } from './components/BookLoreVisibilitySelectionRecoveries';
+export type { BookLoreVisibilitySelectionRecoveriesProps } from './components/BookLoreVisibilitySelectionRecoveries';

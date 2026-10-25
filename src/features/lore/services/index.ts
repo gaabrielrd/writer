@@ -87,3 +87,5 @@ export type {
   VisibilityState,
   VisibilityOutcome,
 } from './bookLoreVisibilitySelectionContracts';
+
+export type { VisibilitySelectionReview } from './bookLoreVisibilitySelectionReview';

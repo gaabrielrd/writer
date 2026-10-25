@@ -1441,3 +1441,17 @@ metadata independente. Respostas tardias isoladas por membro/geração.
 smoke positivos. Revisão/UI/retomada e compêndio ainda pendentes; não encerra
 plano 125. Lifecycle/consumidores/backup/rollout/validate de P1 e fases/gates abertos.
 Sem CI/envio remoto/deploy; somente commit local.
+
+### P1 M38c6c — revisão e UI da visibilidade
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md), marco C,
+[ADR 0142](../../../decisions/0142-book-lore-visibility-selection-ui.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-interface-da-selecao-de-visibilidade.md).
+Revisão C1/v2 e diálogo/lista exportados, bool original, confirmação distinta,
+retry só da ficha revisada, cancel independente e resultado aplicado/unchanged.
+Filhos preservados fora da lista manual isolada.
+
+87 Vitest e quatro jornadas Chromium positivos; três temas/mobile/teclado/foco,
+tipos/lint/bundle/smoke/styleguide positivos. Etapa 4 implementada; montagem
+coordenada do compêndio e demais lifecycle/consumidores/backup/rollout/validate
+de P1 e fases/gates ainda necessários. Somente commit local; sem CI/remoto/deploy.

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useBookLoreActor } from '../hooks/useBookLoreActor';
 import { Button, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
+import { isVisibilitySelectionChild } from '../services/bookLoreVisibilitySelectionContracts';
 import { bookLoreEditSession } from '../services/bookLoreEditService';
 import type { LorePreparationHead } from '../services/bookLorePreparationContracts';
 import type { LoreMentionEntity } from '../model/loreEntity';
@@ -47,7 +48,12 @@ function RecoveryPage({
       .then((page) => {
         if (live) {
           setRows(
-            page.items.filter((p) => p.intent.bookId === bookId && p.discard?.phase !== 'complete'),
+            page.items.filter(
+              (p) =>
+                p.intent.bookId === bookId &&
+                p.discard?.phase !== 'complete' &&
+                !isVisibilitySelectionChild(p.intent.writeId),
+            ),
           );
           setNext(page.next);
         }

@@ -93,3 +93,16 @@ da seleção devem retomar filhos somente pela seleção, sem oferecer apply iso
 na lista manual, e recarregar valores atuais no callback. Não declarar valor
 atual pelo efeito histórico. Demais pendências de P1 e fases/gates preservadas.
 Nenhuma montagem no compêndio nem envio remoto/deploy; somente commit local.
+
+## Marco C — revisão e interface exportadas
+
+Revisão autorizada C1/v2 com nomes/consentimento em RAM, confirmação separada,
+bool fixo e retomada pelo manifesto. UI compõe consulta, dívida, retry de uma
+ficha e cancel fresco, com resultados frios neutros e callback por provas.
+Filhos de visibilidade não aparecem como edição isolada; cópias preservadas.
+[ADR 0142](../../../decisions/0142-book-lore-visibility-selection-ui.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-interface-da-selecao-de-visibilidade.md).
+
+Etapa 4 implementada; etapa 5, montagem coordenada do compêndio com todas as
+ações, continua necessária. Demais lifecycle/consumidores/backup/rollout/validate
+de P1 e fases/gates humanos/comerciais preservados. Sem integração remota.

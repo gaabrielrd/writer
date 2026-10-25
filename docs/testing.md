@@ -2456,3 +2456,18 @@ Sem nova UI, nenhum gate visual/SR/zoom físico certificado.
 
 Lint/tipos/build/smoke/arquitetura/docs positivos. Backend e Rules sem alteração;
 sem repetir Node/SDK. Validate completo continua no fechamento de P1.
+
+### P1 M38c6c — revisão e UI da visibilidade
+
+[ADR 0142](decisions/0142-book-lore-visibility-selection-ui.md) e
+[evidência](entregas/2026-10-25-writer-v2-interface-da-selecao-de-visibilidade.md):
+87 Vitest positivos (32 novos, 55 regressões) e quatro jornadas Chromium reais.
+Revisão C1/v2, bool fixo/retomado, 53 nomes, dívida, retry de uma ficha, cancel
+retido e contexto; regressões de retirada e edição manual.
+
+IndexedDB/locks/AES e cliente HTTP de chave reais; backend/Auth/SDK/App Check em
+fixtures locais. Três temas, 390px, contraste, foco/Tab/Escape/gatilho positivos;
+capturas inspecionadas. Timeout inicial de 60s no caso 53; repetição de 180s
+positiva sem mudar produto. Não comprova performance, credenciais ou implantação.
+Tipos/lint/bundle 2971/smoke/styleguide positivos; validate no fim de P1.
+Sem CI/remoto/deploy; compêndio e demais fases/gates continuam pendentes.

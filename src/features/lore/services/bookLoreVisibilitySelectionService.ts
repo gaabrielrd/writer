@@ -1,3 +1,4 @@
+import { reviewBookLoreVisibilitySelection } from './bookLoreVisibilitySelectionReview';
 import { bookLoreEditSession } from './bookLoreEditService';
 import { bookLoreReadSession } from './bookLoreReadService';
 import {
@@ -104,6 +105,12 @@ export function bookLoreVisibilitySelectionSession(isCurrent: () => boolean = ()
         bookLoreVisibilitySelectionStore(identity, guard),
         environment,
       );
+    },
+    async review(op: Awaited<ReturnType<typeof openBookLoreVisibilitySelection>>) {
+      guard();
+      if (op.snapshot().identity.uid !== actor.uid)
+        throw Error('A seleção pertence a outra conta.');
+      return reviewBookLoreVisibilitySelection(op, reader, guard);
     },
     recoveries(after?: string, limit = 50) {
       guard();

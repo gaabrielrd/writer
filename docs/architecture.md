@@ -2454,3 +2454,20 @@ provas nativas. Sessão Auth e descoberta paginada exportadas, sem UI montada.
 permanece aberto para revisão/retomada/UI e composição do compêndio com todas as
 ações. Demais lifecycle/consumidores/backup/rollout/validate de P1 e fases/gates
 continuam no objetivo.
+
+## P1 M38c6c — revisão e interface da visibilidade
+
+[ADR 0142](decisions/0142-book-lore-visibility-selection-ui.md):
+revisão C1/v2 da mesma origem, nomes e consentimento apenas em RAM, bool fixo
+por tentativa e vindo do manifesto na retomada. Confirmação, consulta e retry
+separados; retry de um membro e cancel independente do produtor retido.
+
+Dialog/lista metadata exportados pelo lore, com actor exato e estados do kit.
+Resultados frios são neutros; callback separa applied/unchanged, confere todas
+as provas/contagens e dispara uma vez por seleção. O host deve reler valores
+atuais. Filhos protegidos de visibilidade ficam fora da lista manual isolada,
+sem perder registros, paginação ou cópias.
+
+Etapa 4 do [plano 125](tasks/writer-v2/execucao/125-visibilidade-duravel-da-selecao-de-lore.md)
+implementada, sem montagem no compêndio. A composição com todas as ações e
+lifecycle/consumidores/backup/rollout/validate de P1 e fases/gates seguem abertos.

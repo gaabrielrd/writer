@@ -3,6 +3,8 @@ import { freezeLoreEditValue as freeze } from './bookLoreWritePlan';
 import { bookLoreWriteHash as hash } from './bookLoreWritePayload';
 import { loreControlJobId, loreInspectionControl } from './bookLoreControlContracts';
 export const VISIBILITY_PAGE_SIZE = 50;
+export const isVisibilitySelectionChild = (writeId: string) =>
+  /^lore-selection-visibility-[a-f0-9]{64}$/.test(writeId);
 export const visibilityEqual = (a: unknown, b: unknown) => hash(a) === hash(b);
 export function visibilityFail(): never {
   throw Error('Não foi possível conferir a seleção de visibilidade. Preserve a recuperação.');

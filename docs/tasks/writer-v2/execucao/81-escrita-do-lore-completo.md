@@ -763,3 +763,17 @@ Próximo: revisão e interface/retomada de visibilidade, sem expor filhos para
 apply isolado na lista manual, depois composição do compêndio com todas as ações.
 Lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/gates abertos.
 Somente commit local, sem CI/envio remoto/deploy.
+
+## Visibilidade da seleção, marco C — M38c6c
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md) e
+[ADR 0142](../../../decisions/0142-book-lore-visibility-selection-ui.md):
+revisão C1/v2, confirmação/retry distintos e diálogo/lista exportados. Bool fixo
+e retomado pelo manifesto, callback por provas com applied/unchanged separados.
+Filhos preservados fora da lista manual isolada; host deve reler valores atuais.
+
+87 Vitest e quatro jornadas Chromium positivos, três temas/mobile/teclado/foco;
+[evidência](../../../entregas/2026-10-25-writer-v2-interface-da-selecao-de-visibilidade.md).
+Etapa 4 implementada; compêndio com todas as ações e demais lifecycle/
+consumidores/backup/rollout/validate de P1 e fases/gates seguem no objetivo.
+Sem CI/envio remoto/deploy; somente commit local.

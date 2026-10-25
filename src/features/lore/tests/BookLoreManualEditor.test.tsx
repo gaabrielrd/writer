@@ -334,6 +334,7 @@ it('lists only the current book, hides discarded copies and preserves cursor pag
         record('one', 'book'),
         record('foreign', 'else'),
         record('discarded', 'book', { phase: 'complete' }),
+        record('lore-selection-visibility-' + 'a'.repeat(64), 'book'),
       ],
       next: 'cursor',
     })
