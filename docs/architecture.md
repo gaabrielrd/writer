@@ -2388,3 +2388,21 @@ Sessão Auth e tipos são públicos, sem montagem de UI/compêndio nem alteraç�
 de backend/transportes/journals/cifras. Grupo não é alegado atômico; conclusão
 da seleção não certifica coleta. UI/visibilidade/compêndio, lifecycle/
 consumidores/backup/rollout/validate de P1 e demais fases/gates seguem abertos.
+
+## P1 M38c5y — interface da retirada de seleção
+
+[ADR 0138](decisions/0138-book-lore-removal-selection-ui.md):
+SelectionDialog/Recoveries exportados, sem montagem no compêndio.
+Revisão na sessão Auth emite v2 para conferir correspondência e captura C1
+com token original. Nomes literais só em RAM; revalidar todas as origens e o
+cancel do pai ao concluir. Não reabrir fontes de membros já encerrados.
+
+Conferência e confirmação são distintas. Apply por unidades para em dívida/
+incerteza/erro; retry explícito não aplica outros membros. Cancel usa handle
+fresco e invalidação da execução visual anterior, sem aguardar produtor. Callback reconcilia
+IDs/outcomes do manifesto, exige prova fresca e não certifica GC.
+
+Lista pagina metadata por conta/livro com rótulos neutros e estados de ciclo
+de vida. Kit/temas/foco/teclado/mobile preservados, sem CSS global novo.
+Visibilidade nativa/composição/compêndio e demais lifecycle/consumidores/
+backup/rollout/validate de P1 e fases/gates seguem abertos.

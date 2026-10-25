@@ -35,3 +35,11 @@ export { BookLoreRemovalDialog } from './components/BookLoreRemovalDialog';
 export type { BookLoreRemovalDialogProps } from './components/BookLoreRemovalDialog';
 export { BookLoreRemovalRecoveries } from './components/BookLoreRemovalRecoveries';
 export type { BookLoreRemovalRecoveriesProps } from './components/BookLoreRemovalRecoveries';
+
+export { BookLoreRemovalSelectionDialog } from './components/BookLoreRemovalSelectionDialog';
+export type {
+  BookLoreRemovalSelectionDialogProps,
+  BookLoreRemovalSelectionResult,
+} from './components/BookLoreRemovalSelectionDialog';
+export { BookLoreRemovalSelectionRecoveries } from './components/BookLoreRemovalSelectionRecoveries';
+export type { BookLoreRemovalSelectionRecoveriesProps } from './components/BookLoreRemovalSelectionRecoveries';

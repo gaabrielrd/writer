@@ -1388,3 +1388,17 @@ positivos. Próximo: interface da seleção/retomada, visibilidade nativa e
 composição final do compêndio; recursos existentes permanecem obrigatórios.
 Lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/gates
 abertos. Somente commit local; sem CI/remoto/deploy.
+
+### P1 M38c5y — interface da retirada de seleção
+
+[Plano 123](123-interface-da-retirada-de-selecao.md),
+[ADR 0138](../../../decisions/0138-book-lore-removal-selection-ui.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-interface-da-retirada-de-selecao.md).
+Diálogo/lista exportados, revisão C1 v2 e confirmação separadas, nomes só em
+RAM, cancel independente e callback por IDs comprovados. Nenhuma montagem.
+
+65 Vitest positivos (34 novos), quatro jornadas Chromium e retake de teclado,
+três temas/mobile/foco e tipos/build/smoke/lint/styleguide positivos.
+Próximo: visibilidade nativa em lote e composição final do compêndio com
+todas as ações preservadas. Lifecycle/consumidores/backup/rollout/validate
+de P1 e demais fases/gates abertos. Somente commit local, sem CI/remoto/deploy.

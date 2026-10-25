@@ -17,6 +17,7 @@ export async function removalSelectionFixture({
   count = 3,
   modes = ['inline'],
   selectionId = 'selected-original',
+  names,
 } = {}) {
   const local = installLoreJournalHarness(),
     remote = adventureImportDb({ nativeUpdates: true }),
@@ -31,7 +32,7 @@ export async function removalSelectionFixture({
         tokenVersion: 2,
         inspectionId: 'unused-source-' + i,
         data: {
-          name: 'PRIVATE_PROSE ' + i,
+          name: names?.[i] ?? 'PRIVATE_PROSE ' + i,
           category: 'other',
           details: '\ufeffprivate 🌙',
           isPublic: i === 0,

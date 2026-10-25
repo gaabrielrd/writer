@@ -702,3 +702,19 @@ Cliente/sessão Auth exportados sem UI montada. Próximo: seleção/retomada vis
 visibilidade nativa e composição final, preservando todas as ações existentes.
 Lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/gates seguem
 abertos. Somente commit local, sem CI/envio remoto/deploy.
+
+## Interface da retirada de seleção — M38c5y
+
+[Plano 123](123-interface-da-retirada-de-selecao.md) e
+[ADR 0138](../../../decisions/0138-book-lore-removal-selection-ui.md):
+host/lista exportados compõem coordenador, revisão C1 v2 e confirmação.
+Nomes só em RAM, origens fixas, retry explícito, dívida/cancel/driver tardio
+protegidos. Callback exige todos os resultados conferidos e retorna somente
+IDs retirados, sem inferir grupo atômico ou coleta de bytes.
+
+65 Vitest positivos (34 novos), quatro jornadas Chromium/retake de teclado,
+três temas/mobile/foco e [evidência](../../../entregas/2026-10-25-writer-v2-interface-da-retirada-de-selecao.md).
+Sem montagem no compêndio: visibilidade nativa em lote e composição completa
+continuam necessárias, sem remover ações existentes. Lifecycle/consumidores/
+backup/rollout/validate de P1 e demais fases/gates seguem abertos.
+Somente commit local, sem CI/envio remoto/deploy.

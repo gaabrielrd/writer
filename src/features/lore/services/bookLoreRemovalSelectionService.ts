@@ -1,4 +1,6 @@
 import { bookLoreRemovalSession } from './bookLoreRemovalService';
+import { bookLoreReadSession } from './bookLoreReadService';
+import { reviewBookLoreRemovalSelection } from './bookLoreRemovalSelectionReview';
 import {
   createRemovalSelection,
   selectionIdentity,
@@ -43,6 +45,14 @@ export function bookLoreRemovalSelectionSession(isCurrent: () => boolean = () =>
       const identity = selectionIdentity({ uid: actor.uid, bookId, selectionId }),
         store = bookLoreRemovalSelectionStore(identity, guard);
       return openBookLoreRemovalSelection(identity, store, environment);
+    },
+    async review(op: Awaited<ReturnType<typeof openBookLoreRemovalSelection>>) {
+      guard();
+      if (op.snapshot().identity.uid !== actor.uid)
+        throw Error('A seleção pertence a outra conta.');
+      const reader = bookLoreReadSession(isCurrent, { tokenVersion: 2 });
+      if (reader.actor !== actor) throw Error('O contexto mudou. Reabra a seleção.');
+      return reviewBookLoreRemovalSelection(op, reader, guard);
     },
     recoveries(after?: string, limit = 50) {
       guard();

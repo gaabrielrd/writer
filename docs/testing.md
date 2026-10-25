@@ -2370,3 +2370,22 @@ Backend/SDK/Auth são fixtures; não comprova UI ou credenciais de produção.
 Lint/tipos/build/smoke positivos, 2958 módulos. Docs/formato/arquitetura no
 fechamento. Backend/Rules/Node/SDK não repetidos; sem mudança servidor.
 Validate integral no fim de P1. UI/visibilidade/compêndio e demais gates abertos.
+
+### P1 M38c5y — revisão e interface da retirada de seleção
+
+[Plano 123](tasks/writer-v2/execucao/123-interface-da-retirada-de-selecao.md)
+e [evidência](entregas/2026-10-25-writer-v2-interface-da-retirada-de-selecao.md):
+65 Vitest positivos, 34 novos/31 regressões, 4.31s. Incluem 21 UI,
+11 revisão C1/v2 e dois novos Auth, além de coordenador/sessão anteriores.
+
+Quatro jornadas Chromium reais de React/kit/serviços/IDB: 53 origens com
+confirmação/callback, aceite perdido/reinício sem replay, cancel independente
+com respostas retidas/perdidas e fonte alterada durante C1. Retake do primeiro
+caso inclui sete Tabs, Escape, foco e retomada da mesma seleção pela lista.
+SDK/Auth/banco remoto são fixtures; não comprovam produção ou piloto.
+
+Três temas (contraste 14.21/14.64/12.98:1), viewport 390 px/documento 390,
+diálogo x16–374 sem overflow; escuro/mobile inspecionados.
+Lint/tipos/build/smoke/styleguide positivos, 2961 módulos.
+Backend/Node/Rules/SDK não repetidos, sem mudança servidor. Validate integral
+no fim de P1; visibilidade/compêndio e demais fases/gates continuam pendentes.
