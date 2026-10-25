@@ -71,8 +71,8 @@ for conhecido; demais etapas usam estado textual, sem precisão inventada.
 
 ## Sequência
 
-- [ ] Revisão/fingerprint/descritor e contratos de bootstrap/upload.
-- [ ] Controle inicial, upload retomável e conflitos por provas originais.
+- [x] Revisão/fingerprint/descritor e contratos de bootstrap/upload.
+- [x] Controle inicial, upload retomável e conflitos por provas originais.
 - [ ] Contratos de revisão/ativação/mídia/limpeza e confirmação após chave revogada.
 - [ ] Sessão de cliente e painel/diálogo integrado ao Estúdio.
 - [ ] Testes dirigidos, browser real e roundtrip atual/legado com consumidores normais.
@@ -105,6 +105,20 @@ implementados. IDs de pedidos/restauração agora seguem o validador real do
 servidor; UID não recebe essa restrição. 65 Vitest distintos e um cenário
 Chromium dirigidos positivos; [evidência](../../../entregas/2026-10-25-writer-v2-contratos-iniciais-do-envio.md).
 
-Não é upload, revisão de arquivo ou interface; todas as caixas da sequência
-continuam abertas. Prova da fórmula de checkpoint/IDs contra append real,
-bootstrap e demais passos continuam obrigatórios.
+Naquele checkpoint ainda não havia upload, revisão de arquivo ou interface.
+A inspeção/bootstrap e a prova de checkpoint/IDs foram implementadas no estado
+registrado a seguir; demais passos continuam obrigatórios.
+
+## Estado da inspeção e do envio
+
+Inspector metadata e bootstrap mínimos implementados; sessão confirma início/
+fence originais, sem chamar job existente de cancelado. Upload prova índice/
+checkpoint/IDs contra append real, repete pedidos e retoma prefixo após recarga.
+Conservar reviewHash original do job ao reabrir arquivo; não substituir pela
+revisão de apresentação recalculada.
+
+46 Vitest distintos e oito cenários Chromium positivos;
+[evidência](../../../entregas/2026-10-25-writer-v2-inspecao-inicio-e-envio-de-backups.md).
+Fluxo de arquivo atual chegou à revisão privada com raiz ausente após duas
+perdas de resposta e reinícios. Cancelamento de job existente, finalização
+durável e UI/roundtrip e demais P1/fases/gates permanecem.

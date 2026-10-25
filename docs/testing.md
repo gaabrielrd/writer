@@ -2898,3 +2898,15 @@ real do servidor; valores inválidos não chegam ao journal. Um Chromium do
 driver/journal também passou após reinício. Fixtures corrigidas e limites na
 [evidência](entregas/2026-10-25-writer-v2-contratos-iniciais-do-envio.md).
 Upload/checkpoint e UI ainda não implementados; validate de P1 continua aberto.
+
+## P1 — inspeção e upload retomável
+
+46 Vitest distintos positivos em seleções cobrem revisão local, metadata inicial,
+start/fence/recibos reais, transferência limitada, IDs/checkpoints, prefixo,
+concorrência, conta e cancelamento. Oito cenários Chromium positivos incluem
+bootstrap nativo e fluxo OPFS/arquivo até revisão real, com dois reinícios e
+respostas perdidas. Raiz permaneceu ausente.
+
+Ver [evidência e limites](entregas/2026-10-25-writer-v2-inspecao-inicio-e-envio-de-backups.md),
+incluindo volume local de RPC/chave e fronteiras simuladas. Sem prova de produção,
+UI ou roundtrip integral; validate de P1 continua pendente.

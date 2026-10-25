@@ -1784,3 +1784,13 @@ persistir. 65 Vitest distintos e um cenário Chromium dirigidos positivos;
 [evidência parcial](../../../entregas/2026-10-25-writer-v2-contratos-iniciais-do-envio.md).
 Inspeção/bootstrap/upload/revisão/ativação/mídia/limpeza do cliente e UI continuam
 no mesmo plano, sem fechar P1/V2/fases/gates.
+
+### P1 — inspeção e envio retomáveis (plano 139 parcial)
+
+[Plano 139](139-restauracao-de-livros-no-estudio.md): revisão metadata, controle
+inicial antes da chave e upload limitado com repetição exata/prefixo autorizado.
+46 Vitest distintos e oito cenários Chromium positivos; fluxo real para na
+revisão, com raiz ausente após dois reinícios.
+[Evidência](../../../entregas/2026-10-25-writer-v2-inspecao-inicio-e-envio-de-backups.md).
+Finalização/cancelamento de job duráveis, UI/roundtrip e demais P1/V2/fases/gates
+continuam obrigatórios.

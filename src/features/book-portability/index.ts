@@ -79,3 +79,13 @@ export type {
   BookRestoreRecoveryContext,
   BookRestoreRecoveryGrant,
 } from './services/bookRestoreRecoveryKey';
+
+export { inspectBookRestoreFile } from './services/inspectBookRestoreFile';
+export type { BookRestoreLocalReview, InspectedBookRestore } from './model/bookRestoreReview';
+export { createBookRestoreStartSession } from './services/bookRestoreStartSession';
+export { createBookRestoreUploadDriver } from './services/bookRestoreUploadDriver';
+export type { BookRestoreUploadStep } from './services/bookRestoreUploadDriver';
+export type {
+  BookRestoreTransferJob,
+  BookRestoreStartOutcome,
+} from './services/bookRestoreTransferJob';

@@ -588,3 +588,16 @@ concluído estiverem satisfeitos. A lista fica em
 - Em pedidos de restauração, valide operationId/restoreId pelo contrato real
   de 16–80 caracteres ASCII alfanuméricos ou hífen antes de persistir; UID
   conserva seu contrato próprio. Não renomeie dívida inválida automaticamente.
+
+## Inspeção e envio de backups de livros
+
+- Produza revisão metadata sem título/prosa/nome do arquivo; valide header e
+  bytes, fixe fonte/guard/signal e não trate revisão local como grant (ADR 0160).
+- Antes de existir chave servidor, preserve somente metadata mínima do início
+  em store separado; CAS e confirmação/fence originais encerram a tentativa.
+  Job encontrado na resolução não é cancelamento de job.
+- No upload, use partes limitadas, ID determinístico por job/índice e checkpoint
+  original comprovado. Reenvie pedido pendente; após recarga confira arquivo/hash
+  e prefixo nativo. Não persista chunkBase64.
+- Conserve reviewHash original do job ao retomar; getters/listas projetam metadata
+  autorizada. Início/envio/preparação nunca ativam automaticamente a raiz.

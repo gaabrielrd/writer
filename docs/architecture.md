@@ -2937,3 +2937,17 @@ inicia origem/start fechados, digest metadata canônico e namespace de chunk.
 IDs de pedido/restauração seguem o servidor antes da persistência; UID conserva
 seu contrato próprio. Upload e UI ainda não usam esses contratos.
 [Resultados e limites](entregas/2026-10-25-writer-v2-contratos-iniciais-do-envio.md).
+
+## P1 — inspeção, início e upload no cliente
+
+[ADR 0160](decisions/0160-local-review-and-resumable-book-transfer.md):
+book-portability inspeciona Blob com validação atual/legada e revisão metadata,
+persiste início mínimo antes da chave e confirma somente recibo/fence originais.
+Upload valida arquivo/hash e envia até 64 KiB, com ID determinístico e checkpoint
+original por índice. Retomada conserva revisão do job e confere prefixo nativo;
+não guarda bytes no dispositivo.
+
+Getters/listas projetam metadata vinculada à origem. Defaults adiam Firebase;
+guards/CAS preservam tentativa diante de erro/conta/concorrência. UI e
+finalização durável continuam no plano 139. Veja a
+[evidência](entregas/2026-10-25-writer-v2-inspecao-inicio-e-envio-de-backups.md).
