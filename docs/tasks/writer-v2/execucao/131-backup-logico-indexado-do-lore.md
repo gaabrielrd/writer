@@ -593,3 +593,61 @@ permanecem distintos.
 Drenagem de staging/contabilidade, leitura preparada/recaptura/roundtrip e
 habilitação coordenada continuam obrigatórios; opção false para novos jobs.
 D3/P1/validate/fases/gates e ativação geral permanecem abertos.
+
+### Contrato D3 — drenagem do staging antes da implementação
+
+No finish de Counts, antes de personas, jobs com payloadInventoryVersion 1
+devem varrer por páginas de até oito journals de payload-chunk e depois
+payload-body. Abrir cada alvo pelo journal/recibo nativo original; alvo ausente,
+recriado ou inconsistente bloqueia o avanço. Remover somente tipos privados
+conhecidos do gravador/geração/reconciliação, com IDs de domínio/escopo conferidos
+e controles em done. Partes, headers finais e segmentos são preservados.
+
+Progresso opcional loreStaging (schema/step/after/scanned) na preparação conserva
+a posição da varredura; uma família termina em unidade posterior à última página.
+A consulta é pelo journal, não só pelos alvos, para detectar órfãos. Ao terminar
+cada família, conferir ausência de tipos privados no namespace nativo. Nenhum
+catálogo/prosa/prova acumulada no cursor. Sem novo endpoint/namespace/Rule.
+
+artifactCount continua total monotônico criado. retiredArtifacts opcional soma
+somente pares alvo/journal retirados nessa drenagem, na mesma transação do cursor
+e recibo; cleanedArtifacts continua zero no estado content-verified e contabiliza
+só o cancelamento. Exigir cleaned + retired <= artifactCount, igualdade ao
+cancelar integralmente. Nunca decrementar artifactCount ou perder replay antigo.
+Retired/loreStaging só são válidos com inventário de payload e cleanup >=8;
+um job content-verified após Counts exige drenagem done se o progresso existir.
+
+Protocolos anteriores sem esses opcionais mantêm saldo original. A varredura
+preserva corpos finais antigos; preparar o cliente/host para a metadata opcional
+antes de qualquer habilitação coordenada. Jobs streamed existentes retomam;
+opção de novas gerações permanece false até roundtrip/consumidores.
+
+Aceites: custo limitado, retomada por serviço novo, replay/resposta perdida,
+rollback/retry, cancel durante/depois da drenagem com saldo exato, ABA/ausência
+de alvo/journal/recibo e documento estrangeiro preservados, leitura lógica igual
+após retirar temporários e SDK real para timestamps/Rules. D3/roundtrip/P1/
+validate/host/inventário geral/fases/gates continuam obrigatórios.
+
+A conferência física final usará duas varreduras adicionais só de metadata,
+check-chunks/check-bodies, também com páginas de oito e cursor por ID. Qualquer
+stageKind remanescente, inclusive desconhecido ou sem journal, bloqueia conclusão.
+Isso cobre órfãos físicos sem índice/consulta range nova. scanned conta observações
+de journals e metadata física; não certifica sozinho igualdade de conteúdo.
+
+## D3 em andamento — drenagem integrada a Counts
+
+Journals e metadata física varridos por páginas de oito; somente privados
+autenticados/terminais são retirados. Progresso e saldo explícitos preservam
+contadores/recibos originais e cancelamento exato. 60 Node distintos positivos;
+SDK e limites na
+[evidência](../../../entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md).
+D3 ainda requer leitura preparada/recaptura/roundtrip e habilitação coordenada.
+P1/host/inventário geral/legacy/validate e demais fases/gates continuam abertos.
+
+### Descoberta para o roundtrip seguinte
+
+A opção indexedLoreBodies ainda seleciona somente itens acima de 512 KiB.
+O caminho inline anterior usa timestamps físicos como datas lógicas. O roundtrip
+deve cobrir também fichas pequenas, datas ausentes/zero e presença dos campos.
+Não habilitar novos jobs alegando preservação integral sem resolver essa escolha
+de representação e conferir todos os leitores. A opção continua false por padrão.

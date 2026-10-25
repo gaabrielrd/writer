@@ -2799,3 +2799,15 @@ sem prosa/catálogo. verify explícito e CAS precedem escrita atômica.
 [evidência](entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md).
 Sem habilitar novas gerações, raiz, rollout ou conclusão de D3/P1. Drenagem e
 roundtrip permanecem obrigatórios.
+
+## P1 M38c12 D3 em andamento — drenagem dos temporários
+
+Counts permanece em finish enquanto varre journals e metadata física de payload
+em páginas de oito. Remove apenas privados autenticados e terminais; recusa
+órfãos/recriados/desconhecidos. Corpos finais e seus timestamps são preservados.
+Cursor/deletes/recibo/job avançam juntos. artifactCount permanece monotônico;
+retiredArtifacts é débito separado de cleanedArtifacts no saldo do cancelamento.
+
+60 Node distintos positivos; SDK e limites na
+[evidência](entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md).
+Sem habilitar novas gerações ou ativar a raiz. D3/roundtrip/P1 permanecem abertos.

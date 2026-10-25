@@ -492,3 +492,8 @@ concluído estiverem satisfeitos. A lista fica em
   nativas por transação, com journals/Merkle e SHA/tamanho finais por campo/página.
 - Fixe identidade nativa da cabeça e origem no controle privado de reconciliação;
   não use o leitor lógico integral de testes no Counts de produção (ADR 0151).
+
+- Drene temporários de lore pelo journal nativo antes de sair de Counts; varra
+  depois a metadata física e recuse stageKind remanescente, inclusive desconhecido.
+- Preserve artifactCount monotônico: retiredArtifacts debita drenagem bem-sucedida,
+  cleanedArtifacts só cancelamento; exija saldo exato ao cancelar (ADR 0151).

@@ -41,6 +41,7 @@ test('Counts reconciles large fields and huge native relation pages without inte
     run = f.db.runTransaction.bind(f.db);
   f.db.runTransaction = (fn) =>
     run(async (tx) => {
+      const comparison = f.records.get(root).preparation.counts?.step === 'scenes';
       const parts = new Set();
       const answer = await fn({
         ...tx,
@@ -49,7 +50,7 @@ test('Counts reconciles large fields and huge native relation pages without inte
           return tx.get(ref);
         },
       });
-      batches.push(parts.size);
+      if (comparison) batches.push(parts.size);
       return answer;
     });
   const p = await finishRestoreCounts(f.factory, uid, id, f.p);
@@ -66,9 +67,9 @@ test('Counts reconciles large fields and huge native relation pages without inte
   assert.ok(Math.max(...batches) <= 3);
   assert.ok(batches.filter((n) => n > 0).length > 256);
   const controls = [...f.records.values()].filter((v) => v.stageKind === 'restore-lore-reconcile');
-  assert.equal(controls.length, 1);
-  assert.equal(controls[0].phase, 'done');
-  assert.ok(Buffer.byteLength(JSON.stringify(controls[0])) <= 24576);
+  assert.equal(controls.length, 0);
+  assert.equal(p.preparation.loreStaging.step, 'done');
+  assert.ok(p.preparation.retiredArtifacts > 0);
 });
 test('Counts replay during reconciliation preserves the checkpoint, counters and native artifacts', async () => {
   const f = await start(),

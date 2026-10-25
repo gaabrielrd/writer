@@ -240,3 +240,21 @@ Sem ficha inteira, catálogo de provas, novo DTO/Rule/namespace/índice de query
 O leitor lógico completo permanece oráculo privado dos testes. Drenagem,
 roundtrip e habilitação coordenada de D3/P1 continuam.
 [Evidência](../entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md).
+
+## Drenagem D3 — journal, metadata física e saldo
+
+Finish de Counts varre journals de payload por páginas de oito e autentica cada
+alvo antes de retirar somente tipos privados conhecidos em estado terminal.
+Depois varre metadata física dos dois namespaces, também por páginas de oito,
+recusando qualquer stageKind restante. Detecta alvo ausente/recriado e journal
+órfão sem esconder o problema consultando apenas os alvos. Corpo final permanece.
+
+Progresso opcional loreStaging não contém prosa/catálogo. artifactCount permanece
+total monotônico criado; retiredArtifacts conta somente retiradas bem-sucedidas,
+cleanedArtifacts conta só cancelamento e continua zero em content-verified.
+Saldo exige cleaned + retired <= criado, com igualdade no cancelamento completo.
+Novos campos dependem do inventário de payload/cleanup >=8; replay preserva o
+recibo antigo e devolve progresso atual sem recriar dados descartados.
+
+[Evidência](../entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md).
+Leitura preparada/recaptura/roundtrip, host e habilitação coordenada continuam.

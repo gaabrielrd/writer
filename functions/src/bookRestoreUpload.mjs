@@ -285,6 +285,7 @@ export function createBookRestoreUploadService({
           'itemIndex',
           'artifactCount',
           'cleanedArtifacts',
+          'retiredArtifacts',
           'actCount',
           'chapterCount',
           'wordCount',

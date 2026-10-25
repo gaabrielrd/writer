@@ -18,6 +18,7 @@ import {
   prepareBookRestoreLoreReconciliationSource,
   prepareBookRestoreLoreReconciliation,
 } from './bookRestoreLoreReconcile.mjs';
+import { prepareBookRestoreLoreStagingDrain } from './bookRestoreLoreStaging.mjs';
 const action = 'advanceBookRestoreCounts';
 
 export function createBookRestoreCountsService({
@@ -118,7 +119,8 @@ export function createBookRestoreCountsService({
         const preparation = structuredClone(cursor),
           counts = preparation.counts,
           writes = [];
-        let itemPending = false;
+        let remove = [],
+          itemPending = false;
         if (counts.step === 'scenes') {
           if (item.record.kind === 'book-resources') {
             if (counts.sceneCount !== preparation.resourceCounts.scene) inconsistent();
@@ -168,9 +170,13 @@ export function createBookRestoreCountsService({
               counts.linkCount = sum(counts.linkCount, 1);
             }
           } else if (counts.step === 'finish') {
-            writes.push(...(await effects.finish(tx, loaded, preparation)));
-            counts.step = 'done';
-            preparation.phase = 'personas';
+            const drained = await prepareBookRestoreLoreStagingDrain(tx, db, loaded, preparation);
+            remove = drained.remove;
+            if (drained.complete) {
+              writes.push(...(await effects.finish(tx, loaded, preparation)));
+              counts.step = 'done';
+              preparation.phase = 'personas';
+            }
           } else inconsistent();
         }
         const artifacts = await prepareBookRestoreArtifacts(
@@ -184,6 +190,7 @@ export function createBookRestoreCountsService({
         preparation.artifactCount = sum(preparation.artifactCount, artifacts.created);
         const record = next(loaded.job, request, { cleanupVersion: 8, preparation });
         artifacts.commit();
+        for (const ref of remove) tx.delete(ref);
         tx.update(loaded.ref, record);
         const receipt = writeOp(
           tx,

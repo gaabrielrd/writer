@@ -1683,3 +1683,12 @@ bytes e SHA com até três partes nativas por transação, controle nativo limit
 provas e compatibilidade anterior. 34 Node distintos positivos; SDK na
 [evidência](../../../entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md).
 Drenagem/roundtrip/habilitação coordenada e demais P1/V2/fases/gates continuam.
+
+### P1 M38c12 D3 em andamento — drenagem do staging
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): finish de Counts drena privados
+por journals, confere metadata física e mantém saldo separado de cancelamento.
+60 Node distintos positivos; SDK na
+[evidência](../../../entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md).
+Leitura preparada/recaptura/roundtrip, habilitação coordenada, host, inventários/
+demais P1/V2/fases/gates e validate continuam obrigatórios.

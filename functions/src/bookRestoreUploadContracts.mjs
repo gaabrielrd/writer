@@ -580,16 +580,44 @@ export function jobShape(uid, id, job) {
       job.preparation.itemIndex > job.validationMeta.items ||
       (job.preparation.schemaVersion >= 2 &&
         job.preparation.loreItemIndex >= job.validationMeta.items) ||
-      job.preparation.cleanedArtifacts > job.preparation.artifactCount ||
+      bookRestoreArtifactBalance(job.preparation) < 0 ||
+      (Object.hasOwn(job.preparation, 'loreStaging') &&
+        (job.payloadInventoryVersion !== 1 || job.cleanupVersion < 8)) ||
       (job.state === 'content-verified' && job.preparation.cleanedArtifacts !== 0) ||
-      (job.state === 'cancelled' &&
-        job.preparation.cleanedArtifacts !== job.preparation.artifactCount)
+      (job.state === 'cancelled' && bookRestoreArtifactBalance(job.preparation) !== 0)
     )
       inconsistent();
   } else if (Object.hasOwn(job, 'preparation') || Object.hasOwn(job, 'validationCheckpoint'))
     inconsistent();
   return job;
 }
+/** Created remains monotonic; successful retirement and cancellation are separate debits. */
+export function bookRestoreArtifactBalance(preparation) {
+  const created = integer(preparation.artifactCount),
+    cleaned = integer(preparation.cleanedArtifacts),
+    retired = integer(preparation.retiredArtifacts ?? 0),
+    removed = sum(cleaned, retired);
+  if (removed > created) inconsistent();
+  return created - removed;
+}
+export function validateBookRestoreLoreStaging(value) {
+  closed(value, ['schemaVersion', 'step', 'after', 'scanned']);
+  if (
+    value.schemaVersion !== 1 ||
+    !['chunks', 'bodies', 'check-chunks', 'check-bodies', 'done'].includes(value.step)
+  )
+    inconsistent();
+  integer(value.scanned);
+  if (value.after !== null) {
+    if (value.step === 'check-chunks') {
+      if (typeof value.after !== 'string' || !/^[a-f0-9]{64}:[0-9]{15}$/.test(value.after))
+        inconsistent();
+    } else restoreHash(value.after);
+  }
+  if (value.step === 'done' && value.after !== null) inconsistent();
+  return value;
+}
+
 export function preparationProgress(value) {
   closed(
     value,
@@ -617,7 +645,7 @@ export function preparationProgress(value) {
       ...(value?.schemaVersion >= 11 ? ['personaLibrary'] : []),
       ...(value?.schemaVersion === 12 ? ['sourceIndexes'] : []),
     ],
-    ['lorePayload'],
+    ['lorePayload', 'retiredArtifacts', 'loreStaging'],
   );
   if (Object.hasOwn(value, 'lorePayload')) {
     lorePayloadProgress(value.lorePayload);
@@ -687,6 +715,20 @@ export function preparationProgress(value) {
   ])
     integer(value[key]);
   if (!Number.isFinite(new Date(value.timestamp).getTime())) inconsistent();
+  if (Object.hasOwn(value, 'retiredArtifacts') !== Object.hasOwn(value, 'loreStaging'))
+    inconsistent();
+  if (Object.hasOwn(value, 'loreStaging')) {
+    const staging = validateBookRestoreLoreStaging(value.loreStaging);
+    integer(value.retiredArtifacts);
+    if (
+      value.schemaVersion < 4 ||
+      value.retiredArtifacts > staging.scanned ||
+      (value.phase !== 'resource-counts' && staging.step !== 'done') ||
+      (value.phase === 'resource-counts' && !['finish', 'done'].includes(value.counts.step))
+    )
+      inconsistent();
+    bookRestoreArtifactBalance(value);
+  }
   if (value.schemaVersion >= 3) {
     integer(value.resourceStartIndex);
     const end = value.schemaVersion >= 5 ? integer(value.resourceEndIndex) : value.itemIndex;

@@ -14,6 +14,7 @@ import {
   restoreId,
   integer,
   sum,
+  bookRestoreArtifactBalance,
 } from './bookRestoreUploadContracts.mjs';
 import { readWorkMetadata } from './workProgressContracts.mjs';
 import { validationContext } from './bookRestoreValidationStore.mjs';
@@ -406,10 +407,10 @@ export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) 
   }
   const preparation = structuredClone(loaded.job.preparation);
   preparation.cleanedArtifacts = sum(preparation.cleanedArtifacts, selected.length);
-  if (preparation.cleanedArtifacts > preparation.artifactCount) inconsistent();
+  bookRestoreArtifactBalance(preparation);
   // Certify emptiness in a separate zero-delete unit: transactional queries cannot see staged deletes.
   if (selected.length === 0) {
-    if (preparation.cleanedArtifacts !== preparation.artifactCount) inconsistent();
+    if (bookRestoreArtifactBalance(preparation) !== 0) inconsistent();
     await assertBookRestoreArtifactsEmpty(tx, db, loaded);
   }
   integer(limit, 1);
@@ -491,7 +492,7 @@ export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, lim
   }
   const preparation = structuredClone(loaded.job.preparation);
   preparation.cleanedArtifacts = sum(preparation.cleanedArtifacts, count);
-  if (preparation.cleanedArtifacts > preparation.artifactCount) inconsistent();
+  bookRestoreArtifactBalance(preparation);
   return { remove, patch: { preparation, state: 'cancelling', cleanupPhase: phase } };
 }
 
@@ -564,7 +565,7 @@ export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, 
   }
   const preparation = structuredClone(loaded.job.preparation);
   preparation.cleanedArtifacts = sum(preparation.cleanedArtifacts, selected.length);
-  if (preparation.cleanedArtifacts > preparation.artifactCount) inconsistent();
+  bookRestoreArtifactBalance(preparation);
   return {
     remove,
     patch: {
@@ -594,6 +595,7 @@ export async function readBookRestoreArtifact(
   const observed = { createTime: target.createTime, updateTime: target.updateTime };
   return {
     ref: at.ref,
+    journal,
     snapshot: target,
     value: target.data(),
     async verify(tx) {
@@ -770,7 +772,7 @@ async function prepareBookRestorePayloadCleanup(tx, db, loaded, limit) {
     }
     const preparation = structuredClone(loaded.job.preparation);
     preparation.cleanedArtifacts = sum(preparation.cleanedArtifacts, selected.length);
-    if (preparation.cleanedArtifacts > preparation.artifactCount) inconsistent();
+    bookRestoreArtifactBalance(preparation);
     return { remove, patch: { preparation, state: 'cancelling', cleanupPhase: 'body-artifacts' } };
   }
   return null;

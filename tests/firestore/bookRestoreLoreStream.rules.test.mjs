@@ -87,15 +87,22 @@ test('SDK lore generation: actual advanceLore resumes with new-job option disabl
   const next = await finishRestoreResources(f.factory, uid, id, p);
   assert.equal(next.preparation.phase, 'resource-counts');
   assert.equal(next.preparation.resourceCounts.lore, 1);
-  const reconciled = await finishRestoreCounts(f.factory, uid, id, next);
-  assert.equal(reconciled.preparation.phase, 'personas');
-  const reconcileControls = await admin
-    .collection('books/' + p.bookId + '/bookResourceBodies')
-    .where('stageKind', '==', 'restore-lore-reconcile')
-    .limit(2)
-    .get();
+  let current = next,
+    reconcileControls;
+  for (let unit = 0; unit < 100; unit++) {
+    current = (
+      await f
+        .factory()
+        .advanceBookRestoreCounts(uid, mutation(id, current, id + '-sdk-count-prefix-' + unit))
+    ).progress;
+    reconcileControls = await admin
+      .collection('books/' + p.bookId + '/bookResourceBodies')
+      .where('stageKind', '==', 'restore-lore-reconcile')
+      .limit(2)
+      .get();
+    if (reconcileControls.size) break;
+  }
   assert.equal(reconcileControls.size, 1);
-  assert.equal(reconcileControls.docs[0].data().phase, 'done');
   const nativeControls = await controls(next);
   assert.equal(nativeControls.size, 1);
   assert.equal(nativeControls.docs[0].data().phase, 'done');
@@ -127,12 +134,38 @@ test('SDK lore generation: actual advanceLore resumes with new-job option disabl
     ])
       await assertFails(getDoc(doc(actor.firestore(), path)));
   }
+  const reconciled = await finishRestoreCounts(f.factory, uid, id, current);
+  assert.equal(reconciled.preparation.phase, 'personas');
+  assert.equal(reconciled.preparation.loreStaging.step, 'done');
+  assert.ok(reconciled.preparation.retiredArtifacts > 0);
+  assert.equal(reconciled.preparation.cleanedArtifacts, 0);
+  assert.equal((await controls(reconciled)).size, 0);
+  assert.equal(
+    (
+      await admin
+        .collection('books/' + p.bookId + '/bookResourceBodies')
+        .where('stageKind', '==', 'restore-lore-reconcile')
+        .limit(1)
+        .get()
+    ).size,
+    0,
+  );
+  assert.deepEqual((await logical(f, reconciled)).data, expected);
   assert.equal((await admin.doc('books/' + p.bookId).get()).exists, false);
   await assert.rejects(() =>
     createBookLoreReadService({ db: admin }).getBookLoreRead(uid, {
       bookId: p.bookId,
       id: f.mapper.identity('lore', 'entity'),
     }),
+  );
+  const terminal = await cleanupLegacyRestore(f.factory(), uid, id, reconciled, {
+    limit: 8,
+    prefix: id + '-sdk-retired-clean-',
+  });
+  assert.equal(terminal.state, 'cancelled');
+  assert.equal(
+    terminal.preparation.cleanedArtifacts + terminal.preparation.retiredArtifacts,
+    terminal.preparation.artifactCount,
   );
 });
 
@@ -198,5 +231,49 @@ test('SDK lore generation: recreated generation control is refused and preserved
     cleanupLegacyRestore(f.factory(), uid, id, p, { limit: 5, prefix: id + '-sdk-aba-' }),
   );
   assert.deepEqual((await ref.get()).data(), original.data());
+  assert.equal((await admin.doc('books/' + p.bookId).get()).exists, false);
+});
+
+test('SDK lore staging: recreated private target blocks retirement and is preserved by cleanup', async () => {
+  const f = await ready(
+    { name: '', category: 'other', details: 'x'.repeat(530000) },
+    { db: admin },
+  );
+  let p = await finishRestoreResources(f.factory, uid, id, await finish(f));
+  for (let unit = 0; unit < 100; unit++) {
+    if (p.preparation.counts?.step === 'finish') break;
+    p = (
+      await f.factory().advanceBookRestoreCounts(uid, mutation(id, p, id + '-sdk-to-drain-' + unit))
+    ).progress;
+  }
+  assert.equal(p.preparation.counts.step, 'finish');
+  const journals = await admin
+    .collection('users/' + uid + '/bookRestores/' + id + '/materializationArtifacts')
+    .where('kind', '==', 'payload-chunk')
+    .orderBy('__name__')
+    .limit(8)
+    .get();
+  let target;
+  for (const journal of journals.docs) {
+    const candidate = await admin
+      .doc('books/' + p.bookId + '/bookResourceChunks/' + journal.data().id)
+      .get();
+    if (candidate.data()?.stageKind) {
+      target = candidate;
+      break;
+    }
+  }
+  assert.equal(target?.exists, true);
+  const ref = target.ref,
+    value = target.data();
+  await ref.delete();
+  await ref.create(value);
+  await assert.rejects(() =>
+    f.factory().advanceBookRestoreCounts(uid, mutation(id, p, id + '-sdk-drain-refused')),
+  );
+  await assert.rejects(() =>
+    cleanupLegacyRestore(f.factory(), uid, id, p, { limit: 8, prefix: id + '-sdk-drain-aba-' }),
+  );
+  assert.deepEqual((await ref.get()).data(), value);
   assert.equal((await admin.doc('books/' + p.bookId).get()).exists, false);
 });

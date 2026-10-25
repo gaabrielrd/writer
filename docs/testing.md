@@ -2784,3 +2784,12 @@ A instrumentação exclui o oráculo integral privado executado depois de Counts
 falha inicial e repetição seletiva registradas na
 [evidência](entregas/2026-10-25-writer-v2-reconciliacao-indexada-do-lore.md), junto ao SDK.
 Sem nova fronteira browser; validate global permanece no fechamento de P1.
+
+## P1 M38c12 D3 em andamento — drenagem dos temporários
+
+60 Node distintos positivos: Counts 22, payload anterior 16, reconciliação 12 e
+drenagem dez. Conferem lotes de oito pares, saldo/cancelamento/retry/replay,
+conteúdo final intacto e órfãos/recriados/estrangeiros preservados ao recusar.
+A falha inicial da asserção de replay e a repetição seletiva estão na
+[evidência](entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md), junto ao SDK.
+Sem nova fronteira browser; validate global permanece no fechamento de P1.
