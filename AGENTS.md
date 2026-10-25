@@ -369,3 +369,15 @@ concluído estiverem satisfeitos. A lista fica em
 - A exclusão integral já autorizada por deleting pode revogar a chave antes da
   limpeza dos produtores; termine a limpeza pelo controlador do livro e conserve
   recibos. O descarte de uma preparação no cliente mantém sua ordem própria.
+
+## Auditoria das chaves históricas
+
+- Audite por UID e páginas de metadata; não busque AES/prosa nem use o relatório
+  como grant. Aplicação exige revisão do mesmo projeto/UID (ADR 0146).
+- Reconfira ausência do livro, marcador de exclusão e provas nativas na mesma
+  transação; alteração/recriação invalida a revisão. Livro presente é preservado.
+- Em caso de prova ausente, resíduo ou erro de infraestrutura, preserve os dados;
+  não certifique inventário global vazio nem execute limpeza por heurística.
+- Mantenha a CLI em modo de leitura por padrão, com projeto/UID explícitos,
+  arquivo limitado e resultados parciais sanitizados; execução real é operação
+  própria e não decorre dos testes locais.

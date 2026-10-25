@@ -2526,3 +2526,20 @@ rollback real no último checkpoint. Não comprova produção ou rollout.
 Sintaxe258/lint/arquitetura/docs/formato/diff positivos; validate no fim de P1.
 Sem repetir browser/Vitest/build para essa alteração de backend/Rules.
 Sem CI/envio remoto/deploy; demais fases/gates preservados.
+
+### P1 M38c8 — auditoria histórica de recuperação
+
+[ADR 0146](decisions/0146-historical-lore-recovery-key-audit.md) e
+[evidência](entregas/2026-10-25-writer-v2-auditoria-das-chaves-historicas.md):
+45 Node distintos em dois arquivos e quatro SDK nativos positivos.
+Elegibilidade, legado/criação, marcador/provas/UID, revisão velha, recriações,
+paginação, ausência, rollback, falha parcial e CLI fechada antes do SDK cobertos.
+
+Executável real gerou e aplicou relatório no emulador; Timestamp legado,
+concorrência e rollback do último delete conferidos. Leitura limitada do
+arquivo, UTF8/BOM e rejeição de formato/escopo testados. Firestore1.22.0,
+JAR verificado/demo/loopback. Sem produção ou certificado de inventário global.
+
+Sintaxe259 e CLI, lint/arquitetura/docs/formato/diff positivos. Sem alteração
+de cliente/writers normais; browser/build/Vitest não repetidos. Validate no
+fechamento de P1; sem CI/envio remoto/deploy.

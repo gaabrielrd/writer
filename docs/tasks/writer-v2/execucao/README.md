@@ -1503,3 +1503,18 @@ controladores avançados/completos não pulam chaves com raiz ainda existente.
 Auditoria das chaves históricas de livros já apagados, demais namespaces,
 escritores/consumidores, backup/restauração, drain/rollout/validate de P1 e
 fases/gates humanos/comerciais seguem no objetivo. Sem CI/envio remoto/deploy.
+
+### P1 M38c8 — auditoria das chaves históricas
+
+[Plano 127](127-auditoria-das-chaves-historicas-de-lore.md),
+[ADR 0146](../../../decisions/0146-historical-lore-recovery-key-audit.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-auditoria-das-chaves-historicas.md).
+Serviço/CLI de leitura padrão, relatório paginado e revogação por revisão fixa,
+com ausência do livro/marcador/provas reconferidos. Chaves recriadas e dados
+sem evidência ficam preservados, sem certificado de inventário global.
+
+45 Node e quatro SDK positivos, incluindo executável real no emulador;
+sintaxe259/CLI e checks locais positivos. Ferramenta implementada; nenhuma conta
+de produção auditada. Operação real e reconciliação, demais namespaces/
+consumidores/backup/restauração/rollout/drain/validate de P1 e fases/gates
+continuam necessários. Somente commit local, sem CI/push/PR/merge/deploy.

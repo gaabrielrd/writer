@@ -2535,3 +2535,25 @@ namespace. Rules negam SDK. Produtores recusam deleting dentro da transação.
 Chaves históricas de livros já apagados exigem auditoria específica.
 Demais consumidores/backup/restauração/rollout/drain/validate de P1 e fases/gates
 seguem no objetivo. Sem CI/envio remoto/deploy.
+
+## P1 M38c8 — auditoria das recuperações históricas
+
+[ADR 0146](decisions/0146-historical-lore-recovery-key-audit.md):
+serviço interno e CLI administrativa por UID, páginas de até 50 controles,
+metadata sem AES/prosa e relatório revisável. Candidato exige livro ausente,
+marcador deletedBooks de exclusão válido e provas originais; Timestamp legado
+é aceito, reserva de restauração não. Datas declaradas não substituem nascimento/
+atualização nativos.
+
+Aplicação fixa requestHash/jobToken/deletionToken e reconfere tudo na transação.
+Livro presente/recriado, marcador alterado e artefato divergente bloqueiam.
+Terminal/prova e remoção de chave/índice originais são atômicos, preservando
+metadata/corpos residuais. Reaplicação confirma o fechamento sem varrer resíduo.
+
+CLI exige projeto/UID e arquivo revisado do mesmo escopo para aplicar; padrão
+só lê. Arquivo lido por bytes limitados, UTF8 estrito e BOM aceito. Falha parcial
+produz resultados confirmados e erro sanitizado para retomada.
+[Operação](lore-recovery-audit.md) documentada; nenhuma execução real ou novo
+endpoint/Rule/writer. Não certifica inventário global vazio ou limpeza integral.
+Demais consumidores/backup/restauração/rollout/drain/validate de P1 e fases/gates
+continuam necessários.

@@ -826,3 +826,17 @@ ambos os finish; metadata e recibos são preservados.
 Chaves históricas de livros já apagados, demais namespaces/escritores/
 consumidores/backup/restauração/rollout/drain/validate de P1 e fases/gates
 continuam necessários. Somente commit local; sem CI/remoto/deploy.
+
+## Auditoria histórica das chaves — M38c8
+
+[Plano 127](127-auditoria-das-chaves-historicas-de-lore.md) e
+[ADR 0146](../../../decisions/0146-historical-lore-recovery-key-audit.md):
+serviço/CLI administrativa por UID com relatório revisável e aplicação
+explícita. Livro ausente, marcador e provas originais são reconferidos;
+sem leitura de AES/prosa, purge ou certificado de inventário global.
+45 Node e quatro SDK positivos; [evidência](../../../entregas/2026-10-25-writer-v2-auditoria-das-chaves-historicas.md).
+
+Nenhuma conta real foi auditada; execução e reconciliação de pendências
+continuam no rollout. Demais namespaces/escritores/consumidores, backup/
+restauração, inventário completo, drain/rollout/validate de P1 e fases/gates
+seguem no objetivo. Somente commit local; sem CI/envio remoto/deploy.

@@ -83,3 +83,12 @@ implementados localmente. Sem CI/envio remoto/deploy.
 Chaves históricas de livros já apagados ainda exigem auditoria/reconciliação
 específica, sem inventar raiz/identidade. Demais namespaces/writers/consumidores,
 backup/restauração, drain/rollout/validate de P1 e fases/gates seguem no objetivo.
+
+## Auditoria posterior — M38c8
+
+[Plano 127](127-auditoria-das-chaves-historicas-de-lore.md) acrescenta serviço
+administrativo/CLI de leitura padrão e aplicação de relatório revisado,
+com livro ausente, marcador e provas originais reconferidos. 45 Node e quatro
+SDK positivos; [evidência](../../../entregas/2026-10-25-writer-v2-auditoria-das-chaves-historicas.md).
+A ferramenta está implementada; nenhuma conta real foi auditada. Casos sem
+provas e operação real permanecem no gate de rollout, sem purge ou raiz inventada.
