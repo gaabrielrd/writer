@@ -354,6 +354,11 @@ test('private cache headers cover all callable methods without affecting unrelat
     setBookRestoreHeaders(method, {
       rawRequest: { res: { setHeader: (...args) => values.push(args) } },
     });
-  assert.equal(values.length, 4);
-  assert.ok(values.every((v) => v.join(':') === 'Cache-Control:private, no-store'));
+  assert.deepEqual(
+    values,
+    Array.from({ length: 4 }, () => [
+      ['Cache-Control', 'private, no-store'],
+      ['Vary', 'Authorization'],
+    ]).flat(),
+  );
 });

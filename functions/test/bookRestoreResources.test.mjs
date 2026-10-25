@@ -135,7 +135,7 @@ test('all scene/narrative resources and native index keys are prepared with exac
   assert.equal(link.sourceKey, sourceKey(sourceRef));
   assert.equal(link.sourceArcId, arcId);
   assert.equal(link.loreKey, digest(local));
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreResources'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreResources'), true);
   for (const method of [
     'advanceBookRestoreStructure',
     'advanceBookRestoreLore',

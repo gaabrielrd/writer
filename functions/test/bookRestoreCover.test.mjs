@@ -50,7 +50,7 @@ test('stages exact private PNG bytes and original metadata with a mapped image i
     false,
   );
   assert.equal(f.records.get('books/' + p.bookId + '/workProgress/current').countReady, false);
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreCover'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreCover'), true);
   const reader = await f.api.openVerifiedBookRestoreContent(uid, {
     restoreId: id,
     jobToken: p.jobToken,

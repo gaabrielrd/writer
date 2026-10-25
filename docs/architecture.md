@@ -2889,3 +2889,16 @@ deleted sem usos, sem I/O ou reconstrução. Namespaces novos exigem evolução 
 contrato; não é snapshot global contra mutações Admin. Host/UI/roundtrip integral
 e demais P1/fases/gates continuam. Veja a
 [evidência](entregas/2026-10-25-writer-v2-limpeza-pos-ativacao.md).
+
+## P1 — transporte explícito de restauração
+
+[ADR 0157](decisions/0157-explicit-book-restore-callables.md): lista literal
+imutável de 31 comandos, exports Functions explícitos e fronteira pura que
+autoriza conta/nome/função própria antes de encaminhar entrada literal.
+Remove seleção arbitrária do serviço composto. Ports internos e chave não são
+callables; recuperação HTTP permanece separada.
+
+App Check obrigatório e configuração existente preservados; handler adiciona
+no-store privado e Vary Authorization. Registro local não implica deploy.
+Driver/UI/roundtrip e demais P1/fases/gates continuam; veja a
+[evidência](entregas/2026-10-25-writer-v2-transporte-da-restauracao.md).

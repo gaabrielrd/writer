@@ -1,4 +1,6 @@
 import { createEditorChatService } from './editorChat.mjs';
+import { BOOK_RESTORE_METHODS } from './bookRestoreUploadContracts.mjs';
+import { invokeBookRestoreCallable } from './bookRestoreCallable.mjs';
 import { EditorChatContractError } from './editorChatContracts.mjs';
 import { createAdventureImportService } from './adventureImport.mjs';
 import {
@@ -375,6 +377,16 @@ const callable = (method, secrets = []) =>
       }
       setCampaignVariantRecoveryHeaders(method, request);
       try {
+        if (BOOK_RESTORE_METHODS.includes(method))
+          return await invokeBookRestoreCallable(
+            createBookRestoreUploadService({
+              db,
+              restoreAssets: createBookRestoreCoverStorage(bucket),
+            }),
+            method,
+            request.auth?.uid,
+            request.data,
+          );
         if (BOOK_PUBLICATION_METHODS.includes(method))
           return await createBookPublicationService({ db })[method](
             request.auth?.uid,
@@ -403,10 +415,6 @@ const callable = (method, secrets = []) =>
         const universeService = createUniverseService({ db });
         const studio = createStudioService({ db });
         const adventureImport = createAdventureImportService({ db });
-        const bookRestore = createBookRestoreUploadService({
-          db,
-          restoreAssets: createBookRestoreCoverStorage(bucket),
-        });
         const adventureLore = createAdventureLoreService({ db });
         const campaigns = createCampaignsService({ db });
         const campaignNotes = createCampaignNotesService({ db });
@@ -449,7 +457,6 @@ const callable = (method, secrets = []) =>
             ? campaignComparisonRead
             : null;
         const handler =
-          (bookRestore[method] ? bookRestore : null) ??
           (bookLoreRead[method] ? bookLoreRead : null) ??
           (bookBackupCover[method] ? bookBackupCover : null) ??
           (bookBackupDraft[method] ? bookBackupDraft : null) ??
@@ -846,3 +853,25 @@ export const getBookRestoreRecoveryKey = onRequest(
 export const advanceBookRestoreIntegrity = callable('advanceBookRestoreIntegrity');
 
 export const advanceBookRestoreValidation = callable('advanceBookRestoreValidation');
+
+export const advanceBookRestoreStructure = callable('advanceBookRestoreStructure');
+export const advanceBookRestoreLore = callable('advanceBookRestoreLore');
+export const advanceBookRestoreResources = callable('advanceBookRestoreResources');
+export const advanceBookRestoreCounts = callable('advanceBookRestoreCounts');
+export const advanceBookRestorePersonas = callable('advanceBookRestorePersonas');
+export const advanceBookRestoreUniverse = callable('advanceBookRestoreUniverse');
+export const advanceBookRestoreHistory = callable('advanceBookRestoreHistory');
+export const advanceBookRestoreDraft = callable('advanceBookRestoreDraft');
+export const finalizeBookRestoreDraft = callable('finalizeBookRestoreDraft');
+export const advanceBookRestoreCover = callable('advanceBookRestoreCover');
+export const reserveBookRestoreCover = callable('reserveBookRestoreCover');
+export const materializeBookRestoreCover = callable('materializeBookRestoreCover');
+export const advanceBookRestorePersonaLibrary = callable('advanceBookRestorePersonaLibrary');
+export const advanceBookRestoreSourceIndexes = callable('advanceBookRestoreSourceIndexes');
+export const advanceBookRestoreAudit = callable('advanceBookRestoreAudit');
+export const getBookRestoreActivationReview = callable('getBookRestoreActivationReview');
+export const activateBookRestore = callable('activateBookRestore');
+export const getBookRestoreMediaState = callable('getBookRestoreMediaState');
+export const finalizeBookRestoreMedia = callable('finalizeBookRestoreMedia');
+export const getBookRestoreArchiveCleanup = callable('getBookRestoreArchiveCleanup');
+export const advanceBookRestoreArchiveCleanup = callable('advanceBookRestoreArchiveCleanup');

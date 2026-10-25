@@ -15,7 +15,7 @@ import { validateBookRestoreActivation } from './bookRestoreActivationContracts.
 import { lorePayloadProgress } from './bookRestoreLorePayloadContracts.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
-export const BOOK_RESTORE_METHODS = [
+export const BOOK_RESTORE_METHODS = Object.freeze([
   'startBookRestore',
   'resolveBookRestoreStart',
   'getBookRestore',
@@ -26,7 +26,28 @@ export const BOOK_RESTORE_METHODS = [
   'resolveBookRestoreOperation',
   'cancelBookRestore',
   'advanceBookRestoreCleanup',
-];
+  'advanceBookRestoreStructure',
+  'advanceBookRestoreLore',
+  'advanceBookRestoreResources',
+  'advanceBookRestoreCounts',
+  'advanceBookRestorePersonas',
+  'advanceBookRestoreUniverse',
+  'advanceBookRestoreHistory',
+  'advanceBookRestoreDraft',
+  'finalizeBookRestoreDraft',
+  'advanceBookRestoreCover',
+  'reserveBookRestoreCover',
+  'materializeBookRestoreCover',
+  'advanceBookRestorePersonaLibrary',
+  'advanceBookRestoreSourceIndexes',
+  'advanceBookRestoreAudit',
+  'getBookRestoreActivationReview',
+  'activateBookRestore',
+  'getBookRestoreMediaState',
+  'finalizeBookRestoreMedia',
+  'getBookRestoreArchiveCleanup',
+  'advanceBookRestoreArchiveCleanup',
+]);
 import { restoreFail, invalid, inconsistent, closed } from './bookRestoreInput.mjs';
 export { restoreFail, invalid, inconsistent, closed };
 export function restoreId(value) {

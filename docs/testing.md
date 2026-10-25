@@ -2856,3 +2856,14 @@ timestamps, leitores normais, 13 namespaces vazios, Rules privadas e recusa
 do controle recriado. Resultados e limites na
 [evidência](entregas/2026-10-25-writer-v2-limpeza-pos-ativacao.md).
 Sem nova UI ou validate global; fechamento de P1 e inventário completo pendentes.
+
+## P1 — transporte de restauração
+
+100 Node distintos positivos em seleções: 36 fronteira, 45 host e 19 regressões.
+Wrapper HTTP Functions real recusa App Check ausente/inválido mesmo com Auth
+válido no teste; verificadores sintéticos isolam os gates sem bypass em runtime.
+Exports/configuração, conta, entrada fechada e ausência de ports internos
+verificados. Serviço real confirma consulta/mídia/limpeza sem alterar a raiz.
+Falha de asserção corrigida e limites dos verificadores na
+[evidência](entregas/2026-10-25-writer-v2-transporte-da-restauracao.md).
+Não comprova credenciais ou Callable de produção; validate integral de P1 pendente.

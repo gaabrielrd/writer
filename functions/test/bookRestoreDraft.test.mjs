@@ -59,7 +59,7 @@ test('removed chapter draft preserves exact metadata, body and exclusive profile
   assert.equal(f.records.has('books/' + p.bookId + '/chapters/' + d.chapter.id), false);
   assert.equal(f.records.has('books/' + p.bookId + '/workVersions/' + d.versionId), false);
   assert.equal(f.records.get('books/' + p.bookId + '/workProgress/current').countReady, false);
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreDraft'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreDraft'), true);
 });
 test('identical saved legacy text is recognized without duplicate draft bodies or a replacement chapter', async () => {
   const f = setup(),

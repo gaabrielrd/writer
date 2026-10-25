@@ -86,7 +86,7 @@ test('installs exact unique snapshots including archived and draft-only profiles
   assert.equal(p.preparation.itemIndex, initial.preparation.itemIndex);
   assert.equal(f.records.has('books/' + p.bookId), false);
   assert.equal(f.records.get('books/' + p.bookId + '/workProgress/current').countReady, false);
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestorePersonaLibrary'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestorePersonaLibrary'), true);
 });
 test('one unit atomically creates one profile, journal, native batch and receipt', async () => {
   const f = setup(),

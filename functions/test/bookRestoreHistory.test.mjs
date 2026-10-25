@@ -61,7 +61,7 @@ test('preserves complete private versions of removed resources and ends before d
   assert.equal(f.records.get('books/' + p.bookId + '/workProgress/current').countReady, false);
   assert.equal(p.preparation.history.versions, 2);
   assert.equal(p.preparation.history.bodyCount, 2);
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreHistory'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreHistory'), true);
   const history = createWorkHistoryService({ db: f.db });
   await assert.rejects(() =>
     history.readWorkVersion(uid, { target: { kind: 'book', id: p.bookId }, versionId: native.id }),

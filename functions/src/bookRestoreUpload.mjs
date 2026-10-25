@@ -67,8 +67,10 @@ import {
 } from './bookRestoreUploadContracts.mjs';
 export { createBookRestoreRecoveryHandler };
 export function setBookRestoreHeaders(method, request) {
-  if (BOOK_RESTORE_METHODS.includes(method))
+  if (BOOK_RESTORE_METHODS.includes(method)) {
     request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
+    request.rawRequest?.res?.setHeader('Vary', 'Authorization');
+  }
 }
 const actions = {
   startBookRestore: ['uploading'],

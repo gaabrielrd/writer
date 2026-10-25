@@ -112,7 +112,8 @@ SDK dirigido deve provar a mesma transação nativa e a barreira de acesso.
 - [x] Finalização da mídia pelo [plano 134](134-finalizacao-da-capa-restaurada.md), com retomada própria.
 - [x] Limpeza pós-ativação com progresso próprio, sem apagar provas necessárias,
       pelo [plano 135](135-limpeza-pos-ativacao.md).
-- [ ] Host/UI/roundtrip integral e demais inventários/legados/rollout/validate.
+- [x] Host explícito pelo [plano 136](136-transporte-da-restauracao.md).
+- [ ] Driver/UI/roundtrip integral e demais inventários/legados/rollout/validate.
 
 [Evidência do núcleo](../../../entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
 Passos 2–3 têm núcleo implementado, incluindo limpeza própria no plano 135;

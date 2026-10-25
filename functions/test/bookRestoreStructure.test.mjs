@@ -76,7 +76,7 @@ test('native structure uses mapped IDs, exact prose, fresh dates/revisions and t
   assert.equal(control.wordCount, chapter.wordCount);
   assert.equal(control.countReady, false);
   assert.equal(p.preparation.wordCount, chapter.wordCount);
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreStructure'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreStructure'), true);
   const reader = await f
     .factory()
     .openVerifiedBookRestoreContent(uid, { restoreId: id, jobToken: p.jobToken });

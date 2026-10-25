@@ -100,7 +100,7 @@ test('activation creates a private native book, enables counts and normal lore/b
     ),
   );
   assert.ok(batch);
-  assert.equal(BOOK_RESTORE_METHODS.includes('activateBookRestore'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('activateBookRestore'), true);
 });
 
 test('activation replay and operation resolution remain historical after edits and deletion; cancel and cleanup cannot touch the book', async () => {

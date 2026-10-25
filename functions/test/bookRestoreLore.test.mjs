@@ -96,7 +96,7 @@ test('lore uses bounded relation pages, remaps own targets and retains external 
     f.records.get('books/' + p.bookId + '/lore/' + map.identity('lore', 'empty')).relations,
     [],
   );
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreLore'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreLore'), true);
   assert.equal(
     [...f.records.keys()].some((k) => k.startsWith('publicBooks/')),
     false,

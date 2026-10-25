@@ -114,7 +114,7 @@ test('reconciliation derives scene/group totals and canonical manuscript words w
     1,
   );
   assert.equal(f.records.get(base + '/narrativeControls/entity-scenes').complete, true);
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreCounts'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreCounts'), true);
   const reader = await f.api.openVerifiedBookRestoreContent(uid, {
     restoreId: id,
     jobToken: p.jobToken,

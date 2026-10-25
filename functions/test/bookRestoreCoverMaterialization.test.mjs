@@ -52,8 +52,8 @@ test('durable native intent and inventory v13 precede all Storage I/O', async ()
   assert.equal(value.state, 'reserved');
   assert.equal(value.storage, null);
   assert.equal(f.storage.events.length, 0);
-  assert.equal(BOOK_RESTORE_METHODS.includes('reserveBookRestoreCover'), false);
-  assert.equal(BOOK_RESTORE_METHODS.includes('materializeBookRestoreCover'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('reserveBookRestoreCover'), true);
+  assert.equal(BOOK_RESTORE_METHODS.includes('materializeBookRestoreCover'), true);
 });
 test('materialization preserves exact valid PNG bytes and metadata without root/library/token exposure', async () => {
   const f = setup(),

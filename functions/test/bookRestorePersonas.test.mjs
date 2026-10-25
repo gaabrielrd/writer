@@ -101,7 +101,7 @@ test('persona definitions preserve raw archived profiles and share mapped identi
     jobToken: p.jobToken,
   });
   assert.equal((await reader.readMappedItem(p.preparation.itemIndex)).record.kind, 'book-universe');
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestorePersonas'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestorePersonas'), true);
   await assert.rejects(
     () => f.api.advanceBookRestorePersonas(uid, mutation(id, p, 'personas-after-complete')),
     (e) => e.details?.reason === 'personas-phase-conflict',

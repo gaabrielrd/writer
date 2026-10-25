@@ -105,7 +105,7 @@ test('old body born without index is migrated with its journal and receipt, pres
   assert.equal(done.preparation.itemIndex, p.preparation.itemIndex);
   assert.equal(f.records.has('books/' + p.bookId), false);
   assert.equal(f.records.get('books/' + p.bookId + '/workProgress/current').countReady, false);
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreSourceIndexes'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreSourceIndexes'), true);
 });
 test('a current index is verified without rewriting body or journal', async () => {
   const f = setup('current'),

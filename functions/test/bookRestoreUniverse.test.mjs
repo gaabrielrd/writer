@@ -83,7 +83,7 @@ test('available origin is prepared with exact native birth, masked authorization
     [{ path: 'universes/world', fields: ['authorId', 'deleting'] }],
   );
   assert.equal(JSON.stringify(p.preparation.universe).includes('GLOBAL'), false);
-  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreUniverse'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('advanceBookRestoreUniverse'), true);
   const reader = await f.api.openVerifiedBookRestoreContent(uid, {
     restoreId: id,
     jobToken: p.jobToken,

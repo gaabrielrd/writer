@@ -1747,3 +1747,12 @@ limpeza, cinco de mídia e um SDK Firestore positivos; veja a
 [evidência](../../../entregas/2026-10-25-writer-v2-limpeza-pos-ativacao.md).
 Host/UI/roundtrip integral/inventários/legados/rollout/validate de P1, fases 3–5
 e condições humanas/comerciais continuam obrigatórios.
+
+### P1 — transporte explícito de restauração (plano 136)
+
+[Plano 136](136-transporte-da-restauracao.md): 31 comandos públicos em lista
+imutável/export literal, Auth/App Check e headers privados; ports internos e
+chave não expostos por callable. Cem Node distintos positivos, incluindo
+HTTP Functions loopback e regressões dirigidas; veja a
+[evidência](../../../entregas/2026-10-25-writer-v2-transporte-da-restauracao.md).
+Sem deploy; driver/journal/UI/roundtrip e demais P1/V2/fases/gates continuam.

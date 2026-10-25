@@ -57,7 +57,7 @@ test('finalizes exact counted text and original metadata/style as a private manu
   assert.equal(p.preparation.wordCount, initial.preparation.wordCount);
   assert.equal(f.records.has('books/' + p.bookId), false);
   assert.equal(f.records.get('books/' + p.bookId + '/workProgress/current').countReady, false);
-  assert.equal(BOOK_RESTORE_METHODS.includes('finalizeBookRestoreDraft'), false);
+  assert.equal(BOOK_RESTORE_METHODS.includes('finalizeBookRestoreDraft'), true);
   const reader = await f.api.openVerifiedBookRestoreContent(uid, {
     restoreId: id,
     jobToken: p.jobToken,

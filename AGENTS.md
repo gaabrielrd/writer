@@ -553,3 +553,13 @@ concluído estiverem satisfeitos. A lista fica em
   para chunks/provas/itens, limites fixos e namespaces conhecidos vazios.
 - Retirada confirmada da capa só conclui unavailable pelo tombstone original
   deleted, sem usos/URL/I/O Storage. Ausência/recriação não substitui essa prova.
+
+## Transporte de restauração
+
+- Exponha restauração somente pela lista literal imutável e pelos exports
+  Functions explícitos; mantenha ports de conteúdo/preparação e helpers internos
+  fora da fronteira pública (ADR 0157).
+- Preserve Auth/App Check e contratos fechados dos comandos; nome no payload
+  não seleciona método. Chave conserva HTTP separado; não exponha-a por callable.
+- Comandos públicos recebem private no-store e Vary Authorization no handler;
+  mocks de verificação existem apenas nos testes, sem bypass em runtime.
