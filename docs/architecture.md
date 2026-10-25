@@ -2420,3 +2420,17 @@ fallback ou decrypt. Criação permanece no protocolo próprio, e conjuntos
 18/22/7 e schemas cifrados não mudam. Null/pending não certificam cancel nem
 autorizam reenvio. Dependência de visibilidade em lote; UI/compêndio e demais
 lifecycle/consumidores/backup/rollout/validate de P1 e fases/gates abertos.
+
+## P1 M38c6a — gate e flush local da edição
+
+[ADR 0140](decisions/0140-lore-manual-unit-gate-and-local-flush.md):
+a operação manual captura beforeUnit, entrega apenas metadata congelada após
+write-ahead e revalida contexto/ticket/cancel antes da RPC. O coordenador pode
+persistir referências sem receber prosa ou manter lock durante a rede.
+
+Manual/persisted expõem flushLocal para dívida/checkpoint sem dirigir uma
+chamada de edição ou nova reserva. Leitura de chave existente conserva
+autorização. Cold flush não reenvia apply nem comprova aceite. Cancel fresco
+continua independente. Sem alteração de formatos, DB ou métodos de wire.
+Marco necessário do [plano 125](tasks/writer-v2/execucao/125-visibilidade-duravel-da-selecao-de-lore.md);
+manifesto/ledger/executor/UI de visibilidade e montagem do compêndio pendentes.

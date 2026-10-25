@@ -302,8 +302,22 @@ export function createPersistedBookLoreEditOperation(
       busy = false;
     }
   }
+  async function flushLocal() {
+    actor();
+    if (busy) throw Error('Uma unidade da edição já está em andamento.');
+    busy = true;
+    try {
+      if (!initialized) await initialize();
+      else await flush();
+      await refresh();
+      return snapshot();
+    } finally {
+      busy = false;
+    }
+  }
   return Object.freeze({
     initialize,
+    flushLocal,
     snapshot,
     advance: () => run(false).then(() => snapshot()),
     apply: () => run(true).then(() => snapshot()),

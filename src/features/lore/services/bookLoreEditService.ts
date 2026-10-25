@@ -3,7 +3,10 @@ import {
   type BookLoreCreationRecovery,
 } from './bookLoreCreationOperation';
 import type { BookLoreCreationInput } from './bookLoreCreationPlan';
-import { createBookLoreManualOperation } from './bookLoreManualOperation';
+import {
+  createBookLoreManualOperation,
+  type BookLoreManualOptions,
+} from './bookLoreManualOperation';
 import { bookLoreJournalSession } from './bookLoreJournalSession';
 import { bookLoreRecoveryKeySession } from './bookLoreRecoveryKeyClient';
 import { createDurableBookLoreCreation } from './bookLoreCreationDurableOperation';
@@ -186,7 +189,7 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
   }
   function manual(
     input: Omit<BookLoreEditOperationInput, 'uid'>,
-    options: BookLoreWriteOptions = {},
+    options: BookLoreManualOptions = {},
   ) {
     guard();
     const frozen = freezeLoreEditValue(input) as Omit<BookLoreEditOperationInput, 'uid'>;
@@ -197,7 +200,7 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
       options,
     );
   }
-  function resumeManual(writeId: string, options: BookLoreWriteOptions = {}) {
+  function resumeManual(writeId: string, options: BookLoreManualOptions = {}) {
     guard();
     return createBookLoreManualOperation(
       writeId,

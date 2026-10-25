@@ -69,16 +69,19 @@ export interface BookLoreManualSnapshot {
   readonly discardPhase: 'requested' | 'purging' | 'complete' | null;
   readonly operation: ReturnType<Controller['snapshot']>['operation'];
 }
+export interface BookLoreManualOptions extends BookLoreWriteOptions {
+  beforeUnit?: (metadata: Readonly<ReturnType<typeof journalWire>['metadata']>) => Promise<void>;
+}
 /** Metadata bootstrap is durable before reservation; keep this handle across failures. */
 export function createBookLoreManualOperation(
   writeId: string,
   environment: BookLoreManualEnvironment,
   input?: BookLoreEditOperationInput,
-  options: BookLoreWriteOptions = {},
+  options: BookLoreManualOptions = {},
 ) {
   let frozen = input ? (freezeLoreEditValue(input) as BookLoreEditOperationInput) : undefined;
   const { uid, guard: actor, recovery, edit, createJournal, openJournal } = environment,
-    { guard: hostGuard, signal, yieldControl } = options;
+    { guard: hostGuard, signal, yieldControl, beforeUnit } = options;
   const guard = () => {
     actor();
     hostGuard?.();
@@ -201,6 +204,14 @@ export function createBookLoreManualOperation(
       if (!h.identity) journalFail();
       const wire = journalWire({ method, input: value }, h.identity);
       if (wire.metadata.lane === 'production' && (closing || h.cancelRequested || h.closed))
+        throw Error('A edição está sendo encerrada.');
+      guard();
+      await beforeUnit?.(Object.freeze({ ...wire.metadata }));
+      const current = await inspect();
+      if (
+        wire.metadata.lane === 'production' &&
+        (closing || current.cancelRequested || current.closed)
+      )
         throw Error('A edição está sendo encerrada.');
       guard();
       const result = await edit.call(method, value);
@@ -388,6 +399,16 @@ export function createBookLoreManualOperation(
     guard();
     return snapshot();
   }
+  async function flushLocal() {
+    guard();
+    await ensureTicket();
+    await getJournal(false);
+    if (controller) await controller.flushLocal();
+    await inspect();
+    if (journal) journalHead = await journal.inspect();
+    guard();
+    return snapshot();
+  }
   async function revoke() {
     let h = await inspect();
     if (h.closed) return;
@@ -518,6 +539,7 @@ export function createBookLoreManualOperation(
   return Object.freeze({
     initialize,
     snapshot,
+    flushLocal,
     advance: () => run(false),
     apply: () => run(true),
     cancel,

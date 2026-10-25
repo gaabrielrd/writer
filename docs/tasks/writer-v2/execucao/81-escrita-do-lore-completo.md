@@ -733,3 +733,17 @@ Dependência implementada, não a visibilidade em lote. Seleção/retomada de
 visibilidade, composição completa de compêndio, lifecycle/consumidores/backup/
 rollout/validate de P1 e demais fases/gates seguem abertos.
 Somente commit local, sem CI/envio remoto/deploy.
+
+## Visibilidade da seleção, marco A — M38c6a
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md) e
+[ADR 0140](../../../decisions/0140-lore-manual-unit-gate-and-local-flush.md):
+gate metadata após write-ahead/antes de RPC, com revalidação tardia, e
+flushLocal de dívida/checkpoint sem dirigir produção. Cold apply não é reenviado
+por flush. Cancel fresco sem chave conclui com produtor retido no gate.
+
+155 casos distintos positivos (dez novos), lint/tipos/build/smoke positivos;
+[evidência](../../../entregas/2026-10-25-writer-v2-controle-de-unidades-da-visibilidade.md).
+Sem montagem de UI. Manifesto/ledger/executor/revisão/retomada de visibilidade,
+composição de compêndio e demais lifecycle/consumidores/backup/rollout/validate
+de P1 e fases/gates seguem abertos. Somente commit local, sem CI/remoto/deploy.

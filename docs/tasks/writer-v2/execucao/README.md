@@ -1416,3 +1416,14 @@ fixados conferidos. Sessão Auth e contratos cifrados anteriores preservados.
 Próximo: seleção/retomada de visibilidade e composição do compêndio.
 Lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/gates
 abertos. Somente commit local, sem CI/remoto/deploy.
+
+### P1 M38c6a — pontos de controle da visibilidade
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md), marco A,
+[ADR 0140](../../../decisions/0140-lore-manual-unit-gate-and-local-flush.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-controle-de-unidades-da-visibilidade.md).
+Gate metadata antes da RPC e flushLocal sem dirigir produção implementados.
+155 casos distintos positivos, dez novos; lint/tipos/build/smoke positivos.
+Não conclui visibilidade: manifesto/ledger/executor, revisão/retomada/UI e
+composição do compêndio seguem necessários. Lifecycle/consumidores/backup/
+rollout/validate de P1 e demais fases/gates abertos. Somente commit local.

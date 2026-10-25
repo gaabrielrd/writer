@@ -2414,3 +2414,19 @@ cleanup integral de livro ou interfaces humanas.
 
 [Resultados e checks](entregas/2026-10-25-writer-v2-consulta-do-aceite-original.md).
 Validate completo permanece no fechamento de P1; sem CI/push/deploy.
+
+### P1 M38c6a — gate metadata e flush local
+
+[Plano 125](tasks/writer-v2/execucao/125-visibilidade-duravel-da-selecao-de-lore.md),
+[ADR 0140](decisions/0140-lore-manual-unit-gate-and-local-flush.md) e
+[evidência](entregas/2026-10-25-writer-v2-controle-de-unidades-da-visibilidade.md).
+155 casos Vitest distintos positivos (dez novos, 145 regressões).
+Dez casos ManualGate verificam write-ahead/gate, erro sem envio, actor/host
+tardios, cancel sem chave com produtor retido, flush concorrente recusado,
+dívida antes/depois de RPC sem produção, cold apply sem replay, ticket local
+sem reserva e callback original capturado. Serviços nativos com banco em memória
+e harness IDB/WebCrypto/Locks; regressões de Manual/Persisted/Session/Editor/Auth.
+
+Sem mudança backend/Rules/schema/UI, nenhum novo teste SDK ou Chromium.
+Lint/tipos/build/smoke positivos; validate completo permanece no fechamento
+de P1. Manifesto/ledger/executor/UI de seleção e composição ainda pendentes.
