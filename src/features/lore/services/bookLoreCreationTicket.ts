@@ -7,6 +7,7 @@ import {
   getCreationTicket,
   commitCreationTicket,
   purgeCreationFrames,
+  collectCreationCheckpointFrames,
 } from './bookLoreCreationTicketDb';
 import { bookLoreWriteHash as hash } from './bookLoreWritePayload';
 import { journalFail } from './bookLoreJournalContracts';
@@ -92,5 +93,25 @@ function ticketHandle(initial: CreationTicket, guard: () => void) {
     );
     return result;
   }
-  return Object.freeze({ inspect, mutate, purge });
+  function collect(limit: number, activeGeneration: string) {
+    const result = queue.then(async () => {
+      guard();
+      if (head.checkpoint?.active?.generation !== activeGeneration) journalFail();
+      const saved = await collectCreationCheckpointFrames(
+        head.uid,
+        head.writeId,
+        head.stamp,
+        limit,
+      );
+      head = saved;
+      guard();
+      return saved;
+    });
+    queue = result.then(
+      () => {},
+      () => {},
+    );
+    return result;
+  }
+  return Object.freeze({ inspect, mutate, purge, collect });
 }

@@ -174,6 +174,7 @@
 - Preserve os 18 métodos do journal de edição até suporte explícito à criação; a lista de 22 métodos do transporte manual não amplia o formato persistido, conforme ADR 0126.
 - Coordene criação de lore pela reserva nativa e apply explícito; congele input/bytes e confira checkpoint privado/grant fresco sem anunciar estado em memória como recuperação durável, conforme ADR 0127.
 - Preserve a preparação de criação de lore em stores aditivos v3, com ticket antes de RPC, cópia imutável cifrada e cancel/release/purge próprios; não habilite advance/apply sem checkpoint write-ahead integrado, conforme ADR 0128.
+- Grave checkpoint da criação em gerações cifradas com controles até 50 e ponte metadata sem wires; confirme active/ACK/antecessora atomicamente, valide a sucessora antes da coleta e preserve inventário próprio no descarte, conforme ADR 0129.
 - Não finalize descarte/liberação de chave por phase conflict: confirme jobs próprios fechados e preserve a cabeça adotada por outra tentativa, conforme ADR 0127.
 - Libere chave de recuperação de lore só por HTTP autenticado, com prova/nascimento/fingerprint originais e origem reautorizada; preserve fences, não regenere chave ausente e não confunda revogação da chave com cancelamento dos jobs, conforme ADR 0117.
 - Preserve journal de edição de lore em partes cifradas com manifesto privado, chave não persistida, reautorização fresca antes/depois da leitura e CAS/oncomplete local; mantenha cleanup metadata sem chave e não envie ou descarte pedidos ao abrir, conforme ADR 0118.

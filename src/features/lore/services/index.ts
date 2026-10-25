@@ -54,3 +54,12 @@ export type {
 export type { BookLoreCreationInput } from './bookLoreCreationPlan';
 
 export type { BookLoreCreationPreparationSnapshot } from './bookLoreCreationPreparation';
+
+export {
+  captureCreationCheckpoint,
+  makeCreationCheckpointOutcome,
+} from './bookLoreCreationCheckpointBundle';
+export type {
+  CreationCheckpointBundle,
+  CreationCheckpointOutcome,
+} from './bookLoreCreationCheckpointContracts';

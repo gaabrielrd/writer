@@ -9,6 +9,8 @@ import {
   type CreationTicketHandle,
 } from './bookLoreCreationTicket';
 import { creationDraftStore } from './bookLoreCreationDraft';
+import { creationCheckpointInventory } from './bookLoreCreationCheckpointContracts';
+import { creationCheckpointJournal } from './bookLoreCreationCheckpointJournal';
 import {
   creationRecoveryIntent,
   creationRecoveryHash,
@@ -390,7 +392,14 @@ export function prepareCreationRecovery(
         discard:
           h.discard ??
           (discard
-            ? { phase: 'requested', generation: h.draft?.generation ?? null, deleted: 0 }
+            ? {
+                phase: 'requested',
+                generation: h.draft?.generation ?? null,
+                deleted: 0,
+                ...(creationCheckpointInventory(h).length
+                  ? { checkpoints: creationCheckpointInventory(h) }
+                  : {}),
+              }
             : null),
       }));
       if (discard && creationKeyClosed(t)) {
@@ -418,7 +427,14 @@ export function prepareCreationRecovery(
     guard();
     return value;
   }
+  async function checkpointJournal() {
+    await acquire();
+    const input = await draft().readDraft();
+    guard();
+    return creationCheckpointJournal(ticket!, input, { guard, signal, yieldControl, getKey });
+  }
   return Object.freeze({
+    checkpointJournal,
     initialize,
     snapshot,
     readDraft,

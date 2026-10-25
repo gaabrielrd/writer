@@ -1252,3 +1252,19 @@ Bootstrap não oferece advance/apply: próximo é write-ahead privado do coorden
 controles e ponte de resultado, antes do host. Exclusão/lifecycle, demais
 writers/consumidores/backup/rollout e validate de P1 continuam necessários.
 P1/F2-09/V2, fases 3–5 e gates humanos/comerciais abertos; somente commits locais.
+
+### P1 M38c5p — checkpoint protegido da criação
+
+[Plano 114](114-checkpoint-protegido-da-criacao-de-lore.md),
+[ADR 0129](../../../decisions/0129-protected-lore-creation-checkpoints.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-checkpoint-protegido-da-criacao-de-lore.md).
+Preparação oferece checkpointJournal: cifra, páginas até 50, ponte metadata,
+swap/ACK atômicos e coleta/purge das gerações próprias. Preserva edição e
+tickets v3 anteriores; não envia RPC de edição ao reconstruir.
+
+250 Vitest distintos em rodadas (29 novos), quatro jornadas Chromium com
+reinícios/prefixo em AES e build/tipos/smoke positivos. Próximo: compor executor
+durável advance/apply, dívida local e adoção própria no cancel/encerramento,
+antes do host. Lifecycle/exclusão/consumidores/backup/rollout e validate de P1
+continuam necessários. P1/F2-09/V2/fases 3–5 e gates humanos/comerciais abertos;
+sem CI ou envio remoto.

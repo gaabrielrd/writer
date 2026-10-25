@@ -570,3 +570,19 @@ write-ahead privado, controles e ponte de resultado antes de advance/apply.
 Host/entrada no compêndio, exclusão/lifecycle, outros writers/consumidores/
 backup/rollout e validate integral de P1 continuam pendentes. P1/F2-09/V2,
 fases 3–5 e gates humanos/comerciais abertos; sem envio remoto.
+
+## Checkpoint protegido da criação — M38c5p
+
+[Plano 114](114-checkpoint-protegido-da-criacao-de-lore.md) e
+[ADR 0129](../../../decisions/0129-protected-lore-creation-checkpoints.md):
+checkpointJournal na preparação mantém gerações cifradas e controles até 50,
+ponte de resultado sem prosa e swap/ACK/coleta atômicos. Purge inclui inventário
+fixo de checkpoints, preservando draft/active/alheios conforme a operação.
+Reabrir exige input/grant originais e validação do core, sem RPC de edição.
+
+250 Vitest distintos em rodadas e quatro jornadas Chromium positivos;
+[evidência](../../../entregas/2026-10-24-writer-v2-checkpoint-protegido-da-criacao-de-lore.md).
+Armazenamento não conclui o executor: ainda compor advance/apply, bloqueio por
+dívida local e confirmação nativa de adoção própria no encerramento. Host,
+exclusão/lifecycle, consumidores/backup/rollout e validate integral de P1
+seguem obrigatórios. P1/F2-09/V2 e fases/gates restantes abertos.

@@ -18,9 +18,11 @@ import {
   journalStorageAvailable,
 } from './bookLoreJournalDb';
 
+import { creationCheckpointTransition } from './bookLoreCreationCheckpointContracts';
+
 const TICKETS = 'creationTickets',
   FRAMES = 'creationFrames';
-export type CreationFrameKey = [string, string, 'draft', string, number];
+export type CreationFrameKey = [string, string, 'draft' | 'checkpoint', string, number];
 export const creationFrameKey = (
   t: CreationTicket,
   generation: string,
@@ -44,6 +46,13 @@ export async function getCreationTicket(
   });
 }
 function monotonic(a: CreationTicket, b: CreationTicket) {
+  creationCheckpointTransition(a, b);
+  if (
+    (a.cancelRequested || b.cancelRequested || b.releaseRequested || b.discard) &&
+    b.checkpoint &&
+    hash(a.checkpoint ?? null) !== hash(b.checkpoint)
+  )
+    journalFail();
   if (
     creationTicketScope(a) !== creationTicketScope(b) ||
     (a.intentHash !== null && (b.intentHash !== a.intentHash || b.uploadCount !== a.uploadCount)) ||
@@ -67,6 +76,7 @@ function monotonic(a: CreationTicket, b: CreationTicket) {
     (a.discard &&
       (!b.discard ||
         b.discard.generation !== a.discard.generation ||
+        hash(a.discard.checkpoints ?? []) !== hash(b.discard.checkpoints ?? []) ||
         ['requested', 'purging', 'complete'].indexOf(b.discard.phase) <
           ['requested', 'purging', 'complete'].indexOf(a.discard.phase) ||
         b.discard.deleted < a.discard.deleted)) ||
@@ -106,6 +116,7 @@ export async function commitCreationTicket(
               adds.length > 1 ||
               (adds.length &&
                 (checked.releaseRequested ||
+                  (checked.cancelRequested && adds[0]?.key[2] === 'checkpoint') ||
                   checked.discard ||
                   !checked.identity ||
                   !checked.draft))
@@ -136,12 +147,13 @@ export async function commitCreationTicket(
             } else if (adds.length) {
               const add = adds[0]!,
                 k = add.key,
-                blob = checked.draft!;
+                blob = k[2] === 'checkpoint' ? checked.checkpoint?.pending : checked.draft;
+              if (!blob) journalFail();
               if (
                 k.length !== 5 ||
                 k[0] !== next.uid ||
                 k[1] !== next.writeId ||
-                k[2] !== 'draft' ||
+                !['draft', 'checkpoint'].includes(k[2]) ||
                 k[3] !== blob.generation ||
                 !Number.isSafeInteger(k[4]) ||
                 k[4] < -1 ||
@@ -255,6 +267,7 @@ export async function purgeCreationFrames(
                       ...t,
                       stamp: crypto.randomUUID(),
                       draft: null,
+                      ...(t.checkpoint ? { checkpoint: null } : {}),
                       discard: {
                         ...t.discard,
                         phase: c ? 'purging' : 'complete',
@@ -274,8 +287,14 @@ export async function purgeCreationFrames(
                   k.length !== 5 ||
                   k[0] !== uid ||
                   k[1] !== writeId ||
-                  k[2] !== 'draft' ||
-                  k[3] !== t.discard!.generation ||
+                  !(
+                    (k[2] === 'draft' && k[3] === t.discard!.generation) ||
+                    (k[2] === 'checkpoint' &&
+                      t.discard!.checkpoints?.some(
+                        (b) =>
+                          b.generation === k[3] && typeof k[4] === 'number' && k[4] < b.chunkCount,
+                      ))
+                  ) ||
                   typeof k[4] !== 'number' ||
                   !Number.isSafeInteger(k[4]) ||
                   k[4] < -1
@@ -283,6 +302,85 @@ export async function purgeCreationFrames(
                   journalFail();
                 journalFrame(c.value);
                 frames.delete(k);
+                removed++;
+                c.continue();
+              } catch {
+                tx.abort();
+              }
+            };
+          } catch {
+            tx.abort();
+          }
+        };
+      }),
+  );
+}
+export async function collectCreationCheckpointFrames(
+  uid: string,
+  writeId: string,
+  expected: string,
+  limit = 50,
+) {
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) journalFail();
+  return navigator.locks.request(
+    'writer.book-lore-creation:' + JSON.stringify([uid, writeId]),
+    async () =>
+      run<CreationTicket>(await open(), [TICKETS, FRAMES], 'readwrite', (tx, done) => {
+        const tickets = tx.objectStore(TICKETS),
+          r: IDBRequest<unknown> = tickets.get([uid, writeId]);
+        r.onsuccess = () => {
+          try {
+            const t = readCreationTicket(r.result, uid, writeId),
+              g = t.checkpoint?.garbage;
+            if (t.stamp !== expected || !g || t.cancelRequested || t.releaseRequested || t.discard)
+              journalFail();
+            const frames = tx.objectStore(FRAMES),
+              cursor = frames.openCursor(
+                IDBKeyRange.bound(
+                  [uid, writeId, 'checkpoint', g.blob.generation],
+                  [uid, writeId, 'checkpoint', g.blob.generation, []],
+                  false,
+                  true,
+                ),
+              );
+            let n = g.next,
+              removed = 0;
+            cursor.onsuccess = () => {
+              try {
+                const c = cursor.result;
+                if (!c || removed === limit) {
+                  if (!c && n !== g.blob.chunkCount + 1) journalFail();
+                  const next = readCreationTicket(
+                    {
+                      ...t,
+                      stamp: crypto.randomUUID(),
+                      checkpoint: {
+                        ...t.checkpoint!,
+                        garbage: c ? { blob: g.blob, next: n } : null,
+                      },
+                    },
+                    uid,
+                    writeId,
+                  );
+                  tickets.put(next, [uid, writeId]);
+                  done(next);
+                  return;
+                }
+                const k = c.key;
+                if (
+                  !Array.isArray(k) ||
+                  k.length !== 5 ||
+                  k[0] !== uid ||
+                  k[1] !== writeId ||
+                  k[2] !== 'checkpoint' ||
+                  k[3] !== g.blob.generation ||
+                  k[4] !== n - 1 ||
+                  n > g.blob.chunkCount
+                )
+                  journalFail();
+                journalFrame(c.value);
+                frames.delete(k);
+                n++;
                 removed++;
                 c.continue();
               } catch {

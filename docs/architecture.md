@@ -2236,3 +2236,21 @@ confere ausência com deletes/contador/tombstone atômicos até 50. Conflito de
 adoção preserva dados e não concede fechamento. Bootstrap não produz;
 checkpoint write-ahead integrado e host precedem advance/apply pela UI.
 Lifecycle/consumidores/backup/rollout e validate de P1 continuam pendentes.
+
+## P1 M38c5p — armazenamento do checkpoint da criação
+
+[ADR 0129](decisions/0129-protected-lore-creation-checkpoints.md):
+preparação oferece checkpointJournal pelo mesmo handle Auth/posse. Ticket v3
+ganha campo opcional active/pending/garbage/outcome/receipt e frames próprios
+na seção checkpoint; formatos/allowlist da edição continuam preservados.
+
+Bundle privado contém checkpoint/wire e páginas até 50, conferidos pelo core
+puro com input original. AES-GCM/digest/prefixo e grants frescos nas duas pontas
+precedem swap atômico e confirmação. Ponte sem prosa liga resultado validado à
+base/pedido; não é grant ou prova nativa de adoção. Coleta verifica sucessora
+e geração, removendo até 50 com cursor/header atômicos. Purge fixa inventário.
+
+Recover não envia RPC de edição; staging parcial mantém active/dívida.
+Ainda compor executor advance/apply, cancel/adoção própria e host. Serviços/
+harness não equivalem a fluxo visual ativado. Lifecycle/consumidores/backup/
+rollout e validate de P1 continuam pendentes.

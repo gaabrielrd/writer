@@ -17,6 +17,12 @@ import {
   type LoreJournalBlob,
 } from './bookLoreJournalContracts';
 
+import {
+  readCreationCheckpointState,
+  creationCheckpointInventory,
+  type CreationCheckpointState,
+} from './bookLoreCreationCheckpointContracts';
+
 export interface CreationMetaWire {
   readonly method: string;
   readonly input: Readonly<Record<string, unknown>>;
@@ -43,10 +49,12 @@ export interface CreationTicket {
   revoke: { wire: LoreRecoveryControl; state: 'pending' | 'confirmed' } | null;
   jobsClosed: boolean;
   draft: LoreJournalBlob | null;
+  checkpoint?: CreationCheckpointState | null;
   discard: {
     phase: 'requested' | 'purging' | 'complete';
     generation: string | null;
     deleted: number;
+    checkpoints?: { generation: string; chunkCount: number }[];
   } | null;
 }
 export function creationRecoveryIntent(
@@ -90,30 +98,34 @@ export const creationKeyClosed = (t: CreationTicket) =>
     (t.keyState === 'none' && t.parent?.jobToken === null) ||
     (t.revoke?.state === 'confirmed' && t.keyView?.phase === 'revoked'));
 export function readCreationTicket(value: unknown, uid: string, writeId: string): CreationTicket {
-  const v = readObject(freezeLoreEditValue(value), [
-    'schemaVersion',
-    'kind',
-    'uid',
-    'writeId',
-    'bookId',
-    'loreId',
-    'creationId',
-    'intentHash',
-    'uploadCount',
-    'stamp',
-    'cancelRequested',
-    'releaseRequested',
-    'startState',
-    'parent',
-    'closing',
-    'keyState',
-    'identity',
-    'keyView',
-    'revoke',
-    'jobsClosed',
-    'draft',
-    'discard',
-  ]);
+  const v = readObject(
+    freezeLoreEditValue(value),
+    [
+      'schemaVersion',
+      'kind',
+      'uid',
+      'writeId',
+      'bookId',
+      'loreId',
+      'creationId',
+      'intentHash',
+      'uploadCount',
+      'stamp',
+      'cancelRequested',
+      'releaseRequested',
+      'startState',
+      'parent',
+      'closing',
+      'keyState',
+      'identity',
+      'keyView',
+      'revoke',
+      'jobsClosed',
+      'draft',
+      'discard',
+    ],
+    ['checkpoint'],
+  );
   const expected = bookLoreCreationIdentity(readId(uid), readId(writeId), readId(v.bookId));
   if (
     v.schemaVersion !== 1 ||
@@ -214,8 +226,28 @@ export function readCreationTicket(value: unknown, uid: string, writeId: string)
     journalBlob(v.draft);
     if (!identity) journalFail();
   }
+  if (v.checkpoint !== undefined && v.checkpoint !== null) {
+    if (!identity || !t.draft?.complete) journalFail();
+    readCreationCheckpointState(v.checkpoint, t);
+  }
   if (v.discard !== null) {
-    const d = readObject(v.discard, ['phase', 'generation', 'deleted']);
+    const d = readObject(v.discard, ['phase', 'generation', 'deleted'], ['checkpoints']);
+    if (d.checkpoints !== undefined) {
+      if (!Array.isArray(d.checkpoints) || d.checkpoints.length > 3) journalFail();
+      const generations = new Set<string>();
+      for (const raw of d.checkpoints) {
+        const b = readObject(raw, ['generation', 'chunkCount']);
+        const gen = readId(b.generation);
+        if (generations.has(gen) || readCount(b.chunkCount) < 1) journalFail();
+        generations.add(gen);
+      }
+    }
+    if (
+      d.phase === 'requested' &&
+      hash(d.checkpoints ?? []) !== hash(creationCheckpointInventory(t))
+    )
+      journalFail();
+    if (d.phase !== 'requested' && v.checkpoint) journalFail();
     if (
       !v.cancelRequested ||
       !v.releaseRequested ||

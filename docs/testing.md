@@ -2223,3 +2223,19 @@ incerta sem texto inventado. IndexedDB/WebCrypto/Web Locks reais; Functions
 sobre fixtures de banco/identidade, sem provar SDK/Auth/App Check/UI reais.
 O bootstrap não oferece advance/apply nem certifica checkpoint persistido.
 Validate integral continua no fechamento de P1, sem CI ou envio remoto.
+
+### P1 M38c5p — checkpoint protegido da criação
+
+[Plano 114](tasks/writer-v2/execucao/114-checkpoint-protegido-da-criacao-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-checkpoint-protegido-da-criacao-de-lore.md):
+250 Vitest distintos em rodadas, 29 novos. Integração 249/249 em 11 arquivos,
+seguida do novo teste de corrida e retakes somente dos afetados: 60/60 em dois
+arquivos e 29/29 de checkpoint. Sem somar retakes.
+
+Casos novos incluem write-ahead, outcome sem chave, swaps abortados, prefixo,
+controle paginado, coleta/purge atômicos, grants/actor/takeover, aplicação nativa
+completa e confirmação explícita de apply perdido. Quatro jornadas Chromium
+repetidas comprovam reinício de processo, ponte metadata sem replay e prefixo
+interrompido durante AES-GCM. IDB/WebCrypto/Web Locks reais; Functions sobre
+fixtures de banco/identidade. Sem SDK/Auth/App Check/UI reais ou executor ativado.
+Validate integral continua no fechamento de P1; somente commits locais.
