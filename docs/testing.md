@@ -2255,3 +2255,20 @@ host/takeover e intenção vinculada ao checkpoint original. Cinco jornadas
 Chromium reais da API passaram com reinício e resposta retida, incluindo
 descarte reaberto. Serviços Functions usam fixtures de banco/identidade;
 sem comprovar SDK/Auth/App Check/UI reais. Validate integral no fechamento de P1.
+
+### P1 M38c5r — interface da criação protegida
+
+[Plano 116](tasks/writer-v2/execucao/116-interface-da-criacao-protegida-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-interface-da-criacao-protegida-de-lore.md):
+77 Vitest distintos em rodadas (21 novos: 20 UI/lista e um sessão). Integração
+76/76 em quatro arquivos e, após caso de conflito recorrente, retake de três
+afetados positivo; outros 17 não executados nesse retake.
+Criar separado de preparar, dados literais/grandes, contexto/actor, callback,
+cancel/descartar com espera, foco, navegação/beforeunload e lista paginada.
+
+Três jornadas Chromium com UI/kit/executor reais passaram: ready sem cabeça,
+criar/descartar, append perdido após reinício e chave retida sem bloquear purge.
+Temas estáveis e mobile 390 px inspecionados, com contraste do textarea >12:1.
+Ports Auth/Functions/identidades são fixtures; não certificam SDK/Auth/App Check,
+leitor de tela, zoom físico 200% ou segundo dispositivo. Host ainda não foi
+montado no compêndio; validate integral permanece no fechamento de P1.

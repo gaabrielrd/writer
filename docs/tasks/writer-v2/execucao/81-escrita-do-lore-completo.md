@@ -602,3 +602,18 @@ aplicada, inclusive sem chave e com resposta retida.
 Host/criação visual e exclusão nativa do cliente precedem entrada no compêndio.
 Lifecycle, demais writers/consumidores/backup/rollout e validate de P1 continuam
 pendentes. P1/F2-09/V2/fases 3–5 e gates humanos/comerciais abertos.
+
+## Interface da criação protegida — M38c5r
+
+[Plano 116](116-interface-da-criacao-protegida-de-lore.md) e
+[ADR 0131](../../../decisions/0131-protected-lore-creation-ui.md):
+host e lista exportados usam executor Auth, dados literais e confirmação
+distinta de preparar/criar. Ticket confere conta/livro antes de retomar;
+listar não abre prosa. Cancel/discard não esperam chave/produtor e preservam
+ficha aplicada; navegação/foco e perfil/actor protegidos.
+
+77 Vitest distintos positivos em rodadas e três jornadas Chromium; veja a
+[evidência](../../../entregas/2026-10-24-writer-v2-interface-da-criacao-protegida-de-lore.md).
+Entrada no compêndio permanece pendente da exclusão nativa do cliente e
+composição coordenada. Lifecycle, demais writers/consumidores/backup/rollout
+e validate de P1 seguem necessários. P1/F2-09/V2/fases/gates restantes abertos.

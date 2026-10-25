@@ -2273,3 +2273,19 @@ Descarte completo reaberto reconfere ausência antes de copyDiscarded.
 API durável está pronta para composição visual, sem ativar compêndio. Host e
 exclusão nativa do cliente, lifecycle, demais writers/consumidores/backup/
 rollout e validate de P1 continuam pendentes.
+
+## P1 M38c5r — host da criação protegida
+
+[ADR 0131](decisions/0131-protected-lore-creation-ui.md):
+BookLoreCreationEditor/CreationRecoveries são exportados por lore, compondo a
+API durável Auth. Campos recebem somente data, sem contexto/token fictícios;
+criação começa privada, congela no preparar e exige criar explícito.
+CreationTicket confere UID/livro/writeId antes da retomada; draft só por leitura
+autorizada. Lista pagina metadata sem chave e não confunde cancel solicitado
+com cancel confirmado.
+
+Host protege actor/epoch/navegação, cancela/descarta sem esperar produtor/chave,
+restaura foco e notifica evento próprio uma vez. Reusa kit/CSS/temas existentes.
+Não monta a entrada no compêndio: exclusão nativa do cliente e composição
+coordenada seguem próximas. Lifecycle/consumidores/backup/rollout/validate
+de P1 e demais fases/gates continuam abertos.

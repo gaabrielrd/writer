@@ -21,7 +21,7 @@ export function BookLoreLiteralFields({
   disabled = false,
   entities = [],
 }: {
-  source: BookLoreEditSource;
+  source: Pick<BookLoreEditSource, 'data'>;
   changes: readonly BookLoreEditChange[];
   onChange: (value: BookLoreEditChange[]) => void;
   disabled?: boolean;

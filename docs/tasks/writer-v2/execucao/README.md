@@ -1284,3 +1284,18 @@ final de quatro casos afetados, cinco jornadas Chromium e tipos/build/smoke verd
 Próximo: host de criação, exclusão nativa do cliente e entrada coordenada no
 compêndio. Lifecycle/consumidores/backup/rollout/validate de P1 continuam
 necessários. P1/F2-09/V2/fases 3–5 e gates humanos/comerciais abertos; sem remoto.
+
+### P1 M38c5r — interface da criação protegida
+
+[Plano 116](116-interface-da-criacao-protegida-de-lore.md),
+[ADR 0131](../../../decisions/0131-protected-lore-creation-ui.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-interface-da-criacao-protegida-de-lore.md).
+Host/lista exportados, campos literais, preparar/revisar/criar explícito,
+retomada por conta/livro e cancel/discard independentes, com foco/navegação.
+Criação reaproveitada de cancel usa novo ID por ação própria.
+
+77 Vitest distintos positivos em rodadas (21 novos), três jornadas Chromium com reinício e espera,
+três temas/mobile inspecionados e tipos/build/smoke/styleguide verdes.
+Próximo: exclusão nativa do cliente e integração coordenada no compêndio.
+Lifecycle/consumidores/backup/rollout/validate de P1 continuam necessários.
+P1/F2-09/V2/fases 3–5/gates humanos/comerciais abertos; somente commits locais.

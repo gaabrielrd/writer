@@ -8,7 +8,7 @@ import { bookLoreJournalSession } from './bookLoreJournalSession';
 import { bookLoreRecoveryKeySession } from './bookLoreRecoveryKeyClient';
 import { createDurableBookLoreCreation } from './bookLoreCreationDurableOperation';
 import { prepareCreationRecovery } from './bookLoreCreationPreparation';
-import { listCreationTickets } from './bookLoreCreationTicketDb';
+import { listCreationTickets, getCreationTicket } from './bookLoreCreationTicketDb';
 import { readJournalPreparation, listJournalPreparations } from './bookLoreJournalDb';
 import { createPersistedBookLoreEditOperation } from './bookLorePersistedOperation';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
@@ -243,6 +243,12 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     guard();
     return prepareCreationRecovery(writeId, manualEnvironment(options.guard), undefined, options);
   }
+  async function creationTicket(writeId: string) {
+    guard();
+    const ticket = await getCreationTicket(uid, writeId);
+    guard();
+    return ticket;
+  }
   async function creationPreparations(after?: string, limit = 50) {
     guard();
     const result = await listCreationTickets(uid, after, limit);
@@ -271,6 +277,7 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     creationPreparation,
     resumeCreationPreparation,
     creationPreparations,
+    creationTicket,
     restore,
     cleanup,
     persistent,

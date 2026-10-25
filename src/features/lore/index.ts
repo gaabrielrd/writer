@@ -25,3 +25,8 @@ export { BookLoreManualEditor } from './components/BookLoreManualEditor';
 export type { BookLoreManualEditorProps } from './components/BookLoreManualEditor';
 
 export { BookLoreRecoveries } from './components/BookLoreRecoveries';
+
+export { BookLoreCreationEditor } from './components/BookLoreCreationEditor';
+export type { BookLoreCreationEditorProps } from './components/BookLoreCreationEditor';
+export { BookLoreCreationRecoveries } from './components/BookLoreCreationRecoveries';
+export type { BookLoreCreationRecoveriesProps } from './components/BookLoreCreationRecoveries';

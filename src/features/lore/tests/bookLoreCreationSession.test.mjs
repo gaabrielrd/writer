@@ -6,6 +6,7 @@ const s = vi.hoisted(() => ({
   prepare: vi.fn(),
   durable: vi.fn(),
   list: vi.fn(),
+  ticket: vi.fn(),
   call: vi.fn(),
   callable: vi.fn(),
   key: vi.fn(),
@@ -21,7 +22,10 @@ vi.mock('../services/bookLoreCreationDurableOperation.ts', () => ({
 vi.mock('../services/bookLoreCreationPreparation.ts', () => ({
   prepareCreationRecovery: s.prepare,
 }));
-vi.mock('../services/bookLoreCreationTicketDb.ts', () => ({ listCreationTickets: s.list }));
+vi.mock('../services/bookLoreCreationTicketDb.ts', () => ({
+  listCreationTickets: s.list,
+  getCreationTicket: s.ticket,
+}));
 vi.mock('../services/bookLoreRecoveryKeyClient.ts', () => ({
   bookLoreRecoveryKeySession: (identity, current) => ({
     async getKey() {
@@ -163,4 +167,16 @@ it('captures the host guard for durable creation and resume without relying on t
   current = false;
   expect(() => created.environment.guard()).toThrow('host changed');
   expect(() => resumed.environment.guard()).toThrow('host changed');
+});
+
+it('reads a single creation ticket only under the captured account and rejects a late actor switch', async () => {
+  const session = bookLoreEditSession();
+  s.ticket.mockResolvedValue({ bookId: 'book', writeId: 'one' });
+  expect(await session.creationTicket('one')).toEqual({ bookId: 'book', writeId: 'one' });
+  expect(s.ticket).toHaveBeenCalledExactlyOnceWith('author', 'one');
+  s.ticket.mockImplementationOnce(async () => {
+    s.auth.currentUser = { uid: 'author' };
+    return { bookId: 'other' };
+  });
+  await expect(session.creationTicket('two')).rejects.toThrow('contexto mudou');
 });
