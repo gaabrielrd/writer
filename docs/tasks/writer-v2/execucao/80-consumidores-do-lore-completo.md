@@ -287,3 +287,16 @@ distintos, cinco Chromium e build/smoke positivos.
 
 A/B/C do plano 131 integrados; D (leitor/remap/materialização/roundtrip grandes)
 é o próximo requisito. Etapa 5/P1/fases/gates ainda abertos, sem rollout.
+
+## Leitura da etapa 5 — M38c12 D1
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): leitor interno de lore C2
+por ranges/campos de 64 KiB, sem catálogo de spans nem ficha/provas integrais.
+Framing canônico permite seek direto; ponteiro/recibo/origem nativos são
+reconferidos no verify da unidade. Metadata/ausência não certificam corpo.
+69 Node, 13 Vitest, três SDK distintos e três Chromium dirigidos positivos;
+veja a [evidência D1](../../../entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).
+
+D2 remap/medição da saída e D3 materialização/rollback/roundtrip ainda obrigatórios.
+Etapa 5 inteira, inventários/writers/exclusão/legacy/drain/rollout/validate de P1
+e fases/gates permanecem abertos. Sem novo namespace, CI ou operação remota.

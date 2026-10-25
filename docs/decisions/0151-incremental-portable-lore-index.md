@@ -1,6 +1,6 @@
 # ADR 0151 — Índice incremental do lore portátil
 
-- Status: A/B/C implementados/validados localmente; D e fechamento de P1 pendentes.
+- Status: A/B/C e D1 implementados/validados localmente; D2/D3 e fechamento de P1 pendentes.
 - Data: 2026-10-25.
 - Plano: [131](../tasks/writer-v2/execucao/131-backup-logico-indexado-do-lore.md).
 
@@ -8,7 +8,8 @@
 
 Na descoberta, a captura privada serializava a cabeça física de lore. O leitor
 e o validador servidor recompunham JSON de até 8 MiB, com até 128 spans por item.
-A/B/C agora integram captura/validação; a leitura grande/materialização segue em D.
+A/B/C integram captura/validação; D1 acrescenta leitura grande por ranges.
+Remap/materialização/roundtrip seguem em D2/D3.
 Esse modelo não transporta todas as fontes lógicas atuais nem o JSON que cresceu
 após remap. A leitura por faixas depende de índice sem prosa e de validação
 incremental; não basta aumentar o limite ou montar o item a cada página.
@@ -148,3 +149,24 @@ desfazer o commit. Antes de close, abort preserva o arquivo anterior.
 27 Node, 75 Vitest distintos, três SDK distintos, cinco Chromium reais e build/
 smoke positivos (2990 módulos). Arquivo real grande chega à validação servidor.
 A/B/C concluídos tecnicamente; D/roundtrip/P1/fases/gates continuam obrigatórios.
+
+## Leitura D1 — acesso direto e provas por unidade
+
+O framing canônico permite calcular a posição de uma parte de 64 KiB pelo
+comprimento do metadata e soma dos dígitos de part. O codec compartilha a
+validação do cursor e lê somente digest anterior/prefixo/corpo/trailer da parte.
+O cursor deve vir de arquivo/item validados e autenticados; a aritmética não
+substitui hash integral, selo, domínio ou autorização. Não persistir spans extras.
+
+OpenIndexedLore aceita o ponteiro original C2 imutável e retorna metadata
+congelada, sourceToken privado e readRange/readField de até 64 KiB. Ausência é
+present:false sem bytes. Cada unidade tem observações novas de chunks/provas;
+verify(tx) confere origem/estado/recibo/ponteiro e observações antes da escrita.
+Metadata tem verify separado, sem garantir corpo disponível. A API integral
+anterior conserva o cap; legado permanece um caminho explícito, sem fallback
+quando um ponteiro indexado presente é inválido.
+
+Sem endpoint/Rule/namespace/recurso novo. D2 deve remapear por unidades e medir
+a saída; D3 materializar sob inventário/retomada/rollback e provar roundtrip.
+69 Node, 13 Vitest, três SDK distintos e três Chromium positivos.
+[Evidência D1](../entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).

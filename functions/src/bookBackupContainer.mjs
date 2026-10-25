@@ -196,6 +196,34 @@ export async function* encodeBookBackup(records, { signal } = {}) {
   };
 }
 
+function cursorValues(cursor, size) {
+  const keys = ['schemaVersion', 'size', 'offset', 'records', 'payloadBytes', 'previous', 'done'];
+  if (
+    !cursor ||
+    typeof cursor !== 'object' ||
+    Array.isArray(cursor) ||
+    Object.keys(cursor).length !== keys.length ||
+    keys.some((k) => !Object.hasOwn(cursor, k)) ||
+    cursor.schemaVersion !== 1 ||
+    cursor.size !== size ||
+    !Number.isSafeInteger(cursor.offset) ||
+    cursor.offset < HEADER_BYTES ||
+    cursor.offset > size ||
+    !uint32(cursor.records) ||
+    !Number.isSafeInteger(cursor.payloadBytes) ||
+    cursor.payloadBytes < 0 ||
+    typeof cursor.previous !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(cursor.previous) ||
+    cursor.done !== false
+  )
+    fail('invalid-format', 'Invalid archive cursor.');
+  return {
+    offset: cursor.offset,
+    count: cursor.records,
+    payloadBytes: cursor.payloadBytes,
+    previous: Uint8Array.from(cursor.previous.match(/../g), (v) => parseInt(v, 16)),
+  };
+}
 /** Host-trusted cursor; it is not a file signature or authorization proof. */
 export async function readBookBackupFrame(source, cursor = null, { signal } = {}) {
   signal?.throwIfAborted();
@@ -213,30 +241,11 @@ export async function readBookBackupFrame(source, cursor = null, { signal } = {}
     payloadBytes = 0,
     previous;
   if (cursor !== null) {
-    const keys = ['schemaVersion', 'size', 'offset', 'records', 'payloadBytes', 'previous', 'done'];
-    if (
-      !cursor ||
-      typeof cursor !== 'object' ||
-      Array.isArray(cursor) ||
-      Object.keys(cursor).length !== keys.length ||
-      keys.some((k) => !Object.hasOwn(cursor, k)) ||
-      cursor.schemaVersion !== 1 ||
-      cursor.size !== size ||
-      !Number.isSafeInteger(cursor.offset) ||
-      cursor.offset < HEADER_BYTES ||
-      cursor.offset > size ||
-      !uint32(cursor.records) ||
-      !Number.isSafeInteger(cursor.payloadBytes) ||
-      cursor.payloadBytes < 0 ||
-      typeof cursor.previous !== 'string' ||
-      !/^[a-f0-9]{64}$/.test(cursor.previous) ||
-      cursor.done !== false
-    )
-      fail('invalid-format', 'Invalid archive cursor.');
-    offset = cursor.offset;
-    count = cursor.records;
-    payloadBytes = cursor.payloadBytes;
-    previous = Uint8Array.from(cursor.previous.match(/../g), (v) => parseInt(v, 16));
+    const saved = cursorValues(cursor, size);
+    offset = saved.offset;
+    count = saved.count;
+    payloadBytes = saved.payloadBytes;
+    previous = saved.previous;
   }
   async function take(length) {
     signal?.throwIfAborted();
@@ -325,4 +334,83 @@ export async function* decodeBookBackup(source, options = {}) {
     if (step.seal) return step.seal;
     yield step.record;
   }
+}
+
+/** Fixed 64 KiB item layout. Cursor/index must come from a validated, authenticated host. */
+export async function readBookBackupIndexedPart(source, start, item, index, { signal } = {}) {
+  signal?.throwIfAborted();
+  if (
+    !source ||
+    !Number.isSafeInteger(source.size) ||
+    source.size < HEADER_BYTES ||
+    typeof source.read !== 'function'
+  )
+    fail('invalid-format', 'Invalid archive source.');
+  const size = source.size,
+    anchor = cursorValues(start, size),
+    record = recordMetadata(item?.record),
+    byteLength = item?.byteLength,
+    chunkCount = item?.chunkCount;
+  if (
+    record.part !== 0 ||
+    !Number.isSafeInteger(byteLength) ||
+    byteLength < 1 ||
+    !uint32(chunkCount) ||
+    chunkCount !== Math.ceil(byteLength / 65536) ||
+    !uint32(index) ||
+    index >= chunkCount ||
+    chunkCount > BOOK_BACKUP_LIMITS.maxRecords - anchor.count
+  )
+    fail('invalid-record', 'Invalid indexed item.');
+  const metadataBytes = encoder.encode(JSON.stringify(record)).length;
+  let digits = 0;
+  for (let lower = 0, upper = 10, width = 1; lower < index; lower = upper, upper *= 10, width++)
+    digits = safeSum(digits, (Math.min(index, upper) - lower) * width);
+  const offset = safeSum(
+      anchor.offset,
+      index * (PREFIX_BYTES + DIGEST_BYTES + metadataBytes - 1 + 65536) + digits,
+    ),
+    payloadBytes = safeSum(anchor.payloadBytes, index * 65536),
+    payloadLength = Math.min(65536, byteLength - index * 65536);
+  if (
+    offset +
+      PREFIX_BYTES +
+      DIGEST_BYTES +
+      metadataBytes +
+      String(index).length -
+      1 +
+      payloadLength >
+    size
+  )
+    fail('incomplete-archive', 'Indexed item exceeds archive.');
+  let previous = hex(anchor.previous);
+  if (index > 0) {
+    const bytes = await source.read(offset - DIGEST_BYTES, DIGEST_BYTES);
+    signal?.throwIfAborted();
+    if (source.size !== size || !isBytes(bytes) || bytes.length !== DIGEST_BYTES)
+      fail('incomplete-archive', 'Archive read did not return the requested bytes.');
+    previous = hex(bytes);
+  }
+  const step = await readBookBackupFrame(
+    source,
+    {
+      schemaVersion: 1,
+      size,
+      offset,
+      records: anchor.count + index,
+      payloadBytes,
+      previous,
+      done: false,
+    },
+    { signal },
+  );
+  if (
+    !step.record ||
+    step.record.kind !== record.kind ||
+    step.record.id !== record.id ||
+    step.record.part !== index ||
+    step.record.payload.length !== payloadLength
+  )
+    fail('invalid-record', 'Indexed part does not match its item.');
+  return { bytes: step.record.payload, cursor: step.cursor };
 }

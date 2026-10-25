@@ -459,3 +459,10 @@ concluído estiverem satisfeitos. A lista fica em
 - Compartilhe port/guard de ator até a resposta após close; abort antes do commit
   preserva o arquivo anterior, mas não prometa desfazer close já confirmado.
 - Recuse payloadStorage no leitor físico de recursos; erro C1 não autoriza fallback.
+
+- Abra lore indexado da restauração somente pelo ponteiro original imutável C2;
+  cursor/ranges/sourceToken não são grants nem prova de disponibilidade de corpos.
+- Consuma ranges de até 64 KiB com observações próprias por unidade e reconfira
+  verify(tx) antes da escrita; não acumule provas ou monte a ficha inteira (ADR 0151).
+- Preserve ausência explícita dos campos e o limite do leitor integral pequeno;
+  D1 não substitui remap/materialização/roundtrip grandes de D2/D3.

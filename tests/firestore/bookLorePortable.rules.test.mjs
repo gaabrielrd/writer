@@ -20,9 +20,17 @@ import {
   bookArchiveReadApi,
   bookArchiveCapturePorts,
 } from '../../functions/test/helpers/bookArchiveCaptureFixture.mjs';
-import { uploadSealedArchiveRestore } from '../../functions/test/helpers/bookRestoreContentFixture.mjs';
+import {
+  uploadSealedArchiveRestore,
+  uploadArchiveRestore,
+} from '../../functions/test/helpers/bookRestoreContentFixture.mjs';
+import {
+  indexedLoreData,
+  indexedLoreArchive,
+} from '../../functions/test/helpers/bookLoreContentFixture.mjs';
 import { finishLegacyRestore } from '../../functions/test/helpers/bookLegacyRestoreFixture.mjs';
 import { createBookRestoreUploadService } from '../../functions/src/bookRestoreUpload.mjs';
+import { chunkId } from '../../functions/src/bookRestoreUploadContracts.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore, FieldValue } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-portable-lore',
@@ -246,6 +254,31 @@ test('SDK archive capture: large C1 source reaches sealed bytes and server conte
   );
   const last = f.requests.filter((r) => r.method === 'getBookLoreRead').at(-1);
   assert.equal(last.input.tokenVersion, 1);
+
+  const reader = await factory().openVerifiedBookRestoreContent('author', {
+      restoreId: id,
+      jobToken: done.jobToken,
+    }),
+    pointer = (
+      await admin
+        .collection('users/author/bookRestores/' + id + '/validationItems')
+        .where('record.kind', '==', 'book-lore')
+        .limit(1)
+        .get()
+    ).docs[0],
+    indexed = await reader.openIndexedLore(pointer.data().index),
+    expected = Buffer.from(JSON.stringify(f.data.details));
+  assert.ok(indexed.metadata.index.ranges.details.byteLength > 8 * 1024 * 1024);
+  await assert.rejects(() => reader.readItem(pointer.data().index));
+  for (const offset of [expected.length - 65536, 65530, 0]) {
+    const unit = await indexed.readField('details', { offset });
+    assert.deepEqual(Buffer.from(unit.bytes), expected.subarray(offset, offset + 65536));
+    await admin.runTransaction(async (tx) => {
+      await unit.verify(tx);
+      tx.create(admin.doc('sdkIndexedRead/result-' + offset), { byteLength: unit.bytes.length });
+    });
+  }
+  assert.equal((await admin.doc('books/' + done.bookId).get()).exists, false);
 });
 test('SDK archive capture: a changed root clock before the final seal aborts the file without a successful close', async () => {
   const f = await fixture('v2'),
@@ -328,4 +361,117 @@ test('SDK archive seal: same-UID actor changes during seal and close cannot retu
   );
   assert.equal(closed, true);
   assert.equal(aborted, true);
+});
+
+async function indexedReady(id) {
+  const factory = () => createBookRestoreUploadService({ db: admin }),
+    data = indexedLoreData({ count: 3 });
+  delete data.summary;
+  const { progress } = await uploadArchiveRestore(
+      factory(),
+      'author',
+      id,
+      indexedLoreArchive(data),
+    ),
+    done = await finishLegacyRestore(factory, 'author', id, progress),
+    reader = await factory().openVerifiedBookRestoreContent('author', {
+      restoreId: id,
+      jobToken: done.jobToken,
+    }),
+    pointer = (
+      await admin
+        .collection('users/author/bookRestores/' + id + '/validationItems')
+        .where('record.kind', '==', 'book-lore')
+        .limit(1)
+        .get()
+    ).docs[0];
+  return {
+    factory,
+    done,
+    reader,
+    pointer,
+    lore: await reader.openIndexedLore(pointer.data().index),
+  };
+}
+test('SDK indexed restore: native ABA blocks consumption of a previously authenticated range', async () => {
+  for (const mode of ['pointer', 'receipt', 'birth', 'chunk', 'proof', 'state', 'job']) {
+    const id = 'sdk-indexed-aba-' + mode,
+      r = await indexedReady(id),
+      root = 'users/author/bookRestores/' + id,
+      job = (await admin.doc(root).get()).data(),
+      unit = await r.lore.readField('details'),
+      path = {
+        pointer: r.pointer.ref.path,
+        receipt: 'users/author/bookRestoreOperations/' + r.pointer.data().createdByOperationId,
+        birth: 'users/author/bookRestoreOperations/' + job.validationBirthOperationId,
+        chunk: root + '/chunks/' + chunkId(0),
+        proof: root + '/integrityProofs/' + chunkId(0),
+        state: root + '/validationState/current',
+        job: root,
+      }[mode],
+      ref = admin.doc(path),
+      original = (await ref.get()).data();
+    assert.ok(original, mode + ': original document must exist');
+    await ref.delete();
+    await ref.create(original);
+    const result = admin.doc('sdkIndexedRead/denied-' + mode);
+    await assert.rejects(
+      () =>
+        admin.runTransaction(async (tx) => {
+          await unit.verify(tx);
+          tx.create(result, { accepted: true });
+        }),
+      mode,
+    );
+    assert.equal((await result.get()).exists, false);
+    if (mode !== 'proof') await assert.rejects(() => r.lore.readField('details'), mode);
+    assert.equal((await admin.doc('books/' + r.done.bookId).get()).exists, false);
+  }
+});
+test('SDK indexed restore: account, absence and range checks remain valid until consumer commit and cancellation revokes them', async () => {
+  const id = 'sdk-indexed-cancel-0001',
+    r = await indexedReady(id),
+    request = { restoreId: id, jobToken: r.done.jobToken },
+    missing = await r.lore.readField('summary'),
+    unit = await r.lore.readRange(1, 10);
+  assert.equal(missing.present, false);
+  assert.equal(Object.hasOwn(missing, 'bytes'), false);
+  for (const [actor, input] of [
+    ['other', request],
+    [null, request],
+    ['author', { ...request, jobToken: 'f'.repeat(64) }],
+  ])
+    await assert.rejects(() => r.factory().openVerifiedBookRestoreContent(actor, input));
+  await assert.rejects(() => r.lore.readRange(0, 65537));
+  await assert.rejects(() => r.lore.readField('summary', { offset: 1 }));
+  const root = 'users/author/bookRestores/' + id;
+  for (const path of [
+    r.pointer.ref.path,
+    root + '/chunks/' + chunkId(0),
+    root + '/integrityProofs/' + chunkId(0),
+  ]) {
+    assert.equal((await admin.doc(path).get()).exists, true, path);
+    for (const actor of [
+      env.authenticatedContext('author'),
+      env.authenticatedContext('other'),
+      env.unauthenticatedContext(),
+    ])
+      await assertFails(getDoc(doc(actor.firestore(), path)));
+  }
+  await admin.runTransaction(missing.verify);
+  await r.factory().cancelBookRestore('author', {
+    ...request,
+    operationId: id + '-cancel',
+    expectedCheckpoint: r.done.checkpoint,
+  });
+  for (const proof of [r.lore, unit, missing])
+    await assert.rejects(() =>
+      admin.runTransaction(async (tx) => {
+        await proof.verify(tx);
+        tx.create(admin.doc('sdkIndexedRead/cancelled'), { accepted: true });
+      }),
+    );
+  await assert.rejects(() => r.lore.readRange(0, 10));
+  assert.equal((await admin.doc('sdkIndexedRead/cancelled').get()).exists, false);
+  assert.equal((await admin.doc('books/' + r.done.bookId).get()).exists, false);
 });

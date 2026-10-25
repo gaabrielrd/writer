@@ -2720,3 +2720,20 @@ ator/abort/pressão preservando arquivo anterior; selo tardio; close já confirm
 com erro sem sucesso e sem promessa de rollback. Build/typecheck/smoke 2990 módulos,
 lint/sintaxe/checks locais positivos. D/roundtrip/P1/validate/gates continuam.
 [Evidência C3](entregas/2026-10-25-writer-v2-captura-logica-e-selo-do-backup.md).
+
+## P1 M38c12 D1 — ranges autenticados do lore
+
+69 Node distintos positivos: codec/acesso direto 36, reader novo 18, reader
+compatível 15. Fronteiras até parte 10000, arquivo real, Unicode/escapes, >8 MiB
+por campo/descrição, ausências, I/O e provas por unidade, cancel/ABA cobertos.
+13/13 Vitest no bridge: base/overrides → arquivo → validação → hash integral
+do campo em mais de 128 unidades, sem criar raiz. Fixtures não provam retries SDK.
+Três SDK distintos positivos: caso grande inicial, depois dois casos afetados
+reexecutados 2/2 após corrigir o ID do fixture para chunkId e exigir existência.
+ABA de sete documentos, conta, ausência, transação, cancel e Rules sobre alvos
+existentes cobertos. Rodada inicial 2/3; retake 2/2, zero skipped.
+
+Três Chromium reais: OPFS 8470397 bytes/130 partes, acesso direto/recarga e
+corrupção/abort. Declaração TS, lint e sintaxe dirigidos positivos.
+[Evidência D1](entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).
+D2/D3/roundtrip/P1/validate/gates continuam; sem CI ou produção.

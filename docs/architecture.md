@@ -2721,3 +2721,22 @@ troca de ator nesse ponto não retorna sucesso. A UI/rollout ainda não são ent
 build/smoke 2990 módulos. Arquivo grande real captura → selo → validação servidor.
 [Evidência C3](entregas/2026-10-25-writer-v2-captura-logica-e-selo-do-backup.md).
 Próximo D: leitor/remap/materialização grandes e roundtrip, mantendo P1/gates abertos.
+
+## P1 M38c12 D1 — leitor indexado da restauração
+
+BookBackupContainer compartilha a validação do cursor e calcula a posição da
+parte fixa pelo metadata canônico/dígitos de part, sem catálogo ou varredura
+anterior. Digest precedente vem do mesmo arquivo autenticado; decoder confere
+frame. Isso não concede integridade global/autorização por cursor calculado.
+
+BookRestoreContentRead abre somente ponteiro C2 original/imutável e oferece
+metadata congelada e ranges/campos de até 64 KiB. BookRestoreLoreRead confere
+shape/limites e acessa no máximo duas partes por range. Cada unidade tem seu
+conjunto limitado de observações nativas; verify(tx) reconfere job/estado/recibo/
+ponteiro/chunks antes da escrita consumidora. Ausência não vira string vazia;
+metadata/sourceToken não certificam disponibilidade de corpos. Sem novo recurso,
+Rule ou endpoint. API integral pequena/legado preservados com seus limites.
+
+69 Node, 13 Vitest, três SDK distintos e três Chromium positivos.
+D2 remap/medição e D3 materialização/roundtrip permanecem obrigatórios.
+[Evidência D1](entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).

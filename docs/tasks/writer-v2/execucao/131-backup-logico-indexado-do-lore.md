@@ -337,3 +337,53 @@ A/B/C implementados/validados tecnicamente. D permanece obrigatório: consumir o
 ponteiro grande por spans autenticados, remapear IDs/relações, materializar partes
 e provar roundtrip, incluindo crescimento após remap. Plano 131/P1/F2-09/V2,
 inventários/legacy/drain/rollout/validate e demais fases/gates continuam abertos.
+
+## Contrato D antes da implementação — leitura, remap e materialização
+
+Executar em sequência: D1 leitor interno verificado por partes/ranges; D2 remap
+incremental de alvos/valores e medição da saída; D3 materialização nativa limitada,
+inventário/rollback/retomada e roundtrip real. Nenhum deles isolado conclui D.
+
+D1 reutiliza o framing canônico de partes JSON de 64 KiB. O tamanho do metadata
+varia somente pelos dígitos de part; posição de uma parte pode ser calculada
+pelo tamanho canônico e soma dos dígitos, sem varrer as anteriores nem persistir
+todos os spans. A cadeia anterior é lida do mesmo arquivo autenticado e o frame
+alvo passa pelo decoder existente, conferindo sequência/identidade/tamanho/hash.
+Cursor calculado é metadata do host, não prova de arquivo nem autorização.
+
+Extrair a validação de cursor compartilhada em BookBackupContainer e acrescentar
+leitura direta de parte fixa, sem alterar formato/limites/erros do leitor atual.
+Testar posições em fronteiras de dígitos, Unicode, último bloco, cursor/tamanho/
+identidade/hash inválidos, abort e custo de I/O constante por parte.
+
+No servidor, openIndexedLore aceita somente ponteiro lore C2 original,
+imutável e vinculado ao recibo da validação. Retorna metadata/identidade da
+origem e readRange/readField por até 64 KiB. Intervalos dentro do item/dado/campo
+são conferidos; ausência não vira texto vazio nem fallback. Ponteiro nativo
+inválido não usa leitor integral. Itens antigos sem esse ponteiro mantêm a API
+compatível; integração D2/D3 decide esse caminho explicitamente.
+
+Cada unidade abre observações próprias de source/provas e oferece verify(tx),
+que revalida job/checkpoint/estado/recibo/ponteiro e chunks antes da escrita do
+consumidor. Não acumular provas da ficha inteira. Metadata de ausência também
+tem verify. Nenhuma callable, Rule, namespace ou grant novo.
+
+Arquivos D1: BookBackupContainer e declaração; novo BookRestoreLoreRead;
+BookRestoreContentRead e testes puros/serviço/SDK; docs/ADR/AGENTS/evidência.
+Aceites: arquivo grande real captura → validação → leitura por ranges com texto
+literal, offsets exatos e custo limitado; conta/estado/cancel/recriação de
+ponteiro/prova/chunk/recibo e mudança antes do commit recusados; metadata não
+certifica byte disponível. Manter o orçamento da API integral pequena sem usá-la
+como implementação grande. D2/D3 e demais P1/fases/gates continuam obrigatórios.
+
+## Estado D1 — 2026-10-25
+
+Leitor por partes/ranges/campos implementado com ponteiro C2 original e provas
+nativas limitadas por unidade. Ausências, Unicode/escapes e metadata sem corpo
+preservados; API integral pequena não foi ampliada. Codec tem seek direto em
+fronteiras de dígitos sem spans persistidos ou varredura das partes anteriores.
+69 Node, 13 Vitest, três SDK distintos e três Chromium positivos; veja a
+[evidência D1](../../../entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).
+
+D permanece aberto para D2 (remap/medição) e D3 (materialização/retomada/rollback/
+roundtrip), inclusive saída maior após remap. P1/fases/gates e validate continuam.

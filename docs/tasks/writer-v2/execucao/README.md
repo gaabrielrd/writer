@@ -1633,3 +1633,15 @@ positivos. [Evidência C3](../../../entregas/2026-10-25-writer-v2-captura-logica
 Próximo D: leitor/remap/materialização grandes, incluindo crescimento após remap,
 e roundtrip. Plano 131/P1/F2-09/V2, inventários/legacy/drain/rollout/validate e
 demais fases/gates continuam abertos. Sem CI ou operação de produção.
+
+### P1 M38c12 D1 — leitura autenticada por ranges
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): acesso direto às partes
+validadas e leitor interno de campos/ranges em até 64 KiB com provas limitadas
+por unidade. Ausências e API integral pequena preservadas. Arquivo capturado
+de base/overrides confere hash completo do campo grande após validação servidor.
+69 Node, 13 Vitest, três SDK distintos e três Chromium positivos; veja a
+[evidência D1](../../../entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).
+
+D2/D3 ainda devem remapear/medir/materializar e provar roundtrip. Plano 131/P1/
+F2-09/V2, inventários/legacy/drain/rollout/validate e fases/gates continuam abertos.

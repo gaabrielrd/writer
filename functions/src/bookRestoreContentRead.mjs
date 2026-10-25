@@ -1,7 +1,13 @@
 import { digest } from './sceneContracts.mjs';
 import { validateBookRestoreRawPosition } from './bookRestoreHistoryContracts.mjs';
 import { createBookRestoreRemapper, BOOK_RESTORE_RELATION_ITEMS } from './bookRestoreRemap.mjs';
-import { inconsistent, integer } from './bookRestoreUploadContracts.mjs';
+import { inconsistent, integer, chunkId } from './bookRestoreUploadContracts.mjs';
+import { BOOK_PORTABLE_LORE_FIELDS } from './bookPortableLoreIndex.mjs';
+import {
+  bookRestoreIndexedLore,
+  readBookRestoreLoreRange,
+  freezeBookRestoreLoreMetadata,
+} from './bookRestoreLoreRead.mjs';
 import {
   createVerifiedBookRestoreSource,
   assertRestoreObservation,
@@ -165,6 +171,97 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
     itemCount: initial.state.items,
     bookId: initial.loaded.job.bookId,
     sourceBookId: initial.loaded.job.validationSummary.sourceBookId,
+    async openIndexedLore(index) {
+      integer(index);
+      if (index >= initial.state.items) inconsistent();
+      const store = createBookRestoreValidationStore(db, initial.loaded, null),
+        pointer = await store.getItem(index);
+      async function verifyMetadata(tx) {
+        await pinned(tx);
+        await store.verify(tx);
+      }
+      await db.runTransaction(verifyMetadata);
+      if (pointer.record?.kind !== 'book-lore' || !Object.hasOwn(pointer, 'lore')) return null;
+      if (initial.state.legacy) inconsistent();
+      const descriptor = bookRestoreIndexedLore(pointer),
+        observedPointer = store.reads.get(
+          initial.loaded.ref.path + '/validationItems/' + chunkId(index),
+        );
+      if (!observedPointer?.token) inconsistent();
+      const sourceToken = digest({
+        domain: 'writer-indexed-lore-restore-source',
+        uid,
+        restoreId: id,
+        jobToken: initial.loaded.view.jobToken,
+        sourceSha256: initial.loaded.job.source.sha256,
+        index,
+        pointer: observedPointer.token,
+        validation: initial.snapshotToken,
+        birth: initial.birthToken,
+        contentHash: descriptor.contentHash,
+      });
+      async function readRange(offset, length) {
+        integer(offset);
+        integer(length);
+        if (
+          length > 65536 ||
+          !Number.isSafeInteger(offset + length) ||
+          offset + length > descriptor.byteLength
+        )
+          inconsistent();
+        const observed = observationSet(),
+          source = await bytesSource(observed),
+          bytes = await readBookRestoreLoreRange(source, descriptor, offset, length);
+        async function verify(tx) {
+          const current = await pinned(tx);
+          await store.verify(tx);
+          await observed.verify(tx, current);
+        }
+        await db.runTransaction(verify);
+        return {
+          offset,
+          nextOffset: offset + bytes.length,
+          done: offset + bytes.length === descriptor.byteLength,
+          bytes,
+          verify,
+        };
+      }
+      async function readField(field, { offset = 0, limit = 65536 } = {}) {
+        if (!BOOK_PORTABLE_LORE_FIELDS.includes(field)) inconsistent();
+        integer(offset);
+        integer(limit, 1);
+        if (limit > 65536) inconsistent();
+        const span = descriptor.metadata.index.ranges[field];
+        if (!span) {
+          if (offset !== 0) inconsistent();
+          await db.runTransaction(verifyMetadata);
+          return { field, present: false, verify: verifyMetadata };
+        }
+        if (offset > span.byteLength) inconsistent();
+        const unit = await readRange(
+          descriptor.metadata.dataOffset + span.offset + offset,
+          Math.min(limit, span.byteLength - offset),
+        );
+        return {
+          ...unit,
+          field,
+          present: true,
+          offset,
+          nextOffset: offset + unit.bytes.length,
+          done: offset + unit.bytes.length === span.byteLength,
+        };
+      }
+      return Object.freeze({
+        schemaVersion: 1,
+        sourceToken,
+        record: freezeBookRestoreLoreMetadata(descriptor.record),
+        metadata: freezeBookRestoreLoreMetadata(descriptor.metadata),
+        contentHash: descriptor.contentHash,
+        verify: verifyMetadata,
+        readRange,
+        readField,
+      });
+    },
     async readMappedItem(index) {
       const item = await api.readItem(index),
         mapped = mapper.mapJSON(item.record, item.value);

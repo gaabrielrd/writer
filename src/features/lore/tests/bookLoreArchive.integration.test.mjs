@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { it, expect, vi } from 'vitest';
+import { createHash } from 'node:crypto';
 import { createBookLoreReadClient } from '../services/bookLoreReadClient';
 import {
   saveBookBackup,
@@ -259,8 +260,8 @@ it('sink pressure holds C1 reads and abort during that write cannot produce a se
   expect(f.sink.abort).toHaveBeenCalledOnce();
 });
 
-it('the exact captured large archive passes server upload/integrity/content validation without activating a restored book', async () => {
-  const f = await fixture('v2', { large: true }),
+it('the exact captured large archive validates and reads indexed lore without activating a restored book', async () => {
+  const f = await fixture('v2', { large: true, base: true }),
     before = structuredClone(f.records.get('books/book/lore/' + f.id));
   await saveBookBackup('book', f.options, f.sink);
   const factory = () => createBookRestoreUploadService({ db: f.db, now: () => 1000 }),
@@ -272,6 +273,36 @@ it('the exact captured large archive passes server upload/integrity/content vali
   expect(done.validation.summary.totals.resources.lore).toBe(1);
   expect(f.records.has('books/' + done.bookId)).toBe(false);
   expect(f.records.get('books/book/lore/' + f.id)).toEqual(before);
+
+  const reader = await factory().openVerifiedBookRestoreContent('author', {
+      restoreId: id,
+      jobToken: done.jobToken,
+    }),
+    pointer = [...f.records.values()].find(
+      (v) => v.record?.kind === 'book-lore' && v.restoreId === id,
+    ),
+    lore = await reader.openIndexedLore(pointer.index);
+  expect(lore.metadata.id).toBe(f.id);
+  await expect(reader.readItem(pointer.index)).rejects.toThrow();
+  const expected = createHash('sha256').update(JSON.stringify(f.expected.details)).digest('hex'),
+    actual = createHash('sha256');
+  let offset = 0,
+    units = 0;
+  for (;;) {
+    const unit = await lore.readField('details', { offset });
+    expect(unit.bytes.length).toBeLessThanOrEqual(65536);
+    actual.update(unit.bytes);
+    await f.db.runTransaction(unit.verify);
+    offset = unit.nextOffset;
+    units++;
+    if (unit.done) break;
+  }
+  expect(actual.digest('hex')).toBe(expected);
+  expect(units).toBeGreaterThan(128);
+  expect(offset).toBe(Buffer.byteLength(JSON.stringify(f.expected.details)));
+  for (const field of ['aliases', 'summary', 'createdAt'])
+    expect((await lore.readField(field)).present).toBe(false);
+  expect(f.records.has('books/' + done.bookId)).toBe(false);
 });
 
 it('actor replacement during the final seal write still aborts before the destination close', async () => {

@@ -60,3 +60,16 @@ export function readBookBackupFrame(
   span?: { offset: number; length: number };
   seal?: BookBackupReadSeal;
 }>;
+
+/** Layout metadata only; the caller must authenticate its source and validated item. */
+export function readBookBackupIndexedPart(
+  source: BookBackupByteSource,
+  start: BookBackupCursor,
+  item: {
+    record: Pick<BookBackupRecord, 'kind' | 'id' | 'part'>;
+    byteLength: number;
+    chunkCount: number;
+  },
+  index: number,
+  options?: { signal?: AbortSignal },
+): Promise<{ bytes: Uint8Array; cursor: BookBackupCursor }>;
