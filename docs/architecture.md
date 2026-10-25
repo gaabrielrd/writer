@@ -2837,3 +2837,13 @@ Somente job/recibo mudam. Contagens exatas levam a activation-ready, sem criar r
 ativar personas ou modificar Storage/universo. Cleanup14 e recibos históricos
 continuam válidos; auditoria não substitui a transação de ativação ou autorização.
 [Evidência](entregas/2026-10-25-writer-v2-inventario-final-da-restauracao.md).
+
+## P1 — revisão antes da ativação
+
+[ADR 0153](decisions/0153-book-restore-activation-review.md): serviço interno de
+revisão lê três itens autenticados e confere selo/recibo, controles, definições e
+lote nativos. Observa universo atual sem ler prosa global. Resumo limitado e
+reviewToken fixam decisões e identidades; Storage é verificado fora da transação,
+seguido de nova autorização e comparação. Não há writes ou raiz ativa. Token
+não concede acesso nem substitui a futura confirmação atômica. Passos restantes
+no [plano 133](tasks/writer-v2/execucao/133-revisao-e-ativacao-do-livro.md).

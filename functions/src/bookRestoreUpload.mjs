@@ -12,6 +12,7 @@ import { createBookRestoreCoverService } from './bookRestoreCover.mjs';
 import { createBookRestorePersonaLibraryService } from './bookRestorePersonaLibrary.mjs';
 import { createBookRestoreSourceIndexesService } from './bookRestoreSourceIndexes.mjs';
 import { createBookRestoreAuditService } from './bookRestoreAudit.mjs';
+import { createBookRestoreActivationReviewService } from './bookRestoreActivationReview.mjs';
 import { createBookRestoreCoverMaterializationService } from './bookRestoreCoverMaterialization.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
@@ -454,6 +455,7 @@ export function createBookRestoreUploadService({
         'materializeBookRestoreCover',
         'advanceBookRestorePersonaLibrary',
         'advanceBookRestoreSourceIndexes',
+        'advanceBookRestoreAudit',
       ].includes(r.action)
     )
       inconsistent();
@@ -1157,6 +1159,7 @@ export function createBookRestoreUploadService({
   });
   return {
     ...createBookRestorePreparedLoreService({ db, load }),
+    ...createBookRestoreActivationReviewService({ db, load, readOp, assets: restoreAssets }),
     ...sourceIndexes,
     ...createBookRestoreAuditService({ db, load, readOp, writeOp, confirmed, next, pickProgress }),
     ...personaLibrary,

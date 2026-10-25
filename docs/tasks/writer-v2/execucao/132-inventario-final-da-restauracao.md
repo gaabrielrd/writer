@@ -81,3 +81,6 @@ Não rodar suíte global até fechar P1; não CI/push/PR/deploy/subagentes.
 - [x] Node/SDK/checks/documentação/revisão/commit local registrados.
 - [ ] Próxima entrega: revisão e ativação atômica do livro; depois host/roundtrip
       integral/inventários gerais/legados/rollout/validate de P1 e fases 3–5/gates.
+
+A sequência de revisão/ativação e host foi detalhada no
+[plano 133](133-revisao-e-ativacao-do-livro.md); inventário concluído não fecha P1.

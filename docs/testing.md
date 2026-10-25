@@ -2814,3 +2814,13 @@ filhos aninhados, perfis estrangeiros, capa e cancelamento/saldo exato.
 Dois SDK reais verificam timestamps/Rules e journal recriado; detalhes e limites
 na [evidência](entregas/2026-10-25-writer-v2-inventario-final-da-restauracao.md).
 Sem nova fronteira de UI; validate global permanece no fechamento de P1.
+
+## P1 — revisão da ativação
+
+bookRestoreActivationReview.test.mjs tem 20 casos distintos positivos em lotes
+dirigidos: nenhuma mutação, resumo limitado, fase/conta/CAS nativos, universo
+revogado/recriado/unavailable, dependências recriadas, Storage/prova divergentes,
+cancelamento/raiz concorrentes e preservação do manuscrito/histórico/rascunho.
+Três regressões de replay/cancelamento de auditoria também passaram. Resultados
+SDK, correções de fixtures e limites na
+[evidência](entregas/2026-10-25-writer-v2-revisao-da-ativacao-de-livros.md).

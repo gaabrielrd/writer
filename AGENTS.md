@@ -514,3 +514,11 @@ concluído estiverem satisfeitos. A lista fica em
 - Grave somente cursor/job/recibo; activation-ready não é grant nem prova atual
   de Storage. Reautorize revisão/origens na futura ativação atômica.
 - Preserve cleanup14, saldo e replay histórico; evolução do layout exige contrato.
+
+## Revisão antes da ativação de livros
+
+- Exija selo/recibo e preparação final originais antes de oferecer revisão; token
+  de revisão não concede acesso ou dispensa CAS/reautorização (ADR 0153).
+- Verifique a geração Storage e reautorize job/dependências após a espera externa;
+  mudanças invalidam a resposta. Não confunda isso com atomicidade distribuída.
+- Prévia limitada do título não trunca o título original ou o manuscrito.

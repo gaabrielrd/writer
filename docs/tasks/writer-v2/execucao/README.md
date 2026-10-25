@@ -1712,3 +1712,11 @@ contagens exatas antes de activation-ready. Não cria raiz nem concede acesso.
 [evidência](../../../entregas/2026-10-25-writer-v2-inventario-final-da-restauracao.md).
 Revisão/ativação/host/roundtrip integral e demais inventários/legados/rollout/
 validate de P1, fases 3–5 e gates continuam pendentes.
+
+### P1 — revisão antes da ativação (passo 1 do plano 133)
+
+[Plano 133](133-revisao-e-ativacao-do-livro.md): revisão somente leitura da
+preparação final, token de identidade, universo autorizado, verificação da capa
+e reautorização após a espera. Vinte Node distintos e três regressões positivos;
+resultados SDK na [evidência](../../../entregas/2026-10-25-writer-v2-revisao-da-ativacao-de-livros.md).
+Ativação/estado terminal/mídia/host/roundtrip e demais P1/V2/fases/gates pendentes.
