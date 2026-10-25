@@ -426,3 +426,12 @@ concluído estiverem satisfeitos. A lista fica em
   certificado apenas de metadata não autoriza copiar texto ou ler corpos.
 - Preserve o checkpoint sem candidato/prosa e não substitua o preparo incremental
   por uma transação sem limite.
+
+## Índice portátil do lore
+
+- Use BookPortableLoreIndex somente para domínio/ranges do objeto data lógico;
+  vincule bytes/hash/framing/origem no protocolo antes de produzir ou restaurar.
+- Mantenha a coleção portátil de relações na entrada separada; não amplie o
+  contrato das páginas nativas de 64 relações nem aceite estado v2 nas APIs antigas.
+- Preserve o checkpoint sem prosa/lista integral e trate IDs/ranges como metadata,
+  sem conceder leitura ou ativação por esse índice puro (ADR 0151).

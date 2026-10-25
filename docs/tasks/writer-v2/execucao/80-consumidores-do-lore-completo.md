@@ -225,3 +225,20 @@ A pendência de escala do plano 130 foi resolvida pelo novo fluxo; chamada antig
 sem certificado mantém seu budget e não é fallback. Captura cliente continua
 integral. Inventário dos demais consumidores e etapa 4 inteira, writers/
 exclusão/backup/restauração/drain/rollout/validate de P1 e fases/gates continuam.
+
+## Descoberta e início da etapa 5 — M38c12 A
+
+Inspeção dos leitores atuais orientou o [plano 131](131-backup-logico-indexado-do-lore.md):
+chat de cenas, análise lógica, referências e publicação possuem integração própria.
+O contrato 29/30 preserva o chat clássico, alimentado por lore cliente hidratado,
+sem migração/proveniência retroativa. Capturas de campanhas não consomem livros.
+Isso não certifica todo o inventário de escritores/namespaces ou encerra P1.
+
+Backup de recurso ainda serializa snapshot físico; cliente/validação recompõem
+JSON com limite de 8 MiB/128 spans. A integração deve preservar a fonte lógica
+sem custo quadrático e cobrir o crescimento após remap. Núcleo A do índice
+portátil implementado: campos/ranges/datas/contagens e IDs por unidade, sem
+prosa/lista no estado; não conectado ao produtor. 335 Node distintos, três
+jornadas Chromium, bundle browser e declaração TS positivos.
+[Evidência](../../../entregas/2026-10-25-writer-v2-indice-portatil-do-lore.md).
+Próximo passo B do plano 131; C/D, etapa 5 inteira e demais P1/fases/gates abertos.

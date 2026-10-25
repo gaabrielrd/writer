@@ -2638,3 +2638,17 @@ acima de 32 MiB; build/smoke positivos. [ADR 0150](decisions/0150-native-book-pu
 e [evidência B](entregas/2026-10-25-writer-v2-publicacao-nativa-marco-b.md).
 Plano 130 implementado/validado localmente; P1/demais consumidores/fases/gates,
 validate global e entrega coordenada Functions/Rules/cliente continuam abertos.
+
+## P1 M38c12 A — índice puro do lore portátil
+
+[ADR 0151](decisions/0151-incremental-portable-lore-index.md) prepara spans do objeto
+data: até 64 KiB por passo, sintaxe/UTF-8 e domínio compartilhados, flags/datas/
+ranges e referências por unidade. Estado de até 16 KiB sem prosa/lista completa.
+GenerationError fica em módulo puro, reexportado pela entrada histórica. Modo
+portátil de relações extensas tem entradas próprias; páginas nativas continuam
+v1/até 64. Índice não prova framing/SHA/nascimento nem concede autorização.
+
+335 Node distintos, três jornadas Chromium e bundle browser/declaração TS
+positivos. [Evidência](entregas/2026-10-25-writer-v2-indice-portatil-do-lore.md).
+Não conectado à captura/validação/restauração: a integração lógica/indexada B–D
+do plano 131, demais P1/roundtrip/validate/fases/gates continuam necessários.

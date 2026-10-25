@@ -1572,3 +1572,18 @@ Próximo passo de P1: inventariar os consumidores restantes da etapa 4 e os
 namespaces/escritores/exclusão, sem expandir captura de campanhas para livros.
 Backup/restauração/drain/rollout/validate de P1 e fases 3–5/gates permanecem.
 Sem envio remoto/deploy; master e servidor preservados.
+
+### P1 M38c12 A — núcleo do backup lógico indexado
+
+[Plano 131](131-backup-logico-indexado-do-lore.md) aberto: fonte física e limite
+8 MiB/recomposição dos validadores ainda precisam de integração B–D.
+Núcleo puro do objeto data validado em unidades, sem prosa/lista no estado;
+modo portátil de relações separado das páginas nativas. 335 Node distintos,
+três jornadas Chromium e bundle browser/declaração TS positivos.
+[ADR 0151](../../../decisions/0151-incremental-portable-lore-index.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-indice-portatil-do-lore.md).
+
+Próximo passo é B: fonte lógica autorizada e índice de saída com custo linear,
+sem usar esse parser como grant ou habilitar captura/restauração parcial.
+Inventário geral/escritores/exclusão, backup/restauração/drain/rollout/validate
+integral de P1, fases 3–5 e gates continuam. Somente commits locais.

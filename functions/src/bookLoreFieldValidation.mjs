@@ -1,5 +1,5 @@
 import { bookContentId } from './bookBackupSchema.mjs';
-import { workFail } from './workProgressContracts.mjs';
+import { GenerationError } from './generationError.mjs';
 
 export const BOOK_LORE_EDIT_FIELDS = Object.freeze([
   'name',
@@ -13,12 +13,14 @@ export const BOOK_LORE_EDIT_FIELDS = Object.freeze([
 ]);
 const partBytes = 65536;
 const encoder = new TextEncoder();
-const bad = () =>
-  workFail(
+const bad = () => {
+  const error = new GenerationError(
     'invalid-argument',
     'O campo de lore não corresponde ao formato esperado.',
-    'book-lore-field-invalid',
   );
+  error.details = { reason: 'book-lore-field-invalid' };
+  throw error;
+};
 const structuredKeys = ['appearance', 'personality', 'history', 'notes'];
 const relationKeys = ['targetEntityId', 'relationType', 'description'];
 const modes = ['syntax', 'string', 'escape', 'unicode', 'literal', 'done'];
@@ -53,7 +55,7 @@ function closed(value, keys) {
 function checkpoint(value) {
   closed(value, fields);
   if (
-    value.schemaVersion !== 1 ||
+    !(value.schemaVersion === 1 || (value.schemaVersion === 2 && value.field === 'relations')) ||
     !BOOK_LORE_EDIT_FIELDS.includes(value.field) ||
     !modes.includes(value.mode) ||
     !Array.isArray(value.stack) ||
@@ -71,7 +73,7 @@ function checkpoint(value) {
     !safe(value.literalIndex) ||
     value.literalIndex > 5 ||
     (value.field === 'relations'
-      ? !safe(value.relationCount) || value.relationCount > 64
+      ? !safe(value.relationCount) || (value.schemaVersion === 1 && value.relationCount > 64)
       : value.relationCount !== null)
   )
     bad();
@@ -108,6 +110,10 @@ function checkpoint(value) {
       !(frame.key === null || (safe(frame.key) && frame.key < keys.length))
     )
       bad();
+  }
+  if (value.schemaVersion === 2) {
+    const frame = value.stack.find((f) => f.kind === 'relations');
+    if (frame && frame.count !== value.relationCount) bad();
   }
   return value;
 }
@@ -161,6 +167,7 @@ function complete(state) {
   if (!['first', 'value'].includes(frame.phase)) bad();
   if (frame.kind === 'aliases' || frame.kind === 'relations') {
     frame.count++;
+    if (frame.kind === 'relations' && state.schemaVersion === 2) state.relationCount = frame.count;
     if (!safe(frame.count) || (frame.kind === 'relations' && frame.count > state.relationCount))
       bad();
   }
@@ -356,13 +363,20 @@ function advanceField(input, bytes, prefix, observer) {
   state.byteLength += consumed;
   return { state, consumed };
 }
-export const advanceBookLoreFieldValidation = (input, bytes, observer) =>
-  advanceField(input, bytes, false, observer).state;
+function version(input, expected) {
+  if (input?.schemaVersion !== expected) bad();
+}
+export const advanceBookLoreFieldValidation = (input, bytes, observer) => {
+  version(input, 1);
+  return advanceField(input, bytes, false, observer).state;
+};
 /** Parse exactly one value, leaving its root delimiter for the base indexer. */
-export const advanceBookLoreFieldPrefixValidation = (input, bytes, observer) =>
-  advanceField(input, bytes, true, observer);
+export const advanceBookLoreFieldPrefixValidation = (input, bytes, observer) => {
+  version(input, 1);
+  return advanceField(input, bytes, true, observer);
+};
 /** Syntax/domain proof only. Native authorization, SHA, receipts and CAS are separate. */
-export function finishBookLoreFieldValidation(state) {
+function finishField(state) {
   checkpoint(state);
   if (
     state.mode !== 'done' ||
@@ -380,4 +394,21 @@ export function finishBookLoreFieldValidation(state) {
     byteLength: state.byteLength,
     ...(state.field === 'relations' ? { count: state.relationCount } : {}),
   };
+}
+
+export function finishBookLoreFieldValidation(state) {
+  version(state, 1);
+  return finishField(state);
+}
+/** Portable logical array, not a native page and never accepted by the old entries. */
+export function createBookPortableLoreRelationsValidation() {
+  return { ...createBookLoreFieldValidation({ field: 'relations', count: 0 }), schemaVersion: 2 };
+}
+export function advanceBookPortableLoreRelationsPrefixValidation(input, bytes, observer) {
+  version(input, 2);
+  return advanceField(input, bytes, true, observer);
+}
+export function finishBookPortableLoreRelationsValidation(state) {
+  version(state, 2);
+  return finishField(state);
 }

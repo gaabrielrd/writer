@@ -2627,3 +2627,18 @@ Tipos/build/smoke (2981 módulos), lint e checks locais positivos. Primeiros lot
 com caminho .ts inexistente corrigidos para .mjs, incluído no lote final de 98.
 Validate/cobertura global só no fechamento de P1; sem browser/CI/remoto/deploy.
 [Evidência B](entregas/2026-10-25-writer-v2-publicacao-nativa-marco-b.md).
+
+## P1 M38c12 A — domínio incremental do lore portátil
+
+335 Node distintos positivos em sete arquivos: 333 no lote e dois novos casos
+finais de ID máximo/cursor. São 47 novos e 288 regressões de geração, campos/
+base/upload/inspeção/publicação. Fontes >8 MiB/128 partes, descrição grande,
+10 mil relações, ranges literais, presença/vazio/duplicados, Unicode/escapes,
+datas/IDs/enum, truncamento e checkpoints inválidos cobertos.
+
+Três jornadas Chromium reais: 10005778 bytes/153 unidades/130 referências,
+checkpoint máximo de 548 bytes no cenário; recarga em UTF-8 parcial; erro puro e
+separação da página nativa. Módulo sem Buffer, somente loopback. Bundle browser
+Vite de 12 módulos e declaração TS isolada positivos; lint JS e checks locais.
+Sem Vitest/SDK/build geral/validate neste marco puro; não é prova de backup ou
+restauração integrados. [Evidência](entregas/2026-10-25-writer-v2-indice-portatil-do-lore.md).

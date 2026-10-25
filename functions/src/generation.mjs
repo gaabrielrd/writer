@@ -1,12 +1,8 @@
 import { imageRef, libraryImage, createImageLibraryService } from './imageLibrary.mjs';
 import { createHash } from 'node:crypto';
 
-export class GenerationError extends Error {
-  constructor(code, message) {
-    super(message);
-    this.code = code;
-  }
-}
+import { GenerationError } from './generationError.mjs';
+export { GenerationError };
 const fail = (code, message) => {
   throw new GenerationError(code, message);
 };
