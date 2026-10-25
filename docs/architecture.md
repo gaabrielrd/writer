@@ -2368,3 +2368,23 @@ individuais não comprova grupo atômico; preservar provas ADR 0110/0135.
 
 Coordenador durável de seleção/UI/compêndio, lifecycle/consumidores/backup/
 rollout/validate de P1 e demais fases/gates continuam abertos.
+
+## P1 M38c5x — seleção durável para retirada
+
+[ADR 0137](decisions/0137-durable-book-lore-removal-selection.md):
+manifesto metadata em páginas de 50 e estado/resultados por membro ficam no
+banco próprio writer.book-lore-removal-selections v1. Inicialização atômica
+precede RPC; outcomes, cursor e contadores confirmam juntos sob CAS/oncomplete.
+Formato/DBs anteriores permanecem.
+
+Executor compõe retiradas singulares por origem fixa. Advance não retira;
+apply não reenvia intenção incerta; retry é explícito. Cancel persiste intenção
+independente do produtor, fecha todos os IDs originais e confere aceites/fences.
+Precondição falha entra em fence antes de conflito concluído. Dívida/ACK tardio
+não autoriza próxima produção. Retomada confere provas nativas e metadata da
+inspeção pode recuperar consulta de aceite sem journal filho, sem novo apply.
+
+Sessão Auth e tipos são públicos, sem montagem de UI/compêndio nem alteração
+de backend/transportes/journals/cifras. Grupo não é alegado atômico; conclusão
+da seleção não certifica coleta. UI/visibilidade/compêndio, lifecycle/
+consumidores/backup/rollout/validate de P1 e demais fases/gates seguem abertos.

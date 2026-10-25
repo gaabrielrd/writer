@@ -65,3 +65,14 @@ export type {
 } from './bookLoreCreationCheckpointContracts';
 
 export type { DurableBookLoreCreationSnapshot } from './bookLoreCreationDurableOperation';
+
+export { bookLoreRemovalSelectionSession } from './bookLoreRemovalSelectionService';
+export type {
+  RemovalSelectionIdentity,
+  RemovalSelectionMember,
+  RemovalSelectionManifest,
+  RemovalSelectionHead,
+  RemovalSelectionRoot,
+  RemovalSelectionOutcome,
+  RemovalSelectionInput,
+} from './bookLoreRemovalSelectionContracts';

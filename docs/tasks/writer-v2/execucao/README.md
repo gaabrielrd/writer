@@ -1372,3 +1372,19 @@ sintaxe positivos. Próximo: coordenar seleção durável com origens v2 explíc
 progresso/conflitos e UI, preservando prova própria/atomicidade quando aplicável.
 Compêndio/lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/
 gates permanecem abertos. Somente commit local; sem CI/remoto/deploy.
+
+### P1 M38c5x — seleção durável para retirada
+
+[Plano 122](122-selecao-duravel-para-retirada-de-lore.md),
+[ADR 0137](../../../decisions/0137-durable-book-lore-removal-selection.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-selecao-duravel-de-retirada-de-lore.md).
+Seleção inteira em páginas metadata, sem cap de autoria, com executor que
+compõe filhos e suas provas. Apply/retry/cancel/ACK e reconciliação preservam
+intenção original e progresso parcial; não inferem grupo atômico ou cleanup.
+
+70 Vitest (31 novos) e quatro jornadas Chromium positivos, incluindo 53
+membros/reinício, duas abas e journal filho perdido. Tipos/build/smoke/lint
+positivos. Próximo: interface da seleção/retomada, visibilidade nativa e
+composição final do compêndio; recursos existentes permanecem obrigatórios.
+Lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/gates
+abertos. Somente commit local; sem CI/remoto/deploy.

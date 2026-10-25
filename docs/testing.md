@@ -2351,3 +2351,22 @@ Primeira expectativa de privacidade da fixture v2 corrigida, sem mudar Rules.
 Lint/tipos/build/smoke e sintaxe 254 módulos positivos. Emulador não comprova
 Auth/App Check HTTP, produção, piloto ou UI. Validate integral no fim de P1;
 consumidores/seleção/UI/compêndio e demais fases/gates permanecem pendentes.
+
+### P1 M38c5x — seleção durável para retirada
+
+[Plano 122](tasks/writer-v2/execucao/122-selecao-duravel-para-retirada-de-lore.md)
+e [evidência](entregas/2026-10-25-writer-v2-selecao-duravel-de-retirada-de-lore.md):
+70 Vitest positivos (31 novos, 39 regressões), 2.36s. Cobrem manifesto/
+descoberta de 53, oncomplete/abort/CAS, metadados/órfãos, perda de respostas,
+cancel independente, fences/aceites, conflitos antes/no apply, dívida/ACK,
+prova fria, origem mista inline/v1/v2, journal filho perdido e Auth.
+
+Quatro jornadas Chromium com IndexedDB/Web Locks reais: 53 membros/reinício,
+aceite perdido sem replay, cancel por outra aba com produtor retido e perda do
+journal filho com preservação do recibo. Cinco stores antigos e uma retirada
+alheia preservados por sentinelas, sem reposição na retomada.
+Backend/SDK/Auth são fixtures; não comprova UI ou credenciais de produção.
+
+Lint/tipos/build/smoke positivos, 2958 módulos. Docs/formato/arquitetura no
+fechamento. Backend/Rules/Node/SDK não repetidos; sem mudança servidor.
+Validate integral no fim de P1. UI/visibilidade/compêndio e demais gates abertos.

@@ -686,3 +686,19 @@ Próximo coordenador deve fixar seleção/progresso/controle duráveis, preserva
 conflitos individuais e não inferir atomicidade conjunta de sucessos isolados.
 Compêndio/lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/
 gates permanecem abertos. Sem CI/envio remoto/deploy.
+
+## Seleção durável para retirada — M38c5x
+
+[Plano 122](122-selecao-duravel-para-retirada-de-lore.md) e
+[ADR 0137](../../../decisions/0137-durable-book-lore-removal-selection.md):
+manifesto/páginas metadata e executor compõem retiradas individuais com origem
+original, prova fresca e cancel independente de produtor retido. Não há teto
+total de 50 nem alegação de grupo atômico; coleta continua protocolo próprio.
+Resultado local salvo não substitui confirmação nativa.
+
+70 Vitest positivos (31 novos), quatro jornadas Chromium reais de IDB/
+reinício/concorrência e [evidência](../../../entregas/2026-10-25-writer-v2-selecao-duravel-de-retirada-de-lore.md).
+Cliente/sessão Auth exportados sem UI montada. Próximo: seleção/retomada visual,
+visibilidade nativa e composição final, preservando todas as ações existentes.
+Lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/gates seguem
+abertos. Somente commit local, sem CI/envio remoto/deploy.
