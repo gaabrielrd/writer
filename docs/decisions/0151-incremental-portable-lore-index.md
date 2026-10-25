@@ -1,13 +1,14 @@
 # ADR 0151 — Índice incremental do lore portátil
 
-- Status: núcleo A e composição B implementados/validados localmente; C/D pendentes.
+- Status: A/B/C implementados/validados localmente; D e fechamento de P1 pendentes.
 - Data: 2026-10-25.
 - Plano: [131](../tasks/writer-v2/execucao/131-backup-logico-indexado-do-lore.md).
 
 ## Contexto
 
-A captura privada ainda serializa a cabeça física de lore. O leitor do arquivo
-e o validador servidor recompõem JSON de até 8 MiB, com até 128 spans por item.
+Na descoberta, a captura privada serializava a cabeça física de lore. O leitor
+e o validador servidor recompunham JSON de até 8 MiB, com até 128 spans por item.
+A/B/C agora integram captura/validação; a leitura grande/materialização segue em D.
 Esse modelo não transporta todas as fontes lógicas atuais nem o JSON que cresceu
 após remap. A leitura por faixas depende de índice sem prosa e de validação
 incremental; não basta aumentar o limite ou montar o item a cada página.
@@ -128,3 +129,22 @@ coordenado antes de emitir novos ponteiros. C3/D/P1 continuam obrigatórios.
 232 Node distintos, 13 Vitest, seis SDK distintos e três Chromium positivos;
 build/typecheck/smoke (2989 módulos) e checks locais. Fonte de 10 MB/1000 relações
 com snapshot de 3313 bytes e ponteiro de 1566 bytes, sem ativar livro.
+
+## Captura C3 — arquivo lógico e revalidação antes do selo
+
+BookResourceCapture usa C1/writePortable para todo lore. Um loreDigest encadeia
+ID/token v1 em ordem, sem guardar um catálogo de provas. A varredura final
+recalcula por portableMetadata v1, além das provas existentes do livro/recursos.
+Leitor físico recusa payloadStorage; nenhum fallback converte stub em conteúdo.
+
+Um port compartilhado fixa ator e guarda captura/conferência/escritas posteriores.
+A prova standalone conserva esse port em WeakMap só em RAM. O adaptador padrão
+abre a sessão no primeiro uso; import/construção não inicializam Auth/App Check.
+O encoder e o sink conferem guarda também após selo/close. Close já concluído
+não é reversível; uma troca de ator nesse ponto bloqueia sucesso sem prometer
+desfazer o commit. Antes de close, abort preserva o arquivo anterior.
+
+[Evidência C3](../entregas/2026-10-25-writer-v2-captura-logica-e-selo-do-backup.md):
+27 Node, 75 Vitest distintos, três SDK distintos, cinco Chromium reais e build/
+smoke positivos (2990 módulos). Arquivo real grande chega à validação servidor.
+A/B/C concluídos tecnicamente; D/roundtrip/P1/fases/gates continuam obrigatórios.

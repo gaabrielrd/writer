@@ -281,6 +281,8 @@ export function createBookBackupResourceService({ db }) {
           await sourceBodyIdentity(tx, context, value, snapshot),
         );
         if (!snapshot.exists || actual !== expected) bookBackupChanged(true);
+        if (value.kind === 'lore' && Object.hasOwn(snapshot.data(), 'payloadStorage'))
+          unavailable();
         if (value.kind === 'scene-source')
           validateValue(context, value, snapshot, parent, snapshot.data(), true);
         if (value.kind === 'scene-source' && snapshot.data().original?.contentStorage != null) {

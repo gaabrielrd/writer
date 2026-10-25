@@ -15,7 +15,7 @@ históricos antigos, sem migração/proveniência retroativa. Não ampliar esse
 contrato durante o backup. Campanhas capturam universo/aventura por leitores
 próprios; não conceder autorização implícita para fichas de livros.
 
-BookBackupResourceRead ainda serializa snapshot.data de lore. Em stubs, omite
+Na descoberta inicial, BookBackupResourceRead ainda serializava snapshot.data de lore. Em stubs, omite
 a fonte lógica ou falha no domínio. BookSnapshotCapture reúne todo JSON em RAM;
 BookBackupContent/BookRestoreValidationStep limitam a 8 MiB/128 spans e também
 recompõem o item. Essa fronteira não atende lore grande nem JSON remapeado que
@@ -275,3 +275,65 @@ C ainda aberto para C3: ligar captura C1 e provas finais ao selo. D deve consumi
 o ponteiro por spans e remapear/materializar grandes, incluindo crescimento do
 JSON após remap. Rollout coordenado/drenagem de instâncias antigas, inventários/
 legacy/roundtrip/validate de P1, fases e gates continuam pendentes.
+
+## Contrato C3 antes da implementação — captura lógica e selo
+
+Reutilizar o produtor writePortable e os endpoints C1 existentes para todo lore
+do catálogo de recursos, inclusive inline. A captura dos demais recursos continua
+pelo contrato atual. Não usar DTO visual nem o read físico de um stub nativo.
+
+BookResourceProof acrescenta somente loreDigest: hash encadeado de ID/token C1
+v1 por ficha na ordem da varredura. Não guardar todas as provas/tokens/IDs na RAM.
+A varredura final recomputa esse digest por metadata C1 forçada em v1 e compara,
+além do digest de itens/pais/coleção e token nativo do livro já existentes.
+Uma mudança de root/clock/cabeça/geração/dono ou revogação impede footer/selo.
+
+O port C1 é compartilhado entre captura e conferência final no stream. Um
+adaptador padrão carrega a feature lore pela API pública somente no primeiro
+uso, fixa uma sessão com actor SDK exato e conserva seu guard nas verificações
+seguintes, inclusive depois do último lore. Port injetado continua disponível
+para composição/testes, sem inicializar Auth/App Check ao importar o módulo.
+isCurrent/signal do host continuam cobrindo a captura e o destino completos.
+
+Acrescentar portableMetadata ao cliente C1 para forçar token v1 independentemente
+do modo de tokens do editor. É metadata/reautorização, não prova nova dos bytes
+ou disponibilidade de todos os corpos. O produtor continua conferindo cada
+corpo/parte, SHA/domínio/EOF e header original antes de retornar prova.
+
+ReadBookBackupResource deve recusar payloadStorage no ramo físico de lore;
+inline e demais recursos conservam ABI. Nenhum fallback após erro C1.
+Proof é privada/em RAM; JSON e arquivo só recebem dados portáteis. Provas antigas
+de três campos não são persistidas e não serão promovidas silenciosamente.
+
+Arquivos C3: BookLorePortableClient, novo BookBackupLorePort, BookResourceCapture,
+StreamBookBackup e exportações públicas; guarda de BookBackupResourceRead;
+testes dirigidos de C1/recursos/orquestrador/sink e bridge real captura → arquivo
+→ validação local/servidor. SDK/Chromium para cancelamento/ator/alteração tardia,
+pressão de consumo, corrupção, grande/overrides/relações e ausência de selo.
+Atualizar ADR 0151, arquitetura/testes/registro/plano/AGENTS/evidência.
+
+C3 não conclui o leitor/remap/materialização D nem habilita rollout. D deve
+restaurar o arquivo capturado de verdade, inclusive campos/relações/remap grandes.
+Inventário geral/P1/fases/gates e validate de P1 continuam obrigatórios.
+
+### Revisão C3 — janela durante selo/fechamento
+
+Conferir também o retorno do encoder após escrever o selo e compartilhar o port
+C1 com BookBackupSink até sua resposta positiva. Revalidar guarda após close:
+uma troca durante a escrita do selo deve abortar antes do close; uma troca no
+close não pode devolver sucesso. Close já confirmado pode ter gravado o arquivo;
+não prometer rollback de um destino que já concluiu esse commit.
+
+## Estado C3 — 2026-10-25
+
+Captura C1 conectada ao arquivo completo e revalidação antes do selo; prova
+privada pequena por digest, ator compartilhado até close e recusa de stub físico.
+Arquivo grande real passa upload/integridade/validação servidor sem raiz ativada.
+27 Node, 75 Vitest distintos, três SDK distintos e cinco Chromium positivos;
+build/typecheck/smoke 2990 módulos e checks locais.
+[Evidência C3](../../../entregas/2026-10-25-writer-v2-captura-logica-e-selo-do-backup.md).
+
+A/B/C implementados/validados tecnicamente. D permanece obrigatório: consumir o
+ponteiro grande por spans autenticados, remapear IDs/relações, materializar partes
+e provar roundtrip, incluindo crescimento após remap. Plano 131/P1/F2-09/V2,
+inventários/legacy/drain/rollout/validate e demais fases/gates continuam abertos.

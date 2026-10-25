@@ -2704,3 +2704,20 @@ drenar validadores/leitores antigos antes da emissão de novos ponteiros.
 232 Node, 13 Vitest, seis SDK distintos, três Chromium e build/smoke positivos.
 [Evidência C2](entregas/2026-10-25-writer-v2-validacao-incremental-do-lore.md).
 Sem nova API/Rule/namespace/dependência; P1/fases/gates continuam abertos.
+
+## P1 M38c12 C3 — C1 no arquivo completo e no selo
+
+BookResourceCapture escreve lore lógico por C1/writePortable, conservando os
+demais recursos. LoreDigest encadeia IDs/tokens v1 sem lista em RAM e é recomposto
+por portableMetadata antes do selo. Provas privadas/tokens não entram no arquivo;
+leitor físico recusa stubs. Sessão/port do ator são compartilhados e a prova
+standalone conserva o guard em WeakMap. Import do adaptador não abre a sessão.
+
+Guarda cobre retorno do encoder e resposta após close. Abort antes do commit
+preserva arquivo confirmado anterior; close já confirmado não é desfeito, mas
+troca de ator nesse ponto não retorna sucesso. A UI/rollout ainda não são entregues.
+
+27 Node, 75 Vitest distintos, três SDK distintos e cinco Chromium positivos;
+build/smoke 2990 módulos. Arquivo grande real captura → selo → validação servidor.
+[Evidência C3](entregas/2026-10-25-writer-v2-captura-logica-e-selo-do-backup.md).
+Próximo D: leitor/remap/materialização grandes e roundtrip, mantendo P1/gates abertos.

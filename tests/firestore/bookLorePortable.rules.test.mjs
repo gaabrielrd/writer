@@ -16,11 +16,18 @@ import {
   adoptCreation,
 } from '../../functions/test/helpers/bookLoreCreationAdoptionFixture.mjs';
 import { resourcePayloadChunkPath } from '../../functions/src/bookResourcePayloadPaths.mjs';
+import {
+  bookArchiveReadApi,
+  bookArchiveCapturePorts,
+} from '../../functions/test/helpers/bookArchiveCaptureFixture.mjs';
+import { uploadSealedArchiveRestore } from '../../functions/test/helpers/bookRestoreContentFixture.mjs';
+import { finishLegacyRestore } from '../../functions/test/helpers/bookLegacyRestoreFixture.mjs';
+import { createBookRestoreUploadService } from '../../functions/src/bookRestoreUpload.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore, FieldValue } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-portable-lore',
   hash = (b) => createHash('sha256').update(b).digest('hex');
-let admin, env, createClient;
+let admin, env, createClient, saveArchive;
 before(async () => {
   const address = process.env.FIRESTORE_EMULATOR_HOST;
   if (!/^127[.]0[.]0[.]1:[0-9]+$/.test(address ?? ''))
@@ -56,6 +63,31 @@ before(async () => {
   ({ createBookLoreReadClient: createClient } = await import(
     'data:text/javascript;base64,' +
       Buffer.from(code + '\n//# sourceURL=writer-lore-portable-sdk.mjs').toString('base64')
+  ));
+  const archiveBundle = await build({
+    configFile: false,
+    root: fileURLToPath(new URL('../../', import.meta.url)),
+    logLevel: 'silent',
+    build: {
+      write: false,
+      lib: {
+        entry: fileURLToPath(
+          new URL(
+            '../../src/features/book-portability/services/bookBackupSink.ts',
+            import.meta.url,
+          ),
+        ),
+        formats: ['es'],
+      },
+      rolldownOptions: { external: (id) => id.startsWith('@/') || id.startsWith('firebase/') },
+    },
+  });
+  const archiveCode = (Array.isArray(archiveBundle) ? archiveBundle : [archiveBundle])
+    .flatMap((r) => r.output)
+    .find((o) => o.type === 'chunk')?.code;
+  assert.equal(typeof archiveCode, 'string');
+  ({ saveBookBackup: saveArchive } = await import(
+    'data:text/javascript;base64,' + Buffer.from(archiveCode).toString('base64')
   ));
 });
 beforeEach(async () => {
@@ -170,4 +202,130 @@ test('SDK portable lore: a recreated native part cannot reuse its old scope or M
   await admin.doc(path).delete();
   await admin.doc(path).create(value);
   await assert.rejects(capture(f), { code: 'failed-precondition' });
+});
+
+test('SDK archive capture: large C1 source reaches sealed bytes and server content validation without activating a copy', async () => {
+  const f = await fixture('v2', { large: true }),
+    api = bookArchiveReadApi(admin),
+    call = (method, input) => api[method]('author', input),
+    lore = { ...f.client, guard: () => {} },
+    options = bookArchiveCapturePorts(call, lore),
+    parts = [];
+  let closed = false,
+    aborted = false;
+  await saveArchive('book', options, {
+    async write(bytes) {
+      parts.push(Buffer.from(bytes));
+    },
+    async close() {
+      closed = true;
+    },
+    async abort() {
+      aborted = true;
+    },
+  });
+  const bytes = Buffer.concat(parts),
+    id = 'sdk-sealed-c1-archive01',
+    factory = () => createBookRestoreUploadService({ db: admin }),
+    progress = await uploadSealedArchiveRestore(factory(), 'author', id, bytes),
+    done = await finishLegacyRestore(factory, 'author', id, progress);
+  assert.ok(bytes.length > 8 * 1024 * 1024);
+  assert.equal(closed, true);
+  assert.equal(aborted, false);
+  assert.equal(done.state, 'content-verified');
+  assert.equal(done.validation.summary.totals.resources.lore, 1);
+  assert.equal((await admin.doc('books/' + done.bookId).get()).exists, false);
+  const reads = f.requests.filter((r) => r.method === 'readBookLorePart');
+  assert.equal(
+    new Set(
+      reads.map((r) =>
+        JSON.stringify([r.input.section, r.input.field, r.input.page, r.input.index]),
+      ),
+    ).size,
+    reads.length,
+  );
+  const last = f.requests.filter((r) => r.method === 'getBookLoreRead').at(-1);
+  assert.equal(last.input.tokenVersion, 1);
+});
+test('SDK archive capture: a changed root clock before the final seal aborts the file without a successful close', async () => {
+  const f = await fixture('v2'),
+    api = bookArchiveReadApi(admin),
+    call = (method, input) => api[method]('author', input),
+    lore = { ...f.client, guard: () => {} },
+    options = bookArchiveCapturePorts(call, lore),
+    verify = options.history.verify;
+  let closed = false,
+    aborted = false;
+  options.history.verify = async (...args) => {
+    await verify(...args);
+    await admin.doc('books/book').update({ localLoreVersion: FieldValue.increment(1) });
+  };
+  await assert.rejects(
+    saveArchive('book', options, {
+      async write() {},
+      async close() {
+        closed = true;
+      },
+      async abort() {
+        aborted = true;
+      },
+    }),
+  );
+  assert.equal(closed, false);
+  assert.equal(aborted, true);
+});
+
+test('SDK archive seal: same-UID actor changes during seal and close cannot return success', async () => {
+  const f = await fixture('v2'),
+    api = bookArchiveReadApi(admin),
+    call = (method, input) => api[method]('author', input),
+    actor = { uid: 'author' };
+  let current = actor,
+    closed = false,
+    aborted = false,
+    changed = false;
+  const lore = {
+      ...f.client,
+      guard: () => {
+        if (current !== actor) throw Error('Actor changed');
+      },
+    },
+    options = bookArchiveCapturePorts(call, lore);
+  await assert.rejects(
+    saveArchive('book', options, {
+      async write(bytes) {
+        if (Buffer.from(bytes).includes(Buffer.from('"type":"end"'))) {
+          changed = true;
+          current = { uid: 'author' };
+        }
+      },
+      async close() {
+        closed = true;
+      },
+      async abort() {
+        aborted = true;
+      },
+    }),
+    /Actor changed/,
+  );
+  assert.equal(changed, true);
+  assert.equal(closed, false);
+  assert.equal(aborted, true);
+  current = actor;
+  aborted = false;
+  await assert.rejects(
+    saveArchive('book', options, {
+      async write() {},
+      async close() {
+        closed = true;
+        current = { uid: 'author' };
+      },
+      async abort() {
+        aborted = true;
+      },
+    }),
+    /Actor changed/,
+  );
+  assert.equal(closed, true);
+  assert.equal(aborted, true);
 });

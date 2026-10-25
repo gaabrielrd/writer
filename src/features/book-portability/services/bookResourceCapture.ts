@@ -13,6 +13,7 @@ import type {
   BookStructureItem,
 } from '../../../../functions/src/bookBackupStructure.mjs';
 import type { BookBackupRecord } from '../model/backupContainer';
+import { createBookBackupLorePort, type BookBackupLorePort } from './bookBackupLorePort';
 import { bookResourceApi } from './bookResourceCallables';
 import {
   check,
@@ -33,6 +34,18 @@ export interface BookResourceProof {
   source: BookStructureSource;
   digest: string;
   counts: Record<BookResourceKind, number>;
+  loreDigest: string;
+}
+const contexts = new WeakMap<BookResourceProof, BookBackupLorePort>();
+const loreSeed = () => textHash('writer-book-logical-lore-v1');
+function loreSource(
+  bookId: string,
+  id: string,
+  value: { bookId: string; id: string; readToken: string },
+) {
+  if (!value || value.bookId !== bookId || value.id !== id || !validHash(value.readToken))
+    invalid();
+  return value.readToken;
 }
 function countsCopy(value?: Record<BookResourceKind, number>) {
   if (
@@ -92,6 +105,7 @@ function page(
 async function scan(
   api: BookResourceApi,
   anchor: BookStructureSource,
+  lore: BookBackupLorePort,
   signal?: AbortSignal,
   visit?: (scope: BookResourceScope, item: BookStructureItem) => Promise<void>,
 ): Promise<Pick<BookResourceProof, 'digest' | 'counts'>> {
@@ -100,11 +114,13 @@ async function scan(
   async function walk(scope: BookResourceScope, depth = 0) {
     if (depth > 1) invalid();
     check(signal);
+    lore.guard();
     digest = await textHash(JSON.stringify([digest, 'scope', scope.kind, scope.parentId]));
     let cursor: string | null = null,
       last: string | null = null;
     do {
       check(signal);
+      lore.guard();
       const current = await api.list({
         bookId: anchor.bookId,
         sourceToken: anchor.sourceToken,
@@ -113,6 +129,7 @@ async function scan(
         limit: 50,
       });
       check(signal);
+      lore.guard();
       page(current, anchor, scope, last);
       const next: string | null = current.nextCursor;
       if (next !== null && next === cursor) invalid();
@@ -122,8 +139,10 @@ async function scan(
           JSON.stringify([digest, 'item', scope.kind, scope.parentId, item.id, item.itemToken]),
         );
         check(signal);
+        lore.guard();
         if (visit) await visit(scope, item);
         check(signal);
+        lore.guard();
         counts[scope.kind]++;
         if (!validCount(counts[scope.kind])) invalid();
         last = item.id;
@@ -142,16 +161,29 @@ export interface BookResourceCaptureOptions {
   source?: BookStructureSource;
   signal?: AbortSignal;
   api?: BookResourceApi;
+  lore?: BookBackupLorePort;
 }
 /** Provisional until every section is revalidated and the M2 archive is sealed. */
 export async function captureBookBackupResources(
   options: BookResourceCaptureOptions,
 ): Promise<BookResourceProof> {
-  const { bookId, write, signal, api = bookResourceApi } = options;
+  const { bookId, write, signal, api = bookResourceApi } = options,
+    lore = { ...(options.lore ?? createBookBackupLorePort()) };
   if (!validId(bookId)) invalid();
   const expected =
     options.source === undefined ? undefined : source(options.source, bookId).sourceToken;
   check(signal);
+  lore.guard();
+  let loreDigest = await loreSeed();
+  check(signal);
+  lore.guard();
+  const emit = async (record: BookBackupRecord) => {
+    check(signal);
+    lore.guard();
+    await write(record);
+    check(signal);
+    lore.guard();
+  };
   const anchor = source(
     await api.getSource({
       bookId,
@@ -161,16 +193,43 @@ export async function captureBookBackupResources(
     expected,
   );
   check(signal);
-  const result = await scan(api, anchor, signal, async (scope, item) => {
+  lore.guard();
+  const result = await scan(api, anchor, lore, signal, async (scope, item) => {
     const address = await hash(
       new TextEncoder().encode(JSON.stringify([scope.kind, scope.parentId, item.id])),
     );
     check(signal);
+    lore.guard();
+    if (scope.kind === 'lore') {
+      const proof = await lore.writePortable(
+        bookId,
+        item.id,
+        (part, payload) => emit({ kind: 'book-lore', id: address, part, payload }),
+        signal,
+      );
+      loreDigest = await textHash(
+        JSON.stringify([loreDigest, item.id, loreSource(bookId, item.id, proof.source)]),
+      );
+      return;
+    }
     await writeSnapshotItem(
       anchor,
       { ...scope, ...item },
-      (index) => api.read({ bookId, sourceToken: anchor.sourceToken, ...scope, ...item, index }),
-      (part, payload) => write({ kind: 'book-' + scope.kind, id: address, part, payload }),
+      async (index) => {
+        check(signal);
+        lore.guard();
+        const result = await api.read({
+          bookId,
+          sourceToken: anchor.sourceToken,
+          ...scope,
+          ...item,
+          index,
+        });
+        check(signal);
+        lore.guard();
+        return result;
+      },
+      (part, payload) => emit({ kind: 'book-' + scope.kind, id: address, part, payload }),
       signal,
       (value) =>
         closed(value, ['schemaVersion', 'kind', 'parentId', 'id', 'data']) &&
@@ -182,22 +241,27 @@ export async function captureBookBackupResources(
     );
   });
   check(signal);
+  lore.guard();
   const counts = Object.freeze({ ...result.counts });
-  await write({
+  await emit({
     kind: 'book-resources',
     id: bookId,
     part: 0,
     payload: new TextEncoder().encode(JSON.stringify({ schemaVersion: 1, counts })),
   });
   check(signal);
-  return Object.freeze({ source: anchor, digest: result.digest, counts });
+  lore.guard();
+  const proof = Object.freeze({ source: anchor, digest: result.digest, counts, loreDigest });
+  contexts.set(proof, lore);
+  return proof;
 }
 export async function verifyBookBackupResources(
   proof: BookResourceProof,
-  options: { signal?: AbortSignal; api?: BookResourceApi } = {},
+  options: { signal?: AbortSignal; api?: BookResourceApi; lore?: BookBackupLorePort } = {},
 ): Promise<void> {
   if (
-    !closed(proof, ['source', 'digest', 'counts']) ||
+    !closed(proof, ['source', 'digest', 'counts', 'loreDigest']) ||
+    !validHash(proof.loreDigest) ||
     !validHash(proof.digest) ||
     !closed(proof.counts, [...BOOK_RESOURCE_KINDS]) ||
     !proof.source ||
@@ -207,19 +271,40 @@ export async function verifyBookBackupResources(
   const anchor = source(proof.source, proof.source.bookId),
     counts = countsCopy(proof.counts),
     expected = proof.digest,
-    { signal, api = bookResourceApi } = options;
+    expectedLore = proof.loreDigest,
+    { signal, api = bookResourceApi } = options,
+    original = contexts.get(proof),
+    selected = { ...(options.lore ?? original ?? createBookBackupLorePort()) },
+    lore = {
+      ...selected,
+      guard: () => {
+        original?.guard();
+        selected.guard();
+      },
+    };
+  let loreDigest = await loreSeed();
   check(signal);
-  const current = await scan(api, anchor, signal);
+  lore.guard();
+  const current = await scan(api, anchor, lore, signal, async (scope, item) => {
+    if (scope.kind !== 'lore') return;
+    const header = await lore.portableMetadata(anchor.bookId, item.id, signal);
+    loreDigest = await textHash(
+      JSON.stringify([loreDigest, item.id, loreSource(anchor.bookId, item.id, header)]),
+    );
+  });
   if (
     current.digest !== expected ||
+    loreDigest !== expectedLore ||
     BOOK_RESOURCE_KINDS.some((kind) => current.counts[kind] !== counts[kind])
   )
     invalid();
   check(signal);
+  lore.guard();
   source(
     await api.getSource({ bookId: anchor.bookId, expectedSourceToken: anchor.sourceToken }),
     anchor.bookId,
     anchor.sourceToken,
   );
   check(signal);
+  lore.guard();
 }

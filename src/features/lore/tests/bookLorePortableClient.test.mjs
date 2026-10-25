@@ -405,3 +405,21 @@ it('a hashed override cannot inject extra members into the portable object', asy
   });
   await expect(capture(f)).rejects.toThrow();
 });
+
+it('portable metadata always pins token v1 even in an editor v2 session and never reads prose', async () => {
+  const f = await fixture('v2'),
+    result = await capture(f);
+  f.call.mockClear();
+  const current = await f.client.portableMetadata('book', f.id);
+  expect(current).toEqual(result.proof.source);
+  expect(f.call.mock.calls).toEqual([
+    ['getBookLoreRead', { bookId: 'book', id: f.id, tokenVersion: 1 }],
+  ]);
+  const controller = new AbortController();
+  controller.abort();
+  f.call.mockClear();
+  await expect(f.client.portableMetadata('book', f.id, controller.signal)).rejects.toMatchObject({
+    name: 'AbortError',
+  });
+  expect(f.call).not.toHaveBeenCalled();
+});

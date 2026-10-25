@@ -1621,3 +1621,15 @@ e até 64 referências por avanço. Provas/cleanup nativos e compatibilidade ant
 
 C3 captura/selo, D leitura/remap/materialização grande e demais inventários/
 roundtrip/drain/rollout/validate de P1/V2/fases/gates permanecem obrigatórios.
+
+### P1 M38c12 C3 — captura C1, arquivo e selo
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): A/B/C implementados/validados.
+Lore lógico no arquivo completo, loreDigest privado/final por metadata v1,
+port/ator compartilhados e guarda até resposta após close. Stub físico recusado.
+27 Node, 75 Vitest distintos, três SDK distintos, cinco Chromium e build/smoke
+positivos. [Evidência C3](../../../entregas/2026-10-25-writer-v2-captura-logica-e-selo-do-backup.md).
+
+Próximo D: leitor/remap/materialização grandes, incluindo crescimento após remap,
+e roundtrip. Plano 131/P1/F2-09/V2, inventários/legacy/drain/rollout/validate e
+demais fases/gates continuam abertos. Sem CI ou operação de produção.

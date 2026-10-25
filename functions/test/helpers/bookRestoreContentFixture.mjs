@@ -4,6 +4,9 @@ import { legacyMutation as mutation } from './bookLegacyRestoreFixture.mjs';
 export async function uploadArchiveRestore(api, uid, id, records) {
   const src = await source(records),
     bytes = await src.read(0, src.size);
+  return { progress: await uploadSealedArchiveRestore(api, uid, id, bytes), source: src, bytes };
+}
+export async function uploadSealedArchiveRestore(api, uid, id, bytes) {
   let progress = (
     await api.startBookRestore(uid, {
       operationId: id,
@@ -44,5 +47,5 @@ export async function uploadArchiveRestore(api, uid, id, records) {
       )
     ).progress;
   }
-  return { progress, source: src, bytes };
+  return progress;
 }

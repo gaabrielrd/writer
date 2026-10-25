@@ -55,6 +55,7 @@ export {
   verifyBookBackupResources,
 } from './services/bookResourceCapture';
 export type { BookResourceProof, BookResourceCaptureOptions } from './services/bookResourceCapture';
+export { createBookBackupLorePort, type BookBackupLorePort } from './services/bookBackupLorePort';
 export {
   captureBookBackupPersonas,
   verifyBookBackupPersonas,

@@ -9,7 +9,13 @@ import {
   captureBookBackupResources,
   verifyBookBackupResources,
   type BookBackupRecord,
+  type BookBackupLorePort,
 } from '../index';
+import {
+  createBookPortableLoreItemIndex,
+  advanceBookPortableLoreItemIndex,
+  finishBookPortableLoreItemIndex,
+} from '../../../../functions/src/bookPortableLoreItemIndex.mjs';
 const digest = (text: string) => createHash('sha256').update(text).digest('hex');
 function fixture(count = 2) {
   const anchor = { schemaVersion: 1 as const, bookId: 'book', sourceToken: 'a'.repeat(64) };
@@ -49,6 +55,7 @@ function fixture(count = 2) {
   if (count) {
     put('lore', null, 'entity', {
       name: 'Ana',
+      category: 'character',
       details: 'Own lore',
       relations: [{ targetEntityId: 'universe:gone:missing', relationType: 'knows' }],
     });
@@ -133,7 +140,58 @@ function fixture(count = 2) {
       });
     }),
   };
-  return { anchor, api, rows, put };
+  const header = (id: string) => {
+    const row = rows.get(JSON.stringify(['lore', null, id]))!,
+      data = JSON.stringify((JSON.parse(row.body) as { data: unknown }).data);
+    return {
+      schemaVersion: 1 as const,
+      bookId: 'book',
+      id,
+      readToken: row.token,
+      mode: 'inline' as const,
+      base: {
+        schemaVersion: 1 as const,
+        byteLength: Buffer.byteLength(data),
+        chunkCount: Math.ceil(Buffer.byteLength(data) / 65536),
+        contentHash: digest(data),
+      },
+      relations: null,
+    };
+  };
+  const lore: BookBackupLorePort = {
+    guard: vi.fn(),
+    portableMetadata: vi.fn<BookBackupLorePort['portableMetadata']>((_bookId, id) =>
+      Promise.resolve(header(id)),
+    ),
+    writePortable: vi.fn<BookBackupLorePort['writePortable']>(async (_bookId, id, write) => {
+      const bytes = Buffer.from(rows.get(JSON.stringify(['lore', null, id]))!.body);
+      let state = createBookPortableLoreItemIndex();
+      for (let offset = 0, part = 0; offset < bytes.length; offset += 65536, part++) {
+        const unit = Uint8Array.from(bytes.subarray(offset, offset + 65536));
+        for (let at = 0; at < unit.length;) {
+          const step = advanceBookPortableLoreItemIndex(state, unit.subarray(at));
+          state = step.state;
+          at += step.consumed;
+        }
+        await write(part, unit);
+      }
+      const meta = finishBookPortableLoreItemIndex(state);
+      return {
+        schemaVersion: 1,
+        source: header(id),
+        byteLength: bytes.length,
+        chunkCount: Math.ceil(bytes.length / 65536),
+        contentHash: digest(bytes.toString()),
+        dataOffset: meta.dataOffset,
+        dataByteLength: meta.dataByteLength,
+        dataHash: digest(
+          bytes.subarray(meta.dataOffset, meta.dataOffset + meta.dataByteLength).toString(),
+        ),
+        index: meta.index,
+      };
+    }),
+  };
+  return { anchor, api, rows, put, lore };
 }
 function sink() {
   const records: BookBackupRecord[] = [];
@@ -171,7 +229,12 @@ afterEach(() => {
 it('captures all twelve types, archived/orphaned scenes, active ordering and colliding reference IDs with bounded pages', async () => {
   const f = fixture(57),
     out = sink();
-  const proof = await captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write });
+  const proof = await captureBookBackupResources({
+    bookId: 'book',
+    api: f.api,
+    lore: f.lore,
+    write: out.write,
+  });
   const data = envelopes(out.records);
   expect(proof.counts.scene).toBe(57);
   expect(proof.counts['scene-body']).toBe(57);
@@ -187,7 +250,7 @@ it('captures all twelve types, archived/orphaned scenes, active ordering and col
   expect(refs[0]!.id).not.toBe(refs[1]!.id);
   expect(refs.every((row) => /^[a-f0-9]{64}$/.test(row.id))).toBe(true);
   const count = vi.mocked(f.api.read).mock.calls.length;
-  await verifyBookBackupResources(proof, { api: f.api });
+  await verifyBookBackupResources(proof, { api: f.api, lore: f.lore });
   expect(f.api.read).toHaveBeenCalledTimes(count);
   expect(f.api.getSource).toHaveBeenLastCalledWith({
     bookId: 'book',
@@ -201,7 +264,7 @@ it('large scene body is assembled exactly and emitted in 64 KiB parts, preservin
     out = sink(),
     text = '\ufeffação 🌙\u0000'.repeat(35000);
   f.put('scene-body', 'scene-000', 'current', { content: text, hash: digest(text) });
-  await captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write });
+  await captureBookBackupResources({ bookId: 'book', api: f.api, lore: f.lore, write: out.write });
   expect(envelopes(out.records).find((row) => row.kind === 'scene-body')?.data.content).toBe(text);
   expect(out.records.every((record) => record.payload.length <= 65536)).toBe(true);
   expect(out.records.filter((row) => row.kind === 'book-scene-body').length).toBeGreaterThan(4);
@@ -214,11 +277,12 @@ it.each(['scene', 'scene-body', 'scene-planning', 'scene-reference', 'milestone'
     const proof = await captureBookBackupResources({
       bookId: 'book',
       api: f.api,
+      lore: f.lore,
       write: out.write,
     });
     const row = [...f.rows.values()].find((row) => row.kind === kind)!;
     row.token = digest('changed');
-    await expect(verifyBookBackupResources(proof, { api: f.api })).rejects.toThrow(
+    await expect(verifyBookBackupResources(proof, { api: f.api, lore: f.lore })).rejects.toThrow(
       'estrutura completa',
     );
   },
@@ -232,7 +296,7 @@ it('missing required body, unexpected singleton ID and repeated child scopes can
     f.rows.delete(bodyKey);
     if (issue === 'id') f.put('scene-body', 'scene-000', 'other', { content: '' });
     await expect(
-      captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write }),
+      captureBookBackupResources({ bookId: 'book', api: f.api, lore: f.lore, write: out.write }),
     ).rejects.toThrow('estrutura completa');
     expect(out.records.some((row) => row.kind === 'book-resources')).toBe(false);
     expect(row.id).toBe('current');
@@ -245,7 +309,7 @@ it('valid transport hash cannot conceal an envelope for another parent', async (
   const data: unknown = JSON.parse(row.body);
   row.body = JSON.stringify({ ...(data as Record<string, unknown>), parentId: 'other' });
   await expect(
-    captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write }),
+    captureBookBackupResources({ bookId: 'book', api: f.api, lore: f.lore, write: out.write }),
   ).rejects.toThrow('estrutura completa');
   expect(out.records.some((row) => row.kind === 'book-scene-body')).toBe(false);
 });
@@ -267,25 +331,33 @@ it('sink backpressure and abort after a write stop further reads without retry o
   const pending = captureBookBackupResources({
     bookId: 'book',
     api: f.api,
+    lore: f.lore,
     write,
     signal: controller.signal,
   });
   await writing;
   expect(f.api.list).toHaveBeenCalledTimes(1);
-  expect(f.api.read).toHaveBeenCalledTimes(1);
+  expect(f.api.read).toHaveBeenCalledTimes(0);
+  expect(f.lore.writePortable).toHaveBeenCalledTimes(1);
   release();
   await expect(pending).rejects.toMatchObject({ name: 'AbortError' });
   expect(f.api.list).toHaveBeenCalledTimes(1);
-  expect(f.api.read).toHaveBeenCalledTimes(1);
+  expect(f.api.read).toHaveBeenCalledTimes(0);
+  expect(f.lore.writePortable).toHaveBeenCalledTimes(1);
 });
 it('empty resource catalogue still needs final authorization and has explicit zero counts', async () => {
   const f = fixture(0),
     out = sink();
-  const proof = await captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write });
+  const proof = await captureBookBackupResources({
+    bookId: 'book',
+    api: f.api,
+    lore: f.lore,
+    write: out.write,
+  });
   expect(out.records).toHaveLength(1);
   expect(Object.values(proof.counts).every((value) => value === 0)).toBe(true);
   f.anchor.sourceToken = 'b'.repeat(64);
-  await expect(verifyBookBackupResources(proof, { api: f.api })).rejects.toThrow(
+  await expect(verifyBookBackupResources(proof, { api: f.api, lore: f.lore })).rejects.toThrow(
     'estrutura completa',
   );
 });
@@ -304,16 +376,21 @@ it('malformed singleton rows and proof counts fail before further I/O', async ()
     return Promise.resolve(response as Awaited<ReturnType<BookResourceApi['list']>>);
   });
   await expect(
-    captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write }),
+    captureBookBackupResources({ bookId: 'book', api: f.api, lore: f.lore, write: out.write }),
   ).rejects.toThrow('estrutura completa');
   expect(f.api.read).not.toHaveBeenCalled();
   const empty = fixture(0),
-    proof = await captureBookBackupResources({ bookId: 'book', api: empty.api, write: out.write });
+    proof = await captureBookBackupResources({
+      bookId: 'book',
+      api: empty.api,
+      lore: empty.lore,
+      write: out.write,
+    });
   const calls = vi.mocked(empty.api.list).mock.calls.length;
   for (const counts of [null, undefined, {}, { ...proof.counts, extra: 1 }]) {
     const bad: unknown = { ...proof, counts };
     await expect(
-      verifyBookBackupResources(bad as typeof proof, { api: empty.api }),
+      verifyBookBackupResources(bad as typeof proof, { api: empty.api, lore: empty.lore }),
     ).rejects.toThrow('estrutura completa');
   }
   expect(empty.api.list).toHaveBeenCalledTimes(calls);
@@ -333,7 +410,7 @@ it('refuses a source with a wrong integral JSON hash before emitting its provisi
     return input.kind === 'scene-source' ? { ...value, contentHash: 'f'.repeat(64) } : value;
   });
   await expect(
-    captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write }),
+    captureBookBackupResources({ bookId: 'book', api: f.api, lore: f.lore, write: out.write }),
   ).rejects.toThrow('estrutura completa');
   expect(out.records.some((record) => record.kind === 'book-scene-source')).toBe(false);
   expect(out.records.some((record) => record.kind === 'book-resources')).toBe(false);
@@ -341,12 +418,79 @@ it('refuses a source with a wrong integral JSON hash before emitting its provisi
 it('final verification rejects a source body token change even with identical portable content', async () => {
   const f = fixture(),
     out = sink(),
-    proof = await captureBookBackupResources({ bookId: 'book', api: f.api, write: out.write }),
+    proof = await captureBookBackupResources({
+      bookId: 'book',
+      api: f.api,
+      lore: f.lore,
+      write: out.write,
+    }),
     row = f.rows.get(JSON.stringify(['scene-source', null, 'old-chapter']))!,
     reads = vi.mocked(f.api.read).mock.calls.length;
   row.token = 'f'.repeat(64);
-  await expect(verifyBookBackupResources(proof, { api: f.api })).rejects.toThrow(
+  await expect(verifyBookBackupResources(proof, { api: f.api, lore: f.lore })).rejects.toThrow(
     'estrutura completa',
   );
   expect(f.api.read).toHaveBeenCalledTimes(reads);
+});
+
+it('actor invalidation while reading a later resource prevents its bytes from being emitted', async () => {
+  const f = fixture(),
+    out = sink(),
+    read = vi.mocked(f.api.read).getMockImplementation()!;
+  let active = true;
+  vi.mocked(f.lore.guard).mockImplementation(() => {
+    if (!active) throw Error('Actor changed');
+  });
+  vi.mocked(f.api.read).mockImplementation(async (input) => {
+    const value = await read(input);
+    active = false;
+    return value;
+  });
+  await expect(
+    captureBookBackupResources({ bookId: 'book', api: f.api, lore: f.lore, write: out.write }),
+  ).rejects.toThrow('Actor changed');
+  expect(out.records.some((r) => r.kind === 'book-lore')).toBe(true);
+  expect(out.records.some((r) => r.kind !== 'book-lore')).toBe(false);
+});
+it('source token is frozen before the first await instead of adopting a caller mutation', async () => {
+  const f = fixture(),
+    out = sink(),
+    pin = { ...f.anchor },
+    pending = captureBookBackupResources({
+      bookId: 'book',
+      source: pin,
+      api: f.api,
+      lore: f.lore,
+      write: out.write,
+    });
+  pin.sourceToken = 'f'.repeat(64);
+  const proof = await pending;
+  expect(proof.source.sourceToken).toBe(f.anchor.sourceToken);
+  expect(f.api.getSource).toHaveBeenCalledWith({
+    bookId: 'book',
+    expectedSourceToken: f.anchor.sourceToken,
+  });
+});
+it('mutating a detached proof during metadata I/O cannot conceal a changed logical source', async () => {
+  const f = fixture(),
+    out = sink(),
+    proof = {
+      ...(await captureBookBackupResources({
+        bookId: 'book',
+        api: f.api,
+        lore: f.lore,
+        write: out.write,
+      })),
+    },
+    read = vi.mocked(f.lore.portableMetadata).getMockImplementation()!,
+    changed = 'f'.repeat(64);
+  vi.mocked(f.lore.portableMetadata).mockImplementationOnce(async (...args) => {
+    proof.loreDigest = digest(
+      JSON.stringify([digest('writer-book-logical-lore-v1'), 'entity', changed]),
+    );
+    return { ...(await read(...args)), readToken: changed };
+  });
+  await expect(verifyBookBackupResources(proof, { api: f.api, lore: f.lore })).rejects.toThrow(
+    'estrutura completa',
+  );
 });

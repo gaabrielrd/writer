@@ -27,6 +27,7 @@ import {
 } from '../model/backupContainer';
 import { bookStructureApi } from './bookStructureCallables';
 import { bookResourceApi } from './bookResourceCallables';
+import { createBookBackupLorePort, type BookBackupLorePort } from './bookBackupLorePort';
 import { bookPersonaApi } from './bookPersonaCallables';
 import { bookUniverseApi } from './bookUniverseCallables';
 import { bookDraftApi } from './bookDraftCallables';
@@ -69,6 +70,7 @@ export interface BookBackupOptions {
     universe?: BookUniverseApi;
     draft?: BookDraftApi;
     cover?: BookCoverApi;
+    lore?: BookBackupLorePort;
   };
 }
 function invalid(): never {
@@ -83,8 +85,10 @@ export function streamBookBackup(
   options: BookBackupOptions,
 ): AsyncGenerator<Uint8Array, BookBackupSeal | undefined, void> {
   const settings = { ...options, apis: { ...options.apis }, history: { ...options.history } },
-    controller = new AbortController();
+    controller = new AbortController(),
+    lore = { ...(settings.apis.lore ?? createBookBackupLorePort()) };
   function check() {
+    lore.guard();
     settings.signal?.throwIfAborted();
     controller.signal.throwIfAborted();
     if (settings.isCurrent && !settings.isCurrent())
@@ -213,7 +217,14 @@ export function streamBookBackup(
     const resources = yield* section(
       'resources',
       bridge((write, signal) =>
-        captureBookBackupResources({ bookId, source: anchor, api: resourcesApi, write, signal }),
+        captureBookBackupResources({
+          bookId,
+          source: anchor,
+          api: resourcesApi,
+          lore,
+          write,
+          signal,
+        }),
       ),
     );
     same(resources);
@@ -265,7 +276,11 @@ export function streamBookBackup(
     same(cover);
     if (!structure || !resources || !personas || !universe || !draft || !cover) invalid();
     await verifyBookBackupStructure(structure, { api: structureApi, signal: controller.signal });
-    await verifyBookBackupResources(resources, { api: resourcesApi, signal: controller.signal });
+    await verifyBookBackupResources(resources, {
+      api: resourcesApi,
+      lore,
+      signal: controller.signal,
+    });
     await verifyBookBackupPersonas(personas, { api: personasApi, signal: controller.signal });
     await verifyBookBackupUniverse(universe, { api: universeApi, signal: controller.signal });
     await guard(() =>
@@ -309,7 +324,9 @@ export function streamBookBackup(
     if (settings.signal?.aborted) onAbort();
     try {
       check();
-      return yield* encodeBookBackup(records(), { signal: controller.signal });
+      const seal = yield* encodeBookBackup(records(), { signal: controller.signal });
+      check();
+      return seal;
     } finally {
       controller.abort(new DOMException('Fluxo de backup encerrado.', 'AbortError'));
       settings.signal?.removeEventListener('abort', onAbort);

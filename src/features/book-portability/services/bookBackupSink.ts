@@ -2,12 +2,14 @@ import type { BookBackupSeal } from '../model/backupContainer';
 import { BookBackupFormatError } from '../model/backupContainer';
 import { streamBookBackup, type BookBackupOptions } from './streamBookBackup';
 import { closed, validHash } from './bookSnapshotCapture';
+import { createBookBackupLorePort } from './bookBackupLorePort';
 export interface BookBackupSink {
   write(this: void, bytes: Uint8Array): Promise<void>;
   close(this: void): Promise<void>;
   abort(this: void, reason: unknown): Promise<void>;
 }
-function check(options: Pick<BookBackupOptions, 'signal' | 'isCurrent'>) {
+function check(options: Pick<BookBackupOptions, 'signal' | 'isCurrent' | 'apis'>) {
+  options.apis?.lore?.guard();
   options.signal?.throwIfAborted();
   if (options.isCurrent && !options.isCurrent())
     throw new DOMException('A captura não pertence mais à sessão atual.', 'AbortError');
@@ -46,7 +48,10 @@ export function saveBookBackup(
   options: BookBackupOptions,
   destination: BookBackupSink | PromiseLike<BookBackupSink>,
 ): Promise<BookBackupSeal> {
-  const settings = { ...options };
+  const settings = {
+    ...options,
+    apis: { ...options.apis, lore: { ...(options.apis?.lore ?? createBookBackupLorePort()) } },
+  };
   const stream = streamBookBackup(bookId, settings);
   return write();
   async function write(): Promise<BookBackupSeal> {
@@ -74,6 +79,7 @@ export function saveBookBackup(
               'O backup não retornou seu selo completo.',
             );
           await sink.close();
+          check(settings);
           return seal;
         }
         await sink.write(next.value);

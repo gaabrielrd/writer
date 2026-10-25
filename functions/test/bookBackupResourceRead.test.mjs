@@ -410,3 +410,12 @@ test('native own-lore edit invalidates an item even when an Admin bypasses the r
   assert.deepEqual(await source(f), pin);
   await assert.rejects(read(f, pin, 'lore', null, row), { code: 'failed-precondition' });
 });
+
+test('physical lore reads refuse every payloadStorage stub while metadata listing remains available', async () => {
+  const f = fixture();
+  f.records.get('books/book/lore/entity').payloadStorage = {};
+  const pin = await source(f),
+    page = await list(f, pin, 'lore');
+  assert.equal(page.items.length, 1);
+  await assert.rejects(read(f, pin, 'lore', null, page.items[0]), { code: 'failed-precondition' });
+});

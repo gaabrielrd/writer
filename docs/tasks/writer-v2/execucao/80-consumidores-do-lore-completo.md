@@ -276,3 +276,14 @@ positivos; build/smoke. [Evidência C2](../../../entregas/2026-10-25-writer-v2-v
 C3 deve ligar captura/revalidação/selo. D deve ler/remapear/materializar grande,
 sem usar o orçamento da API integral pequena como limite de autoria. Etapa 5,
 plano 131/P1/fases/gates continuam abertos, sem rollout ou operação de produção.
+
+## Captura e selo da etapa 5 — M38c12 C3
+
+Arquivo completo captura lore por C1 e revalida loreDigest/metadados v1 antes do
+selo, sem lista de provas em RAM ou stub físico. Guarda de ator inclui selo/
+close, preservando o limite real do commit. 27 Node, 75 Vitest distintos, três SDK
+distintos, cinco Chromium e build/smoke positivos.
+[Evidência C3](../../../entregas/2026-10-25-writer-v2-captura-logica-e-selo-do-backup.md).
+
+A/B/C do plano 131 integrados; D (leitor/remap/materialização/roundtrip grandes)
+é o próximo requisito. Etapa 5/P1/fases/gates ainda abertos, sem rollout.

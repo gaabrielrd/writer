@@ -75,6 +75,16 @@ export function createBookLorePortableClient(call: LoreReadCall, guard: LoreRead
       readToken,
     );
   }
+  async function portableMetadata(bookId: string, id: string, signal?: AbortSignal) {
+    readId(bookId);
+    readId(id);
+    guard();
+    signal?.throwIfAborted();
+    const value = await header(bookId, id);
+    signal?.throwIfAborted();
+    guard();
+    return value;
+  }
   async function verifyPortable(proof: BookLorePortableProof, signal?: AbortSignal) {
     guard();
     signal?.throwIfAborted();
@@ -303,5 +313,5 @@ export function createBookLorePortableClient(call: LoreReadCall, guard: LoreRead
       dataHash.destroy();
     }
   }
-  return { writePortable, verifyPortable };
+  return { writePortable, verifyPortable, portableMetadata };
 }

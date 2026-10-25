@@ -453,3 +453,9 @@ concluído estiverem satisfeitos. A lista fica em
 - Preserve checkpoints antigos em andamento; não use a API integral pequena
   como substituta do leitor grande por spans nem emita ponteiros novos em rollout
   com validadores/leitores antigos ainda ativos.
+
+- Capture lore do arquivo por C1/writePortable e revalide loreDigest por metadata
+  v1 antes do selo; não guarde catálogo de provas nem serialize tokens no arquivo.
+- Compartilhe port/guard de ator até a resposta após close; abort antes do commit
+  preserva o arquivo anterior, mas não prometa desfazer close já confirmado.
+- Recuse payloadStorage no leitor físico de recursos; erro C1 não autoriza fallback.

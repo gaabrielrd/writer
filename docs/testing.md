@@ -2702,3 +2702,21 @@ durante lore grande; conteúdo malformado sob selo válido. Build/typecheck/smok
 2989 módulos e checks locais positivos. Não comprova captura/restauração grande:
 C3/D/P1/gates continuam. Sem CI/validate global.
 [Evidência C2](entregas/2026-10-25-writer-v2-validacao-incremental-do-lore.md).
+
+## P1 M38c12 C3 — captura até o selo real
+
+27/27 Node dirigidos e 75 Vitest distintos positivos: lote 72/72, duas regressões
+de ator em selo/close reproduzidas vermelhas e depois 22/22 nos arquivos afetados;
+bridge reexecutado 13/13 após incluir base/overrides/deleções. Captura C1 real,
+recursos/sink/pressão, fonte congelada e prova imutável cobertos.
+
+Três SDK distintos: dois positivos no lote inicial (arquivo >8 MiB → servidor,
+clock), depois somente clock e nova regressão de ator/selo/close: 2/2, zero skipped.
+Compilação em memória/Firestore demo verificado; sem Auth/App Check em produção.
+
+Cinco Chromium com arquivo OPFS/índice cifrado reais: 10184266 bytes/164 registros/
+163 unidades nativas distintas, base/overrides/deleções e validação pública;
+ator/abort/pressão preservando arquivo anterior; selo tardio; close já confirmado
+com erro sem sucesso e sem promessa de rollback. Build/typecheck/smoke 2990 módulos,
+lint/sintaxe/checks locais positivos. D/roundtrip/P1/validate/gates continuam.
+[Evidência C3](entregas/2026-10-25-writer-v2-captura-logica-e-selo-do-backup.md).
