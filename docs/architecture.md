@@ -2254,3 +2254,22 @@ Recover não envia RPC de edição; staging parcial mantém active/dívida.
 Ainda compor executor advance/apply, cancel/adoção própria e host. Serviços/
 harness não equivalem a fluxo visual ativado. Lifecycle/consumidores/backup/
 rollout e validate de P1 continuam pendentes.
+
+## P1 M38c5q — executor durável da criação
+
+[ADR 0130](decisions/0130-durable-lore-creation-executor.md):
+createLore/resumeLoreCreation na sessão Auth compõem preparação/checkpoint/core
+no mesmo handle. Proxy confirma wire antes da RPC e ponte/checkpoint depois;
+dívida after só confirma a gravação, bloqueando outro produtor. Inicialização
+reconcilia metadata e cópia sem enviar bytes/apply automaticamente.
+
+OwnApply opcional nasce do wire no checkpoint privado validado antes do envio.
+Prova própria confere pai e edição por hash/token/revisão/operação/geração,
+timestamp e clock originais. Queries não usam chave, inclusive quando cancel
+perde para apply. CreationJobsClosed distingue cancel de adoção própria;
+release/purge removem só recuperação, preservando cabeça e geração adotadas.
+Descarte completo reaberto reconfere ausência antes de copyDiscarded.
+
+API durável está pronta para composição visual, sem ativar compêndio. Host e
+exclusão nativa do cliente, lifecycle, demais writers/consumidores/backup/
+rollout e validate de P1 continuam pendentes.

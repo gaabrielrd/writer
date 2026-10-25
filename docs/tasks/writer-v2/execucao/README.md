@@ -1268,3 +1268,19 @@ durável advance/apply, dívida local e adoção própria no cancel/encerramento
 antes do host. Lifecycle/exclusão/consumidores/backup/rollout e validate de P1
 continuam necessários. P1/F2-09/V2/fases 3–5 e gates humanos/comerciais abertos;
 sem CI ou envio remoto.
+
+### P1 M38c5q — executor durável da criação
+
+[Plano 115](115-executor-duravel-da-criacao-de-lore.md),
+[ADR 0130](../../../decisions/0130-durable-lore-creation-executor.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-executor-duravel-da-criacao-de-lore.md).
+Sessão oferece createLore/resumeLoreCreation com write-ahead/dívida/ponte,
+ready sem cabeça, apply explícito e confirmação nativa por metadata. OwnApply
+vincula wire cifrado a pai/edição/hash/token/geração/evento originais; permite
+release/discard da recuperação aplicada sem remover cabeça/geração.
+
+274 Vitest distintos positivos em rodadas, em 12 arquivos (24 novos), retake
+final de quatro casos afetados, cinco jornadas Chromium e tipos/build/smoke verdes.
+Próximo: host de criação, exclusão nativa do cliente e entrada coordenada no
+compêndio. Lifecycle/consumidores/backup/rollout/validate de P1 continuam
+necessários. P1/F2-09/V2/fases 3–5 e gates humanos/comerciais abertos; sem remoto.

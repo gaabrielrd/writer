@@ -4,6 +4,7 @@ import { bookLoreEditSession } from '../services/bookLoreEditService.ts';
 const s = vi.hoisted(() => ({
   auth: { currentUser: null },
   prepare: vi.fn(),
+  durable: vi.fn(),
   list: vi.fn(),
   call: vi.fn(),
   callable: vi.fn(),
@@ -13,6 +14,9 @@ vi.mock('@/shared/lib', () => ({ auth: s.auth, getFirebaseApp: () => ({ app: 'fi
 vi.mock('firebase/functions', () => ({
   getFunctions: () => ({ region: 'us-central1' }),
   httpsCallable: s.callable,
+}));
+vi.mock('../services/bookLoreCreationDurableOperation.ts', () => ({
+  createDurableBookLoreCreation: s.durable,
 }));
 vi.mock('../services/bookLoreCreationPreparation.ts', () => ({
   prepareCreationRecovery: s.prepare,
@@ -30,6 +34,12 @@ beforeEach(() => {
   vi.resetAllMocks();
   s.auth.currentUser = { uid: 'author' };
   s.prepare.mockImplementation((writeId, environment, input, options) => ({
+    writeId,
+    environment,
+    input,
+    options,
+  }));
+  s.durable.mockImplementation((writeId, environment, input, options) => ({
     writeId,
     environment,
     input,
@@ -114,4 +124,43 @@ it('drops a late preparation listing after the captured actor changes', async ()
     return { items: [], next: null };
   });
   await expect(session.creationPreparations()).rejects.toThrow('contexto mudou');
+});
+
+it('binds durable creation to the captured account, freezes input and exposes metadata-only resume', () => {
+  const session = bookLoreEditSession(),
+    input = {
+      uid: 'spoof',
+      bookId: 'book',
+      writeId: 'durable-auth',
+      data: { name: 'Literal', category: 'other' },
+    },
+    created = session.createLore(input),
+    resumed = session.resumeLoreCreation('durable-auth');
+  input.data.name = 'changed';
+  expect(created.input.uid).toBe('author');
+  expect(created.input.data.name).toBe('Literal');
+  expect(resumed.input).toBeUndefined();
+  expect(resumed.writeId).toBe('durable-auth');
+  expect(s.call).not.toHaveBeenCalled();
+  s.auth.currentUser = { uid: 'author' };
+  expect(() => created.environment.guard()).toThrow('contexto mudou');
+  expect(() => resumed.environment.guard()).toThrow('contexto mudou');
+});
+it('captures the host guard for durable creation and resume without relying on the mutable options', () => {
+  let current = true;
+  const options = {
+      guard: () => {
+        if (!current) throw Error('host changed');
+      },
+    },
+    session = bookLoreEditSession(),
+    created = session.createLore(
+      { bookId: 'book', writeId: 'host-durable', data: { name: 'Own', category: 'other' } },
+      options,
+    ),
+    resumed = session.resumeLoreCreation('host-durable', options);
+  options.guard = () => {};
+  current = false;
+  expect(() => created.environment.guard()).toThrow('host changed');
+  expect(() => resumed.environment.guard()).toThrow('host changed');
 });

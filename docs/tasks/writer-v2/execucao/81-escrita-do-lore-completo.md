@@ -586,3 +586,19 @@ Armazenamento não conclui o executor: ainda compor advance/apply, bloqueio por
 dívida local e confirmação nativa de adoção própria no encerramento. Host,
 exclusão/lifecycle, consumidores/backup/rollout e validate integral de P1
 seguem obrigatórios. P1/F2-09/V2 e fases/gates restantes abertos.
+
+## Executor durável da criação — M38c5q
+
+[Plano 115](115-executor-duravel-da-criacao-de-lore.md) e
+[ADR 0130](../../../decisions/0130-durable-lore-creation-executor.md):
+createLore/resumeLoreCreation compõem preparação/checkpoint/core no mesmo
+handle Auth, confirmando wire e resultado sem novo produtor com dívida local.
+Ready conserva cabeça ausente e apply permanece explícito. Prova metadata
+correlaciona pai/edição/hash/token/geração e evento antes de fechar recuperação
+aplicada, inclusive sem chave e com resposta retida.
+
+274 Vitest distintos positivos em rodadas (24 novos), cinco jornadas Chromium e
+[evidência](../../../entregas/2026-10-24-writer-v2-executor-duravel-da-criacao-de-lore.md).
+Host/criação visual e exclusão nativa do cliente precedem entrada no compêndio.
+Lifecycle, demais writers/consumidores/backup/rollout e validate de P1 continuam
+pendentes. P1/F2-09/V2/fases 3–5 e gates humanos/comerciais abertos.

@@ -18,6 +18,7 @@ import {
   journalStorageAvailable,
 } from './bookLoreJournalDb';
 
+import { creationAdoptionTransition } from './bookLoreCreationAdoptionContracts';
 import { creationCheckpointTransition } from './bookLoreCreationCheckpointContracts';
 
 const TICKETS = 'creationTickets',
@@ -47,6 +48,7 @@ export async function getCreationTicket(
 }
 function monotonic(a: CreationTicket, b: CreationTicket) {
   creationCheckpointTransition(a, b);
+  creationAdoptionTransition(a, b);
   if (
     (a.cancelRequested || b.cancelRequested || b.releaseRequested || b.discard) &&
     b.checkpoint &&

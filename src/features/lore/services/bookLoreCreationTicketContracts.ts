@@ -23,6 +23,11 @@ import {
   type CreationCheckpointState,
 } from './bookLoreCreationCheckpointContracts';
 
+import {
+  readCreationAdoptionState,
+  type CreationAdoptionState,
+} from './bookLoreCreationAdoptionContracts';
+
 export interface CreationMetaWire {
   readonly method: string;
   readonly input: Readonly<Record<string, unknown>>;
@@ -50,6 +55,7 @@ export interface CreationTicket {
   jobsClosed: boolean;
   draft: LoreJournalBlob | null;
   checkpoint?: CreationCheckpointState | null;
+  ownApply?: CreationAdoptionState | null;
   discard: {
     phase: 'requested' | 'purging' | 'complete';
     generation: string | null;
@@ -91,8 +97,10 @@ export const creationTicketScope = (t: CreationTicket) =>
     loreId: t.loreId,
     creationId: t.creationId,
   });
+export const creationJobsClosed = (t: CreationTicket) =>
+  t.jobsClosed || t.ownApply?.phase === 'confirmed';
 export const creationKeyClosed = (t: CreationTicket) =>
-  t.jobsClosed &&
+  creationJobsClosed(t) &&
   t.releaseRequested &&
   ((t.keyState === 'none' && t.intentHash === null && !t.identity && !t.draft) ||
     (t.keyState === 'none' && t.parent?.jobToken === null) ||
@@ -124,7 +132,7 @@ export function readCreationTicket(value: unknown, uid: string, writeId: string)
       'draft',
       'discard',
     ],
-    ['checkpoint'],
+    ['checkpoint', 'ownApply'],
   );
   const expected = bookLoreCreationIdentity(readId(uid), readId(writeId), readId(v.bookId));
   if (
@@ -208,12 +216,13 @@ export function readCreationTicket(value: unknown, uid: string, writeId: string)
     if (!get) readId(r.operationId);
     if (advance) readCount(r.expectedRevision);
   }
+  if (v.ownApply !== undefined && v.ownApply !== null) readCreationAdoptionState(v.ownApply, t);
   if (v.revoke !== null) {
     const r = readObject(v.revoke, ['wire', 'state']),
       w = readObject(r.wire, ['writeId', 'requestHash'], ['jobToken']);
     if (
       !v.releaseRequested ||
-      !v.jobsClosed ||
+      !creationJobsClosed(t) ||
       !['pending', 'confirmed'].includes(r.state as string) ||
       w.writeId !== writeId ||
       w.requestHash !== creationRecoveryHash(t) ||

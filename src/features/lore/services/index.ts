@@ -63,3 +63,5 @@ export type {
   CreationCheckpointBundle,
   CreationCheckpointOutcome,
 } from './bookLoreCreationCheckpointContracts';
+
+export type { DurableBookLoreCreationSnapshot } from './bookLoreCreationDurableOperation';

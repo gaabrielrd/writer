@@ -6,6 +6,7 @@ import type { BookLoreCreationInput } from './bookLoreCreationPlan';
 import { createBookLoreManualOperation } from './bookLoreManualOperation';
 import { bookLoreJournalSession } from './bookLoreJournalSession';
 import { bookLoreRecoveryKeySession } from './bookLoreRecoveryKeyClient';
+import { createDurableBookLoreCreation } from './bookLoreCreationDurableOperation';
 import { prepareCreationRecovery } from './bookLoreCreationPreparation';
 import { listCreationTickets } from './bookLoreCreationTicketDb';
 import { readJournalPreparation, listJournalPreparations } from './bookLoreJournalDb';
@@ -203,6 +204,28 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
       options,
     );
   }
+  function createLore(
+    input: Omit<BookLoreCreationInput, 'uid'>,
+    options: BookLoreWriteOptions = {},
+  ) {
+    guard();
+    const frozen = freezeLoreEditValue(input) as Omit<BookLoreCreationInput, 'uid'>;
+    return createDurableBookLoreCreation(
+      frozen.writeId,
+      manualEnvironment(options.guard),
+      { ...frozen, uid },
+      options,
+    );
+  }
+  function resumeLoreCreation(writeId: string, options: BookLoreWriteOptions = {}) {
+    guard();
+    return createDurableBookLoreCreation(
+      writeId,
+      manualEnvironment(options.guard),
+      undefined,
+      options,
+    );
+  }
   function creationPreparation(
     input: Omit<BookLoreCreationInput, 'uid'>,
     options: BookLoreWriteOptions = {},
@@ -243,6 +266,8 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     guard,
     prepare,
     prepareCreation,
+    createLore,
+    resumeLoreCreation,
     creationPreparation,
     resumeCreationPreparation,
     creationPreparations,

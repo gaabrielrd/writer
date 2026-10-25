@@ -2239,3 +2239,19 @@ repetidas comprovam reinício de processo, ponte metadata sem replay e prefixo
 interrompido durante AES-GCM. IDB/WebCrypto/Web Locks reais; Functions sobre
 fixtures de banco/identidade. Sem SDK/Auth/App Check/UI reais ou executor ativado.
 Validate integral continua no fechamento de P1; somente commits locais.
+
+### P1 M38c5q — executor durável da criação
+
+[Plano 115](tasks/writer-v2/execucao/115-executor-duravel-da-criacao-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-executor-duravel-da-criacao-de-lore.md):
+274 Vitest distintos em rodadas, em 12 arquivos (24 novos: 22 executor e dois sessão).
+Integração inicial: 273/273 em 32.08 s. Revisão posterior conferiu reabertura do
+descarte e adicionou confirmação no mesmo handle: retake final de quatro casos
+positivos em 10.55 s, com 18 outros não executados nesse arquivo.
+
+Cobertura dirigida inclui dívida/ACK/ponte, ready/apply explícito, origem/token/
+geração, prova nativa sem chave, cancel durante produtor/apply, Signal/actor/
+host/takeover e intenção vinculada ao checkpoint original. Cinco jornadas
+Chromium reais da API passaram com reinício e resposta retida, incluindo
+descarte reaberto. Serviços Functions usam fixtures de banco/identidade;
+sem comprovar SDK/Auth/App Check/UI reais. Validate integral no fechamento de P1.

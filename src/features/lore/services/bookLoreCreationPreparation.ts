@@ -11,10 +11,12 @@ import {
 import { creationDraftStore } from './bookLoreCreationDraft';
 import { creationCheckpointInventory } from './bookLoreCreationCheckpointContracts';
 import { creationCheckpointJournal } from './bookLoreCreationCheckpointJournal';
+import { creationAdoptionWorker } from './bookLoreCreationAdoptionWorker';
 import {
   creationRecoveryIntent,
   creationRecoveryHash,
   creationKeyClosed,
+  creationJobsClosed,
   type CreationTicket,
   type CreationMetaWire,
 } from './bookLoreCreationTicketContracts';
@@ -80,21 +82,25 @@ export function prepareCreationRecovery(
       phase:
         head?.discard?.phase === 'complete' && discardVerified
           ? 'discarded'
-          : head && creationKeyClosed(head)
-            ? 'released'
-            : head?.jobsClosed
-              ? 'cancelled'
-              : head?.parent?.phase === 'adopted'
-                ? 'conflict'
-                : head?.cancelRequested
-                  ? 'cancelling'
-                  : head?.draft?.complete
-                    ? 'copy-ready'
-                    : head && !frozen
-                      ? 'awaiting-draft'
-                      : head
-                        ? 'preparing'
-                        : 'opening',
+          : head?.ownApply?.phase === 'confirmed'
+            ? 'applied'
+            : head && creationKeyClosed(head)
+              ? 'released'
+              : head?.jobsClosed
+                ? 'cancelled'
+                : head?.parent?.phase === 'adopted'
+                  ? head.ownApply?.phase === 'pending'
+                    ? 'resolving'
+                    : 'conflict'
+                  : head?.cancelRequested
+                    ? 'cancelling'
+                    : head?.draft?.complete
+                      ? 'copy-ready'
+                      : head && !frozen
+                        ? 'awaiting-draft'
+                        : head
+                          ? 'preparing'
+                          : 'opening',
       hasRecoveryCopy: !!head?.draft?.complete,
       requiresInput: !!head && !frozen && !head.draft?.complete,
       parent: head?.parent ?? null,
@@ -291,8 +297,11 @@ export function prepareCreationRecovery(
     });
   async function advanceClosing() {
     let t = await current();
-    if (!t.jobsClosed) {
-      if (t.parent?.phase === 'adopted') return snapshot();
+    if (!creationJobsClosed(t)) {
+      if (t.parent?.phase === 'adopted') {
+        if (t.ownApply?.phase === 'pending') await adoption.reconcile();
+        return snapshot();
+      }
       if (!t.closing || t.closing.state === 'confirmed') {
         const advance = t.parent?.phase === 'cancelling';
         const method = advance
@@ -433,7 +442,29 @@ export function prepareCreationRecovery(
     guard();
     return creationCheckpointJournal(ticket!, input, { guard, signal, yieldControl, getKey });
   }
+  const adoption = creationAdoptionWorker({ guard, inspect: current, mutate: update, edit });
+  async function inspect() {
+    await acquire();
+    return current();
+  }
+  async function stageApply(value: unknown) {
+    guard();
+    const wire = freezeLoreEditValue(value);
+    await acquire();
+    const journal = await checkpointJournal(),
+      bundle = await journal.read();
+    guard();
+    if (hash(bundle.checkpoint.pending.production) !== hash(wire)) journalFail();
+    return adoption.stage(wire);
+  }
+  async function confirmAdoption() {
+    await acquire();
+    return adoption.reconcile();
+  }
   return Object.freeze({
+    inspect,
+    stageApply,
+    confirmAdoption,
     checkpointJournal,
     initialize,
     snapshot,
