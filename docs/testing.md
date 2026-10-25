@@ -2793,3 +2793,14 @@ conteúdo final intacto e órfãos/recriados/estrangeiros preservados ao recusar
 A falha inicial da asserção de replay e a repetição seletiva estão na
 [evidência](entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md), junto ao SDK.
 Sem nova fronteira browser; validate global permanece no fechamento de P1.
+
+## P1 M38c12 D3 em andamento — port preparado e recaptura
+
+118 Node distintos positivos (95 C1 anteriores, 23 novos), sete Vitest de
+recaptura/segunda restauração, dois SDK e quatro Chromium. Conferem origem e
+provas por unidade, conta/fase/ABA, datas pequenas ausentes/zero, arquivo mínimo
+selado grande, perda de autorização/journal e abort OPFS. Falhas de fixtures/
+asserções, seleções dirigidas e limites estão na
+[evidência](entregas/2026-10-25-writer-v2-leitura-preparada-e-recaptura-do-lore.md).
+Não é roundtrip integral do livro original, host/UI ou Auth de produção.
+Validate global permanece no fechamento de P1.

@@ -1,5 +1,6 @@
 import { createBookRestoreStructureService } from './bookRestoreStructure.mjs';
 import { createBookRestoreLoreService } from './bookRestoreLore.mjs';
+import { createBookRestorePreparedLoreService } from './bookRestorePreparedLore.mjs';
 import { createBookRestoreResourcesService } from './bookRestoreResources.mjs';
 import { createBookRestoreCountsService } from './bookRestoreCounts.mjs';
 import { createBookRestorePersonasService } from './bookRestorePersonas.mjs';
@@ -1138,6 +1139,7 @@ export function createBookRestoreUploadService({
     pickProgress,
   });
   return {
+    ...createBookRestorePreparedLoreService({ db, load }),
     ...sourceIndexes,
     ...personaLibrary,
     ...coverMaterialization,

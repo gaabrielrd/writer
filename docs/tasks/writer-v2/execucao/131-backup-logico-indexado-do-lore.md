@@ -651,3 +651,52 @@ O caminho inline anterior usa timestamps físicos como datas lógicas. O roundtr
 deve cobrir também fichas pequenas, datas ausentes/zero e presença dos campos.
 Não habilitar novos jobs alegando preservação integral sem resolver essa escolha
 de representação e conferir todos os leitores. A opção continua false por padrão.
+
+### Contrato D3 — leitor preparado e fichas pequenas antes da implementação
+
+A opção interna indexedLoreBodies=true passará a selecionar geração v2 para
+todo item que tenha o índice original validado, inclusive pequeno; remover o
+critério de 512 KiB nesse modo. Prefixos monolíticos em andamento mantêm seu
+protocolo; opção false continua o comportamento anterior. Não habilitar o
+padrão antes do roundtrip/host/rollout. Isso evita fabricar datas portáteis em
+fichas pequenas sem migrar silenciosamente as cabeças anteriores.
+
+Acrescentar port interno openPreparedBookRestoreLore por restoreId/jobToken,
+sem callable/Rule/namespace novo. A abertura e cada leitura reautorizam conta,
+job/reserva/marcador nativos, raiz ausente, estado content-verified, Counts done
+e drenagem done quando há inventário de payload. Não criar raiz sintética.
+Devolver somente a ABI de lista/header/parte de lore; nenhuma chave, ponteiro
+físico, grant ou dado interno do job no transporte.
+
+Reutilizar operações C1 por port explícito de autorização/leitura, mantendo
+a composição pública com autorização normal de livro. O port preparado deve
+autenticar cada cabeça listada/lida e header/parte/segmento pelo journal/recibo
+original, além de codec/Merkle/birth existentes. Ausência simultânea de alvo e
+journal pode dar null; artefato existente sem prova não permite fallback.
+
+Tokens preparados incluem escopo criptográfico específico do job; não equivalem
+a tokens C1 de livro ativo. Lista fixa checkpoint atual; origens v1/v2 normais
+mantêm seus hashes anteriores. Cancelamento, job/reserva/marker/cabeça/corpo/
+journal/recibo recriados ou alterados, outro ator/destino e root presente devem
+bloquear a próxima unidade. Nenhum certificado anterior substitui autorização.
+
+Validar pequena/grande, campos/relações ausentes/vazios, datas ausentes/zero e
+tokens v1/v2; C1 normal continua recusado sem raiz. Provar recaptura com produtor
+portátil real e validação local/servidor do arquivo, incluindo UTF-8/escapes e
+crescimento após remap. Captura/backup integral do livro e ativação geral ainda
+têm host e demais recursos/gates de P1; não declarar esse port como entrega final.
+Node/Vitest/SDK/Chromium dirigidos; validate integral permanece no fechamento de P1.
+
+## D3 em andamento — leitura preparada e recaptura individual
+
+Port interno reautoriza job e prova original por unidade; C1 público continua
+exigindo livro ativo. Geração indexada explícita inclui fichas pequenas com datas
+lógicas preservadas. Captura individual real, arquivo mínimo validado e segunda
+restauração privados conferidos. 118 Node distintos, sete Vitest, dois SDK e
+quatro Chromium positivos; ver
+[evidência](../../../entregas/2026-10-25-writer-v2-leitura-preparada-e-recaptura-do-lore.md).
+
+O arquivo mínimo de teste só contém lore; não é recaptura integral do livro
+original. Host/roundtrip integral, consumidores/inventários/legados necessários,
+habilitação coordenada, validate de P1 e demais fases/gates continuam obrigatórios.
+Não habilitado por padrão, sem raiz/endpoint/Rule/namespace ou operação remota nova.

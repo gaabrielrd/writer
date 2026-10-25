@@ -65,10 +65,12 @@ export function loreEntityToken(c, book, snapshot, tokenVersion = 1) {
   const native = bookBackupIdentity(snapshot);
   if (!native) loreChanged();
   loreReadTokenVersion(tokenVersion);
+  const scope = book.tokenScope === undefined ? {} : { tokenScope: loreReadToken(book.tokenScope) };
   if (tokenVersion === 2)
     return digest({
       schemaVersion: 2,
       domain: 'book-lore-read-entity',
+      ...scope,
       uid: c.uid,
       bookId: c.bookId,
       bookBirth: bookBackupIdentity(book.snapshot).created,
@@ -78,6 +80,7 @@ export function loreEntityToken(c, book, snapshot, tokenVersion = 1) {
   return digest({
     schemaVersion: 1,
     domain: 'book-lore-read',
+    ...scope,
     uid: c.uid,
     bookId: c.bookId,
     listToken: book.listToken,

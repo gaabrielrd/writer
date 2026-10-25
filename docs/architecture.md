@@ -2811,3 +2811,17 @@ retiredArtifacts é débito separado de cleanedArtifacts no saldo do cancelament
 60 Node distintos positivos; SDK e limites na
 [evidência](entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md).
 Sem habilitar novas gerações ou ativar a raiz. D3/roundtrip/P1 permanecem abertos.
+
+## P1 M38c12 D3 em andamento — leitura preparada e recaptura
+
+Port interno openPreparedBookRestoreLore reutiliza operações C1 com autorização
+específica de job nativo, Counts/drenagem done e raiz ausente. Cada cabeça e
+header/parte/segmento é autenticado pelo journal/recibo original. Tokens levam
+escopo do job; C1 público e seus hashes anteriores permanecem iguais. Não há
+endpoint/Rule/namespace novo nem raiz sintética.
+
+Modo indexado explícito cobre fichas pequenas para preservar datas lógicas
+ausentes/zero. Padrão false enquanto host/consumidores/roundtrip/rollout pendem.
+118 Node distintos, sete Vitest, dois SDK e quatro Chromium positivos; limites na
+[evidência](entregas/2026-10-25-writer-v2-leitura-preparada-e-recaptura-do-lore.md).
+O arquivo recapturado é fixture mínima de lore, não o livro original completo.

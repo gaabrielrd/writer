@@ -497,3 +497,10 @@ concluído estiverem satisfeitos. A lista fica em
   depois a metadata física e recuse stageKind remanescente, inclusive desconhecido.
 - Preserve artifactCount monotônico: retiredArtifacts debita drenagem bem-sucedida,
   cleanedArtifacts só cancelamento; exija saldo exato ao cancelar (ADR 0151).
+
+- Leia lore preparado somente pelo port interno ligado ao job/reserva/marcador
+  originais, Counts/drenagem done e raiz ausente; reautorize cada unidade e seu journal.
+- Separe tokens preparados por escopo do job e mantenha C1 público com autorização
+  normal de livro; não exponha o port interno como callable por composição dinâmica.
+- No modo indexado novo, preserve datas/ausências também em fichas pequenas;
+  opção padrão continua desligada até host/roundtrip/rollout coordenados (ADR 0151).

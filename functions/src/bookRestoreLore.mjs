@@ -86,13 +86,7 @@ export function createBookRestoreLoreService({
         if (cursor.lorePayload?.streamed && !indexed) inconsistent();
         if (
           indexed &&
-          (cursor.lorePayload?.streamed ||
-            (indexedLoreBodies &&
-              !cursor.lorePayload &&
-              indexed.sourceMetadata.byteLength +
-                indexed.sourceMetadata.index.relations.count * 74 +
-                1024 >
-                512 * 1024))
+          (cursor.lorePayload?.streamed || (indexedLoreBodies && !cursor.lorePayload))
         ) {
           streamed = indexed;
           item = indexed;

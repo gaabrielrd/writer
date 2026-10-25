@@ -258,3 +258,21 @@ recibo antigo e devolve progresso atual sem recriar dados descartados.
 
 [Evidência](../entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md).
 Leitura preparada/recaptura/roundtrip, host e habilitação coordenada continuam.
+
+## Port preparado D3 e representação pequena
+
+C1 compartilha operações com ports explícitos de autorização/leitura. A
+composição pública permanece fixa no livro ativo. O port preparado é interno,
+ligado à conta/jobToken originais, reserva/marcador, Counts e drenagem done,
+sempre sem raiz. Confere journals/recibos de cabeça, header, parte e segmento
+além das provas do codec. Tokens adicionam tokenScope somente nesse port;
+hashes normais v1/v2 continuam idênticos. Não é novo endpoint ou grant de livro.
+
+O modo indexedLoreBodies=true cobre todo item com índice original validado,
+inclusive pequeno; a geração v2 preserva datas lógicas opcionais separadas das
+físicas. Prefixos antigos iniciados e opção false mantêm a representação
+anterior. Não habilitar o padrão até host, consumidores, roundtrip e rollout.
+
+[Evidência](../entregas/2026-10-25-writer-v2-leitura-preparada-e-recaptura-do-lore.md):
+port/recaptura de lore em arquivo selado mínimo e segunda restauração privada.
+Não comprova roundtrip do restante do livro ou sua UI final; D3/P1 continuam.

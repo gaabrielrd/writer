@@ -21,6 +21,17 @@ export function setBookLoreReadHeaders(method, request) {
   request.rawRequest?.res?.setHeader('Vary', 'Authorization');
 }
 export function createBookLoreReadService({ db }) {
+  return createBookLoreReadOperations({
+    db,
+    readBook: ({ tx, c }) => readLoreBook(tx, c),
+    readEntity: ({ tx, c, id, snapshot }) => snapshot ?? tx.get(db.doc(c.path + '/lore/' + id)),
+    readPart: ({ tx, opened, section, page, index, field }) =>
+      readBookLoreRecordPart(tx, opened, section, page, index, field),
+  });
+}
+/** Internal operations shared by active-book and native restore-job authorization ports. */
+export function createBookLoreReadOperations({ db, readBook, readEntity, readPart }) {
+  if ([readBook, readEntity, readPart].some((value) => typeof value !== 'function')) loreInvalid();
   return {
     async listBookLoreRead(uid, data) {
       const c = loreReadScope(db, uid, data, ['limit', 'listToken', 'cursor', 'tokenVersion']),
@@ -30,7 +41,7 @@ export function createBookLoreReadService({ db }) {
       if (data.listToken != null) loreReadToken(data.listToken);
       if (data.cursor != null && data.listToken == null) loreInvalid();
       return db.runTransaction(async (tx) => {
-        const book = await readLoreBook(tx, c);
+        const book = await readBook({ tx, c });
         if (data.listToken != null && data.listToken !== book.listToken) loreChanged();
         const after = loreReadCursor(data.cursor, c, book, tokenVersion);
         let query = db
@@ -45,10 +56,13 @@ export function createBookLoreReadService({ db }) {
           schemaVersion: 1,
           bookId: c.bookId,
           listToken: book.listToken,
-          items: selected.map((snapshot) => ({
-            id: snapshot.id,
-            readToken: loreEntityToken(c, book, snapshot, tokenVersion),
-          })),
+          items: await Promise.all(
+            selected.map(async (snapshot) => {
+              const native = await readEntity({ tx, c, book, id: snapshot.id, snapshot });
+              if (!native.exists || native.id !== snapshot.id) loreChanged();
+              return { id: native.id, readToken: loreEntityToken(c, book, native, tokenVersion) };
+            }),
+          ),
           nextCursor:
             rows.docs.length > limit
               ? Buffer.from(
@@ -73,8 +87,8 @@ export function createBookLoreReadService({ db }) {
         if (Object.hasOwn(data, 'tokenVersion')) loreInvalid();
       }
       return db.runTransaction(async (tx) => {
-        const book = await readLoreBook(tx, c),
-          snapshot = await tx.get(db.doc(c.path + '/lore/' + id));
+        const book = await readBook({ tx, c }),
+          snapshot = await readEntity({ tx, c, book, id });
         if (!snapshot.exists) {
           if (data.readToken !== undefined) loreChanged();
           return null;
@@ -119,11 +133,20 @@ export function createBookLoreReadService({ db }) {
       )
         loreInvalid();
       return db.runTransaction(async (tx) => {
-        const book = await readLoreBook(tx, c),
-          snapshot = await tx.get(db.doc(c.path + '/lore/' + id));
+        const book = await readBook({ tx, c }),
+          snapshot = await readEntity({ tx, c, book, id });
         if (!snapshot.exists || !matchesLoreEntityToken(c, book, snapshot, token)) loreChanged();
         const opened = await openBookLoreRecord(tx, c, snapshot),
-          part = await readBookLoreRecordPart(tx, opened, data.section, page, index, data.field);
+          part = await readPart({
+            tx,
+            c,
+            book,
+            opened,
+            section: data.section,
+            page,
+            index,
+            field: data.field,
+          });
         return {
           schemaVersion: 1,
           bookId: c.bookId,

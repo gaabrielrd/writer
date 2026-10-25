@@ -1692,3 +1692,13 @@ por journals, confere metadata física e mantém saldo separado de cancelamento.
 [evidência](../../../entregas/2026-10-25-writer-v2-drenagem-do-lore-restaurado.md).
 Leitura preparada/recaptura/roundtrip, habilitação coordenada, host, inventários/
 demais P1/V2/fases/gates e validate continuam obrigatórios.
+
+### P1 M38c12 D3 em andamento — port preparado e recaptura
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): leitura interna autorizada por
+job e provas originais, geração indexada também pequena, produtor portátil real,
+arquivo mínimo selado e segunda restauração privada. 118 Node distintos, sete
+Vitest, dois SDK e quatro Chromium positivos; detalhes na
+[evidência](../../../entregas/2026-10-25-writer-v2-leitura-preparada-e-recaptura-do-lore.md).
+Host/roundtrip integral/consumidores/inventários/legados/rollout/validate, demais
+P1/V2/fases e gates continuam. Padrão de novas gerações permanece false.
