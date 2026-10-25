@@ -2619,3 +2619,22 @@ por chamada de 32 MiB/512 partes. Plano 130 B continua aberto: certificado/range
 da inspeção incremental devem permitir fontes maiores sem prosa no checkpoint.
 Campanhas não consomem fichas de livros. Demais P1/fases/gates e rollout continuam
 necessários; sem envio remoto/deploy.
+
+## P1 M38c11 B — certificado de projeção pública
+
+A inspeção original aceita publicationHash opcional. Cada avanço compara o
+candidato público limitado em RAM; estado guarda só sintaxe/SHA/posições.
+Overrides v2 avançam por partes antes da base integral; ready vincula o hash
+pelo contexto nativo. Stage reautoriza a origem/consentimento e copia somente os
+quatro campos certificados, sem reler chunks. Certificado metadata antigo não
+permite copiar texto ou ler corpos. Sem namespace/documento filho adicional;
+CAS/recibos/fence/cancelamento e exclusão usam o inventário existente.
+
+Cliente novo sempre prepara; ID determinístico permite retomar após resposta
+perdida e Auth exato cobre cada await. Captura inicial C1 continua integral em
+RAM. Caminho antigo sem certificado mantém o budget por chamada; não é fallback.
+139 Node distintos, 98 Vitest e cinco SDK positivos, incluindo base/override
+acima de 32 MiB; build/smoke positivos. [ADR 0150](decisions/0150-native-book-publication.md)
+e [evidência B](entregas/2026-10-25-writer-v2-publicacao-nativa-marco-b.md).
+Plano 130 implementado/validado localmente; P1/demais consumidores/fases/gates,
+validate global e entrega coordenada Functions/Rules/cliente continuam abertos.

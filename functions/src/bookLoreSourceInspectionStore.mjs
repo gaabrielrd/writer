@@ -138,22 +138,19 @@ export async function loadSourceInspection(tx, c, r) {
     'lastOperationId',
     'createdAt',
   ]);
-  closed(j.context, [
-    'bookId',
-    'loreId',
-    'inspectionId',
-    'sourceToken',
-    'bookBirth',
-    'mode',
-    'manifest',
-  ]);
+  closed(
+    j.context,
+    ['bookId', 'loreId', 'inspectionId', 'sourceToken', 'bookBirth', 'mode', 'manifest'],
+    ['publicationHash'],
+  );
   const { bookBirth, mode, manifest, ...intent } = j.context;
   if (
     j.kind !== 'inspection' ||
     j.context.inspectionId !== c.id ||
     inspectionStartHash(inspectionIntent(c.uid, intent)) !== j.startHash ||
     !['inline', 'payload'].includes(mode) ||
-    !['checking', 'base', 'privacy', 'ready', 'cancelled'].includes(j.phase)
+    !['checking', 'base', 'privacy', 'ready', 'cancelled', 'publication'].includes(j.phase) ||
+    (j.phase === 'publication' && !j.context.publicationHash)
   )
     conflict();
   closed(bookBirth, ['seconds', 'nanoseconds']);
@@ -178,7 +175,9 @@ export async function loadSourceInspection(tx, c, r) {
     j.byteLength !== Math.min(j.nextIndex * 65536, totalBytes) ||
     (j.phase === 'base'
       ? total === 0 || j.nextIndex >= total || typeof j.stateHash !== 'string'
-      : j.stateHash !== null) ||
+      : j.phase === 'publication'
+        ? j.nextIndex !== 0 || typeof j.stateHash !== 'string'
+        : j.stateHash !== null) ||
     (j.phase === 'checking' && (total !== 0 || j.nextIndex !== 0)) ||
     (['privacy', 'ready'].includes(j.phase) && j.nextIndex !== total)
   )
@@ -207,7 +206,7 @@ export async function loadSourceInspection(tx, c, r) {
 export async function inspectionState(tx, loaded) {
   const { c, job: j } = loaded,
     s = await tx.get(c.stateRef);
-  if (j.phase !== 'base') {
+  if (!['base', 'publication'].includes(j.phase)) {
     if (s.exists) conflict();
     return null;
   }
@@ -218,15 +217,11 @@ export async function inspectionState(tx, loaded) {
     !bornEqual({ createTime: s.updateTime }, { createTime: loaded.snapshot.updateTime })
   )
     conflict();
-  closed(v, [
-    'schemaVersion',
-    'ownerId',
-    'inspectionId',
-    'startHash',
-    'algorithm',
-    'hashState',
-    'parser',
-  ]);
+  closed(
+    v,
+    ['schemaVersion', 'ownerId', 'inspectionId', 'startHash', 'algorithm', 'hashState', 'parser'],
+    ['publication'],
+  );
   if (
     v.schemaVersion !== 1 ||
     v.ownerId !== c.uid ||
@@ -235,7 +230,8 @@ export async function inspectionState(tx, loaded) {
     v.algorithm !== SOURCE_INSPECTION_ALGORITHM ||
     digest(v) !== j.stateHash ||
     v.parser?.byteLength !== j.byteLength ||
-    v.parser?.bookId !== j.context.bookId
+    v.parser?.bookId !== j.context.bookId ||
+    Object.hasOwn(v, 'publication') !== Object.hasOwn(j.context, 'publicationHash')
   )
     conflict();
   return v;

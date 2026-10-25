@@ -10,6 +10,7 @@ import { bookContentId } from './bookBackupSchema.mjs';
 import { BOOK_LORE_BASE_FIELDS } from './bookLoreBaseIndex.mjs';
 import { BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
 import { digest, workFail } from './workProgressContracts.mjs';
+import { publicationCandidate } from './bookLorePublicationValidation.mjs';
 export const SOURCE_INSPECTION_ALGORITHM = 'sha256/hash-wasm@4.12.0';
 export const inspectionConflict = () =>
   workFail(
@@ -19,12 +20,15 @@ export const inspectionConflict = () =>
   );
 export function inspectionIntent(uid, r) {
   authorize(uid);
-  closed(r, ['bookId', 'loreId', 'inspectionId', 'sourceToken']);
+  closed(r, ['bookId', 'loreId', 'inspectionId', 'sourceToken'], ['publicationHash']);
   return {
     bookId: bookContentId(r.bookId),
     loreId: bookContentId(r.loreId),
     inspectionId: bookContentId(r.inspectionId),
     sourceToken: restoreHash(r.sourceToken),
+    ...(Object.hasOwn(r, 'publicationHash')
+      ? { publicationHash: restoreHash(r.publicationHash) }
+      : {}),
   };
 }
 export const inspectionStartHash = (intent) =>
@@ -53,7 +57,7 @@ export function inspectionRequest(uid, r, mutation = false, cas = false) {
       ...(mutation ? ['operationId'] : []),
       ...(cas ? ['jobToken', 'expectedRevision'] : []),
     ],
-    cas ? [] : ['jobToken'],
+    cas ? ['publication'] : ['jobToken'],
   );
   const value = {
     inspectionId: bookContentId(r.inspectionId),
@@ -64,6 +68,7 @@ export function inspectionRequest(uid, r, mutation = false, cas = false) {
   if (cas) {
     integer(r.expectedRevision);
     value.expectedRevision = r.expectedRevision;
+    if (Object.hasOwn(r, 'publication')) value.publication = publicationCandidate(r.publication);
   }
   return value;
 }

@@ -210,3 +210,18 @@ continuam abertos. Captura de campanhas não aceita lore de livros: usa universo
 aventura e seus leitores próprios, sem migração ou grant entre escopos.
 Inventário de outros leitores, escritores/exclusão/backup/restauração/drain/
 rollout/validate de P1 e demais fases/gates permanecem necessários.
+
+## Publicação nativa, marco B — M38c11
+
+[Plano 130](130-publicacao-com-lore-nativo.md) implementado/validado localmente.
+Inspeção incremental compara candidato público por unidades, preserva prova
+nativa e certifica somente a projeção fechada; cópia reautoriza sem reler chunks.
+V1 e override v2 acima de 32 MiB positivos; retomada/CAS/recibos/fence/cancel e
+exclusão do livro cobertos, sem namespace novo ou prosa no checkpoint.
+139 Node distintos, 98 Vitest, cinco SDK e tipos/build/smoke/checks positivos.
+[Evidência B](../../../entregas/2026-10-25-writer-v2-publicacao-nativa-marco-b.md).
+
+A pendência de escala do plano 130 foi resolvida pelo novo fluxo; chamada antiga
+sem certificado mantém seu budget e não é fallback. Captura cliente continua
+integral. Inventário dos demais consumidores e etapa 4 inteira, writers/
+exclusão/backup/restauração/drain/rollout/validate de P1 e fases/gates continuam.

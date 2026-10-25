@@ -2608,3 +2608,22 @@ Tipos/build/smoke (2980 módulos), lint/sintaxe e checks locais positivos.
 Sem browser/CI/deploy ou validate global neste marco. Plano 130 B permanece
 pendente: publicação acima de 32MiB/512 partes por chamada não está demonstrada;
 inspeção incremental/ranges certificados devem resolver a dependência.
+
+## P1 M38c11 B — publicação incremental
+
+139 Node distintos positivos: 136 em bookLorePublication/SourceInspection/
+Deletion/EditTransport e três guardas finais novos. 98/98 Vitest em
+publicationService, bookLorePublication.integration e bookLoreEditOperation;
+13 jornadas integradas, incluindo resposta de inspeção perdida e Auth tardio.
+5/5 SDK novos no emulador Firestore 1.22.0 verificado/demo/loopback, sem skipped.
+
+Fonte v1 >32 MiB/512 partes, override v2 >32 MiB, nome aparável grande, criação,
+Unicode/escapes, candidato inventado/ausente/sem consentimento, certificado
+metadata insuficiente, origem/certificado recriados, retry/CAS/corrupção,
+checkpoint privado, cancelamento e exclusão do livro conferidos. Cada tentativa
+transacional lê até uma parte; replay confirma recibo sem novos chunks.
+
+Tipos/build/smoke (2981 módulos), lint e checks locais positivos. Primeiros lotes
+com caminho .ts inexistente corrigidos para .mjs, incluído no lote final de 98.
+Validate/cobertura global só no fechamento de P1; sem browser/CI/remoto/deploy.
+[Evidência B](entregas/2026-10-25-writer-v2-publicacao-nativa-marco-b.md).

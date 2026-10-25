@@ -1,6 +1,10 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseApp } from '@/shared/lib';
-import { bookLoreReadSession, type BookLoreCollectionCapture } from '@/features/lore';
+import {
+  bookLoreReadSession,
+  verifyBookLorePublicationCandidate,
+  type BookLoreCollectionCapture,
+} from '@/features/lore';
 interface Stamp {
   seconds: number;
   nanoseconds: number;
@@ -159,8 +163,21 @@ export function bookPublicationSession(bookId: string, expectedOwner: unknown) {
     ): Promise<void> {
       const entity = capture.collection.sources.find((source) => source.id === loreId);
       if (!entity) invalid();
+      const { inspection, publication } = await verifyBookLorePublicationCandidate(
+        {
+          uid: reader.actor.uid,
+          bookId,
+          loreId,
+          sourceToken: entity.sourceToken,
+          data: entity.data,
+        },
+        (method, input) => rpc('bookLoreEdit', { method, input }),
+        reader.guard,
+      );
       const result = object(
         await rpc('stageBookPublicationLore', {
+          inspection,
+          publication,
           ...control(capture, revisionId),
           loreId,
           readToken: entity.sourceToken,

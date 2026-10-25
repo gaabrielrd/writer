@@ -108,7 +108,14 @@ export function inspectionProgress(
       'totalParts',
       'ready',
     ]),
-    p = base(v, 'inspectionId', expected, ['checking', 'base', 'privacy', 'ready', 'cancelled']),
+    p = base(v, 'inspectionId', expected, [
+      'checking',
+      'base',
+      'privacy',
+      'ready',
+      'cancelled',
+      'publication',
+    ]),
     nextIndex = readCount(v.nextIndex),
     byteLength = readCount(v.byteLength),
     totalParts = readCount(v.totalParts);

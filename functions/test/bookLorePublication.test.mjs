@@ -10,6 +10,14 @@ import {
 import { createBookPublicationService } from '../src/bookLorePublication.mjs';
 import { createBookLoreReadService } from '../src/bookLoreRead.mjs';
 import { resourcePayloadChunkPath } from '../src/bookResourcePayloadPaths.mjs';
+import { digest } from '../src/workProgressContracts.mjs';
+import { inspectionStartHash } from '../src/bookLoreSourceInspectionContracts.mjs';
+import { createBookLoreSourceInspectionService } from '../src/bookLoreSourceInspection.mjs';
+import {
+  bookLoreDeletionFixture,
+  markBookDeleting,
+  finishBookLoreDeletion,
+} from './helpers/bookLoreDeletionFixture.mjs';
 const data = () => ({
   name: ' Name 🌙 ',
   category: 'character',
@@ -19,7 +27,7 @@ const data = () => ({
   structuredDetails: { notes: 'PRIVATE_NOTES' },
   isPublic: true,
 });
-async function fixture(mode = 'v2', patch = {}) {
+async function fixture(mode = 'v2', patch = {}, generation = {}) {
   const f = adventureImportDb({ nativeUpdates: true }),
     value = { ...data(), ...patch };
   let seed,
@@ -32,7 +40,7 @@ async function fixture(mode = 'v2', patch = {}) {
     seed = creation.source.seed;
     id = creation.loreId;
   } else if (mode === 'v2')
-    seed = await seedBookLoreGeneration(f.db, { id, noBase: true, fields: value });
+    seed = await seedBookLoreGeneration(f.db, { id, noBase: true, ...generation, fields: value });
   else seed = await seedBookLoreRead(f.db, { id, inline: mode === 'inline', data: value });
   await f.db.runTransaction(async (tx) => {
     const ref = f.db.doc('books/book'),
@@ -356,3 +364,366 @@ for (const change of [
       assert.deepEqual([...f.records], before);
     },
   );
+
+async function publicInspection(f, options = {}) {
+  const publication = options.publication ?? {
+      name: (options.name ?? data().name).trim(),
+      aliases: [...data().aliases],
+      category: data().category,
+      summary: data().summary,
+    },
+    intent = {
+      bookId: 'book',
+      loreId: f.id,
+      sourceToken: f.stage.readToken,
+      inspectionId:
+        'lore-source-' +
+        digest({ readToken: f.stage.readToken, publication, salt: options.salt ?? '' }),
+      publicationHash: digest(publication),
+    },
+    startHash = inspectionStartHash(intent),
+    factory = () => createBookLoreSourceInspectionService({ db: f.db });
+  let progress = await factory().startBookLoreSourceInspection('author', intent);
+  const request = (p = progress) => ({
+    inspectionId: intent.inspectionId,
+    startHash,
+    jobToken: p.jobToken,
+    operationId: 'step-' + p.revision,
+    expectedRevision: p.revision,
+    publication,
+  });
+  return {
+    intent,
+    publication,
+    startHash,
+    factory,
+    request,
+    initial: progress,
+    async finish() {
+      while (!progress.ready) {
+        f.events.length = 0;
+        const result = await factory().advanceBookLoreSourceInspection('author', request());
+        assert.ok(chunks(f).length <= 1, 'at most one source part per transaction');
+        progress = result.progress;
+        const state = f.records.get(
+          'users/author/bookLoreSourceInspections/' + intent.inspectionId + '/state/current',
+        );
+        if (state) {
+          assert.ok(JSON.stringify(state).length < 6000);
+          assert.equal(JSON.stringify(state).includes('PRIVATE_'), false);
+          assert.equal(Object.hasOwn(state, 'candidate'), false);
+        }
+      }
+      return {
+        ...f.stage,
+        publication,
+        inspection: { inspectionId: intent.inspectionId, startHash, jobToken: progress.jobToken },
+      };
+    },
+  };
+}
+for (const mode of ['inline', 'v1', 'v2', 'created'])
+  test(
+    mode + ' publication certificate copies the closed candidate without reading body parts again',
+    async () => {
+      const f = await fixture(mode),
+        inspection = await publicInspection(f),
+        stage = await inspection.finish();
+      f.events.length = 0;
+      assert.equal((await f.api.stageBookPublicationLore('author', stage)).status, 'staged');
+      assert.equal(chunks(f).length, 0);
+      assert.deepEqual(f.records.get('publicBooks/book/revisions/revision-first/lore/' + f.id), {
+        name: 'Name 🌙',
+        aliases: ['Alias', 'Alias'],
+        category: 'character',
+        summary: 'Literal 🌙',
+      });
+      assert.equal(
+        (await f.api.stageBookPublicationLore('author', stage)).status,
+        'already-staged',
+      );
+      assert.equal((await f.finish()).status, 'published');
+    },
+  );
+test('v1 above 32 MiB including a huge trimmed name resumes one native part at a time', async () => {
+  const name = ' '.repeat(17 * 1024 * 1024) + 'Name 🌙' + '\n'.repeat(9 * 1024 * 1024),
+    f = await fixture('v1', { name, details: 'PRIVATE_' + 'x'.repeat(2 * 1024 * 1024) }),
+    inspection = await publicInspection(f, { name });
+  assert.ok(f.seed.base.prepared.manifest.byteLength > 32 * 1024 * 1024);
+  assert.ok(f.seed.base.prepared.manifest.chunkCount > 512);
+  const firstRequest = inspection.request(),
+    service = inspection.factory(),
+    first = await service.advanceBookLoreSourceInspection('author', firstRequest);
+  f.events.length = 0;
+  assert.deepEqual(
+    await inspection.factory().advanceBookLoreSourceInspection('author', firstRequest),
+    first,
+  );
+  assert.equal(chunks(f).length, 0);
+  const stage = await inspection.finish();
+  f.events.length = 0;
+  assert.equal((await f.api.stageBookPublicationLore('author', stage)).status, 'staged');
+  assert.equal(chunks(f).length, 0);
+  assert.equal((await f.finish()).status, 'published');
+});
+test('v2 huge name override is certified before the base and ignores the replaced base fields', async () => {
+  const name = ' '.repeat(33 * 1024 * 1024) + 'Name 🌙',
+    f = await fixture(
+      'v2',
+      { name },
+      {
+        noBase: false,
+        baseData: {
+          name: 'Replaced private name',
+          aliases: ['replaced'],
+          category: 'other',
+          summary: 'replaced',
+          details: 'PRIVATE_BASE',
+          isPublic: false,
+        },
+      },
+    ),
+    inspection = await publicInspection(f, { name });
+  assert.equal(inspection.initial.phase, 'publication');
+  const stage = await inspection.finish();
+  f.events.length = 0;
+  await f.api.stageBookPublicationLore('author', stage);
+  assert.equal(chunks(f).length, 0);
+  assert.equal((await f.finish()).status, 'published');
+});
+for (const [key, value] of [
+  ['name', 'forged'],
+  ['summary', 'forged'],
+  ['category', 'other'],
+  ['aliases', ['Alias']],
+])
+  test('inspection refuses an invented public ' + key + ' and cannot stage it', async () => {
+    const f = await fixture('v1'),
+      p = await publicInspection(f, {
+        publication: {
+          name: 'Name 🌙',
+          aliases: data().aliases,
+          summary: data().summary,
+          category: data().category,
+          [key]: value,
+        },
+      });
+    await assert.rejects(p.finish());
+    assert.equal(f.records.has('publicBooks/book/revisions/revision-first/lore/' + f.id), false);
+  });
+for (const phase of ['publication', 'base'])
+  test(
+    'cancellation in ' + phase + ' clears syntax state and fences all later advances',
+    async () => {
+      const f = await fixture(phase === 'publication' ? 'v2' : 'v1'),
+        p = await publicInspection(f),
+        r = p.request();
+      const cancelled = await p.factory().cancelBookLoreSourceInspection('author', {
+        inspectionId: r.inspectionId,
+        startHash: r.startHash,
+        jobToken: r.jobToken,
+        operationId: 'cancel',
+      });
+      assert.equal(cancelled.progress.phase, 'cancelled');
+      assert.equal(
+        f.records.has(
+          'users/author/bookLoreSourceInspections/' + r.inspectionId + '/state/current',
+        ),
+        false,
+      );
+      await assert.rejects(p.factory().advanceBookLoreSourceInspection('author', r));
+      assert.equal(
+        (await p.factory().startBookLoreSourceInspection('author', p.intent)).phase,
+        'cancelled',
+      );
+    },
+  );
+test('publication purpose cannot be added to a metadata-only certificate or swapped after start', async () => {
+  const f = await fixture('v1'),
+    p = await publicInspection(f),
+    r = p.request();
+  const before = structuredClone([...f.records]);
+  await assert.rejects(
+    p.factory().advanceBookLoreSourceInspection('author', {
+      ...r,
+      publication: { ...r.publication, name: 'forged' },
+    }),
+  );
+  const { publication, ...missing } = r;
+  assert.ok(publication);
+  await assert.rejects(p.factory().advanceBookLoreSourceInspection('author', missing));
+  assert.deepEqual([...f.records], before);
+  const plainIntent = { ...p.intent, inspectionId: 'lore-source-' + 'b'.repeat(64) };
+  delete plainIntent.publicationHash;
+  let progress = await p.factory().startBookLoreSourceInspection('author', plainIntent);
+  const startHash = inspectionStartHash(plainIntent);
+  while (!progress.ready)
+    progress = (
+      await p.factory().advanceBookLoreSourceInspection('author', {
+        inspectionId: plainIntent.inspectionId,
+        startHash,
+        jobToken: progress.jobToken,
+        expectedRevision: progress.revision,
+        operationId: 'plain-' + progress.revision,
+      })
+    ).progress;
+  await assert.rejects(
+    f.api.stageBookPublicationLore('author', {
+      ...f.stage,
+      publication: r.publication,
+      inspection: {
+        inspectionId: plainIntent.inspectionId,
+        startHash,
+        jobToken: progress.jobToken,
+      },
+    }),
+  );
+});
+for (const mutation of ['clock', 'head-birth', 'certificate', 'private'])
+  test('certified stage reauthorizes ' + mutation + ' before any public write', async () => {
+    const f = await fixture('v2'),
+      p = await publicInspection(f),
+      stage = await p.finish(),
+      certPath =
+        'users/author/bookLoreSourceInspections/' + p.intent.inspectionId + '/certificate/current';
+    await f.db.runTransaction((tx) => {
+      if (mutation === 'clock') tx.update(f.db.doc('books/book'), { localLoreVersion: 1 });
+      if (mutation === 'head-birth') {
+        tx.delete(f.db.doc(f.seed.path));
+        tx.create(f.db.doc(f.seed.path), f.records.get(f.seed.path));
+      }
+      if (mutation === 'certificate') {
+        const cert = f.records.get(certPath);
+        tx.delete(f.db.doc(certPath));
+        tx.create(f.db.doc(certPath), cert);
+      }
+      if (mutation === 'private') tx.update(f.db.doc(f.seed.path), { isPublic: false });
+    });
+    f.events.length = 0;
+    await assert.rejects(f.api.stageBookPublicationLore('author', stage));
+    assert.equal(chunks(f).length, 0);
+    assert.equal(f.records.has('publicBooks/book/revisions/revision-first/lore/' + f.id), false);
+  });
+
+test('literal Unicode, JSON escapes and internal whitespace survive public candidate comparison', async () => {
+  const value = {
+      name: ' \t\ufeff🌙 é " \\\n X  ',
+      aliases: ['', '🌙', 'a"\\\t\u0001'],
+      summary: '\ufeffline\n🌙 é\u0000',
+      category: 'concept',
+    },
+    f = await fixture('v1', value),
+    p = await publicInspection(f, { publication: { ...value, name: value.name.trim() } }),
+    stage = { ...(await p.finish()), aliases: value.aliases };
+  await f.api.stageBookPublicationLore('author', stage);
+  assert.deepEqual(f.records.get('publicBooks/book/revisions/revision-first/lore/' + f.id), {
+    ...value,
+    name: value.name.trim(),
+  });
+});
+test('book deletion cancels the publication field cursor through the existing inspection inventory', async () => {
+  const f = await fixture('v2', { name: ' '.repeat(90000) + 'Name 🌙' }),
+    p = await publicInspection(f, { name: ' '.repeat(90000) + 'Name 🌙' });
+  await p.factory().advanceBookLoreSourceInspection('author', p.request());
+  const deletion = bookLoreDeletionFixture(f.db);
+  await markBookDeleting(deletion);
+  await finishBookLoreDeletion(deletion);
+  const path = 'users/author/bookLoreSourceInspections/' + p.intent.inspectionId;
+  assert.equal(f.records.get(path).phase, 'cancelled');
+  assert.equal(f.records.has(path + '/state/current'), false);
+  await assert.rejects(
+    p
+      .factory()
+      .advanceBookLoreSourceInspection('author', { ...p.request(), operationId: 'late-new' }),
+  );
+});
+
+test('a retried publication-field transaction resets parser positions and hash state together', async () => {
+  const f = await fixture('v2'),
+    p = await publicInspection(f),
+    run = f.db.runTransaction.bind(f.db),
+    retry = Error('retry');
+  let once = true;
+  f.db.runTransaction = (fn) => {
+    if (!once) return run(fn);
+    once = false;
+    return run(async (tx) => {
+      await fn(tx);
+      throw retry;
+    }).catch((error) => {
+      if (error !== retry) throw error;
+      return run(fn);
+    });
+  };
+  const first = await p.factory().advanceBookLoreSourceInspection('author', p.request());
+  assert.equal(first.progress.revision, 1);
+  const stage = await p.finish();
+  assert.equal((await f.api.stageBookPublicationLore('author', stage)).status, 'staged');
+});
+test('a corrupt native override part cannot advance the public field checkpoint or create a receipt', async () => {
+  const f = await fixture('v2', { name: ' '.repeat(90000) + 'Name 🌙' }),
+    p = await publicInspection(f, { name: ' '.repeat(90000) + 'Name 🌙' }),
+    first = await p.factory().advanceBookLoreSourceInspection('author', p.request()),
+    body = f.seed.bodies.name.prepared.manifest,
+    path = resourcePayloadChunkPath('book', body.bodyId, 1);
+  await f.db.runTransaction((tx) =>
+    tx.update(f.db.doc(path), { bytes: Buffer.from('forged').toString('base64') }),
+  );
+  const before = structuredClone([...f.records]);
+  await assert.rejects(
+    p.factory().advanceBookLoreSourceInspection('author', p.request(first.progress)),
+  );
+  assert.deepEqual([...f.records], before);
+});
+for (const patch of [
+  { name: '' },
+  { summary: 'x'.repeat(141) },
+  { aliases: Array(21).fill('') },
+  { name: 'a'.repeat(201) },
+  { category: 'forged' },
+])
+  test(
+    'bounded candidate rejects invalid public values before a source unit ' + Object.keys(patch)[0],
+    async () => {
+      const f = await fixture('v1'),
+        p = await publicInspection(f, {
+          publication: {
+            name: 'Name 🌙',
+            aliases: data().aliases,
+            category: 'character',
+            summary: data().summary,
+            ...patch,
+          },
+        }),
+        before = structuredClone([...f.records]);
+      f.events.length = 0;
+      await assert.rejects(p.finish());
+      assert.equal(chunks(f).length, 0);
+      assert.deepEqual([...f.records], before);
+    },
+  );
+
+test('certified public copy still requires logical consent rather than a candidate or ready flag', async () => {
+  const f = await fixture('v2', { isPublic: false }),
+    p = await publicInspection(f),
+    stage = await p.finish();
+  f.events.length = 0;
+  await assert.rejects(f.api.stageBookPublicationLore('author', stage), {
+    code: 'permission-denied',
+  });
+  assert.equal(chunks(f).length, 0);
+  assert.equal(f.records.has('publicBooks/book/revisions/revision-first/lore/' + f.id), false);
+});
+test('a publication candidate cannot manufacture an explicitly absent v2 public field', async () => {
+  const f = await fixture('v2', { summary: null }),
+    p = await publicInspection(f);
+  await assert.rejects(p.finish());
+  assert.equal(f.records.has('publicBooks/book'), false);
+});
+test('null stage controls preserve structured authentication and argument errors', async () => {
+  const f = await fixture();
+  await assert.rejects(f.api.stageBookPublicationLore(null, null), { code: 'unauthenticated' });
+  await assert.rejects(f.api.stageBookPublicationLore('author', null), {
+    code: 'invalid-argument',
+  });
+});

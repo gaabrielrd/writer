@@ -1,6 +1,6 @@
 # ADR 0150 — Publicação de livros com lore nativo
 
-- Status: marco A implementado localmente; escala do marco B pendente.
+- Status: marcos A e B implementados e validados localmente; P1 ainda aberto.
 - Data: 2026-10-25.
 - Plano: [130](../tasks/writer-v2/execucao/130-publicacao-com-lore-nativo.md).
 
@@ -47,22 +47,47 @@ guarda somente o segundo hash. São metadata opaca, não tokens de leitura de um
 ficha, segredo ou grant. Detalhes/notas/relações e readToken de fichas nunca são
 gravados na projeção pública. Autor público continua explicitamente informado.
 
-## Limite aberto e consequências
+## Escala do marco B e consequências
 
 Cliente ainda transfere o lore integral autorizado, inclusive campos privados;
-não afirmar leitura seletiva nessa fronteira. Custo linear, sem cache persistente.
-Servidor copia apenas campos públicos em RAM, mas v1 exige validar toda a base.
-Orçamento atual é 32 MiB/512 partes/900000 bytes lógicos por chamada; fonte maior
-pode falhar sem alteração, mas a publicação para todas as fontes válidas permanece
-incompleta. Não contornar com transação sem limite.
+não afirmar leitura seletiva nessa fronteira. Custo linear e sem cache persistente.
 
-Marco B deverá reutilizar SHA/ranges/certificado de bookLoreSourceInspection por
-unidades, preservando origem/recibos/fence/cleanup e evitando prosa no checkpoint.
-[Plano 130](../tasks/writer-v2/execucao/130-publicacao-com-lore-nativo.md) continua
-aberto; este marco sozinho não encerra publicação nativa completa ou P1.
+O cliente novo prepara um certificado pelo inspetor existente. Intent/contexto
+ganham publicationHash opcional; contratos anteriores permanecem válidos.
+Cada avanço recebe candidato fechado (nome aparado, aliases originais completos,
+categoria/resumo), limitado pelas regras públicas, e compara caracteres
+decodificados com posições/contagens. Whitespace nas extremidades do nome pode
+ocupar muitas partes, sem ser retido. Não há normalização do original.
 
-[Evidência](../entregas/2026-10-25-writer-v2-publicacao-nativa-marco-a.md):
-36 Node, 135 Vitest e 19 SDK positivos; tipos/build/smoke/checks locais.
-Nenhuma tela/dependência/mídia/crédito novo. Sem CI/envio remoto/deploy; novas
-Functions e Rules ainda exigem entrega futura. Demais consumidores/inventário/
-backup/restauração/drain/rollout/validate, fases 3–5 e gates continuam necessários.
+Overrides públicos v2 são validados por uma parte de 64 KiB por transação, com
+parser e SHA completos. Depois, a base é inspecionada integralmente, comparando
+somente campos efetivos não substituídos. Consentimento conserva sua unidade
+própria. Checkpoint guarda apenas sintaxe, contadores e estados SHA; candidato
+e campos privados não são persistidos nele. Ready emite o certificado nativo
+existente, cujo contextHash inclui publicationHash.
+
+Stage exige origem nativa ainda autorizada, candidato exato e certificado ready
+original. Só o novo propósito verificado permite copiar os quatro valores sem
+reler chunks; certificado apenas de metadata não concede essa capacidade, nem
+concede leitura atual de corpos. Subsequência ordenada de aliases continua
+conferida sobre os aliases originais completos.
+
+Recibos/CAS/fence/cleanup continuam no namespace da inspeção: nenhum journal/
+coleção/documento filho adicional. Novo cursor publication é cancelado e limpo
+pela exclusão já existente do livro. ID determinístico por UID/origem/candidato
+permite retomar após resposta perdida; Auth original é conferido a cada await.
+Não há persistência de prosa da publicação no navegador.
+
+O caminho RPC antigo sem certificado mantém seu orçamento de
+32 MiB/512 partes/900000 bytes lógicos por chamada. O cliente novo sempre
+prepara e usa o certificado, sem fallback. Fontes v1 e overrides v2 acima desse
+orçamento foram validados; sem transação ou resposta ilimitada.
+
+[Evidência A](../entregas/2026-10-25-writer-v2-publicacao-nativa-marco-a.md):
+36 Node, 135 Vitest e 19 SDK positivos.
+[Evidência B](../entregas/2026-10-25-writer-v2-publicacao-nativa-marco-b.md):
+139 Node distintos, 98 Vitest e cinco SDK positivos; tipos/build/smoke/checks.
+O escopo técnico do plano 130 está implementado e validado localmente.
+Demais consumidores/inventários/backup/restauração/drain/rollout/validate de P1,
+fases 3–5 e gates humanos/comerciais continuam necessários. Sem CI/remoto/deploy;
+Functions/Rules e cliente precisam de entrega coordenada futura.

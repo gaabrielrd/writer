@@ -28,6 +28,14 @@ import {
   commitSourceInspection,
   inspectionCertificate,
 } from './bookLoreSourceInspectionStore.mjs';
+import {
+  createPublicationValidation,
+  publicationOverrides,
+  publicationObservers,
+  finishPublicationValidation,
+  PUBLICATION_FIELDS,
+} from './bookLorePublicationValidation.mjs';
+import { advancePublicationOverride } from './bookLorePublicationInspection.mjs';
 const empty = () => ({
   schemaVersion: 1,
   fields: [],
@@ -100,17 +108,20 @@ export function createBookLoreSourceInspectionService({
             manifest: opened.manifest,
           },
           scanning = opened.mode === 'payload' && opened.manifest !== null,
-          state = scanning
-            ? {
-                schemaVersion: 1,
-                ownerId: uid,
-                inspectionId: c.id,
-                startHash,
-                algorithm: SOURCE_INSPECTION_ALGORITHM,
-                hashState: Buffer.from(hasher.save()).toString('base64'),
-                parser: createBookLoreBaseIndex(intent.bookId),
-              }
-            : null;
+          verifying = intent.publicationHash && publicationOverrides(opened).length > 0,
+          state =
+            scanning || verifying
+              ? {
+                  schemaVersion: 1,
+                  ownerId: uid,
+                  inspectionId: c.id,
+                  startHash,
+                  algorithm: SOURCE_INSPECTION_ALGORITHM,
+                  hashState: Buffer.from(hasher.save()).toString('base64'),
+                  parser: createBookLoreBaseIndex(intent.bookId),
+                  ...(intent.publicationHash ? { publication: createPublicationValidation() } : {}),
+                }
+              : null;
         const orphans = await Promise.all([tx.get(c.stateRef), tx.get(c.certificateRef)]);
         if (orphans.some((s) => s.exists)) conflict();
         const job = {
@@ -120,7 +131,7 @@ export function createBookLoreSourceInspectionService({
           inspectionId: c.id,
           startHash,
           context,
-          phase: scanning ? 'base' : 'checking',
+          phase: verifying ? 'publication' : scanning ? 'base' : 'checking',
           revision: 0,
           nextIndex: 0,
           byteLength: 0,
@@ -162,21 +173,53 @@ export function createBookLoreSourceInspectionService({
         if (replay) return replay;
         assertAnalysisChildUnit(tx, db, uid, 'inspection', c.id);
         const j = loaded.job;
-        if (j.revision !== r.expectedRevision || !['base', 'checking', 'privacy'].includes(j.phase))
+        if (
+          j.context.publicationHash
+            ? !r.publication || digest(r.publication) !== j.context.publicationHash
+            : Object.hasOwn(r, 'publication')
+        )
+          conflict();
+        if (
+          j.revision !== r.expectedRevision ||
+          !['base', 'checking', 'privacy', 'publication'].includes(j.phase)
+        )
           conflict();
         const { opened } = await inspectionSource(tx, c, j.context),
-          state = await inspectionState(tx, loaded);
+          originalState = await inspectionState(tx, loaded),
+          state = originalState ? structuredClone(originalState) : null;
         let patch,
           nextState = null,
           finish = null;
-        if (j.phase === 'base') {
+        if (j.phase === 'publication') {
+          const done = await advancePublicationOverride(
+            tx,
+            opened,
+            state.publication,
+            r.publication,
+          );
+          if (done && !j.context.manifest) finish = resolveMetadata(opened, empty());
+          else {
+            nextState = state;
+            patch = done ? { phase: 'base' } : {};
+          }
+        } else if (j.phase === 'base') {
           const saved = Buffer.from(state.hashState, 'base64');
           if (saved.length !== stateLength || saved.toString('base64') !== state.hashState)
             conflict();
           hasher.load(saved);
           const part = await readBookLoreRecordPart(tx, opened, 'base', 0, j.nextIndex),
             bytes = part.bytes,
-            parser = advanceBookLoreBaseIndex(state.parser, bytes),
+            parser = advanceBookLoreBaseIndex(
+              state.parser,
+              bytes,
+              j.context.publicationHash
+                ? publicationObservers(
+                    state.publication,
+                    r.publication,
+                    PUBLICATION_FIELDS.filter((key) => !publicationOverrides(opened).includes(key)),
+                  )
+                : undefined,
+            ),
             nextIndex = j.nextIndex + 1,
             byteLength = j.byteLength + bytes.length;
           hasher.update(bytes);
@@ -207,6 +250,8 @@ export function createBookLoreSourceInspectionService({
           finish = resolveMetadata(opened, j.metadata, text === 'true');
         }
         if (finish) {
+          if (j.context.publicationHash && j.phase !== 'privacy')
+            finishPublicationValidation(opened, finish.metadata, state?.publication, r.publication);
           inspectionMetadata(finish.metadata);
           patch = {
             ...patch,

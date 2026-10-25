@@ -1559,3 +1559,16 @@ barreiras SDK. 36 Node, 135 Vitest e 19 SDK positivos; tipos/build/smoke/checks.
 Plano **aberto**: marco B deve preparar bases acima do orçamento por unidades e
 copiar ranges certificados. Não fecha etapa 4/P1/V2. Demais inventários/
 consumidores/backup/restauração/drain/rollout/validate e fases/gates continuam.
+
+### P1 M38c11 B — publicação certificada por unidades
+
+[Plano 130](130-publicacao-com-lore-nativo.md) implementado e validado localmente:
+inspeção com candidato público fechado, hash/contexto nativo e cópia sem chunks.
+Base/override >32 MiB, retomada/recibos/fence/cancelamento/exclusão conferidos;
+nenhum namespace novo. 139 Node distintos, 98 Vitest e cinco SDK positivos;
+tipos/build/smoke/checks. [Evidência B](../../../entregas/2026-10-25-writer-v2-publicacao-nativa-marco-b.md).
+
+Próximo passo de P1: inventariar os consumidores restantes da etapa 4 e os
+namespaces/escritores/exclusão, sem expandir captura de campanhas para livros.
+Backup/restauração/drain/rollout/validate de P1 e fases 3–5/gates permanecem.
+Sem envio remoto/deploy; master e servidor preservados.

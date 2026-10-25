@@ -420,6 +420,9 @@ concluído estiverem satisfeitos. A lista fica em
   autor explícito, staging invisível, retirada e replay sem nova aplicação.
 - Hashes de metadata não são grants; readToken de fichas e campos privados não
   vão para documentos públicos. Não permita fallback SDK após erro nativo.
-- Cópia por chamada permanece limitada; plano 130 B deve usar inspeção/ranges
-  certificados em unidades para bases maiores. Não declarar publicação completa
-  nem substituir esse preparo por uma transação sem limite ou checkpoint com prosa.
+- Prepare a projeção pública pela inspeção com publicationHash e candidato exato,
+  em unidades de 64 KiB; preserve CAS/recibos/fence/cleanup e Auth originais.
+- Copie somente os quatro campos certificados após reautorizar origem/consentimento;
+  certificado apenas de metadata não autoriza copiar texto ou ler corpos.
+- Preserve o checkpoint sem candidato/prosa e não substitua o preparo incremental
+  por uma transação sem limite.

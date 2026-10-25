@@ -14,6 +14,9 @@ export const BOOK_PUBLICATION_METHODS = Object.freeze([
   'stageBookPublicationLore',
   'finalizeBookPublication',
 ]);
+import { publicationCandidate } from './bookLorePublicationValidation.mjs';
+import { inspectionPaths, inspectionRequest } from './bookLoreSourceInspectionContracts.mjs';
+import { openBookLoreSourceInspection } from './bookLoreSourceInspectionStore.mjs';
 const conflict = () =>
   workFail(
     'failed-precondition',
@@ -235,8 +238,17 @@ export function createBookPublicationService({ db }) {
       });
     },
     async stageBookPublicationLore(uid, data) {
-      const c = control(db, uid, data, ['loreId', 'readToken', 'aliases']),
-        loreId = loreReadId(data.loreId);
+      const certified =
+          Object.hasOwn(data ?? {}, 'inspection') || Object.hasOwn(data ?? {}, 'publication'),
+        c = control(db, uid, data, [
+          'loreId',
+          'readToken',
+          'aliases',
+          ...(certified ? ['inspection', 'publication'] : []),
+        ]),
+        loreId = loreReadId(data.loreId),
+        candidate = certified ? publicationCandidate(data.publication) : null;
+      if (certified) closed(data.inspection, ['inspectionId', 'startHash', 'jobToken']);
       loreReadToken(data.readToken);
       if (
         !Array.isArray(data.aliases) ||
@@ -252,7 +264,37 @@ export function createBookPublicationService({ db }) {
         const head = await tx.get(db.doc(c.path + '/lore/' + loreId));
         if (!head.exists || !matchesLoreEntityToken(c, current.book, head, data.readToken))
           conflict();
-        const reader = await createBookLoreContextReader(tx, db, uid, c.bookId),
+        let projected;
+        if (certified) {
+          const r = inspectionRequest(uid, data.inspection),
+            inspected = await openBookLoreSourceInspection(
+              tx,
+              inspectionPaths(db, uid, r.inspectionId),
+              r,
+            ),
+            context = inspected.loaded.job.context;
+          if (
+            context.bookId !== c.bookId ||
+            context.loreId !== loreId ||
+            context.sourceToken !== data.readToken ||
+            context.publicationHash !== digest(candidate)
+          )
+            conflict();
+          projected = {
+            privacy: inspected.metadata.isPublic,
+            fields: {
+              name: { value: candidate.name },
+              category: { value: candidate.category },
+              summary: { value: candidate.summary, truncated: false },
+              aliases: {
+                value: candidate.aliases,
+                count: candidate.aliases.length,
+                truncated: false,
+              },
+            },
+          };
+        } else {
+          const reader = await createBookLoreContextReader(tx, db, uid, c.bookId);
           projected = await reader.read(
             loreId,
             { name: null, category: null, summary: 141, aliases: { items: 21, characters: 201 } },
@@ -261,8 +303,9 @@ export function createBookPublicationService({ db }) {
               parts: 512,
               retainedBytes: 900000,
             }),
-          ),
-          fields = projected.fields;
+          );
+        }
+        const fields = projected.fields;
         if (!projected.privacy.present || projected.privacy.value !== true)
           workFail('permission-denied', 'Esta ficha não tem consentimento público.');
         if (

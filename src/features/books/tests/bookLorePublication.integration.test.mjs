@@ -10,6 +10,7 @@ import {
 } from '../../../../functions/test/helpers/bookLoreCreationAdoptionFixture.mjs';
 import { createBookPublicationService } from '../../../../functions/src/bookLorePublication.mjs';
 import { createBookLoreReadService } from '../../../../functions/src/bookLoreRead.mjs';
+import { createBookLoreEditTransportService } from '../../../../functions/src/bookLoreEditTransport.mjs';
 const state = vi.hoisted(() => ({
   auth: { currentUser: { uid: 'author' } },
   get: vi.fn(),
@@ -130,7 +131,12 @@ async function fixture(mode = 'v2', { world = false } = {}) {
   const publication = createBookPublicationService({ db: f.db }),
     reader = createBookLoreReadService({ db: f.db });
   const handle = async (method, data) => {
-    const api = publication[method] ? publication : reader;
+    const api =
+      method === 'bookLoreEdit'
+        ? createBookLoreEditTransportService({ db: f.db })
+        : publication[method]
+          ? publication
+          : reader;
     const result = await api[method](state.auth.currentUser.uid, JSON.parse(JSON.stringify(data)));
     return JSON.parse(JSON.stringify(result));
   };
@@ -267,4 +273,47 @@ it('legacy missing book dates use the source baseline without inventing a creati
   await publishBook('book', 'Author');
   expect(f.records.get('publicBooks/book').revisionId).toBe('revision-integration');
   expect(f.records.get('books/book').createdAt).toBe(createdAt);
+});
+
+it('resumes an inspection whose advance committed but its reply was lost, then stages through the real bridge', async () => {
+  const f = await fixture('v2');
+  let lost = false;
+  state.rpc.mockImplementation(async (method, data) => {
+    const result = await f.handle(method, data);
+    if (!lost && method === 'bookLoreEdit' && data.method === 'advanceBookLoreSourceInspection') {
+      lost = true;
+      throw new Error('Lost inspection reply');
+    }
+    return result;
+  });
+  await expect(publishBook('book', 'Author')).rejects.toThrow('Lost inspection reply');
+  expect(f.records.has('publicBooks/book')).toBe(false);
+  const { bookPublicationSession } = await import('../services/bookLorePublicationClient'),
+    session = bookPublicationSession('book', 'author'),
+    capture = await session.capture();
+  await session.stage(capture, 'revision-integration', f.id, ['A']);
+  await session.finalize(capture, 'revision-integration', 'Author');
+  expect(
+    f.records.get('publicBooks/book/revisions/revision-integration/lore/' + f.id).aliases,
+  ).toEqual(['A']);
+  expect(f.records.get('publicBooks/book').revisionId).toBe('revision-integration');
+  const starts = state.rpc.mock.calls.filter(
+    ([method, data]) =>
+      method === 'bookLoreEdit' && data.method === 'startBookLoreSourceInspection',
+  );
+  expect(starts).toHaveLength(2);
+  expect(starts[0][1].input).toEqual(starts[1][1].input);
+});
+it('discards a late inspection reply after the Auth object changes, before staging a public fiche', async () => {
+  const f = await fixture('v2');
+  state.rpc.mockImplementation(async (method, data) => {
+    const result = await f.handle(method, data);
+    if (method === 'bookLoreEdit') state.auth.currentUser = { uid: 'author' };
+    return result;
+  });
+  await expect(publishBook('book', 'Author')).rejects.toThrow('contexto mudou');
+  expect(state.rpc.mock.calls.some(([method]) => method === 'stageBookPublicationLore')).toBe(
+    false,
+  );
+  expect(f.records.has('publicBooks/book')).toBe(false);
 });

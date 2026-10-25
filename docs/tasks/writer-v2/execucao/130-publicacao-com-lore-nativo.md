@@ -105,7 +105,42 @@ checks locais. [ADR 0150](../../../decisions/0150-native-book-publication.md) e
 Cópia/ativação nativas funcionam no escopo de uma chamada; cliente e Rules estão
 integrados. Sem novo namespace privado, envio remoto ou deploy.
 
-Marco B não implementado. Próximo passo: integrar bookLoreSourceInspection por
-unidades, certificado/ranges e cópia pública da fonte original acima do orçamento,
-com cancelamento/retomada/fence/cleanup apropriados. Plano 130 **não concluído**;
-etapa 4/P1/F2-09/V2 e demais requisitos continuam abertos.
+Registro do marco A: o marco B ainda não estava implementado. A implementação e
+validação posteriores estão registradas abaixo; etapa 4/P1/F2-09/V2 e os demais
+requisitos continuam abertos.
+
+## Contrato do marco B — inspeção com candidato público
+
+Estender a inspeção original com publicationHash opcional, vinculado ao intent,
+sem alterar jobs antigos. Cada advance desse modo recebe o candidato fechado
+(nome já aparado, aliases originais completos, categoria e resumo), limitado
+pelas regras públicas. O servidor compara o texto decodificado por unidade;
+o checkpoint contém somente posições/contagens, sintaxe e SHA, nunca o candidato.
+Nome permite whitespace nas extremidades sem reter uma string ilimitada.
+
+Overrides v2 são verificados antes da base, em uma parte por advance; campos
+substituídos da base não participam da comparação. A base original continua
+validada integralmente por SHA e parser. O certificado ready existente vincula
+o hash do candidato pelo contextHash. Consentimento lógico e fonte nativa são
+revalidados na cópia. A cópia usa os quatro valores certificados, sem reler a
+base em uma transação. Não criar namespace ou journal adicional: cancelamento,
+fence, recibos e limpeza usam os mesmos documentos e protocolo da inspeção.
+
+O cliente usa ID determinístico por origem/candidato; repete o mesmo pedido
+após resposta perdida e retoma a inspeção existente. Guardas de Auth cobrem
+cada await. Não oferecer persistência de prosa da publicação no dispositivo.
+Testar base >32 MiB, nome com whitespace grande, v2 substituído, resposta
+perdida/CAS, recriação/revogação, cancelamento e limpeza do estado.
+
+## Estado do marco B — 2026-10-25
+
+Implementado o contrato de candidato público acima: comparação ocorre durante a
+inspeção original e dispensa uma segunda passagem de ranges na cópia. V1 e override
+v2 acima de 32 MiB foram publicados por unidades; sem prosa no checkpoint,
+namespace novo ou ampliação da transação. Cancelamento/recibos/fence/retomada e
+exclusão do livro integrados ao protocolo existente.
+
+139 Node distintos, 98 Vitest e cinco SDK positivos; tipos/build/smoke/checks.
+[Evidência B](../../../entregas/2026-10-25-writer-v2-publicacao-nativa-marco-b.md).
+Escopo técnico do plano 130 implementado e validado localmente. Aceite global de
+P1, etapa 4 inteira, demais fases/gates e rollout continuam pendentes.

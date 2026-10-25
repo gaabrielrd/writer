@@ -16,6 +16,9 @@ import {
 } from '../../functions/test/helpers/bookLoreCreationAdoptionFixture.mjs';
 import { createBookPublicationService } from '../../functions/src/bookLorePublication.mjs';
 import { createBookLoreReadService } from '../../functions/src/bookLoreRead.mjs';
+import { createBookLoreEditTransportService } from '../../functions/src/bookLoreEditTransport.mjs';
+import { digest } from '../../functions/src/workProgressContracts.mjs';
+import { inspectionStartHash } from '../../functions/src/bookLoreSourceInspectionContracts.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore, FieldValue } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-native-publication';
@@ -54,9 +57,15 @@ after(async () => {
 });
 const client = (uid) =>
   uid ? env.authenticatedContext(uid).firestore() : env.unauthenticatedContext().firestore();
-async function fixture({ mode = 'v2', large = false, world = false, missingFlag = false } = {}) {
+async function fixture({
+  mode = 'v2',
+  large = false,
+  world = false,
+  missingFlag = false,
+  publicName = ' Name 🌙 ',
+} = {}) {
   const data = {
-    name: ' Name 🌙 ',
+    name: publicName,
     category: 'character',
     aliases: ['A', 'A'],
     summary: 'Public 🌙',
@@ -269,4 +278,135 @@ test('SDK native publication: malformed native header and intrusive public body 
   );
   assert.equal(sourcePublicationToken, f.proof.sourceToken);
   await assertFails(deleteDoc(doc(client('other'), f.revision)));
+});
+
+async function certifiedFixture(options) {
+  const f = await fixture(options),
+    publication = {
+      name: (options?.publicName ?? ' Name 🌙 ').trim(),
+      aliases: ['A', 'A'],
+      category: 'character',
+      summary: 'Public 🌙',
+    },
+    intent = {
+      bookId: 'book',
+      loreId: f.id,
+      sourceToken: f.stage.readToken,
+      inspectionId: 'lore-source-' + digest({ source: f.stage.readToken, publication }),
+      publicationHash: digest(publication),
+    },
+    startHash = inspectionStartHash(intent),
+    api = createBookLoreEditTransportService({ db: admin }),
+    call = (method, input) => api.bookLoreEdit('author', { method, input });
+  let p = await call('startBookLoreSourceInspection', intent);
+  const initial = p;
+  const request = () => ({
+    inspectionId: intent.inspectionId,
+    startHash,
+    jobToken: p.jobToken,
+    expectedRevision: p.revision,
+    operationId: 'publication-' + p.revision,
+    publication,
+  });
+  return {
+    ...f,
+    intent,
+    initial,
+    publication,
+    call,
+    request,
+    async prepare() {
+      while (!p.ready) p = (await call('advanceBookLoreSourceInspection', request())).progress;
+      return {
+        ...f.stage,
+        publication,
+        inspection: { inspectionId: intent.inspectionId, startHash, jobToken: p.jobToken },
+      };
+    },
+  };
+}
+test('SDK incremental publication: source above 32 MiB, native certificate, lost reply and private checkpoint', async () => {
+  const publicName = ' '.repeat(17 * 1024 * 1024) + 'Name 🌙' + '\n'.repeat(9 * 1024 * 1024),
+    f = await certifiedFixture({ mode: 'v1', publicName });
+  assert.ok(f.seed.base.prepared.manifest.byteLength > 32 * 1024 * 1024);
+  const request = f.request(),
+    first = await f.call('advanceBookLoreSourceInspection', request);
+  assert.deepEqual(await f.call('advanceBookLoreSourceInspection', request), first);
+  const statePath =
+    'users/author/bookLoreSourceInspections/' + f.intent.inspectionId + '/state/current';
+  await assertFails(getDoc(doc(client('author'), statePath)));
+  await assertFails(setDoc(doc(client('author'), statePath), { forged: true }));
+  const stage = await f.prepare();
+  assert.equal((await admin.doc(statePath).get()).exists, false);
+  await f.api.stageBookPublicationLore('author', stage);
+  await assertFails(getDoc(doc(client(null), f.revision + '/lore/' + f.id)));
+  await f.finish();
+  assert.deepEqual(
+    (await assertSucceeds(getDoc(doc(client(null), f.revision + '/lore/' + f.id)))).data(),
+    {
+      name: 'Name 🌙',
+      aliases: ['A', 'A'],
+      category: 'character',
+      summary: 'Public 🌙',
+    },
+  );
+});
+for (const mode of ['v2', 'created'])
+  test(
+    'SDK incremental publication: ' + mode + ' native field proofs and certificate replay',
+    async () => {
+      const f = await certifiedFixture({ mode }),
+        stage = await f.prepare();
+      assert.equal(f.initial.phase, 'publication');
+      assert.equal((await f.api.stageBookPublicationLore('author', stage)).status, 'staged');
+      assert.equal(
+        (await f.api.stageBookPublicationLore('author', stage)).status,
+        'already-staged',
+      );
+      await f.finish();
+      assert.equal(
+        (await assertSucceeds(getDoc(doc(client(null), f.revision + '/lore/' + f.id)))).data().name,
+        'Name 🌙',
+      );
+    },
+  );
+test('SDK incremental publication: cancellation fences native field validation and removes the checkpoint', async () => {
+  const f = await certifiedFixture(),
+    request = f.request();
+  const result = await f.call('cancelBookLoreSourceInspection', {
+    inspectionId: request.inspectionId,
+    startHash: request.startHash,
+    jobToken: request.jobToken,
+    operationId: 'cancel-publication',
+  });
+  assert.equal(result.progress.phase, 'cancelled');
+  assert.equal(
+    (
+      await admin
+        .doc('users/author/bookLoreSourceInspections/' + f.intent.inspectionId + '/state/current')
+        .get()
+    ).exists,
+    false,
+  );
+  await assert.rejects(f.call('advanceBookLoreSourceInspection', request), {
+    code: 'failed-precondition',
+  });
+  assert.equal((await admin.doc('publicBooks/book').get()).exists, false);
+});
+test('SDK incremental publication: a recreated certificate or revoked source cannot authorize the copy', async () => {
+  const f = await certifiedFixture(),
+    stage = await f.prepare(),
+    path =
+      'users/author/bookLoreSourceInspections/' + f.intent.inspectionId + '/certificate/current',
+    cert = (await admin.doc(path).get()).data();
+  await admin.doc(path).delete();
+  await admin.doc(path).create(cert);
+  await assert.rejects(f.api.stageBookPublicationLore('author', stage), {
+    code: 'failed-precondition',
+  });
+  assert.equal((await admin.doc(f.revision + '/lore/' + f.id).get()).exists, false);
+  await admin.doc('books/book').update({ localLoreVersion: 1 });
+  await assert.rejects(f.api.stageBookPublicationLore('author', stage), {
+    code: 'failed-precondition',
+  });
 });
