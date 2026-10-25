@@ -2430,3 +2430,29 @@ e harness IDB/WebCrypto/Locks; regressões de Manual/Persisted/Session/Editor/Au
 Sem mudança backend/Rules/schema/UI, nenhum novo teste SDK ou Chromium.
 Lint/tipos/build/smoke positivos; validate completo permanece no fechamento
 de P1. Manifesto/ledger/executor/UI de seleção e composição ainda pendentes.
+
+### P1 M38c6b — executor da seleção de visibilidade
+
+[Plano 125](tasks/writer-v2/execucao/125-visibilidade-duravel-da-selecao-de-lore.md),
+[ADR 0141](decisions/0141-durable-book-lore-visibility-selection.md) e
+[evidência](entregas/2026-10-25-writer-v2-executor-da-selecao-de-visibilidade.md).
+98 casos Vitest dirigidos distintos: 31 novos e 67 regressões. Suite final de
+seis arquivos: 97 positivos; mais um caso isolado novo com inline/payload v1/v2.
+
+53 aplicações, mixed/no-op, origem mudada antes/depois de ready, resposta perdida,
+retry original, perda de cópia filha, chave negada, cancel de 53 nunca iniciados,
+produtor aceito retido/duas instâncias, dívida antes de RPC/ACK local perdido,
+prova recriada, conta/host, paginação, CAS/rollback/orfãos e tokens monotônicos.
+A corrida de GET de limpeza antigo escrevendo inspectionClosed do membro
+seguinte foi reproduzida, corrigida e retestada; a conferência agora fixa membro
+e geração e marcador fechado exige referência observada.
+
+Cinco jornadas Chromium novas com protocolo real, IndexedDB/Web Locks/WebCrypto
+reais, reinício de contexto, perda de journal, reenvio explícito e duas abas.
+Quatro regressões Chromium da retirada após extração da rotina IDB. Todas nove
+positivas, com os cinco stores cifrados preservados. SDK/Auth remoto e backend são
+fixtures locais; não comprovam deploy, App Check ou credenciais de produção.
+Sem nova UI, nenhum gate visual/SR/zoom físico certificado.
+
+Lint/tipos/build/smoke/arquitetura/docs positivos. Backend e Rules sem alteração;
+sem repetir Node/SDK. Validate completo continua no fechamento de P1.

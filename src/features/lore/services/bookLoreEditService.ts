@@ -40,7 +40,7 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
       throw new Error('O contexto mudou. Reabra a ficha.');
   };
   const port = {
-    async call(method: string, input: unknown) {
+    async call(this: void, method: string, input: unknown) {
       guard();
       const result = await httpsCallable<unknown, unknown>(
         getFunctions(getFirebaseApp(), 'us-central1'),
@@ -148,7 +148,7 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
       uid,
       guard: check,
       edit: {
-        async call(method: string, input: unknown) {
+        async call(this: void, method: string, input: unknown) {
           check();
           const result = await port.call(method, input);
           check();
@@ -288,6 +288,7 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
   );
   return Object.freeze({
     actor,
+    call: port.call,
     outcome,
     guard,
     prepare,

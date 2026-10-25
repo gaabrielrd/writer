@@ -747,3 +747,19 @@ por flush. Cancel fresco sem chave conclui com produtor retido no gate.
 Sem montagem de UI. Manifesto/ledger/executor/revisão/retomada de visibilidade,
 composição de compêndio e demais lifecycle/consumidores/backup/rollout/validate
 de P1 e fases/gates seguem abertos. Somente commit local, sem CI/remoto/deploy.
+
+## Visibilidade da seleção, marco B — M38c6b
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md) e
+[ADR 0141](../../../decisions/0141-durable-book-lore-visibility-selection.md):
+manifesto/ledger/executor/sessão exportados. Seleção inteira metadata, C1/v2 e
+filhas cifradas, referências antes da RPC, consulta de apply incerto/retry
+explícito, dívida só salva, cancel sem chave e provas frias. Unchanged e conflito
+distintos; respostas tardias fixam membro/geração. Formatos antigos preservados.
+
+98 casos dirigidos distintos e nove jornadas Chromium positivos; tipos/lint/
+build/smoke e [evidência](../../../entregas/2026-10-25-writer-v2-executor-da-selecao-de-visibilidade.md).
+Próximo: revisão e interface/retomada de visibilidade, sem expor filhos para
+apply isolado na lista manual, depois composição do compêndio com todas as ações.
+Lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/gates abertos.
+Somente commit local, sem CI/envio remoto/deploy.

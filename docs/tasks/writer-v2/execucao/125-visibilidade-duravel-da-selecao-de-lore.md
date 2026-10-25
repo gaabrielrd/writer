@@ -73,3 +73,23 @@ e [evidência](../../../entregas/2026-10-25-writer-v2-controle-de-unidades-da-vi
 Marco A não conclui esta tarefa. Prosseguir com manifesto/ledger, executor e
 resultados no-op, cancel/retomada/revisão/UI e composição do compêndio, além de
 todos os demais pendentes de P1 e fases/gates. Sem CI/envio remoto/deploy.
+
+## Marco B — manifesto, ledger, executor e sessão implementados
+
+writer.book-lore-visibility-selections v1 com plano completo e estados metadata,
+páginas de até 50 sem cap total, CAS/oncomplete e refs/tokens monotônicos.
+Executor compõe C1/v2 e filhos cifrados, prova original, retry explícito, dívida
+local isolada e cancel sem chave, preservando aceites. Unchanged distinto e
+conflitos antes/depois de ready. Formatos antigos preservados.
+
+98 casos distintos e nove jornadas Chromium positivos; lint/tipos/build/smoke
+positivos. A corrida de observação de limpeza retida atualizando o membro ativo
+seguinte foi reproduzida e corrigida com geração/membro fixos.
+[ADR 0141](../../../decisions/0141-durable-book-lore-visibility-selection.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-executor-da-selecao-de-visibilidade.md).
+
+Etapas 2 e 3 implementadas; etapas 4 e 5 continuam necessárias. A revisão/UI/lista
+da seleção devem retomar filhos somente pela seleção, sem oferecer apply isolado
+na lista manual, e recarregar valores atuais no callback. Não declarar valor
+atual pelo efeito histórico. Demais pendências de P1 e fases/gates preservadas.
+Nenhuma montagem no compêndio nem envio remoto/deploy; somente commit local.

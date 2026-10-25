@@ -2434,3 +2434,23 @@ autorização. Cold flush não reenvia apply nem comprova aceite. Cancel fresco
 continua independente. Sem alteração de formatos, DB ou métodos de wire.
 Marco necessário do [plano 125](tasks/writer-v2/execucao/125-visibilidade-duravel-da-selecao-de-lore.md);
 manifesto/ledger/executor/UI de visibilidade e montagem do compêndio pendentes.
+
+## P1 M38c6b — seleção durável de visibilidade
+
+[ADR 0141](decisions/0141-durable-book-lore-visibility-selection.md):
+writer.book-lore-visibility-selections v1 guarda manifesto/páginas/estados
+metadata antes de RPC, sem teto de seleção. Cursor/outcome atômicos, CAS/oncomplete
+e Web Locks curtos. A retirada conserva nome/versão/formatos ao compartilhar
+somente a rotina de transação local.
+
+Executor compõe C1/v2 real, edição cifrada e gate; uma mudança isPublic por filha.
+Apply incerto só consulta, retry explícito fixa referências/tokens, dívida só salva.
+Cancel independente preserva aceites e fecha todos os IDs por metadata, sem chave.
+Unchanged distinto e conflitos nunca promovem origem. ACK assíncrono fixa membro
+e geração, sem usar active mutável depois do cancelamento. Progresso frio exige
+provas nativas. Sessão Auth e descoberta paginada exportadas, sem UI montada.
+
+[Plano 125](tasks/writer-v2/execucao/125-visibilidade-duravel-da-selecao-de-lore.md)
+permanece aberto para revisão/retomada/UI e composição do compêndio com todas as
+ações. Demais lifecycle/consumidores/backup/rollout/validate de P1 e fases/gates
+continuam no objetivo.

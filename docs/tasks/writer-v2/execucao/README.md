@@ -1427,3 +1427,17 @@ Gate metadata antes da RPC e flushLocal sem dirigir produção implementados.
 Não conclui visibilidade: manifesto/ledger/executor, revisão/retomada/UI e
 composição do compêndio seguem necessários. Lifecycle/consumidores/backup/
 rollout/validate de P1 e demais fases/gates abertos. Somente commit local.
+
+### P1 M38c6b — seleção de visibilidade durável
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md), marco B,
+[ADR 0141](../../../decisions/0141-durable-book-lore-visibility-selection.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-executor-da-selecao-de-visibilidade.md).
+Manifesto/ledger/executor e sessão Auth exportados; bool desejado e origens fixos,
+sem cap de seleção, provas originais, retry explícito, no-op distinto e cancel
+metadata independente. Respostas tardias isoladas por membro/geração.
+
+98 casos dirigidos e nove jornadas Chromium positivos, com tipos/lint/build/
+smoke positivos. Revisão/UI/retomada e compêndio ainda pendentes; não encerra
+plano 125. Lifecycle/consumidores/backup/rollout/validate de P1 e fases/gates abertos.
+Sem CI/envio remoto/deploy; somente commit local.

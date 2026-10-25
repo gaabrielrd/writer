@@ -76,3 +76,14 @@ export type {
   RemovalSelectionOutcome,
   RemovalSelectionInput,
 } from './bookLoreRemovalSelectionContracts';
+
+export { bookLoreVisibilitySelectionSession } from './bookLoreVisibilitySelectionService';
+export type {
+  VisibilityInput,
+  VisibilityIdentity,
+  VisibilityMember,
+  VisibilityManifest,
+  VisibilityRoot,
+  VisibilityState,
+  VisibilityOutcome,
+} from './bookLoreVisibilitySelectionContracts';
