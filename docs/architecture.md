@@ -2586,3 +2586,17 @@ qualquer corpo derivado, preservando a pergunta própria. Universos e aventuras
 mantêm seus contratos. 99 Node e sete cenários SDK distintos positivos.
 Atualiza a pendência do marco A: plano 128 concluído localmente; demais
 consumidores e P1/fases/gates continuam abertos. Sem deploy/rollout.
+
+## P1 M38c10 — lore nas referências de cenas e planejamento
+
+[ADR 0149](decisions/0149-native-book-lore-references.md): BookLoreReferenceRead
+compõe autorização/C1 e leitor seletivo. Origem confere flags/tombstone/prova/
+header sem chunks; inserção e índices inversos não dependem do tamanho do texto.
+Listas buscam só nome/categoria, com budget por página e sem truncamento.
+v1 exige fluxo integral; v2 não baixa outros campos/relações.
+
+Scenes e narrativePlanning conservam vínculos por IDs e remoção após revogação,
+sem nomes na relação. Cursor local inclui relógio do livro/listToken C1;
+índices inversos incluem token nativo exato da ficha. Universos/aventuras
+mantêm contratos. 60 Node e oito SDK positivos. Publicação/campanhas e demais
+consumidores/P1/fases/gates continuam necessários; sem rollout/deploy.

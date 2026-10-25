@@ -397,3 +397,14 @@ concluído estiverem satisfeitos. A lista fica em
   avanço (ADR 0148). Não trunque aliases do matcher para contornar complexidade.
 - Revalide histórico por metadata, tombstone e prova original de criação, sem
   baixar corpos de lore. DTO privado e defaults de contexto não são fonte de escrita.
+
+## Lore nas referências de cenas e planejamento
+
+- Confira origem C1 na transação antes de vincular lore local; disponibilidade
+  e índices inversos não devem depender de baixar prosa (ADR 0149).
+- Resolva nome/categoria lógicos em listas, com budget por página e sem truncar
+  label, gravá-lo no link ou buscar outros campos/relações v2.
+- Ausência/revogação conhecida omite nomes; corrupção/infraestrutura é erro,
+  sem fallback. Preserve remoção explícita de vínculo já indisponível.
+- Cursores locais observam localLoreVersion e nascimento do livro; consultas
+  inversas observam também token nativo exato da ficha, sem reduzir a millis.

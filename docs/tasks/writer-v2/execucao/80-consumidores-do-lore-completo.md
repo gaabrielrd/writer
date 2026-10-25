@@ -186,3 +186,14 @@ cenários SDK distintos positivos; [evidência](../../../entregas/2026-10-25-wri
 Só o consumidor de chat desta etapa 4 foi integrado. Referências/cenas,
 planejamento, publicação e captura de campanhas continuam pendentes, assim como
 inventário/escritores/backup/restauração/drain/rollout/validate e demais gates.
+
+## Referências integradas — M38c10
+
+[Plano 129](129-lore-logico-nas-referencias-de-cenas-e-planejamento.md) integra
+scenes/narrativePlanning: origem autorizada para vínculos/índices sem chunks,
+labels lógicos completos e cursores observando relógio/nascimento nativos.
+60 Node e oito SDK positivos; [evidência](../../../entregas/2026-10-25-writer-v2-lore-nativo-nas-referencias.md).
+Preserva IDs, índices/recibos e remoção de referências indisponíveis. Próximos
+consumidores: publicação/capturas de campanhas e demais leituras ainda cruas.
+Etapa 4 inteira, inventário/escritores/exclusão/backup/restauração/drain/rollout/
+validate de P1 e demais fases/gates continuam abertos.

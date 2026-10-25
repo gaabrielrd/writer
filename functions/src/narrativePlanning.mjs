@@ -1,3 +1,8 @@
+import {
+  createBookLoreReferenceReader,
+  createBookLoreReferenceBudget,
+} from './bookLoreReferenceRead.mjs';
+import { readBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { readAdventureLoreContext } from './adventureLore.mjs';
 import { storedMetadata as storedAdventureLoreMetadata } from './adventureLoreContracts.mjs';
 import { sceneRankBetween, validSceneRank } from './sceneRanks.mjs';
@@ -130,14 +135,29 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
     kind,
     ...extra,
   });
-  async function lore(context, p, ref, tx) {
-    return (await loreState(context, p, ref, tx)).entity;
+  async function lore(context, p, ref, tx, labels) {
+    return (await loreState(context, p, ref, tx, labels)).entity;
   }
-  async function loreState(context, p, ref, tx) {
-    let snapshot, worldSnapshot, localContext;
+  async function loreState(context, p, ref, tx, labels = null) {
+    let snapshot,
+      worldSnapshot,
+      localContext,
+      bookEntity,
+      bookOriginToken = null,
+      bookListToken = null;
     if (ref.kind === 'book') {
-      if (context.target.kind === 'book' && ref.scopeId === context.target.id)
-        snapshot = await tx.get(db.doc(`${context.path}/lore/${ref.entityId}`));
+      if (context.target.kind === 'book' && ref.scopeId === context.target.id) {
+        const reader =
+          labels?.reader ??
+          (await createBookLoreReferenceReader(tx, db, context.uid, context.target.id));
+        bookListToken = reader.listToken;
+        const found = labels
+          ? await reader.label(ref.entityId, labels.budget)
+          : await reader.origin(ref.entityId);
+        snapshot = found?.snapshot;
+        bookEntity = found?.entity ?? null;
+        bookOriginToken = found?.sourceToken ?? null;
+      }
     } else if (ref.kind === 'adventure') {
       if (context.target.kind === 'adventure' && ref.scopeId === context.target.id) {
         localContext = await readAdventureLoreContext(
@@ -162,13 +182,15 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
           ? storedAdventureLoreMetadata(rawEntity, localContext, ref.entityId)
           : null,
       entity =
-        ref.kind === 'adventure'
-          ? localEntity && !localEntity.deleted
-            ? localEntity
-            : null
-          : rawEntity && !rawEntity.deleted && !rawEntity.deleting
-            ? rawEntity
-            : null,
+        ref.kind === 'book'
+          ? (bookEntity ?? null)
+          : ref.kind === 'adventure'
+            ? localEntity && !localEntity.deleted
+              ? localEntity
+              : null
+            : rawEntity && !rawEntity.deleted && !rawEntity.deleting
+              ? rawEntity
+              : null,
       world = worldSnapshot?.data();
     return {
       entity,
@@ -180,17 +202,25 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
         originWorldSnapshot: worldSnapshot?.updateTime?.toMillis?.() ?? 0,
         originWorldDate: world?.updatedAt ?? 0,
         originLoreVersion: world?.loreVersion ?? 0,
-        originLocalLoreVersion: p.loreVersion ?? 0,
+        originLocalLoreVersion:
+          context.target.kind === 'book' ? readBookLocalLoreVersion(p) : (p.loreVersion ?? 0),
+        ...(ref.kind === 'book'
+          ? { originBookToken: bookListToken, originEntityToken: bookOriginToken }
+          : {}),
         originLocalIdentity: localContext?.adventureToken ?? null,
         originPrivacyVersion: world?.privacyVersion ?? 0,
         linkedUniverseId: p.universeId ?? null,
       },
     };
   }
-  async function resolve(context, p, ref, tx) {
+  async function resolve(context, p, ref, tx, labels = null) {
     if (ref.kind === 'lore') {
-      const value = await lore(context, p, ref.reference, tx);
-      return value ? { label: value.name ?? '', category: value.category ?? '' } : null;
+      const value = await lore(context, p, ref.reference, tx, labels);
+      return value
+        ? labels
+          ? { label: value.name ?? '', category: value.category ?? '' }
+          : {}
+        : null;
     }
     const value = (
       await tx.get(
@@ -525,6 +555,13 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
       return db.runTransaction(async (tx) => {
         const p = await root(context, tx);
         await item(context, source, tx);
+        const labels = {
+          reader:
+            context.target.kind === 'book'
+              ? await createBookLoreReferenceReader(tx, db, uid, context.target.id)
+              : null,
+          budget: createBookLoreReferenceBudget(),
+        };
         return page(
           context,
           p,
@@ -539,7 +576,7 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
           undefined,
           async (snap) => {
             const link = snap.data(),
-              available = await resolve(context, p, link.reference, tx);
+              available = await resolve(context, p, link.reference, tx, labels);
             return {
               id: snap.id,
               reference: link.reference,
@@ -547,6 +584,7 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
               ...(available ?? {}),
             };
           },
+          labels.reader ? { originBookToken: labels.reader.listToken } : {},
         );
       });
     },
@@ -578,12 +616,19 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
           world = (await tx.get(db.doc(`universes/${id(p.universeId)}`))).data();
           if (world?.authorId === uid && !world.deleting) path = `universes/${p.universeId}/lore`;
         }
+        const bookReader =
+            data.scope === 'book'
+              ? await createBookLoreReferenceReader(tx, db, uid, context.target.id)
+              : null,
+          budget = createBookLoreReferenceBudget();
         const c = baseCursor(context, 'lore-options', { scope: data.scope }),
           observed = {
             originId: p.universeId ?? null,
             originDate: world?.updatedAt ?? 0,
             originLore: world?.loreVersion ?? 0,
-            originLocalLore: p.loreVersion ?? 0,
+            originLocalLore:
+              context.target.kind === 'book' ? readBookLocalLoreVersion(p) : (p.loreVersion ?? 0),
+            ...(bookReader ? { originBookToken: bookReader.listToken } : {}),
             originLocalIdentity: localContext?.adventureToken ?? null,
             originPrivacy: world?.privacyVersion ?? 0,
             available: Boolean(path),
@@ -609,16 +654,19 @@ export function createNarrativePlanningService({ db, now = Date.now }) {
           data.cursor,
           pageLimit,
           undefined,
-          (snap) => {
+          async (snap) => {
             if (localContext) storedAdventureLoreMetadata(snap.data(), localContext, snap.id);
+            const found = bookReader ? await bookReader.label(snap.id, budget) : null;
+            if (bookReader && !found) return null;
+            const entity = found?.entity ?? snap.data();
             return {
               reference: {
                 kind: data.scope,
                 scopeId: data.scope === 'universe' ? p.universeId : context.target.id,
                 entityId: snap.id,
               },
-              name: snap.data().name ?? '',
-              category: snap.data().category ?? '',
+              name: entity.name ?? '',
+              category: entity.category ?? '',
             };
           },
           observed,

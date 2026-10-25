@@ -2574,3 +2574,19 @@ histórico passou a ser semeado com Admin; vencedor/relógio/retirada continuam 
 cliente. Nenhuma Rule foi enfraquecida. Lint/sintaxe/formato e checks locais;
 validate integral só no fechamento de P1. Sem UI/build/CI/deploy novos.
 [Evidência](entregas/2026-10-25-writer-v2-lore-nativo-no-contexto-do-chat.md).
+
+## P1 M38c10 — referências nativas de lore
+
+60/60 Node em bookLoreReferences, scenes, narrativePlanning e
+adventureLoreCampaign: 22 novos e 38 regressões. Labels literais, quatro modos,
+criação/prova, >8MiB/128 partes, disponibilidade sem chunks, campos v2 não pedidos,
+revogação/remoção, orçamento agregado, corrupção/infraestrutura e cursores com
+clock/nascimento/submilissegundo conferidos.
+
+8/8 SDK em três execuções selecionadas: quatro novos bookLoreReferences e quatro
+regressões de narrativePlanning/scenes. Origem grande/v2/criação e rollback de
+último índice comprovados com timestamps/recibos nativos. Emulador 1.22.0
+verificado/demo/loopback, sem skipped/falhas. Nenhuma Rule alterada.
+Lint/sintaxe/formato/docs/arquitetura/diff; validate global só no fechamento de
+P1. UI/build/typecheck/CI/deploy não executados neste marco.
+[Evidência](entregas/2026-10-25-writer-v2-lore-nativo-nas-referencias.md).

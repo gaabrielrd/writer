@@ -1,3 +1,7 @@
+import {
+  createBookLoreReferenceReader,
+  createBookLoreReferenceBudget,
+} from './bookLoreReferenceRead.mjs';
 import { readAdventureLoreContext } from './adventureLore.mjs';
 import { storedMetadata as storedAdventureLoreMetadata } from './adventureLoreContracts.mjs';
 import { validateId } from './generation.mjs';
@@ -677,13 +681,18 @@ export function createScenesService({ db, now = Date.now }) {
     });
   }
 
-  async function referenceAvailable(context, p, reference, tx = null) {
+  async function referenceAvailable(context, p, reference, tx = null, labels = null) {
     if (reference.kind === 'book') {
       if (context.target.kind !== 'book' || reference.scopeId !== context.target.id) return null;
-      const entity = await (tx
-        ? tx.get(db.doc(`${context.path}/lore/${reference.entityId}`))
-        : db.doc(`${context.path}/lore/${reference.entityId}`).get());
-      return entity.data() ?? null;
+      if (!tx)
+        return db.runTransaction((t) => referenceAvailable(context, p, reference, t, labels));
+      const reader =
+        labels?.reader ??
+        (await createBookLoreReferenceReader(tx, db, context.uid, context.target.id));
+      const found = labels
+        ? await reader.label(reference.entityId, labels.budget)
+        : await reader.origin(reference.entityId);
+      return found?.entity ?? null;
     }
     if (reference.kind === 'adventure') {
       if (context.target.kind !== 'adventure' || reference.scopeId !== context.target.id)
@@ -1055,7 +1064,20 @@ export function createScenesService({ db, now = Date.now }) {
         const p = await project(context, tx),
           scene = (await tx.get(db.doc(`${context.path}/scenes/${id}`))).data();
         if (!scene || scene.ownerId !== uid) sceneFail('not-found', 'Cena indisponível.');
-        const c = { uid, target: context.target, kind: 'references', sceneId: id },
+        const labels =
+          context.target.kind === 'book'
+            ? {
+                reader: await createBookLoreReferenceReader(tx, db, uid, context.target.id),
+                budget: createBookLoreReferenceBudget(),
+              }
+            : null;
+        const c = {
+            uid,
+            target: context.target,
+            kind: 'references',
+            sceneId: id,
+            ...(labels ? { loreToken: labels.reader.listToken } : {}),
+          },
           cursor = decodeSceneCursor(data.cursor, c);
         if (cursor && cursor.revision !== revision(p)) conflict();
         let query = db
@@ -1068,7 +1090,7 @@ export function createScenesService({ db, now = Date.now }) {
           items = [];
         for (const item of visible) {
           const ref = item.data(),
-            entity = await referenceAvailable(context, p, ref, tx);
+            entity = await referenceAvailable(context, p, ref, tx, labels);
           items.push({
             id: item.id,
             reference: ref,
@@ -1082,11 +1104,13 @@ export function createScenesService({ db, now = Date.now }) {
           });
         }
         const last = visible.at(-1);
-        return {
+        const response = {
           items,
           nextCursor: page.docs.length > limit ? cursorFor(c, revision(p), last.id, last.id) : null,
           projectRevision: revision(p),
         };
+        assertSceneEnvelope(response);
+        return response;
       });
     },
     async readSceneAssembly(uid, data) {

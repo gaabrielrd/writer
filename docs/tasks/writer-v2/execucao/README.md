@@ -1538,3 +1538,13 @@ Página/snapshot lógicos e budget por avanço; história por origem sem corpo d
 lore. 99 Node e sete cenários SDK distintos positivos (dois retakes de fixtures).
 Demais consumidores da etapa 4, namespaces/escritores, backup/restauração,
 drain/rollout/validate de P1 e fases/gates permanecem necessários. Sem remoto.
+
+### P1 M38c10 — lore nas referências de cenas e planejamento
+
+[Plano 129](129-lore-logico-nas-referencias-de-cenas-e-planejamento.md),
+[ADR 0149](../../../decisions/0149-native-book-lore-references.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-lore-nativo-nas-referencias.md).
+Origem C1 sem chunks para vínculo/índices e labels seletivos completos nas listas;
+cursores observam relógio/nascimento nativos. 60 Node e oito SDK positivos.
+Plano concluído localmente. Publicação/campanhas/demais consumidores, inventário,
+backup/restauração/drain/rollout/validate de P1 e fases/gates seguem necessários.
