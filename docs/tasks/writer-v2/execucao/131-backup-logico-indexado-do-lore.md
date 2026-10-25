@@ -176,3 +176,46 @@ B implementado/validado localmente. Não conectado ao orquestrador final:
 C deve integrar captura/validação incremental antes do selo, D deve consumir/
 remapear/materializar por spans e comprovar roundtrip sem teto artificial.
 Plano 131, P1/F2-09/V2 e fases/gates continuam abertos.
+
+## Contrato C antes da integração — orçamento semântico e envelope
+
+A validação servidor limita o buffer do ValidationStore a 96 escritas por
+operação. Uma parte de transporte de 64 KiB pode conter mais de 64 relações
+curtas; não criar uma escrita por referência sem orçamento nem guardar todas
+as relações/spans no checkpoint.
+
+Executar C em sequência técnica: C1 acrescenta prefixo do índice A com até
+64 referências por transição e índice do envelope completo do item lore;
+C2 conecta esses passos ao ContentMachine/validador local/ValidationStep e
+persiste somente ponteiros limitados; C3 conecta a captura C1 ao orquestrador
+e confere o selo final. C1 isolado não habilita captura/restauração nem conclui C.
+
+O prefixo devolve consumed exato, estado sintático e referências provisórias.
+Ao atingir o orçamento, retoma no byte seguinte sem perder/repetir referência.
+As entradas antigas conservam consumo integral e páginas nativas de até 64.
+O envelope fechado conserva schemaVersion/kind/parentId/id/data em qualquer
+ordem canônica já aceita, sem normalizar prosa ou copiar data em RAM. ID e
+header são limitados; data usa A, com offset/ranges em bytes.
+
+Arquivos C1: BookLoreFieldValidation e declaração; BookPortableLoreIndex e
+declaração; novo BookPortableLoreItemIndex e declaração/testes; atualização de
+ADR 0151, arquitetura/testes/registro/plano/evidência. Não alterar fontes nativas,
+endpoints, Rules, formato do arquivo ou leitores finais nesta transição.
+
+Aceites: compatibilidade de envelope/campos/ordem, >8 MiB/128 partes, estado sem
+prosa/lista, fronteiras UTF-8/escapes e retorno com <=64 referências, recarga de
+cada checkpoint, EOF/truncamento/injeção/duplicados/estado inválido rejeitados.
+Conferir consumo e equivalência com schema anterior; Node dirigido, declarações,
+bundle/Chromium e checks proporcionais. Nenhuma prova sintática concede SHA,
+autorização, integridade de framing ou ativação. C2/C3/D/P1 seguem obrigatórios.
+
+## Estado C1 — 2026-10-25
+
+Envelope/prefixo semântico implementados e validados: 43 Node novos +217 de
+regressão, 26 Vitest do bridge, três jornadas Chromium, bundle browser e tipos.
+[Evidência C1](../../../entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md).
+Entrada anterior continua integral e estados nativos continuam separados.
+
+C ainda aberto: implementar C2 (ContentMachine/validadores/ponteiros), C3
+(captura/revalidação/selo), depois D e inventários/roundtrip/validate de P1.
+Não habilitar arquivo/restauração por esse parser isolado.

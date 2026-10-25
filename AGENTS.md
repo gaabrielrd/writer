@@ -442,3 +442,8 @@ concluído estiverem satisfeitos. A lista fica em
   header antes da prova e mantenha bytes provisórios até o selo do arquivo.
 - Revalidação metadata não certifica bytes/corpos atuais; não habilite arquivo
   ou restauração antes de integrar validação e materialização por spans.
+
+- Use o prefixo com consumed e orçamento de até 64 referências na validação
+  semântica do lore; não suponha que 64 KiB limitam o número de escritas.
+- Preserve a validação do envelope/EOF e vincule índice/offsets ao mesmo arquivo
+  e item antes de usar spans; o parser puro não certifica SHA nem autorização.

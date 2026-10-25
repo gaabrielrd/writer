@@ -2671,3 +2671,18 @@ abortar seu sink em falha; validadores/restauradores C/D ainda não integrados.
 [ADR 0151](decisions/0151-incremental-portable-lore-index.md) e
 [evidência B](entregas/2026-10-25-writer-v2-composicao-portatil-do-lore.md).
 P1/fases/gates permanecem abertos; sem remoto/deploy.
+
+## P1 M38c12 C1 — envelope e orçamento de referências
+
+O prefixo de BookPortableLoreIndex devolve consumed exato e no máximo 64
+referências por passo, preparando o limite semântico do ValidationStore.
+A entrada anterior continua integral; páginas nativas conservam seu contrato.
+
+BookPortableLoreItemIndex valida envelope/id/data em ordem canônica arbitrária,
+com metadata/ranges em bytes e checkpoint JSON de até 32768 bytes sem prosa/lista.
+As referências são provisórias; índice não certifica SHA/framing/autorização.
+C2 integra validadores/ponteiros, C3 captura/selo e D leitor/remap/materialização.
+
+260 Node distintos, 26 Vitest do bridge, três Chromium, bundle de 11 módulos e
+declarações TS positivos. [Evidência C1](entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md).
+Plano 131/P1/fases/gates abertos; nenhum caminho final habilitado neste passo.

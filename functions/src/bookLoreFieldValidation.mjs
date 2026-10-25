@@ -334,7 +334,7 @@ function syntaxByte(state, byte, observer) {
   bad();
 }
 /** Check one storage unit. Checkpoints contain syntax/IDs, never string prose. */
-function advanceField(input, bytes, prefix, observer) {
+function advanceField(input, bytes, prefix, observer, referenceLimit = Infinity) {
   checkpoint(input);
   if (
     !(bytes instanceof Uint8Array) ||
@@ -343,7 +343,19 @@ function advanceField(input, bytes, prefix, observer) {
   )
     bad();
   const state = structuredClone(input);
-  let consumed = 0;
+  let consumed = 0,
+    references = 0;
+  const events =
+    referenceLimit === Infinity
+      ? observer
+      : {
+          start: (role) => observer?.start?.(role),
+          text: (code, role) => observer?.text?.(code, role),
+          end(role) {
+            observer?.end?.(role);
+            if (role === 'target') references++;
+          },
+        };
   for (const byte of bytes) {
     if (state.mode === 'done') {
       if (prefix) break;
@@ -357,8 +369,9 @@ function advanceField(input, bytes, prefix, observer) {
         state.literalIndex = 0;
         complete(state);
       }
-    } else if (state.mode === 'syntax') syntaxByte(state, byte, observer);
-    else stringByte(state, byte, observer);
+    } else if (state.mode === 'syntax') syntaxByte(state, byte, events);
+    else stringByte(state, byte, events);
+    if (references === referenceLimit) break;
   }
   state.byteLength += consumed;
   return { state, consumed };
@@ -404,9 +417,19 @@ export function finishBookLoreFieldValidation(state) {
 export function createBookPortableLoreRelationsValidation() {
   return { ...createBookLoreFieldValidation({ field: 'relations', count: 0 }), schemaVersion: 2 };
 }
-export function advanceBookPortableLoreRelationsPrefixValidation(input, bytes, observer) {
+export function advanceBookPortableLoreRelationsPrefixValidation(
+  input,
+  bytes,
+  observer,
+  referenceLimit,
+) {
   version(input, 2);
-  return advanceField(input, bytes, true, observer);
+  if (
+    referenceLimit !== undefined &&
+    (!Number.isInteger(referenceLimit) || referenceLimit < 1 || referenceLimit > 64)
+  )
+    bad();
+  return advanceField(input, bytes, true, observer, referenceLimit);
 }
 export function finishBookPortableLoreRelationsValidation(state) {
   version(state, 2);

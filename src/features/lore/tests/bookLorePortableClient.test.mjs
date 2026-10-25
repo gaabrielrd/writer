@@ -2,6 +2,11 @@
 import { expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { createBookLoreReadClient } from '../services/bookLoreReadClient';
+import {
+  createBookPortableLoreItemIndex,
+  advanceBookPortableLoreItemIndex,
+  finishBookPortableLoreItemIndex,
+} from '../../../../functions/src/bookPortableLoreItemIndex.mjs';
 import { adventureImportDb } from '../../../../functions/test/helpers/adventureImportDb.mjs';
 import { seedBookLoreRead } from '../../../../functions/test/helpers/bookLoreReadFixture.mjs';
 import { seedBookLoreGeneration } from '../../../../functions/test/helpers/bookLoreGenerationFixture.mjs';
@@ -119,6 +124,34 @@ function consistent(f, r) {
   expect(JSON.stringify(r.proof)).not.toContain('PRIVATE_PORTABLE_TEXT');
   expect(Object.isFrozen(r.proof)).toBe(true);
   expect(Object.isFrozen(r.proof.source)).toBe(true);
+  let state = createBookPortableLoreItemIndex();
+  const references = [];
+  for (const part of r.parts) {
+    for (let at = 0; at < part.length;) {
+      const step = advanceBookPortableLoreItemIndex(state, part.subarray(at), 17);
+      expect(step.consumed).toBeGreaterThan(0);
+      expect(step.references.length).toBeLessThanOrEqual(17);
+      references.push(...step.references);
+      state = JSON.parse(JSON.stringify(step.state));
+      at += step.consumed;
+    }
+  }
+  expect(finishBookPortableLoreItemIndex(state)).toEqual({
+    schemaVersion: 1,
+    kind: 'lore',
+    parentId: null,
+    id: f.id,
+    byteLength: r.proof.byteLength,
+    dataOffset: r.proof.dataOffset,
+    dataByteLength: r.proof.dataByteLength,
+    index: r.proof.index,
+  });
+  expect(references).toEqual(
+    (f.expected.relations ?? []).map((r, index) => ({
+      index,
+      targetEntityId: r.targetEntityId,
+    })),
+  );
 }
 it.each(['inline', 'v1', 'v2', 'created'])(
   'production C1 → portable JSON for %s preserves the closed logical source',

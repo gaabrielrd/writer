@@ -256,3 +256,12 @@ Arquivo final/validadores/restauradores ainda usam o caminho anterior: C/D são
 próximos e obrigatórios, inclusive JSON ampliado após remap. Etapa 5, inventário
 geral/writers/exclusão/coleta/legacy/roundtrip/rollout/validate de P1, fases e
 gates continuam abertos. Sem recurso remoto novo, CI, push ou deploy.
+
+## Envelope da etapa 5 — M38c12 C1
+
+Índice do envelope e prefixo com orçamento de referências implementados/validados:
+consumed exato, <=64 referências, checkpoint sem prosa/lista e domínio portátil.
+260 Node distintos, 26 Vitest, três Chromium, bundle browser e declarações TS.
+[Evidência C1](../../../entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md).
+C2/C3 ainda devem integrar validadores/captura/selo; D remap/materialização.
+Etapa 5, plano 131, P1 e demais fases/gates permanecem abertos.

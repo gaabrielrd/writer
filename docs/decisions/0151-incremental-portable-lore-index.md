@@ -87,3 +87,22 @@ leitura de unidade no cliente anterior conserva sua montagem/concorrência.
 [Evidência B](../entregas/2026-10-25-writer-v2-composicao-portatil-do-lore.md):
 147 Node, 114 Vitest distintos, cinco SDK e três jornadas Chromium positivos;
 tipos/build/smoke/bundle/checks locais. C/D/P1/fases/gates continuam abertos.
+
+## Validação C — prefixos e envelope com orçamento semântico
+
+O store da validação tem limite de 96 escritas por operação. Uma parte de 64 KiB
+não limita a quantidade de referências. Por isso C1 acrescenta consumed exato
+e orçamento de 1–64 referências ao prefixo portátil, sem mudar a entrada nativa
+ou o consumo integral anterior. O checkpoint retoma no byte seguinte ao limite.
+
+BookPortableLoreItemIndex compartilha o índice de data e a gramática de string
+do ID; confere o envelope fechado em qualquer ordem canônica aceita antes.
+Estado de até 32768 bytes, sem prosa/lista, entrega ranges/offsets/metadata e
+referências provisórias. Erros do ID têm o código invalid-record do backup.
+
+C1 não certifica bytes/SHA/framing/acesso. C2 deve ligar esse estado aos ponteiros
+e à validação semântica; C3 à captura/selo e D ao leitor/remap/materialização.
+[Evidência C1](../entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md):
+260 Node distintos positivos (43 novos/217 regressões), 26 Vitest do bridge,
+três Chromium, bundle browser de 11 módulos e declarações TS conferidas.
+Nenhuma fronteira remota nova, SDK ou build geral neste passo puro.

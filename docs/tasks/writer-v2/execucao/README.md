@@ -1600,3 +1600,13 @@ Próximo passo C: ligar ao arquivo e à validação incremental local/servidor;
 depois D: leitor verificado/remap/materialização grandes e roundtrip. O caminho
 anterior de arquivo permanece; não usar B como autorização de ativação.
 Inventários/legacy/drain/rollout/validate de P1, fases 3–5 e gates continuam.
+
+### P1 M38c12 C1 — envelope e orçamento semântico
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): prefixo com consumed e até 64
+referências; envelope fechado, data incremental, estado sem prosa/lista.
+260 Node distintos, 26 Vitest do bridge e três Chromium positivos; bundle browser
+e declarações TS. [Evidência C1](../../../entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md).
+
+C2 deve ligar ContentMachine/validadores e ponteiros; C3 captura/selo; D leitor/
+remap/materialização/roundtrip. Plano 131/P1/V2/fases/gates continuam abertos.

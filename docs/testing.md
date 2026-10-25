@@ -2664,3 +2664,21 @@ de consumo e troca de ator. Build/typecheck/smoke (2988 módulos), bundle browse
 e checks locais positivos. Sem CI/remoto/deploy/validate global. Não comprova
 arquivo/restauração integrados: C/D ainda obrigatórios.
 [Evidência B](entregas/2026-10-25-writer-v2-composicao-portatil-do-lore.md).
+
+## P1 M38c12 C1 — envelope e budget semântico
+
+43/43 Node novos do envelope/prefixo e 217/217 regressões de campo/base/índice/
+upload: 260 distintos positivos. As 120 ordens do envelope, >16 MiB/128 partes,
+orçamento 1/17/64, referências densas, UTF-8/IDs/escapes, estado imutável e rejeição
+de truncamento/injeção/corrupção cobertos. Código do erro de ID alinhado após
+duas falhas iniciais; arquivo novo reexecutado inteiro e positivo.
+
+26/26 Vitest percorrem C1 real → produtor → índice do envelope nos casos positivos.
+Três Chromium: fonte 10005932 bytes/153 partes/130 referências, sete pausas e
+checkpoint máximo 1047 bytes; recarga em UTF-8 parcial; frame com 1000 relações,
+64 referências por passo e rejeição de injeção. Sem Buffer e só loopback.
+
+Bundle browser: 11 módulos/26742 bytes/zero imports externos. Declarações TS,
+lint/sintaxe/formato/docs/arquitetura/diff positivos. Sem SDK novo/build geral/
+validate neste passo puro. C2/C3/D obrigatórios, sem prova de arquivo/restauração
+integrados. [Evidência C1](entregas/2026-10-25-writer-v2-envelope-incremental-do-lore.md).

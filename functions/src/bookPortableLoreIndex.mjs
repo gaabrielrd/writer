@@ -31,10 +31,10 @@ const fields = BOOK_PORTABLE_LORE_FIELDS,
   dates = ['createdAt', 'updatedAt'],
   required = (1 << fields.indexOf('name')) | (1 << fields.indexOf('category'));
 const relations = (key) => key === 'relations';
-function childAdvance(key, input, bytes, observer) {
+function childAdvance(key, input, bytes, observer, referenceLimit) {
   try {
     return relations(key)
-      ? advanceBookPortableLoreRelationsPrefixValidation(input, bytes, observer)
+      ? advanceBookPortableLoreRelationsPrefixValidation(input, bytes, observer, referenceLimit)
       : advanceBookLoreFieldPrefixValidation(input, bytes, observer);
   } catch {
     bad();
@@ -214,7 +214,7 @@ function endValue(s) {
   s.phase = 'after';
 }
 /** One canonical JSON unit. References remain provisional until EOF/integrity; metadata never grants access. */
-export function advanceBookPortableLoreIndex(input, bytes) {
+function advanceIndex(input, bytes, prefix = false, referenceLimit = Infinity) {
   checked(input);
   if (
     !(bytes instanceof Uint8Array) ||
@@ -243,6 +243,7 @@ export function advanceBookPortableLoreIndex(input, bytes) {
   };
   let at = 0;
   while (at < bytes.length) {
+    if (prefix && s.phase === 'done') break;
     const byte = bytes[at],
       position = input.byteLength + at;
     if (s.phase === 'value') {
@@ -263,6 +264,7 @@ export function advanceBookPortableLoreIndex(input, bytes) {
           s.child,
           bytes.subarray(at),
           relations(key) ? observer : undefined,
+          referenceLimit === Infinity ? undefined : referenceLimit - references.length,
         );
         if (!result.consumed) bad();
         if (key === 'isPublic' && s.valueBytes === 0) s.isPublic = byte === 116;
@@ -270,6 +272,7 @@ export function advanceBookPortableLoreIndex(input, bytes) {
         s.valueBytes += result.consumed;
         at += result.consumed;
         if (s.child.mode === 'done') endValue(s);
+        if (references.length === referenceLimit) break;
       }
       continue;
     }
@@ -312,9 +315,19 @@ export function advanceBookPortableLoreIndex(input, bytes) {
       else bad();
     } else bad();
   }
-  s.byteLength += bytes.length;
+  s.byteLength += at;
   checked(s);
-  return { state: s, references };
+  return { state: s, references, consumed: at };
+}
+/** Complete-unit entry preserves the original ABI and never accepts trailing bytes. */
+export function advanceBookPortableLoreIndex(input, bytes) {
+  const { state, references } = advanceIndex(input, bytes);
+  return { state, references };
+}
+/** Bounded semantic prefix. Bytes after the data object remain with its envelope reader. */
+export function advanceBookPortableLorePrefixIndex(input, bytes, referenceLimit = 64) {
+  if (!Number.isInteger(referenceLimit) || referenceLimit < 1 || referenceLimit > 64) bad();
+  return advanceIndex(input, bytes, true, referenceLimit);
 }
 export function finishBookPortableLoreIndex(s) {
   checked(s);

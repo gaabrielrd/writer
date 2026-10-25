@@ -65,6 +65,7 @@ export function advanceBookPortableLoreRelationsPrefixValidation(
   input: BookPortableLoreRelationsState,
   bytes: Uint8Array,
   observer?: BookLoreFieldObserver,
+  referenceLimit?: number,
 ): { state: BookPortableLoreRelationsState; consumed: number };
 export function finishBookPortableLoreRelationsValidation(input: BookPortableLoreRelationsState): {
   field: 'relations';

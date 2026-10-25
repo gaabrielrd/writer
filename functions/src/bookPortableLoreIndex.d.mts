@@ -51,6 +51,15 @@ export function advanceBookPortableLoreIndex(
   input: BookPortableLoreIndexState,
   bytes: Uint8Array,
 ): { state: BookPortableLoreIndexState; references: readonly BookPortableLoreReference[] };
+export function advanceBookPortableLorePrefixIndex(
+  input: BookPortableLoreIndexState,
+  bytes: Uint8Array,
+  referenceLimit?: number,
+): {
+  state: BookPortableLoreIndexState;
+  references: readonly BookPortableLoreReference[];
+  consumed: number;
+};
 export function finishBookPortableLoreIndex(
   input: BookPortableLoreIndexState,
 ): BookPortableLoreMetadata;
