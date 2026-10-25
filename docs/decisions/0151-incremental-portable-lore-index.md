@@ -190,3 +190,21 @@ empacotar/atestar, vincular procedência, ampliar inventário antes das escritas
 provar retomada/rollback/roundtrip até ativação. Sem novo recurso ou endpoint D2.
 255 Node distintos, 13 Vitest, dois SDK e três Chromium positivos.
 [Evidência D2](../entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
+
+## Materialização D3 em andamento — núcleo de corpos
+
+O gravador usa os conjuntos payload já inventariados para controles, fragmentos,
+acumuladores e nós privados com IDs de domínio. O host confirma plano e job/CAS/
+recibo nativos juntos. Acumulador parcial fica no artefato, sem prosa no cursor.
+SHA da montagem confere D2; árvore é construída por unidades, partes finais são
+copiadas imutáveis com provas e header vem após varredura limitada. Native reader
+rejeita staging; não existe ponteiro público para esses recursos provisórios.
+
+Leaf/branch e formato do codec original mantidos. Escrita sem mudança do
+acumulador é omitida para preservar updateTime/journal reais. A estrutura usa
+metadata na fronteira de lore, preservando o caminho integral dos legados.
+
+84 Node distintos e três SDK positivos. O núcleo ainda exige integração de
+geração/campos/páginas, Resources/Counts, drenagem de staging e roundtrip.
+O harness não é o orquestrador completo.
+[Evidência](../entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).

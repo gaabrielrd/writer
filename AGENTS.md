@@ -473,3 +473,10 @@ concluído estiverem satisfeitos. A lista fica em
   limite 64 KiB/64 alvos por entrada e trate saída de até 80 KiB como fragmento.
 - Cursor/summary D2 não são prova acumulada ou parte nativa: persista pelo journal
   e empacote sob inventário D3 antes do manifesto; não acumule prosa/provas (ADR 0151).
+
+- Prepare corpos de lore por estágios inventariados no journal/recibo original;
+  controles/fragmentos/árvore privados nunca são ponteiros nativos de leitura.
+- Mantenha o acumulador parcial de até 64 KiB no artefato privado com CAS,
+  sem prosa no checkpoint; copie partes finais imutáveis e confira SHA/Merkle.
+- Não regrave acumulador sem mudança: preserve o updateTime nativo e seu journal.
+  Reconciliação/geração/roundtrip completos continuam obrigatórios (ADR 0151).

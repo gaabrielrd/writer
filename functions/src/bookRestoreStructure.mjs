@@ -105,7 +105,10 @@ export function createBookRestoreStructureService({
           token: request.jobToken,
           load,
         });
-        item = await reader.readMappedItem(cursor.itemIndex);
+        // The resource boundary only needs verified identity; do not assemble large lore.
+        item =
+          (await reader.openIndexedLore(cursor.itemIndex)) ??
+          (await reader.readMappedItem(cursor.itemIndex));
       } catch (error) {
         const resolved = await db.runTransaction(async (tx) => {
           const current = await load(tx, uid, request.restoreId, request.jobToken),

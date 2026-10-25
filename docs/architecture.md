@@ -2757,3 +2757,18 @@ persistido; metadata/hash não comprovam toda a origem anterior por si próprios
 Sem novo endpoint/Rule/namespace/recurso. 255 Node distintos, 13 Vitest, dois SDK
 e três Chromium positivos. Materialização/roundtrip/P1 pendentes.
 [Evidência D2](entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
+
+## P1 M38c12 D3 em andamento — gravador de corpos
+
+BookRestoreStreamBody prepara fragmentos D2, chunks em montagem e nós Merkle
+nos conjuntos físicos já cobertos por payloadInventoryVersion:1. Controle por
+artefato nativo/journal/recibo, cursor limitado, raiz ausente e sem pointer de
+staging. Um fragmento/um acumulador por montagem; árvore por nível/índice,
+partes finais imutáveis por caminho Merkle e varredura de até 16 antes do header.
+Formato/manifest nativos e codec leaf/branch preservados, sem catálogo em RAM.
+
+A estrutura usa D1 metadata na fronteira antes do primeiro lore, deixando corpo
+para Resources. Gravador ainda não integrado à geração completa v2/advanceLore/
+Counts; coordenador de teste não comprova essas entregas. 84 Node distintos e
+três SDK positivos. D3/roundtrip/P1 abertos.
+[Evidência do núcleo](entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).

@@ -437,3 +437,84 @@ recurso remoto novo. Saída <=80 KiB é fragmento lógico, não chunk nativo.
 D3 deve empacotar/materializar com procedência/inventário/retomada/rollback e
 provar roundtrip, inclusive saída ampliada. Plano 131/P1/fases/gates e validate
 permanecem abertos. Cursor D2 precisa de journal/recibo nativo ao persistir.
+
+## Contrato D3 antes da implementação — corpos, geração e reconciliação
+
+D3 integra a materialização completa, não apenas o reader. A descoberta atual
+também encontrou readMappedItem integral em Resources e Counts; ambos devem
+selecionar explicitamente lore indexado antes da chamada anterior. A raiz geral
+continua ausente. Conferir roundtrip por leitura/recaptura autorizada antes da
+ativação geral de P1, que conserva contrato/gates próprios.
+
+Implementar em sequência interna: gravador incremental de corpos; geração v2
+com sete campos e páginas nativas de 64 relações; integração do advanceLore e
+reconciliação por partes; roundtrip/cancelamento/compatibilidade dirigidos.
+Não declarar D3 concluído por um helper ou por campos sem relações.
+
+O inventário payloadInventoryVersion:1 já cobre bookResourceChunks,
+bookResourceBodies e bookLoreSegments, com journal/recibos nativos tipados.
+Antes de gravar staging, certificar namespaces vazios se o job ainda não aderiu
+ao inventário. Todo fragmento, chunk em montagem e nó Merkle usa esses conjuntos
+com tipo privado fechado/ID de domínio separado e journal, sem ponteiro de leitura
+pública. Não criar namespace ou recurso sem inventário. Cleanup existente deve
+comprovar remoção limitada de cada estágio e recusar recriados/outros jobs.
+
+Corpo: um fragmento D2 autenticado por avanço, até 80 KiB. Empacotar em chunks
+privados limitados a 64 KiB; acumulador parcial fica em artefato privado com CAS/
+recibo/journal, nunca em checkpoint de prosa. Cada passo toca um fragmento e um
+acumulador. Conferir SHA da saída empacotada contra a medição D2. Guardar folhas/
+nós Merkle em metadata inventariada por nível/índice, sem catálogo em RAM.
+Construir árvore por unidades; copiar partes finais imutáveis com prova de
+Merkle buscada por caminho limitado. Reconferir partes por varredura limitada
+antes do header; pointer guarda nascimento do header e barreira das partes.
+Reutilizar codec/escopo/manifest nativos, incluindo bodyId derivado dos hashes.
+
+D3 usa geração v2 sem base, campos somente presentes e datas lógicas originais.
+Páginas de relações preservam ordem/duplicados e descrições grandes; gramática
+compartilhada deve delimitar objetos sem reunir a página em RAM. O mesmo
+remapeador mantém precedência local qualificada e externo literal.
+Não usar timestamps físicos da restauração como datas portáteis da ficha.
+
+Persistir somente progressos limitados em preparação nativa; cursor D2 não é
+aceito do cliente como prova. Ler/validar unidade antes e verificar no commit
+CAS, origem, índice, ponteiro e bytes/journals usados. Clone novo por retry SDK,
+recibos idempotentes e raiz ausente. Compatibilidade com jobs schema1 anteriores
+não é migrada silenciosamente nem pode adotar corpo novo sem conferência.
+
+Reconciliação compara campos/páginas remapeados e nativos por unidades e hashes,
+confere referências/contagens/ausências/datas e artefatos originais, sem read
+integral ou transação que percorre todo o corpo. Preparação e passagem por
+Resources também não podem montar o lore indexado inteiro.
+
+Artefatos temporários devem ser drenados por passos inventariados antes da
+ativação geral, com contabilidade compatível; D3 não promete ativação enquanto
+P1/cleanup/host/inventário geral ainda estiverem abertos.
+
+Aceites: fonte/prosa/descrição/página >8 MiB e >128 partes, crescimento após
+remap, datas ausentes/zero, campos vazios e relações ausentes/vazias; igualdade
+nativa/recapturada literal. Leitura/escrita/checkpoint/provas limitados, retomada
+por serviço novo a cada transição, retry/CAS/replay/resposta perdida, cancelamento
+em cada estágio, mudanças/ABA de fontes/staging/árvore/partes/recibos e limpeza
+sem órfãos ou destruição de recriados. Node/SDK/bridge/Chromium conforme fronteira
+real e validate global no fechamento de P1. D3/P1/fases/gates permanecem abertos
+até existir a evidência integral; sem CI/push/deploy/subagentes.
+
+### Descoberta durante D3 — fronteira da estrutura
+
+O teste real com lore >8 MiB também revelou o mesmo teto na primeira passagem
+Structure → Resources: a estrutura montava o primeiro lore só para reconhecer
+a fronteira. Selecionar D1 metadata explicitamente nesse ponto; corpo permanece
+para o materializador. Não ampliar a API integral nem ignorar índice inválido.
+
+## D3 em implementação — núcleo do gravador
+
+Preparador de corpos por estágios implementado: fragmento D2 autenticado,
+acumulador privado limitado, árvore em metadata por unidades, partes finais
+imutáveis e varredura antes do header. Inventário/journals/recibos existentes;
+sem novo namespace. Estrutura usa metadata na fronteira e preserva legado.
+84 Node distintos e três SDK positivos; limites na
+[evidência](../../../entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).
+
+D3 continua aberto: integrar geração v2/campos/datas/páginas, Resources/Counts,
+drenagem e roundtrip. O coordenador de testes não prova advanceLore integrado.
+P1/validate/fases/gates continuam obrigatórios, sem ativação geral.

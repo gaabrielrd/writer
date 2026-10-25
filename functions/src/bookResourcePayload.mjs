@@ -179,3 +179,6 @@ export function verifyBookResourcePayloadPart(manifestInput, part) {
   if (level !== part.proof.length || hash !== manifest.merkleRoot) inconsistent();
   return Buffer.from(part.bytes);
 }
+
+// Shared by the incremental restore producer; framing/leaf domain is unchanged.
+export { leaf as resourcePayloadLeafHash, branch as resourcePayloadBranchHash };

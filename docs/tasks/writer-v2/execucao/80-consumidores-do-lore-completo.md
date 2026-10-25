@@ -311,3 +311,12 @@ cursor privado limitado; não é parte nativa ou prova acumulada.
 [evidência D2](../../../entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
 D3/materialização/retomada/rollback/roundtrip e inventários/legacy/drain/rollout/
 validate de P1 e fases/gates permanecem obrigatórios.
+
+## Materialização da etapa 5 em andamento — núcleo D3
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): gravador de corpos por
+estágios com inventário/journals/recibos, memória limitada e codec nativo.
+Fronteira estrutural corrigida para metadata de lore. 84 Node distintos e três
+SDK positivos; limites na [evidência](../../../entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).
+Ainda integrar geração, páginas, Resources/Counts, drenagem e roundtrip.
+Etapa 5/D3/P1/validate/fases/gates permanecem abertos.

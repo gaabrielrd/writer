@@ -2752,3 +2752,16 @@ recriado, cancel/outro usuário e commit recusado. Não é persistência D3 ou r
 forçado. Tipos/lint/checks dirigidos positivos. Veja a
 [evidência D2](entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
 D3/materialização/roundtrip/P1/validate/fases/gates continuam; sem CI ou produção.
+
+## P1 M38c12 D3 em andamento — núcleo de corpos nativos
+
+84 Node distintos positivos: 26 do gravador, 17 estrutura e 41 codec. Lote inicial
+novo 14/15 expôs a fronteira estrutural que ainda montava lore grande; corrigida
+e retestada 1/1. Lote posterior 82/83 por comparação Buffer/Uint8Array do fixture;
+correção e novo caso de saída vazia conferidos 2/2. Não é um lote único de 84.
+Corpos >8 MiB, árvore ímpar, partial/journal, captura pré-await, SHA, cancel/cleanup
+em todos os estágios e sete recriações cobertos. Coordenador nativo de teste
+não substitui a integração completa D3. Três SDK positivos, zero skipped,
+182884.5849 ms: partial/Merkle/partes reais, Rules em alvos existentes, fragmentos
+vazios/updateTime/cleanup e controle recriado preservado. Checks locais na
+[evidência](entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).

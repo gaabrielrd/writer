@@ -1655,3 +1655,13 @@ sem remontar a ficha. 255 Node distintos, 13 Vitest, dois SDK e três Chromium
 positivos; veja a [evidência D2](../../../entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
 D3 deve empacotar/materializar sob inventário e provar retomada/rollback/roundtrip.
 Plano 131/P1/F2-09/V2, validate e fases/gates continuam abertos.
+
+### P1 M38c12 D3 em andamento — gravador de corpos
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): núcleo de gravação por estágios,
+inventário atual e partes finais imutáveis. Fronteira Structure → Resources usa
+metadata para não montar lore grande. 84 Node distintos e três SDK positivos;
+checks/limites na
+[evidência](../../../entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).
+Geração completa/páginas/Resources/Counts/drenagem/roundtrip ainda obrigatórios;
+núcleo não conclui D3/P1/F2-09/V2, validate ou fases/gates.
