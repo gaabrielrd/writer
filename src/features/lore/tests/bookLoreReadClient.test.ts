@@ -473,3 +473,48 @@ it('captureList cannot return a partial collection after final list changes', as
   );
   await expect(f.client.captureList('book')).rejects.toThrow();
 });
+
+it('captures a whole collection proof and revalidates only metadata without downloading its bodies again', async () => {
+  const f = fixture({ first: { data: basic() }, second: { data: basic() } });
+  const capture = await f.client.captureCollection('book');
+  expect(Object.isFrozen(capture)).toBe(true);
+  expect(capture.listToken).toBe(sha('list'));
+  f.call.mockClear();
+  await f.client.verifyCollection(capture);
+  expect(f.call.mock.calls.map(([method]) => method)).toEqual([
+    'listBookLoreRead',
+    'getBookLoreRead',
+    'getBookLoreRead',
+    'listBookLoreRead',
+  ]);
+});
+it.each(['clock', 'token', 'revoked', 'last-page'])(
+  'collection verification rejects %s before publication without a body fallback',
+  async (change) => {
+    const f = fixture(),
+      capture = await f.client.captureCollection('book');
+    f.call.mockClear();
+    let pages = 0;
+    f.intercept((method, _input, result) => {
+      if (method === 'getBookLoreRead' && change === 'revoked') throw new Error('Revoked origin');
+      if (method === 'getBookLoreRead' && change === 'token')
+        return { ...(result as Input), readToken: sha('other') };
+      if (
+        method === 'listBookLoreRead' &&
+        (change === 'clock' || (change === 'last-page' && ++pages === 2))
+      )
+        return { ...(result as Input), listToken: sha('other-list') };
+      return result;
+    });
+    await expect(f.client.verifyCollection(capture)).rejects.toThrow();
+    expect(f.call.mock.calls.some(([name]) => name === 'readBookLorePart')).toBe(false);
+  },
+);
+it('empty collection verification preserves its clock and checks authorization without inventing a source', async () => {
+  const f = fixture({}),
+    capture = await f.client.captureCollection('book');
+  expect(capture.sources).toEqual([]);
+  await f.client.verifyCollection(capture);
+  f.revoke();
+  await expect(f.client.verifyCollection(capture)).rejects.toThrow('Context changed');
+});

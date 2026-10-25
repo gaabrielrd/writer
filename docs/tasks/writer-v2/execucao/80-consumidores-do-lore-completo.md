@@ -197,3 +197,16 @@ Preserva IDs, índices/recibos e remoção de referências indisponíveis. Próx
 consumidores: publicação/capturas de campanhas e demais leituras ainda cruas.
 Etapa 4 inteira, inventário/escritores/exclusão/backup/restauração/drain/rollout/
 validate de P1 e demais fases/gates continuam abertos.
+
+## Publicação nativa, marco A — M38c11
+
+[Plano 130](130-publicacao-com-lore-nativo.md) integra captura C1 e servidor para
+cópia pública/ativação, preservando consentimento/sombra local/global/staging.
+36 Node, 135 Vitest e 19 SDK positivos; [evidência](../../../entregas/2026-10-25-writer-v2-publicacao-nativa-marco-a.md).
+
+Escala ainda pendente: cópia por chamada é limitada a 32MiB/512 partes; marco B
+usará inspeção incremental/certificado/ranges existentes. Plano 130 e etapa 4
+continuam abertos. Captura de campanhas não aceita lore de livros: usa universo/
+aventura e seus leitores próprios, sem migração ou grant entre escopos.
+Inventário de outros leitores, escritores/exclusão/backup/restauração/drain/
+rollout/validate de P1 e demais fases/gates permanecem necessários.

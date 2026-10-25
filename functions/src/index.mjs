@@ -57,6 +57,11 @@ import { createNarrativePlanningService } from './narrativePlanning.mjs';
 import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createBookLoreReadService, setBookLoreReadHeaders } from './bookLoreRead.mjs';
 import {
+  createBookPublicationService,
+  setBookPublicationHeaders,
+  BOOK_PUBLICATION_METHODS,
+} from './bookLorePublication.mjs';
+import {
   createBookLoreWriteRecoveryService,
   setBookLoreWriteRecoveryHeaders,
   BOOK_LORE_RECOVERY_METHODS,
@@ -359,6 +364,7 @@ const callable = (method, secrets = []) =>
       setBookBackupCoverHeaders(method, request);
       setBookRestoreHeaders(method, request);
       setBookLoreReadHeaders(method, request);
+      setBookPublicationHeaders(method, request);
       setBookLoreEditHeaders(method, request);
       setBookLoreEditOutcomeHeaders(method, request);
       setBookLoreRemovalHeaders(method, request);
@@ -369,6 +375,11 @@ const callable = (method, secrets = []) =>
       }
       setCampaignVariantRecoveryHeaders(method, request);
       try {
+        if (BOOK_PUBLICATION_METHODS.includes(method))
+          return await createBookPublicationService({ db })[method](
+            request.auth?.uid,
+            request.data,
+          );
         if (BOOK_LORE_RECOVERY_METHODS.includes(method))
           return await createBookLoreWriteRecoveryService({ db })[method](
             request.auth?.uid,
@@ -656,6 +667,9 @@ export const setSceneReference = callable('setSceneReference');
 export const listSceneReferences = callable('listSceneReferences');
 export const listSceneSources = callable('listSceneSources');
 export const readSceneSourceText = callable('readSceneSourceText');
+export const getBookPublicationSource = callable('getBookPublicationSource');
+export const stageBookPublicationLore = callable('stageBookPublicationLore');
+export const finalizeBookPublication = callable('finalizeBookPublication');
 export const listBookLoreRead = callable('listBookLoreRead');
 export const getBookLoreRead = callable('getBookLoreRead');
 export const readBookLorePart = callable('readBookLorePart');

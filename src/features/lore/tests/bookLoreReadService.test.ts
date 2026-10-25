@@ -111,3 +111,25 @@ it('drops a late independent read after the exact account object is replaced', a
   await failed;
   expect(state.call).toHaveBeenCalledTimes(1);
 });
+
+it('captures the original UID independently of the mutable Auth object', async () => {
+  const session = bookLoreReadSession();
+  state.auth.currentUser!.uid = 'other';
+  await expect(session.metadata('book', 'entity')).rejects.toThrow('contexto mudou');
+  expect(state.call).not.toHaveBeenCalled();
+});
+it('drops a late response when the same Auth object changes its UID', async () => {
+  let resolve!: (value: unknown) => void;
+  state.call.mockReturnValue(
+    new Promise((r) => {
+      resolve = r;
+    }),
+  );
+  const session = bookLoreReadSession(),
+    reading = session.get('book', 'entity'),
+    rejected = expect(reading).rejects.toThrow('contexto mudou');
+  state.auth.currentUser!.uid = 'other';
+  resolve({ data: null });
+  await rejected;
+  expect(state.call).toHaveBeenCalledTimes(1);
+});

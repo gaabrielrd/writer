@@ -8,8 +8,9 @@ export function bookLoreReadSession(
 ) {
   const actor = auth.currentUser;
   if (!actor?.uid) throw new Error('Entre na sua conta para ler o lore.');
+  const uid = actor.uid;
   const guard = () => {
-    if (auth.currentUser !== actor || auth.currentUser?.uid !== actor.uid || !isCurrent())
+    if (auth.currentUser !== actor || auth.currentUser?.uid !== uid || !isCurrent())
       throw new Error('O contexto mudou. Reabra o compêndio.');
   };
   const call = async (name: string, data: unknown) =>

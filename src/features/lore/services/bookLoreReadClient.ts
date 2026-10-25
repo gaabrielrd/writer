@@ -21,6 +21,11 @@ export interface CompleteBookLore {
   id: string;
   data: Record<string, unknown>;
 }
+export interface BookLoreCollectionCapture {
+  readonly bookId: string;
+  readonly listToken: string;
+  readonly sources: readonly BookLoreEditSource[];
+}
 const equal = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 function validateData(id: string, bookId: string, data: Record<string, unknown>) {
   try {
@@ -259,7 +264,7 @@ export function createBookLoreReadClient(
     } while (cursor !== null);
     return { listToken: listToken, items };
   }
-  async function captureList(bookId: string): Promise<readonly BookLoreEditSource[]> {
+  async function captureCollection(bookId: string): Promise<BookLoreCollectionCapture> {
     readId(bookId);
     guard();
     const initial = await ids(bookId),
@@ -272,7 +277,27 @@ export function createBookLoreReadClient(
     const final = await ids(bookId, initial.listToken);
     if (!equal(final, initial)) throw invalidLoreRead();
     guard();
-    return Object.freeze(result);
+    return Object.freeze({ bookId, listToken: initial.listToken, sources: Object.freeze(result) });
+  }
+  async function verifyCollection(capture: BookLoreCollectionCapture): Promise<void> {
+    readObject(capture, ['bookId', 'listToken', 'sources']);
+    readId(capture.bookId);
+    readHash(capture.listToken);
+    if (!Array.isArray(capture.sources)) throw invalidLoreRead();
+    const expected = capture.sources.map((value: unknown) => {
+      const source = readObject(value, ['bookId', 'id', 'sourceToken', 'data']);
+      if (source.bookId !== capture.bookId) throw invalidLoreRead();
+      return { id: readId(source.id), readToken: readHash(source.sourceToken) };
+    });
+    const initial = await ids(capture.bookId, capture.listToken);
+    if (!equal(initial.items, expected)) throw invalidLoreRead();
+    for (const item of initial.items) await metadata(capture.bookId, item.id, item.readToken);
+    const final = await ids(capture.bookId, capture.listToken);
+    if (!equal(final, initial)) throw invalidLoreRead();
+    guard();
+  }
+  async function captureList(bookId: string): Promise<readonly BookLoreEditSource[]> {
+    return (await captureCollection(bookId)).sources;
   }
   async function list(bookId: string): Promise<CompleteBookLore[]> {
     return (await captureList(bookId)).map((source) => ({
@@ -287,5 +312,5 @@ export function createBookLoreReadClient(
     guard();
     return header(bookId, id, readToken);
   }
-  return { get, list, capture, captureList, metadata };
+  return { get, list, capture, captureList, captureCollection, verifyCollection, metadata };
 }

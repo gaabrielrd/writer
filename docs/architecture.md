@@ -2600,3 +2600,22 @@ sem nomes na relação. Cursor local inclui relógio do livro/listToken C1;
 índices inversos incluem token nativo exato da ficha. Universos/aventuras
 mantêm contratos. 60 Node e oito SDK positivos. Publicação/campanhas e demais
 consumidores/P1/fases/gates continuam necessários; sem rollout/deploy.
+
+## P1 M38c11 A — publicação com lore nativo
+
+[ADR 0150](decisions/0150-native-book-publication.md): cliente captura C1 integral
+com tokens originais e revalida coleção/headers só por metadata. Sessão fixa Auth
+exato e UID independente do objeto. Publisher preserva precedência local/global,
+autor explícito e staging invisível, sem defaults visuais como fonte.
+
+GetBookPublicationSource produz prova nativa fechada de livro/universo/marcador
+público. StageBookPublicationLore projeta quatro campos sob consentimento lógico;
+finalizeBookPublication confere fonte/header e ativa ponteiro/status atomicamente.
+Rules bloqueiam atalhos nativos, mantendo o legado inline e staging global/
+capítulos/atos/unpublish/cleanup. Nenhum namespace privado novo.
+
+36 Node, 135 Vitest e 19 SDK positivos; tipos/build/smoke. Cópia ainda tem orçamento
+por chamada de 32 MiB/512 partes. Plano 130 B continua aberto: certificado/ranges
+da inspeção incremental devem permitir fontes maiores sem prosa no checkpoint.
+Campanhas não consomem fichas de livros. Demais P1/fases/gates e rollout continuam
+necessários; sem envio remoto/deploy.

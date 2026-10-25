@@ -408,3 +408,18 @@ concluído estiverem satisfeitos. A lista fica em
   sem fallback. Preserve remoção explícita de vínculo já indisponível.
 - Cursores locais observam localLoreVersion e nascimento do livro; consultas
   inversas observam também token nativo exato da ficha, sem reduzir a millis.
+
+## Publicação com lore nativo
+
+- Capture fontes C1 originais e coleção completa, sem usar DTO visual/defaults;
+  revalide metadata antes/depois de staging e fixe Auth/UID originais (ADR 0150).
+- Livros nativos copiam lore local e ativam ponteiro/status somente no servidor.
+  Reconfira consentimento lógico, prova nativa do livro/universo/marcador público,
+  clocks/status/privacidade/cenas e header staged na transação.
+- Preserve projeção pública fechada e limites existentes, sombra privada local,
+  autor explícito, staging invisível, retirada e replay sem nova aplicação.
+- Hashes de metadata não são grants; readToken de fichas e campos privados não
+  vão para documentos públicos. Não permita fallback SDK após erro nativo.
+- Cópia por chamada permanece limitada; plano 130 B deve usar inspeção/ranges
+  certificados em unidades para bases maiores. Não declarar publicação completa
+  nem substituir esse preparo por uma transação sem limite ou checkpoint com prosa.

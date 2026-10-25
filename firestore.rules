@@ -87,11 +87,12 @@ service cloud.firestore {
 
     function validPublicBook(data) {
       return data.keys().hasAll(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt'])
-        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion', 'hasActs', 'sourceSceneRevision'])
+        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion', 'hasActs', 'sourceSceneRevision', 'sourcePublicationToken'])
         && data.get('sourceSceneRevision', 0) is int && data.get('sourceSceneRevision', 0) >= 0
         && ((data.schemaVersion == 1 && data.get('universeId', null) == null && data.get('universePrivacyVersion', null) == null) || (data.schemaVersion == 2
           && nonemptyString(data.get('universeId', ''), 128)
           && data.get('universePrivacyVersion', -1) is int && data.universePrivacyVersion >= 0))
+        && (data.get('sourcePublicationToken', null) == null || (data.sourcePublicationToken is string && data.sourcePublicationToken.matches('^[a-f0-9]{64}$')))
         && data.get('hasActs', false) is bool
         && nonemptyString(data.title, 300)
         && nonemptyString(data.authorName, 120)
@@ -101,8 +102,11 @@ service cloud.firestore {
 
     function validRevision(data) {
       return data.keys().hasAll(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion'])
-        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion', 'actCount', 'sourceSceneRevision'])
+        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion', 'actCount', 'sourceSceneRevision', 'sourceLoreToken', 'sourcePublicationToken'])
         && data.get('sourceSceneRevision', 0) is int && data.get('sourceSceneRevision', 0) >= 0
+        && ((data.get('sourceLoreToken', null) == null && data.get('sourcePublicationToken', null) == null)
+          || (data.sourceLoreToken is string && data.sourceLoreToken.matches('^[a-f0-9]{64}$')
+            && data.sourcePublicationToken is string && data.sourcePublicationToken.matches('^[a-f0-9]{64}$')))
         && data.privacyVersion is int && data.privacyVersion >= 0
         && data.createdAt is int && data.createdAt >= 0
         && data.chapterCount is int && data.chapterCount >= 0
@@ -713,10 +717,17 @@ service cloud.firestore {
     }
 
     match /publicBooks/{bookId} {
+      function inlinePublicationWriter() {
+        return get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false
+          && (!exists(/databases/$(database)/documents/publicBooks/$(bookId))
+            || !get(/databases/$(database)/documents/publicBooks/$(bookId)).data.keys().hasAny(['sourcePublicationToken']));
+      }
       allow get: if isBookAuthor(bookId) || (isPublished(bookId)
         && (!exists(/databases/$(database)/documents/publicBooks/$(bookId)) || universePublicationCurrent(resource.data)));
       allow list: if false;
       allow create, update: if isBookAuthor(bookId)
+        && inlinePublicationWriter()
+        && !request.resource.data.keys().hasAny(['sourcePublicationToken'])
         && validPublicBook(request.resource.data)
         && publicationSceneMatches(bookId, request.resource.data)
         && publicationUniverseMatches(bookId, request.resource.data)
@@ -736,6 +747,8 @@ service cloud.firestore {
         allow list: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
           && validRevision(request.resource.data)
+          && (get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false
+            || request.resource.data.keys().hasAll(['sourceLoreToken', 'sourcePublicationToken']))
           && publicationSceneMatches(bookId, request.resource.data)
           && publicationUniverseMatches(bookId, request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
@@ -781,6 +794,9 @@ service cloud.firestore {
           allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
             && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
             && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId))
+            && (request.resource.data.get('sourceEntityId', null) != null
+              || (get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false
+                && !getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId)).data.keys().hasAny(['sourcePublicationToken'])))
             && originalConsent()
             && validLore(request.resource.data);
           allow update: if false;

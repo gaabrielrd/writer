@@ -1548,3 +1548,14 @@ Origem C1 sem chunks para vínculo/índices e labels seletivos completos nas lis
 cursores observam relógio/nascimento nativos. 60 Node e oito SDK positivos.
 Plano concluído localmente. Publicação/campanhas/demais consumidores, inventário,
 backup/restauração/drain/rollout/validate de P1 e fases/gates seguem necessários.
+
+### P1 M38c11 A — publicação com lore nativo
+
+[Plano 130](130-publicacao-com-lore-nativo.md),
+[ADR 0150](../../../decisions/0150-native-book-publication.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-publicacao-nativa-marco-a.md).
+Captura C1/metadata, cópia local e ativação no servidor, consentimento/prova e
+barreiras SDK. 36 Node, 135 Vitest e 19 SDK positivos; tipos/build/smoke/checks.
+Plano **aberto**: marco B deve preparar bases acima do orçamento por unidades e
+copiar ranges certificados. Não fecha etapa 4/P1/V2. Demais inventários/
+consumidores/backup/restauração/drain/rollout/validate e fases/gates continuam.

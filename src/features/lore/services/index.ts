@@ -1,4 +1,6 @@
 export * from './loreService';
+export { bookLoreReadSession, hasBookLorePayload } from './bookLoreReadService';
+export type { BookLoreCollectionCapture } from './bookLoreReadClient';
 export * as loreService from './loreService';
 export {
   prepareBookLoreEditOperation,

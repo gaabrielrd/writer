@@ -2590,3 +2590,21 @@ verificado/demo/loopback, sem skipped/falhas. Nenhuma Rule alterada.
 Lint/sintaxe/formato/docs/arquitetura/diff; validate global só no fechamento de
 P1. UI/build/typecheck/CI/deploy não executados neste marco.
 [Evidência](entregas/2026-10-25-writer-v2-lore-nativo-nas-referencias.md).
+
+## P1 M38c11 A — publicação nativa
+
+36/36 Node e 135/135 Vitest dirigidos; onze jornadas integradas percorrem publisher,
+C1 e serviços de produção com Firestore/Auth/SDK em memória/fixtures. Quatro
+representações, coleção vazia, sombra local/global, metadata, Auth/UID e resposta
+perdida conferidos. Cliente ainda captura conteúdo integral; verify só metadata.
+
+19/19 SDK reais no emulador verificado 1.22.0/demo/loopback: seis novos e 13
+regressões. Fonte >8MiB/128 partes, projeção/consentimento lógico, bypass negado,
+invisibilidade, acesso anônimo, revogação/retirada, rollback e replay concorrente.
+Sem skipped/falhas; denegações esperadas das Rules não são falha do runner.
+Tipos/build/smoke (2980 módulos), lint/sintaxe e checks locais positivos.
+[Evidência](entregas/2026-10-25-writer-v2-publicacao-nativa-marco-a.md).
+
+Sem browser/CI/deploy ou validate global neste marco. Plano 130 B permanece
+pendente: publicação acima de 32MiB/512 partes por chamada não está demonstrada;
+inspeção incremental/ranges certificados devem resolver a dependência.
