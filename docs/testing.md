@@ -2389,3 +2389,28 @@ diálogo x16–374 sem overflow; escuro/mobile inspecionados.
 Lint/tipos/build/smoke/styleguide positivos, 2961 módulos.
 Backend/Node/Rules/SDK não repetidos, sem mudança servidor. Validate integral
 no fim de P1; visibilidade/compêndio e demais fases/gates continuam pendentes.
+
+### P1 M38c5z — prova do aceite original manual
+
+[Plano 124](tasks/writer-v2/execucao/124-consulta-do-aceite-original-da-edicao.md)
+e [ADR 0139](decisions/0139-book-lore-edit-original-outcome.md):
+28 Node novos verificam escopo, ID manual derivado, origem/hash/tokens,
+inline/v1/v2, metadata sem writes, resposta perdida, ausência/órfãos,
+provas removidas/recriadas, cancel e criação recusada. Resultado original
+preservado após nova edição, aposentadoria/coleta e ausência de livro/cabeça.
+
+Quatro HTTP novos conferem App Check ausente/inválido, handler Auth/DTO
+fechado e no-store/Vary, mais retorno metadata em fixture HTTP local.
+Não usam token/attestation de produção. 52 regressões Node de adoção e
+transporte passam. 60 Vitest (31 novos, 29 regressões) conferem parser fechado,
+prova nativa atravessando cliente, hashes/privacidade/tokens e sessão Auth,
+incluindo actor substituído com mesmo UID e perfil do mesmo actor preservado.
+
+Três SDK Firestore reais no emulador 1.22.0: leitura só de metadata e sem
+writes; Rules privadas de job/recibo para owner e anônimo; aceite histórico
+após nova edição/GC/ausência; recibo/âncora recriados com mesmo dado e novo
+nascimento recusados. Não validam implantação, credenciais, App Check real,
+cleanup integral de livro ou interfaces humanas.
+
+[Resultados e checks](entregas/2026-10-25-writer-v2-consulta-do-aceite-original.md).
+Validate completo permanece no fechamento de P1; sem CI/push/deploy.

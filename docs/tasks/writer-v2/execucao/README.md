@@ -1402,3 +1402,17 @@ três temas/mobile/foco e tipos/build/smoke/lint/styleguide positivos.
 Próximo: visibilidade nativa em lote e composição final do compêndio com
 todas as ações preservadas. Lifecycle/consumidores/backup/rollout/validate
 de P1 e demais fases/gates abertos. Somente commit local, sem CI/remoto/deploy.
+
+### P1 M38c5z — prova histórica de edição manual
+
+[Plano 124](124-consulta-do-aceite-original-da-edicao.md),
+[ADR 0139](../../../decisions/0139-book-lore-edit-original-outcome.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-consulta-do-aceite-original.md).
+Consulta de metadata confirma o efeito original sem reenviar apply,
+abrir prosa ou depender da cabeça atual; escopo/UID/nascimentos e tokens
+fixados conferidos. Sessão Auth e contratos cifrados anteriores preservados.
+
+147 testes dirigidos positivos (66 novos), com três SDK Firestore reais.
+Próximo: seleção/retomada de visibilidade e composição do compêndio.
+Lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/gates
+abertos. Somente commit local, sem CI/remoto/deploy.

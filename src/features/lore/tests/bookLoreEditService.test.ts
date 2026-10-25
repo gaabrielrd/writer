@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { loreControlJobId } from '../services/bookLoreControlContracts';
 import { journalWire } from '../services/bookLoreJournalContracts';
 import { bookLoreEditSession } from '../services/bookLoreEditService';
 import { bookLoreWriteHash } from '../services/bookLoreWritePayload';
@@ -460,4 +461,67 @@ it('preserves the host guard captured for creation without depending on the muta
   expect(() => op.checkpoint()).toThrow('host changed');
   await expect(op.advance()).rejects.toThrow('host changed');
   expect(state.call).not.toHaveBeenCalled();
+});
+
+function outcomeRequest() {
+  const i = { writeId: 'manual-outcome', bookId: 'book', loreId: 'entity' };
+  return {
+    ...i,
+    editId: loreControlJobId({ uid: 'author', ...i }, 'lore-edit'),
+    sourceToken: 'a'.repeat(64),
+    startHash: 'b'.repeat(64),
+  };
+}
+function outcomeResponse(r = outcomeRequest()) {
+  return {
+    data: {
+      schemaVersion: 1,
+      ...r,
+      jobToken: 'c'.repeat(64),
+      phase: 'preparing',
+      applied: false,
+      changedFields: ['isPublic'],
+      relationsChanged: false,
+      adoption: null,
+      outcomeToken: null,
+    },
+  };
+}
+it('queries original outcome through its dedicated regional callable with a closed flat request', async () => {
+  const r = outcomeRequest();
+  state.call.mockResolvedValueOnce(outcomeResponse(r));
+  const result = await bookLoreEditSession().outcome(r);
+  expect(result?.applied).toBe(false);
+  expect(state.httpsCallable).toHaveBeenCalledExactlyOnceWith(
+    { region: 'us-central1' },
+    'bookLoreEditOutcome',
+    { timeout: 130000 },
+  );
+  expect(state.call).toHaveBeenCalledExactlyOnceWith(r);
+});
+it.each(['account', 'same-uid', 'host'])(
+  'invalidates pending outcome on %s replacement',
+  async (kind) => {
+    let resolve!: (value: unknown) => void,
+      current = true;
+    state.call.mockImplementationOnce(
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
+    );
+    const session = bookLoreEditSession(() => current),
+      pending = session.outcome(outcomeRequest());
+    if (kind === 'host') current = false;
+    else state.auth.currentUser = { uid: kind === 'same-uid' ? 'author' : 'other' };
+    resolve(outcomeResponse());
+    await expect(pending).rejects.toThrow('contexto mudou');
+    expect(state.call).toHaveBeenCalledTimes(1);
+  },
+);
+it('preserves outcome lookup when only the same actor profile changes', async () => {
+  state.call.mockResolvedValueOnce(outcomeResponse());
+  const session = bookLoreEditSession();
+  Object.assign(state.auth.currentUser!, { displayName: 'Updated' });
+  expect((await session.outcome(outcomeRequest()))?.phase).toBe('preparing');
 });

@@ -2406,3 +2406,17 @@ Lista pagina metadata por conta/livro com rótulos neutros e estados de ciclo
 de vida. Kit/temas/foco/teclado/mobile preservados, sem CSS global novo.
 Visibilidade nativa/composição/compêndio e demais lifecycle/consumidores/
 backup/rollout/validate de P1 e fases/gates seguem abertos.
+
+## P1 M38c5z — consulta histórica do aceite manual
+
+[ADR 0139](decisions/0139-book-lore-edit-original-outcome.md):
+bookLoreEditOutcome consulta reserva/recibo/evento nativos e deriva a identidade
+manual por UID/writeId/livro/ficha. Resposta metadata com privacidade antes/depois
+e outcomeToken fixável, sem conteúdo, novo recurso ou mutação. Não reabre fonte
+obsoleta nem depende da cabeça atual; não representa autorização atual de leitura.
+
+Cliente e sessão Auth validam DTO/escopo e actor antes/depois, sem replay,
+fallback ou decrypt. Criação permanece no protocolo próprio, e conjuntos
+18/22/7 e schemas cifrados não mudam. Null/pending não certificam cancel nem
+autorizam reenvio. Dependência de visibilidade em lote; UI/compêndio e demais
+lifecycle/consumidores/backup/rollout/validate de P1 e fases/gates abertos.

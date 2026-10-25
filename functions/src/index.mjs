@@ -70,6 +70,10 @@ import {
   createBookLoreRemovalTransportService,
   setBookLoreRemovalHeaders,
 } from './bookLoreRemovalTransport.mjs';
+import {
+  createBookLoreEditOutcomeService,
+  setBookLoreEditOutcomeHeaders,
+} from './bookLoreEditOutcome.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createChapterChatService } from './chapterChat.mjs';
@@ -356,6 +360,7 @@ const callable = (method, secrets = []) =>
       setBookRestoreHeaders(method, request);
       setBookLoreReadHeaders(method, request);
       setBookLoreEditHeaders(method, request);
+      setBookLoreEditOutcomeHeaders(method, request);
       setBookLoreRemovalHeaders(method, request);
       setBookLoreWriteRecoveryHeaders(method, request);
       if (method === 'readLegacyChapterText') {
@@ -371,6 +376,11 @@ const callable = (method, secrets = []) =>
           );
         if (method === 'bookLoreEdit')
           return await createBookLoreEditTransportService({ db }).bookLoreEdit(
+            request.auth?.uid,
+            request.data,
+          );
+        if (method === 'bookLoreEditOutcome')
+          return await createBookLoreEditOutcomeService({ db }).bookLoreEditOutcome(
             request.auth?.uid,
             request.data,
           );
@@ -650,6 +660,7 @@ export const listBookLoreRead = callable('listBookLoreRead');
 export const getBookLoreRead = callable('getBookLoreRead');
 export const readBookLorePart = callable('readBookLorePart');
 export const bookLoreEdit = callable('bookLoreEdit');
+export const bookLoreEditOutcome = callable('bookLoreEditOutcome');
 export const bookLoreRemoval = callable('bookLoreRemoval');
 export const reserveBookLoreEditRecovery = callable('reserveBookLoreEditRecovery');
 export const getBookLoreEditRecovery = callable('getBookLoreEditRecovery');

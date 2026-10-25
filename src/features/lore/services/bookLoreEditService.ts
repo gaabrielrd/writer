@@ -23,6 +23,8 @@ import type { BookLoreWriteOptions } from './bookLoreWritePayload';
 import type { BookLoreEditRecovery } from './bookLoreEditCheckpoint';
 import type { openBookLoreJournal } from './bookLoreJournal';
 
+import { createBookLoreEditOutcomeClient } from './bookLoreEditOutcome';
+
 export const currentBookLoreActor = () => auth.currentUser;
 
 /** Auth-bound ports; the host explicitly drives pure or persistent operations. */
@@ -267,8 +269,23 @@ export function bookLoreEditSession(isCurrent: () => boolean = () => true) {
     guard();
     return p;
   }
+  const outcome = createBookLoreEditOutcomeClient(
+    uid,
+    async (method, input) => {
+      guard();
+      const response = await httpsCallable<unknown, unknown>(
+        getFunctions(getFirebaseApp(), 'us-central1'),
+        method,
+        { timeout: 130000 },
+      )(input);
+      guard();
+      return response.data;
+    },
+    guard,
+  );
   return Object.freeze({
     actor,
+    outcome,
     guard,
     prepare,
     prepareCreation,

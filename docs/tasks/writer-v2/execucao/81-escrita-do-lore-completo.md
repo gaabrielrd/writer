@@ -718,3 +718,18 @@ Sem montagem no compêndio: visibilidade nativa em lote e composição completa
 continuam necessárias, sem remover ações existentes. Lifecycle/consumidores/
 backup/rollout/validate de P1 e demais fases/gates seguem abertos.
 Somente commit local, sem CI/envio remoto/deploy.
+
+## Consulta do aceite original manual — M38c5z
+
+[Plano 124](124-consulta-do-aceite-original-da-edicao.md) e
+[ADR 0139](../../../decisions/0139-book-lore-edit-original-outcome.md):
+consulta metadata separada confirma o recibo/evento originais sem reenviar
+apply, decrypt ou fonte atual. Identidade manual derivada, escopo e tokens
+fixos; ausência nunca autoriza replay. Criação tem consulta própria.
+
+147 testes dirigidos positivos: 60 Vitest, 84 Node (incluindo HTTP) e três
+SDK Firestore reais; [evidência](../../../entregas/2026-10-25-writer-v2-consulta-do-aceite-original.md).
+Dependência implementada, não a visibilidade em lote. Seleção/retomada de
+visibilidade, composição completa de compêndio, lifecycle/consumidores/backup/
+rollout/validate de P1 e demais fases/gates seguem abertos.
+Somente commit local, sem CI/envio remoto/deploy.
