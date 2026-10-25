@@ -669,3 +669,20 @@ recibos singulares não comprovam grupo.
 Coordenador da seleção completa e orçamento das unidades precedem
 transporte/recuperação/UI/compêndio. Limite transacional não limita autoria.
 Lifecycle/consumidores/backup/rollout/validate e demais fases/gates abertos.
+
+## Origem independente por ficha — M38c5w
+
+[Plano 121](121-origem-independente-por-ficha-de-lore.md) e
+[ADR 0136](../../../decisions/0136-independent-book-lore-source-tokens.md):
+opção tokenVersion 2 fixa nascimento do livro e identidade nativa da ficha,
+conservando origens intactas ao alterar outra ficha. Default v1/pedidos/
+journals continuam exatos; não promover nem recapturar após aprovação.
+Coleção ainda depende do clock global e verifica começo/fim.
+
+601 casos distintos positivos em rodadas (38 novos), três SDK e seleção
+com 53 origens; [evidência](../../../entregas/2026-10-25-writer-v2-origem-independente-de-lore.md).
+Cliente/sessão Auth oferecem opção, sem migrar consumidores ou ativar UI.
+Próximo coordenador deve fixar seleção/progresso/controle duráveis, preservar
+conflitos individuais e não inferir atomicidade conjunta de sucessos isolados.
+Compêndio/lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/
+gates permanecem abertos. Sem CI/envio remoto/deploy.

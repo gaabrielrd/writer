@@ -20,6 +20,7 @@ export async function fieldUploadFixture(
     value = '\ufeffnew literal 🌙',
     target = { field: 'details' },
     inline = true,
+    tokenVersion = 1,
   } = {},
 ) {
   await seedBookLoreRead(db, {
@@ -29,7 +30,11 @@ export async function fieldUploadFixture(
     inline,
     data: { name: 'Original', category: 'other', details: 'saved' },
   });
-  const view = await createBookLoreReadService({ db }).getBookLoreRead(uid, { bookId, id: loreId }),
+  const view = await createBookLoreReadService({ db }).getBookLoreRead(uid, {
+      bookId,
+      id: loreId,
+      tokenVersion,
+    }),
     prepared = prepareBookResourcePayload({
       uid,
       bookId,

@@ -2,7 +2,10 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { auth, getFirebaseApp } from '@/shared/lib';
 import { createBookLoreReadClient } from './bookLoreReadClient';
 
-export function bookLoreReadSession(isCurrent: () => boolean = () => true) {
+export function bookLoreReadSession(
+  isCurrent: () => boolean = () => true,
+  options: { tokenVersion?: 1 | 2 } = {},
+) {
   const actor = auth.currentUser;
   if (!actor?.uid) throw new Error('Entre na sua conta para ler o lore.');
   const guard = () => {
@@ -16,6 +19,6 @@ export function bookLoreReadSession(isCurrent: () => boolean = () => true) {
         name,
       )(data)
     ).data;
-  return { actor, guard, ...createBookLoreReadClient(call, guard) };
+  return { actor, guard, ...createBookLoreReadClient(call, guard, options) };
 }
 export const hasBookLorePayload = (value: object) => Object.hasOwn(value, 'payloadStorage');

@@ -34,7 +34,15 @@ function validateData(id: string, bookId: string, data: Record<string, unknown>)
   }
 }
 /** In-memory authorized transport. No persistent cache and no partial collection result. */
-export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuard) {
+export function createBookLoreReadClient(
+  call: LoreReadCall,
+  guard: LoreReadGuard,
+  options: { tokenVersion?: 1 | 2 } = {},
+) {
+  readObject(options, [], ['tokenVersion']);
+  const tokenVersion = options.tokenVersion === undefined ? 1 : options.tokenVersion;
+  if (tokenVersion !== 1 && tokenVersion !== 2) throw invalidLoreRead();
+  const emission = tokenVersion === 2 ? { tokenVersion: 2 } : {};
   const rpc = async (method: string, input: unknown) => {
     guard();
     const result = await call(method, input);
@@ -45,7 +53,7 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
     const value = await rpc('getBookLoreRead', {
       bookId,
       id,
-      ...(readToken === undefined ? {} : { readToken }),
+      ...(readToken === undefined ? emission : { readToken }),
     });
     if (value === null && readToken === undefined) return null;
     return readHeader(value, bookId, id, readToken);
@@ -230,6 +238,7 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
         await rpc('listBookLoreRead', {
           bookId,
           limit: 50,
+          ...emission,
           ...(listToken === undefined ? {} : { listToken }),
           ...(cursor === null ? {} : { cursor }),
         }),

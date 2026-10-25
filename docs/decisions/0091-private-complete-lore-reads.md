@@ -73,3 +73,12 @@ outros campos grandes e certificação/ativação de P1 continuam pendentes.
 118 casos backend distintos e três cenários SDK reais. Unicode de 9,2 MB
 atravessou 141 partes e três páginas de relações; acesso direto aos corpos
 continuou negado. Sem deploy, consumo de produção ou integração visual.
+
+## Complemento em 2026-10-25 — token por ficha opcional
+
+A [ADR 0136](0136-independent-book-lore-source-tokens.md) acrescenta
+tokenVersion 2 por opção explícita. V1 continua padrão e mantém a fórmula
+acima; não migrar origens persistidas. V2 fixa nascimento do livro e
+identidade nativa da ficha, conservando fonte intacta após mutação alheia.
+Lista/cursor/coleção conservam verificação global. As autorizações e provas
+de armazenamento desta ADR permanecem exigidas em cada unidade.

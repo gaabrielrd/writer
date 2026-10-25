@@ -10,6 +10,8 @@ import {
   loreReadScope,
   readLoreBook,
   loreEntityToken,
+  matchesLoreEntityToken,
+  loreReadTokenVersion,
   loreReadCursor,
 } from './bookLoreReadContracts.mjs';
 export { BOOK_LORE_READ_METHODS };
@@ -21,15 +23,16 @@ export function setBookLoreReadHeaders(method, request) {
 export function createBookLoreReadService({ db }) {
   return {
     async listBookLoreRead(uid, data) {
-      const c = loreReadScope(db, uid, data, ['limit', 'listToken', 'cursor']),
-        limit = data.limit ?? 50;
+      const c = loreReadScope(db, uid, data, ['limit', 'listToken', 'cursor', 'tokenVersion']),
+        limit = data.limit ?? 50,
+        tokenVersion = loreReadTokenVersion(data.tokenVersion);
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) loreInvalid();
       if (data.listToken != null) loreReadToken(data.listToken);
       if (data.cursor != null && data.listToken == null) loreInvalid();
       return db.runTransaction(async (tx) => {
         const book = await readLoreBook(tx, c);
         if (data.listToken != null && data.listToken !== book.listToken) loreChanged();
-        const after = loreReadCursor(data.cursor, c, book);
+        const after = loreReadCursor(data.cursor, c, book, tokenVersion);
         let query = db
           .collection(c.path + '/lore')
           .orderBy('__name__')
@@ -44,14 +47,15 @@ export function createBookLoreReadService({ db }) {
           listToken: book.listToken,
           items: selected.map((snapshot) => ({
             id: snapshot.id,
-            readToken: loreEntityToken(c, book, snapshot),
+            readToken: loreEntityToken(c, book, snapshot, tokenVersion),
           })),
           nextCursor:
             rows.docs.length > limit
               ? Buffer.from(
                   JSON.stringify({
-                    schemaVersion: 1,
+                    schemaVersion: tokenVersion,
                     bookId: c.bookId,
+                    ...(tokenVersion === 2 ? { tokenVersion } : {}),
                     listToken: book.listToken,
                     after: selected.at(-1).id,
                   }),
@@ -61,9 +65,13 @@ export function createBookLoreReadService({ db }) {
       });
     },
     async getBookLoreRead(uid, data) {
-      const c = loreReadScope(db, uid, data, ['id', 'readToken']),
-        id = loreReadId(data.id);
-      if (data.readToken !== undefined) loreReadToken(data.readToken);
+      const c = loreReadScope(db, uid, data, ['id', 'readToken', 'tokenVersion']),
+        id = loreReadId(data.id),
+        tokenVersion = loreReadTokenVersion(data.tokenVersion);
+      if (data.readToken !== undefined) {
+        loreReadToken(data.readToken);
+        if (Object.hasOwn(data, 'tokenVersion')) loreInvalid();
+      }
       return db.runTransaction(async (tx) => {
         const book = await readLoreBook(tx, c),
           snapshot = await tx.get(db.doc(c.path + '/lore/' + id));
@@ -71,8 +79,12 @@ export function createBookLoreReadService({ db }) {
           if (data.readToken !== undefined) loreChanged();
           return null;
         }
-        const token = loreEntityToken(c, book, snapshot);
-        if (data.readToken !== undefined && data.readToken !== token) loreChanged();
+        if (
+          data.readToken !== undefined &&
+          !matchesLoreEntityToken(c, book, snapshot, data.readToken)
+        )
+          loreChanged();
+        const token = data.readToken ?? loreEntityToken(c, book, snapshot, tokenVersion);
         const opened = await openBookLoreRecord(tx, c, snapshot);
         return {
           schemaVersion: opened.storage?.schemaVersion === 2 ? 2 : 1,
@@ -109,7 +121,7 @@ export function createBookLoreReadService({ db }) {
       return db.runTransaction(async (tx) => {
         const book = await readLoreBook(tx, c),
           snapshot = await tx.get(db.doc(c.path + '/lore/' + id));
-        if (!snapshot.exists || loreEntityToken(c, book, snapshot) !== token) loreChanged();
+        if (!snapshot.exists || !matchesLoreEntityToken(c, book, snapshot, token)) loreChanged();
         const opened = await openBookLoreRecord(tx, c, snapshot),
           part = await readBookLoreRecordPart(tx, opened, data.section, page, index, data.field);
         return {

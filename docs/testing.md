@@ -2333,3 +2333,21 @@ replay/controles recriados, cleanup/handoff e unidade de 50 membros.
 SDK/Admin reais em emulador não comprovam Auth/App Check/limites de produção.
 Lint e sintaxe de 254 módulos positivos; app build/typecheck e validate
 integral não executados neste incremento backend. Coordenador/UI e P1 abertos.
+
+### P1 M38c5w — tokens independentes por ficha
+
+[Plano 121](tasks/writer-v2/execucao/121-origem-independente-por-ficha-de-lore.md)
+e [evidência](entregas/2026-10-25-writer-v2-origem-independente-de-lore.md):
+601 casos distintos positivos em rodadas (38 novos): 490 Node,
+108 Vitest distintos e três SDK. Node integrado 490/490; cliente 105/105
+e retake Auth 11/11 (três casos adicionais). SDK 3/3 em emulador 1.22.0.
+
+Cobrem wire/hash v1 original, token v2 opcional, fonte/conta/ABA/estado,
+cursor/paginação, coleção global consistente e 53 origens sem recaptura.
+Preparação/adoção, inventário/chave, conflito parcial e guardas da sessão
+Auth são exercitados em Node/Vitest com banco em memória e SDK/Auth simulados
+na sessão. Os três testes SDK usam Admin/cliente reais em loopback.
+Primeira expectativa de privacidade da fixture v2 corrigida, sem mudar Rules.
+Lint/tipos/build/smoke e sintaxe 254 módulos positivos. Emulador não comprova
+Auth/App Check HTTP, produção, piloto ou UI. Validate integral no fim de P1;
+consumidores/seleção/UI/compêndio e demais fases/gates permanecem pendentes.

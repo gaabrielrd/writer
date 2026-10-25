@@ -6,6 +6,7 @@ import { before, beforeEach, after, test } from 'node:test';
 import { initializeTestEnvironment, assertFails } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { createBookLoreReadService } from '../../functions/src/bookLoreRead.mjs';
+import { tokenSelectionFixture } from '../../functions/test/helpers/bookLoreReadTokensFixture.mjs';
 import {
   seedBookLoreRead,
   loreReadData,
@@ -151,4 +152,100 @@ test('SDK owner, missing project, deletion and collection-version checks reautho
   const current = await api.getBookLoreRead(seed.uid, scope(seed));
   await admin.doc(seed.bookPath).update({ deleting: true });
   await assert.rejects(() => api.readBookLorePart(seed.uid, request(current)));
+});
+
+test('SDK independent selection preserves every original token across native withdrawals while its global list becomes stale', async () => {
+  const f = await tokenSelectionFixture(admin);
+  const first = await api.listBookLoreRead(f.uid, { bookId: f.bookId, limit: 1, tokenVersion: 2 });
+  await assert.rejects(
+    api.listBookLoreRead(f.uid, {
+      bookId: f.bookId,
+      listToken: first.listToken,
+      cursor: first.nextCursor,
+      limit: 1,
+    }),
+    { code: 'invalid-argument' },
+  );
+  assert.equal(
+    (
+      await api.listBookLoreRead(f.uid, {
+        bookId: f.bookId,
+        listToken: first.listToken,
+        cursor: first.nextCursor,
+        limit: 1,
+        tokenVersion: 2,
+      })
+    ).items.length,
+    1,
+  );
+  const second = f.members[1],
+    scope = { bookId: f.bookId, id: second.loreId },
+    legacy = await api.getBookLoreRead(f.uid, scope),
+    original = second.intent.sourceToken;
+  assert.equal((await f.members[0].start()).removed, true);
+  await assert.rejects(
+    api.listBookLoreRead(f.uid, {
+      bookId: f.bookId,
+      listToken: first.listToken,
+      tokenVersion: 2,
+    }),
+    { code: 'failed-precondition' },
+  );
+  await assert.rejects(api.getBookLoreRead(f.uid, { ...scope, readToken: legacy.readToken }), {
+    code: 'failed-precondition',
+  });
+  assert.equal(
+    (await api.getBookLoreRead(f.uid, { ...scope, readToken: original })).readToken,
+    original,
+  );
+  for (const m of f.members.slice(1)) assert.equal((await m.start()).removed, true);
+  assert.equal((await admin.doc('books/book').get()).data().localLoreVersion, 3);
+  assert.equal((await admin.doc('books/book').get()).data().publicationPrivacyVersion, 1);
+  for (const m of f.members) {
+    assert.equal((await admin.doc(m.source.seed.path).get()).exists, false);
+    assert.equal((await m.get()).removed, true);
+  }
+  await assertFails(getDoc(doc(env.authenticatedContext(f.uid).firestore(), second.source.c.path)));
+});
+
+test('SDK independent token refuses a recreated fiche and a recreated book even when their data is identical', async () => {
+  const s = await seedBookLoreRead(admin, {
+      inline: true,
+      data: { name: 'Original', category: 'other' },
+    }),
+    a = await api.getBookLoreRead(s.uid, { ...scope(s), tokenVersion: 2 }),
+    head = await admin.doc(s.path).get();
+  await admin.doc(s.path).delete();
+  await admin.doc(s.path).create(head.data());
+  assert.equal((await admin.doc(s.path).get()).createTime.isEqual(head.createTime), false);
+  await assert.rejects(api.readBookLorePart(s.uid, request(a)), { code: 'failed-precondition' });
+  const b = await api.getBookLoreRead(s.uid, { ...scope(s), tokenVersion: 2 }),
+    book = await admin.doc(s.bookPath).get();
+  await admin.doc(s.bookPath).delete();
+  await admin.doc(s.bookPath).create(book.data());
+  assert.equal((await admin.doc(s.bookPath).get()).createTime.isEqual(book.createTime), false);
+  await assert.rejects(api.getBookLoreRead(s.uid, { ...scope(s), readToken: b.readToken }), {
+    code: 'failed-precondition',
+  });
+});
+
+test('SDK independent payload token preserves private Rules and native body proof after unrelated clock changes', async () => {
+  const s = await seedBookLoreRead(admin, {
+      data: { name: 'N', category: 'other', details: 'Literal 🌙' },
+    }),
+    v = await api.getBookLoreRead(s.uid, { ...scope(s), tokenVersion: 2 });
+  await admin.doc(s.bookPath).update({ localLoreVersion: 5 });
+  assert.equal((await readLoreSection(api, s.uid, v)).details, 'Literal 🌙');
+  for (const client of [
+    env.authenticatedContext(s.uid).firestore(),
+    env.unauthenticatedContext().firestore(),
+  ])
+    await assertFails(getDoc(doc(client, s.base.path)));
+  await assert.rejects(api.getBookLoreRead('other', { ...scope(s), readToken: v.readToken }), {
+    code: 'not-found',
+  });
+  const body = await admin.doc(s.base.path).get();
+  await admin.doc(s.base.path).delete();
+  await admin.doc(s.base.path).create(body.data());
+  await assert.rejects(api.readBookLorePart(s.uid, request(v)), { code: 'failed-precondition' });
 });

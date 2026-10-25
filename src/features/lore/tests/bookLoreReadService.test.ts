@@ -63,3 +63,51 @@ it('treats a malformed but present own pointer as payload, never as empty inline
   expect(hasBookLorePayload(Object.create({ payloadStorage: {} }) as object)).toBe(false);
   expect(hasBookLorePayload({ name: 'Inline' })).toBe(false);
 });
+
+it('opts into independent tokens only when the authenticated session explicitly requests them', async () => {
+  const session = bookLoreReadSession(() => true, { tokenVersion: 2 });
+  expect(await session.metadata('book', 'entity')).toBeNull();
+  expect(state.call).toHaveBeenCalledExactlyOnceWith({
+    bookId: 'book',
+    id: 'entity',
+    tokenVersion: 2,
+  });
+});
+
+it('preserves the exact pinned source instead of negotiating during an authenticated resume', async () => {
+  const token = 'a'.repeat(64);
+  state.call.mockResolvedValue({
+    data: {
+      schemaVersion: 1,
+      bookId: 'book',
+      id: 'entity',
+      readToken: token,
+      mode: 'inline',
+      base: { schemaVersion: 1, contentHash: 'b'.repeat(64), byteLength: 2, chunkCount: 1 },
+      relations: null,
+    },
+  });
+  const session = bookLoreReadSession(() => true, { tokenVersion: 2 });
+  expect((await session.metadata('book', 'entity', token))?.readToken).toBe(token);
+  expect(state.call).toHaveBeenCalledExactlyOnceWith({
+    bookId: 'book',
+    id: 'entity',
+    readToken: token,
+  });
+});
+
+it('drops a late independent read after the exact account object is replaced', async () => {
+  let resolve!: (value: unknown) => void;
+  state.call.mockReturnValue(
+    new Promise((r) => {
+      resolve = r;
+    }),
+  );
+  const session = bookLoreReadSession(() => true, { tokenVersion: 2 }),
+    reading = session.metadata('book', 'entity'),
+    failed = expect(reading).rejects.toThrow('contexto mudou');
+  state.auth.currentUser = { uid: 'author' };
+  resolve({ data: null });
+  await failed;
+  expect(state.call).toHaveBeenCalledTimes(1);
+});

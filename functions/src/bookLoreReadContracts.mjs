@@ -57,9 +57,24 @@ export async function readLoreBook(tx, c) {
     });
   return { snapshot, version, listToken };
 }
-export function loreEntityToken(c, book, snapshot) {
+export function loreReadTokenVersion(value = 1) {
+  if (value !== 1 && value !== 2) loreInvalid();
+  return value;
+}
+export function loreEntityToken(c, book, snapshot, tokenVersion = 1) {
   const native = bookBackupIdentity(snapshot);
   if (!native) loreChanged();
+  loreReadTokenVersion(tokenVersion);
+  if (tokenVersion === 2)
+    return digest({
+      schemaVersion: 2,
+      domain: 'book-lore-read-entity',
+      uid: c.uid,
+      bookId: c.bookId,
+      bookBirth: bookBackupIdentity(book.snapshot).created,
+      id: snapshot.id,
+      native,
+    });
   return digest({
     schemaVersion: 1,
     domain: 'book-lore-read',
@@ -70,7 +85,14 @@ export function loreEntityToken(c, book, snapshot) {
     native,
   });
 }
-export function loreReadCursor(value, c, book) {
+/** Compare the exact original token; never replace an expected v1 token with v2. */
+export function matchesLoreEntityToken(c, book, snapshot, expected) {
+  return (
+    loreEntityToken(c, book, snapshot, 1) === expected ||
+    loreEntityToken(c, book, snapshot, 2) === expected
+  );
+}
+export function loreReadCursor(value, c, book, tokenVersion = 1) {
   if (value == null) return null;
   if (typeof value !== 'string' || value.length > 10000 || !/^[A-Za-z0-9_-]+$/.test(value))
     loreInvalid();
@@ -80,10 +102,17 @@ export function loreReadCursor(value, c, book) {
   } catch {
     loreInvalid();
   }
-  workClosed(decoded, ['schemaVersion', 'bookId', 'listToken', 'after']);
+  workClosed(decoded, [
+    'schemaVersion',
+    'bookId',
+    'listToken',
+    'after',
+    ...(tokenVersion === 2 ? ['tokenVersion'] : []),
+  ]);
   if (
     Buffer.from(JSON.stringify(decoded)).toString('base64url') !== value ||
-    decoded.schemaVersion !== 1 ||
+    decoded.schemaVersion !== tokenVersion ||
+    (tokenVersion === 2 && decoded.tokenVersion !== 2) ||
     decoded.bookId !== c.bookId ||
     decoded.listToken !== book.listToken
   )

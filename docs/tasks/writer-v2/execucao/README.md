@@ -1357,3 +1357,18 @@ seleção completa/orçamento/transporte/recuperação/UI, sem converter o limit
 da unidade em cap de seleção ou renovar fontes cegamente entre unidades.
 Compêndio/lifecycle/consumidores/backup/rollout/validate e demais fases/gates
 abertos. Somente commit local; sem CI/envio remoto/deploy.
+
+### P1 M38c5w — origem independente por ficha de lore
+
+[Plano 121](121-origem-independente-por-ficha-de-lore.md),
+[ADR 0136](../../../decisions/0136-independent-book-lore-source-tokens.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-origem-independente-de-lore.md).
+Token v2 opcional conserva origem individual nativa ao alterar outras fichas;
+v1/journals/pedidos permanecem, sem promoção ou rebase. Lista continua global.
+
+601 casos distintos positivos em rodadas (38 novos), incluindo três SDK,
+53 origens e preparação/adoção/recuperação nativas. Tipos/build/smoke/lint/
+sintaxe positivos. Próximo: coordenar seleção durável com origens v2 explícitas,
+progresso/conflitos e UI, preservando prova própria/atomicidade quando aplicável.
+Compêndio/lifecycle/consumidores/backup/rollout/validate de P1 e demais fases/
+gates permanecem abertos. Somente commit local; sem CI/remoto/deploy.

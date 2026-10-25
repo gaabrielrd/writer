@@ -16,6 +16,7 @@ export async function sourceInspectionFixture(
     id = 'entity',
     inspectionId = 'source-inspection-0001',
     mode = 'v1',
+    tokenVersion = 1,
     existingSeed = null,
     data = {
       name: 'Original',
@@ -40,7 +41,11 @@ export async function sourceInspectionFixture(
             inline: mode === 'inline',
             ...options,
           })),
-    view = await createBookLoreReadService({ db }).getBookLoreRead(uid, { bookId, id }),
+    view = await createBookLoreReadService({ db }).getBookLoreRead(uid, {
+      bookId,
+      id,
+      tokenVersion,
+    }),
     intent = inspectionIntent(uid, {
       bookId,
       loreId: id,

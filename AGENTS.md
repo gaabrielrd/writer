@@ -145,6 +145,7 @@
 - Grave payloads de lore sob payloadInventoryVersion 1 com journals/cleanup e birth fixado; mantenha a raiz ausente até integrar consumidores e exclusão, conforme ADR 0089.
 - Migre prefixos de lore com contador autenticado pelo recibo original; preserve o prefixo até a troca atômica e contadores monotônicos, conforme ADR 0090.
 - Leia payloads de lore por unidades reautorizadas, com tokens, escopo nativo e sealBirth; não exponha stubs como fichas completas, conforme ADR 0091.
+- Use token v2 de lore somente por opção explícita; preserve origens v1/journals sem promoção e lista pelo clock global. Confira identidade nativa da ficha e reautorize cada unidade, conforme ADR 0136.
 - Hidrate lore antes de mapear/ordenar; confira SHA/schema/origem final, conta exata e epoch, aguardando confirmação servidor nas assinaturas, conforme ADR 0092.
 - Valide campos de lore por unidades sem reter texto livre no checkpoint; Rules não permitem mutação SDK de payloadStorage/stubs, inclusive deleting, conforme ADR 0093.
 - Prepare campos sob job/lease com recibos nativos, SHA privado e partSealBirth; preserve fences e incorpore cleanup/exclusão antes de habilitar adoção, conforme ADR 0094.

@@ -1,7 +1,7 @@
 import { born, bornEqual, closed, integer, restoreHash } from './bookRestoreUploadContracts.mjs';
 import { digest } from './workProgressContracts.mjs';
 import { bookContentId } from './bookBackupSchema.mjs';
-import { readLoreBook, loreEntityToken } from './bookLoreReadContracts.mjs';
+import { readLoreBook, matchesLoreEntityToken } from './bookLoreReadContracts.mjs';
 import { openBookLoreRecord } from './bookLoreStorageRead.mjs';
 import {
   inspectionConflict as conflict,
@@ -21,7 +21,7 @@ export async function inspectionSource(tx, c, context) {
     snapshot = await tx.get(c.db.doc(scope.path + '/lore/' + context.loreId));
   if (
     !snapshot.exists ||
-    loreEntityToken(scope, book, snapshot) !== context.sourceToken ||
+    !matchesLoreEntityToken(scope, book, snapshot, context.sourceToken) ||
     (context.bookBirth && !bornEqual(book.snapshot, { createTime: context.bookBirth }))
   )
     conflict();

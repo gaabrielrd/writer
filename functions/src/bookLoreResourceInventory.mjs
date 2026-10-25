@@ -2,7 +2,7 @@ import { assertPreparedGenerationHead } from './bookLoreEditAdoptionProofs.mjs';
 import { born, bornEqual, closed, restoreHash } from './bookRestoreUploadContracts.mjs';
 import { digest, readWorkMetadata } from './workProgressContracts.mjs';
 import { bookContentId } from './bookBackupSchema.mjs';
-import { readLoreBook, loreEntityToken } from './bookLoreReadContracts.mjs';
+import { readLoreBook, matchesLoreEntityToken } from './bookLoreReadContracts.mjs';
 import { openBookLoreRecord, openBookLoreRelationPage } from './bookLoreStorageRead.mjs';
 import { openBookResourcePayload } from './bookResourcePayloadRead.mjs';
 import { loreGenerationStorage } from './bookLoreGenerationContracts.mjs';
@@ -22,7 +22,7 @@ import { createBookLoreResourceInventoryCleanup } from './bookLoreResourceInvent
 async function sourceBody(tx, c, input) {
   const book = await readLoreBook(tx, c),
     snapshot = await tx.get(c.db.doc(c.path + '/lore/' + input.loreId));
-  if (!snapshot.exists || loreEntityToken(c, book, snapshot) !== input.sourceToken) conflict();
+  if (!snapshot.exists || !matchesLoreEntityToken(c, book, snapshot, input.sourceToken)) conflict();
   const opened = await openBookLoreRecord(tx, c, snapshot),
     selector = inventorySelector(input.selector);
   if (opened.mode !== 'payload') conflict();

@@ -1,7 +1,7 @@
 import { born, bornEqual, closed, integer } from './bookRestoreUploadContracts.mjs';
 import { bookContentId } from './bookBackupSchema.mjs';
 import { digest, readWorkMetadata } from './workProgressContracts.mjs';
-import { readLoreBook, loreEntityToken } from './bookLoreReadContracts.mjs';
+import { readLoreBook, matchesLoreEntityToken } from './bookLoreReadContracts.mjs';
 import { openBookLoreRecord } from './bookLoreStorageRead.mjs';
 import {
   FIELD_UPLOAD_ALGORITHM,
@@ -50,7 +50,7 @@ export async function uploadSource(tx, c, context, full = false) {
     data = snapshot.data();
   if (
     !snapshot.exists ||
-    loreEntityToken(scope, book, snapshot) !== context.sourceToken ||
+    !matchesLoreEntityToken(scope, book, snapshot, context.sourceToken) ||
     (context.bookBirth && !bornEqual(book.snapshot, { createTime: context.bookBirth })) ||
     (Object.hasOwn(data, 'deleting') && data.deleting !== false) ||
     (Object.hasOwn(data, 'rebalancing') && data.rebalancing !== false) ||

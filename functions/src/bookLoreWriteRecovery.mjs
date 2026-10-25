@@ -1,7 +1,7 @@
 import { randomBytes, createHash } from 'node:crypto';
 import { born, bornEqual, closed, date, integer } from './bookRestoreUploadContracts.mjs';
 import { digest, readWorkMetadata } from './workProgressContracts.mjs';
-import { readLoreBook, loreEntityToken } from './bookLoreReadContracts.mjs';
+import { readLoreBook, matchesLoreEntityToken } from './bookLoreReadContracts.mjs';
 import { readCreationRecoveryOrigin } from './bookLoreWriteRecoveryCreation.mjs';
 import {
   BOOK_LORE_RECOVERY_METHODS,
@@ -144,7 +144,7 @@ async function origin(tx, c, intent, pinned = null) {
       !bornEqual(source, { createTime: pinned.sourceBirth })
     )
       conflict();
-  } else if (loreEntityToken(scope, book, source) !== intent.sourceToken) conflict();
+  } else if (!matchesLoreEntityToken(scope, book, source, intent.sourceToken)) conflict();
   return { bookBirth: born(book.snapshot), sourceBirth: born(source) };
 }
 export function createBookLoreWriteRecoveryService({ db, now = () => Date.now() }) {

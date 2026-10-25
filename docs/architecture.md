@@ -2349,3 +2349,22 @@ UI de lote. Coordenador completo deve preservar seleção e origem ao dividir
 unidades por orçamento real; 50 não é limite de autoria. Transporte,
 recuperação, compêndio, lifecycle/consumidores/backup/rollout/validate de P1 e
 demais fases/gates permanecem abertos.
+
+## P1 M38c5w — origem independente por ficha
+
+[ADR 0136](decisions/0136-independent-book-lore-source-tokens.md):
+list/get oferecem tokenVersion 2 explicitamente; padrão v1 e seu wire/hash
+permanecem. V2 fixa UID/livro/nascimento do livro/ID e createTime/updateTime
+da ficha, permitindo manter a origem intacta após mutação de outra ficha.
+Todas as unidades reautorizam livro/ficha/provas. Token esperado é comparado
+literalmente, nunca renegociado nem promovido de v1.
+
+listToken mantém clock global, cursor fixa versão e lista completa conserva
+checagem inicial/final. ReadClient/ReadService expõem opção sem migrar
+consumidores, journals, wire de pedidos ou formatos cifrados. Inspeção/uploads/
+inventário/reserva de recuperação aceitam ambas as origens exatas. A versão
+do token é independente da versão de armazenamento. Sequência de operações
+individuais não comprova grupo atômico; preservar provas ADR 0110/0135.
+
+Coordenador durável de seleção/UI/compêndio, lifecycle/consumidores/backup/
+rollout/validate de P1 e demais fases/gates continuam abertos.
