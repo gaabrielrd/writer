@@ -1,6 +1,6 @@
 # ADR 0103 — Exclusão individual do lore completo
 
-- Estado: aceita para serviço interno; criação por reserva e rollout pendentes.
+- Estado: aceita; transporte dedicado local pela ADR 0132; UI/rollout pendentes.
 - Data: 2026-10-24.
 - Contexto: [plano 88](../tasks/writer-v2/execucao/88-exclusao-individual-do-lore-completo.md).
 
@@ -84,7 +84,9 @@ relações 7, v2 campo com base 6/relações 7, campo sem base 5 leituras.
 O índice de bookResourceBodies por resource.kind/resource.id/nome está declarado;
 o emulador não comprova ativação desse índice em produção.
 
-Serviço interno sem callable, UI ou worker. Criação por reserva, todos os
-writers/consumidores, backup lógico/indexado e cliente/recuperação permanecem
-antes da exposição. Guardas, Rules, índice e drain de versões antigas devem
-ser coordenados no rollout. Sem deploy; P1/F2-09/Writer V2 continuam abertos.
+O serviço nasceu interno. O transporte dedicado e a porta Auth foram
+implementados localmente na [ADR 0132](0132-authenticated-lore-removal-transport.md),
+com namespaces próprios; executor recuperável, confirmação visual e composição
+no compêndio continuam pendentes. Demais writers/consumidores, backup lógico/
+indexado e lifecycle permanecem antes do rollout. Guardas, Rules, índice e drain
+de versões antigas devem ser coordenados. Sem deploy; P1/F2-09/V2 abertos.

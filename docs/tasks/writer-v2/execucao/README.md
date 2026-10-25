@@ -1299,3 +1299,17 @@ três temas/mobile inspecionados e tipos/build/smoke/styleguide verdes.
 Próximo: exclusão nativa do cliente e integração coordenada no compêndio.
 Lifecycle/consumidores/backup/rollout/validate de P1 continuam necessários.
 P1/F2-09/V2/fases 3–5/gates humanos/comerciais abertos; somente commits locais.
+
+### P1 M38c5s — transporte autenticado da retirada
+
+[Plano 117](117-transporte-autenticado-da-retirada-de-lore.md),
+[ADR 0132](../../../decisions/0132-authenticated-lore-removal-transport.md) e
+[evidência](../../../entregas/2026-10-24-writer-v2-transporte-da-retirada-de-lore.md).
+Endpoint próprio com sete métodos e namespaces separados. Sessão Auth congela
+wire e consulta metadata sem prosa/retry; allowlists antigas preservadas.
+
+168 casos distintos positivos, 27 novos, incluindo dois SDK em emulador.
+Tipos/build/smoke/lint positivos. Próximo: journal/executor recuperável da
+retirada, confirmação visual e compêndio. Lifecycle/consumidores/backup/
+rollout/validate de P1 ainda necessários. P1/F2-09/V2/fases 3–5 e gates
+humanos/comerciais abertos; somente commit local, sem CI/remoto.

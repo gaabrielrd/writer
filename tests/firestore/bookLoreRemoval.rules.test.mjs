@@ -26,6 +26,8 @@ import {
 import { resourcePayloadChunkPath } from '../../functions/src/bookResourcePayloadPaths.mjs';
 import { createBookLoreReadService } from '../../functions/src/bookLoreRead.mjs';
 import { createBookLoreResourceInventoryService } from '../../functions/src/bookLoreResourceInventory.mjs';
+import { createBookLoreRemovalTransportService } from '../../functions/src/bookLoreRemovalTransport.mjs';
+import { createBookLoreEditTransportService } from '../../functions/src/bookLoreEditTransport.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-book-lore-removal';
@@ -300,4 +302,147 @@ test('SDK generic collector defers to native individual removal while its own co
   );
   await finishRemoval(f, p);
   await scopedEmpty(f);
+});
+
+test('SDK dedicated transport withdraws once, fences private controls and resumes native cleanup', async () => {
+  const hash = 'd'.repeat(64);
+  const source = await sourceInspectionFixture(admin, {
+    mode: 'v2',
+    inspectionId: 'lore-removal-source-' + hash,
+    data: {
+      name: 'PRIVATE SDK PROSE',
+      category: 'other',
+      details: 'Exact 🌙'.repeat(20000),
+      isPublic: true,
+      createdAt: 1000,
+      updatedAt: 1000,
+    },
+  });
+  const port = createBookLoreRemovalTransportService({ db: admin });
+  const call = (method, input, uid = source.uid) => port.bookLoreRemoval(uid, { method, input });
+  let inspected = await call('startBookLoreSourceInspection', source.intent);
+  for (let i = 0; !inspected.ready && i < 1000; i++)
+    inspected = (
+      await call('advanceBookLoreSourceInspection', {
+        inspectionId: source.inspectionId,
+        startHash: inspected.startHash,
+        jobToken: inspected.jobToken,
+        expectedRevision: inspected.revision,
+        operationId: 'sdk-inspect-' + inspected.revision,
+      })
+    ).progress;
+  assert.equal(inspected.ready, true);
+  assert.equal((await admin.doc(source.seed.path).get()).exists, true);
+  const intent = {
+    bookId: 'book',
+    loreId: 'entity',
+    removalId: 'lore-removal-' + hash,
+    sourceToken: source.view.readToken,
+    inspection: {
+      inspectionId: source.inspectionId,
+      startHash: inspected.startHash,
+      jobToken: inspected.jobToken,
+    },
+  };
+  const [first, retry] = await Promise.all([
+    call('startBookLoreRemoval', intent),
+    call('startBookLoreRemoval', intent),
+  ]);
+  assert.deepEqual(first, retry);
+  const control = {
+    removalId: intent.removalId,
+    startHash: first.startHash,
+    jobToken: first.jobToken,
+  };
+  assert.deepEqual(await call('getBookLoreRemoval', control), first);
+  assert.equal(
+    await call(
+      'getBookLoreRemoval',
+      { removalId: intent.removalId, startHash: first.startHash },
+      'other',
+    ),
+    null,
+  );
+  assert.equal((await admin.doc(source.seed.path).get()).exists, false);
+  assert.equal((await admin.doc('books/book').get()).data().localLoreVersion, 1);
+  const path = 'users/author/bookLoreRemovals/' + intent.removalId;
+  const context = await admin.doc(path).get(),
+    tombstone = await admin.doc('books/book/bookLoreTombstones/entity').get();
+  assert.equal(context.createTime.isEqual(tombstone.createTime), true);
+  for (const client of [
+    env.authenticatedContext(source.uid).firestore(),
+    env.authenticatedContext('other').firestore(),
+    env.unauthenticatedContext().firestore(),
+  ]) {
+    for (const privatePath of [
+      path,
+      path + '/state/current',
+      'books/book/bookLoreTombstones/entity',
+      'users/author/bookLoreSourceInspections/' + source.inspectionId,
+    ]) {
+      await assertFails(getDoc(doc(client, privatePath)));
+      await assertFails(setDoc(doc(client, privatePath), { forged: true }));
+    }
+    await assertFails(
+      setDoc(doc(client, source.seed.path), {
+        bookId: 'book',
+        name: 'Recreated',
+        category: 'other',
+        createdAt: 1000,
+        updatedAt: 1000,
+      }),
+    );
+  }
+  let current = first;
+  for (let i = 0; !current.complete && i < 1000; i++)
+    current = (
+      await call('advanceBookLoreRemoval', {
+        ...control,
+        expectedRevision: current.revision,
+        operationId: 'sdk-remove-' + current.revision,
+      })
+    ).progress;
+  assert.equal(current.complete, true);
+  assert.equal((await admin.doc('books/book').get()).data().localLoreVersion, 1);
+  assert.deepEqual(await call('getBookLoreRemoval', control), current);
+  assert.equal(JSON.stringify(current).includes('PRIVATE SDK PROSE'), false);
+});
+test('SDK dedicated inspection cancellation is disjoint from edition and cannot remove a head', async () => {
+  const hash = 'e'.repeat(64);
+  const source = await sourceInspectionFixture(admin, {
+    mode: 'inline',
+    inspectionId: 'lore-removal-source-' + hash,
+  });
+  const port = createBookLoreRemovalTransportService({ db: admin });
+  const call = (method, input) => port.bookLoreRemoval(source.uid, { method, input });
+  const ready = await call('startBookLoreSourceInspection', source.intent);
+  const control = {
+    inspectionId: source.inspectionId,
+    startHash: ready.startHash,
+    jobToken: ready.jobToken,
+  };
+  await assert.rejects(
+    createBookLoreEditTransportService({ db: admin }).bookLoreEdit(source.uid, {
+      method: 'cancelBookLoreSourceInspection',
+      input: { ...control, operationId: 'wrong-endpoint' },
+    }),
+    { code: 'invalid-argument' },
+  );
+  assert.deepEqual(await call('getBookLoreSourceInspection', control), ready);
+  const cancelled = await call('cancelBookLoreSourceInspection', {
+    ...control,
+    operationId: 'cancel-own-inspection',
+  });
+  assert.equal(cancelled.progress.phase, 'cancelled');
+  await assert.rejects(
+    call('startBookLoreRemoval', {
+      bookId: source.bookId,
+      loreId: source.id,
+      removalId: 'lore-removal-' + hash,
+      sourceToken: source.view.readToken,
+      inspection: control,
+    }),
+  );
+  assert.equal((await admin.doc(source.seed.path).get()).exists, true);
+  assert.equal((await admin.doc('books/book/bookLoreTombstones/entity').get()).exists, false);
 });

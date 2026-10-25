@@ -2289,3 +2289,17 @@ restaura foco e notifica evento próprio uma vez. Reusa kit/CSS/temas existentes
 Não monta a entrada no compêndio: exclusão nativa do cliente e composição
 coordenada seguem próximas. Lifecycle/consumidores/backup/rollout/validate
 de P1 e demais fases/gates continuam abertos.
+
+## P1 M38c5s — transporte autenticado da retirada
+
+[ADR 0132](decisions/0132-authenticated-lore-removal-transport.md):
+bookLoreRemoval usa wrapper regional Auth/App Check/no-store. Sete métodos
+fechados encaminham inspeção/retirada somente por IDs lore-removal-source e
+lore-removal. Parsers nativos conferem DTO/CAS/origem; tombstone/clock/privacidade
+permanecem transacionais. Edição/journal preservam 22/18 métodos.
+
+ReadClient.metadata lê header validado sem prosa. Sessão interna congela input,
+captura actor/host e não faz retry/fallback. Inspeção conserva a ficha; start
+retira irreversivelmente. Journal/executor recuperável e confirmação visual
+precedem compêndio. Lifecycle/consumidores/backup/rollout/validate de P1 e
+demais fases/gates continuam abertos.

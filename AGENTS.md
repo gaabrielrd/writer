@@ -157,6 +157,7 @@
 - Adote cabeça/geração/leases lógicas/clock/privacidade/recibo atomicamente; exija consentimento explícito lógico e provas nativas para liberar leases aposentadas, preserve hasLoreResources como marca servidor e bloqueie exclusão legada, conforme ADR 0101.
 - Limpe lore do livro já deleting pelo inventário v3 e cutoff nativo; coordene filhos/checkpoints na mesma transação, remova partes antes do header e preserve jobs/leases/controles como fences, conforme ADR 0102.
 - Retire lore individual com inspeção/CAS, clock/privacidade e tombstone permanentes; adie o coletor genérico e entregue a limpeza ao inventário do livro ao entrar em deleting, preservando recibos nativos, conforme ADR 0103.
+- Encaminhe retirada manual somente por bookLoreRemoval e namespaces lore-removal-source/lore-removal; preserve os 18/22 métodos antigos e não envie start destrutivo ao abrir a interface, conforme ADR 0132.
 - Reserve criação de lore por ID servidor e prova nativa, mantendo cabeça ausente; preserve fences e amplie inventário/cancelamento antes do primeiro byte, conforme ADR 0104.
 - Vincule uploads de criação à reserva nativa antes dos bytes; intenção de cancel bloqueia novas unidades, e filho/journal/recibo compartilham transação, preservando bindings e leases, conforme ADR 0105.
 - Componha criação por origem explícita sem cabeça/inspeção fictícia; vincule tentativas nativamente e limpe reserved antes de auditar controles, conforme ADR 0106.

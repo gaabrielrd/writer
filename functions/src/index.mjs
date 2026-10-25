@@ -66,6 +66,10 @@ import {
   createBookLoreEditTransportService,
   setBookLoreEditHeaders,
 } from './bookLoreEditTransport.mjs';
+import {
+  createBookLoreRemovalTransportService,
+  setBookLoreRemovalHeaders,
+} from './bookLoreRemovalTransport.mjs';
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createChapterChatService } from './chapterChat.mjs';
@@ -352,6 +356,7 @@ const callable = (method, secrets = []) =>
       setBookRestoreHeaders(method, request);
       setBookLoreReadHeaders(method, request);
       setBookLoreEditHeaders(method, request);
+      setBookLoreRemovalHeaders(method, request);
       setBookLoreWriteRecoveryHeaders(method, request);
       if (method === 'readLegacyChapterText') {
         request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
@@ -366,6 +371,11 @@ const callable = (method, secrets = []) =>
           );
         if (method === 'bookLoreEdit')
           return await createBookLoreEditTransportService({ db }).bookLoreEdit(
+            request.auth?.uid,
+            request.data,
+          );
+        if (method === 'bookLoreRemoval')
+          return await createBookLoreRemovalTransportService({ db }).bookLoreRemoval(
             request.auth?.uid,
             request.data,
           );
@@ -640,6 +650,7 @@ export const listBookLoreRead = callable('listBookLoreRead');
 export const getBookLoreRead = callable('getBookLoreRead');
 export const readBookLorePart = callable('readBookLorePart');
 export const bookLoreEdit = callable('bookLoreEdit');
+export const bookLoreRemoval = callable('bookLoreRemoval');
 export const reserveBookLoreEditRecovery = callable('reserveBookLoreEditRecovery');
 export const getBookLoreEditRecovery = callable('getBookLoreEditRecovery');
 export const revokeBookLoreEditRecovery = callable('revokeBookLoreEditRecovery');

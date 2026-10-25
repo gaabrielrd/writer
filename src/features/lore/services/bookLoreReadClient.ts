@@ -3,6 +3,7 @@ import { validateBookBackupJSONItem } from '../../../../functions/src/bookBackup
 import {
   invalidLoreRead,
   readId,
+  readHash,
   readObject,
   readManifest,
   readHeader,
@@ -264,5 +265,12 @@ export function createBookLoreReadClient(call: LoreReadCall, guard: LoreReadGuar
     guard();
     return result;
   }
-  return { get, list, capture };
+  async function metadata(bookId: string, id: string, readToken?: string) {
+    readId(bookId);
+    readId(id);
+    if (readToken !== undefined) readHash(readToken);
+    guard();
+    return header(bookId, id, readToken);
+  }
+  return { get, list, capture, metadata };
 }

@@ -2272,3 +2272,17 @@ Temas estáveis e mobile 390 px inspecionados, com contraste do textarea >12:1.
 Ports Auth/Functions/identidades são fixtures; não certificam SDK/Auth/App Check,
 leitor de tela, zoom físico 200% ou segundo dispositivo. Host ainda não foi
 montado no compêndio; validate integral permanece no fechamento de P1.
+
+### P1 M38c5s — transporte da retirada
+
+[Plano 117](tasks/writer-v2/execucao/117-transporte-autenticado-da-retirada-de-lore.md)
+e [evidência](entregas/2026-10-24-writer-v2-transporte-da-retirada-de-lore.md):
+168 casos distintos positivos (27 novos): 62 Node, 104 Vitest e dois SDK no
+emulador Firestore 1.22.0. Retake da sessão 13/13 após tipar mocks.
+Auth/envelope/namespace fechados, inspeção sem retirada, replay/cleanup/origem
+alterada, actor/host e metadata sem prosa/retry.
+
+SDK confirma timestamps/retirada concorrente/Rules privadas e cancelamento
+separado de edição. Admin/cliente Firestore reais em emulador não comprovam
+rede Functions/Auth/App Check de produção. Sem mudança de UI.
+Build/tipos/smoke/lint positivos; validate integral no fechamento de P1.

@@ -617,3 +617,15 @@ ficha aplicada; navegação/foco e perfil/actor protegidos.
 Entrada no compêndio permanece pendente da exclusão nativa do cliente e
 composição coordenada. Lifecycle, demais writers/consumidores/backup/rollout
 e validate de P1 seguem necessários. P1/F2-09/V2/fases/gates restantes abertos.
+
+## Transporte autenticado da retirada — M38c5s
+
+[Plano 117](117-transporte-autenticado-da-retirada-de-lore.md) e
+[ADR 0132](../../../decisions/0132-authenticated-lore-removal-transport.md):
+bookLoreRemoval fecha sete métodos/IDs próprios e preserva edição/journals.
+Sessão Auth consulta metadata sem prosa e congela wire sem retry.
+
+168 casos distintos positivos, incluindo dois SDK reais em emulador;
+[evidência](../../../entregas/2026-10-24-writer-v2-transporte-da-retirada-de-lore.md).
+Journal/executor recuperável e confirmação visual precedem compêndio.
+Lifecycle/consumidores/backup/rollout/validate integral e demais gates abertos.
