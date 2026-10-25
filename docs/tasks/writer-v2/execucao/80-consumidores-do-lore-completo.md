@@ -300,3 +300,14 @@ veja a [evidência D1](../../../entregas/2026-10-25-writer-v2-leitura-indexada-d
 D2 remap/medição da saída e D3 materialização/rollback/roundtrip ainda obrigatórios.
 Etapa 5 inteira, inventários/writers/exclusão/legacy/drain/rollout/validate de P1
 e fases/gates permanecem abertos. Sem novo namespace, CI ou operação remota.
+
+## Projeção da etapa 5 — M38c12 D2
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): remap incremental por campo,
+ID partido até fechar, prosa literal, resolução nativa local qualificada e
+hash/bytes finais. Até 64 KiB/64 alvos por entrada, fragmento de até 80 KiB e
+cursor privado limitado; não é parte nativa ou prova acumulada.
+255 Node distintos, 13 Vitest, dois SDK e três Chromium positivos; veja a
+[evidência D2](../../../entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
+D3/materialização/retomada/rollback/roundtrip e inventários/legacy/drain/rollout/
+validate de P1 e fases/gates permanecem obrigatórios.

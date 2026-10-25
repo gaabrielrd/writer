@@ -466,3 +466,10 @@ concluído estiverem satisfeitos. A lista fica em
   verify(tx) antes da escrita; não acumule provas ou monte a ficha inteira (ADR 0151).
 - Preserve ausência explícita dos campos e o limite do leitor integral pequeno;
   D1 não substitui remap/materialização/roundtrip grandes de D2/D3.
+
+- Projete lore indexado por unidades com o remapeador original e índice nativo;
+  ID local qualificado tem precedência e externo ausente não vira grant.
+- Preserve bytes literais fora de targetEntityId e retenha ID partido até fechar;
+  limite 64 KiB/64 alvos por entrada e trate saída de até 80 KiB como fragmento.
+- Cursor/summary D2 não são prova acumulada ou parte nativa: persista pelo journal
+  e empacote sob inventário D3 antes do manifesto; não acumule prosa/provas (ADR 0151).

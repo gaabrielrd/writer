@@ -41,6 +41,8 @@ export interface BookLoreFieldObserver {
   start?(role: string): void;
   text?(code: number, role: string): void;
   end?(role: string): void;
+  /** Absolute field byte offset: opening quote, or exclusive end after closing quote. */
+  position?(event: 'start' | 'end', role: string, offset: number): void;
 }
 export function createBookLoreFieldValidation(
   input: { field: Exclude<BookLoreFieldName, 'relations'> } | { field: 'relations'; count: number },

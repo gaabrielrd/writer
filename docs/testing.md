@@ -2737,3 +2737,18 @@ Três Chromium reais: OPFS 8470397 bytes/130 partes, acesso direto/recarga e
 corrupção/abort. Declaração TS, lint e sintaxe dirigidos positivos.
 [Evidência D1](entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).
 D2/D3/roundtrip/P1/validate/gates continuam; sem CI ou produção.
+
+## P1 M38c12 D2 — remap e medição por campo
+
+255 Node distintos positivos: 231 regressões, 12 transformador e 12 projeção.
+Projeção inicialmente 11/12 por tamanho errado do fixture; corrigido somente
+o fixture e repetido o caso afetado 1/1. Fonte <8 MiB cresce para >8 MiB após
+remap com hash/tamanho exatos, checkpoints limitados e provas por unidade.
+13/13 Vitest do arquivo real até o leitor projetado; três Chromium reais:
+9,9 MB literais, recarga em alvo UTF-8 e 2000 alvos com orçamento 64 por avanço.
+Dois SDK positivos, zero skipped, 399298.3364 ms: crescimento/medição e retomada
+com reader novo após avanço nativo; observação local presente/ausente, índice
+recriado, cancel/outro usuário e commit recusado. Não é persistência D3 ou retry
+forçado. Tipos/lint/checks dirigidos positivos. Veja a
+[evidência D2](entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
+D3/materialização/roundtrip/P1/validate/fases/gates continuam; sem CI ou produção.

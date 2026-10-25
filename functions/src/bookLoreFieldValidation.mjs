@@ -346,13 +346,17 @@ function advanceField(input, bytes, prefix, observer, referenceLimit = Infinity)
   let consumed = 0,
     references = 0;
   const events =
-    referenceLimit === Infinity
+    referenceLimit === Infinity && typeof observer?.position !== 'function'
       ? observer
       : {
-          start: (role) => observer?.start?.(role),
+          start(role) {
+            observer?.start?.(role);
+            observer?.position?.('start', role, state.byteLength + consumed - 1);
+          },
           text: (code, role) => observer?.text?.(code, role),
           end(role) {
             observer?.end?.(role);
+            observer?.position?.('end', role, state.byteLength + consumed);
             if (role === 'target') references++;
           },
         };

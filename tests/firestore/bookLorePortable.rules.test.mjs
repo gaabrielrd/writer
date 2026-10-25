@@ -31,6 +31,7 @@ import {
 import { finishLegacyRestore } from '../../functions/test/helpers/bookLegacyRestoreFixture.mjs';
 import { createBookRestoreUploadService } from '../../functions/src/bookRestoreUpload.mjs';
 import { chunkId } from '../../functions/src/bookRestoreUploadContracts.mjs';
+import { digest } from '../../functions/src/sceneContracts.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore, FieldValue } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-portable-lore',
@@ -363,15 +364,17 @@ test('SDK archive seal: same-UID actor changes during seal and close cannot retu
   assert.equal(aborted, true);
 });
 
-async function indexedReady(id) {
-  const factory = () => createBookRestoreUploadService({ db: admin }),
-    data = indexedLoreData({ count: 3 });
+async function indexedReady(
+  id,
+  { data = indexedLoreData({ count: 3 }), sourceId = 'entity' } = {},
+) {
+  const factory = () => createBookRestoreUploadService({ db: admin });
   delete data.summary;
   const { progress } = await uploadArchiveRestore(
       factory(),
       'author',
       id,
-      indexedLoreArchive(data),
+      indexedLoreArchive(data, { id: sourceId }),
     ),
     done = await finishLegacyRestore(factory, 'author', id, progress),
     reader = await factory().openVerifiedBookRestoreContent('author', {
@@ -474,4 +477,115 @@ test('SDK indexed restore: account, absence and range checks remain valid until 
   await assert.rejects(() => r.lore.readRange(0, 10));
   assert.equal((await admin.doc('sdkIndexedRead/cancelled').get()).exists, false);
   assert.equal((await admin.doc('books/' + r.done.bookId).get()).exists, false);
+});
+
+test('SDK mapped lore: remap growth crosses 8 MiB and cursor resumes after native preparation advances', async () => {
+  const id = 'sdk-mapped-growth-0001',
+    data = indexedLoreData({ count: 1000 });
+  data.relations = data.relations.map((v) => ({ ...v, targetEntityId: 'entity' }));
+  data.relations[0].description = 'PRIVATE_INDEXED_LORE_BODY';
+  const fill = 8 * 1024 * 1024 - 32768 - Buffer.byteLength(JSON.stringify(data.relations));
+  assert.ok(fill > 0);
+  data.relations[0].description += 'x'.repeat(fill);
+  const r = await indexedReady(id, { data }),
+    original = await r.reader.openMappedIndexedLore(r.pointer.data().index),
+    first = await original.readField('relations', { limit: 17 }),
+    parts = [Buffer.from(first.bytes)];
+  assert.ok(r.pointer.data().byteLength < 8 * 1024 * 1024);
+  const advanced = (
+    await r.factory().advanceBookRestoreStructure('author', {
+      restoreId: id,
+      jobToken: r.done.jobToken,
+      operationId: id + '-prepare',
+      expectedCheckpoint: r.done.checkpoint,
+    })
+  ).progress;
+  await assert.rejects(() => admin.runTransaction(first.verify));
+  const fresh = await r.factory().openVerifiedBookRestoreContent('author', {
+      restoreId: id,
+      jobToken: advanced.jobToken,
+    }),
+    mapped = await fresh.openMappedIndexedLore(r.pointer.data().index);
+  assert.equal(mapped.sourceToken, original.sourceToken);
+  let cursor = JSON.parse(JSON.stringify(first.cursor)),
+    last,
+    units = 1;
+  for (;;) {
+    const unit = await mapped.readField('relations', { cursor });
+    assert.ok(unit.bytes.length <= 80 * 1024 && unit.references <= 64);
+    await admin.runTransaction(unit.verify);
+    parts.push(Buffer.from(unit.bytes));
+    cursor = JSON.parse(JSON.stringify(unit.cursor));
+    assert.ok(Buffer.byteLength(JSON.stringify(cursor)) <= 16384);
+    last = unit;
+    units++;
+    if (unit.done) break;
+  }
+  const actual = Buffer.concat(parts),
+    expected = Buffer.from(
+      JSON.stringify(data.relations.map((v) => ({ ...v, targetEntityId: mapped.id }))),
+    );
+  assert.deepEqual(actual, expected);
+  assert.ok(actual.length > 8 * 1024 * 1024);
+  assert.equal(last.summary.contentHash, hash(expected));
+  assert.equal(last.summary.byteLength, expected.length);
+  assert.equal(last.summary.relations, 1000);
+  assert.ok(units > 128);
+  await admin.runTransaction(async (tx) => {
+    await last.verify(tx);
+    tx.create(admin.doc('sdkMappedLore/result'), { hash: last.summary.contentHash });
+  });
+  assert.equal((await admin.doc('books/' + advanced.bookId).get()).exists, false);
+});
+test('SDK mapped lore: present and absent qualified-local observations plus cancellation are pinned at consumer commit', async () => {
+  for (const present of [true, false]) {
+    const id = 'sdk-mapped-index-' + present,
+      local = 'universe:world:outside',
+      r = await indexedReady(id, { sourceId: present ? local : 'entity' }),
+      mapped = await r.reader.openMappedIndexedLore(r.pointer.data().index),
+      unit = await mapped.readField('relations'),
+      path =
+        'users/author/bookRestores/' +
+        id +
+        '/validationIndex/' +
+        digest(['node', 'lore', '', local]),
+      ref = admin.doc(path),
+      original = await ref.get();
+    assert.equal(original.exists, present);
+    if (present) {
+      await ref.delete();
+      await ref.create(original.data());
+    } else {
+      const own = await admin
+        .doc(
+          'users/author/bookRestores/' +
+            id +
+            '/validationIndex/' +
+            digest(['node', 'lore', '', 'entity']),
+        )
+        .get();
+      assert.equal(own.exists, true);
+      await ref.create({ ...own.data(), key: ['node', 'lore', '', local] });
+    }
+    const result = admin.doc('sdkMappedLore/denied-' + present);
+    await assert.rejects(() =>
+      admin.runTransaction(async (tx) => {
+        await unit.verify(tx);
+        tx.create(result, { accepted: true });
+      }),
+    );
+    assert.equal((await result.get()).exists, false);
+    await r.factory().cancelBookRestore('author', {
+      restoreId: id,
+      jobToken: r.done.jobToken,
+      expectedCheckpoint: r.done.checkpoint,
+      operationId: id + '-cancel',
+    });
+    await assert.rejects(() => mapped.readField('relations', { cursor: unit.cursor }));
+    await assert.rejects(() =>
+      r
+        .factory()
+        .openVerifiedBookRestoreContent('other', { restoreId: id, jobToken: r.done.jobToken }),
+    );
+  }
 });

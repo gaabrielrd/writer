@@ -1645,3 +1645,13 @@ de base/overrides confere hash completo do campo grande após validação servid
 
 D2/D3 ainda devem remapear/medir/materializar e provar roundtrip. Plano 131/P1/
 F2-09/V2, inventários/legacy/drain/rollout/validate e fases/gates continuam abertos.
+
+### P1 M38c12 D2 — remap e medição incremental do lore
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): alvos remapeados por unidades
+com precedência local qualificada e prosa literal. Campos medidos por SHA/bytes,
+checkpoint limitado e provas nativas por avanço. Fonte <8 MiB cresce para >8 MiB
+sem remontar a ficha. 255 Node distintos, 13 Vitest, dois SDK e três Chromium
+positivos; veja a [evidência D2](../../../entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
+D3 deve empacotar/materializar sob inventário e provar retomada/rollback/roundtrip.
+Plano 131/P1/F2-09/V2, validate e fases/gates continuam abertos.

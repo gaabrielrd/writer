@@ -387,3 +387,53 @@ fronteiras de dígitos sem spans persistidos ou varredura das partes anteriores.
 
 D permanece aberto para D2 (remap/medição) e D3 (materialização/retomada/rollback/
 roundtrip), inclusive saída maior após remap. P1/fases/gates e validate continuam.
+
+## Contrato D2 antes da implementação — projeção e medição por campo
+
+Acrescentar uma notificação opcional de posição em bytes ao observador do parser
+de campos, preservando assinaturas/resultados anteriores. O transformador de
+relações usa a gramática portátil existente e retém somente o ID corrente:
+bytes de targetEntityId ficam provisórios até fechar a string, inclusive quando
+o ID atravessa unidades. Copiar todos os demais bytes literalmente; remapear o
+alvo pelo mesmo createBookRestoreRemapper e precedência de ID local qualificado.
+
+Cada avanço consome até 64 KiB e 64 alvos. Retorna um fragmento de até 80 KiB,
+pois um ID curto pode crescer e um ID começado na unidade anterior pode terminar
+agora. Este fragmento não é uma parte nativa: D3 deve empacotar/atestar sob seu
+inventário antes de expor manifesto. Não persistir prosa no checkpoint para
+resolver esse encaixe. Sem acumular catálogo/provas ou revarrer o prefixo da ficha.
+
+OpenMappedIndexedLore compõe D1, o transformador e a resolução nativa do índice
+original. Campos não relacionais preservam bytes sem remontar objetos. Cada
+readField devolve cursor de até 16 KiB com contexto/offset/contagens, sintaxe/ID
+parcial e estado SHA privado; summary final mede bytes/hash de saída e relações.
+Ausência continua explícita. Cursor é metadata do host e deve estar protegido
+pelo journal/recibo nativo D3 ao persistir; não é autorização ou prova acumulada.
+
+A identidade de projeção fixa origem original, destino e ID mapeado. Cada unidade
+reconfere D1 e observações locais de resolução antes de retornar e por verify(tx)
+antes de escrita. A reabertura por reader novo aceita o cursor da mesma origem/
+destino, mas não revalida uma origem recriada. Sem endpoint/Rule/namespace/recurso
+remoto novo. API integral e remapeador anteriores conservam comportamento.
+
+Arquivos: BookLoreFieldValidation e declaração; novo transformador puro e helper
+de projeção de lore; BookRestoreContentRead; testes puros/serviço/bridge/SDK/
+Chromium dirigidos; ADR 0151/planos/registro/arquitetura/testes/AGENTS/evidência.
+Aceites: Unicode/escapes/IDs partidos e ordem arbitrária das chaves de relações,
+prosa/ausências/duplicados/externos literais, IDs locais qualificados, >8 MiB e
+crescimento após remap atravessando 8 MiB, medição/hash exatos, checkpoint sem
+corpo/catálogo, <=64 alvos e I/O/provas por unidade, conta/contexto/cancel/ABA/
+alteração antes do commit. D3/roundtrip/P1/validate/fases/gates seguem abertos.
+
+## Estado D2 — 2026-10-25
+
+Remap por campo implementado com gramática compartilhada, alvos partidos,
+identidade local qualificada, bytes literais e medidas SHA/tamanho exatas.
+Cursor limitado com observações/provas por unidade; ausência explícita e nenhum
+recurso remoto novo. Saída <=80 KiB é fragmento lógico, não chunk nativo.
+255 Node distintos, 13 Vitest, dois SDK e três Chromium positivos; veja a
+[evidência D2](../../../entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).
+
+D3 deve empacotar/materializar com procedência/inventário/retomada/rollback e
+provar roundtrip, inclusive saída ampliada. Plano 131/P1/fases/gates e validate
+permanecem abertos. Cursor D2 precisa de journal/recibo nativo ao persistir.

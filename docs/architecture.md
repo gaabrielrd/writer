@@ -2740,3 +2740,20 @@ Rule ou endpoint. API integral pequena/legado preservados com seus limites.
 69 Node, 13 Vitest, três SDK distintos e três Chromium positivos.
 D2 remap/medição e D3 materialização/roundtrip permanecem obrigatórios.
 [Evidência D1](entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).
+
+## P1 M38c12 D2 — projeção incremental do lore
+
+BookRestoreLoreTransform compartilha o parser de campos com notificação opcional
+de posições: retém somente alvo/ID parcial e copia o restante literalmente.
+BookRestoreLoreProjection mede campos por SHA/contagem, com cursor privado
+limitado a 16 KiB. Até 64 KiB/64 alvos por avanço; expansão produz fragmentos
+de até 80 KiB, que D3 deve empacotar/atestar antes de manifesto nativo.
+
+OpenMappedIndexedLore usa D1, remapeador original e índice nativo por unidade.
+ID local qualificado tem precedência; externo não ganha autorização. SourceMetadata
+é original, ausência explícita e verify do consumidor inclui as resoluções.
+Cursor capturado antes de await deve ser protegido por journal/recibo D3 quando
+persistido; metadata/hash não comprovam toda a origem anterior por si próprios.
+Sem novo endpoint/Rule/namespace/recurso. 255 Node distintos, 13 Vitest, dois SDK
+e três Chromium positivos. Materialização/roundtrip/P1 pendentes.
+[Evidência D2](entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).

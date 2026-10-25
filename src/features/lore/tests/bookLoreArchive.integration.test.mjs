@@ -24,6 +24,7 @@ import { validateBookBackupContent } from '../../../../functions/src/bookBackupC
 import { indexFixture, hashPort } from '../../../../functions/test/helpers/bookContentFixture.mjs';
 import { decodeBookBackup } from '../../../../functions/src/bookBackupContainer.mjs';
 import { createBookRestoreUploadService } from '../../../../functions/src/bookRestoreUpload.mjs';
+import { createBookRestoreRemapper } from '../../../../functions/src/bookRestoreRemap.mjs';
 import { uploadSealedArchiveRestore } from '../../../../functions/test/helpers/bookRestoreContentFixture.mjs';
 import { finishLegacyRestore } from '../../../../functions/test/helpers/bookLegacyRestoreFixture.mjs';
 async function fixture(mode = 'v2', { large = false, base = false } = {}) {
@@ -260,7 +261,7 @@ it('sink pressure holds C1 reads and abort during that write cannot produce a se
   expect(f.sink.abort).toHaveBeenCalledOnce();
 });
 
-it('the exact captured large archive validates and reads indexed lore without activating a restored book', async () => {
+it('the exact captured large archive validates and measures mapped lore without activating a restored book', async () => {
   const f = await fixture('v2', { large: true, base: true }),
     before = structuredClone(f.records.get('books/book/lore/' + f.id));
   await saveBookBackup('book', f.options, f.sink);
@@ -281,25 +282,52 @@ it('the exact captured large archive validates and reads indexed lore without ac
     pointer = [...f.records.values()].find(
       (v) => v.record?.kind === 'book-lore' && v.restoreId === id,
     ),
-    lore = await reader.openIndexedLore(pointer.index);
-  expect(lore.metadata.id).toBe(f.id);
+    lore = await reader.openMappedIndexedLore(pointer.index);
+  expect(lore.sourceMetadata.id).toBe(f.id);
   await expect(reader.readItem(pointer.index)).rejects.toThrow();
   const expected = createHash('sha256').update(JSON.stringify(f.expected.details)).digest('hex'),
     actual = createHash('sha256');
-  let offset = 0,
-    units = 0;
+  let cursor = null,
+    units = 0,
+    summary;
   for (;;) {
-    const unit = await lore.readField('details', { offset });
+    const unit = await lore.readField('details', { cursor });
     expect(unit.bytes.length).toBeLessThanOrEqual(65536);
     actual.update(unit.bytes);
     await f.db.runTransaction(unit.verify);
-    offset = unit.nextOffset;
+    cursor = JSON.parse(JSON.stringify(unit.cursor));
     units++;
+    summary = unit.summary;
     if (unit.done) break;
   }
   expect(actual.digest('hex')).toBe(expected);
+  expect(summary.contentHash).toBe(expected);
   expect(units).toBeGreaterThan(128);
-  expect(offset).toBe(Buffer.byteLength(JSON.stringify(f.expected.details)));
+  expect(summary.byteLength).toBe(Buffer.byteLength(JSON.stringify(f.expected.details)));
+  const mapper = createBookRestoreRemapper({
+      schemaVersion: 1,
+      jobToken: done.jobToken,
+      sourceBookId: 'book',
+      bookId: done.bookId,
+    }),
+    relationParts = [];
+  cursor = null;
+  for (;;) {
+    const unit = await lore.readField('relations', { cursor });
+    relationParts.push(Buffer.from(unit.bytes));
+    expect(unit.references).toBeLessThanOrEqual(64);
+    await f.db.runTransaction(unit.verify);
+    cursor = JSON.parse(JSON.stringify(unit.cursor));
+    if (unit.done) break;
+  }
+  expect(JSON.parse(Buffer.concat(relationParts).toString())).toEqual(
+    f.expected.relations.map((v) => ({
+      ...v,
+      targetEntityId: v.targetEntityId.startsWith('universe:')
+        ? v.targetEntityId
+        : mapper.identity('lore', v.targetEntityId),
+    })),
+  );
   for (const field of ['aliases', 'summary', 'createdAt'])
     expect((await lore.readField(field)).present).toBe(false);
   expect(f.records.has('books/' + done.bookId)).toBe(false);

@@ -1,6 +1,6 @@
 # ADR 0151 — Índice incremental do lore portátil
 
-- Status: A/B/C e D1 implementados/validados localmente; D2/D3 e fechamento de P1 pendentes.
+- Status: A/B/C/D1/D2 implementados/validados localmente; D3/fechamento de P1 pendentes.
 - Data: 2026-10-25.
 - Plano: [131](../tasks/writer-v2/execucao/131-backup-logico-indexado-do-lore.md).
 
@@ -9,7 +9,7 @@
 Na descoberta, a captura privada serializava a cabeça física de lore. O leitor
 e o validador servidor recompunham JSON de até 8 MiB, com até 128 spans por item.
 A/B/C integram captura/validação; D1 acrescenta leitura grande por ranges.
-Remap/materialização/roundtrip seguem em D2/D3.
+D2 acrescenta remap/medição; materialização/roundtrip seguem em D3.
 Esse modelo não transporta todas as fontes lógicas atuais nem o JSON que cresceu
 após remap. A leitura por faixas depende de índice sem prosa e de validação
 incremental; não basta aumentar o limite ou montar o item a cada página.
@@ -170,3 +170,23 @@ Sem endpoint/Rule/namespace/recurso novo. D2 deve remapear por unidades e medir
 a saída; D3 materializar sob inventário/retomada/rollback e provar roundtrip.
 69 Node, 13 Vitest, três SDK distintos e três Chromium positivos.
 [Evidência D1](../entregas/2026-10-25-writer-v2-leitura-indexada-do-lore-restaurado.md).
+
+## Projeção D2 — remap por campo e medida da saída
+
+O parser de campos oferece position opcional em offsets de bytes sem alterar
+os callbacks antigos. O transformador retém somente ID parcial até fechar a
+string e copia bytes dos demais campos/prosa literalmente. Até 64 KiB e 64 alvos
+por avanço; o remapeador existente conserva a precedência de ID local qualificado
+por índice original. Externo não resolvido localmente permanece literal.
+
+OpenMappedIndexedLore fixa origem/destino/ID e expõe sourceMetadata original,
+não ranges de saída. Cursor privado de até 16 KiB contém sintaxe/ID/offset/
+contagens/SHA, sem ficha/lista. Summary mede hash/bytes finais de cada campo.
+Cada unidade reconfere D1 e as resoluções nativas no verify do consumidor.
+Cursor deve ter journal/recibo original ao persistir; não é prova acumulada.
+
+Fragmentos podem crescer até 80 KiB e não são chunks nativos de 64 KiB. D3 deve
+empacotar/atestar, vincular procedência, ampliar inventário antes das escritas e
+provar retomada/rollback/roundtrip até ativação. Sem novo recurso ou endpoint D2.
+255 Node distintos, 13 Vitest, dois SDK e três Chromium positivos.
+[Evidência D2](../entregas/2026-10-25-writer-v2-remap-incremental-do-lore-restaurado.md).

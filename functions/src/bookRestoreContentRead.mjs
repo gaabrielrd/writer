@@ -3,6 +3,7 @@ import { validateBookRestoreRawPosition } from './bookRestoreHistoryContracts.mj
 import { createBookRestoreRemapper, BOOK_RESTORE_RELATION_ITEMS } from './bookRestoreRemap.mjs';
 import { inconsistent, integer, chunkId } from './bookRestoreUploadContracts.mjs';
 import { BOOK_PORTABLE_LORE_FIELDS } from './bookPortableLoreIndex.mjs';
+import { readMappedBookRestoreLoreField } from './bookRestoreLoreProjection.mjs';
 import {
   bookRestoreIndexedLore,
   readBookRestoreLoreRange,
@@ -260,6 +261,50 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
         verify: verifyMetadata,
         readRange,
         readField,
+      });
+    },
+    async openMappedIndexedLore(index) {
+      const lore = await api.openIndexedLore(index);
+      if (lore === null) return null;
+      const id = mapper.identity('lore', lore.metadata.id),
+        sourceToken = digest({
+          domain: 'writer-book-restore-lore-projection',
+          sourceToken: lore.sourceToken,
+          bookId: api.bookId,
+          id,
+        });
+      return Object.freeze({
+        schemaVersion: 1,
+        sourceToken,
+        sourceId: lore.metadata.id,
+        id,
+        record: Object.freeze({ kind: 'book-lore', id: digest(['lore', null, id]), part: 0 }),
+        sourceMetadata: lore.metadata,
+        verify: lore.verify,
+        async readField(field, { cursor = null, limit = 65536 } = {}) {
+          const store = createBookRestoreValidationStore(db, initial.loaded, null),
+            unit = await readMappedBookRestoreLoreField({
+              lore,
+              contextToken: sourceToken,
+              field,
+              cursor,
+              limit,
+              async mapTarget(targetEntityId) {
+                const mapped = await mapper.mapLoreRelation(
+                  { targetEntityId, relationType: '' },
+                  async (original) =>
+                    (await store.index.get(['node', 'lore', '', original])) !== undefined,
+                );
+                return mapped.targetEntityId;
+              },
+            });
+          async function verify(tx) {
+            await unit.verify(tx);
+            await store.verify(tx);
+          }
+          await db.runTransaction(verify);
+          return { ...unit, verify };
+        },
       });
     },
     async readMappedItem(index) {
