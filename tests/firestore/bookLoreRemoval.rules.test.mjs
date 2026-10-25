@@ -28,6 +28,8 @@ import { createBookLoreReadService } from '../../functions/src/bookLoreRead.mjs'
 import { createBookLoreResourceInventoryService } from '../../functions/src/bookLoreResourceInventory.mjs';
 import { createBookLoreRemovalTransportService } from '../../functions/src/bookLoreRemovalTransport.mjs';
 import { createBookLoreEditTransportService } from '../../functions/src/bookLoreEditTransport.mjs';
+import { removalBatchFixture } from '../../functions/test/helpers/bookLoreRemovalBatchFixture.mjs';
+import { prepareBookLoreRemovalBatch } from '../../functions/src/bookLoreRemovalStart.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore } = requireFunctions('firebase-admin/firestore'),
   projectId = 'demo-writer-book-lore-removal';
@@ -94,6 +96,9 @@ async function snapshots(paths) {
 }
 
 test('SDK withdrawal is atomic and concurrent retry preserves clocks, explicit privacy and a permanent non-reusable ID', async () => {
+  const fresh = { bookId: 'book', name: 'Other', category: 'other', isPublic: false };
+  // Existing sibling is seeded before the native barrier; SDK writers close afterwards.
+  await sourceInspectionFixture(admin, { mode: 'inline', id: 'preserved', data: fresh });
   const f = await removalFixture(admin, {
       data: { name: 'N', category: 'other', isPublic: true, createdAt: 1000, updatedAt: 1000 },
     }),
@@ -130,16 +135,17 @@ test('SDK withdrawal is atomic and concurrent retry preserves clocks, explicit p
   assert.equal(book.data().createdAt, 1000);
   await assertFails(getDoc(doc(anonymous, publicPath)));
   await assertFails(getDoc(doc(anonymous, revision)));
-  const fresh = { bookId: 'book', name: 'Other', category: 'other', isPublic: false },
-    positive = writeBatch(client);
-  positive.update(doc(client, root), { localLoreVersion: 2 });
-  positive.set(doc(client, 'books/book/lore/preserved'), fresh);
-  await assertSucceeds(positive.commit());
+  assert.equal(book.data().hasLoreResources, true);
+  const blocked = writeBatch(client);
+  blocked.update(doc(client, root), { localLoreVersion: 2 });
+  blocked.set(doc(client, 'books/book/lore/blocked-new'), fresh);
+  await assertFails(blocked.commit());
+  assert.equal((await admin.doc('books/book/lore/blocked-new').get()).exists, false);
   const rejected = writeBatch(client);
-  rejected.update(doc(client, root), { localLoreVersion: 3 });
+  rejected.update(doc(client, root), { localLoreVersion: 2 });
   rejected.set(doc(client, 'books/book/lore/entity'), fresh);
   await assertFails(rejected.commit());
-  assert.equal((await data(root)).localLoreVersion, 2);
+  assert.equal((await data(root)).localLoreVersion, 1);
   await assertFails(getDoc(doc(client, f.tombstonePath)));
   await assertFails(setDoc(doc(client, f.tombstonePath), {}));
   await assertFails(getDoc(doc(client, f.path)));
@@ -148,7 +154,7 @@ test('SDK withdrawal is atomic and concurrent retry preserves clocks, explicit p
   await scopedEmpty(f);
   assert.equal((await admin.doc('books/book/lore/preserved').get()).exists, true);
   assert.equal((await admin.doc(root).get()).exists, true);
-  assert.equal((await data(root)).localLoreVersion, 2);
+  assert.equal((await data(root)).localLoreVersion, 1);
   assert.deepEqual(await f.start(), done);
 });
 
@@ -445,4 +451,136 @@ test('SDK dedicated inspection cancellation is disjoint from edition and cannot 
   );
   assert.equal((await admin.doc(source.seed.path).get()).exists, true);
   assert.equal((await admin.doc('books/book/bookLoreTombstones/entity').get()).exists, false);
+});
+
+test('SDK bulk native concurrent withdrawal shares one birth, clock and privacy revocation with private aggregate proof', async () => {
+  const f = await removalBatchFixture(admin);
+  const sourceHeads = await Promise.all(f.members.map((m) => admin.doc(m.source.seed.path).get()));
+  assert.equal(
+    sourceHeads.every((s) => s.exists),
+    true,
+  );
+  const [a, b] = await Promise.all([f.start(), f.start()]);
+  assert.deepEqual(a, b);
+  assert.equal(a.localLoreVersion, 11);
+  assert.match(a.jobToken, /^[a-f0-9]{64}$/);
+  assert.deepEqual(
+    await f.factory().getBookLoreRemovalBatch(f.uid, { ...f.control, jobToken: a.jobToken }),
+    a,
+  );
+  await assert.rejects(
+    f.factory().getBookLoreRemovalBatch(f.uid, { ...f.control, jobToken: 'f'.repeat(64) }),
+    { code: 'failed-precondition' },
+  );
+  assert.equal(a.publicationPrivacyVersion, 5);
+  assert.equal(a.timestamp, 10001);
+  const record = await f.c.record.get(),
+    proof = await f.c.proof.get();
+  assert.equal(record.createTime.isEqual(record.updateTime), true);
+  assert.equal(record.createTime.isEqual(proof.createTime), true);
+  for (const m of f.members) {
+    const context = await admin.doc(m.path).get(),
+      tombstone = await admin.doc(m.tombstonePath).get();
+    assert.equal(context.createTime.isEqual(record.createTime), true);
+    assert.equal(tombstone.createTime.isEqual(record.createTime), true);
+    assert.equal((await admin.doc(m.source.seed.path).get()).exists, false);
+  }
+  const root = await admin.doc('books/book').get();
+  assert.equal(root.data().localLoreVersion, 11);
+  assert.equal(root.data().publicationPrivacyVersion, 5);
+  assert.equal(root.data().createdAt, 500);
+  assert.equal((await admin.doc('publicBooks/book').get()).exists, false);
+  assert.equal((await admin.doc(f.sibling.seed.path).get()).exists, true);
+  for (const client of [
+    env.authenticatedContext(f.uid).firestore(),
+    env.authenticatedContext('other').firestore(),
+    env.unauthenticatedContext().firestore(),
+  ]) {
+    for (const path of [
+      f.c.record.path,
+      f.c.proof.path,
+      f.members[0].path,
+      f.members[0].tombstonePath,
+    ]) {
+      await assertFails(getDoc(doc(client, path)));
+      await assertFails(setDoc(doc(client, path), { forged: true }));
+    }
+    await assertFails(
+      setDoc(doc(client, f.members[0].source.seed.path), {
+        bookId: 'book',
+        name: 'Forged',
+        category: 'other',
+        createdAt: 1000,
+        updatedAt: 1000,
+      }),
+    );
+  }
+  assert.deepEqual(await f.get(), a);
+  assert.equal((await admin.doc('users/author').get()).data().credits, 20);
+});
+
+test('SDK bulk native caller rollback preserves all sources and allows the original batch to retry', async () => {
+  const f = await removalBatchFixture(admin);
+  const before = await snapshots([
+    'books/book',
+    'publicBooks/book',
+    ...f.members.map((m) => m.source.seed.path),
+  ]);
+  await assert.rejects(
+    admin.runTransaction(async (tx) => {
+      const plan = await prepareBookLoreRemovalBatch(
+        tx,
+        { db: admin, now: () => 3000 },
+        f.uid,
+        f.input,
+      );
+      plan.commit();
+      throw Error('explicit caller rollback');
+    }),
+    /explicit caller rollback/,
+  );
+  assert.deepEqual(
+    await snapshots([
+      'books/book',
+      'publicBooks/book',
+      ...f.members.map((m) => m.source.seed.path),
+    ]),
+    before,
+  );
+  for (const m of f.members) assert.equal((await admin.doc(m.path).get()).exists, false);
+  assert.equal((await f.c.record.get()).exists, false);
+  assert.equal((await f.c.proof.get()).exists, false);
+  assert.equal((await f.start()).localLoreVersion, 11);
+});
+
+test('SDK bulk native recreated aggregate pair and lost proof cannot claim original contexts', async () => {
+  const f = await removalBatchFixture(admin);
+  await f.start();
+  const original = await f.c.record.get(),
+    anchor = await f.c.proof.get();
+  await admin.runTransaction(async (tx) => {
+    tx.delete(f.c.record);
+    tx.delete(f.c.proof);
+  });
+  await assert.rejects(f.get(), { code: 'failed-precondition' });
+  await admin.runTransaction(async (tx) => {
+    tx.create(f.c.record, original.data());
+    tx.create(f.c.proof, anchor.data());
+  });
+  assert.equal((await f.c.record.get()).createTime.isEqual(original.createTime), false);
+  await assert.rejects(f.get(), { code: 'failed-precondition' });
+  await assert.rejects(f.start(), { code: 'failed-precondition' });
+  assert.equal((await admin.doc('books/book').get()).data().localLoreVersion, 11);
+});
+
+test('SDK bulk native supports a 50-member unit while keeping the unrelated fiche and root', async () => {
+  const f = await removalBatchFixture(admin, { count: 50, modes: ['inline'] });
+  const p = await f.start();
+  assert.equal(p.items.length, 50);
+  assert.equal(p.localLoreVersion, 11);
+  assert.equal((await admin.doc('books/book').get()).data().localLoreVersion, 11);
+  assert.equal((await admin.doc(f.sibling.seed.path).get()).exists, true);
+  const birth = (await f.c.record.get()).createTime;
+  for (const m of f.members)
+    assert.equal((await admin.doc(m.path).get()).createTime.isEqual(birth), true);
 });

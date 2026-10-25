@@ -1,8 +1,6 @@
-import { born, bornEqual, date, integer } from './bookRestoreUploadContracts.mjs';
-import { digest, readWorkMetadata } from './workProgressContracts.mjs';
-import { nextBookLocalLoreVersion } from './bookLoreVersion.mjs';
-import { inspectionPaths } from './bookLoreSourceInspectionContracts.mjs';
-import { openBookLoreSourceInspection } from './bookLoreSourceInspectionStore.mjs';
+import { prepareBookLoreRemovalStart } from './bookLoreRemovalStart.mjs';
+import { bornEqual } from './bookRestoreUploadContracts.mjs';
+import { readWorkMetadata } from './workProgressContracts.mjs';
 import { inventoryScope } from './bookLoreResourceInventoryContracts.mjs';
 import { loadInventoryControl } from './bookLoreResourceInventoryStore.mjs';
 import { resourcePayloadBodyPath } from './bookResourcePayloadPaths.mjs';
@@ -19,22 +17,10 @@ import {
 import {
   loadBookLoreRemoval,
   openBookLoreRemovalCleanup,
-  initializeBookLoreRemoval,
   replayBookLoreRemoval,
   reserveRemovalCommit,
   removalProgress,
 } from './bookLoreRemovalStore.mjs';
-function timestamp(now, book, source) {
-  const values = [date(now)];
-  for (const value of [book.updatedAt, source.dates.updatedAt]) {
-    if (value === undefined) continue;
-    integer(value);
-    if (!Number.isSafeInteger(value + 1) || !Number.isFinite(new Date(value + 1).getTime()))
-      conflict();
-    values.push(value + 1);
-  }
-  return Math.max(...values);
-}
 async function finishCleanup(tx, l, next) {
   for (const name of ['bookResourceBodies', 'bookLoreSegments'])
     if ((await tx.get(loreCleanupQuery(l, name).select().limit(1))).docs.length) conflict();
@@ -81,80 +67,9 @@ export function createBookLoreRemovalService({ db, now = () => Date.now() }) {
         startHash = removalStartHash(intent),
         c = removalPaths(db, uid, intent.removalId);
       return db
-        .runTransaction(async (tx) => {
-          const previous = await loadBookLoreRemoval(tx, c, { startHash });
-          if (previous) {
-            if (digest(previous.context.intent) !== digest(intent)) conflict();
-            return removalProgress(tx, previous);
-          }
-          const source = await openBookLoreSourceInspection(
-              tx,
-              inspectionPaths(db, uid, intent.inspection.inspectionId),
-              intent.inspection,
-            ),
-            original = source.loaded.job.context;
-          if (
-            original.bookId !== intent.bookId ||
-            original.loreId !== intent.loreId ||
-            original.sourceToken !== intent.sourceToken
-          )
-            conflict();
-          const root = await readWorkMetadata(tx, db.doc('books/' + intent.bookId), [
-              'authorId',
-              'deleting',
-              'localLoreVersion',
-              'updatedAt',
-              'publicationPrivacyVersion',
-              'hasLoreResources',
-            ]),
-            book = root.data(),
-            localLoreVersion = nextBookLocalLoreVersion(book),
-            privacy = source.metadata.isPublic,
-            revoked = privacy.present && privacy.value === true,
-            epoch = Object.hasOwn(book, 'publicationPrivacyVersion')
-              ? book.publicationPrivacyVersion
-              : 0;
-          integer(epoch);
-          const publicationPrivacyVersion = epoch + (revoked ? 1 : 0);
-          integer(publicationPrivacyVersion);
-          if (Object.hasOwn(book, 'hasLoreResources') && typeof book.hasLoreResources !== 'boolean')
-            conflict();
-          if (
-            !root.exists ||
-            book.authorId !== uid ||
-            !bornEqual(root, source.source.book.snapshot) ||
-            (Object.hasOwn(book, 'deleting') && book.deleting !== false)
-          )
-            conflict();
-          const context = {
-              schemaVersion: 1,
-              ownerId: uid,
-              intent,
-              startHash,
-              bookBirth: born(root),
-              sourceBirth: born(source.source.opened.snapshot),
-              sourceUpdate: born({ createTime: source.source.opened.snapshot.updateTime }),
-              inspectionBirth: born(source.loaded.snapshot),
-              metadataHash: digest(source.metadata),
-              privacy,
-              revoked,
-              timestamp: timestamp(now, book, source.metadata),
-              localLoreVersion,
-              publicationPrivacyVersion,
-            },
-            initial = await initializeBookLoreRemoval(tx, c, context);
-          initial.commit();
-          tx.delete(source.source.opened.snapshot.ref);
-          tx.update(root.ref, {
-            localLoreVersion,
-            hasLoreResources: true,
-            updatedAt: context.timestamp,
-            ...(revoked ? { status: 'draft', publicationPrivacyVersion } : {}),
-          });
-          if (revoked) tx.delete(db.doc('publicBooks/' + intent.bookId));
-          // Birth and token are read from the committed context, never guessed from wall time.
-          return null;
-        })
+        .runTransaction(async (tx) =>
+          (await prepareBookLoreRemovalStart(tx, { db, now }, uid, intent)).commit(),
+        )
         .then(
           (result) =>
             result ??

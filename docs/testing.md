@@ -2317,3 +2317,19 @@ resposta perdida, apply/cancel com respostas retidas/perdidas e nome de 400
 caracteres sem overflow a 390 px. UI/executor/IDB/Web Locks reais; SDK/Auth/
 banco são fixtures e não comprovam produção. Dark/mobile inspecionados.
 Tipos/build/smoke/lint positivos; compêndio/lotes/validate de P1 pendentes.
+
+### P1 M38c5v — retirada conjunta de lore
+
+[Plano 120](tasks/writer-v2/execucao/120-retirada-conjunta-de-lore.md) e
+[evidência](entregas/2026-10-25-writer-v2-retirada-conjunta-de-lore.md):
+103 casos distintos positivos em rodadas (24 novos): 68 Node, 30 Vitest e
+cinco SDK. Node integrado 67/67; retake do lote 20/20 inclui token adicional.
+Executor/sessão 30/30. Quatro novos casos SDK passaram na rodada inicial;
+regressão singular herdada foi alinhada à barreira hasLoreResources, sem
+alterar Rules, e passou no retake. Dois SDK afetados pelo token também passaram.
+
+Cobrem transação conjunta, rollback, frame/privacidade, prova/nascimento,
+replay/controles recriados, cleanup/handoff e unidade de 50 membros.
+SDK/Admin reais em emulador não comprovam Auth/App Check/limites de produção.
+Lint e sintaxe de 254 módulos positivos; app build/typecheck e validate
+integral não executados neste incremento backend. Coordenador/UI e P1 abertos.

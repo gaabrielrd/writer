@@ -655,3 +655,17 @@ e cancelamento independente. Nenhum reenvio ao abrir/verificar; callback único.
 Antes do compêndio, adaptar também visibilidade/exclusão em lote por captura
 e revisão nativas. Lifecycle/consumidores/backup/rollout/validate e demais
 fases/gates permanecem abertos. Sem CI/envio remoto/deploy.
+
+## Unidade de retirada conjunta — M38c5v
+
+[Plano 120](120-retirada-conjunta-de-lore.md) e
+[ADR 0135](../../../decisions/0135-atomic-lore-removal-batches.md):
+retirada conjunta interna por origem/inspeção original, um clock/privacidade
+e prova de nascimento comum. Token observado fica fixado no histórico;
+recibos singulares não comprovam grupo.
+
+103 casos distintos positivos em rodadas, incluindo cinco SDK; veja a
+[evidência](../../../entregas/2026-10-25-writer-v2-retirada-conjunta-de-lore.md).
+Coordenador da seleção completa e orçamento das unidades precedem
+transporte/recuperação/UI/compêndio. Limite transacional não limita autoria.
+Lifecycle/consumidores/backup/rollout/validate e demais fases/gates abertos.

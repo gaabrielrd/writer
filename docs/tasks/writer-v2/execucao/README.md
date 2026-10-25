@@ -1342,3 +1342,18 @@ temas/mobile/foco e tipos/build/smoke/lint positivos. Próximo: composição no
 compêndio com criação/edição/retirada e ações em lote nativas; preservar lote
 e revisar origem antes de aplicar. Lifecycle/consumidores/backup/rollout/
 validate de P1 e demais fases/gates abertos. Somente commit local, sem remoto.
+
+### P1 M38c5v — retirada conjunta de lore
+
+[Plano 120](120-retirada-conjunta-de-lore.md),
+[ADR 0135](../../../decisions/0135-atomic-lore-removal-batches.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-retirada-conjunta-de-lore.md).
+Primitiva interna retira unidade de até 50 na mesma transação, com frame único,
+origem preservada e prova nativa conjunta. Singular mantém seu formato.
+
+103 casos distintos positivos em rodadas (24 novos), incluindo cinco SDK
+distintos e unidade de 50 no emulador. Lint/sintaxe positivos. Ainda compor
+seleção completa/orçamento/transporte/recuperação/UI, sem converter o limite
+da unidade em cap de seleção ou renovar fontes cegamente entre unidades.
+Compêndio/lifecycle/consumidores/backup/rollout/validate e demais fases/gates
+abertos. Somente commit local; sem CI/envio remoto/deploy.

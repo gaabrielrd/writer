@@ -90,3 +90,12 @@ com namespaces próprios; executor recuperável, confirmação visual e composi�
 no compêndio continuam pendentes. Demais writers/consumidores, backup lógico/
 indexado e lifecycle permanecem antes do rollout. Guardas, Rules, índice e drain
 de versões antigas devem ser coordenados. Sem deploy; P1/F2-09/V2 abertos.
+
+## Unidade conjunta acrescentada — 2026-10-25
+
+[ADR 0135](0135-atomic-lore-removal-batches.md) extrai a preparação singular
+e acrescenta unidade interna de retirada conjunta. Contextos dos filhos
+mantêm formato/cleanup/handoff; timestamp e versões finais são compartilhados,
+com privacidade/revoked particular. Prova conjunta exige o mesmo nascimento
+nativo de todos os contextos e token original observado, sem agregar recibos
+singulares como se comprovassem uma transação. Coordenador/cliente/rollout abertos.

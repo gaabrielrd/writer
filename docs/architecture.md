@@ -2333,3 +2333,19 @@ de resultado remoto, preserva perfil e fenceia outro actor. Kit/temas/foco e
 nomes literais longos são mantidos. Sem montagem no compêndio: adaptar também
 ações em lote com captura/revisão próprias antes da composição final.
 Lifecycle/consumidores/backup/rollout/validate de P1 e demais gates abertos.
+
+## P1 M38c5v — retirada conjunta de lore
+
+[ADR 0135](decisions/0135-atomic-lore-removal-batches.md):
+prepareBookLoreRemovalStart/Batch compartilham leituras/validações e commit.
+Uma unidade interna de até 50 preserva sourceTokens/inspeções e retira todas as
+cabeças com um timestamp/clock/epoch; falha impede todos os efeitos.
+Comprovante/prova privados abaixo do primeiro job compartilham nascimento
+nativo com todos os contextos. Histórico fixa manifesto/frame/jobToken
+observado, sem recompor grupo por recibos individuais.
+
+Singular/cleanup/handoff/formatos dos filhos permanecem. Não há callable nem
+UI de lote. Coordenador completo deve preservar seleção e origem ao dividir
+unidades por orçamento real; 50 não é limite de autoria. Transporte,
+recuperação, compêndio, lifecycle/consumidores/backup/rollout/validate de P1 e
+demais fases/gates permanecem abertos.
