@@ -342,6 +342,14 @@ concluído estiverem satisfeitos. A lista fica em
   sem fabricar datas ou converter projeção de apresentação em fonte de escrita.
   Reautorize a ficha pelo token ao abri-la; conta/livro e epoch limitam resultados.
 - Mantenha cinco retomadas acessíveis mesmo quando a lista de fichas falhar.
-  Releia valores atuais após provas e preserve falhas selecionadas. Lateral,
-  menções e revisão assistida exigem migração própria antes do rollout; não
-  enfraqueça hasLoreResources para contornar entradas ainda antigas.
+  Releia valores atuais após provas e preserve falhas selecionadas.
+- Na lateral do editor e menções, use BookLoreAuthoring pela interface pública;
+  callbacks do formulário legado atendem somente o universo (ADR 0144).
+  Fixe nome/alvo originais e não substitua rascunho por novas props.
+- Compartilhe leitura C1/v2 para modal e detalhes inline; não use DTO visual
+  como fonte de escrita. Mantenha o host aberto na transição leitura/edição.
+- Não registre bloqueio de navegação inativo. Aguarde operação do capítulo antes
+  de iniciar autoria, sem desmontar rascunho já aberto.
+- A revisão assistida anterior à criação edita a proposta em RAM; preserve esse
+  contrato. Não enfraqueça hasLoreResources nem habilite rollout antes do
+  inventário/drain de todos os produtores e consumidores.

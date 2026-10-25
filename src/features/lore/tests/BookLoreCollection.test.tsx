@@ -1,6 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { act, renderHook, renderWithProviders, screen, waitFor, within } from '@/test/render';
 import { StrictMode } from 'react';
+import { BookLoreAuthoring } from '../components/BookLoreAuthoring';
+import { BookLoreInlineDetails } from '../components/BookLoreInlineDetails';
 import { useBookLoreCollection } from '../hooks/useBookLoreCollection';
 import { chooseDropdown } from '@/test/dropdown';
 import { Dialog, Button } from '@/shared/ui';
@@ -590,4 +592,135 @@ it('a newer explicit refresh wins even when an older request finishes afterwards
   expect(hook.result.current.rows[0]?.name).toBe('Latest authorized');
   expect(hook.result.current.error).toBe('');
   hook.unmount();
+});
+
+it('public authoring freezes the original mention target and returns that target on close', async () => {
+  const closed = vi.fn(),
+    confirmed = vi.fn(),
+    target = { kind: 'create' as const, initialName: '  🌙 Original ' };
+  const { user, rerender } = renderWithProviders(
+    <BookLoreAuthoring
+      open
+      bookId="book"
+      target={target}
+      entities={[]}
+      onClose={closed}
+      onConfirmed={confirmed}
+    />,
+  );
+  expect(last(s.create)).toMatchObject({ initialName: '  🌙 Original ' });
+  rerender(
+    <BookLoreAuthoring
+      open
+      bookId="book"
+      target={{ kind: 'create', initialName: 'Replacement' }}
+      entities={[]}
+      onClose={closed}
+      onConfirmed={confirmed}
+    />,
+  );
+  expect(last(s.create)).toMatchObject({ initialName: '  🌙 Original ' });
+  await user.click(screen.getByRole('button', { name: 'Confirmar no fluxo nativo' }));
+  expect(confirmed).toHaveBeenCalledOnce();
+  await user.click(screen.getByRole('button', { name: 'Fechar tentativa' }));
+  expect(closed).toHaveBeenCalledExactlyOnceWith(target);
+});
+it('a chapter operation delays first authoring entry but cannot unmount a draft already opened', () => {
+  const close = vi.fn(),
+    props = {
+      open: true,
+      bookId: 'book',
+      target: { kind: 'create' as const, initialName: 'Seed' },
+      entities: [],
+      onClose: close,
+    };
+  const { rerender } = renderWithProviders(<BookLoreAuthoring {...props} disabled />);
+  expect(screen.getByRole('dialog')).toHaveTextContent('Aguarde a operação do capítulo');
+  expect(s.create).not.toHaveBeenCalled();
+  rerender(<BookLoreAuthoring {...props} />);
+  expect(screen.getByRole('dialog', { name: 'Criação nativa' })).toBeInTheDocument();
+  rerender(<BookLoreAuthoring {...props} disabled />);
+  expect(screen.getByRole('dialog', { name: 'Criação nativa' })).toBeInTheDocument();
+});
+it('recovery cannot mount an editor while the chapter operation is active', async () => {
+  const props = {
+    open: true,
+    bookId: 'book',
+    target: { kind: 'recoveries' as const },
+    entities: [],
+    onClose: vi.fn(),
+  };
+  const { user, rerender } = renderWithProviders(<BookLoreAuthoring {...props} disabled />);
+  await user.click(screen.getByRole('button', { name: 'Retomar edição fixture' }));
+  expect(s.edit).not.toHaveBeenCalled();
+  rerender(<BookLoreAuthoring {...props} />);
+  await user.click(screen.getByRole('button', { name: 'Retomar edição fixture' }));
+  expect(last(s.edit)).toMatchObject({
+    bookId: 'book',
+    loreId: 'arthur',
+    resumeWriteId: 'write-edit',
+  });
+});
+it('inline details authorize C1 before showing full text, including absent consent as private', async () => {
+  const pending = deferred<BookLoreEditSource>();
+  s.capture.mockReturnValueOnce(pending.promise);
+  renderWithProviders(<BookLoreInlineDetails bookId="book" loreId="camelot" entities={[]} />);
+  expect(screen.getByText('Conferindo a ficha completa...')).toBeInTheDocument();
+  expect(
+    screen.queryByRole('region', { name: 'Ficha completa de Camelot' }),
+  ).not.toBeInTheDocument();
+  await act(async () => {
+    pending.resolve({
+      ...sources()[1]!,
+      data: { ...sources()[1]!.data, details: 'Authorized body' },
+    });
+    await pending.promise;
+  });
+  expect(
+    await screen.findByRole('region', { name: 'Ficha completa de Camelot' }),
+  ).toHaveTextContent('Authorized body');
+  expect(screen.getByText('Privado (somente autor)')).toBeInTheDocument();
+  expect(s.capture).toHaveBeenCalledWith('book', 'camelot', undefined);
+});
+it('inline details discard a late source after the selected ID or actor changes', async () => {
+  const pending = deferred<BookLoreEditSource>();
+  s.capture.mockReturnValueOnce(pending.promise);
+  const { rerender } = renderWithProviders(
+    <BookLoreInlineDetails bookId="book" loreId="arthur" entities={[]} />,
+  );
+  rerender(<BookLoreInlineDetails bookId="book" loreId="camelot" entities={[]} />);
+  await screen.findByRole('region', { name: 'Ficha completa de Camelot' });
+  await act(async () => {
+    pending.resolve({
+      ...sources()[0]!,
+      data: { ...sources()[0]!.data, details: 'OLD PRIVATE BODY' },
+    });
+    await pending.promise;
+  });
+  expect(screen.queryByText('OLD PRIVATE BODY')).not.toBeInTheDocument();
+  s.actor = { uid: 'author', displayName: '' };
+  s.capture.mockRejectedValueOnce(Error('Reauthorization required'));
+  rerender(<BookLoreInlineDetails bookId="book" loreId="camelot" entities={[]} />);
+  await screen.findByText('Reauthorization required');
+  expect(
+    screen.queryByRole('region', { name: 'Ficha completa de Camelot' }),
+  ).not.toBeInTheDocument();
+});
+
+it('public authoring transitions from reauthorized read to edit without closing the host', async () => {
+  const closed = vi.fn();
+  const { user } = renderWithProviders(
+    <BookLoreAuthoring
+      open
+      bookId="book"
+      target={{ kind: 'read', loreId: 'arthur' }}
+      entities={[]}
+      onClose={closed}
+    />,
+  );
+  await screen.findByRole('dialog', { name: 'Arthur' });
+  await user.click(screen.getByRole('button', { name: 'Editar Ficha' }));
+  expect(last(s.edit)).toMatchObject({ bookId: 'book', loreId: 'arthur' });
+  expect(closed).not.toHaveBeenCalled();
+  expect(screen.getByRole('dialog', { name: 'Edição nativa' })).toBeInTheDocument();
 });

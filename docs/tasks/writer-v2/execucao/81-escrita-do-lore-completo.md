@@ -792,3 +792,22 @@ Ainda faltam EditorLoreSidebar, menções e revisão assistida no plano 125,
 preservando nome inicial, retorno e escopo. Não enfraquecer hasLoreResources.
 Lifecycle/consumidores/backup/restauração/rollout/drain/validate de P1 e fases/
 gates humanos/comerciais continuam necessários. Sem CI/remoto/deploy.
+
+## Lateral e menções, marco E — M38c6e
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md) e
+[ADR 0144](../../../decisions/0144-native-editor-book-lore-authoring.md):
+lateral local e menções usam BookLoreAuthoring, cinco retomadas e leitura C1/v2.
+Nome/alvo originais, retorno ao editor e rascunhos protegidos preservados;
+callbacks legados de EditorPage atendem somente o universo. Ler e editar mantém
+o host aberto; bloqueio inativo não compete com a proteção do formulário.
+
+Inventário manual corrigiu o marco D: AssistedBookPage edita proposta em RAM
+antes da criação; não deve usar o writer de uma ficha existente. Análise tem
+contrato próprio. A composição manual da etapa 5 está implementada localmente;
+demais produtores/consumidores, lifecycle de chaves/exclusão, backup/restauração,
+drain/rollout/validate de P1 e fases/gates continuam necessários.
+Sem CI/envio remoto/deploy.
+
+[Evidência M38c6e](../../../entregas/2026-10-25-writer-v2-lore-nativo-na-lateral-do-editor.md):
+124 casos distintos, 30 jornadas Chromium distintas e build2979 positivos.

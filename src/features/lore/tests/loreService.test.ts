@@ -68,6 +68,18 @@ beforeEach(() => {
 });
 
 describe('loreService', () => {
+  it.each([undefined, null, 'true', false])(
+    'mantém consentimento ausente ou inválido privado: %s',
+    async (isPublic) => {
+      vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+        exists: () => true,
+        id: 'e-private',
+        data: () => ({ name: 'Ficha', category: 'character', isPublic }),
+      } as unknown as firestoreModule.DocumentSnapshot);
+      expect((await getLoreEntity('b-1', 'e-private'))?.isPublic).toBe(false);
+    },
+  );
+
   it('uses stable versions for legacy records with no timestamps', async () => {
     vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
       exists: () => true,

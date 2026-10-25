@@ -154,3 +154,56 @@ declarar o plano 125 concluído nem habilitar rollout com writers antigos.
 Lifecycle de chaves/exclusão, demais escritores e consumidores, backup/
 restauração, rollout/drain/validate de P1 e fases/gates humanos/comerciais
 continuam necessários. Somente commit local; sem CI/envio remoto/deploy.
+
+## Marco E — plano da lateral do editor e menções
+
+1. Criação protegida aceita nome inicial literal, fixo na tentativa e ignorado
+   na retomada, sem substituir rascunho por mudanças de props.
+2. Compartilhar leitura C1/v2 reautorizada e conteúdo visual entre ficha modal
+   e detalhes inline; expor host público para ações/retomadas da lateral.
+3. EditorLoreSidebar encaminha local para hosts nativos, com cinco retomadas;
+   preserva filtros, destaque, detalhes inline, nome de menção e escopo global.
+   EditorPage recebe confirmação somente para reler; handlers antigos recusam
+   escrita local. Respostas antigas não atualizam outra sessão.
+4. Coordenar proteção de navegação do capítulo e formulário nativo, incluindo
+   busy do capítulo e retomadas; não permitir que um bloqueio inativo tome
+   precedência sobre uma operação ativa.
+5. Testes de nome inicial, leitura/contexto, composição da lateral/parent,
+   navegação e serviços afetados; Chromium nativo e ajustes de fixtures visuais.
+   Documentar e commit local, sem CI/remoto/deploy; validate no fim de P1.
+
+Arquivos previstos: criação/Reader/hook/conteúdo de lore e host público/index,
+EditorLoreSidebar/EditorPage/BusyNavigationGuard, apresentação de consentimento
+local, testes correspondentes e prévia visual, ADR/AGENTS/docs/evidência.
+
+Inspeção corrigiu a suposição sobre AssistedBookPage: seu LoreEntityForm altera
+somente proposal.entities em memória antes da criação atômica do livro. Não
+convertê-lo em writer de ficha existente nem exigir raiz que ainda não existe.
+LoreAnalysisDialog envia a proposta pelo serviço próprio de análise; preserve
+esse contrato. Demais writers/consumidores e rollout continuam com seus gates.
+
+## Marco E — lateral e menções compostas localmente
+
+EditorLoreSidebar encaminha criação, edição, leitura e cinco retomadas locais
+para BookLoreAuthoring. Nome/alvo originais fixos, rascunho protegido, foco de
+retorno e bloqueio de navegação preservados. EditorPage recusa callbacks de
+escrita local e apenas relê após prova; consentimento ausente continua privado.
+Modal e detalhe inline compartilham C1/v2, sem repetir o resumo do card.
+A transição Ver Ficha → Editar Ficha mantém o mesmo host aberto.
+[ADR 0144](../../../decisions/0144-native-editor-book-lore-authoring.md).
+
+O inventário das entradas manuais atualiza a pendência do marco D:
+LoreCollection/LoreTab, LorePage/BookPage, lateral e menções usam os hosts nativos
+nos escopos de livro. Universos e aventuras mantêm seus contratos. O formulário
+assistido altera somente a proposta em RAM, antes da criação atômica; não é
+writer manual de ficha existente. Análise segue seu serviço próprio.
+
+A composição manual prevista na etapa 5 está implementada localmente. O plano
+não autoriza rollout nem conclui o inventário/drain dos demais produtores e
+consumidores. Preserve a barreira hasLoreResources e as pendências de lifecycle,
+chaves/exclusão, backup/restauração, rollout/validate de P1 e fases 3–5/gates
+humanos/comerciais. Somente commit local, sem CI/push/PR/merge/deploy.
+
+[Evidência do marco E](../../../entregas/2026-10-25-writer-v2-lore-nativo-na-lateral-do-editor.md):
+124 casos dirigidos distintos, 30 jornadas Chromium distintas e checks locais
+positivos. Recarga real e retomada sem replay conferidas nos seis projetos.

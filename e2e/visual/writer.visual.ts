@@ -522,10 +522,10 @@ test('menções @ permitem criação cancelável e seleção sem trocar de capí
   await manuscript.fill('@Avalon');
   await expect(page.getByRole('option', { name: /Criar “Avalon”/ })).toBeVisible();
   await manuscript.press('Enter');
-  const dialog = page.getByRole('dialog', { name: 'Cadastrar Nova Entidade no Compêndio' });
+  const dialog = page.getByRole('dialog', { name: 'Nova ficha de lore' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel('Nome da Entidade')).toHaveValue('Avalon');
-  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(dialog.getByLabel('Nome', { exact: true })).toHaveValue('Avalon');
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).first().click();
   await expect(dialog).toHaveCount(0);
   await expect(manuscript).toHaveText('@Avalon');
   await manuscript.fill('@Li');

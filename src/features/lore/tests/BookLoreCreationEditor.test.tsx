@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { beforeEach, it, expect, vi } from 'vitest';
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -484,4 +485,38 @@ it('stops automatic cleanup retries after a repeated conflict and preserves the 
   expect(s.cancel).toHaveBeenCalledTimes(3);
   expect(s.discard).not.toHaveBeenCalled();
   expect(screen.getByRole('button', { name: 'Cancelar preparação' })).toBeEnabled();
+});
+
+it('keeps the literal mention seed private and does not manufacture optional fields', async () => {
+  const name = '\ufeff  Lune 🌙\r\n',
+    { user } = editor({ initialName: name });
+  expect(screen.getByLabelText('Nome', { exact: true })).toHaveValue(name.replace(/\r\n/g, '\n'));
+  await user.click(screen.getByRole('button', { name: 'Preparar ficha' }));
+  await screen.findByRole('button', { name: 'Criar ficha' });
+  expect(s.create.mock.calls[0]![0].data).toEqual({ name, category: 'character', isPublic: false });
+});
+it('a later initialName prop cannot overwrite an open draft or its protected preparation', async () => {
+  let change!: (name: string) => void;
+  function Seed() {
+    const [name, setName] = useState('First');
+    change = setName;
+    return <BookLoreCreationEditor open bookId="book" initialName={name} onClose={() => {}} />;
+  }
+  const router = createMemoryRouter([{ path: '/', element: <Seed /> }]);
+  render(<RouterProvider router={router} />);
+  const user = userEvent.setup();
+  await user.clear(screen.getByLabelText('Nome', { exact: true }));
+  await user.type(screen.getByLabelText('Nome', { exact: true }), 'Own draft');
+  act(() => change('Replacement'));
+  expect(screen.getByLabelText('Nome', { exact: true })).toHaveValue('Own draft');
+  await user.click(screen.getByRole('button', { name: 'Preparar ficha' }));
+  await screen.findByRole('button', { name: 'Criar ficha' });
+  expect(s.create.mock.calls[0]![0].data.name).toBe('Own draft');
+});
+it('resuming uses the protected draft and ignores a new mention seed', async () => {
+  const { user } = editor({ resumeWriteId: 'resume', initialName: 'UNTRUSTED SEED' });
+  expect(screen.queryByDisplayValue('UNTRUSTED SEED')).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Retomar preparação' }));
+  expect(await screen.findByLabelText('Nome', { exact: true })).toHaveValue('\ufeff Original\n');
+  expect(s.create).not.toHaveBeenCalled();
 });

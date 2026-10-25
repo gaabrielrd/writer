@@ -51,3 +51,11 @@ export type {
 } from './components/BookLoreVisibilitySelectionDialog';
 export { BookLoreVisibilitySelectionRecoveries } from './components/BookLoreVisibilitySelectionRecoveries';
 export type { BookLoreVisibilitySelectionRecoveriesProps } from './components/BookLoreVisibilitySelectionRecoveries';
+
+export { BookLoreAuthoring } from './components/BookLoreAuthoring';
+export type {
+  BookLoreAuthoringProps,
+  BookLoreAuthoringTarget,
+} from './components/BookLoreAuthoring';
+export { BookLoreInlineDetails } from './components/BookLoreInlineDetails';
+export type { BookLoreInlineDetailsProps } from './components/BookLoreInlineDetails';

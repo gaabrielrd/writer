@@ -4,6 +4,7 @@ import type {
   LoreScope,
   UpdateLoreEntityInput,
 } from '../../../src/features/lore/model/loreEntity';
+import { presentBookLore } from '../../../src/features/lore/model/bookLorePresentation';
 import { author, lore, FIXTURE_TIME } from './data';
 import { fixtureOwner } from './studioStore';
 
@@ -79,7 +80,30 @@ function emit() {
 export function subscribeLoreEntities(
   scope: string | LoreScope,
   changed: (entities: LoreEntity[]) => void,
+  failed?: (error: unknown) => void,
 ) {
+  if (window.__writerVisualNativeLoreCall && (typeof scope === 'string' || scope.kind === 'book')) {
+    let active = true;
+    const owner = fixtureOwner();
+    const reload = () => {
+      void listLoreEntities(scope)
+        .then((rows) => {
+          if (active && fixtureOwner() === owner) changed(rows);
+        })
+        .catch((error: unknown) => {
+          if (active) {
+            changed([]);
+            failed?.(error);
+          }
+        });
+    };
+    window.addEventListener('writer.visual.native-lore', reload);
+    reload();
+    return () => {
+      active = false;
+      window.removeEventListener('writer.visual.native-lore', reload);
+    };
+  }
   const listener = { scope, changed, ownerId: fixtureOwner() };
   listeners.add(listener);
   emit();
@@ -88,16 +112,56 @@ export function subscribeLoreEntities(
   };
 }
 
-export function listLoreEntities(bookId: string | LoreScope): Promise<LoreEntity[]> {
+export async function listLoreEntities(bookId: string | LoreScope): Promise<LoreEntity[]> {
+  if (
+    window.__writerVisualNativeLoreCall &&
+    (typeof bookId === 'string' || bookId.kind === 'book')
+  ) {
+    const { bookLoreReadSession } = await import('./bookLoreReadFixture');
+    const sources = await bookLoreReadSession().captureList(
+      typeof bookId === 'string' ? bookId : bookId.id,
+    );
+    return sources.map((source) => {
+      const { structuredDetails: details, ...row } = presentBookLore(source),
+        d = source.data;
+      if (typeof d.createdAt !== 'number' || typeof d.updatedAt !== 'number')
+        throw Error('Native visual fixture requires original dates.');
+      return {
+        id: row.id,
+        bookId: row.bookId,
+        name: row.name,
+        category: row.category,
+        aliases: row.aliases,
+        summary: row.summary,
+        details: row.details,
+        relations: row.relations,
+        isPublic: row.isPublic,
+        createdAt: d.createdAt,
+        updatedAt: d.updatedAt,
+        ...(details
+          ? {
+              structuredDetails: {
+                appearance: details.appearance ?? '',
+                personality: details.personality ?? '',
+                history: details.history ?? '',
+                notes: details.notes ?? '',
+              },
+            }
+          : {}),
+      };
+    });
+  }
   return Promise.resolve(
     structuredClone([...store().values()].filter((entity) => belongs(entity, bookId))),
   );
 }
 
-export function getLoreEntity(
+export async function getLoreEntity(
   bookId: string | LoreScope,
   entityId: string,
 ): Promise<LoreEntity | null> {
+  if (window.__writerVisualNativeLoreCall && (typeof bookId === 'string' || bookId.kind === 'book'))
+    return (await listLoreEntities(bookId)).find((e) => e.id === entityId) ?? null;
   const entity = store().get(entityId);
   return Promise.resolve(structuredClone(entity && belongs(entity, bookId) ? entity : null));
 }

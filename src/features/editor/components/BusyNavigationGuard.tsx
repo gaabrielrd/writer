@@ -52,5 +52,5 @@ export function BusyNavigationGuard(props: NavigationGuardProps) {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [busy]);
-  return router ? <DataRouterGuard {...props} /> : null;
+  return router && busy ? <DataRouterGuard {...props} /> : null;
 }

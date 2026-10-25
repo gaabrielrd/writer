@@ -38,6 +38,7 @@ import {
   updateLoreEntity,
   subscribeLoreEntities,
   entityScope,
+  currentBookLoreActor,
   type CreateLoreEntityInput,
   type UpdateLoreEntityInput,
   type LoreEntity,
@@ -176,6 +177,15 @@ function EditorSession() {
   }, []);
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(false);
   const [loreRefreshError, setLoreRefreshError] = useState<string | null>(null);
+  const loreRefreshOwner = useRef({ alive: true, epoch: 0 });
+  useEffect(() => {
+    const owner = loreRefreshOwner.current;
+    owner.alive = true;
+    return () => {
+      owner.alive = false;
+      owner.epoch++;
+    };
+  }, []);
   const handleBusyChange = useCallback(
     (busy: boolean) => {
       aiBusyRef.current = busy;
@@ -351,22 +361,25 @@ function EditorSession() {
     scope: 'local' | 'global' = 'local',
   ) => {
     if (!bookId) return;
-    if (scope === 'global' && !book?.universeId) throw new Error('Este livro não possui universo.');
+    if (scope !== 'global') throw new Error('Use a criação protegida do livro.');
+    if (!book?.universeId) throw new Error('Este livro não possui universo.');
     const newEntity: LoreEntity = await createLoreEntity(
-      scope === 'global' ? { kind: 'universe', id: book!.universeId! } : bookId,
+      { kind: 'universe', id: book.universeId },
       input,
     );
-    const setter = scope === 'global' ? setGlobalLoreEntities : setLoreEntities;
-    setter((prev) => [...prev.filter((item) => item.id !== newEntity.id), newEntity]);
+    setGlobalLoreEntities((prev) => [
+      ...prev.filter((item) => item.id !== newEntity.id),
+      newEntity,
+    ]);
   };
 
   const handleUpdateLoreEntity = async (id: string, input: UpdateLoreEntityInput) => {
     if (!bookId) return;
     const entity = allLoreEntities.find((item) => item.id === id);
     if (!entity) throw new Error('Entidade não disponível.');
-    await updateLoreEntity(entity.universeId ? entityScope(entity) : bookId, id, input);
-    const setter = entity.universeId ? setGlobalLoreEntities : setLoreEntities;
-    setter((prev) =>
+    if (!entity.universeId) throw new Error('Use a edição protegida do livro.');
+    await updateLoreEntity(entityScope(entity), id, input);
+    setGlobalLoreEntities((prev) =>
       prev.map((e) => (e.id === id ? { ...e, ...input, updatedAt: Date.now() } : e)),
     );
   };
@@ -514,18 +527,36 @@ function EditorSession() {
 
   const refreshLore = async () => {
     if (!book) return;
+    const owner = loreRefreshOwner.current,
+      epoch = ++owner.epoch,
+      current = () => owner.alive && owner.epoch === epoch,
+      actor = currentBookLoreActor();
     try {
-      const [local, global] = await Promise.all([
+      if (!actor || actor.uid !== book.authorId || actor.uid !== user?.uid)
+        throw Error('O contexto do compêndio mudou.');
+      const results = await Promise.allSettled([
         listLoreEntities(book.id),
         book.universeId
           ? listLoreEntities({ kind: 'universe', id: book.universeId })
           : Promise.resolve([]),
       ]);
-      setLoreEntities(local);
-      setGlobalLoreEntities(global);
+      if (!current()) return;
+      if (currentBookLoreActor() !== actor) throw Error('O contexto do compêndio mudou.');
+      const local = results[0],
+        global = results[1];
+      if (local.status === 'rejected') throw local.reason;
+      if (global.status === 'rejected') throw global.reason;
+      setLoreEntities(local.value);
+      setGlobalLoreEntities(global.value);
       setLoreRefreshError(null);
     } catch {
-      setLoreRefreshError('O lote foi aplicado, mas não foi possível recarregar o compêndio.');
+      if (current()) {
+        setLoreEntities([]);
+        setGlobalLoreEntities([]);
+        setLoreRefreshError(
+          'Não foi possível recarregar o compêndio. As alterações confirmadas foram mantidas.',
+        );
+      }
     }
   };
 
@@ -901,11 +932,18 @@ function EditorSession() {
             <EditorLoreSidebar
               onAnalyzeText={globalLoreError ? undefined : () => setIsAnalysisOpen(true)}
               isOpen={isSidebarOpen}
+              bookId={book.id}
+              disabled={operationBusy}
+              onNativeConfirmed={() => void refreshLore()}
               entities={allLoreEntities}
               universeId={book.universeId}
               selectedEntityId={selectedEntityId}
               createEntityName={createEntityName}
-              onCreateRequestHandled={() => setCreateEntityName(null)}
+              onCreateRequestHandled={(name) =>
+                setCreateEntityName((current) =>
+                  name === undefined || current === name ? null : current,
+                )
+              }
               onClose={() => setIsSidebarOpen(false)}
               onCreateEntity={handleCreateLoreEntity}
               onUpdateEntity={handleUpdateLoreEntity}

@@ -7,6 +7,8 @@ import {
   test,
 } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID, lore } from './fixtures/data';
+import { installNativeBookLore } from './nativeBookLore.mjs';
+import { chooseDropdown } from '../dropdown';
 
 test('livro cria pelos dados essenciais e mantém detalhes opcionais ao recolher', async ({
   page,
@@ -44,56 +46,92 @@ test('livro cria pelos dados essenciais e mantém detalhes opcionais ao recolher
   ).toBeVisible();
 });
 
-test('ficha salva uma alteração direta, preserva detalhes e mostra impacto na publicação', async ({
+test('ficha prepara alteração direta, preserva detalhes e mostra visibilidade privada', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(120_000);
+  await installNativeBookLore(page);
   await page.goto(`/books/${FIXTURE_BOOK_ID}`);
   await page.getByRole('tab', { name: 'Compêndio', exact: true }).click();
   const trigger = page.getByRole('button', { name: 'Editar Lia', exact: true });
   await trigger.click();
-  const dialog = page.getByRole('dialog', { name: 'Editar Entidade: Lia' });
+  const dialog = page.getByRole('dialog', { name: 'Editar lore do livro' });
+  await expect(dialog.getByLabel('Nome', { exact: true })).toHaveValue('Lia');
   await capture(page, testInfo, 'lore-essenciais');
-  await dialog.getByLabel('Resumo Curto').fill('Cartógrafa das ilhas esquecidas.');
-  await expect(dialog.getByLabel('Aparência')).not.toBeVisible();
-  await expect(dialog.getByLabel(/Tornar visível/)).toBeVisible();
-  await dialog.getByLabel(/Tornar visível/).uncheck();
-  await expect(dialog.getByRole('alert')).toContainText('A publicação será retirada');
-  await capture(page, testInfo, 'lore-aviso-publicacao');
-  await dialog.getByRole('button', { name: 'Salvar Alterações' }).click();
-  await expect(dialog).toHaveCount(0);
-  await expect(trigger).toBeFocused();
-  await trigger.click();
-  await expect(dialog.getByLabel('Resumo Curto')).toHaveValue('Cartógrafa das ilhas esquecidas.');
-  await dialog.getByRole('button', { name: /^História e notas/ }).click();
-  await expect(dialog.getByLabel('Ficha Detalhada / Lore Completo (opcional)')).toHaveValue(
-    lore[0].details,
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Resumo');
+  await dialog.getByLabel('Resumo', { exact: true }).fill('Cartógrafa das ilhas esquecidas.');
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Visibilidade');
+  await chooseDropdown(
+    dialog.getByRole('combobox', { name: 'Visibilidade', exact: true }),
+    'Privado',
   );
+  await capture(page, testInfo, 'lore-visibilidade-privada');
+  await dialog.getByRole('button', { name: 'Preparar alterações', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Aplicar alterações', exact: true })).toBeEnabled(
+    { timeout: 60_000 },
+  );
+  await dialog.getByRole('button', { name: 'Aplicar alterações', exact: true }).click();
+  await expect(dialog.getByText('Alterações aplicadas à ficha.', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).first().click();
+  await dialog.getByRole('button', { name: 'Fechar e manter recuperação', exact: true }).click();
+  // Refresh replaces the original card; the native collection uses its stable list control.
+  await expect(
+    page.getByRole('button', { name: 'Visualização em lista', exact: true }),
+  ).toBeFocused();
+  await trigger.click();
+  await expect(dialog.getByLabel('Nome', { exact: true })).toHaveValue('Lia');
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Resumo');
+  await expect(dialog.getByLabel('Resumo', { exact: true })).toHaveValue(
+    'Cartógrafa das ilhas esquecidas.',
+  );
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Visibilidade');
+  await expect(dialog.getByRole('combobox', { name: 'Visibilidade', exact: true })).toHaveText(
+    'Privado',
+  );
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Detalhes');
+  await expect(dialog.getByLabel('Detalhes', { exact: true })).toHaveValue(lore[0].details);
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'lore-secoes');
-  await page.keyboard.press('Escape');
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).first().click();
   await expect(trigger).toBeFocused();
 });
 
-test('sidebar cria lore sem etapas em 320px e conserva rodapé ao abrir detalhes', async ({
+test('sidebar prepara lore protegido em 320px e conserva rodapé ao revisar detalhes', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(120_000);
+  await installNativeBookLore(page);
   await page.setViewportSize({ width: 320, height: 640 });
   await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
   await page.getByRole('button', { name: /^Compêndio(?: \d+)?$/ }).click();
   await page.getByRole('button', { name: 'Nova Entidade', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome da Entidade').fill('Estação das Cartas');
-  await dialog.getByLabel('Resumo Curto').fill('Um refúgio entre as ilhas.');
-  await dialog.getByRole('button', { name: /^Características/ }).click();
-  await dialog.getByLabel('Aparência').fill('Uma casa de janelas azuis.');
-  await dialog.getByRole('button', { name: /^Características/ }).click();
-  await expect(dialog.getByLabel('Aparência')).not.toBeVisible();
-  const submit = dialog.getByRole('button', { name: 'Cadastrar Entidade' });
+  await dialog.getByLabel('Nome', { exact: true }).fill('Estação das Cartas');
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Resumo');
+  await dialog.getByRole('button', { name: 'Adicionar resumo', exact: true }).click();
+  await dialog.getByLabel('Resumo', { exact: true }).fill('Um refúgio entre as ilhas.');
+  await chooseDropdown(
+    dialog.getByRole('combobox', { name: 'Campo em edição' }),
+    'Características e notas',
+  );
+  await dialog
+    .getByRole('button', { name: 'Adicionar características e notas', exact: true })
+    .click();
+  await dialog.getByRole('button', { name: 'Adicionar aparência', exact: true }).click();
+  await dialog.getByLabel('Aparência', { exact: true }).fill('Uma casa de janelas azuis.');
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Nome');
+  await expect(dialog.getByLabel('Aparência', { exact: true })).not.toBeVisible();
+  const submit = dialog.getByRole('button', { name: 'Preparar ficha', exact: true });
   await expect(submit).toBeInViewport();
   await expectDialogWithinViewport(page);
   await expectNoHorizontalOverflow(page, 'lore-320');
   await capture(page, testInfo, 'lore-320');
   await submit.click();
+  const create = dialog.getByRole('button', { name: 'Criar ficha', exact: true });
+  await expect(create).toBeEnabled({ timeout: 60_000 });
+  await create.click();
+  await expect(dialog.getByText('Ficha criada no livro.', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).first().click();
   await expect(dialog).toHaveCount(0);
   await expect(page.getByText('Estação das Cartas', { exact: true })).toBeVisible();
 });

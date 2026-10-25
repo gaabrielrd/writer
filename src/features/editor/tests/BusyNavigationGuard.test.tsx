@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { createMemoryRouter, Link, MemoryRouter, RouterProvider } from 'react-router';
-import { expect, it } from 'vitest';
+import { createMemoryRouter, Link, MemoryRouter, RouterProvider, useBlocker } from 'react-router';
+import { expect, it, vi } from 'vitest';
 import { BusyNavigationGuard } from '../components/BusyNavigationGuard';
 
 function Editor() {
@@ -104,4 +104,38 @@ it('falha de armazenamento bloqueia descarte enquanto preserva o texto', async (
   render(<RouterProvider router={router} />);
   await userEvent.setup().click(screen.getByRole('link', { name: 'Home' }));
   expect(screen.getByRole('button', { name: 'Sair sem guardar' })).toBeDisabled();
+});
+
+it('an inactive chapter guard cannot compete with the protected form router guard', async () => {
+  function Form() {
+    const blocker = useBlocker(true);
+    return (
+      <>
+        <BusyNavigationGuard busy={false} />
+        <h1>Form protected</h1>
+        <Link to="/">Home</Link>
+        {blocker.state === 'blocked' && (
+          <button onClick={() => blocker.reset()}>Continue form</button>
+        )}
+      </>
+    );
+  }
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  try {
+    const router = createMemoryRouter(
+      [
+        { path: '/form', element: <Form /> },
+        { path: '/', element: <h1>Outside</h1> },
+      ],
+      { initialEntries: ['/form'] },
+    );
+    render(<RouterProvider router={router} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('link', { name: 'Home' }));
+    expect(await screen.findByRole('button', { name: 'Continue form' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Outside' })).not.toBeInTheDocument();
+    expect(warn).not.toHaveBeenCalled();
+  } finally {
+    warn.mockRestore();
+  }
 });

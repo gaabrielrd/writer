@@ -2490,3 +2490,23 @@ positivos. Não prova produção, piloto humano ou performance real.
 
 EditorLoreSidebar, menções/revisão assistida e demais entradas ainda pendentes.
 Validate no fim de P1; fases/gates humanos/comerciais mantidos. Sem CI/remoto/deploy.
+
+### P1 M38c6e — lateral e menções nativas
+
+[ADR 0144](decisions/0144-native-editor-book-lore-authoring.md) e
+[evidência](entregas/2026-10-25-writer-v2-lore-nativo-na-lateral-do-editor.md):
+124 casos distintos dirigidos em sete arquivos positivos; alvo/nome originais,
+busy, C1/v2 inline, contexto, leitura → edição, callbacks locais recusados,
+releitura após prova e regressões globais/serviços.
+
+30 jornadas Chromium distintas positivas: matriz de quatro cenários × seis
+projetos (24), minimapa/criação em 320px (duas) e regressões do compêndio/resumo
+(quatro). A autoria foi repetida nos seis projetos com recarga real antes
+da recuperação; não somar essas repetições ao total distinto. Quantidade de
+adoções permanece a mesma após retomar.
+
+React/serviços/journal/IDB/locks/AES reais, handlers nativos com Firestore em
+memória e SDK/Auth/App Check/HTTP de chave em fixtures isoladas. Capturas
+inspecionadas nos três temas e celular; não comprova produção ou piloto humano.
+Tipos/lint/build2979/smoke/arquitetura/styleguide/docs/formatação positivos.
+Validate no fechamento de P1; sem CI ou envio remoto.

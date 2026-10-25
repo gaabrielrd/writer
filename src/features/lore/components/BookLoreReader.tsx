@@ -1,53 +1,41 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { Button, Dialog, ErrorState, LoadingState } from '@/shared/ui';
 import type { LoreMentionEntity } from '../model/loreEntity';
-import { presentBookLore, type BookLorePresentation } from '../model/bookLorePresentation';
-import { bookLoreReadSession } from '../services/bookLoreReadService';
+import { useBookLorePresentation } from '../hooks/useBookLorePresentation';
+import { useBookLoreActor } from '../hooks/useBookLoreActor';
 import { LoreDrawer } from './LoreDrawer';
 
-export function BookLoreReader({
-  bookId,
-  entity,
-  entities,
-  onClose,
-  onEdit,
-}: {
+export interface BookLoreReaderProps {
   bookId: string;
-  entity: BookLorePresentation;
+  loreId: string;
+  sourceToken?: string;
   entities: readonly LoreMentionEntity[];
   onClose: () => void;
-  onEdit: (id: string) => void;
-}) {
-  const [value, setValue] = useState<BookLorePresentation | null>(null),
-    [error, setError] = useState(''),
-    [reload, setReload] = useState(0),
+  onEdit?: (id: string) => void;
+}
+export function BookLoreReader(props: BookLoreReaderProps) {
+  const actor = useBookLoreActor();
+  return actor !== null ? (
+    <Content
+      key={JSON.stringify([actor, props.bookId, props.loreId, props.sourceToken])}
+      {...props}
+    />
+  ) : null;
+}
+function Content({ bookId, loreId, sourceToken, entities, onClose, onEdit }: BookLoreReaderProps) {
+  const { value, error, retry } = useBookLorePresentation(bookId, loreId, sourceToken),
     errorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (error) errorRef.current?.focus();
   }, [error]);
-  useEffect(() => {
-    let live = true;
-    void (async () => {
-      const reader = bookLoreReadSession(() => live, { tokenVersion: 2 }),
-        source = await reader.capture(bookId, entity.id, entity.sourceToken);
-      reader.guard();
-      if (!source) throw Error('A ficha está indisponível. Atualize o compêndio.');
-      const next = presentBookLore(source);
-      if (live) setValue(next);
-    })().catch((e: unknown) => {
-      if (live) setError(e instanceof Error ? e.message : 'Não foi possível abrir a ficha.');
-    });
-    return () => {
-      live = false;
-    };
-  }, [bookId, entity.id, entity.sourceToken, reload]);
   return value ? (
     <LoreDrawer
       open
       entity={value}
       allEntities={entities}
       onClose={onClose}
-      onEdit={(e) => onEdit(e.id)}
+      closeOnEdit={false}
+      onEdit={onEdit ? (e) => onEdit(e.id) : undefined}
     />
   ) : (
     <Dialog
@@ -65,16 +53,7 @@ export function BookLoreReader({
           <ErrorState
             title="Não foi possível abrir a ficha"
             description={error}
-            action={
-              <Button
-                onClick={() => {
-                  setError('');
-                  setReload((n) => n + 1);
-                }}
-              >
-                Tentar novamente
-              </Button>
-            }
+            action={<Button onClick={retry}>Tentar novamente</Button>}
           />
         </div>
       ) : (

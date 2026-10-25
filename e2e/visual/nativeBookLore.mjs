@@ -32,7 +32,7 @@ export async function installNativeBookLore(page) {
   await page.route(/\/firebase_functions\.js(?:\?.*)?$/, (route) =>
     route.fulfill({
       contentType: 'text/javascript',
-      body: "import {auth} from '/e2e/visual/fixtures/firebase.ts';export const getFunctions=()=>({region:'us-central1'});export const httpsCallable=(_,name)=>async input=>({data:await window.__writerVisualNativeLoreCall(name,input,auth.currentUser.uid)});",
+      body: "import {auth} from '/e2e/visual/fixtures/firebase.ts';export const getFunctions=()=>({region:'us-central1'});export const httpsCallable=(_,name)=>async input=>{const data=await window.__writerVisualNativeLoreCall(name,input,auth.currentUser.uid);if(name==='bookLoreEdit'&&input.method.startsWith('adoptBookLore'))window.dispatchEvent(new Event('writer.visual.native-lore'));return {data};};",
     }),
   );
   await page.route(/\/firebase_app-check\.js(?:\?.*)?$/, (route) =>

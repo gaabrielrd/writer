@@ -1470,3 +1470,22 @@ Plano 125 não concluído: faltam lateral do editor, menções e revisão assist
 antes da migração/drain de todos os writers. Lifecycle/consumidores/backup/
 restauração/rollout/validate de P1 e fases/gates seguem no objetivo.
 Somente commit local; sem CI/envio remoto/deploy.
+
+### P1 M38c6e — lore nativo na lateral e menções
+
+[Plano 125](125-visibilidade-duravel-da-selecao-de-lore.md), marco E e
+[ADR 0144](../../../decisions/0144-native-editor-book-lore-authoring.md).
+Criação/edição/leitura e cinco retomadas locais pela interface pública do lore,
+com nome/alvo originais e volta ao manuscrito. EditorPage somente relê após prova;
+callbacks antigos atendem o universo. C1/v2 compartilhado entre modal e inline.
+
+A etapa 5 de composição manual está implementada localmente. A pendência anterior
+de revisão assistida foi corrigida pelo inventário: o formulário edita a proposta
+em RAM antes da criação atômica, sem writer manual de ficha existente.
+Lifecycle, demais produtores/consumidores, backup/restauração, drain/rollout/
+validate de P1 e fases/gates humanos/comerciais seguem abertos.
+Somente commit local, sem CI/envio remoto/deploy.
+
+[Evidência M38c6e](../../../entregas/2026-10-25-writer-v2-lore-nativo-na-lateral-do-editor.md):
+124 casos dirigidos distintos e 30 jornadas Chromium distintas positivos;
+build2979 e checks locais positivos. Retomada após recarga conferida nos seis projetos.

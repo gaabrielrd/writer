@@ -15,6 +15,7 @@ export interface LoreDrawerProps<T extends ReadableLore = LoreEntity> {
   open: boolean;
   onClose: () => void;
   onEdit?: (entity: T) => void;
+  closeOnEdit?: boolean;
 }
 
 const CATEGORY_LABELS: Record<LoreCategory, string> = {
@@ -40,10 +41,9 @@ export function LoreDrawer<T extends ReadableLore>({
   open,
   onClose,
   onEdit,
+  closeOnEdit = true,
 }: LoreDrawerProps<T>) {
   if (!open || !entity) return null;
-
-  const entityMap = new Map(allEntities.map((e) => [e.id, e]));
 
   return (
     <Dialog
@@ -59,7 +59,7 @@ export function LoreDrawer<T extends ReadableLore>({
             <Button
               variant="primary"
               onClick={() => {
-                onClose();
+                if (closeOnEdit) onClose();
                 onEdit(entity);
               }}
             >
@@ -70,96 +70,115 @@ export function LoreDrawer<T extends ReadableLore>({
         </div>
       }
     >
-      <div className={styles.container}>
-        <div className={styles.metaRow}>
-          <div className={styles.categoryRow}>
+      <LoreRecord entity={entity} allEntities={allEntities} />
+    </Dialog>
+  );
+}
+
+export function LoreRecord<T extends ReadableLore>({
+  entity,
+  allEntities,
+  showOverview = true,
+}: {
+  entity: T;
+  allEntities: readonly LoreMentionEntity[];
+  showOverview?: boolean;
+}) {
+  const entityMap = new Map(allEntities.map((e) => [e.id, e]));
+  return (
+    <div className={styles.container}>
+      <div className={styles.metaRow}>
+        <div className={styles.categoryRow}>
+          {showOverview && (
             <Badge variant={CATEGORY_BADGES[entity.category]}>
               {CATEGORY_LABELS[entity.category]}
             </Badge>
-            {entity.isPublic ? (
-              <span className={styles.publicBadge}>
-                <Eye className="icon icon-sm" aria-hidden="true" />
-                <span>Público no leitor</span>
-              </span>
-            ) : (
-              <span className={styles.privateBadge}>
-                <EyeOff className="icon icon-sm" aria-hidden="true" />
-                <span>Privado (somente autor)</span>
-              </span>
-            )}
+          )}
+          {entity.isPublic ? (
+            <span className={styles.publicBadge}>
+              <Eye className="icon icon-sm" aria-hidden="true" />
+              <span>Público no leitor</span>
+            </span>
+          ) : (
+            <span className={styles.privateBadge}>
+              <EyeOff className="icon icon-sm" aria-hidden="true" />
+              <span>Privado (somente autor)</span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {showOverview && entity.aliases.length > 0 && (
+        <div className={styles.section}>
+          <strong className={styles.sectionTitle}>Apelidos / Aliases:</strong>
+          <div className={styles.aliasesList}>
+            {entity.aliases.map((alias, idx) => (
+              <Badge key={idx} variant="neutral">
+                <Tag className="icon icon-sm" aria-hidden="true" />
+                {alias}
+              </Badge>
+            ))}
           </div>
         </div>
+      )}
 
-        {entity.aliases.length > 0 && (
-          <div className={styles.section}>
-            <strong className={styles.sectionTitle}>Apelidos / Aliases:</strong>
-            <div className={styles.aliasesList}>
-              {entity.aliases.map((alias, idx) => (
-                <Badge key={idx} variant="neutral">
-                  <Tag className="icon icon-sm" aria-hidden="true" />
-                  {alias}
-                </Badge>
-              ))}
-            </div>
-          </div>
-        )}
-
+      {showOverview && (
         <div className={styles.section}>
           <strong className={styles.sectionTitle}>Resumo:</strong>
           <p className={styles.summaryText}>{entity.summary}</p>
         </div>
+      )}
 
-        {entity.details && (
-          <div className={styles.section}>
-            <strong className={styles.sectionTitle}>Ficha Detalhada:</strong>
-            <div className={styles.detailsBox}>
-              {entity.details.split('\n').map((line, idx) => (
-                <p key={idx} className={styles.detailLine}>
-                  {line || '\u00A0'}
-                </p>
-              ))}
-            </div>
+      {entity.details && (
+        <div className={styles.section}>
+          <strong className={styles.sectionTitle}>Ficha Detalhada:</strong>
+          <div className={styles.detailsBox}>
+            {entity.details.split('\n').map((line, idx) => (
+              <p key={idx} className={styles.detailLine}>
+                {line || '\u00A0'}
+              </p>
+            ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {entity.structuredDetails &&
-          (
-            [
-              ['appearance', 'Aparência'],
-              ['personality', 'Personalidade'],
-              ['history', 'Histórico'],
-              ['notes', 'Notas privadas'],
-            ] as const
-          ).map(([field, label]) =>
-            entity.structuredDetails?.[field] ? (
-              <div className={styles.section} key={field}>
-                <strong className={styles.sectionTitle}>{label}:</strong>
-                <p className={styles.detailsBox}>{entity.structuredDetails[field]}</p>
-              </div>
-            ) : null,
-          )}
-        {entity.relations.length > 0 && (
-          <div className={styles.section}>
-            <strong className={styles.sectionTitle}>Relações Cadastradas:</strong>
-            <div className={styles.relationsList}>
-              {entity.relations.map((rel, idx) => {
-                const target =
-                  rel.available === false ? undefined : entityMap.get(rel.targetEntityId);
-                return (
-                  <div key={idx} className={styles.relationItem}>
-                    <span className={styles.relTypeBadge}>{rel.relationType}</span>
-                    <strong className={styles.targetName}>
-                      {target ? target.name : 'Entidade indisponível'}
-                    </strong>
-                    {target && <Badge variant="neutral">{CATEGORY_LABELS[target.category]}</Badge>}
-                    {rel.description && <span className={styles.relDesc}>— {rel.description}</span>}
-                  </div>
-                );
-              })}
+      {entity.structuredDetails &&
+        (
+          [
+            ['appearance', 'Aparência'],
+            ['personality', 'Personalidade'],
+            ['history', 'Histórico'],
+            ['notes', 'Notas privadas'],
+          ] as const
+        ).map(([field, label]) =>
+          entity.structuredDetails?.[field] ? (
+            <div className={styles.section} key={field}>
+              <strong className={styles.sectionTitle}>{label}:</strong>
+              <p className={styles.detailsBox}>{entity.structuredDetails[field]}</p>
             </div>
-          </div>
+          ) : null,
         )}
-      </div>
-    </Dialog>
+      {entity.relations.length > 0 && (
+        <div className={styles.section}>
+          <strong className={styles.sectionTitle}>Relações Cadastradas:</strong>
+          <div className={styles.relationsList}>
+            {entity.relations.map((rel, idx) => {
+              const target =
+                rel.available === false ? undefined : entityMap.get(rel.targetEntityId);
+              return (
+                <div key={idx} className={styles.relationItem}>
+                  <span className={styles.relTypeBadge}>{rel.relationType}</span>
+                  <strong className={styles.targetName}>
+                    {target ? target.name : 'Entidade indisponível'}
+                  </strong>
+                  {target && <Badge variant="neutral">{CATEGORY_LABELS[target.category]}</Badge>}
+                  {rel.description && <span className={styles.relDesc}>— {rel.description}</span>}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

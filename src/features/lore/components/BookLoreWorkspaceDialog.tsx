@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Dialog, Dropdown } from '@/shared/ui';
+import { Alert, Button, Dialog, Dropdown } from '@/shared/ui';
 import type { LoreMentionEntity } from '../model/loreEntity';
 import type { BookLorePresentation } from '../model/bookLorePresentation';
 import { BookLoreCreationEditor } from './BookLoreCreationEditor';
@@ -16,9 +16,10 @@ import { BookLoreReader } from './BookLoreReader';
 
 type Target = { readonly loreId: string; readonly sourceToken: string };
 export type BookLoreWorkspaceMode =
-  | { kind: 'create'; writeId?: string }
+  | { kind: 'create'; writeId?: string; initialName?: string }
   | { kind: 'edit'; loreId: string; writeId?: string }
   | { kind: 'read'; entity: BookLorePresentation }
+  | { kind: 'read-current'; loreId: string }
   | { kind: 'remove'; loreId: string; sourceToken?: string; name?: string; writeId?: string }
   | { kind: 'remove-selection'; targets?: readonly Target[]; selectionId?: string }
   | { kind: 'visibility'; targets?: readonly Target[]; selectionId?: string; value?: boolean }
@@ -29,6 +30,7 @@ export function BookLoreWorkspaceDialog({
   mode,
   bookId,
   entities,
+  disabled = false,
   onClose,
   onMode,
   onCompleted,
@@ -36,6 +38,7 @@ export function BookLoreWorkspaceDialog({
   mode: BookLoreWorkspaceMode;
   bookId: string;
   entities: readonly LoreMentionEntity[];
+  disabled?: boolean;
   onClose: () => void;
   onMode: (mode: BookLoreWorkspaceMode) => void;
   onCompleted: (ids: readonly string[], message: string) => void;
@@ -47,6 +50,7 @@ export function BookLoreWorkspaceDialog({
           open
           bookId={bookId}
           resumeWriteId={mode.writeId}
+          initialName={mode.initialName}
           entities={entities}
           onClose={onClose}
           onCreated={(id) =>
@@ -76,10 +80,21 @@ export function BookLoreWorkspaceDialog({
         <BookLoreReader
           key={JSON.stringify([bookId, mode.entity.id, mode.entity.sourceToken])}
           bookId={bookId}
-          entity={mode.entity}
+          loreId={mode.entity.id}
+          sourceToken={mode.entity.sourceToken}
           entities={entities}
           onClose={onClose}
-          onEdit={(loreId) => onMode({ kind: 'edit', loreId })}
+          onEdit={disabled ? undefined : (loreId) => onMode({ kind: 'edit', loreId })}
+        />
+      );
+    case 'read-current':
+      return (
+        <BookLoreReader
+          bookId={bookId}
+          loreId={mode.loreId}
+          entities={entities}
+          onClose={onClose}
+          onEdit={disabled ? undefined : (loreId) => onMode({ kind: 'edit', loreId })}
         />
       );
     case 'remove':
@@ -149,29 +164,36 @@ export function BookLoreWorkspaceDialog({
             </Button>
           }
         >
-          <BookLoreRecoveries
-            bookId={bookId}
-            entities={entities}
-            onSelect={(writeId, loreId) => onMode({ kind: 'edit', writeId, loreId })}
-          />
-          <BookLoreCreationRecoveries
-            bookId={bookId}
-            entities={entities}
-            onSelect={(writeId) => onMode({ kind: 'create', writeId })}
-          />
-          <BookLoreRemovalRecoveries
-            bookId={bookId}
-            entities={entities}
-            onSelect={(writeId, loreId) => onMode({ kind: 'remove', writeId, loreId })}
-          />
-          <BookLoreRemovalSelectionRecoveries
-            bookId={bookId}
-            onSelect={(selectionId) => onMode({ kind: 'remove-selection', selectionId })}
-          />
-          <BookLoreVisibilitySelectionRecoveries
-            bookId={bookId}
-            onSelect={(selectionId) => onMode({ kind: 'visibility', selectionId })}
-          />
+          {disabled && (
+            <Alert>
+              Uma operação do capítulo está em andamento. Aguarde para abrir uma retomada.
+            </Alert>
+          )}
+          <fieldset className="contents" disabled={disabled}>
+            <BookLoreRecoveries
+              bookId={bookId}
+              entities={entities}
+              onSelect={(writeId, loreId) => onMode({ kind: 'edit', writeId, loreId })}
+            />
+            <BookLoreCreationRecoveries
+              bookId={bookId}
+              entities={entities}
+              onSelect={(writeId) => onMode({ kind: 'create', writeId })}
+            />
+            <BookLoreRemovalRecoveries
+              bookId={bookId}
+              entities={entities}
+              onSelect={(writeId, loreId) => onMode({ kind: 'remove', writeId, loreId })}
+            />
+            <BookLoreRemovalSelectionRecoveries
+              bookId={bookId}
+              onSelect={(selectionId) => onMode({ kind: 'remove-selection', selectionId })}
+            />
+            <BookLoreVisibilitySelectionRecoveries
+              bookId={bookId}
+              onSelect={(selectionId) => onMode({ kind: 'visibility', selectionId })}
+            />
+          </fieldset>
         </Dialog>
       );
   }

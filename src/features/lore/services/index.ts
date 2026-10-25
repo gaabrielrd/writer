@@ -89,3 +89,5 @@ export type {
 } from './bookLoreVisibilitySelectionContracts';
 
 export type { VisibilitySelectionReview } from './bookLoreVisibilitySelectionReview';
+
+export { currentBookLoreActor } from './bookLoreEditService';

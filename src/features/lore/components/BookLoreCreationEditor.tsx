@@ -14,12 +14,15 @@ export interface BookLoreCreationEditorProps {
   open: boolean;
   bookId: string;
   resumeWriteId?: string;
+  /** Literal seed for a new attempt; ignored when resuming a protected draft. */
+  initialName?: string;
   entities?: readonly LoreMentionEntity[];
   onClose: () => void;
   onCreated?: (loreId: string) => void;
 }
 type Operation = ReturnType<ReturnType<typeof bookLoreEditSession>['createLore']>;
-const initial = () => Object.freeze({ name: '', category: 'character', isPublic: false });
+const initial = (name?: string) =>
+  Object.freeze({ name: name ?? '', category: 'character', isPublic: false });
 const message = (e: unknown) =>
   e instanceof Error ? e.message : 'Não foi possível concluir. Seus dados foram preservados.';
 /** Prepared host; mount only with coordinated native authoring entries. */
@@ -32,14 +35,15 @@ export function BookLoreCreationEditor(props: BookLoreCreationEditorProps) {
 function Content({
   bookId,
   resumeWriteId: originalResumeId,
+  initialName,
   entities,
   onClose,
   onCreated,
 }: BookLoreCreationEditorProps) {
   const [creatingNew, setCreatingNew] = useState(false),
     resumeWriteId = creatingNew ? undefined : originalResumeId,
-    [data, setData] = useState<Readonly<Record<string, unknown>> | null>(
-      originalResumeId ? null : initial,
+    [data, setData] = useState<Readonly<Record<string, unknown>> | null>(() =>
+      originalResumeId ? null : initial(initialName),
     ),
     [changes, setChanges] = useState<readonly BookLoreEditChange[]>([]),
     [state, setState] = useState<DurableBookLoreCreationSnapshot | null>(null),

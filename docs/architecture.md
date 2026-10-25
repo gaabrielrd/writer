@@ -2490,3 +2490,27 @@ com Firestore em memória, SDK/Auth/App Check em fixtures.
 continua aberto: lateral do editor, menções e revisão assistida ainda precisam
 migrar sem perder ações/retornos/rascunhos. Demais lifecycle/consumidores/backup/
 rollout/drain/validate de P1 e fases/gates seguem no objetivo. Sem deploy.
+
+## P1 M38c6e — lateral e menções com lore nativo
+
+[ADR 0144](decisions/0144-native-editor-book-lore-authoring.md):
+EditorLoreSidebar usa a interface pública BookLoreAuthoring para autoria local,
+leitura e cinco retomadas. Nome/alvo originais ficam fixos; retomada não usa
+semente nova. Callbacks antigos de EditorPage atendem somente o universo;
+confirmação nativa apenas relê, drenando ambas as leituras e conferindo actor
+SDK exato, sessão e época antes de publicar dados.
+
+Reader modal e detalhes inline compartilham captura C1/v2 e apresentação em RAM,
+com reautorização antes do corpo. Detalhes inline não repetem o resumo do card.
+Transição leitura/edição mantém o host. Bloqueio de navegação inativo não compete
+com o formulário; primeira entrada aguarda busy do capítulo sem desmontar um
+rascunho já aberto depois.
+
+O inventário corrigiu a suposição do marco D: o formulário de AssistedBookPage
+edita proposal.entities em RAM, antes da criação atômica, sem writer de ficha
+existente. LoreAnalysisDialog usa serviço de análise próprio. Não substituir
+esses contratos por uma operação manual de uma raiz ainda inexistente.
+
+Esta seção atualiza a pendência manual do marco D. Lifecycle de chaves/exclusão,
+demais escritores/consumidores, backup/restauração, drain/rollout/validate de P1 e
+fases/gates humanos/comerciais seguem necessários. Sem deploy ou alteração remota.

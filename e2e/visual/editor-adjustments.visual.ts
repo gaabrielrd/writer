@@ -64,7 +64,11 @@ test('compêndio compacto mantém busca, filtros e ações nos três temas', asy
   await expectNoHorizontalOverflow(page, 'compêndio em 320px');
   await panel.getByRole('button', { name: 'Nova Entidade' }).click();
   await expectDialogWithinViewport(page);
-  await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Fechar', exact: true })
+    .first()
+    .click();
   await panel.getByRole('button', { name: 'Fechar painel de lore' }).click();
   await expect(panel).toHaveCount(0);
 });
