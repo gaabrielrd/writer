@@ -1765,3 +1765,13 @@ Firebase. 75 Vitest distintos positivos, incluindo preparações atual/JSON v6 c
 serviço real até revisão; [evidência](../../../entregas/2026-10-25-writer-v2-preparacao-retomavel-no-cliente.md).
 Journal durável/cifrado concreto, upload/revisão/ativação/mídia/limpeza do cliente,
 UI/roundtrip integral e demais P1/V2/fases/gates continuam obrigatórios.
+
+### P1 — journal protegido da preparação (plano 138)
+
+[Plano 138](138-journal-protegido-da-preparacao.md): chave HTTP autorizada,
+AES-GCM sem chave persistida, IndexedDB/Web Locks e CAS completo. Driver recupera
+mesmo pedido após reinício; recusas preservam ciphertext.
+35 Vitest e dez cenários Chromium positivos; veja a
+[evidência](../../../entregas/2026-10-25-writer-v2-journal-protegido-da-preparacao.md).
+UI/descarte terminal/upload/revisão/ativação/mídia/limpeza/roundtrip e demais
+P1/V2/fases/gates continuam obrigatórios.

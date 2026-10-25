@@ -72,3 +72,10 @@ export type {
   BookRestorePreparationProgress,
   BookRestorePreparationStep,
 } from './model/bookRestorePreparation';
+
+export { createBookRestorePreparationJournal } from './services/bookRestorePreparationJournal';
+export { bookRestorePreparationStorageAvailable } from './services/bookRestorePreparationDb';
+export type {
+  BookRestoreRecoveryContext,
+  BookRestoreRecoveryGrant,
+} from './services/bookRestoreRecoveryKey';

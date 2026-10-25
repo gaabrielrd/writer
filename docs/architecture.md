@@ -2915,3 +2915,17 @@ e conta impedem entrega tardia; revisão para sem ativação automática.
 Completude de índices decide a passagem à auditoria dentro de resources-finalize.
 Ainda faltam journal cifrado concreto, upload/revisão/ativação/mídia/limpeza do
 cliente e UI; [evidência](entregas/2026-10-25-writer-v2-preparacao-retomavel-no-cliente.md).
+
+## P1 — journal cifrado da preparação
+
+[ADR 0159](decisions/0159-protected-restore-preparation-journal.md):
+HTTP de recuperação existente entrega chave somente após Auth/App Check/contexto;
+cliente importa chave não extraível e não a persiste. Envelope AES-GCM liga
+contexto/stamp por AAD e guarda apenas intenção limitada cifrada.
+
+IndexedDB dedicado e Web Lock por conta/restauração; rede/crypto fora da transação,
+CAS do envelope completo dentro dela. Fábrica pública satisfaz o port do driver
+e reautoriza antes de abrir/substituir. Origem terminal sem chave conserva
+ciphertext. Proxy local exato acompanha rewrite Hosting existente.
+[Resultados/limites](entregas/2026-10-25-writer-v2-journal-protegido-da-preparacao.md);
+UI e demais P1/fases/gates continuam pendentes.

@@ -2878,3 +2878,14 @@ Falha de seleção corrigida para índices completos, ajuste da asserção do do
 durações e alcance na
 [evidência](entregas/2026-10-25-writer-v2-preparacao-retomavel-no-cliente.md).
 Journal em memória não comprova recuperação após recarga; UI/validate pendentes.
+
+## P1 — journal protegido da preparação
+
+35 Vitest distintos positivos em seleções: chave HTTP/contexto, crypto/AAD/
+não extração, coordenação do journal e proxy exato. Dez cenários Chromium
+nativos positivos provam IndexedDB/Web Locks, reinício completo, abas, aborto,
+revogação/adulteração, CAS contra escritor externo e driver com resposta perdida
+retomando o mesmo pedido. Serviço remoto/grants são simulados; não há prova de
+credenciais ou Firebase de produção. Correções/checks e alcance na
+[evidência](entregas/2026-10-25-writer-v2-journal-protegido-da-preparacao.md).
+Validate integral de P1 e UI/roundtrip continuam pendentes.

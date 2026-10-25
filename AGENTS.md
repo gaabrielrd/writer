@@ -573,3 +573,14 @@ concluído estiverem satisfeitos. A lista fica em
   índices antes de escolher auditoria. Nunca ative automaticamente em activation-ready.
 - Revalide conta/vida útil após waits; instância não executa unidades concorrentes.
   Port de journal não comprova persistência cifrada ou recuperação após recarga.
+
+## Journal protegido da preparação de livros
+
+- Use chave HTTP autorizada/contexto exato e AES-GCM não extraível; não persista
+  chave, tokens, prosa ou arquivo no journal (ADR 0159).
+- Vincule contexto/stamp por AAD, limite intenção/envelope e reautorize antes
+  de abrir/substituir. Erros de parser não revelam resposta ou plaintext.
+- Faça crypto/rede fora da transação IndexedDB; Web Locks coordena abas,
+  CAS interno compara envelope inteiro, não só stamp ou operationId.
+- Preserve ciphertext em falhas/revogação; origem terminal sem chave não autoriza
+  reabertura ou descarte implícito. Não use fallback plaintext.
