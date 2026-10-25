@@ -1,3 +1,5 @@
+import { createBookLorePortableClient } from './bookLorePortableClient';
+import { createBookLoreUnitReader } from './bookLoreReadUnits';
 import { freezeBookLoreEditSource, type BookLoreEditSource } from './bookLoreWritePlan';
 import { validateBookBackupJSONItem } from '../../../../functions/src/bookBackupSchema.mjs';
 import {
@@ -5,7 +7,6 @@ import {
   readId,
   readHash,
   readObject,
-  readManifest,
   readHeader,
   readList,
   loreReadFields,
@@ -13,7 +14,6 @@ import {
   type LoreReadCall,
   type LoreReadGuard,
   type LoreReadHeader,
-  type LoreReadManifest,
   type LoreReadItem,
 } from './bookLoreReadContracts';
 
@@ -69,70 +69,13 @@ export function createBookLoreReadClient(
     page: number,
     field?: LoreReadField,
   ) {
-    let manifest: LoreReadManifest | undefined =
-      kind === 'base'
-        ? (view.base ?? undefined)
-        : kind === 'field' && view.schemaVersion === 2 && field
-          ? (view.fields[field] ?? undefined)
-          : undefined;
-    const offset = kind === 'relations' ? page * 64 : null;
-    const count = kind === 'relations' ? Math.min(64, view.relations!.count - page * 64) : null;
-    const part = async (index: number) => {
-      const raw = await rpc('readBookLorePart', {
-        bookId: view.bookId,
-        id: view.id,
-        readToken: view.readToken,
-        section: kind,
-        ...(kind === 'field' ? { field } : {}),
-        page,
-        index,
-      });
-      const r = readObject(raw, [
-        'schemaVersion',
-        'bookId',
-        'id',
-        'readToken',
-        'section',
-        'page',
-        'index',
-        'manifest',
-        'offset',
-        'count',
-        'chunkBase64',
-        ...(kind === 'field' ? ['field'] : []),
-      ]);
-      const actual = readManifest(r.manifest);
-      if (
-        r.schemaVersion !== 1 ||
-        r.bookId !== view.bookId ||
-        r.id !== view.id ||
-        r.readToken !== view.readToken ||
-        r.section !== kind ||
-        (kind === 'field' && r.field !== field) ||
-        r.page !== page ||
-        r.index !== index ||
-        r.offset !== offset ||
-        r.count !== count ||
-        (manifest !== undefined && !equal(actual, manifest)) ||
-        typeof r.chunkBase64 !== 'string' ||
-        r.chunkBase64.length > 87384
-      )
-        throw invalidLoreRead();
-      manifest ??= actual;
-      let binary: string;
-      try {
-        binary = atob(r.chunkBase64);
-        if (btoa(binary) !== r.chunkBase64) throw invalidLoreRead();
-      } catch {
-        throw invalidLoreRead();
-      }
-      if (binary.length !== Math.min(65536, manifest.byteLength - index * 65536))
-        throw invalidLoreRead();
-      return Uint8Array.from(binary, (c) => c.charCodeAt(0));
-    };
-    const first = await part(0);
+    const unit = createBookLoreUnitReader(rpc, guard, view, kind, page, field);
+    const firstUnit = await unit(0),
+      manifest = firstUnit.manifest;
+    const part = async (index: number) => (await unit(index)).bytes;
+    const first = firstUnit.bytes;
     // Allocation follows the authenticated descriptor; platform failures never become empty lore.
-    const expected = manifest!;
+    const expected = manifest;
     const bytes = new Uint8Array(expected.byteLength);
     bytes.set(first);
     for (let start = 1; start < expected.chunkCount; start += 4) {
@@ -312,5 +255,14 @@ export function createBookLoreReadClient(
     guard();
     return header(bookId, id, readToken);
   }
-  return { get, list, capture, captureList, captureCollection, verifyCollection, metadata };
+  return {
+    get,
+    list,
+    capture,
+    captureList,
+    captureCollection,
+    verifyCollection,
+    metadata,
+    ...createBookLorePortableClient(rpc, guard),
+  };
 }

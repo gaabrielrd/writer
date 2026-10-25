@@ -95,3 +95,5 @@ export type { VisibilitySelectionReview } from './bookLoreVisibilitySelectionRev
 export { currentBookLoreActor } from './bookLoreEditService';
 
 export { verifyBookLorePublicationCandidate } from './bookLorePublicationInspection';
+
+export type { BookLorePortableProof, BookLorePortableWrite } from './bookLorePortableClient';

@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { GenerationError, validateId } from './generation.mjs';
+import { validateId } from './generation.mjs';
 import { digest } from './sceneContracts.mjs';
 import { BOOK_RESOURCE_KINDS } from './bookBackupResources.mjs';
 import { BOOK_PERSONA_SCOPES } from './bookBackupPersonas.mjs';
@@ -25,27 +25,8 @@ export const BOOK_RESTORE_METHODS = [
   'cancelBookRestore',
   'advanceBookRestoreCleanup',
 ];
-export function restoreFail(code, reason) {
-  const error = new GenerationError(
-    code,
-    'Não foi possível concluir a preparação da cópia do livro.',
-  );
-  error.details = { reason };
-  throw error;
-}
-export const invalid = (reason = 'invalid-input') => restoreFail('invalid-argument', reason);
-export const inconsistent = () => restoreFail('failed-precondition', 'identity-conflict');
-export function closed(value, required, optional = []) {
-  if (
-    !value ||
-    typeof value !== 'object' ||
-    Array.isArray(value) ||
-    required.some((k) => !Object.hasOwn(value, k)) ||
-    Object.keys(value).some((k) => ![...required, ...optional].includes(k))
-  )
-    invalid();
-  return value;
-}
+import { restoreFail, invalid, inconsistent, closed } from './bookRestoreInput.mjs';
+export { restoreFail, invalid, inconsistent, closed };
 export function restoreId(value) {
   try {
     return validateId(value);

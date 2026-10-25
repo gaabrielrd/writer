@@ -435,3 +435,10 @@ concluído estiverem satisfeitos. A lista fica em
   contrato das páginas nativas de 64 relações nem aceite estado v2 nas APIs antigas.
 - Preserve o checkpoint sem prosa/lista integral e trate IDs/ranges como metadata,
   sem conceder leitura ou ativação por esse índice puro (ADR 0151).
+
+- Componha lore portátil pela leitura C1 fixada no clock da coleção, sem DTO
+  visual, reler corpos por página ou guardar a ficha inteira em RAM (ADR 0151).
+- Aguarde o consumo da parte antes de ler a próxima; confira SHA/EOF/domínio/
+  header antes da prova e mantenha bytes provisórios até o selo do arquivo.
+- Revalidação metadata não certifica bytes/corpos atuais; não habilite arquivo
+  ou restauração antes de integrar validação e materialização por spans.

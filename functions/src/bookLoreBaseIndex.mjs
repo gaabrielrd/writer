@@ -1,6 +1,6 @@
 import { bookContentId } from './bookBackupSchema.mjs';
-import { closed } from './bookRestoreUploadContracts.mjs';
-import { workFail } from './workProgressContracts.mjs';
+import { closed } from './bookRestoreInput.mjs';
+import { GenerationError } from './generationError.mjs';
 import {
   createBookLoreFieldValidation,
   advanceBookLoreFieldPrefixValidation,
@@ -27,12 +27,14 @@ const fields = BOOK_LORE_BASE_FIELDS,
         : mask,
     0,
   );
-const bad = () =>
-  workFail(
+const bad = () => {
+  const error = new GenerationError(
     'failed-precondition',
     'A base do lore não corresponde ao formato esperado.',
-    'book-lore-base-invalid',
   );
+  error.details = { reason: 'book-lore-base-invalid' };
+  throw error;
+};
 const safe = (v) => Number.isSafeInteger(v) && v >= 0;
 function checkpoint(s) {
   closed(s, [
@@ -147,8 +149,8 @@ function endValue(s) {
   s.valueBytes = 0;
   s.phase = 'after';
 }
-/** One bounded canonical-JSON unit. The checkpoint stores metadata and syntax, never prose. */
-export function advanceBookLoreBaseIndex(input, bytes, observers) {
+/** One bounded canonical-JSON unit. Raw value callbacks are RAM-only; numeric dates stay in metadata. */
+export function advanceBookLoreBaseIndex(input, bytes, observers, valueBytes) {
   checkpoint(input);
   if (
     !(bytes instanceof Uint8Array) ||
@@ -188,8 +190,11 @@ export function advanceBookLoreBaseIndex(input, bytes, observers) {
         if (key === 'isPublic' && s.valueBytes === 0) s.isPublic = byte === 116;
         s.valueBytes += result.consumed;
         s.child = result.state;
+        const start = at,
+          complete = s.child.mode === 'done';
         at = end;
-        if (s.child.mode === 'done') endValue(s);
+        if (complete) endValue(s);
+        valueBytes?.(key, bytes.subarray(start, end), complete);
       }
       continue;
     }

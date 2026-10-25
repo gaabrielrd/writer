@@ -125,3 +125,54 @@ e [evidência](../../../entregas/2026-10-25-writer-v2-indice-portatil-do-lore.md
 A não está conectado à captura/validação/restauração; limites antigos não foram
 alterados. Continuar B → C → D antes de encerrar o plano. P1/F2-09/V2 e demais
 fases/gates permanecem abertos; validate integral somente no fechamento de P1.
+
+## Contrato B antes da implementação
+
+Reutilizar getBookLoreRead/readBookLorePart, sem novo endpoint/namespace/job.
+Uma captura individual fixa token C1 v1 (nascimento/clock da coleção e identidade
+nativa da ficha) antes de bytes. Cada parte reautoriza os mesmos livro/dono/
+ficha/geração/segmentos. Revalidar o header original depois da saída e oferecer
+revalidação metadata antes do selo geral futuro. Tokens ficam somente em RAM.
+
+Compor o JSON portátil sequencialmente. Inline já tem projeção lógica fechada.
+Em payload, inspecionar a base uma vez com o parser existente e um observador
+RAM dos bytes de cada valor; emitir só campos efetivos, omitir bookId e datas
+antigas v2, anexar overrides presentes/datas lógicas e juntar interiores das
+páginas de relações na ordem. Validar quantidade/domínio de cada página nativa.
+Objetos podem ter ordem de propriedades distinta do projetor antigo; ordem de
+aliases/relações e strings/datas permanecem literais e sem defaults.
+
+Conferir SHA integral de todo corpo consumido, inclusive base com campos
+substituídos. O índice A valida a saída data incrementalmente e produz spans;
+hash/contagem da saída completa e offset de data formam prova privada em RAM.
+Não reler ranges sem hash/prova da parte nem guardar hashes/prosa de todas as
+partes em memória. Estado é limitado a parsers, hash, unidade e buffer de saída.
+
+Escrever partes de até 64 KiB aguardando o consumidor; sem leitura antecipada
+enquanto write estiver pendente. Bytes são provisórios até EOF/hashes/domínio/
+header e selo. Abortar/fechar não retorna prova de conclusão; como as APIs são
+somente leitura, não há recurso remoto novo para limpar. O sink temporário já
+existente deverá ser abortado pelo compositor C em falha; não publicar arquivo
+parcial por causa de um write bem-sucedido.
+
+Extrair apenas helpers puros de erro/closed usados pelo parser da base,
+preservando reexports e erros antigos; não duplicar sua gramática. Compartilhar
+validação do DTO de parte entre o leitor anterior e o novo produtor. Marco B
+inclui composição e provas, não habilitação do arquivo final ainda limitado nos
+validadores C/D. Testar inline/v1/v2/criação, >8 MiB/128 partes, ausências,
+overrides, relações grandes, corrupção de cauda, identidade/clock/conta/abort,
+pressão de consumo, final sem chunks e leitura linear.
+
+## Estado do marco B — 2026-10-25
+
+WritePortable/verifyPortable expostos pelo serviço público C1; fonte fixada pelo
+clock, composição de base/overrides/datas/relações em uma leitura por corpo,
+hashes/domínio/spans e header final. Buffer com pressão de consumo, sem prosa
+integral ou novos recursos remotos. Helper de unidade compartilhado conserva
+o leitor anterior. 147 Node, 114 Vitest distintos, cinco SDK e três Chromium
+positivos; tipos/build/smoke/checks. [Evidência B](../../../entregas/2026-10-25-writer-v2-composicao-portatil-do-lore.md).
+
+B implementado/validado localmente. Não conectado ao orquestrador final:
+C deve integrar captura/validação incremental antes do selo, D deve consumir/
+remapear/materializar por spans e comprovar roundtrip sem teto artificial.
+Plano 131, P1/F2-09/V2 e fases/gates continuam abertos.

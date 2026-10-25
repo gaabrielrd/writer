@@ -1587,3 +1587,16 @@ Próximo passo é B: fonte lógica autorizada e índice de saída com custo line
 sem usar esse parser como grant ou habilitar captura/restauração parcial.
 Inventário geral/escritores/exclusão, backup/restauração/drain/rollout/validate
 integral de P1, fases 3–5 e gates continuam. Somente commits locais.
+
+### P1 M38c12 B — composição portátil individual
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): B implementado/validado localmente.
+C1 com clock de coleção, base em leitura única, overrides/datas/relações literais,
+hashes/spans e consumidor aguardado por parte. Sem endpoint/job/namespace novo.
+147 Node, 114 Vitest distintos, cinco SDK e três Chromium positivos; tipos/build/
+smoke/checks. [Evidência B](../../../entregas/2026-10-25-writer-v2-composicao-portatil-do-lore.md).
+
+Próximo passo C: ligar ao arquivo e à validação incremental local/servidor;
+depois D: leitor verificado/remap/materialização grandes e roundtrip. O caminho
+anterior de arquivo permanece; não usar B como autorização de ativação.
+Inventários/legacy/drain/rollout/validate de P1, fases 3–5 e gates continuam.

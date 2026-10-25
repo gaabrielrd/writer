@@ -2642,3 +2642,25 @@ separação da página nativa. Módulo sem Buffer, somente loopback. Bundle brow
 Vite de 12 módulos e declaração TS isolada positivos; lint JS e checks locais.
 Sem Vitest/SDK/build geral/validate neste marco puro; não é prova de backup ou
 restauração integrados. [Evidência](entregas/2026-10-25-writer-v2-indice-portatil-do-lore.md).
+
+## P1 M38c12 B — produtor portátil individual
+
+147/147 Node dirigidos (base/upload/inspeção/publicação): dois novos do observador
+e 145 regressões. 114 Vitest distintos positivos: 75 leitor/sessão, 26 produtor
+e 13 bridge de publicação; arquivo novo reexecutado após ajuste de fixture Unicode
+e validação individual de override. Regressão de injeção confirmada vermelha sem
+a correção e verde com ela.
+
+5/5 SDK no Firestore 1.22.0 verificado/demo/loopback com serviço C1 real e cliente
+compilado em memória. Fonte >8 MiB/128 partes, v2/criação, leitura única, clock
+alterado, parte recriada e SDK direto negado. Sem skipped na execução final;
+antes, before do harness corrigido para lista de resultados do build Vite.
+Após a revisão dos overrides, somente v2/criação/clock foram repetidos: 3/3,
+zero skipped. As três jornadas Chromium também foram repetidas com o ajuste.
+
+Três Chromium com C1 em memória: saída 10005932 bytes/153 partes/161 unidades
+distintas, overrides/relações; metadata sem prosa em contexto fresco; pressão
+de consumo e troca de ator. Build/typecheck/smoke (2988 módulos), bundle browser
+e checks locais positivos. Sem CI/remoto/deploy/validate global. Não comprova
+arquivo/restauração integrados: C/D ainda obrigatórios.
+[Evidência B](entregas/2026-10-25-writer-v2-composicao-portatil-do-lore.md).

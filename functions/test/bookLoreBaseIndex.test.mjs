@@ -163,3 +163,42 @@ test('input checkpoints are not mutated, size is limited per unit and corrupt st
     ),
   );
 });
+
+test('raw value observation is optional, bounded and leaves native metadata unchanged', () => {
+  const source = base(),
+    bytes = Buffer.from(JSON.stringify(source)),
+    pieces = new Map(),
+    completed = [];
+  let state = createBookLoreBaseIndex(source.bookId);
+  for (let at = 0; at < bytes.length; at += 7) {
+    const incoming = bytes.subarray(at, at + 7),
+      before = structuredClone(state);
+    state = advanceBookLoreBaseIndex(state, incoming, undefined, (field, raw, done) => {
+      assert.ok(raw.length <= incoming.length);
+      if (!pieces.has(field)) pieces.set(field, []);
+      pieces.get(field).push(Buffer.from(raw));
+      if (done) completed.push(field);
+    });
+    assert.notDeepEqual(state, before);
+  }
+  assert.deepEqual(finishBookLoreBaseIndex(state), scan(source).metadata);
+  for (const [field, parts] of pieces)
+    assert.equal(Buffer.concat(parts).toString(), JSON.stringify(source[field]));
+  assert.deepEqual(
+    new Set(completed),
+    new Set(Object.keys(source).filter((k) => !['createdAt', 'updatedAt'].includes(k))),
+  );
+  assert.equal(pieces.has('createdAt'), false);
+});
+test('a raw observer failure never mutates its input checkpoint or certifies a completed field', () => {
+  const state = createBookLoreBaseIndex('book'),
+    before = structuredClone(state);
+  assert.throws(
+    () =>
+      advanceBookLoreBaseIndex(state, Buffer.from('{"name":"A"'), undefined, () => {
+        throw Error('observer failed');
+      }),
+    /observer failed/,
+  );
+  assert.deepEqual(state, before);
+});

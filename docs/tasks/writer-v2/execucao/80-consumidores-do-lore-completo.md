@@ -242,3 +242,17 @@ prosa/lista no estado; não conectado ao produtor. 335 Node distintos, três
 jornadas Chromium, bundle browser e declaração TS positivos.
 [Evidência](../../../entregas/2026-10-25-writer-v2-indice-portatil-do-lore.md).
 Próximo passo B do plano 131; C/D, etapa 5 inteira e demais P1/fases/gates abertos.
+
+## Composição individual da etapa 5 — M38c12 B
+
+[Plano 131](131-backup-logico-indexado-do-lore.md): produtor C1 em unidades
+implementado/validado, sem montar/reler ficha inteira. Token de coleção original,
+SHA de cada corpo, domínio/spans da saída, header final e pressão de consumo.
+Inline/v1/v2/criação, >8 MiB/128 partes e relações grandes positivos.
+147 Node, 114 Vitest distintos, cinco SDK e três Chromium; build/checks.
+[Evidência B](../../../entregas/2026-10-25-writer-v2-composicao-portatil-do-lore.md).
+
+Arquivo final/validadores/restauradores ainda usam o caminho anterior: C/D são
+próximos e obrigatórios, inclusive JSON ampliado após remap. Etapa 5, inventário
+geral/writers/exclusão/coleta/legacy/roundtrip/rollout/validate de P1, fases e
+gates continuam abertos. Sem recurso remoto novo, CI, push ou deploy.

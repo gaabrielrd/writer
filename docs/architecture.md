@@ -2652,3 +2652,22 @@ v1/até 64. Índice não prova framing/SHA/nascimento nem concede autorização.
 positivos. [Evidência](entregas/2026-10-25-writer-v2-indice-portatil-do-lore.md).
 Não conectado à captura/validação/restauração: a integração lógica/indexada B–D
 do plano 131, demais P1/roundtrip/validate/fases/gates continuam necessários.
+
+## P1 M38c12 B — composição lógica por C1
+
+BookLoreReadSession oferece writePortable/verifyPortable. Fonte usa token C1 v1
+com clock da coleção e header original; APIs/autorizações nativas existentes,
+sem novo endpoint ou storage. BookLoreReadUnits compartilha validação do DTO.
+Base é inspecionada uma vez com callback de bytes; overrides/datas/páginas
+compõem JSON lógico e o índice A/hashes acompanhando a saída. Buffer de 64 KiB
+aguarda consumidor antes de nova unidade. Erros/closed do upload ficam em
+BookRestoreInput puro, mantendo reexports/ABI.
+
+Prova privada é congelada em RAM e só retorna após hashes/domínio/header.
+Bytes emitidos são provisórios; verify reautoriza metadata sem novo download,
+não certifica bytes do arquivo ou corpos disponíveis. O orquestrador C deverá
+abortar seu sink em falha; validadores/restauradores C/D ainda não integrados.
+147 Node, 114 Vitest distintos, cinco SDK e três Chromium positivos, build/smoke.
+[ADR 0151](decisions/0151-incremental-portable-lore-index.md) e
+[evidência B](entregas/2026-10-25-writer-v2-composicao-portatil-do-lore.md).
+P1/fases/gates permanecem abertos; sem remoto/deploy.
