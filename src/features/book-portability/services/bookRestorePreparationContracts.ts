@@ -28,11 +28,13 @@ export function restorePreparationId(v: unknown): v is string {
     new TextDecoder().decode(new TextEncoder().encode(v)) === v
   );
 }
+export const restorePreparationOperationId = (value: unknown): value is string =>
+  typeof value === 'string' && /^[a-zA-Z0-9-]{16,80}$/.test(value);
 export function readBookRestoreIdentity(value: BookRestoreIdentity): BookRestoreIdentity {
   restorePreparationCheck(
     object(value) &&
       restorePreparationId(value.ownerId) &&
-      restorePreparationId(value.restoreId) &&
+      restorePreparationOperationId(value.restoreId) &&
       restorePreparationId(value.bookId) &&
       typeof value.jobToken === 'string' &&
       /^[a-f0-9]{64}$/.test(value.jobToken),
@@ -164,7 +166,7 @@ export function readBookRestorePreparationIntent(
   restorePreparationCheck(
     raw.schemaVersion === 1 &&
       BOOK_RESTORE_PREPARATION_COMMANDS.includes(raw.action as BookRestorePreparationCommand) &&
-      restorePreparationId(raw.operationId) &&
+      restorePreparationOperationId(raw.operationId) &&
       integer(raw.expectedCheckpoint) &&
       raw.expectedCheckpoint < Number.MAX_SAFE_INTEGER &&
       raw.limit === (raw.action === 'advanceBookRestoreIntegrity' ? 16 : null),

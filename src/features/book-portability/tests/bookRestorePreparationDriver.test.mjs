@@ -63,7 +63,7 @@ function fixture(raw = progress()) {
       },
       operationId: () => {
         f.sequence++;
-        return 'step-' + f.sequence;
+        return 'preparation-step-' + f.sequence;
       },
     });
   return f;
@@ -204,7 +204,7 @@ it('lost response retains the exact intent and a fresh driver confirms it before
   expect(f.calls[0]).toEqual(f.calls[1]);
   expect(f.events).toEqual(['read', 'advance', 'clear']);
   expect(f.sequence).toBe(1);
-  expect(pending.operationId).toBe('step-1');
+  expect(pending.operationId).toBe('preparation-step-1');
   expect(f.stored).toBeNull();
 });
 it('historical receipt can report later current progress without sending the next phase', async () => {
@@ -279,7 +279,7 @@ it('malformed or foreign pending intent is preserved and never used to select a 
       schemaVersion: 1,
       ...identity,
       action: 'advanceBookRestoreIntegrity',
-      operationId: 'old-operation',
+      operationId: 'original-operation-0001',
       expectedCheckpoint: 4,
       limit: 16,
       ...extra,
@@ -332,7 +332,7 @@ it('confirmation mismatch retains pending intent instead of discarding a debt or
       return r;
     };
     await expect(f.driver().step()).rejects.toThrow();
-    expect(f.stored.operationId).toBe('step-1');
+    expect(f.stored.operationId).toBe('preparation-step-1');
     expect(f.events).not.toContain('clear');
   }
 });
@@ -345,14 +345,14 @@ it('a failed journal CAS prevents send and a failed confirmation CAS never erase
     cas = g.journal.compareAndSet;
   g.journal.compareAndSet = async (old, next) => {
     if (next === null) {
-      g.stored = { ...g.stored, operationId: 'another-tab' };
+      g.stored = { ...g.stored, operationId: 'another-tab-operation' };
       return false;
     }
     return cas(old, next);
   };
   await expect(g.driver().step()).rejects.toThrow();
   expect(g.calls).toHaveLength(1);
-  expect(g.stored.operationId).toBe('another-tab');
+  expect(g.stored.operationId).toBe('another-tab-operation');
 });
 it('account invalidation after each pre-confirmation await stops progress and preserves any stored intent', async () => {
   for (const stage of ['read', 'get', 'persist', 'advance']) {
@@ -430,7 +430,7 @@ it('storage read failure, invalid operation id and checkpoint conflict leave the
     throw Error('Checkpoint conflict');
   };
   await expect(g.driver().step()).rejects.toThrow('Checkpoint conflict');
-  expect(g.stored.operationId).toBe('step-1');
+  expect(g.stored.operationId).toBe('preparation-step-1');
   const h = fixture(),
     d = createBookRestorePreparationDriver({
       identity,
@@ -451,7 +451,7 @@ it('identity is copied at creation and cannot be redirected by later mutation of
       api: f.api,
       journal: f.journal,
       check: () => {},
-      operationId: () => 'fixed-operation',
+      operationId: () => 'fixed-operation-0001',
     });
   copy.ownerId = 'other';
   copy.bookId = 'other';
@@ -525,4 +525,26 @@ it('invalidation after clearing a confirmed own intent suppresses delivery and n
   await expect(f.driver().step()).rejects.toThrow('Inactive');
   expect(f.calls).toHaveLength(1);
   expect(f.stored).toBeNull();
+});
+
+it('server-invalid operation identifiers are rejected before persisting an unsendable request', async () => {
+  for (const operationId of [
+    'short',
+    'a'.repeat(15),
+    'a'.repeat(81),
+    'underscore_operation_0001',
+  ]) {
+    const f = fixture(),
+      driver = createBookRestorePreparationDriver({
+        identity,
+        api: f.api,
+        journal: f.journal,
+        check: () => {},
+        operationId: () => operationId,
+      });
+    await expect(driver.step()).rejects.toThrow();
+    expect(f.events).toEqual(['read', 'get']);
+    expect(f.stored).toBeNull();
+    expect(f.calls).toHaveLength(0);
+  }
 });

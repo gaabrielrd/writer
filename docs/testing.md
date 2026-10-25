@@ -2889,3 +2889,12 @@ retomando o mesmo pedido. Serviço remoto/grants são simulados; não há prova 
 credenciais ou Firebase de produção. Correções/checks e alcance na
 [evidência](entregas/2026-10-25-writer-v2-journal-protegido-da-preparacao.md).
 Validate integral de P1 e UI/roundtrip continuam pendentes.
+
+## P1 — IDs e contratos iniciais de envio
+
+65 Vitest distintos positivos em seleções: driver/transferência, regressões
+afetadas e preparação real atual/JSON v6. Hash e IDs comparados com o código
+real do servidor; valores inválidos não chegam ao journal. Um Chromium do
+driver/journal também passou após reinício. Fixtures corrigidas e limites na
+[evidência](entregas/2026-10-25-writer-v2-contratos-iniciais-do-envio.md).
+Upload/checkpoint e UI ainda não implementados; validate de P1 continua aberto.

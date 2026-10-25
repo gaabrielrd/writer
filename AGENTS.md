@@ -584,3 +584,7 @@ concluído estiverem satisfeitos. A lista fica em
   CAS interno compara envelope inteiro, não só stamp ou operationId.
 - Preserve ciphertext em falhas/revogação; origem terminal sem chave não autoriza
   reabertura ou descarte implícito. Não use fallback plaintext.
+
+- Em pedidos de restauração, valide operationId/restoreId pelo contrato real
+  de 16–80 caracteres ASCII alfanuméricos ou hífen antes de persistir; UID
+  conserva seu contrato próprio. Não renomeie dívida inválida automaticamente.

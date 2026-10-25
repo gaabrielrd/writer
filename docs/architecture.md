@@ -2929,3 +2929,11 @@ e reautoriza antes de abrir/substituir. Origem terminal sem chave conserva
 ciphertext. Proxy local exato acompanha rewrite Hosting existente.
 [Resultados/limites](entregas/2026-10-25-writer-v2-journal-protegido-da-preparacao.md);
 UI e demais P1/fases/gates continuam pendentes.
+
+## P1 — contratos iniciais de transferência
+
+O [plano 139](tasks/writer-v2/execucao/139-restauracao-de-livros-no-estudio.md)
+inicia origem/start fechados, digest metadata canônico e namespace de chunk.
+IDs de pedido/restauração seguem o servidor antes da persistência; UID conserva
+seu contrato próprio. Upload e UI ainda não usam esses contratos.
+[Resultados e limites](entregas/2026-10-25-writer-v2-contratos-iniciais-do-envio.md).

@@ -162,7 +162,9 @@ it('whole-envelope equality includes cipher bytes and structural intent equality
   expect(sameEnvelope(null, e, context)).toBe(false);
   const reversed = Object.fromEntries(Object.entries(intent).reverse());
   expect(sameIntent(intent, reversed, context)).toBe(true);
-  expect(sameIntent(intent, { ...intent, operationId: 'other-operation' }, context)).toBe(false);
+  expect(sameIntent(intent, { ...intent, operationId: 'other-operation-0001' }, context)).toBe(
+    false,
+  );
 });
 
 it('authenticated but malformed plaintext never exposes its contents through a JSON parser error', async () => {

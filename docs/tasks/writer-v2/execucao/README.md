@@ -1775,3 +1775,12 @@ mesmo pedido após reinício; recusas preservam ciphertext.
 [evidência](../../../entregas/2026-10-25-writer-v2-journal-protegido-da-preparacao.md).
 UI/descarte terminal/upload/revisão/ativação/mídia/limpeza/roundtrip e demais
 P1/V2/fases/gates continuam obrigatórios.
+
+### P1 — início do envio e revisão no Estúdio (plano 139)
+
+[Plano 139](139-restauracao-de-livros-no-estudio.md) inicia com contratos
+fechados de origem/start, hash canônico e IDs alinhados ao servidor antes de
+persistir. 65 Vitest distintos e um cenário Chromium dirigidos positivos;
+[evidência parcial](../../../entregas/2026-10-25-writer-v2-contratos-iniciais-do-envio.md).
+Inspeção/bootstrap/upload/revisão/ativação/mídia/limpeza do cliente e UI continuam
+no mesmo plano, sem fechar P1/V2/fases/gates.

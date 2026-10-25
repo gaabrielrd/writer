@@ -97,7 +97,9 @@ it('intent mismatch, occupied slot or missing expected envelope returns false wi
   await journal.compareAndSet(null, intent);
   const before = structuredClone(mocks.value);
   expect(await journal.compareAndSet(null, intent)).toBe(false);
-  expect(await journal.compareAndSet({ ...intent, operationId: 'other' }, null)).toBe(false);
+  expect(await journal.compareAndSet({ ...intent, operationId: 'different-operation' }, null)).toBe(
+    false,
+  );
   expect(mocks.value).toEqual(before);
 });
 it('reauthorization or read failures preserve the exact encrypted record', async () => {
@@ -158,11 +160,11 @@ it('concurrent instances serialize through the scoped lock and only one CAS repl
     b = create(context, guard);
   await a.compareAndSet(null, intent);
   const results = await Promise.all([
-    a.compareAndSet(intent, { ...intent, operationId: 'first' }),
-    b.compareAndSet(intent, { ...intent, operationId: 'second' }),
+    a.compareAndSet(intent, { ...intent, operationId: 'first-operation-0001' }),
+    b.compareAndSet(intent, { ...intent, operationId: 'second-operation-0001' }),
   ]);
   expect(results.filter(Boolean)).toHaveLength(1);
-  expect((await a.read()).operationId).toBe('first');
+  expect((await a.read()).operationId).toBe('first-operation-0001');
 });
 it('guard invalidation after key authorization cannot write or open the protected record', async () => {
   let alive = true;
