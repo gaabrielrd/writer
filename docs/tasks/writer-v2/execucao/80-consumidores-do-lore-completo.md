@@ -320,3 +320,13 @@ Fronteira estrutural corrigida para metadata de lore. 84 Node distintos e três
 SDK positivos; limites na [evidência](../../../entregas/2026-10-25-writer-v2-gravador-incremental-de-corpos-de-lore.md).
 Ainda integrar geração, páginas, Resources/Counts, drenagem e roundtrip.
 Etapa 5/D3/P1/validate/fases/gates permanecem abertos.
+
+## P1 — inventário final antes da ativação
+
+[Plano 132](132-inventario-final-da-restauracao.md): schema13 congela escritores,
+varre journals e 32 namespaces por páginas limitadas, autentica origens e exige
+contagens exatas antes de activation-ready. Não cria raiz nem concede acesso.
+35 Node distintos e dois SDK positivos; veja a
+[evidência](../../../entregas/2026-10-25-writer-v2-inventario-final-da-restauracao.md).
+Revisão/ativação/host/roundtrip integral e demais inventários/legados/rollout/
+validate de P1, fases 3–5 e gates continuam pendentes.

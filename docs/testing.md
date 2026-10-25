@@ -2804,3 +2804,13 @@ asserções, seleções dirigidas e limites estão na
 [evidência](entregas/2026-10-25-writer-v2-leitura-preparada-e-recaptura-do-lore.md).
 Não é roundtrip integral do livro original, host/UI ou Auth de produção.
 Validate global permanece no fechamento de P1.
+
+## P1 — inventário final da preparação
+
+bookRestoreAudit.test.mjs: 18/18 positivos no lote final; 17/17 sourceIndexes
+anteriores, total de 35 casos distintos. Metadata/páginas limitadas, nenhum write
+em conteúdo, fase/CAS/conta, retomada/replay/retry, origens recriadas, órfãos,
+filhos aninhados, perfis estrangeiros, capa e cancelamento/saldo exato.
+Dois SDK reais verificam timestamps/Rules e journal recriado; detalhes e limites
+na [evidência](entregas/2026-10-25-writer-v2-inventario-final-da-restauracao.md).
+Sem nova fronteira de UI; validate global permanece no fechamento de P1.

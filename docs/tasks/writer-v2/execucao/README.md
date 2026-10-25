@@ -1702,3 +1702,13 @@ Vitest, dois SDK e quatro Chromium positivos; detalhes na
 [evidência](../../../entregas/2026-10-25-writer-v2-leitura-preparada-e-recaptura-do-lore.md).
 Host/roundtrip integral/consumidores/inventários/legados/rollout/validate, demais
 P1/V2/fases e gates continuam. Padrão de novas gerações permanece false.
+
+## P1 — inventário final antes da ativação
+
+[Plano 132](132-inventario-final-da-restauracao.md): schema13 congela escritores,
+varre journals e 32 namespaces por páginas limitadas, autentica origens e exige
+contagens exatas antes de activation-ready. Não cria raiz nem concede acesso.
+35 Node distintos e dois SDK positivos; veja a
+[evidência](../../../entregas/2026-10-25-writer-v2-inventario-final-da-restauracao.md).
+Revisão/ativação/host/roundtrip integral e demais inventários/legados/rollout/
+validate de P1, fases 3–5 e gates continuam pendentes.

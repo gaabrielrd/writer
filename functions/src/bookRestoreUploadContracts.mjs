@@ -10,6 +10,7 @@ import { validateBookRestoreCover } from './bookRestoreCoverContracts.mjs';
 import { validateBookRestoreCoverStorageProgress } from './bookRestoreCoverStorageContracts.mjs';
 import { validateBookRestorePersonaLibrary } from './bookRestorePersonaLibraryContracts.mjs';
 import { validateBookRestoreSourceIndexes } from './bookRestoreSourceIndexesContracts.mjs';
+import { validateBookRestoreAudit } from './bookRestoreAuditContracts.mjs';
 import { lorePayloadProgress } from './bookRestoreLorePayloadContracts.mjs';
 export const BOOK_RESTORE_CHUNK_BYTES = 65536;
 export const BOOK_RESTORE_SEED = digest({ version: 1, kind: 'book-restore-upload' });
@@ -473,6 +474,8 @@ export function jobShape(uid, id, job) {
         'cover-finalize',
         'personas-integrate',
         'resources-finalize',
+        'resources-audit',
+        'activation-ready',
       ].includes(job.preparation.phase)
     ) {
       const p = job.preparation.personas,
@@ -486,7 +489,7 @@ export function jobShape(uid, id, job) {
     if (
       !(
         job.cleanupVersion === 14
-          ? [11, 12]
+          ? [11, 12, 13]
           : job.cleanupVersion === 13
             ? [10]
             : job.cleanupVersion === 12
@@ -523,6 +526,8 @@ export function jobShape(uid, id, job) {
           'cover-finalize',
           'personas-integrate',
           'resources-finalize',
+          'resources-audit',
+          'activation-ready',
         ].includes(job.preparation.phase) &&
           (h.versions !== t.versions ||
             h.byteLength !== t.historyBytes ||
@@ -540,6 +545,8 @@ export function jobShape(uid, id, job) {
           'cover-finalize',
           'personas-integrate',
           'resources-finalize',
+          'resources-audit',
+          'activation-ready',
         ].includes(job.preparation.phase) &&
           d.bytes !== job.validationSummary.totals.draftBytes)
       )
@@ -553,12 +560,14 @@ export function jobShape(uid, id, job) {
       if (
         library.installed > job.validationSummary.totals.profiles ||
         library.revoked !== mustRevoke ||
-        (job.preparation.phase === 'resources-finalize' &&
+        (['resources-finalize', 'resources-audit', 'activation-ready'].includes(
+          job.preparation.phase,
+        ) &&
           library.installed !== job.validationSummary.totals.profiles)
       )
         inconsistent();
     }
-    if (job.preparation.schemaVersion === 12) {
+    if (job.preparation.schemaVersion >= 12) {
       const progress = job.preparation.sourceIndexes,
         total = job.preparation.resourceCounts['scene-source'];
       if (progress.scanned > total || (progress.complete && progress.scanned !== total))
@@ -643,7 +652,8 @@ export function preparationProgress(value) {
       ...(value?.schemaVersion >= 9 ? ['cover'] : []),
       ...(value?.schemaVersion >= 10 ? ['coverStorage'] : []),
       ...(value?.schemaVersion >= 11 ? ['personaLibrary'] : []),
-      ...(value?.schemaVersion === 12 ? ['sourceIndexes'] : []),
+      ...(value?.schemaVersion >= 12 ? ['sourceIndexes'] : []),
+      ...(value?.schemaVersion >= 13 ? ['audit'] : []),
     ],
     ['lorePayload', 'retiredArtifacts', 'loreStaging'],
   );
@@ -653,7 +663,7 @@ export function preparationProgress(value) {
       inconsistent();
   }
   if (
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(value.schemaVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(value.schemaVersion) ||
     !(
       value.schemaVersion === 1
         ? ['structure', 'resources']
@@ -677,7 +687,9 @@ export function preparationProgress(value) {
                           ? ['cover-finalize', 'personas-integrate']
                           : value.schemaVersion === 11
                             ? ['personas-integrate', 'resources-finalize']
-                            : ['resources-finalize']
+                            : value.schemaVersion === 12
+                              ? ['resources-finalize']
+                              : ['resources-audit', 'activation-ready']
     ).includes(value.phase)
   )
     inconsistent();
@@ -699,6 +711,8 @@ export function preparationProgress(value) {
         'cover-finalize',
         'personas-integrate',
         'resources-finalize',
+        'resources-audit',
+        'activation-ready',
       ].includes(value.phase) &&
         value.relationOffset !== 0)
     )
@@ -888,12 +902,24 @@ export function preparationProgress(value) {
       inconsistent();
     }
   }
-  if (value.schemaVersion === 12) {
+  if (value.schemaVersion >= 12) {
     try {
       validateBookRestoreSourceIndexes(value.sourceIndexes);
     } catch {
       inconsistent();
     }
+  }
+  if (value.schemaVersion >= 13) {
+    const audit = validateBookRestoreAudit(value.audit),
+      live = value.artifactCount - (value.retiredArtifacts ?? 0);
+    if (
+      !value.sourceIndexes.complete ||
+      value.counts.step !== 'done' ||
+      audit.checkedArtifacts > live ||
+      (audit.phase === 'done' && audit.checkedArtifacts !== live) ||
+      (value.phase === 'activation-ready') !== (audit.phase === 'done')
+    )
+      inconsistent();
   }
   return structuredClone(value);
 }

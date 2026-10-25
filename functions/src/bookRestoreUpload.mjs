@@ -11,6 +11,7 @@ import { createBookRestoreDraftFinalizeService } from './bookRestoreDraftFinaliz
 import { createBookRestoreCoverService } from './bookRestoreCover.mjs';
 import { createBookRestorePersonaLibraryService } from './bookRestorePersonaLibrary.mjs';
 import { createBookRestoreSourceIndexesService } from './bookRestoreSourceIndexes.mjs';
+import { createBookRestoreAuditService } from './bookRestoreAudit.mjs';
 import { createBookRestoreCoverMaterializationService } from './bookRestoreCoverMaterialization.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
@@ -84,6 +85,7 @@ const actions = {
   materializeBookRestoreCover: ['content-verified'],
   advanceBookRestorePersonaLibrary: ['content-verified'],
   advanceBookRestoreSourceIndexes: ['content-verified'],
+  advanceBookRestoreAudit: ['content-verified'],
 };
 export function createBookRestoreUploadService({
   db,
@@ -378,6 +380,21 @@ export function createBookRestoreUploadService({
           (r.preparation.personaLibrary.revoked && !loaded.job.preparation.personaLibrary.revoked))
       )
         inconsistent();
+      if (r.preparation.audit) {
+        const prior = r.preparation.audit,
+          current = loaded.job.preparation.audit;
+        if (
+          !current ||
+          prior.contextToken !== current.contextToken ||
+          prior.checkedArtifacts > current.checkedArtifacts ||
+          prior.checkedPhysical > current.checkedPhysical ||
+          prior.family > current.family ||
+          ['journals', 'physical', 'done'].indexOf(prior.phase) >
+            ['journals', 'physical', 'done'].indexOf(current.phase) ||
+          (prior.sealOperationId !== null && prior.sealOperationId !== current.sealOperationId)
+        )
+          inconsistent();
+      }
       if (r.preparation.sourceIndexes) {
         const p = r.preparation.sourceIndexes,
           current = loaded.job.preparation.sourceIndexes;
@@ -1141,6 +1158,7 @@ export function createBookRestoreUploadService({
   return {
     ...createBookRestorePreparedLoreService({ db, load }),
     ...sourceIndexes,
+    ...createBookRestoreAuditService({ db, load, readOp, writeOp, confirmed, next, pickProgress }),
     ...personaLibrary,
     ...coverMaterialization,
     ...cover,

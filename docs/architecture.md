@@ -2825,3 +2825,15 @@ ausentes/zero. Padrão false enquanto host/consumidores/roundtrip/rollout pendem
 118 Node distintos, sete Vitest, dois SDK e quatro Chromium positivos; limites na
 [evidência](entregas/2026-10-25-writer-v2-leitura-preparada-e-recaptura-do-lore.md).
 O arquivo recapturado é fixture mínima de lore, não o livro original completo.
+
+## P1 — inventário final da preparação
+
+[ADR 0152](decisions/0152-native-restore-final-audit.md): o serviço interno
+advanceBookRestoreAudit exige preparação completa e muda para schema13, bloqueando
+escritores anteriores. Passagens de journals e 32 namespaces físicos usam páginas
+de oito, consultas de metadata e pais autenticados. Cursor constante com âncora e
+contexto fixa origem/layout/totais; cada artefato resolve pelo journal original.
+Somente job/recibo mudam. Contagens exatas levam a activation-ready, sem criar raiz,
+ativar personas ou modificar Storage/universo. Cleanup14 e recibos históricos
+continuam válidos; auditoria não substitui a transação de ativação ou autorização.
+[Evidência](entregas/2026-10-25-writer-v2-inventario-final-da-restauracao.md).

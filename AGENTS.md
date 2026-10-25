@@ -504,3 +504,13 @@ concluído estiverem satisfeitos. A lista fica em
   normal de livro; não exponha o port interno como callable por composição dinâmica.
 - No modo indexado novo, preserve datas/ausências também em fichas pequenas;
   opção padrão continua desligada até host/roundtrip/rollout coordenados (ADR 0151).
+
+## Inventário final de restauração
+
+- Congele a preparação em schema13 antes da auditoria; preserve completude de
+  índices/Counts/drenagem/capa e lote de personas original preparando (ADR 0152).
+- Varra journals e namespaces físicos com páginas limitadas, pais/âncora originais
+  e totais exatos; não adote órfãos, stageKind ou dados recriados.
+- Grave somente cursor/job/recibo; activation-ready não é grant nem prova atual
+  de Storage. Reautorize revisão/origens na futura ativação atômica.
+- Preserve cleanup14, saldo e replay histórico; evolução do layout exige contrato.

@@ -700,3 +700,13 @@ O arquivo mínimo de teste só contém lore; não é recaptura integral do livro
 original. Host/roundtrip integral, consumidores/inventários/legados necessários,
 habilitação coordenada, validate de P1 e demais fases/gates continuam obrigatórios.
 Não habilitado por padrão, sem raiz/endpoint/Rule/namespace ou operação remota nova.
+
+## P1 — inventário final antes da ativação
+
+[Plano 132](132-inventario-final-da-restauracao.md): schema13 congela escritores,
+varre journals e 32 namespaces por páginas limitadas, autentica origens e exige
+contagens exatas antes de activation-ready. Não cria raiz nem concede acesso.
+35 Node distintos e dois SDK positivos; veja a
+[evidência](../../../entregas/2026-10-25-writer-v2-inventario-final-da-restauracao.md).
+Revisão/ativação/host/roundtrip integral e demais inventários/legados/rollout/
+validate de P1, fases 3–5 e gates continuam pendentes.
