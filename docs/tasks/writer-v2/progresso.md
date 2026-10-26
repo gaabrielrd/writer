@@ -99,3 +99,8 @@ registra inventário de fontes e validate integral verde dos leitores: 4.096 fro
 87 scripts, 3.332 Functions, sintaxe/types/build/smoke. Duas falhas de infraestrutura
 de testes foram corrigidas e preservadas na evidência. P2 ainda não monta/restaura
 arquivo nem oferece UI; 8/35 e demais gates permanecem sem mudança.
+
+[Formato 159](execucao/159-formato-privado-de-aventuras.md): framing próprio e
+envelope de oito seções, com vetor de livro preservado; 64 Node/37 Vitest e
+build dirigidos positivos. Não há montagem/restauração de aventura ainda;
+validação semântica/segunda passagem, UI e demais gates permanecem pendentes.

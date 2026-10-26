@@ -2992,3 +2992,10 @@ de sintaxe, typecheck/build/smoke. Duas tentativas anteriores encontraram timeou
 em fluxo de três formatos e corrida por polling de 5 ms no harness; evidência
 preserva falhas, seleções dirigidas e correções. Limites de cobertura inalterados.
 Não confundir esse fechamento com arquivo/restauração/UI de aventura concluídos.
+
+O [formato privado P2](entregas/2026-10-26-writer-v2-formato-privado-de-aventuras.md)
+passou 64 Node (13 novos, 51 regressões), 37 Vitest, lint/sintaxe de 313 módulos
+e typecheck/build/smoke. Vetores Python dos dois domínios e rejeição cruzada
+conferem o framer compartilhado; envelope-only não certifica DTOs nem autoria.
+Validate de 158 não é atribuído a esse código posterior; próximo fechamento
+integral ocorre no fim do grande bloco seguinte, sem CI.

@@ -740,3 +740,8 @@ concluído estiverem satisfeitos. A lista fica em
   duplicação/grant. Revalide fonte/acesso; origem indisponível não autoriza
   coincidência nem bloqueia leitura própria (ADR 0179). Compartilhe só validador
   puro portableUniverseOrigin, mantendo alias/payload de livro.
+- Framing de aventura usa WRITER-ADVN/erro próprio; preserve bytes/APIs de livro
+  ao compartilhar portableBackupContainer. Envelope de oito seções é somente
+  envelope-only: ainda exige validação autoral/acesso antes de uso (ADR 0181).
+- Cursor/index de arquivo privado pertencem ao host confiável; não aceite
+  checkpoints do arquivo/usuário nem os transfira entre domínios.

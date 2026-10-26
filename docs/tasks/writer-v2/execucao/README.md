@@ -1924,3 +1924,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      4.096 frontend, 87 scripts e 3.332 Functions; duas falhas de teste corrigidas.
      [Evidência](../../../entregas/2026-10-26-writer-v2-inventario-dos-leitores-de-aventuras.md).
      Fecha somente o bloco de leitores; assembler/pacote/restore/UI e P2 abertos.
+
+159. [Formato privado de aventuras](159-formato-privado-de-aventuras.md):
+     framer puro compartilhado com bytes de livro preservados, assinatura de
+     aventura e envelope canônico de oito seções; 64 Node/37 Vitest e build verdes.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-formato-privado-de-aventuras.md).
+     Report envelope-only; assembler/validação autoral/restauração/UI e P2 abertos.

@@ -3082,3 +3082,9 @@ O [inventário P2](tasks/writer-v2/inventario-portabilidade-aventuras.md) fecha 
 bloco de leitores 147–157: fontes/writers/clocks, presença, staging, exclusões e
 rascunhos locais separados. Segunda passagem completa e manifestos de histórico/
 assets são condições do assembler futuro; não há arquivo/restore de aventura ainda.
+
+A [ADR 0181](decisions/0181-adventure-private-archive-envelope.md) extrai somente
+framing puro para portableBackupContainer, preservando bytes/APIs de livro.
+Aventura tem assinatura/erro próprios e envelope canônico de oito seções.
+Report envelope-only e checkpoints de host não certificam conteúdo nem grants;
+assembler/validador autoral e restauração/UI continuam pendentes.
