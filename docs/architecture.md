@@ -3072,3 +3072,8 @@ A [ADR 0179](decisions/0179-adventure-backup-universe-origin.md) registra origem
 neutra do universo da aventura por metadata autorizada e nascimento preciso.
 Não copia lore/nomes ou duplica universo; ausência de acesso preserva o próprio.
 Validador puro é compartilhado por alias compatível com livros.
+
+A [ADR 0180](decisions/0180-adventure-imported-image-authority.md) corrige a idade
+dos heads: importador cria cenas antes da ativação da raiz. Ownership/identidade
+do head continuam; autorização dos bytes vem do uso tipado posterior à raiz,
+com provas de biblioteca/Storage. Não depende de chave/job de importação.

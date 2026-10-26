@@ -1912,3 +1912,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      24 Node e um SDK positivos, alias puro de livro preservado.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-origem-do-universo-no-backup-de-aventuras.md).
      Inventário/selo/pacote/restauração/UI/roundtrip e validate P2 abertos.
+
+157. [Imagens de aventuras importadas](157-imagens-de-aventuras-importadas.md):
+     corrige idade do head materializado antes da ativação, mantendo uso tipado
+     posterior à raiz como grant atual; RED reproduzido, 50 Node e três SDK verdes.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-imagens-de-aventuras-importadas.md).
+     Inventário/selo/pacote/restauração/UI/roundtrip e validate do bloco abertos.

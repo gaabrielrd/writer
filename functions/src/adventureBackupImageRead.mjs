@@ -49,15 +49,10 @@ const fields = (kind) => [
   kind === 'scene' ? 'mainBlockImage' : 'image',
   ...external,
 ];
-function owned(snapshot, c, root) {
-  const stamp = identity(snapshot),
-    base = identity(root).created;
-  if (
-    !stamp ||
-    stamp.created.seconds < base.seconds ||
-    (stamp.created.seconds === base.seconds && stamp.created.nanoseconds < base.nanoseconds)
-  )
-    bad();
+function owned(snapshot, c) {
+  // Imported scenes can predate activation of the root. Asset authority comes
+  // from the exact typed use born after the current root, checked separately.
+  if (!identity(snapshot)) bad();
   const v = snapshot.data();
   if (
     !v ||
@@ -82,7 +77,7 @@ function stampAfterRoot(snapshot, root) {
   return s;
 }
 async function item(tx, c, sourceToken, kind, snapshot, root, content = false) {
-  const v = owned(snapshot, c, root),
+  const v = owned(snapshot, c),
     resource = { kind, id: snapshot.id };
   let ancestor = null;
   if (kind === 'block') {
@@ -93,7 +88,7 @@ async function item(tx, c, sourceToken, kind, snapshot, root, content = false) {
       bad();
     }
     ancestor = await readWorkMetadata(tx, c.db.doc(c.path + '/scenes/' + sceneId), fields('scene'));
-    owned(ancestor, c, root);
+    owned(ancestor, c);
   }
   let image;
   try {

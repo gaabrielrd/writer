@@ -35,3 +35,9 @@ integral de P2 continuam pendentes.
 
 [Plano 155](../tasks/writer-v2/execucao/155-imagens-autorizadas-no-backup-de-aventuras.md)
 e [evidência parcial](../entregas/2026-10-26-writer-v2-imagens-no-backup-de-aventuras.md).
+
+## Correção posterior
+
+A [ADR 0180](0180-adventure-imported-image-authority.md) substitui a comparação
+de nascimento dos heads com a raiz, para cenas preparadas antes da ativação.
+Comparação de idade do uso tipado e demais provas permanecem obrigatórias.

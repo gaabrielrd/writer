@@ -13,15 +13,15 @@ const requireFunctions = createRequire(new URL('../../functions/package.json', i
 const { Firestore } = requireFunctions('firebase-admin/firestore'),
   { Storage } = requireFunctions('@google-cloud/storage'),
   sharp = requireFunctions('sharp');
-import { createStudioService } from '../../functions/src/studio.mjs';
-import { createScenesService } from '../../functions/src/scenes.mjs';
+import { activateBackupImportedAdventure } from '../../functions/test/helpers/adventureBackupImportFixture.mjs';
+import { adventureImportIds } from '../../functions/src/adventureImportContracts.mjs';
 import { createAdventureBlocksService } from '../../functions/src/adventureBlocks.mjs';
 import { libraryImage } from '../../functions/src/imageLibrary.mjs';
 import { adventureImageUseKey } from '../../functions/src/adventureBlockImages.mjs';
 const projectId = 'demo-writer-backup-cover',
   uid = 'author',
-  adventureId = 'adventure-image-sdk-0001',
-  sceneId = 'adventure-image-scene-0001',
+  adventureId = adventureImportIds(uid, 'backup-import-source-0001').adventureId,
+  sceneId = adventureImportIds(uid, 'backup-import-source-0001', 0).sceneId,
   blockId = 'adventure-image-block-0001',
   imageId = 'adventure-image-storage-0001',
   path = 'book-covers/' + uid + '/' + imageId + '.png',
@@ -116,17 +116,11 @@ beforeEach(async () => {
       100,
     ),
   );
-  await createStudioService({ db: admin, now: () => 1000 }).createAdventure(uid, {
-    operationId: adventureId,
-    title: 'PRIVATE_ROOT',
-  });
-  const target = { kind: 'adventure', id: adventureId };
-  await createScenesService({ db: admin, now: () => 1200 }).createScene(uid, {
-    target,
-    operationId: sceneId,
-    title: 'PRIVATE_SCENE',
-    content: 'PRIVATE_PROSE',
-  });
+  await activateBackupImportedAdventure(admin);
+  const rootBirth = (await admin.doc(projectPath).get()).createTime,
+    sceneBirth = (await admin.doc(projectPath + '/scenes/' + sceneId).get()).createTime;
+  assert.ok(sceneBirth.toMillis() <= rootBirth.toMillis());
+  assert.equal(sceneBirth.isEqual(rootBirth), false);
   const blocks = createAdventureBlocksService({ db: admin, now: () => 1300 });
   await blocks.createAdventureBlock(uid, {
     adventureId,
@@ -156,7 +150,7 @@ after(async () => {
   await environment?.cleanup();
 });
 
-test('SDK adventure image real typed uses and Storage generation ranges preserve exact PNG without URLs or tokens', async () => {
+test('SDK adventure image activated import and typed uses preserve PNG ranges without URLs or tokens', async () => {
   const pin = await source(),
     before = await admin.doc(libraryPath).get();
   for (const kind of ['scene', 'block']) {
