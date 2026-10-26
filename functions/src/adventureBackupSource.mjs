@@ -24,58 +24,66 @@ function stamp(value) {
     inconsistent();
   return { seconds: value.seconds, nanoseconds: value.nanoseconds };
 }
-function identity(snapshot) {
+export function adventureBackupIdentity(snapshot) {
   return snapshot.exists
     ? { created: stamp(snapshot.createTime), updated: stamp(snapshot.updateTime) }
     : null;
 }
-/** A root/progress anchor only. Resource bindings and bodies need separate proofs. */
+export function adventureBackupToken(value) {
+  if (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value))
+    workFail('invalid-argument', 'Token de captura inválido.');
+  return value;
+}
+export function adventureBackupChanged(item = false) {
+  workFail(
+    'failed-precondition',
+    'A aventura mudou durante a captura. Faça um novo backup.',
+    item ? 'adventure-backup-item-changed' : 'adventure-backup-source-changed',
+  );
+}
+export function adventureBackupScope(db, uid, data, keys) {
+  if (!uid) workFail('unauthenticated', 'Entre na sua conta.');
+  workClosed(data, ['adventureId', ...keys]);
+  const adventureId = workId(data.adventureId),
+    path = 'adventures/' + adventureId;
+  return { db, uid, adventureId, path, ref: db.doc(path) };
+}
+/** Root/progress only: resource bindings and bodies require their own proofs. */
+export async function readAdventureBackupSource(tx, context, expected) {
+  if (typeof tx.getAll !== 'function') inconsistent();
+  const { db, uid, adventureId, path, ref } = context,
+    snapshot = await readWorkMetadata(tx, ref, ['ownerId', 'schemaVersion', 'deleting']),
+    root = snapshot.data();
+  if (!snapshot.exists || !root || root.ownerId !== uid || root.deleting)
+    workFail('not-found', 'Aventura indisponível.');
+  if (root.schemaVersion !== 1) inconsistent();
+  const project = adventureBackupIdentity(snapshot),
+    progress = await readWorkMetadata(tx, db.doc(path + '/workProgress/current'), [
+      'schemaVersion',
+    ]),
+    sourceToken = digest({
+      version: 1,
+      kind: 'adventure',
+      scope: 'root-progress',
+      uid,
+      adventureId,
+      project,
+      progress: adventureBackupIdentity(progress),
+    });
+  if (progress.exists && progress.data()?.schemaVersion !== 1) inconsistent();
+  if (expected !== undefined && sourceToken !== expected) adventureBackupChanged();
+  return { result: { schemaVersion: 1, adventureId, sourceToken }, snapshot, progress };
+}
 export function createAdventureBackupSourceService({ db }) {
   return {
     async getAdventureBackupSource(uid, data) {
-      if (!uid) workFail('unauthenticated', 'Entre na sua conta.');
-      workClosed(data, ['adventureId', 'expectedSourceToken']);
-      const adventureId = workId(data.adventureId),
-        expected = data.expectedSourceToken;
-      if (
-        Object.hasOwn(data, 'expectedSourceToken') &&
-        (typeof expected !== 'string' || !/^[a-f0-9]{64}$/.test(expected))
-      )
-        workFail('invalid-argument', 'Token de captura inválido.');
-      return db.runTransaction(async (tx) => {
-        if (typeof tx.getAll !== 'function') inconsistent();
-        const path = 'adventures/' + adventureId,
-          snapshot = await readWorkMetadata(tx, db.doc(path), [
-            'ownerId',
-            'schemaVersion',
-            'deleting',
-          ]),
-          root = snapshot.data();
-        if (!snapshot.exists || !root || root.ownerId !== uid || root.deleting)
-          workFail('not-found', 'Aventura indisponível.');
-        if (root.schemaVersion !== 1) inconsistent();
-        const project = identity(snapshot),
-          progress = await readWorkMetadata(tx, db.doc(path + '/workProgress/current'), [
-            'schemaVersion',
-          ]),
-          sourceToken = digest({
-            version: 1,
-            kind: 'adventure',
-            scope: 'root-progress',
-            uid,
-            adventureId,
-            project,
-            progress: identity(progress),
-          });
-        if (progress.exists && progress.data()?.schemaVersion !== 1) inconsistent();
-        if (expected !== undefined && sourceToken !== expected)
-          workFail(
-            'failed-precondition',
-            'A aventura mudou durante a captura. Faça um novo backup.',
-            'adventure-backup-source-changed',
-          );
-        return { schemaVersion: 1, adventureId, sourceToken };
-      });
+      const context = adventureBackupScope(db, uid, data, ['expectedSourceToken']),
+        expected = Object.hasOwn(data, 'expectedSourceToken')
+          ? adventureBackupToken(data.expectedSourceToken)
+          : undefined;
+      return db.runTransaction(
+        async (tx) => (await readAdventureBackupSource(tx, context, expected)).result,
+      );
     },
   };
 }

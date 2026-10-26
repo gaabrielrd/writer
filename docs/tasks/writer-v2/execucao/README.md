@@ -1858,3 +1858,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      inicia fonte interna metadata raiz/progresso; 26 Node dirigidos positivos.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-fonte-do-backup-de-aventuras.md).
      Sem endpoint/UI/arquivo; demais recursos, restauração e validate P2 pendentes.
+
+148. [Leitura da estrutura de aventuras](148-leitura-da-estrutura-de-aventuras.md):
+     raiz/partes por unidades, fonte no mesmo snapshot, metadata paginada e
+     procedência sem grant; 64 Node e três SDK positivos na versão final.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-leitura-da-estrutura-de-aventuras.md).
+     Cenas/demais famílias, pacote/restauração/UI e validate P2 permanecem abertos.

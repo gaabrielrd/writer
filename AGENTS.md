@@ -697,3 +697,7 @@ concluído estiverem satisfeitos. A lista fica em
   e revalide recursos/bindings/perfis antes do selo completo (ADR 0170).
 - Preserve leitura do próprio com universo indisponível; não copie lore global
   nem trate a âncora como grant ou backup integral.
+- Liste partes por metadata/cursor limitado e confira origem nativa por unidade
+  de até 64 KiB. Capture índice/IDs/tokens antes de awaits (ADR 0171).
+- Preserve conteúdo legado literal; recuse corpo externo sem leitor e mantenha
+  importId/URLs operacionais fora da procedência portátil.

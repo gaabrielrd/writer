@@ -3022,3 +3022,8 @@ controles, leitores, writers e limpeza, distinguindo prova local de gate operaci
 metadata autorizada da raiz/progresso, com identidade nativa e máscaras obrigatórias.
 Não depende do universo e não é selo de todos os recursos. Bindings/personas
 exigem provas próprias; P2 ainda não oferece arquivo ou restauração.
+
+A [ADR 0171](decisions/0171-adventure-backup-structure-read.md) acrescenta fonte
+transacional compatível, listagem metadata e leitura por unidades da raiz/partes.
+Codec próprio inclui texto legado e procedência declarada sem IDs de operação.
+Não há transporte público/arquivo completo; provas das outras famílias seguem.

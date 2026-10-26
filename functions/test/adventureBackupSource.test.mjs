@@ -221,3 +221,11 @@ test('a port without field masks cannot fall back to downloading root content', 
   });
   assert.equal(fullRead, false);
 });
+
+test('the original source contract retains its exact version-one golden token', async () => {
+  const f = await fixture();
+  assert.equal(
+    (await f.read()).sourceToken,
+    'c41d18f83b27fdecddd06b3b2f10dd77f1135a99339aa66ee8736e6d3469628e',
+  );
+});

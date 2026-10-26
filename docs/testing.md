@@ -2980,3 +2980,8 @@ com produtor real/banco em memória, autorização/máscaras, mudança/ABA e mun
 indisponível. [Evidência parcial](entregas/2026-10-26-writer-v2-fonte-do-backup-de-aventuras.md).
 Validate completo de P1 não é atribuído a esse código novo; P2 será validado no
 fechamento do bloco. Sem nova prova SDK/Chromium neste incremento interno.
+
+A [leitura de estrutura P2](entregas/2026-10-26-writer-v2-leitura-da-estrutura-de-aventuras.md)
+passou 64 Node dirigidos e três SDK reais (8.166,2951 ms na seleção final).
+Conferem produtores, metadata, 52/53 partes, bytes/Unicode/presença, ABA, Rules,
+falha/retry e intenção congelada. Sem frontend novo ou validate global P2 atribuído.
