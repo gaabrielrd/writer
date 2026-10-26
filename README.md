@@ -643,3 +643,10 @@ local em lotes, com confirmação, fence e preservação do lore já aplicado.
 241 Vitest distintos em rodadas e três jornadas Chromium, com temas/mobile.
 Componentes exportados; entrada no compêndio ainda depende de writers/Rules/
 drenagem coordenados. O formulário legado permanece; P1/F2-09/V2 abertos.
+
+A restauração de livros agora tem ação própria e lista de retomadas no Estúdio:
+revisão do backup atual/JSON legado, preparação em unidades, confirmação da cópia
+privada, pausa e recuperação após recarga. Abrir a cópia exige acesso atual no
+servidor. Veja a [entrega local](docs/entregas/2026-10-25-writer-v2-restauracao-no-estudio.md).
+Endpoints novos ainda sem implantação; roundtrip/consumidores/inventários/rollout/
+validate de P1 continuam, sem conclusão de F2-09/V2.

@@ -2960,3 +2960,10 @@ antes de removê-la por CAS integral. Bootstrap e finalização compartilham ker
 IndexedDB interno com codecs separados; journal cifrado permanece independente.
 Revisão é explícita e capturada antes de awaits. Ver
 [ADR 0161](decisions/0161-durable-book-restore-terminal-operations.md).
+
+A restauração do Estúdio compõe diálogo/lista da própria feature. Abertura da cópia
+usa consulta normal ao servidor e guard após await; intenções históricas não
+concedem conteúdo. Listas remount por conta e páginas independentes preservam
+pendências locais mesmo com fonte remota indisponível. Descarte local terminal
+reautoriza contexto e usa CAS do envelope, sem decrypt ou exclusão do projeto.
+Ver [ADR 0162](decisions/0162-book-restore-studio-workflow.md).

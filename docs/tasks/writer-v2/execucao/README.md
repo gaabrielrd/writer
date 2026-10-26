@@ -1794,3 +1794,16 @@ revisão, com raiz ausente após dois reinícios.
 [Evidência](../../../entregas/2026-10-25-writer-v2-inspecao-inicio-e-envio-de-backups.md).
 Finalização/cancelamento de job duráveis, UI/roundtrip e demais P1/V2/fases/gates
 continuam obrigatórios.
+
+### P1 — finalização durável e interface de restauração (plano 139 parcial)
+
+[Finalização](../../../entregas/2026-10-25-writer-v2-finalizacao-duravel-no-cliente.md)
+acrescenta intenção operacional sem chave, replay/reconciliação próprios,
+ativação/mídia/limpeza/cancelamento. 44 Vitest distintos, quatro Node e 14 cenários
+Chromium positivos em seleções. Commit local 221e7c7.
+
+[Interface do Estúdio](../../../entregas/2026-10-25-writer-v2-restauracao-no-estudio.md)
+compõe seleção/revisões/preparação/confirmação explícita, lista/pausa/retomada e
+abertura com acesso atual. 30 Vitest distintos e oito verificações Chromium
+positivos. Sem implantação. Roundtrip integral/consumidores/inventários/rollout/
+validate de P1 e demais V2/fases/gates continuam obrigatórios.

@@ -1,3 +1,5 @@
+export { BookRestoreDialog } from './components/BookRestoreDialog';
+export { BookRestorePreparations } from './components/BookRestorePreparations';
 export * from './model/backupContainer';
 export { fingerprintBookBackup } from './services/fingerprintBookBackup';
 export { inspectLegacyBookBackup } from './services/inspectLegacyBookBackup';

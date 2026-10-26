@@ -6,6 +6,7 @@ import { chooseDropdown } from '@/test/dropdown';
 import { StudioPage } from '../components/StudioPage';
 import {
   createBook,
+  getBook,
   listStudioBooks,
   prepareStudioBooks,
   type StudioBookSummary,
@@ -21,6 +22,41 @@ import {
 const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } => ({
   user: { uid: 'owner' },
   loading: false,
+}));
+const restore = vi.hoisted(() => ({ visible: false, guard: vi.fn() }));
+vi.mock('@/features/book-portability', () => ({
+  BookRestorePreparations: ({ onResume }: { onResume: (id: string) => void }) =>
+    restore.visible ? (
+      <section aria-label="Restaurações de livros">
+        <button onClick={() => onResume('restore-studio-0001')}>Retomar restauração</button>
+      </section>
+    ) : null,
+  BookRestoreDialog: ({
+    open,
+    restoreId,
+    onClose,
+    onOpenBook,
+  }: {
+    open: boolean;
+    restoreId?: string;
+    onClose: () => void;
+    onOpenBook: (id: string, guard: () => void) => Promise<void>;
+  }) =>
+    open ? (
+      <section aria-label="Backup no Estúdio">
+        <p>{restoreId ? 'Preparação existente' : 'Nova cópia privada'}</p>
+        <button
+          onClick={() => {
+            void onOpenBook('restored-book', () => {
+              restore.guard();
+            }).catch(() => {});
+          }}
+        >
+          Abrir cópia conferida
+        </button>
+        <button onClick={onClose}>Fechar restauração</button>
+      </section>
+    ) : null,
 }));
 const captures = vi.hoisted(() => ({ visible: false }));
 const comparisons = vi.hoisted(() => ({ visible: false }));
@@ -92,6 +128,7 @@ vi.mock('@/features/campaign-bases', () => ({
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('@/features/books', () => ({
   createBook: vi.fn(),
+  getBook: vi.fn(),
   listStudioBooks: vi.fn(),
   prepareStudioBooks: vi.fn(),
   BookCard: ({ book }: { book: StudioBookSummary }) => (
@@ -165,6 +202,9 @@ const campaign: CampaignSummary = {
   updatedAt: 2000,
 };
 beforeEach(() => {
+  restore.visible = false;
+  restore.guard.mockReset();
+  vi.mocked(getBook).mockReset();
   adoptions.visible = false;
   comparisons.visible = false;
   captures.visible = false;
@@ -549,4 +589,61 @@ it('Estúdio abre revisão com envelope observado da candidata e fecha sem criar
   expect(screen.getByRole('region', { name: 'Revisão observada no Estúdio' })).toHaveTextContent(
     'Revisão 7',
   );
+});
+
+it('restauração usa ação própria sem substituir importação de documentos', async () => {
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Restaurar backup de livro' }));
+  expect(screen.getByRole('region', { name: 'Backup no Estúdio' })).toHaveTextContent(
+    'Nova cópia privada',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar restauração' }));
+  expect(screen.getByRole('button', { name: 'Importar Documento' })).toBeInTheDocument();
+});
+it('retomada do backup continua acessível sem livro listado e abre somente com acesso atual ao servidor', async () => {
+  restore.visible = true;
+  vi.mocked(listStudioBooks).mockResolvedValue({ items: [], nextCursor: null });
+  vi.mocked(getBook).mockResolvedValue({ ...book, authorId: 'owner' });
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Retomar restauração' }));
+  expect(screen.getByRole('region', { name: 'Backup no Estúdio' })).toHaveTextContent(
+    'Preparação existente',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir cópia conferida' }));
+  expect(await screen.findByRole('heading', { name: 'Livro aberto' })).toBeInTheDocument();
+  expect(getBook).toHaveBeenCalledExactlyOnceWith('restored-book', { source: 'server' });
+});
+it.each([null, { ...book, authorId: 'other' }, { ...book, authorId: 'owner', deleting: true }])(
+  'histórico de restauração não abre raiz ausente estrangeira ou em exclusão',
+  async (value) => {
+    vi.mocked(getBook).mockResolvedValue(value);
+    render(tree());
+    await userEvent.click(await screen.findByRole('button', { name: 'Restaurar backup de livro' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir cópia conferida' }));
+    await waitFor(() => expect(getBook).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('heading', { name: 'Livro aberto' })).not.toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Backup no Estúdio' })).toBeInTheDocument();
+  },
+);
+
+it('resposta de acesso anterior à troca de conta não navega depois do await', async () => {
+  let release: (book: import('@/features/books').Book | null) => void = () => {};
+  vi.mocked(getBook).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Restaurar backup de livro' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir cópia conferida' }));
+  expect(restore.guard).not.toHaveBeenCalled();
+  restore.guard.mockImplementation(() => {
+    throw Error('Conta encerrada');
+  });
+  act(() => {
+    release({ ...book, authorId: 'owner' });
+  });
+  await waitFor(() => expect(restore.guard).toHaveBeenCalledTimes(1));
+  expect(screen.queryByRole('heading', { name: 'Livro aberto' })).not.toBeInTheDocument();
 });

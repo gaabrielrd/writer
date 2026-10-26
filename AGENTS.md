@@ -612,3 +612,14 @@ concluído estiverem satisfeitos. A lista fica em
   nativa. Desconhecido no mesmo checkpoint não encerra tentativa.
 - CAS compara registro inteiro. Histórico não concede acesso ao livro nem
   recria raiz excluída; cleanup de cancelamento mantém limit 16 no fingerprint.
+
+## Restauração no Estúdio
+
+- Componha diálogo/painel pela interface pública de book-portability; mantenha
+  importação de documentos separada e revisão/ativação explícitas (ADR 0162).
+- Capture conta/vida útil, pause entre unidades e preserve pedidos ao fechar.
+  Remonte listas por conta; falha de uma fonte não oculta as demais.
+- Antes de navegar, consulte livro no servidor, confira autor/exclusão e revalide
+  o guard após await. Recibo histórico não abre conteúdo.
+- Descarte de ciphertext terminal é explícito: reautorize contexto original e
+  compare envelope inteiro antes de removê-lo; não remova projeto nem decripte.

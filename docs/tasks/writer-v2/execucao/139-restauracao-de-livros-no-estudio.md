@@ -74,7 +74,7 @@ for conhecido; demais etapas usam estado textual, sem precisão inventada.
 - [x] Revisão/fingerprint/descritor e contratos de bootstrap/upload.
 - [x] Controle inicial, upload retomável e conflitos por provas originais.
 - [x] Contratos de revisão/ativação/mídia/limpeza e confirmação após chave revogada.
-- [ ] Sessão de cliente e painel/diálogo integrado ao Estúdio.
+- [x] Sessão de cliente e painel/diálogo integrado ao Estúdio.
 - [ ] Testes dirigidos, browser real e roundtrip atual/legado com consumidores normais.
 - [ ] Revisão/checks/ADR/evidência e commits locais.
 
@@ -163,3 +163,35 @@ após chave revogada e confirmação/reconciliação nativas. 44 Vitest distinto
 quatro Node e 14 cenários Chromium positivos em seleções;
 [evidência](../../../entregas/2026-10-25-writer-v2-finalizacao-duravel-no-cliente.md).
 Ainda falta integrar interface, validar consumidores/roundtrip e fechar P1.
+
+## Composição da interface antes do código
+
+A ação própria Restaurar backup de livro abre diálogo da feature; importação de
+documentos fica preservada. A lista combina páginas independentes de jobs
+autorizados, inícios locais e tentativas terminais locais. Abertura consulta
+estado; efeito novo depende de ação explícita. Nenhuma consulta inicia ativação.
+
+Sessão de interface guarda arquivo apenas em memória, fixa conta/vida útil e
+executa unidades sequenciais. Fechar invalida respostas; Pausar encerra o loop
+depois da unidade em andamento, preservando pedidos sem resposta. Upload retomado
+exige mesmo arquivo/hash e usa reviewHash original do job. Nova seleção invalida
+a revisão local antes da leitura.
+
+Revisão local apresenta contagens/ausências/políticas. Revisão final limitada vem
+do servidor; botão Criar cópia privada usa exatamente o valor exibido. Exibir
+cópia ativada antes de terminar limpeza; Abrir livro usa callback que confirma
+getBook no servidor e proprietário/ausência de exclusão antes de navegar.
+
+Retomar/Verificar preservam pedidos pendentes e erros, sem trocar IDs/tokens.
+Cancelamento pede confirmação explícita; início usa fence ou cancela job
+confirmado. Ciphertext de preparação terminal só pode ser removido por opção
+explícita com contexto original e CAS inteiro; nunca por falha de decrypt.
+
+## Estado da interface
+
+Diálogo, lista paginada e sessão no Estúdio implementados com confirmação explícita,
+pausa, conta/vida útil, recuperação e descarte local terminal confirmado.
+30 Vitest distintos positivos em seleções e oito verificações Chromium;
+[evidência](../../../entregas/2026-10-25-writer-v2-restauracao-no-estudio.md).
+UI provada com arquivo atual, três reinícios/respostas perdidas e limpeza completa.
+Roundtrip integral atual/legado e consumidores normais seguem pendentes.

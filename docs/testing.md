@@ -2910,3 +2910,10 @@ respostas perdidas. Raiz permaneceu ausente.
 Ver [evidência e limites](entregas/2026-10-25-writer-v2-inspecao-inicio-e-envio-de-backups.md),
 incluindo volume local de RPC/chave e fronteiras simuladas. Sem prova de produção,
 UI ou roundtrip integral; validate de P1 continua pendente.
+
+A restauração no Estúdio possui testes dirigidos de diálogo/lista, pausa,
+confirmação explícita, origem de arquivo, respostas tardias e acesso atual antes
+de navegar. Harness Chromium externo prova armazenamento nativo e fluxo com
+três reinícios/respostas perdidas até ativação e limpeza; identidade/SDK são
+simulados. Consulte a [evidência](entregas/2026-10-25-writer-v2-restauracao-no-estudio.md)
+para limites e resultados, sem inferir infraestrutura de produção.
