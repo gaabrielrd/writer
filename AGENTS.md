@@ -723,3 +723,9 @@ concluído estiverem satisfeitos. A lista fica em
 - Hash da unidade JSON não certifica texto histórico completo: confira ordinais,
   quantidade, bytes e SHA do manifesto antes de selar pacote. Restore futuro
   cria raiz privada pendente antes dos filhos ou planeja prova equivalente.
+- Personas portáteis da aventura seguem vínculos root/cena e herança dos blocos;
+  confira perfil/lote ativo antes da prosa. Preserve IDs legados válidos sem
+  prefixo custom- e arquivo, sem habilitar geração ou fabricar fallback (ADR 0177).
+- Compartilhe somente a projeção pura portablePersonaProfile entre domínios;
+  preserve alias/bytes do serializer de livro e exclua origem operacional,
+  credenciais/provedor e extras de perfil/trait do DTO.

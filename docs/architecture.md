@@ -3056,3 +3056,8 @@ retido de cena/bloco com cabeçalhos e chunks nativos. Fonte, parentToken e
 nascimento da raiz protegem a origem; fonte corrente não é obrigatória.
 DTOs por faixas preservam texto/labels, mas assembler futuro ainda deve conferir
 o manifesto do texto inteiro antes de selar arquivo.
+
+A [ADR 0177](decisions/0177-adventure-backup-used-personas.md) captura somente
+personas vinculadas à aventura/cenas, com provas nativas e disponibilidade ativa
+antes da prosa. IDs legados e arquivo são preservados. Projeção pura de perfil
+é compartilhada com livros por alias compatível; DTO da aventura é independente.
