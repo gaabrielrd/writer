@@ -714,3 +714,6 @@ concluído estiverem satisfeitos. A lista fica em
 - Lore portátil próprio deve conferir metadata/corpo pelo nascimento da raiz,
   conta e revisão, sem consultar universo. Tombstone exige corpo ausente e não
   vira ficha ativa; recuse corpo órfão ou de raiz recriada (ADR 0174).
+- Na preparação portátil, preserve escolhas/meta e tarefas atuais; não exporte
+  jobs/contadores como autoria nem preferências/atividade da conta. Ausência do
+  controle não cria defaults; futuros totais vêm das tarefas reais (ADR 0175).

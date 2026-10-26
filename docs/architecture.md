@@ -3045,3 +3045,8 @@ A [ADR 0174](decisions/0174-adventure-backup-local-lore-pairs.md) mantém leitor
 específico para pares de lore próprio e tombstones. Identidade da raiz e revisão
 do par são conferidas sem universo/autorização de campanha. Metadata não leva
 texto na listagem; corpo preserva relações neutras. Órfãos não são adotados.
+
+A [ADR 0175](decisions/0175-adventure-backup-project-preparation.md) acrescenta
+progress/checklist às definições do leitor existente. Preserva escolhas e
+tarefas sem jobs/contadores, sem inventar controle ausente ou copiar fuso/
+atividade da conta. Fonte 147 já ancora o controle de progresso.

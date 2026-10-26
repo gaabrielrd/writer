@@ -6,6 +6,8 @@ import { adventureBlockTypes, adventureBlockAudiences } from './adventureBlocksS
 export const ADVENTURE_RESOURCE_DEFINITIONS = Object.freeze(
   Object.fromEntries(
     Object.entries({
+      progress: { path: 'workProgress', singleton: 'current', control: true, optional: true },
+      checklist: { path: 'workChecklist', control: true },
       arc: { path: 'arcs', owner: true, nativeKind: 'arc' },
       event: { path: 'timelineEvents', owner: true, nativeKind: 'event' },
       milestone: { path: 'milestones', parent: 'arcs', owner: true, nativeKind: 'milestone' },
@@ -69,6 +71,8 @@ const narrative = [...common, 'kind', 'rankA', 'rankB'];
 export const ADVENTURE_RESOURCE_FIELDS = Object.freeze(
   Object.fromEntries(
     Object.entries({
+      progress: ['editorialState', 'wordGoal', 'updatedAt'],
+      checklist: ['title', 'completed', 'createdAt', 'updatedAt'],
       arc: [...narrative, 'initialState', 'objective', 'plannedOutcome'],
       event: [...narrative, 'description', 'dateLabel'],
       milestone: [...narrative, 'arcId', 'notes'],
@@ -227,6 +231,11 @@ export function serializeAdventureBackupResource(
       optional(value, key, utf8);
     for (const key of ['createdAt', 'updatedAt']) optional(value, key, date);
     optional(value, 'archived', (v) => typeof v === 'boolean');
+    optional(value, 'completed', (v) => typeof v === 'boolean');
+    optional(value, 'editorialState', (v) => ['draft', 'review', 'ready'].includes(v));
+    optional(value, 'wordGoal', (v) => v === null || (Number.isSafeInteger(v) && v > 0));
+    if (kind === 'checklist' && (!utf8(value.title) || typeof value.completed !== 'boolean'))
+      invalid();
     for (const key of ['rankA', 'rankB']) optional(value, key, validSceneRank);
     optional(value, 'rankSlot', (v) => v === null || ['A', 'B'].includes(v));
     optional(value, 'bodyHash', hash);

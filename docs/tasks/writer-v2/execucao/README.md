@@ -1882,3 +1882,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      204 Node e dois SDK positivos na seleção final.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-lore-proprio-no-backup-de-aventuras.md).
      Histórico/demais famílias, selo/pacote/restauração/UI e validate P2 abertos.
+
+152. [Metas e checklist no backup de aventuras](152-metas-e-checklist-no-backup-de-aventuras.md):
+     escolhas declaradas e tarefas atuais pelo leitor existente, sem controles
+     derivados/atividade da conta; 115 Node e um SDK positivos.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-metas-e-checklist-no-backup-de-aventuras.md).
+     Histórico/personas/mídia, selo/pacote/restauração/UI e validate P2 abertos.

@@ -87,6 +87,6 @@ de horas/esforço nem equivale a lançamento. Gates operacionais, humanos e
 comerciais continuam explícitos. Nenhum push, PR, merge, deploy ou CI nesta etapa.
 
 P2 iniciou fonte interna (147), raiz/partes (148), cenas/blocos/controles/
-planner/referências (149), narrativa (150) e lore próprio (151), com 204 Node e
-dois SDK positivos no último incremento. Não há backup integral ou restauração
-de aventuras ainda; a contagem de tarefas completas não muda.
+planner/referências (149), narrativa (150), lore próprio (151) e metas/checklist
+(152), com 115 Node e um SDK positivos no último incremento. Não há backup
+integral ou restauração de aventuras ainda; a contagem de tarefas completas não muda.
