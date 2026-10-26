@@ -3015,3 +3015,10 @@ para novos pedidos nos dois pontos de composição, com configuração pura comu
 Factory conserva default legado; job/reserva continuam fixados pela ADR 0168.
 O [inventário](tasks/writer-v2/inventario-portabilidade-livros.md) mapeia conteúdo,
 controles, leitores, writers e limpeza, distinguindo prova local de gate operacional.
+
+### P2 — âncora interna da aventura
+
+[ADR 0170](decisions/0170-adventure-backup-root-progress-anchor.md): leitura
+metadata autorizada da raiz/progresso, com identidade nativa e máscaras obrigatórias.
+Não depende do universo e não é selo de todos os recursos. Bindings/personas
+exigem provas próprias; P2 ainda não oferece arquivo ou restauração.

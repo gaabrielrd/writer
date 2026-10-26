@@ -1853,3 +1853,8 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      Sete SDK Storage também positivos; runner correto e concorrência limitada
      sem reduzir casos/limites. [Evidência](../../../entregas/2026-10-26-writer-v2-ciclo-e-inventario-dos-backups-de-livros.md).
      Gates operacionais/humanos/comerciais, P2/P3/D e demais fases continuam.
+
+147. [Portabilidade privada de aventuras](147-portabilidade-privada-de-aventuras.md):
+     inicia fonte interna metadata raiz/progresso; 26 Node dirigidos positivos.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-fonte-do-backup-de-aventuras.md).
+     Sem endpoint/UI/arquivo; demais recursos, restauração e validate P2 pendentes.

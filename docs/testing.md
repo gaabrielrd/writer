@@ -2974,3 +2974,9 @@ A suíte completa de Functions limita a dois arquivos simultâneos por
 --test-concurrency=2. O limite evita pressão de memória do runner padrão em
 máquinas com muitos CPUs e fixtures grandes; não reduz casos nem volumes.
 Seleções dirigidas que reúnem vários desses arquivos devem usar o mesmo limite.
+
+P2 começa com adventureBackupSource.test.mjs: 26 Node positivos (110,1388 ms)
+com produtor real/banco em memória, autorização/máscaras, mudança/ABA e mundo
+indisponível. [Evidência parcial](entregas/2026-10-26-writer-v2-fonte-do-backup-de-aventuras.md).
+Validate completo de P1 não é atribuído a esse código novo; P2 será validado no
+fechamento do bloco. Sem nova prova SDK/Chromium neste incremento interno.
