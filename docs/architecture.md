@@ -3094,3 +3094,9 @@ metadata de adventure-portability: registro puro compartilhado com servidor,
 port injetado sem Firebase no import, páginas/ancestrais limitados e SHA de todas
 as views. Scan/verify pela interface pública produzem prova inventory-only;
 corpos, histórico ordenado, Storage e selo autoral permanecem independentes.
+
+A [ADR 0183](decisions/0183-adventure-client-unit-stream.md) acrescenta leitura
+por ranges de unidades JSON em adventure-portability, com fonte/escopo/token e
+SHA integral, estado constante e prova unit-bytes-only. Return não aguarda RPC
+pendente; resposta tardia não emite dados/prova. Montagem autoral, manifestos
+históricos/Storage e selo completo permanecem etapas seguintes.

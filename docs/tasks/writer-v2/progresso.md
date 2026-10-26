@@ -110,3 +110,8 @@ acrescenta percurso metadata limitado e segunda passagem no cliente, com registr
 puro compartilhado: 24 Vitest/115 Node dirigidos positivos. É inventory-only;
 corpos, ordinais/hash de histórico, Storage, montagem/restauração/UI continuam
 pendentes. P2/P3/D e contagem 8/35 preservadas.
+
+[Unidades 161](execucao/161-leitura-limitada-das-unidades-de-aventuras.md)
+acrescenta ranges/hash integral no cliente, com intenção congelada e fechamento
+sem aguardar RPC: 24 casos e seleção final positivos. Prova unit-bytes-only não
+é selo autoral; composição/histórico/Storage/restauração/UI e P2 continuam abertos.

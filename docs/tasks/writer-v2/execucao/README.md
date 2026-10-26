@@ -1936,3 +1936,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      24 Vitest/115 Node, types/lint e bundle isolado positivos.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-inventario-do-cliente-de-aventuras.md).
      Inventory-only não certifica conteúdo/Storage nem sela arquivo; P2 aberta.
+
+161. [Leitura limitada das unidades de aventuras](161-leitura-limitada-das-unidades-de-aventuras.md):
+     JSON por ranges, SHA incremental e encerramento sem RPC tardio; 24 testes,
+     seleção final de whitelist, types/lint e bundle isolado positivos.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-unidades-de-aventuras-no-cliente.md).
+     Unit-bytes-only não sela pacote nem certifica histórico/Storage; P2 aberta.

@@ -3006,3 +3006,9 @@ e bundle isolado para navegador. Fixtures usam produtores/leitores reais com
 53 cenas, source final, mudanças sem rootclock/contagem, páginas adulteradas e
 cancelamento/conta. Falhas iniciais de fixture/import local/inferência de cursor
 estão registradas; sem relaxar contratos ou atribuir validate integral anterior.
+
+O [leitor de unidades P2](entregas/2026-10-26-writer-v2-unidades-de-aventuras-no-cliente.md)
+passou 24 testes do arquivo novo e seleção final de dois casos após whitelist
+própria. Hash Node independente, todos os read JSON nativos, ranges, conta/abort
+/return com RPC retido e intenção/buffers mutáveis são exercitados. Types/lint
+/bundle isolado positivos; sem repetir SDK ou atribuir validate integral anterior.

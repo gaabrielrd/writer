@@ -751,3 +751,7 @@ concluído estiverem satisfeitos. A lista fica em
   mantendo provas independentes de corpos/histórico/Storage (ADR 0182).
 - Ao acrescentar view/produtor autoral, atualize registro, percurso, fixtures
   e manifestos; não omita namespace novo de um backup declarado completo.
+- Corpos de aventura no cliente passam por readAdventureBackupUnit: fixe intenção
+  antes de next/await, valide DTO/base64/manifesto e SHA incremental (ADR 0183).
+  Unit-bytes-only não certifica pacote, histórico textual ou Storage. Return
+  deve fechar sem aguardar RPC e impedir emissão/prova após resposta tardia.

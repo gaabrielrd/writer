@@ -11,3 +11,11 @@ export {
   type AdventureInventoryItem,
   type AdventureInventoryProof,
 } from './services/adventureInventoryContracts';
+
+export { readAdventureBackupUnit } from './services/adventureUnit';
+export {
+  AdventureUnitError,
+  type AdventureUnitApi,
+  type AdventureUnitOptions,
+  type AdventureUnitProof,
+} from './services/adventureUnitContracts';
