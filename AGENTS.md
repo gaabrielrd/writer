@@ -717,3 +717,9 @@ concluído estiverem satisfeitos. A lista fica em
 - Na preparação portátil, preserve escolhas/meta e tarefas atuais; não exporte
   jobs/contadores como autoria nem preferências/atividade da conta. Ausência do
   controle não cria defaults; futuros totais vêm das tarefas reais (ADR 0175).
+- Histórico portátil da aventura exige target/resource e nascimento nativo
+  coerentes; chunk depende de parentToken/ordinal/ID derivado (ADR 0176).
+  Não adote versões anteriores ao nascimento da raiz nem exija fonte corrente.
+- Hash da unidade JSON não certifica texto histórico completo: confira ordinais,
+  quantidade, bytes e SHA do manifesto antes de selar pacote. Restore futuro
+  cria raiz privada pendente antes dos filhos ou planeja prova equivalente.

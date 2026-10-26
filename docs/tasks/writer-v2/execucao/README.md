@@ -1888,3 +1888,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      derivados/atividade da conta; 115 Node e um SDK positivos.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-metas-e-checklist-no-backup-de-aventuras.md).
      Histórico/personas/mídia, selo/pacote/restauração/UI e validate P2 abertos.
+
+153. [Histórico no backup de aventuras](153-historico-no-backup-de-aventuras.md):
+     versões manuais/before-restore de cena/bloco, chunks e provas nativas;
+     66 Node e dois SDK positivos após ajuste de ambiente do emulador.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-historico-no-backup-de-aventuras.md).
+     Personas/mídia, selo/pacote/restauração/UI e validate P2 abertos.

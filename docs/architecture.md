@@ -3050,3 +3050,9 @@ A [ADR 0175](decisions/0175-adventure-backup-project-preparation.md) acrescenta
 progress/checklist às definições do leitor existente. Preserva escolhas e
 tarefas sem jobs/contadores, sem inventar controle ausente ou copiar fuso/
 atividade da conta. Fonte 147 já ancora o controle de progresso.
+
+A [ADR 0176](decisions/0176-adventure-backup-retained-history.md) lê histórico
+retido de cena/bloco com cabeçalhos e chunks nativos. Fonte, parentToken e
+nascimento da raiz protegem a origem; fonte corrente não é obrigatória.
+DTOs por faixas preservam texto/labels, mas assembler futuro ainda deve conferir
+o manifesto do texto inteiro antes de selar arquivo.
