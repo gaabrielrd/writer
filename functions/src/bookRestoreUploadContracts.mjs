@@ -43,6 +43,7 @@ export const BOOK_RESTORE_METHODS = Object.freeze([
   'advanceBookRestoreAudit',
   'getBookRestoreActivationReview',
   'activateBookRestore',
+  'retireBookRestoreActivation',
   'getBookRestoreMediaState',
   'finalizeBookRestoreMedia',
   'getBookRestoreArchiveCleanup',

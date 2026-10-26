@@ -174,3 +174,58 @@ test('SDK atomic book activation registers a private pending cover and its use w
   assert.ok(storage.events.slice(events).every((e) => e.method === 'head'));
   assert.deepEqual(await activate(f), answer);
 });
+
+test('SDK activation retirement arbitrates concurrent original requests and preserves native audit and access', async () => {
+  for (const first of ['retire', 'activate', 'concurrent']) {
+    const f = await readyActivation({ db: admin, id: 'sdk-retire-' + first }),
+      api = f.factory(),
+      retire = () => api.retireBookRestoreActivation(uid, f.request),
+      original = () => api.activateBookRestore(uid, f.request);
+    let a, b;
+    if (first === 'concurrent') [a, b] = await Promise.all([original(), retire()]);
+    else if (first === 'retire') {
+      a = await retire();
+      b = await original();
+    } else {
+      a = await original();
+      b = await retire();
+    }
+    assert.equal(a.receipt.action, b.receipt.action);
+    assert.equal(a.receipt.checkpoint, b.receipt.checkpoint);
+    const jobRef = admin.doc(f.root),
+      receiptRef = admin.doc('users/' + uid + '/bookRestoreOperations/' + f.request.operationId),
+      job = await jobRef.get(),
+      receipt = await receiptRef.get(),
+      rootRef = admin.doc('books/' + f.p.bookId),
+      retired = a.receipt.action === 'retireBookRestoreActivation';
+    assert.equal((await rootRef.get()).exists, !retired);
+    assert.equal(job.updateTime.isEqual(receipt.createTime), true);
+    assert.equal(receipt.createTime.isEqual(receipt.updateTime), true);
+    const other = env.authenticatedContext('other').firestore(),
+      own = env.authenticatedContext(uid).firestore();
+    await assertFails(getDoc(doc(other, receiptRef.path)));
+    await assertFails(setDoc(doc(own, receiptRef.path), { receipt: 'forged' }));
+    await assert.rejects(api.retireBookRestoreActivation('other', f.request));
+    if (retired) {
+      assert.equal(job.data().preparation.audit.sealOperationId, f.request.operationId);
+      const review = await api.getBookRestoreActivationReview(uid, {
+        restoreId: f.id,
+        jobToken: f.p.jobToken,
+      });
+      assert.equal(review.checkpoint, f.p.checkpoint + 1);
+      await api.activateBookRestore(uid, {
+        ...f.request,
+        operationId: f.id + '-fresh',
+        expectedCheckpoint: review.checkpoint,
+        reviewToken: review.reviewToken,
+      });
+      assert.equal((await rootRef.get()).data().status, 'draft');
+    }
+    await assertSucceeds(getDoc(doc(own, rootRef.path)));
+    await assertFails(getDoc(doc(other, rootRef.path)));
+    await rootRef.delete();
+    assert.equal((await original()).receipt.action, a.receipt.action);
+    assert.equal((await retire()).receipt.action, a.receipt.action);
+    assert.equal((await rootRef.get()).exists, false);
+  }
+});

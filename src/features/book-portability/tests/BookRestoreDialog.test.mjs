@@ -370,3 +370,35 @@ it('lost activation hides a new confirmation and offers only the recorded retry'
   expect(screen.getByRole('button', { name: 'Retomar' })).toBeInTheDocument();
   expect(m.activate).toHaveBeenCalledTimes(1);
 });
+
+it('retired stale activation presents a changed universe review and requires another explicit confirmation', async () => {
+  m.current = {
+    ...m.current,
+    state: 'content-verified',
+    preparation: { phase: 'activation-ready' },
+  };
+  m.activate.mockImplementationOnce(async () => {
+    m.current = { ...m.current, checkpoint: m.current.checkpoint + 1 };
+    m.final = {
+      ...m.final,
+      checkpoint: m.current.checkpoint,
+      reviewToken: 'f'.repeat(64),
+      summary: {
+        ...m.final.summary,
+        universe: { originKind: 'reference', observed: 'unavailable', universeId: null },
+      },
+    };
+    return { kind: 'retired' };
+  });
+  view({ ...props(), restoreId: m.current.restoreId });
+  const old = structuredClone(m.final);
+  await userEvent.click(await screen.findByRole('button', { name: 'Criar cópia privada' }));
+  const region = await screen.findByRole('region', { name: 'Revisão da cópia privada' });
+  await waitFor(() => expect(region).toHaveTextContent(/indisponível/));
+  expect(m.activate).toHaveBeenCalledExactlyOnceWith(old);
+  expect(screen.queryByRole('button', { name: 'Abrir livro' })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Criar cópia privada' }));
+  await screen.findByRole('button', { name: 'Abrir livro' });
+  expect(m.activate).toHaveBeenLastCalledWith(m.final);
+  expect(m.activate).toHaveBeenCalledTimes(2);
+});

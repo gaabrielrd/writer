@@ -2928,3 +2928,8 @@ A [compatibilidade do rascunho marcado](entregas/2026-10-25-writer-v2-ausencia-d
 tem 32 Node, 16 Vitest da captura e dois roundtrips selecionados positivos,
 incluindo retomada, recusas, ausência neutra, estilo antigo, vazio/removido e
 recaptura. Banco/ports em memória não comprovam produção nem validate global.
+
+A [revisão renovada na ativação](entregas/2026-10-25-writer-v2-revisao-renovada-na-ativacao.md)
+tem 65 Node e 29 Vitest distintos positivos em seleções, um SDK real com três
+ordens concorrentes e oito verificações Chromium. Inclui falhas inicialmente
+encontradas no selo/limpeza, retomada nativa e segundo clique obrigatório.

@@ -542,3 +542,151 @@ test('activation preserves a monolithic legacy payload and the normal active-boo
   assert.equal(data.details, 'x'.repeat(530000));
   assert.equal(data.name, 'Old');
 });
+
+test('retirement seals the exact original activation atomically and a new review needs explicit activation', async () => {
+  const f = await readyActivation(),
+    before = structuredClone(f.records),
+    answer = await f.factory().retireBookRestoreActivation(uid, f.request);
+  assert.equal(answer.receipt.action, 'retireBookRestoreActivation');
+  assert.equal(answer.progress.state, 'content-verified');
+  assert.equal(answer.progress.checkpoint, f.p.checkpoint + 1);
+  assert.equal(f.records.has('books/' + f.p.bookId), false);
+  for (const [path, data] of before)
+    if (path !== f.root) assert.deepEqual(f.records.get(path), data);
+  const commit = f.commits.at(-1);
+  assert.equal(commit.length, 2);
+  assert.ok(commit.some((w) => w.path === f.root));
+  assert.ok(
+    commit.some(
+      (w) => w.path === 'users/' + uid + '/bookRestoreOperations/' + f.request.operationId,
+    ),
+  );
+  assert.deepEqual(await f.factory().retireBookRestoreActivation(uid, f.request), answer);
+  assert.deepEqual(await activate(f), answer);
+  assert.deepEqual(
+    await f.factory().resolveBookRestoreOperation(uid, {
+      restoreId: f.id,
+      jobToken: f.p.jobToken,
+      operationId: f.request.operationId,
+      requestHash: requestHash('activateBookRestore', f.request),
+    }),
+    answer,
+  );
+  const review = await f
+    .factory()
+    .getBookRestoreActivationReview(uid, { restoreId: f.id, jobToken: f.p.jobToken });
+  assert.notEqual(review.reviewToken, f.review.reviewToken);
+  const current = {
+    ...f.request,
+    operationId: f.id + '-new-activation',
+    expectedCheckpoint: review.checkpoint,
+    reviewToken: review.reviewToken,
+  };
+  await f.factory().activateBookRestore(uid, current);
+  assert.equal(f.records.get('books/' + f.p.bookId).status, 'draft');
+  assert.equal((await activate(f)).receipt.action, 'retireBookRestoreActivation');
+});
+test('an activation already committed wins retirement and historical replay never recreates a deleted book', async () => {
+  const f = await readyActivation(),
+    answer = await activate(f);
+  assert.deepEqual(await f.factory().retireBookRestoreActivation(uid, f.request), answer);
+  f.records.delete('books/' + f.p.bookId);
+  const commits = f.commits.length;
+  assert.deepEqual(await f.factory().retireBookRestoreActivation(uid, f.request), answer);
+  assert.equal(f.records.has('books/' + f.p.bookId), false);
+  assert.ok(f.commits.slice(commits).every((writes) => writes.length === 0));
+});
+test('retirement binds original identity review and fingerprint and rejects altered reuse without effects', async () => {
+  const f = await readyActivation();
+  for (const [actor, patch] of [
+    ['', {}],
+    ['other', {}],
+    [uid, { jobToken: 'e'.repeat(64) }],
+    [uid, { expectedCheckpoint: f.p.checkpoint - 1 }],
+    [uid, { reviewToken: null }],
+    [uid, { requestHash: 'a'.repeat(64) }],
+  ])
+    await assert.rejects(
+      f.factory().retireBookRestoreActivation(actor, { ...f.request, ...patch }),
+    );
+  assert.equal(
+    f.records.has('users/' + uid + '/bookRestoreOperations/' + f.request.operationId),
+    false,
+  );
+  await f.factory().retireBookRestoreActivation(uid, f.request);
+  for (const patch of [{ reviewToken: 'f'.repeat(64) }, { expectedCheckpoint: f.p.checkpoint + 1 }])
+    await assert.rejects(f.factory().retireBookRestoreActivation(uid, { ...f.request, ...patch }), {
+      code: 'invalid-argument',
+    });
+  assert.equal(f.records.has('books/' + f.p.bookId), false);
+});
+test('retirement fences a stale universe review even if the same origin becomes available again', async () => {
+  const f = await worldActivation();
+  await f.db.runTransaction((tx) => tx.update(f.db.doc('universes/world'), { deleting: true }));
+  await assert.rejects(activate(f), { details: { reason: 'activation-review-changed' } });
+  await f.factory().retireBookRestoreActivation(uid, f.request);
+  await f.db.runTransaction((tx) => tx.update(f.db.doc('universes/world'), { deleting: false }));
+  assert.equal((await activate(f)).receipt.action, 'retireBookRestoreActivation');
+  assert.equal(f.records.has('books/' + f.p.bookId), false);
+  assert.equal(f.records.get('universes/world').bookCount, 0);
+  const review = await f
+    .factory()
+    .getBookRestoreActivationReview(uid, { restoreId: f.id, jobToken: f.p.jobToken });
+  assert.equal(review.summary.universe.universeId, 'world');
+  await f.factory().activateBookRestore(uid, {
+    ...f.request,
+    operationId: f.id + '-explicit-fresh',
+    expectedCheckpoint: review.checkpoint,
+    reviewToken: review.reviewToken,
+  });
+  assert.equal(f.records.get('universes/world').bookCount, 1);
+});
+
+test('historical audit seal transition requires exact frozen content and the original operation self identity', async () => {
+  const f = await readyActivation(),
+    sealPath = 'users/' + uid + '/bookRestoreOperations/' + f.p.preparation.audit.sealOperationId,
+    original = structuredClone(f.records.get(sealPath));
+  await f.factory().retireBookRestoreActivation(uid, f.request);
+  const read = () =>
+    f.factory().resolveBookRestoreOperation(uid, {
+      restoreId: f.id,
+      jobToken: f.p.jobToken,
+      operationId: original.receipt.operationId,
+      requestHash: original.fingerprint,
+    });
+  assert.equal((await read()).receipt.action, 'advanceBookRestoreAudit');
+  for (const patch of [
+    (value) => {
+      value.receipt.preparation.audit.sealOperationId = 'foreign-seal-operation';
+    },
+    (value) => {
+      value.receipt.preparation.audit.checkedArtifacts--;
+      value.receipt.preparation.audit.checkedPhysical--;
+    },
+    (value) => {
+      value.receipt.preparation.audit.contextToken = 'f'.repeat(64);
+    },
+  ]) {
+    const corrupted = structuredClone(original);
+    patch(corrupted);
+    f.records.set(sealPath, corrupted);
+    await assert.rejects(read(), { code: 'failed-precondition' });
+  }
+  f.records.set(sealPath, original);
+  assert.equal((await read()).receipt.action, 'advanceBookRestoreAudit');
+});
+test('retirement refuses a recreated current audit seal without replacing it or advancing the job', async () => {
+  const base = adventureImportDb({ nativeUpdates: true }),
+    f = { ...base, ...(await readyActivation({ db: base.db })) },
+    sealRef = f.db.doc(
+      'users/' + uid + '/bookRestoreOperations/' + f.p.preparation.audit.sealOperationId,
+    ),
+    value = f.records.get(sealRef.path);
+  await f.db.runTransaction((tx) => tx.delete(sealRef));
+  await f.db.runTransaction((tx) => tx.create(sealRef, value));
+  const before = structuredClone(f.records);
+  await assert.rejects(f.factory().retireBookRestoreActivation(uid, f.request), {
+    code: 'failed-precondition',
+  });
+  assert.deepEqual(f.records, before);
+});

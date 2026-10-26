@@ -661,3 +661,8 @@ O rascunho explícito também conserva ausência declarada de persona e override
 antigos em seu histórico, sem consulta por coincidência ou perda de texto.
 O [incremento local](docs/entregas/2026-10-25-writer-v2-ausencia-de-persona-no-rascunho.md)
 não fecha inventário, compatibilidade v1 nem P1.
+
+Mudança do universo antes da ativação agora encerra o pedido antigo por recibo
+nativo e reapresenta revisão, exigindo nova confirmação. Veja a
+[evidência local](docs/entregas/2026-10-25-writer-v2-revisao-renovada-na-ativacao.md);
+o callable novo precisa de implantação coordenada antes de uso em produção.

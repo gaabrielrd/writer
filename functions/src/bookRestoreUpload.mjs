@@ -95,6 +95,7 @@ const actions = {
   advanceBookRestoreSourceIndexes: ['content-verified'],
   advanceBookRestoreAudit: ['content-verified'],
   activateBookRestore: ['activated'],
+  retireBookRestoreActivation: ['content-verified'],
 };
 export function createBookRestoreUploadService({
   db,
@@ -206,13 +207,23 @@ export function createBookRestoreUploadService({
       ...(job.state === 'activated' ? { activation: job.activation } : {}),
     };
   }
-  function writeOp(tx, uid, id, action, request, job, token, sequence = null) {
+  function writeOp(
+    tx,
+    uid,
+    id,
+    action,
+    request,
+    job,
+    token,
+    sequence = null,
+    originalAction = action,
+  ) {
     const value = receipt(action, request, job, sequence);
     tx.create(opRef(uid, request.operationId), {
       schemaVersion: 1,
       ownerId: uid,
       restoreId: id,
-      fingerprint: requestHash(action, request),
+      fingerprint: requestHash(originalAction, request),
       ...(token === undefined ? {} : { jobToken: token }),
       receipt: value,
     });
@@ -260,6 +271,13 @@ export function createBookRestoreUploadService({
       )
         inconsistent();
     } else if (Object.hasOwn(r, 'activation')) inconsistent();
+    if (
+      r.action === 'retireBookRestoreActivation' &&
+      (r.preparation?.schemaVersion !== 13 ||
+        r.preparation.phase !== 'activation-ready' ||
+        r.preparation.audit?.sealOperationId !== r.operationId)
+    )
+      inconsistent();
     ['checkpoint', 'uploadedChunks', 'uploadedBytes', 'cleanedChunks'].forEach((k) =>
       integer(r[k]),
     );
@@ -416,7 +434,18 @@ export function createBookRestoreUploadService({
           prior.family > current.family ||
           ['journals', 'physical', 'done'].indexOf(prior.phase) >
             ['journals', 'physical', 'done'].indexOf(current.phase) ||
-          (prior.sealOperationId !== null && prior.sealOperationId !== current.sealOperationId)
+          (prior.sealOperationId !== null &&
+            prior.sealOperationId !== current.sealOperationId &&
+            !(
+              ['advanceBookRestoreAudit', 'retireBookRestoreActivation'].includes(r.action) &&
+              prior.phase === 'done' &&
+              current.phase === 'done' &&
+              prior.sealOperationId === r.operationId &&
+              current.sealOperationId !== null &&
+              r.checkpoint < loaded.job.checkpoint &&
+              digest({ ...prior, sealOperationId: null }) ===
+                digest({ ...current, sealOperationId: null })
+            ))
         )
           inconsistent();
       }
@@ -481,6 +510,7 @@ export function createBookRestoreUploadService({
         'advanceBookRestoreSourceIndexes',
         'advanceBookRestoreAudit',
         'activateBookRestore',
+        'retireBookRestoreActivation',
       ].includes(r.action)
     )
       inconsistent();

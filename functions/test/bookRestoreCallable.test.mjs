@@ -32,6 +32,7 @@ const expected = [
   'advanceBookRestoreAudit',
   'getBookRestoreActivationReview',
   'activateBookRestore',
+  'retireBookRestoreActivation',
   'getBookRestoreMediaState',
   'finalizeBookRestoreMedia',
   'getBookRestoreArchiveCleanup',
@@ -51,7 +52,7 @@ const internal = [
 
 test('restore callable list is immutable, exact and excludes every internal reader/key/helper', () => {
   assert.deepEqual(BOOK_RESTORE_METHODS, expected);
-  assert.equal(new Set(BOOK_RESTORE_METHODS).size, 31);
+  assert.equal(new Set(BOOK_RESTORE_METHODS).size, 32);
   assert.ok(Object.isFrozen(BOOK_RESTORE_METHODS));
   assert.throws(() => BOOK_RESTORE_METHODS.push('openPreparedBookRestoreLore'), TypeError);
   for (const method of internal) assert.equal(BOOK_RESTORE_METHODS.includes(method), false);

@@ -38,6 +38,7 @@ for (const method of [
     expect(mocks.functions).toHaveBeenCalledExactlyOnceWith('app', 'us-central1');
   });
 for (const [name, method] of [
+  ['retireActivation', 'retireBookRestoreActivation'],
   ['review', 'getBookRestoreActivationReview'],
   ['media', 'getBookRestoreMediaState'],
   ['archive', 'getBookRestoreArchiveCleanup'],

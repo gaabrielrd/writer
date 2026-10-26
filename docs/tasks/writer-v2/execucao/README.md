@@ -1823,3 +1823,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      dois roundtrips positivos. Sem inventar perfil ou recriar capítulo.
      [Evidência](../../../entregas/2026-10-25-writer-v2-ausencia-de-persona-no-rascunho.md).
      P1 segue com inventários/legados/rollout/validate e fases 3–5 pendentes.
+
+142. [Revisão alterada na ativação](142-revisao-alterada-na-ativacao.md):
+     retirada atômica pelo pedido original, selo conferido e nova confirmação.
+     65 Node/29 Vitest distintos em seleções, um SDK com três ordens concorrentes
+     e oito verificações Chromium. [Evidência](../../../entregas/2026-10-25-writer-v2-revisao-renovada-na-ativacao.md).
+     Inventários/legados/rollout/validate e demais fases/gates continuam pendentes.

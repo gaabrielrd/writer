@@ -646,3 +646,15 @@ concluído estiverem satisfeitos. A lista fica em
   outro vínculo omite marca antiga e segue a autorização normal.
 - Conte avisos reais no draft e em work-version.draft, sem instalar perfil ausente
   ou recriar capítulo. Reautorize a origem antes do selo, inclusive sem perfil.
+
+## Revisão alterada na ativação de livros
+
+- activation-review-changed pode retirar o pedido original somente por transação
+  retireBookRestoreActivation, com mesmo operationId/fingerprint. Recibo nativo
+  e checkpoint impedem ativação antiga posterior; unknown sozinho não apaga journal.
+- Confira selo/âncora antes de renovar seu ID; mantenha preparação congelada.
+  Revisão exige checkpoint/preparação/nascimento exatos (ADR 0165).
+- Históricos de audit/retirada aceitam outro selo só com self-ID, checkpoint
+  anterior e audit idêntico exceto sealOperationId; preserve demais recusas.
+- Host reapresenta revisão e exige novo clique. Rede/conta/CAS incertos preservam
+  metadata; replay confirma efeito original sem conceder acesso ou recriar raiz.

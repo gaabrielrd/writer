@@ -2980,3 +2980,10 @@ Contribuição local projeta a marca fechada do mesmo vínculo; ausência manté
 persona null sem lookup, e overrides antigos mantêm perfil autorizado. Schema
 do draft/histórico e warnings retomáveis compartilham o contrato da
 [ADR 0164](decisions/0164-explicit-draft-persona-absence.md). Sem novo namespace.
+
+### Renovação da revisão de ativação
+
+[ADR 0165](decisions/0165-retire-stale-book-activation.md) arbitra retirada/ativação
+pelo mesmo pedido original. Selo nativo é conferido antes de renovar checkpoint;
+recibos históricos mantêm audit congelado. Journal não muda de schema e só sai
+por recibo/CAS ou prova monotônica existente; novo clique confirma revisão atual.

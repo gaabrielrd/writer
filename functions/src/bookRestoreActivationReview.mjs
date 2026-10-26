@@ -48,20 +48,10 @@ function proof(artifact) {
     journal: nativeRestoreToken(artifact.journal),
   };
 }
-/** Internal transaction port, shared with the future atomic activation. No writes or grants. */
-export async function prepareBookRestoreActivationReview(tx, db, loaded, items, readOp) {
+/** Certifies the current frozen audit seal before review or atomic retirement. */
+export async function verifyBookRestoreActivationAudit(tx, db, loaded, readOp) {
   available(loaded);
   const p = loaded.job.preparation;
-  for (const [key, kind] of [
-    ['metadata', 'book-metadata'],
-    ['universe', 'book-universe'],
-    ['cover', 'book-cover'],
-  ]) {
-    if (items[key]?.record.kind !== kind || items[key].record.id !== loaded.job.bookId)
-      inconsistent();
-    await items[key].verify(tx);
-  }
-  if (!same(items.universe.value.origin, p.universe.origin)) inconsistent();
   await verifyAuditAnchor(tx, db, loaded, p.audit.anchor);
   const seal = await tx.get(
     db.doc('users/' + loaded.job.ownerId + '/bookRestoreOperations/' + p.audit.sealOperationId),
@@ -77,7 +67,7 @@ export async function prepareBookRestoreActivationReview(tx, db, loaded, items, 
   const sealIdentity = bookBackupIdentity(seal),
     jobIdentity = bookBackupIdentity(loaded.snapshot);
   if (
-    sealReceipt.action !== 'advanceBookRestoreAudit' ||
+    !['advanceBookRestoreAudit', 'retireBookRestoreActivation'].includes(sealReceipt.action) ||
     sealReceipt.state !== 'content-verified' ||
     sealReceipt.checkpoint !== loaded.job.checkpoint ||
     !same(sealReceipt.preparation, p) ||
@@ -87,6 +77,24 @@ export async function prepareBookRestoreActivationReview(tx, db, loaded, items, 
       sealIdentity.created.nanoseconds > jobIdentity.updated.nanoseconds)
   )
     inconsistent();
+  return seal;
+}
+
+/** Internal transaction port shared with atomic activation. No writes or grants. */
+export async function prepareBookRestoreActivationReview(tx, db, loaded, items, readOp) {
+  available(loaded);
+  const p = loaded.job.preparation;
+  for (const [key, kind] of [
+    ['metadata', 'book-metadata'],
+    ['universe', 'book-universe'],
+    ['cover', 'book-cover'],
+  ]) {
+    if (items[key]?.record.kind !== kind || items[key].record.id !== loaded.job.bookId)
+      inconsistent();
+    await items[key].verify(tx);
+  }
+  if (!same(items.universe.value.origin, p.universe.origin)) inconsistent();
+  const seal = await verifyBookRestoreActivationAudit(tx, db, loaded, readOp);
   const control = await readBookRestoreArtifact(tx, db, loaded, 'work-control', 'current'),
     index = await readBookRestoreArtifact(tx, db, loaded, 'entity-index-control', 'entity-scenes'),
     coverDefinition = await readBookRestoreArtifact(tx, db, loaded, 'cover-definition', 'current'),

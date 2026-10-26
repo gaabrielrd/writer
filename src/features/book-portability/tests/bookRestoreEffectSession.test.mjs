@@ -43,6 +43,7 @@ function client(f) {
   };
   c.api = {
     mutate: call,
+    retireActivation: (input) => call('retireBookRestoreActivation', input),
     review: (input) => call('getBookRestoreActivationReview', input),
     media: (input) => call('getBookRestoreMediaState', input),
     archive: (input) => call('getBookRestoreArchiveCleanup', input),
@@ -119,10 +120,13 @@ it('resolver confirms original activation after transport loss without issuing a
   expect(c.record).toBeNull();
   expect(c.calls.filter((r) => r.method === 'activateBookRestore')).toHaveLength(1);
 });
-it('stale review is retained unchanged and an unknown same-checkpoint resolution cannot clear or replace it', async () => {
+it('unknown same-checkpoint resolution cannot clear a stale activation while retirement is unavailable', async () => {
   const f = await readyActivation(),
     c = client(f),
     review = await c.make().review();
+  c.api.retireActivation = async () => {
+    throw Error('Retirement unavailable');
+  };
   const changed = { ...review, reviewToken: 'f'.repeat(64) };
   await expect(c.make().activate(changed)).rejects.toThrow();
   const original = structuredClone(c.record);
@@ -137,6 +141,9 @@ it('checkpoint advancement proves an uncommitted stale activation cannot produce
   const f = await readyActivation(),
     c = client(f),
     review = await c.make().review();
+  c.api.retireActivation = async () => {
+    throw Error('Retirement unavailable');
+  };
   await expect(c.make().activate({ ...review, reviewToken: 'f'.repeat(64) })).rejects.toThrow();
   await f.factory().activateBookRestore(uid, f.request);
   expect((await c.make().reconcile()).kind).toBe('superseded');
@@ -302,4 +309,78 @@ it('activation snapshots the displayed review before waiting for local storage',
   expect(c.calls.filter((r) => r.method === 'activateBookRestore').at(-1).input.reviewToken).toBe(
     f.review.reviewToken,
   );
+});
+
+it('definitively stale review retires the original intent and presents a fresh review without activating automatically', async () => {
+  const f = await readyActivation(),
+    c = client(f),
+    review = await c.make().review();
+  const retired = await c.make().activate({ ...review, reviewToken: 'f'.repeat(64) });
+  expect(retired.kind).toBe('retired');
+  expect(c.record).toBeNull();
+  expect(f.records.has('books/' + f.p.bookId)).toBe(false);
+  const original = c.calls.find((r) => r.method === 'activateBookRestore').input;
+  expect(c.calls.find((r) => r.method === 'retireBookRestoreActivation').input).toEqual(original);
+  const next = await c.make().review();
+  expect(next.checkpoint).toBe(review.checkpoint + 1);
+  expect(next.reviewToken).not.toBe(review.reviewToken);
+  expect((await c.make().activate(next)).job.state).toBe('activated');
+  let last;
+  for (let n = 0; n < 1000; n++) {
+    last = await c.make().advance();
+    if (last.kind === 'complete') break;
+  }
+  expect(last.kind).toBe('complete');
+});
+it('lost retirement response survives a fresh session using the same original intent and no second retirement', async () => {
+  const f = await readyActivation(),
+    c = client(f),
+    retire = c.api.retireActivation;
+  c.api.retireActivation = async (input) => {
+    await retire(input);
+    throw Error('Lost retirement reply');
+  };
+  await expect(
+    c.make().activate({ ...(await c.make().review()), reviewToken: 'f'.repeat(64) }),
+  ).rejects.toThrow('Lost retirement reply');
+  const original = structuredClone(c.record);
+  expect((await c.make().resume()).kind).toBe('retired');
+  expect(c.record).toBeNull();
+  const calls = c.calls.filter((r) => r.method === 'activateBookRestore');
+  expect(calls).toHaveLength(2);
+  expect(calls[1].input).toEqual(calls[0].input);
+  expect(calls[1].input.operationId).toBe(original.intent.operationId);
+  expect(c.calls.filter((r) => r.method === 'retireBookRestoreActivation')).toHaveLength(1);
+  expect(f.records.has('books/' + f.p.bookId)).toBe(false);
+});
+it('transport failure alone never retires an activation and account/CAS still protect a retired receipt', async () => {
+  const f = await readyActivation(),
+    c = client(f);
+  c.api.mutate = async () => {
+    throw Error('Offline before commit');
+  };
+  await expect(c.make().activate(await c.make().review())).rejects.toThrow('Offline before commit');
+  expect(c.calls.some((r) => r.method === 'retireBookRestoreActivation')).toBe(false);
+  expect(c.record).not.toBeNull();
+  const g = await readyActivation(),
+    d = client(g),
+    retire = d.api.retireActivation;
+  d.api.retireActivation = async (input) => {
+    const reply = await retire(input);
+    d.alive = false;
+    return reply;
+  };
+  await expect(
+    d.make().activate({ ...(await d.make().review()), reviewToken: 'f'.repeat(64) }),
+  ).rejects.toThrow('Inactive account');
+  expect(d.record).not.toBeNull();
+  d.alive = true;
+  const saved = structuredClone(d.record),
+    compare = d.storage.compare;
+  d.storage.compare = async () => false;
+  await expect(d.make().reconcile()).rejects.toThrow();
+  expect(d.record).toEqual(saved);
+  d.storage.compare = compare;
+  expect((await d.make().reconcile()).kind).toBe('retired');
+  expect(d.record).toBeNull();
 });

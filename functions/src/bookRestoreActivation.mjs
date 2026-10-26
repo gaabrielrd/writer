@@ -8,7 +8,10 @@ import {
 } from './bookRestoreUploadContracts.mjs';
 import { digest } from './sceneContracts.mjs';
 import { createVerifiedBookRestoreContent } from './bookRestoreContentRead.mjs';
-import { prepareBookRestoreActivationReview } from './bookRestoreActivationReview.mjs';
+import {
+  prepareBookRestoreActivationReview,
+  verifyBookRestoreActivationAudit,
+} from './bookRestoreActivationReview.mjs';
 import { prepareBookRestoreUniverseLink } from './bookRestoreUniverse.mjs';
 import { prepareBookRestoreActivationEffects } from './bookRestoreActivationEffects.mjs';
 const action = 'activateBookRestore';
@@ -24,6 +27,46 @@ export function createBookRestoreActivationService({
   keyContext,
 }) {
   return {
+    async retireBookRestoreActivation(uid, input) {
+      authorize(uid);
+      const request = {
+          ...mutationInput(input, ['reviewToken']),
+          reviewToken: restoreHash(input.reviewToken),
+        },
+        fingerprint = requestHash(action, request),
+        opRef = db.doc('users/' + uid + '/bookRestoreOperations/' + request.operationId);
+      return db.runTransaction(async (tx) => {
+        const loaded = await load(tx, uid, request.restoreId, request.jobToken),
+          op = await tx.get(opRef);
+        if (op.exists)
+          return confirmed(loaded, readOp(op, uid, request.restoreId, fingerprint, loaded));
+        if (loaded.job.state !== 'content-verified') fail('failed-precondition', 'state-conflict');
+        if (loaded.job.checkpoint !== request.expectedCheckpoint)
+          fail('failed-precondition', 'checkpoint-conflict');
+        if (
+          loaded.job.preparation?.schemaVersion !== 13 ||
+          loaded.job.preparation.phase !== 'activation-ready'
+        )
+          fail('failed-precondition', 'activation-phase-conflict');
+        await verifyBookRestoreActivationAudit(tx, db, loaded, readOp);
+        const preparation = structuredClone(loaded.job.preparation);
+        preparation.audit.sealOperationId = request.operationId;
+        const record = next(loaded.job, request, { preparation }),
+          receipt = writeOp(
+            tx,
+            uid,
+            request.restoreId,
+            'retireBookRestoreActivation',
+            request,
+            record,
+            loaded.view.jobToken,
+            null,
+            action,
+          );
+        tx.update(loaded.ref, record);
+        return confirmed({ ...loaded, view: { ...loaded.view, ...pickProgress(record) } }, receipt);
+      });
+    },
     async activateBookRestore(uid, input) {
       authorize(uid);
       const request = {

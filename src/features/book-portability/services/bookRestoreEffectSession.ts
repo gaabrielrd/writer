@@ -37,7 +37,7 @@ type Store = {
   compare: typeof compareStoredBookRestoreEffect;
 };
 export type BookRestoreEffectAck = {
-  kind: 'confirmed' | 'already-complete';
+  kind: 'confirmed' | 'already-complete' | 'retired';
   action: BookRestoreEffectAction;
   job?: BookRestoreTransferJob;
   media?: BookRestoreMediaStatus;
@@ -130,6 +130,24 @@ export function createBookRestoreEffectSession(options: {
     }
     check(raw.kind === 'confirmed' && object(raw.receipt));
     const r = raw.receipt;
+    if (intent.action === 'activateBookRestore' && r.action === 'retireBookRestoreActivation') {
+      check(
+        r.schemaVersion === 1 &&
+          r.operationId === intent.operationId &&
+          r.expectedCheckpoint === intent.expectedCheckpoint &&
+          r.checkpoint === intent.expectedCheckpoint! + 1 &&
+          r.state === 'content-verified' &&
+          object(r.preparation) &&
+          r.preparation.schemaVersion === 13 &&
+          r.preparation.phase === 'activation-ready' &&
+          object(r.preparation.audit) &&
+          r.preparation.audit.sealOperationId === intent.operationId &&
+          !Object.hasOwn(r, 'activation'),
+      );
+      const job = jobReply(raw.progress);
+      check(job.checkpoint >= r.checkpoint);
+      return { kind: 'retired', action: intent.action, job };
+    }
     check(
       r.schemaVersion === 1 &&
         r.operationId === intent.operationId &&
@@ -162,7 +180,21 @@ export function createBookRestoreEffectSession(options: {
   }
   async function execute(record: BookRestoreEffectRecord): Promise<BookRestoreEffectAck> {
     guard();
-    const raw = await api.mutate(record.intent.action, bookRestoreEffectInput(record.intent));
+    let raw;
+    try {
+      raw = await api.mutate(record.intent.action, bookRestoreEffectInput(record.intent));
+    } catch (error) {
+      guard();
+      const e = error as { code?: string; details?: { reason?: string } };
+      if (
+        record.intent.action !== 'activateBookRestore' ||
+        !['failed-precondition', 'functions/failed-precondition'].includes(e?.code ?? '') ||
+        e?.details?.reason !== 'activation-review-changed'
+      )
+        throw error;
+      // The original ID arbitrates retirement against any in-flight activation.
+      raw = await api.retireActivation(bookRestoreEffectInput(record.intent));
+    }
     guard();
     const ack = confirmed(raw, record.intent);
     await clear(record);

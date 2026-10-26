@@ -333,3 +333,10 @@ O [plano 141](141-ausencia-de-persona-no-rascunho-portatil.md) resolve o rascunh
 marcado da ADR 0163: ausência neutra ou perfil/overrides antigos conservados em
 versão separada e recaptura. 32 Node, 16 Vitest e dois roundtrips positivos.
 Inventário geral e compatibilidade de raízes v1 sem marca continuam pendentes.
+
+### Revisão alterada na ativação
+
+O [plano 142](142-revisao-alterada-na-ativacao.md) retira atomicamente pedido
+obsoleto, preserva prova do selo e reapresenta revisão. Nova confirmação é
+explícita; resposta perdida/restart/limpeza conferidos. Não fecha inventários,
+certificação v1, rollout nem validate de P1.

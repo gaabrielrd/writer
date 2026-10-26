@@ -139,6 +139,7 @@ export function terminal(f, p, api = service(f)) {
       ),
     api: {
       mutate: call,
+      retireActivation: (i) => call('retireBookRestoreActivation', i),
       review: (i) => call('getBookRestoreActivationReview', i),
       media: (i) => call('getBookRestoreMediaState', i),
       archive: (i) => call('getBookRestoreArchiveCleanup', i),

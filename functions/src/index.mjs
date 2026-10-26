@@ -871,6 +871,7 @@ export const advanceBookRestoreSourceIndexes = callable('advanceBookRestoreSourc
 export const advanceBookRestoreAudit = callable('advanceBookRestoreAudit');
 export const getBookRestoreActivationReview = callable('getBookRestoreActivationReview');
 export const activateBookRestore = callable('activateBookRestore');
+export const retireBookRestoreActivation = callable('retireBookRestoreActivation');
 export const getBookRestoreMediaState = callable('getBookRestoreMediaState');
 export const finalizeBookRestoreMedia = callable('finalizeBookRestoreMedia');
 export const getBookRestoreArchiveCleanup = callable('getBookRestoreArchiveCleanup');
