@@ -765,3 +765,7 @@ No backup privado de aventuras, preserve o cabeçalho histórico nativo e separe
 sua contagem de chunks da contagem portátil fixed64k em adventure-version-body.
 Leia texto por ordinal/chunkRef canônico; confira UTF-8/bytes/SHA completos antes
 de provar a seção. history-data-only não autoriza selo ou restauração do arquivo.
+
+Na captura portátil de imagens da aventura, cada recurso conserva seu vínculo
+autorizado. Não deduplique por imageId. Reconfira todos os vínculos/gerações em
+segunda passagem antes do selo global; mantenha digest operacional fora do arquivo.

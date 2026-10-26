@@ -3111,3 +3111,8 @@ A [ADR 0185](decisions/0185-adventure-ordered-history-stream.md) preserva heads 
 compõe texto histórico por ordinal nativo, com SHA/UTF-8 integral e repacking
 fixed64k. Manifesto do corpo separa contagem portátil da nativa e vincula headerHash.
 Prova history-data-only continua parcial; não sela arquivo nem habilita restore.
+
+A [ADR 0186](decisions/0186-adventure-image-data-stream.md) compõe vínculos/PNGs
+por recurso com grants independentes e hashes completos. A segunda passagem
+reconfere todas as imagens e gerações, comparando digest operacional separado
+do conteúdo portátil. images-data-only ainda exige inventário geral e selo.

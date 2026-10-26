@@ -35,3 +35,11 @@ export {
   type AdventureHistoryOptions,
   type AdventureHistoryProof,
 } from './services/adventureHistoryContracts';
+
+export { streamAdventureImageData, verifyAdventureImageData } from './services/adventureImageData';
+export {
+  AdventureImageError,
+  type AdventureImageApi,
+  type AdventureImageOptions,
+  type AdventureImageProof,
+} from './services/adventureImageContracts';

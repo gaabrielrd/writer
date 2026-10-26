@@ -125,3 +125,8 @@ restore continuam pendentes; prova core-data-only e contagem 8/35 preservadas.
 compõe cabeçalhos e texto ordenado, com contagem portátil separada/UTF-8/SHA:
 52 Node, 21 Vitest e um SDK positivos. Imagens/drafts, composição/selo/validador,
 RPC/UI/restore continuam pendentes; prova history-data-only e 8/35 preservados.
+
+[Imagens 164](execucao/164-imagens-no-arquivo-de-aventuras.md) acrescenta PNGs,
+vínculos e segunda passagem completa, com provas parciais e sem deduplicar
+por imageId: 20 Vitest/37 Node dirigidos positivos. Drafts, composição final,
+validador/transporte/UI/restore e P2/P3/D continuam abertos; 8/35 preservado.

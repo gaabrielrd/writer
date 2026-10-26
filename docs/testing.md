@@ -3026,3 +3026,9 @@ chunks nativos em duas partes portáteis, snapshots manual/before-restore, vazio
 53 versões, UTF-8 incompleto e fonte compartilhada com composição central.
 Primeiras seis falhas cliente por ordem de chaves do digest estão registradas;
 writer/IDs nativos preservados. Não substitui validate integral do próximo bloco.
+
+As [imagens no arquivo P2](entregas/2026-10-26-writer-v2-imagens-no-arquivo-de-aventuras.md)
+passaram 20 Vitest distintos em seleções e 37 Node, tipos/lint/bundle isolado.
+Incluem 53 cenas, 8 bytes/16 MiB, grants independentes, geração sem mudar bytes,
+troca de membro com contagem igual, ABA, retry e cancelamento. Expectativa inicial
+de next após return foi corrigida para AbortError; sem nova prova SDK/UI.
