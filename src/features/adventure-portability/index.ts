@@ -43,3 +43,14 @@ export {
   type AdventureImageOptions,
   type AdventureImageProof,
 } from './services/adventureImageContracts';
+
+export {
+  streamAdventureDraftData,
+  verifyAdventureDraftData,
+  AdventureDraftError,
+  type AdventureDraftInput,
+  type AdventureDraftOrigin,
+  type AdventureDraftApi,
+  type AdventureDraftOptions,
+  type AdventureDraftProof,
+} from './services/adventureDraftData';

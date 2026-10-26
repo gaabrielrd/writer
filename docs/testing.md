@@ -3032,3 +3032,9 @@ passaram 20 Vitest distintos em seleções e 37 Node, tipos/lint/bundle isolado.
 Incluem 53 cenas, 8 bytes/16 MiB, grants independentes, geração sem mudar bytes,
 troca de membro com contagem igual, ABA, retry e cancelamento. Expectativa inicial
 de next após return foi corrigida para AbortError; sem nova prova SDK/UI.
+
+O [rascunho explícito P2](entregas/2026-10-26-writer-v2-rascunho-explicito-de-aventuras.md)
+passou 13 Vitest novos e seleção de dois (um refinado e uma regressão central),
+um Node, tipos/lint/bundle navegador. Inclui origem nativa de cena/bloco, revisão
+antiga real, vazio/BOM/Unicode, hash independente, observador/conta/cancelamento.
+São 14 Vitest distintos positivos; sem nova prova SDK/UI ou validate global.

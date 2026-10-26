@@ -130,3 +130,8 @@ RPC/UI/restore continuam pendentes; prova history-data-only e 8/35 preservados.
 vínculos e segunda passagem completa, com provas parciais e sem deduplicar
 por imageId: 20 Vitest/37 Node dirigidos positivos. Drafts, composição final,
 validador/transporte/UI/restore e P2/P3/D continuam abertos; 8/35 preservado.
+
+[Rascunho 165](execucao/165-rascunho-explicito-no-backup-de-aventuras.md) conserva
+texto explícito separado, com origem/hash salvos e observador limitado: 14 Vitest
+distintos e um Node positivos. Composição final/selo/validador/transporte/UI/
+restauração e P2/P3/D permanecem abertos, sem mudança de 8/35.

@@ -769,3 +769,8 @@ de provar a seção. history-data-only não autoriza selo ou restauração do ar
 Na captura portátil de imagens da aventura, cada recurso conserva seu vínculo
 autorizado. Não deduplique por imageId. Reconfira todos os vínculos/gerações em
 segunda passagem antes do selo global; mantenha digest operacional fora do arquivo.
+
+No backup de aventura, draft é contribuição explícita de um editor de cena/bloco,
+separada do texto salvo e vinculada às provas autorizadas de head/body. Não
+exporte journals/pedidos ou enumere storage. Restore preserva draft em versão
+separada; baseRevision local antiga não concede acesso nem substitui o salvo.

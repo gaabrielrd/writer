@@ -36,6 +36,7 @@ export interface AdventureCoreOptions {
   guard: () => void;
   signal?: AbortSignal;
   source?: AdventureInventorySource;
+  onUnit?: (proof: AdventureUnitProof) => Promise<void>;
 }
 export interface AdventureCoreRecord {
   readonly section: AdventureCoreSection;
@@ -79,7 +80,8 @@ export function streamAdventureCoreData(
     invalid();
   const invoke = api.call.bind(api),
     guard = options.guard,
-    signal = options.signal;
+    signal = options.signal,
+    onUnit = options.onUnit;
   const expected =
     options.source === undefined ? undefined : source(options.source, adventureId).sourceToken;
   return asyncRecordStream<AdventureCoreRecord, AdventureCoreProof>(
@@ -211,6 +213,11 @@ export function streamAdventureCoreData(
           part !== proof.chunkCount
         )
           invalid();
+        if (onUnit) {
+          check();
+          await onUnit(proof);
+          check();
+        }
         note(section, identity, proof, key);
       }
       async function finish(section: AdventureCoreSection) {

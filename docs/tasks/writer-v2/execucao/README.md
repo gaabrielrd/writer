@@ -1960,3 +1960,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      37 Node dirigidos positivos.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-imagens-no-arquivo-de-aventuras.md).
      Drafts/selo/validador/transporte/restauração/UI e P2 permanecem abertos.
+
+165. [Rascunho explícito no backup de aventuras](165-rascunho-explicito-no-backup-de-aventuras.md):
+     texto separado por recurso/head/body autorizados e observador limitado;
+     14 Vitest distintos e um Node dirigidos positivos.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-rascunho-explicito-de-aventuras.md).
+     Composição final/validador/transporte/restauração/UI e P2 seguem abertos.

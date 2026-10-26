@@ -3116,3 +3116,8 @@ A [ADR 0186](decisions/0186-adventure-image-data-stream.md) compõe vínculos/PN
 por recurso com grants independentes e hashes completos. A segunda passagem
 reconfere todas as imagens e gerações, comparando digest operacional separado
 do conteúdo portátil. images-data-only ainda exige inventário geral e selo.
+
+A [ADR 0187](decisions/0187-adventure-explicit-draft-stream.md) conserva um draft
+explícito de cena/bloco como contribuição separada, ligada a head/body autorizados.
+onUnit opcional entrega provas limitadas na composição; nenhuma enumeração de
+storage ou journal. Draft-data-only exige segunda conferência e selo futuro.
