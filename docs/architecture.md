@@ -2987,3 +2987,10 @@ do draft/histórico e warnings retomáveis compartilham o contrato da
 pelo mesmo pedido original. Selo nativo é conferido antes de renovar checkpoint;
 recibos históricos mantêm audit congelado. Journal não muda de schema e só sai
 por recibo/CAS ou prova monotônica existente; novo clique confirma revisão atual.
+
+### Entrada visual do backup completo
+
+Editor compõe histórico e portabilidade em saveEditorBookBackup. Serviço
+exportBookArchive fixa contexto, congela rascunho e seleciona destino pelo adapter
+bookArchiveDestination. Não há cópia plaintext oculta/fallback Blob integral;
+arquivo fecha só após selo. [ADR 0166](decisions/0166-book-archive-export-dialog.md).

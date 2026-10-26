@@ -2933,3 +2933,9 @@ A [revisão renovada na ativação](entregas/2026-10-25-writer-v2-revisao-renova
 tem 65 Node e 29 Vitest distintos positivos em seleções, um SDK real com três
 ordens concorrentes e oito verificações Chromium. Inclui falhas inicialmente
 encontradas no selo/limpeza, retomada nativa e segundo clique obrigatório.
+
+O [backup completo no editor](entregas/2026-10-25-writer-v2-backup-completo-no-editor.md)
+tem 22 Vitest distintos positivos em seleções e 13 verificações Chromium
+(exportação e restauração do arquivo produzido), incluindo cancelamento, falha
+durante captura, preservação do arquivo anterior, conta/contexto e foco/temas.
+Handle nativo OPFS injetado não substitui conferir o seletor externo do sistema.

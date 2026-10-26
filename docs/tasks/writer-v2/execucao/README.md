@@ -1829,3 +1829,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      65 Node/29 Vitest distintos em seleções, um SDK com três ordens concorrentes
      e oito verificações Chromium. [Evidência](../../../entregas/2026-10-25-writer-v2-revisao-renovada-na-ativacao.md).
      Inventários/legados/rollout/validate e demais fases/gates continuam pendentes.
+
+143. [Backup completo no diálogo de exportação](143-backup-completo-no-dialogo-de-exportacao.md):
+     gravação .writer com histórico e destino escolhido; JSON antigo identificado.
+     22 Vitest distintos e 13 verificações Chromium de exportação/restauração.
+     [Evidência](../../../entregas/2026-10-25-writer-v2-backup-completo-no-editor.md).
+     Inventários gerais/legados/rollout/validate e demais fases/gates pendentes.

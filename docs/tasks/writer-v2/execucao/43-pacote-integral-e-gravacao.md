@@ -92,3 +92,9 @@ Implementados envelope/leitor, ponte, composição, sink e composition root.
 Veja [evidência M10](../../../entregas/2026-10-22-writer-v2-pacote-integral-por-fluxo.md)
 e [ADR 0054](../../../decisions/0054-streamed-book-package.md).
 P1 permanece aberto; próximo contrato deve validar semântica e legados antes da UI.
+
+## Host posterior
+
+O [plano 143](143-backup-completo-no-dialogo-de-exportacao.md) conecta o produtor
+ao diálogo Exportar com seleção do destino, histórico e rascunho separado.
+Não altera este protocolo nem oferece fallback Blob integral/OPFS plaintext.

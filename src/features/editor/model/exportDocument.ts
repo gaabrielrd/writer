@@ -143,7 +143,10 @@ export function createExportDocument(
   };
 }
 
-export function exportFileName(title: string, extension: 'md' | 'docx' | 'json'): string {
+export function exportFileName(
+  title: string,
+  extension: 'md' | 'docx' | 'json' | 'writer',
+): string {
   const name = title
     .normalize('NFKC')
     .replace(/[<>:"/\\|?*\p{Cc}\p{Cf}]/gu, '')

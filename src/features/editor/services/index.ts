@@ -1,4 +1,5 @@
 export * from './chapterContentStorage';
+export { exportBookArchive } from './exportBookArchive';
 export {
   streamEditorBookBackup,
   saveEditorBookBackup,

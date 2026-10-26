@@ -59,7 +59,13 @@ export function EditorOptionsMenu({
           },
         ]}
       />
-      {exportOpen && <ExportDialog {...exportProps} onClose={() => setExportOpen(false)} />}
+      {exportOpen && (
+        <ExportDialog
+          key={exportProps.book.authorId + ':' + exportProps.book.id}
+          {...exportProps}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
     </>
   );
 }

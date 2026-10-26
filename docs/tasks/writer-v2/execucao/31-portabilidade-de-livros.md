@@ -340,3 +340,10 @@ O [plano 142](142-revisao-alterada-na-ativacao.md) retira atomicamente pedido
 obsoleto, preserva prova do selo e reapresenta revisão. Nova confirmação é
 explícita; resposta perdida/restart/limpeza conferidos. Não fecha inventários,
 certificação v1, rollout nem validate de P1.
+
+### Backup completo no editor
+
+O [plano 143](143-backup-completo-no-dialogo-de-exportacao.md) acrescenta entrada
+visual .writer por fluxo/histórico e rascunho explícito. O arquivo produzido
+passou pela restauração do Estúdio; 22 Vitest distintos e 13 verificações Chromium
+positivos em seleções. Inventário geral, legados/rollout/validate ainda pendentes.

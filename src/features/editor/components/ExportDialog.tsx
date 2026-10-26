@@ -4,6 +4,9 @@ import type { Book, Chapter } from '@/features/books';
 import { Alert, Button, Dialog, Dropdown } from '@/shared/ui';
 import type { ExportFormat, ExportScope } from '../model/exportDocument';
 import { exportManuscript } from '../services/exportManuscript';
+import { exportBookArchive } from '../services/exportBookArchive';
+import { bookArchivePicker } from '../services/bookArchiveDestination';
+type ExportChoice = ExportFormat | 'writer';
 
 export interface ExportDialogProps {
   book: Book;
@@ -14,7 +17,8 @@ export interface ExportDialogProps {
 
 export function ExportDialog({ book, currentChapter, currentContent, onClose }: ExportDialogProps) {
   const [scope, setScope] = useState<ExportScope>(currentChapter ? 'chapter' : 'book');
-  const [format, setFormat] = useState<ExportFormat>('markdown');
+  const [format, setFormat] = useState<ExportChoice>('markdown');
+  const archiveSupported = bookArchivePicker.supported();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -34,19 +38,33 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
     setError(null);
     setResult(null);
     try {
-      await exportManuscript({
-        book,
-        scope,
-        format,
-        currentChapter,
-        currentContent,
-        signal: controller.signal,
-      });
+      let archive: { kind: 'saved' | 'cancelled' } | undefined;
+      if (format === 'writer') {
+        archive = await exportBookArchive({
+          book,
+          currentChapter,
+          currentContent,
+          signal: controller.signal,
+          isCurrent: () => operation.current === controller,
+        });
+      } else
+        await exportManuscript({
+          book,
+          scope,
+          format,
+          currentChapter,
+          currentContent,
+          signal: controller.signal,
+        });
       if (!controller.signal.aborted) {
         setResult(
-          format === 'pdf'
-            ? 'Impressão aberta. Escolha “Salvar como PDF” no navegador.'
-            : 'Arquivo preparado. Confira os downloads do navegador.',
+          archive
+            ? archive.kind === 'cancelled'
+              ? 'Seleção de arquivo cancelada.'
+              : 'Backup salvo no arquivo escolhido. Para restaurar, abra o Estúdio.'
+            : format === 'pdf'
+              ? 'Impressão aberta. Escolha “Salvar como PDF” no navegador.'
+              : 'Arquivo preparado. Confira os downloads do navegador.',
         );
       }
     } catch (failure) {
@@ -73,13 +91,22 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
           <Button variant="secondary" onClick={close}>
             {pending ? 'Cancelar exportação' : 'Fechar'}
           </Button>
-          <Button onClick={() => void startExport()} disabled={pending}>
+          <Button
+            onClick={() => void startExport()}
+            disabled={pending || (format === 'writer' && !archiveSupported)}
+          >
             {format === 'pdf' ? (
               <Printer className="icon icon-sm" aria-hidden="true" />
             ) : (
               <Download className="icon icon-sm" aria-hidden="true" />
             )}
-            {pending ? 'Preparando…' : format === 'pdf' ? 'Abrir impressão' : 'Baixar arquivo'}
+            {pending
+              ? 'Preparando…'
+              : format === 'pdf'
+                ? 'Abrir impressão'
+                : format === 'writer'
+                  ? 'Salvar backup'
+                  : 'Baixar arquivo'}
           </Button>
         </>
       }
@@ -89,7 +116,7 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
           mode="select"
           label="Conteúdo da exportação"
           value={scope}
-          disabled={pending || format === 'json'}
+          disabled={pending || format === 'json' || format === 'writer'}
           onValueChange={(nextValue) => {
             setScope(nextValue as ExportScope);
             setResult(null);
@@ -107,16 +134,17 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
           value={format}
           disabled={pending}
           onValueChange={(nextValue) => {
-            const next = nextValue as ExportFormat;
+            const next = nextValue as ExportChoice;
             setFormat(next);
-            if (next === 'json') setScope('book');
+            if (next === 'json' || next === 'writer') setScope('book');
             setResult(null);
           }}
           options={[
             { value: 'markdown', label: 'Markdown (.md)' },
             { value: 'docx', label: 'Word (.docx)' },
             { value: 'pdf', label: 'PDF (impressão)' },
-            { value: 'json', label: 'Backup completo (.json)' },
+            { value: 'writer', label: 'Backup privado com histórico (.writer)' },
+            { value: 'json', label: 'Backup JSON antigo (.json)' },
           ]}
         />
         {format === 'pdf' && (
@@ -124,6 +152,19 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
             O navegador abre uma versão limpa para impressão. Escolha “Salvar como PDF” e desative
             cabeçalhos e rodapés para um manuscrito sem a URL.
           </p>
+        )}
+        {format === 'writer' && (
+          <Alert variant="warning" title="Backup privado com histórico">
+            Inclui o texto salvo, planejamento, lore próprio, versões do texto e imagens próprias
+            disponíveis. Um rascunho incluído fica separado do texto salvo. O universo é somente um
+            vínculo sujeito ao acesso autorizado. Guarde o arquivo em um local de confiança.
+          </Alert>
+        )}
+        {format === 'writer' && !archiveSupported && (
+          <Alert variant="warning" title="Gravação de arquivo indisponível">
+            Este navegador não oferece a seleção e gravação necessárias para este backup. Os outros
+            formatos continuam disponíveis.
+          </Alert>
         )}
         {format === 'json' && (
           <Alert
@@ -138,7 +179,9 @@ export function ExportDialog({ book, currentChapter, currentContent, onClose }: 
         )}
         {currentChapter && (
           <p className="text-sm text-[hsl(var(--muted-foreground))]">
-            Inclui as alterações atuais deste capítulo, mesmo antes do salvamento.
+            {format === 'writer' && currentChapter.contentMode === 'scenes'
+              ? 'Os capítulos compostos por cenas usam os textos salvos das cenas.'
+              : 'Inclui as alterações atuais deste capítulo, mesmo antes do salvamento.'}
           </p>
         )}
         {error && (

@@ -666,3 +666,9 @@ Mudança do universo antes da ativação agora encerra o pedido antigo por recib
 nativo e reapresenta revisão, exigindo nova confirmação. Veja a
 [evidência local](docs/entregas/2026-10-25-writer-v2-revisao-renovada-na-ativacao.md);
 o callable novo precisa de implantação coordenada antes de uso em produção.
+
+O diálogo Exportar oferece Backup privado com histórico (.writer), com seleção
+do destino e rascunho explícito separado. JSON antigo continua disponível sem
+histórico completo. A gravação exige API compatível de seleção de arquivo;
+[evidência local](docs/entregas/2026-10-25-writer-v2-backup-completo-no-editor.md)
+distingue prova nativa de QA e conferência manual do seletor externo.

@@ -658,3 +658,13 @@ concluído estiverem satisfeitos. A lista fica em
   anterior e audit idêntico exceto sealOperationId; preserve demais recusas.
 - Host reapresenta revisão e exige novo clique. Rede/conta/CAS incertos preservam
   metadata; replay confirma efeito original sem conceder acesso ou recriar raiz.
+
+## Backup completo pela interface do editor
+
+- Formato .writer usa saveEditorBookBackup/sink por fluxo, livro inteiro e
+  histórico, com contribuição explícita congelada antes do seletor (ADR 0166).
+  JSON antigo continua separado e não deve prometer histórico completo.
+- Seletor/gravação ficam em serviços, com conta/livro/sinal conferidos e close só
+  após selo. Cancelar escolha é neutro; falha/abort não anunciam arquivo salvo.
+- Não criar fallback Blob integral nem cópia plaintext oculta. Sem API compatível,
+  explique disponibilidade e preserve outros formatos. Hosts remontam por contexto.
