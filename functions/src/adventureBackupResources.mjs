@@ -1,10 +1,38 @@
 import { utf8 } from './campaignSessionsContracts.mjs';
 import { validSceneRank } from './sceneRanks.mjs';
+import { sequenceKey } from './narrativeContracts.mjs';
 import { adventureBlockTypes, adventureBlockAudiences } from './adventureBlocksState.mjs';
 
 export const ADVENTURE_RESOURCE_DEFINITIONS = Object.freeze(
   Object.fromEntries(
     Object.entries({
+      arc: { path: 'arcs', owner: true, nativeKind: 'arc' },
+      event: { path: 'timelineEvents', owner: true, nativeKind: 'event' },
+      milestone: { path: 'milestones', parent: 'arcs', owner: true, nativeKind: 'milestone' },
+      'arc-order': {
+        path: 'narrativeControls',
+        singleton: true,
+        sequence: 'arc',
+        control: true,
+        optional: true,
+      },
+      'event-order': {
+        path: 'narrativeControls',
+        singleton: true,
+        sequence: 'event',
+        control: true,
+        optional: true,
+      },
+      'milestone-order': {
+        path: 'narrativeControls',
+        parent: 'arcs',
+        rootCollection: true,
+        singleton: true,
+        sequence: 'milestone',
+        control: true,
+        optional: true,
+      },
+      'narrative-link': { path: 'narrativeLinks', narrativeSource: true },
       'part-control': { path: 'parts', control: true },
       'scene-control': {
         path: 'sceneControls',
@@ -27,10 +55,27 @@ export const ADVENTURE_RESOURCE_DEFINITIONS = Object.freeze(
   ),
 );
 export const ADVENTURE_RESOURCE_KINDS = Object.freeze(Object.keys(ADVENTURE_RESOURCE_DEFINITIONS));
+export function adventureResourceSingleton(kind, parentId) {
+  const definition = ADVENTURE_RESOURCE_DEFINITIONS[kind];
+  return definition.sequence
+    ? sequenceKey({
+        kind: definition.sequence,
+        ...(definition.sequence === 'milestone' ? { arcId: parentId } : {}),
+      })
+    : definition.singleton;
+}
 const common = ['title', 'createdAt', 'updatedAt'];
+const narrative = [...common, 'kind', 'rankA', 'rankB'];
 export const ADVENTURE_RESOURCE_FIELDS = Object.freeze(
   Object.fromEntries(
     Object.entries({
+      arc: [...narrative, 'initialState', 'objective', 'plannedOutcome'],
+      event: [...narrative, 'description', 'dateLabel'],
+      milestone: [...narrative, 'arcId', 'notes'],
+      'arc-order': ['rankSlot'],
+      'event-order': ['rankSlot'],
+      'milestone-order': ['rankSlot'],
+      'narrative-link': ['source', 'reference'],
       'part-control': ['rankSlot'],
       'scene-control': ['rankSlot'],
       scene: [
@@ -114,6 +159,33 @@ function persona(value) {
     }),
   };
 }
+function narrativeSource(value) {
+  if (
+    !value ||
+    typeof value !== 'object' ||
+    Array.isArray(value) ||
+    !['arc', 'event', 'milestone'].includes(value.kind) ||
+    !id(value.id) ||
+    (value.kind === 'milestone' && !id(value.arcId))
+  )
+    invalid();
+  return own(value, ['kind', 'id', ...(value.kind === 'milestone' ? ['arcId'] : [])]);
+}
+function narrativeReference(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) invalid();
+  if (value.kind === 'scene' && id(value.sceneId)) return own(value, ['kind', 'sceneId']);
+  if (value.kind === 'event' && id(value.eventId)) return own(value, ['kind', 'eventId']);
+  const ref = value.reference;
+  if (
+    value.kind === 'lore' &&
+    ref &&
+    ['book', 'adventure', 'universe'].includes(ref.kind) &&
+    id(ref.scopeId) &&
+    id(ref.entityId)
+  )
+    return { kind: 'lore', reference: own(ref, ['kind', 'scopeId', 'entityId']) };
+  invalid();
+}
 export function serializeAdventureBackupResource(
   kind,
   parentId,
@@ -132,7 +204,7 @@ export function serializeAdventureBackupResource(
   if (
     (definition.parent && parentId === null) ||
     (!definition.parent && parentId !== null) ||
-    (definition.singleton && resourceId !== definition.singleton) ||
+    (definition.singleton && resourceId !== adventureResourceSingleton(kind, parentId)) ||
     (!present && !definition.optional)
   )
     invalid();
@@ -140,7 +212,18 @@ export function serializeAdventureBackupResource(
   if (present) {
     if (!value || typeof value !== 'object' || Array.isArray(value)) invalid();
     value = own(value, ADVENTURE_RESOURCE_FIELDS[kind]);
-    for (const key of ['title', 'content', 'objective', 'conflict', 'pointOfView'])
+    for (const key of [
+      'title',
+      'content',
+      'objective',
+      'conflict',
+      'pointOfView',
+      'initialState',
+      'plannedOutcome',
+      'description',
+      'dateLabel',
+      'notes',
+    ])
       optional(value, key, utf8);
     for (const key of ['createdAt', 'updatedAt']) optional(value, key, date);
     optional(value, 'archived', (v) => typeof v === 'boolean');
@@ -170,7 +253,16 @@ export function serializeAdventureBackupResource(
         !adventureBlockAudiences.includes(value.audience))
     )
       invalid();
+    if (
+      definition.nativeKind &&
+      (value.kind !== definition.nativeKind || (kind === 'milestone' && value.arcId !== parentId))
+    )
+      invalid();
     data = own(value, ADVENTURE_RESOURCE_FIELDS[kind]);
+    if (definition.narrativeSource) {
+      data.source = narrativeSource(value.source);
+      data.reference = narrativeReference(value.reference);
+    }
     for (const key of ['mainBlockImage', 'image'])
       if (Object.hasOwn(data, key)) data[key] = image(data[key]);
     if (Object.hasOwn(data, 'personaComplement'))

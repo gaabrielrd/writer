@@ -20,6 +20,7 @@ import {
   ADVENTURE_RESOURCE_DEFINITIONS as definitions,
   ADVENTURE_RESOURCE_FIELDS as fields,
   serializeAdventureBackupResource,
+  adventureResourceSingleton,
 } from './adventureBackupResources.mjs';
 
 const external = ['contentStorage', 'payloadStorage', 'bodyStorage'];
@@ -29,6 +30,11 @@ const metadata = [
   'deleting',
   'rebalancing',
   'sceneId',
+  'kind',
+  'arcId',
+  'source.kind',
+  'source.id',
+  'source.arcId',
   'bodyHash',
   'hash',
   ...external,
@@ -47,12 +53,14 @@ function descriptor(data) {
     parentId = data.parentId ?? null;
   if (definition.parent) workId(parentId);
   else if (parentId !== null) invalid();
-  return { kind, parentId, definition };
+  return { kind, parentId, definition, singleton: adventureResourceSingleton(kind, parentId) };
 }
 const collectionPath = (context, value) =>
   context.path +
   '/' +
-  (value.definition.parent ? value.definition.parent + '/' + value.parentId + '/' : '') +
+  (value.definition.parent && !value.definition.rootCollection
+    ? value.definition.parent + '/' + value.parentId + '/'
+    : '') +
   value.definition.path;
 function nativeId(value) {
   try {
@@ -88,6 +96,7 @@ async function parentContext(tx, context, value, cache = new Map()) {
     ancestor = null;
   if (value.definition.parent) {
     parent = await read(context.path + '/' + value.definition.parent + '/' + value.parentId);
+    if (value.definition.parent === 'arcs' && parent.data.kind !== 'arc') unavailable();
     if (value.definition.parent === 'sceneBlocks')
       ancestor = await read(context.path + '/scenes/' + nativeId(parent.data.sceneId));
   }
@@ -110,6 +119,7 @@ async function itemContext(
         content ? [...new Set([...metadata, ...fields[value.kind]])] : metadata,
       ));
   let data,
+    parent = parents.parent,
     ancestor = parents.ancestor;
   if (value.definition.control) {
     data = item.exists ? adventureBackupPartData(item, context.uid) : null;
@@ -117,6 +127,28 @@ async function itemContext(
     if (data && external.some((key) => Object.hasOwn(data, key))) unavailable();
   } else
     data = check(item, context.uid, !value.definition.optional, Boolean(value.definition.owner));
+  if (
+    value.definition.nativeKind &&
+    (data.kind !== value.definition.nativeKind ||
+      (value.kind === 'milestone' && data.arcId !== value.parentId))
+  )
+    unavailable();
+  if (value.definition.narrativeSource) {
+    const source = data.source;
+    if (!source || !['arc', 'event', 'milestone'].includes(source.kind)) unavailable();
+    const id = nativeId(source.id);
+    if (source.kind === 'milestone') {
+      const arcId = nativeId(source.arcId);
+      ancestor = await parents.read(context.path + '/arcs/' + arcId);
+      if (ancestor.data.kind !== 'arc') unavailable();
+      parent = await parents.read(context.path + '/arcs/' + arcId + '/milestones/' + id);
+      if (parent.data.arcId !== arcId) unavailable();
+    } else
+      parent = await parents.read(
+        context.path + '/' + (source.kind === 'arc' ? 'arcs' : 'timelineEvents') + '/' + id,
+      );
+    if (parent.data.kind !== source.kind) unavailable();
+  }
   if (value.definition.scene)
     ancestor = await parents.read(context.path + '/scenes/' + nativeId(data.sceneId));
   if (value.definition.body) {
@@ -134,7 +166,7 @@ async function itemContext(
   return {
     item,
     data,
-    parent: parents.parent?.snapshot ?? null,
+    parent: parent?.snapshot ?? null,
     ancestor: ancestor?.snapshot ?? null,
   };
 }
@@ -183,17 +215,17 @@ export function createAdventureBackupResourceService({ db }) {
         sourceToken = token(data.sourceToken),
         limit = workLimit(data.limit),
         after = readCursor(data.cursor, context, value, sourceToken);
-      if (value.definition.singleton && after !== null) invalid();
+      if (value.singleton && after !== null) invalid();
       return db.runTransaction(async (tx) => {
         const current = await readAdventureBackupSource(tx, context, sourceToken),
           parents = await parentContext(tx, context, value);
         let selected,
           hasMore = false;
-        if (value.definition.singleton)
+        if (value.singleton)
           selected = [
             await readWorkMetadata(
               tx,
-              db.doc(collectionPath(context, value) + '/' + value.definition.singleton),
+              db.doc(collectionPath(context, value) + '/' + value.singleton),
               metadata,
             ),
           ];
@@ -244,11 +276,7 @@ export function createAdventureBackupResourceService({ db }) {
         expectedItem = token(data.itemToken),
         id = workId(data.id),
         index = data.index;
-      if (
-        !Number.isSafeInteger(index) ||
-        index < 0 ||
-        (value.definition.singleton && id !== value.definition.singleton)
-      )
+      if (!Number.isSafeInteger(index) || index < 0 || (value.singleton && id !== value.singleton))
         invalid();
       return db.runTransaction(async (tx) => {
         const current = await readAdventureBackupSource(tx, context, sourceToken),

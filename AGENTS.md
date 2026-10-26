@@ -708,3 +708,6 @@ concluído estiverem satisfeitos. A lista fica em
   cena dona. Não exija revisão numérica igual ou contador derivado para salvar
   prosa própria. Referências/imagens/personas são vínculos neutros até suas
   provas específicas; nunca copie labels globais como fallback.
+- Na narrativa portátil, derive somente os controles de ordem conhecidos pelo
+  sequenceKey; não exporte entity-scenes. Marco exige arco/arcId coerentes;
+  link exige source próprio e seus ancestrais, sem resolver o alvo (ADR 0173).

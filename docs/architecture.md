@@ -3034,3 +3034,9 @@ ligam item, pai e cena dona; ausências opcionais são explícitas e corpos exig
 hash integral coerente com o head. Preserva ranks, arquivo e hint de parte
 retirada sem recriá-la. Vínculos de imagem/persona/referência são neutros;
 selo global, demais famílias, arquivo integral e restauração ainda pendentes.
+
+A [ADR 0173](decisions/0173-adventure-backup-narrative-resources.md) estende o
+mesmo leitor com narrativa inline, marcos, ordens determinísticas e links.
+Milestone-order vive no controle raiz e depende do arco; links comprovam source
+e seus ancestrais, sem resolver alvos ou serializar índices/labels derivados.
+Data textual e ranks são preservados; captura ainda não é pacote integral.
