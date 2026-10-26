@@ -690,3 +690,27 @@ test('retirement refuses a recreated current audit seal without replacing it or 
   });
   assert.deepEqual(f.records, before);
 });
+
+test('activated historical proof keeps the original pinned lore mode and never adopts a changed reservation', async () => {
+  const f = await readyActivation();
+  await activate(f);
+  const job = structuredClone(f.records.get(f.root)),
+    path = 'bookRestoreReservations/' + f.p.bookId,
+    reservation = structuredClone(f.records.get(path)),
+    root = structuredClone(f.records.get('books/' + f.p.bookId)),
+    read = () => f.factory().getBookRestore(uid, { restoreId: f.id, jobToken: f.p.jobToken });
+  f.records.set(f.root, {
+    ...job,
+    loreMode: job.loreMode === 'indexed-v2' ? 'inline-v1' : 'indexed-v2',
+  });
+  await assert.rejects(read(), { code: 'failed-precondition' });
+  f.records.set(f.root, job);
+  f.records.set(path, {
+    ...reservation,
+    loreMode: reservation.loreMode === 'indexed-v2' ? 'inline-v1' : 'indexed-v2',
+  });
+  await assert.rejects(read(), { code: 'failed-precondition' });
+  f.records.set(path, reservation);
+  assert.equal((await read()).state, 'activated');
+  assert.deepEqual(f.records.get('books/' + f.p.bookId), root);
+});

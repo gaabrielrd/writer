@@ -676,3 +676,7 @@ distingue prova nativa de QA e conferência manual do seletor externo.
 Leitores normais de livro/capítulo agora conservam a metadata de persona
 indisponível até o rascunho do editor, sem adotar biblioteca por coincidência.
 [Validação local](docs/entregas/2026-10-25-writer-v2-metadata-de-persona-no-editor.md).
+
+A restauração fixa o modo de lore na reserva original e conserva pedidos em
+andamento quando a configuração muda. [Evidência local](docs/entregas/2026-10-25-writer-v2-modo-de-lore-fixado.md).
+Seleção do runtime e rollout continuam pendentes.

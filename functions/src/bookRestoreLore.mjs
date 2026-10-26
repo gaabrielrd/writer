@@ -11,6 +11,7 @@ import { BOOK_RESOURCE_KINDS } from './bookBackupResources.mjs';
 import { createVerifiedBookRestoreContent } from './bookRestoreContentRead.mjs';
 import {
   prepareBookRestoreArtifacts,
+  readBookRestoreArtifact,
   assertBookRestoreLoreNamespaceEmpty,
   assertBookRestoreBodyNamespaceEmpty,
 } from './bookRestoreArtifacts.mjs';
@@ -22,9 +23,28 @@ import {
 } from './bookRestoreLoreStream.mjs';
 
 const action = 'advanceBookRestoreLore';
+/** Legacy inference uses only one certified native head; it never adopts foreign content. */
+async function indexedLoreMode(tx, db, loaded) {
+  if (Object.hasOwn(loaded.job, 'loreMode')) return loaded.job.loreMode === 'indexed-v2';
+  const p = loaded.job.preparation;
+  if (p.lorePayload?.streamed) return true;
+  if (p.lorePayload || !p.loreCount) return false;
+  const candidate = (
+    await tx.get(
+      db
+        .collection('books/' + loaded.job.bookId + '/lore')
+        .where('payloadStorage.schemaVersion', '==', 2)
+        .orderBy('__name__')
+        .select('payloadStorage.schemaVersion')
+        .limit(1),
+    )
+  ).docs[0];
+  if (!candidate) return false;
+  await readBookRestoreArtifact(tx, db, loaded, 'lore', candidate.id, { metadataOnly: true });
+  return true;
+}
 export function createBookRestoreLoreService({
   db,
-  indexedLoreBodies = false,
   load,
   readOp,
   writeOp,
@@ -56,7 +76,7 @@ export function createBookRestoreLoreService({
           result = await resolved(tx, loaded);
         if (result) return { result };
         available(loaded, request);
-        return { loaded };
+        return { loaded, indexed: await indexedLoreMode(tx, db, loaded) };
       });
       if (initial.result) return initial.result;
       const cursor =
@@ -84,10 +104,7 @@ export function createBookRestoreLoreService({
         });
         const indexed = await reader.openMappedIndexedLore(cursor.loreItemIndex);
         if (cursor.lorePayload?.streamed && !indexed) inconsistent();
-        if (
-          indexed &&
-          (cursor.lorePayload?.streamed || (indexedLoreBodies && !cursor.lorePayload))
-        ) {
+        if (indexed && (cursor.lorePayload?.streamed || (initial.indexed && !cursor.lorePayload))) {
           streamed = indexed;
           item = indexed;
           streamSource = await prepareBookRestoreLoreStreamSource(db, initial.loaded, indexed);
@@ -111,6 +128,7 @@ export function createBookRestoreLoreService({
           result = await resolved(tx, loaded);
         if (result) return result;
         available(loaded, request);
+        if ((await indexedLoreMode(tx, db, loaded)) !== initial.indexed) inconsistent();
         await item.verify(tx);
         if (page) await page.verify(tx);
         if (loaded.job.cleanupVersion < 6) {

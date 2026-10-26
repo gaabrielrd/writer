@@ -2943,3 +2943,8 @@ Handle nativo OPFS injetado não substitui conferir o seletor externo do sistema
 A [projeção de persona no editor](entregas/2026-10-25-writer-v2-metadata-de-persona-no-editor.md)
 passou 69 testes do serviço de livros (sete novos), incluindo DTO real → rascunho
 portátil vazio, sem lookup. I/O Firestore simulado; sem nova prova de produção.
+
+A [política fixada do lore](entregas/2026-10-25-writer-v2-modo-de-lore-fixado.md)
+tem 70 Node distintos em seleções e dois SDK positivos. Testa configuração
+oposta, retry, imutabilidade, prefixos legados/indexados, intervalo entre fichas
+e candidato sem journal. Fixtures corrigem timestamps, sem relaxar servidor.

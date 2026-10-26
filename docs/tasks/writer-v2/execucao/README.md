@@ -1840,3 +1840,8 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      projeção fechada em get/list e DTO real até rascunho vazio sem lookup;
      69 testes do serviço positivos. [Evidência](../../../entregas/2026-10-25-writer-v2-metadata-de-persona-no-editor.md).
      Inventários gerais/legados/coleta/rollout/validate e demais fases/gates pendentes.
+
+145. [Modo de lore fixado na restauração](145-modo-de-lore-fixado-na-restauracao.md):
+     job/reserva imutáveis, retomada e compatibilidade por provas existentes;
+     70 Node distintos e dois SDK positivos. [Evidência](../../../entregas/2026-10-25-writer-v2-modo-de-lore-fixado.md).
+     Runtime/inventários/legados/coleta/rollout/validate e demais fases/gates pendentes.

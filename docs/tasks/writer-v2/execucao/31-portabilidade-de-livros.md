@@ -354,3 +354,10 @@ O [plano 144](144-metadata-de-persona-nos-leitores-do-editor.md) corrige a
 projeção get/list para que o rascunho do editor conserve a marca explícita.
 69 testes do serviço positivos, sete novos. Inventários gerais/legados/coleta/
 rollout/validate e demais fases/gates continuam pendentes.
+
+### Política fixada por preparação
+
+O [plano 145](145-modo-de-lore-fixado-na-restauracao.md) conserva a escolha de
+representação no job/reserva original. 70 Node distintos e dois SDK positivos;
+modos antigos retomam por prova existente. Padrão runtime/inventário final/
+legados/coleta/rollout/validate e fases/gates permanecem pendentes.

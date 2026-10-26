@@ -20,7 +20,7 @@ const startRequest = (operationId = id, data = bytes) => ({
   reviewHash: 'a'.repeat(64),
 });
 function fixture() {
-  const f = adventureImportDb();
+  const f = adventureImportDb({ nativeUpdates: true });
   return { ...f, api: createBookRestoreUploadService({ db: f.db, now: () => 1000 }) };
 }
 const start = (f, request = startRequest()) => f.api.startBookRestore(uid, request);

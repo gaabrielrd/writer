@@ -11,7 +11,7 @@ const uid = 'author',
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const bytes = (n) => Buffer.from(Array.from({ length: n }, (_, i) => (i * 17 + 13) % 256));
 function fixture() {
-  const f = adventureImportDb();
+  const f = adventureImportDb({ nativeUpdates: true });
   return { ...f, api: createBookRestoreUploadService({ db: f.db, now: () => 1000 }) };
 }
 const mutate = (p, operationId, extra = {}) => ({

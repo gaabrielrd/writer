@@ -676,3 +676,13 @@ concluído estiverem satisfeitos. A lista fica em
   antigos. Marca velha é omitida e inválida falha, sem lookup (ADR 0167).
 - Book/Chapter usam tipo puro compartilhado; inputs de escrita não ganham essa
   autorização. Preserve metadata até o rascunho portátil sem mudar texto/datas.
+
+## Política de lore na preparação
+
+- Start fixa loreMode no job e reserva nativa imutável; cliente não declara o
+  modo. Load e prova histórica conferem presença/valor originais (ADR 0168).
+- Configuração posterior não troca pedido novo. Para job antigo, preserve prefixo;
+  entre fichas, só candidate metadata v2 com journal original certifica indexado.
+  Reconferir decisão antes de writes, com consulta limitada a um candidato.
+- Não fabricar flag retroativa, migrar hash/cursor ou adotar órfão como prova.
+  Padrão da factory permanece false até seleção coordenada e validação de conjunto.

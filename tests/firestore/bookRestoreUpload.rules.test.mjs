@@ -11,13 +11,17 @@ import { doc, collection, getDoc, getDocs, setDoc, deleteDoc } from 'firebase/fi
 import { createBookRestoreUploadService } from '../../functions/src/bookRestoreUpload.mjs';
 import { createImageLibraryService } from '../../functions/src/imageLibrary.mjs';
 import {
+  readyLoreMode,
+  advanceLoreMode,
+} from '../../functions/test/helpers/bookRestoreLoreModeFixture.mjs';
+import {
   sha256,
   startInput,
   requestHash,
   chunkInput,
 } from '../../functions/src/bookRestoreUploadContracts.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url));
-const { Firestore } = requireFunctions('firebase-admin/firestore');
+const { Firestore, FieldValue } = requireFunctions('firebase-admin/firestore');
 const projectId = 'demo-writer-restore-upload',
   uid = 'author',
   id = 'restore-sdk-000001',
@@ -251,4 +255,58 @@ test('cancel resolver creates a permanent fence and races safely with a late sta
   if (startResult.kind === 'confirmed')
     assert.equal((await api.getBookRestore(uid, { restoreId: id })).state, 'uploading');
   else assert.equal((await admin.doc('users/' + uid + '/bookRestores/' + id).get()).exists, false);
+});
+
+test('SDK pinned lore mode stays original on start replay and protected reservation mutation is refused', async () => {
+  for (const flag of [false, true]) {
+    const service = (value) =>
+        createBookRestoreUploadService({ db: admin, now: () => 1000, indexedLoreBodies: value }),
+      input = { ...request(), operationId: 'sdk-mode-start-' + flag },
+      first = await service(flag).startBookRestore(uid, input),
+      job = admin.doc('users/' + uid + '/bookRestores/' + input.operationId),
+      reserve = admin.doc('bookRestoreReservations/' + first.progress.bookId),
+      raw = await job.get(),
+      reserved = await reserve.get();
+    assert.equal(raw.data().loreMode, flag ? 'indexed-v2' : 'inline-v1');
+    assert.equal(reserved.data().loreMode, raw.data().loreMode);
+    assert.equal(reserved.createTime.isEqual(reserved.updateTime), true);
+    assert.equal(raw.createTime.isEqual(reserved.createTime), true);
+    assert.deepEqual(await service(!flag).startBookRestore(uid, input), first);
+    const own = env.authenticatedContext(uid).firestore();
+    await assertFails(setDoc(doc(own, job.path), { loreMode: 'inline-v1' }, { merge: true }));
+    await assertFails(setDoc(doc(own, reserve.path), { loreMode: 'inline-v1' }, { merge: true }));
+    await assert.rejects(
+      service(!flag).startBookRestore(uid, { ...input, loreMode: 'inline-v1' }),
+      { code: 'invalid-argument' },
+    );
+    await job.update({ loreMode: FieldValue.delete() });
+    await assert.rejects(service(!flag).getBookRestore(uid, { restoreId: input.operationId }), {
+      code: 'failed-precondition',
+    });
+    await job.update({ loreMode: raw.data().loreMode });
+    await reserve.update({ touchedByTest: true });
+    await assert.rejects(service(!flag).getBookRestore(uid, { restoreId: input.operationId }), {
+      code: 'failed-precondition',
+    });
+    assert.equal((await admin.doc('books/' + first.progress.bookId).get()).exists, false);
+  }
+});
+test('SDK pinned lore mode legacy candidate query authenticates an existing v2 journal between entities', async () => {
+  const f = await readyLoreMode(true, { db: admin, id: 'sdk-mode-old-boundary' });
+  await advanceLoreMode(
+    f,
+    true,
+    (p) => p.preparation.loreCount === 1 && p.preparation.lorePayload === null,
+  );
+  // Emulate pre-policy metadata only; this is a selector/query test, not historical activation certification.
+  const batch = admin.batch();
+  batch.update(admin.doc(f.root), { loreMode: FieldValue.delete() });
+  batch.update(admin.doc(f.reservation), { loreMode: FieldValue.delete() });
+  await batch.commit();
+  await advanceLoreMode(f, false);
+  const heads = await admin.collection('books/' + f.p.bookId + '/lore').get();
+  assert.equal(heads.size, 2);
+  assert.ok(heads.docs.every((s) => s.data().payloadStorage.schemaVersion === 2));
+  assert.equal((await admin.doc(f.root).get()).data().loreMode, undefined);
+  assert.equal((await admin.doc('books/' + f.p.bookId).get()).exists, false);
 });

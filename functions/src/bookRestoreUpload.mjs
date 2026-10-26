@@ -37,6 +37,7 @@ import { randomBytes } from 'node:crypto';
 import { readWorkMetadata } from './workProgressContracts.mjs';
 import { createBookRestoreRecoveryHandler } from './bookRestoreRecovery.mjs';
 import {
+  bookRestoreLoreModeBinding,
   restoreFail as fail,
   inconsistent,
   invalid,
@@ -153,6 +154,12 @@ export function createBookRestoreUploadService({
       m.reservationKind !== kind ||
       !bornEqual(reserved, birth) ||
       !bornEqual(marked, birth)
+    )
+      inconsistent();
+    if (
+      kind === 'job' &&
+      bookRestoreLoreModeBinding(birth.data(), r) &&
+      !bornEqual(reserved, { createTime: reserved.updateTime })
     )
       inconsistent();
   }
@@ -609,6 +616,7 @@ export function createBookRestoreUploadService({
         record = {
           schemaVersion: 1,
           cleanupVersion: 1,
+          loreMode: indexedLoreBodies ? 'indexed-v2' : 'inline-v1',
           ownerId: uid,
           restoreId: id,
           bookId,
@@ -636,6 +644,7 @@ export function createBookRestoreUploadService({
         bookId,
         startFingerprint: fingerprint,
         kind: 'job',
+        loreMode: record.loreMode,
       });
       tx.create(markerRef(bookId), marker(uid, id, bookId, fingerprint, 'job', timestamp));
       writeOp(tx, uid, id, 'startBookRestore', request, record);
@@ -1106,7 +1115,6 @@ export function createBookRestoreUploadService({
   });
   const lore = createBookRestoreLoreService({
     db,
-    indexedLoreBodies,
     load,
     readOp,
     writeOp,

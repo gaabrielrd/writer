@@ -1,4 +1,9 @@
-import { bornEqual, requestHash, inconsistent } from './bookRestoreUploadContracts.mjs';
+import {
+  bornEqual,
+  requestHash,
+  inconsistent,
+  bookRestoreLoreModeBinding,
+} from './bookRestoreUploadContracts.mjs';
 import { digest } from './sceneContracts.mjs';
 /** Historical confirmation only. Never opens the current book or grants access to its data. */
 export async function readBookRestoreActivationProof(tx, db, loaded, readOp) {
@@ -32,6 +37,7 @@ export async function readBookRestoreActivationProof(tx, db, loaded, readOp) {
     expected !== a.requestHash
   )
     inconsistent();
+  bookRestoreLoreModeBinding(job, value);
   const r = readOp(receipt, job.ownerId, job.restoreId, a.requestHash, loaded);
   if (
     r.action !== 'activateBookRestore' ||

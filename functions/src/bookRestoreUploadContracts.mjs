@@ -178,6 +178,18 @@ export const jobToken = (uid, id, snapshot, fingerprint) =>
     born: born(snapshot),
     startFingerprint: fingerprint,
   });
+/** Internal policy is pinned by the original immutable reservation, never by client input. */
+export function bookRestoreLoreModeBinding(job, reservation) {
+  const pinned = Object.hasOwn(job, 'loreMode');
+  if (
+    pinned !== Object.hasOwn(reservation, 'loreMode') ||
+    (pinned &&
+      (!['inline-v1', 'indexed-v2'].includes(job.loreMode) ||
+        job.loreMode !== reservation.loreMode))
+  )
+    inconsistent();
+  return pinned;
+}
 export function chunkChain(previous, index, hash, length) {
   return digest({ version: 1, previous, index, hash, byteLength: length });
 }
@@ -201,6 +213,8 @@ export function jobShape(uid, id, job) {
       'cancelled',
     ].includes(job.state)
   )
+    inconsistent();
+  if (Object.hasOwn(job, 'loreMode') && !['inline-v1', 'indexed-v2'].includes(job.loreMode))
     inconsistent();
   if (Object.hasOwn(job, 'payloadInventoryVersion')) {
     if (

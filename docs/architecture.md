@@ -3000,3 +3000,10 @@ arquivo fecha só após selo. [ADR 0166](decisions/0166-book-archive-export-dial
 [ADR 0167](decisions/0167-persona-availability-editor-dto.md) projeta metadata
 fechada nos leitores Book/Chapter e mantém o tipo puro compartilhado. Não adiciona
 campo aos inputs de escrita, consulta de perfil ou dependência na portabilidade.
+
+### Política fixada da restauração
+
+[ADR 0168](decisions/0168-pinned-book-restore-lore-mode.md) fixa loreMode no job/
+reserva imutável. Retomada não consulta flag atual. Job antigo só usa prefixo ou
+um candidato v2 autenticado pelo journal, reconferido antes de gravação.
+Nenhum campo de modo cruza o input/progresso público.
