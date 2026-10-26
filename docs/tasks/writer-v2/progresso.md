@@ -120,3 +120,8 @@ sem aguardar RPC: 24 casos e seleção final positivos. Prova unit-bytes-only n�
 acrescenta as cinco primeiras seções, manifestos e fila compartilhada: 33 Vitest/
 dez Node dirigidos positivos. Histórico, imagens/drafts, selo/validador/RPC/UI/
 restore continuam pendentes; prova core-data-only e contagem 8/35 preservadas.
+
+[Histórico 163](execucao/163-historico-de-aventuras-em-ordem-textual.md)
+compõe cabeçalhos e texto ordenado, com contagem portátil separada/UTF-8/SHA:
+52 Node, 21 Vitest e um SDK positivos. Imagens/drafts, composição/selo/validador,
+RPC/UI/restore continuam pendentes; prova history-data-only e 8/35 preservados.

@@ -1948,3 +1948,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      33 Vitest/dez Node, tipos/lint, bundle e smoke por passos positivos.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-dados-centrais-de-aventuras.md).
      Prova core-data-only; seções finais/selo/RPC/UI/restore e P2 abertos.
+
+163. [Histórico de aventuras em ordem textual](163-historico-de-aventuras-em-ordem-textual.md):
+     reader nativo por ordinal, cabeçalhos preservados e texto fixed64k/SHA;
+     52 Node, 21 Vitest e um SDK dirigidos positivos.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-historico-ordenado-de-aventuras.md).
+     Imagens/drafts/selo/validador/restauração/UI e P2 seguem abertos.

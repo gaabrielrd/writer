@@ -3019,3 +3019,10 @@ dez Node, incluindo SHA independente e 53 cenas. Tipos/lint/bundle isolado verde
 wrapper do build sofreu falha de criação de Node por memória, mas typecheck e
 bundle/smoke diretos/sequenciais passaram. Evidência preserva a falha e não
 atribui validate integral anterior a esse código ou selo autoral aos placeholders.
+
+O [histórico ordenado P2](entregas/2026-10-26-writer-v2-historico-ordenado-de-aventuras.md)
+passou 52 Node, 21 Vitest distintos em seleções e um SDK Firestore. Inclui três
+chunks nativos em duas partes portáteis, snapshots manual/before-restore, vazio,
+53 versões, UTF-8 incompleto e fonte compartilhada com composição central.
+Primeiras seis falhas cliente por ordem de chaves do digest estão registradas;
+writer/IDs nativos preservados. Não substitui validate integral do próximo bloco.

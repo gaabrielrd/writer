@@ -27,3 +27,11 @@ export {
   type AdventureCoreRecord,
   type AdventureCoreProof,
 } from './services/adventureCoreData';
+
+export { streamAdventureHistoryData } from './services/adventureHistoryData';
+export {
+  AdventureHistoryError,
+  type AdventureHistoryApi,
+  type AdventureHistoryOptions,
+  type AdventureHistoryProof,
+} from './services/adventureHistoryContracts';

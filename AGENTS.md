@@ -760,3 +760,8 @@ concluído estiverem satisfeitos. A lista fica em
 - streamAdventureCoreData produz somente cinco seções/core-data-only. Preserve
   endereços/manifestos e unidades iguais ao inventário; só verificar/selo global
   depois de histórico/drafts/imagens e suas provas, nunca por esse recorte.
+
+No backup privado de aventuras, preserve o cabeçalho histórico nativo e separe
+sua contagem de chunks da contagem portátil fixed64k em adventure-version-body.
+Leia texto por ordinal/chunkRef canônico; confira UTF-8/bytes/SHA completos antes
+de provar a seção. history-data-only não autoriza selo ou restauração do arquivo.

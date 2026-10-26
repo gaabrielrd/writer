@@ -13,7 +13,7 @@ import {
   adventureBackupChanged as changed,
   readAdventureBackupSource,
 } from './adventureBackupSource.mjs';
-import { CHUNK_BYTES } from './workHistoryContracts.mjs';
+import { CHUNK_BYTES, chunkRef } from './workHistoryContracts.mjs';
 import { utf8 } from './campaignSessionsContracts.mjs';
 import { ADVENTURE_STRUCTURE_LIMITS } from './adventureBackupStructure.mjs';
 
@@ -247,6 +247,37 @@ export function createAdventureBackupHistoryService({ db }) {
                   }),
                 ).toString('base64url')
               : null,
+        };
+      });
+    },
+    async readAdventureBackupHistoryText(uid, data) {
+      const context = scope(uid, data, ['ordinal']),
+        value = descriptor(data),
+        sourceToken = token(data.sourceToken),
+        ordinal = data.ordinal;
+      if (value.kind !== 'version-chunk' || !Number.isSafeInteger(ordinal) || ordinal < 0)
+        invalid();
+      return db.runTransaction(async (tx) => {
+        const current = await readAdventureBackupSource(tx, context, sourceToken),
+          ancestor = await parent(tx, context, value, current, sourceToken);
+        if (ordinal >= ancestor.data.chunkCount) invalid();
+        const snapshot = await readWorkMetadata(
+            tx,
+            chunkRef(db, context, value.parentId, ordinal),
+            [...bodyMetadata, 'content'],
+          ),
+          raw = chunkData(snapshot, value, ancestor, current.snapshot, true),
+          bytes = Buffer.from(raw.content, 'utf8');
+        if (raw.index !== ordinal) bad();
+        return {
+          ...current.result,
+          ...value,
+          id: snapshot.id,
+          itemToken: chunkToken(context, sourceToken, value, snapshot),
+          ordinal,
+          manifest: own(ancestor.data, ['byteLength', 'chunkCount', 'contentHash']),
+          chunkHash: digest(raw.content),
+          chunkBase64: bytes.toString('base64'),
         };
       });
     },

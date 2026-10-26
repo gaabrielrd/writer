@@ -3106,3 +3106,8 @@ em streamAdventureCoreData, por unidades preservadas e manifestos/endereço de
 adventureArchiveCore puro. Prova core-data-only ainda depende das outras seções
 e segunda passagem. shared/streams fornece fila neutra de um slot, com wrapper
 compatível de livro e encerramento sem aguardar RPC.
+
+A [ADR 0185](decisions/0185-adventure-ordered-history-stream.md) preserva heads e
+compõe texto histórico por ordinal nativo, com SHA/UTF-8 integral e repacking
+fixed64k. Manifesto do corpo separa contagem portátil da nativa e vincula headerHash.
+Prova history-data-only continua parcial; não sela arquivo nem habilita restore.

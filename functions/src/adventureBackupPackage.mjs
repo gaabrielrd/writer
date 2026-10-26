@@ -20,7 +20,12 @@ const kinds = Object.freeze({
   lore: Object.freeze(['adventure-lore', 'adventure-lore-body', 'adventure-lore-end']),
   personas: Object.freeze(['adventure-persona', 'adventure-personas']),
   universe: Object.freeze(['adventure-universe']),
-  history: Object.freeze(['adventure-version', 'adventure-version-text', 'adventure-history']),
+  history: Object.freeze([
+    'adventure-version',
+    'adventure-version-body',
+    'adventure-version-text',
+    'adventure-history',
+  ]),
   drafts: Object.freeze(['adventure-draft', 'adventure-draft-text', 'adventure-drafts']),
   images: Object.freeze([
     'adventure-image-binding',

@@ -272,3 +272,100 @@ test('SDK adventure history native head/chunk births, authority and retry protec
   });
   await assert.rejects(list(f), { code: 'failed-precondition' });
 });
+
+test('SDK adventure ordinal text reads preserve native versions, masks, authority and retry', async () => {
+  const f = await fixture(1, true),
+    rows = (await list(f)).items;
+  const masks = [];
+  const port = {
+    doc: (p) => admin.doc(p),
+    runTransaction: (op) =>
+      admin.runTransaction((tx) =>
+        op({
+          getAll: async (ref, options) => {
+            masks.push({ path: ref.path, fields: options.fieldMask });
+            return tx.getAll(ref, options);
+          },
+        }),
+      ),
+  };
+  const api = createAdventureBackupHistoryService({ db: port });
+  for (const row of rows) {
+    const head = await read(f, request(f, row)),
+      parts = [];
+    for (let ordinal = 0; ordinal < head.chunkCount; ordinal++) {
+      const input = {
+        adventureId: id,
+        sourceToken: f.pin.sourceToken,
+        ...chunkScope(row),
+        ordinal,
+      };
+      const result = await api.readAdventureBackupHistoryText(uid, input),
+        bytes = Buffer.from(result.chunkBase64, 'base64');
+      assert.equal(result.id, digest({ versionId: row.id, index: ordinal }));
+      assert.equal(result.ordinal, ordinal);
+      assert.equal(result.chunkHash, digest(bytes.toString('utf8')));
+      assert.ok(bytes.length <= 65536);
+      parts.push(bytes);
+      if (ordinal === 0) {
+        await assert.rejects(api.readAdventureBackupHistoryText('other', input), {
+          code: 'not-found',
+        });
+        await assert.rejects(
+          api.readAdventureBackupHistoryText(uid, { ...input, parentToken: 'f'.repeat(64) }),
+          { code: 'failed-precondition' },
+        );
+      }
+    }
+    const bytes = Buffer.concat(parts);
+    assert.equal(bytes.length, head.byteLength);
+    assert.equal(digest(bytes.toString('utf8')), head.contentHash);
+    if (row.id === blockVersion) assert.equal(bytes.toString('utf8'), large);
+  }
+  assert.ok(
+    masks.some((e) => e.path.includes('/workVersionBodies/') && e.fields.includes('content')),
+  );
+  assert.ok(
+    masks
+      .filter((e) => e.path.includes('/workVersions/'))
+      .every((e) => !e.fields.includes('label') && !e.fields.includes('content')),
+  );
+  const row = rows[0],
+    input = { adventureId: id, sourceToken: f.pin.sourceToken, ...chunkScope(row), ordinal: 0 };
+  let failed = false;
+  const flaky = createAdventureBackupHistoryService({
+    db: {
+      doc: (p) => admin.doc(p),
+      runTransaction: (op) =>
+        admin.runTransaction((tx) =>
+          op({
+            getAll(ref, options) {
+              if (!failed && ref.path.includes('/workVersionBodies/')) {
+                failed = true;
+                throw Error('injected ordinal SDK read failure');
+              }
+              return tx.getAll(ref, options);
+            },
+          }),
+        ),
+    },
+  });
+  await assert.rejects(
+    flaky.readAdventureBackupHistoryText(uid, input),
+    /injected ordinal SDK read failure/,
+  );
+  await api.readAdventureBackupHistoryText(uid, input);
+  const source = (await admin.doc(path).get()).data();
+  await admin.doc(path).delete();
+  await admin.doc(path).create(source);
+  await assert.rejects(api.readAdventureBackupHistoryText(uid, input), {
+    code: 'failed-precondition',
+  });
+  const owner = env.authenticatedContext(uid).firestore(),
+    other = env.authenticatedContext('other').firestore(),
+    anon = env.unauthenticatedContext().firestore();
+  for (const db of [owner, other, anon]) {
+    await assertFails(getDoc(doc(db, versionPath)));
+    await assertFails(setDoc(doc(db, versionPath), { title: 'FORGED' }));
+  }
+});

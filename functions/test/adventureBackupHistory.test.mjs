@@ -429,3 +429,137 @@ test('captured history request and retry preserve original scope and source byte
   await readAll(f, request(f, row));
   assert.deepEqual([...f.records], before);
 });
+
+const textRequest = (f, row, ordinal = 0) => ({
+  adventureId: id,
+  sourceToken: f.pin.sourceToken,
+  ...chunkScope(row),
+  ordinal,
+});
+test('ordered raw history reads preserve Unicode, chunk hashes and native manifests without writes', async () => {
+  const content = 'a'.repeat(65535) + '🌙' + 'b'.repeat(65533),
+    f = await fixture(1, content),
+    row = (await list(f)).items[0],
+    before = structuredClone([...f.records]),
+    chunks = [];
+  const head = f.records.get(versionPath);
+  assert.equal(head.chunkCount, 3);
+  for (let ordinal = 0; ordinal < head.chunkCount; ordinal++) {
+    const result = await f.api.readAdventureBackupHistoryText(uid, textRequest(f, row, ordinal)),
+      bytes = Buffer.from(result.chunkBase64, 'base64');
+    assert.equal(result.ordinal, ordinal);
+    assert.equal(result.parentToken, row.itemToken);
+    assert.equal(result.id, digest({ versionId: row.id, index: ordinal }));
+    assert.ok(bytes.length <= 65536);
+    assert.equal(digest(bytes.toString('utf8')), result.chunkHash);
+    assert.deepEqual(result.manifest, {
+      byteLength: head.byteLength,
+      chunkCount: head.chunkCount,
+      contentHash: head.contentHash,
+    });
+    chunks.push(bytes);
+  }
+  const bytes = Buffer.concat(chunks);
+  assert.equal(bytes.toString('utf8'), content);
+  assert.equal(bytes.length, head.byteLength);
+  assert.equal(digest(content), head.contentHash);
+  assert.deepEqual([...f.records], before);
+});
+test('raw history supports an empty retained version and does not require its current source', async () => {
+  const f = await fixture(1, ''),
+    row = (await list(f)).items[0];
+  await f.db.runTransaction((tx) => {
+    tx.delete(f.db.doc(scenePath));
+    tx.delete(f.db.doc(scenePath + '/body/current'));
+  });
+  const result = await f.api.readAdventureBackupHistoryText(uid, textRequest(f, row));
+  assert.equal(result.chunkBase64, '');
+  assert.equal(result.chunkHash, digest(''));
+  assert.deepEqual(result.manifest, { byteLength: 0, chunkCount: 1, contentHash: digest('') });
+});
+test('raw history checks actor, source, parent and closed ordinal input before exposing text', async () => {
+  const f = await fixture(),
+    row = (await list(f)).items[0],
+    input = textRequest(f, row);
+  for (const actor of ['', 'other'])
+    await assert.rejects(f.api.readAdventureBackupHistoryText(actor, input), {
+      code: actor ? 'not-found' : 'unauthenticated',
+    });
+  for (const ordinal of [-1, 0.5, NaN, Infinity, '0', f.records.get(versionPath).chunkCount])
+    await assert.rejects(f.api.readAdventureBackupHistoryText(uid, { ...input, ordinal }), {
+      code: 'invalid-argument',
+    });
+  await assert.rejects(f.api.readAdventureBackupHistoryText(uid, { ...input, extra: true }), {
+    code: 'invalid-argument',
+  });
+  for (const patch of [{ sourceToken: 'f'.repeat(64) }, { parentToken: 'f'.repeat(64) }])
+    await assert.rejects(f.api.readAdventureBackupHistoryText(uid, { ...input, ...patch }), {
+      code: 'failed-precondition',
+    });
+});
+for (const patch of [
+  { versionId: 'other' },
+  { index: 99 },
+  { contentStorage: null },
+  { bodyStorage: null },
+  { content: '\ud800' },
+]) {
+  test('raw history refuses a malformed physical chunk: ' + Object.keys(patch)[0], async () => {
+    const f = await fixture(),
+      row = (await list(f)).items[0],
+      path = 'adventures/' + id + '/workVersionBodies/' + digest({ versionId: row.id, index: 0 });
+    await f.db.runTransaction((tx) => tx.update(f.db.doc(path), patch));
+    await assert.rejects(f.api.readAdventureBackupHistoryText(uid, textRequest(f, row)), {
+      code: 'failed-precondition',
+    });
+  });
+}
+test('raw history has no missing-body fallback and refreshed child tokens reveal recreation', async () => {
+  const f = await fixture(),
+    row = (await list(f)).items[0],
+    input = textRequest(f, row),
+    path = 'adventures/' + id + '/workVersionBodies/' + digest({ versionId: row.id, index: 0 });
+  const first = await f.api.readAdventureBackupHistoryText(uid, input),
+    body = structuredClone(f.records.get(path));
+  await f.db.runTransaction((tx) => tx.delete(f.db.doc(path)));
+  await assert.rejects(f.api.readAdventureBackupHistoryText(uid, input), {
+    code: 'failed-precondition',
+  });
+  await f.db.runTransaction((tx) => tx.create(f.db.doc(path), body));
+  const recreated = await f.api.readAdventureBackupHistoryText(uid, input);
+  assert.notEqual(recreated.itemToken, first.itemToken);
+  assert.equal(recreated.chunkBase64, first.chunkBase64);
+});
+test('raw history freezes ordinal and parent before the first await and retries as a read-only operation', async () => {
+  const f = await fixture(1, 'x'.repeat(80000)),
+    row = (await list(f)).items[0],
+    input = textRequest(f, row),
+    before = structuredClone([...f.records]);
+  let entered = false;
+  const db = {
+    ...f.db,
+    runTransaction: (op) =>
+      f.db.runTransaction((tx) =>
+        op({
+          ...tx,
+          getAll: async (ref, options) => {
+            if (!entered) {
+              entered = true;
+              await Promise.resolve();
+              Object.assign(input, { ordinal: 1, parentId: 'other', parentToken: 'f'.repeat(64) });
+            }
+            return tx.getAll(ref, options);
+          },
+        }),
+      ),
+  };
+  const result = await createAdventureBackupHistoryService({ db }).readAdventureBackupHistoryText(
+    uid,
+    input,
+  );
+  assert.equal(result.ordinal, 0);
+  assert.equal(result.parentId, row.id);
+  assert.equal(Buffer.from(result.chunkBase64, 'base64').length, 65536);
+  await f.api.readAdventureBackupHistoryText(uid, textRequest(f, row));
+  assert.deepEqual([...f.records], before);
+});
