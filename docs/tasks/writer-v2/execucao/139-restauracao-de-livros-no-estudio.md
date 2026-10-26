@@ -73,7 +73,7 @@ for conhecido; demais etapas usam estado textual, sem precisão inventada.
 
 - [x] Revisão/fingerprint/descritor e contratos de bootstrap/upload.
 - [x] Controle inicial, upload retomável e conflitos por provas originais.
-- [ ] Contratos de revisão/ativação/mídia/limpeza e confirmação após chave revogada.
+- [x] Contratos de revisão/ativação/mídia/limpeza e confirmação após chave revogada.
 - [ ] Sessão de cliente e painel/diálogo integrado ao Estúdio.
 - [ ] Testes dirigidos, browser real e roundtrip atual/legado com consumidores normais.
 - [ ] Revisão/checks/ADR/evidência e commits locais.
@@ -122,3 +122,44 @@ revisão de apresentação recalculada.
 Fluxo de arquivo atual chegou à revisão privada com raiz ausente após duas
 perdas de resposta e reinícios. Cancelamento de job existente, finalização
 durável e UI/roundtrip e demais P1/fases/gates permanecem.
+
+## Contrato da finalização antes do código
+
+A chave do upload é revogada na ativação/cancelamento; pedidos que encerram essa
+chave não podem depender de decrypt para serem confirmados. Usar controle
+operacional metadata separado, fechado, com identidade do job, ação, operationId
+e checkpoint/revisão/token de revisão aplicáveis. Não guardar título, texto,
+chave, Auth/App Check ou URL. JobToken/reviewToken são identificadores/provas do
+protocolo, não credenciais de autenticação.
+
+Ativação nova só por confirmação explícita da revisão exibida; persistir intenção
+antes de RPC e repetir exatamente após recarga. Nova revisão não substitui token
+de uma tentativa pendente. Consultas históricas não concedem acesso ao livro.
+Mídia/limpeza/cancelamento usam suas confirmações específicas e progresso atual;
+already-complete só encerra dívida quando o servidor prova conclusão do mesmo
+contexto, sem inventar um recibo próprio.
+
+Erros de transporte/conta conservam controle. Conflito não autoriza mudar
+checkpoint/operationId: reconciliar recibo original ou prova nativa de que a
+tentativa não pode mais produzir efeitos. Revisão de ativação mudada exige
+nova confirmação humana; nunca reenviar automaticamente com token atualizado.
+Cancelamento continua restrito a antes da ativação.
+
+Bootstrap e finalização compartilham o mesmo padrão de I/O metadata (registro
+fechado, conta/chave, CAS integral, paginação e guards), com schemas/namespaces
+separados. Extrair somente esse kernel interno para evitar duas implementações
+divergentes; manter codec/layout do bootstrap e journal cifrado anteriores.
+Repetir as provas nativas afetadas ao extrair.
+
+Nos testes reais, o replay de cancelamento revelou fases modernas ausentes no
+validador de recibos históricos; incluir cover-storage/persona-library somente
+nas versões que as suportam. O comando de limpeza exige limit explícito: manter
+16 como parte fixa do pedido e de seu fingerprint em todas as retomadas.
+
+## Estado parcial da finalização
+
+Contratos, store operacional e sessão de finalização implementados, com replay
+após chave revogada e confirmação/reconciliação nativas. 44 Vitest distintos,
+quatro Node e 14 cenários Chromium positivos em seleções;
+[evidência](../../../entregas/2026-10-25-writer-v2-finalizacao-duravel-no-cliente.md).
+Ainda falta integrar interface, validar consumidores/roundtrip e fechar P1.

@@ -601,3 +601,14 @@ concluído estiverem satisfeitos. A lista fica em
   e prefixo nativo. Não persista chunkBase64.
 - Conserve reviewHash original do job ao retomar; getters/listas projetam metadata
   autorizada. Início/envio/preparação nunca ativam automaticamente a raiz.
+
+## Finalização durável no cliente de livros
+
+- Preserve intenção operacional metadata em store separado antes de ativar,
+  finalizar mídia/limpeza ou cancelar; sem prosa/chave/Auth/App Check (ADR 0161).
+- Confirme revisão explícita capturada antes de awaits e reenvie pedido original;
+  chave revogada não autoriza descartar dívida ou trocar token/checkpoint.
+- Use recibo/resolver apropriado a cada ação; already-complete exige conclusão
+  nativa. Desconhecido no mesmo checkpoint não encerra tentativa.
+- CAS compara registro inteiro. Histórico não concede acesso ao livro nem
+  recria raiz excluída; cleanup de cancelamento mantém limit 16 no fingerprint.

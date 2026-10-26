@@ -30,7 +30,7 @@ export function restorePreparationId(v: unknown): v is string {
 }
 export const restorePreparationOperationId = (value: unknown): value is string =>
   typeof value === 'string' && /^[a-zA-Z0-9-]{16,80}$/.test(value);
-export function readBookRestoreIdentity(value: BookRestoreIdentity): BookRestoreIdentity {
+export function readBookRestoreIdentity(value: unknown): BookRestoreIdentity {
   restorePreparationCheck(
     object(value) &&
       restorePreparationId(value.ownerId) &&

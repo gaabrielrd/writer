@@ -289,6 +289,8 @@ export function createBookRestoreUploadService({
           'artifacts',
           'body-artifacts',
           'resource-children',
+          ...(loaded.job.cleanupVersion >= 13 ? ['cover-storage'] : []),
+          ...(loaded.job.cleanupVersion >= 14 ? ['persona-library'] : []),
         ].includes(r.integrity.cleanupPhase)
       )
         inconsistent();

@@ -2951,3 +2951,12 @@ Getters/listas projetam metadata vinculada à origem. Defaults adiam Firebase;
 guards/CAS preservam tentativa diante de erro/conta/concorrência. UI e
 finalização durável continuam no plano 139. Veja a
 [evidência](entregas/2026-10-25-writer-v2-inspecao-inicio-e-envio-de-backups.md).
+
+## Confirmação terminal da restauração no cliente
+
+Ativação/cancelamento revogam a chave do journal de preparação. O cliente mantém
+intenção operacional metadata em namespace próprio e exige recibo/prova nativa
+antes de removê-la por CAS integral. Bootstrap e finalização compartilham kernel
+IndexedDB interno com codecs separados; journal cifrado permanece independente.
+Revisão é explícita e capturada antes de awaits. Ver
+[ADR 0161](decisions/0161-durable-book-restore-terminal-operations.md).
