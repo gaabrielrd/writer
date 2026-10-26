@@ -1807,3 +1807,13 @@ compõe seleção/revisões/preparação/confirmação explícita, lista/pausa/r
 abertura com acesso atual. 30 Vitest distintos e oito verificações Chromium
 positivos. Sem implantação. Roundtrip integral/consumidores/inventários/rollout/
 validate de P1 e demais V2/fases/gates continuam obrigatórios.
+
+### P1 — roundtrip com consumidores normais (plano 140 parcial)
+
+[Plano 140](140-roundtrip-dos-livros-com-consumidores-normais.md): captura/recaptura
+normal atual/JSON v1–v6, escrita, histórico/rascunho, capa e lore >8 MiB.
+Corrigidos controle derivado em narrativa e ausência explícita de persona.
+16 Vitest distintos, 109 Node distintos, dois SDK e sete verificações Chromium
+positivos em seleções; [evidência](../../../entregas/2026-10-25-writer-v2-roundtrip-normal-dos-livros.md).
+Inventários/writers/exclusão/coleta, fontes antigas e draft com perfil indisponível,
+rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.

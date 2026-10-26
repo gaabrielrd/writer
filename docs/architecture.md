@@ -2967,3 +2967,9 @@ concedem conteúdo. Listas remount por conta e páginas independentes preservam
 pendências locais mesmo com fonte remota indisponível. Descarte local terminal
 reautoriza contexto e usa CAS do envelope, sem decrypt ou exclusão do projeto.
 Ver [ADR 0162](decisions/0162-book-restore-studio-workflow.md).
+
+Disponibilidade portátil de persona é metadata fechada no dono, separada de
+perfil/autorização. Normalização legada v2 explicita ausência/overrides sem mudar
+replay v1; recaptura não adota perfil por coincidência. Controle de índice
+entity-scenes não integra conteúdo autoral portátil. Ver
+[ADR 0163](decisions/0163-portable-persona-absence-and-native-roundtrip.md).

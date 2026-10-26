@@ -41,6 +41,7 @@ function nativeChapter(uid, bookId, id, value, timestamp) {
     ...(Object.hasOwn(value, 'personaComplement')
       ? { personaComplement: value.personaComplement }
       : {}),
+    ...(value.personaAvailability ? { personaAvailability: value.personaAvailability } : {}),
     createdAt: timestamp,
     updatedAt: timestamp,
   };

@@ -60,7 +60,15 @@ export function createBookRestoreRemapper(input) {
   function complement(value) {
     if (value) value.personaId = identity('persona', value.personaId);
   }
+  function availability(value) {
+    if (value.personaAvailability)
+      value.personaAvailability.personaId = identity(
+        'persona',
+        value.personaAvailability.personaId,
+      );
+  }
   function chapter(value) {
+    availability(value);
     if (Object.hasOwn(value, 'actId')) value.actId = maybe('act', value.actId);
     complement(value.personaComplement);
     return value;
@@ -115,6 +123,7 @@ export function createBookRestoreRemapper(input) {
       if (record.id !== context.sourceBookId) bad();
       newId = context.bookId;
       if (kind === 'book-metadata') {
+        availability(value.book);
         if (value.book.personaId != null)
           value.book.personaId = identity('persona', value.book.personaId);
         if (value.book.coverImageId != null)

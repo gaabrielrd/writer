@@ -7,7 +7,7 @@ import {
   assertFails,
   assertSucceeds,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
 import { createBookBackupReadService } from '../../functions/src/bookBackupRead.mjs';
 import { createBookBackupPersonaService } from '../../functions/src/bookBackupPersonaRead.mjs';
 import { createBookBackupResourceService } from '../../functions/src/bookBackupResourceRead.mjs';
@@ -243,4 +243,33 @@ test('own lore source projects structure/relations without resolved global label
   await assert.rejects(resources.listBookBackupResources('author', { ...args, limit: 50 }), {
     code: 'failed-precondition',
   });
+});
+
+test('SDK portable availability survives metadata masks without adopting matching profiles or changing access rules', async () => {
+  const book = admin.doc('books/book'),
+    chapter = admin.doc('books/book/chapters/chapter'),
+    sourceRef = admin.doc('books/book/sceneSources/chapter');
+  const marker = (personaId) => ({ schemaVersion: 1, personaId, reason: 'profile-not-recorded' });
+  const batch = admin.batch();
+  batch.update(book, { personaAvailability: marker('custom-used') });
+  batch.update(chapter, { personaAvailability: marker('custom-used') });
+  batch.update(sourceRef, { 'original.personaAvailability': marker('preset-epic') });
+  await batch.commit();
+  const pin = await source();
+  for (const kind of ['book', 'chapter', 'scene-source']) {
+    const page = await list(pin, kind);
+    assert.ok(page.items.length > 0);
+    assert.ok(page.items.every((row) => row.personaId === null));
+  }
+  const own = environment.authenticatedContext('author').firestore(),
+    other = environment.authenticatedContext('other').firestore();
+  await assertSucceeds(getDoc(doc(own, book.path)));
+  await assertFails(getDoc(doc(other, book.path)));
+  await assertSucceeds(updateDoc(doc(own, book.path), { title: 'Edit after explicit absence' }));
+  assert.deepEqual((await book.get()).data().personaAvailability, marker('custom-used'));
+  await book.update({ personaId: 'preset-epic' });
+  const changed = await source(),
+    row = (await list(changed)).items[0];
+  assert.equal(row.personaId, 'preset-epic');
+  assert.equal(decode(await read(changed, 'book', row)).profile.id, 'preset-epic');
 });

@@ -75,7 +75,7 @@ for conhecido; demais etapas usam estado textual, sem precisão inventada.
 - [x] Controle inicial, upload retomável e conflitos por provas originais.
 - [x] Contratos de revisão/ativação/mídia/limpeza e confirmação após chave revogada.
 - [x] Sessão de cliente e painel/diálogo integrado ao Estúdio.
-- [ ] Testes dirigidos, browser real e roundtrip atual/legado com consumidores normais.
+- [x] Testes dirigidos, browser real e roundtrip atual/legado com consumidores normais.
 - [ ] Revisão/checks/ADR/evidência e commits locais.
 
 ## Riscos e critérios de aceite
@@ -195,3 +195,8 @@ pausa, conta/vida útil, recuperação e descarte local terminal confirmado.
 [evidência](../../../entregas/2026-10-25-writer-v2-restauracao-no-estudio.md).
 UI provada com arquivo atual, três reinícios/respostas perdidas e limpeza completa.
 Roundtrip integral atual/legado e consumidores normais seguem pendentes.
+
+O [roundtrip do plano 140](140-roundtrip-dos-livros-com-consumidores-normais.md)
+acrescenta prova atual/JSON v1–v6, edição/recaptura, rascunhos e lore >8 MiB;
+[evidência](../../../entregas/2026-10-25-writer-v2-roundtrip-normal-dos-livros.md).
+Demais inventários/compatibilidades/rollout/validate de P1 e fases/gates continuam.

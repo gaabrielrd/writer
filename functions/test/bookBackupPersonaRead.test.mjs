@@ -229,3 +229,36 @@ test('deleting/rebalancing root or owner and stale origin prevent capture', asyn
   f.records.set('books/book', { ...f.records.get('books/book'), deleting: true });
   await assert.rejects(source(f), { code: 'not-found' });
 });
+
+test('explicit missing profile remains neutral even if the library contains the same ID, while a new chosen ID is authorized normally', async () => {
+  const f = fixture(),
+    book = f.records.get('books/book');
+  book.personaAvailability = {
+    schemaVersion: 1,
+    personaId: f.profile.id,
+    reason: 'profile-not-recorded',
+  };
+  let pin = await source(f);
+  const before = structuredClone(f.records);
+  const rows = await list(f, pin);
+  assert.equal(rows.items[0].personaId, null);
+  assert.deepEqual(f.records, before);
+  await f.db.runTransaction((tx) =>
+    tx.update(f.db.doc('books/book'), { personaId: DEFAULT_PERSONAS[0].id }),
+  );
+  pin = await source(f);
+  const row = (await list(f, pin)).items[0];
+  assert.equal(row.personaId, DEFAULT_PERSONAS[0].id);
+  assert.equal(decode(await read(f, pin, 'book', row)).profile.id, DEFAULT_PERSONAS[0].id);
+});
+test('malformed availability metadata cannot bypass normal persona validation', async () => {
+  const f = fixture();
+  f.records.get('books/book').personaAvailability = {
+    schemaVersion: 1,
+    personaId: f.profile.id,
+    reason: 'available',
+    key: 'NEVER_ADOPT',
+  };
+  const pin = await source(f);
+  await assert.rejects(list(f, pin), { code: 'failed-precondition' });
+});

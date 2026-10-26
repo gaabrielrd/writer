@@ -30,6 +30,8 @@ export interface BookContentReport {
     externalReferences: number;
     orphanGroups: number;
     legacyCover: boolean;
+    missingPersonas?: number;
+    unknownOverrides?: number;
   };
 }
 export function validateBookBackupContent(

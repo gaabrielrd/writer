@@ -217,12 +217,17 @@ export function createBookBackupResourceService({ db }) {
           let query = db
             .collection(path(context, value))
             .orderBy('__name__')
-            .limit(limit + 1)
+            // One reserved derived-index control is not portable author content.
+            .limit(limit + 1 + (value.kind === 'narrative-control' ? 1 : 0))
             .select(...(value.kind === 'scene-source' ? ['original.contentStorage'] : []));
           if (after !== null) query = query.startAfter(after);
-          const page = await tx.get(query);
-          selected = page.docs.slice(0, limit);
-          hasMore = page.docs.length > limit;
+          const page = await tx.get(query),
+            portable =
+              value.kind === 'narrative-control'
+                ? page.docs.filter((snapshot) => snapshot.id !== 'entity-scenes')
+                : page.docs;
+          selected = portable.slice(0, limit);
+          hasMore = portable.length > limit;
         }
         return {
           ...current.result,

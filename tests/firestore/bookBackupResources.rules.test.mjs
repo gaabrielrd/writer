@@ -278,3 +278,38 @@ test('busy controls, deleting root and same-ID root replacement cannot pass', as
   await assert.rejects(list(pin, 'scene'), { details: { reason: 'book-backup-source-changed' } });
   assert.ok(id);
 });
+
+test('SDK portable derived control is excluded with complete native cursor pages', async () => {
+  const expected = new Set([digest({ kind: 'arc' })]),
+    batch = admin.batch();
+  batch.set(admin.doc('books/book/narrativeControls/' + digest({ kind: 'arc' })), {
+    rankSlot: 'A',
+    resource: { kind: 'arc' },
+  });
+  batch.set(admin.doc('books/book/narrativeControls/entity-scenes'), {
+    ready: true,
+    sourceRevision: 0,
+  });
+  for (let n = 0; n < 63; n++) {
+    const resource = { kind: 'milestone', arcId: 'native-arc-' + n },
+      id = digest(resource);
+    expected.add(id);
+    batch.set(admin.doc('books/book/narrativeControls/' + id), { rankSlot: 'A', resource });
+  }
+  await batch.commit();
+  const pin = await source();
+  for (const limit of [2, 50]) {
+    let cursor = null;
+    const seen = [];
+    do {
+      const page = await list(pin, 'narrative-control', null, { cursor, limit });
+      assert.ok(page.items.length <= limit);
+      if (page.nextCursor) assert.equal(page.items.length, limit);
+      seen.push(...page.items.map((row) => row.id));
+      cursor = page.nextCursor;
+    } while (cursor);
+    assert.equal(seen.length, expected.size);
+    assert.deepEqual(new Set(seen), expected);
+  }
+  assert.equal((await admin.doc('books/book/narrativeControls/entity-scenes').get()).exists, true);
+});

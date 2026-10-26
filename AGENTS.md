@@ -623,3 +623,16 @@ concluído estiverem satisfeitos. A lista fica em
   o guard após await. Recibo histórico não abre conteúdo.
 - Descarte de ciphertext terminal é explícito: reautorize contexto original e
   compare envelope inteiro antes de removê-lo; não remova projeto nem decripte.
+
+## Recaptura e ausência portátil de persona
+
+- Omita somente narrativeControls/entity-scenes da listagem portátil; leia até
+  limit+2 metadata nesse grupo para conservar páginas/cursor, sem filtrar
+  inconsistências desconhecidas (ADR 0163).
+- Preserve personaAvailability fechada e ID neutro junto ao dono/remap. Ausência
+  não cria perfil nem autoriza biblioteca por coincidência; vínculo novo exige
+  autorização normal. Overrides antigos conservam snapshot/valores e aviso.
+- Sem marcador explícito, formato novo mantém recusas de perfis/traits ausentes.
+  Cursor legado v1 conserva saída/hash; normalização v2 registra a metadata.
+- JSON antigo projeta fontes sem a marca nova e sem mutar objeto original.
+  Warnings opcionais atuais não invalidam checkpoints anteriores.

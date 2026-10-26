@@ -314,3 +314,15 @@ efeitos atomicamente, com consulta histórica segura. 55 Node distintos e dois
 SDK positivos; [evidência](../../../entregas/2026-10-25-writer-v2-ativacao-atomica-de-livros.md).
 Finalização da mídia, limpeza pós-ativação, host/UI/roundtrip integral,
 inventários/writers/exclusão/legados/rollout e validate de P1 permanecem pendentes.
+
+## Avanço local em 2026-10-25 — interface e roundtrip
+
+Finalização da mídia/limpeza, transporte explícito, cliente durável e interface do
+Estúdio foram implementados em incrementos próprios. O
+[plano 140](140-roundtrip-dos-livros-com-consumidores-normais.md) prova recaptura por
+serviços normais, JSON v1–v6, histórico/rascunho/mídia, escrita e lore >8 MiB;
+[evidência](../../../entregas/2026-10-25-writer-v2-roundtrip-normal-dos-livros.md).
+Isso atualiza as pendências históricas do início deste documento, sem concluir P1.
+Inventários de writers/namespaces/exclusão/coleta, fontes antigas/compatibilidades,
+rascunho com perfil indisponível, rollout e validate integral ainda são exigidos.
+Modo indexado padrão false, sem CI ou operações remotas.

@@ -2917,3 +2917,9 @@ de navegar. Harness Chromium externo prova armazenamento nativo e fluxo com
 três reinícios/respostas perdidas até ativação e limpeza; identidade/SDK são
 simulados. Consulte a [evidência](entregas/2026-10-25-writer-v2-restauracao-no-estudio.md)
 para limites e resultados, sem inferir infraestrutura de produção.
+
+O [roundtrip normal dos livros](entregas/2026-10-25-writer-v2-roundtrip-normal-dos-livros.md)
+usa serviços e streams reais com ports de banco/índice/journal em memória para
+comparar conteúdo atual/legado por remap, datas nativas declaradas e bytes
+literais. Testes SDK separados provam máscaras/páginas/Rules; Chromium separado
+prova JSON v6/recuperação nativa. Não inferir implantação ou inventário global.

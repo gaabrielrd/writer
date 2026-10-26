@@ -58,7 +58,7 @@ export async function prepareBookRestoreActivationEffects(
       authorId: uid,
       title: original.title,
       ...Object.fromEntries(
-        ['genre', 'synopsis', 'personaId']
+        ['genre', 'synopsis', 'personaId', 'personaAvailability']
           .filter((k) => Object.hasOwn(original, k))
           .map((k) => [k, original[k]]),
       ),

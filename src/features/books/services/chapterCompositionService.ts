@@ -229,7 +229,10 @@ export async function captureSceneBookBackup(
         backup.sources.some((existing) => existing.id === source.id)
       )
         throw changed();
-      backup.sources.push(source);
+      // The legacy JSON schema derives availability from its own persona catalog.
+      const original = { ...source.original };
+      Reflect.deleteProperty(original, 'personaAvailability');
+      backup.sources.push({ ...source, original });
     }
     cursor = page.nextCursor;
     if (cursor && pageCursors.has(cursor)) throw changed();

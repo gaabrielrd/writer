@@ -1,4 +1,5 @@
 import { readAvailablePersonaMetadata } from './personaAvailability.mjs';
+import { currentBookPersonaAvailability } from './bookPersonaAvailability.mjs';
 import {
   digest,
   workClosed,
@@ -19,11 +20,19 @@ import { BOOK_PERSONA_SCOPES, serializeBookBackupPersona } from './bookBackupPer
 import { DEFAULT_PERSONAS, validateComplement } from './personaProfile.mjs';
 
 const definitions = {
-  book: { fields: ['personaId', 'deleting', 'rebalancing'] },
-  chapter: { path: 'chapters', fields: ['personaComplement', 'deleting', 'rebalancing'] },
+  book: { fields: ['personaId', 'personaAvailability', 'deleting', 'rebalancing'] },
+  chapter: {
+    path: 'chapters',
+    fields: ['personaComplement', 'personaAvailability', 'deleting', 'rebalancing'],
+  },
   'scene-source': {
     path: 'sceneSources',
-    fields: ['original.personaComplement', 'deleting', 'rebalancing'],
+    fields: [
+      'original.personaComplement',
+      'original.personaAvailability',
+      'deleting',
+      'rebalancing',
+    ],
   },
 };
 function unavailable() {
@@ -49,7 +58,15 @@ function binding(type, value) {
     unavailable();
   }
   if (id !== null && (typeof id !== 'string' || !/^[a-zA-Z0-9-]{1,100}$/.test(id))) unavailable();
-  return id;
+  const owner = type === 'scene-source' ? value.original : value;
+  let marker;
+  try {
+    marker = currentBookPersonaAvailability(owner.personaAvailability, id);
+  } catch {
+    unavailable();
+  }
+  // A neutral missing profile must not be adopted from the library by ID coincidence.
+  return marker?.reason === 'profile-not-recorded' ? null : id;
 }
 export async function readBookBackupPersonaIdentity(tx, context, id) {
   if (id === null) return { identity: null, preset: null, snapshot: null };

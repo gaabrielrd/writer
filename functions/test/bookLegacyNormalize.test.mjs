@@ -77,8 +77,8 @@ async function catalog(src, { index = adapter(), onState, maxBytes = 65536, maxV
   );
   return { descriptor: clone(descriptor), index, state };
 }
-async function normalize(src, descriptor, index, { onStep } = {}) {
-  let cursor = createBookLegacyNormalizationState(descriptor, { hash });
+async function normalize(src, descriptor, index, { onStep, version = 2 } = {}) {
+  let cursor = createBookLegacyNormalizationState(descriptor, { hash, version });
   let machineState = createBookContentState(descriptor.bookId, true);
   const records = [];
   let steps = 0,
@@ -315,7 +315,7 @@ test('normalizer rejects closed/version/context and phase cursor mismatches befo
   const variants = [
     [],
     { ...cursor, extra: 1 },
-    { ...cursor, schemaVersion: 2 },
+    { ...cursor, schemaVersion: 3 },
     { ...cursor, contextHash: 'f'.repeat(64) },
     { ...cursor, phase: 'future' },
     { ...cursor, position: -1 },
@@ -449,4 +449,46 @@ test('readback refuses changed hashes/records and a missing chapter index withou
     readBookLegacyNormalizedItem(src, descriptor, before, expected, { index: readonly, hash }),
   );
   assert.equal(index.data.has(key), false);
+});
+
+test('v1 normalization replay preserves old literal output while v2 records missing profile explicitly', async () => {
+  const src = source(fixture(5)),
+    oldCatalog = await catalog(src),
+    newCatalog = await catalog(src),
+    old = await normalize(src, oldCatalog.descriptor, oldCatalog.index, { version: 1 }),
+    next = await normalize(src, newCatalog.descriptor, newCatalog.index);
+  assert.equal(old.cursor.schemaVersion, 1);
+  assert.equal(next.cursor.schemaVersion, 2);
+  const a = old.records.find((r) => r.record.kind === 'book-scene-source'),
+    b = next.records.find((r) => r.record.kind === 'book-scene-source');
+  assert.equal(a.value.data.original.personaAvailability, undefined);
+  assert.deepEqual(b.value.data.original.personaAvailability, {
+    schemaVersion: 1,
+    personaId: 'missing-source-style',
+    reason: 'profile-not-recorded',
+  });
+  const expected = structuredClone(b.value);
+  delete expected.data.original.personaAvailability;
+  assert.deepEqual(expected, a.value);
+  assert.notEqual(a.valueHash, b.valueHash);
+  assert.deepEqual(next.summary.warnings, old.summary.warnings);
+});
+test('available legacy profile retains snapshot and unknown override values with explicit provenance', async () => {
+  const input = fixture(5);
+  input.scenes.sources[0].original.personaComplement = {
+    personaId: input.personas[0].id,
+    overrides: [{ traitId: 'old-unrecognized', value: 77 }],
+  };
+  const src = source(input),
+    c = await catalog(src),
+    out = await normalize(src, c.descriptor, c.index),
+    sourceRecord = out.records.find((r) => r.record.kind === 'book-scene-source');
+  assert.equal(sourceRecord.value.data.original.personaAvailability.reason, 'legacy-overrides');
+  assert.deepEqual(sourceRecord.value.data.original.personaComplement.overrides, [
+    { traitId: 'old-unrecognized', value: 77 },
+  ]);
+  assert.equal(out.summary.warnings.unknownOverrides, 1);
+  assert.ok(
+    out.records.some((r) => r.record.kind === 'book-persona' && r.value.scope === 'scene-source'),
+  );
 });

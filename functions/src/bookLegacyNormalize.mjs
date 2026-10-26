@@ -110,10 +110,11 @@ function descriptor(catalog) {
     present: [...catalog.present],
   };
 }
-export function createBookLegacyNormalizationState(catalog, { hash }) {
+export function createBookLegacyNormalizationState(catalog, { hash, version = 2 }) {
+  if (![1, 2].includes(version)) bad();
   const view = descriptor(catalog);
   return {
-    schemaVersion: 1,
+    schemaVersion: version,
     contextHash: hashOf(view, hash),
     phase: 'profiles',
     position: 0,
@@ -150,7 +151,7 @@ function checkedCursor(cursor, catalog, hash) {
     'legacyWarnings',
   ]);
   if (
-    cursor.schemaVersion !== 1 ||
+    ![1, 2].includes(cursor.schemaVersion) ||
     cursor.contextHash !== hashOf(descriptor(catalog), hash) ||
     !phases.includes(cursor.phase) ||
     new TextEncoder().encode(JSON.stringify(cursor)).length > 16384
@@ -272,7 +273,17 @@ async function normalizationStep(source, catalog, cursor, { index, hash, signal 
     if (next.sourceHash !== null && next.sourceHash !== actual) bad();
     next.sourceHash = actual;
   }
-  // Shared projections preserve the legacy-only exceptions, never a new archive.
+  async function availability(personaId, overrides = []) {
+    if (next.schemaVersion < 2 || !personaId) return undefined;
+    const found = await get(['legacy-profile', personaId]);
+    if (!found) return { schemaVersion: 1, personaId, reason: 'profile-not-recorded' };
+    if (!Array.isArray(overrides)) bad();
+    const profile = await item('personas', found.position);
+    if (overrides.some((o) => !profile.traits.some((t) => t.id === o.traitId)))
+      return { schemaVersion: 1, personaId, reason: 'legacy-overrides' };
+    return undefined;
+  }
+  // v1 replay retains its literal old output. v2 carries explicit portable absence.
   async function original(position) {
     const value = await item('sources', position);
     closed(value, ['id', 'content', 'hash', 'original']);
@@ -289,6 +300,10 @@ async function normalizationStep(source, catalog, cursor, { index, hash, signal 
     )
       bad();
     if (value.original.wordCount !== undefined) count(value.original.wordCount);
+    const marker = await availability(
+      value.original.personaComplement?.personaId,
+      value.original.personaComplement?.overrides,
+    );
     return {
       id: value.id,
       data: {
@@ -299,6 +314,7 @@ async function normalizationStep(source, catalog, cursor, { index, hash, signal 
             chapterFields.filter((k) => k !== 'content'),
           ),
           content: value.content,
+          ...(marker ? { personaAvailability: marker } : {}),
         },
       },
     };
@@ -331,6 +347,11 @@ async function normalizationStep(source, catalog, cursor, { index, hash, signal 
         if (value[key] !== undefined && value[key] !== group[key]) bad();
       data.rankSlot = group.rankSlot;
     }
+    const marker = await availability(
+      data.personaComplement?.personaId,
+      data.personaComplement?.overrides,
+    );
+    if (marker) data.personaAvailability = marker;
     return { id: value.id, data };
   }
 
@@ -410,9 +431,10 @@ async function normalizationStep(source, catalog, cursor, { index, hash, signal 
       });
       advance();
     } else if (phase === 'metadata') {
-      const book = await item('book');
+      const book = await item('book'),
+        marker = await availability(book.personaId);
       result = output('book-metadata', bookId, {
-        book: pick(book, bookFields),
+        book: { ...pick(book, bookFields), ...(marker ? { personaAvailability: marker } : {}) },
         progress: {},
         cover: catalog.cover,
       });

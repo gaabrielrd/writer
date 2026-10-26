@@ -650,3 +650,9 @@ privada, pausa e recuperação após recarga. Abrir a cópia exige acesso atual 
 servidor. Veja a [entrega local](docs/entregas/2026-10-25-writer-v2-restauracao-no-estudio.md).
 Endpoints novos ainda sem implantação; roundtrip/consumidores/inventários/rollout/
 validate de P1 continuam, sem conclusão de F2-09/V2.
+
+O [roundtrip local dos livros](docs/entregas/2026-10-25-writer-v2-roundtrip-normal-dos-livros.md)
+foi provado com captura/restauração/recaptura normais, JSON v1–v6, histórico,
+rascunho, mídia, edição e lore indexado acima de 8 MiB. Personas ausentes e
+overrides antigos permanecem explícitos, sem perfil fabricado. Inventários,
+compatibilidades restantes/rollout e validate integral de P1 continuam pendentes.

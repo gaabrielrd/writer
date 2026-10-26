@@ -419,3 +419,52 @@ test('physical lore reads refuse every payloadStorage stub while metadata listin
   assert.equal(page.items.length, 1);
   await assert.rejects(read(f, pin, 'lore', null, page.items[0]), { code: 'failed-precondition' });
 });
+
+test('derived entity-scenes control is excluded without hiding author sequences across bounded pages', async () => {
+  const f = fixture(),
+    expected = new Set([digest({ kind: 'arc' })]);
+  f.records.set('books/book/narrativeControls/entity-scenes', { ready: true, sourceRevision: 0 });
+  for (let n = 0; n < 63; n++) {
+    const resource = { kind: 'milestone', arcId: 'arc-' + n },
+      id = digest(resource);
+    expected.add(id);
+    f.records.set('books/book/narrativeControls/' + id, { rankSlot: 'A', resource });
+  }
+  const pin = await source(f),
+    before = structuredClone(f.records);
+  for (const limit of [1, 50]) {
+    let cursor = null;
+    const seen = [];
+    do {
+      const page = await list(f, pin, 'narrative-control', null, { limit, cursor });
+      assert.ok(page.items.length <= limit);
+      assert.ok(!page.items.some((row) => row.id === 'entity-scenes'));
+      if (page.nextCursor) assert.equal(page.items.length, limit);
+      seen.push(...page.items.map((row) => row.id));
+      cursor = page.nextCursor;
+    } while (cursor);
+    assert.equal(seen.length, expected.size);
+    assert.deepEqual(new Set(seen), expected);
+  }
+  assert.deepEqual(f.records, before);
+});
+test('only reserved derived control is omitted; an unknown author-control ID still fails on content read', async () => {
+  const f = fixture();
+  for (const path of [...f.records.keys()])
+    if (path.startsWith('books/book/narrativeControls/')) f.records.delete(path);
+  f.records.set('books/book/narrativeControls/entity-scenes', { ready: true });
+  const pin = await source(f);
+  assert.deepEqual((await list(f, pin, 'narrative-control')).items, []);
+  f.records.set('books/book/narrativeControls/unknown-control', {
+    rankSlot: 'A',
+    resource: { kind: 'arc' },
+  });
+  const page = await list(f, pin, 'narrative-control');
+  assert.deepEqual(
+    page.items.map((row) => row.id),
+    ['unknown-control'],
+  );
+  await assert.rejects(read(f, pin, 'narrative-control', null, page.items[0]), {
+    code: 'failed-precondition',
+  });
+});

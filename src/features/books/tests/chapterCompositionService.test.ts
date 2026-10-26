@@ -250,3 +250,31 @@ describe('backup privado de cenas', () => {
     await expect(captureSceneBookBackup('book', 9)).rejects.toThrow(/mudaram/);
   });
 });
+
+it('JSON legado omite somente a marca nova de disponibilidade sem alterar fonte ou complemento', async () => {
+  const source = {
+    id: 'chapter',
+    content: 'fonte original',
+    hash: hash('fonte original'),
+    original: {
+      title: 'Original',
+      order: 1,
+      personaComplement: {
+        personaId: 'custom-missing',
+        overrides: [{ traitId: 'old', value: 77 }],
+      },
+      personaAvailability: {
+        schemaVersion: 1,
+        personaId: 'custom-missing',
+        reason: 'profile-not-recorded',
+      },
+    },
+  };
+  const before = structuredClone(source);
+  api.listSceneSources.mockResolvedValue(page([source]));
+  const result = await captureSceneBookBackup('book', 9),
+    expected = { ...source.original };
+  Reflect.deleteProperty(expected, 'personaAvailability');
+  expect(result.sources).toEqual([{ ...source, original: expected }]);
+  expect(source).toEqual(before);
+});

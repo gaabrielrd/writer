@@ -1,5 +1,6 @@
 import { BOOK_RESOURCE_KINDS } from './bookBackupResources.mjs';
 import { BOOK_PERSONA_SCOPES } from './bookBackupPersonas.mjs';
+import { readBookPersonaAvailability } from './bookPersonaAvailability.mjs';
 import { validateBookBackupUniverseOrigin } from './bookBackupUniverse.mjs';
 import {
   bookContentInvalid as bad,
@@ -178,7 +179,11 @@ function checkpoint(value) {
       for (const value of Object.values(state.totals[key])) count(value);
     } else count(state.totals[key]);
   }
-  closed(state.warnings, Object.keys(shape.warnings));
+  closed(
+    state.warnings,
+    Object.keys(shape.warnings),
+    state.legacy ? [] : ['missingPersonas', 'unknownOverrides'],
+  );
   for (const [key, value] of Object.entries(state.warnings)) {
     if (key === 'legacyCover') {
       if (typeof value !== 'boolean') bad();
@@ -305,10 +310,17 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
     await add(['row', String(rowCount++)], value);
     count(rowCount);
   }
-  async function need(scope, id, personaId, traits = []) {
+  async function need(scope, id, personaId, traits = [], availability) {
     await add(['need', scope, id], { personaId });
     bump(totals.owners, scope);
-    await row({ kind: 'persona', scope, id, personaId, traits });
+    await row({
+      kind: 'persona',
+      scope,
+      id,
+      personaId,
+      traits,
+      ...(availability ? { availability } : {}),
+    });
   }
   const dates = (value, fields = ['createdAt', 'updatedAt']) => {
     if (fields.some((key) => !Object.hasOwn(value, key))) bump(warnings, 'missingDates');
@@ -387,7 +399,7 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
         cover: coverBinding(value.cover),
       };
       dates(value.book);
-      await need('book', bookId, book.personaId);
+      await need('book', bookId, book.personaId, [], value.book.personaAvailability);
     } else if (kind === 'act' || kind === 'chapter') {
       if (!book) bad();
       await add(nodeKey(kind, record.id), {
@@ -402,6 +414,7 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
           record.id,
           value.personaComplement?.personaId ?? null,
           (value.personaComplement?.overrides ?? []).map((o) => o.traitId),
+          value.personaAvailability,
         );
         if (value.actId) await edge(nodeKey('act', value.actId), false, true);
       }
@@ -516,6 +529,7 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
           value.id,
           data.original.personaComplement?.personaId ?? null,
           (data.original.personaComplement?.overrides ?? []).map((o) => o.traitId),
+          data.original.personaAvailability,
         );
         await edge(nodeKey('chapter', value.id), false, true);
       } else if (type === 'scene-reference') await loreRef(data);
@@ -681,17 +695,32 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
       return;
     }
     const binding = await get(['binding', item.scope, item.id]);
+    let marker;
+    try {
+      marker = readBookPersonaAvailability(item.availability);
+    } catch {
+      bad();
+    }
+    if (marker && marker.personaId !== item.personaId) bad();
+    const warn = (key, n = 1) => {
+      if (!Object.hasOwn(warnings, key)) warnings[key] = 0;
+      bump(warnings, key, n);
+    };
     if (item.personaId === null) {
-      if (binding !== undefined) bad();
+      if (binding !== undefined || marker) bad();
     } else if (!binding) {
-      if (!legacy) bad();
-      bump(warnings, 'missingPersonas');
+      if (
+        (!legacy && marker?.reason !== 'profile-not-recorded') ||
+        marker?.reason === 'legacy-overrides'
+      )
+        bad();
+      warn('missingPersonas');
     } else {
-      if (binding.personaId !== item.personaId) bad();
+      if (binding.personaId !== item.personaId || marker?.reason === 'profile-not-recorded') bad();
       const unknown = item.traits.filter((id) => !binding.traits.includes(id)).length;
       if (unknown) {
-        if (!legacy) bad();
-        bump(warnings, 'unknownOverrides', unknown);
+        if (!legacy && marker?.reason !== 'legacy-overrides') bad();
+        warn('unknownOverrides', unknown);
       }
     }
   }

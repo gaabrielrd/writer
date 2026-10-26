@@ -1,3 +1,4 @@
+import { currentBookPersonaAvailability } from './bookPersonaAvailability.mjs';
 export const BOOK_STRUCTURE_LIMITS = Object.freeze({
   version: 1,
   pageItems: 50,
@@ -53,6 +54,13 @@ function assertJSON(entry, depth = 0) {
 export function serializeBookBackupStructure(kind, value, control) {
   if (!Object.hasOwn(fields, kind)) throw new TypeError('Tipo de estrutura inválido.');
   const item = pick(value, fields[kind]);
+  if (kind === 'book' || kind === 'chapter') {
+    const marker = currentBookPersonaAvailability(
+      value.personaAvailability,
+      kind === 'book' ? value.personaId : value.personaComplement?.personaId,
+    );
+    if (marker) item.personaAvailability = marker;
+  }
   if (kind === 'chapter' && item.personaComplement != null) {
     const complement = item.personaComplement;
     if (!Array.isArray(complement.overrides)) throw new TypeError('Complemento inválido.');

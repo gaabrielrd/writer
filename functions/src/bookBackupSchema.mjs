@@ -1,4 +1,5 @@
 import { BookBackupFormatError } from './bookBackupContainer.mjs';
+import { readBookPersonaAvailability } from './bookPersonaAvailability.mjs';
 import { BOOK_RESOURCE_KINDS, BOOK_RESOURCE_SINGLETONS } from './bookBackupResources.mjs';
 import { projectBookBackupPersona, BOOK_PERSONA_SCOPES } from './bookBackupPersonas.mjs';
 import { validateComplement } from './personaProfile.mjs';
@@ -130,9 +131,25 @@ const chapterFields = [
   'assemblyRevision',
   'structureRevision',
   'rankSlot',
+  'personaAvailability',
   'createdAt',
   'updatedAt',
 ];
+function availability(value, personaId, overrides = true) {
+  if (!Object.hasOwn(value, 'personaAvailability')) return;
+  let marker;
+  try {
+    marker = readBookPersonaAvailability(value.personaAvailability);
+  } catch {
+    bad();
+  }
+  if (
+    !marker ||
+    marker.personaId !== personaId ||
+    (!overrides && marker.reason !== 'profile-not-recorded')
+  )
+    bad();
+}
 function chapter(value, draft = false) {
   bookContentClosed(
     value,
@@ -147,6 +164,7 @@ function chapter(value, draft = false) {
   dates(value);
   optional(value, ['actId'], nullableId);
   optional(value, ['personaComplement'], complement);
+  availability(value, value.personaComplement?.personaId);
   optional(value, ['content'], string);
   optional(value, ['contentMode'], (v) => one(v, draft ? ['legacy'] : ['legacy', 'scenes']));
   optional(value, ['assemblyRevision', 'structureRevision'], bookContentCount);
@@ -331,12 +349,22 @@ export function validateBookBackupJSONItem(kind, value, bookId) {
     bookContentClosed(
       value.book,
       ['title'],
-      ['genre', 'synopsis', 'personaId', 'universeId', 'coverImageId', 'createdAt', 'updatedAt'],
+      [
+        'genre',
+        'synopsis',
+        'personaId',
+        'personaAvailability',
+        'universeId',
+        'coverImageId',
+        'createdAt',
+        'updatedAt',
+      ],
     );
     ['title', 'genre', 'synopsis'].forEach((k) => {
       if (Object.hasOwn(value.book, k)) string(value.book[k]);
     });
     dates(value.book);
+    availability(value.book, value.book.personaId, false);
     optional(value.book, ['personaId'], (v) => {
       if (v !== null) personaId(v);
     });

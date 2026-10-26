@@ -350,3 +350,86 @@ test('cover checkpoints keep only identity/hash/size and omit the library name',
   assert.equal(JSON.stringify(f.snapshots).includes('PRIVATE COVER TITLE'), false);
   assert.ok(f.snapshots.some((s) => s.raw?.binary && s.raw.id === imageId));
 });
+
+test('explicit unavailable persona remains portable without granting or inventing a profile, including resumed checkpoints', async () => {
+  let records = fixture().filter((r) => r.kind !== 'book-persona');
+  records = patch(records, 'book-personas', (v) => ({
+    ...v,
+    bindings: { book: 0, chapter: 0, 'scene-source': 0 },
+  }));
+  records = patch(records, 'book-metadata', (v) => ({
+    ...v,
+    book: {
+      ...v.book,
+      personaAvailability: {
+        schemaVersion: 1,
+        personaId: v.book.personaId,
+        reason: 'profile-not-recorded',
+      },
+    },
+  }));
+  records = patch(records, 'book-scene-source', (v) => ({
+    ...v,
+    data: {
+      ...v.data,
+      original: {
+        ...v.data.original,
+        personaAvailability: {
+          schemaVersion: 1,
+          personaId: v.data.original.personaComplement.personaId,
+          reason: 'profile-not-recorded',
+        },
+      },
+    },
+  }));
+  const f = await drive(records, { resume: true, limit: 1 });
+  assert.equal(f.result.legacy, false);
+  assert.equal(f.result.warnings.missingPersonas, 2);
+  assert.equal(f.result.totals.profiles, 0);
+  assert.ok(f.snapshots.some((s) => s.warnings.missingPersonas > 0));
+  const falseClaim = patch(fixture(), 'book-metadata', (v) => ({
+    ...v,
+    book: {
+      ...v.book,
+      personaAvailability: {
+        schemaVersion: 1,
+        personaId: v.book.personaId,
+        reason: 'profile-not-recorded',
+      },
+    },
+  }));
+  await assert.rejects(drive(falseClaim, { resume: true, limit: 1 }), bad);
+});
+test('explicit old override preserves known profile and rejects the same unknown trait without the marker', async () => {
+  const records = patch(fixture(), 'book-scene-source', (v) => ({
+    ...v,
+    data: {
+      ...v.data,
+      original: {
+        ...v.data.original,
+        personaComplement: {
+          ...v.data.original.personaComplement,
+          overrides: [{ traitId: 'unknown-trait', value: 17 }],
+        },
+      },
+    },
+  }));
+  await assert.rejects(drive(records, { resume: true, limit: 1 }), bad);
+  const marked = patch(records, 'book-scene-source', (v) => ({
+    ...v,
+    data: {
+      ...v.data,
+      original: {
+        ...v.data.original,
+        personaAvailability: {
+          schemaVersion: 1,
+          personaId: v.data.original.personaComplement.personaId,
+          reason: 'legacy-overrides',
+        },
+      },
+    },
+  }));
+  const f = await drive(marked, { resume: true, limit: 1 });
+  assert.equal(f.result.warnings.unknownOverrides, 1);
+  assert.equal(f.result.totals.profiles, 1);
+});
