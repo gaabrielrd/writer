@@ -109,3 +109,11 @@ checks documentais/arquiteturais/formatação/diff acompanham o commit.
 [evidência parcial](../../../entregas/2026-10-26-writer-v2-fonte-do-backup-de-aventuras.md).
 P2 integral permanece aberto; próxima entrega é o contrato/inventário e a
 captura de recursos próprios, sem reutilizar base parcial de campanha como dump.
+
+## Continuidade de captura
+
+148 acrescentou raiz/partes; 149 acrescenta oito famílias de cenas/blocos,
+controles de ordem, corpos, planner e referências. São leitores internos com
+provas próprias, não selo global ou backup integral. 118 Node e três SDK
+positivos no incremento 149. Narrativa/lore/demais famílias, pacote/restore/UI
+e validação integral de P2 continuam pendentes.

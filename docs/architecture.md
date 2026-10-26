@@ -3027,3 +3027,10 @@ A [ADR 0171](decisions/0171-adventure-backup-structure-read.md) acrescenta fonte
 transacional compatível, listagem metadata e leitura por unidades da raiz/partes.
 Codec próprio inclui texto legado e procedência declarada sem IDs de operação.
 Não há transporte público/arquivo completo; provas das outras famílias seguem.
+
+A [ADR 0172](decisions/0172-adventure-backup-scene-block-resources.md) acrescenta
+oito famílias fechadas de cenas/blocos/controles/planner/referências. Tokens
+ligam item, pai e cena dona; ausências opcionais são explícitas e corpos exigem
+hash integral coerente com o head. Preserva ranks, arquivo e hint de parte
+retirada sem recriá-la. Vínculos de imagem/persona/referência são neutros;
+selo global, demais famílias, arquivo integral e restauração ainda pendentes.

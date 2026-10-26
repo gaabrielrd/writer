@@ -86,6 +86,7 @@ A contagem histórica de tarefas completas permanece 8/35 (22,9%); não é medid
 de horas/esforço nem equivale a lançamento. Gates operacionais, humanos e
 comerciais continuam explícitos. Nenhum push, PR, merge, deploy ou CI nesta etapa.
 
-P2 iniciou fonte interna (147) e leitura de raiz/partes (148), com 64 Node
-selecionados e três SDK positivos no último incremento. Não há backup integral
-ou restauração de aventuras ainda; a contagem de tarefas completas não muda.
+P2 iniciou fonte interna (147), leitura de raiz/partes (148) e oito famílias
+de cenas/blocos/controles/planner/referências (149), com 118 Node selecionados
+e três SDK positivos no último incremento. Não há backup integral ou restauração
+de aventuras ainda; a contagem de tarefas completas não muda.

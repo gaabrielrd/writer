@@ -181,3 +181,5 @@ export function createAdventureBackupReadService({ db }) {
     },
   };
 }
+
+export { available as adventureBackupPartData };

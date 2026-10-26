@@ -701,3 +701,10 @@ concluído estiverem satisfeitos. A lista fica em
   de até 64 KiB. Capture índice/IDs/tokens antes de awaits (ADR 0171).
 - Preserve conteúdo legado literal; recuse corpo externo sem leitor e mantenha
   importId/URLs operacionais fora da procedência portátil.
+- Capture cenas/blocos físicos, incluindo arquivo/sem parte, e rankSlot/ranks
+  declarados. Ausência opcional é explícita; corpo obrigatório ausente falha
+  (ADR 0172). Preserve formerParentId sem recriar parte retirada.
+- Confira hash do texto contra corpo/head e identidades nativas do item, pai e
+  cena dona. Não exija revisão numérica igual ou contador derivado para salvar
+  prosa própria. Referências/imagens/personas são vínculos neutros até suas
+  provas específicas; nunca copie labels globais como fallback.
