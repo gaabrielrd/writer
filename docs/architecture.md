@@ -3077,3 +3077,8 @@ A [ADR 0180](decisions/0180-adventure-imported-image-authority.md) corrige a ida
 dos heads: importador cria cenas antes da ativação da raiz. Ownership/identidade
 do head continuam; autorização dos bytes vem do uso tipado posterior à raiz,
 com provas de biblioteca/Storage. Não depende de chave/job de importação.
+
+O [inventário P2](tasks/writer-v2/inventario-portabilidade-aventuras.md) fecha o
+bloco de leitores 147–157: fontes/writers/clocks, presença, staging, exclusões e
+rascunhos locais separados. Segunda passagem completa e manifestos de histórico/
+assets são condições do assembler futuro; não há arquivo/restore de aventura ainda.

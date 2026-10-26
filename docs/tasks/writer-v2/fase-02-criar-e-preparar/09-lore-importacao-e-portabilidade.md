@@ -69,3 +69,13 @@ Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md
 ## Não escopo
 
 OCR, autorizar venda de PDF importado, exportar chaves BYOK e substituir o pacote comercial por backup JSON.
+
+## Atualização local — 2026-10-26
+
+P1 (livros) passou o [fechamento 146](../execucao/146-inventario-e-consumidores-dos-livros-restaurados.md),
+com arquivo/restauração privada e runtime local para novos pedidos; limitações
+operacionais permanecem no inventário. P2 fechou apenas leitores internos no
+[plano 158](../execucao/158-inventario-e-validacao-dos-leitores-de-aventuras.md),
+com validate integral verde. Pacote/assembler/restauração/UI de aventuras, P3 de
+campanhas e demonstração integrada continuam pendentes; nenhum aceite acima é
+marcado por esse subincremento. Trabalho atual somente em commits locais, sem CI.

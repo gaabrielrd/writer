@@ -2985,3 +2985,10 @@ A [leitura de estrutura P2](entregas/2026-10-26-writer-v2-leitura-da-estrutura-d
 passou 64 Node dirigidos e três SDK reais (8.166,2951 ms na seleção final).
 Conferem produtores, metadata, 52/53 partes, bytes/Unicode/presença, ABA, Rules,
 falha/retry e intenção congelada. Sem frontend novo ou validate global P2 atribuído.
+
+O [fechamento dos leitores P2](entregas/2026-10-26-writer-v2-inventario-dos-leitores-de-aventuras.md)
+passou validate integral: 4.096 frontend, 87 scripts, 3.332 Functions e 310 módulos
+de sintaxe, typecheck/build/smoke. Duas tentativas anteriores encontraram timeout
+em fluxo de três formatos e corrida por polling de 5 ms no harness; evidência
+preserva falhas, seleções dirigidas e correções. Limites de cobertura inalterados.
+Não confundir esse fechamento com arquivo/restauração/UI de aventura concluídos.

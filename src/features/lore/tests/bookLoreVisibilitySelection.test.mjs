@@ -431,4 +431,4 @@ it('one selection preserves raw source fields across inline, payload v1 and payl
     expect(captured.data.details).toBe('NATIVE_PRIVATE_' + n);
     expect(captured.data.name).toBe('Literal 🌙 ' + n);
   }
-});
+}, 30000);

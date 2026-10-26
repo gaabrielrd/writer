@@ -93,3 +93,9 @@ com origem por identidade nativa. Compatibilidade do leitor de imagens com cenas
 preparadas antes da ativação foi corrigida em 157: 50 Node e três SDK positivos.
 Não há backup integral ou restauração de aventuras ainda; a contagem de tarefas
 completas não muda.
+
+O [fechamento 158](execucao/158-inventario-e-validacao-dos-leitores-de-aventuras.md)
+registra inventário de fontes e validate integral verde dos leitores: 4.096 frontend,
+87 scripts, 3.332 Functions, sintaxe/types/build/smoke. Duas falhas de infraestrutura
+de testes foram corrigidas e preservadas na evidência. P2 ainda não monta/restaura
+arquivo nem oferece UI; 8/35 e demais gates permanecem sem mudança.

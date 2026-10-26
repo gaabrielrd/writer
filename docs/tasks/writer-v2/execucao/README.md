@@ -1918,3 +1918,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      posterior à raiz como grant atual; RED reproduzido, 50 Node e três SDK verdes.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-imagens-de-aventuras-importadas.md).
      Inventário/selo/pacote/restauração/UI/roundtrip e validate do bloco abertos.
+
+158. [Inventário e validação dos leitores de aventuras](158-inventario-e-validacao-dos-leitores-de-aventuras.md):
+     matriz de produtores/provas/exclusões/drafts e validate integral verde:
+     4.096 frontend, 87 scripts e 3.332 Functions; duas falhas de teste corrigidas.
+     [Evidência](../../../entregas/2026-10-26-writer-v2-inventario-dos-leitores-de-aventuras.md).
+     Fecha somente o bloco de leitores; assembler/pacote/restore/UI e P2 abertos.

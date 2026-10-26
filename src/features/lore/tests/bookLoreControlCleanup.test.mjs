@@ -272,10 +272,15 @@ it('closes a producer whose append committed while its response is still pending
 it('fences a registered edit before its delayed start and never reopens it', async () => {
   const f = await setup();
   let release,
+    started,
     entered = false;
+  const atStart = new Promise((done) => {
+    started = done;
+  });
   f.intercept(async (method, _input, invoke) => {
     if (method === 'startBookLoreEditReservation') {
       entered = true;
+      started();
       await new Promise((done) => {
         release = done;
       });
@@ -285,10 +290,7 @@ it('fences a registered edit before its delayed start and never reopens it', asy
   let late;
   for (let n = 0; n < 3000; n++) {
     const step = advanceProducer(f);
-    await Promise.race([
-      step,
-      vi.waitFor(() => expect(entered).toBe(true), { timeout: 5 }).catch(() => {}),
-    ]);
+    await Promise.race([step, atStart]);
     if (entered) {
       late = step;
       break;
