@@ -104,3 +104,9 @@ arquivo nem oferece UI; 8/35 e demais gates permanecem sem mudança.
 envelope de oito seções, com vetor de livro preservado; 64 Node/37 Vitest e
 build dirigidos positivos. Não há montagem/restauração de aventura ainda;
 validação semântica/segunda passagem, UI e demais gates permanecem pendentes.
+
+[Inventário 160](execucao/160-inventario-limitado-do-cliente-de-aventuras.md)
+acrescenta percurso metadata limitado e segunda passagem no cliente, com registro
+puro compartilhado: 24 Vitest/115 Node dirigidos positivos. É inventory-only;
+corpos, ordinais/hash de histórico, Storage, montagem/restauração/UI continuam
+pendentes. P2/P3/D e contagem 8/35 preservadas.

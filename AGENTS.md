@@ -745,3 +745,9 @@ concluído estiverem satisfeitos. A lista fica em
   envelope-only: ainda exige validação autoral/acesso antes de uso (ADR 0181).
 - Cursor/index de arquivo privado pertencem ao host confiável; não aceite
   checkpoints do arquivo/usuário nem os transfira entre domínios.
+- No cliente, compartilhe somente adventureBackupResourceDefinitions puro;
+  percorra todas as views/filhos com páginas, IDs UTF-8 e presença explícita.
+  Inventory-only é metadata; reconfira digest/fonte/totais em nova passagem,
+  mantendo provas independentes de corpos/histórico/Storage (ADR 0182).
+- Ao acrescentar view/produtor autoral, atualize registro, percurso, fixtures
+  e manifestos; não omita namespace novo de um backup declarado completo.

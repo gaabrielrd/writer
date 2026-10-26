@@ -2999,3 +2999,10 @@ e typecheck/build/smoke. Vetores Python dos dois domínios e rejeição cruzada
 conferem o framer compartilhado; envelope-only não certifica DTOs nem autoria.
 Validate de 158 não é atribuído a esse código posterior; próximo fechamento
 integral ocorre no fim do grande bloco seguinte, sem CI.
+
+O [inventário do cliente P2](entregas/2026-10-26-writer-v2-inventario-do-cliente-de-aventuras.md)
+passou 24 Vitest na seleção final, 115 Node, lint/types
+e bundle isolado para navegador. Fixtures usam produtores/leitores reais com
+53 cenas, source final, mudanças sem rootclock/contagem, páginas adulteradas e
+cancelamento/conta. Falhas iniciais de fixture/import local/inferência de cursor
+estão registradas; sem relaxar contratos ou atribuir validate integral anterior.

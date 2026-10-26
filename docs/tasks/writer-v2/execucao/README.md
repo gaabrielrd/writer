@@ -1930,3 +1930,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      aventura e envelope canônico de oito seções; 64 Node/37 Vitest e build verdes.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-formato-privado-de-aventuras.md).
      Report envelope-only; assembler/validação autoral/restauração/UI e P2 abertos.
+
+160. [Inventário limitado do cliente de aventuras](160-inventario-limitado-do-cliente-de-aventuras.md):
+     registro puro e percurso metadata completo com SHA/segunda passagem,
+     24 Vitest/115 Node, types/lint e bundle isolado positivos.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-inventario-do-cliente-de-aventuras.md).
+     Inventory-only não certifica conteúdo/Storage nem sela arquivo; P2 aberta.

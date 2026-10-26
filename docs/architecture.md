@@ -3088,3 +3088,9 @@ framing puro para portableBackupContainer, preservando bytes/APIs de livro.
 Aventura tem assinatura/erro próprios e envelope canônico de oito seções.
 Report envelope-only e checkpoints de host não certificam conteúdo nem grants;
 assembler/validador autoral e restauração/UI continuam pendentes.
+
+A [ADR 0182](decisions/0182-adventure-client-inventory.md) define o percurso
+metadata de adventure-portability: registro puro compartilhado com servidor,
+port injetado sem Firebase no import, páginas/ancestrais limitados e SHA de todas
+as views. Scan/verify pela interface pública produzem prova inventory-only;
+corpos, histórico ordenado, Storage e selo autoral permanecem independentes.
