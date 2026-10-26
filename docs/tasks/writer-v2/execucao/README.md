@@ -1876,3 +1876,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      com source/ancestrais autorizados; 158 Node e cinco SDK positivos.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-narrativa-no-backup-de-aventuras.md).
      Lore/demais famílias, selo/pacote/restauração/UI e validate P2 abertos.
+
+151. [Lore próprio no backup de aventuras](151-lore-proprio-no-backup-de-aventuras.md):
+     metadata/corpo/tombstone por nascimento/revisão da origem, sem lookup global;
+     204 Node e dois SDK positivos na seleção final.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-lore-proprio-no-backup-de-aventuras.md).
+     Histórico/demais famílias, selo/pacote/restauração/UI e validate P2 abertos.

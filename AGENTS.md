@@ -711,3 +711,6 @@ concluído estiverem satisfeitos. A lista fica em
 - Na narrativa portátil, derive somente os controles de ordem conhecidos pelo
   sequenceKey; não exporte entity-scenes. Marco exige arco/arcId coerentes;
   link exige source próprio e seus ancestrais, sem resolver o alvo (ADR 0173).
+- Lore portátil próprio deve conferir metadata/corpo pelo nascimento da raiz,
+  conta e revisão, sem consultar universo. Tombstone exige corpo ausente e não
+  vira ficha ativa; recuse corpo órfão ou de raiz recriada (ADR 0174).

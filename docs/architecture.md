@@ -3040,3 +3040,8 @@ mesmo leitor com narrativa inline, marcos, ordens determinísticas e links.
 Milestone-order vive no controle raiz e depende do arco; links comprovam source
 e seus ancestrais, sem resolver alvos ou serializar índices/labels derivados.
 Data textual e ranks são preservados; captura ainda não é pacote integral.
+
+A [ADR 0174](decisions/0174-adventure-backup-local-lore-pairs.md) mantém leitor
+específico para pares de lore próprio e tombstones. Identidade da raiz e revisão
+do par são conferidas sem universo/autorização de campanha. Metadata não leva
+texto na listagem; corpo preserva relações neutras. Órfãos não são adotados.
