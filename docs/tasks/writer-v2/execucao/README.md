@@ -1817,3 +1817,9 @@ Corrigidos controle derivado em narrativa e ausência explícita de persona.
 positivos em seleções; [evidência](../../../entregas/2026-10-25-writer-v2-roundtrip-normal-dos-livros.md).
 Inventários/writers/exclusão/coleta, fontes antigas e draft com perfil indisponível,
 rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
+
+141. [Ausência de persona no rascunho portátil](141-ausencia-de-persona-no-rascunho-portatil.md):
+     captura explícita, schema/histórico e avisos retomáveis; 32 Node, 16 Vitest e
+     dois roundtrips positivos. Sem inventar perfil ou recriar capítulo.
+     [Evidência](../../../entregas/2026-10-25-writer-v2-ausencia-de-persona-no-rascunho.md).
+     P1 segue com inventários/legados/rollout/validate e fases 3–5 pendentes.

@@ -51,3 +51,9 @@ Sem escrita, Rules, coleção, crédito ou dependência nova. A
 [entrega M8](../entregas/2026-10-21-writer-v2-rascunho-explicito-no-backup.md)
 distingue produtor limitado e prova de bytes das fixtures/UI/sink/restauração.
 P1/F2-09 continuam abertos, somente commits locais e sem CI/push.
+
+## Compatibilidade posterior
+
+A [ADR 0164](0164-explicit-draft-persona-absence.md) estende somente contribuições
+com personaAvailability explícita: ausência guarda persona null sem lookup;
+overrides antigos mantêm perfil real revalidado. Sem marca, a recusa M8 permanece.

@@ -2923,3 +2923,8 @@ usa serviços e streams reais com ports de banco/índice/journal em memória par
 comparar conteúdo atual/legado por remap, datas nativas declaradas e bytes
 literais. Testes SDK separados provam máscaras/páginas/Rules; Chromium separado
 prova JSON v6/recuperação nativa. Não inferir implantação ou inventário global.
+
+A [compatibilidade do rascunho marcado](entregas/2026-10-25-writer-v2-ausencia-de-persona-no-rascunho.md)
+tem 32 Node, 16 Vitest da captura e dois roundtrips selecionados positivos,
+incluindo retomada, recusas, ausência neutra, estilo antigo, vazio/removido e
+recaptura. Banco/ports em memória não comprovam produção nem validate global.

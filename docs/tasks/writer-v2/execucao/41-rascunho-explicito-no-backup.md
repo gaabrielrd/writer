@@ -77,3 +77,9 @@ incluindo JSON v1–v6, 20 MiB/320 partes e abort; SDK quatro cenários; Chromiu
 Build e checks dirigidos positivos. Veja [entrega M8](../../../entregas/2026-10-21-writer-v2-rascunho-explicito-no-backup.md)
 e [ADR 0052](../../../decisions/0052-explicit-book-draft-backup.md).
 Sem UI/sink/restauração anunciados; P1/F2-09 abertos, sem CI/push/deploy.
+
+## Compatibilidade posterior
+
+O [plano 141](141-ausencia-de-persona-no-rascunho-portatil.md) conserva ausência/
+overrides antigos explicitamente marcados, sem lookup por coincidência nem
+perda de texto. Sem marca, a exigência original de perfil real permanece.

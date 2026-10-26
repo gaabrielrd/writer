@@ -310,21 +310,30 @@ function counts(value, keys) {
   bookContentClosed(value, keys);
   Object.values(value).forEach(bookContentCount);
 }
+function draftStyle(chapter, persona) {
+  const complement = chapter.personaComplement,
+    id = complement?.personaId ?? null,
+    marker = readBookPersonaAvailability(chapter.personaAvailability);
+  if (persona !== null) profile(persona);
+  if (marker?.reason === 'profile-not-recorded') {
+    if (persona !== null) bad();
+  } else {
+    if ((persona?.id ?? null) !== id || (marker && !persona)) bad();
+    if (
+      persona &&
+      marker?.reason !== 'legacy-overrides' &&
+      (complement?.overrides ?? []).some((o) => !persona.traits.some((t) => t.id === o.traitId))
+    )
+      bad();
+  }
+}
 export function projectBookVersionDraft(value, resource) {
   bookContentClosed(value, ['schemaVersion', 'chapter', 'persona']);
   if (value.schemaVersion !== 1) bad();
   chapter(value.chapter, true);
   if (resource && (resource.kind !== 'chapter' || resource.id !== value.chapter.id)) bad();
-  if (value.persona !== null) profile(value.persona);
+  draftStyle(value.chapter, value.persona);
   const complement = value.chapter.personaComplement;
-  if (
-    (value.persona?.id ?? null) !== (complement?.personaId ?? null) ||
-    (value.persona &&
-      (complement?.overrides ?? []).some(
-        (o) => !value.persona.traits.some((t) => t.id === o.traitId),
-      ))
-  )
-    bad();
   const metadata = Object.fromEntries(
     ['id', ...chapterFields]
       .filter((k) => Object.hasOwn(value.chapter, k))
@@ -463,9 +472,7 @@ export function validateBookBackupJSONItem(kind, value, bookId) {
       bookContentCount(value.chunkCount);
       bookContentHash(value.contentHash);
       if (value.chunkCount < 1) bad();
-      const id = value.chapter.personaComplement?.personaId ?? null;
-      if (value.persona !== null) profile(value.persona);
-      if ((value.persona?.id ?? null) !== id) bad();
+      draftStyle(value.chapter, value.persona);
     }
   } else if (kind === 'book-cover') {
     bookContentClosed(value, ['schemaVersion', 'cover']);

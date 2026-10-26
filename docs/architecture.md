@@ -2973,3 +2973,10 @@ perfil/autorização. Normalização legada v2 explicita ausência/overrides sem
 replay v1; recaptura não adota perfil por coincidência. Controle de índice
 entity-scenes não integra conteúdo autoral portátil. Ver
 [ADR 0163](decisions/0163-portable-persona-absence-and-native-roundtrip.md).
+
+### Ausência explícita no rascunho portátil
+
+Contribuição local projeta a marca fechada do mesmo vínculo; ausência mantém
+persona null sem lookup, e overrides antigos mantêm perfil autorizado. Schema
+do draft/histórico e warnings retomáveis compartilham o contrato da
+[ADR 0164](decisions/0164-explicit-draft-persona-absence.md). Sem novo namespace.

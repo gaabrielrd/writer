@@ -228,10 +228,11 @@ export function normalPorts(f) {
     lore,
   };
 }
-export async function capture(f, bookId) {
+export async function capture(f, bookId, options = {}) {
   const ports = normalPorts(f),
     parts = [];
-  for await (const bytes of streamBookBackup(bookId, ports.options)) parts.push(Buffer.from(bytes));
+  for await (const bytes of streamBookBackup(bookId, { ...ports.options, ...options }))
+    parts.push(Buffer.from(bytes));
   return { bytes: Buffer.concat(parts), ports, parts };
 }
 export async function restore(f, bytes, indexed = false) {

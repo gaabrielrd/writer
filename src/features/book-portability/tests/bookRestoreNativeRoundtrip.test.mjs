@@ -440,3 +440,95 @@ for (const scenario of [
     },
     30000,
   );
+
+for (const reason of ['profile-not-recorded', 'legacy-overrides'])
+  it(
+    'explicit unsaved draft with ' +
+      reason +
+      ' survives normal backup restore history and recapture',
+    async () => {
+      const f = await seedActive();
+      await finishTerminal(f, f.p);
+      route(f);
+      const [profilePath, profile] = [...f.records].find(([path]) =>
+        path.startsWith('users/author/aiPersonas/'),
+      );
+      expect(profilePath).toBeTruthy();
+      const personaId = reason === 'profile-not-recorded' ? 'custom-neutral-missing' : profile.id,
+        draft = {
+          chapter: {
+            id: 'own-removed-local',
+            bookId: f.p.bookId,
+            title: ' Draft 🌙 ',
+            order: 13,
+            contentMode: 'legacy',
+            createdAt: 101,
+            updatedAt: 107,
+            personaComplement: { personaId, overrides: [{ traitId: 'legacy-only', value: 77 }] },
+            personaAvailability: { schemaVersion: 1, personaId, reason },
+          },
+          content: reason === 'profile-not-recorded' ? '' : '\ufeffUnsaved own 🌙\n  literal',
+        };
+      const a = await capture(f, f.p.bookId, { draft }),
+        copy = await restore(f, a.bytes);
+      expect(
+        copy.inspected.review.warnings[
+          reason === 'profile-not-recorded' ? 'missingPersonas' : 'unknownOverrides'
+        ],
+      ).toBe(1);
+      expect(copy.review.summary.draft.outcome).toBe('version');
+      const b = await capture(f, copy.p.bookId),
+        rows = await logicalRecords(b.bytes),
+        version = rows.find((r) => r.kind === 'work-version' && r.value.draft),
+        style = version.value.draft,
+        mapper = createBookRestoreRemapper({
+          schemaVersion: 1,
+          sourceBookId: f.p.bookId,
+          bookId: copy.p.bookId,
+          jobToken: copy.p.jobToken,
+        });
+      expect(style.chapter).toMatchObject({
+        id: mapper.identity('chapter', draft.chapter.id),
+        title: draft.chapter.title,
+        createdAt: 101,
+        updatedAt: 107,
+        personaAvailability: {
+          schemaVersion: 1,
+          personaId: mapper.identity('persona', personaId),
+          reason,
+        },
+        personaComplement: {
+          personaId: mapper.identity('persona', personaId),
+          overrides: draft.chapter.personaComplement.overrides,
+        },
+      });
+      expect(
+        rows
+          .find((r) => r.kind === 'work-version-text' && r.id === version.id)
+          .value.toString('utf8'),
+      ).toBe(draft.content);
+      if (reason === 'profile-not-recorded') {
+        expect(style.persona).toBeNull();
+        expect(
+          f.records.has('users/author/aiPersonas/' + style.chapter.personaAvailability.personaId),
+        ).toBe(false);
+      } else expect(style.persona.instructions).toBe(profile.instructions);
+      expect(f.records.has('books/' + copy.p.bookId + '/chapters/' + style.chapter.id)).toBe(false);
+      const second = await restore(f, b.bytes);
+      expect(
+        second.inspected.review.warnings[
+          reason === 'profile-not-recorded' ? 'missingPersonas' : 'unknownOverrides'
+        ],
+      ).toBe(1);
+      b.bookId = copy.p.bookId;
+      const c = await capture(f, second.p.bookId),
+        media = await second.api.getBookRestoreMediaState(uid, {
+          restoreId: second.p.restoreId,
+          jobToken: second.p.jobToken,
+        });
+      expect(sorted(await logicalRecords(c.bytes))).toEqual(
+        await expectedRemap(b, second.p, { media }),
+      );
+    },
+    45000,
+  );

@@ -306,3 +306,86 @@ it('transport error propagates once and malformed proof is rejected before remot
   ).rejects.toThrow('rascunho explícito');
   expect(f.api.getSource).toHaveBeenCalledTimes(calls);
 });
+
+it('explicit unavailable draft keeps its neutral style and frozen marker without consulting a matching library profile', async () => {
+  const f = fixture();
+  f.input.chapter.personaAvailability = {
+    schemaVersion: 1,
+    personaId: 'custom-draft',
+    reason: 'profile-not-recorded',
+  };
+  const stream = bookDraftBackupRecords('book', f.input, { api: f.api });
+  f.input.chapter.personaAvailability.reason = 'legacy-overrides';
+  const result = await drain(stream),
+    meta = header(result.records);
+  expect(meta).toMatchObject({
+    persona: null,
+    chapter: {
+      personaAvailability: {
+        schemaVersion: 1,
+        personaId: 'custom-draft',
+        reason: 'profile-not-recorded',
+      },
+      personaComplement: {
+        personaId: 'custom-draft',
+        overrides: [{ traitId: 'sensory', value: 27 }],
+      },
+    },
+  });
+  expect(body(result.records)).toBe(f.input.content);
+  expect(result.proof.persona).toBeNull();
+  await verifyBookBackupDraft(result.proof, { api: f.api });
+  expect(f.api.persona).not.toHaveBeenCalled();
+  f.anchor.sourceToken = 'd'.repeat(64);
+  await expect(verifyBookBackupDraft(result.proof, { api: f.api })).rejects.toThrow();
+});
+it('explicit old overrides retain an authorized snapshot and normal final persona revalidation', async () => {
+  const f = fixture();
+  f.input.chapter.personaAvailability = {
+    schemaVersion: 1,
+    personaId: 'custom-draft',
+    reason: 'legacy-overrides',
+  };
+  f.input.chapter.personaComplement!.overrides = [{ traitId: 'old-trait', value: 77 }];
+  const result = await drain(bookDraftBackupRecords('book', f.input, { api: f.api }));
+  expect(header(result.records)).toMatchObject({
+    persona: f.state.profile,
+    chapter: {
+      personaAvailability: { reason: 'legacy-overrides' },
+      personaComplement: { overrides: [{ traitId: 'old-trait', value: 77 }] },
+    },
+  });
+  await verifyBookBackupDraft(result.proof, { api: f.api });
+  expect(f.api.persona).toHaveBeenCalledTimes(2);
+  f.state.token = 'c'.repeat(64);
+  await expect(verifyBookBackupDraft(result.proof, { api: f.api })).rejects.toThrow();
+});
+it('changing the draft binding omits stale absence metadata and still captures the chosen profile', async () => {
+  const f = fixture();
+  f.input.chapter.personaAvailability = {
+    schemaVersion: 1,
+    personaId: 'custom-old',
+    reason: 'profile-not-recorded',
+  };
+  const result = await drain(bookDraftBackupRecords('book', f.input, { api: f.api }));
+  expect(header(result.records).chapter).not.toHaveProperty('personaAvailability');
+  expect(header(result.records).persona).toEqual(f.state.profile);
+  expect(f.api.persona).toHaveBeenCalledTimes(1);
+});
+it('malformed absence fails synchronously and an unmarked unavailable profile still propagates its failure', async () => {
+  const f = fixture();
+  Object.assign(f.input.chapter, {
+    personaAvailability: {
+      schemaVersion: 1,
+      personaId: 'custom-draft',
+      reason: 'profile-not-recorded',
+      key: 'DO NOT COPY',
+    },
+  });
+  expect(() => bookDraftBackupRecords('book', f.input, { api: f.api })).toThrow();
+  expect(f.api.getSource).not.toHaveBeenCalled();
+  delete f.input.chapter.personaAvailability;
+  const error = new Error('Profile unavailable');
+  vi.mocked(f.api.persona).mockRejectedValueOnce(error);
+  await expect(bookDraftBackupRecords('book', f.input, { api: f.api }).next()).rejects.toBe(error);
+});

@@ -1,6 +1,10 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import type { Chapter } from '@/features/books';
+import {
+  currentBookPersonaAvailability,
+  type BookPersonaAvailability,
+} from '../../../../functions/src/bookPersonaAvailability.mjs';
 import { validateComplement } from '../../../../functions/src/personaProfile.mjs';
 import {
   encodeBookBackupJSON,
@@ -28,7 +32,7 @@ export interface BookDraftInput {
     | 'contentMode'
     | 'createdAt'
     | 'updatedAt'
-  >;
+  > & { personaAvailability?: BookPersonaAvailability };
   content: string;
 }
 export interface BookDraftProof {
@@ -73,9 +77,13 @@ function snapshot(bookId: string, input: BookDraftInput | null) {
     (chapter.actId != null && !validId(chapter.actId))
   )
     invalid();
-  let complement;
+  let complement, availability;
   try {
     complement = validateComplement(chapter.personaComplement);
+    availability = currentBookPersonaAvailability(
+      chapter.personaAvailability,
+      complement?.personaId,
+    );
   } catch {
     invalid();
   }
@@ -85,6 +93,7 @@ function snapshot(bookId: string, input: BookDraftInput | null) {
       serializeBookBackupStructure('chapter', {
         title: chapter.title,
         order: chapter.order,
+        ...(availability ? { personaAvailability: availability } : {}),
         createdAt: chapter.createdAt,
         updatedAt: chapter.updatedAt,
         ...(chapter.actId !== undefined ? { actId: chapter.actId } : {}),
@@ -96,7 +105,8 @@ function snapshot(bookId: string, input: BookDraftInput | null) {
   return {
     chapterId: chapter.id,
     metadata,
-    personaId: complement?.personaId ?? null,
+    personaId:
+      availability?.reason === 'profile-not-recorded' ? null : (complement?.personaId ?? null),
     content: input.content,
   };
 }

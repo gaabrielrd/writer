@@ -16,6 +16,7 @@ import {
   record,
   resource,
   ordered,
+  persona,
 } from './helpers/bookContentFixture.mjs';
 const meta = (r) => ({ kind: r.kind, id: r.id, part: r.part });
 const parsed = (r) => JSON.parse(new TextDecoder().decode(r.payload));
@@ -433,3 +434,90 @@ test('explicit old override preserves known profile and rejects the same unknown
   assert.equal(f.result.warnings.unknownOverrides, 1);
   assert.equal(f.result.totals.profiles, 1);
 });
+
+for (const reason of ['profile-not-recorded', 'legacy-overrides'])
+  for (const kind of ['book-draft', 'work-version'])
+    test('explicit draft style ' + reason + ' survives semantic resume in ' + kind, async () => {
+      const rows = patch(fixture(), kind, (value) => {
+        const chapter = {
+          id: kind === 'work-version' ? value.resource.id : value.chapter.id,
+          title: 'Own draft',
+          order: 1,
+          createdAt: 12,
+          updatedAt: 17,
+          personaComplement: {
+            personaId: persona.id,
+            overrides: [{ traitId: 'old-only', value: 77 }],
+          },
+          personaAvailability: { schemaVersion: 1, personaId: persona.id, reason },
+        };
+        const style = {
+          chapter,
+          persona: reason === 'profile-not-recorded' ? null : structuredClone(persona),
+        };
+        return kind === 'book-draft'
+          ? { ...value, ...style }
+          : { ...value, draft: { schemaVersion: 1, ...style } };
+      });
+      const f = await drive(rows, { resume: true, limit: 1 });
+      assert.equal(
+        f.result.warnings[
+          reason === 'profile-not-recorded' ? 'missingPersonas' : 'unknownOverrides'
+        ],
+        1,
+      );
+      assert.equal(f.result.totals.profiles, 1);
+      assert.ok(
+        f.snapshots.some(
+          (s) =>
+            s.warnings[
+              reason === 'profile-not-recorded' ? 'missingPersonas' : 'unknownOverrides'
+            ] === 1,
+        ),
+      );
+    });
+
+for (const kind of ['book-draft', 'work-version'])
+  test(
+    'draft style metadata cannot bypass closed identity/profile validation in ' + kind,
+    async () => {
+      const marker = { schemaVersion: 1, personaId: persona.id, reason: 'profile-not-recorded' };
+      for (const issue of [
+        'unmarked-missing',
+        'available-marked-missing',
+        'wrong-id',
+        'extra',
+        'legacy-without-profile',
+        'unmarked-unknown',
+      ]) {
+        const rows = patch(fixture(), kind, (value) => {
+          const chapter = {
+            id: kind === 'work-version' ? value.resource.id : value.chapter.id,
+            title: 'Own draft',
+            order: 1,
+            createdAt: 12,
+            updatedAt: 17,
+            personaComplement: {
+              personaId: persona.id,
+              overrides: [{ traitId: 'old-only', value: 77 }],
+            },
+            personaAvailability: structuredClone(marker),
+          };
+          let profile = null;
+          if (issue === 'unmarked-missing' || issue === 'unmarked-unknown')
+            delete chapter.personaAvailability;
+          if (issue === 'available-marked-missing' || issue === 'unmarked-unknown')
+            profile = structuredClone(persona);
+          if (issue === 'wrong-id') chapter.personaAvailability.personaId = 'custom-other';
+          if (issue === 'extra') chapter.personaAvailability.key = 'DO NOT COPY';
+          if (issue === 'legacy-without-profile')
+            chapter.personaAvailability.reason = 'legacy-overrides';
+          const style = { chapter, persona: profile };
+          return kind === 'book-draft'
+            ? { ...value, ...style }
+            : { ...value, draft: { schemaVersion: 1, ...style } };
+        });
+        await assert.rejects(drive(rows, { resume: true }), bad);
+      }
+    },
+  );

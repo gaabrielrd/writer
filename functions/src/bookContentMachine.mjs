@@ -310,6 +310,20 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
     await add(['row', String(rowCount++)], value);
     count(rowCount);
   }
+  function warn(key, n = 1) {
+    if (!Object.hasOwn(warnings, key)) warnings[key] = 0;
+    bump(warnings, key, n);
+  }
+  function draftWarnings(value) {
+    const marker = readBookPersonaAvailability(value.chapter.personaAvailability);
+    if (marker?.reason === 'profile-not-recorded') warn('missingPersonas');
+    else if (marker?.reason === 'legacy-overrides') {
+      const unknown = (value.chapter.personaComplement?.overrides ?? []).filter(
+        (o) => !value.persona.traits.some((t) => t.id === o.traitId),
+      ).length;
+      if (unknown) warn('unknownOverrides', unknown);
+    }
+  }
   async function need(scope, id, personaId, traits = [], availability) {
     await add(['need', scope, id], { personaId });
     bump(totals.owners, scope);
@@ -442,6 +456,7 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
       origin = structuredClone(value.origin);
     } else if (kind === 'work-version') {
       if (ended.has('work-history') || record.id !== value.id) bad();
+      if (value.draft) draftWarnings(value.draft);
       await add(['version', value.id], { resource: value.resource });
       state.raw = rawExpectation('work-version-text', value.id, value, false, 'history');
     } else if (kind === 'work-history') {
@@ -457,15 +472,8 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
       once(kind);
       if (record.id !== bookId) bad();
       if (value.state === 'present') {
-        if (value.persona) {
-          await registerProfile(value.persona);
-          if (
-            (value.chapter.personaComplement?.overrides ?? []).some(
-              (o) => !value.persona.traits.some((t) => t.id === o.traitId),
-            )
-          )
-            bad();
-        }
+        draftWarnings(value);
+        if (value.persona) await registerProfile(value.persona);
         state.raw = rawExpectation('book-draft-text', value.chapter.id, value, false, 'draft');
       }
     } else if (kind === 'book-cover') {
@@ -702,10 +710,6 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
       bad();
     }
     if (marker && marker.personaId !== item.personaId) bad();
-    const warn = (key, n = 1) => {
-      if (!Object.hasOwn(warnings, key)) warnings[key] = 0;
-      bump(warnings, key, n);
-    };
     if (item.personaId === null) {
       if (binding !== undefined || marker) bad();
     } else if (!binding) {

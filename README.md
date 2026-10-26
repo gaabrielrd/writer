@@ -656,3 +656,8 @@ foi provado com captura/restauração/recaptura normais, JSON v1–v6, históric
 rascunho, mídia, edição e lore indexado acima de 8 MiB. Personas ausentes e
 overrides antigos permanecem explícitos, sem perfil fabricado. Inventários,
 compatibilidades restantes/rollout e validate integral de P1 continuam pendentes.
+
+O rascunho explícito também conserva ausência declarada de persona e overrides
+antigos em seu histórico, sem consulta por coincidência ou perda de texto.
+O [incremento local](docs/entregas/2026-10-25-writer-v2-ausencia-de-persona-no-rascunho.md)
+não fecha inventário, compatibilidade v1 nem P1.

@@ -636,3 +636,13 @@ concluído estiverem satisfeitos. A lista fica em
   Cursor legado v1 conserva saída/hash; normalização v2 registra a metadata.
 - JSON antigo projeta fontes sem a marca nova e sem mutar objeto original.
   Warnings opcionais atuais não invalidam checkpoints anteriores.
+
+## Persona ausente no rascunho portátil
+
+- Preserve personaAvailability explícita no snapshot do rascunho e no histórico.
+  profile-not-recorded exige persona null e nunca consulta perfil por coincidência;
+  legacy-overrides conserva perfil autorizado/token/hash e valores (ADR 0164).
+- Sem marca, preserve a recusa M8 de perfil/traits ausentes. Marca malformada falha;
+  outro vínculo omite marca antiga e segue a autorização normal.
+- Conte avisos reais no draft e em work-version.draft, sem instalar perfil ausente
+  ou recriar capítulo. Reautorize a origem antes do selo, inclusive sem perfil.

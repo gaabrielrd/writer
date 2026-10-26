@@ -326,3 +326,10 @@ Isso atualiza as pendências históricas do início deste documento, sem conclui
 Inventários de writers/namespaces/exclusão/coleta, fontes antigas/compatibilidades,
 rascunho com perfil indisponível, rollout e validate integral ainda são exigidos.
 Modo indexado padrão false, sem CI ou operações remotas.
+
+### Compatibilidade explícita do rascunho
+
+O [plano 141](141-ausencia-de-persona-no-rascunho-portatil.md) resolve o rascunho
+marcado da ADR 0163: ausência neutra ou perfil/overrides antigos conservados em
+versão separada e recaptura. 32 Node, 16 Vitest e dois roundtrips positivos.
+Inventário geral e compatibilidade de raízes v1 sem marca continuam pendentes.
