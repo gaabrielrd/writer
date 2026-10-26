@@ -185,9 +185,14 @@ it('retains applied lore and native bodies while deleting only the recovery copy
     op = f.make();
   for (let n = 0; n < 300 && !op.snapshot().canApply; n++) await op.advance();
   await op.apply();
-  const before = structuredClone([...f.records].filter(([p]) => p.startsWith('books/')));
+  const recoveryIndex = 'books/book/bookLoreRecoveryKeys/' + f.input.writeId,
+    before = structuredClone([...f.records].filter(([p]) => p.startsWith('books/')));
+  expect(f.records.has(recoveryIndex)).toBe(true);
   await discarded(op);
-  expect([...f.records].filter(([p]) => p.startsWith('books/'))).toEqual(before);
+  expect(f.records.has(recoveryIndex)).toBe(false);
+  expect([...f.records].filter(([p]) => p.startsWith('books/'))).toEqual(
+    before.filter(([p]) => p !== recoveryIndex),
+  );
   expect(op.snapshot().phase).toBe('applied');
 });
 it('rejects invalid limits before persisting irreversible intent', async () => {

@@ -2948,3 +2948,29 @@ A [política fixada do lore](entregas/2026-10-25-writer-v2-modo-de-lore-fixado.m
 tem 70 Node distintos em seleções e dois SDK positivos. Testa configuração
 oposta, retry, imutabilidade, prefixos legados/indexados, intervalo entre fichas
 e candidato sem journal. Fixtures corrigem timestamps, sem relaxar servidor.
+
+O teste bookRestoreActiveLifecycle compõe ativação/mídia/arquivo e serviços
+normais de edição, criação, retirada e exclusão nos modos inline/v1/v2. Preserva
+projeto de outra conta e testa configuração runtime com fonte >8 MiB por SHA.
+Banco em memória não comprova operação de produção; o inventário e os limites
+estão no [plano 146](tasks/writer-v2/execucao/146-inventario-e-consumidores-dos-livros-restaurados.md).
+
+### Runner de Storage no fechamento de P1
+
+Vitest exclui tests/storage, assim como tests/firestore: esses arquivos usam
+node:test, SDKs nativos e emuladores, não jsdom. A exclusão não dispensa a suíte:
+
+```sh
+node scripts/run-book-backup-media.mjs tests/storage/bookBackupCover.rules.test.mjs tests/storage/bookRestoreCover.rules.test.mjs
+```
+
+bookLegacyInterop usa Node/Blob nativo para comparar os JSONs realmente emitidos
+com o leitor puro sem misturar realms de Uint8Array. O host LorePage testa rota,
+carregamento/erro e delegação; BookLoreCollection mantém as jornadas nativas de
+Auth/leitura/escrita. Casos >8 MiB e lote de 53 operações têm timeouts específicos;
+limites de cobertura, volumes e asserções não foram reduzidos.
+
+A suíte completa de Functions limita a dois arquivos simultâneos por
+--test-concurrency=2. O limite evita pressão de memória do runner padrão em
+máquinas com muitos CPUs e fixtures grandes; não reduz casos nem volumes.
+Seleções dirigidas que reúnem vários desses arquivos devem usar o mesmo limite.

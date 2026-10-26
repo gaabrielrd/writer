@@ -71,3 +71,17 @@ consumidores, backup, ativação/rollout e validação integrada de P1 continuam
 necessários. A contagem histórica de tarefas não avança por subincremento.
 Fases 3–5 e condições humanas/comerciais continuam abertas. O desenvolvimento
 segue por commits locais, sem acompanhar CI, conforme orientação atual.
+
+## Atualização técnica local — 2026-10-26
+
+P1 (livros) foi implementado e validado no
+[plano 146](execucao/146-inventario-e-consumidores-dos-livros-restaurados.md):
+exportação .writer com todo histórico, leitura JSON v1–v6, restauração privada,
+UI recuperável, consumidores e exclusão. Validate verde com 4.096 frontend,
+87 scripts e 3.007 Functions; sete SDK Storage adicionais positivos.
+[Inventário e limites](inventario-portabilidade-livros.md).
+
+F2-09 segue aberta: faltam P2 (aventuras), P3 (campanhas) e D (integração).
+A contagem histórica de tarefas completas permanece 8/35 (22,9%); não é medida
+de horas/esforço nem equivale a lançamento. Gates operacionais, humanos e
+comerciais continuam explícitos. Nenhum push, PR, merge, deploy ou CI nesta etapa.

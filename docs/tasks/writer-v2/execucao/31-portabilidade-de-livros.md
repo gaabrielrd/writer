@@ -1,6 +1,11 @@
 # F2-09 P1 — Backup completo e restauração privada de livros
 
-**Estado em 2026-10-22:** universo confirmado; M1 de captura de histórico e M2 de contêiner limitado implementados e validados localmente. Veja [M1](32-captura-consistente-do-historico.md) e [M2](33-conteiner-limitado-de-backup.md). M3a fecha o [pertencimento SDK da estrutura](35-clock-da-estrutura-legada.md); M3b implementa [leitura limitada e conferência da estrutura salva](36-leitura-limitada-da-estrutura.md). M4 acrescenta [histórico por fluxo](37-historico-por-fluxo.md), sem acumular versões. M5 inclui [cenas/fontes/narrativa com prova nativa](38-cenas-e-narrativa-no-backup.md). M6 acrescenta [lore próprio e personas por vínculo](39-lore-e-personas-no-backup.md). M7 captura [origem de universo sem cópia global](40-origem-de-universo-no-backup.md). M8 preserva [rascunho explícito e estilo declarado](41-rascunho-explicito-no-backup.md). M9 captura [bytes autorizados da capa](42-midia-autorizada-no-backup.md). M10 compõe [pacote por fluxo e gravação temporária](43-pacote-integral-e-gravacao.md), com envelope conferido e prova OPFS. M11 implementa [validação semântica e índice protegido](44-validacao-semantica-do-pacote.md). M12 acrescenta [leitura JSON v1–v6 com procedência/ausências](45-leitura-dos-backups-json-legados.md). M13 inicia [reserva/upload/cancelamento](46-reserva-e-transferencia-da-restauracao.md) e M14 confere [integridade retomável dos bytes](47-integridade-retomavel-da-restauracao.md). M15 extrai [núcleo semântico com checkpoints](48-nucleo-semantico-com-checkpoints.md), compartilhado pelos leitores existentes. M16 liga [parser e persistência servidor do contêiner novo](49-validacao-servidor-do-conteiner.md). M17 extrai [scanner JSON legado retomável](50-scanner-json-legado-com-cursor.md), preservando os limites e leitores existentes. M18 extrai [catálogo/normalização com checkpoints](51-catalogo-e-normalizacao-legados.md). M19 liga [validação servidor dos JSON v1–v6](52-validacao-servidor-do-json-legado.md). M20 acrescenta [leitura interna autenticada dos itens](53-leitura-autenticada-dos-itens-validados.md). M21 acrescenta [remapeamento completo de identidade e relações limitadas](54-remapeamento-da-identidade-restaurada.md). M22 inicia [estrutura nativa e limpeza v4](55-preparacao-nativa-da-estrutura.md), mantendo raiz ausente. Os incrementos seguintes já preparam recursos/campos grandes e implementam o núcleo de ativação privada do [plano 133](133-revisao-e-ativacao-do-livro.md). Finalização de mídia, limpeza pós-ativação, host/UI, roundtrip integral e fechamento de P1 permanecem pendentes.
+**Estado local em 2026-10-26:** P1 implementado e validado tecnicamente, com
+inventário de consumidores, modo indexado para novos pedidos, UI e roundtrip.
+Veja o [fechamento 146](146-inventario-e-consumidores-dos-livros-restaurados.md).
+Rollout, piloto humano, P2/P3/D e demais fases permanecem abertos.
+
+**Snapshot histórico de 2026-10-22:** universo confirmado; M1 de captura de histórico e M2 de contêiner limitado implementados e validados localmente. Veja [M1](32-captura-consistente-do-historico.md) e [M2](33-conteiner-limitado-de-backup.md). M3a fecha o [pertencimento SDK da estrutura](35-clock-da-estrutura-legada.md); M3b implementa [leitura limitada e conferência da estrutura salva](36-leitura-limitada-da-estrutura.md). M4 acrescenta [histórico por fluxo](37-historico-por-fluxo.md), sem acumular versões. M5 inclui [cenas/fontes/narrativa com prova nativa](38-cenas-e-narrativa-no-backup.md). M6 acrescenta [lore próprio e personas por vínculo](39-lore-e-personas-no-backup.md). M7 captura [origem de universo sem cópia global](40-origem-de-universo-no-backup.md). M8 preserva [rascunho explícito e estilo declarado](41-rascunho-explicito-no-backup.md). M9 captura [bytes autorizados da capa](42-midia-autorizada-no-backup.md). M10 compõe [pacote por fluxo e gravação temporária](43-pacote-integral-e-gravacao.md), com envelope conferido e prova OPFS. M11 implementa [validação semântica e índice protegido](44-validacao-semantica-do-pacote.md). M12 acrescenta [leitura JSON v1–v6 com procedência/ausências](45-leitura-dos-backups-json-legados.md). M13 inicia [reserva/upload/cancelamento](46-reserva-e-transferencia-da-restauracao.md) e M14 confere [integridade retomável dos bytes](47-integridade-retomavel-da-restauracao.md). M15 extrai [núcleo semântico com checkpoints](48-nucleo-semantico-com-checkpoints.md), compartilhado pelos leitores existentes. M16 liga [parser e persistência servidor do contêiner novo](49-validacao-servidor-do-conteiner.md). M17 extrai [scanner JSON legado retomável](50-scanner-json-legado-com-cursor.md), preservando os limites e leitores existentes. M18 extrai [catálogo/normalização com checkpoints](51-catalogo-e-normalizacao-legados.md). M19 liga [validação servidor dos JSON v1–v6](52-validacao-servidor-do-json-legado.md). M20 acrescenta [leitura interna autenticada dos itens](53-leitura-autenticada-dos-itens-validados.md). M21 acrescenta [remapeamento completo de identidade e relações limitadas](54-remapeamento-da-identidade-restaurada.md). M22 inicia [estrutura nativa e limpeza v4](55-preparacao-nativa-da-estrutura.md), mantendo raiz ausente. Os incrementos seguintes já preparam recursos/campos grandes e implementam o núcleo de ativação privada do [plano 133](133-revisao-e-ativacao-do-livro.md). Finalização de mídia, limpeza pós-ativação, host/UI, roundtrip integral e fechamento de P1 permanecem pendentes.
 **Base:** A enviado em `5f947a0e5e50df81154df14a7124b914278cd4c9`, HEAD/upstream/remoto
 conferidos e checkout limpo no fechamento A. PR21 aberto em rascunho; Rules
 39659740521 verdes. Na CI 39659740574 passaram Node 22, auditoria e produção
@@ -255,19 +260,19 @@ escolhida ao fechar fronteiras; nenhuma importação interna entre features.
 
 ## Critérios de aceite
 
-- [ ] v1–v6 lidos com revisão de ausências, sem gravação parcial ou origem inventada.
-- [ ] Novo formato inclui estado atual e todo histórico, inclusive recursos removidos.
-- [ ] Rascunho legado aberto/vazio/removido continua no backup explícito sem autosave forçado.
-- [ ] Roundtrip em nova cópia preserva prosa, estrutura, arquivo, ordem e relações.
-- [ ] Universo autorizado é religado, sem duplicar/alterar global; ausência permite revisão sem vínculo.
-- [ ] Revogação após revisão bloqueia aquela ativação; corpo global inline nunca vira lore local.
-- [ ] Referências externas indisponíveis ficam neutras, sem nomes/corpos de fallback ou grant do arquivo.
-- [ ] Datas/IDs/revisões/ledger/índices e mídia reconstruídos no servidor, sem tokens externos.
-- [ ] Estado privado, sem publicação/compra/grant/credencial importados.
-- [ ] Perda de resposta, UID/ABA, concorrência, cancel/retomada e cleanup sem perda ou duplicação.
-- [ ] SDK com origens e autores distintos; versão futura/corpo/hash/tamanho inválidos falham antes de ativar.
-- [ ] Nativo de backup/restore/retomada/legados e temas/celular; provas distintas das fixtures.
-- [ ] Validate local, documentação/entrega/revisão/Git; CI retomada quando houver solicitação de envio remoto.
+- [x] v1–v6 lidos com revisão de ausências, sem gravação parcial ou origem inventada.
+- [x] Novo formato inclui estado atual e todo histórico, inclusive recursos removidos.
+- [x] Rascunho legado aberto/vazio/removido continua no backup explícito sem autosave forçado.
+- [x] Roundtrip em nova cópia preserva prosa, estrutura, arquivo, ordem e relações.
+- [x] Universo autorizado é religado, sem duplicar/alterar global; ausência permite revisão sem vínculo.
+- [x] Revogação após revisão bloqueia aquela ativação; corpo global inline nunca vira lore local.
+- [x] Referências externas indisponíveis ficam neutras, sem nomes/corpos de fallback ou grant do arquivo.
+- [x] Datas/IDs/revisões/ledger/índices e mídia reconstruídos no servidor, sem tokens externos.
+- [x] Estado privado, sem publicação/compra/grant/credencial importados.
+- [x] Perda de resposta, UID/ABA, concorrência, cancel/retomada e cleanup sem perda ou duplicação.
+- [x] SDK com origens e autores distintos; versão futura/corpo/hash/tamanho inválidos falham antes de ativar.
+- [x] Nativo de backup/restore/retomada/legados e temas/celular; provas distintas das fixtures.
+- [x] Validate local, documentação/entrega/revisão/Git; CI retomada quando houver solicitação de envio remoto.
 
 ## Riscos e esforço
 
@@ -361,3 +366,14 @@ O [plano 145](145-modo-de-lore-fixado-na-restauracao.md) conserva a escolha de
 representação no job/reserva original. 70 Node distintos e dois SDK positivos;
 modos antigos retomam por prova existente. Padrão runtime/inventário final/
 legados/coleta/rollout/validate e fases/gates permanecem pendentes.
+
+## Fechamento técnico local em 2026-10-26
+
+O [plano 146](146-inventario-e-consumidores-dos-livros-restaurados.md) consolida
+consumidores/writers/exclusão/controles e encerra P1 técnico local, após validate
+verde e provas de ciclo ativo/arquivamento nos três modos. Atualiza as pendências
+técnicas dos snapshots anteriores; a [matriz](../inventario-portabilidade-livros.md)
+mantém as limitações de prova e gates operacionais explícitos.
+Leitores de JSON v1–v6 novos são compatíveis; estados internos antigos sem marca
+não ganham reparo/grant por inferência. Auditoria/revisão antes de rollout, seletor
+externo, pilotos e condições comerciais seguem pendentes. Sem operação remota.

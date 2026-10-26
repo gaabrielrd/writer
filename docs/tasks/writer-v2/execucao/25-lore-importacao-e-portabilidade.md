@@ -224,3 +224,13 @@ Cenas, fontes e narrativa têm captura limitada e conferência nativa por item/p
 [entrega M5](../../../entregas/2026-10-21-writer-v2-cenas-e-narrativa-no-backup.md).
 P1 continua aberto: demais capacidades, schema, arquivo persistente e restauração
 não foram entregues. Avanço local, sem CI/push.
+
+## Atualização local de P1 — 2026-10-26
+
+P1 está implementado e validado tecnicamente no fechamento do
+[plano 146](146-inventario-e-consumidores-dos-livros-restaurados.md), com .writer,
+JSON v1–v6, histórico/rascunho/mídia, nova cópia privada e UI recuperável.
+[Matriz de consumidores e gates](../inventario-portabilidade-livros.md).
+L/I/A/P1 têm implementação; P2/P3/D continuam obrigatórios antes de fechar F2-09.
+A orientação atual é commits locais e nenhuma CI/operação remota, substituindo
+a referência histórica de acompanhamento em paralelo deste documento.

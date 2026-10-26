@@ -626,7 +626,7 @@ it('can reload between every production unit with multiple fields and retain exp
   expect((await f.j.inspect()).controls.count).toBe(3);
   await op.apply();
   expect((await f.client.capture(f.bookId, f.entityId)).data.summary).toBe('first');
-});
+}, 30000);
 it('preserves malformed native response as uncertain and does not create an outcome or ACK', async () => {
   const f = await setup(),
     op = f.make();

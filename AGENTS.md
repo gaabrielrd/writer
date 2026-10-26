@@ -254,6 +254,8 @@
 
 ## Testes
 
+- Use o runner Functions com dois arquivos simultâneos; preserve casos, volumes
+  e asserções. Limitar concorrência não autoriza reduzir cobertura.
 - Toda mudança de comportamento deve considerar testes.
 - Teste o resultado observável.
 - `npm run test` aplica limites de cobertura; não os reduza para fazer passar.
@@ -685,4 +687,6 @@ concluído estiverem satisfeitos. A lista fica em
   entre fichas, só candidate metadata v2 com journal original certifica indexado.
   Reconferir decisão antes de writes, com consulta limitada a um candidato.
 - Não fabricar flag retroativa, migrar hash/cursor ou adotar órfão como prova.
-  Padrão da factory permanece false até seleção coordenada e validação de conjunto.
+  Factory conserva false; runtime local seleciona true para novos jobs nos dois
+  pontos de composição após inventário/ciclo ativo. Preserve essa configuração
+  compartilhada e os gates operacionais antes de rollout (ADR 0169).

@@ -347,9 +347,9 @@ test('an older completed payload job without drainage proof cannot open the new 
   await assert.rejects(() => f.open());
 });
 
-test('enabling the indexed option does not migrate a monolithic prefix already started by the previous producer', async () => {
+test('enabling the indexed option preserves a monolithic prefix started with the original policy', async () => {
   const data = { name: 'Previous', category: 'other', details: 'x'.repeat(530000) },
-    f = await ready(data),
+    f = await ready(data, { indexedLoreBodies: false }),
     restoreId = 'restore-lore-stream-0001';
   f.factory = () => createBookRestoreUploadService({ db: f.db, now: () => 1000 });
   const first = await f

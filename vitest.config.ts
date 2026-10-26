@@ -16,6 +16,8 @@ export default defineConfig((context) =>
           ...configDefaults.exclude,
           'scripts/**/*.test.mjs',
           'tests/firestore/**',
+          // Storage Rules use node:test and the dedicated emulator runner (test:media).
+          'tests/storage/**',
           'e2e/**',
           'functions/**',
         ],
@@ -25,6 +27,7 @@ export default defineConfig((context) =>
         },
         coverage: {
           provider: 'v8',
+          reportOnFailure: true,
           reporter: ['text', 'html'],
           include: ['src/**/*.{ts,tsx}'],
           exclude: ['src/test/**', 'src/main.tsx', 'src/vite-env.d.ts'],

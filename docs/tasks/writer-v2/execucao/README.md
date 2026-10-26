@@ -1845,3 +1845,11 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      job/reserva imutáveis, retomada e compatibilidade por provas existentes;
      70 Node distintos e dois SDK positivos. [Evidência](../../../entregas/2026-10-25-writer-v2-modo-de-lore-fixado.md).
      Runtime/inventários/legados/coleta/rollout/validate e demais fases/gates pendentes.
+
+146. [Inventário e consumidores dos livros restaurados](146-inventario-e-consumidores-dos-livros-restaurados.md):
+     fecha P1 técnico local com ciclo inline/v1/v2, fonte >8 MiB e seleção do
+     runtime para novos pedidos. Validate verde: 4.096 frontend, 87 scripts,
+     3.007 Functions, cobertura atendida, sintaxe/tipos/build/smoke positivos.
+     Sete SDK Storage também positivos; runner correto e concorrência limitada
+     sem reduzir casos/limites. [Evidência](../../../entregas/2026-10-26-writer-v2-ciclo-e-inventario-dos-backups-de-livros.md).
+     Gates operacionais/humanos/comerciais, P2/P3/D e demais fases continuam.

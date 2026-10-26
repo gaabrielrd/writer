@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { createHash } from 'node:crypto';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { DEFAULT_PERSONAS, listPersonas } from '@/features/ai-assistant';
@@ -21,7 +22,7 @@ import type {
 } from '../../../../functions/src/bookBackupContent.mjs';
 import { exportManuscript } from '../services/exportManuscript';
 import { downloadExport } from '../services/downloadExport';
-import { exportBook, exportChapter, readBlob } from './exportFixtures';
+import { exportBook, exportChapter } from './exportFixtures';
 vi.mock('@/features/books', async () => ({
   ...(await vi.importActual('../../books/model/act')),
   listChapters: vi.fn(),
@@ -244,7 +245,7 @@ it.each([1, 2, 3, 4, 5, 6])(
       currentContent: '',
     });
     const blob = vi.mocked(downloadExport).mock.calls.at(-1)![0],
-      bytes = new Uint8Array(await readBlob(blob));
+      bytes = new Uint8Array(await blob.arrayBuffer());
     const source = {
       size: bytes.length,
       read: (offset: number, length: number) =>

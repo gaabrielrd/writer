@@ -200,3 +200,9 @@ O [roundtrip do plano 140](140-roundtrip-dos-livros-com-consumidores-normais.md)
 acrescenta prova atual/JSON v1–v6, edição/recaptura, rascunhos e lore >8 MiB;
 [evidência](../../../entregas/2026-10-25-writer-v2-roundtrip-normal-dos-livros.md).
 Demais inventários/compatibilidades/rollout/validate de P1 e fases/gates continuam.
+
+## Estado técnico atualizado — 2026-10-26
+
+[Fechamento 146](146-inventario-e-consumidores-dos-livros-restaurados.md) resolve
+roundtrip, consumidores/inventário e validate locais de P1. Gates operacionais
+e humanos, P2/P3/D e fases posteriores permanecem; não houve rollout.

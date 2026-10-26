@@ -27,8 +27,12 @@ atual e possui verificação retomável para projetos anteriores. Os gates locai
 [contrato de progresso e retomada](docs/tasks/writer-v2/execucao/10-estados-metas-e-retomada.md).
 F2-05 acrescenta versões manuais do texto e cópia anterior a cada restauração,
 com comparação, exclusão explícita e recuperação de pedidos sem resposta. O
-histórico é privado e ainda não acompanha o backup v6. Os resultados de validação
-ficam no [contrato de histórico](docs/tasks/writer-v2/execucao/11-historico-e-restauracao.md).
+histórico é privado. O backup JSON v6 guarda apenas o estado atual; a implementação
+local do formato .writer guarda todo o histórico e a contribuição explícita do
+rascunho, com restauração em nova cópia privada pelo Estúdio. Consulte o
+[contrato de histórico](docs/tasks/writer-v2/execucao/11-historico-e-restauracao.md) e o
+[inventário da portabilidade de livros](docs/tasks/writer-v2/inventario-portabilidade-livros.md)
+para escopo, validação local e gates de operação ainda pendentes.
 F2-06 está concluído tecnicamente em 624c912, incluindo a correção de foco/refazer
 confirmada na CI. Aventuras reúnem blocos com texto, tipo, audiência e
 ilustração próprios na mesma cena. O principal antigo permanece íntegro; novo e

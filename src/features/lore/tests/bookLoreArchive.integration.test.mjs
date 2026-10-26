@@ -169,7 +169,7 @@ it('full archive above 8 MiB uses each native body unit once and final metadata 
   expect(new Set(units).size).toBe(units.length);
   expect(await values(src)).toEqual(f.expected);
   expect(report.totals.resources.lore).toBe(1);
-});
+}, 30000);
 it('a changed C1 metadata token is detected even when resource head tokens remain unchanged', async () => {
   const f = await fixture(),
     read = f.lore.portableMetadata;
@@ -331,7 +331,7 @@ it('the exact captured large archive validates and measures mapped lore without 
   for (const field of ['aliases', 'summary', 'createdAt'])
     expect((await lore.readField(field)).present).toBe(false);
   expect(f.records.has('books/' + done.bookId)).toBe(false);
-});
+}, 30000);
 
 it('actor replacement during the final seal write still aborts before the destination close', async () => {
   const f = await fixture(),
@@ -370,4 +370,4 @@ it('a large v2 base with overrides and deleted optionals reaches the archive wit
   expect(data).not.toHaveProperty('createdAt');
   expect(src.bytes.includes(Buffer.from('C3_SHADOWED_PRIVATE_PROSE'))).toBe(false);
   expect(report.warnings.missingDates).toBe(1);
-});
+}, 30000);

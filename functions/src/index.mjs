@@ -1,6 +1,7 @@
 import { createEditorChatService } from './editorChat.mjs';
 import { BOOK_RESTORE_METHODS } from './bookRestoreUploadContracts.mjs';
 import { invokeBookRestoreCallable } from './bookRestoreCallable.mjs';
+import { BOOK_RESTORE_RUNTIME } from './bookRestoreRuntime.mjs';
 import { EditorChatContractError } from './editorChatContracts.mjs';
 import { createAdventureImportService } from './adventureImport.mjs';
 import {
@@ -380,6 +381,7 @@ const callable = (method, secrets = []) =>
         if (BOOK_RESTORE_METHODS.includes(method))
           return await invokeBookRestoreCallable(
             createBookRestoreUploadService({
+              ...BOOK_RESTORE_RUNTIME,
               db,
               restoreAssets: createBookRestoreCoverStorage(bucket),
             }),
@@ -842,6 +844,7 @@ export const getBookRestoreRecoveryKey = onRequest(
   { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
   createBookRestoreRecoveryHandler({
     service: createBookRestoreUploadService({
+      ...BOOK_RESTORE_RUNTIME,
       db,
       restoreAssets: createBookRestoreCoverStorage(bucket),
     }),

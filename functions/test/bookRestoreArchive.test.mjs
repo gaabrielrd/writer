@@ -135,13 +135,11 @@ test('cleanup waits for media and rejects foreign identity, injected cursor and 
     'waiting-for-media',
   );
   await assert.rejects(() =>
-    f
-      .factory()
-      .advanceBookRestoreArchiveCleanup(uid, {
-        ...input,
-        operationId: f.id + '-early',
-        expectedRevision: 0,
-      }),
+    f.factory().advanceBookRestoreArchiveCleanup(uid, {
+      ...input,
+      operationId: f.id + '-early',
+      expectedRevision: 0,
+    }),
   );
   await finishMedia(f);
   f.archiveProgress = (await f.factory().getBookRestoreArchiveCleanup(uid, input)).progress;
@@ -154,12 +152,10 @@ test('cleanup waits for media and rejects foreign identity, injected cursor and 
     [uid, { expectedCheckpoint: 0 }],
   ])
     await assert.rejects(() =>
-      f
-        .factory()
-        .advanceBookRestoreArchiveCleanup(actor, {
-          ...archiveRequest(f, f.archiveProgress),
-          ...patch,
-        }),
+      f.factory().advanceBookRestoreArchiveCleanup(actor, {
+        ...archiveRequest(f, f.archiveProgress),
+        ...patch,
+      }),
     );
   assert.deepEqual([...f.records], before);
   const first = await archiveStep(f),

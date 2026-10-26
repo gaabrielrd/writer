@@ -2782,10 +2782,10 @@ descrição grande depois do alvo. Timestamps físicos continuam obrigatórios;
 portableDates sem base preserva datas lógicas opcionais em C1/lógico/inspeção.
 Resources atravessa lore por metadata indexada.
 
-Novas adesões dependem da opção interna indexedLoreBodies, temporariamente false
-até Counts/drenagem/roundtrip; jobs streamed existentes sempre retomam. Não há
-opção de request, namespace, Rule ou endpoint novo. D3/P1/ativação geral continuam
-abertos. [Evidência](entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
+Neste marco, novas adesões dependiam de indexedLoreBodies false até
+Counts/drenagem/roundtrip; jobs streamed existentes sempre retomavam. A seleção
+local posterior consta da ADR 0169, com política por job da ADR 0168. Este marco
+não introduziu opção de request, namespace, Rule ou endpoint. [Evidência](entregas/2026-10-25-writer-v2-geracao-indexada-de-lore-restaurado.md).
 
 ## P1 M38c12 D3 em andamento — reconciliação indexada
 
@@ -3007,3 +3007,11 @@ campo aos inputs de escrita, consulta de perfil ou dependência na portabilidade
 reserva imutável. Retomada não consulta flag atual. Job antigo só usa prefixo ou
 um candidato v2 autenticado pelo journal, reconferido antes de gravação.
 Nenhum campo de modo cruza o input/progresso público.
+
+### Runtime local indexado e consumidores de P1
+
+[ADR 0169](decisions/0169-indexed-book-restore-runtime.md) seleciona lore indexado
+para novos pedidos nos dois pontos de composição, com configuração pura comum.
+Factory conserva default legado; job/reserva continuam fixados pela ADR 0168.
+O [inventário](tasks/writer-v2/inventario-portabilidade-livros.md) mapeia conteúdo,
+controles, leitores, writers e limpeza, distinguindo prova local de gate operacional.

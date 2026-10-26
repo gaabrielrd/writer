@@ -13,10 +13,10 @@ import { finishLegacyRestore, legacyMutation as mutation } from './bookLegacyRes
 import { finishRestoreStructure } from './bookRestoreStructureFixture.mjs';
 export const uid = 'author',
   id = 'restore-lore-stream-0001';
-export async function ready(data, { db: supplied = null } = {}) {
+export async function ready(data, { db: supplied = null, indexedLoreBodies = true } = {}) {
   const f = supplied ? { db: supplied } : adventureImportDb({ nativeUpdates: true }),
     factory = () =>
-      createBookRestoreUploadService({ db: f.db, now: () => 1000, indexedLoreBodies: true }),
+      createBookRestoreUploadService({ db: f.db, now: () => 1000, indexedLoreBodies }),
     { progress } = await uploadArchiveRestore(factory(), uid, id, indexedLoreArchive(data)),
     p = await finishRestoreStructure(
       factory,

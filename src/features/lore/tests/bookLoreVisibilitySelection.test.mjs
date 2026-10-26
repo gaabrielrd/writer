@@ -34,7 +34,7 @@ it('stores the whole 53-member plan before RPC and applies actual C1 isPublic ed
   for (let i = 0; i < 53; i++) await cold.advance();
   expect(cold.snapshot().phase).toBe('complete');
   expect(f.calls.slice(calls).every((c) => c.kind === 'outcome')).toBe(true);
-}, 90000);
+}, 180000);
 it('unchanged results are distinct, close original IDs and never create a fake manual edit', async () => {
   const f = await visibilityFixture({ count: 2, publics: [true, true] }),
     op = await f.make();

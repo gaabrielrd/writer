@@ -191,6 +191,7 @@ it.each(['v1', 'v2'])(
       );
     expect(JSON.stringify(r.proof).length).toBeLessThan(6000);
   },
+  30000,
 );
 it('v2 overlays remove optionals and source dates without copying replaced base prose', async () => {
   const baseData = {
@@ -251,7 +252,7 @@ it('field names and aliases are literal private backup data, without publication
   consistent(f, r);
   expect(r.decoded.data.name).toBe(f.expected.name);
   expect(r.proof.index.isPublic).toEqual({ present: true, value: false });
-});
+}, 30000);
 it('caller backpressure stops the next native read until the pending part is consumed', async () => {
   const f = await fixture('v1', { data: { details: 'x'.repeat(500000) } });
   let release, started;

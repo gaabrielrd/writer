@@ -108,3 +108,11 @@ e [evidência](../../../entregas/2026-10-25-writer-v2-roundtrip-normal-dos-livro
 Não equivale a inventário/rollout ou validate global. Fontes antigas v1 sem marca
 não ganham reparo automático; rascunho explícito com perfil indisponível conserva
 contrato estrito do plano 41 e precisa de compatibilidade no inventário seguinte.
+
+## Estado técnico atualizado — 2026-10-26
+
+141/144 resolvem a metadata explícita até o rascunho/editor; o
+[fechamento 146](146-inventario-e-consumidores-dos-livros-restaurados.md) consolida
+inventário, ciclo dos consumidores e validate local de P1. Estados internos
+antigos não são migrados por inferência; revisão operacional antes de rollout
+e demais P2/P3/D/fases/gates continuam.
