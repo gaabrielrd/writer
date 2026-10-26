@@ -1,4 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { bookDraftBackupRecords } from '@/features/book-portability';
 import * as firestoreModule from 'firebase/firestore';
 import { deleteSceneGroup } from '@/features/scenes';
 import {
@@ -883,4 +884,157 @@ it('resolve capítulo composto pelas cenas sem usar o corpo legado congelado com
   } finally {
     compose.mockRestore();
   }
+});
+
+describe('metadata portátil de persona nos leitores reais', () => {
+  const marker = {
+    schemaVersion: 1 as const,
+    personaId: 'custom-neutral',
+    reason: 'profile-not-recorded' as const,
+  };
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(firestoreModule.getDocsFromServer).mockResolvedValue({
+      docs: [],
+    } as unknown as firestoreModule.QuerySnapshot);
+  });
+  function stored(data: Record<string, unknown>, id = 'chapter') {
+    const snapshot = { id, exists: () => true, data: () => data };
+    vi.mocked(firestoreModule.getDoc).mockResolvedValue(
+      snapshot as unknown as firestoreModule.DocumentSnapshot,
+    );
+    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValue(
+      snapshot as unknown as firestoreModule.DocumentSnapshot,
+    );
+    vi.mocked(firestoreModule.getDocs).mockResolvedValue({
+      docs: [snapshot],
+    } as unknown as firestoreModule.QuerySnapshot);
+    return snapshot;
+  }
+  function chapter() {
+    return {
+      title: 'Own text',
+      order: 1,
+      content: 'Saved own 🌙',
+      wordCount: 3,
+      createdAt: 12,
+      updatedAt: 17,
+      personaComplement: {
+        personaId: marker.personaId,
+        overrides: [{ traitId: 'old-only', value: 77 }],
+      },
+      personaAvailability: structuredClone(marker),
+    };
+  }
+  it('preserva ausência explícita do livro em get/list sem projetar campos extras nem escrever', async () => {
+    const data = {
+      title: 'Own book',
+      authorId: 'author',
+      personaId: marker.personaId,
+      personaAvailability: structuredClone(marker),
+      privateExtra: 'DO NOT COPY',
+      createdAt: 12,
+      updatedAt: 17,
+    };
+    stored(data, 'book');
+    const read = await getBook('book', { source: 'server' }),
+      listed = await listBooksByAuthor('author');
+    expect(read?.personaAvailability).toEqual(marker);
+    expect(listed[0]?.personaAvailability).toEqual(marker);
+    expect(read?.personaAvailability).not.toBe(data.personaAvailability);
+    expect(read).not.toHaveProperty('privateExtra');
+    expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+  });
+  for (const reason of ['profile-not-recorded', 'legacy-overrides'] as const)
+    it('preserva marca/complemento/texto literal em get/list de capítulo: ' + reason, async () => {
+      const data = { ...chapter(), personaAvailability: { ...marker, reason } };
+      stored(data);
+      const read = await getChapter('book', 'chapter'),
+        listed = await listChapters('book');
+      for (const value of [read, listed[0]]) {
+        expect(value?.personaAvailability).toEqual(data.personaAvailability);
+        expect(value?.personaComplement).toEqual(data.personaComplement);
+        expect(value?.content).toBe(data.content);
+        expect(value?.createdAt).toBe(12);
+        expect(value?.updatedAt).toBe(17);
+      }
+      expect(data.personaAvailability).toEqual({ ...marker, reason });
+      expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+    });
+  it('omite marca de vínculo antigo e mantém o vínculo novo sem adotar biblioteca', async () => {
+    const data = { ...chapter(), personaComplement: { personaId: 'custom-new', overrides: [] } };
+    stored(data);
+    expect(await getChapter('book', 'chapter')).not.toHaveProperty('personaAvailability');
+    expect((await listChapters('book'))[0]).not.toHaveProperty('personaAvailability');
+    expect((await getChapter('book', 'chapter'))?.personaComplement?.personaId).toBe('custom-new');
+    stored(
+      { title: 'Book', authorId: 'author', personaId: 'custom-new', personaAvailability: marker },
+      'book',
+    );
+    expect(await getBook('book')).not.toHaveProperty('personaAvailability');
+    expect((await listBooksByAuthor('author'))[0]).not.toHaveProperty('personaAvailability');
+  });
+  it('recusa marca malformada no livro ou capítulo em vez de ocultá-la no DTO', async () => {
+    stored({ ...chapter(), personaAvailability: { ...marker, key: 'DO NOT COPY' } });
+    await expect(getChapter('book', 'chapter')).rejects.toThrow();
+    await expect(listChapters('book')).rejects.toThrow();
+    stored(
+      {
+        title: 'Book',
+        authorId: 'author',
+        personaId: marker.personaId,
+        personaAvailability: { ...marker, reason: 'available' },
+      },
+      'book',
+    );
+    await expect(getBook('book')).rejects.toThrow();
+    await expect(listBooksByAuthor('author')).rejects.toThrow();
+  });
+  it('recusa motivo reservado aos complementos no escopo do livro', async () => {
+    stored(
+      {
+        title: 'Book',
+        authorId: 'author',
+        personaId: marker.personaId,
+        personaAvailability: { ...marker, reason: 'legacy-overrides' },
+      },
+      'book',
+    );
+    await expect(getBook('book')).rejects.toThrow('Disponibilidade de persona do livro');
+    await expect(listBooksByAuthor('author')).rejects.toThrow(
+      'Disponibilidade de persona do livro',
+    );
+  });
+  it('DTO real do editor chega ao rascunho vazio com ausência preservada e sem consulta de perfil', async () => {
+    stored(chapter());
+    const current = (await getChapter('book', 'chapter'))!,
+      persona = vi.fn(),
+      getSource = vi.fn(() =>
+        Promise.resolve({ schemaVersion: 1 as const, bookId: 'book', sourceToken: 'a'.repeat(64) }),
+      );
+    const parts: Uint8Array[] = [],
+      text: Uint8Array[] = [];
+    for await (const record of bookDraftBackupRecords(
+      'book',
+      { chapter: current, content: '' },
+      { api: { getSource, persona } },
+    )) {
+      if (record.kind === 'book-draft') parts.push(record.payload);
+      if (record.kind === 'book-draft-text') text.push(record.payload);
+    }
+    const metadata = JSON.parse(new TextDecoder().decode(Buffer.concat(parts))) as {
+      chapter: { personaAvailability: unknown; personaComplement: unknown };
+      persona: unknown;
+      byteLength: number;
+      chunkCount: number;
+    };
+    expect(metadata.chapter.personaAvailability).toEqual(marker);
+    expect(metadata.chapter.personaComplement).toEqual(current.personaComplement);
+    expect(metadata.persona).toBeNull();
+    expect(metadata.byteLength).toBe(0);
+    expect(metadata.chunkCount).toBe(1);
+    expect(text).toEqual([new Uint8Array()]);
+    expect(persona).not.toHaveBeenCalled();
+  });
 });

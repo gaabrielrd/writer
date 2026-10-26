@@ -2994,3 +2994,9 @@ Editor compõe histórico e portabilidade em saveEditorBookBackup. Serviço
 exportBookArchive fixa contexto, congela rascunho e seleciona destino pelo adapter
 bookArchiveDestination. Não há cópia plaintext oculta/fallback Blob integral;
 arquivo fecha só após selo. [ADR 0166](decisions/0166-book-archive-export-dialog.md).
+
+### Metadata de persona nos DTOs
+
+[ADR 0167](decisions/0167-persona-availability-editor-dto.md) projeta metadata
+fechada nos leitores Book/Chapter e mantém o tipo puro compartilhado. Não adiciona
+campo aos inputs de escrita, consulta de perfil ou dependência na portabilidade.

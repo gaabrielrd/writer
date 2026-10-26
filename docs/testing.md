@@ -2939,3 +2939,7 @@ tem 22 Vitest distintos positivos em seleções e 13 verificações Chromium
 (exportação e restauração do arquivo produzido), incluindo cancelamento, falha
 durante captura, preservação do arquivo anterior, conta/contexto e foco/temas.
 Handle nativo OPFS injetado não substitui conferir o seletor externo do sistema.
+
+A [projeção de persona no editor](entregas/2026-10-25-writer-v2-metadata-de-persona-no-editor.md)
+passou 69 testes do serviço de livros (sete novos), incluindo DTO real → rascunho
+portátil vazio, sem lookup. I/O Firestore simulado; sem nova prova de produção.

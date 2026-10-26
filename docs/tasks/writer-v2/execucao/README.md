@@ -1835,3 +1835,8 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      22 Vitest distintos e 13 verificações Chromium de exportação/restauração.
      [Evidência](../../../entregas/2026-10-25-writer-v2-backup-completo-no-editor.md).
      Inventários gerais/legados/rollout/validate e demais fases/gates pendentes.
+
+144. [Metadata de persona nos leitores do editor](144-metadata-de-persona-nos-leitores-do-editor.md):
+     projeção fechada em get/list e DTO real até rascunho vazio sem lookup;
+     69 testes do serviço positivos. [Evidência](../../../entregas/2026-10-25-writer-v2-metadata-de-persona-no-editor.md).
+     Inventários gerais/legados/coleta/rollout/validate e demais fases/gates pendentes.

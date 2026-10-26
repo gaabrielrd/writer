@@ -672,3 +672,7 @@ do destino e rascunho explícito separado. JSON antigo continua disponível sem
 histórico completo. A gravação exige API compatível de seleção de arquivo;
 [evidência local](docs/entregas/2026-10-25-writer-v2-backup-completo-no-editor.md)
 distingue prova nativa de QA e conferência manual do seletor externo.
+
+Leitores normais de livro/capítulo agora conservam a metadata de persona
+indisponível até o rascunho do editor, sem adotar biblioteca por coincidência.
+[Validação local](docs/entregas/2026-10-25-writer-v2-metadata-de-persona-no-editor.md).

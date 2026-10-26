@@ -1,9 +1,12 @@
+import type { BookPersonaAvailability } from '../../../../functions/src/bookPersonaAvailability.mjs';
+
 export interface ChapterPersonaComplement {
   personaId: string;
   overrides: { traitId: string; value: number }[];
 }
 
 export interface Chapter {
+  personaAvailability?: BookPersonaAvailability;
   actId?: string | null;
   id: string;
   bookId: string;

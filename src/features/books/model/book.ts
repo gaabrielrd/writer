@@ -1,9 +1,12 @@
+import type { BookPersonaAvailability } from '../../../../functions/src/bookPersonaAvailability.mjs';
+
 export type BookStatus = 'draft' | 'published';
 
 export interface Book {
   id: string;
   universeId?: string | null;
   personaId?: string | null;
+  personaAvailability?: BookPersonaAvailability;
   localLoreVersion?: number;
   authorId: string;
   title: string;

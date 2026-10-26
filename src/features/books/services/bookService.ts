@@ -1,4 +1,5 @@
 import { validateComplement, type PersonaComplement } from '@/features/ai-assistant';
+import { currentBookPersonaAvailability } from '../../../../functions/src/bookPersonaAvailability.mjs';
 import {
   collection,
   doc,
@@ -39,6 +40,7 @@ import {
 } from '../model/chapter';
 
 interface StoredBookDoc {
+  personaAvailability?: unknown;
   deleting?: boolean;
   localLoreVersion?: number;
   hasSceneResources?: boolean;
@@ -63,6 +65,7 @@ interface StoredBookDoc {
 }
 
 interface StoredChapterDoc {
+  personaAvailability?: unknown;
   contentMode?: 'legacy' | 'scenes';
   assemblyRevision?: number;
   structureRevision?: number;
@@ -79,6 +82,20 @@ interface StoredChapterDoc {
   updatedAt: number;
 }
 
+function bookAvailability(data: StoredBookDoc) {
+  const marker = currentBookPersonaAvailability(data.personaAvailability, data.personaId);
+  if (marker && marker.reason !== 'profile-not-recorded')
+    throw new Error('Disponibilidade de persona do livro inválida.');
+  return marker ? { personaAvailability: marker } : {};
+}
+function chapterSettings(data: StoredChapterDoc) {
+  const complement = validateComplement(data.personaComplement),
+    marker = currentBookPersonaAvailability(data.personaAvailability, complement?.personaId);
+  return {
+    ...(complement ? { personaComplement: complement } : {}),
+    ...(marker ? { personaAvailability: marker } : {}),
+  };
+}
 function localLoreVersion(data: StoredBookDoc): number | undefined {
   if (!('localLoreVersion' in data)) return undefined;
   const value = data.localLoreVersion;
@@ -100,6 +117,7 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
       authorId: data.authorId,
       ...(loreVersion !== undefined ? { localLoreVersion: loreVersion } : {}),
       ...(data.personaId ? { personaId: data.personaId } : {}),
+      ...bookAvailability(data),
       ...(data.universeId ? { universeId: data.universeId } : {}),
       title: data.title,
       genre: data.genre ?? '',
@@ -143,6 +161,7 @@ export async function getBook(
     authorId: data.authorId,
     ...(loreVersion !== undefined ? { localLoreVersion: loreVersion } : {}),
     ...(data.personaId ? { personaId: data.personaId } : {}),
+    ...bookAvailability(data),
     ...(data.universeId ? { universeId: data.universeId } : {}),
     title: data.title,
     genre: data.genre ?? '',
@@ -265,9 +284,7 @@ export async function listChapters(
       id: docSnap.id,
       bookId,
       ...(data.actId ? { actId: data.actId } : {}),
-      ...(data.personaComplement
-        ? { personaComplement: validateComplement(data.personaComplement) }
-        : {}),
+      ...chapterSettings(data),
       title: data.title,
       order: data.order ?? 0,
       wordCount: data.wordCount ?? 0,
@@ -310,9 +327,7 @@ export async function getChapter(bookId: string, chapterId: string): Promise<Cha
     id: snapshot.id,
     bookId,
     ...(data.actId ? { actId: data.actId } : {}),
-    ...(data.personaComplement
-      ? { personaComplement: validateComplement(data.personaComplement) }
-      : {}),
+    ...chapterSettings(data),
     title: data.title,
     order: data.order ?? 0,
     wordCount: data.wordCount ?? 0,

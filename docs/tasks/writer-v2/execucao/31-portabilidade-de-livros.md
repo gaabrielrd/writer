@@ -347,3 +347,10 @@ O [plano 143](143-backup-completo-no-dialogo-de-exportacao.md) acrescenta entrad
 visual .writer por fluxo/histórico e rascunho explícito. O arquivo produzido
 passou pela restauração do Estúdio; 22 Vitest distintos e 13 verificações Chromium
 positivos em seleções. Inventário geral, legados/rollout/validate ainda pendentes.
+
+### Metadata de persona até o editor
+
+O [plano 144](144-metadata-de-persona-nos-leitores-do-editor.md) corrige a
+projeção get/list para que o rascunho do editor conserve a marca explícita.
+69 testes do serviço positivos, sete novos. Inventários gerais/legados/coleta/
+rollout/validate e demais fases/gates continuam pendentes.

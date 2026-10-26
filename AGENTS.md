@@ -668,3 +668,11 @@ concluído estiverem satisfeitos. A lista fica em
   após selo. Cancelar escolha é neutro; falha/abort não anunciam arquivo salvo.
 - Não criar fallback Blob integral nem cópia plaintext oculta. Sem API compatível,
   explique disponibilidade e preserve outros formatos. Hosts remontam por contexto.
+
+## Metadata de persona no editor
+
+- Projete personaAvailability fechada e vinculada ao ID atual em get/list de
+  livro/capítulo. Livro só admite ausência; capítulo preserva também overrides
+  antigos. Marca velha é omitida e inválida falha, sem lookup (ADR 0167).
+- Book/Chapter usam tipo puro compartilhado; inputs de escrita não ganham essa
+  autorização. Preserve metadata até o rascunho portátil sem mudar texto/datas.

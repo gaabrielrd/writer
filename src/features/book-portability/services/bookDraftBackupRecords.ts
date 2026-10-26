@@ -1,10 +1,7 @@
 import { sha256 } from '@noble/hashes/sha2.js';
 import { bytesToHex } from '@noble/hashes/utils.js';
 import type { Chapter } from '@/features/books';
-import {
-  currentBookPersonaAvailability,
-  type BookPersonaAvailability,
-} from '../../../../functions/src/bookPersonaAvailability.mjs';
+import { currentBookPersonaAvailability } from '../../../../functions/src/bookPersonaAvailability.mjs';
 import { validateComplement } from '../../../../functions/src/personaProfile.mjs';
 import {
   encodeBookBackupJSON,
@@ -29,10 +26,11 @@ export interface BookDraftInput {
     | 'order'
     | 'actId'
     | 'personaComplement'
+    | 'personaAvailability'
     | 'contentMode'
     | 'createdAt'
     | 'updatedAt'
-  > & { personaAvailability?: BookPersonaAvailability };
+  >;
   content: string;
 }
 export interface BookDraftProof {
