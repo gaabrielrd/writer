@@ -1906,3 +1906,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      50 Node e três SDK Firestore/Storage positivos, avisos de listeners registrados.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-imagens-no-backup-de-aventuras.md).
      Selo/pacote/restauração/UI/roundtrip e validate P2 abertos.
+
+156. [Origem do universo no backup de aventuras](156-origem-do-universo-no-backup-de-aventuras.md):
+     origem neutra por fonte/birth/acesso, sem duplicação/prosa global;
+     24 Node e um SDK positivos, alias puro de livro preservado.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-origem-do-universo-no-backup-de-aventuras.md).
+     Inventário/selo/pacote/restauração/UI/roundtrip e validate P2 abertos.

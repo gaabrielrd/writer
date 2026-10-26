@@ -735,3 +735,7 @@ concluído estiverem satisfeitos. A lista fica em
 - Preserve adventureImageUseKey do produtor; heads/uso anteriores à raiz não
   autorizam uma cópia recriada. Biblioteca pode ser anterior. PNG aceito e ranges
   limitados não substituem selo global/deduplicação com provas de cada vínculo.
+- Origem do universo portátil é referência neutra com nascimento nativo, nunca
+  duplicação/grant. Revalide fonte/acesso; origem indisponível não autoriza
+  coincidência nem bloqueia leitura própria (ADR 0179). Compartilhe só validador
+  puro portableUniverseOrigin, mantendo alias/payload de livro.

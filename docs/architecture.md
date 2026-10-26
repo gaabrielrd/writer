@@ -3067,3 +3067,8 @@ dos vínculos de cena/adicional, com uso tipado, biblioteca privada e caminho
 canônico. Storage generation/metageneration são fixadas e revalidadas após I/O;
 DTO não expõe path/URLs/tokens. A chave pura do uso é compartilhada sem mudar
 o produtor; ranges/hash usam adapter existente.
+
+A [ADR 0179](decisions/0179-adventure-backup-universe-origin.md) registra origem
+neutra do universo da aventura por metadata autorizada e nascimento preciso.
+Não copia lore/nomes ou duplica universo; ausência de acesso preserva o próprio.
+Validador puro é compartilhado por alias compatível com livros.
