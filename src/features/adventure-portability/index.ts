@@ -54,3 +54,13 @@ export {
   type AdventureDraftOptions,
   type AdventureDraftProof,
 } from './services/adventureDraftData';
+
+export {
+  streamAdventureArchive,
+  streamAdventureArchiveRecords,
+  AdventureArchiveError,
+  type AdventureArchiveApi,
+  type AdventureArchiveOptions,
+  type AdventureArchiveProof,
+  type AdventureArchiveByteProof,
+} from './services/streamAdventureArchive';

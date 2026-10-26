@@ -70,3 +70,8 @@ após ajustes e `npm run validate` no fechamento de grandes blocos. Registre qua
 checks passaram e quais não foram executados; o resultado local não comprova
 aprovação remota. Uma nova solicitação de envio remoto retoma os portões da CI
 para integração. Merge, deploy e lançamento dependem de instrução própria.
+
+O comando npm run lint verifica todo o projeto em subprocessos sequenciais;
+features e Functions são particionadas e a raiz cobre o restante. Não é filtro
+de diff: preserva arquivos novos e regras/ignores existentes. O pre-commit mantém
+ESLint direto nos arquivos preparados. Veja scripts/run-lint.mjs.

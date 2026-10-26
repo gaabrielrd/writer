@@ -1966,3 +1966,11 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      14 Vitest distintos e um Node dirigidos positivos.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-rascunho-explicito-de-aventuras.md).
      Composição final/validador/transporte/restauração/UI e P2 seguem abertos.
+
+166. [Composição integral da captura de aventuras](166-composicao-integral-da-captura-de-aventuras.md):
+     oito seções/fontes reais, conferência final e framing próprio; testes
+     integrados dirigidos positivos; rodada completa com um timeout corrigido
+     em seleção própria, 90 scripts/3.367 Functions e build positivos.
+     [Registro parcial](../../../entregas/2026-10-26-writer-v2-captura-integral-de-aventuras.md).
+     Wrapper verde permanece pendente para o próximo grande bloco.
+     Leitor/validador autoral/restauração/UI e P2 permanecem abertos.

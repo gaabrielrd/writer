@@ -3038,3 +3038,20 @@ passou 13 Vitest novos e seleção de dois (um refinado e uma regressão central
 um Node, tipos/lint/bundle navegador. Inclui origem nativa de cena/bloco, revisão
 antiga real, vazio/BOM/Unicode, hash independente, observador/conta/cancelamento.
 São 14 Vitest distintos positivos; sem nova prova SDK/UI ou validate global.
+
+O lint completo usa subprocessos sequenciais por feature e src/test de Functions,
+com uma passagem final da raiz excluindo somente esses diretórios já verificados.
+Preserva configuração/ignores e inclui arquivos novos/restantes, sem filtro Git,
+cache ou redução de regras. Evita acumular todo estado de parser num processo.
+
+A [captura integral P2](entregas/2026-10-26-writer-v2-captura-integral-de-aventuras.md)
+passou 11 integrações dirigidas e a rodada completa de frontend executou 320
+arquivos/4.227 casos: 4.226 positivos e um timeout de PNG 16 MiB. Cobertura global
+89,94/85,71/91,12/93,24% (statements/branches/functions/lines), limites preservados.
+Somente o caso pesado recebeu timeout 30 s; seleção própria passou, sem produção
+alterada. Não há chamada verde de validate atribuída a essa combinação.
+90 scripts, 3.367 Functions, 318 módulos de sintaxe e build/smoke passaram à parte.
+Duas falhas iniciais de memória no lint levaram a subprocessos sequenciais;
+frontend com quatro workers também sofreu OOM. Repetição usou um worker apenas
+no subprocesso. Evidência conserva tentativas e pendência formal para o próximo
+bloco; não fecha P2/F2-09, validação semântica, UI ou restauração.

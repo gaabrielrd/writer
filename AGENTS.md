@@ -774,3 +774,12 @@ No backup de aventura, draft é contribuição explícita de um editor de cena/b
 separada do texto salvo e vinculada às provas autorizadas de head/body. Não
 exporte journals/pedidos ou enumere storage. Restore preserva draft em versão
 separada; baseRevision local antiga não concede acesso nem substitui o salvo.
+
+A composição de arquivo de aventura só emite package-end após verificar inventário
+completo, imagens/gerações e draft. Confira conta/abort em cada bloco binário,
+inclusive antes do selo final. captured-data-only não autoriza importar/ativar
+projeto; arquivos externos ainda exigem validação semântica independente.
+
+O lint integral usa scripts/run-lint.mjs: subprocessos sequenciais por diretório
+e passagem final da raiz. Preserve cobertura de todos os arquivos/configurações;
+não substitua por filtro de diff nem ignore diretórios sem verificá-los.

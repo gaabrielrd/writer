@@ -3121,3 +3121,8 @@ A [ADR 0187](decisions/0187-adventure-explicit-draft-stream.md) conserva um draf
 explícito de cena/bloco como contribuição separada, ligada a head/body autorizados.
 onUnit opcional entrega provas limitadas na composição; nenhuma enumeração de
 storage ou journal. Draft-data-only exige segunda conferência e selo futuro.
+
+A [ADR 0188](decisions/0188-adventure-complete-capture-stream.md) reúne oito seções
+com inventário/provas em segunda passagem antes de package-end, e guard em cada
+bloco do container. captured-data-only não substitui validação semântica independente
+de arquivo externo ou autoriza ativação/restauração.

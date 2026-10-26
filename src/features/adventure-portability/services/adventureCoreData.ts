@@ -36,7 +36,7 @@ export interface AdventureCoreOptions {
   guard: () => void;
   signal?: AbortSignal;
   source?: AdventureInventorySource;
-  onUnit?: (proof: AdventureUnitProof) => Promise<void>;
+  onUnit?: (proof: AdventureUnitProof) => void | Promise<void>;
 }
 export interface AdventureCoreRecord {
   readonly section: AdventureCoreSection;

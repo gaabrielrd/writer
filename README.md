@@ -684,3 +684,7 @@ indisponível até o rascunho do editor, sem adotar biblioteca por coincidência
 A restauração fixa o modo de lore na reserva original e conserva pedidos em
 andamento quando a configuração muda. [Evidência local](docs/entregas/2026-10-25-writer-v2-modo-de-lore-fixado.md).
 Seleção do runtime e rollout continuam pendentes.
+
+O lint integral usa processos sequenciais por diretório, preservando todas as
+regras e uma passagem final da raiz para arquivos restantes. Isso limita a
+memória acumulada pelo parser; o pre-commit continua verificando o diff preparado.

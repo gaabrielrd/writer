@@ -135,3 +135,11 @@ validador/transporte/UI/restore e P2/P3/D continuam abertos; 8/35 preservado.
 texto explícito separado, com origem/hash salvos e observador limitado: 14 Vitest
 distintos e um Node positivos. Composição final/selo/validador/transporte/UI/
 restauração e P2/P3/D permanecem abertos, sem mudança de 8/35.
+
+[Captura integral 166](execucao/166-composicao-integral-da-captura-de-aventuras.md)
+reúne oito seções e fontes verificadas antes do fechamento do container.
+Rodada completa: 4.226 passes/um timeout, com cobertura acima dos limites;
+caso pesado corrigido passou em seleção própria. 90 scripts, 3.367 Functions e
+build verdes. Wrapper verde permanece pendente no próximo grande bloco; captura
+é técnica/parcial e não valida arquivo externo ou habilita restore/UI.
+P2/P3/D, F2-09, gates e contagem 8/35 permanecem abertos/inalterados.

@@ -94,7 +94,7 @@ it('preserves the minimum eight-byte PNG and the maximum 16MiB without changing 
     expect(count).toBe(Math.ceil(size / 65536) * 2);
     expect(proof.bytes).toBe(size * 2);
   }
-});
+}, 30000);
 for (const [name, mutate] of [
   ['source', (v) => ({ ...v, sourceToken: '0'.repeat(64) })],
   ['ordinal', (v) => ({ ...v, index: 2 })],

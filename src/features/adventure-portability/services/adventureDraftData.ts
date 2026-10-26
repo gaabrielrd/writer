@@ -207,27 +207,15 @@ export function streamAdventureDraftData(
   options: AdventureDraftOptions,
 ): AsyncGenerator<AdventureBackupRecord, AdventureDraftProof | undefined, void> {
   const settings = intent(adventureId, api, options);
-  let frozen: AdventureDraftInput | null = null;
-  if (input !== null) {
-    if (
-      !closed(input, ['adventureId', 'resource', 'content', 'baseRevision', 'savedAt']) ||
-      input.adventureId !== adventureId ||
-      !closed(input.resource, ['kind', 'id']) ||
-      !['scene', 'block'].includes(input.resource.kind) ||
-      !validId(input.resource.id) ||
-      typeof input.content !== 'string' ||
-      !Number.isSafeInteger(input.baseRevision) ||
-      input.baseRevision < 1 ||
-      !Number.isFinite(input.savedAt) ||
-      input.savedAt < 0 ||
-      input.savedAt > 8640000000000000 ||
-      !settings.origin ||
-      input.resource.kind !== settings.origin.head.scope.kind ||
-      input.resource.id !== settings.origin.head.item.id
-    )
-      invalid();
-    frozen = Object.freeze({ ...input, resource: Object.freeze({ ...input.resource }) });
-  } else if (settings.origin !== null) invalid();
+  const frozen = captureAdventureDraftInput(adventureId, input);
+  if (
+    frozen
+      ? !settings.origin ||
+        frozen.resource.kind !== settings.origin.head.scope.kind ||
+        frozen.resource.id !== settings.origin.head.item.id
+      : settings.origin !== null
+  )
+    invalid();
   return asyncRecordStream(
     async (write, signal) => {
       function check() {
@@ -354,4 +342,29 @@ export function verifyAdventureDraftData(
     settings.signal?.throwIfAborted();
   };
   return revalidate(settings, check, settings.signal);
+}
+
+/** Freezes the explicit local contribution without I/O or origin grants. */
+export function captureAdventureDraftInput(
+  adventureId: string,
+  input: AdventureDraftInput | null,
+): AdventureDraftInput | null {
+  if (input !== null) {
+    if (
+      !closed(input, ['adventureId', 'resource', 'content', 'baseRevision', 'savedAt']) ||
+      input.adventureId !== adventureId ||
+      !closed(input.resource, ['kind', 'id']) ||
+      !['scene', 'block'].includes(input.resource.kind) ||
+      !validId(input.resource.id) ||
+      typeof input.content !== 'string' ||
+      !Number.isSafeInteger(input.baseRevision) ||
+      input.baseRevision < 1 ||
+      !Number.isFinite(input.savedAt) ||
+      input.savedAt < 0 ||
+      input.savedAt > 8640000000000000
+    )
+      invalid();
+    return Object.freeze({ ...input, resource: Object.freeze({ ...input.resource }) });
+  }
+  return null;
 }
