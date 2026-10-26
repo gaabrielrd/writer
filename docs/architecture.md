@@ -3100,3 +3100,9 @@ por ranges de unidades JSON em adventure-portability, com fonte/escopo/token e
 SHA integral, estado constante e prova unit-bytes-only. Return não aguarda RPC
 pendente; resposta tardia não emite dados/prova. Montagem autoral, manifestos
 históricos/Storage e selo completo permanecem etapas seguintes.
+
+A [ADR 0184](decisions/0184-adventure-core-data-stream.md) compõe cinco seções
+em streamAdventureCoreData, por unidades preservadas e manifestos/endereço de
+adventureArchiveCore puro. Prova core-data-only ainda depende das outras seções
+e segunda passagem. shared/streams fornece fila neutra de um slot, com wrapper
+compatível de livro e encerramento sem aguardar RPC.

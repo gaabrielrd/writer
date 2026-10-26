@@ -1942,3 +1942,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      seleção final de whitelist, types/lint e bundle isolado positivos.
      [Evidência parcial](../../../entregas/2026-10-26-writer-v2-unidades-de-aventuras-no-cliente.md).
      Unit-bytes-only não sela pacote nem certifica histórico/Storage; P2 aberta.
+
+162. [Composição dos dados centrais de aventuras](162-composicao-dos-dados-centrais-de-aventuras.md):
+     cinco seções/manifestos/endereço e ponte neutra compartilhada com livros;
+     33 Vitest/dez Node, tipos/lint, bundle e smoke por passos positivos.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-dados-centrais-de-aventuras.md).
+     Prova core-data-only; seções finais/selo/RPC/UI/restore e P2 abertos.

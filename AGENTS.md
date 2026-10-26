@@ -755,3 +755,8 @@ concluído estiverem satisfeitos. A lista fica em
   antes de next/await, valide DTO/base64/manifesto e SHA incremental (ADR 0183).
   Unit-bytes-only não certifica pacote, histórico textual ou Storage. Return
   deve fechar sem aguardar RPC e impedir emissão/prova após resposta tardia.
+- Compartilhe a ponte de registros por shared/streams, mantendo-o neutro;
+  ack ocorre após consumo e fechamento não aguarda RPC (ADR 0184).
+- streamAdventureCoreData produz somente cinco seções/core-data-only. Preserve
+  endereços/manifestos e unidades iguais ao inventário; só verificar/selo global
+  depois de histórico/drafts/imagens e suas provas, nunca por esse recorte.

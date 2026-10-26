@@ -115,3 +115,8 @@ pendentes. P2/P3/D e contagem 8/35 preservadas.
 acrescenta ranges/hash integral no cliente, com intenção congelada e fechamento
 sem aguardar RPC: 24 casos e seleção final positivos. Prova unit-bytes-only não
 é selo autoral; composição/histórico/Storage/restauração/UI e P2 continuam abertos.
+
+[Composição 162](execucao/162-composicao-dos-dados-centrais-de-aventuras.md)
+acrescenta as cinco primeiras seções, manifestos e fila compartilhada: 33 Vitest/
+dez Node dirigidos positivos. Histórico, imagens/drafts, selo/validador/RPC/UI/
+restore continuam pendentes; prova core-data-only e contagem 8/35 preservadas.

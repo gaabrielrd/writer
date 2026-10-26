@@ -19,3 +19,11 @@ export {
   type AdventureUnitOptions,
   type AdventureUnitProof,
 } from './services/adventureUnitContracts';
+
+export {
+  streamAdventureCoreData,
+  type AdventureCoreApi,
+  type AdventureCoreOptions,
+  type AdventureCoreRecord,
+  type AdventureCoreProof,
+} from './services/adventureCoreData';

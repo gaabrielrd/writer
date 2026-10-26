@@ -3012,3 +3012,10 @@ passou 24 testes do arquivo novo e seleção final de dois casos após whitelist
 própria. Hash Node independente, todos os read JSON nativos, ranges, conta/abort
 /return com RPC retido e intenção/buffers mutáveis são exercitados. Types/lint
 /bundle isolado positivos; sem repetir SDK ou atribuir validate integral anterior.
+
+A [composição central P2](entregas/2026-10-26-writer-v2-dados-centrais-de-aventuras.md)
+passou 33 Vitest distintos em seleções (15 livro, sete ponte, 11 composição) e
+dez Node, incluindo SHA independente e 53 cenas. Tipos/lint/bundle isolado verdes;
+wrapper do build sofreu falha de criação de Node por memória, mas typecheck e
+bundle/smoke diretos/sequenciais passaram. Evidência preserva a falha e não
+atribui validate integral anterior a esse código ou selo autoral aos placeholders.
