@@ -88,6 +88,6 @@ comerciais continuam explícitos. Nenhum push, PR, merge, deploy ou CI nesta eta
 
 P2 iniciou fonte interna (147), raiz/partes (148), cenas/blocos/controles/
 planner/referências (149), narrativa (150), lore próprio (151), metas/checklist
-(152), histórico (153) e personas (154), com 50 Node e dois SDK positivos no
-último incremento. Não há backup integral ou restauração de aventuras ainda;
-a contagem de tarefas completas não muda.
+(152), histórico (153), personas (154) e imagens (155), com 50 Node e três SDK
+Firestore/Storage positivos no último incremento. Não há backup integral ou
+restauração de aventuras ainda; a contagem de tarefas completas não muda.

@@ -3061,3 +3061,9 @@ A [ADR 0177](decisions/0177-adventure-backup-used-personas.md) captura somente
 personas vinculadas à aventura/cenas, com provas nativas e disponibilidade ativa
 antes da prosa. IDs legados e arquivo são preservados. Projeção pura de perfil
 é compartilhada com livros por alias compatível; DTO da aventura é independente.
+
+A [ADR 0178](decisions/0178-adventure-backup-authorized-images.md) captura PNGs
+dos vínculos de cena/adicional, com uso tipado, biblioteca privada e caminho
+canônico. Storage generation/metageneration são fixadas e revalidadas após I/O;
+DTO não expõe path/URLs/tokens. A chave pura do uso é compartilhada sem mudar
+o produtor; ranges/hash usam adapter existente.

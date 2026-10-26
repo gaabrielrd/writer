@@ -16,9 +16,11 @@ export function adventureImageInput(value) {
       workFail('invalid-argument', 'Legenda ou texto alternativo inválido.');
   return { imageId, alt: value.alt, caption: value.caption };
 }
+export const adventureImageUseKey = (adventureId, resource) =>
+  'adventure-block:' + digest({ adventureId, resource });
 export async function prepareAdventureImageUse(tx, db, context, resource, previous, next) {
   return prepareLibraryImageUse(tx, db, context.uid, {
-    key: 'adventure-block:' + digest({ adventureId: context.target.id, resource }),
+    key: adventureImageUseKey(context.target.id, resource),
     usage: { kind: 'adventure-block', adventureId: context.target.id, resource },
     previousId: previous?.imageId ?? null,
     nextId: next?.imageId ?? null,

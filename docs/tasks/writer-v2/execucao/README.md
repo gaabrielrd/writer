@@ -1900,3 +1900,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      prosa; projeção pura compartilhada com alias de livro e vetor preservado.
      50 Node e dois SDK positivos. [Evidência parcial](../../../entregas/2026-10-26-writer-v2-personas-no-backup-de-aventuras.md).
      Mídia/selo/pacote/restauração/UI e validate P2 abertos.
+
+155. [Imagens autorizadas no backup de aventuras](155-imagens-autorizadas-no-backup-de-aventuras.md):
+     vínculos/uso tipado e PNG por geração/ranges com revalidação após I/O;
+     50 Node e três SDK Firestore/Storage positivos, avisos de listeners registrados.
+     [Evidência parcial](../../../entregas/2026-10-26-writer-v2-imagens-no-backup-de-aventuras.md).
+     Selo/pacote/restauração/UI/roundtrip e validate P2 abertos.

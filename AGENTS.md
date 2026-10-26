@@ -729,3 +729,9 @@ concluído estiverem satisfeitos. A lista fica em
 - Compartilhe somente a projeção pura portablePersonaProfile entre domínios;
   preserve alias/bytes do serializer de livro e exclua origem operacional,
   credenciais/provedor e extras de perfil/trait do DTO.
+- Imagens portáteis da aventura exigem vínculo/cena dona/biblioteca/uso tipado
+  autorizados, caminho canônico e geração fixada. Revalide metadata/binding
+  após I/O antes dos bytes; não emita URLs/tokens de download (ADR 0178).
+- Preserve adventureImageUseKey do produtor; heads/uso anteriores à raiz não
+  autorizam uma cópia recriada. Biblioteca pode ser anterior. PNG aceito e ranges
+  limitados não substituem selo global/deduplicação com provas de cada vínculo.
