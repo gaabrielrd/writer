@@ -230,3 +230,11 @@ Testes e limites reais estão na
 draft-ready não ativa projeto: universo, personas na biblioteca, mídia, agregados/
 audit/ativação, recuperação/UI e roundtrip seguem obrigatórios. P2/P3/D/F2-09,
 gates e macro 8/35 permanecem abertos.
+
+[Universo original 177](execucao/177-universo-original-da-aventura-restaurada.md)
+prepara seleção privada com identidade nativa e acesso atual, sem copiar universo
+ou alterar contador. O plano final reautoriza e compõe vínculo nativo strict;
+ativação real continua pendente. Checks e resultados estão na
+[evidência](../../entregas/2026-10-27-writer-v2-universo-original-de-aventuras.md).
+Personas, mídia, agregados/audit/ativação, recuperação/UI e roundtrip seguem
+obrigatórios. P2/P3/D/F2-09, gates e macro 8/35 permanecem abertos.

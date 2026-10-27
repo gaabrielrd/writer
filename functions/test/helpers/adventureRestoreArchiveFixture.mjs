@@ -29,7 +29,10 @@ import {
 } from '../../src/adventureArchiveImages.mjs';
 const sha = (b) => createHash('sha256').update(b).digest('hex');
 /** Small contract fixture for the real SDK; native writer corpus is tested separately through Vitest. */
-export async function emptyAdventureArchive({ invalidRoot = false } = {}) {
+export async function emptyAdventureArchive({
+  invalidRoot = false,
+  universeOrigin = { kind: 'none' },
+} = {}) {
   const id = 'original-empty-adventure-0001',
     rows = [],
     counts = createAdventurePackageCounts(),
@@ -57,7 +60,11 @@ export async function emptyAdventureArchive({ invalidRoot = false } = {}) {
   await unit('structure', { family: 'structure', kind: 'adventure' }, id, {
     schemaVersion: 1,
     kind: 'adventure',
-    data: { title: 'PRIVATE_EMPTY_TITLE', status: invalidRoot ? 'wrong' : 'draft' },
+    data: {
+      title: 'PRIVATE_EMPTY_TITLE',
+      status: invalidRoot ? 'wrong' : 'draft',
+      ...(universeOrigin.kind === 'none' ? {} : { universeId: universeOrigin.id }),
+    },
   });
   const resourceCounts = adventureCoreCounts('resources');
   for (const kind of ['progress', 'arc-order', 'event-order', 'scene-control']) {
@@ -97,7 +104,7 @@ export async function emptyAdventureArchive({ invalidRoot = false } = {}) {
   );
   await unit('universe', { family: 'universe' }, id, {
     schemaVersion: 1,
-    origin: { kind: 'none' },
+    origin: universeOrigin,
   });
   row('adventure-history', adventureHistoryManifest(0, 0, 0, sha(ADVENTURE_HISTORY_SEED)));
   row('adventure-drafts', adventureDraftsManifest(0, 0, sha(ADVENTURE_DRAFTS_SEED)));

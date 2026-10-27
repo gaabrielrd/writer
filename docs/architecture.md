@@ -3199,3 +3199,10 @@ como versão nativa separada, com contagem global de HTML/Markdown e manuscrito
 intacto. Fonte, descriptor, estado e partes são provados, com rechecagem final
 por metadata/journal antes de confirmar versão/recibo/revisão juntos. draft-ready
 ainda exige universo, personas, mídia, agregados/audit e recuperação/UI para ativar.
+
+A [ADR 0199](decisions/0199-adventure-original-universe-revalidation.md) compartilha
+a inspeção neutra do universo original entre livros e aventuras. A seleção privada
+confirma unidade, definição e journals com checkpoint/recibo, sem alterar universo
+ou contador. universe-ready ainda não ativa projeto. O plano de vínculo final
+relê fonte/job/provas e reautoriza por proprietário e nascimento, devolvendo o
+universeId atual e commit strict que deverá acompanhar a futura raiz ativa.

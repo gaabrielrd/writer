@@ -1,4 +1,9 @@
 import {
+  universeRestorePhase,
+  universeRestoreViewKeys,
+  validAdventureUniverseOutcome,
+} from './adventureRestoreUniverseMeta.mjs';
+import {
   draftFinalizePhase,
   draftFinalizeViewKeys,
   validAdventureDraftFinalized,
@@ -48,6 +53,7 @@ export const adventureStagingView = (value) =>
         ...(profilePhase(value) ? profileView : []),
         ...(historyPhase(value) ? [...historyViewKeys, 'historyPending'] : []),
         ...(draftFinalizePhase(value) ? draftFinalizeViewKeys : []),
+        ...(universeRestorePhase(value) ? universeRestoreViewKeys : []),
       ].map((k) => [k, value[k]]),
     ),
   );
@@ -59,6 +65,7 @@ export function validAdventureStagingView(v) {
       ...historyViewKeys,
       'historyPending',
       ...draftFinalizeViewKeys,
+      ...universeRestoreViewKeys,
     ]) ||
     v.version !== 1 ||
     ![
@@ -72,6 +79,7 @@ export function validAdventureStagingView(v) {
       'history',
       'history-ready',
       'draft-ready',
+      'universe-ready',
     ].includes(v.phase) ||
     !viewKeys.filter((k) => !['version', 'phase'].includes(k)).every((k) => count(v[k])) ||
     v.cleanedArtifacts > v.artifactCount
@@ -93,6 +101,12 @@ export function validAdventureStagingView(v) {
       : draftFinalizeViewKeys.some((k) => Object.hasOwn(v, k))
   )
     return false;
+  if (
+    universeRestorePhase(v)
+      ? !validAdventureUniverseOutcome(v)
+      : universeRestoreViewKeys.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
   return historyPhase(v)
     ? validAdventureHistoryView(v)
     : [...historyViewKeys, 'historyPending'].every((k) => !Object.hasOwn(v, k));
@@ -109,6 +123,7 @@ export function validAdventureStagingMeta(v, job) {
         ...historyViewKeys,
         ...historyPrivateKeys,
         ...draftFinalizeViewKeys,
+        ...universeRestoreViewKeys,
       ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
@@ -210,5 +225,7 @@ export function validAdventureStagingMeta(v, job) {
   if (draftFinalizePhase(v)) {
     if ((v.draftOutcome === 'version') !== (v.drafts === 1)) return false;
   } else if (draftFinalizeViewKeys.some((k) => Object.hasOwn(v, k))) return false;
+  if (!universeRestorePhase(v) && universeRestoreViewKeys.some((k) => Object.hasOwn(v, k)))
+    return false;
   return true;
 }

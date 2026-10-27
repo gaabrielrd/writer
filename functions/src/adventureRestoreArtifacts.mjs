@@ -31,6 +31,7 @@ const actions = [
   'advanceAdventureRestoreProfiles',
   'advanceAdventureRestoreHistory',
   'finalizeAdventureRestoreDraft',
+  'advanceAdventureRestoreUniverse',
 ];
 const mapped = (v) => typeof v === 'string' && /^restore-[a-f0-9]{64}$/.test(v);
 const hashId = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);

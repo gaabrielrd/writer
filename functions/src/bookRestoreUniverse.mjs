@@ -5,10 +5,9 @@ import {
   restoreFail as fail,
   inconsistent,
   sum,
-  bornEqual,
 } from './bookRestoreUploadContracts.mjs';
 import { digest } from './sceneContracts.mjs';
-import { readWorkMetadata } from './workProgressContracts.mjs';
+import { inspectPortableRestoreUniverse } from './portableUniverseRestore.mjs';
 import { validateBookBackupUniverseOrigin } from './bookBackupUniverse.mjs';
 import { validateBookRestoreUniverseSelection } from './bookRestoreUniverseContracts.mjs';
 import { createVerifiedBookRestoreContent } from './bookRestoreContentRead.mjs';
@@ -23,25 +22,12 @@ export async function inspectBookRestoreUniverse(tx, db, uid, input) {
   } catch {
     inconsistent();
   }
-  if (origin.kind === 'none') return { origin, observed: 'none', universeId: null };
-  // An unavailable descriptor never becomes a reference by looking up the same ID.
-  if (origin.kind === 'unavailable') return { origin, observed: 'unavailable', universeId: null };
-  const snapshot = await readWorkMetadata(tx, db.doc('universes/' + origin.id), [
-      'authorId',
-      'deleting',
-    ]),
-    record = snapshot.data(),
-    available = Boolean(
-      record &&
-      record.authorId === uid &&
-      !record.deleting &&
-      bornEqual(snapshot, { createTime: origin.created }),
-    );
-  return {
-    origin,
-    observed: available ? 'available' : 'unavailable',
-    universeId: available ? origin.id : null,
-  };
+  try {
+    return await inspectPortableRestoreUniverse(tx, db, uid, origin);
+  } catch (error) {
+    if (error instanceof TypeError) inconsistent();
+    throw error;
+  }
 }
 
 /** Internal activation plan. Caller must commit the returned effects with the authorized new root. */
