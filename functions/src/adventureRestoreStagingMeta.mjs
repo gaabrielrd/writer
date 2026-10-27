@@ -1,4 +1,9 @@
 import {
+  draftFinalizePhase,
+  draftFinalizeViewKeys,
+  validAdventureDraftFinalized,
+} from './adventureRestoreDraftMeta.mjs';
+import {
   historyPhase,
   historyViewKeys,
   historyPrivateKeys,
@@ -42,12 +47,19 @@ export const adventureStagingView = (value) =>
         ...(Object.hasOwn(value, 'resourceIndex') ? resourceView : []),
         ...(profilePhase(value) ? profileView : []),
         ...(historyPhase(value) ? [...historyViewKeys, 'historyPending'] : []),
+        ...(draftFinalizePhase(value) ? draftFinalizeViewKeys : []),
       ].map((k) => [k, value[k]]),
     ),
   );
 export function validAdventureStagingView(v) {
   if (
-    !closed(v, viewKeys, [...resourceView, ...profileView, ...historyViewKeys, 'historyPending']) ||
+    !closed(v, viewKeys, [
+      ...resourceView,
+      ...profileView,
+      ...historyViewKeys,
+      'historyPending',
+      ...draftFinalizeViewKeys,
+    ]) ||
     v.version !== 1 ||
     ![
       'structure',
@@ -59,6 +71,7 @@ export function validAdventureStagingView(v) {
       'profiles-ready',
       'history',
       'history-ready',
+      'draft-ready',
     ].includes(v.phase) ||
     !viewKeys.filter((k) => !['version', 'phase'].includes(k)).every((k) => count(v[k])) ||
     v.cleanedArtifacts > v.artifactCount
@@ -72,6 +85,12 @@ export function validAdventureStagingView(v) {
     profilePhase(v)
       ? !profileView.every((k) => count(v[k]))
       : profileView.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
+  if (
+    draftFinalizePhase(v)
+      ? !validAdventureDraftFinalized(v)
+      : draftFinalizeViewKeys.some((k) => Object.hasOwn(v, k))
   )
     return false;
   return historyPhase(v)
@@ -89,6 +108,7 @@ export function validAdventureStagingMeta(v, job) {
         ...profileView,
         ...historyViewKeys,
         ...historyPrivateKeys,
+        ...draftFinalizeViewKeys,
       ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
@@ -187,5 +207,8 @@ export function validAdventureStagingMeta(v, job) {
     if (!validAdventureHistoryMeta(v, job, profileEnd)) return false;
   } else if ([...historyViewKeys, ...historyPrivateKeys].some((k) => Object.hasOwn(v, k)))
     return false;
+  if (draftFinalizePhase(v)) {
+    if ((v.draftOutcome === 'version') !== (v.drafts === 1)) return false;
+  } else if (draftFinalizeViewKeys.some((k) => Object.hasOwn(v, k))) return false;
   return true;
 }

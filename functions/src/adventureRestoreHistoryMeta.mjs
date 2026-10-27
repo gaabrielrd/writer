@@ -1,5 +1,5 @@
 import { contentClosed as closed, contentCount as count } from './adventureContentPrimitives.mjs';
-export const historyPhase = (v) => ['history', 'history-ready'].includes(v.phase);
+export const historyPhase = (v) => ['history', 'history-ready', 'draft-ready'].includes(v.phase);
 export const historyViewKeys = [
   'historyVersions',
   'historyBytes',
@@ -63,7 +63,7 @@ export function validAdventureHistoryMeta(v, job, profileEnd) {
         v.historySourceRecords !== t.nativeHistoryRecords)) ||
     (!afterHistory && (v.drafts !== 0 || v.draftBytes !== 0 || v.draftBodies !== 0)) ||
     (complete && (v.drafts !== t.drafts || v.draftBytes !== t.draftBytes || v.historyPending)) ||
-    (v.phase === 'history-ready') !== complete
+    ['history-ready', 'draft-ready'].includes(v.phase) !== complete
   )
     return false;
   return true;

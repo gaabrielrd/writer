@@ -220,3 +220,13 @@ conjuntos e três SDK demo positivos. [Evidência](../../entregas/2026-10-27-wri
 history-ready mantém draft pending-finalization e universo pendente; biblioteca
 de personas, mídia, agregados/audit/ativação, recuperação/UI e roundtrip seguem
 obrigatórios. P2/P3/D/F2-09, gates e 8/35 permanecem abertos.
+
+[Finalização do draft 176](execucao/176-finalizacao-do-rascunho-de-aventuras.md)
+cria a versão recuperada nativa, com contagem global exata e manuscrito intacto,
+inclusive draft vazio/igual. Validate local integral positivo fecha o bloco
+171–176: 4.316 frontend, 90 scripts, 3.477 Functions e sintaxe/tipos/build/smoke.
+Testes e limites reais estão na
+[evidência](../../entregas/2026-10-27-writer-v2-finalizacao-do-rascunho-de-aventuras.md).
+draft-ready não ativa projeto: universo, personas na biblioteca, mídia, agregados/
+audit/ativação, recuperação/UI e roundtrip seguem obrigatórios. P2/P3/D/F2-09,
+gates e macro 8/35 permanecem abertos.

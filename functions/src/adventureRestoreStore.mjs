@@ -123,6 +123,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreResources',
           'advanceAdventureRestoreProfiles',
           'advanceAdventureRestoreHistory',
+          'finalizeAdventureRestoreDraft',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -160,6 +161,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         'advanceAdventureRestoreResources',
         'advanceAdventureRestoreProfiles',
         'advanceAdventureRestoreHistory',
+        'finalizeAdventureRestoreDraft',
       ].includes(r.action)
     )
       inconsistent();
@@ -173,6 +175,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreResources',
           'advanceAdventureRestoreProfiles',
           'advanceAdventureRestoreHistory',
+          'finalizeAdventureRestoreDraft',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||

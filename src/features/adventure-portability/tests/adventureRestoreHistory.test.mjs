@@ -166,3 +166,83 @@ for (const kind of ['scene', 'block'])
     },
     60000,
   );
+
+for (const kind of ['scene', 'block'])
+  it(
+    'finalizes the real ' +
+      kind +
+      ' draft into a native historical version without changing the manuscript',
+    async () => {
+      const { source, draft, bytes } = await capture(kind),
+        { f, p } = await historyReady(bytes),
+        history = await historyFinish(f, p),
+        path = 'adventures/' + p.adventureId,
+        descriptor = structuredClone(f.records.get(f.path + '/preparedRoot/recovered-draft')),
+        before = new Map(
+          [...f.records].filter(([k]) => k.startsWith(path + '/') && k.endsWith('/body/current')),
+        );
+      const result = await f.api.finalizeAdventureRestoreDraft(f.uid, {
+        restoreId: p.restoreId,
+        jobToken: p.jobToken,
+        expectedCheckpoint: history.checkpoint,
+        operationId: 'native-draft-finalize-' + kind,
+      });
+      expect(result.progress.staging).toMatchObject({
+        phase: 'draft-ready',
+        draftOutcome: 'version',
+        draftWordCount: kind === 'scene' ? 10000 : 0,
+      });
+      const context = { target: { kind: 'adventure', id: p.adventureId }, path },
+        restored = await f.db.runTransaction(async (tx) => {
+          const value = await readHistoryVersion(tx, f.db, context, descriptor.versionId),
+            texts = [];
+          for (let i = 0; i < value.chunkCount; i++)
+            texts.push((await readHistoryChunk(tx, f.db, context, value, i)).content);
+          return { value, content: texts.join('') };
+        });
+      expect(restored.content).toBe(draft.content);
+      expect(restored.value.contentHash).toBe(digest(draft.content));
+      expect(restored.value.wordCount).toBe(kind === 'scene' ? 10000 : 0);
+      expect(restored.value).toMatchObject({
+        createdAt: draft.savedAt,
+        label: 'Rascunho recuperado do backup',
+        reason: 'manual',
+      });
+      expect(restored.value).not.toHaveProperty('draft');
+      const { validateAdventureVersion } =
+        await import('../../../../functions/src/adventureContentSchema.mjs');
+      const data = Object.fromEntries(
+        [
+          'resource',
+          'createdAt',
+          'reason',
+          'wordCount',
+          'byteLength',
+          'contentHash',
+          'chunkCount',
+          'label',
+        ].map((k) => [k, restored.value[k]]),
+      );
+      expect(() =>
+        validateAdventureVersion({
+          schemaVersion: 1,
+          kind: 'version',
+          parentId: null,
+          id: descriptor.versionId,
+          data,
+        }),
+      ).not.toThrow();
+      expect(f.records.get(f.path + '/preparedRoot/current').value.historyRevision).toBe(
+        history.staging.historyVersions + 1,
+      );
+      expect(
+        [...f.records.keys()].filter((k) => k.startsWith(path + '/workVersions/')).length,
+      ).toBe(
+        [...source.records.keys()].filter((k) => k.startsWith(source.path + '/workVersions/'))
+          .length + 1,
+      );
+      for (const [k, v] of before) expect(f.records.get(k)).toEqual(v);
+      expect((await cleanup(f, result.progress, 50)).state).toBe('cancelled');
+    },
+    60000,
+  );

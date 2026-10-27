@@ -3193,3 +3193,9 @@ manifesto só após SHA integral. Draft conserva texto/descriptor separados sem
 alterar manuscrito; sua contagem exata/manifesto ainda exigem finalização. Origem
 do universo fica candidata pendente. history-ready não ativa projeto nem substitui
 biblioteca de personas, mídia, agregados/audit ou recuperação/UI.
+
+A [ADR 0198](decisions/0198-adventure-recovered-draft-version.md) finaliza o draft
+como versão nativa separada, com contagem global de HTML/Markdown e manuscrito
+intacto. Fonte, descriptor, estado e partes são provados, com rechecagem final
+por metadata/journal antes de confirmar versão/recibo/revisão juntos. draft-ready
+ainda exige universo, personas, mídia, agregados/audit e recuperação/UI para ativar.
