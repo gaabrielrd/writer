@@ -95,3 +95,12 @@ continua pendente; não declarar F2-09/P2 ou o grande bloco formalmente concluí
 Leitor/validador semântico, índice/revisão, transporte/UI, restauração e roundtrip
 continuam pendentes. P2/P3/D, F2-09, demais fases/gates e contagem 8/35 não mudam.
 Sem CI/push/PR/merge/deploy/subagentes.
+
+## Pendência formal encerrada — 2026-10-27
+
+O validate integral de 167 terminou exit 0: 4.259 frontend, 90 scripts,
+3.379 Functions, sintaxe/tipos/build/smoke. Inclui o timeout individual corrigido
+em 166 e os contratos do validador novo. A chamada antiga permanece exit 1;
+não é aprovação retroativa. A [evidência de 167](2026-10-27-writer-v2-validacao-semantica-de-aventuras.md)
+registra a nova execução. Fecha o bloco técnico de captura/validação;
+P2/P3/D, restauração/UI e demais gates continuam abertos.

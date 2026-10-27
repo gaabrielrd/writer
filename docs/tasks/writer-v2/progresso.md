@@ -143,3 +143,16 @@ caso pesado corrigido passou em seleção própria. 90 scripts, 3.367 Functions 
 build verdes. Wrapper verde permanece pendente no próximo grande bloco; captura
 é técnica/parcial e não valida arquivo externo ou habilita restore/UI.
 P2/P3/D, F2-09, gates e contagem 8/35 permanecem abertos/inalterados.
+
+## Atualização local — 2026-10-27
+
+[Validador 167](execucao/167-validacao-semantica-do-arquivo-de-aventuras.md)
+confere independentemente conteúdo, hashes/manifestos e relações das oito seções,
+com índice cifrado e SHA/UTF-8 retomáveis. Chromium e validate integral positivos:
+4.259 frontend, 90 scripts, 3.379 Functions, sintaxe/tipos/build/smoke.
+Fecha a pendência formal de validate de 166, sem aprovar a tentativa antiga.
+[Evidência](../../entregas/2026-10-27-writer-v2-validacao-semantica-de-aventuras.md).
+
+Relatório content-only não concede acesso ou ativação. Transporte/revisão,
+restauração/remapeamento/mídia, UI e roundtrip ainda faltam em P2; P3/D e F2-09
+seguem abertos. Contagem 8/35 (22,9% de tarefas) e gates humanos/comerciais não mudam.

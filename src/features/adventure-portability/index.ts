@@ -64,3 +64,7 @@ export {
   type AdventureArchiveProof,
   type AdventureArchiveByteProof,
 } from './services/streamAdventureArchive';
+
+export { inspectAdventureBackupContent } from './services/inspectAdventureBackupContent';
+export { AdventureContentError } from '../../../functions/src/adventureContentPrimitives.mjs';
+export type { AdventureContentReport } from '../../../functions/src/adventureBackupContent.mjs';

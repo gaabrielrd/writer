@@ -3055,3 +3055,16 @@ Duas falhas iniciais de memória no lint levaram a subprocessos sequenciais;
 frontend com quatro workers também sofreu OOM. Repetição usou um worker apenas
 no subprocesso. Evidência conserva tentativas e pendência formal para o próximo
 bloco; não fecha P2/F2-09, validação semântica, UI ou restauração.
+
+O validador semântico P2 usa corpus nativo e arquivos adulterados novamente
+selados com Node crypto independente. Testa ausência/duplicação, origem, campos,
+hashes, UTF-8 entre partes e engines novas, tombstones/personas, draft e PNG.
+O índice neutro mantém regressões de livro; Chromium verificou WASM/OPFS reais
+e limpeza após sucesso/falha. Veja a [ADR 0189](decisions/0189-adventure-independent-content-validation.md).
+
+O [fechamento semântico P2](entregas/2026-10-27-writer-v2-validacao-semantica-de-aventuras.md)
+passou npm run validate integral: 4.259 frontend, 90 scripts, 3.379 Functions,
+323 módulos de sintaxe e tipos/build/smoke, com cobertura preservada. Encerrada
+a pendência formal de 166 por execução nova, sem reclassificar tentativas antigas.
+VITEST_MAX_WORKERS=1 só no subprocesso. Chromium verificou WASM/OPFS e limpeza;
+não constitui UI/SDK de restauração. P2 e F2-09 permanecem abertas.

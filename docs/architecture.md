@@ -3126,3 +3126,10 @@ A [ADR 0188](decisions/0188-adventure-complete-capture-stream.md) reúne oito se
 com inventário/provas em segunda passagem antes de package-end, e guard em cada
 bloco do container. captured-data-only não substitui validação semântica independente
 de arquivo externo ou autoriza ativação/restauração.
+
+A [ADR 0189](decisions/0189-adventure-independent-content-validation.md) valida
+independentemente as oito seções da aventura e seus vínculos/hashes, com JSON
+limitado, texto incremental e checkpoints do host. content-only não concede
+acesso ou ativação. shared/validation extrai o índice OPFS cifrado de livros,
+preservando namespace e API, para o leitor público de aventuras. Transporte,
+restauração e UI permanecem etapas próprias.

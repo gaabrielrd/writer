@@ -6,10 +6,12 @@ import { adventureBlockTypes, adventureBlockAudiences } from './adventureBlocksS
 import {
   ADVENTURE_RESOURCE_DEFINITIONS,
   ADVENTURE_RESOURCE_KINDS,
+  ADVENTURE_RESOURCE_FIELDS,
 } from './adventureBackupResourceDefinitions.mjs';
 export {
   ADVENTURE_RESOURCE_DEFINITIONS,
   ADVENTURE_RESOURCE_KINDS,
+  ADVENTURE_RESOURCE_FIELDS,
 } from './adventureBackupResourceDefinitions.mjs';
 export function adventureResourceSingleton(kind, parentId) {
   const definition = ADVENTURE_RESOURCE_DEFINITIONS[kind];
@@ -20,55 +22,6 @@ export function adventureResourceSingleton(kind, parentId) {
       })
     : definition.singleton;
 }
-const common = ['title', 'createdAt', 'updatedAt'];
-const narrative = [...common, 'kind', 'rankA', 'rankB'];
-export const ADVENTURE_RESOURCE_FIELDS = Object.freeze(
-  Object.fromEntries(
-    Object.entries({
-      progress: ['editorialState', 'wordGoal', 'updatedAt'],
-      checklist: ['title', 'completed', 'createdAt', 'updatedAt'],
-      arc: [...narrative, 'initialState', 'objective', 'plannedOutcome'],
-      event: [...narrative, 'description', 'dateLabel'],
-      milestone: [...narrative, 'arcId', 'notes'],
-      'arc-order': ['rankSlot'],
-      'event-order': ['rankSlot'],
-      'milestone-order': ['rankSlot'],
-      'narrative-link': ['source', 'reference'],
-      'part-control': ['rankSlot'],
-      'scene-control': ['rankSlot'],
-      scene: [
-        ...common,
-        'parentId',
-        'formerParentId',
-        'stage',
-        'archived',
-        'rankA',
-        'rankB',
-        'bodyHash',
-        'mainBlockOrder',
-        'mainBlockTitle',
-        'mainBlockType',
-        'mainBlockAudience',
-        'mainBlockImage',
-        'personaComplement',
-      ],
-      'scene-body': ['content', 'hash'],
-      'block-body': ['content', 'hash'],
-      'scene-planning': ['objective', 'conflict', 'pointOfView'],
-      'scene-reference': ['kind', 'scopeId', 'entityId'],
-      block: [
-        ...common,
-        'sceneId',
-        'narrativeType',
-        'audience',
-        'order',
-        'archived',
-        'bodyHash',
-        'image',
-      ],
-    }).map(([key, value]) => [key, Object.freeze(value)]),
-  ),
-);
 const own = (value, keys) =>
   Object.fromEntries(
     keys.filter((key) => Object.hasOwn(value, key)).map((key) => [key, value[key]]),

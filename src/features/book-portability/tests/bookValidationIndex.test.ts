@@ -152,3 +152,25 @@ it('checks cancellation before storage and during access, while allowing cleanup
   await index.dispose();
   expect((await parent()).directories.size).toBe(0);
 });
+
+it('keeps validation namespaces independent while preserving the original book prefix', async () => {
+  const { createTemporaryValidationIndex } = await import('@/shared/validation');
+  const adventure = await createTemporaryValidationIndex('writer-adventure-validation-v1'),
+    book = await createBookValidationIndex();
+  await adventure.add(['same-id'], { kind: 'adventure' });
+  await book.add(['same-id'], { kind: 'book' });
+  expect([...root.directories.keys()].sort()).toEqual([
+    'writer-adventure-validation-v1',
+    'writer-book-validation-v1',
+  ]);
+  expect(await adventure.get(['same-id'])).toEqual({ kind: 'adventure' });
+  await adventure.dispose();
+  expect(await book.get(['same-id'])).toEqual({ kind: 'book' });
+  await book.dispose();
+});
+it('rejects unsafe namespaces before opening browser storage', async () => {
+  const { createTemporaryValidationIndex } = await import('@/shared/validation');
+  for (const name of ['../private', '', 'UPPER', 'with/slash', 'x'.repeat(101)])
+    await expect(createTemporaryValidationIndex(name)).rejects.toThrow('Namespace');
+  expect(root.directories.size).toBe(0);
+});

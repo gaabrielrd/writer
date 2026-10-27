@@ -99,3 +99,12 @@ Nova entrega remota precisa coordenação de Rules/cliente/Admin conforme fase.
 O validate do bloco de leitores é evidência local do código testado, sem
 concluir P2/P3/D, F2-09, fases 3–5 ou gates humanos/comerciais. Contagem histórica
 permanece 8/35; não é estimativa de esforço nem declaração de lançamento.
+
+## Avanço de captura e validação — 2026-10-26
+
+Os planos 159–166 acrescentaram formato, inventário/segunda passagem e captura
+integral das oito seções, incluindo histórico/PNG/draft explícito. O plano 167
+acrescenta leitor semântico inerte: content-only, sem acesso ou ativação.
+As pendências acima de assembler/draft são históricas; agora faltam transporte,
+revisão/restauração/remapeamento/mídia, recuperação/UI e roundtrip/consumidores.
+A origem externa e o acesso precisam de nova conferência na restauração.

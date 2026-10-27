@@ -1972,5 +1972,13 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      integrados dirigidos positivos; rodada completa com um timeout corrigido
      em seleção própria, 90 scripts/3.367 Functions e build positivos.
      [Registro parcial](../../../entregas/2026-10-26-writer-v2-captura-integral-de-aventuras.md).
-     Wrapper verde permanece pendente para o próximo grande bloco.
-     Leitor/validador autoral/restauração/UI e P2 permanecem abertos.
+     Pendência formal encerrada pelo validate verde de 167 em 2026-10-27.
+     A captura permanece distinta da validação; restauração/UI e P2 abertas.
+
+167. [Validação semântica do arquivo de aventuras](167-validacao-semantica-do-arquivo-de-aventuras.md):
+     DTOs/identidades/hashes e relações das oito seções, índice OPFS neutro cifrado,
+     SHA/UTF-8 retomáveis e leitor público content-only. Corpus nativo/adversarial
+     e Chromium positivos; validate integral verde com 4.259 frontend,
+     90 scripts/3.379 Functions, sintaxe/tipos/build/smoke.
+     [Evidência](../../../entregas/2026-10-27-writer-v2-validacao-semantica-de-aventuras.md).
+     Transporte/revisão/restauração/UI, P2/P3/D e gates permanecem abertos.

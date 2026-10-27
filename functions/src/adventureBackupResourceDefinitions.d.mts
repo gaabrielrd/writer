@@ -34,3 +34,5 @@ export const ADVENTURE_RESOURCE_DEFINITIONS: Readonly<
   Record<AdventureResourceKind, Readonly<AdventureResourceDefinition>>
 >;
 export const ADVENTURE_RESOURCE_KINDS: readonly AdventureResourceKind[];
+
+export const ADVENTURE_RESOURCE_FIELDS: Readonly<Record<AdventureResourceKind, readonly string[]>>;

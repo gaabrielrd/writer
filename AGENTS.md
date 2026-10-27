@@ -783,3 +783,9 @@ projeto; arquivos externos ainda exigem validação semântica independente.
 O lint integral usa scripts/run-lint.mjs: subprocessos sequenciais por diretório
 e passagem final da raiz. Preserve cobertura de todos os arquivos/configurações;
 não substitua por filtro de diff nem ignore diretórios sem verificá-los.
+
+Na validação de arquivo de aventura, content-only exige DTOs fechados, hashes,
+manifestos e relações independentes; não concede acesso nem ativa projeto.
+Use checkpoints somente do host confiável, UTF-8 incremental para fixed64k e
+índice OPFS cifrado por shared/validation. Preserve namespace/API dos livros;
+limpeza falha impede aprovação e preserva os erros primário e de limpeza (ADR 0189).

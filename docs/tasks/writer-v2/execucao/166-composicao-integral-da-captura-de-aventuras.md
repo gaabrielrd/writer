@@ -39,5 +39,6 @@ semântico para arquivo importado, interface ou restauração.
 - [x] Segunda passagem completa antes de footer, sem memória integral.
 - [x] Container de aventura íntegro e abort/conta sem selo tardio.
 - [x] Checks restantes/revisão/evidência e commit local parcial; P2/P3/D abertos.
-- [ ] Fechamento formal com npm run validate verde no próximo grande bloco,
-      após ajuste individual do timeout; não declarar a rodada exit 1 aprovada.
+- [x] Fechamento formal em 167 (2026-10-27): npm run validate exit 0,
+      com 4.259 frontend, 90 scripts e 3.379 Functions; a rodada anterior
+      permanece registrada como exit 1, sem aprovação retroativa.
