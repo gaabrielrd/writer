@@ -815,3 +815,12 @@ ativa o projeto nem autoriza origens; consumidores futuros revalidam suas provas
 Cleanup inclui os três namespaces de validação mesmo para jobs anteriores,
 recusando órfãos e falta de contagem; estado mutável exige protocolo próprio.
 Transporte/validação continuam internos até recuperação e ativação (ADR 0192).
+
+No consumo de aventuras restauradas, reconstrua reportHash/summary do snapshot
+autenticado e confira cada item antes da leitura. Aguarde verify(tx) na transação
+consumidora antes de escrever. sourceToken/projeção de IDs não são credenciais.
+Prefixos raw são privados e só podem ser reutilizados após autenticação pelo
+estado/recibo do host; não aceite checkpoint de cliente. Remapeie imagens por
+asset/uso e preserve referências externas para autorização. Hashes sourceBindings
+e sourceOnly continuam prova da entrada; reconstrua provas nativas no stager.
+Não reviva recurso somente histórico nem aplique draft sobre o salvo (ADR 0193).

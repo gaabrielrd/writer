@@ -180,3 +180,10 @@ cinco SDK novos distintos dirigidos positivos, mais regressão de cleanup.
 Não ativa projeto ou concede acesso. Consumo autenticado/remap, recuperação,
 stager/ativação/UI/roundtrip, P2/P3/D/F2-09 e gates continuam pendentes.
 8/35 (22,9% de tarefas) permanece inalterado.
+
+[Consumo/remap 171](execucao/171-consumo-autenticado-e-remapeamento-de-aventuras.md)
+autentica unidades aprovadas, oferece barreira transacional para consumidores e
+projeta referências coerentes para a nova aventura, incluindo raw e imagens por
+uso. Testes dirigidos positivos; o validate de 170 é base anterior, não prova
+deste código. Ainda faltam stagers, autorizações externas, ativação, recuperação,
+UI e roundtrip. P2/P3/D/F2-09, gates e 8/35 seguem abertos.

@@ -3156,3 +3156,11 @@ O snapshot preserva birth e autentica criador/último atualizador, sem históric
 operacional ilimitado ou buffers na view. Recheck integral em lotes precede
 content-verified, que ainda não ativa projeto ou concede grants. Cleanup inclui
 os três namespaces novos para jobs antigos e atuais; órfãos não são adotados.
+
+A [ADR 0193](decisions/0193-adventure-verified-consumption-and-remap.md) acrescenta
+consumo interno de JSON/raw com relatório reconstruído, item autenticado e
+verify(tx) antes de escritas consumidoras. Corpos avançam por frame/SHA/UTF-8,
+com prefixos privados autenticados pelo host. Remapper próprio cobre identidades
+e referências, com imagens por uso e origem externa preservada. Projeção não é
+selo de backup ou autorização: sourceBindings/sourceOnly exigem reconstrução
+de provas e gates dos próximos stagers. Nenhuma ativação/endpoint/UI adicionada.

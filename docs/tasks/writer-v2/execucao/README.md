@@ -2005,3 +2005,11 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      [Evidência](../../../entregas/2026-10-27-writer-v2-validacao-persistente-de-aventuras.md).
      Serviço interno; leitura/remap, recuperação, stager/ativação/UI/roundtrip
      e P2/P3/D seguem abertos.
+
+171. [Consumo autenticado e remapeamento de aventuras](171-consumo-autenticado-e-remapeamento-de-aventuras.md):
+     relatório/item/fonte autenticados e verify(tx) antes de consumo, raw por
+     frame com SHA/UTF-8 e remapeamento coerente dos 17 recursos/imagens por uso.
+     Testes dirigidos de contrato e SDK real demo; sem novo validate integral.
+     [Evidência dirigida](../../../entregas/2026-10-27-writer-v2-consumo-autenticado-de-aventuras.md).
+     Contrato interno sem staging/ativação. Recuperação/UI/roundtrip e P2/P3/D
+     permanecem abertos.

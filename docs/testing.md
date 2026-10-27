@@ -3091,3 +3091,9 @@ alterada, snapshot recriado, índice/recibo adulterados, rejeição semântica,
 membership e limpeza com órfãos/faltas. O arquivo SDK novo é descoberto pelo
 runner normal de Rules; seu comando dirigido usa apenas emulador demo local.
 Resultados e limitações ficam na entrega de validação persistente da aventura.
+
+O [consumo/remap P2](entregas/2026-10-27-writer-v2-consumo-autenticado-de-aventuras.md)
+usa arquivos nativos no Vitest, testes puros dos 17 recursos e raw/SHA/UTF-8 no
+Node e consumo transacional no SDK demo. Inclui source/proof/item/state alterados,
+recriação/cancelamento/rollback, cópias de imagens por uso, referências externas,
+prefixos privados e imutabilidade. Não é prova de staging/ativação ou UI.
