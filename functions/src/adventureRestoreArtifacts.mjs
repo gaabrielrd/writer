@@ -29,6 +29,7 @@ const actions = [
   'advanceAdventureRestoreStructure',
   'advanceAdventureRestoreResources',
   'advanceAdventureRestoreProfiles',
+  'advanceAdventureRestoreHistory',
 ];
 const mapped = (v) => typeof v === 'string' && /^restore-[a-f0-9]{64}$/.test(v);
 const hashId = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
@@ -40,7 +41,7 @@ export function adventureStageAddress(value) {
     value.scope === 'job'
       ? p.length === 2 &&
         p[0] === 'preparedRoot' &&
-        (p[1] === 'current' ||
+        (['current', 'text-state', 'universe-candidate', 'recovered-draft'].includes(p[1]) ||
           /^persona-custom-[a-f0-9]{64}$/.test(p[1]) ||
           /^binding-[a-f0-9]{64}$/.test(p[1]))
       : value.scope === 'adventure' &&
@@ -54,9 +55,12 @@ export function adventureStageAddress(value) {
             'timelineEvents',
             'lore',
             'loreBodies',
+            'workVersions',
           ].includes(p[0]) &&
           mapped(p[1])) ||
-          (p.length === 2 && ['narrativeLinks', 'sceneLoreLinks'].includes(p[0]) && hashId(p[1])) ||
+          (p.length === 2 &&
+            ['narrativeLinks', 'sceneLoreLinks', 'workVersionBodies'].includes(p[0]) &&
+            hashId(p[1])) ||
           (p.length === 2 &&
             p[0] === 'narrativeControls' &&
             (hashId(p[1]) || p[1] === 'entity-scenes')) ||

@@ -3186,3 +3186,10 @@ nativos de lore/tombstones e snapshots/bindings privados de persona. Lookup de l
 e versão nativa, avançando apenas o checkpoint e os demais efeitos. profiles-ready
 não integra aiPersonas nem ativa a raiz: biblioteca, universo, histórico/draft,
 mídia, agregados/audit e recuperação/UI ainda precedem a ativação.
+
+A [ADR 0197](decisions/0197-adventure-streamed-history-draft-staging.md) monta
+histórico em UTF-8 nativo por frames autenticados, com estado privado limitado e
+manifesto só após SHA integral. Draft conserva texto/descriptor separados sem
+alterar manuscrito; sua contagem exata/manifesto ainda exigem finalização. Origem
+do universo fica candidata pendente. history-ready não ativa projeto nem substitui
+biblioteca de personas, mídia, agregados/audit ou recuperação/UI.

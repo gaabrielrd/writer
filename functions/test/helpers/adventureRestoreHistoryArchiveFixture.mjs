@@ -16,9 +16,13 @@ import {
   adventureHistoryDigestLine,
   adventureHistoryManifest,
 } from '../../src/adventureArchiveHistory.mjs';
+import { splitHistoryContent } from '../../src/workHistoryContracts.mjs';
 const sha = (value) => createHash('sha256').update(value).digest('hex');
-export async function historyAdventureArchive() {
-  const base = await emptyAdventureArchive(),
+export async function historyAdventureArchive({
+  baseBytes,
+  content = 'a'.repeat(65535) + '🌙',
+} = {}) {
+  const base = baseBytes ?? (await emptyAdventureArchive()),
     original = [];
   for await (const row of decodeAdventureBackup({
     size: base.length,
@@ -26,7 +30,8 @@ export async function historyAdventureArchive() {
   }))
     original.push(row);
   const versionId = 'history-only-version-0001',
-    data = Buffer.from('a'.repeat(65535) + '🌙'),
+    data = Buffer.from(content),
+    nativeChunks = splitHistoryContent(content).length,
     header = {
       schemaVersion: 1,
       kind: 'version',
@@ -38,7 +43,7 @@ export async function historyAdventureArchive() {
         reason: 'manual',
         wordCount: 1,
         byteLength: data.length,
-        chunkCount: 2,
+        chunkCount: nativeChunks,
         contentHash: sha(data),
       },
     },
@@ -50,7 +55,7 @@ export async function historyAdventureArchive() {
     },
     body = adventureHistoryBodyManifest(versionId, headerManifest.contentHash, {
       byteLength: data.length,
-      chunkCount: 2,
+      chunkCount: nativeChunks,
       contentHash: sha(data),
     }),
     historyDigest = sha(
@@ -66,7 +71,9 @@ export async function historyAdventureArchive() {
               part: 0,
               payload: Buffer.from(JSON.stringify(body)),
             },
-            ...[data.subarray(0, 65536), data.subarray(65536)].map((payload, part) => ({
+            ...Array.from({ length: Math.max(1, Math.ceil(data.length / 65536)) }, (_, part) =>
+              data.subarray(part * 65536, (part + 1) * 65536),
+            ).map((payload, part) => ({
               kind: 'adventure-version-text',
               id: versionId,
               part,
@@ -75,7 +82,9 @@ export async function historyAdventureArchive() {
             {
               ...row,
               payload: Buffer.from(
-                JSON.stringify(adventureHistoryManifest(1, 3, data.length, historyDigest)),
+                JSON.stringify(
+                  adventureHistoryManifest(1, 1 + nativeChunks, data.length, historyDigest),
+                ),
               ),
             },
           ]

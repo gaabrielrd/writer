@@ -122,6 +122,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreStructure',
           'advanceAdventureRestoreResources',
           'advanceAdventureRestoreProfiles',
+          'advanceAdventureRestoreHistory',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -141,6 +142,15 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'personaAdventureBindings',
           'personaSceneBindings',
           'personaProfiles',
+          'historyVersions',
+          'historyBytes',
+          'historyBodies',
+          'historySourceRecords',
+          'drafts',
+          'draftBytes',
+          'draftBodies',
+          'textFrames',
+          'historyUnits',
         ].some((k) => r.staging[k] > loaded.job.staging[k])
       )
         inconsistent();
@@ -149,6 +159,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         'advanceAdventureRestoreStructure',
         'advanceAdventureRestoreResources',
         'advanceAdventureRestoreProfiles',
+        'advanceAdventureRestoreHistory',
       ].includes(r.action)
     )
       inconsistent();
@@ -161,6 +172,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreStructure',
           'advanceAdventureRestoreResources',
           'advanceAdventureRestoreProfiles',
+          'advanceAdventureRestoreHistory',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||

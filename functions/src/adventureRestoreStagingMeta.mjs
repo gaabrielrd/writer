@@ -1,3 +1,10 @@
+import {
+  historyPhase,
+  historyViewKeys,
+  historyPrivateKeys,
+  validAdventureHistoryView,
+  validAdventureHistoryMeta,
+} from './adventureRestoreHistoryMeta.mjs';
 import { contentClosed as closed, contentCount as count } from './adventureContentPrimitives.mjs';
 import { adventureCoreCounts } from './adventureArchiveCore.mjs';
 export const ADVENTURE_STAGING_COLLECTIONS = Object.freeze(['stagingArtifacts', 'preparedRoot']);
@@ -24,7 +31,8 @@ const profileView = [
   'personaSceneBindings',
   'personaProfiles',
 ];
-const profilePhase = (v) => ['lore', 'personas', 'profiles-ready'].includes(v.phase);
+const profilePhase = (v) =>
+  ['lore', 'personas', 'profiles-ready'].includes(v.phase) || historyPhase(v);
 const resourcePhase = (v) => ['resources', 'resources-ready'].includes(v.phase) || profilePhase(v);
 export const adventureStagingView = (value) =>
   structuredClone(
@@ -33,12 +41,13 @@ export const adventureStagingView = (value) =>
         ...viewKeys,
         ...(Object.hasOwn(value, 'resourceIndex') ? resourceView : []),
         ...(profilePhase(value) ? profileView : []),
+        ...(historyPhase(value) ? [...historyViewKeys, 'historyPending'] : []),
       ].map((k) => [k, value[k]]),
     ),
   );
 export function validAdventureStagingView(v) {
   if (
-    !closed(v, viewKeys, [...resourceView, ...profileView]) ||
+    !closed(v, viewKeys, [...resourceView, ...profileView, ...historyViewKeys, 'historyPending']) ||
     v.version !== 1 ||
     ![
       'structure',
@@ -48,6 +57,8 @@ export function validAdventureStagingView(v) {
       'lore',
       'personas',
       'profiles-ready',
+      'history',
+      'history-ready',
     ].includes(v.phase) ||
     !viewKeys.filter((k) => !['version', 'phase'].includes(k)).every((k) => count(v[k])) ||
     v.cleanedArtifacts > v.artifactCount
@@ -57,16 +68,28 @@ export function validAdventureStagingView(v) {
     if (!resourceView.every((k) => count(v[k])) || v.checklistCompleted > v.checklistTotal)
       return false;
   } else if (resourceView.some((k) => Object.hasOwn(v, k))) return false;
-  return profilePhase(v)
-    ? profileView.every((k) => count(v[k]))
-    : profileView.every((k) => !Object.hasOwn(v, k));
+  if (
+    profilePhase(v)
+      ? !profileView.every((k) => count(v[k]))
+      : profileView.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
+  return historyPhase(v)
+    ? validAdventureHistoryView(v)
+    : [...historyViewKeys, 'historyPending'].every((k) => !Object.hasOwn(v, k));
 }
 export function validAdventureStagingMeta(v, job) {
   if (
     !closed(
       v,
       [...viewKeys, 'resourceStartIndex', 'timestamp'],
-      [...resourceView, 'resourceCounts', ...profileView],
+      [
+        ...resourceView,
+        'resourceCounts',
+        ...profileView,
+        ...historyViewKeys,
+        ...historyPrivateKeys,
+      ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
     !count(v.timestamp) ||
@@ -133,25 +156,36 @@ export function validAdventureStagingMeta(v, job) {
       v.personaAdventureBindings > totals.personas.adventure ||
       v.personaSceneBindings > totals.personas.scene ||
       v.personaProfiles > v.personaAdventureBindings + v.personaSceneBindings ||
-      v.itemIndex !==
+      (historyPhase(v) ? v.historyStartIndex : v.itemIndex) !==
         v.resourceIndex +
           v.loreHeads +
           v.loreBodies +
           Number(v.phase !== 'lore') +
           v.personaAdventureBindings +
           v.personaSceneBindings +
-          Number(v.phase === 'profiles-ready') ||
+          Number(v.phase === 'profiles-ready' || historyPhase(v)) ||
       (v.phase === 'lore' &&
         (v.personaAdventureBindings !== 0 ||
           v.personaSceneBindings !== 0 ||
           v.personaProfiles !== 0)) ||
       (v.phase !== 'lore' &&
         (v.loreHeads !== totals.lore.lore || v.loreBodies !== totals.lore['lore-body'])) ||
-      (v.phase === 'profiles-ready' &&
+      ((v.phase === 'profiles-ready' || historyPhase(v)) &&
         (v.personaAdventureBindings !== totals.personas.adventure ||
           v.personaSceneBindings !== totals.personas.scene))
     )
       return false;
   } else if (profileView.some((k) => Object.hasOwn(v, k))) return false;
+  if (historyPhase(v)) {
+    const profileEnd =
+      v.resourceIndex +
+      v.loreHeads +
+      v.loreBodies +
+      2 +
+      v.personaAdventureBindings +
+      v.personaSceneBindings;
+    if (!validAdventureHistoryMeta(v, job, profileEnd)) return false;
+  } else if ([...historyViewKeys, ...historyPrivateKeys].some((k) => Object.hasOwn(v, k)))
+    return false;
   return true;
 }
