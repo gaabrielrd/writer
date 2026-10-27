@@ -4,7 +4,7 @@ import { resourceAdventureArchive } from './adventureRestoreResourceArchiveFixtu
 export const resourceRequest = (p) =>
   mutation(p, 'resource-step-' + String(p.checkpoint).padStart(8, '0'));
 export async function resourceReady(options) {
-  const f = transferFixture(await resourceAdventureArchive(options));
+  const f = transferFixture(options?.bytes ?? (await resourceAdventureArchive(options)));
   let p = await verify(f, await upload(f), 16);
   for (let n = 0; ['bytes-verified', 'validating'].includes(p.state); n++) {
     assert.ok(n < 2000);

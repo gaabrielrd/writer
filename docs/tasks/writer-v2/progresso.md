@@ -204,3 +204,11 @@ filhos antes dos pais. Testes dirigidos e estado dos checks estão na
 resources-ready mantém a raiz sem dono e countReady false. Lore/personas/mídia,
 universo autorizado, histórico/draft, agregados/audit/ativação, recuperação/UI e
 roundtrip continuam pendentes. P2/P3/D/F2-09 e gates permanecem abertos; 8/35 não muda.
+
+[Lore/personas privados 174](execucao/174-lore-e-personas-da-aventura-restaurada.md)
+acrescenta pares/tombstones nativos e perfis/bindings privados deduplicados, com
+identidade da raiz comprovada e preservação de escrita sem mudança. Os resultados
+locais estão na [evidência](../../entregas/2026-10-27-writer-v2-lore-personas-privados-de-aventuras.md).
+profiles-ready não integra a biblioteca de personas nem ativa o projeto.
+Universo, histórico/draft, mídia, agregados/audit/ativação, recuperação/UI e
+roundtrip seguem pendentes; P2/P3/D/F2-09, gates e 8/35 permanecem abertos.

@@ -31,6 +31,7 @@ import { ADVENTURE_RESTORE_CLEANUP as names } from './adventureRestoreValidation
 import { readAdventureValidationState } from './adventureRestoreValidationState.mjs';
 import { createAdventureRestoreValidationService } from './adventureRestoreValidation.mjs';
 import { ADVENTURE_STAGE_ARTIFACT_FIELDS } from './adventureRestoreArtifacts.mjs';
+import { createAdventureRestoreProfilesService } from './adventureRestoreProfiles.mjs';
 import { createAdventureRestoreResourcesService } from './adventureRestoreResources.mjs';
 import { createAdventureRestoreStructureService } from './adventureRestoreStructure.mjs';
 import {
@@ -488,5 +489,6 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
     ...createAdventureRestoreValidationService(store),
     ...createAdventureRestoreStructureService(store),
     ...createAdventureRestoreResourcesService(store),
+    ...createAdventureRestoreProfilesService(store),
   };
 }

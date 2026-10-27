@@ -3179,3 +3179,10 @@ com índices derivados. Cursor próprio mantém recibos anteriores; updates prov
 a versão integral e preservam criador/nascimento. Journals de filhos precedem os
 pais e a limpeza divide a página nessa fronteira. resources-ready mantém a raiz
 sem dono e countReady false; agregados/audit e os demais stagers precedem ativação.
+
+A [ADR 0196](decisions/0196-adventure-private-lore-persona-staging.md) prepara pares
+nativos de lore/tombstones e snapshots/bindings privados de persona. Lookup de lore
+é autenticado e consumido na transação. Escrita idêntica preserva target/journal
+e versão nativa, avançando apenas o checkpoint e os demais efeitos. profiles-ready
+não integra aiPersonas nem ativa a raiz: biblioteca, universo, histórico/draft,
+mídia, agregados/audit e recuperação/UI ainda precedem a ativação.

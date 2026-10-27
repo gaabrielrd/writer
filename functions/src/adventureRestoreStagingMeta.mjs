@@ -17,35 +17,56 @@ const resourceView = [
   'checklistTotal',
   'checklistCompleted',
 ];
-const resourcePhase = (v) => ['resources', 'resources-ready'].includes(v.phase);
+const profileView = [
+  'loreHeads',
+  'loreBodies',
+  'personaAdventureBindings',
+  'personaSceneBindings',
+  'personaProfiles',
+];
+const profilePhase = (v) => ['lore', 'personas', 'profiles-ready'].includes(v.phase);
+const resourcePhase = (v) => ['resources', 'resources-ready'].includes(v.phase) || profilePhase(v);
 export const adventureStagingView = (value) =>
   structuredClone(
     Object.fromEntries(
-      [...viewKeys, ...(Object.hasOwn(value, 'resourceIndex') ? resourceView : [])].map((k) => [
-        k,
-        value[k],
-      ]),
+      [
+        ...viewKeys,
+        ...(Object.hasOwn(value, 'resourceIndex') ? resourceView : []),
+        ...(profilePhase(value) ? profileView : []),
+      ].map((k) => [k, value[k]]),
     ),
   );
 export function validAdventureStagingView(v) {
   if (
-    !closed(v, viewKeys, resourceView) ||
+    !closed(v, viewKeys, [...resourceView, ...profileView]) ||
     v.version !== 1 ||
-    !['structure', 'structure-ready', 'resources', 'resources-ready'].includes(v.phase) ||
+    ![
+      'structure',
+      'structure-ready',
+      'resources',
+      'resources-ready',
+      'lore',
+      'personas',
+      'profiles-ready',
+    ].includes(v.phase) ||
     !viewKeys.filter((k) => !['version', 'phase'].includes(k)).every((k) => count(v[k])) ||
     v.cleanedArtifacts > v.artifactCount
   )
     return false;
-  if (resourcePhase(v))
-    return resourceView.every((k) => count(v[k])) && v.checklistCompleted <= v.checklistTotal;
-  return resourceView.every((k) => !Object.hasOwn(v, k));
+  if (resourcePhase(v)) {
+    if (!resourceView.every((k) => count(v[k])) || v.checklistCompleted > v.checklistTotal)
+      return false;
+  } else if (resourceView.some((k) => Object.hasOwn(v, k))) return false;
+  return profilePhase(v)
+    ? profileView.every((k) => count(v[k]))
+    : profileView.every((k) => !Object.hasOwn(v, k));
 }
 export function validAdventureStagingMeta(v, job) {
   if (
     !closed(
       v,
       [...viewKeys, 'resourceStartIndex', 'timestamp'],
-      [...resourceView, 'resourceCounts'],
+      [...resourceView, 'resourceCounts', ...profileView],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
     !count(v.timestamp) ||
@@ -92,16 +113,45 @@ export function validAdventureStagingMeta(v, job) {
       v.resourceIndex > v.itemIndex ||
       v.resourcesProcessed !== Object.values(v.resourceCounts).reduce((a, b) => a + b, 0) ||
       v.resourceIndex - v.resourceStartIndex !==
-        v.resourcesProcessed + Number(v.phase === 'resources-ready') ||
+        v.resourcesProcessed + Number(v.phase !== 'resources') ||
       v.checklistTotal !== v.resourceCounts.checklist ||
       v.checklistCompleted > v.checklistTotal
     )
       return false;
     if (
-      v.phase === 'resources-ready' &&
-      (v.resourceIndex !== v.itemIndex || keys.some((k) => v.resourceCounts[k] !== expected[k]))
+      v.phase !== 'resources' &&
+      ((v.phase === 'resources-ready' && v.resourceIndex !== v.itemIndex) ||
+        keys.some((k) => v.resourceCounts[k] !== expected[k]))
     )
       return false;
   } else if (Object.hasOwn(v, 'resourceCounts')) return false;
+  if (profilePhase(v)) {
+    const totals = job.validation.summary.totals;
+    if (
+      v.loreHeads > totals.lore.lore ||
+      v.loreBodies > totals.lore['lore-body'] ||
+      v.personaAdventureBindings > totals.personas.adventure ||
+      v.personaSceneBindings > totals.personas.scene ||
+      v.personaProfiles > v.personaAdventureBindings + v.personaSceneBindings ||
+      v.itemIndex !==
+        v.resourceIndex +
+          v.loreHeads +
+          v.loreBodies +
+          Number(v.phase !== 'lore') +
+          v.personaAdventureBindings +
+          v.personaSceneBindings +
+          Number(v.phase === 'profiles-ready') ||
+      (v.phase === 'lore' &&
+        (v.personaAdventureBindings !== 0 ||
+          v.personaSceneBindings !== 0 ||
+          v.personaProfiles !== 0)) ||
+      (v.phase !== 'lore' &&
+        (v.loreHeads !== totals.lore.lore || v.loreBodies !== totals.lore['lore-body'])) ||
+      (v.phase === 'profiles-ready' &&
+        (v.personaAdventureBindings !== totals.personas.adventure ||
+          v.personaSceneBindings !== totals.personas.scene))
+    )
+      return false;
+  } else if (profileView.some((k) => Object.hasOwn(v, k))) return false;
   return true;
 }

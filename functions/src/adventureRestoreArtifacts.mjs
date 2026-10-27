@@ -25,7 +25,11 @@ export const ADVENTURE_STAGE_ARTIFACT_FIELDS = Object.freeze([
   'valueHash',
   'sourceToken',
 ]);
-const actions = ['advanceAdventureRestoreStructure', 'advanceAdventureRestoreResources'];
+const actions = [
+  'advanceAdventureRestoreStructure',
+  'advanceAdventureRestoreResources',
+  'advanceAdventureRestoreProfiles',
+];
 const mapped = (v) => typeof v === 'string' && /^restore-[a-f0-9]{64}$/.test(v);
 const hashId = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
 export function adventureStageAddress(value) {
@@ -34,12 +38,23 @@ export function adventureStageAddress(value) {
   if (!Array.isArray(p) || p.some((k) => typeof k !== 'string')) inconsistent();
   const valid =
     value.scope === 'job'
-      ? p.length === 2 && p[0] === 'preparedRoot' && p[1] === 'current'
+      ? p.length === 2 &&
+        p[0] === 'preparedRoot' &&
+        (p[1] === 'current' ||
+          /^persona-custom-[a-f0-9]{64}$/.test(p[1]) ||
+          /^binding-[a-f0-9]{64}$/.test(p[1]))
       : value.scope === 'adventure' &&
         ((p.length === 2 &&
-          ['parts', 'scenes', 'sceneBlocks', 'workChecklist', 'arcs', 'timelineEvents'].includes(
-            p[0],
-          ) &&
+          [
+            'parts',
+            'scenes',
+            'sceneBlocks',
+            'workChecklist',
+            'arcs',
+            'timelineEvents',
+            'lore',
+            'loreBodies',
+          ].includes(p[0]) &&
           mapped(p[1])) ||
           (p.length === 2 && ['narrativeLinks', 'sceneLoreLinks'].includes(p[0]) && hashId(p[1])) ||
           (p.length === 2 &&
@@ -269,6 +284,11 @@ export async function prepareAdventureStageArtifacts(
     const serialized = JSON.stringify(p.value);
     if (typeof serialized !== 'string' || Buffer.byteLength(serialized) > 900000)
       restoreFail('failed-precondition', 'native-compatibility');
+    // Firestore may preserve updateTime for an identical replacement. Keep its proof too.
+    if (previous && digest(p.value) === previous.value.valueHash) {
+      p.skip = true;
+      continue;
+    }
     p.entry = {
       ...restoreContext(loaded, previous?.value.createdByOperationId ?? operationId),
       updatedByOperationId: operationId,

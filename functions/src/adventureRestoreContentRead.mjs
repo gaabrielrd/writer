@@ -218,6 +218,53 @@ export async function createVerifiedAdventureRestoreContent(input) {
     await db.runTransaction(verify);
     return Object.freeze({ ...unit, sourceToken, verify });
   }
+  async function findLore(kind, nativeId) {
+    if (!['lore', 'lore-body'].includes(kind) || !contentId(nativeId)) inconsistent();
+    const key = [kind, nativeId];
+    const observed = await db.runTransaction(async (tx) => {
+      const loaded = await pinned(tx),
+        ref = db.doc(loaded.ref.path + '/validationIndex/' + adventureValidationIndexId(key)),
+        snapshot = await tx.get(ref),
+        value = await readAdventureValidationIndex(store, tx, loaded, snapshot, key),
+        entry = snapshot.data(),
+        at = entry.sourceItemIndex;
+      if (!Number.isSafeInteger(at) || at < 0 || at >= initial.saved.state.items) inconsistent();
+      const creator = await tx.get(store.refs.op(uid, entry.createdByOperationId));
+      if (store.operation(creator, loaded).validation?.items !== at + 1) inconsistent();
+      return { ref, at, value, token: nativeToken(snapshot), hash: digest(entry) };
+    });
+    const unit = await item(observed.at);
+    if (
+      unit.record.kind !== (kind === 'lore' ? 'adventure-lore' : 'adventure-lore-body') ||
+      unit.record.id !== nativeId ||
+      unit.value.kind !== kind ||
+      unit.value.id !== nativeId ||
+      (kind === 'lore' &&
+        (observed.value.unitHash !== unit.contentHash ||
+          observed.value.deleted !== unit.value.data.deleted))
+    )
+      inconsistent();
+    const sourceToken = digest({
+      domain: 'writer-adventure-lore-lookup-v1',
+      key,
+      index: observed.token,
+      sourceToken: unit.sourceToken,
+    });
+    async function verify(tx) {
+      const loaded = await pinned(tx),
+        snapshot = await tx.get(observed.ref);
+      if (
+        !snapshot.exists ||
+        nativeToken(snapshot) !== observed.token ||
+        digest(snapshot.data()) !== observed.hash
+      )
+        inconsistent();
+      await readAdventureValidationIndex(store, tx, loaded, snapshot, key);
+      return { ...(await unit.verify(tx)), sourceToken };
+    }
+    await db.runTransaction(verify);
+    return Object.freeze({ ...unit, sourceToken, verify });
+  }
   async function raw(index, mapped) {
     const unit = await item(index);
     if (unit.raw === null) return null;
@@ -274,6 +321,7 @@ export async function createVerifiedAdventureRestoreContent(input) {
     summary: freeze(structuredClone(initial.summary)),
     readItem: item,
     findResource,
+    findLore,
     openRaw: (index) => raw(index, false),
     openMappedRaw: (index) => raw(index, true),
     async readMappedItem(index) {

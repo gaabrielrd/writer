@@ -121,6 +121,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         ![
           'advanceAdventureRestoreStructure',
           'advanceAdventureRestoreResources',
+          'advanceAdventureRestoreProfiles',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -135,11 +136,20 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'resourcesProcessed',
           'checklistTotal',
           'checklistCompleted',
+          'loreHeads',
+          'loreBodies',
+          'personaAdventureBindings',
+          'personaSceneBindings',
+          'personaProfiles',
         ].some((k) => r.staging[k] > loaded.job.staging[k])
       )
         inconsistent();
     } else if (
-      ['advanceAdventureRestoreStructure', 'advanceAdventureRestoreResources'].includes(r.action)
+      [
+        'advanceAdventureRestoreStructure',
+        'advanceAdventureRestoreResources',
+        'advanceAdventureRestoreProfiles',
+      ].includes(r.action)
     )
       inconsistent();
     if (Object.hasOwn(r, 'validation')) {
@@ -150,6 +160,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreValidation',
           'advanceAdventureRestoreStructure',
           'advanceAdventureRestoreResources',
+          'advanceAdventureRestoreProfiles',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
