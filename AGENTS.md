@@ -795,3 +795,13 @@ frames e raw exige ponteiro/layout/manifesto coerentes. Host fornece fonte
 imutável/verificada e buffer transacional; confirme índice, itens e checkpoint
 juntos ou descarte o lote. stepped-content-only não é grant ou job autenticado;
 exija provas dos bytes e contexto remoto antes do uso autoral (ADR 0190).
+
+Na restauração de aventuras, preserve raiz mínima sem ownerId até a ativação,
+com nascimento comum a job/reserva/start-op. Cancelamento mantém marcador mínimo
+aposentado e reserva permanentes; não libere o ID por TTL. Estado atual exige
+recibo do checkpoint exato, hash do job e updateTime/birth; recibo histórico não
+prova progresso atual. Artefatos exigem contexto/birth/hash e operação imutável.
+Trate estados SHA como conteúdo privado, pois podem conter cauda limitada dos
+bytes; nunca os exponha em metadata/recibos de UI. Atualize schemas/registry de
+cleanup ao criar fase/namespace. Transporte segue interno até recuperação,
+validação semântica persistente e ativação privada (ADR 0191).

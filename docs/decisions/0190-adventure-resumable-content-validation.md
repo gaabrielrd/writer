@@ -43,3 +43,11 @@ o validate de 167 ao código novo; fechamento integral no próximo grande bloco.
 Transporte, reserva/upload, coordenação persistente, remap/mídia, ativação privada,
 UI e roundtrip continuam pendentes. Histórico exige resolver nascimento da raiz
 e invisibilidade antes do stager. P2/P3/D/F2-09 e demais gates seguem abertos.
+
+## Precisão de privacidade — 2026-10-27
+
+Ausência de projeto/prosa integral no checkpoint não torna o estado criptográfico
+público: SHA retomável pode reter uma cauda limitada de bytes. Tratar checkpoint
+como conteúdo sensível no host e cifrá-lo se persistido no dispositivo; não
+incluí-lo em metadata/recibos de UI. O transporte de 169 mantém estados privados
+no servidor. Não é mudança no formato, no hash ou nos limites da máquina.

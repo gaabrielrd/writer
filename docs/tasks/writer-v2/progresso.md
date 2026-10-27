@@ -163,3 +163,10 @@ unidades, com 20 Vitest distintos em seleções e checks dirigidos positivos.
 É núcleo inerte: transporte/reserva/upload/coordenação persistente e restauração/
 UI/roundtrip ainda faltam. Validate de 167 não é atribuído ao novo código;
 fechamento integral no próximo grande bloco. P2/P3/D/F2-09 e 8/35 preservados.
+
+[Transporte 169](execucao/169-transporte-privado-da-restauracao-de-aventuras.md)
+implementa reserva nativa invisível, envio/verificação de bytes e limpeza
+retomável. 22 Node/seis SDK distintos dirigidos positivos, com correção comprovada
+de checkpoint atual adulterado. Ainda interno: bytes-verified não valida conteúdo
+ou concede acesso. Coordenação semântica, recuperação, stager/ativação/UI e
+roundtrip seguem pendentes; P2/P3/D/F2-09 e 8/35 não mudam.

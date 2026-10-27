@@ -1988,3 +1988,10 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      ports fixados; 20 Vitest distintos em seleções, lint e sintaxe positivos.
      [Evidência dirigida](../../../entregas/2026-10-27-writer-v2-validacao-retomavel-de-aventuras.md).
      Não é coordenação remota ou restauração; transporte/UI e P2/P3/D abertos.
+
+169. [Transporte privado da restauração de aventuras](169-transporte-privado-da-restauracao-de-aventuras.md):
+     reserva/raiz invisível, chunks/SHA/provas nativas, replay e limpeza limitada;
+     22 Node e seis SDK distintos em seleções, lint/sintaxe positivos.
+     [Evidência](../../../entregas/2026-10-27-writer-v2-transporte-privado-da-restauracao-de-aventuras.md).
+     Serviço interno sem endpoint/UI. Validação persistente, recuperação,
+     remap/mídia/ativação/roundtrip e P2/P3/D permanecem abertos.

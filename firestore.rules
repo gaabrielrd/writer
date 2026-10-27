@@ -335,9 +335,13 @@ service cloud.firestore {
     }
     match /adventureImportReservations/{id} { allow read, write: if false; }
     match /bookRestoreReservations/{id} { allow read, write: if false; }
+    match /adventureRestoreReservations/{id} { allow read, write: if false; }
     match /users/{userId} {
       match /adventureImports/{document=**} { allow read, write: if false; }
       match /bookRestores/{document=**} { allow read, write: if false; }
+      match /adventureRestores/{document=**} { allow read, write: if false; }
+      match /adventureRestoreOperations/{id} { allow read, write: if false; }
+      match /adventureRestoreStartFences/{id} { allow read, write: if false; }
       match /bookLoreFieldUploads/{document=**} { allow read, write: if false; }
       match /bookLoreSourceInspections/{document=**} { allow read, write: if false; }
       match /bookLoreEdits/{document=**} { allow read, write: if false; }

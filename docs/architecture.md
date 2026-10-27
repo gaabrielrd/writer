@@ -3140,3 +3140,11 @@ relido precisa corresponder ao SHA recebido; ponteiros raw são obrigatórios
 onde houver texto/PNG. Host fornece fonte verificada e buffer atômico para
 índice/item/checkpoint. stepped-content-only não autoriza job ou restauração;
 a coordenação remota e o stager permanecem próprios dos próximos blocos.
+
+A [ADR 0191](decisions/0191-adventure-private-restore-transfer.md) reserva raiz
+mínima de aventura sem ownerId no mesmo nascimento do job/reserva/start-op;
+assim fica invisível e antecede o histórico. Transporte privado tem chunks de
+64 KiB, SHA independente/provas em lotes até 16, recibo atual exato e cleanup
+até 50. Aposenta marcador mínimo sem dono/prosa em vez de liberar o ID.
+Bytes-verified não é validação semântica. Sem endpoint/UI antes da recuperação,
+coordenação persistente e stager/ativação próprios. Estado SHA é sensível.

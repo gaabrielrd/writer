@@ -3075,3 +3075,11 @@ contínua, 53 cenas, JSON de 8 MiB/128 partes e byte excedente, raw vazio/UTF-8/
 PNG/draft, fonte alterada, rollback/retry e corrupção resealada. Lint e sintaxe
 324 módulos positivos. Sem novo validate global/SDK/UI; próxima rodada integral
 no fechamento maior, sem atribuir o verde de 167 a código posterior.
+
+O [transporte P2](entregas/2026-10-27-writer-v2-transporte-privado-da-restauracao-de-aventuras.md)
+passou 22 Node/seis SDK distintos em seleções, lint e sintaxe de 329 módulos.
+SDK demo comprova nascimento comum/invisibilidade mesmo com filhos preparados,
+negação dos namespaces privados, concorrência, replay, SHA, cleanup e ABA.
+Revisão reproduziu checkpoint atual aceito por recibo histórico e validou a
+correção no Node/SDK. Arquivo de 54 chunks exercita 16 por lote e 50 por página.
+Sem nova suíte global ou evidência de UI/ativação; próxima rodada no bloco maior.
