@@ -156,3 +156,10 @@ Fecha a pendência formal de validate de 166, sem aprovar a tentativa antiga.
 Relatório content-only não concede acesso ou ativação. Transporte/revisão,
 restauração/remapeamento/mídia, UI e roundtrip ainda faltam em P2; P3/D e F2-09
 seguem abertos. Contagem 8/35 (22,9% de tarefas) e gates humanos/comerciais não mudam.
+
+[Validação retomável 168](execucao/168-validacao-retomavel-do-arquivo-de-aventuras.md)
+prepara leitura em etapas com estado limitado, SHA de releitura e índice de
+unidades, com 20 Vitest distintos em seleções e checks dirigidos positivos.
+É núcleo inerte: transporte/reserva/upload/coordenação persistente e restauração/
+UI/roundtrip ainda faltam. Validate de 167 não é atribuído ao novo código;
+fechamento integral no próximo grande bloco. P2/P3/D/F2-09 e 8/35 preservados.

@@ -789,3 +789,9 @@ manifestos e relações independentes; não concede acesso nem ativa projeto.
 Use checkpoints somente do host confiável, UTF-8 incremental para fixed64k e
 índice OPFS cifrado por shared/validation. Preserve namespace/API dos livros;
 limpeza falha impede aprovação e preserva os erros primário e de limpeza (ADR 0189).
+
+Na validação retomável de aventura, releitura JSON deve corresponder ao SHA dos
+frames e raw exige ponteiro/layout/manifesto coerentes. Host fornece fonte
+imutável/verificada e buffer transacional; confirme índice, itens e checkpoint
+juntos ou descarte o lote. stepped-content-only não é grant ou job autenticado;
+exija provas dos bytes e contexto remoto antes do uso autoral (ADR 0190).

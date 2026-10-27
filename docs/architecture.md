@@ -3133,3 +3133,10 @@ limitado, texto incremental e checkpoints do host. content-only não concede
 acesso ou ativação. shared/validation extrai o índice OPFS cifrado de livros,
 preservando namespace e API, para o leitor público de aventuras. Transporte,
 restauração e UI permanecem etapas próprias.
+
+A [ADR 0190](decisions/0190-adventure-resumable-content-validation.md) prepara
+validação de aventuras por frame/unidade/lote sem prosa no checkpoint. JSON
+relido precisa corresponder ao SHA recebido; ponteiros raw são obrigatórios
+onde houver texto/PNG. Host fornece fonte verificada e buffer atômico para
+índice/item/checkpoint. stepped-content-only não autoriza job ou restauração;
+a coordenação remota e o stager permanecem próprios dos próximos blocos.

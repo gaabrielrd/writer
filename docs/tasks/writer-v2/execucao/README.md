@@ -1982,3 +1982,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      90 scripts/3.379 Functions, sintaxe/tipos/build/smoke.
      [Evidência](../../../entregas/2026-10-27-writer-v2-validacao-semantica-de-aventuras.md).
      Transporte/revisão/restauração/UI, P2/P3/D e gates permanecem abertos.
+
+168. [Validação retomável do arquivo de aventuras](168-validacao-retomavel-do-arquivo-de-aventuras.md):
+     snapshots limitados, releitura por SHA e ponteiros JSON/raw, com fonte e
+     ports fixados; 20 Vitest distintos em seleções, lint e sintaxe positivos.
+     [Evidência dirigida](../../../entregas/2026-10-27-writer-v2-validacao-retomavel-de-aventuras.md).
+     Não é coordenação remota ou restauração; transporte/UI e P2/P3/D abertos.

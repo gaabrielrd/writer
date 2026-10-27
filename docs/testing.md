@@ -3068,3 +3068,10 @@ passou npm run validate integral: 4.259 frontend, 90 scripts, 3.379 Functions,
 a pendência formal de 166 por execução nova, sem reclassificar tentativas antigas.
 VITEST_MAX_WORKERS=1 só no subprocesso. Chromium verificou WASM/OPFS e limpeza;
 não constitui UI/SDK de restauração. P2 e F2-09 permanecem abertas.
+
+O [núcleo retomável P2](entregas/2026-10-27-writer-v2-validacao-retomavel-de-aventuras.md)
+passou 20 Vitest distintos em seleções: engines/checkpoints novos, comparação
+contínua, 53 cenas, JSON de 8 MiB/128 partes e byte excedente, raw vazio/UTF-8/
+PNG/draft, fonte alterada, rollback/retry e corrupção resealada. Lint e sintaxe
+324 módulos positivos. Sem novo validate global/SDK/UI; próxima rodada integral
+no fechamento maior, sem atribuir o verde de 167 a código posterior.
