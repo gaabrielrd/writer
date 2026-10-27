@@ -3,6 +3,7 @@ import { firestore } from '@/shared/lib';
 import { validatePersona, isDefaultPersona, type AIPersona } from '../model/persona';
 import {
   projectPersonaRestoreOrigin,
+  personaRestoreProjectId,
   isPersonaRestoreBatchAvailable,
   type PersonaRestoreOrigin,
 } from '../model/personaAvailability';
@@ -40,7 +41,7 @@ export function subscribePersonas(
         isPersonaRestoreBatchAvailable(
           ownerId,
           row.origin,
-          row.origin ? batches.get(row.origin.bookId)?.value : undefined,
+          row.origin ? batches.get(personaRestoreProjectId(row.origin))?.value : undefined,
         ),
       )
       .map((row) => row.persona);
@@ -59,7 +60,9 @@ export function subscribePersonas(
       if (!alive) return;
       try {
         current = rows(snapshot.docs);
-        const wanted = new Set(current.flatMap((row) => (row.origin ? [row.origin.bookId] : [])));
+        const wanted = new Set(
+          current.flatMap((row) => (row.origin ? [personaRestoreProjectId(row.origin)] : [])),
+        );
         for (const [id, entry] of batches)
           if (!wanted.has(id)) {
             batches.delete(id);
@@ -114,7 +117,9 @@ export function subscribePersonas(
 export async function listPersonas(ownerId: string): Promise<AIPersona[]> {
   const snapshot = await getDocs(personaCollection(ownerId)),
     items = rows(snapshot.docs),
-    ids = [...new Set(items.flatMap((row) => (row.origin ? [row.origin.bookId] : [])))],
+    ids = [
+      ...new Set(items.flatMap((row) => (row.origin ? [personaRestoreProjectId(row.origin)] : []))),
+    ],
     batches = new Map(
       await Promise.all(
         ids.map(async (id) => {
@@ -128,7 +133,7 @@ export async function listPersonas(ownerId: string): Promise<AIPersona[]> {
       isPersonaRestoreBatchAvailable(
         ownerId,
         row.origin,
-        row.origin ? batches.get(row.origin.bookId) : undefined,
+        row.origin ? batches.get(personaRestoreProjectId(row.origin)) : undefined,
       ),
     )
     .map((row) => row.persona);
@@ -151,7 +156,7 @@ export async function savePersona(
       ? projectPersonaRestoreOrigin({ ...snapshot.data(), id: snapshot.id })
       : null;
     if (origin) {
-      const batch = await transaction.get(batchReference(ownerId, origin.bookId));
+      const batch = await transaction.get(batchReference(ownerId, personaRestoreProjectId(origin)));
       if (
         !isPersonaRestoreBatchAvailable(ownerId, origin, batch.exists() ? batch.data() : undefined)
       )

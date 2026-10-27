@@ -238,3 +238,11 @@ ativação real continua pendente. Checks e resultados estão na
 [evidência](../../entregas/2026-10-27-writer-v2-universo-original-de-aventuras.md).
 Personas, mídia, agregados/audit/ativação, recuperação/UI e roundtrip seguem
 obrigatórios. P2/P3/D/F2-09, gates e macro 8/35 permanecem abertos.
+
+[Disponibilidade de personas 178](execucao/178-disponibilidade-de-personas-restauradas-de-aventuras.md)
+acrescenta origem v2 própria de aventura no contrato, servidor, biblioteca e
+Rules, preservando livro v1 e prova nativa/estado ativo. Testes reais dirigidos
+e correções estão na [evidência](../../entregas/2026-10-27-writer-v2-disponibilidade-de-personas-de-aventuras.md).
+Instalador de perfis/dedupe/journals/cleanup e ativação real continuam obrigatórios;
+não confundir fixtures de lote com esse fluxo. Mídia, agregados/audit/ativação,
+recuperação/UI/roundtrip, P2/P3/D/F2-09, fases seguintes, gates e 8/35 seguem abertos.

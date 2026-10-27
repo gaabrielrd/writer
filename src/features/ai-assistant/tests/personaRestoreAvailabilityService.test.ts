@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 import { getDocs, getDoc, onSnapshot, runTransaction } from 'firebase/firestore';
-import { DEFAULT_PERSONAS } from '../model/persona';
+import { DEFAULT_PERSONAS, type AIPersona } from '../model/persona';
 import { listPersonas, subscribePersonas, savePersona } from '../services/personaService';
 const f = vi.hoisted(() => ({
   listeners: new Map<
@@ -193,4 +193,150 @@ it('editing an active restored profile preserves native origin, revision CAS and
   });
   expect(saved).not.toHaveProperty('restoreOrigin');
   await expect(savePersona(owner, input, 6)).rejects.toThrow('outra janela');
+});
+
+const adventureOrigin = {
+    schemaVersion: 2,
+    target: { kind: 'adventure', id: 'restore-a-' + 'b'.repeat(64) },
+    restoreId: 'adventure-persona-restore-001',
+    jobToken: 'c'.repeat(64),
+  },
+  adventureProfile = {
+    ...restored,
+    id: 'custom-' + 'e'.repeat(64),
+    restoreOrigin: adventureOrigin,
+  },
+  adventureBatch = {
+    ...adventureOrigin,
+    ownerId: owner,
+    state: 'active',
+    profileCount: 1,
+    createdByOperationId: 'adventure-persona-install-001',
+    lastOperationId: 'adventure-persona-activate-001',
+  },
+  adventureBatchPath = 'users/' + owner + '/aiPersonaRestoreBatches/' + adventureOrigin.target.id;
+
+it('lists mixed book and adventure origins from separate batches and strips operational fields', async () => {
+  vi.mocked(getDocs).mockResolvedValue(documents([legacy, restored, adventureProfile]) as never);
+  vi.mocked(getDoc)
+    .mockResolvedValueOnce(snapshot({ ...batch, state: 'active' }) as never)
+    .mockResolvedValueOnce(snapshot(adventureBatch) as never);
+  const result = await listPersonas(owner);
+  expect(result.map((p) => p.id)).toEqual([legacy.id, restored.id, adventureProfile.id]);
+  expect(getDoc).toHaveBeenCalledWith(batchPath);
+  expect(getDoc).toHaveBeenCalledWith(adventureBatchPath);
+  expect(result.every((p) => !Object.hasOwn(p, 'restoreOrigin'))).toBe(true);
+});
+it('hides adventure profiles for pending, cancelled, foreign, missing or mismatched batches', async () => {
+  vi.mocked(getDocs).mockResolvedValue(documents([legacy, adventureProfile]) as never);
+  for (const value of [
+    undefined,
+    { ...adventureBatch, state: 'preparing' },
+    { ...adventureBatch, state: 'cancelled' },
+    { ...adventureBatch, ownerId: 'other' },
+    { ...adventureBatch, jobToken: 'f'.repeat(64) },
+    { ...batch, state: 'active' },
+    { ...adventureBatch, target: { kind: 'book', id: adventureOrigin.target.id } },
+  ]) {
+    vi.mocked(getDoc).mockResolvedValue(snapshot(value) as never);
+    expect(await listPersonas(owner)).toEqual([legacy]);
+  }
+});
+it('observes adventure batches once and revokes only their rows while preserving book rows', () => {
+  const changed = vi.fn<(personas: AIPersona[]) => void>(),
+    failed = vi.fn(),
+    stop = subscribePersonas(owner, changed, failed);
+  f.listeners
+    .get(profiles)!
+    .changed(
+      documents([
+        restored,
+        adventureProfile,
+        { ...adventureProfile, id: 'custom-' + 'f'.repeat(64) },
+      ]),
+    );
+  expect(onSnapshot).toHaveBeenCalledTimes(3);
+  const bookWatcher = f.listeners.get(batchPath)!,
+    watcher = f.listeners.get(adventureBatchPath)!;
+  bookWatcher.changed(snapshot({ ...batch, state: 'active' }));
+  expect(changed.mock.lastCall?.[0].map((p: { id: string }) => p.id)).toEqual([restored.id]);
+  watcher.changed(snapshot(adventureBatch));
+  expect(changed.mock.lastCall?.[0]).toHaveLength(3);
+  watcher.changed(snapshot({ ...adventureBatch, state: 'cancelled' }));
+  expect(changed.mock.lastCall?.[0].map((p: { id: string }) => p.id)).toEqual([restored.id]);
+  watcher.changed(snapshot(adventureBatch));
+  watcher.failed(new Error('offline adventure'));
+  expect(changed.mock.lastCall?.[0].map((p: { id: string }) => p.id)).toEqual([restored.id]);
+  expect(failed).toHaveBeenCalledOnce();
+  f.listeners.get(profiles)!.changed(documents([restored]));
+  expect(watcher.stop).toHaveBeenCalledOnce();
+  const calls = changed.mock.calls.length;
+  watcher.changed(snapshot(adventureBatch));
+  expect(changed).toHaveBeenCalledTimes(calls);
+  stop();
+  expect(bookWatcher.stop).toHaveBeenCalledOnce();
+});
+it('edits an active adventure persona with its native origin and rejects conflicting revisions', async () => {
+  const set = vi.fn();
+  vi.mocked(runTransaction).mockImplementation(async (_db, callback) =>
+    callback({
+      get: (ref: unknown) =>
+        Promise.resolve(
+          snapshot(
+            String(ref) === adventureBatchPath ? adventureBatch : adventureProfile,
+            String(ref) === adventureBatchPath ? adventureOrigin.target.id : adventureProfile.id,
+          ),
+        ),
+      set,
+    } as never),
+  );
+  const input = {
+      ...adventureProfile,
+      name: 'Edited adventure',
+      restoreOrigin: { ...adventureOrigin, jobToken: 'f'.repeat(64) },
+    },
+    saved = await savePersona(owner, input, 7);
+  expect(saved.revision).toBe(8);
+  expect(saved.createdAt).toBe(adventureProfile.createdAt);
+  expect(saved).not.toHaveProperty('restoreOrigin');
+  expect(set).toHaveBeenCalledWith(profiles + '/' + adventureProfile.id, {
+    ...saved,
+    restoreOrigin: adventureOrigin,
+  });
+  await expect(savePersona(owner, adventureProfile, 6)).rejects.toThrow('outra janela');
+});
+it('blocks editing an inactive adventure profile without writing any document', async () => {
+  const set = vi.fn();
+  for (const value of [
+    undefined,
+    { ...adventureBatch, state: 'preparing' },
+    { ...adventureBatch, state: 'cancelled' },
+    { ...adventureBatch, target: { kind: 'adventure', id: 'restore-a-' + 'f'.repeat(64) } },
+  ]) {
+    vi.mocked(runTransaction).mockImplementation(async (_db, callback) =>
+      callback({
+        get: (ref: unknown) =>
+          Promise.resolve(
+            snapshot(
+              String(ref) === adventureBatchPath ? value : adventureProfile,
+              String(ref) === adventureBatchPath ? adventureOrigin.target.id : adventureProfile.id,
+            ),
+          ),
+        set,
+      } as never),
+    );
+    await expect(savePersona(owner, adventureProfile, 7)).rejects.toThrow(
+      'ainda não foi concluída',
+    );
+  }
+  expect(set).not.toHaveBeenCalled();
+});
+it('rejects a malformed adventure origin rather than exposing it as a legacy persona', async () => {
+  vi.mocked(getDocs).mockResolvedValue(
+    documents([
+      { ...adventureProfile, restoreOrigin: { ...adventureOrigin, bookId: bookId } },
+    ]) as never,
+  );
+  await expect(listPersonas(owner)).rejects.toThrow();
+  expect(getDoc).not.toHaveBeenCalled();
 });

@@ -250,11 +250,12 @@ service cloud.firestore {
           && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId))));
     }
 
-    function validPersonaTraitAt(traits, index) {
-      let trait = traits.size() > index ? traits[index] : null;
-      return traits.size() <= index || (trait is map && trait.value is int && trait.value >= 0 && trait.value <= 100);
+    function validPersonaTrait(trait) {
+      return trait is map && trait.value is int && trait.value >= 0 && trait.value <= 100;
     }
     function validAIPersona(data, personaId) {
+      let traits = data.traits;
+      let count = traits is list ? traits.size() : -1;
       return data.keys().hasOnly(['id', 'schemaVersion', 'name', 'description', 'instructions', 'traits', 'revision', 'archived', 'createdAt', 'updatedAt', 'restoreOrigin'])
         && data.id == personaId && personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$')
         && data.schemaVersion == 1
@@ -264,33 +265,40 @@ service cloud.firestore {
         && data.instructions is string && data.instructions.size() > 0 && data.instructions.size() <= 6000
         && data.revision is int && data.revision >= 1
         && data.archived is bool && data.createdAt is int && data.updatedAt is int
-        && data.traits is list && data.traits.size() >= 8 && data.traits.size() <= 16
-        && validPersonaTraitAt(data.traits, 0)
-        && validPersonaTraitAt(data.traits, 1)
-        && validPersonaTraitAt(data.traits, 2)
-        && validPersonaTraitAt(data.traits, 3)
-        && validPersonaTraitAt(data.traits, 4)
-        && validPersonaTraitAt(data.traits, 5)
-        && validPersonaTraitAt(data.traits, 6)
-        && validPersonaTraitAt(data.traits, 7)
-        && validPersonaTraitAt(data.traits, 8)
-        && validPersonaTraitAt(data.traits, 9)
-        && validPersonaTraitAt(data.traits, 10)
-        && validPersonaTraitAt(data.traits, 11)
-        && validPersonaTraitAt(data.traits, 12)
-        && validPersonaTraitAt(data.traits, 13)
-        && validPersonaTraitAt(data.traits, 14)
-        && validPersonaTraitAt(data.traits, 15);
+        && traits is list && count >= 8 && count <= 16
+        && validPersonaTrait(traits[0])
+        && validPersonaTrait(traits[1])
+        && validPersonaTrait(traits[2])
+        && validPersonaTrait(traits[3])
+        && validPersonaTrait(traits[4])
+        && validPersonaTrait(traits[5])
+        && validPersonaTrait(traits[6])
+        && validPersonaTrait(traits[7])
+        && (count <= 8 || validPersonaTrait(traits[8]))
+        && (count <= 9 || validPersonaTrait(traits[9]))
+        && (count <= 10 || validPersonaTrait(traits[10]))
+        && (count <= 11 || validPersonaTrait(traits[11]))
+        && (count <= 12 || validPersonaTrait(traits[12]))
+        && (count <= 13 || validPersonaTrait(traits[13]))
+        && (count <= 14 || validPersonaTrait(traits[14]))
+        && (count <= 15 || validPersonaTrait(traits[15]));
     }
     function validPersonaRestoreOrigin(origin) {
-      return origin is map && origin.keys().hasOnly(['schemaVersion','bookId','restoreId','jobToken'])
-        && origin.schemaVersion == 1 && origin.bookId is string && origin.bookId.matches('^restore-[a-f0-9]{64}$')
+      return origin is map && (
+        (origin.schemaVersion == 1 && origin.keys().hasOnly(['schemaVersion','bookId','restoreId','jobToken'])
+          && origin.bookId is string && origin.bookId.matches('^restore-[a-f0-9]{64}$'))
+        || (origin.schemaVersion == 2 && origin.keys().hasOnly(['schemaVersion','target','restoreId','jobToken'])
+          && origin.target is map && origin.target.keys().hasOnly(['kind','id'])
+          && origin.target.kind == 'adventure' && origin.target.id is string
+          && origin.target.id.matches('^restore-a-[a-f0-9]{64}$')))
         && origin.restoreId is string && origin.restoreId.matches('^[a-zA-Z0-9-]{16,80}$')
         && origin.jobToken is string && origin.jobToken.matches('^[a-f0-9]{64}$');
     }
     function personaRestoreBatchActive(userId, origin) {
-      let batch = getAfter(/databases/$(database)/documents/users/$(userId)/aiPersonaRestoreBatches/$(origin.bookId)).data;
-      return batch.schemaVersion == 1 && batch.ownerId == userId && batch.bookId == origin.bookId
+      let projectId = origin.schemaVersion == 1 ? origin.bookId : origin.target.id;
+      let batch = getAfter(/databases/$(database)/documents/users/$(userId)/aiPersonaRestoreBatches/$(projectId)).data;
+      return batch.schemaVersion == origin.schemaVersion && batch.ownerId == userId
+        && (origin.schemaVersion == 1 ? batch.bookId == origin.bookId : batch.target == origin.target)
         && batch.restoreId == origin.restoreId && batch.jobToken == origin.jobToken && batch.state == 'active';
     }
     function personaRestoreAvailable(userId, data) {
@@ -366,7 +374,7 @@ service cloud.firestore {
       match /editorChatCleanup/{id} { allow read, write: if false; }
       match /editorChats/{document=**} { allow read, write: if false; }
       match /editorChatCatalogs/{id} { allow read, write: if false; }
-      match /aiPersonaRestoreBatches/{bookId} { allow read: if isOwner(userId); allow write: if false; }
+      match /aiPersonaRestoreBatches/{projectId} { allow read: if isOwner(userId); allow write: if false; }
       match /aiPersonas/{personaId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && validAIPersona(request.resource.data, personaId)

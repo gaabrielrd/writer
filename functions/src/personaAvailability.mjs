@@ -4,6 +4,7 @@ import {
   projectPersonaRestoreOrigin,
   parsePersonaRestoreOrigin,
   projectPersonaRestoreBatch,
+  personaRestoreProjectId,
 } from './personaAvailabilityContracts.mjs';
 const receiptFields = [
   'schemaVersion',
@@ -57,11 +58,12 @@ export async function readPersonaRestoreBatchProof(tx, db, uid, input, state) {
   }
   const snapshot = await readWorkMetadata(
     tx,
-    db.doc('users/' + uid + '/aiPersonaRestoreBatches/' + origin.bookId),
+    db.doc('users/' + uid + '/aiPersonaRestoreBatches/' + personaRestoreProjectId(origin)),
     [
       'schemaVersion',
       'ownerId',
       'bookId',
+      'target',
       'restoreId',
       'jobToken',
       'state',
@@ -78,37 +80,44 @@ export async function readPersonaRestoreBatchProof(tx, db, uid, input, state) {
   }
   if (
     value.ownerId !== uid ||
-    value.bookId !== origin.bookId ||
+    value.schemaVersion !== origin.schemaVersion ||
+    (value.schemaVersion === 1 ? value.bookId : value.target.id) !==
+      personaRestoreProjectId(origin) ||
     value.restoreId !== origin.restoreId ||
     value.jobToken !== origin.jobToken ||
     value.state !== state
   )
     return null;
+  const adventure = origin.schemaVersion === 2,
+    operations = adventure ? 'adventureRestoreOperations' : 'bookRestoreOperations',
+    installAction = adventure
+      ? 'advanceAdventureRestorePersonaLibrary'
+      : 'advanceBookRestorePersonaLibrary';
   const [first, last] = await Promise.all([
     readWorkMetadata(
       tx,
-      db.doc('users/' + uid + '/bookRestoreOperations/' + value.createdByOperationId),
+      db.doc('users/' + uid + '/' + operations + '/' + value.createdByOperationId),
       receiptFields,
     ),
     readWorkMetadata(
       tx,
-      db.doc('users/' + uid + '/bookRestoreOperations/' + value.lastOperationId),
+      db.doc('users/' + uid + '/' + operations + '/' + value.lastOperationId),
       receiptFields,
     ),
   ]);
   const [action, receiptState] =
     state === 'active'
-      ? ['activateBookRestore', 'activated']
+      ? [adventure ? 'activateAdventureRestore' : 'activateBookRestore', 'activated']
       : state === 'cancelled'
-        ? ['advanceBookRestoreCleanup', 'cancelling']
-        : ['advanceBookRestorePersonaLibrary', 'content-verified'];
+        ? [adventure ? 'advanceAdventureRestoreCleanup' : 'advanceBookRestoreCleanup', 'cancelling']
+        : [installAction, 'content-verified'];
   if (
     !receipt(
       first.data(),
       uid,
       value,
       value.createdByOperationId,
-      'advanceBookRestorePersonaLibrary',
+      installAction,
       'content-verified',
     ) ||
     !receipt(last.data(), uid, value, value.lastOperationId, action, receiptState)

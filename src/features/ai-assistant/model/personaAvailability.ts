@@ -1,6 +1,7 @@
 export {
   projectPersonaRestoreOrigin,
   projectPersonaRestoreBatch,
+  personaRestoreProjectId,
   isPersonaRestoreBatchAvailable,
   type PersonaRestoreOrigin,
   type PersonaRestoreBatch,

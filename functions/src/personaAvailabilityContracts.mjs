@@ -13,16 +13,28 @@ const owner = (v) =>
   ![...v].some((c) => c.charCodeAt(0) < 32 || c.charCodeAt(0) === 127);
 export function parsePersonaRestoreOrigin(value) {
   if (
-    !closed(value, ['schemaVersion', 'bookId', 'restoreId', 'jobToken']) ||
-    value.schemaVersion !== 1 ||
-    typeof value.bookId !== 'string' ||
-    !/^restore-[a-f0-9]{64}$/.test(value.bookId) ||
+    !(
+      (closed(value, ['schemaVersion', 'bookId', 'restoreId', 'jobToken']) &&
+        value.schemaVersion === 1 &&
+        typeof value.bookId === 'string' &&
+        /^restore-[a-f0-9]{64}$/.test(value.bookId)) ||
+      (closed(value, ['schemaVersion', 'target', 'restoreId', 'jobToken']) &&
+        value.schemaVersion === 2 &&
+        closed(value.target, ['kind', 'id']) &&
+        value.target.kind === 'adventure' &&
+        typeof value.target.id === 'string' &&
+        /^restore-a-[a-f0-9]{64}$/.test(value.target.id))
+    ) ||
     !id(value.restoreId) ||
     typeof value.jobToken !== 'string' ||
     !/^[a-f0-9]{64}$/.test(value.jobToken)
   )
     throw new TypeError('Origem de persona restaurada inválida.');
-  return { ...value };
+  return value.schemaVersion === 1 ? { ...value } : { ...value, target: { ...value.target } };
+}
+export function personaRestoreProjectId(value) {
+  const origin = parsePersonaRestoreOrigin(value);
+  return origin.schemaVersion === 1 ? origin.bookId : origin.target.id;
 }
 export function projectPersonaRestoreOrigin(record) {
   if (!object(record)) throw new TypeError('Registro de persona inválido.');
@@ -35,7 +47,7 @@ export function projectPersonaRestoreBatch(value) {
   const keys = [
     'schemaVersion',
     'ownerId',
-    'bookId',
+    value?.schemaVersion === 2 ? 'target' : 'bookId',
     'restoreId',
     'jobToken',
     'state',
@@ -45,7 +57,7 @@ export function projectPersonaRestoreBatch(value) {
   ];
   if (
     !closed(value, keys) ||
-    value.schemaVersion !== 1 ||
+    ![1, 2].includes(value.schemaVersion) ||
     !owner(value.ownerId) ||
     !['preparing', 'active', 'cancelled'].includes(value.state) ||
     !Number.isSafeInteger(value.profileCount) ||
@@ -54,13 +66,13 @@ export function projectPersonaRestoreBatch(value) {
     !id(value.lastOperationId)
   )
     throw new TypeError('Lote de personas inválido.');
-  parsePersonaRestoreOrigin({
+  const origin = parsePersonaRestoreOrigin({
     schemaVersion: value.schemaVersion,
-    bookId: value.bookId,
+    ...(value.schemaVersion === 1 ? { bookId: value.bookId } : { target: value.target }),
     restoreId: value.restoreId,
     jobToken: value.jobToken,
   });
-  return { ...value };
+  return { ...value, ...origin };
 }
 export function isPersonaRestoreBatchAvailable(ownerId, value, batch) {
   if (value === null) return true;
@@ -70,7 +82,8 @@ export function isPersonaRestoreBatchAvailable(ownerId, value, batch) {
     return (
       owner(ownerId) &&
       b.ownerId === ownerId &&
-      b.bookId === o.bookId &&
+      b.schemaVersion === o.schemaVersion &&
+      (b.schemaVersion === 1 ? b.bookId : b.target.id) === personaRestoreProjectId(o) &&
       b.restoreId === o.restoreId &&
       b.jobToken === o.jobToken &&
       b.state === 'active'
