@@ -8,6 +8,7 @@ import {
   validAdventureValidationMeta,
   adventureValidationView,
 } from './adventureRestoreValidationMeta.mjs';
+import { validAdventureStagingMeta, adventureStagingView } from './adventureRestoreStagingMeta.mjs';
 export const ADVENTURE_RESTORE_DOMAIN = 'writer-adventure-restore-v1';
 export const ADVENTURE_RESTORE_CHUNK_BYTES = 65536;
 export const ADVENTURE_RESTORE_SEED = digest([ADVENTURE_RESTORE_DOMAIN, 'upload']);
@@ -26,6 +27,7 @@ export const ADVENTURE_RESTORE_ACTIONS = Object.freeze({
   appendAdventureRestoreChunk: ['uploading', 'uploaded'],
   advanceAdventureRestoreIntegrity: ['checking', 'bytes-verified', 'rejected'],
   advanceAdventureRestoreValidation: ['validating', 'content-verified', 'content-rejected'],
+  advanceAdventureRestoreStructure: ['content-verified'],
   cancelAdventureRestore: ['cancelling'],
   advanceAdventureRestoreCleanup: ['cancelling', 'cancelled'],
 });
@@ -201,7 +203,7 @@ export const JOB_FIELDS = Object.freeze([
   'lastRequestHash',
 ]);
 export function parseJob(value, uid, id) {
-  closed(value, JOB_FIELDS, ['validation']);
+  closed(value, JOB_FIELDS, ['validation', 'staging']);
   if (
     Object.hasOwn(value, 'validation')
       ? !validAdventureValidationMeta(value.validation, value)
@@ -209,6 +211,7 @@ export function parseJob(value, uid, id) {
   )
     inconsistent();
   if (
+    (Object.hasOwn(value, 'staging') && !validAdventureStagingMeta(value.staging, value)) ||
     value.schemaVersion !== 1 ||
     value.ownerId !== uid ||
     value.restoreId !== id ||
@@ -369,6 +372,7 @@ export function progress(uid, id, snap, job = parseJob(snap.data(), uid, id)) {
     checkedChunks: job.checkedChunks,
     checkedBytes: job.checkedBytes,
     ...(job.validation ? { validation: adventureValidationView(job.validation) } : {}),
+    ...(job.staging ? { staging: adventureStagingView(job.staging) } : {}),
     integrityDigest: job.integrityDigest,
     integrityFailure: job.integrityFailure,
     cleanedChunks: job.cleanedChunks,

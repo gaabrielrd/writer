@@ -30,6 +30,12 @@ import {
 import { ADVENTURE_RESTORE_CLEANUP as names } from './adventureRestoreValidationMeta.mjs';
 import { readAdventureValidationState } from './adventureRestoreValidationState.mjs';
 import { createAdventureRestoreValidationService } from './adventureRestoreValidation.mjs';
+import { ADVENTURE_STAGE_ARTIFACT_FIELDS } from './adventureRestoreArtifacts.mjs';
+import { createAdventureRestoreStructureService } from './adventureRestoreStructure.mjs';
+import {
+  prepareAdventureStagingCleanup,
+  checkAdventureStageSourceIndex,
+} from './adventureRestoreStagingCleanup.mjs';
 const terminal = (id, adventureId) => ({
   schemaVersion: 1,
   kind: 'cancelled',
@@ -363,6 +369,8 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
         .collection(loaded.ref.path + '/' + name)
         .orderBy('__name__')
         .limit(request.limit);
+      if (name === 'stagingArtifacts') q = q.select(...ADVENTURE_STAGE_ARTIFACT_FIELDS);
+      if (name === 'preparedRoot') q = q.select('schemaVersion');
       if (job.cleanupCursor) q = q.startAfter(job.cleanupCursor);
       const page = await tx.get(q),
         counter = {
@@ -373,29 +381,42 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
           validationItems: 'cleanedItems',
           validationState: 'cleanedState',
         }[name];
+      const stagingCleanup = ['stagingArtifacts', 'preparedRoot'].includes(name)
+        ? await prepareAdventureStagingCleanup(store, tx, loaded, name, page)
+        : null;
       const isValidation = name.startsWith('validation');
       if (isValidation && page.docs.length && !job.validation) inconsistent();
-      for (const snap of page.docs) {
+      for (const snap of stagingCleanup ? [] : page.docs) {
         if (name === 'validationState') {
           if (snap.id !== 'current') inconsistent();
           const state = await readAdventureValidationState(store, tx, loaded);
           if (nativeToken(state.snapshot) !== nativeToken(snap)) inconsistent();
-        } else await store.artifact(tx, loaded, name, snap);
+        } else {
+          await store.artifact(tx, loaded, name, snap);
+          if (name === 'validationIndex')
+            await checkAdventureStageSourceIndex(store, tx, loaded, snap);
+        }
       }
-      const cleaned = isValidation ? (job.validation?.[counter] ?? 0) : job[counter];
+      const cleaned = stagingCleanup
+        ? stagingCleanup.cleaned
+        : isValidation
+          ? (job.validation?.[counter] ?? 0)
+          : job[counter];
       let patch = {
           cleanupCursor: page.docs.at(-1)?.id ?? job.cleanupCursor,
-          ...(isValidation
-            ? job.validation
-              ? {
-                  validation: {
-                    ...job.validation,
-                    [counter]: sum(cleaned, page.docs.length),
-                    ...(name === 'validationState' && page.docs.length ? { snapshot: null } : {}),
-                  },
-                }
-              : {}
-            : { [counter]: sum(cleaned, page.docs.length) }),
+          ...(stagingCleanup
+            ? stagingCleanup.patch
+            : isValidation
+              ? job.validation
+                ? {
+                    validation: {
+                      ...job.validation,
+                      [counter]: sum(cleaned, page.docs.length),
+                      ...(name === 'validationState' && page.docs.length ? { snapshot: null } : {}),
+                    },
+                  }
+                : {}
+              : { [counter]: sum(cleaned, page.docs.length) }),
         },
         root = null;
       if (!page.docs.length) {
@@ -410,14 +431,16 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
           ).docs.length
         )
           inconsistent();
-        const expected = {
-          chunks: job.uploadedChunks,
-          integrityProofs: job.checkedChunks,
-          integrityStates: job.writtenStates,
-          validationIndex: job.validation?.indexEntries ?? 0,
-          validationItems: job.validation?.items ?? 0,
-          validationState: Number(job.validation?.stateCreated ?? false),
-        }[name];
+        const expected = stagingCleanup
+          ? stagingCleanup.expected
+          : {
+              chunks: job.uploadedChunks,
+              integrityProofs: job.checkedChunks,
+              integrityStates: job.writtenStates,
+              validationIndex: job.validation?.indexEntries ?? 0,
+              validationItems: job.validation?.items ?? 0,
+              validationState: Number(job.validation?.stateCreated ?? false),
+            }[name];
         if (cleaned !== expected) inconsistent();
         patch = { ...patch, cleanupCursor: null, cleanupPhase: names[offset + 1] ?? 'done' };
         if (patch.cleanupPhase === 'done') {
@@ -440,7 +463,8 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
       }
       const record = store.next(loaded, request, action, patch),
         effects = root ? [store.effect('root', job.adventureId, root)] : [];
-      page.docs.forEach((snap) => tx.delete(snap.ref));
+      if (stagingCleanup) stagingCleanup.commit();
+      else page.docs.forEach((snap) => tx.delete(snap.ref));
       if (root) tx.set(refs.root(job.adventureId), root);
       return store.commit(tx, loaded, request, action, record, effects);
     });
@@ -456,5 +480,6 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
     advanceAdventureRestoreCleanup: cleanup,
     ...createAdventureRestoreIntegrityService(store),
     ...createAdventureRestoreValidationService(store),
+    ...createAdventureRestoreStructureService(store),
   };
 }

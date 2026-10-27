@@ -3164,3 +3164,11 @@ com prefixos privados autenticados pelo host. Remapper próprio cobre identidade
 e referências, com imagens por uso e origem externa preservada. Projeção não é
 selo de backup ou autorização: sourceBindings/sourceOnly exigem reconstrução
 de provas e gates dos próximos stagers. Nenhuma ativação/endpoint/UI adicionada.
+
+A [ADR 0194](decisions/0194-adventure-private-structure-staging.md) prepara partes,
+cenas/blocos com corpos e controle de progresso sob raiz mínima sem dono; a
+definição da raiz fica privada. Lookup autenticado une unidades e os efeitos
+nativos são confirmados com journals/recibo/checkpoint. Contadores permanecem
+incompletos. Cleanup prova targets por metadata e confere filhos conhecidos,
+inclusive de heads derivados da fonte ainda não criados. Estrutura pronta é
+uma passagem interna; recursos restantes e ativação continuam etapas próprias.

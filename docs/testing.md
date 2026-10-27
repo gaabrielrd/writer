@@ -3097,3 +3097,10 @@ usa arquivos nativos no Vitest, testes puros dos 17 recursos e raw/SHA/UTF-8 no
 Node e consumo transacional no SDK demo. Inclui source/proof/item/state alterados,
 recriação/cancelamento/rollback, cópias de imagens por uso, referências externas,
 prefixos privados e imutabilidade. Não é prova de staging/ativação ou UI.
+
+A [estrutura privada P2](entregas/2026-10-27-writer-v2-estrutura-privada-de-aventuras.md)
+tem sete Vitest nativos, cinco Node novos distintos em seleções, 27 Node de
+regressão e três SDK demo positivos. Confere pares head/corpo, texto/hash/bytes,
+invisibilidade, journal/nascimento, lookup, orçamento, replay/concorrência/
+rollback/cancelamento, origem adulterada e limpeza de targets, inclusive órfão
+sob head ainda não criado. Sem evidência de ativação/contadores finais ou UI.

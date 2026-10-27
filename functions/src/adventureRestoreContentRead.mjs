@@ -23,6 +23,12 @@ import { createAdventureContentHash } from './adventureContentHash.mjs';
 import { createAdventureValidationSource } from './adventureRestoreValidationSource.mjs';
 import { prepareAdventureRestoreRawStep } from './adventureRestoreRawRead.mjs';
 import { createAdventureRestoreRemapper } from './adventureRestoreRemap.mjs';
+import {
+  adventureValidationIndexId,
+  readAdventureValidationIndex,
+} from './adventureRestoreValidationIndex.mjs';
+import { ADVENTURE_RESOURCE_DEFINITIONS } from './adventureBackupResourceDefinitions.mjs';
+import { contentId } from './adventureContentPrimitives.mjs';
 const unusedIndex = Object.freeze({
   get() {
     inconsistent();
@@ -161,6 +167,57 @@ export async function createVerifiedAdventureRestoreContent(input) {
       verify,
     });
   }
+  async function findResource(kind, nativeId, parentId = null) {
+    if (
+      !Object.hasOwn(ADVENTURE_RESOURCE_DEFINITIONS, kind) ||
+      !contentId(nativeId) ||
+      (ADVENTURE_RESOURCE_DEFINITIONS[kind].parent ? !contentId(parentId) : parentId !== null)
+    )
+      inconsistent();
+    const key = ['resource', kind, parentId ?? '', nativeId];
+    const observed = await db.runTransaction(async (tx) => {
+      const loaded = await pinned(tx),
+        ref = db.doc(loaded.ref.path + '/validationIndex/' + adventureValidationIndexId(key)),
+        snapshot = await tx.get(ref),
+        value = await readAdventureValidationIndex(store, tx, loaded, snapshot, key),
+        entry = snapshot.data(),
+        at = entry.sourceItemIndex;
+      if (!Number.isSafeInteger(at) || at < 0 || at >= initial.saved.state.items) inconsistent();
+      const creator = await tx.get(store.refs.op(uid, entry.createdByOperationId));
+      if (store.operation(creator, loaded).validation?.items !== at + 1) inconsistent();
+      return { ref, token: nativeToken(snapshot), hash: digest(entry), at, value };
+    });
+    const unit = await item(observed.at);
+    if (
+      unit.record.kind !== 'adventure-resource' ||
+      unit.value.kind !== kind ||
+      unit.value.id !== nativeId ||
+      unit.value.parentId !== parentId ||
+      observed.value.unitHash !== unit.contentHash ||
+      observed.value.present !== unit.value.present
+    )
+      inconsistent();
+    const sourceToken = digest({
+      domain: 'writer-adventure-resource-lookup-v1',
+      key,
+      index: observed.token,
+      sourceToken: unit.sourceToken,
+    });
+    async function verify(tx) {
+      const loaded = await pinned(tx),
+        snapshot = await tx.get(observed.ref);
+      if (
+        !snapshot.exists ||
+        nativeToken(snapshot) !== observed.token ||
+        digest(snapshot.data()) !== observed.hash
+      )
+        inconsistent();
+      await readAdventureValidationIndex(store, tx, loaded, snapshot, key);
+      return { ...(await unit.verify(tx)), sourceToken };
+    }
+    await db.runTransaction(verify);
+    return Object.freeze({ ...unit, sourceToken, verify });
+  }
   async function raw(index, mapped) {
     const unit = await item(index);
     if (unit.raw === null) return null;
@@ -216,6 +273,7 @@ export async function createVerifiedAdventureRestoreContent(input) {
     itemCount: initial.saved.state.items,
     summary: freeze(structuredClone(initial.summary)),
     readItem: item,
+    findResource,
     openRaw: (index) => raw(index, false),
     openMappedRaw: (index) => raw(index, true),
     async readMappedItem(index) {

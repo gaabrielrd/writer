@@ -20,6 +20,7 @@ function keyId(key) {
     inconsistent();
   return digest([ADVENTURE_RESTORE_DOMAIN, 'validation-index', key]);
 }
+export { keyId as adventureValidationIndexId };
 function boundedJSON(value) {
   const text = JSON.stringify(value);
   if (typeof text !== 'string' || Buffer.byteLength(text) > 16384) inconsistent();

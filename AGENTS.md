@@ -824,3 +824,13 @@ estado/recibo do host; não aceite checkpoint de cliente. Remapeie imagens por
 asset/uso e preserve referências externas para autorização. Hashes sourceBindings
 e sourceOnly continuam prova da entrada; reconstrua provas nativas no stager.
 Não reviva recurso somente histórico nem aplique draft sobre o salvo (ADR 0193).
+
+Na montagem privada de aventuras, mantenha a raiz reservada sem ownerId e a
+definição em preparedRoot/current até ativação auditada. Una head/corpo por lookup
+autenticado e aguarde suas provas na transação. Targets/journals/checkpoint/recibo
+nascem juntos; não adote alvo ou filho existente. Respeite orçamento nativo sem
+truncar e mantenha countReady false até reconstruir agregados. Cleanup confere
+targets por operações/hash/metadata, inclusive namespaces de heads derivados da
+fonte antes de descartar o índice. Novos filhos/famílias exigem ampliar prova e
+limpeza antes de gravar; atualizações futuras preservam o criador e provam a
+versão anterior. structure-ready não autoriza ativação (ADR 0194).

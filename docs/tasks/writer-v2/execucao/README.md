@@ -2013,3 +2013,11 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      [Evidência dirigida](../../../entregas/2026-10-27-writer-v2-consumo-autenticado-de-aventuras.md).
      Contrato interno sem staging/ativação. Recuperação/UI/roundtrip e P2/P3/D
      permanecem abertos.
+
+172. [Estrutura privada da aventura restaurada](172-estrutura-privada-da-aventura-restaurada.md):
+     lookup autenticado, partes/cenas/blocos e pares de corpo nativos com journals,
+     raiz reservada sem dono e controle de progresso incompleto. Sete Vitest,
+     cinco Node novos em seleções, 27 Node de regressão e três SDK positivos.
+     [Evidência dirigida](../../../entregas/2026-10-27-writer-v2-estrutura-privada-de-aventuras.md).
+     Recursos/índices restantes, contadores/audit/ativação/recuperação/UI/roundtrip
+     e P2/P3/D permanecem abertos.

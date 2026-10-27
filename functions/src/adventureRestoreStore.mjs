@@ -30,6 +30,11 @@ import {
   adventureValidationView,
   validAdventureValidationView,
 } from './adventureRestoreValidationMeta.mjs';
+import {
+  adventureStagingView,
+  validAdventureStagingView,
+  ADVENTURE_STAGING_COLLECTIONS,
+} from './adventureRestoreStagingMeta.mjs';
 export const ADVENTURE_RESTORE_ROOT_COLLECTIONS = Object.freeze([
   'parts',
   'scenes',
@@ -108,13 +113,29 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
     restoreHash(op.jobHash);
     if (fingerprint !== undefined && op.fingerprint !== fingerprint) invalid('operation-mismatch');
     immutable(snapshot);
-    const r = closed(op.receipt, RECEIPT_FIELDS, ['validation']);
+    const r = closed(op.receipt, RECEIPT_FIELDS, ['validation', 'staging']);
+    if (Object.hasOwn(r, 'staging')) {
+      if (
+        !loaded.job.staging ||
+        !validAdventureStagingView(r.staging) ||
+        ![
+          'advanceAdventureRestoreStructure',
+          'cancelAdventureRestore',
+          'advanceAdventureRestoreCleanup',
+        ].includes(r.action) ||
+        ['itemIndex', 'artifactCount', 'cleanedArtifacts', 'parts', 'scenes', 'blocks'].some(
+          (k) => r.staging[k] > loaded.job.staging[k],
+        )
+      )
+        inconsistent();
+    } else if (r.action === 'advanceAdventureRestoreStructure') inconsistent();
     if (Object.hasOwn(r, 'validation')) {
       if (
         !loaded.job.validation ||
         !validAdventureValidationView(r.validation) ||
         ![
           'advanceAdventureRestoreValidation',
+          'advanceAdventureRestoreStructure',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -164,6 +185,8 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'integrityStates',
           'root',
           ...ADVENTURE_VALIDATION_COLLECTIONS,
+          ...ADVENTURE_STAGING_COLLECTIONS,
+          'staged-target',
         ].includes(effect.collection) ||
         typeof effect.id !== 'string' ||
         !/^[A-Za-z0-9-]{1,80}$/.test(effect.id)
@@ -205,6 +228,8 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         op.jobHash !== digest(loaded.job) ||
         digest(born(snapshot)) !== digest(updated(loaded.snapshot)) ||
         r.state !== loaded.job.state ||
+        digest(r.staging ?? null) !==
+          digest(loaded.job.staging ? adventureStagingView(loaded.job.staging) : null) ||
         digest(r.validation ?? null) !==
           digest(loaded.job.validation ? adventureValidationView(loaded.job.validation) : null) ||
         COUNTERS.some((k) => r[k] !== loaded.job[k]) ||
@@ -326,6 +351,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
       cleanupPhase: record.cleanupPhase,
       integrityFailure: record.integrityFailure,
       ...(record.validation ? { validation: adventureValidationView(record.validation) } : {}),
+      ...(record.staging ? { staging: adventureStagingView(record.staging) } : {}),
     };
   }
   function writeOperation(

@@ -187,3 +187,11 @@ projeta referências coerentes para a nova aventura, incluindo raw e imagens por
 uso. Testes dirigidos positivos; o validate de 170 é base anterior, não prova
 deste código. Ainda faltam stagers, autorizações externas, ativação, recuperação,
 UI e roundtrip. P2/P3/D/F2-09, gates e 8/35 seguem abertos.
+
+[Estrutura privada 172](execucao/172-estrutura-privada-da-aventura-restaurada.md)
+prepara partes/cenas/blocos com texto exato, definição privada e journals atômicos,
+com cleanup comprovado dos targets. Sete Vitest, cinco Node novos em seleções,
+27 Node de regressão e três SDK demo positivos. structure-ready não é ativação;
+controle de progresso continua incompleto. Recursos restantes, origens, mídia/
+histórico/draft, contadores/audit, ativação, recuperação/UI/roundtrip, P2/P3/D/F2-09
+e gates continuam pendentes. 8/35 permanece inalterado.

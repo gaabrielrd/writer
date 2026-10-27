@@ -5,6 +5,7 @@ import {
   contentId as id,
 } from './adventureContentPrimitives.mjs';
 import { adventureCoreCounts } from './adventureArchiveCore.mjs';
+import { ADVENTURE_STAGING_COLLECTIONS } from './adventureRestoreStagingMeta.mjs';
 export const ADVENTURE_VALIDATION_COLLECTIONS = Object.freeze([
   'validationIndex',
   'validationItems',
@@ -15,6 +16,7 @@ export const ADVENTURE_RESTORE_CLEANUP = Object.freeze([
   'integrityProofs',
   'integrityStates',
   ...ADVENTURE_VALIDATION_COLLECTIONS,
+  ...ADVENTURE_STAGING_COLLECTIONS,
 ]);
 export const ADVENTURE_VALIDATION_STATES = Object.freeze([
   'validating',
