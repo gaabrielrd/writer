@@ -3148,3 +3148,11 @@ assim fica invisível e antecede o histórico. Transporte privado tem chunks de
 até 50. Aposenta marcador mínimo sem dono/prosa em vez de liberar o ID.
 Bytes-verified não é validação semântica. Sem endpoint/UI antes da recuperação,
 coordenação persistente e stager/ativação próprios. Estado SHA é sensível.
+
+A [ADR 0192](decisions/0192-adventure-persistent-content-validation.md) liga
+transporte/provas à máquina semântica por um coordenador interno. Fonte limitada,
+índice/itens imutáveis e snapshot atual privado confirmam efeitos/recibo juntos.
+O snapshot preserva birth e autentica criador/último atualizador, sem histórico
+operacional ilimitado ou buffers na view. Recheck integral em lotes precede
+content-verified, que ainda não ativa projeto ou concede grants. Cleanup inclui
+os três namespaces novos para jobs antigos e atuais; órfãos não são adotados.

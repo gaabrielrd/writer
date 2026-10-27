@@ -1995,3 +1995,13 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      [Evidência](../../../entregas/2026-10-27-writer-v2-transporte-privado-da-restauracao-de-aventuras.md).
      Serviço interno sem endpoint/UI. Validação persistente, recuperação,
      remap/mídia/ativação/roundtrip e P2/P3/D permanecem abertos.
+
+170. [Validação semântica persistente de aventuras](170-validacao-semantica-persistente-de-aventuras.md):
+     fonte com provas, índice/itens transacionais e snapshot atual autenticado,
+     recheck integral e cleanup compatível. 13 Vitest/cinco Node novos e cinco
+     SDK novos distintos em seleções, com regressão de transporte/cleanup.
+     Validate integral verde: 4.292 frontend, 90 scripts, 3.406 Functions,
+     sintaxe/tipos/build/smoke.
+     [Evidência](../../../entregas/2026-10-27-writer-v2-validacao-persistente-de-aventuras.md).
+     Serviço interno; leitura/remap, recuperação, stager/ativação/UI/roundtrip
+     e P2/P3/D seguem abertos.

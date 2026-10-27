@@ -24,6 +24,12 @@ import {
   restoreDate,
   restoreFail,
 } from './adventureRestoreContracts.mjs';
+import {
+  ADVENTURE_RESTORE_CLEANUP,
+  ADVENTURE_VALIDATION_COLLECTIONS,
+  adventureValidationView,
+  validAdventureValidationView,
+} from './adventureRestoreValidationMeta.mjs';
 export const ADVENTURE_RESTORE_ROOT_COLLECTIONS = Object.freeze([
   'parts',
   'scenes',
@@ -102,7 +108,22 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
     restoreHash(op.jobHash);
     if (fingerprint !== undefined && op.fingerprint !== fingerprint) invalid('operation-mismatch');
     immutable(snapshot);
-    const r = closed(op.receipt, RECEIPT_FIELDS);
+    const r = closed(op.receipt, RECEIPT_FIELDS, ['validation']);
+    if (Object.hasOwn(r, 'validation')) {
+      if (
+        !loaded.job.validation ||
+        !validAdventureValidationView(r.validation) ||
+        ![
+          'advanceAdventureRestoreValidation',
+          'cancelAdventureRestore',
+          'advanceAdventureRestoreCleanup',
+        ].includes(r.action) ||
+        ['frames', 'items', 'recheckedChunks'].some(
+          (k) => r.validation[k] > loaded.job.validation[k],
+        )
+      )
+        inconsistent();
+    } else if (r.action === 'advanceAdventureRestoreValidation') inconsistent();
     if (
       r.schemaVersion !== 1 ||
       r.operationId !== snapshot.id ||
@@ -123,17 +144,27 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
       r.checkedChunks > r.uploadedChunks ||
       r.cleanedChunks > r.uploadedChunks ||
       r.cleanedProofs > r.checkedChunks ||
-      !['chunks', 'integrityProofs', 'integrityStates', 'done'].includes(r.cleanupPhase) ||
+      ![...ADVENTURE_RESTORE_CLEANUP, 'done'].includes(r.cleanupPhase) ||
       (r.integrityFailure !== null &&
         !['file-hash-mismatch', 'upload-chain-mismatch'].includes(r.integrityFailure))
     )
       inconsistent();
-    if (!Array.isArray(op.effects) || op.effects.length > 18) inconsistent();
+    if (
+      !Array.isArray(op.effects) ||
+      op.effects.length > (r.action === 'advanceAdventureRestoreValidation' ? 97 : 18)
+    )
+      inconsistent();
     const keys = new Set();
     for (const effect of op.effects) {
       closed(effect, ['collection', 'id', 'hash']);
       if (
-        !['chunks', 'integrityProofs', 'integrityStates', 'root'].includes(effect.collection) ||
+        ![
+          'chunks',
+          'integrityProofs',
+          'integrityStates',
+          'root',
+          ...ADVENTURE_VALIDATION_COLLECTIONS,
+        ].includes(effect.collection) ||
         typeof effect.id !== 'string' ||
         !/^[A-Za-z0-9-]{1,80}$/.test(effect.id)
       )
@@ -174,6 +205,8 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         op.jobHash !== digest(loaded.job) ||
         digest(born(snapshot)) !== digest(updated(loaded.snapshot)) ||
         r.state !== loaded.job.state ||
+        digest(r.validation ?? null) !==
+          digest(loaded.job.validation ? adventureValidationView(loaded.job.validation) : null) ||
         COUNTERS.some((k) => r[k] !== loaded.job[k]) ||
         r.cleanupPhase !== loaded.job.cleanupPhase ||
         r.integrityFailure !== loaded.job.integrityFailure
@@ -292,6 +325,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
       ...Object.fromEntries(COUNTERS.map((k) => [k, record[k]])),
       cleanupPhase: record.cleanupPhase,
       integrityFailure: record.integrityFailure,
+      ...(record.validation ? { validation: adventureValidationView(record.validation) } : {}),
     };
   }
   function writeOperation(
@@ -364,7 +398,9 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
     if (
       (collection === 'chunks'
         ? r.action !== 'appendAdventureRestoreChunk'
-        : r.action !== 'advanceAdventureRestoreIntegrity') ||
+        : ['validationIndex', 'validationItems'].includes(collection)
+          ? r.action !== 'advanceAdventureRestoreValidation'
+          : r.action !== 'advanceAdventureRestoreIntegrity') ||
       !op
         .data()
         .effects.some(

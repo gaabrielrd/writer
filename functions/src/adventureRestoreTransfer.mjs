@@ -27,7 +27,9 @@ import {
   chunkId,
   chunkChain,
 } from './adventureRestoreContracts.mjs';
-const names = ['chunks', 'integrityProofs', 'integrityStates'];
+import { ADVENTURE_RESTORE_CLEANUP as names } from './adventureRestoreValidationMeta.mjs';
+import { readAdventureValidationState } from './adventureRestoreValidationState.mjs';
+import { createAdventureRestoreValidationService } from './adventureRestoreValidation.mjs';
 const terminal = (id, adventureId) => ({
   schemaVersion: 1,
   kind: 'cancelled',
@@ -367,11 +369,33 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
           chunks: 'cleanedChunks',
           integrityProofs: 'cleanedProofs',
           integrityStates: 'cleanedStates',
+          validationIndex: 'cleanedIndex',
+          validationItems: 'cleanedItems',
+          validationState: 'cleanedState',
         }[name];
-      for (const snap of page.docs) await store.artifact(tx, loaded, name, snap);
+      const isValidation = name.startsWith('validation');
+      if (isValidation && page.docs.length && !job.validation) inconsistent();
+      for (const snap of page.docs) {
+        if (name === 'validationState') {
+          if (snap.id !== 'current') inconsistent();
+          const state = await readAdventureValidationState(store, tx, loaded);
+          if (nativeToken(state.snapshot) !== nativeToken(snap)) inconsistent();
+        } else await store.artifact(tx, loaded, name, snap);
+      }
+      const cleaned = isValidation ? (job.validation?.[counter] ?? 0) : job[counter];
       let patch = {
           cleanupCursor: page.docs.at(-1)?.id ?? job.cleanupCursor,
-          [counter]: sum(job[counter], page.docs.length),
+          ...(isValidation
+            ? job.validation
+              ? {
+                  validation: {
+                    ...job.validation,
+                    [counter]: sum(cleaned, page.docs.length),
+                    ...(name === 'validationState' && page.docs.length ? { snapshot: null } : {}),
+                  },
+                }
+              : {}
+            : { [counter]: sum(cleaned, page.docs.length) }),
         },
         root = null;
       if (!page.docs.length) {
@@ -390,8 +414,11 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
           chunks: job.uploadedChunks,
           integrityProofs: job.checkedChunks,
           integrityStates: job.writtenStates,
+          validationIndex: job.validation?.indexEntries ?? 0,
+          validationItems: job.validation?.items ?? 0,
+          validationState: Number(job.validation?.stateCreated ?? false),
         }[name];
-        if (job[counter] !== expected) inconsistent();
+        if (cleaned !== expected) inconsistent();
         patch = { ...patch, cleanupCursor: null, cleanupPhase: names[offset + 1] ?? 'done' };
         if (patch.cleanupPhase === 'done') {
           for (const collection of names)
@@ -428,5 +455,6 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
     cancelAdventureRestore: cancel,
     advanceAdventureRestoreCleanup: cleanup,
     ...createAdventureRestoreIntegrityService(store),
+    ...createAdventureRestoreValidationService(store),
   };
 }

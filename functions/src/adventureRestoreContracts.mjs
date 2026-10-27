@@ -2,6 +2,12 @@ import { createHash } from 'node:crypto';
 import { GenerationError } from './generationError.mjs';
 import { digest } from './sceneContracts.mjs';
 export { digest };
+import {
+  ADVENTURE_RESTORE_CLEANUP,
+  ADVENTURE_VALIDATION_STATES,
+  validAdventureValidationMeta,
+  adventureValidationView,
+} from './adventureRestoreValidationMeta.mjs';
 export const ADVENTURE_RESTORE_DOMAIN = 'writer-adventure-restore-v1';
 export const ADVENTURE_RESTORE_CHUNK_BYTES = 65536;
 export const ADVENTURE_RESTORE_SEED = digest([ADVENTURE_RESTORE_DOMAIN, 'upload']);
@@ -10,6 +16,7 @@ export const ADVENTURE_RESTORE_STATES = Object.freeze([
   'uploaded',
   'checking',
   'bytes-verified',
+  ...ADVENTURE_VALIDATION_STATES,
   'rejected',
   'cancelling',
   'cancelled',
@@ -18,6 +25,7 @@ export const ADVENTURE_RESTORE_ACTIONS = Object.freeze({
   startAdventureRestore: ['uploading'],
   appendAdventureRestoreChunk: ['uploading', 'uploaded'],
   advanceAdventureRestoreIntegrity: ['checking', 'bytes-verified', 'rejected'],
+  advanceAdventureRestoreValidation: ['validating', 'content-verified', 'content-rejected'],
   cancelAdventureRestore: ['cancelling'],
   advanceAdventureRestoreCleanup: ['cancelling', 'cancelled'],
 });
@@ -193,7 +201,13 @@ export const JOB_FIELDS = Object.freeze([
   'lastRequestHash',
 ]);
 export function parseJob(value, uid, id) {
-  closed(value, JOB_FIELDS);
+  closed(value, JOB_FIELDS, ['validation']);
+  if (
+    Object.hasOwn(value, 'validation')
+      ? !validAdventureValidationMeta(value.validation, value)
+      : ADVENTURE_VALIDATION_STATES.includes(value.state)
+  )
+    inconsistent();
   if (
     value.schemaVersion !== 1 ||
     value.ownerId !== uid ||
@@ -246,8 +260,7 @@ export function parseJob(value, uid, id) {
     (value.checkedChunks === 0 && value.checkedChainHash !== ADVENTURE_RESTORE_SEED)
   )
     inconsistent();
-  if (!['chunks', 'integrityProofs', 'integrityStates', 'done'].includes(value.cleanupPhase))
-    inconsistent();
+  if (![...ADVENTURE_RESTORE_CLEANUP, 'done'].includes(value.cleanupPhase)) inconsistent();
   if (
     value.cleanupCursor !== null &&
     (typeof value.cleanupCursor !== 'string' ||
@@ -273,7 +286,9 @@ export function parseJob(value, uid, id) {
     inconsistent();
   if (value.state === 'uploading' && value.uploadedChunks === total) inconsistent();
   if (
-    ['uploaded', 'checking', 'bytes-verified', 'rejected'].includes(value.state) &&
+    ['uploaded', 'checking', 'bytes-verified', 'rejected', ...ADVENTURE_VALIDATION_STATES].includes(
+      value.state,
+    ) &&
     value.uploadedChunks !== total
   )
     inconsistent();
@@ -296,14 +311,14 @@ export function parseJob(value, uid, id) {
   )
     inconsistent();
   if (
-    ['bytes-verified', 'rejected'].includes(value.state) &&
+    ['bytes-verified', 'rejected', ...ADVENTURE_VALIDATION_STATES].includes(value.state) &&
     (value.checkedChunks !== total ||
       value.integrityDigest === null ||
       value.integrityStateId !== null)
   )
     inconsistent();
   if (
-    value.state === 'bytes-verified' &&
+    ['bytes-verified', ...ADVENTURE_VALIDATION_STATES].includes(value.state) &&
     (value.integrityDigest !== source.sha256 ||
       value.integrityFailure !== null ||
       value.checkedChainHash !== value.uploadedChainHash)
@@ -353,6 +368,7 @@ export function progress(uid, id, snap, job = parseJob(snap.data(), uid, id)) {
     uploadedBytes: job.uploadedBytes,
     checkedChunks: job.checkedChunks,
     checkedBytes: job.checkedBytes,
+    ...(job.validation ? { validation: adventureValidationView(job.validation) } : {}),
     integrityDigest: job.integrityDigest,
     integrityFailure: job.integrityFailure,
     cleanedChunks: job.cleanedChunks,

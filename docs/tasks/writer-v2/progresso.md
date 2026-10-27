@@ -170,3 +170,13 @@ retomável. 22 Node/seis SDK distintos dirigidos positivos, com correção compr
 de checkpoint atual adulterado. Ainda interno: bytes-verified não valida conteúdo
 ou concede acesso. Coordenação semântica, recuperação, stager/ativação/UI e
 roundtrip seguem pendentes; P2/P3/D/F2-09 e 8/35 não mudam.
+
+[Validação persistente 170](execucao/170-validacao-semantica-persistente-de-aventuras.md)
+liga transporte e máquina semântica com fonte/índice/snapshot autenticados,
+recibo transacional e reconferência integral antes de content-verified.
+Validate integral verde: 4.292 frontend, 90 scripts, 3.406 Functions e build/smoke;
+cinco SDK novos distintos dirigidos positivos, mais regressão de cleanup.
+[Evidência](../../entregas/2026-10-27-writer-v2-validacao-persistente-de-aventuras.md).
+Não ativa projeto ou concede acesso. Consumo autenticado/remap, recuperação,
+stager/ativação/UI/roundtrip, P2/P3/D/F2-09 e gates continuam pendentes.
+8/35 (22,9% de tarefas) permanece inalterado.

@@ -3083,3 +3083,11 @@ negação dos namespaces privados, concorrência, replay, SHA, cleanup e ABA.
 Revisão reproduziu checkpoint atual aceito por recibo histórico e validou a
 correção no Node/SDK. Arquivo de 54 chunks exercita 16 por lote e 50 por página.
 Sem nova suíte global ou evidência de UI/ativação; próxima rodada no bloco maior.
+
+O bloco persistente P2 usa arquivos nativos no Vitest e um arquivo mínimo de
+contrato no Node/SDK real demo. Confere cada retomada, resultado do leitor
+independente, lote de imagens, replay/corrida/leitura atrasada, rollback, origem
+alterada, snapshot recriado, índice/recibo adulterados, rejeição semântica,
+membership e limpeza com órfãos/faltas. O arquivo SDK novo é descoberto pelo
+runner normal de Rules; seu comando dirigido usa apenas emulador demo local.
+Resultados e limitações ficam na entrega de validação persistente da aventura.

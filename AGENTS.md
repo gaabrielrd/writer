@@ -805,3 +805,13 @@ Trate estados SHA como conteúdo privado, pois podem conter cauda limitada dos
 bytes; nunca os exponha em metadata/recibos de UI. Atualize schemas/registry de
 cleanup ao criar fase/namespace. Transporte segue interno até recuperação,
 validação semântica persistente e ativação privada (ADR 0191).
+
+Na validação persistente remota de aventuras, fixe contexto/checkpoint e reconfira
+as provas observadas antes de confirmar índice, itens, snapshot e recibo juntos.
+validationState/current preserva nascimento e autentica criador/atualizador por
+operações imutáveis; não aceite estado do cliente nem exponha buffers em views.
+Reconfira toda a fonte em lotes antes de content-verified. Esse resultado não
+ativa o projeto nem autoriza origens; consumidores futuros revalidam suas provas.
+Cleanup inclui os três namespaces de validação mesmo para jobs anteriores,
+recusando órfãos e falta de contagem; estado mutável exige protocolo próprio.
+Transporte/validação continuam internos até recuperação e ativação (ADR 0192).
