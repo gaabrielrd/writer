@@ -195,3 +195,12 @@ com cleanup comprovado dos targets. Sete Vitest, cinco Node novos em seleções,
 controle de progresso continua incompleto. Recursos restantes, origens, mídia/
 histórico/draft, contadores/audit, ativação, recuperação/UI/roundtrip, P2/P3/D/F2-09
 e gates continuam pendentes. 8/35 permanece inalterado.
+
+[Recursos privados 173](execucao/173-recursos-e-indices-da-aventura-restaurada.md)
+prepara checklist/metas, planejamento, narrativa/ordens e referências com índices.
+Cursor próprio preserva recibos; updates mantêm criador/birth e limpeza confirma
+filhos antes dos pais. Testes dirigidos e estado dos checks estão na
+[evidência](../../entregas/2026-10-27-writer-v2-recursos-privados-de-aventuras.md).
+resources-ready mantém a raiz sem dono e countReady false. Lore/personas/mídia,
+universo autorizado, histórico/draft, agregados/audit/ativação, recuperação/UI e
+roundtrip continuam pendentes. P2/P3/D/F2-09 e gates permanecem abertos; 8/35 não muda.

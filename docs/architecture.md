@@ -3172,3 +3172,10 @@ nativos são confirmados com journals/recibo/checkpoint. Contadores permanecem
 incompletos. Cleanup prova targets por metadata e confere filhos conhecidos,
 inclusive de heads derivados da fonte ainda não criados. Estrutura pronta é
 uma passagem interna; recursos restantes e ativação continuam etapas próprias.
+
+A [ADR 0195](decisions/0195-adventure-private-resource-staging.md) acrescenta a
+passagem interna de checklist/metas, planejamento, narrativa/ordens e referências
+com índices derivados. Cursor próprio mantém recibos anteriores; updates provam
+a versão integral e preservam criador/nascimento. Journals de filhos precedem os
+pais e a limpeza divide a página nessa fronteira. resources-ready mantém a raiz
+sem dono e countReady false; agregados/audit e os demais stagers precedem ativação.

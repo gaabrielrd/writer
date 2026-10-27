@@ -28,6 +28,7 @@ export const ADVENTURE_RESTORE_ACTIONS = Object.freeze({
   advanceAdventureRestoreIntegrity: ['checking', 'bytes-verified', 'rejected'],
   advanceAdventureRestoreValidation: ['validating', 'content-verified', 'content-rejected'],
   advanceAdventureRestoreStructure: ['content-verified'],
+  advanceAdventureRestoreResources: ['content-verified'],
   cancelAdventureRestore: ['cancelling'],
   advanceAdventureRestoreCleanup: ['cancelling', 'cancelled'],
 });

@@ -14,7 +14,7 @@ export async function checkAdventureStageSourceIndex(store, tx, loaded, snapshot
     !Array.isArray(key) ||
     key.length !== 4 ||
     key[0] !== 'resource' ||
-    !['scene', 'block'].includes(key[1]) ||
+    !['scene', 'block', 'arc'].includes(key[1]) ||
     key[2] !== ''
   )
     return;
@@ -26,7 +26,10 @@ export async function checkAdventureStageSourceIndex(store, tx, loaded, snapshot
     }),
     address = {
       scope: 'adventure',
-      path: [key[1] === 'scene' ? 'scenes' : 'sceneBlocks', mapper.identity(key[1], key[3])],
+      path: [
+        { scene: 'scenes', block: 'sceneBlocks', arc: 'arcs' }[key[1]],
+        mapper.identity(key[1], key[3]),
+      ],
     },
     head = await readWorkMetadata(tx, adventureStageTarget(store, loaded, address), [
       'schemaVersion',
@@ -35,8 +38,12 @@ export async function checkAdventureStageSourceIndex(store, tx, loaded, snapshot
     journal = await tx.get(
       store.db.doc(loaded.ref.path + '/stagingArtifacts/' + adventureStageArtifactId(address)),
     );
-  if (head.exists || journal.exists) await readAdventureStageArtifact(store, tx, loaded, journal);
-  await checkAdventureStageChildren(store, tx, loaded, address, true);
+  if (head.exists || journal.exists) {
+    await readAdventureStageArtifact(store, tx, loaded, journal);
+    // Their new descendants are removed first by the ordered journal pass.
+    return;
+  }
+  await checkAdventureStageChildren(store, tx, loaded, address, false);
 }
 export async function prepareAdventureStagingCleanup(store, tx, loaded, name, page) {
   const staging = loaded.job.staging;

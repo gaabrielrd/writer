@@ -25,31 +25,53 @@ export const ADVENTURE_STAGE_ARTIFACT_FIELDS = Object.freeze([
   'valueHash',
   'sourceToken',
 ]);
-const mapped = (value) => typeof value === 'string' && /^restore-[a-f0-9]{64}$/.test(value);
+const actions = ['advanceAdventureRestoreStructure', 'advanceAdventureRestoreResources'];
+const mapped = (v) => typeof v === 'string' && /^restore-[a-f0-9]{64}$/.test(v);
+const hashId = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
 export function adventureStageAddress(value) {
   closed(value, ['scope', 'path']);
-  const path = value.path;
-  if (!Array.isArray(path) || path.some((p) => typeof p !== 'string')) inconsistent();
+  const p = value.path;
+  if (!Array.isArray(p) || p.some((k) => typeof k !== 'string')) inconsistent();
   const valid =
     value.scope === 'job'
-      ? path.length === 2 && path[0] === 'preparedRoot' && path[1] === 'current'
+      ? p.length === 2 && p[0] === 'preparedRoot' && p[1] === 'current'
       : value.scope === 'adventure' &&
-        ((path.length === 2 &&
-          ['parts', 'scenes', 'sceneBlocks'].includes(path[0]) &&
-          mapped(path[1])) ||
-          (path.length === 2 &&
-            ((path[0] === 'sceneControls' && path[1] === 'unassigned') ||
-              (path[0] === 'workProgress' && path[1] === 'current'))) ||
-          (path.length === 4 &&
-            ['scenes', 'sceneBlocks'].includes(path[0]) &&
-            mapped(path[1]) &&
-            path[2] === 'body' &&
-            path[3] === 'current'));
+        ((p.length === 2 &&
+          ['parts', 'scenes', 'sceneBlocks', 'workChecklist', 'arcs', 'timelineEvents'].includes(
+            p[0],
+          ) &&
+          mapped(p[1])) ||
+          (p.length === 2 && ['narrativeLinks', 'sceneLoreLinks'].includes(p[0]) && hashId(p[1])) ||
+          (p.length === 2 &&
+            p[0] === 'narrativeControls' &&
+            (hashId(p[1]) || p[1] === 'entity-scenes')) ||
+          (p.length === 2 &&
+            ((p[0] === 'sceneControls' && p[1] === 'unassigned') ||
+              (p[0] === 'workProgress' && p[1] === 'current'))) ||
+          (p.length === 4 &&
+            ['scenes', 'sceneBlocks'].includes(p[0]) &&
+            mapped(p[1]) &&
+            p[2] === 'body' &&
+            p[3] === 'current') ||
+          (p.length === 4 &&
+            p[0] === 'scenes' &&
+            mapped(p[1]) &&
+            ((p[2] === 'planning' && p[3] === 'current') ||
+              (p[2] === 'references' && hashId(p[3])))) ||
+          (p.length === 4 &&
+            p[0] === 'arcs' &&
+            mapped(p[1]) &&
+            p[2] === 'milestones' &&
+            mapped(p[3])));
   if (!valid) inconsistent();
-  return { scope: value.scope, path: [...path] };
+  return { scope: value.scope, path: [...p] };
 }
-export const adventureStageArtifactId = (address) =>
-  digest([ADVENTURE_RESTORE_DOMAIN, 'staged-document', adventureStageAddress(address)]);
+export const adventureStageArtifactId = (address) => {
+  const a = adventureStageAddress(address),
+    h = digest([ADVENTURE_RESTORE_DOMAIN, 'staged-document', a]);
+  // Newly introduced descendants sort before every legacy hexadecimal parent journal.
+  return a.path.length === 4 && a.path[2] !== 'body' ? '0-' + h : h;
+};
 export function adventureStageTarget(store, loaded, address) {
   const a = adventureStageAddress(address);
   return store.db.doc(
@@ -73,7 +95,6 @@ export async function assertAdventureStagingEmpty(store, tx, loaded) {
       inconsistent();
   await store.emptyRoot(tx, loaded.job.adventureId);
 }
-/** Prove current native target from its creator/updater effects without reading large body bytes. */
 export async function readAdventureStageArtifact(
   store,
   tx,
@@ -82,37 +103,27 @@ export async function readAdventureStageArtifact(
   { withValue = false } = {},
 ) {
   if (!loaded.job.staging || !snapshot.exists) inconsistent();
-  const value = snapshot.data();
-  closed(value, [
-    'schemaVersion',
-    'ownerId',
-    'restoreId',
-    'jobToken',
-    'createdByOperationId',
-    'updatedByOperationId',
-    'address',
-    'valueHash',
-    'sourceToken',
-  ]);
+  const v = snapshot.data();
+  closed(v, ADVENTURE_STAGE_ARTIFACT_FIELDS);
   if (
-    value.schemaVersion !== 1 ||
-    value.ownerId !== loaded.uid ||
-    value.restoreId !== loaded.id ||
-    value.jobToken !== loaded.view.jobToken
+    v.schemaVersion !== 1 ||
+    v.ownerId !== loaded.uid ||
+    v.restoreId !== loaded.id ||
+    v.jobToken !== loaded.view.jobToken
   )
     inconsistent();
-  restoreId(value.createdByOperationId);
-  restoreId(value.updatedByOperationId);
-  restoreHash(value.valueHash);
-  restoreHash(value.sourceToken);
-  const address = adventureStageAddress(value.address),
+  restoreId(v.createdByOperationId);
+  restoreId(v.updatedByOperationId);
+  restoreHash(v.valueHash);
+  restoreHash(v.sourceToken);
+  const address = adventureStageAddress(v.address),
     id = adventureStageArtifactId(address);
   if (id !== snapshot.id) inconsistent();
-  const first = await tx.get(store.refs.op(loaded.uid, value.createdByOperationId)),
+  const first = await tx.get(store.refs.op(loaded.uid, v.createdByOperationId)),
     last =
-      first.id === value.updatedByOperationId
+      first.id === v.updatedByOperationId
         ? first
-        : await tx.get(store.refs.op(loaded.uid, value.updatedByOperationId));
+        : await tx.get(store.refs.op(loaded.uid, v.updatedByOperationId));
   if (
     !first.exists ||
     !last.exists ||
@@ -124,19 +135,19 @@ export async function readAdventureStageArtifact(
   const a = store.operation(first, loaded),
     b = store.operation(last, loaded);
   if (
-    a.action !== 'advanceAdventureRestoreStructure' ||
-    b.action !== a.action ||
+    !actions.includes(a.action) ||
+    !actions.includes(b.action) ||
     a.checkpoint > b.checkpoint ||
     !first.data().effects.some((e) => e.collection === 'stagingArtifacts' && e.id === id) ||
     !last
       .data()
       .effects.some(
-        (e) => e.collection === 'stagingArtifacts' && e.id === id && e.hash === digest(value),
+        (e) => e.collection === 'stagingArtifacts' && e.id === id && e.hash === digest(v),
       ) ||
     !last
       .data()
       .effects.some(
-        (e) => e.collection === 'staged-target' && e.id === id && e.hash === value.valueHash,
+        (e) => e.collection === 'staged-target' && e.id === id && e.hash === v.valueHash,
       )
   )
     inconsistent();
@@ -151,13 +162,13 @@ export async function readAdventureStageArtifact(
   let data;
   if (withValue) {
     const full = await tx.get(targetRef);
-    if (nativeToken(full) !== nativeToken(metadata) || digest(full.data()) !== value.valueHash)
+    if (nativeToken(full) !== nativeToken(metadata) || digest(full.data()) !== v.valueHash)
       inconsistent();
     data = full.data();
   }
-  return { value, address, targetRef, metadata, data };
+  return { value: v, address, targetRef, metadata, data };
 }
-/** Known descendant namespaces must be empty at creation and wholly journaled before deleting a head. */
+/** At cleanup all NEW descendants have already been removed by their ordered journal prefix. */
 export async function checkAdventureStageChildren(
   store,
   tx,
@@ -166,18 +177,15 @@ export async function checkAdventureStageChildren(
   allowRegistered = false,
 ) {
   const a = adventureStageAddress(address);
-  if (
-    a.scope !== 'adventure' ||
-    a.path.length !== 2 ||
-    !['parts', 'scenes', 'sceneBlocks'].includes(a.path[0])
-  )
-    return;
+  if (a.scope !== 'adventure' || a.path.length !== 2) return;
   const names =
     a.path[0] === 'scenes'
       ? ['body', 'planning', 'references']
       : a.path[0] === 'sceneBlocks'
         ? ['body']
-        : [];
+        : a.path[0] === 'arcs'
+          ? ['milestones']
+          : [];
   for (const name of names) {
     const page = await tx.get(
       store.db
@@ -196,7 +204,11 @@ export async function checkAdventureStageChildren(
     if (page.docs.length) {
       const child = { scope: 'adventure', path: [...a.path, name, 'current'] },
         id = adventureStageArtifactId(child),
-        journal = await tx.get(store.db.doc(loaded.ref.path + '/stagingArtifacts/' + id));
+        journal = await readWorkMetadata(
+          tx,
+          store.db.doc(loaded.ref.path + '/stagingArtifacts/' + id),
+          ADVENTURE_STAGE_ARTIFACT_FIELDS,
+        );
       await readAdventureStageArtifact(store, tx, loaded, journal);
     }
   }
@@ -214,48 +226,93 @@ export async function prepareAdventureStageArtifacts(
   if (!Array.isArray(writes) || writes.length > 8) inconsistent();
   const seen = new Set(),
     plans = writes.map((w) => {
-      closed(w, ['address', 'value']);
+      closed(w, ['address'], ['value', 'mode', 'update']);
       const address = adventureStageAddress(w.address),
-        value = structuredClone(w.value),
-        id = adventureStageArtifactId(address);
-      if (seen.has(id)) inconsistent();
+        id = adventureStageArtifactId(address),
+        mode = w.mode ?? 'create';
+      if (
+        seen.has(id) ||
+        !['create', 'ensure', 'update'].includes(mode) ||
+        (mode === 'update'
+          ? typeof w.update !== 'function' || Object.hasOwn(w, 'value')
+          : !Object.hasOwn(w, 'value') || Object.hasOwn(w, 'update'))
+      )
+        inconsistent();
       seen.add(id);
-      const text = JSON.stringify(value);
-      if (typeof text !== 'string' || Buffer.byteLength(text) > 900000)
-        restoreFail('failed-precondition', 'native-compatibility');
       return {
         id,
         address,
-        value,
+        mode,
+        update: w.update?.bind(w),
+        value: mode === 'update' ? null : structuredClone(w.value),
         target: adventureStageTarget(store, loaded, address),
         journal: store.db.doc(loaded.ref.path + '/stagingArtifacts/' + id),
-        entry: {
-          ...restoreContext(loaded, operationId),
-          updatedByOperationId: operationId,
-          address,
-          valueHash: digest(value),
-          sourceToken,
-        },
       };
     });
-  for (const plan of plans) {
+  for (const p of plans) {
     const [target, journal] = await Promise.all([
-      readWorkMetadata(tx, plan.target, ['schemaVersion', 'ownerId']),
-      readWorkMetadata(tx, plan.journal, ADVENTURE_STAGE_ARTIFACT_FIELDS),
+      readWorkMetadata(tx, p.target, ['schemaVersion', 'ownerId']),
+      readWorkMetadata(tx, p.journal, ADVENTURE_STAGE_ARTIFACT_FIELDS),
     ]);
-    if (target.exists || journal.exists) inconsistent();
-    await checkAdventureStageChildren(store, tx, loaded, plan.address);
+    let previous = null;
+    if (p.mode === 'create') {
+      if (target.exists || journal.exists) inconsistent();
+    } else if (target.exists || journal.exists) {
+      previous = await readAdventureStageArtifact(store, tx, loaded, journal, { withValue: true });
+      if (p.mode === 'ensure') {
+        if (digest(p.value) !== previous.value.valueHash) inconsistent();
+        p.skip = true;
+        continue;
+      }
+      p.value = p.update(structuredClone(previous.data));
+    } else if (p.mode === 'update') inconsistent();
+    const serialized = JSON.stringify(p.value);
+    if (typeof serialized !== 'string' || Buffer.byteLength(serialized) > 900000)
+      restoreFail('failed-precondition', 'native-compatibility');
+    p.entry = {
+      ...restoreContext(loaded, previous?.value.createdByOperationId ?? operationId),
+      updatedByOperationId: operationId,
+      address: p.address,
+      valueHash: digest(p.value),
+      sourceToken,
+    };
+    p.existing = Boolean(previous);
+    if (!previous) await checkAdventureStageChildren(store, tx, loaded, p.address);
   }
+  for (const p of plans.filter(
+    (p) => !p.skip && p.address.scope === 'adventure' && p.address.path.length === 4,
+  )) {
+    const parent = { scope: 'adventure', path: p.address.path.slice(0, 2) },
+      parentId = adventureStageArtifactId(parent);
+    if (
+      !plans.some(
+        (candidate) => candidate.id === parentId && !candidate.skip && !candidate.existing,
+      )
+    ) {
+      const journal = await readWorkMetadata(
+        tx,
+        store.db.doc(loaded.ref.path + '/stagingArtifacts/' + parentId),
+        ADVENTURE_STAGE_ARTIFACT_FIELDS,
+      );
+      await readAdventureStageArtifact(store, tx, loaded, journal);
+    }
+  }
+  const changed = plans.filter((p) => !p.skip);
   return {
-    count: plans.length,
-    effects: plans.flatMap((p) => [
+    count: changed.filter((p) => !p.existing).length,
+    effects: changed.flatMap((p) => [
       store.effect('stagingArtifacts', p.id, p.entry),
       { collection: 'staged-target', id: p.id, hash: p.entry.valueHash },
     ]),
     commit() {
-      for (const p of plans) {
-        tx.create(p.target, p.value);
-        tx.create(p.journal, p.entry);
+      for (const p of changed) {
+        if (p.existing) {
+          tx.set(p.target, p.value);
+          tx.set(p.journal, p.entry);
+        } else {
+          tx.create(p.target, p.value);
+          tx.create(p.journal, p.entry);
+        }
       }
     },
   };

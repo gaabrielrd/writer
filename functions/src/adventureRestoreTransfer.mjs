@@ -31,6 +31,7 @@ import { ADVENTURE_RESTORE_CLEANUP as names } from './adventureRestoreValidation
 import { readAdventureValidationState } from './adventureRestoreValidationState.mjs';
 import { createAdventureRestoreValidationService } from './adventureRestoreValidation.mjs';
 import { ADVENTURE_STAGE_ARTIFACT_FIELDS } from './adventureRestoreArtifacts.mjs';
+import { createAdventureRestoreResourcesService } from './adventureRestoreResources.mjs';
 import { createAdventureRestoreStructureService } from './adventureRestoreStructure.mjs';
 import {
   prepareAdventureStagingCleanup,
@@ -372,7 +373,12 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
       if (name === 'stagingArtifacts') q = q.select(...ADVENTURE_STAGE_ARTIFACT_FIELDS);
       if (name === 'preparedRoot') q = q.select('schemaVersion');
       if (job.cleanupCursor) q = q.startAfter(job.cleanupCursor);
-      const page = await tx.get(q),
+      const fetched = await tx.get(q),
+        // Finish descendant journals in their own commit before checking parents.
+        page =
+          name === 'stagingArtifacts' && fetched.docs[0]?.id.startsWith('0-')
+            ? { docs: fetched.docs.filter((snapshot) => snapshot.id.startsWith('0-')) }
+            : fetched,
         counter = {
           chunks: 'cleanedChunks',
           integrityProofs: 'cleanedProofs',
@@ -481,5 +487,6 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
     ...createAdventureRestoreIntegrityService(store),
     ...createAdventureRestoreValidationService(store),
     ...createAdventureRestoreStructureService(store),
+    ...createAdventureRestoreResourcesService(store),
   };
 }

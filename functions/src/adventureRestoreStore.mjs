@@ -120,15 +120,28 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         !validAdventureStagingView(r.staging) ||
         ![
           'advanceAdventureRestoreStructure',
+          'advanceAdventureRestoreResources',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
-        ['itemIndex', 'artifactCount', 'cleanedArtifacts', 'parts', 'scenes', 'blocks'].some(
-          (k) => r.staging[k] > loaded.job.staging[k],
-        )
+        [
+          'itemIndex',
+          'artifactCount',
+          'cleanedArtifacts',
+          'parts',
+          'scenes',
+          'blocks',
+          'resourceIndex',
+          'resourcesProcessed',
+          'checklistTotal',
+          'checklistCompleted',
+        ].some((k) => r.staging[k] > loaded.job.staging[k])
       )
         inconsistent();
-    } else if (r.action === 'advanceAdventureRestoreStructure') inconsistent();
+    } else if (
+      ['advanceAdventureRestoreStructure', 'advanceAdventureRestoreResources'].includes(r.action)
+    )
+      inconsistent();
     if (Object.hasOwn(r, 'validation')) {
       if (
         !loaded.job.validation ||
@@ -136,6 +149,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         ![
           'advanceAdventureRestoreValidation',
           'advanceAdventureRestoreStructure',
+          'advanceAdventureRestoreResources',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
