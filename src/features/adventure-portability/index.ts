@@ -146,3 +146,14 @@ export {
   type AdventureRestoreMediaStatus,
   type AdventureRestoreArchiveStatus,
 } from './services/adventureRestoreFinalizationViews';
+
+export {
+  AdventureRestoreDialog,
+  type AdventureRestoreDialogProps,
+} from './components/AdventureRestoreDialog';
+export { AdventureRestorePreparations } from './components/AdventureRestorePreparations';
+export {
+  inspectAdventureRestoreFile,
+  type AdventureRestoreLocalReview,
+  type InspectedAdventureRestore,
+} from './services/inspectAdventureRestoreFile';

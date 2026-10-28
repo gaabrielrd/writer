@@ -11,7 +11,7 @@ import {
   prepareStudioBooks,
   type StudioBookSummary,
 } from '@/features/books';
-import { listAdventures } from '@/features/adventures';
+import { listAdventures, getAdventure, type Adventure } from '@/features/adventures';
 import {
   createCampaign,
   listCampaigns,
@@ -55,6 +55,41 @@ vi.mock('@/features/book-portability', () => ({
           Abrir cópia conferida
         </button>
         <button onClick={onClose}>Fechar restauração</button>
+      </section>
+    ) : null,
+}));
+const adventureRestore = vi.hoisted(() => ({ visible: false, guard: vi.fn() }));
+vi.mock('@/features/adventure-portability', () => ({
+  AdventureRestorePreparations: ({ onResume }: { onResume: (id: string) => void }) =>
+    adventureRestore.visible ? (
+      <button onClick={() => onResume('adventure-restore-studio-0001')}>
+        Retomar aventura do backup
+      </button>
+    ) : null,
+  AdventureRestoreDialog: ({
+    open,
+    restoreId,
+    onClose,
+    onOpenAdventure,
+  }: {
+    open: boolean;
+    restoreId?: string;
+    onClose: () => void;
+    onOpenAdventure: (id: string, guard: () => void) => Promise<void>;
+  }) =>
+    open ? (
+      <section aria-label="Backup de aventura no Estúdio">
+        <p>{restoreId ? 'Preparação de aventura existente' : 'Nova aventura privada'}</p>
+        <button
+          onClick={() => {
+            void onOpenAdventure('restored-adventure', () => {
+              adventureRestore.guard();
+            }).catch(() => {});
+          }}
+        >
+          Abrir aventura conferida
+        </button>
+        <button onClick={onClose}>Fechar restauração de aventura</button>
       </section>
     ) : null,
 }));
@@ -171,7 +206,11 @@ vi.mock('@/features/adventure-import', () => ({
   AdventureImportDialog: () => null,
   AdventureImportPreparations: () => null,
 }));
-vi.mock('@/features/adventures', () => ({ listAdventures: vi.fn(), createAdventure: vi.fn() }));
+vi.mock('@/features/adventures', () => ({
+  listAdventures: vi.fn(),
+  createAdventure: vi.fn(),
+  getAdventure: vi.fn(),
+}));
 vi.mock('@/features/campaigns', () => ({
   listCampaigns: vi.fn(),
   createCampaign: vi.fn(),
@@ -202,6 +241,9 @@ const campaign: CampaignSummary = {
   updatedAt: 2000,
 };
 beforeEach(() => {
+  adventureRestore.visible = false;
+  adventureRestore.guard.mockReset();
+  vi.mocked(getAdventure).mockReset();
   restore.visible = false;
   restore.guard.mockReset();
   vi.mocked(getBook).mockReset();
@@ -259,6 +301,7 @@ function tree() {
         <Route path="/studio" element={<StudioPage />} />
         <Route path="/books/new/assisted" element={<h1>Criação assistida preservada</h1>} />
         <Route path="/books/:bookId" element={<h1>Livro aberto</h1>} />
+        <Route path="/adventures/:adventureId" element={<h1>Aventura aberta</h1>} />
         <Route path="/campaigns/:campaignId" element={<h1>Campanha aberta</h1>} />
         <Route path="/login" element={<h1>Entrar na conta</h1>} />
       </Routes>
@@ -646,4 +689,77 @@ it('resposta de acesso anterior à troca de conta não navega depois do await', 
   });
   await waitFor(() => expect(restore.guard).toHaveBeenCalledTimes(1));
   expect(screen.queryByRole('heading', { name: 'Livro aberto' })).not.toBeInTheDocument();
+});
+
+const restoredAdventure: Adventure = {
+  id: 'restored-adventure',
+  ownerId: 'owner',
+  schemaVersion: 1,
+  revision: 1,
+  title: 'Cópia de aventura',
+  synopsis: '',
+  language: 'pt-BR',
+  origin: { kind: 'authored' },
+  status: 'draft',
+  universeId: null,
+  createdAt: 1000,
+  updatedAt: 2000,
+};
+it('restaurar aventura é ação própria e não abre o diálogo de livros', async () => {
+  render(tree());
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Restaurar backup de aventura' }),
+  );
+  expect(screen.getByRole('region', { name: 'Backup de aventura no Estúdio' })).toHaveTextContent(
+    'Nova aventura privada',
+  );
+  expect(screen.queryByRole('region', { name: 'Backup no Estúdio' })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar restauração de aventura' }));
+  expect(screen.getByRole('button', { name: 'Restaurar backup de livro' })).toBeInTheDocument();
+});
+it('retoma aventura sem projeto listado e abre somente depois da leitura atual autorizada', async () => {
+  adventureRestore.visible = true;
+  vi.mocked(getAdventure).mockResolvedValue(restoredAdventure);
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Retomar aventura do backup' }));
+  expect(screen.getByRole('region', { name: 'Backup de aventura no Estúdio' })).toHaveTextContent(
+    'Preparação de aventura existente',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir aventura conferida' }));
+  expect(await screen.findByRole('heading', { name: 'Aventura aberta' })).toBeInTheDocument();
+  expect(getAdventure).toHaveBeenCalledExactlyOnceWith('restored-adventure');
+  expect(adventureRestore.guard).toHaveBeenCalledTimes(1);
+});
+it.each([null, { ...restoredAdventure, ownerId: 'other' }])(
+  'recibo histórico não abre aventura ausente ou de outra conta %#',
+  async (value) => {
+    vi.mocked(getAdventure).mockResolvedValue(value);
+    render(tree());
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Restaurar backup de aventura' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir aventura conferida' }));
+    await waitFor(() => expect(adventureRestore.guard).toHaveBeenCalledTimes(1));
+    expect(screen.queryByRole('heading', { name: 'Aventura aberta' })).not.toBeInTheDocument();
+  },
+);
+it('troca de conta durante leitura da aventura impede navegação tardia', async () => {
+  let release!: (value: Adventure | null) => void;
+  vi.mocked(getAdventure).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        release = resolve;
+      }),
+  );
+  render(tree());
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Restaurar backup de aventura' }),
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Abrir aventura conferida' }));
+  adventureRestore.guard.mockImplementation(() => {
+    throw Error('Conta encerrada');
+  });
+  act(() => release(restoredAdventure));
+  await waitFor(() => expect(adventureRestore.guard).toHaveBeenCalledTimes(1));
+  expect(screen.queryByRole('heading', { name: 'Aventura aberta' })).not.toBeInTheDocument();
 });

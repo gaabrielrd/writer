@@ -3188,3 +3188,16 @@ reais; serviço/banco/Storage de teste e autenticação sintética são distingu
 do SDK com mocks. Tipos/lint/arquitetura/build/smoke positivos.
 Validate integral no fechamento do próximo grande bloco; o resultado anterior
 189–194 não é atribuído ao código novo. Não houve CI ou implantação.
+
+## Interface da restauração de aventuras
+
+A [entrega 196](entregas/2026-10-28-writer-v2-restauracao-de-aventuras-no-estudio.md)
+registra 103 casos dirigidos em oito arquivos, com inspeção, recuperação local,
+Dialog/Preparations, Estúdio e regressões de journal/validador.
+Doze verificações Chromium usam UI/exportador/serviços reais, IndexedDB/Web Locks/
+WebCrypto nativos, banco/Storage simulados e SDK/Auth/App Check sintéticos.
+Incluem quota antes do start com retry do mesmo ID, pausa, recarga de pedido
+cifrado, ativação explícita, mídia/coleta e descarte terminal sem chave.
+Temas, largura de 320 px e foco/teclado são verificados; imagens aguardam as
+transições existentes. Não são prova de dispositivo/leitor de tela/zoom físico,
+credenciais reais, implantação ou produção. Validate integral no próximo bloco.

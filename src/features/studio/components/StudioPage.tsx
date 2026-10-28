@@ -2,6 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
 import { Plus, Upload, ArchiveRestore } from 'lucide-react';
 import { BookRestoreDialog, BookRestorePreparations } from '@/features/book-portability';
+import {
+  AdventureRestoreDialog,
+  AdventureRestorePreparations,
+} from '@/features/adventure-portability';
+import { getAdventure } from '@/features/adventures';
 import { ContinueWorkPanel } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
 import { AdventureImportDialog, AdventureImportPreparations } from '@/features/adventure-import';
@@ -37,6 +42,9 @@ function StudioSession({ ownerId }: { ownerId: string }) {
   const [restoreOpen, setRestoreOpen] = useState(false),
     [restoreId, setRestoreId] = useState<string | undefined>(),
     [restoreRevision, setRestoreRevision] = useState(0);
+  const [adventureRestoreOpen, setAdventureRestoreOpen] = useState(false),
+    [adventureRestoreId, setAdventureRestoreId] = useState<string | undefined>(),
+    [adventureRestoreRevision, setAdventureRestoreRevision] = useState(0);
   const [adoption, setAdoption] = useState<ComparisonReadEnvelope | null>(null),
     [adoptionOpen, setAdoptionOpen] = useState(false),
     [adoptionAttempt, setAdoptionAttempt] = useState(0);
@@ -104,6 +112,16 @@ function StudioSession({ ownerId }: { ownerId: string }) {
               <ArchiveRestore className="icon icon-sm" aria-hidden="true" />
               Restaurar backup de livro
             </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setAdventureRestoreId(undefined);
+                setAdventureRestoreOpen(true);
+              }}
+            >
+              <ArchiveRestore className="icon icon-sm" aria-hidden="true" />
+              Restaurar backup de aventura
+            </Button>
             <Button variant="secondary" onClick={() => void navigate('/books/new/assisted')}>
               Criar com IA
             </Button>
@@ -134,6 +152,31 @@ function StudioSession({ ownerId }: { ownerId: string }) {
           if (!book || book.authorId !== ownerId || book.deleting)
             throw new Error('Este livro não está disponível para abrir.');
           void navigate('/books/' + encodeURIComponent(id));
+        }}
+      />
+      <AdventureRestorePreparations
+        ownerId={ownerId}
+        revision={adventureRestoreRevision}
+        onResume={(id) => {
+          setAdventureRestoreId(id);
+          setAdventureRestoreOpen(true);
+        }}
+      />
+      <AdventureRestoreDialog
+        ownerId={ownerId}
+        open={adventureRestoreOpen}
+        restoreId={adventureRestoreId}
+        onClose={() => {
+          setAdventureRestoreOpen(false);
+          setAdventureRestoreRevision((n) => n + 1);
+        }}
+        onOpenAdventure={async (id, guard) => {
+          const adventure = await getAdventure(id);
+          guard();
+          if (!active.current) return;
+          if (!adventure || adventure.ownerId !== ownerId)
+            throw new Error('Esta aventura não está disponível para abrir.');
+          void navigate('/adventures/' + encodeURIComponent(id));
         }}
       />
       <AdventureImportPreparations

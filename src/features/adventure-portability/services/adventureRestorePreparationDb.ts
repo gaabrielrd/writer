@@ -1,5 +1,7 @@
 import {
   readAdventureRestoreRecoveryContext,
+  readAdventureRestoreRecoveryRequest,
+  type AdventureRestoreRecoveryIdentity,
   type AdventureRestoreRecoveryContext,
 } from './adventureRestoreRecoveryContracts';
 import {
@@ -17,7 +19,10 @@ export const adventureRestorePreparationStorageAvailable = () =>
   !!globalThis.crypto?.subtle &&
   typeof globalThis.navigator?.locks?.request === 'function' &&
   globalThis.isSecureContext !== false;
-const key = (context: AdventureRestoreRecoveryContext) => [context.ownerId, context.restoreId];
+const key = (context: Pick<AdventureRestoreRecoveryContext, 'ownerId' | 'restoreId'>) => [
+  context.ownerId,
+  context.restoreId,
+];
 async function open(guard: () => void): Promise<IDBDatabase> {
   guard();
   check(adventureRestorePreparationStorageAvailable());
@@ -59,12 +64,18 @@ async function open(guard: () => void): Promise<IDBDatabase> {
     };
   });
 }
-export async function readStoredAdventureRestorePreparation(
-  expectedContext: AdventureRestoreRecoveryContext,
+export async function readStoredAdventureRestorePreparationMetadata(
+  expectedContext: AdventureRestoreRecoveryIdentity,
   guard: () => void,
 ): Promise<unknown> {
   guard();
-  const context = readAdventureRestoreRecoveryContext(expectedContext),
+  const context = readAdventureRestoreRecoveryRequest({
+      ownerId: expectedContext.ownerId,
+      restoreId: expectedContext.restoreId,
+      adventureId: expectedContext.adventureId,
+      jobToken: expectedContext.jobToken,
+      reviewHash: expectedContext.reviewHash,
+    }),
     db = await open(guard);
   try {
     guard();
@@ -92,6 +103,16 @@ export async function readStoredAdventureRestorePreparation(
   } finally {
     db.close();
   }
+}
+export async function readStoredAdventureRestorePreparation(
+  expectedContext: AdventureRestoreRecoveryContext,
+  guard: () => void,
+): Promise<unknown> {
+  guard();
+  return readStoredAdventureRestorePreparationMetadata(
+    readAdventureRestoreRecoveryContext(expectedContext),
+    guard,
+  );
 }
 export async function compareStoredAdventureRestorePreparation(
   expectedContext: AdventureRestoreRecoveryContext,

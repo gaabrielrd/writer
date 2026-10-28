@@ -2090,3 +2090,11 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      [evidência dirigida](../../../entregas/2026-10-28-writer-v2-efeitos-retomaveis-de-aventuras.md).
      Tipos/lint/arquitetura/build/smoke verdes; validate no próximo grande bloco.
      UI/roundtrip e P2/P3/D/F2-09 continuam abertos; somente commit local.
+
+196. [Restauração de aventuras no Estúdio](196-restauracao-de-aventuras-no-estudio.md):
+     inspeção/revisão local, preparação e consentimento final, pausa/retomada,
+     lista paginada e abertura autorizada; descarte terminal sem chave.
+     103 Vitest e 12 verificações Chromium positivos;
+     [evidência dirigida](../../../entregas/2026-10-28-writer-v2-restauracao-de-aventuras-no-estudio.md).
+     Tipos/lint/arquitetura/styleguide/build/smoke verdes. Geração pela UI/corpus
+     amplo e demais P2/P3/D/F2-09 abertos; validate no próximo bloco integrado.

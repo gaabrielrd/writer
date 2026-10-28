@@ -3379,3 +3379,15 @@ o pedido original sem ativar automaticamente. Mídia/coleta usam checkpoints
 próprios e preservam job congelado/edições atuais; cancelamento/coleta podem
 encerrar a chave sem impedir confirmação. Helper cliente completa os 29 métodos
 públicos; chaves/helpers ficam privados. Interface e roundtrip continuam pendentes.
+
+## Restauração de aventuras no Estúdio
+
+A [ADR 0218](decisions/0218-adventure-restore-studio-flow.md) combina inspeção
+local metadata, hook por conta/tentativa e Dialog/Preparations próprios.
+Somente o barrel público chega ao Estúdio. Revisões local/final são explícitas;
+arquivo fica em memória, keyId anterior vem do envelope e grant continua privado.
+Leitura de metadata não decifra. Descarte terminal revalida job e usa CAS sem
+chave encerrada. Falha local antes do start pode repetir somente o ID/revisão
+originais após not-found; disponibilidade incerta conserva a tentativa.
+Abrir aventura consulta getAdventure e guard/owner após await.
+Geração do arquivo pela UI e corpus integrado amplo continuam pendentes.

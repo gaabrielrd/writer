@@ -417,3 +417,12 @@ build/smoke, conforme
 [evidência](../../entregas/2026-10-28-writer-v2-efeitos-retomaveis-de-aventuras.md).
 Validate integral no fechamento do próximo grande bloco; UI/revisão local/
 roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 continuam abertos.
+
+[Interface de restauração 196](execucao/196-restauracao-de-aventuras-no-estudio.md)
+integra seleção/inspeção, revisão explícita, retomadas e finalização/cancelamento
+de aventuras no Estúdio. **103 Vitest e 12 verificações Chromium** positivos,
+com tipos/lint/arquitetura/styleguide/build/smoke; resultados e limites na
+[evidência](../../entregas/2026-10-28-writer-v2-restauracao-de-aventuras-no-estudio.md).
+Inclui retry de quota pelo mesmo ID e descarte terminal sem chave.
+Geração do arquivo pela UI/corpus amplo de roundtrip e P2/P3/D/F2-09 continuam
+abertos. Macro 8/35 inalterada; validate integral no próximo bloco integrado.
