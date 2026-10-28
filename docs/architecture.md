@@ -3400,5 +3400,17 @@ Catálogo/retomada omitem origens reservadas; Rules fecham listagem direta da
 raiz e conferem reserva no get/filhos. O cliente já usa catálogo no servidor.
 Fonte interna de confirmação observa nascimento/updateTime nativos da raiz
 e progresso. Recibo histórico não libera chave, novo corpo ou mídia.
-Produtor/job/limpeza/UI da exclusão ainda não estão implementados/expostos;
-o plano 199 e o fechamento integral do bloco continuam abertos.
+Início/job permanecem internos; avanço da limpeza e interface ainda faltam.
+O plano 199 e o fechamento integral do bloco continuam abertos.
+
+## Início privado e inventário físico da exclusão de aventuras
+
+A [ADR 0222](decisions/0222-adventure-deletion-start-and-inventory.md) define
+início idempotente com fonte atual, revogação e desvínculo atômicos. Status e
+recibos observam nascimento/updateTime nativos; resposta incerta retoma pelo
+mesmo fingerprint e o fence privado não desfaz confirmação.
+Inventário limitado encontra filhos sem head por grupos enquadrados na raiz
+e valida caminhos/metadados antes de devolver referências. Layout v1 contém
+19 coleções diretas e quatro grupos; consulta vazia é separada.
+Serviço interno sem export em index/callable/UI; avanço da limpeza permanece
+pendente, assim como o fechamento integral do plano 199.

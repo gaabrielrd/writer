@@ -60,3 +60,10 @@ Inclui autores/importação/restauração, consumidores de autoria e campanha,
 mídia pendente, catálogo e retomada. Fonte interna de confirmação usa carimbos
 nativos, sem mutar. Não existe início público ou limpeza de projeto ainda.
 Esta preparação não fecha a lacuna de exclusão completa nem P2/P3/D/F2-09.
+
+O início interno agora grava reserva/job/recibo/revogação e desfaz o vínculo
+do universo atomicamente; resolve tentativas sem resposta e prova identidades
+nativas. Inventário limitado encontra filhos com pais ausentes.
+Veja a [evidência](../../entregas/2026-10-28-writer-v2-inicio-privado-e-inventario-da-exclusao-de-aventuras.md).
+Continua sem endpoint/UI de exclusão ou avanço da limpeza; o conjunto do
+plano 199 permanece pendente.

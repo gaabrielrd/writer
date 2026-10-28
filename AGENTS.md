@@ -954,3 +954,11 @@ Recibo histórico não libera chave, corpo novo ou mídia; revalide o ACK depois
 do I/O. Notas próprias da campanha e imagens/personas independentes continuam
 separadas da origem. Não exponha produtor de exclusão antes de completar
 inventário, quiescência, limpeza e retomada do plano 199 (ADR 0221).
+
+No início privado da exclusão de aventuras, fixe sourceToken/nascimento/revisão,
+reserve job/recibo/raiz na mesma transação e desfaça o vínculo tipado do universo.
+Reconfira nascimento conjunto e último recibo/updateTime; fence desconhecido
+não cancela confirmado. Leia receipt por folhas, não por objeto inteiro.
+O inventário versionado usa páginas de até 25 e grupos de filhos por intervalo
+da raiz, com caminho/família exatos; não dependa de head existente. Exija vazio
+separado em todas as famílias e revise a versão ao mudar o layout (ADR 0222).

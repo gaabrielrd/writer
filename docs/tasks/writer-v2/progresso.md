@@ -457,3 +457,10 @@ rodadas documentada na
 [evidência parcial](../../entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
 Sem produtor público/início, job/limpeza ou UI de exclusão. Validate integral
 no fechamento do bloco; P2/P3/D/F2-09 e macro **8/35** inalterados.
+
+No mesmo plano 199, o serviço interno de início/consulta/resolução e o
+inventário físico de órfãos passaram em **28 Node e oito SDK/Rules**.
+O início é atômico e o catálogo suporta janela de 50 com provas nativas.
+[Entregável parcial](../../entregas/2026-10-28-writer-v2-inicio-privado-e-inventario-da-exclusao-de-aventuras.md):
+sem endpoint/UI ou avanço de limpeza; versão v1 e índice somente locais.
+Não fecha P2/P3/D/F2-09 nem altera a macro **8/35**.

@@ -137,3 +137,49 @@ Todos os aceites gerais acima permanecem abertos: não há produtor/job/limpeza
 ou interface de exclusão. Inventário completo/fechamento de Storage/controles,
 universo/atividade e fontes órfãs precisam preceder a exposição da operação.
 O validate integral continua reservado ao fechamento do bloco.
+
+## Próximo passo — inventário físico e início privado
+
+Base conferida em 24411d3, árvore limpa. A prova SDK local m113-group-probe
+encontrou quatro corpos com raiz/pais ausentes, em três consultas de duas
+unidades, com projeção vazia e exclusão de cinco caminhos alheios.
+
+Usar collectionGroup por filho conhecido (body/planning/references/milestones)
+com cursores de nome de documento dentro da raiz: limites documentais fixos
+!/! e ~/~ enquadram os nomes ASCII das famílias autorizadas. Validar cada
+caminho retornado contra a família e profundidade exatas; não interpretar
+nome semelhante como pertencimento. Paginar também as 19 coleções diretas.
+Reconsultar desde o início após remover uma página e exigir consulta vazia,
+incluindo filhos sem head. Porta sem suporte deve recusar, sem travessia
+por pais como fallback. A prova não cobre índices/configuração de produção.
+
+Implementar o início somente no serviço interno (sem index/callable/UI):
+UID/fingerprint/pedido fechado, CAS de sourceToken/nascimento/revisão atuais,
+reserva/job/recibo e revogação atômicos, desvínculo tipado do universo.
+Confirmação posterior lê metadados nativos; incerteza usa o mesmo ID.
+Vincular nascimento do job/reserva/recibo inicial e último checkpoint; metadado
+copiado/recriado não autoriza uma tentativa antiga. Resolver início desconhecido
+com fence não deve cancelar exclusão confirmada, nem consultar prosa atual.
+
+Depois integrar limpeza/quiescência completa e avanço; não declarar este
+início privado como produto disponível ou exclusão concluída.
+
+## Início interno e inventário — implementados parcialmente
+
+Serviço próprio agora inicia/consulta/lista/resolve com fonte atual e metadados
+nativos, revogação/recibo/job/reserva e desvínculo atômicos. O recibo é lido
+por folhas e possui hash do checkpoint. Perda de ACK ou da leitura posterior
+retoma pelo pedido original. Ainda sem export em index/callable/UI.
+
+Inventário v1 independente da restauração enumera 19 coleções diretas e
+quatro grupos de filhos. Caminhos/profundidades/dono/projeto são conferidos;
+página de até 25, sem corpos, seguida de observação vazia separada.
+Provas: 28 Node e oito SDK/Rules reais verdes; 54 órfãos sem raiz removidos
+em 25/25/4/0 nas transações do teste, vizinho preservado e reaparecimento
+bloqueando certificação. O processador do produto ainda não existe.
+
+A [ADR 0222](../../../decisions/0222-adventure-deletion-start-and-inventory.md)
+e a [evidência parcial](../../../entregas/2026-10-28-writer-v2-inicio-privado-e-inventario-da-exclusao-de-aventuras.md)
+registram regras, resultados e limites. Próximo: integrar quiescência operacional,
+retirada de mídia/usos e fontes/controles externos, avanço da limpeza/atividade,
+certificação terminal e cliente/UI. Todos os aceites gerais continuam abertos.

@@ -58,3 +58,7 @@ ou universos junto. A reserva não é autorização para apagar cópias alheias.
 
 As regressões dirigidas e o emulador demo comprovam esta preparação local,
 conforme a entrega. Não comprovam Rules/endpoints ou configuração de produção.
+
+Evolução interna: início/recibos/resolução e inventário físico foram acrescentados
+pela [ADR 0222](0222-adventure-deletion-start-and-inventory.md), sem exposição
+ou fechamento da exclusão completa.

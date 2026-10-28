@@ -39,7 +39,8 @@ arquivo pela interface também está integrada localmente; veja a
 [evidência do backup de aventuras](docs/entregas/2026-10-28-writer-v2-backup-de-aventuras-pela-interface.md)
 para validação e limites. A exclusão completa está em andamento: guards de
 reserva permanente, Rules e fonte privada de confirmação estão preparados,
-sem início/job/limpeza ou interface pública de exclusão. Consulte a
+com início/job privados ainda sem avanço de limpeza ou interface pública.
+Consulte a
 [evidência parcial](docs/entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
 A portabilidade completa continua aberta. Não houve implantação.
 F2-06 está concluído tecnicamente em 624c912, incluindo a correção de foco/refazer

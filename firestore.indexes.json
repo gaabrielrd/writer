@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "adventureDeletions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "createdAt", "order": "DESCENDING" },
+        { "fieldPath": "__name__", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "editorChats",
       "queryScope": "COLLECTION",
       "fields": [
