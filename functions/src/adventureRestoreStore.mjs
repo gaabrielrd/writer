@@ -273,9 +273,15 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           ...ADVENTURE_STAGING_COLLECTIONS,
           'staged-target',
           'persona-library-batch',
+          'recovery-key',
         ].includes(effect.collection) ||
         typeof effect.id !== 'string' ||
         !/^[A-Za-z0-9-]{1,80}$/.test(effect.id)
+      )
+        inconsistent();
+      if (
+        effect.collection === 'recovery-key' &&
+        (r.action !== 'startAdventureRestore' || effect.id !== loaded.id)
       )
         inconsistent();
       restoreHash(effect.hash);

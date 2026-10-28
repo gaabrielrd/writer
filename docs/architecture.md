@@ -3318,3 +3318,14 @@ com UID, App Check, limites e headers privados. Leitores/chaves/helpers ficam
 fora dos callables; recuperação HTTP e cliente/UI continuam próprios. HTTP/SDK
 locais verificam o protocolo com atestações sintéticas, sem comprovar produção.
 Não houve deploy nem novo segredo, dependência, índice ou Rules.
+
+## Chave privada da retomada de aventuras
+
+A [ADR 0212](decisions/0212-adventure-restore-private-recovery-key.md) cria chave
+AES-GCM junto do novo início, com nascimento/imutabilidade e efeito nativo dos
+metadados/fingerprint. A recuperação HTTP própria exige Auth/App Check,
+jobToken/revisão/keyId e responde sem cache. Nenhum callable/DTO comum carrega
+o segredo; o servidor não cria chave tardia para jobs antigos ou chave perdida.
+Cancelamento e primeira unidade da coleta removem a chave atomicamente, usando
+metadados mascarados sem ler segredo; replay e job ativado são preservados.
+Journal/controlador/UI/roundtrip continuam etapas próprias. Sem deploy.

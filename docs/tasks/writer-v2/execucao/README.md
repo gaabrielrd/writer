@@ -2051,3 +2051,9 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      internos/chaves excluídos. 162 Node e um SDK HTTP/Firestore demo positivos;
      [evidência](../../../entregas/2026-10-28-writer-v2-transporte-da-restauracao-de-aventuras.md).
      Recuperação HTTP/chaves/cliente/UI/roundtrip e P2/P3/D/F2-09 abertos.
+
+190. [Chave privada da restauração de aventuras](190-chave-privada-da-restauracao-de-aventuras.md):
+     nascimento atômico, HTTP próprio autenticado e encerramento por metadados
+     no cancelamento/coleta; sem chave tardia ou exposição em callables.
+     [Evidência](../../../entregas/2026-10-28-writer-v2-chave-privada-da-restauracao-de-aventuras.md).
+     Cliente/journal/UI/roundtrip e P2/P3/D/F2-09 permanecem abertos.

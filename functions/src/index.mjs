@@ -16,6 +16,7 @@ import {
   createBookRestoreRecoveryHandler,
   setBookRestoreHeaders,
 } from './bookRestoreUpload.mjs';
+import { createAdventureRestoreRecoveryHandler } from './adventureRestoreRecoveryHttp.mjs';
 import { createAdventureImportRecoveryHandler } from './adventureImportRecovery.mjs';
 import { getAuth } from 'firebase-admin/auth';
 import { getAppCheck } from 'firebase-admin/app-check';
@@ -905,6 +906,17 @@ export const finalizeBookRestoreMedia = callable('finalizeBookRestoreMedia');
 export const getBookRestoreArchiveCleanup = callable('getBookRestoreArchiveCleanup');
 export const advanceBookRestoreArchiveCleanup = callable('advanceBookRestoreArchiveCleanup');
 
+export const getAdventureRestoreRecoveryKey = onRequest(
+  { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
+  createAdventureRestoreRecoveryHandler({
+    service: createAdventureRestoreTransferService({
+      db,
+      assets: createRestoredImageStorage(bucket),
+    }),
+    verifyIdToken: (token) => getAuth().verifyIdToken(token),
+    verifyAppCheck: (token) => getAppCheck().verifyToken(token),
+  }),
+);
 export const startAdventureRestore = callable('startAdventureRestore');
 export const resolveAdventureRestoreStart = callable('resolveAdventureRestoreStart');
 export const getAdventureRestore = callable('getAdventureRestore');

@@ -3116,3 +3116,16 @@ cobrem a composição comum. O SDK em
 usa Firestore demo em loopback e HTTP local para o pipeline completo mínimo.
 Não tratar run, atestações sintéticas ou configuração declarada como prova de
 credenciais/atestação/deploy em produção.
+
+## Chave da retomada de aventuras
+
+adventureRestoreRecoveryKey.test.mjs em functions/test confere cifra/decifra
+AES-GCM com chave recuperada, prova nativa/retry, identidade/revisão/keyId,
+legado, adulteração/ABA, rollback no início/cancelamento, ausência de segredo
+nos DTOs e encerramento no cancelamento/coleta. Ports de teste impedem leitura
+integral da chave durante remoção e conferem máscaras não vazias.
+adventureRestoreHost.test.mjs monta também o HTTPS privado: Auth/App Check,
+corpo/tamanho/UTF-8, método, headers e falha inesperada sanitizada.
+O SDK HTTP de aventura confere nascimento conjunto, recuperação/retry por
+conta, Rules negando acesso direto à chave e indisponibilidade após coleta.
+Atestações sintéticas só nos testes; não são prova de credenciais reais.

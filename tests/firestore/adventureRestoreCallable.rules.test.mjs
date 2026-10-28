@@ -70,6 +70,16 @@ before(async () => {
   };
   const app = express();
   app.use(express.json({ limit: '128kb' }));
+  app.use(
+    express.raw({
+      type: 'text/plain',
+      limit: '16kb',
+      verify: (req, _res, body) => {
+        req.rawBody = body;
+      },
+    }),
+  );
+  app.post('/getAdventureRestoreRecoveryKey', host.getAdventureRestoreRecoveryKey);
   for (const method of ADVENTURE_RESTORE_METHODS) app.post('/' + method, host[method]);
   server = createServer(app);
   await new Promise((resolve, reject) => {
@@ -127,6 +137,34 @@ test('native HTTP callables restore and collect a private adventure with the rea
     other = env.authenticatedContext('other').firestore(),
     jobRef = admin.doc('users/' + uid + '/adventureRestores/' + p.restoreId),
     rootRef = admin.doc('adventures/' + p.adventureId);
+  const keyInput = {
+    restoreId: p.restoreId,
+    jobToken: p.jobToken,
+    reviewHash: (await jobRef.get()).data().reviewHash,
+  };
+  const fetchKey = async (actor, input = keyInput) => {
+    const response = await fetch(url + '/getAdventureRestoreRecoveryKey', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+        Authorization: 'Bearer ' + (actor === uid ? 'local-author-auth' : 'local-other-auth'),
+        'X-Firebase-AppCheck': 'local-valid-app-check',
+      },
+      body: JSON.stringify(input),
+    });
+    assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
+    assert.ok(response.headers.get('Vary').includes('Authorization'));
+    return { status: response.status, body: await response.json() };
+  };
+  const key = await fetchKey(uid);
+  assert.equal(key.status, 200);
+  assert.equal(Buffer.from(key.body.data.keyBase64, 'base64').length, 32);
+  assert.deepEqual(await fetchKey(uid, { ...keyInput, expectedKeyId: key.body.data.keyId }), key);
+  assert.equal((await fetchKey('other')).status, 404);
+  const keyRef = admin.doc('users/' + uid + '/adventureRestoreRecoveryKeys/' + p.restoreId);
+  assert.equal((await keyRef.get()).createTime.isEqual((await jobRef.get()).createTime), true);
+  await assertFails(getDoc(doc(own, keyRef.path)));
+  await assertFails(getDoc(doc(other, keyRef.path)));
   await assertFails(getDoc(doc(own, jobRef.path)));
   await assertFails(getDoc(doc(own, rootRef.path)));
   await assert.rejects(
@@ -153,6 +191,8 @@ test('native HTTP callables restore and collect a private adventure with the rea
     })
   ).progress;
   assert.equal((await finishArchiveCleanup(f, p, control)).phase, 'done');
+  assert.equal((await keyRef.get()).exists, false);
+  assert.equal((await fetchKey(uid)).body.error.details.reason, 'recovery-key-unavailable');
   assert.deepEqual(await api.activateAdventureRestore(uid, review.request), activated);
   assert.equal(
     (await api.getAdventureRestore(uid, { restoreId: p.restoreId, jobToken: p.jobToken })).state,

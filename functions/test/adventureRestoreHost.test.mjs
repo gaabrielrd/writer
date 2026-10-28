@@ -33,6 +33,16 @@ before(async () => {
       : previousAppCheck.call(appCheckService, token, ...args);
   const app = express();
   app.use(express.json());
+  app.use(
+    express.raw({
+      type: 'text/plain',
+      limit: '16kb',
+      verify: (req, _res, body) => {
+        req.rawBody = body;
+      },
+    }),
+  );
+  app.all('/getAdventureRestoreRecoveryKey', host.getAdventureRestoreRecoveryKey);
   for (const method of ADVENTURE_RESTORE_METHODS) app.post('/' + method, host[method]);
   server = createServer(app);
   await new Promise((resolve, reject) => {
@@ -49,14 +59,15 @@ after(async () => {
   if (previousProject === undefined) delete process.env.GCLOUD_PROJECT;
   else process.env.GCLOUD_PROJECT = previousProject;
 });
-test('host exports exactly the public adventure protocol without internal readers or recovery keys', () => {
+test('host exports the public adventure protocol and a separate HTTP key without internal readers', () => {
   assert.deepEqual(
     Object.keys(host)
       .filter((n) => /AdventureRestore/.test(n))
       .sort(),
-    [...ADVENTURE_RESTORE_METHODS].sort(),
+    [...ADVENTURE_RESTORE_METHODS, 'getAdventureRestoreRecoveryKey'].sort(),
   );
-  assert.equal(host.getAdventureRestoreRecoveryKey, undefined);
+  assert.equal(host.getAdventureRestoreRecoveryKey.__endpoint.callableTrigger, undefined);
+  assert.ok(host.getAdventureRestoreRecoveryKey.__endpoint.httpsTrigger);
   assert.equal(host.openVerifiedAdventureRestoreContent, undefined);
   assert.equal(host.readAdventureStageJournal, undefined);
 });
@@ -189,5 +200,152 @@ test('unexpected service faults are sanitized by the real HTTP callable boundary
     assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
   } finally {
     db.runTransaction = previousRun;
+  }
+});
+
+for (const [label, token, check, body, contentType, status, reason] of [
+  [
+    'missing Auth',
+    null,
+    'only-local-valid-app-check',
+    '{}',
+    'text/plain;charset=utf-8',
+    401,
+    'auth-required',
+  ],
+  [
+    'invalid Auth',
+    'invalid-auth',
+    'only-local-valid-app-check',
+    '{}',
+    'text/plain;charset=utf-8',
+    401,
+    'auth-required',
+  ],
+  [
+    'missing App Check',
+    'only-local-auth',
+    null,
+    '{}',
+    'text/plain;charset=utf-8',
+    401,
+    'app-check-required',
+  ],
+  [
+    'invalid App Check',
+    'only-local-auth',
+    'invalid-appcheck',
+    '{}',
+    'text/plain;charset=utf-8',
+    401,
+    'app-check-required',
+  ],
+  [
+    'closed body',
+    'only-local-auth',
+    'only-local-valid-app-check',
+    '{"privateText":"PRIVATE_LITERAL"}',
+    'text/plain;charset=utf-8',
+    400,
+    'invalid-input',
+  ],
+  [
+    'malformed JSON',
+    'only-local-auth',
+    'only-local-valid-app-check',
+    '{',
+    'text/plain;charset=utf-8',
+    400,
+    'invalid-input',
+  ],
+  [
+    'invalid content type',
+    'only-local-auth',
+    'only-local-valid-app-check',
+    '{}',
+    'application/json',
+    400,
+    'invalid-input',
+  ],
+  [
+    'oversized raw body',
+    'only-local-auth',
+    'only-local-valid-app-check',
+    'x'.repeat(8193),
+    'text/plain;charset=utf-8',
+    400,
+    'payload-too-large',
+  ],
+  [
+    'invalid UTF-8',
+    'only-local-auth',
+    'only-local-valid-app-check',
+    Buffer.from([0xff]),
+    'text/plain;charset=utf-8',
+    400,
+    'invalid-input',
+  ],
+])
+  test(
+    'private recovery HTTP rejects ' + label + ' with non-cacheable sanitized errors',
+    async () => {
+      const response = await fetch(address + '/getAdventureRestoreRecoveryKey', {
+        method: 'POST',
+        headers: {
+          'Content-Type': contentType,
+          ...(token ? { Authorization: 'Bearer ' + token } : {}),
+          ...(check ? { 'X-Firebase-AppCheck': check } : {}),
+        },
+        body,
+      });
+      const result = await response.text();
+      assert.equal(response.status, status);
+      assert.equal(JSON.parse(result).error.details.reason, reason);
+      assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
+      assert.ok(response.headers.get('Vary').includes('Authorization'));
+      for (const marker of ['PRIVATE_LITERAL', 'invalid-auth', 'invalid-appcheck', 'keyBase64'])
+        assert.equal(result.includes(marker), false);
+    },
+  );
+test('key export is HTTP-only, rejects GET, and retains private runtime limits', async () => {
+  const endpoint = host.getAdventureRestoreRecoveryKey.__endpoint;
+  assert.deepEqual(endpoint.region, ['us-central1']);
+  assert.equal(endpoint.availableMemoryMb, 512);
+  assert.equal(endpoint.timeoutSeconds, 120);
+  assert.equal(endpoint.maxInstances, 5);
+  assert.equal(endpoint.secretEnvironmentVariables, undefined);
+  const response = await fetch(address + '/getAdventureRestoreRecoveryKey');
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get('Allow'), 'POST');
+  assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
+});
+
+test('private recovery HTTP sanitizes an unexpected service error without reflecting payloads', async () => {
+  const db = getFirestore(),
+    previous = db.runTransaction;
+  db.runTransaction = async () => {
+    throw Error('SECRET_PRIVATE_FAILURE');
+  };
+  try {
+    const response = await fetch(address + '/getAdventureRestoreRecoveryKey', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+        Authorization: 'Bearer only-local-auth',
+        'X-Firebase-AppCheck': 'only-local-valid-app-check',
+      },
+      body: JSON.stringify({
+        restoreId: 'adventure-key-http-0001',
+        jobToken: 'a'.repeat(64),
+        reviewHash: 'b'.repeat(64),
+      }),
+    });
+    assert.equal(response.status, 503);
+    const raw = await response.text();
+    assert.equal(JSON.parse(raw).error.details.reason, 'temporary-unavailable');
+    assert.equal(raw.includes('SECRET_PRIVATE_FAILURE'), false);
+    assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
+  } finally {
+    db.runTransaction = previous;
   }
 });

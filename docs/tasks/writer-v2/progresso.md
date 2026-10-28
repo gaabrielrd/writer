@@ -362,3 +362,11 @@ HTTP/Firestore demo positivos**; resultados e limites na
 Código transportável não equivale a deploy ou UI. Recuperação HTTP/chaves,
 cliente/journal/interface/roundtrip, P2/P3/D/F2-09 e macro 8/35 seguem abertos.
 Validate integral no próximo grande bloco; sem CI/operação remota.
+
+[Chave privada 190](execucao/190-chave-privada-da-restauracao-de-aventuras.md)
+acrescenta nascimento atômico e HTTP Auth/App Check para retomada futura.
+Cancelamento/coleta encerram a chave por metadados, sem alterar job ativado;
+legado não recebe chave tardia. Resultados efetivamente executados na
+[evidência](../../entregas/2026-10-28-writer-v2-chave-privada-da-restauracao-de-aventuras.md).
+Cliente/journal/interface/roundtrip, P2/P3/D/F2-09 e macro 8/35 seguem abertos.
+Validate integral no próximo grande bloco; sem CI/operação remota.

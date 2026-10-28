@@ -14,6 +14,7 @@ import {
 } from './adventureRestoreArchiveContracts.mjs';
 import { createAdventureRestoreArchiveStore } from './adventureRestoreArchiveStore.mjs';
 import { prepareAdventureRestoreArchiveUnit } from './adventureRestoreArchiveUnits.mjs';
+import { readAdventureRestoreKey } from './adventureRestoreRecoveryKey.mjs';
 export function createAdventureRestoreArchiveService(store) {
   const mediaStore = createAdventureRestoreMediaStore(store),
     archiveStore = createAdventureRestoreArchiveStore(store);
@@ -53,6 +54,7 @@ export function createAdventureRestoreArchiveService(store) {
         const p = control.value ? structuredClone(control.value) : initialArchive(loaded, media);
         if (p.checkpoint !== request.expectedCheckpoint)
           restoreFail('failed-precondition', 'archive-checkpoint-conflict');
+        const key = !control.value ? await readAdventureRestoreKey(store, tx, loaded, true) : null;
         const remove = await prepareAdventureRestoreArchiveUnit(store, tx, loaded, p);
         p.checkpoint = sum(p.checkpoint, 1);
         p.firstOperationId ??= request.operationId;
@@ -60,6 +62,7 @@ export function createAdventureRestoreArchiveService(store) {
         p.updatedAt = restoreDate(store.now, p.updatedAt);
         if (p.phase === 'done') p.completedAt = p.updatedAt;
         validateArchive(p, loaded, media);
+        if (key) tx.delete(key.ref);
         for (const ref of remove) tx.delete(ref);
         return archiveStore.commit(tx, loaded, control, request, p);
       });

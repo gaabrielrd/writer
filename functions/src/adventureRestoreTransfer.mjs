@@ -58,6 +58,14 @@ import {
   prepareAdventureStagingCleanup,
   checkAdventureStageSourceIndex,
 } from './adventureRestoreStagingCleanup.mjs';
+import {
+  adventureRestoreKeyRef,
+  adventureRestoreKeyMetadata,
+  assertAdventureRestoreKeyAbsent,
+  newAdventureRestoreKey,
+  readAdventureRestoreKey,
+  createAdventureRestoreRecoveryService,
+} from './adventureRestoreRecoveryKey.mjs';
 const terminal = (id, adventureId) => ({
   schemaVersion: 1,
   kind: 'cancelled',
@@ -116,7 +124,8 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
     const request = startInput(input),
       id = request.operationId,
       fingerprint = requestHash('startAdventureRestore', request),
-      adventureId = targetId(uid, id, fingerprint);
+      adventureId = targetId(uid, id, fingerprint),
+      recoveryKey = newAdventureRestoreKey(uid, id, adventureId, fingerprint, request.reviewHash);
     const prior = await db.runTransaction(async (tx) => {
       const [job, op, f, r, root] = await Promise.all([
         tx.get(refs.job(uid, id)),
@@ -136,7 +145,8 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
         if (receipt.action !== 'startAdventureRestore') inconsistent();
         return store.confirm(loaded, receipt);
       }
-      if (r.exists || root.exists) inconsistent();
+      if (r.exists || root.exists || (await tx.get(adventureRestoreKeyRef(store, uid, id))).exists)
+        inconsistent();
       await store.emptyRoot(tx, adventureId);
       const timestamp = restoreDate(now),
         record = {
@@ -176,7 +186,10 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
         reservation(uid, id, adventureId, fingerprint, 'job'),
       );
       tx.create(refs.root(adventureId), pendingRoot(uid, id, fingerprint));
-      store.writeOperation(tx, uid, id, 'startAdventureRestore', request, record);
+      tx.create(adventureRestoreKeyRef(store, uid, id), recoveryKey);
+      store.writeOperation(tx, uid, id, 'startAdventureRestore', request, record, undefined, [
+        store.effect('recovery-key', id, adventureRestoreKeyMetadata(recoveryKey)),
+      ]);
       return null;
     });
     if (prior) return prior;
@@ -365,11 +378,15 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
       if (op.exists) return store.confirm(loaded, store.operation(op, loaded, fingerprint));
       if (['cancelled', 'activated'].includes(loaded.job.state))
         restoreFail('failed-precondition', 'state-conflict');
+      const alreadyCancelling = loaded.job.state === 'cancelling';
+      if (alreadyCancelling) await assertAdventureRestoreKeyAbsent(store, tx, uid, loaded.id);
+      const key = alreadyCancelling ? null : await readAdventureRestoreKey(store, tx, loaded, true);
       const record = store.next(loaded, request, action, {
         state: 'cancelling',
         integrityStateId: null,
         integrityStateHash: null,
       });
+      if (key) tx.delete(key.ref);
       return store.commit(tx, loaded, request, action, record);
     });
   }
@@ -493,6 +510,7 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
               ).docs.length
             )
               inconsistent();
+          await assertAdventureRestoreKeyAbsent(store, tx, uid, loaded.id);
           await store.emptyRoot(tx, job.adventureId);
           await assertAdventurePersonaLibraryClean(store, tx, loaded);
           await assertAdventureRestoreImageLibraryClean(store, tx, loaded);
@@ -512,6 +530,7 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
       : result;
   }
   return {
+    ...createAdventureRestoreRecoveryService(store),
     startAdventureRestore: start,
     resolveAdventureRestoreStart: resolveStart,
     getAdventureRestore: get,

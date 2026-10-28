@@ -13,7 +13,9 @@ test('collection removes only private source namespaces while keeping native pro
     parent = structuredClone(f.records.get(f.path)),
     preserved = structuredClone(
       [...f.records].filter(
-        ([k]) => !ARCHIVE_NAMES.some((name) => k.startsWith(f.path + '/' + name + '/')),
+        ([k]) =>
+          !k.includes('/adventureRestoreRecoveryKeys/') &&
+          !ARCHIVE_NAMES.some((name) => k.startsWith(f.path + '/' + name + '/')),
       ),
     );
   const done = await finishArchiveCleanup(f, p, progress);

@@ -911,3 +911,10 @@ ADVENTURE_RESTORE_METHODS e pelos exports literais; autorize UID antes do dispat
 mantenha App Check e headers privados e não escolha método pelo payload.
 Mantenha leitores/chaves/helpers fora dos callables; teste run e middleware HTTP
 separadamente, com atestações sintéticas restritas aos testes (ADR 0211).
+
+Crie chave de retomada de aventura atomicamente no início, com efeito de
+metadados/fingerprint e nascimento nativo imutável; nunca crie chave tardia.
+Entregue segredo somente no HTTP privado Auth/App Check, fora dos callables.
+No cancelamento e primeira coleta, remova por metadata mascarada, sem ler
+keyBase64; recuse port sem getAll. Replay não recria chave nem altera job
+ativado; legado sem efeito não recebe chave nova (ADR 0212).
