@@ -3104,3 +3104,15 @@ regressão e três SDK demo positivos. Confere pares head/corpo, texto/hash/byte
 invisibilidade, journal/nascimento, lookup, orçamento, replay/concorrência/
 rollback/cancelamento, origem adulterada e limpeza de targets, inclusive órfão
 sob head ainda não criado. Sem evidência de ativação/contadores finais ou UI.
+
+## Transporte da restauração de aventuras
+
+adventureRestoreCallable.test.mjs e adventureRestoreHost.test.mjs em
+functions/test separam dispatch/contratos de middleware HTTP. O teste de host
+usa exports reais, com verificadores Auth/App Check sintéticos apenas no processo;
+não remover enforceAppCheck no runtime para testar. Regressões de livros e entry
+cobrem a composição comum. O SDK em
+[adventureRestoreCallable.rules.test.mjs](../tests/firestore/adventureRestoreCallable.rules.test.mjs)
+usa Firestore demo em loopback e HTTP local para o pipeline completo mínimo.
+Não tratar run, atestações sintéticas ou configuração declarada como prova de
+credenciais/atestação/deploy em produção.

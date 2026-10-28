@@ -64,7 +64,7 @@ const terminal = (id, adventureId) => ({
   restoreId: id,
   adventureId,
 });
-/** Internal only: no callable or UI is exposed before persistent validation/recovery/activation is complete. */
+/** Callable exposure uses the explicit public boundary; recovery HTTP and client UI have separate contracts. */
 export function createAdventureRestoreTransferService({ db, assets, now = Date.now }) {
   const store = createAdventureRestoreStore({ db, now }),
     { refs } = store,

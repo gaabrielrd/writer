@@ -3308,3 +3308,13 @@ estados SHA e validação usam metadata/recibos e contagens, sem reidratar paylo
 Job/projeto/biblioteca/personas e recibos de ativação/mídia são preservados.
 Verificação final exige namespaces privados conhecidos vazios e nenhuma chave
 pendente. Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
+
+## Transporte da restauração de aventuras
+
+A [ADR 0211](decisions/0211-adventure-restore-callable-boundary.md) acrescenta
+29 exports explícitos ao index e uma fronteira fechada antes do fallback genérico.
+A aventura mantém seus DTOs/serviço e usa o adaptador Storage compartilhado,
+com UID, App Check, limites e headers privados. Leitores/chaves/helpers ficam
+fora dos callables; recuperação HTTP e cliente/UI continuam próprios. HTTP/SDK
+locais verificam o protocolo com atestações sintéticas, sem comprovar produção.
+Não houve deploy nem novo segredo, dependência, índice ou Rules.

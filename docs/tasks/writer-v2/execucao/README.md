@@ -2045,3 +2045,9 @@ Fechamento integral local 186–188: **4.331 frontend / 336 arquivos, 90 scripts
 89,94/85,71/91,12/93,24 e limites preservados. Coleta SDK final 1/1 positivo.
 [Evidência](../../../entregas/2026-10-28-writer-v2-coleta-da-fonte-da-aventura-restaurada.md).
 Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
+
+189. [Transporte autenticado da restauração de aventuras](189-transporte-autenticado-da-restauracao-de-aventuras.md):
+     29 comandos explícitos, Auth/App Check, limites/headers privados e ports
+     internos/chaves excluídos. 162 Node e um SDK HTTP/Firestore demo positivos;
+     [evidência](../../../entregas/2026-10-28-writer-v2-transporte-da-restauracao-de-aventuras.md).
+     Recuperação HTTP/chaves/cliente/UI/roundtrip e P2/P3/D/F2-09 abertos.

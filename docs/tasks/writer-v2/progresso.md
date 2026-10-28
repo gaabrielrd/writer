@@ -353,3 +353,12 @@ Fechamento integral local de **186–188 verde**: **4.331 frontend em 336 arquiv
 Cobertura/limites preservados; SDK final de coleta 1/1 positivo na versão com
 máscaras explícitas. Código conferido por hashes; somente commit local.
 Esse fechamento não entrega recuperação/transportes/UI/roundtrip nem conclui P2.
+
+[Transporte 189](execucao/189-transporte-autenticado-da-restauracao-de-aventuras.md)
+acrescenta os 29 comandos explícitos de restauração de aventuras no index,
+com UID/App Check, headers privados e limites preservados. **162 Node e um SDK
+HTTP/Firestore demo positivos**; resultados e limites na
+[evidência](../../entregas/2026-10-28-writer-v2-transporte-da-restauracao-de-aventuras.md).
+Código transportável não equivale a deploy ou UI. Recuperação HTTP/chaves,
+cliente/journal/interface/roundtrip, P2/P3/D/F2-09 e macro 8/35 seguem abertos.
+Validate integral no próximo grande bloco; sem CI/operação remota.

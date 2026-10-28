@@ -1,3 +1,10 @@
+import {
+  ADVENTURE_RESTORE_METHODS,
+  invokeAdventureRestoreCallable,
+  setAdventureRestoreHeaders,
+} from './adventureRestoreCallable.mjs';
+import { createAdventureRestoreTransferService } from './adventureRestoreTransfer.mjs';
+import { createRestoredImageStorage } from './restoredImageStorage.mjs';
 import { createEditorChatService } from './editorChat.mjs';
 import { BOOK_RESTORE_METHODS } from './bookRestoreUploadContracts.mjs';
 import { invokeBookRestoreCallable } from './bookRestoreCallable.mjs';
@@ -358,7 +365,11 @@ const callable = (method, secrets = []) =>
     {
       region: 'us-central1',
       enforceAppCheck: true,
-      timeoutSeconds: ['analyzeChapterLore', 'advanceBookRestoreValidation'].includes(method)
+      timeoutSeconds: [
+        'analyzeChapterLore',
+        'advanceBookRestoreValidation',
+        'advanceAdventureRestoreValidation',
+      ].includes(method)
         ? 540
         : 120,
       memory: '512MiB',
@@ -369,6 +380,7 @@ const callable = (method, secrets = []) =>
       setCampaignMediaHeaders(method, request);
       setBookBackupCoverHeaders(method, request);
       setBookRestoreHeaders(method, request);
+      setAdventureRestoreHeaders(method, request);
       setBookLoreReadHeaders(method, request);
       setBookPublicationHeaders(method, request);
       setBookLoreEditHeaders(method, request);
@@ -381,6 +393,16 @@ const callable = (method, secrets = []) =>
       }
       setCampaignVariantRecoveryHeaders(method, request);
       try {
+        if (ADVENTURE_RESTORE_METHODS.includes(method))
+          return await invokeAdventureRestoreCallable(
+            createAdventureRestoreTransferService({
+              db,
+              assets: createRestoredImageStorage(bucket),
+            }),
+            method,
+            request.auth?.uid,
+            request.data,
+          );
         if (BOOK_RESTORE_METHODS.includes(method))
           return await invokeBookRestoreCallable(
             createBookRestoreUploadService({
@@ -882,3 +904,37 @@ export const getBookRestoreMediaState = callable('getBookRestoreMediaState');
 export const finalizeBookRestoreMedia = callable('finalizeBookRestoreMedia');
 export const getBookRestoreArchiveCleanup = callable('getBookRestoreArchiveCleanup');
 export const advanceBookRestoreArchiveCleanup = callable('advanceBookRestoreArchiveCleanup');
+
+export const startAdventureRestore = callable('startAdventureRestore');
+export const resolveAdventureRestoreStart = callable('resolveAdventureRestoreStart');
+export const getAdventureRestore = callable('getAdventureRestore');
+export const listAdventureRestores = callable('listAdventureRestores');
+export const appendAdventureRestoreChunk = callable('appendAdventureRestoreChunk');
+export const resolveAdventureRestoreOperation = callable('resolveAdventureRestoreOperation');
+export const cancelAdventureRestore = callable('cancelAdventureRestore');
+export const advanceAdventureRestoreCleanup = callable('advanceAdventureRestoreCleanup');
+export const advanceAdventureRestoreIntegrity = callable('advanceAdventureRestoreIntegrity');
+export const advanceAdventureRestoreValidation = callable('advanceAdventureRestoreValidation');
+export const advanceAdventureRestoreStructure = callable('advanceAdventureRestoreStructure');
+export const advanceAdventureRestoreResources = callable('advanceAdventureRestoreResources');
+export const advanceAdventureRestoreProfiles = callable('advanceAdventureRestoreProfiles');
+export const advanceAdventureRestoreHistory = callable('advanceAdventureRestoreHistory');
+export const finalizeAdventureRestoreDraft = callable('finalizeAdventureRestoreDraft');
+export const advanceAdventureRestoreUniverse = callable('advanceAdventureRestoreUniverse');
+export const advanceAdventureRestorePersonaLibrary = callable(
+  'advanceAdventureRestorePersonaLibrary',
+);
+export const advanceAdventureRestoreImages = callable('advanceAdventureRestoreImages');
+export const advanceAdventureRestoreImageStorage = callable('advanceAdventureRestoreImageStorage');
+export const advanceAdventureRestoreCounts = callable('advanceAdventureRestoreCounts');
+export const advanceAdventureRestoreAudit = callable('advanceAdventureRestoreAudit');
+export const advanceAdventureRestoreImageLibrary = callable('advanceAdventureRestoreImageLibrary');
+export const getAdventureRestoreActivationReview = callable('getAdventureRestoreActivationReview');
+export const activateAdventureRestore = callable('activateAdventureRestore');
+export const retireAdventureRestoreActivation = callable('retireAdventureRestoreActivation');
+export const getAdventureRestoreMediaState = callable('getAdventureRestoreMediaState');
+export const advanceAdventureRestoreMedia = callable('advanceAdventureRestoreMedia');
+export const getAdventureRestoreArchiveCleanup = callable('getAdventureRestoreArchiveCleanup');
+export const advanceAdventureRestoreArchiveCleanup = callable(
+  'advanceAdventureRestoreArchiveCleanup',
+);

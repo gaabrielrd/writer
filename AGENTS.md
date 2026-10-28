@@ -905,3 +905,9 @@ pendente ou registros inesperados; não reutilize cleanup pré-ativação (ADR 0
 Exija getAll com máscaras antes de qualquer leitura da coleta; recuse o port
 incompatível. Confira presença da chave por metadata não vazia de restoreId,
 sem hidratar material privado nem depender de máscara pontual vazia (ADR 0210).
+
+Exponha restauração de aventuras somente pela lista imutável
+ADVENTURE_RESTORE_METHODS e pelos exports literais; autorize UID antes do dispatch,
+mantenha App Check e headers privados e não escolha método pelo payload.
+Mantenha leitores/chaves/helpers fora dos callables; teste run e middleware HTTP
+separadamente, com atestações sintéticas restritas aos testes (ADR 0211).
