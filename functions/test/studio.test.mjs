@@ -421,7 +421,7 @@ test('editorial filtering uses current private state and preserves independent l
 });
 
 test('editorial pages scan bounded metadata windows and advance past unmatched rows', async () => {
-  const { service, records, reads } = fixture();
+  const { service, records, reads, metadataReads } = fixture();
   for (const [id, editorialState] of [
     ['f', 'ready'],
     ['e', 'review'],
@@ -461,10 +461,20 @@ test('editorial pages scan bounded metadata windows and advance past unmatched r
   for (const read of reads) {
     assert.equal(read.maximum, 3);
     assert.ok(read.count <= 3);
-    assert.ok(read.fields.includes('editorialState'));
+    assert.deepEqual(read.fields, ['ownerId', 'updatedAt']);
     assert.ok(!read.fields.includes('content'));
     assert.ok(!read.fields.includes('synopsis'));
   }
+  const summaries = metadataReads.filter((read) => read.path.startsWith('adventures/'));
+  assert.ok(summaries.length > 0);
+  assert.ok(
+    summaries.every(
+      (read) =>
+        read.fields.includes('editorialState') &&
+        !read.fields.includes('content') &&
+        !read.fields.includes('synopsis'),
+    ),
+  );
   assert.equal('content' in second.items[0], false);
   assert.equal('synopsis' in second.items[0], false);
 });

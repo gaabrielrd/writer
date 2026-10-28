@@ -1,6 +1,7 @@
 import { GenerationError, validateId } from './generation.mjs';
 import { digest } from './sceneContracts.mjs';
 import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
 
 export { digest };
 export function workFail(code, message, reason) {
@@ -72,6 +73,8 @@ export function workScope(db, uid, data, keys) {
   return { db, uid, target, path: workPath(target), ref: db.doc(workPath(target)) };
 }
 export async function workProject(tx, context) {
+  if (context.target.kind === 'adventure')
+    await assertAdventureNotDeleted(tx, context.db, context.uid, context.target.id);
   if (context.target.kind === 'campaign')
     await assertCampaignNotDeleted(tx, context.db, context.uid, context.target.id);
   const snapshot = await tx.get(context.ref),

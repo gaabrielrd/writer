@@ -1,4 +1,8 @@
 import test from 'node:test';
+import {
+  adventureReservationPath,
+  adventureDeletionReservationFields,
+} from '../src/adventureDeletionGuard.mjs';
 import assert from 'node:assert/strict';
 import { createStudioService } from '../src/studio.mjs';
 import { createAdventureBackupSourceService } from '../src/adventureBackupSource.mjs';
@@ -36,6 +40,7 @@ test('actual Studio project has a repeatable metadata-only anchor with no conten
   assert.deepEqual(
     f.metadataReads,
     [0, 1].flatMap(() => [
+      { path: adventureReservationPath(id), fields: [...adventureDeletionReservationFields] },
       { path, fields: ['ownerId', 'schemaVersion', 'deleting'] },
       { path: path + '/workProgress/current', fields: ['schemaVersion'] },
     ]),
@@ -131,7 +136,11 @@ test('own content anchor does not depend on a linked world or copy its content',
     }),
   );
   assert.deepEqual(await f.read({ expectedSourceToken: a.sourceToken }), a);
-  assert.ok(f.metadataReads.every((r) => r.path.startsWith(path)));
+  assert.ok(
+    f.metadataReads.every(
+      (r) => r.path.startsWith(path) || r.path === adventureReservationPath(id),
+    ),
+  );
   assert.equal(JSON.stringify(a).includes('GLOBAL_PRIVATE'), false);
 });
 for (const metadata of [

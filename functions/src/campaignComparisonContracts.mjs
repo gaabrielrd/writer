@@ -13,6 +13,10 @@ import { campaignIdentityToken } from './campaignIdentity.mjs';
 import { loreStorageContext } from './campaignLoreStorage.mjs';
 import { readCampaignAuthorization } from './campaignAuthorization.mjs';
 import { readCampaignDeletionReservation } from './campaignDeletionGuard.mjs';
+import {
+  readAdventureDeletionReservation,
+  assertAdventureNotDeleted,
+} from './adventureDeletionGuard.mjs';
 
 export { digest, fail, captureToken as hashId, basePath, readWorkMetadata };
 export const comparisonPath = (uid, id) => `users/${uid}/campaignComparisons/${id}`;
@@ -101,6 +105,8 @@ export async function observeCampaign(tx, db, uid, campaignId, expected = null) 
       campaign.provenance.adventureId !== expected.adventureId)
   )
     return { available: false, reason: 'base-changed' };
+  if ((await readAdventureDeletionReservation(tx, db, campaign.provenance.adventureId)).record)
+    return { available: false, reason: 'source-unavailable' };
   const base = (
     await readWorkMetadata(tx, db.doc(basePath(uid, campaign.activeBaseId)), baseFields)
   ).data();
@@ -153,6 +159,7 @@ export async function observeComparison(tx, db, p, checkSourceToken = false) {
   return result;
 }
 export async function generationContext(tx, db, uid, campaignId, base) {
+  await assertAdventureNotDeleted(tx, db, uid, base.adventureId);
   let world = null;
   if (base.universeId != null)
     world = (

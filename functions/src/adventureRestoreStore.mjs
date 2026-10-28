@@ -1,4 +1,5 @@
 import { readWorkMetadata } from './workProgressContracts.mjs';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
 import {
   ADVENTURE_RESTORE_ACTIONS,
   ADVENTURE_RESTORE_CHUNK_BYTES,
@@ -346,6 +347,8 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
       if (error?.code === 'invalid-argument') inconsistent();
       throw error;
     }
+    if (!['activated', 'cancelled'].includes(job.state))
+      await assertAdventureNotDeleted(tx, db, uid, job.adventureId);
     const view = progress(uid, id, snapshot, job);
     if (token !== undefined && token !== view.jobToken)
       restoreFail('failed-precondition', 'identity-conflict');

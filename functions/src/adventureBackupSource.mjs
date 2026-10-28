@@ -6,6 +6,8 @@ import {
   readWorkMetadata,
 } from './workProgressContracts.mjs';
 
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
+
 const inconsistent = () =>
   workFail(
     'failed-precondition',
@@ -51,6 +53,7 @@ export function adventureBackupScope(db, uid, data, keys) {
 /** Root/progress only: resource bindings and bodies require their own proofs. */
 export async function readAdventureBackupSource(tx, context, expected) {
   if (typeof tx.getAll !== 'function') inconsistent();
+  await assertAdventureNotDeleted(tx, context.db, context.uid, context.adventureId);
   const { db, uid, adventureId, path, ref } = context,
     snapshot = await readWorkMetadata(tx, ref, ['ownerId', 'schemaVersion', 'deleting']),
     root = snapshot.data();

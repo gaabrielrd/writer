@@ -2,6 +2,7 @@ import { countVisibleWords } from './visibleWordCount.mjs';
 import { addBookChapterRead } from './bookChapterRead.mjs';
 import { readBookChapterText } from './bookChapterText.mjs';
 import { isCampaignDeletionError } from './campaignDeletionGuard.mjs';
+import { isAdventureDeletionError } from './adventureDeletionGuard.mjs';
 import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { addWorkProgressLegacy } from './workProgressLegacy.mjs';
 import {
@@ -473,7 +474,7 @@ export function createWorkProgressService({ db, now = Date.now, countWords = cou
           return resolve(tx, context, root, row);
         });
       } catch (error) {
-        if (error.code === 'not-found') return null;
+        if (error.code === 'not-found' || isAdventureDeletionError(error)) return null;
         throw error;
       }
     },
@@ -504,7 +505,12 @@ export function createWorkProgressService({ db, now = Date.now, countWords = cou
           try {
             root = await workProject(tx, context);
           } catch (error) {
-            if (error.code === 'not-found' || isCampaignDeletionError(error)) continue;
+            if (
+              error.code === 'not-found' ||
+              isCampaignDeletionError(error) ||
+              isAdventureDeletionError(error)
+            )
+              continue;
             throw error;
           }
           const resolved = await resolve(tx, context, root, row);

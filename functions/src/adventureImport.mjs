@@ -30,6 +30,8 @@ import {
   adventureImportMetadataFields,
 } from './adventureImportContracts.mjs';
 
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
+
 export function createAdventureImportService({ db, now = Date.now }) {
   const ledger = createWorkProgressLedger({ db });
   function authorize(uid) {
@@ -235,6 +237,7 @@ export function createAdventureImportService({ db, now = Date.now }) {
         if (receipt.action !== 'startAdventureImport') importInvalid('operation-mismatch');
         return confirmed(uid, id, loaded, receipt);
       }
+      await assertAdventureNotDeleted(tx, db, uid, adventureId);
       if (reserved.exists || root.exists || control.exists)
         fail('failed-precondition', 'identity-mismatch');
       await universe(tx, uid, request.project.universeId);
@@ -450,6 +453,11 @@ export function createAdventureImportService({ db, now = Date.now }) {
       const job = loaded.job;
       if (job.checkpoint !== request.expectedCheckpoint)
         fail('failed-precondition', 'checkpoint-conflict');
+      if (
+        action !== 'cancelAdventureImport' &&
+        !(action === 'advanceAdventureImport' && job.state === 'deleting')
+      )
+        await assertAdventureNotDeleted(tx, db, uid, job.adventureId);
       if ((await tx.get(db.doc('adventures/' + job.adventureId))).exists)
         fail('failed-precondition', 'state-conflict');
       let patch = {},

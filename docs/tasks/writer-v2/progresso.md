@@ -448,3 +448,12 @@ agora mostra fonte legada e oferece recuperação explícita de cenas sem parte.
 registram 35 Vitest distintos, 30 Node/SDK e nove verificações Chromium positivos,
 com checks dirigidos/build. Não houve novo validate integral.
 Exclusão completa da aventura ainda falta; P2/P3/D/F2-09 e macro 8/35 seguem abertos.
+
+[Exclusão 199](execucao/199-exclusao-completa-de-aventuras.md) permanece em
+andamento. A primeira preparação integra reserva permanente nos criadores/
+consumidores, Rules e fonte interna nativa de confirmação. São 42 testes novos,
+regressões dirigidas e 37 cenários SDK/Rules distintos, com sobreposição entre
+rodadas documentada na
+[evidência parcial](../../entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
+Sem produtor público/início, job/limpeza ou UI de exclusão. Validate integral
+no fechamento do bloco; P2/P3/D/F2-09 e macro **8/35** inalterados.

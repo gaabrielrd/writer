@@ -945,3 +945,12 @@ fence de início desconhecido não cancela job confirmado. Leia metadata sem
 inventar keyId; journal/driver de preparação ainda exigem contexto privado.
 Hash completo do Blob nativo precede append; preserve bytes/ID pendentes e
 revalide o arquivo após reload. Não persista arquivo/nome/prosa (ADR 0216).
+
+Na exclusão de aventuras, confira adventureDeletionReservations com máscara
+antes de recriar/consumir a origem; raiz reaparecida não reabre acesso.
+Catálogo da aventura usa servidor, não listagem direta pelo SDK. Fonte de
+confirmação observa nascimento/updateTime nativos da raiz e progresso.
+Recibo histórico não libera chave, corpo novo ou mídia; revalide o ACK depois
+do I/O. Notas próprias da campanha e imagens/personas independentes continuam
+separadas da origem. Não exponha produtor de exclusão antes de completar
+inventário, quiescência, limpeza e retomada do plano 199 (ADR 0221).

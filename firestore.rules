@@ -42,7 +42,8 @@ service cloud.firestore {
     }
     function sceneAdventureReadable(adventureId) {
       return isOwner(get(/databases/$(database)/documents/adventures/$(adventureId)).data.ownerId)
-        && get(/databases/$(database)/documents/adventures/$(adventureId)).data.get('deleting', false) != true;
+        && get(/databases/$(database)/documents/adventures/$(adventureId)).data.get('deleting', false) != true
+        && !exists(/databases/$(database)/documents/adventureDeletionReservations/$(adventureId));
     }
     function publicationSceneMatches(bookId, data) {
       let book = get(/databases/$(database)/documents/books/$(bookId)).data;
@@ -475,10 +476,9 @@ service cloud.firestore {
       }
       match /workVersions/{id} { allow read, write: if false; }
       match /workVersionBodies/{id} { allow read, write: if false; }
-      allow get: if isOwner(resource.data.ownerId);
-      allow list: if isOwner(resource.data.ownerId)
-        && request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;
-      allow write: if false;
+      allow get: if sceneAdventureReadable(adventureId);
+      // Server catalog applies the permanent reservation before loading summaries.
+      allow list, write: if false;
       match /parts/{partId} {
         allow get: if sceneAdventureReadable(adventureId);
         allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
@@ -523,6 +523,7 @@ service cloud.firestore {
       }
     }
 
+    match /adventureDeletionReservations/{adventureId} { allow read, write: if false; }
     match /campaignDeletionReservations/{campaignId} { allow read, write: if false; }
 
     match /campaigns/{campaignId} {

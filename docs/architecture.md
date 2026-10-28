@@ -3391,3 +3391,14 @@ chave encerrada. Falha local antes do start pode repetir somente o ID/revisão
 originais após not-found; disponibilidade incerta conserva a tentativa.
 Abrir aventura consulta getAdventure e guard/owner após await.
 Geração do arquivo pela UI e corpus integrado amplo continuam pendentes.
+
+## Reserva permanente de aventuras
+
+A [ADR 0221](decisions/0221-adventure-deletion-reservation-and-source.md) introduz
+a leitura mascarada da reserva permanente nos criadores e consumidores privados.
+Catálogo/retomada omitem origens reservadas; Rules fecham listagem direta da
+raiz e conferem reserva no get/filhos. O cliente já usa catálogo no servidor.
+Fonte interna de confirmação observa nascimento/updateTime nativos da raiz
+e progresso. Recibo histórico não libera chave, novo corpo ou mídia.
+Produtor/job/limpeza/UI da exclusão ainda não estão implementados/expostos;
+o plano 199 e o fechamento integral do bloco continuam abertos.

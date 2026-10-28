@@ -72,7 +72,7 @@ export function createEditorChatApplyService({ db, now = Date.now }) {
       const saved = await readHistorySource(
         tx,
         db,
-        { uid, target: request.target, path, ref: db.doc(path) },
+        { db, uid, target: request.target, path, ref: db.doc(path) },
         request.resource,
       );
       if (!saved || !same(baseOf(saved.source), request.base)) editorChatFail('revision-conflict');

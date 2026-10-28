@@ -1,4 +1,5 @@
 import { randomBytes, createHash } from 'node:crypto';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
 import { readWorkMetadata } from './workProgressContracts.mjs';
 import {
   authorize,
@@ -103,6 +104,7 @@ export function createAdventureRestoreRecoveryService(store) {
         const loaded = await store.load(tx, uid, id, token);
         if (['cancelling', 'cancelled'].includes(loaded.job.state))
           restoreFail('failed-precondition', 'state-conflict');
+        await assertAdventureNotDeleted(tx, store.db, uid, loaded.job.adventureId);
         if (loaded.job.reviewHash !== reviewHash)
           restoreFail('failed-precondition', 'review-mismatch');
         const archive = await tx.get(store.db.doc(loaded.ref.path + '/archiveCleanup/current'));

@@ -50,3 +50,13 @@ fixtures, sem trocar o caminho real da restauração.
   Neste incremento foram executados os testes e checks dirigidos da entrega.
 
 Veja a [evidência local](../../entregas/2026-10-28-writer-v2-ciclo-normal-das-aventuras-restauradas.md).
+
+## Preparação da exclusão — plano 199 aberto
+
+Guards privados e Rules agora recusam origem permanentemente reservada,
+inclusive raiz reaparecida, nas famílias integradas no
+[avanço local](../../entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
+Inclui autores/importação/restauração, consumidores de autoria e campanha,
+mídia pendente, catálogo e retomada. Fonte interna de confirmação usa carimbos
+nativos, sem mutar. Não existe início público ou limpeza de projeto ainda.
+Esta preparação não fecha a lacuna de exclusão completa nem P2/P3/D/F2-09.

@@ -9,6 +9,7 @@ import {
 } from './workProgressContracts.mjs';
 import { splitHistoryContent } from './workHistoryContracts.mjs';
 import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
+import { readAdventureDeletionReservation } from './adventureDeletionGuard.mjs';
 
 const id = workId;
 export { workClosed as closed, workFail as fail, workId as id, digest, workLimit as limit };
@@ -64,6 +65,7 @@ export function captureToken(value) {
   return value;
 }
 export async function readCaptureOrigin(tx, db, uid, adventureId) {
+  if ((await readAdventureDeletionReservation(tx, db, id(adventureId))).record) return null;
   const snapshot = await tx.get(db.doc('adventures/' + id(adventureId))),
     adventure = snapshot.data();
   if (
@@ -235,6 +237,12 @@ export async function readCampaignBase(tx, db, uid, campaignId, { optionalSource
     campaign.provenance.baseId !== campaign.activeBaseId
   )
     workFail('not-found', 'Base indisponível.');
+  if (
+    (await readAdventureDeletionReservation(tx, db, id(campaign.provenance.adventureId))).record
+  ) {
+    if (optionalSource) return null;
+    workFail('not-found', 'Origem indisponível.');
+  }
   const ref = db.doc(basePath(uid, campaign.activeBaseId)),
     base = (await tx.get(ref)).data();
   if (optionalSource && !base) return null;
@@ -291,6 +299,8 @@ export async function baseItemAvailable(tx, db, context, item) {
   if (item.kind !== 'lore') return true;
   const origin = assertLoreItemOrigin(item, context.base);
   if (origin.kind === 'adventure-lore') {
+    if ((await readAdventureDeletionReservation(tx, db, id(context.base.adventureId))).record)
+      return false;
     const snapshot =
       context.adventureSnapshot ??
       (await readWorkMetadata(tx, db.doc('adventures/' + id(context.base.adventureId)), [

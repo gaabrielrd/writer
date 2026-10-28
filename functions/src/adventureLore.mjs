@@ -37,6 +37,8 @@ import {
   prepareCampaignAuthorization,
 } from './campaignAuthorization.mjs';
 
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
+
 export async function readAdventureLoreContext(
   tx,
   db,
@@ -45,6 +47,7 @@ export async function readAdventureLoreContext(
   optionalToken = false,
   withWorld = true,
 ) {
+  await assertAdventureNotDeleted(tx, db, uid, data.adventureId);
   const path = 'adventures/' + data.adventureId;
   const snapshot = await readWorkMetadata(tx, db.doc(path), [
     'ownerId',

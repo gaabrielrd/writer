@@ -1,4 +1,5 @@
 import { prepareBookLoreDeletion } from './bookLoreDeletion.mjs';
+import { readAdventureDeletionReservation } from './adventureDeletionGuard.mjs';
 import { assertBookLorePayloadsEmpty } from './bookLoreDeletionStore.mjs';
 import {
   sceneFail,
@@ -473,6 +474,11 @@ export function addSceneJobs(api, helpers) {
     const context = scope(uid, data, ['operationId']),
       id = sceneId(data.operationId);
     return db.runTransaction(async (tx) => {
+      if (
+        context.target.kind === 'adventure' &&
+        (await readAdventureDeletionReservation(tx, db, context.target.id)).record
+      )
+        return null;
       const record = (await tx.get(db.doc(`users/${uid}/sceneOperations/${id}`))).data();
       const job = record?.checkpointId
         ? (

@@ -16,6 +16,8 @@ import {
   adventureRestorePersonaBatchRef,
   adventurePersonaBatchEffect,
 } from './adventureRestorePersonaLibraryBatch.mjs';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
+
 const ACTIVATE = 'activateAdventureRestore',
   RETIRE = 'retireAdventureRestoreActivation';
 export function createAdventureRestoreActivationService(store) {
@@ -59,6 +61,7 @@ export function createAdventureRestoreActivationService(store) {
           replay = await resolved(tx, loaded, request);
         if (replay) return replay;
         checkpoint(loaded, request);
+        await assertAdventureNotDeleted(tx, store.db, uid, loaded.job.adventureId);
         await verifyAdventureActivationSeal(store, tx, loaded);
         return null;
       });
@@ -83,6 +86,7 @@ export function createAdventureRestoreActivationService(store) {
           replay = await resolved(tx, loaded, request);
         if (replay) return replay;
         checkpoint(loaded, request);
+        await assertAdventureNotDeleted(tx, store.db, uid, loaded.job.adventureId);
         const reviewed = await prepareAdventureActivationReview(store, tx, loaded, items);
         if (reviewed.result.reviewToken !== request.reviewToken)
           restoreFail('failed-precondition', 'activation-review-changed');

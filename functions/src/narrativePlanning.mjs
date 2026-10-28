@@ -32,8 +32,12 @@ import {
   inputText,
 } from './narrativeContracts.mjs';
 
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
+
 export function createNarrativePlanningService({ db, now = Date.now }) {
   const root = async (context, tx, deleting = false) => {
+    if (context.target.kind === 'adventure')
+      await assertAdventureNotDeleted(tx, db, context.uid, context.target.id);
     const snap = await tx.get(context.ref),
       p = snap.data();
     if (!p || p[context.owner] !== context.uid || (!deleting && p.deleting))

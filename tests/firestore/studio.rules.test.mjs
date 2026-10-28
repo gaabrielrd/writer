@@ -62,7 +62,7 @@ after(async () => {
   else process.env.METADATA_SERVER_DETECTION = metadataDetection;
 });
 
-test('private originals keep adventure owner queries and server-only campaigns; all writes and children are closed', async () => {
+test('private originals allow an available adventure get and keep catalog/campaigns server-only; all writes and children are closed', async () => {
   const adventure = await studio.createAdventure('author', {
     operationId,
     title: 'Aventura',
@@ -86,7 +86,7 @@ test('private originals keep adventure owner queries and server-only campaigns; 
         getDocs(query(collection(client(uid), kind), where('ownerId', '==', 'author'), limit(25))),
       );
     }
-    await ownerRead(
+    await assertFails(
       getDocs(query(collection(client(), kind), where('ownerId', '==', 'author'), limit(50))),
     );
     await assertFails(getDocs(query(collection(client(), kind), where('ownerId', '==', 'author'))));

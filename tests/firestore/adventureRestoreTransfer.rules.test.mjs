@@ -2,11 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { before, beforeEach, after, test } from 'node:test';
-import {
-  initializeTestEnvironment,
-  assertFails,
-  assertSucceeds,
-} from '@firebase/rules-unit-testing';
+import { initializeTestEnvironment, assertFails } from '@firebase/rules-unit-testing';
 import {
   collection,
   doc,
@@ -138,11 +134,15 @@ test('SDK pending root is natively reserved, invisible and unusable even with st
     }
   }
   const own = env.authenticatedContext(uid).firestore();
-  const rows = await assertSucceeds(
+  await assertFails(
     getDocs(query(collection(own, 'adventures'), where('ownerId', '==', uid), limit(50))),
   );
+  const rows = await createStudioService({ db: admin }).listStudioProjects(uid, {
+    kind: 'adventure',
+    limit: 50,
+  });
   assert.deepEqual(
-    rows.docs.map((d) => d.id),
+    rows.items.map((row) => row.id),
     ['adventure-sdk-control-0001'],
   );
 });

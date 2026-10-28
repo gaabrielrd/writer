@@ -66,6 +66,8 @@ import {
   readAdventureRestoreKey,
   createAdventureRestoreRecoveryService,
 } from './adventureRestoreRecoveryKey.mjs';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
+
 const terminal = (id, adventureId) => ({
   schemaVersion: 1,
   kind: 'cancelled',
@@ -145,6 +147,7 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
         if (receipt.action !== 'startAdventureRestore') inconsistent();
         return store.confirm(loaded, receipt);
       }
+      await assertAdventureNotDeleted(tx, db, uid, adventureId);
       if (r.exists || root.exists || (await tx.get(adventureRestoreKeyRef(store, uid, id))).exists)
         inconsistent();
       await store.emptyRoot(tx, adventureId);

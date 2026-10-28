@@ -35,9 +35,13 @@ rascunho, com restauração em nova cópia privada pelo Estúdio. Consulte o
 para escopo, validação local e gates de operação ainda pendentes.
 A restauração de aventuras em arquivo nativo `.writer` está integrada localmente
 no Estúdio, com revisão explícita, pausa/retomada e finalização. A geração do
-arquivo pela interface e a portabilidade completa continuam pendentes; veja a
-[evidência de restauração de aventuras](docs/entregas/2026-10-28-writer-v2-restauracao-de-aventuras-no-estudio.md)
-para checks dirigidos e limites do ambiente de teste. Não houve implantação.
+arquivo pela interface também está integrada localmente; veja a
+[evidência do backup de aventuras](docs/entregas/2026-10-28-writer-v2-backup-de-aventuras-pela-interface.md)
+para validação e limites. A exclusão completa está em andamento: guards de
+reserva permanente, Rules e fonte privada de confirmação estão preparados,
+sem início/job/limpeza ou interface pública de exclusão. Consulte a
+[evidência parcial](docs/entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
+A portabilidade completa continua aberta. Não houve implantação.
 F2-06 está concluído tecnicamente em 624c912, incluindo a correção de foco/refazer
 confirmada na CI. Aventuras reúnem blocos com texto, tipo, audiência e
 ilustração próprios na mesma cena. O principal antigo permanece íntegro; novo e

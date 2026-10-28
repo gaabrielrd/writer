@@ -113,11 +113,10 @@ test('SDK semantic completion preserves native state birth, private namespaces, 
       await assertFails(setDoc(doc(db, jobPath + '/' + name + '/forged'), { ownerId: uid }));
     }
   }
-  const authorDb = env.authenticatedContext(uid).firestore(),
-    list = await getDocs(
-      query(collection(authorDb, 'adventures'), where('ownerId', '==', uid), limit(50)),
-    );
-  assert.equal(list.docs.length, 0);
+  const authorDb = env.authenticatedContext(uid).firestore();
+  await assertFails(
+    getDocs(query(collection(authorDb, 'adventures'), where('ownerId', '==', uid), limit(50))),
+  );
   assert.equal((await clean(p)).state, 'cancelled');
   for (const name of [
     'chunks',

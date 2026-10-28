@@ -18,7 +18,9 @@ import {
 import { adventureLibraryImageAddress } from './adventureRestoreImageLibrary.mjs';
 import { adventureImageUseKey } from './adventureBlockImages.mjs';
 import { validateRestoredImageOrigin } from './restoredImageRemoval.mjs';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
 export async function prepareAdventureRestoreMedia(store, tx, loaded, control) {
+  await assertAdventureNotDeleted(tx, store.db, loaded.uid, loaded.job.adventureId);
   let query = store.db
     .collection(loaded.ref.path + '/preparedRoot')
     .where('kind', '==', 'adventure-restore-image-storage')

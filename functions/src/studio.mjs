@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
 import {
+  assertAdventureNotDeleted,
+  readAdventureDeletionReservation,
+} from './adventureDeletionGuard.mjs';
+import {
   assertCampaignNotDeleted,
   readCampaignDeletionReservation,
 } from './campaignDeletionGuard.mjs';
@@ -175,6 +179,7 @@ export function createStudioService({ db, now = Date.now }) {
     const receipt = db.doc(`users/${uid}/studioOperations/${id}`);
     return db.runTransaction(async (tx) => {
       if (kind === 'campaign') await assertCampaignNotDeleted(tx, db, uid, id);
+      if (kind === 'adventure') await assertAdventureNotDeleted(tx, db, uid, id);
       const [existing, operation, importReservation] = await Promise.all([
         tx.get(ref),
         tx.get(receipt),
@@ -226,13 +231,16 @@ export function createStudioService({ db, now = Date.now }) {
     authorize(uid);
     input(data, ['id']);
     const id = validateId(data.id);
-    const record =
-      kind === 'campaign'
-        ? await db.runTransaction(async (tx) => {
-            if ((await readCampaignDeletionReservation(tx, db, id)).record) return null;
-            return (await tx.get(db.doc('campaigns/' + id))).data();
-          })
-        : (await db.doc(`${domains[kind].collection}/${id}`).get()).data();
+    const record = ['campaign', 'adventure'].includes(kind)
+      ? await db.runTransaction(async (tx) => {
+          const reservation =
+            kind === 'campaign'
+              ? await readCampaignDeletionReservation(tx, db, id)
+              : await readAdventureDeletionReservation(tx, db, id);
+          if (reservation.record) return null;
+          return (await tx.get(db.doc(domains[kind].collection + '/' + id))).data();
+        })
+      : (await db.doc(`${domains[kind].collection}/${id}`).get()).data();
     if (!record || record.ownerId !== uid || record.deleting) return null;
     return projectView(kind, id, record);
   }
@@ -314,25 +322,27 @@ export function createStudioService({ db, now = Date.now }) {
           ...(data.kind === 'book' ? ['coverUrl', 'wordCount', 'genre', 'synopsis'] : []),
         );
       if (cursor) query = query.startAfter(cursor.updatedAt, cursor.id);
-      const page =
-        data.kind === 'campaign'
-          ? await db.runTransaction(async (tx) => {
-              const window = await tx.get(query.select('ownerId', 'updatedAt'));
-              const docs = [];
-              for (const snapshot of window.docs) {
-                const reserved = (await readCampaignDeletionReservation(tx, db, snapshot.id))
-                  .record;
-                if (reserved)
-                  docs.push({
-                    id: snapshot.id,
-                    ref: snapshot.ref,
-                    data: () => ({ ...snapshot.data(), deleting: true }),
-                  });
-                else docs.push((await tx.getAll(snapshot.ref, { fieldMask: summaryFields }))[0]);
-              }
-              return { docs };
-            })
-          : await query.get();
+      const page = ['campaign', 'adventure'].includes(data.kind)
+        ? await db.runTransaction(async (tx) => {
+            const window = await tx.get(query.select('ownerId', 'updatedAt'));
+            const docs = [];
+            for (const snapshot of window.docs) {
+              const reserved = (
+                data.kind === 'campaign'
+                  ? await readCampaignDeletionReservation(tx, db, snapshot.id)
+                  : await readAdventureDeletionReservation(tx, db, snapshot.id)
+              ).record;
+              if (reserved)
+                docs.push({
+                  id: snapshot.id,
+                  ref: snapshot.ref,
+                  data: () => ({ ...snapshot.data(), deleting: true }),
+                });
+              else docs.push((await tx.getAll(snapshot.ref, { fieldMask: summaryFields }))[0]);
+            }
+            return { docs };
+          })
+        : await query.get();
       const scanned = page.docs.slice(0, limit);
       const last = scanned.at(-1);
       return {

@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
 import { GenerationError } from './generation.mjs';
 import {
   importClosed,
@@ -31,6 +32,7 @@ export function createAdventureImportRecoveryService({ db, now = Date.now, autho
           job = loaded.job;
         if (!['uploading', 'preparing', 'ready'].includes(job.state))
           fail('failed-precondition', 'state-conflict');
+        await assertAdventureNotDeleted(tx, db, uid, job.adventureId);
         if (job.reviewHash !== reviewHash) fail('failed-precondition', 'review-mismatch');
         if (expected !== undefined && expected !== job.keyId)
           fail('failed-precondition', 'key-mismatch');

@@ -5,6 +5,7 @@ import {
 import { readAdventureLoreContext } from './adventureLore.mjs';
 import { storedMetadata as storedAdventureLoreMetadata } from './adventureLoreContracts.mjs';
 import { validateId } from './generation.mjs';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
 import {
   closed,
   initialScene,
@@ -57,6 +58,13 @@ export function createScenesService({ db, now = Date.now }) {
     return { uid, target, domain, path, ref: db.doc(path) };
   }
   async function project(context, tx = null, deleting = false) {
+    if (context.target.kind === 'adventure') {
+      if (tx) await assertAdventureNotDeleted(tx, db, context.uid, context.target.id);
+      else
+        await db.runTransaction((inner) =>
+          assertAdventureNotDeleted(inner, db, context.uid, context.target.id),
+        );
+    }
     const snapshot = await (tx ? tx.get(context.ref) : context.ref.get());
     const record = snapshot.data();
     if (!record || record[context.domain.owner] !== context.uid || (!deleting && record.deleting))

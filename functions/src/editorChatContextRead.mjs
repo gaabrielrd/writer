@@ -1,5 +1,6 @@
 import { readAvailablePersonaMetadata } from './personaAvailability.mjs';
 import { GenerationError } from './generation.mjs';
+import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
 import { createBookLoreContextReader } from './bookLoreContextRead.mjs';
 import { createBookLoreProjectionBudget } from './bookLoreTextProjection.mjs';
 import { assertCreationHead } from './bookLoreCreationHead.mjs';
@@ -133,6 +134,7 @@ const parentFields = [
 ];
 
 export async function readEditorChatProject(tx, db, uid, target) {
+  if (target.kind === 'adventure') await assertAdventureNotDeleted(tx, db, uid, target.id);
   const path = pathFor(target),
     snapshot = await readWorkMetadata(tx, db.doc(path), projectFields);
   const root = snapshot.data();
@@ -258,7 +260,7 @@ export async function readEditorChatSource(tx, db, uid, scope, { withContent = f
     const saved = await readHistorySource(
       tx,
       db,
-      { uid, target: scope.target, path: project.path, ref: db.doc(project.path) },
+      { db, uid, target: scope.target, path: project.path, ref: db.doc(project.path) },
       scope.resource,
     );
     if (
