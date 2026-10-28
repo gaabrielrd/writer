@@ -2124,3 +2124,13 @@ em páginas e desliga turnos ativos. 27 Node e 11 SDK/Rules positivos;
 [evidência parcial](../../../entregas/2026-10-28-writer-v2-avanco-privado-e-encerramento-de-contextos.md).
 Fontes/mídia/autoria/controles/atividade/verificação e cliente/UI ainda faltam.
 Plano 199, P2/P3/D/F2-09/V2 e macro 8/35 permanecem abertos; só commit local.
+
+### Plano 199 — mídia pendente e fontes da exclusão
+
+A quiescência integra mídia/coleta originais da restauração e manifests de
+importação por metadata. Recibos e checkpoint de exclusão são atômicos;
+preparing é retirado por geração, enquanto cópias ativas são preservadas.
+Veja [ADR 0224](../../../decisions/0224-adventure-deletion-source-retirement.md) e
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-fontes-na-exclusao-de-aventuras.md).
+Fases seguintes, cliente/UI e validação integrada permanecem pendentes.
+Plano 199 e macro 8/35 não são concluídos por este incremento.

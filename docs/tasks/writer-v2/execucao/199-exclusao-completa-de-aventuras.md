@@ -218,3 +218,43 @@ Veja [ADR 0223](../../../decisions/0223-adventure-deletion-quiescence.md) e
 A parte dois recusa até implementar fontes; nenhuma fase completa certificada.
 Perguntas próprias e corpos de turnos preservados nesta etapa. Demais aceites,
 interface e validate integral continuam pendentes; macro 8/35 inalterada.
+
+## Integração seguinte — fontes e mídia de restauração/importação
+
+Base dcf3135 conferida limpa. Processar a fonte de restauração original pela
+identidade nativa da raiz/job e preservar o job ativado e seus recibos.
+Primeiro retirar mídia ainda pendente por geração/fence, sem publicar imagens
+preparing; imagens que já ficaram ativas são cópias próprias preservadas.
+Conferir novamente origem, checkpoint e intenção após I/O externo.
+
+Compor mídia/coleta e recibos originais com o checkpoint da exclusão na mesma
+transação. A chave é removida pela primeira coleta existente, por metadata,
+não por um segundo fluxo que deixaria o sidecar antigo inconsistente.
+Retomar coleta parcial ou já concluída, sem tocar artefatos atuais da aventura,
+personas ou biblioteca ativa. Cada avanço executa uma unidade limitada.
+
+Na importação ativada, provar job/reserva/token e nascimento da raiz pelo
+recibo nativo da ativação. A chave já deve estar ausente. Retirar manifests
+de seção em páginas somente após conferir recibos de append, sem ler corpos;
+preservar job/recibos. Raiz ausente não perde a identidade histórica.
+
+Testar fontes reais pelas factories existentes, mídia preparada/ativa,
+retirada física e accept atrasado, falha/ACK após I/O/commit, origem/recibo
+recriados e vizinho preservado; SDK local pertinente. Só certificar quiescência
+depois dos processadores e verificações implementados; as fases restantes,
+perguntas próprias pendentes, interface e validate integral continuam abertas.
+
+## Resultado parcial — fontes integradas
+
+Quiescência agora retira mídia preparing e coleta fontes originais de
+restauração/importação. Recibos e checkpoints são atômicos; imagem ativa,
+job ativado, personas e campanhas independentes permanecem. Fontes provadas
+vazias e ausência de chaves permitem mover para a fase media, ainda pendente.
+
+76 Node distintos positivos em rodadas sobrepostas; 13 SDK/Rules distintos,
+com a jornada nativa de mídia/coleta positiva isoladamente em 274595,1786 ms.
+Duas tentativas anteriores atingiram 180 segundos na preparação original;
+limites e checks reais estão na
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-fontes-na-exclusao-de-aventuras.md)
+e decisão na [ADR 0224](../../../decisions/0224-adventure-deletion-source-retirement.md).
+Não conclui exclusão inteira, interface, P2/P3/D/F2-09 ou macro 8/35.

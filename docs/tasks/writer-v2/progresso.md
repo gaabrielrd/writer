@@ -472,3 +472,12 @@ metadata e encerra turnos ativos, com recibos/checkpoints atômicos.
 rollback de corpo recriado e fence de resposta tardia. Fontes/mídia/limpeza final
 e cliente/UI ainda faltam; fase não certificada. Sem novo validate integral.
 Somente commit local, sem CI/remoto. Macro **8/35** e pendências gerais preservadas.
+
+A integração seguinte do plano 199 acrescenta retirada física de mídia ainda
+preparing e coleta das fontes de restauração/importação, compondo seus recibos
+originais com a exclusão. Biblioteca ativa/personas e jobs ativados permanecem.
+[ADR 0224](../../decisions/0224-adventure-deletion-source-retirement.md) e
+[evidência parcial](../../entregas/2026-10-28-writer-v2-fontes-na-exclusao-de-aventuras.md)
+registram os resultados e limites. Quiescência avança para media após as fontes;
+limpeza inteira/cliente/UI ainda faltam. Macro **8/35**, P2/P3/D/F2-09 e gates
+continuam abertos. Sem novo validate integral ou operação remota.

@@ -1,4 +1,6 @@
 import { workFail, workDate } from './workProgressContracts.mjs';
+import { prepareAdventureDeletionRestore } from './adventureDeletionRestore.mjs';
+import { prepareAdventureDeletionImport } from './adventureDeletionImports.mjs';
 import {
   editorChatProjectToken,
   editorChatControlToken,
@@ -179,9 +181,35 @@ export async function quiesceAdventureConversations(tx, db, p, now) {
   }
   return nextPage(p, docs);
 }
-export async function advanceAdventureQuiescence(tx, db, p, now) {
-  if (p.part === 0) return quiesceAdventureContexts(tx, db, p, now);
-  if (p.part === 1) return quiesceAdventureConversations(tx, db, p, now);
+export async function advanceAdventureQuiescence(tx, db, p, now, operationId, io = null) {
+  if (p.part === 0) return { value: await quiesceAdventureContexts(tx, db, p, now) };
+  if (p.part === 1) return { value: await quiesceAdventureConversations(tx, db, p, now) };
+  if (p.part === 2) return prepareAdventureDeletionRestore(tx, db, p, now, operationId, io);
+  if (p.part === 3) return { value: await prepareAdventureDeletionImport(tx, db, p) };
+  if (p.part === 4) {
+    for (const name of ['adventureImportRecoveryKeys', 'adventureRestoreRecoveryKeys'])
+      if (
+        (
+          await tx.get(
+            db
+              .collection('users/' + p.ownerId + '/' + name)
+              .where('adventureId', '==', p.adventureId)
+              .select()
+              .limit(1),
+          )
+        ).docs.length
+      )
+        invalid();
+    return {
+      value: {
+        ...p,
+        phase: 'media',
+        part: 0,
+        cursor: null,
+        certified: [...p.certified, 'quiescence'],
+      },
+    };
+  }
   workFail(
     'failed-precondition',
     'O fechamento das fontes da aventura ainda está em implementação.',

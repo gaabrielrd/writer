@@ -18,9 +18,38 @@ import {
 import { adventureLibraryImageAddress } from './adventureRestoreImageLibrary.mjs';
 import { adventureImageUseKey } from './adventureBlockImages.mjs';
 import { validateRestoredImageOrigin } from './restoredImageRemoval.mjs';
-import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
+import {
+  assertAdventureNotDeleted,
+  readAdventureDeletionReservation,
+} from './adventureDeletionGuard.mjs';
+import { adventureIdentityToken } from './campaignLoreOrigin.mjs';
 export async function prepareAdventureRestoreMedia(store, tx, loaded, control) {
   await assertAdventureNotDeleted(tx, store.db, loaded.uid, loaded.job.adventureId);
+  return prepareMedia(store, tx, loaded, control, false);
+}
+// Internal retirement requires an existing deletion of this exact native source.
+// No public media request can select this path or authorize publication with it.
+export async function prepareDeletedAdventureRestoreMedia(store, tx, loaded, control, deletion) {
+  const { record: r } = await readAdventureDeletionReservation(
+    tx,
+    store.db,
+    loaded.job.adventureId,
+  );
+  if (
+    !r ||
+    deletion.ownerId !== loaded.uid ||
+    deletion.adventureId !== loaded.job.adventureId ||
+    r.state !== 'deleting' ||
+    r.ownerId !== loaded.uid ||
+    r.deletionId !== deletion.deletionId ||
+    r.adventureToken !== deletion.adventureToken ||
+    loaded.job.state !== 'activated' ||
+    adventureIdentityToken(loaded.uid, loaded.job.adventureId, loaded.snapshot) !== r.adventureToken
+  )
+    inconsistent();
+  return prepareMedia(store, tx, loaded, control, true);
+}
+async function prepareMedia(store, tx, loaded, control, retiring) {
   let query = store.db
     .collection(loaded.ref.path + '/preparedRoot')
     .where('kind', '==', 'adventure-restore-image-storage')
@@ -109,7 +138,8 @@ export async function prepareAdventureRestoreMedia(store, tx, loaded, control) {
     assetId,
     imageId: asset.imageId,
     after: row.id,
-    unavailable,
+    unavailable: retiring || unavailable,
+    ...(retiring ? { retirement: true, retirementUses: uses.docs.map((s) => s.ref) } : {}),
     imageRef,
     image,
     path,
@@ -122,6 +152,13 @@ export async function prepareAdventureRestoreMedia(store, tx, loaded, control) {
       origin,
       storage,
       unavailable,
+      ...(retiring
+        ? {
+            retiring: true,
+            image: nativeToken(image),
+            uses: uses.docs.map((s) => ({ id: s.id, token: nativeToken(s) })),
+          }
+        : {}),
     }),
   };
 }

@@ -184,6 +184,16 @@ export function createAdventureRestoreMediaStore(store) {
         url: accepted.url,
         restoreStorage: { ...pending.image.data().restoreStorage, publishedProof: storage },
       });
+    if (pending?.retirement) {
+      if (!pending.unavailable || accepted !== null) inconsistent();
+      for (const ref of pending.retirementUses) tx.delete(ref);
+      tx.update(pending.imageRef, {
+        state: 'deleted',
+        url: null,
+        useCount: 0,
+        updatedAt: next.updatedAt,
+      });
+    }
     if (outcome) tx.create(outcomeRef(loaded, pending.assetId), outcome);
     if (current.snapshot.exists) tx.update(current.ref, next);
     else tx.create(current.ref, next);

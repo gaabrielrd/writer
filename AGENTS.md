@@ -969,3 +969,10 @@ mesma transação, preservando updateTime do marcador. Retire snapshots por
 metadata e origem exatas; desligue turnos ativos antes de aceitar conclusão
 tardia. Não descarte perguntas próprias implicitamente junto dos snapshots e
 não certifique fases cujos processadores ainda não existem (ADR 0223).
+
+Na exclusão de aventura restaurada, componha mídia/coleta originais e o
+checkpoint da exclusão atomicamente. Retire preparing por geração e reconfira
+a intenção após I/O; não publique no encerramento. Preserve biblioteca ativa,
+personas e recibos. Retire a chave pela primeira coleta original após mídia,
+sem quebrar seu sidecar. Reserva de fonte sem head e artefato reaparecido
+impedem certificação; importação prova a raiz pelo recibo de ativação (ADR 0224).

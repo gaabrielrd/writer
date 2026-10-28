@@ -138,23 +138,7 @@ export async function prepareAdventureRestoreArchiveUnit(store, tx, l, p) {
     }
     move('verify');
   } else if (p.phase === 'verify') {
-    for (const name of ARCHIVE_NAMES) await empty(name);
-    const key = store.db
-      .collection('users/' + l.uid + '/adventureRestoreRecoveryKeys')
-      .where('restoreId', '==', l.id)
-      .select()
-      .limit(1);
-    if (
-      (await tx.get(key)).docs.length ||
-      (
-        await readWorkMetadata(
-          tx,
-          store.db.doc('users/' + l.uid + '/adventureRestoreRecoveryKeys/' + l.id),
-          ['restoreId'],
-        )
-      ).exists
-    )
-      inconsistent();
+    await assertAdventureRestoreArchiveCollected(store, tx, l);
     move('done');
   } else inconsistent();
   const unique = new Set();
@@ -171,4 +155,25 @@ export async function prepareAdventureRestoreArchiveUnit(store, tx, l, p) {
     unique.add(ref.path);
   }
   return remove;
+}
+
+export async function assertAdventureRestoreArchiveCollected(store, tx, l) {
+  for (const name of ARCHIVE_NAMES)
+    if ((await tx.get(archivePage(store, l, name, null, [], 1))).docs.length) inconsistent();
+  const key = store.db
+    .collection('users/' + l.uid + '/adventureRestoreRecoveryKeys')
+    .where('restoreId', '==', l.id)
+    .select()
+    .limit(1);
+  if (
+    (await tx.get(key)).docs.length ||
+    (
+      await readWorkMetadata(
+        tx,
+        store.db.doc('users/' + l.uid + '/adventureRestoreRecoveryKeys/' + l.id),
+        ['restoreId'],
+      )
+    ).exists
+  )
+    inconsistent();
 }

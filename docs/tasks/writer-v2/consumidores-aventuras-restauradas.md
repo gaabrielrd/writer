@@ -73,3 +73,11 @@ antes de respostas tardias. Fonte nativa original no job permite prosseguir sem
 head; rollback/recibo/páginas e BYOK foram comprovados no emulador demo.
 Veja a [evidência parcial](../../entregas/2026-10-28-writer-v2-avanco-privado-e-encerramento-de-contextos.md).
 Perguntas próprias preservadas; fontes/mídia/limpeza final e UI ainda faltam.
+
+A coleta da fonte também está integrada à quiescência da exclusão: mídia ainda
+preparing é retirada por geração sem promoção; recibos de mídia/coleta e
+exclusão ficam no mesmo commit. Imagens já ativas, personas e job ativado são
+preservados. Importações retiram manifests por recibos/nascimento e páginas,
+sem hidratar o manuscrito. Veja a
+[evidência parcial](../../entregas/2026-10-28-writer-v2-fontes-na-exclusao-de-aventuras.md).
+Usos restantes, autoria/controles/atividade, verificação final e UI ainda faltam.

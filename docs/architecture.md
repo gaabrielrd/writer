@@ -3425,3 +3425,15 @@ são cercadas uma por página para recusar geração tardia de plataforma/BYOK.
 corpo recriado recusa a página. A raiz marcada não muda durante o avanço.
 Perguntas próprias permanecem; política da exclusão inteira está pendente.
 Fontes/mídia/limpeza final e exposição/cliente/UI continuam abertos no plano 199.
+
+## Fontes da exclusão de aventuras
+
+A [ADR 0224](decisions/0224-adventure-deletion-source-retirement.md) compõe uma
+unidade dos sidecars originais de mídia/coleta com o checkpoint da exclusão.
+Restauração prova nascimento original; mídia pending é retirada por geração,
+sem accept, com revalidação após I/O. Imagens ativas permanecem cópias próprias.
+A chave é removida pela coleta original, mantendo seus recibos compatíveis.
+Importação prova a raiz pelo recibo da ativação e remove manifests por metadata,
+em páginas de oito, sem ler corpo/título. Reserva sem head, gap, chave órfã ou
+artefato reaparecido impedem saltar a fonte. A quiescência pode avançar para media;
+fases seguintes, cliente/UI e fechamento integral do plano 199 permanecem abertos.

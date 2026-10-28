@@ -114,18 +114,21 @@ test('old receipts survive later checkpoints, while stale checkpoints, altered r
   });
   await assert.rejects(() => b.api.advanceAdventureDeletion('other', r), { code: 'not-found' });
 });
-test('unsupported source-closing stage keeps its checkpoint and never fabricates phase certification', async () => {
+test('unsupported media stage keeps its checkpoint after the completed quiescence', async () => {
   const f = await editorChatConversationFixture({
       kind: 'adventure',
       database: adventureDeletionDb(),
     }),
     b = await begin(f);
   let p = b.initial.progress;
-  for (let n = 0; n < 10; n++) {
-    const stored = f.records.get('users/' + uid + '/adventureDeletions/' + p.deletionId);
-    if (stored.part === 2) break;
+  for (let n = 0; n < 20 && p.phase === 'quiescence'; n++) {
     p = (await b.api.advanceAdventureDeletion(uid, step(p, 10 + n))).progress;
   }
+  assert.equal(p.phase, 'media');
+  assert.deepEqual(
+    f.records.get('users/' + uid + '/adventureDeletions/' + p.deletionId).certified,
+    ['quiescence'],
+  );
   const before = structuredClone(f.records);
   await assert.rejects(
     () => b.api.advanceAdventureDeletion(uid, step(p, 100)),

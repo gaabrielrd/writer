@@ -1,6 +1,46 @@
 {
   "indexes": [
     {
+      "collectionGroup": "adventureImportOperations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "importId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receipt.action",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "adventureImportOperations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "importId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receipt.action",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receipt.index",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "editorChatContexts",
       "queryScope": "COLLECTION",
       "fields": [
