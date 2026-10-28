@@ -4,7 +4,7 @@ import {
   validateAdventureImageBinding,
 } from './adventureContentSchema.mjs';
 export const adventureImagePreparationPhase = (v) =>
-  ['image-bytes', 'image-bytes-ready'].includes(v.phase);
+  ['image-bytes', 'image-bytes-ready', 'image-storage', 'image-storage-ready'].includes(v.phase);
 export const imagePreparationViewKeys = [
   'imageBindings',
   'imageAssets',
@@ -19,7 +19,7 @@ export const validAdventureImageView = (v) =>
   typeof v.imagePending === 'boolean';
 export function validAdventureImageMeta(v, job) {
   const t = job.validation.summary.totals,
-    ready = v.phase === 'image-bytes-ready';
+    ready = v.phase !== 'image-bytes';
   return (
     validAdventureImageView(v) &&
     count(v.imageIndex) &&

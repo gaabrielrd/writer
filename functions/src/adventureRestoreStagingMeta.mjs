@@ -1,4 +1,11 @@
 import {
+  imageStoragePhase,
+  imageStorageViewKeys,
+  imageStoragePrivateKeys,
+  validImageStorageView,
+  validImageStorageMeta,
+} from './adventureRestoreImageStorageMeta.mjs';
+import {
   adventureImagePreparationPhase,
   imagePreparationViewKeys,
   imagePreparationPrivateKeys,
@@ -70,6 +77,7 @@ export const adventureStagingView = (value) =>
         ...(universeRestorePhase(value) ? universeRestoreViewKeys : []),
         ...(adventurePersonaLibraryPhase(value) ? adventurePersonaLibraryViewKeys : []),
         ...(adventureImagePreparationPhase(value) ? imagePreparationViewKeys : []),
+        ...(imageStoragePhase(value) ? imageStorageViewKeys : []),
       ].map((k) => [k, value[k]]),
     ),
   );
@@ -84,6 +92,7 @@ export function validAdventureStagingView(v) {
       ...universeRestoreViewKeys,
       ...adventurePersonaLibraryViewKeys,
       ...imagePreparationViewKeys,
+      ...imageStorageViewKeys,
     ]) ||
     v.version !== 1 ||
     ![
@@ -102,6 +111,8 @@ export function validAdventureStagingView(v) {
       'persona-library-ready',
       'image-bytes',
       'image-bytes-ready',
+      'image-storage',
+      'image-storage-ready',
     ].includes(v.phase) ||
     !viewKeys.filter((k) => !['version', 'phase'].includes(k)).every((k) => count(v[k])) ||
     v.cleanedArtifacts > v.artifactCount
@@ -141,6 +152,12 @@ export function validAdventureStagingView(v) {
       : imagePreparationViewKeys.some((k) => Object.hasOwn(v, k))
   )
     return false;
+  if (
+    imageStoragePhase(v)
+      ? !validImageStorageView(v)
+      : imageStorageViewKeys.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
   return historyPhase(v)
     ? validAdventureHistoryView(v)
     : [...historyViewKeys, 'historyPending'].every((k) => !Object.hasOwn(v, k));
@@ -162,6 +179,8 @@ export function validAdventureStagingMeta(v, job) {
         ...adventurePersonaLibraryPrivateKeys,
         ...imagePreparationViewKeys,
         ...imagePreparationPrivateKeys,
+        ...imageStorageViewKeys,
+        ...imageStoragePrivateKeys,
       ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
@@ -279,6 +298,12 @@ export function validAdventureStagingMeta(v, job) {
       : [...imagePreparationViewKeys, ...imagePreparationPrivateKeys].some((k) =>
           Object.hasOwn(v, k),
         )
+  )
+    return false;
+  if (
+    imageStoragePhase(v)
+      ? !validImageStorageMeta(v, job)
+      : [...imageStorageViewKeys, ...imageStoragePrivateKeys].some((k) => Object.hasOwn(v, k))
   )
     return false;
   return true;

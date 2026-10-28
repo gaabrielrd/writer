@@ -5,6 +5,8 @@ export const universeRestorePhase = (v) =>
     'persona-library-ready',
     'image-bytes',
     'image-bytes-ready',
+    'image-storage',
+    'image-storage-ready',
   ].includes(v.phase);
 export const universeRestoreViewKeys = ['universeOutcome'];
 export const validAdventureUniverseOutcome = (v) =>

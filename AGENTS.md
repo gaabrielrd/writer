@@ -848,3 +848,14 @@ privado e permanente. Use somente contexto/provas da biblioteca, CAS decimal
 exato e remoção da geração original comprovada. Não faça fallback para delete
 bruto. Confirme uses vazia antes de deleting e nascimento/conteúdo da biblioteca
 antes de deleted; falha externa/Firestore deve permitir retomada (ADR 0203).
+
+Na materialização de PNGs das aventuras restauradas, reserve intenção nativa
+antes do I/O e revalide fonte/frames/head/binding antes/depois do upload. Use o
+adaptador compartilhado, bytes exatos até 16 MiB e decodificação Sharp completa.
+Cleanup revoga personas e confirma fences de todas as intenções antes de apagar
+fonte/frames; preserve marcadores e criador dos journals. Não ative ou publique
+mídia por image-storage-ready (ADR 0204).
+
+Leitores de origem da biblioteca não devem importar contratos operacionais de
+restauração que inicializam seeds: imageLibrary também é alcançada por lore/
+cenas. Mantenha validação primitiva independente da orquestração (ADR 0204).

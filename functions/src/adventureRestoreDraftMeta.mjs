@@ -7,6 +7,8 @@ export const draftFinalizePhase = (v) =>
     'persona-library-ready',
     'image-bytes',
     'image-bytes-ready',
+    'image-storage',
+    'image-storage-ready',
   ].includes(v.phase);
 export const draftFinalizeViewKeys = ['draftOutcome', 'draftWordCount'];
 export function validAdventureDraftFinalized(v) {

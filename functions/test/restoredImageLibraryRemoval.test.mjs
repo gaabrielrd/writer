@@ -235,3 +235,38 @@ test('legacy and generated images without restoration metadata retain their norm
   await f.library.remove(uid, { id });
   assert.deepEqual(f.calls, ['legacy-remove']);
 });
+
+test('invalid provenance IDs and native birth stop removal before changing either store', async () => {
+  for (const change of [
+    'restore-short',
+    'operation-long',
+    'negative-birth',
+    'invalid-nanoseconds',
+  ]) {
+    const f = await setup();
+    if (change === 'restore-short' || change === 'operation-long') {
+      const value = f.records.get(row),
+        field = change === 'restore-short' ? 'restoreId' : 'activationOperationId';
+      await f.db.runTransaction((tx) =>
+        tx.update(f.db.doc(row), {
+          restoreOrigin: {
+            ...value.restoreOrigin,
+            [field]: 'a'.repeat(change === 'restore-short' ? 15 : 81),
+          },
+        }),
+      );
+    } else
+      f.metadata.set(row, {
+        ...f.metadata.get(row),
+        ...(change === 'negative-birth'
+          ? { createdAt: -1000 }
+          : { createdAtNanoseconds: 1000000000 }),
+      });
+    const before = structuredClone([...f.records]),
+      at = f.storage.events.length;
+    await assert.rejects(() => f.library.remove(uid, { id: c.imageId }));
+    assert.deepEqual([...f.records], before);
+    assert.equal(f.storage.events.length, at);
+    assert.deepEqual(f.calls, []);
+  }
+});

@@ -280,3 +280,13 @@ distintas em seleções e um SDK Firestore ampliado positivos; detalhes na
 Suíte integral no fechamento de mídia. Materialização Storage das aventuras,
 ativação e demais pendências de P2/P3/D/F2-09/fases/gates continuam abertas;
 macro 8/35 preservada.
+
+[Materialização de imagens 182](execucao/182-materializacao-privada-das-imagens-de-aventuras.md)
+liga intenção nativa, PNG completo/bytes exatos e Storage privado, com fence
+antes da limpeza. 17 Node novos, limite real de 16 MiB/256 frames, corpus do Writer,
+36 regressões e uma integração SDK Firestore/GCS local positivos. Fechamento
+integral de 180–182 verde: 4.325 frontend, 90 scripts, 3.579 Functions e
+sintaxe/tipos/build/smoke; duas tentativas anteriores não verdes preservadas na
+[evidência](../../entregas/2026-10-28-writer-v2-materializacao-privada-das-imagens-de-aventuras.md).
+Biblioteca/usos, agregados/audit/ativação, aceitação/URL posterior, recuperação
+cifrada/UI/roundtrip, P2/P3/D/F2-09/fases/gates e macro 8/35 continuam abertos.

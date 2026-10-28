@@ -1,6 +1,5 @@
 import { GenerationError, validateId } from './generation.mjs';
 import { digest } from './sceneContracts.mjs';
-import { born, restoreId } from './bookRestoreUploadContracts.mjs';
 import {
   bookRestoreCoverStorageContext,
   bookRestoreStorageProof,
@@ -20,6 +19,21 @@ function closed(v, keys, optional = []) {
     Object.keys(v).every((k) => keys.includes(k) || optional.includes(k))
   );
 }
+// Keep this reader independent of restore orchestration: imageLibrary is also
+// reached by scene/lore modules while their hashing contracts are initializing.
+function birth(snapshot) {
+  const value = snapshot?.createTime;
+  if (
+    !value ||
+    !Number.isSafeInteger(value.seconds) ||
+    value.seconds < 0 ||
+    !Number.isInteger(value.nanoseconds) ||
+    value.nanoseconds < 0 ||
+    value.nanoseconds >= 1e9
+  )
+    fail();
+  return { seconds: value.seconds, nanoseconds: value.nanoseconds };
+}
 /** Server-owned library provenance only; no request path, generation or context is trusted. */
 export function restoredImageRemovalPlan(uid, id, record) {
   if (!Object.hasOwn(record, 'restoreOrigin') && !Object.hasOwn(record, 'restoreStorage'))
@@ -37,8 +51,12 @@ export function restoredImageRemovalPlan(uid, id, record) {
       record.path !== 'book-covers/' + uid + '/' + id + '.png'
     )
       fail();
-    restoreId(o.restoreId);
-    restoreId(o.activationOperationId);
+    if (
+      [o.restoreId, o.activationOperationId].some(
+        (value) => typeof value !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(value),
+      )
+    )
+      fail();
     validateId(o.bookId);
     const context = bookRestoreCoverStorageContext({
         ownerId: uid,
@@ -64,10 +82,10 @@ export function restoredImageRemovalPlan(uid, id, record) {
   }
 }
 export function restoredImageRemovalClaim(snapshot, value) {
-  return { birth: born(snapshot), value: structuredClone(value) };
+  return { birth: birth(snapshot), value: structuredClone(value) };
 }
 export function verifyRestoredImageRemovalClaim(snapshot, claim) {
-  if (!snapshot.exists || digest(born(snapshot)) !== digest(claim.birth)) fail();
+  if (!snapshot.exists || digest(birth(snapshot)) !== digest(claim.birth)) fail();
   const value = snapshot.data();
   // Concurrent removers can both confirm the same incarnation after the first finalizes.
   const comparable =

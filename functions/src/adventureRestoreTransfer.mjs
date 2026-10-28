@@ -31,6 +31,7 @@ import { ADVENTURE_RESTORE_CLEANUP as names } from './adventureRestoreValidation
 import { readAdventureValidationState } from './adventureRestoreValidationState.mjs';
 import { createAdventureRestoreValidationService } from './adventureRestoreValidation.mjs';
 import { ADVENTURE_STAGE_ARTIFACT_FIELDS } from './adventureRestoreArtifacts.mjs';
+import { createAdventureRestoreImageStorageService } from './adventureRestoreImageStorage.mjs';
 import { createAdventureRestoreImagesService } from './adventureRestoreImages.mjs';
 import { createAdventureRestorePersonaLibraryService } from './adventureRestorePersonaLibrary.mjs';
 import {
@@ -54,9 +55,10 @@ const terminal = (id, adventureId) => ({
   adventureId,
 });
 /** Internal only: no callable or UI is exposed before persistent validation/recovery/activation is complete. */
-export function createAdventureRestoreTransferService({ db, now = Date.now }) {
+export function createAdventureRestoreTransferService({ db, assets, now = Date.now }) {
   const store = createAdventureRestoreStore({ db, now }),
-    { refs } = store;
+    { refs } = store,
+    imageStorage = createAdventureRestoreImageStorageService(store, assets);
   const reservation = (uid, id, adventureId, fingerprint, kind) => ({
     schemaVersion: 1,
     ownerId: uid,
@@ -366,7 +368,7 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
       action = 'advanceAdventureRestoreCleanup',
       fingerprint = requestHash(action, request);
     if (request.limit > 50) invalid();
-    return db.runTransaction(async (tx) => {
+    const result = await db.runTransaction(async (tx) => {
       const loaded = await store.load(tx, uid, request.restoreId, request.jobToken),
         op = await tx.get(refs.op(uid, request.operationId)),
         job = loaded.job;
@@ -379,6 +381,8 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
         revocation.commit();
         return store.commit(tx, loaded, request, action, record, revocation.effects);
       }
+      const storageCleanup = await imageStorage.prepareCleanup(tx, loaded, request);
+      if (storageCleanup) return { storageCleanup };
       const name = job.cleanupPhase,
         offset = names.indexOf(name);
       if (offset < 0) inconsistent();
@@ -491,6 +495,9 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
       if (root) tx.set(refs.root(job.adventureId), root);
       return store.commit(tx, loaded, request, action, record, effects);
     });
+    return result.storageCleanup
+      ? imageStorage.finishCleanup(uid, request, result.storageCleanup)
+      : result;
   }
   return {
     startAdventureRestore: start,
@@ -511,5 +518,6 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
     ...createAdventureRestoreUniverseService(store),
     ...createAdventureRestorePersonaLibraryService(store),
     ...createAdventureRestoreImagesService(store),
+    advanceAdventureRestoreImageStorage: imageStorage.advance,
   };
 }

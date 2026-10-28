@@ -1,8 +1,13 @@
 import { contentCount as count } from './adventureContentPrimitives.mjs';
 export const adventurePersonaLibraryPhase = (v) =>
-  ['persona-library', 'persona-library-ready', 'image-bytes', 'image-bytes-ready'].includes(
-    v.phase,
-  );
+  [
+    'persona-library',
+    'persona-library-ready',
+    'image-bytes',
+    'image-bytes-ready',
+    'image-storage',
+    'image-storage-ready',
+  ].includes(v.phase);
 export const adventurePersonaLibraryViewKeys = ['personaLibraryInstalled', 'personaLibraryRevoked'];
 export const adventurePersonaLibraryPrivateKeys = ['personaLibraryAfter'];
 export const validAdventurePersonaLibraryView = (v) =>

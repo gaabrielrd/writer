@@ -3234,3 +3234,16 @@ Claim deleting exige contador zero e uses vazia; depois do I/O, finalize deleted
 somente na mesma encarnação nativa e com conteúdo original. Delete físico bruto
 continua apenas para imagens sem origem de restauração; nunca libere o caminho
 que um upload create-only antigo ainda pode alcançar.
+
+A materialização privada de imagens de aventuras (ADR 0204) reserva intenção
+nativa antes de I/O, decodifica PNG inteiro e mantém bytes exatos por recurso.
+O adaptador restoredImageStorage compartilha o protocolo das capas, cujo alias
+permanece. Revalide fonte e provas nativas antes/depois do upload. No cleanup,
+revogue personas e confirme fences de todas as intenções antes de apagar fonte/
+frames; cursor privado por nome e kind mantém consultas limitadas. Nenhuma
+biblioteca/uso/URL ou ativação decorre de image-storage-ready.
+
+O leitor de origem da biblioteca restoredImageRemoval não importa contratos
+operacionais de restauração: imageLibrary também participa dos imports de lore/
+cenas. Valide ali os primitivos de ID/nascimento sem inicializar seeds ou
+orquestradores, para preservar a ordem independente de carregamento (ADR 0204).

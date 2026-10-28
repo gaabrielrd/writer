@@ -51,7 +51,10 @@ test('SDK activated archive cleanup authenticates source deletion, preserves edi
     imageId = f.p.preparation.cover.imageId,
     library = createImageLibraryService({
       db: admin,
-      assets: { remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }) },
+      assets: {
+        retireRestoreImage: f.assets.retire,
+        remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }),
+      },
     });
   await library.detach(uid, f.p.bookId, imageId);
   await library.remove(uid, { id: imageId });
