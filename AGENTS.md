@@ -962,3 +962,10 @@ não cancela confirmado. Leia receipt por folhas, não por objeto inteiro.
 O inventário versionado usa páginas de até 25 e grupos de filhos por intervalo
 da raiz, com caminho/família exatos; não dependa de head existente. Exija vazio
 separado em todas as famílias e revise a versão ao mudar o layout (ADR 0222).
+
+No avanço privado da exclusão de aventuras, conserve o nascimento original no
+job conferido pelo token/recibo inicial. Grave checkpoint/recibo e efeitos na
+mesma transação, preservando updateTime do marcador. Retire snapshots por
+metadata e origem exatas; desligue turnos ativos antes de aceitar conclusão
+tardia. Não descarte perguntas próprias implicitamente junto dos snapshots e
+não certifique fases cujos processadores ainda não existem (ADR 0223).

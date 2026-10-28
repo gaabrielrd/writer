@@ -1,6 +1,50 @@
 {
   "indexes": [
     {
+      "collectionGroup": "editorChatContexts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "summary.target.kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.target.id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.projectToken",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "editorChats",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "summary.target.kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.target.id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.projectToken",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "adventureDeletions",
       "queryScope": "COLLECTION",
       "fields": [

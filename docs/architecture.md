@@ -3414,3 +3414,14 @@ e valida caminhos/metadados antes de devolver referências. Layout v1 contém
 19 coleções diretas e quatro grupos; consulta vazia é separada.
 Serviço interno sem export em index/callable/UI; avanço da limpeza permanece
 pendente, assim como o fechamento integral do plano 199.
+
+## Avanço privado e quiescência parcial de aventuras
+
+A [ADR 0223](decisions/0223-adventure-deletion-quiescence.md) acrescenta nascimento
+original ao job interno e advance com checkpoint/fingerprint/recibo atômicos.
+Contextos da origem são fechados em páginas de dez sem ler snapshots; conversas
+são cercadas uma por página para recusar geração tardia de plataforma/BYOK.
+Índices locais consultam alvo e projectToken. Raiz ausente não perde identidade;
+corpo recriado recusa a página. A raiz marcada não muda durante o avanço.
+Perguntas próprias permanecem; política da exclusão inteira está pendente.
+Fontes/mídia/limpeza final e exposição/cliente/UI continuam abertos no plano 199.

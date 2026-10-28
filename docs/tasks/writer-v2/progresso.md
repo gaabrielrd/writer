@@ -464,3 +464,11 @@ O início é atômico e o catálogo suporta janela de 50 com provas nativas.
 [Entregável parcial](../../entregas/2026-10-28-writer-v2-inicio-privado-e-inventario-da-exclusao-de-aventuras.md):
 sem endpoint/UI ou avanço de limpeza; versão v1 e índice somente locais.
 Não fecha P2/P3/D/F2-09 nem altera a macro **8/35**.
+
+O avanço privado do mesmo plano 199 agora retira snapshots de contexto por
+metadata e encerra turnos ativos, com recibos/checkpoints atômicos.
+[Preparação parcial](../../entregas/2026-10-28-writer-v2-avanco-privado-e-encerramento-de-contextos.md):
+**27 Node e 11 SDK/Rules** positivos, lote nativo 10/3/0, ACK perdido, raiz ausente,
+rollback de corpo recriado e fence de resposta tardia. Fontes/mídia/limpeza final
+e cliente/UI ainda faltam; fase não certificada. Sem novo validate integral.
+Somente commit local, sem CI/remoto. Macro **8/35** e pendências gerais preservadas.

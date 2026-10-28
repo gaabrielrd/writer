@@ -2115,3 +2115,12 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      35 Vitest distintos, 30 Node/SDK, nove verificações Chromium e build verdes.
      Exclusão completa de aventura é a próxima lacuna; P2/P3/D/F2-09 seguem
      abertos. Integral no fechamento do bloco; somente commit local.
+
+### Plano 199 — avanço privado e encerramento de contextos
+
+O avanço interno liga checkpoint/recibo e efeitos atômicos; retira snapshots
+em páginas e desliga turnos ativos. 27 Node e 11 SDK/Rules positivos;
+[ADR 0223](../../../decisions/0223-adventure-deletion-quiescence.md) e
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-avanco-privado-e-encerramento-de-contextos.md).
+Fontes/mídia/autoria/controles/atividade/verificação e cliente/UI ainda faltam.
+Plano 199, P2/P3/D/F2-09/V2 e macro 8/35 permanecem abertos; só commit local.

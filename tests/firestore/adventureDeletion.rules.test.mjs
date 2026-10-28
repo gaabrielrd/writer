@@ -17,6 +17,11 @@ import {
   ADVENTURE_DELETION_LAYOUT as layout,
 } from '../../functions/src/adventureDeletionInventory.mjs';
 import { adventureReservationPath } from '../../functions/src/adventureDeletionGuard.mjs';
+import { createWorkHistoryService } from '../../functions/src/workHistory.mjs';
+import { createEditorChatContextService } from '../../functions/src/editorChatContext.mjs';
+import { createEditorChatConversationsService } from '../../functions/src/editorChatConversations.mjs';
+import { createEditorChatGenerationService } from '../../functions/src/editorChatGeneration.mjs';
+import { signed } from '../../functions/test/helpers/editorChatFixture.mjs';
 import {
   adventureDeletionPath,
   adventureDeletionOperationPath,
@@ -258,4 +263,214 @@ test('SDK cannot access private start records or inventory after revocation; ano
     );
   }
   assert.equal((await api.getAdventureDeletion('other', { adventureId: id })).deletion, null);
+});
+
+async function chatScope(adventureId = id, count = 1) {
+  const scene = await createScenesService({ db }).createScene(uid, {
+    target: { kind: 'adventure', id: adventureId },
+    operationId: adventureId + '-chat-scene',
+    parentId: null,
+    title: 'Own scene',
+    content: '<p>Private exact own text</p>',
+  });
+  const scope = {
+    target: { kind: 'adventure', id: adventureId },
+    resource: { kind: 'scene', id: scene.scene.id },
+  };
+  const source = await createWorkHistoryService({ db }).getWorkVersionSource(uid, scope);
+  const ctx = createEditorChatContextService({ db });
+  const controls = [];
+  for (let n = 0; n < count; n++) {
+    const contextId = adventureId + '-context-' + String(n).padStart(3, '0');
+    let current = (
+      await ctx.dispatch(
+        uid,
+        await signed({
+          action: 'prepareContext',
+          ...scope,
+          contextId,
+          operationId: contextId,
+          base: {
+            sourceToken: source.sourceToken,
+            revision: source.revision,
+            bodyHash: source.contentHash,
+          },
+          capture: {
+            source: 'selection',
+            editorHash: 'a'.repeat(64),
+            from: 0,
+            to: 5,
+            text: 'Aria',
+            surroundingText: '',
+            truncated: false,
+          },
+        }),
+      )
+    ).current;
+    if (n === 0)
+      for (let m = 0; m < 10 && ['local', 'global'].includes(current.phase); m++)
+        current = (
+          await ctx.dispatch(
+            uid,
+            await signed({
+              action: 'advanceContext',
+              ...scope,
+              contextId,
+              contextToken: current.contextToken,
+              expectedRevision: current.revision,
+              operationId: contextId + '-advance-' + m,
+            }),
+          )
+        ).current;
+    controls.push(current);
+  }
+  return { scope, controls };
+}
+const cleanupStep = (p, n) => ({
+  deletionId: p.deletionId,
+  deletionToken: p.deletionToken,
+  expectedCheckpoint: p.checkpoint,
+  operationId: 'native-quiescence-step-' + n,
+});
+
+test('native advance retires ten snapshots per page, replays receipts and preserves a neighboring adventure', async () => {
+  await setup();
+  const own = await chatScope(id, 13),
+    otherId = id + '-neighbor';
+  await studio.createAdventure(uid, { operationId: otherId, title: 'Neighbor' });
+  const neighbor = await chatScope(otherId),
+    neighborBody = db.doc(
+      'users/' + uid + '/editorChatContextBodies/' + neighbor.controls[0].contextId,
+    );
+  const kept = await neighborBody.get();
+  const request = await input(),
+    start = await api.startAdventureDeletion(uid, request);
+  const rootBefore = await db.doc(root).get();
+  let p = start.progress;
+  const sizes = [];
+  let firstRequest, first;
+  for (let n = 0; n < 3; n++) {
+    const r = cleanupStep(p, n),
+      before = p.deletedDocuments;
+    const result = await api.advanceAdventureDeletion(uid, r);
+    if (n === 0) {
+      firstRequest = r;
+      first = result;
+    }
+    p = result.progress;
+    sizes.push(p.deletedDocuments - before);
+  }
+  assert.deepEqual(sizes, [10, 3, 0]);
+  const replay = await api.advanceAdventureDeletion(uid, firstRequest);
+  assert.deepEqual(replay.receipt, first.receipt);
+  assert.equal(replay.progress.checkpoint, p.checkpoint);
+  assert.ok((await db.doc(root).get()).updateTime.isEqual(rootBefore.updateTime));
+  assert.ok((await neighborBody.get()).updateTime.isEqual(kept.updateTime));
+  for (const c of own.controls) {
+    assert.equal(
+      (await db.doc('users/' + uid + '/editorChatContextBodies/' + c.contextId).get()).exists,
+      false,
+    );
+    const value = (
+      await db.doc('users/' + uid + '/editorChatContexts/' + c.contextId).get()
+    ).data();
+    assert.equal(value.summary.phase, 'deleted');
+    assert.equal(value.source, null);
+  }
+  const job = await db.doc(adventureDeletionPath(uid, p.deletionId)).get();
+  const receipt = await db
+    .doc(adventureDeletionOperationPath(uid, 'native-quiescence-step-2'))
+    .get();
+  assert.ok(job.updateTime.isEqual(receipt.createTime));
+  assert.equal(job.data().part, 1);
+});
+
+test('native snapshot recreation rolls back the whole page; original birth still retires after root removal', async () => {
+  await setup();
+  const own = await chatScope(id, 2),
+    start = await api.startAdventureDeletion(uid, await input());
+  const recreated = db.doc(
+      'users/' + uid + '/editorChatContextBodies/' + own.controls[1].contextId,
+    ),
+    original = await recreated.get();
+  await recreated.delete();
+  await recreated.create(original.data());
+  const firstRef = db.doc('users/' + uid + '/editorChatContextBodies/' + own.controls[0].contextId);
+  await assert.rejects(() => api.advanceAdventureDeletion(uid, cleanupStep(start.progress, 100)), {
+    code: 'failed-precondition',
+  });
+  assert.equal((await firstRef.get()).exists, true);
+  assert.equal(
+    (await db.doc(adventureDeletionPath(uid, start.progress.deletionId)).get()).data().checkpoint,
+    0,
+  );
+  await recreated.delete();
+  await db.doc(root).delete();
+  const advanced = await api.advanceAdventureDeletion(uid, cleanupStep(start.progress, 101));
+  assert.equal(advanced.progress.deletedDocuments, 1);
+  assert.equal((await firstRef.get()).exists, false);
+});
+
+test('native conversation fencing stops BYOK without erasing its own question or mutating the project root', async () => {
+  await setup();
+  const f = await chatScope(),
+    conversations = createEditorChatConversationsService({ db });
+  const bootstrap = await conversations.dispatch(uid, { action: 'listConversations', ...f.scope });
+  const conversation = (
+    await conversations.dispatch(
+      uid,
+      await signed({
+        action: 'createConversation',
+        ...f.scope,
+        conversationId: 'native-quiescence-conversation',
+        operationId: 'native-quiescence-conversation',
+        projectToken: bootstrap.projectToken,
+        resourceToken: bootstrap.resourceToken,
+      }),
+    )
+  ).current;
+  const scope = {
+    ...f.scope,
+    conversationId: conversation.conversationId,
+    conversationToken: conversation.conversationToken,
+  };
+  const generation = createEditorChatGenerationService({
+    db,
+    generator: async () => {
+      throw Error('BYOK must not call a provider');
+    },
+  });
+  const context = f.controls[0];
+  const sent = await generation.dispatch(
+    uid,
+    await signed({
+      action: 'send',
+      ...scope,
+      operationId: 'native-quiescence-send',
+      contextId: context.contextId,
+      contextToken: context.contextToken,
+      expectedContextRevision: context.revision,
+      expectedConversationRevision: conversation.revision,
+      prompt: '  Private own question\n',
+      generation: { version: 1, provider: 'openai_byok', model: 'gpt-4o-mini', reasoning: 'auto' },
+    }),
+  );
+  const start = await api.startAdventureDeletion(uid, await input());
+  const marked = await db.doc(root).get();
+  let p = start.progress;
+  for (let n = 0; n < 4; n++)
+    p = (await api.advanceAdventureDeletion(uid, cleanupStep(p, 200 + n))).progress;
+  const conv = await db.doc('users/' + uid + '/editorChats/' + conversation.conversationId).get();
+  assert.equal(conv.data().summary.activeTurnId, null);
+  const after = await generation.dispatch(uid, {
+    action: 'getByokInput',
+    ...scope,
+    turnId: sent.turn.turnId,
+    attemptToken: sent.turn.attemptToken,
+  });
+  assert.equal(after.turn.state, 'stopped');
+  assert.equal(after.input, null);
+  const question = await db.doc(conv.ref.path + '/turnQuestions/' + sent.turn.turnId).get();
+  assert.equal(question.data().question, '  Private own question\n');
+  assert.ok((await db.doc(root).get()).updateTime.isEqual(marked.updateTime));
 });

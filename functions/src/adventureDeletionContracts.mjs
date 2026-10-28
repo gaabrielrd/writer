@@ -1,4 +1,5 @@
 import { validateId } from './generation.mjs';
+import { adventureIdentityToken } from './campaignLoreOrigin.mjs';
 import { digest, workClosed, workFail, workId } from './workProgressContracts.mjs';
 
 export { digest };
@@ -20,6 +21,7 @@ export const ADVENTURE_DELETION_JOB_FIELDS = Object.freeze([
   'adventureId',
   'adventureToken',
   'sourceToken',
+  'sourceBirth',
   'expectedRevision',
   'title',
   'deletionId',
@@ -187,6 +189,14 @@ export function adventureDeletionOwned(value, uid, id) {
     (p.parentId === null && (p.childPart !== 0 || p.childCursor !== null))
   )
     adventureDeletionInconsistent();
+  if (
+    !exact(p.sourceBirth, ['seconds', 'nanoseconds']) ||
+    !integer(p.sourceBirth.seconds) ||
+    !integer(p.sourceBirth.nanoseconds) ||
+    p.sourceBirth.nanoseconds >= 1e9 ||
+    adventureIdentityToken(uid, p.adventureId, { createTime: p.sourceBirth }) !== p.adventureToken
+  )
+    adventureDeletionInconsistent();
   const request = {
     adventureId: p.adventureId,
     adventureToken: p.adventureToken,
@@ -305,7 +315,7 @@ export const encodeAdventureDeletionCursor = (uid, p) =>
     }),
   ).toString('base64url');
 
-export function initialAdventureDeletion(uid, input, title, timestamp) {
+export function initialAdventureDeletion(uid, input, title, timestamp, sourceBirth) {
   return {
     schemaVersion: 1,
     cleanupVersion: ADVENTURE_DELETION_VERSION,
@@ -313,6 +323,7 @@ export function initialAdventureDeletion(uid, input, title, timestamp) {
     adventureId: input.adventureId,
     adventureToken: input.adventureToken,
     sourceToken: input.sourceToken,
+    sourceBirth: { ...sourceBirth },
     expectedRevision: input.expectedRevision,
     title,
     deletionId: input.operationId,
@@ -331,5 +342,21 @@ export function initialAdventureDeletion(uid, input, title, timestamp) {
     childCursor: null,
     certified: [],
     deletedDocuments: 0,
+  };
+}
+
+export function adventureDeletionAdvanceInput(uid, data) {
+  adventureDeletionScope(uid, data, [
+    'deletionId',
+    'deletionToken',
+    'operationId',
+    'expectedCheckpoint',
+  ]);
+  if (!integer(data.expectedCheckpoint)) workFail('invalid-argument', 'Checkpoint inválido.');
+  return {
+    deletionId: validateId(data.deletionId),
+    deletionToken: adventureDeletionHash(data.deletionToken),
+    operationId: validateId(data.operationId),
+    expectedCheckpoint: data.expectedCheckpoint,
   };
 }

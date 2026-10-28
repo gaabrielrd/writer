@@ -1,4 +1,5 @@
 import { validateId } from './generation.mjs';
+import { advanceAdventureQuiescence } from './adventureDeletionQuiescence.mjs';
 import {
   readWorkMetadata,
   workDate,
@@ -28,6 +29,8 @@ import {
   adventureDeletionInconsistent as inconsistent,
   adventureDeletionScope as scope,
   adventureDeletionStartInput as startInput,
+  adventureDeletionAdvanceInput as advanceInput,
+  adventureDeletionJobToken as jobToken,
   adventureDeletionFingerprint as fingerprint,
   adventureDeletionOwned as owned,
   adventureDeletionIdentity as identity,
@@ -90,6 +93,7 @@ export async function readAdventureDeletionJob(tx, db, uid, id, supplied) {
     },
     p.title,
     p.createdAt,
+    p.sourceBirth,
   );
   if (
     retired.exists ||
@@ -215,7 +219,13 @@ export function createAdventureDeletionService({ db, now = Date.now }) {
         if ((await metadata(tx, db, path, ['ownerId'])).exists) inconsistent();
         const timestamp = workDate(now, current.root.updatedAt ?? 0);
         if (!Number.isSafeInteger(timestamp) || timestamp > 8640000000000000) inconsistent();
-        const p = initialAdventureDeletion(uid, input, current.source.title, timestamp);
+        const p = initialAdventureDeletion(
+          uid,
+          input,
+          current.source.title,
+          timestamp,
+          born(current.snapshot),
+        );
         owned(p, uid, p.deletionId);
         const unlink = await prepareUniverseProjectLink(
           tx,
@@ -265,6 +275,73 @@ export function createAdventureDeletionService({ db, now = Date.now }) {
         const found = await readStart(tx, uid, input);
         if (!found.answer) inconsistent();
         return found.answer;
+      });
+    },
+    async advanceAdventureDeletion(uid, data) {
+      const input = advanceInput(uid, data),
+        fp = fingerprint('advance', input);
+      return transaction(async (tx) => {
+        const loaded = await readAdventureDeletionJob(tx, db, uid, input.deletionId),
+          p = loaded.p;
+        if (jobToken(p, loaded.snapshot) !== input.deletionToken)
+          workFail(
+            'failed-precondition',
+            'A identidade da exclusão mudou.',
+            'adventure-deletion-identity-changed',
+          );
+        const ref = db.doc(adventureDeletionOperationPath(uid, input.operationId));
+        const previous = operation(
+          await metadata(tx, db, ref.path, ADVENTURE_DELETION_OPERATION_READ_FIELDS),
+          uid,
+          fp,
+        );
+        if (previous) {
+          if (
+            previous.deletionId !== p.deletionId ||
+            previous.receipt.action !== 'advance' ||
+            previous.receipt.expectedCheckpoint !== input.expectedCheckpoint ||
+            previous.receipt.confirmedCheckpoint > p.checkpoint
+          )
+            inconsistent();
+          return { receipt: previous.receipt, progress: loaded.progress };
+        }
+        if (p.state !== 'deleting' || p.checkpoint !== input.expectedCheckpoint)
+          workFail(
+            'failed-precondition',
+            'O progresso mudou. Consulte a exclusão antes de continuar.',
+            'checkpoint-conflict',
+          );
+        if (p.phase !== 'quiescence')
+          workFail(
+            'failed-precondition',
+            'Esta etapa da exclusão ainda está em implementação.',
+            'adventure-deletion-step-unavailable',
+          );
+        const patch = await advanceAdventureQuiescence(tx, db, p, now);
+        const value = {
+          ...patch,
+          checkpoint: p.checkpoint + 1,
+          updatedAt: workDate(now, p.updatedAt),
+          lastOperationId: input.operationId,
+          lastRequestHash: fp,
+        };
+        owned(value, uid, p.deletionId);
+        const receipt = {
+          operationId: input.operationId,
+          action: 'advance',
+          expectedCheckpoint: input.expectedCheckpoint,
+          confirmedCheckpoint: value.checkpoint,
+        };
+        tx.set(db.doc(adventureDeletionPath(uid, p.deletionId)), value);
+        tx.create(ref, {
+          schemaVersion: 1,
+          ownerId: uid,
+          deletionId: p.deletionId,
+          fingerprint: fp,
+          receipt,
+          jobHash: digest(value),
+        });
+        return { receipt, progress: progress(value, loaded.snapshot) };
       });
     },
     async resolveAdventureDeletionStart(uid, data) {

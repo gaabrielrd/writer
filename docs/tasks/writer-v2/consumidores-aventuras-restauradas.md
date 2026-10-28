@@ -67,3 +67,9 @@ nativas. Inventário limitado encontra filhos com pais ausentes.
 Veja a [evidência](../../entregas/2026-10-28-writer-v2-inicio-privado-e-inventario-da-exclusao-de-aventuras.md).
 Continua sem endpoint/UI de exclusão ou avanço da limpeza; o conjunto do
 plano 199 permanece pendente.
+
+O avanço interno agora fecha contextos por metadata e desliga turnos ativos
+antes de respostas tardias. Fonte nativa original no job permite prosseguir sem
+head; rollback/recibo/páginas e BYOK foram comprovados no emulador demo.
+Veja a [evidência parcial](../../entregas/2026-10-28-writer-v2-avanco-privado-e-encerramento-de-contextos.md).
+Perguntas próprias preservadas; fontes/mídia/limpeza final e UI ainda faltam.

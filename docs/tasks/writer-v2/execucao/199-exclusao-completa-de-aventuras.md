@@ -183,3 +183,38 @@ e a [evidência parcial](../../../entregas/2026-10-28-writer-v2-inicio-privado-e
 registram regras, resultados e limites. Próximo: integrar quiescência operacional,
 retirada de mídia/usos e fontes/controles externos, avanço da limpeza/atividade,
 certificação terminal e cliente/UI. Todos os aceites gerais continuam abertos.
+
+## Avanço interno — encerramento dos contextos e pedidos
+
+Base 530413d conferida limpa. Acrescentar nascimento original da raiz ao job
+privado, derivado do snapshot (sem input do cliente), para conferir a identidade
+dos contextos mesmo quando o head já estiver ausente. O formato continua interno,
+sem jobs reais/endpoint; não há migração silenciosa de um formato público.
+
+Implementar advance com token nativo/checkpoint/fingerprint, recibo e novo estado
+atômicos. Primeiro processador: invalidar contextos e retirar seus corpos sem
+hidratar captura/frozen; desligar turnos ativos da origem para impedir resposta
+tardia. Consultar somente UID/alvo/nascimento conferidos; preservar outras origens
+e contas. Raiz marcada não recebe novas mutações durante os passos.
+
+A política de perguntas próprias na exclusão inteira foi perguntada ao operador;
+não apagar perguntas enquanto essa resposta não chegar. Ficha indisponível e
+exclusão de projeto têm escopos diferentes. Partes dependentes dessa decisão
+aguardam; núcleo de avanço e encerramento de derivação podem prosseguir.
+
+Não saltar uma etapa ainda não implementada nem fabricar certificação. Mídia,
+usos, importação/restauração, limpeza e verificação finais permanecem obrigatórios
+antes da exposição do fluxo e do fechamento 199.
+
+## Resultado parcial — contextos e turnos ativos
+
+Advance interno e partes zero/um implementados. Snapshot retirado por metadata,
+controle fechado e turno ativo desligado com catálogo no checkpoint atômico.
+O nascimento original da raiz permite retomada sem head. 27 Node e 11 SDK/Rules
+positivos; lote 10/3/0, rollback da página, retry após ACK perdido e resposta
+atrasada sem escrita. Índices locais declarados, sem implantação.
+Veja [ADR 0223](../../../decisions/0223-adventure-deletion-quiescence.md) e
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-avanco-privado-e-encerramento-de-contextos.md).
+A parte dois recusa até implementar fontes; nenhuma fase completa certificada.
+Perguntas próprias e corpos de turnos preservados nesta etapa. Demais aceites,
+interface e validate integral continuam pendentes; macro 8/35 inalterada.
