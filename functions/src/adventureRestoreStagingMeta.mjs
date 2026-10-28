@@ -1,4 +1,11 @@
 import {
+  adventureImagePreparationPhase,
+  imagePreparationViewKeys,
+  imagePreparationPrivateKeys,
+  validAdventureImageView,
+  validAdventureImageMeta,
+} from './adventureRestoreImageMeta.mjs';
+import {
   adventurePersonaLibraryPhase,
   adventurePersonaLibraryViewKeys,
   adventurePersonaLibraryPrivateKeys,
@@ -62,6 +69,7 @@ export const adventureStagingView = (value) =>
         ...(draftFinalizePhase(value) ? draftFinalizeViewKeys : []),
         ...(universeRestorePhase(value) ? universeRestoreViewKeys : []),
         ...(adventurePersonaLibraryPhase(value) ? adventurePersonaLibraryViewKeys : []),
+        ...(adventureImagePreparationPhase(value) ? imagePreparationViewKeys : []),
       ].map((k) => [k, value[k]]),
     ),
   );
@@ -75,6 +83,7 @@ export function validAdventureStagingView(v) {
       ...draftFinalizeViewKeys,
       ...universeRestoreViewKeys,
       ...adventurePersonaLibraryViewKeys,
+      ...imagePreparationViewKeys,
     ]) ||
     v.version !== 1 ||
     ![
@@ -91,6 +100,8 @@ export function validAdventureStagingView(v) {
       'universe-ready',
       'persona-library',
       'persona-library-ready',
+      'image-bytes',
+      'image-bytes-ready',
     ].includes(v.phase) ||
     !viewKeys.filter((k) => !['version', 'phase'].includes(k)).every((k) => count(v[k])) ||
     v.cleanedArtifacts > v.artifactCount
@@ -124,6 +135,12 @@ export function validAdventureStagingView(v) {
       : adventurePersonaLibraryViewKeys.some((k) => Object.hasOwn(v, k))
   )
     return false;
+  if (
+    adventureImagePreparationPhase(v)
+      ? !validAdventureImageView(v)
+      : imagePreparationViewKeys.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
   return historyPhase(v)
     ? validAdventureHistoryView(v)
     : [...historyViewKeys, 'historyPending'].every((k) => !Object.hasOwn(v, k));
@@ -143,6 +160,8 @@ export function validAdventureStagingMeta(v, job) {
         ...universeRestoreViewKeys,
         ...adventurePersonaLibraryViewKeys,
         ...adventurePersonaLibraryPrivateKeys,
+        ...imagePreparationViewKeys,
+        ...imagePreparationPrivateKeys,
       ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
@@ -250,6 +269,14 @@ export function validAdventureStagingMeta(v, job) {
     adventurePersonaLibraryPhase(v)
       ? !validAdventurePersonaLibraryMeta(v, job)
       : [...adventurePersonaLibraryViewKeys, ...adventurePersonaLibraryPrivateKeys].some((k) =>
+          Object.hasOwn(v, k),
+        )
+  )
+    return false;
+  if (
+    adventureImagePreparationPhase(v)
+      ? !validAdventureImageMeta(v, job)
+      : [...imagePreparationViewKeys, ...imagePreparationPrivateKeys].some((k) =>
           Object.hasOwn(v, k),
         )
   )

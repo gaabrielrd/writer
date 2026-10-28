@@ -33,6 +33,7 @@ const actions = [
   'finalizeAdventureRestoreDraft',
   'advanceAdventureRestoreUniverse',
   'advanceAdventureRestorePersonaLibrary',
+  'advanceAdventureRestoreImages',
 ];
 const mapped = (v) => typeof v === 'string' && /^restore-[a-f0-9]{64}$/.test(v);
 const hashId = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
@@ -46,7 +47,10 @@ export function adventureStageAddress(value) {
         p[0] === 'preparedRoot' &&
         (['current', 'text-state', 'universe-candidate', 'recovered-draft'].includes(p[1]) ||
           /^persona-custom-[a-f0-9]{64}$/.test(p[1]) ||
-          /^binding-[a-f0-9]{64}$/.test(p[1]))
+          /^binding-[a-f0-9]{64}$/.test(p[1]) ||
+          p[1] === 'image-state' ||
+          /^image-(binding-)?[a-f0-9]{64}$/.test(p[1]) ||
+          /^image-bytes-[a-f0-9]{64}-[0-9]{6}$/.test(p[1]))
       : (value.scope === 'persona' &&
           p.length === 2 &&
           p[0] === 'aiPersonas' &&

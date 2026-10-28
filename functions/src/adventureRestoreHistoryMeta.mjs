@@ -7,6 +7,8 @@ export const historyPhase = (v) =>
     'universe-ready',
     'persona-library',
     'persona-library-ready',
+    'image-bytes',
+    'image-bytes-ready',
   ].includes(v.phase);
 export const historyViewKeys = [
   'historyVersions',
@@ -77,6 +79,8 @@ export function validAdventureHistoryMeta(v, job, profileEnd) {
       'universe-ready',
       'persona-library',
       'persona-library-ready',
+      'image-bytes',
+      'image-bytes-ready',
     ].includes(v.phase) !== complete
   )
     return false;

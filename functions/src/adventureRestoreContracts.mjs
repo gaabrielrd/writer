@@ -34,6 +34,7 @@ export const ADVENTURE_RESTORE_ACTIONS = Object.freeze({
   finalizeAdventureRestoreDraft: ['content-verified'],
   advanceAdventureRestoreUniverse: ['content-verified'],
   advanceAdventureRestorePersonaLibrary: ['content-verified'],
+  advanceAdventureRestoreImages: ['content-verified'],
   cancelAdventureRestore: ['cancelling'],
   advanceAdventureRestoreCleanup: ['cancelling', 'cancelled'],
 });

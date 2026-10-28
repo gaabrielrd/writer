@@ -1,6 +1,8 @@
 import { contentCount as count } from './adventureContentPrimitives.mjs';
 export const adventurePersonaLibraryPhase = (v) =>
-  ['persona-library', 'persona-library-ready'].includes(v.phase);
+  ['persona-library', 'persona-library-ready', 'image-bytes', 'image-bytes-ready'].includes(
+    v.phase,
+  );
 export const adventurePersonaLibraryViewKeys = ['personaLibraryInstalled', 'personaLibraryRevoked'];
 export const adventurePersonaLibraryPrivateKeys = ['personaLibraryAfter'];
 export const validAdventurePersonaLibraryView = (v) =>
@@ -13,7 +15,7 @@ export function validAdventurePersonaLibraryMeta(v, job) {
       ? v.personaLibraryAfter === null
       : typeof v.personaLibraryAfter === 'string' &&
         /^persona-custom-[a-f0-9]{64}$/.test(v.personaLibraryAfter)) &&
-    (v.phase !== 'persona-library-ready' || v.personaLibraryInstalled === v.personaProfiles) &&
+    (v.phase === 'persona-library' || v.personaLibraryInstalled === v.personaProfiles) &&
     (!v.personaLibraryRevoked || ['cancelling', 'cancelled'].includes(job.state)) &&
     (job.state !== 'cancelled' || v.personaLibraryRevoked)
   );

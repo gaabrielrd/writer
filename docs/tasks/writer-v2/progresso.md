@@ -261,3 +261,12 @@ tipos/build/smoke. A primeira tentativa falhou na máscara de leitura da
 auditoria de livros; corrigida sem relaxar o teste e revalidada integralmente.
 Resultado e limites estão na evidência de 179. Demais pendências e macro 8/35
 permanecem inalteradas.
+
+[Bytes de imagens 180](execucao/180-preparacao-privada-das-imagens-de-aventuras.md)
+prepara vínculos explícitos/descritores/frames privados por uso, com replay e
+cleanup comprovados. 15 Node novos distintos, 47 regressões, um corpus nativo e
+um SDK demo positivos em seleções dirigidas; resultados e limites na
+[evidência](../../entregas/2026-10-28-writer-v2-bytes-privados-das-imagens-de-aventuras.md).
+Suíte integral no fechamento do bloco de mídia. Storage/decodificação/fence,
+biblioteca/usos/ativação, agregados/audit, recuperação cifrada/UI/roundtrip,
+P2/P3/D/F2-09, fases seguintes, gates e macro 8/35 permanecem abertos.

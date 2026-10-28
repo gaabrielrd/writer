@@ -1,6 +1,13 @@
 import { contentClosed as closed, contentCount as count } from './adventureContentPrimitives.mjs';
 export const draftFinalizePhase = (v) =>
-  ['draft-ready', 'universe-ready', 'persona-library', 'persona-library-ready'].includes(v.phase);
+  [
+    'draft-ready',
+    'universe-ready',
+    'persona-library',
+    'persona-library-ready',
+    'image-bytes',
+    'image-bytes-ready',
+  ].includes(v.phase);
 export const draftFinalizeViewKeys = ['draftOutcome', 'draftWordCount'];
 export function validAdventureDraftFinalized(v) {
   return (

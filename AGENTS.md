@@ -836,3 +836,9 @@ targets por operações/hash/metadata, inclusive namespaces de heads derivados d
 fonte antes de descartar o índice. Novos filhos/famílias exigem ampliar prova e
 limpeza antes de gravar; atualizações futuras preservam o criador e provam a
 versão anterior. structure-ready não autoriza ativação (ADR 0194).
+
+Na preparação de imagens restauradas de aventuras, preserve um ativo por recurso,
+bytes em arrays numéricos canônicos e prefixo raw privado comprovado. Revalide
+fonte/head/binding antes do commit de cada frame; image-bytes-ready não autoriza
+biblioteca, URL, Storage ou ativação. Decodifique PNG integralmente e reserve/fence
+o I/O na etapa de materialização (ADR 0202).

@@ -3220,3 +3220,10 @@ journal global limitado ao UID e lote preparing comprovado pelo job/recibos.
 Cancelamento revoga lote antes dos deletes; limpeza preserva recriações e exige
 namespace do projeto vazio, mantendo batch cancelado. persona-library-ready ainda
 não ativa lote/raiz; mídia, agregados/audit e recuperação/UI continuam obrigatórios.
+
+Na preparação de imagens das aventuras restauradas (ADR 0202), mantenha vínculos,
+descritores, frames e prefixo raw em preparedRoot com journals comprovados. Um
+avanço copia até 65.536 bytes como array numérico canônico; imageIndex privado
+preserva o cursor histórico. Revalide fonte, head e binding no commit atômico.
+Não crie biblioteca/uso/URL nem aceite PNG apenas pela assinatura ou SHA. Storage,
+decodificação integral e fence antes da limpeza pertencem à integração seguinte.
