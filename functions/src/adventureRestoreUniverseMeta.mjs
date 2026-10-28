@@ -1,4 +1,4 @@
-import { ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
+import { ADVENTURE_COUNT_AND_AUDIT_PHASES as ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
 export const universeRestorePhase = (v) =>
   [
     'universe-ready',

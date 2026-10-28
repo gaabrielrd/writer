@@ -35,27 +35,8 @@ import {
   validAdventureStagingView,
   ADVENTURE_STAGING_COLLECTIONS,
 } from './adventureRestoreStagingMeta.mjs';
-export const ADVENTURE_RESTORE_ROOT_COLLECTIONS = Object.freeze([
-  'parts',
-  'scenes',
-  'sceneBlocks',
-  'sceneControls',
-  'sceneJobs',
-  'arcs',
-  'timelineEvents',
-  'narrativeControls',
-  'narrativeLinks',
-  'narrativeJobs',
-  'sceneLoreLinks',
-  'lore',
-  'loreBodies',
-  'workProgress',
-  'workWordSources',
-  'workWordGroups',
-  'workChecklist',
-  'workVersions',
-  'workVersionBodies',
-]);
+import { ADVENTURE_RESTORE_ROOT_COLLECTIONS } from './adventureRestoreRootCollections.mjs';
+export { ADVENTURE_RESTORE_ROOT_COLLECTIONS };
 const RECEIPT_FIELDS = [
   'schemaVersion',
   'operationId',
@@ -129,6 +110,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreImages',
           'advanceAdventureRestoreImageStorage',
           'advanceAdventureRestoreCounts',
+          'advanceAdventureRestoreAudit',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -171,6 +153,9 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'countScenes',
           'countLinks',
           'countWordCount',
+          'auditJournals',
+          'auditPhysical',
+          'auditMedia',
         ].some((k) => r.staging[k] > loaded.job.staging[k])
       )
         inconsistent();
@@ -186,6 +171,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         'advanceAdventureRestoreImages',
         'advanceAdventureRestoreImageStorage',
         'advanceAdventureRestoreCounts',
+        'advanceAdventureRestoreAudit',
       ].includes(r.action)
     )
       inconsistent();
@@ -205,6 +191,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreImages',
           'advanceAdventureRestoreImageStorage',
           'advanceAdventureRestoreCounts',
+          'advanceAdventureRestoreAudit',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||

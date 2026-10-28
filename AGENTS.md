@@ -866,3 +866,10 @@ proxy com writes journalados; preserve arquivo/órfãos sem inventar agrupadores
 Referências contam o source direto; counts-ready mantém raiz privada e
 countReady false até auditoria/ativação. Cleanup preserva revogação/fences antes
 dos alvos e inclui o ledger registrado (ADR 0205).
+
+Na auditoria privada de aventuras restauradas, congele writers, confira journals
+e inventário físico por páginas e revalide o anchor nativo em cada avanço.
+Não leia corpos/frames completos nessa varredura. Verifique a geração de mídia
+fora da transação e reconfira intenção/contexto no ACK. audit-ready não ativa:
+novas instalações/layout/inventário exigem invalidar e refazer o selo; preserve
+raiz privada e cleanup com revogação/fences antes dos alvos (ADR 0206).

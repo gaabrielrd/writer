@@ -3255,3 +3255,11 @@ Blocos arquivados reservam ordem; cenas arquivadas/sem parte/órfãs preservam t
 e não contribuem ao manuscrito. Referências contam somente o source direto.
 counts-ready conserva raiz reservada e countReady false; a simulação do gate nos
 testes de deltas não substitui o protocolo futuro de auditoria/ativação.
+
+A auditoria privada da preparação de aventuras (ADR 0206) compartilha a lista
+pura de coleções com o Store. Varre journals e documentos físicos por páginas,
+com cursores de pais e anchor nativo, lendo metadata dos corpos/frames. Verifica
+gerações de mídia fora da transação e reconfere contexto/intenção antes do ACK.
+Writers ficam congelados; audit-ready certifica apenas aquele inventário/layout,
+sem ativar raiz ou biblioteca. Instalações posteriores exigem nova auditoria e
+a ativação continua responsável pela reautorização atômica do universo.

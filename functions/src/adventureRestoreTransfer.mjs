@@ -32,6 +32,7 @@ import { readAdventureValidationState } from './adventureRestoreValidationState.
 import { createAdventureRestoreValidationService } from './adventureRestoreValidation.mjs';
 import { ADVENTURE_STAGE_ARTIFACT_FIELDS } from './adventureRestoreArtifacts.mjs';
 import { createAdventureRestoreImageStorageService } from './adventureRestoreImageStorage.mjs';
+import { createAdventureRestoreAuditService } from './adventureRestoreAudit.mjs';
 import { createAdventureRestoreCountsService } from './adventureRestoreCounts.mjs';
 import { createAdventureRestoreImagesService } from './adventureRestoreImages.mjs';
 import { createAdventureRestorePersonaLibraryService } from './adventureRestorePersonaLibrary.mjs';
@@ -521,5 +522,6 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
     ...createAdventureRestoreImagesService(store),
     advanceAdventureRestoreImageStorage: imageStorage.advance,
     ...createAdventureRestoreCountsService(store),
+    ...createAdventureRestoreAuditService(store, assets),
   };
 }

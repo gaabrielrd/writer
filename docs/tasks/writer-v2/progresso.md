@@ -300,3 +300,13 @@ counts-ready mantém raiz privada e countReady false. Auditoria/ativação,
 biblioteca/usos, aceitação/URL, recuperação/UI/roundtrip, P2/P3/D/F2-09,
 fases/gates e macro 8/35 continuam abertos. Validate integral no fechamento do
 próximo grande bloco; o gate de 10708fd não é atribuído a este código novo.
+
+[Auditoria privada 184](execucao/184-auditoria-da-aventura-restaurada.md)
+confere journals/documentos físicos por páginas e gerações privadas de mídia,
+com writers congelados, contexto/anchor e ACK retomável. Onze Node novos, um
+corpus real, três regressões e um SDK integrado Firestore/GCS demo positivos;
+resultados e limites na [evidência](../../entregas/2026-10-28-writer-v2-auditoria-da-aventura-restaurada.md).
+audit-ready não ativa: novas instalações/layout/inventário exigem refazer o selo.
+Biblioteca/usos, ativação, aceitação/URL, recuperação/UI/roundtrip, P2/P3/D/F2-09,
+fases/gates e macro 8/35 permanecem abertos. Validate no fechamento do próximo
+grande bloco; o gate de 10708fd não é atribuído ao código novo.

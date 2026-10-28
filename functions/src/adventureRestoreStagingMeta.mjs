@@ -1,5 +1,12 @@
 import {
-  ADVENTURE_COUNT_PHASES,
+  adventureAuditPhase,
+  auditViewKeys,
+  auditPrivateKeys,
+  validAdventureAuditView,
+  validAdventureAuditMeta,
+} from './adventureRestoreAuditMeta.mjs';
+import {
+  ADVENTURE_COUNT_AND_AUDIT_PHASES as ADVENTURE_COUNT_PHASES,
   adventureCountPhase,
   countViewKeys,
   countPrivateKeys,
@@ -87,6 +94,7 @@ export const adventureStagingView = (value) =>
         ...(adventureImagePreparationPhase(value) ? imagePreparationViewKeys : []),
         ...(imageStoragePhase(value) ? imageStorageViewKeys : []),
         ...(adventureCountPhase(value) ? countViewKeys : []),
+        ...(adventureAuditPhase(value) ? auditViewKeys : []),
       ].map((k) => [k, value[k]]),
     ),
   );
@@ -103,6 +111,7 @@ export function validAdventureStagingView(v) {
       ...imagePreparationViewKeys,
       ...imageStorageViewKeys,
       ...countViewKeys,
+      ...auditViewKeys,
     ]) ||
     v.version !== 1 ||
     ![
@@ -175,6 +184,12 @@ export function validAdventureStagingView(v) {
       : countViewKeys.some((k) => Object.hasOwn(v, k))
   )
     return false;
+  if (
+    adventureAuditPhase(v)
+      ? !validAdventureAuditView(v)
+      : auditViewKeys.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
   return historyPhase(v)
     ? validAdventureHistoryView(v)
     : [...historyViewKeys, 'historyPending'].every((k) => !Object.hasOwn(v, k));
@@ -200,6 +215,8 @@ export function validAdventureStagingMeta(v, job) {
         ...imageStoragePrivateKeys,
         ...countViewKeys,
         ...countPrivateKeys,
+        ...auditViewKeys,
+        ...auditPrivateKeys,
       ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
@@ -329,6 +346,12 @@ export function validAdventureStagingMeta(v, job) {
     adventureCountPhase(v)
       ? !validAdventureCountMeta(v)
       : [...countViewKeys, ...countPrivateKeys].some((k) => Object.hasOwn(v, k))
+  )
+    return false;
+  if (
+    adventureAuditPhase(v)
+      ? !validAdventureAuditMeta(v)
+      : [...auditViewKeys, ...auditPrivateKeys].some((k) => Object.hasOwn(v, k))
   )
     return false;
   return true;

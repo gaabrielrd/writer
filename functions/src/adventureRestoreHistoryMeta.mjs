@@ -1,4 +1,4 @@
-import { ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
+import { ADVENTURE_COUNT_AND_AUDIT_PHASES as ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
 import { contentClosed as closed, contentCount as count } from './adventureContentPrimitives.mjs';
 export const historyPhase = (v) =>
   [
