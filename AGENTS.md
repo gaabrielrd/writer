@@ -138,6 +138,7 @@
 - Materialize capa privada somente após intenção v13; cancele por fence vazio permanente antes dos recursos, preserve geração decimal exata e nunca remova o marcador por cleanup/lifecycle, conforme ADR 0082.
 - Preserve restoreOrigin nos escritores de persona; IA/backup exigem lote ativo com recibos nativos, SDK não altera a origem nem edita/vincula perfis pendentes, conforme ADR 0083.
 - Distinga origem v1 de livro e v2 com target de aventura; use namespaces/recibos próprios e preserve os gates de disponibilidade, conforme ADR 0200.
+- Instale personas de aventura por unidade/journal com lote preparing; revogue o lote antes de limpar perfis e preserve a encarnação de biblioteca preexistente, conforme ADR 0201.
 - Mantenha lote/recibos ativos de personas após excluir o livro e implante gates/Rules/cliente antes de instalar cópias globais.
 - Instale personas restauradas por unidades sob inventário v14, sem sobrescrever biblioteca; revogue o lote antes da limpeza e preserve o marcador cancelled permanente, conforme ADR 0084.
 - Preserve texto lógico e pin próprio das fontes congeladas nos corpos de capítulo existentes; reconfira origem/revisão em cada parte e omita ponteiros físicos no backup, conforme ADR 0085.

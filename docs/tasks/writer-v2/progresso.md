@@ -246,3 +246,18 @@ e correções estão na [evidência](../../entregas/2026-10-27-writer-v2-disponi
 Instalador de perfis/dedupe/journals/cleanup e ativação real continuam obrigatórios;
 não confundir fixtures de lote com esse fluxo. Mídia, agregados/audit/ativação,
 recuperação/UI/roundtrip, P2/P3/D/F2-09, fases seguintes, gates e 8/35 seguem abertos.
+
+[Instalação de personas 179](execucao/179-instalacao-de-personas-da-aventura-restaurada.md)
+copia perfis únicos para a biblioteca por unidades atômicas com lote preparing,
+mantendo bindings e indisponibilidade. Revogação precede deletes; cleanup confere
+provas e preserva existentes/recriados. Resultados dirigidos e gate integral do
+bloco 177–179 estão na [evidência](../../entregas/2026-10-27-writer-v2-instalacao-de-personas-de-aventuras.md).
+Ativação real, mídia, agregados/audit, recuperação/UI/roundtrip, P2/P3/D/F2-09,
+fases seguintes, gates e macro 8/35 continuam abertos.
+
+Fechamento local do bloco 177–179 em 2026-10-28: npm run validate verde com
+4.323 frontend, 90 scripts, 3.523 Functions, sintaxe de 358 módulos e
+tipos/build/smoke. A primeira tentativa falhou na máscara de leitura da
+auditoria de livros; corrigida sem relaxar o teste e revalidada integralmente.
+Resultado e limites estão na evidência de 179. Demais pendências e macro 8/35
+permanecem inalteradas.

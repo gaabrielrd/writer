@@ -3213,3 +3213,10 @@ livro. Cliente e regras usam o projeto correto; consumidores do servidor exigem
 recibos nativos no namespace do domínio e lote ativo. Validação de atributos
 mantém todas as condições com menor custo de avaliação. Isso precede o instalador
 de perfis da aventura e não ativa lote ou projeto.
+
+A [ADR 0201](decisions/0201-adventure-restored-persona-library-install.md) instala
+snapshots únicos da aventura por uma unidade/strict create na biblioteca, com
+journal global limitado ao UID e lote preparing comprovado pelo job/recibos.
+Cancelamento revoga lote antes dos deletes; limpeza preserva recriações e exige
+namespace do projeto vazio, mantendo batch cancelado. persona-library-ready ainda
+não ativa lote/raiz; mídia, agregados/audit e recuperação/UI continuam obrigatórios.

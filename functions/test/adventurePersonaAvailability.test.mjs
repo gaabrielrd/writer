@@ -91,6 +91,17 @@ test('active proof uses only adventure receipts and masked metadata; profile rev
     f.metadataReads.some((v) => v.path.includes('/bookRestoreOperations/')),
     false,
   );
+  assert.deepEqual(f.metadataReads.find((v) => v.path === paths.batch).fields, [
+    'schemaVersion',
+    'ownerId',
+    'target',
+    'restoreId',
+    'jobToken',
+    'state',
+    'profileCount',
+    'createdByOperationId',
+    'lastOperationId',
+  ]);
   assert.ok(f.metadataReads.some((v) => v.path === paths.first));
   assert.ok(f.metadataReads.some((v) => v.path === paths.last));
   await f.db.runTransaction((tx) =>

@@ -191,3 +191,53 @@ it('cleans the actual native writer lore and private persona corpus without leav
   ).toEqual([]);
   expect(f.records.get('adventures/' + p.adventureId).kind).toBe('adventure-restore-retired');
 }, 60000);
+
+it('installs actual Writer persona snapshots once per profile and keeps native bindings/private availability through cancellation', async () => {
+  const { readAvailablePersonaMetadata, readPersonaRestoreBatchProof } =
+      await import('../../../../functions/src/personaAvailability.mjs'),
+    { finishPersonaLibrary } =
+      await import('../../../../functions/test/helpers/adventureRestorePersonaLibraryFixture.mjs'),
+    { f, p: initial } = await ready();
+  let p = await finish(f, initial);
+  for (let n = 0; p.staging.phase !== 'history-ready'; n++)
+    p = (
+      await f.api.advanceAdventureRestoreHistory(
+        f.uid,
+        mutation(p, 'native-library-history-' + String(n).padStart(6, '0')),
+      )
+    ).progress;
+  p = (await f.api.finalizeAdventureRestoreDraft(f.uid, mutation(p, 'native-library-final-draft')))
+    .progress;
+  p = (await f.api.advanceAdventureRestoreUniverse(f.uid, mutation(p, 'native-library-universe')))
+    .progress;
+  const definitions = [...f.records].filter(
+      ([k, v]) => k.startsWith(f.path + '/preparedRoot/') && v.kind === 'adventure-restore-persona',
+    ),
+    before = new Map([...f.records].filter(([k]) => k.startsWith('adventures/'))),
+    end = await finishPersonaLibrary(f, p),
+    rows = [...f.records].filter(([k]) => k.startsWith('users/' + f.uid + '/aiPersonas/'));
+  expect(end.staging.personaLibraryInstalled).toBe(1);
+  expect(rows).toHaveLength(1);
+  expect(rows[0][1]).toEqual({
+    ...definitions[0][1].profile,
+    restoreOrigin: {
+      schemaVersion: 2,
+      target: { kind: 'adventure', id: p.adventureId },
+      restoreId: p.restoreId,
+      jobToken: p.jobToken,
+    },
+  });
+  for (const [k, v] of before) expect(f.records.get(k)).toEqual(v);
+  expect(
+    await f.db.runTransaction((tx) => readAvailablePersonaMetadata(tx, f.db, f.uid, rows[0][1].id)),
+  ).toBeNull();
+  const cancelled = await cleanup(f, end, 50);
+  expect(cancelled.staging.cleanedArtifacts).toBe(end.staging.artifactCount);
+  expect(f.records.has(rows[0][0])).toBe(false);
+  expect(
+    await f.db.runTransaction((tx) =>
+      readPersonaRestoreBatchProof(tx, f.db, f.uid, rows[0][1].restoreOrigin, 'cancelled'),
+    ),
+  ).not.toBeNull();
+  expect(f.records.get('adventures/' + p.adventureId).kind).toBe('adventure-restore-retired');
+}, 60000);

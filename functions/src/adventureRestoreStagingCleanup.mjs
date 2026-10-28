@@ -1,3 +1,4 @@
+import { readAdventureRestorePersonaBatch } from './adventureRestorePersonaLibraryBatch.mjs';
 import { readWorkMetadata } from './workProgressContracts.mjs';
 import { inconsistent, sum } from './adventureRestoreContracts.mjs';
 import {
@@ -56,6 +57,8 @@ export async function prepareAdventureStagingCleanup(store, tx, loaded, name, pa
   const plans = [];
   for (const snapshot of page.docs) {
     const entry = await readAdventureStageArtifact(store, tx, loaded, snapshot);
+    if (entry.address.scope === 'persona')
+      await readAdventureRestorePersonaBatch(store, tx, loaded, 'cancelled');
     await checkAdventureStageChildren(store, tx, loaded, entry.address, true);
     plans.push({ target: entry.targetRef, journal: snapshot.ref });
   }

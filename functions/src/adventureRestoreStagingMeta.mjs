@@ -1,4 +1,11 @@
 import {
+  adventurePersonaLibraryPhase,
+  adventurePersonaLibraryViewKeys,
+  adventurePersonaLibraryPrivateKeys,
+  validAdventurePersonaLibraryView,
+  validAdventurePersonaLibraryMeta,
+} from './adventureRestorePersonaLibraryMeta.mjs';
+import {
   universeRestorePhase,
   universeRestoreViewKeys,
   validAdventureUniverseOutcome,
@@ -54,6 +61,7 @@ export const adventureStagingView = (value) =>
         ...(historyPhase(value) ? [...historyViewKeys, 'historyPending'] : []),
         ...(draftFinalizePhase(value) ? draftFinalizeViewKeys : []),
         ...(universeRestorePhase(value) ? universeRestoreViewKeys : []),
+        ...(adventurePersonaLibraryPhase(value) ? adventurePersonaLibraryViewKeys : []),
       ].map((k) => [k, value[k]]),
     ),
   );
@@ -66,6 +74,7 @@ export function validAdventureStagingView(v) {
       'historyPending',
       ...draftFinalizeViewKeys,
       ...universeRestoreViewKeys,
+      ...adventurePersonaLibraryViewKeys,
     ]) ||
     v.version !== 1 ||
     ![
@@ -80,6 +89,8 @@ export function validAdventureStagingView(v) {
       'history-ready',
       'draft-ready',
       'universe-ready',
+      'persona-library',
+      'persona-library-ready',
     ].includes(v.phase) ||
     !viewKeys.filter((k) => !['version', 'phase'].includes(k)).every((k) => count(v[k])) ||
     v.cleanedArtifacts > v.artifactCount
@@ -107,6 +118,12 @@ export function validAdventureStagingView(v) {
       : universeRestoreViewKeys.some((k) => Object.hasOwn(v, k))
   )
     return false;
+  if (
+    adventurePersonaLibraryPhase(v)
+      ? !validAdventurePersonaLibraryView(v)
+      : adventurePersonaLibraryViewKeys.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
   return historyPhase(v)
     ? validAdventureHistoryView(v)
     : [...historyViewKeys, 'historyPending'].every((k) => !Object.hasOwn(v, k));
@@ -124,6 +141,8 @@ export function validAdventureStagingMeta(v, job) {
         ...historyPrivateKeys,
         ...draftFinalizeViewKeys,
         ...universeRestoreViewKeys,
+        ...adventurePersonaLibraryViewKeys,
+        ...adventurePersonaLibraryPrivateKeys,
       ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
@@ -226,6 +245,14 @@ export function validAdventureStagingMeta(v, job) {
     if ((v.draftOutcome === 'version') !== (v.drafts === 1)) return false;
   } else if (draftFinalizeViewKeys.some((k) => Object.hasOwn(v, k))) return false;
   if (!universeRestorePhase(v) && universeRestoreViewKeys.some((k) => Object.hasOwn(v, k)))
+    return false;
+  if (
+    adventurePersonaLibraryPhase(v)
+      ? !validAdventurePersonaLibraryMeta(v, job)
+      : [...adventurePersonaLibraryViewKeys, ...adventurePersonaLibraryPrivateKeys].some((k) =>
+          Object.hasOwn(v, k),
+        )
+  )
     return false;
   return true;
 }

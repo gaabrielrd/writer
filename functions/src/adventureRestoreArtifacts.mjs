@@ -32,6 +32,7 @@ const actions = [
   'advanceAdventureRestoreHistory',
   'finalizeAdventureRestoreDraft',
   'advanceAdventureRestoreUniverse',
+  'advanceAdventureRestorePersonaLibrary',
 ];
 const mapped = (v) => typeof v === 'string' && /^restore-[a-f0-9]{64}$/.test(v);
 const hashId = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
@@ -46,44 +47,48 @@ export function adventureStageAddress(value) {
         (['current', 'text-state', 'universe-candidate', 'recovered-draft'].includes(p[1]) ||
           /^persona-custom-[a-f0-9]{64}$/.test(p[1]) ||
           /^binding-[a-f0-9]{64}$/.test(p[1]))
-      : value.scope === 'adventure' &&
-        ((p.length === 2 &&
-          [
-            'parts',
-            'scenes',
-            'sceneBlocks',
-            'workChecklist',
-            'arcs',
-            'timelineEvents',
-            'lore',
-            'loreBodies',
-            'workVersions',
-          ].includes(p[0]) &&
-          mapped(p[1])) ||
-          (p.length === 2 &&
-            ['narrativeLinks', 'sceneLoreLinks', 'workVersionBodies'].includes(p[0]) &&
-            hashId(p[1])) ||
-          (p.length === 2 &&
-            p[0] === 'narrativeControls' &&
-            (hashId(p[1]) || p[1] === 'entity-scenes')) ||
-          (p.length === 2 &&
-            ((p[0] === 'sceneControls' && p[1] === 'unassigned') ||
-              (p[0] === 'workProgress' && p[1] === 'current'))) ||
-          (p.length === 4 &&
-            ['scenes', 'sceneBlocks'].includes(p[0]) &&
-            mapped(p[1]) &&
-            p[2] === 'body' &&
-            p[3] === 'current') ||
-          (p.length === 4 &&
-            p[0] === 'scenes' &&
-            mapped(p[1]) &&
-            ((p[2] === 'planning' && p[3] === 'current') ||
-              (p[2] === 'references' && hashId(p[3])))) ||
-          (p.length === 4 &&
-            p[0] === 'arcs' &&
-            mapped(p[1]) &&
-            p[2] === 'milestones' &&
-            mapped(p[3])));
+      : (value.scope === 'persona' &&
+          p.length === 2 &&
+          p[0] === 'aiPersonas' &&
+          /^custom-[a-f0-9]{64}$/.test(p[1])) ||
+        (value.scope === 'adventure' &&
+          ((p.length === 2 &&
+            [
+              'parts',
+              'scenes',
+              'sceneBlocks',
+              'workChecklist',
+              'arcs',
+              'timelineEvents',
+              'lore',
+              'loreBodies',
+              'workVersions',
+            ].includes(p[0]) &&
+            mapped(p[1])) ||
+            (p.length === 2 &&
+              ['narrativeLinks', 'sceneLoreLinks', 'workVersionBodies'].includes(p[0]) &&
+              hashId(p[1])) ||
+            (p.length === 2 &&
+              p[0] === 'narrativeControls' &&
+              (hashId(p[1]) || p[1] === 'entity-scenes')) ||
+            (p.length === 2 &&
+              ((p[0] === 'sceneControls' && p[1] === 'unassigned') ||
+                (p[0] === 'workProgress' && p[1] === 'current'))) ||
+            (p.length === 4 &&
+              ['scenes', 'sceneBlocks'].includes(p[0]) &&
+              mapped(p[1]) &&
+              p[2] === 'body' &&
+              p[3] === 'current') ||
+            (p.length === 4 &&
+              p[0] === 'scenes' &&
+              mapped(p[1]) &&
+              ((p[2] === 'planning' && p[3] === 'current') ||
+                (p[2] === 'references' && hashId(p[3])))) ||
+            (p.length === 4 &&
+              p[0] === 'arcs' &&
+              mapped(p[1]) &&
+              p[2] === 'milestones' &&
+              mapped(p[3]))));
   if (!valid) inconsistent();
   return { scope: value.scope, path: [...p] };
 }
@@ -96,7 +101,11 @@ export const adventureStageArtifactId = (address) => {
 export function adventureStageTarget(store, loaded, address) {
   const a = adventureStageAddress(address);
   return store.db.doc(
-    (a.scope === 'job' ? loaded.ref.path : 'adventures/' + loaded.job.adventureId) +
+    (a.scope === 'job'
+      ? loaded.ref.path
+      : a.scope === 'persona'
+        ? 'users/' + loaded.uid
+        : 'adventures/' + loaded.job.adventureId) +
       '/' +
       a.path.join('/'),
   );

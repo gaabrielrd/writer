@@ -125,6 +125,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreHistory',
           'finalizeAdventureRestoreDraft',
           'advanceAdventureRestoreUniverse',
+          'advanceAdventureRestorePersonaLibrary',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -144,6 +145,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'personaAdventureBindings',
           'personaSceneBindings',
           'personaProfiles',
+          'personaLibraryInstalled',
           'historyVersions',
           'historyBytes',
           'historyBodies',
@@ -164,6 +166,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         'advanceAdventureRestoreHistory',
         'finalizeAdventureRestoreDraft',
         'advanceAdventureRestoreUniverse',
+        'advanceAdventureRestorePersonaLibrary',
       ].includes(r.action)
     )
       inconsistent();
@@ -179,6 +182,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreHistory',
           'finalizeAdventureRestoreDraft',
           'advanceAdventureRestoreUniverse',
+          'advanceAdventureRestorePersonaLibrary',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -230,6 +234,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           ...ADVENTURE_VALIDATION_COLLECTIONS,
           ...ADVENTURE_STAGING_COLLECTIONS,
           'staged-target',
+          'persona-library-batch',
         ].includes(effect.collection) ||
         typeof effect.id !== 'string' ||
         !/^[A-Za-z0-9-]{1,80}$/.test(effect.id)

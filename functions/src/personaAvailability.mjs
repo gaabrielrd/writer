@@ -62,8 +62,7 @@ export async function readPersonaRestoreBatchProof(tx, db, uid, input, state) {
     [
       'schemaVersion',
       'ownerId',
-      'bookId',
-      'target',
+      origin.schemaVersion === 1 ? 'bookId' : 'target',
       'restoreId',
       'jobToken',
       'state',

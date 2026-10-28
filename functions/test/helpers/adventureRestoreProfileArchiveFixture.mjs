@@ -30,6 +30,8 @@ export async function profileAdventureArchive({
   bodiesFirst = false,
   personas = true,
   nearNativeLimit = false,
+  profilePatch = {},
+  distinctSceneProfile = false,
 } = {}) {
   const base = await resourceAdventureArchive({ references: 0 }),
     rows = [];
@@ -39,7 +41,10 @@ export async function profileAdventureArchive({
   }))
     rows.push(row);
   const root = rows[0].id,
-    profile = structuredClone(DEFAULT_PERSONAS[0]),
+    profile = { ...structuredClone(DEFAULT_PERSONAS[0]), ...profilePatch },
+    sceneProfile = distinctSceneProfile
+      ? { ...structuredClone(profile), id: 'custom-original-scene-persona' }
+      : profile,
     resources = rows
       .filter((r) => r.kind === 'adventure-resource')
       .map((r) => JSON.parse(Buffer.from(r.payload).toString('utf8')));
@@ -48,7 +53,7 @@ export async function profileAdventureArchive({
   if (personas) {
     definition.data.personaId = profile.id;
     resources.find((v) => v.kind === 'scene').data.personaComplement = {
-      personaId: profile.id,
+      personaId: sceneProfile.id,
       overrides: [{ traitId: 'sensory', value: 81 }],
     };
   }
@@ -132,15 +137,16 @@ export async function profileAdventureArchive({
   }
   lore.push(...(bodiesFirst ? [...bodies, ...heads] : [...heads, ...bodies]));
   const bindings = ['adventure', 'scene'].map((scope) => {
-    const bindingId = scope === 'adventure' ? root : sourceScene;
+    const bindingId = scope === 'adventure' ? root : sourceScene,
+      capturedProfile = scope === 'adventure' ? profile : sceneProfile;
     return personas
       ? {
           schemaVersion: 1,
           kind: 'persona',
           scope,
           bindingId,
-          personaId: profile.id,
-          profile: structuredClone(profile),
+          personaId: capturedProfile.id,
+          profile: structuredClone(capturedProfile),
         }
       : adventureNullPersona(scope, bindingId);
   });

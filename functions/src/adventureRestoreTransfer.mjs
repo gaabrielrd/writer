@@ -31,6 +31,11 @@ import { ADVENTURE_RESTORE_CLEANUP as names } from './adventureRestoreValidation
 import { readAdventureValidationState } from './adventureRestoreValidationState.mjs';
 import { createAdventureRestoreValidationService } from './adventureRestoreValidation.mjs';
 import { ADVENTURE_STAGE_ARTIFACT_FIELDS } from './adventureRestoreArtifacts.mjs';
+import { createAdventureRestorePersonaLibraryService } from './adventureRestorePersonaLibrary.mjs';
+import {
+  prepareAdventurePersonaLibraryRevocation,
+  assertAdventurePersonaLibraryClean,
+} from './adventureRestorePersonaLibraryBatch.mjs';
 import { createAdventureRestoreUniverseService } from './adventureRestoreUniverse.mjs';
 import { createAdventureRestoreDraftFinalizeService } from './adventureRestoreDraftFinalize.mjs';
 import { createAdventureRestoreHistoryService } from './adventureRestoreHistory.mjs';
@@ -367,6 +372,12 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
       if (op.exists) return store.confirm(loaded, store.operation(op, loaded, fingerprint));
       if (job.state !== 'cancelling' || request.expectedCheckpoint !== job.checkpoint)
         restoreFail('failed-precondition', 'state-conflict');
+      const revocation = await prepareAdventurePersonaLibraryRevocation(store, tx, loaded, request);
+      if (revocation) {
+        const record = store.next(loaded, request, action, { staging: revocation.staging });
+        revocation.commit();
+        return store.commit(tx, loaded, request, action, record, revocation.effects);
+      }
       const name = job.cleanupPhase,
         offset = names.indexOf(name);
       if (offset < 0) inconsistent();
@@ -467,6 +478,7 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
             )
               inconsistent();
           await store.emptyRoot(tx, job.adventureId);
+          await assertAdventurePersonaLibraryClean(store, tx, loaded);
           root = pendingRoot(uid, loaded.id, job.startFingerprint, true);
           patch.state = 'cancelled';
         }
@@ -496,5 +508,6 @@ export function createAdventureRestoreTransferService({ db, now = Date.now }) {
     ...createAdventureRestoreHistoryService(store),
     ...createAdventureRestoreDraftFinalizeService(store),
     ...createAdventureRestoreUniverseService(store),
+    ...createAdventureRestorePersonaLibraryService(store),
   };
 }

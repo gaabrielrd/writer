@@ -2,8 +2,13 @@ import assert from 'node:assert/strict';
 import { emptyAdventureArchive } from './adventureRestoreArchiveFixture.mjs';
 import { request, chunkRequest, mutation } from './adventureRestoreTransferFixture.mjs';
 
-export async function prepareUniverseAdventure(api, uid, origin = { kind: 'none' }) {
-  const bytes = await emptyAdventureArchive({ universeOrigin: origin });
+export async function prepareUniverseAdventure(
+  api,
+  uid,
+  origin = { kind: 'none' },
+  suppliedBytes = null,
+) {
+  const bytes = suppliedBytes ?? (await emptyAdventureArchive({ universeOrigin: origin }));
   let p = (await api.startAdventureRestore(uid, request(bytes))).progress;
   const req = () => mutation(p, 'universe-fixture-' + String(p.checkpoint).padStart(8, '0'));
   for (let n = 0; n < Math.ceil(bytes.length / 65536); n++)
