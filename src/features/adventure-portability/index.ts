@@ -88,3 +88,16 @@ export {
   type AdventureRestorePreparationIntent,
   type AdventureRestorePreparationJournal,
 } from './services/adventureRestorePreparationContracts';
+
+export {
+  createAdventureRestorePreparationDriver,
+  type AdventurePreparationApi,
+  type AdventurePreparationRequest,
+} from './services/adventureRestorePreparationDriver';
+export { createAdventureRestorePreparationApi } from './services/adventureRestorePreparationCallables';
+export {
+  readAdventurePreparationProgress,
+  type AdventurePreparationProgress,
+  type AdventurePreparationStep,
+  type AdventurePreparationPause,
+} from './services/adventureRestorePreparationProgress';

@@ -3152,3 +3152,14 @@ separadas; não importar seus serviços internos para construir fixtures.
 A [evidência nativa](entregas/2026-10-28-writer-v2-journal-cifrado-da-preparacao-de-aventuras.md)
 registra smoke isolado com IndexedDB/Web Locks/WebCrypto reais, recarga/abas,
 contextos capturados e quota injetada; autorização sintética não prova tokens.
+
+## Controlador da preparação de aventuras
+
+adventureRestorePreparationDriver.test.mjs, Callables e Pipeline, em
+src/features/adventure-portability/tests, cobrem step/persistência/recibo/CAS/
+guard/replay, transporte contextual e pipeline real sem imagens. Validadores
+de views da aventura têm declarações TS próprias; não usar schemas de livro.
+A [evidência](entregas/2026-10-28-writer-v2-controlador-da-preparacao-de-aventuras.md)
+separa mocks SDK, banco de teste, Chromium/IndexedDB reais e bridge HTTP
+local. Inclui resposta perdida, recarga, imagem e duas auditorias; não é prova
+de credenciais reais, Functions SDK no browser ou deploy.

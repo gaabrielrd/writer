@@ -931,3 +931,10 @@ Exija Web Locks/IndexedDB/WebCrypto e reautorize cada abertura, sem fallback
 plaintext ou exclusão após falha. Capture inputs antes de await e preserve
 pendência se o ACK após commit for incerto. Efeitos que encerram a chave
 exigem registro metadata separado (ADR 0214).
+
+Execute a preparação da aventura por unidade, com intent persistido antes do
+envio e confirmação de action/ID/checkpoints/views antes de limpar por CAS.
+Repita pendência exata sem replanejar. audit-ready sem biblioteca exige
+instalação; só a auditoria posterior permite pausar para revisão, inclusive
+com zero imagens. Use fases/views próprios e mantenha ativação/efeitos fora
+do controlador; metadata pública não é prova de grant (ADR 0215).

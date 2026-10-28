@@ -387,3 +387,12 @@ verificações no Chromium com armazenamento real**; resultados e limites na
 Controlador/bootstrap/efeitos de ciclo de vida/revisão/UI/roundtrip e P2/P3/D/
 F2-09 permanecem abertos. Macro 8/35 inalterada; validate no fechamento do
 bloco do cliente, sem CI/remoto.
+
+[Controlador 193](execucao/193-controlador-da-preparacao-de-aventuras.md)
+executa uma unidade, retoma pedido exato e confirma recibo antes de limpar o
+journal. **169 Vitest e sete verificações no Chromium**, com imagem/recarga
+e duas auditorias, conforme
+[evidência](../../entregas/2026-10-28-writer-v2-controlador-da-preparacao-de-aventuras.md).
+A preparação pausa para revisão; não ativa automaticamente. Bootstrap/start/
+upload/revisão/efeitos/UI/roundtrip e P2/P3/D/F2-09 seguem abertos; macro 8/35
+inalterada. Validate integral no fim do bloco do cliente, sem CI/remoto.

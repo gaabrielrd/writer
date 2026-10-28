@@ -2069,3 +2069,9 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      35/35 e oito verificações nativas no Chromium.
      [Evidência](../../../entregas/2026-10-28-writer-v2-journal-cifrado-da-preparacao-de-aventuras.md).
      Controlador/bootstrap/efeitos/UI/roundtrip e P2/P3/D/F2-09 seguem abertos.
+
+193. [Controlador da preparação de aventuras](193-controlador-da-preparacao-de-aventuras.md):
+     step com journal/recibos e transporte contextual; duas auditorias e pausa
+     privada para revisão. 169 Vitest e sete verificações Chromium positivas.
+     [Evidência](../../../entregas/2026-10-28-writer-v2-controlador-da-preparacao-de-aventuras.md).
+     Bootstrap/start/upload/efeitos/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.

@@ -3348,3 +3348,12 @@ O journal cifra com AAD próprio, persiste somente envelope/contexto em
 IndexedDB e combina Web Locks com CAS do envelope inteiro. Reautoriza antes
 de decifrar, relê para detectar mudança e preserva falhas/ACK incerto.
 Inputs são fixados antes de await. Controlador/bootstrap/UI continuam próprios.
+
+## Controlador da preparação de aventuras
+
+A [ADR 0215](decisions/0215-adventure-restore-preparation-controller.md)
+combina journal cifrado e transporte contextual para executar uma unidade por
+chamada. Projeta metadata com views puros da aventura e só limpa a pendência
+após recibo compatível; replay mantém pedido original. A biblioteca de imagens
+fica entre duas auditorias, inclusive vazia; a última pausa para revisão.
+Nenhuma ativação automática. Bootstrap/revisão/efeitos/UI seguem separados.
