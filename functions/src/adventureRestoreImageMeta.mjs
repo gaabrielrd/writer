@@ -1,10 +1,17 @@
+import { ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
 import { contentClosed as closed, contentCount as count } from './adventureContentPrimitives.mjs';
 import {
   validateAdventureImageAsset,
   validateAdventureImageBinding,
 } from './adventureContentSchema.mjs';
 export const adventureImagePreparationPhase = (v) =>
-  ['image-bytes', 'image-bytes-ready', 'image-storage', 'image-storage-ready'].includes(v.phase);
+  [
+    'image-bytes',
+    'image-bytes-ready',
+    'image-storage',
+    'image-storage-ready',
+    ...ADVENTURE_COUNT_PHASES,
+  ].includes(v.phase);
 export const imagePreparationViewKeys = [
   'imageBindings',
   'imageAssets',

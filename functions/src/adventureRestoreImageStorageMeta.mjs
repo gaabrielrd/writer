@@ -1,10 +1,12 @@
+import { ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
 import { contentCount as count, contentClosed as closed } from './adventureContentPrimitives.mjs';
 import {
   validateAdventureImageAsset,
   validateAdventureImageBinding,
 } from './adventureContentSchema.mjs';
 import { bookRestoreStorageProof } from './bookRestoreCoverStorageContracts.mjs';
-export const imageStoragePhase = (v) => ['image-storage', 'image-storage-ready'].includes(v.phase);
+export const imageStoragePhase = (v) =>
+  ['image-storage', 'image-storage-ready', ...ADVENTURE_COUNT_PHASES].includes(v.phase);
 export const imageStorageViewKeys = [
   'storageBindings',
   'storageIntents',
@@ -17,7 +19,7 @@ export const validImageStorageView = (v) =>
   imageStorageViewKeys.filter((k) => k !== 'storagePending').every((k) => count(v[k])) &&
   typeof v.storagePending === 'boolean';
 export function validImageStorageMeta(v, job) {
-  const ready = v.phase === 'image-storage-ready',
+  const ready = v.phase !== 'image-storage',
     active = job.state === 'content-verified';
   return (
     validImageStorageView(v) &&

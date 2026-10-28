@@ -1,3 +1,4 @@
+import { ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
 import { contentCount as count } from './adventureContentPrimitives.mjs';
 export const adventurePersonaLibraryPhase = (v) =>
   [
@@ -7,6 +8,7 @@ export const adventurePersonaLibraryPhase = (v) =>
     'image-bytes-ready',
     'image-storage',
     'image-storage-ready',
+    ...ADVENTURE_COUNT_PHASES,
   ].includes(v.phase);
 export const adventurePersonaLibraryViewKeys = ['personaLibraryInstalled', 'personaLibraryRevoked'];
 export const adventurePersonaLibraryPrivateKeys = ['personaLibraryAfter'];

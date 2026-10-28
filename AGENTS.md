@@ -859,3 +859,10 @@ mídia por image-storage-ready (ADR 0204).
 Leitores de origem da biblioteca não devem importar contratos operacionais de
 restauração que inicializam seeds: imageLibrary também é alcançada por lore/
 cenas. Mantenha validação primitiva independente da orquestração (ADR 0204).
+
+Na reconciliação de aventuras restauradas, prove fonte/alvos/journals antes de
+recompor blocos, cenas e links por unidades. Reutilize o ledger de palavras por
+proxy com writes journalados; preserve arquivo/órfãos sem inventar agrupadores.
+Referências contam o source direto; counts-ready mantém raiz privada e
+countReady false até auditoria/ativação. Cleanup preserva revogação/fences antes
+dos alvos e inclui o ledger registrado (ADR 0205).

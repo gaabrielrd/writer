@@ -35,6 +35,7 @@ const actions = [
   'advanceAdventureRestorePersonaLibrary',
   'advanceAdventureRestoreImages',
   'advanceAdventureRestoreImageStorage',
+  'advanceAdventureRestoreCounts',
   'advanceAdventureRestoreCleanup',
 ];
 const mapped = (v) => typeof v === 'string' && /^restore-[a-f0-9]{64}$/.test(v);
@@ -72,7 +73,13 @@ export function adventureStageAddress(value) {
             ].includes(p[0]) &&
             mapped(p[1])) ||
             (p.length === 2 &&
-              ['narrativeLinks', 'sceneLoreLinks', 'workVersionBodies'].includes(p[0]) &&
+              [
+                'narrativeLinks',
+                'sceneLoreLinks',
+                'workVersionBodies',
+                'workWordSources',
+                'workWordGroups',
+              ].includes(p[0]) &&
               hashId(p[1])) ||
             (p.length === 2 &&
               p[0] === 'narrativeControls' &&

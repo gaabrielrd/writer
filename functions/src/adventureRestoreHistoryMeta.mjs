@@ -1,3 +1,4 @@
+import { ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
 import { contentClosed as closed, contentCount as count } from './adventureContentPrimitives.mjs';
 export const historyPhase = (v) =>
   [
@@ -11,6 +12,7 @@ export const historyPhase = (v) =>
     'image-bytes-ready',
     'image-storage',
     'image-storage-ready',
+    ...ADVENTURE_COUNT_PHASES,
   ].includes(v.phase);
 export const historyViewKeys = [
   'historyVersions',
@@ -85,6 +87,7 @@ export function validAdventureHistoryMeta(v, job, profileEnd) {
       'image-bytes-ready',
       'image-storage',
       'image-storage-ready',
+      ...ADVENTURE_COUNT_PHASES,
     ].includes(v.phase) !== complete
   )
     return false;

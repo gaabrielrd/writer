@@ -3247,3 +3247,11 @@ O leitor de origem da biblioteca restoredImageRemoval não importa contratos
 operacionais de restauração: imageLibrary também participa dos imports de lore/
 cenas. Valide ali os primitivos de ID/nascimento sem inicializar seeds ou
 orquestradores, para preservar a ordem independente de carregamento (ADR 0204).
+
+A reconciliação privada de aventuras restauradas (ADR 0205) percorre o índice
+autenticado em passagens de blocos, cenas/controles e links. Atualiza agregados e
+o ledger existente por proxy journalado, com todas as leituras nativas provadas.
+Blocos arquivados reservam ordem; cenas arquivadas/sem parte/órfãs preservam texto
+e não contribuem ao manuscrito. Referências contam somente o source direto.
+counts-ready conserva raiz reservada e countReady false; a simulação do gate nos
+testes de deltas não substitui o protocolo futuro de auditoria/ativação.

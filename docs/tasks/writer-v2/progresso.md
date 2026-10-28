@@ -290,3 +290,13 @@ sintaxe/tipos/build/smoke; duas tentativas anteriores não verdes preservadas na
 [evidência](../../entregas/2026-10-28-writer-v2-materializacao-privada-das-imagens-de-aventuras.md).
 Biblioteca/usos, agregados/audit/ativação, aceitação/URL posterior, recuperação
 cifrada/UI/roundtrip, P2/P3/D/F2-09/fases/gates e macro 8/35 continuam abertos.
+
+[Agregados da aventura 183](execucao/183-agregados-da-aventura-restaurada.md)
+recompõe blocos, cenas/partes, ledger e referências diretas por unidades nativas,
+preservando texto/arquivo/órfãos. Sete Node novos, dois casos com arquivo real,
+quatro regressões selecionadas e um SDK Firestore demo positivos; resultados e
+limites na [evidência](../../entregas/2026-10-28-writer-v2-agregados-da-aventura-restaurada.md).
+counts-ready mantém raiz privada e countReady false. Auditoria/ativação,
+biblioteca/usos, aceitação/URL, recuperação/UI/roundtrip, P2/P3/D/F2-09,
+fases/gates e macro 8/35 continuam abertos. Validate integral no fechamento do
+próximo grande bloco; o gate de 10708fd não é atribuído a este código novo.

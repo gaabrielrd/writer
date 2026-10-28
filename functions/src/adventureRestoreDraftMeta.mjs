@@ -1,3 +1,4 @@
+import { ADVENTURE_COUNT_PHASES } from './adventureRestoreCountMeta.mjs';
 import { contentClosed as closed, contentCount as count } from './adventureContentPrimitives.mjs';
 export const draftFinalizePhase = (v) =>
   [
@@ -9,6 +10,7 @@ export const draftFinalizePhase = (v) =>
     'image-bytes-ready',
     'image-storage',
     'image-storage-ready',
+    ...ADVENTURE_COUNT_PHASES,
   ].includes(v.phase);
 export const draftFinalizeViewKeys = ['draftOutcome', 'draftWordCount'];
 export function validAdventureDraftFinalized(v) {

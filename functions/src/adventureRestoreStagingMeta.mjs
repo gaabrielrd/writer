@@ -1,4 +1,12 @@
 import {
+  ADVENTURE_COUNT_PHASES,
+  adventureCountPhase,
+  countViewKeys,
+  countPrivateKeys,
+  validAdventureCountView,
+  validAdventureCountMeta,
+} from './adventureRestoreCountMeta.mjs';
+import {
   imageStoragePhase,
   imageStorageViewKeys,
   imageStoragePrivateKeys,
@@ -78,6 +86,7 @@ export const adventureStagingView = (value) =>
         ...(adventurePersonaLibraryPhase(value) ? adventurePersonaLibraryViewKeys : []),
         ...(adventureImagePreparationPhase(value) ? imagePreparationViewKeys : []),
         ...(imageStoragePhase(value) ? imageStorageViewKeys : []),
+        ...(adventureCountPhase(value) ? countViewKeys : []),
       ].map((k) => [k, value[k]]),
     ),
   );
@@ -93,6 +102,7 @@ export function validAdventureStagingView(v) {
       ...adventurePersonaLibraryViewKeys,
       ...imagePreparationViewKeys,
       ...imageStorageViewKeys,
+      ...countViewKeys,
     ]) ||
     v.version !== 1 ||
     ![
@@ -113,6 +123,7 @@ export function validAdventureStagingView(v) {
       'image-bytes-ready',
       'image-storage',
       'image-storage-ready',
+      ...ADVENTURE_COUNT_PHASES,
     ].includes(v.phase) ||
     !viewKeys.filter((k) => !['version', 'phase'].includes(k)).every((k) => count(v[k])) ||
     v.cleanedArtifacts > v.artifactCount
@@ -158,6 +169,12 @@ export function validAdventureStagingView(v) {
       : imageStorageViewKeys.some((k) => Object.hasOwn(v, k))
   )
     return false;
+  if (
+    adventureCountPhase(v)
+      ? !validAdventureCountView(v)
+      : countViewKeys.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
   return historyPhase(v)
     ? validAdventureHistoryView(v)
     : [...historyViewKeys, 'historyPending'].every((k) => !Object.hasOwn(v, k));
@@ -181,6 +198,8 @@ export function validAdventureStagingMeta(v, job) {
         ...imagePreparationPrivateKeys,
         ...imageStorageViewKeys,
         ...imageStoragePrivateKeys,
+        ...countViewKeys,
+        ...countPrivateKeys,
       ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
@@ -304,6 +323,12 @@ export function validAdventureStagingMeta(v, job) {
     imageStoragePhase(v)
       ? !validImageStorageMeta(v, job)
       : [...imageStorageViewKeys, ...imageStoragePrivateKeys].some((k) => Object.hasOwn(v, k))
+  )
+    return false;
+  if (
+    adventureCountPhase(v)
+      ? !validAdventureCountMeta(v)
+      : [...countViewKeys, ...countPrivateKeys].some((k) => Object.hasOwn(v, k))
   )
     return false;
   return true;
