@@ -3286,3 +3286,14 @@ o mesmo ID/fingerprint, e o job ativado fica congelado. Finalização de mídia/
 usarão sidecars; cleanup anterior não apaga projeto ativo. Serviço interno,
 sem novo endpoint, dependência, índice ou Rules. Recuperação/UI/roundtrip e
 P2/P3/D/F2-09 continuam abertos.
+
+## Mídia pós-ativação da aventura
+
+A [ADR 0209](decisions/0209-adventure-restored-media-units.md) mantém o job
+ativado congelado e usa controle/outcomes/recibos separados para liberar uma
+imagem por unidade. Aceitação ou retirada física precedem o ACK transacional;
+a conclusão exige leitura vazia. A prova de instalação confere journal/recibo/
+nascimento e origem/Storage imutáveis, preservando detach e edições legítimas.
+Não escreve heads/textos/raiz. Resultado histórico não é grant atual. Serviço
+interno sem novos endpoints, dependências, índices ou Rules; coleta da fonte,
+recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 seguem abertos.

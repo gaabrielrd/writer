@@ -889,3 +889,9 @@ Resolva recibos históricos sem consultar ou autorizar a raiz atual; recuse clea
 pré-ativação de projeto ativo. Encerre pedido incerto pelo mesmo ID/fingerprint
 de ativação. Mantenha mídia pendente e use sidecars para progresso posterior
 (ADR 0208).
+
+Finalize mídia de aventuras restauradas por ativo em sidecars, sem mutar o job
+ativado nem religar heads. Prove nascimento/origem/Storage e usos atuais;
+preserve detach/edições. Revalide o ACK após accept/retire; confirme retirada
+física antes de unavailable. Trate contagens e replay como históricos, sem
+grants atuais, e exija a consulta final vazia (ADR 0209).

@@ -144,13 +144,7 @@ export async function assertAdventureStagingEmpty(store, tx, loaded) {
       inconsistent();
   await store.emptyRoot(tx, loaded.job.adventureId);
 }
-export async function readAdventureStageArtifact(
-  store,
-  tx,
-  loaded,
-  snapshot,
-  { withValue = false } = {},
-) {
+export async function readAdventureStageJournal(store, tx, loaded, snapshot) {
   if (!loaded.job.staging || !snapshot.exists) inconsistent();
   const v = snapshot.data();
   closed(v, ADVENTURE_STAGE_ARTIFACT_FIELDS);
@@ -200,6 +194,21 @@ export async function readAdventureStageArtifact(
       )
   )
     inconsistent();
+  return { value: v, address, first, last };
+}
+export async function readAdventureStageArtifact(
+  store,
+  tx,
+  loaded,
+  snapshot,
+  { withValue = false } = {},
+) {
+  const {
+    value: v,
+    address,
+    first,
+    last,
+  } = await readAdventureStageJournal(store, tx, loaded, snapshot);
   const targetRef = adventureStageTarget(store, loaded, address),
     metadata = await readWorkMetadata(tx, targetRef, ['schemaVersion', 'ownerId', 'revision']);
   if (

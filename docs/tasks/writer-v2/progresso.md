@@ -330,3 +330,12 @@ na [evidência dirigida](../../entregas/2026-10-28-writer-v2-ativacao-atomica-da
 Mídia continua pendente. Finalização por ativo, coleta da fonte, recuperação/
 transportes/UI/roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 permanecem
 abertos. Validate integral no fechamento do próximo grande bloco.
+
+[Finalização de mídia 187](execucao/187-finalizacao-das-imagens-da-aventura-restaurada.md)
+libera uma imagem por unidade com controle separado, preservando o job ativado.
+Confere aceitação/retirada física e provas no ACK, sem reescrever ou religar
+heads. Detach mantém a cópia própria; retirada/ABA não ressuscitam conteúdo.
+Veja a [evidência dirigida](../../entregas/2026-10-28-writer-v2-finalizacao-das-imagens-restauradas-de-aventuras.md)
+para os resultados executados. Coleta da fonte, recuperação/transportes/UI/
+roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 permanecem abertos.
+Validate integral no fim do próximo grande bloco.

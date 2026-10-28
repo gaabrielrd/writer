@@ -2027,3 +2027,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      de pedido incerto com histórico independente da raiz atual.
      [Evidência dirigida](../../../entregas/2026-10-28-writer-v2-ativacao-atomica-da-aventura-restaurada.md).
      Mídia pendente; finalização/GC/recuperação/UI/roundtrip e P2/P3/D/F2-09 abertos.
+
+174. [Finalização das imagens da aventura restaurada](187-finalizacao-das-imagens-da-aventura-restaurada.md):
+     uma imagem por unidade em sidecars, com accept/retire provados, ACK atômico,
+     detach preservado e conclusão por consulta vazia.
+     [Evidência dirigida](../../../entregas/2026-10-28-writer-v2-finalizacao-das-imagens-restauradas-de-aventuras.md).
+     Coleta da fonte/recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 abertos.
