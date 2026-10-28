@@ -39,9 +39,9 @@ export function recoveryObject(
 }
 export const recoveryHash = (value: unknown): value is string =>
   typeof value === 'string' && /^[a-f0-9]{64}$/.test(value);
-const id = (value: unknown): value is string =>
+export const recoveryOperationId = (value: unknown): value is string =>
   typeof value === 'string' && /^[A-Za-z0-9-]{16,80}$/.test(value);
-const owner = (value: unknown): value is string =>
+export const recoveryOwner = (value: unknown): value is string =>
   typeof value === 'string' &&
   value.length > 0 &&
   value.length <= 128 &&
@@ -58,9 +58,9 @@ export function readAdventureRestoreRecoveryRequest(raw: unknown): AdventureRest
       ['ownerId', 'restoreId', 'adventureId', 'jobToken', 'reviewHash'],
       ['keyId'],
     ) &&
-      owner(raw.ownerId) &&
-      id(raw.restoreId) &&
-      id(raw.adventureId) &&
+      recoveryOwner(raw.ownerId) &&
+      recoveryOperationId(raw.restoreId) &&
+      recoveryOperationId(raw.adventureId) &&
       recoveryHash(raw.jobToken) &&
       recoveryHash(raw.reviewHash) &&
       (!Object.hasOwn(raw, 'keyId') || recoveryHash(raw.keyId)),

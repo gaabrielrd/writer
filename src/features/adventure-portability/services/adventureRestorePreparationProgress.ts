@@ -1,12 +1,13 @@
 import { validAdventureStagingView } from '../../../../functions/src/adventureRestoreStagingMeta.mjs';
 import { validAdventureValidationView } from '../../../../functions/src/adventureRestoreValidationMeta.mjs';
 import {
-  readAdventureRestoreRecoveryContext,
+  readAdventureRestoreRecoveryRequest,
   recoveryCheck as check,
   recoveryObject,
   recoveryHash,
   type AdventureRestoreRecoveryContext,
   type AdventureRestoreRecoveryIdentity,
+  type AdventureRestoreRecoveryRequest,
 } from './adventureRestoreRecoveryContracts';
 import {
   type AdventureRestorePreparationCommand,
@@ -121,9 +122,9 @@ function stage(raw: unknown, state: string): NonNullable<AdventurePreparationPro
 }
 export function readAdventurePreparationProgress(
   raw: unknown,
-  expected: AdventureRestoreRecoveryContext,
+  expected: AdventureRestoreRecoveryRequest,
 ): AdventurePreparationProgress {
-  const c = readAdventureRestoreRecoveryContext(expected);
+  const c = readAdventureRestoreRecoveryRequest(expected);
   check(
     object(raw) &&
       raw.schemaVersion === 1 &&

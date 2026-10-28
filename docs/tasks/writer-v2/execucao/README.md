@@ -2075,3 +2075,10 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      privada para revisão. 169 Vitest e sete verificações Chromium positivas.
      [Evidência](../../../entregas/2026-10-28-writer-v2-controlador-da-preparacao-de-aventuras.md).
      Bootstrap/start/upload/efeitos/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
+
+194. [Início e upload retomável de aventuras](194-inicio-e-upload-retomavel-de-aventuras.md):
+     bootstrap metadata, sessão/fence, arquivo verificado e blocos com retomada;
+     dez verificações Chromium positivas.
+     [Fechamento integral 189–194](../../../entregas/2026-10-28-writer-v2-inicio-e-upload-retomavel-de-aventuras.md):
+     4567 frontend, 90 scripts, 3772 Functions e 391 módulos de sintaxe,
+     cobertura/tipos/bundle/smoke verdes. UI/efeitos/roundtrip e P2/P3/D/F2-09 abertos.

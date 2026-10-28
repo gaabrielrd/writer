@@ -396,3 +396,15 @@ e duas auditorias, conforme
 A preparação pausa para revisão; não ativa automaticamente. Bootstrap/start/
 upload/revisão/efeitos/UI/roundtrip e P2/P3/D/F2-09 seguem abertos; macro 8/35
 inalterada. Validate integral no fim do bloco do cliente, sem CI/remoto.
+
+[Início/upload 194](execucao/194-inicio-e-upload-retomavel-de-aventuras.md)
+acrescenta bootstrap metadata, sessão/resolução e envio de arquivo verificado,
+com retomada após recarga e sem troca de bytes/identidade. Dez verificações
+Chromium positivas; detalhes e limites na
+[evidência](../../entregas/2026-10-28-writer-v2-inicio-e-upload-retomavel-de-aventuras.md).
+
+Fechamento integral **189–194 verde**: **4567 frontend em 347 arquivos,
+90 scripts, 3772 Functions e sintaxe de 391 módulos**, tipos/bundle/smoke.
+Cobertura 89,52/85,58/90,68/92,73 e limites preservados; hashes de 17 arquivos
+de código conferidos durante a execução. Somente commit local.
+UI/revisão/efeitos/roundtrip, P2/P3/D/F2-09 e macro 8/35 continuam abertos.

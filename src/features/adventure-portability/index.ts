@@ -101,3 +101,29 @@ export {
   type AdventurePreparationStep,
   type AdventurePreparationPause,
 } from './services/adventureRestorePreparationProgress';
+
+export {
+  createAdventureRestoreStartSession,
+  type AdventureRestoreBootstrapStorage,
+} from './services/adventureRestoreStartSession';
+export {
+  createAdventureRestoreUploadDriver,
+  type AdventureRestoreUploadStep,
+} from './services/adventureRestoreUploadDriver';
+export {
+  createAdventureRestoreTransferApi,
+  type AdventureRestoreTransferApi,
+} from './services/adventureRestoreTransferCallables';
+export {
+  readAdventureRestoreSourceDescriptor,
+  readAdventureRestoreStartIntent,
+  adventureRestoreStartFingerprint,
+  expectedAdventureRestoreTarget,
+  type AdventureRestoreSourceDescriptor,
+  type AdventureRestoreStartIntent,
+} from './services/adventureRestoreTransferContracts';
+export {
+  readAdventureRestoreTransferJob,
+  type AdventureRestoreTransferJob,
+  type AdventureRestoreStartOutcome,
+} from './services/adventureRestoreTransferJob';

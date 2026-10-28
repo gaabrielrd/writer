@@ -938,3 +938,10 @@ Repita pendência exata sem replanejar. audit-ready sem biblioteca exige
 instalação; só a auditoria posterior permite pausar para revisão, inclusive
 com zero imagens. Use fases/views próprios e mantenha ativação/efeitos fora
 do controlador; metadata pública não é prova de grant (ADR 0215).
+
+No início/upload de aventura, use fingerprint/target e IDs de bloco do domínio
+próprio. Persista somente metadata do início antes de enviar, com CAS inteiro;
+fence de início desconhecido não cancela job confirmado. Leia metadata sem
+inventar keyId; journal/driver de preparação ainda exigem contexto privado.
+Hash completo do Blob nativo precede append; preserve bytes/ID pendentes e
+revalide o arquivo após reload. Não persista arquivo/nome/prosa (ADR 0216).

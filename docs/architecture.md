@@ -3357,3 +3357,14 @@ chamada. Projeta metadata com views puros da aventura e só limpa a pendência
 após recibo compatível; replay mantém pedido original. A biblioteca de imagens
 fica entre duas auditorias, inclusive vazia; a última pausa para revisão.
 Nenhuma ativação automática. Bootstrap/revisão/efeitos/UI seguem separados.
+
+## Início e upload de aventuras
+
+A [ADR 0216](decisions/0216-adventure-restore-start-upload-recovery.md) define
+bootstrap metadata por conta/operação, sessão de início/resolução e upload
+por blocos de 65536 bytes. Fingerprint/alvo são próprios da aventura; Blob
+nativo/hash completo e IDs determinísticos protegem retomada sem troca de bytes.
+Metadata do job é legível antes do keyId privado, sem fabricar grant.
+Helper SDK interno mantém conta/guard/lista/prazos de preparação/transporte.
+Interface e efeitos posteriores continuam pendentes. Bloco 189–194 validado
+integralmente no código local; não houve implantação.

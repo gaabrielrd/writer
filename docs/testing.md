@@ -3163,3 +3163,16 @@ A [evidência](entregas/2026-10-28-writer-v2-controlador-da-preparacao-de-aventu
 separa mocks SDK, banco de teste, Chromium/IndexedDB reais e bridge HTTP
 local. Inclui resposta perdida, recarga, imagem e duas auditorias; não é prova
 de credenciais reais, Functions SDK no browser ou deploy.
+
+## Início e upload de aventuras
+
+TransferContracts, TransferCallables, StartSession e UploadDriver em
+src/features/adventure-portability/tests conferem compatibilidade com o
+servidor real, codecs/metadata/CAS, respostas incertas/fence, fingerprint/
+arquivo/blocos/ACK e guard/conta. Regressões de preparação cobrem o helper
+SDK interno e a leitura de metadata sem keyId. Chromium isolado usa arquivo
+nativo de teste e IndexedDB/Blob/Web Locks/WebCrypto reais; serviço sobre
+banco de teste e bridge HTTP com autorização sintética, sem dados de produção.
+O [fechamento integral 189–194](entregas/2026-10-28-writer-v2-inicio-e-upload-retomavel-de-aventuras.md)
+registra 4567 frontend, 90 scripts e 3772 Functions positivos, com cobertura/
+tipos/build/smoke. Não equivale a UI, credenciais reais ou implantação.

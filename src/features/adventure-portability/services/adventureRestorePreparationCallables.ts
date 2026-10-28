@@ -1,3 +1,4 @@
+import { callAdventureRestore } from './adventureRestoreCallables';
 import {
   readAdventureRestoreRecoveryContext,
   recoveryObject,
@@ -15,25 +16,8 @@ export function createAdventureRestorePreparationApi(
   guard: () => void,
 ): AdventurePreparationApi {
   const context = readAdventureRestoreRecoveryContext(expected);
-  async function call(name: string, input: Readonly<Record<string, unknown>>): Promise<unknown> {
-    guard();
-    const [{ getFunctions, httpsCallable }, { getFirebaseApp, auth }] = await Promise.all([
-      import('firebase/functions'),
-      import('@/shared/lib'),
-    ]);
-    const active = () => {
-      guard();
-      check(auth.currentUser?.uid === context.ownerId);
-    };
-    active();
-    const result = await httpsCallable<unknown, unknown>(
-      getFunctions(getFirebaseApp(), 'us-central1'),
-      name,
-      { timeout: name === 'advanceAdventureRestoreValidation' ? 600_000 : 180_000 },
-    )(input);
-    active();
-    return result.data;
-  }
+  const call = (name: string, input: Readonly<Record<string, unknown>>) =>
+    callAdventureRestore(context.ownerId, guard, name, input);
   return {
     get(input) {
       guard();
