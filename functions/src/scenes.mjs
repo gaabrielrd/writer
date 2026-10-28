@@ -815,6 +815,104 @@ export function createScenesService({ db, now = Date.now }) {
         };
       });
     },
+    async listOrphanScenes(uid, data) {
+      const context = scope(uid, data, ['cursor', 'limit']);
+      if (context.target.kind !== 'adventure')
+        sceneFail('invalid-argument', 'Recuperação disponível somente para aventuras.');
+      const count = sceneLimit(data.limit ?? 25),
+        c = { uid, target: context.target, kind: 'orphan-scenes' };
+      const cursor = decodeSceneCursor(data.cursor, c);
+      return db.runTransaction(async (tx) => {
+        const p = await project(context, tx);
+        if (cursor && cursor.revision !== revision(p)) conflict();
+        let query = db
+          .collection(context.path + '/scenes')
+          .where('ownerId', '==', uid)
+          .orderBy('__name__')
+          .limit(count + 1);
+        if (cursor) query = query.startAfter(sceneId(cursor.id));
+        const page = await tx.get(query),
+          selected = page.docs.slice(0, count),
+          items = [];
+        const parents = new Map();
+        for (const row of selected) {
+          const value = row.data();
+          if (value.parentId !== null && !parents.has(value.parentId)) {
+            sceneId(value.parentId);
+            parents.set(value.parentId, (await tx.get(groupRef(context, value.parentId))).exists);
+          }
+          if (value.parentId !== null && !parents.get(value.parentId))
+            items.push(summary(value, groupView(context, null), 'adventure'));
+        }
+        const last = selected.at(-1);
+        return {
+          items,
+          nextCursor: page.docs.length > count ? cursorFor(c, revision(p), last.id, last.id) : null,
+          projectRevision: revision(p),
+        };
+      });
+    },
+    async recoverOrphanScene(uid, data) {
+      const context = scope(uid, data, [
+        'sceneId',
+        'expectedRevision',
+        'expectedMissingParentId',
+        'operationId',
+      ]);
+      if (context.target.kind !== 'adventure')
+        sceneFail('invalid-argument', 'Recuperação disponível somente para aventuras.');
+      const id = sceneId(data.sceneId),
+        parent = sceneId(data.expectedMissingParentId);
+      sceneRevision(data.expectedRevision);
+      const op = operation(context, data, 'recoverOrphanScene', {
+        sceneId: id,
+        expectedRevision: data.expectedRevision,
+        expectedMissingParentId: parent,
+      });
+      return db.runTransaction(async (tx) => {
+        const p = await project(context, tx),
+          previous = await receipt(tx, op);
+        if (previous) return retryScene(tx, context, p, previous, 'recoverOrphanScene');
+        const ref = db.doc(context.path + '/scenes/' + id),
+          scene = (await tx.get(ref)).data();
+        if (!scene || scene.ownerId !== uid) sceneFail('not-found', 'Cena indisponível.');
+        if (scene.revision !== data.expectedRevision || scene.parentId !== parent) conflict();
+        if ((await tx.get(groupRef(context, parent))).exists)
+          sceneFail(
+            'failed-precondition',
+            'A parte voltou a existir. Atualize o planejamento antes de continuar.',
+          );
+        const destination = await group(context, null, tx, { composed: true, structure: true });
+        const timestamp = sceneDate(now, Math.max(p.updatedAt ?? 0, scene.updatedAt ?? 0));
+        const value = {
+          ...scene,
+          parentId: null,
+          formerParentId: parent,
+          revision: scene.revision + 1,
+          updatedAt: timestamp,
+          [slotField(destination.value)]: await placement(context, destination, tx, {}, id),
+        };
+        const next = nextGroup(
+          destination,
+          scene.archived ? 0 : scene.wordCount,
+          1,
+          timestamp,
+          true,
+        );
+        assertSceneEnvelope(value);
+        const words = await workLedger.prepareChanges(tx, {
+          target: context.target,
+          root: p,
+          changes: [{ kind: 'scene', id, parentId: null, archived: scene.archived, removed: true }],
+        });
+        tx.update(ref, value);
+        writeGroup(tx, destination, next);
+        const projectRevision = writeProject(tx, context, p, timestamp);
+        words.commit();
+        writeReceipt(tx, op, { sceneId: id, revision: value.revision, createdAt: timestamp });
+        return { scene: summary(value, next, 'adventure'), groups: [next], projectRevision };
+      });
+    },
     async listSceneGroups(uid, data) {
       const context = scope(uid, data, ['cursor', 'limit']),
         limit = sceneLimit(data.limit);
@@ -895,21 +993,22 @@ export function createScenesService({ db, now = Date.now }) {
           const entry = await group(context, id, tx, { deleting: true });
           const original = entry.snapshot.data() ?? {},
             content =
-              entry.value.contentMode === 'legacy' && !entry.value.deleting
-                ? await readBookChapterText(tx, db, {
-                    uid,
-                    bookId: context.target.id,
-                    chapterId: id,
-                    chapter: original,
-                  })
-                : null;
+              context.target.kind === 'adventure' &&
+              typeof original.content === 'string' &&
+              !entry.value.deleting
+                ? original.content
+                : entry.value.contentMode === 'legacy' && !entry.value.deleting
+                  ? await readBookChapterText(tx, db, {
+                      uid,
+                      bookId: context.target.id,
+                      chapterId: id,
+                      chapter: original,
+                    })
+                  : null;
           return {
             group: entry.value,
             sourceVersion: digest(original),
-            legacy:
-              entry.value.contentMode === 'legacy' && !entry.value.deleting
-                ? { content, hash: digest(content) }
-                : null,
+            legacy: content !== null ? { content, hash: digest(content) } : null,
           };
         });
       } catch (error) {

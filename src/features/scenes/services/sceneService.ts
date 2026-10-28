@@ -110,3 +110,16 @@ export const getSceneJob = (input: {
   target: SceneProject;
   operationId: string;
 }): Promise<SceneJob | null> => call('getSceneJob', input);
+
+export const listOrphanScenes = (input: {
+  target: SceneProject;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<ScenePage<SceneSummary>> => call('listOrphanScenes', input);
+export const recoverOrphanScene = (input: {
+  target: SceneProject;
+  sceneId: string;
+  expectedRevision: number;
+  expectedMissingParentId: string;
+  operationId: string;
+}): Promise<SceneMutationResult> => call('recoverOrphanScene', input);

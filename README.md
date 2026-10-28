@@ -702,3 +702,9 @@ A gravação exige seleção de arquivo compatível e contexto seguro.
 Veja o [contrato local](docs/decisions/0219-adventure-backup-interface.md).
 Os endpoints novos ainda precisam de implantação para uso com conta real;
 P2/F2-09 e os gates de lançamento continuam pendentes.
+
+O planejador de aventuras mostra texto anterior de parte como fonte preservada,
+separada das cenas, e permite localizar/conferir cenas sem parte disponível.
+A recuperação explícita move para Sem parte e preserva texto, blocos, histórico
+e referência anterior. Veja a [matriz local](docs/tasks/writer-v2/consumidores-aventuras-restauradas.md).
+Exclusão completa de aventura continua pendente; endpoints novos sem implantação.

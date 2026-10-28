@@ -654,3 +654,20 @@ it('erro de comparação mantém bloqueio até revisão atual estar disponível'
     within(screen.getByRole('dialog')).getByRole('button', { name: 'Alterar estado' }),
   ).toBeDisabled();
 });
+
+it('adventure planner exposes preserved part prose safely without offering book conversion', async () => {
+  vi.mocked(api.getSceneGroup).mockResolvedValue({
+    ...groupDetail,
+    group: { ...group, kind: 'part', contentMode: 'scenes' },
+    legacy: {
+      content: '<p>Fonte antiga da parte</p><script>window.bad=1</script>',
+      hash: 'source-hash',
+    },
+  });
+  mount({ target: { kind: 'adventure', id: 'adventure' } });
+  const source = await screen.findByRole('region', { name: 'Texto preservado da parte' });
+  expect(source).toHaveTextContent('Fonte antiga da parte');
+  expect(source.querySelector('script')).toBeNull();
+  expect(screen.queryByRole('button', { name: 'Converter em cenas' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Recuperar cenas sem parte' })).toBeInTheDocument();
+});

@@ -130,3 +130,15 @@ tipos/build/smoke e limites verdes. As pendências históricas acima de
 transporte/restauração/UI foram atendidas nesses recortes; falta consolidar
 matriz ampla de consumidores/exclusão, compatibilidade/corpus e gates de P2.
 P3/D/F2-09 e macro 8/35 continuam abertos. Sem implantação nem operação remota.
+
+## Consumidores e compatibilidade — 198
+
+[Matriz atual](consumidores-aventuras-restauradas.md) prova o ciclo normal após
+coleta, com edição/histórico/contexto/recaptura e cinco casos de corpus.
+O texto legado agora é fonte visível e sanitizada; cenas sem parte têm localização/
+prévia e recuperação explícita idempotente para Sem parte, sem criar agrupador.
+
+[Entrega dirigida](../../entregas/2026-10-28-writer-v2-ciclo-normal-das-aventuras-restauradas.md)
+registra 35 Vitest distintos, 30 Node/SDK e nove verificações Chromium.
+Falta exclusão completa de aventura antes de P2; P3/D/F2-09 e macro 8/35 continuam
+abertos. Validate integral no fechamento desse bloco; sem operação remota.

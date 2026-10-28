@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { Archive, Columns3, List, Plus, ArrowUpDown, FileText } from 'lucide-react';
 import { useAuth } from '@/features/auth';
+import { renderRichText } from '@/shared/lib';
 import {
   Alert,
   Badge,
@@ -39,6 +40,7 @@ import { useSceneResource } from '../hooks/useSceneResource';
 import { SceneOperationDialog } from './SceneOperationDialog';
 import { ScenePlanningDialog } from './ScenePlanningDialog';
 import { SceneMoveDialog } from './SceneMoveDialog';
+import { SceneOrphanDialog } from './SceneOrphanDialog';
 import styles from './Scenes.module.css';
 export interface ScenePlannerProps {
   target: SceneProject;
@@ -74,6 +76,7 @@ function ScenePlannerSession({
   const [version, setVersion] = useState(0);
   const [action, setAction] = useState<Action | null>(null);
   const [success, setSuccess] = useState('');
+  const [orphansOpen, setOrphansOpen] = useState(false);
   const groups = useScenePage('groups:' + version, (cursor) =>
     listSceneGroups({ target, cursor, limit: 25 }),
   );
@@ -172,6 +175,18 @@ function ScenePlannerSession({
     groupOptions.push({ value: parentId, label: detail?.group.title ?? 'Agrupador selecionado' });
   return (
     <section className={styles.planner} aria-label="Planejamento de cenas">
+      {orphansOpen && (
+        <SceneOrphanDialog
+          target={target}
+          onClose={() => setOrphansOpen(false)}
+          onRecovered={refresh}
+        />
+      )}
+      {target.kind === 'adventure' && (
+        <Button variant="outline" onClick={() => setOrphansOpen(true)}>
+          Recuperar cenas sem parte
+        </Button>
+      )}
       <div className={styles.toolbar}>
         <div>
           <h2>Cenas</h2>
@@ -263,6 +278,15 @@ function ScenePlannerSession({
       {success && <Alert variant="success">{success}</Alert>}
       {detailLoading && <LoadingState label="Carregando agrupador…" />}
       {detailError && <ErrorState error={detailError} onRetry={refresh} />}
+      {target.kind === 'adventure' && detail?.legacy && (
+        <section aria-label="Texto preservado da parte" className={styles.preservedPart}>
+          <h3>Texto preservado da parte</h3>
+          <p className={styles.hint}>
+            Este texto anterior está preservado. As cenas da parte continuam separadas.
+          </p>
+          <div dangerouslySetInnerHTML={{ __html: renderRichText(detail.legacy.content) }} />
+        </section>
+      )}
       {group?.contentMode === 'legacy' && (
         <Alert variant="info">
           Este capítulo usa texto legado. A conversão cria uma única cena com o corpo inteiro,

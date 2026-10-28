@@ -439,3 +439,12 @@ módulos**, tipos/build/smoke verdes. Cobertura 89,59/85,72/90,79/92,75, limites
 preservados, 24 hashes conferidos. Endpoints ainda sem implantação.
 Auditoria ampla de P2/consumidores, P3/D/F2-09 e gates permanecem abertos;
 macro **8/35** inalterada. Somente commit local, sem CI/operação remota.
+
+[Ciclo normal 198](execucao/198-ciclo-normal-das-aventuras-restauradas.md)
+prova edição/histórico/lore/contexto e nova restauração após coleta. O planejador
+agora mostra fonte legada e oferece recuperação explícita de cenas sem parte.
+[Matriz](consumidores-aventuras-restauradas.md) e
+[entrega](../../entregas/2026-10-28-writer-v2-ciclo-normal-das-aventuras-restauradas.md)
+registram 35 Vitest distintos, 30 Node/SDK e nove verificações Chromium positivos,
+com checks dirigidos/build. Não houve novo validate integral.
+Exclusão completa da aventura ainda falta; P2/P3/D/F2-09 e macro 8/35 seguem abertos.

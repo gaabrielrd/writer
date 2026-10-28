@@ -2106,3 +2106,12 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      4791 frontend, 90 scripts, 3798 Functions e sintaxe de 393 módulos,
      cobertura/tipos/build/smoke verdes. Auditoria de P2/consumidores e P3/D/
      F2-09 continuam abertos; macro 8/35 inalterada. Somente commit local.
+
+198. [Ciclo normal das aventuras restauradas](198-ciclo-normal-das-aventuras-restauradas.md):
+     leitura/edição/histórico/IA e segunda captura/restauração após coleta.
+     Corrige fonte legada invisível e recupera cenas sem parte por confirmação.
+     [Matriz](../consumidores-aventuras-restauradas.md) e
+     [evidência dirigida](../../../entregas/2026-10-28-writer-v2-ciclo-normal-das-aventuras-restauradas.md):
+     35 Vitest distintos, 30 Node/SDK, nove verificações Chromium e build verdes.
+     Exclusão completa de aventura é a próxima lacuna; P2/P3/D/F2-09 seguem
+     abertos. Integral no fechamento do bloco; somente commit local.

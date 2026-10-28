@@ -395,7 +395,7 @@ const callable = (method, secrets = []) =>
       setBookLoreEditOutcomeHeaders(method, request);
       setBookLoreRemovalHeaders(method, request);
       setBookLoreWriteRecoveryHeaders(method, request);
-      if (method === 'readLegacyChapterText') {
+      if (['readLegacyChapterText', 'listOrphanScenes', 'recoverOrphanScene'].includes(method)) {
         request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
         request.rawRequest?.res?.setHeader('Vary', 'Authorization');
       }
@@ -708,6 +708,8 @@ export const moveScene = callable('moveScene');
 export const archiveScene = callable('archiveScene');
 export const getScene = callable('getScene');
 export const listScenes = callable('listScenes');
+export const listOrphanScenes = callable('listOrphanScenes');
+export const recoverOrphanScene = callable('recoverOrphanScene');
 export const listSceneGroups = callable('listSceneGroups');
 export const getSceneGroup = callable('getSceneGroup');
 export const createSceneGroup = callable('createSceneGroup');
