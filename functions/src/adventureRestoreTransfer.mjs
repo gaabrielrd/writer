@@ -1,3 +1,5 @@
+import { createAdventureRestoreActivationService } from './adventureRestoreActivation.mjs';
+import { createAdventureRestoreActivationReviewService } from './adventureRestoreActivationReview.mjs';
 import { createAdventureRestoreStore } from './adventureRestoreStore.mjs';
 import { createAdventureRestoreIntegrityService } from './adventureRestoreIntegrity.mjs';
 import { restoreContext } from './adventureRestoreChunks.mjs';
@@ -359,7 +361,8 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
       const loaded = await store.load(tx, uid, request.restoreId, request.jobToken),
         op = await tx.get(refs.op(uid, request.operationId));
       if (op.exists) return store.confirm(loaded, store.operation(op, loaded, fingerprint));
-      if (loaded.job.state === 'cancelled') restoreFail('failed-precondition', 'state-conflict');
+      if (['cancelled', 'activated'].includes(loaded.job.state))
+        restoreFail('failed-precondition', 'state-conflict');
       const record = store.next(loaded, request, action, {
         state: 'cancelling',
         integrityStateId: null,
@@ -529,5 +532,7 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
     ...createAdventureRestoreCountsService(store),
     ...createAdventureRestoreAuditService(store, assets),
     ...createAdventureRestoreImageLibraryService(store),
+    ...createAdventureRestoreActivationReviewService(store),
+    ...createAdventureRestoreActivationService(store),
   };
 }

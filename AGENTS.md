@@ -881,3 +881,11 @@ instalar e refaça a auditoria incluindo imagens/usos. Recibos da auditoria inic
 permanecem históricos pela fronteira nativa capturada; a rodada atual e demais
 contadores continuam monotônicos. Cleanup fecha Storage e remove usos antes
 das imagens, preservando registros alheios/recriados (ADR 0207).
+
+Na ativação de aventuras restauradas, exija revisão e selo posterior à instalação
+da biblioteca; reautorize o universo e confirme raiz/countReady/personas/job/recibo
+na mesma transação. Preserve o nascimento da raiz reservada e congele o job ativo.
+Resolva recibos históricos sem consultar ou autorizar a raiz atual; recuse cleanup
+pré-ativação de projeto ativo. Encerre pedido incerto pelo mesmo ID/fingerprint
+de ativação. Mantenha mídia pendente e use sidecars para progresso posterior
+(ADR 0208).

@@ -2021,3 +2021,9 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      [Evidência dirigida](../../../entregas/2026-10-27-writer-v2-estrutura-privada-de-aventuras.md).
      Recursos/índices restantes, contadores/audit/ativação/recuperação/UI/roundtrip
      e P2/P3/D permanecem abertos.
+
+173. [Ativação atômica da aventura restaurada](186-ativacao-atomica-da-aventura-restaurada.md):
+     revisão final, raiz/countReady/personas/universo/recibo atômicos e encerramento
+     de pedido incerto com histórico independente da raiz atual.
+     [Evidência dirigida](../../../entregas/2026-10-28-writer-v2-ativacao-atomica-da-aventura-restaurada.md).
+     Mídia pendente; finalização/GC/recuperação/UI/roundtrip e P2/P3/D/F2-09 abertos.

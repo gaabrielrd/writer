@@ -252,8 +252,8 @@ export function validAdventureStagingMeta(v, job) {
   )
     return false;
   if (
-    !['content-verified', 'cancelling', 'cancelled'].includes(job.state) ||
-    (job.state === 'content-verified' && v.cleanedArtifacts !== 0) ||
+    !['content-verified', 'activated', 'cancelling', 'cancelled'].includes(job.state) ||
+    (['content-verified', 'activated'].includes(job.state) && v.cleanedArtifacts !== 0) ||
     (job.state === 'cancelled' && v.cleanedArtifacts !== v.artifactCount)
   )
     return false;

@@ -3274,3 +3274,15 @@ imagem/uso por unidade com journals nativos, estado preparing, URL null e contad
    sem comparar seus contadores aos reiniciados na rodada final. Cancelamento
    fecha os caminhos Storage antes de limpar usos e imagens. Ativação e finalização
    de mídia por ativo continuam posteriores.
+
+## Ativação interna da aventura restaurada
+
+A [ADR 0208](decisions/0208-adventure-atomic-restore-activation.md) exige revisão
+vinculada ao selo final, biblioteca, contagens, personas e origem reautorizada.
+O commit constante libera raiz/countReady/lote/universo e confirma job/recibo,
+preservando o nascimento da raiz reservada. Imagens continuam preparing/URL null.
+Recibos históricos independem da raiz atual; encerramento de pedido incerto usa
+o mesmo ID/fingerprint, e o job ativado fica congelado. Finalização de mídia/GC
+usarão sidecars; cleanup anterior não apaga projeto ativo. Serviço interno,
+sem novo endpoint, dependência, índice ou Rules. Recuperação/UI/roundtrip e
+P2/P3/D/F2-09 continuam abertos.

@@ -20,7 +20,7 @@ export const validImageStorageView = (v) =>
   typeof v.storagePending === 'boolean';
 export function validImageStorageMeta(v, job) {
   const ready = v.phase !== 'image-storage',
-    active = job.state === 'content-verified';
+    active = ['content-verified', 'activated'].includes(job.state);
   return (
     validImageStorageView(v) &&
     count(v.storageIndex) &&

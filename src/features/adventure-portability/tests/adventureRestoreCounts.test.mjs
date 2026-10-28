@@ -6,6 +6,9 @@ import {
   countFixture,
   finishCounts,
 } from '../../../../functions/test/helpers/adventureRestoreCountsFixture.mjs';
+import { finishAudit } from '../../../../functions/test/helpers/adventureRestoreAuditFixture.mjs';
+import { finishImageLibrary } from '../../../../functions/test/helpers/adventureRestoreImageLibraryFixture.mjs';
+import { activationRequest } from '../../../../functions/test/helpers/adventureRestoreActivationFixture.mjs';
 import { createScenesService } from '../../../../functions/src/scenes.mjs';
 import { createAdventureBlocksService } from '../../../../functions/src/adventureBlocks.mjs';
 it('reconciles a real Writer archive and the first authoring changes apply only their deltas', async () => {
@@ -96,10 +99,12 @@ it('reconciles a real Writer archive and the first authoring changes apply only 
   expect(f.records.get(controlPath).countReady).toBe(false);
   expect([...source.records]).toEqual(original);
 
-  // Simulate the future activation gate only to exercise existing authoring readers.
-  // This is not evidence that the production activation protocol is implemented.
-  f.records.set(prefix, structuredClone(f.records.get(f.path + '/preparedRoot/current').value));
-  f.records.set(controlPath, { ...f.records.get(controlPath), countReady: true });
+  const audited = await finishAudit(f, await finishImageLibrary(f, await finishAudit(f, ready)));
+  const { request } = await activationRequest(f, audited);
+  const activated = await f.api.activateAdventureRestore(f.uid, request);
+  expect(activated.progress.state).toBe('activated');
+  expect(f.records.get(controlPath).countReady).toBe(true);
+  expect(f.records.get(prefix).wordCount).toBe(5);
   const scenes = createScenesService({ db: f.db, now: () => 4000 }),
     blocks = createAdventureBlocksService({ db: f.db, now: () => 5000 }),
     target = { kind: 'adventure', id: p.adventureId },

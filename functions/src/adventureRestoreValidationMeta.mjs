@@ -180,7 +180,7 @@ export function validAdventureValidationMeta(v, job) {
   if (
     !cancelling &&
     (v.phase === 'verified'
-      ? job.state !== 'content-verified'
+      ? !['content-verified', 'activated'].includes(job.state)
       : v.phase === 'rejected'
         ? job.state !== 'content-rejected'
         : job.state !== 'validating')

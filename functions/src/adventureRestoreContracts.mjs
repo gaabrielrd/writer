@@ -1,3 +1,4 @@
+import { validAdventureRestoreActivation } from './adventureRestoreActivationMeta.mjs';
 import { createHash } from 'node:crypto';
 import { GenerationError } from './generationError.mjs';
 import { digest } from './sceneContracts.mjs';
@@ -21,6 +22,7 @@ export const ADVENTURE_RESTORE_STATES = Object.freeze([
   'rejected',
   'cancelling',
   'cancelled',
+  'activated',
 ]);
 export const ADVENTURE_RESTORE_ACTIONS = Object.freeze({
   startAdventureRestore: ['uploading'],
@@ -39,6 +41,8 @@ export const ADVENTURE_RESTORE_ACTIONS = Object.freeze({
   advanceAdventureRestoreCounts: ['content-verified'],
   advanceAdventureRestoreAudit: ['content-verified'],
   advanceAdventureRestoreImageLibrary: ['content-verified'],
+  activateAdventureRestore: ['activated'],
+  retireAdventureRestoreActivation: ['content-verified'],
   cancelAdventureRestore: ['cancelling'],
   advanceAdventureRestoreCleanup: ['cancelling', 'cancelled'],
 });
@@ -214,7 +218,13 @@ export const JOB_FIELDS = Object.freeze([
   'lastRequestHash',
 ]);
 export function parseJob(value, uid, id) {
-  closed(value, JOB_FIELDS, ['validation', 'staging']);
+  closed(value, JOB_FIELDS, ['validation', 'staging', 'activation']);
+  if (
+    Object.hasOwn(value, 'activation')
+      ? !validAdventureRestoreActivation(value.activation, value)
+      : value.state === 'activated'
+  )
+    inconsistent();
   if (
     Object.hasOwn(value, 'validation')
       ? !validAdventureValidationMeta(value.validation, value)
@@ -300,9 +310,14 @@ export function parseJob(value, uid, id) {
     inconsistent();
   if (value.state === 'uploading' && value.uploadedChunks === total) inconsistent();
   if (
-    ['uploaded', 'checking', 'bytes-verified', 'rejected', ...ADVENTURE_VALIDATION_STATES].includes(
-      value.state,
-    ) &&
+    [
+      'uploaded',
+      'checking',
+      'bytes-verified',
+      'rejected',
+      'activated',
+      ...ADVENTURE_VALIDATION_STATES,
+    ].includes(value.state) &&
     value.uploadedChunks !== total
   )
     inconsistent();
@@ -325,14 +340,16 @@ export function parseJob(value, uid, id) {
   )
     inconsistent();
   if (
-    ['bytes-verified', 'rejected', ...ADVENTURE_VALIDATION_STATES].includes(value.state) &&
+    ['bytes-verified', 'rejected', 'activated', ...ADVENTURE_VALIDATION_STATES].includes(
+      value.state,
+    ) &&
     (value.checkedChunks !== total ||
       value.integrityDigest === null ||
       value.integrityStateId !== null)
   )
     inconsistent();
   if (
-    ['bytes-verified', ...ADVENTURE_VALIDATION_STATES].includes(value.state) &&
+    ['bytes-verified', 'activated', ...ADVENTURE_VALIDATION_STATES].includes(value.state) &&
     (value.integrityDigest !== source.sha256 ||
       value.integrityFailure !== null ||
       value.checkedChainHash !== value.uploadedChainHash)
@@ -384,6 +401,7 @@ export function progress(uid, id, snap, job = parseJob(snap.data(), uid, id)) {
     checkedBytes: job.checkedBytes,
     ...(job.validation ? { validation: adventureValidationView(job.validation) } : {}),
     ...(job.staging ? { staging: adventureStagingView(job.staging) } : {}),
+    ...(job.activation ? { activation: structuredClone(job.activation) } : {}),
     integrityDigest: job.integrityDigest,
     integrityFailure: job.integrityFailure,
     cleanedChunks: job.cleanedChunks,

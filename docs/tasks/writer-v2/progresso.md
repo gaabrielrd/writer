@@ -320,3 +320,13 @@ positivos; [evidência](../../entregas/2026-10-28-writer-v2-biblioteca-das-image
 Fechamento integral local de 183–185 verde: 4.329 frontend, 90 scripts,
 3.610 Functions, sintaxe/tipos/build/smoke. Ativação/finalização de mídia,
 recuperação/UI/roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 continuam abertos.
+
+[Ativação interna 186](execucao/186-ativacao-atomica-da-aventura-restaurada.md)
+acrescenta revisão final e confirmação atômica da raiz, contagens, personas e
+universo reautorizado. Preserva nascimento da raiz e provas históricas, inclusive
+após excluir/recriar o projeto. Encerra pedido incerto impedindo ativação atrasada;
+o editor já é exercitado após ativação real. Veja os checks efetivamente executados
+na [evidência dirigida](../../entregas/2026-10-28-writer-v2-ativacao-atomica-da-aventura-restaurada.md).
+Mídia continua pendente. Finalização por ativo, coleta da fonte, recuperação/
+transportes/UI/roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 permanecem
+abertos. Validate integral no fechamento do próximo grande bloco.

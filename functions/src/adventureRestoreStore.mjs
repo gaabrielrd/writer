@@ -94,7 +94,17 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
     restoreHash(op.jobHash);
     if (fingerprint !== undefined && op.fingerprint !== fingerprint) invalid('operation-mismatch');
     immutable(snapshot);
-    const r = closed(op.receipt, RECEIPT_FIELDS, ['validation', 'staging']);
+    const r = closed(op.receipt, RECEIPT_FIELDS, ['validation', 'staging', 'activation']);
+    if (
+      Object.hasOwn(r, 'activation')
+        ? r.action !== 'activateAdventureRestore' ||
+          r.state !== 'activated' ||
+          !loaded.job.activation ||
+          digest(r.activation) !== digest(loaded.job.activation) ||
+          r.checkpoint !== loaded.job.checkpoint
+        : r.action === 'activateAdventureRestore'
+    )
+      inconsistent();
     if (Object.hasOwn(r, 'staging')) {
       if (
         !loaded.job.staging ||
@@ -112,6 +122,8 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreCounts',
           'advanceAdventureRestoreAudit',
           'advanceAdventureRestoreImageLibrary',
+          'activateAdventureRestore',
+          'retireAdventureRestoreActivation',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -184,6 +196,8 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         'advanceAdventureRestoreCounts',
         'advanceAdventureRestoreAudit',
         'advanceAdventureRestoreImageLibrary',
+        'activateAdventureRestore',
+        'retireAdventureRestoreActivation',
       ].includes(r.action)
     )
       inconsistent();
@@ -205,6 +219,8 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreCounts',
           'advanceAdventureRestoreAudit',
           'advanceAdventureRestoreImageLibrary',
+          'activateAdventureRestore',
+          'retireAdventureRestoreActivation',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -331,7 +347,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
     const [reserved, start, meta] = await Promise.all([
       tx.get(refs.reservation(job.adventureId)),
       tx.get(refs.op(uid, id)),
-      rootMeta(tx, job.adventureId),
+      job.state === 'activated' ? Promise.resolve(null) : rootMeta(tx, job.adventureId),
     ]);
     const r = reserved.data();
     closed(r, ['schemaVersion', 'ownerId', 'restoreId', 'adventureId', 'startFingerprint', 'kind']);
@@ -347,11 +363,12 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
       inconsistent();
     immutable(reserved);
     if (
-      !meta.exists ||
-      !bornEqual(meta, snapshot) ||
-      Object.hasOwn(meta.data(), 'ownerId') ||
-      digest(meta.data()) !==
-        digest(pendingRoot(uid, id, job.startFingerprint, job.state === 'cancelled'))
+      job.state !== 'activated' &&
+      (!meta.exists ||
+        !bornEqual(meta, snapshot) ||
+        Object.hasOwn(meta.data(), 'ownerId') ||
+        digest(meta.data()) !==
+          digest(pendingRoot(uid, id, job.startFingerprint, job.state === 'cancelled')))
     )
       inconsistent();
     if (
@@ -375,10 +392,12 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           )
       )
         inconsistent();
-    } else immutable(meta);
-    const full = await tx.get(refs.root(job.adventureId));
-    if (nativeToken(full) !== nativeToken(meta) || digest(full.data()) !== digest(meta.data()))
-      inconsistent();
+    } else if (job.state !== 'activated') immutable(meta);
+    if (job.state !== 'activated') {
+      const full = await tx.get(refs.root(job.adventureId));
+      if (nativeToken(full) !== nativeToken(meta) || digest(full.data()) !== digest(meta.data()))
+        inconsistent();
+    }
     return loaded;
   }
   async function emptyRoot(tx, id) {
@@ -392,7 +411,18 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
       if (found.docs.length) inconsistent();
     }
   }
-  function next(loaded, request, action, patch = {}) {
+  function mutationFingerprint(action, request, fingerprintAction = action) {
+    if (
+      fingerprintAction !== action &&
+      !(
+        action === 'retireAdventureRestoreActivation' &&
+        fingerprintAction === 'activateAdventureRestore'
+      )
+    )
+      inconsistent();
+    return requestHash(fingerprintAction, request);
+  }
+  function next(loaded, request, action, patch = {}, fingerprintAction = action) {
     if (request.expectedCheckpoint !== loaded.job.checkpoint)
       restoreFail('failed-precondition', 'checkpoint-conflict');
     return parseJob(
@@ -402,7 +432,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         checkpoint: sum(loaded.job.checkpoint, 1),
         updatedAt: restoreDate(now, loaded.job.updatedAt),
         lastOperationId: request.operationId,
-        lastRequestHash: requestHash(action, request),
+        lastRequestHash: mutationFingerprint(action, request, fingerprintAction),
       },
       loaded.uid,
       loaded.id,
@@ -422,6 +452,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
       integrityFailure: record.integrityFailure,
       ...(record.validation ? { validation: adventureValidationView(record.validation) } : {}),
       ...(record.staging ? { staging: adventureStagingView(record.staging) } : {}),
+      ...(record.activation ? { activation: structuredClone(record.activation) } : {}),
     };
   }
   function writeOperation(
@@ -434,13 +465,14 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
     token,
     effects = [],
     sequence = null,
+    fingerprintAction = action,
   ) {
     const r = receipt(action, request, record, sequence);
     tx.create(refs.op(uid, request.operationId), {
       schemaVersion: 1,
       ownerId: uid,
       restoreId: id,
-      fingerprint: requestHash(action, request),
+      fingerprint: mutationFingerprint(action, request, fingerprintAction),
       jobHash: digest(record),
       receipt: r,
       effects: structuredClone(effects),
@@ -456,7 +488,16 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
       progress: progress(loaded.uid, loaded.id, loaded.snapshot, record),
     };
   }
-  function commit(tx, loaded, request, action, record, effects = [], sequence = null) {
+  function commit(
+    tx,
+    loaded,
+    request,
+    action,
+    record,
+    effects = [],
+    sequence = null,
+    fingerprintAction = action,
+  ) {
     tx.update(loaded.ref, record);
     return confirm(
       loaded,
@@ -470,6 +511,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         loaded.view.jobToken,
         effects,
         sequence,
+        fingerprintAction,
       ),
       record,
     );
