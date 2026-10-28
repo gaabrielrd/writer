@@ -7,6 +7,16 @@ const methods = Object.freeze([
   'listAdventureRestores',
   'appendAdventureRestoreChunk',
   'resolveAdventureRestoreStart',
+  'getAdventureRestoreActivationReview',
+  'activateAdventureRestore',
+  'retireAdventureRestoreActivation',
+  'getAdventureRestoreMediaState',
+  'advanceAdventureRestoreMedia',
+  'getAdventureRestoreArchiveCleanup',
+  'advanceAdventureRestoreArchiveCleanup',
+  'cancelAdventureRestore',
+  'advanceAdventureRestoreCleanup',
+  'resolveAdventureRestoreOperation',
 ]);
 /** Internal transport only; callers validate and snapshot their domain request before invoking. */
 export async function callAdventureRestore(

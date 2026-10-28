@@ -3176,3 +3176,15 @@ banco de teste e bridge HTTP com autorização sintética, sem dados de produç�
 O [fechamento integral 189–194](entregas/2026-10-28-writer-v2-inicio-e-upload-retomavel-de-aventuras.md)
 registra 4567 frontend, 90 scripts e 3772 Functions positivos, com cobertura/
 tipos/build/smoke. Não equivale a UI, credenciais reais ou implantação.
+
+## Efeitos finais da restauração de aventuras
+
+EffectContracts, EffectCallables e EffectSession em adventure-portability/tests
+cobrem fingerprints contra o servidor real, codecs fechados, revisão explícita,
+replay/retirada/resolução, checkpoints próprios, conta/guard/CAS e recibos.
+A [evidência dirigida de 195](entregas/2026-10-28-writer-v2-efeitos-retomaveis-de-aventuras.md)
+registra 136 Vitest em cinco arquivos e 13 verificações Chromium/IndexedDB
+reais; serviço/banco/Storage de teste e autenticação sintética são distinguidos
+do SDK com mocks. Tipos/lint/arquitetura/build/smoke positivos.
+Validate integral no fechamento do próximo grande bloco; o resultado anterior
+189–194 não é atribuído ao código novo. Não houve CI ou implantação.

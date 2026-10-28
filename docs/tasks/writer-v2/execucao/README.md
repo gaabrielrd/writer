@@ -2082,3 +2082,11 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      [Fechamento integral 189–194](../../../entregas/2026-10-28-writer-v2-inicio-e-upload-retomavel-de-aventuras.md):
      4567 frontend, 90 scripts, 3772 Functions e 391 módulos de sintaxe,
      cobertura/tipos/bundle/smoke verdes. UI/efeitos/roundtrip e P2/P3/D/F2-09 abertos.
+
+195. [Efeitos retomáveis da restauração de aventuras](195-efeitos-retomaveis-da-restauracao-de-aventuras.md):
+     metadata própria, revisão/ativação explícita e confirmação após encerrar
+     chave; mídia/coleta por checkpoints, com CAS e resolução/retirada.
+     136 Vitest e 13 verificações Chromium positivos;
+     [evidência dirigida](../../../entregas/2026-10-28-writer-v2-efeitos-retomaveis-de-aventuras.md).
+     Tipos/lint/arquitetura/build/smoke verdes; validate no próximo grande bloco.
+     UI/roundtrip e P2/P3/D/F2-09 continuam abertos; somente commit local.

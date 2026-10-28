@@ -3368,3 +3368,14 @@ Metadata do job é legível antes do keyId privado, sem fabricar grant.
 Helper SDK interno mantém conta/guard/lista/prazos de preparação/transporte.
 Interface e efeitos posteriores continuam pendentes. Bloco 189–194 validado
 integralmente no código local; não houve implantação.
+
+## Efeitos retomáveis da aventura restaurada
+
+A [ADR 0217](decisions/0217-adventure-restore-durable-effects.md) acrescenta
+cinco intents metadata separados da chave/journal de preparação. Sessão
+persiste antes de mutar e só limpa por CAS após recibo/resolução compatível.
+Revisão explícita é copiada antes dos awaits; erro definitivo pode aposentar
+o pedido original sem ativar automaticamente. Mídia/coleta usam checkpoints
+próprios e preservam job congelado/edições atuais; cancelamento/coleta podem
+encerrar a chave sem impedir confirmação. Helper cliente completa os 29 métodos
+públicos; chaves/helpers ficam privados. Interface e roundtrip continuam pendentes.

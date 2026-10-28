@@ -127,3 +127,22 @@ export {
   type AdventureRestoreTransferJob,
   type AdventureRestoreStartOutcome,
 } from './services/adventureRestoreTransferJob';
+
+export {
+  createAdventureRestoreEffectSession,
+  type AdventureRestoreEffectAck,
+} from './services/adventureRestoreEffectSession';
+export {
+  createAdventureRestoreEffectApi,
+  type AdventureRestoreEffectApi,
+} from './services/adventureRestoreEffectCallables';
+export {
+  type AdventureRestoreEffectIntent,
+  type AdventureRestoreEffectRecord,
+  type AdventureRestoreEffectAction,
+} from './services/adventureRestoreEffectContracts';
+export {
+  type AdventureRestoreActivationReview,
+  type AdventureRestoreMediaStatus,
+  type AdventureRestoreArchiveStatus,
+} from './services/adventureRestoreFinalizationViews';

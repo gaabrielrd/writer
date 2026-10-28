@@ -408,3 +408,12 @@ Fechamento integral **189–194 verde**: **4567 frontend em 347 arquivos,
 Cobertura 89,52/85,58/90,68/92,73 e limites preservados; hashes de 17 arquivos
 de código conferidos durante a execução. Somente commit local.
 UI/revisão/efeitos/roundtrip, P2/P3/D/F2-09 e macro 8/35 continuam abertos.
+
+[Efeitos retomáveis 195](execucao/195-efeitos-retomaveis-da-restauracao-de-aventuras.md)
+acrescenta revisão/ativação explícita, metadata de cinco efeitos e retomada de
+cancelamento/mídia/coleta mesmo após remoção da chave. **136 Vitest em cinco
+arquivos e 13 verificações Chromium** positivos, com tipos/lint/arquitetura/
+build/smoke, conforme
+[evidência](../../entregas/2026-10-28-writer-v2-efeitos-retomaveis-de-aventuras.md).
+Validate integral no fechamento do próximo grande bloco; UI/revisão local/
+roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 continuam abertos.

@@ -95,7 +95,7 @@ it('invalid names, owner or guard cannot reach SDK through the common internal h
   const { callAdventureRestore } = await import('../services/adventureRestoreCallables.ts');
   for (const method of [
     'getAdventureRestoreRecoveryKey',
-    'activateAdventureRestore',
+    'activateBookRestore',
     'constructor',
     'toString',
     '__proto__',
