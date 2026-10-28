@@ -739,3 +739,47 @@ it('configura complemento da cena e invalida contexto sem criar persona separada
   expect(chatView.props!.invalidationKey).not.toBe(oldHint);
   expect(updateScene).not.toHaveBeenCalled();
 });
+
+import type { AdventureBackupDialogProps } from '@/features/adventure-portability';
+const backupView = vi.hoisted(() => ({ props: null as AdventureBackupDialogProps | null }));
+vi.mock('@/features/adventure-portability', () => ({
+  AdventureBackupDialog: (props: AdventureBackupDialogProps) => {
+    backupView.props = props;
+    return props.open ? (
+      <section aria-label="Backup observado">
+        <button onClick={props.onClose}>Fechar backup observado</button>
+      </section>
+    ) : null;
+  },
+}));
+
+it('backup da cena de aventura fornece somente o texto aberto e sua revisão por captura explícita', async () => {
+  vi.mocked(getScene).mockResolvedValue({
+    ...document,
+    project: { kind: 'adventure', id: 'adventure', title: 'Aventura', universeId: null },
+    group: { ...document.group!, kind: 'part' },
+  });
+  mount('/adventures/adventure/scenes/scene');
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  await userEvent.clear(field);
+  await userEvent.type(field, 'Meu rascunho explícito');
+  await userEvent.click(screen.getByRole('button', { name: 'Backup da aventura' }));
+  expect(backupView.props).toMatchObject({
+    ownerId: 'owner',
+    adventureId: 'adventure',
+    title: 'Aventura',
+  });
+  const snapshot = backupView.props!.getDraft!();
+  expect(snapshot).toMatchObject({
+    adventureId: 'adventure',
+    resource: { kind: 'scene', id: 'scene' },
+    content: 'Meu rascunho explícito',
+  });
+  expect(snapshot.baseRevision).toBeGreaterThanOrEqual(1);
+  expect(snapshot.savedAt).toBeLessThanOrEqual(Date.now());
+});
+it('cena de livro não ganha uma ação de backup de aventura', async () => {
+  mount();
+  await screen.findByRole('textbox', { name: 'Área de escrita da cena' });
+  expect(screen.queryByRole('button', { name: 'Backup da aventura' })).not.toBeInTheDocument();
+});

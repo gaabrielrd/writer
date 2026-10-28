@@ -1,6 +1,6 @@
 # Progresso do Writer V2
 
-**Snapshot:** 2026-10-21, branch `codex/writer-v2`; L concluído em `087bced` e I em `ffc01d9`, ambos com CI/regras verdes. A implementado e validado localmente, com CI do novo head pendente.
+**Snapshot local:** 2026-10-28, branch `codex/writer-v2`. Geração/restauração de aventuras pela interface e fechamento integral 195–197 verdes. L/I/A/P1 implementados; auditoria de P2, P3/D e F2-09 continuam abertos. Durante o desenvolvimento, somente commits locais, sem acompanhamento de CI.
 Este relatório conta tarefas do plano, sem atribuir o mesmo esforço a cada tarefa.
 
 | Fase                          | Total de tarefas | Implementadas | Restantes |
@@ -426,3 +426,16 @@ com tipos/lint/arquitetura/styleguide/build/smoke; resultados e limites na
 Inclui retry de quota pelo mesmo ID e descarte terminal sem chave.
 Geração do arquivo pela UI/corpus amplo de roundtrip e P2/P3/D/F2-09 continuam
 abertos. Macro 8/35 inalterada; validate integral no próximo bloco integrado.
+
+[Backup de aventuras pela interface 197](execucao/197-geracao-do-backup-de-aventuras-pela-interface.md)
+acrescenta geração por arquivo nativo nos três pontos do produto, com rascunho
+explícito congelado e salvo preservado. Nove jornadas Chromium verificaram
+geração/restauração, três versões, lore/persona e duas imagens, além de abort
+com preservação do arquivo anterior.
+
+[Fechamento integral local 195–197](../../entregas/2026-10-28-writer-v2-backup-de-aventuras-pela-interface.md):
+**4791 frontend em 359 arquivos, 90 scripts, 3798 Functions e sintaxe de 393
+módulos**, tipos/build/smoke verdes. Cobertura 89,59/85,72/90,79/92,75, limites
+preservados, 24 hashes conferidos. Endpoints ainda sem implantação.
+Auditoria ampla de P2/consumidores, P3/D/F2-09 e gates permanecem abertos;
+macro **8/35** inalterada. Somente commit local, sem CI/operação remota.

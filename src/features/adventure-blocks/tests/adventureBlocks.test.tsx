@@ -1111,3 +1111,34 @@ it('confere bytes reais mesmo quando a resposta remota declara o mesmo hash inco
   });
   expect(host.getConfirmedSnapshot()).toEqual(own);
 });
+
+import type { AdventureBackupDialogProps } from '@/features/adventure-portability';
+const backupView = vi.hoisted(() => ({ props: null as AdventureBackupDialogProps | null }));
+vi.mock('@/features/adventure-portability', () => ({
+  AdventureBackupDialog: (props: AdventureBackupDialogProps) => {
+    backupView.props = props;
+    return props.open ? (
+      <section aria-label="Backup observado">
+        <button onClick={props.onClose}>Fechar backup observado</button>
+      </section>
+    ) : null;
+  },
+}));
+
+it('backup do bloco fornece seu texto aberto sem trocar a origem pela cena principal', async () => {
+  render(editor());
+  const field = await screen.findByRole('textbox', { name: 'Área de escrita do bloco' });
+  await userEvent.clear(field);
+  await userEvent.type(field, 'Rascunho próprio do bloco');
+  await userEvent.click(screen.getByRole('button', { name: 'Backup da aventura' }));
+  expect(backupView.props).toMatchObject({
+    ownerId: 'owner',
+    adventureId: 'adventure',
+    title: document.adventureTitle,
+  });
+  expect(backupView.props!.getDraft!()).toMatchObject({
+    adventureId: 'adventure',
+    resource: document.resource,
+    content: 'Rascunho próprio do bloco',
+  });
+});

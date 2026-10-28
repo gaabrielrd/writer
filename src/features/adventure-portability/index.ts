@@ -157,3 +157,18 @@ export {
   type AdventureRestoreLocalReview,
   type InspectedAdventureRestore,
 } from './services/inspectAdventureRestoreFile';
+
+export {
+  AdventureBackupDialog,
+  type AdventureBackupDialogProps,
+} from './components/AdventureBackupDialog';
+export {
+  createAdventureArchiveApi,
+  ADVENTURE_ARCHIVE_METHODS,
+} from './services/adventureArchiveCallables';
+export { saveAdventureBackup } from './services/saveAdventureBackup';
+export { exportAdventureArchive } from './services/exportAdventureArchive';
+export {
+  type AdventureArchiveSink,
+  type AdventureArchivePicker,
+} from './services/adventureArchiveDestination';

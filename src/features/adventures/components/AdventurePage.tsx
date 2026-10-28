@@ -13,6 +13,7 @@ import {
   readEditorChatOperation,
   subscribeEditorChatOperation,
 } from '@/features/ai-assistant';
+import { AdventureBackupDialog } from '@/features/adventure-portability';
 import { WorkHistoryDialog } from '@/features/manuscript-history';
 import { LoreCollection } from '@/features/lore';
 import { BusyNavigationGuard } from '@/features/editor';
@@ -45,6 +46,7 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const { setPendingEditorOperation } = useAuth();
   const navigate = useNavigate();
   const [captureOpen, setCaptureOpen] = useState(false);
+  const [backupOpen, setBackupOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [historyOpen, setHistoryOpen] = useState(false);
   const [loreBusy, setLoreBusy] = useState(false);
@@ -209,6 +211,13 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
             void navigate('/campaigns/' + encodeURIComponent(campaignId))
           }
         />
+        <AdventureBackupDialog
+          open={backupOpen}
+          onClose={() => setBackupOpen(false)}
+          ownerId={ownerId}
+          adventureId={adventure.id}
+          title={adventure.title}
+        />
         <WorkHistoryDialog
           open={historyOpen}
           onClose={() => setHistoryOpen(false)}
@@ -223,6 +232,9 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
           actions={
             <div className={styles.headerActions}>
               {back}
+              <Button variant="outline" disabled={pending} onClick={() => setBackupOpen(true)}>
+                Backup da aventura
+              </Button>
               <Button variant="outline" onClick={() => setPersonaOpen(true)}>
                 <UserRound className="icon icon-sm" aria-hidden="true" />
                 Persona da aventura

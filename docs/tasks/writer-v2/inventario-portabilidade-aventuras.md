@@ -1,8 +1,9 @@
 # Inventário da portabilidade privada de aventuras
 
-Snapshot: leitores 147–157, base 8c97714, 2026-10-26. Fontes conferidas no código;
-grafo indisponível. Inventário de views de captura, não quantidade de módulos ou
-percentual de implementação. Arquivo/restore/UI ainda não habilitados.
+Snapshot histórico: leitores 147–157, base 8c97714, 2026-10-26. Fontes conferidas
+no código; grafo indisponível naquela leitura. Inventário de views de captura,
+não quantidade de módulos ou percentual de implementação. Arquivo, restauração
+e interface avançaram nos planos seguintes; veja a atualização 197 ao final.
 
 ## Fontes persistidas e provas
 
@@ -108,3 +109,24 @@ acrescenta leitor semântico inerte: content-only, sem acesso ou ativação.
 As pendências acima de assembler/draft são históricas; agora faltam transporte,
 revisão/restauração/remapeamento/mídia, recuperação/UI e roundtrip/consumidores.
 A origem externa e o acesso precisam de nova conferência na restauração.
+
+## Fechamento local 195–197 — 2026-10-28
+
+A captura integral agora tem 17 leitores públicos e ação na página da aventura
+e editores de cena/bloco. Salvo é o padrão; o texto aberto entra somente por
+escolha e é congelado antes do seletor. O arquivo é escrito por partes e só
+confirmado após prova/selo e close. Abort preserva o arquivo anterior.
+
+A restauração pelo Estúdio inclui inspeção, revisões explícitas, nova cópia,
+recuperação/pausa/cancelamento e finalização de mídia/coleta. O corpus nativo
+gerou e restaurou Unicode grande, lore/persona, duas versões manuais, rascunho
+separado e duas imagens por uso. Os handlers/serviços são reais; Auth/App Check/
+SDK/chooser e bancos/Storage são doubles/sintéticos. OPFS e recuperação local
+usam APIs nativas. Seletor do SO e produção não estão comprovados.
+
+[Evidência e validate integral](../../entregas/2026-10-28-writer-v2-backup-de-aventuras-pela-interface.md):
+4791 frontend/359 arquivos, 90 scripts, 3798 Functions, sintaxe de 393 módulos,
+tipos/build/smoke e limites verdes. As pendências históricas acima de
+transporte/restauração/UI foram atendidas nesses recortes; falta consolidar
+matriz ampla de consumidores/exclusão, compatibilidade/corpus e gates de P2.
+P3/D/F2-09 e macro 8/35 continuam abertos. Sem implantação nem operação remota.

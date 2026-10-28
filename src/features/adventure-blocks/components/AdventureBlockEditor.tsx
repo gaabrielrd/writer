@@ -8,6 +8,7 @@ import {
   useState,
 } from 'react';
 import { Link, UNSAFE_DataRouterContext, useBlocker, useParams } from 'react-router';
+import { AdventureBackupDialog } from '@/features/adventure-portability';
 import { useAuth } from '@/features/auth';
 import { RichEditor } from '@/features/editor';
 import {
@@ -179,6 +180,7 @@ function BlockSession({
   }, []);
   const [editorBusy, setEditorBusy] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [backupOpen, setBackupOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [imageReserved, setImageReserved] = useState(false);
   const onImageReservation = useCallback((reserved: boolean) => {
@@ -484,12 +486,41 @@ function BlockSession({
             adventureId={adventureId}
             sceneId={sceneId}
           />
+          <AdventureBackupDialog
+            open={backupOpen}
+            onClose={() => setBackupOpen(false)}
+            ownerId={uid}
+            adventureId={adventureId}
+            title={doc.adventureTitle}
+            getDraft={() => ({
+              adventureId,
+              resource: { ...doc.resource },
+              content: draft.content,
+              baseRevision: doc.revision,
+              savedAt: Date.now(),
+            })}
+          />
           <PageHeader
             title={doc.title}
             description={doc.adventureTitle + ' · ' + doc.sceneTitle}
             breadcrumbs={<Link to={returnPath}>Voltar à cena</Link>}
             actions={
               <div className={styles.actions}>
+                <Button
+                  variant="outline"
+                  disabled={
+                    editorBusy ||
+                    chatBusy ||
+                    chatPending ||
+                    historyBusy ||
+                    imageReserved ||
+                    draft.mutation.busy ||
+                    Boolean(draft.mutation.pending)
+                  }
+                  onClick={() => setBackupOpen(true)}
+                >
+                  Backup da aventura
+                </Button>
                 <Button variant="outline" onClick={() => setPreviewOpen(true)}>
                   Prévia da cena
                 </Button>

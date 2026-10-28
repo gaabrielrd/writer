@@ -693,3 +693,12 @@ Seleção do runtime e rollout continuam pendentes.
 O lint integral usa processos sequenciais por diretório, preservando todas as
 regras e uma passagem final da raiz para arquivos restantes. Isso limita a
 memória acumulada pelo parser; o pre-commit continua verificando o diff preparado.
+
+A aventura e seus editores de cena/bloco oferecem Backup da aventura (.writer).
+O arquivo completo inclui histórico e imagens; no editor, o texto aberto pode
+entrar como rascunho separado por escolha explícita. A restauração no Estúdio
+preserva o manuscrito salvo e recupera esse rascunho como versão.
+A gravação exige seleção de arquivo compatível e contexto seguro.
+Veja o [contrato local](docs/decisions/0219-adventure-backup-interface.md).
+Os endpoints novos ainda precisam de implantação para uso com conta real;
+P2/F2-09 e os gates de lançamento continuam pendentes.

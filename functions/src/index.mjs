@@ -3,6 +3,12 @@ import {
   invokeAdventureRestoreCallable,
   setAdventureRestoreHeaders,
 } from './adventureRestoreCallable.mjs';
+import {
+  ADVENTURE_BACKUP_METHODS,
+  invokeAdventureBackupCallable,
+  setAdventureBackupHeaders,
+} from './adventureBackupCallable.mjs';
+import { createAdventureBackupService } from './adventureBackupService.mjs';
 import { createAdventureRestoreTransferService } from './adventureRestoreTransfer.mjs';
 import { createRestoredImageStorage } from './restoredImageStorage.mjs';
 import { createEditorChatService } from './editorChat.mjs';
@@ -382,6 +388,7 @@ const callable = (method, secrets = []) =>
       setBookBackupCoverHeaders(method, request);
       setBookRestoreHeaders(method, request);
       setAdventureRestoreHeaders(method, request);
+      setAdventureBackupHeaders(method, request);
       setBookLoreReadHeaders(method, request);
       setBookPublicationHeaders(method, request);
       setBookLoreEditHeaders(method, request);
@@ -394,6 +401,13 @@ const callable = (method, secrets = []) =>
       }
       setCampaignVariantRecoveryHeaders(method, request);
       try {
+        if (ADVENTURE_BACKUP_METHODS.includes(method))
+          return await invokeAdventureBackupCallable(
+            createAdventureBackupService({ db, assets: backupStorage }),
+            method,
+            request.auth?.uid,
+            request.data,
+          );
         if (ADVENTURE_RESTORE_METHODS.includes(method))
           return await invokeAdventureRestoreCallable(
             createAdventureRestoreTransferService({
@@ -950,3 +964,21 @@ export const getAdventureRestoreArchiveCleanup = callable('getAdventureRestoreAr
 export const advanceAdventureRestoreArchiveCleanup = callable(
   'advanceAdventureRestoreArchiveCleanup',
 );
+
+export const getAdventureBackupSource = callable('getAdventureBackupSource');
+export const listAdventureBackupStructure = callable('listAdventureBackupStructure');
+export const readAdventureBackupStructure = callable('readAdventureBackupStructure');
+export const listAdventureBackupResources = callable('listAdventureBackupResources');
+export const readAdventureBackupResource = callable('readAdventureBackupResource');
+export const listAdventureBackupLore = callable('listAdventureBackupLore');
+export const readAdventureBackupLore = callable('readAdventureBackupLore');
+export const listAdventureBackupPersonaBindings = callable('listAdventureBackupPersonaBindings');
+export const readAdventureBackupPersona = callable('readAdventureBackupPersona');
+export const listAdventureBackupHistory = callable('listAdventureBackupHistory');
+export const readAdventureBackupHistory = callable('readAdventureBackupHistory');
+export const readAdventureBackupHistoryText = callable('readAdventureBackupHistoryText');
+export const listAdventureBackupImageBindings = callable('listAdventureBackupImageBindings');
+export const getAdventureBackupImage = callable('getAdventureBackupImage');
+export const readAdventureBackupImageChunk = callable('readAdventureBackupImageChunk');
+export const verifyAdventureBackupImage = callable('verifyAdventureBackupImage');
+export const getAdventureBackupUniverse = callable('getAdventureBackupUniverse');

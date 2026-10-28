@@ -365,3 +365,35 @@ it('encerra a projeção da persona e libera o guard anterior ao trocar de conta
   expect(previous.uid).toBe('owner');
   await waitFor(() => expect(auth.setPendingEditorOperation).toHaveBeenCalledWith(false));
 });
+
+import type { AdventureBackupDialogProps } from '@/features/adventure-portability';
+const backupView = vi.hoisted(() => ({ props: null as AdventureBackupDialogProps | null }));
+vi.mock('@/features/adventure-portability', () => ({
+  AdventureBackupDialog: (props: AdventureBackupDialogProps) => {
+    backupView.props = props;
+    return props.open ? (
+      <section aria-label="Backup observado">
+        <button onClick={props.onClose}>Fechar backup observado</button>
+      </section>
+    ) : null;
+  },
+}));
+
+it('abre backup do projeto autorizado sem inventar rascunho ou alterar o original', async () => {
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Backup da aventura' }));
+  expect(screen.getByRole('region', { name: 'Backup observado' })).toBeInTheDocument();
+  expect(backupView.props).toMatchObject({
+    ownerId: 'owner',
+    adventureId: resource.id,
+    title: resource.title,
+  });
+  expect(backupView.props?.getDraft).toBeUndefined();
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar backup observado' }));
+  expect(screen.queryByRole('region', { name: 'Backup observado' })).not.toBeInTheDocument();
+});
+it('operações de persona pendentes bloqueiam abertura de nova captura', async () => {
+  persona.pending = true;
+  render(tree());
+  expect(await screen.findByRole('button', { name: 'Backup da aventura' })).toBeDisabled();
+});

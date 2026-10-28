@@ -2098,3 +2098,11 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      [evidência dirigida](../../../entregas/2026-10-28-writer-v2-restauracao-de-aventuras-no-estudio.md).
      Tipos/lint/arquitetura/styleguide/build/smoke verdes. Geração pela UI/corpus
      amplo e demais P2/P3/D/F2-09 abertos; validate no próximo bloco integrado.
+
+197. [Geração do backup de aventuras pela interface](197-geracao-do-backup-de-aventuras-pela-interface.md):
+     17 leitores públicos, escrita nativa por stream e rascunho explícito,
+     com três entradas de UI e nove verificações Chromium positivas.
+     [Fechamento integral 195–197](../../../entregas/2026-10-28-writer-v2-backup-de-aventuras-pela-interface.md):
+     4791 frontend, 90 scripts, 3798 Functions e sintaxe de 393 módulos,
+     cobertura/tipos/build/smoke verdes. Auditoria de P2/consumidores e P3/D/
+     F2-09 continuam abertos; macro 8/35 inalterada. Somente commit local.

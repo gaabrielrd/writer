@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useLayoutEffect } from 'react';
 import { Link, useParams, useLocation } from 'react-router';
+import { AdventureBackupDialog } from '@/features/adventure-portability';
 import { useAuth } from '@/features/auth';
 import { useWorkActivity, WorkActivityNotice } from '@/features/work-progress';
 import { RichEditor, BusyNavigationGuard } from '@/features/editor';
@@ -151,6 +152,7 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
   const editorBusyRef = useRef(false);
   const historyLock = useRef(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [backupOpen, setBackupOpen] = useState(false);
   const [historyBusy, setHistoryBusy] = useState(false);
   const [historyContentVersion, setHistoryContentVersion] = useState(0);
   const [historyPending, setHistoryPending] = useState(() =>
@@ -543,6 +545,22 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
           onChanged={() => setPersonaVersion((v) => v + 1)}
         />
       )}
+      {target.kind === 'adventure' && (
+        <AdventureBackupDialog
+          open={backupOpen}
+          onClose={() => setBackupOpen(false)}
+          ownerId={uid}
+          adventureId={target.id}
+          title={doc.project.title}
+          getDraft={() => ({
+            adventureId: target.id,
+            resource: { kind: 'scene', id: doc.id },
+            content: autosave.content,
+            baseRevision: doc.revision,
+            savedAt: Date.now(),
+          })}
+        />
+      )}
       <WorkHistoryDialog
         open={historyOpen}
         onClose={() => setHistoryOpen(false)}
@@ -569,6 +587,15 @@ function SceneWritingSession({ uid, initial }: { uid: string; initial: SceneDocu
         breadcrumbs={<Link to={returnUrl}>Voltar ao planejamento</Link>}
       />
       <div className={styles.toolbar}>
+        {target.kind === 'adventure' && (
+          <Button
+            variant="outline"
+            disabled={operationBusy || chatPending || personaPending}
+            onClick={() => setBackupOpen(true)}
+          >
+            Backup da aventura
+          </Button>
+        )}
         <Button
           variant="outline"
           disabled={
