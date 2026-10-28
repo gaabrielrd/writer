@@ -370,3 +370,11 @@ legado não recebe chave tardia. Resultados efetivamente executados na
 [evidência](../../entregas/2026-10-28-writer-v2-chave-privada-da-restauracao-de-aventuras.md).
 Cliente/journal/interface/roundtrip, P2/P3/D/F2-09 e macro 8/35 seguem abertos.
 Validate integral no próximo grande bloco; sem CI/operação remota.
+
+[Cliente da chave 191](execucao/191-cliente-da-chave-privada-de-aventuras.md)
+acrescenta primeira autorização/revalidação com CryptoKey não extraível e
+proxy/rewrite próprios. **52 Vitest em quatro arquivos e retake final 38/38**, tipos/lint/
+arquitetura/bundle/smoke positivos; detalhes e limites na
+[evidência](../../entregas/2026-10-28-writer-v2-cliente-da-chave-privada-de-aventuras.md).
+Journal cifrado/bootstrap/controlador/UI/roundtrip, P2/P3/D/F2-09 e macro 8/35
+seguem abertos. Sem CI/remoto; validate integral ao fechar o bloco do cliente.

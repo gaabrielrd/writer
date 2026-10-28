@@ -68,3 +68,14 @@ export {
 export { inspectAdventureBackupContent } from './services/inspectAdventureBackupContent';
 export { AdventureContentError } from '../../../functions/src/adventureContentPrimitives.mjs';
 export type { AdventureContentReport } from '../../../functions/src/adventureBackupContent.mjs';
+
+export { getAdventureRestoreRecoveryGrant } from './services/adventureRestoreRecoveryKey';
+export {
+  readAdventureRestoreRecoveryRequest,
+  readAdventureRestoreRecoveryContext,
+  AdventureRestoreRecoveryError,
+  type AdventureRestoreRecoveryIdentity,
+  type AdventureRestoreRecoveryContext,
+  type AdventureRestoreRecoveryRequest,
+  type AdventureRestoreRecoveryGrant,
+} from './services/adventureRestoreRecoveryContracts';

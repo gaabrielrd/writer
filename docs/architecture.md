@@ -3329,3 +3329,13 @@ o segredo; o servidor não cria chave tardia para jobs antigos ou chave perdida.
 Cancelamento e primeira unidade da coleta removem a chave atomicamente, usando
 metadados mascarados sem ler segredo; replay e job ativado são preservados.
 Journal/controlador/UI/roundtrip continuam etapas próprias. Sem deploy.
+
+## Cliente da chave de aventura
+
+A [ADR 0213](decisions/0213-adventure-restore-private-key-client.md) define
+identidade/contexto próprios e cliente HTTP com conta/guard, Auth/App Check,
+resposta limitada e CryptoKey AES-GCM não extraível. A primeira obtenção
+descobre keyId; retomadas exigem correspondência. Proxy Vite/rewrite Hosting
+usam /api/adventure-restore/recovery-key, separados das outras recuperações.
+Nenhum segredo é persistido ou retornado no grant. Journal/controlador/UI
+continuam pendentes; configuração de rota não equivale a deploy.

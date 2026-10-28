@@ -2057,3 +2057,9 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      no cancelamento/coleta; sem chave tardia ou exposição em callables.
      [Evidência](../../../entregas/2026-10-28-writer-v2-chave-privada-da-restauracao-de-aventuras.md).
      Cliente/journal/UI/roundtrip e P2/P3/D/F2-09 permanecem abertos.
+
+191. [Cliente da chave privada de aventuras](191-cliente-da-chave-privada-de-aventuras.md):
+     primeira autorização/revalidação, CryptoKey não extraível e proxy/Hosting
+     próprios; 52 Vitest, retake final 38/38 e checks de tipos/lint/arquitetura/bundle/smoke positivos.
+     [Evidência](../../../entregas/2026-10-28-writer-v2-cliente-da-chave-privada-de-aventuras.md).
+     Journal/controlador/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.

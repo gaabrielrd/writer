@@ -14,6 +14,11 @@ export default defineConfig(({ command, mode }) => {
     plugins: [react(), tailwindcss()],
     server: {
       proxy: {
+        '^/api/adventure-restore/recovery-key(?:\\?.*)?$': {
+          target: `https://us-central1-${projectId}.cloudfunctions.net`,
+          changeOrigin: true,
+          rewrite: () => '/getAdventureRestoreRecoveryKey',
+        },
         '^/api/book-restore/recovery-key(?:\\?.*)?$': {
           target: `https://us-central1-${projectId}.cloudfunctions.net`,
           changeOrigin: true,

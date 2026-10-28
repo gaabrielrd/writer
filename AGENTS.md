@@ -918,3 +918,9 @@ Entregue segredo somente no HTTP privado Auth/App Check, fora dos callables.
 No cancelamento e primeira coleta, remova por metadata mascarada, sem ler
 keyBase64; recuse port sem getAll. Replay não recria chave nem altera job
 ativado; legado sem efeito não recebe chave nova (ADR 0212).
+
+No cliente de retomada de aventura, use identidade própria e grant AES-GCM não
+extraível. A primeira autorização obtém keyId; a retomada exige o mesmo keyId.
+Confira conta/guard em cada await, limite a resposta e zere buffers, inclusive
+o chunk recusado. Não persista/retorne keyBase64 nem substitua o HTTP privado
+por callable. Preserve rewrite exata anterior à SPA (ADR 0213).

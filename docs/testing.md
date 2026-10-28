@@ -3129,3 +3129,14 @@ corpo/tamanho/UTF-8, método, headers e falha inesperada sanitizada.
 O SDK HTTP de aventura confere nascimento conjunto, recuperação/retry por
 conta, Rules negando acesso direto à chave e indisponibilidade após coleta.
 Atestações sintéticas só nos testes; não são prova de credenciais reais.
+
+## Cliente da chave de aventura
+
+adventureRestoreRecoveryKey.test.mjs e adventureRestoreRecoveryProxy.test.mjs
+em src/features/adventure-portability/tests verificam primeira autorização,
+revalidação, AES não extraível, conta/guard/imutabilidade, limites/UTF-8/
+Base64, limpeza do reader/buffers e erros. O teste com handler/serviço reais
+usa banco de teste e fetch em memória; não é Firestore nativo ou navegador.
+Proxy/Hosting conferem rota específica e preservação de livro/importação,
+com regressões desses clientes. Resultados na
+[evidência](entregas/2026-10-28-writer-v2-cliente-da-chave-privada-de-aventuras.md).

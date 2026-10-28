@@ -11,6 +11,13 @@
         }
       },
       {
+        "source": "/api/adventure-restore/recovery-key",
+        "function": {
+          "functionId": "getAdventureRestoreRecoveryKey",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "/api/book-restore/recovery-key",
         "function": {
           "functionId": "getBookRestoreRecoveryKey",
