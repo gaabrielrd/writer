@@ -924,3 +924,10 @@ extraível. A primeira autorização obtém keyId; a retomada exige o mesmo keyI
 Confira conta/guard em cada await, limite a resposta e zere buffers, inclusive
 o chunk recusado. Não persista/retorne keyBase64 nem substitua o HTTP privado
 por callable. Preserve rewrite exata anterior à SPA (ADR 0213).
+
+Registre pedidos de preparação da aventura somente na lista de 14 comandos
+e no journal AES-GCM próprio, com AAD da aventura e CAS do envelope inteiro.
+Exija Web Locks/IndexedDB/WebCrypto e reautorize cada abertura, sem fallback
+plaintext ou exclusão após falha. Capture inputs antes de await e preserve
+pendência se o ACK após commit for incerto. Efeitos que encerram a chave
+exigem registro metadata separado (ADR 0214).

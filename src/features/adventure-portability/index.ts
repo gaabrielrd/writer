@@ -79,3 +79,12 @@ export {
   type AdventureRestoreRecoveryRequest,
   type AdventureRestoreRecoveryGrant,
 } from './services/adventureRestoreRecoveryContracts';
+
+export { createAdventureRestorePreparationJournal } from './services/adventureRestorePreparationJournal';
+export {
+  ADVENTURE_RESTORE_PREPARATION_COMMANDS,
+  readAdventureRestorePreparationIntent,
+  type AdventureRestorePreparationCommand,
+  type AdventureRestorePreparationIntent,
+  type AdventureRestorePreparationJournal,
+} from './services/adventureRestorePreparationContracts';

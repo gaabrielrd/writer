@@ -3140,3 +3140,15 @@ usa banco de teste e fetch em memória; não é Firestore nativo ou navegador.
 Proxy/Hosting conferem rota específica e preservação de livro/importação,
 com regressões desses clientes. Resultados na
 [evidência](entregas/2026-10-28-writer-v2-cliente-da-chave-privada-de-aventuras.md).
+
+## Journal cifrado de aventuras
+
+adventureRestorePreparationCrypto.test.mjs e
+adventureRestorePreparationJournal.test.mjs em
+src/features/adventure-portability/tests cobrem comandos/limites, AES/AAD,
+cifra de outro domínio, grants inválidos, metadados fechados, CAS/locks,
+reauthorização/falhas e ACK incerto. Testes de livros permanecem regressões
+separadas; não importar seus serviços internos para construir fixtures.
+A [evidência nativa](entregas/2026-10-28-writer-v2-journal-cifrado-da-preparacao-de-aventuras.md)
+registra smoke isolado com IndexedDB/Web Locks/WebCrypto reais, recarga/abas,
+contextos capturados e quota injetada; autorização sintética não prova tokens.

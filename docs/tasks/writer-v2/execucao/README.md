@@ -2063,3 +2063,9 @@ Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
      próprios; 52 Vitest, retake final 38/38 e checks de tipos/lint/arquitetura/bundle/smoke positivos.
      [Evidência](../../../entregas/2026-10-28-writer-v2-cliente-da-chave-privada-de-aventuras.md).
      Journal/controlador/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.
+
+192. [Journal cifrado da preparação de aventuras](192-journal-cifrado-da-preparacao-de-aventuras.md):
+     14 comandos, AES-GCM próprio, reautorização e CAS/locks; 70 Vitest, retake
+     35/35 e oito verificações nativas no Chromium.
+     [Evidência](../../../entregas/2026-10-28-writer-v2-journal-cifrado-da-preparacao-de-aventuras.md).
+     Controlador/bootstrap/efeitos/UI/roundtrip e P2/P3/D/F2-09 seguem abertos.

@@ -3339,3 +3339,12 @@ descobre keyId; retomadas exigem correspondência. Proxy Vite/rewrite Hosting
 usam /api/adventure-restore/recovery-key, separados das outras recuperações.
 Nenhum segredo é persistido ou retornado no grant. Journal/controlador/UI
 continuam pendentes; configuração de rota não equivale a deploy.
+
+## Journal da preparação de aventuras
+
+A [ADR 0214](decisions/0214-adventure-restore-encrypted-preparation-journal.md)
+separa 14 intents de preparação dos efeitos que podem encerrar a chave.
+O journal cifra com AAD próprio, persiste somente envelope/contexto em
+IndexedDB e combina Web Locks com CAS do envelope inteiro. Reautoriza antes
+de decifrar, relê para detectar mudança e preserva falhas/ACK incerto.
+Inputs são fixados antes de await. Controlador/bootstrap/UI continuam próprios.

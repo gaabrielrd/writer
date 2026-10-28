@@ -378,3 +378,12 @@ arquitetura/bundle/smoke positivos; detalhes e limites na
 [evidência](../../entregas/2026-10-28-writer-v2-cliente-da-chave-privada-de-aventuras.md).
 Journal cifrado/bootstrap/controlador/UI/roundtrip, P2/P3/D/F2-09 e macro 8/35
 seguem abertos. Sem CI/remoto; validate integral ao fechar o bloco do cliente.
+
+[Journal cifrado 192](execucao/192-journal-cifrado-da-preparacao-de-aventuras.md)
+preserva os 14 pedidos de preparação, com reautorização e CAS/locks, sem
+guardar intent ou chave em claro. **70 Vitest e retake 35/35**, mais **8
+verificações no Chromium com armazenamento real**; resultados e limites na
+[evidência](../../entregas/2026-10-28-writer-v2-journal-cifrado-da-preparacao-de-aventuras.md).
+Controlador/bootstrap/efeitos de ciclo de vida/revisão/UI/roundtrip e P2/P3/D/
+F2-09 permanecem abertos. Macro 8/35 inalterada; validate no fechamento do
+bloco do cliente, sem CI/remoto.
