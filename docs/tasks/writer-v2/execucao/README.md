@@ -2033,3 +2033,15 @@ rollout e validate de P1 continuam, sem conclusão de F2-09/V2/fases/gates.
      detach preservado e conclusão por consulta vazia.
      [Evidência dirigida](../../../entregas/2026-10-28-writer-v2-finalizacao-das-imagens-restauradas-de-aventuras.md).
      Coleta da fonte/recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 abertos.
+
+175. [Coleta da fonte da aventura restaurada](188-coleta-da-fonte-da-aventura-restaurada.md):
+     mídia concluída, exclusões privadas por páginas, provas de metadata e
+     preservação de projeto/biblioteca/personas/recibos.
+     [Evidência e fechamento 186–188](../../../entregas/2026-10-28-writer-v2-coleta-da-fonte-da-aventura-restaurada.md).
+     Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 permanecem abertos.
+
+Fechamento integral local 186–188: **4.331 frontend / 336 arquivos, 90 scripts,
+3.656 Functions e sintaxe de 388 módulos**, tipos/build/smoke verdes. Cobertura
+89,94/85,71/91,12/93,24 e limites preservados. Coleta SDK final 1/1 positivo.
+[Evidência](../../../entregas/2026-10-28-writer-v2-coleta-da-fonte-da-aventura-restaurada.md).
+Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.

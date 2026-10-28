@@ -339,3 +339,17 @@ Veja a [evidência dirigida](../../entregas/2026-10-28-writer-v2-finalizacao-das
 para os resultados executados. Coleta da fonte, recuperação/transportes/UI/
 roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 permanecem abertos.
 Validate integral no fim do próximo grande bloco.
+
+[Coleta privada 188](execucao/188-coleta-da-fonte-da-aventura-restaurada.md)
+descarta fonte/preparação após a conclusão da mídia, com checkpoint próprio,
+provas por página e verificação final. Preserva projeto editado, biblioteca,
+personas e recibos, sem reidratar payload nem autorizar uma raiz recriada.
+[Evidência do incremento e fechamento 186–188](../../entregas/2026-10-28-writer-v2-coleta-da-fonte-da-aventura-restaurada.md)
+registra os resultados efetivamente executados. Recuperação/transportes/UI/
+roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 permanecem abertos.
+
+Fechamento integral local de **186–188 verde**: **4.331 frontend em 336 arquivos,
+90 scripts e 3.656 Functions**, sintaxe de 388 módulos, tipos/build/smoke.
+Cobertura/limites preservados; SDK final de coleta 1/1 positivo na versão com
+máscaras explícitas. Código conferido por hashes; somente commit local.
+Esse fechamento não entrega recuperação/transportes/UI/roundtrip nem conclui P2.

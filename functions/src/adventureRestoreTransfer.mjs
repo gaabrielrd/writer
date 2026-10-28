@@ -1,3 +1,4 @@
+import { createAdventureRestoreArchiveService } from './adventureRestoreArchive.mjs';
 import { createAdventureRestoreMediaService } from './adventureRestoreMedia.mjs';
 import { createAdventureRestoreActivationService } from './adventureRestoreActivation.mjs';
 import { createAdventureRestoreActivationReviewService } from './adventureRestoreActivationReview.mjs';
@@ -536,5 +537,6 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
     ...createAdventureRestoreActivationReviewService(store),
     ...createAdventureRestoreActivationService(store),
     ...createAdventureRestoreMediaService(store, assets),
+    ...createAdventureRestoreArchiveService(store),
   };
 }

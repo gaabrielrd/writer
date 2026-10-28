@@ -3297,3 +3297,14 @@ nascimento e origem/Storage imutáveis, preservando detach e edições legítima
 Não escreve heads/textos/raiz. Resultado histórico não é grant atual. Serviço
 interno sem novos endpoints, dependências, índices ou Rules; coleta da fonte,
 recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 seguem abertos.
+
+## Coleta da fonte da aventura ativada
+
+A [ADR 0210](decisions/0210-adventure-activated-source-collection.md) fixa a
+conclusão nativa de mídia em sidecar próprio para descartar fonte/preparação por
+páginas. Journals de recursos atuais são removidos sem ler/apagar seus alvos;
+somente alvos privados scope job são excluídos com suas provas. Chunks/proofs,
+estados SHA e validação usam metadata/recibos e contagens, sem reidratar payload.
+Job/projeto/biblioteca/personas e recibos de ativação/mídia são preservados.
+Verificação final exige namespaces privados conhecidos vazios e nenhuma chave
+pendente. Recuperação/transportes/UI/roundtrip e P2/P3/D/F2-09 continuam abertos.

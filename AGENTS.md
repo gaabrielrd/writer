@@ -895,3 +895,13 @@ ativado nem religar heads. Prove nascimento/origem/Storage e usos atuais;
 preserve detach/edições. Revalide o ACK após accept/retire; confirme retirada
 física antes de unavailable. Trate contagens e replay como históricos, sem
 grants atuais, e exija a consulta final vazia (ADR 0209).
+
+Colete fonte/preparação de aventuras só após mídia concluída, em sidecar próprio
+e páginas provadas. Apague alvos de journals somente no scope job; preserve
+recursos atuais, biblioteca/personas e recibos. Use metadata nativa para descartar
+payload, nunca para autorizar consumo. Exija contagens/vazio e bloqueie chave
+pendente ou registros inesperados; não reutilize cleanup pré-ativação (ADR 0210).
+
+Exija getAll com máscaras antes de qualquer leitura da coleta; recuse o port
+incompatível. Confira presença da chave por metadata não vazia de restoreId,
+sem hidratar material privado nem depender de máscara pontual vazia (ADR 0210).
