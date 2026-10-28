@@ -111,6 +111,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreImageStorage',
           'advanceAdventureRestoreCounts',
           'advanceAdventureRestoreAudit',
+          'advanceAdventureRestoreImageLibrary',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||
@@ -156,7 +157,17 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'auditJournals',
           'auditPhysical',
           'auditMedia',
-        ].some((k) => r.staging[k] > loaded.job.staging[k])
+          'libraryImages',
+          'libraryUses',
+        ].some(
+          (k) =>
+            // Library installation invalidates the first audit and starts a final round.
+            // Its sealed checkpoint remains an immutable historical receipt boundary.
+            !(
+              k.startsWith('audit') &&
+              r.checkpoint <= (loaded.job.staging.librarySourceAudit?.checkpoint ?? -1)
+            ) && r.staging[k] > loaded.job.staging[k],
+        )
       )
         inconsistent();
     } else if (
@@ -172,6 +183,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
         'advanceAdventureRestoreImageStorage',
         'advanceAdventureRestoreCounts',
         'advanceAdventureRestoreAudit',
+        'advanceAdventureRestoreImageLibrary',
       ].includes(r.action)
     )
       inconsistent();
@@ -192,6 +204,7 @@ export function createAdventureRestoreStore({ db, now = Date.now }) {
           'advanceAdventureRestoreImageStorage',
           'advanceAdventureRestoreCounts',
           'advanceAdventureRestoreAudit',
+          'advanceAdventureRestoreImageLibrary',
           'cancelAdventureRestore',
           'advanceAdventureRestoreCleanup',
         ].includes(r.action) ||

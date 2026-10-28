@@ -36,6 +36,7 @@ const actions = [
   'advanceAdventureRestoreImages',
   'advanceAdventureRestoreImageStorage',
   'advanceAdventureRestoreCounts',
+  'advanceAdventureRestoreImageLibrary',
   'advanceAdventureRestoreCleanup',
 ];
 const mapped = (v) => typeof v === 'string' && /^restore-[a-f0-9]{64}$/.test(v);
@@ -54,7 +55,12 @@ export function adventureStageAddress(value) {
           p[1] === 'image-state' ||
           /^image-(binding-|storage-)?[a-f0-9]{64}$/.test(p[1]) ||
           /^image-bytes-[a-f0-9]{64}-[0-9]{6}$/.test(p[1]))
-      : (value.scope === 'persona' &&
+      : (value.scope === 'image' &&
+          p[0] === 'imageLibrary' &&
+          mapped(p[1]) &&
+          (p.length === 2 ||
+            (p.length === 4 && p[2] === 'uses' && /^adventure-block:[a-f0-9]{64}$/.test(p[3])))) ||
+        (value.scope === 'persona' &&
           p.length === 2 &&
           p[0] === 'aiPersonas' &&
           /^custom-[a-f0-9]{64}$/.test(p[1])) ||
@@ -116,7 +122,7 @@ export function adventureStageTarget(store, loaded, address) {
   return store.db.doc(
     (a.scope === 'job'
       ? loaded.ref.path
-      : a.scope === 'persona'
+      : ['persona', 'image'].includes(a.scope)
         ? 'users/' + loaded.uid
         : 'adventures/' + loaded.job.adventureId) +
       '/' +
@@ -220,15 +226,17 @@ export async function checkAdventureStageChildren(
   allowRegistered = false,
 ) {
   const a = adventureStageAddress(address);
-  if (a.scope !== 'adventure' || a.path.length !== 2) return;
+  if (!['adventure', 'image'].includes(a.scope) || a.path.length !== 2) return;
   const names =
-    a.path[0] === 'scenes'
-      ? ['body', 'planning', 'references']
-      : a.path[0] === 'sceneBlocks'
-        ? ['body']
-        : a.path[0] === 'arcs'
-          ? ['milestones']
-          : [];
+    a.scope === 'image'
+      ? ['uses']
+      : a.path[0] === 'scenes'
+        ? ['body', 'planning', 'references']
+        : a.path[0] === 'sceneBlocks'
+          ? ['body']
+          : a.path[0] === 'arcs'
+            ? ['milestones']
+            : [];
   for (const name of names) {
     const page = await tx.get(
       store.db
@@ -328,9 +336,10 @@ export async function prepareAdventureStageArtifacts(
     if (!previous) await checkAdventureStageChildren(store, tx, loaded, p.address);
   }
   for (const p of plans.filter(
-    (p) => !p.skip && p.address.scope === 'adventure' && p.address.path.length === 4,
+    (p) =>
+      !p.skip && ['adventure', 'image'].includes(p.address.scope) && p.address.path.length === 4,
   )) {
-    const parent = { scope: 'adventure', path: p.address.path.slice(0, 2) },
+    const parent = { scope: p.address.scope, path: p.address.path.slice(0, 2) },
       parentId = adventureStageArtifactId(parent);
     if (
       !plans.some(

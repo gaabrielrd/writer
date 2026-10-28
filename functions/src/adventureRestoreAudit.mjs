@@ -27,7 +27,7 @@ export function createAdventureRestoreAuditService(store, assets) {
   function available(loaded, request) {
     if (
       loaded.job.state !== 'content-verified' ||
-      !['counts-ready', ...ADVENTURE_AUDIT_PHASES.slice(0, -1)].includes(
+      !['counts-ready', 'image-library-ready', ...ADVENTURE_AUDIT_PHASES.slice(0, -1)].includes(
         loaded.job.staging?.phase,
       ) ||
       loaded.job.checkpoint !== request.expectedCheckpoint ||
@@ -77,7 +77,7 @@ export function createAdventureRestoreAuditService(store, assets) {
   }
   function nextStage(loaded) {
     const p = loaded.job.staging;
-    if (p.phase !== 'counts-ready') return structuredClone(p);
+    if (!['counts-ready', 'image-library-ready'].includes(p.phase)) return structuredClone(p);
     return {
       ...p,
       phase: 'audit-journals',

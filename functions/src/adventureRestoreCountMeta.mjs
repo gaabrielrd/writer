@@ -1,3 +1,4 @@
+import { ADVENTURE_IMAGE_LIBRARY_PHASES } from './adventureRestoreImageLibraryMeta.mjs';
 import { ADVENTURE_AUDIT_PHASES, adventureAuditPhase } from './adventureRestoreAuditMeta.mjs';
 import { contentCount as count } from './adventureContentPrimitives.mjs';
 export const ADVENTURE_COUNT_PHASES = [
@@ -9,13 +10,17 @@ export const ADVENTURE_COUNT_PHASES = [
 export const ADVENTURE_COUNT_AND_AUDIT_PHASES = [
   ...ADVENTURE_COUNT_PHASES,
   ...ADVENTURE_AUDIT_PHASES,
+  ...ADVENTURE_IMAGE_LIBRARY_PHASES,
 ];
 export const adventureCountPhase = (v) => ADVENTURE_COUNT_AND_AUDIT_PHASES.includes(v.phase);
 export const countViewKeys = ['countBlocks', 'countScenes', 'countLinks', 'countWordCount'];
 export const countPrivateKeys = ['countIndex'];
 export const validAdventureCountView = (v) => countViewKeys.every((k) => count(v[k]));
 export function validAdventureCountMeta(v) {
-  const step = adventureAuditPhase(v) ? 3 : ADVENTURE_COUNT_PHASES.indexOf(v.phase);
+  const step =
+    adventureAuditPhase(v) || ADVENTURE_IMAGE_LIBRARY_PHASES.includes(v.phase)
+      ? 3
+      : ADVENTURE_COUNT_PHASES.indexOf(v.phase);
   return (
     validAdventureCountView(v) &&
     count(v.countIndex) &&

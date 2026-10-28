@@ -32,6 +32,10 @@ import { readAdventureValidationState } from './adventureRestoreValidationState.
 import { createAdventureRestoreValidationService } from './adventureRestoreValidation.mjs';
 import { ADVENTURE_STAGE_ARTIFACT_FIELDS } from './adventureRestoreArtifacts.mjs';
 import { createAdventureRestoreImageStorageService } from './adventureRestoreImageStorage.mjs';
+import {
+  createAdventureRestoreImageLibraryService,
+  assertAdventureRestoreImageLibraryClean,
+} from './adventureRestoreImageLibrary.mjs';
 import { createAdventureRestoreAuditService } from './adventureRestoreAudit.mjs';
 import { createAdventureRestoreCountsService } from './adventureRestoreCounts.mjs';
 import { createAdventureRestoreImagesService } from './adventureRestoreImages.mjs';
@@ -486,6 +490,7 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
               inconsistent();
           await store.emptyRoot(tx, job.adventureId);
           await assertAdventurePersonaLibraryClean(store, tx, loaded);
+          await assertAdventureRestoreImageLibraryClean(store, tx, loaded);
           root = pendingRoot(uid, loaded.id, job.startFingerprint, true);
           patch.state = 'cancelled';
         }
@@ -523,5 +528,6 @@ export function createAdventureRestoreTransferService({ db, assets, now = Date.n
     advanceAdventureRestoreImageStorage: imageStorage.advance,
     ...createAdventureRestoreCountsService(store),
     ...createAdventureRestoreAuditService(store, assets),
+    ...createAdventureRestoreImageLibraryService(store),
   };
 }

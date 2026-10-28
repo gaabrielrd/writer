@@ -873,3 +873,11 @@ Não leia corpos/frames completos nessa varredura. Verifique a geração de míd
 fora da transação e reconfira intenção/contexto no ACK. audit-ready não ativa:
 novas instalações/layout/inventário exigem invalidar e refazer o selo; preserve
 raiz privada e cleanup com revogação/fences antes dos alvos (ADR 0206).
+
+Prepare imagens restauradas de aventura por pares imagem/uso journalados,
+preparing/URL null/useCount 1. Use origem v2 tipada com instalação própria,
+preservando retirada permanente e livros v1. Invalide o selo original antes de
+instalar e refaça a auditoria incluindo imagens/usos. Recibos da auditoria inicial
+permanecem históricos pela fronteira nativa capturada; a rodada atual e demais
+contadores continuam monotônicos. Cleanup fecha Storage e remove usos antes
+das imagens, preservando registros alheios/recriados (ADR 0207).

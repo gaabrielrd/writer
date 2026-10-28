@@ -34,16 +34,52 @@ function birth(snapshot) {
     fail();
   return { seconds: value.seconds, nanoseconds: value.nanoseconds };
 }
+/** Pure typed provenance; installation of an adventure image does not imply activation. */
+export function validateRestoredImageOrigin(value) {
+  const v1 = value?.schemaVersion === 1;
+  if (
+    !closed(
+      value,
+      v1
+        ? ['schemaVersion', 'restoreId', 'jobToken', 'activationOperationId', 'bookId']
+        : [
+            'schemaVersion',
+            'restoreId',
+            'jobToken',
+            'installationOperationId',
+            'target',
+            'assetId',
+          ],
+    ) ||
+    (!v1 && value.schemaVersion !== 2) ||
+    typeof value.jobToken !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(value.jobToken) ||
+    [value.restoreId, v1 ? value.activationOperationId : value.installationOperationId].some(
+      (id) => typeof id !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(id),
+    )
+  )
+    fail();
+  if (v1) validateId(value.bookId);
+  else {
+    if (
+      !closed(value.target, ['kind', 'id']) ||
+      value.target.kind !== 'adventure' ||
+      typeof value.assetId !== 'string' ||
+      !/^[a-f0-9]{64}$/.test(value.assetId)
+    )
+      fail();
+    validateId(value.target.id);
+  }
+  return structuredClone(value);
+}
 /** Server-owned library provenance only; no request path, generation or context is trusted. */
 export function restoredImageRemovalPlan(uid, id, record) {
   if (!Object.hasOwn(record, 'restoreOrigin') && !Object.hasOwn(record, 'restoreStorage'))
     return null;
   try {
-    const o = record.restoreOrigin,
+    const o = validateRestoredImageOrigin(record.restoreOrigin),
       s = record.restoreStorage;
     if (
-      !closed(o, ['schemaVersion', 'restoreId', 'jobToken', 'activationOperationId', 'bookId']) ||
-      o.schemaVersion !== 1 ||
       !closed(s, ['schemaVersion', 'contentHash', 'byteLength', 'proof'], ['publishedProof']) ||
       s.schemaVersion !== 1 ||
       record.id !== id ||
@@ -51,13 +87,6 @@ export function restoredImageRemovalPlan(uid, id, record) {
       record.path !== 'book-covers/' + uid + '/' + id + '.png'
     )
       fail();
-    if (
-      [o.restoreId, o.activationOperationId].some(
-        (value) => typeof value !== 'string' || !/^[a-zA-Z0-9-]{16,80}$/.test(value),
-      )
-    )
-      fail();
-    validateId(o.bookId);
     const context = bookRestoreCoverStorageContext({
         ownerId: uid,
         restoreId: o.restoreId,

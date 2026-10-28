@@ -3263,3 +3263,14 @@ gerações de mídia fora da transação e reconfere contexto/intenção antes d
 Writers ficam congelados; audit-ready certifica apenas aquele inventário/layout,
 sem ativar raiz ou biblioteca. Instalações posteriores exigem nova auditoria e
 a ativação continua responsável pela reautorização atômica do universo.
+
+Na biblioteca de imagens de aventuras restauradas (ADR 0207), prepare um par
+imagem/uso por unidade com journals nativos, estado preparing, URL null e contador
+
+1. Os leitores/listagem atuais mantêm a cópia indisponível como imagem ativa.
+   Origem v2 tipa adventure e registra a instalação sem fabricar um livro/ativação.
+   A instalação invalida o selo anterior; outra auditoria inclui imagens/usos e
+   seus contadores. O recibo inicial é histórico pela fronteira nativa capturada,
+   sem comparar seus contadores aos reiniciados na rodada final. Cancelamento
+   fecha os caminhos Storage antes de limpar usos e imagens. Ativação e finalização
+   de mídia por ativo continuam posteriores.

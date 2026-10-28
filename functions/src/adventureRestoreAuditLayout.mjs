@@ -13,4 +13,6 @@ export const ADVENTURE_AUDIT_LAYOUT = Object.freeze([
   ].map(([parentCollection, collection]) => ({ scope: 'adventure', parentCollection, collection })),
   { scope: 'job', collection: 'preparedRoot' },
   { scope: 'persona', collection: 'aiPersonas' },
+  { scope: 'image', collection: 'imageLibrary', restoreImages: true },
+  { scope: 'image', collection: 'uses', parentCollection: 'imageLibrary', restoreImages: true },
 ]);

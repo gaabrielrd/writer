@@ -29,7 +29,7 @@ function anchor(value) {
     value === null ||
     (closed(value, ['address', 'journalToken', 'targetToken']) &&
       closed(value.address, ['scope', 'path']) &&
-      ['adventure', 'job', 'persona'].includes(value.address.scope) &&
+      ['adventure', 'job', 'persona', 'image'].includes(value.address.scope) &&
       Array.isArray(value.address.path) &&
       [2, 4].includes(value.address.path.length) &&
       value.address.path.every(id) &&

@@ -270,3 +270,58 @@ test('invalid provenance IDs and native birth stop removal before changing eithe
     assert.deepEqual(f.calls, []);
   }
 });
+
+test('adventure provenance retires detached pending and published images without a fake book or late recreation', async () => {
+  for (const pending of [true, false]) {
+    const f = await setup({ pending, delayed: true });
+    f.records.set(row, {
+      ...f.records.get(row),
+      restoreOrigin: {
+        schemaVersion: 2,
+        restoreId: c.restoreId,
+        jobToken: c.jobToken,
+        installationOperationId: 'adventure-image-install-0001',
+        target: { kind: 'adventure', id: 'restore-' + 'c'.repeat(64) },
+        assetId: 'd'.repeat(64),
+      },
+    });
+    try {
+      assert.deepEqual(await f.library.remove(uid, { id: c.imageId }), { deleted: true });
+    } finally {
+      f.release();
+    }
+    await assert.rejects(() => f.late);
+    assert.equal(f.records.get(row).state, 'deleted');
+    assert.deepEqual(f.calls, ['retire']);
+    assert.equal(f.storage.version(path).bytes.length, 0);
+    assert.equal(f.storage.version(path).metadata.metadata.restoreState, 'retired');
+    assert.equal(f.storage.versions.get(path).size, 1);
+  }
+});
+test('malformed adventure provenance cannot substitute a book, asset or installation proof for retirement', async () => {
+  for (const change of [
+    { target: { kind: 'book', id: 'other' } },
+    { assetId: 'bad' },
+    { installationOperationId: 'short' },
+    { bookId: 'smuggled-book' },
+  ]) {
+    const f = await setup({ pending: true });
+    f.records.set(row, {
+      ...f.records.get(row),
+      restoreOrigin: {
+        schemaVersion: 2,
+        restoreId: c.restoreId,
+        jobToken: c.jobToken,
+        installationOperationId: 'adventure-image-install-0001',
+        target: { kind: 'adventure', id: 'restore-' + 'c'.repeat(64) },
+        assetId: 'd'.repeat(64),
+        ...change,
+      },
+    });
+    const before = structuredClone([...f.records]);
+    await assert.rejects(() => f.library.remove(uid, { id: c.imageId }));
+    assert.deepEqual([...f.records], before);
+    assert.deepEqual(f.calls, []);
+    assert.equal(f.storage.version(path).bytes.length, bytes.length);
+  }
+});

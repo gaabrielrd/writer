@@ -1,4 +1,11 @@
 import {
+  adventureImageLibraryPhase,
+  imageLibraryViewKeys,
+  imageLibraryPrivateKeys,
+  validAdventureImageLibraryView,
+  validAdventureImageLibraryMeta,
+} from './adventureRestoreImageLibraryMeta.mjs';
+import {
   adventureAuditPhase,
   auditViewKeys,
   auditPrivateKeys,
@@ -95,6 +102,7 @@ export const adventureStagingView = (value) =>
         ...(imageStoragePhase(value) ? imageStorageViewKeys : []),
         ...(adventureCountPhase(value) ? countViewKeys : []),
         ...(adventureAuditPhase(value) ? auditViewKeys : []),
+        ...(adventureImageLibraryPhase(value) ? imageLibraryViewKeys : []),
       ].map((k) => [k, value[k]]),
     ),
   );
@@ -112,6 +120,7 @@ export function validAdventureStagingView(v) {
       ...imageStorageViewKeys,
       ...countViewKeys,
       ...auditViewKeys,
+      ...imageLibraryViewKeys,
     ]) ||
     v.version !== 1 ||
     ![
@@ -190,6 +199,12 @@ export function validAdventureStagingView(v) {
       : auditViewKeys.some((k) => Object.hasOwn(v, k))
   )
     return false;
+  if (
+    adventureImageLibraryPhase(v)
+      ? !validAdventureImageLibraryView(v)
+      : imageLibraryViewKeys.some((k) => Object.hasOwn(v, k))
+  )
+    return false;
   return historyPhase(v)
     ? validAdventureHistoryView(v)
     : [...historyViewKeys, 'historyPending'].every((k) => !Object.hasOwn(v, k));
@@ -217,6 +232,8 @@ export function validAdventureStagingMeta(v, job) {
         ...countPrivateKeys,
         ...auditViewKeys,
         ...auditPrivateKeys,
+        ...imageLibraryViewKeys,
+        ...imageLibraryPrivateKeys,
       ],
     ) ||
     !validAdventureStagingView(adventureStagingView(v)) ||
@@ -352,6 +369,12 @@ export function validAdventureStagingMeta(v, job) {
     adventureAuditPhase(v)
       ? !validAdventureAuditMeta(v)
       : [...auditViewKeys, ...auditPrivateKeys].some((k) => Object.hasOwn(v, k))
+  )
+    return false;
+  if (
+    adventureImageLibraryPhase(v)
+      ? !validAdventureImageLibraryMeta(v, job)
+      : [...imageLibraryViewKeys, ...imageLibraryPrivateKeys].some((k) => Object.hasOwn(v, k))
   )
     return false;
   return true;

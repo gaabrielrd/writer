@@ -310,3 +310,13 @@ audit-ready não ativa: novas instalações/layout/inventário exigem refazer o 
 Biblioteca/usos, ativação, aceitação/URL, recuperação/UI/roundtrip, P2/P3/D/F2-09,
 fases/gates e macro 8/35 permanecem abertos. Validate no fechamento do próximo
 grande bloco; o gate de 10708fd não é atribuído ao código novo.
+
+[Biblioteca das imagens 185](execucao/185-biblioteca-das-imagens-de-aventuras-restauradas.md)
+instala pares imagem/uso preparing por unidade, com origem v2 de aventura e
+retirada permanente. Invalida o selo inicial e exige nova auditoria dos registros;
+replay histórico conserva a fronteira nativa. Treze Node novos, onze regressões
+de retirada, três de auditoria, um corpus real e um SDK Firestore/GCS demo
+positivos; [evidência](../../entregas/2026-10-28-writer-v2-biblioteca-das-imagens-restauradas-de-aventuras.md).
+Fechamento integral local de 183–185 verde: 4.329 frontend, 90 scripts,
+3.610 Functions, sintaxe/tipos/build/smoke. Ativação/finalização de mídia,
+recuperação/UI/roundtrip, P2/P3/D/F2-09, fases/gates e macro 8/35 continuam abertos.

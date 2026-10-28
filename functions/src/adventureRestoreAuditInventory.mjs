@@ -19,6 +19,7 @@ export function adventureAuditContext(loaded) {
     counts: [p.countBlocks, p.countScenes, p.countLinks, p.countWordCount],
     personas: p.personaLibraryInstalled,
     media: p.storagePrepared,
+    library: Object.hasOwn(p, 'libraryImages') ? [p.libraryImages, p.libraryUses] : null,
     layout: ADVENTURE_AUDIT_LAYOUT,
   });
 }
@@ -70,7 +71,7 @@ export async function advanceAdventureAuditPhysical(store, tx, loaded, p) {
   const base =
     family.scope === 'job'
       ? loaded.ref.path
-      : family.scope === 'persona'
+      : ['persona', 'image'].includes(family.scope)
         ? 'users/' + loaded.uid
         : 'adventures/' + loaded.job.adventureId;
   let query;
@@ -81,6 +82,8 @@ export async function advanceAdventureAuditPhysical(store, tx, loaded, p) {
         .select()
         .orderBy('__name__')
         .limit(1);
+      if (family.restoreImages)
+        parents = parents.where('restoreOrigin.target.id', '==', loaded.job.adventureId);
       if (p.auditParentAfter !== null) parents = parents.startAfter(p.auditParentAfter);
       const page = await tx.get(parents);
       if (!page.docs.length) {
@@ -102,7 +105,7 @@ export async function advanceAdventureAuditPhysical(store, tx, loaded, p) {
   } else {
     if (p.auditParent !== null || p.auditParentAfter !== null) inconsistent();
     query = store.db.collection(base + '/' + family.collection);
-    if (family.scope === 'persona')
+    if (family.scope === 'persona' || family.restoreImages)
       query = query.where('restoreOrigin.target.id', '==', loaded.job.adventureId);
   }
   query = query.select().orderBy('__name__').limit(8);
