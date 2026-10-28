@@ -74,6 +74,29 @@ export function createBookRestoreCoverStorage(bucket) {
         (extra.replacedGeneration === '') !== (extra.replacedMetageneration === '')
       )
         fail();
+    } else if (extra.restoreState === 'retired') {
+      if (
+        m.contentType !== 'application/octet-stream' ||
+        Number(m.size) !== 0 ||
+        Object.keys(extra).length !== Object.keys(expected).length + 5
+      )
+        fail();
+      const prepared = bookRestoreStorageProof({
+          generation: extra.preparedGeneration,
+          metageneration: extra.preparedMetageneration,
+        }),
+        replaced = bookRestoreStorageProof({
+          generation: extra.replacedGeneration,
+          metageneration: extra.replacedMetageneration,
+        });
+      if (
+        replaced.generation !== prepared.generation ||
+        ![prepared.metageneration, String(BigInt(prepared.metageneration) + 1n)].includes(
+          replaced.metageneration,
+        )
+      )
+        fail();
+      return { proof, state: 'retired', previous: replaced, prepared };
     } else fail();
     return {
       proof,
@@ -146,7 +169,84 @@ export function createBookRestoreCoverStorage(bucket) {
         token,
     };
   }
+  function original(c, prepared, metadata) {
+    if (metadata?.metadata?.restoreState === 'active')
+      return { proof: accepted(c, prepared, metadata).proof, state: 'active' };
+    const state = inspect(c, metadata);
+    if (state.state !== 'prepared' || !same(state.proof, prepared)) fail();
+    return state;
+  }
+  async function metadata(c, generation = null) {
+    try {
+      const [value] = await (
+        generation === null ? bucket().file(path(c)) : pinned(path(c), generation)
+      ).getMetadata();
+      return value;
+    } catch (error) {
+      if (error.code === 404) return null;
+      throw error;
+    }
+  }
   return {
+    async retire(input, proof, publishedProof = null) {
+      const c = bookRestoreCoverStorageContext(input),
+        prepared = bookRestoreStorageProof(proof),
+        published = publishedProof === null ? null : bookRestoreStorageProof(publishedProof);
+      if (
+        published !== null &&
+        (published.generation !== prepared.generation ||
+          published.metageneration !== String(BigInt(prepared.metageneration) + 1n))
+      )
+        fail();
+      for (let attempt = 0; attempt < 4; attempt++) {
+        const currentMetadata = await metadata(c);
+        if (currentMetadata?.metadata?.restoreState === 'retired') {
+          const marker = inspect(c, currentMetadata);
+          if (!same(marker.prepared, prepared)) fail();
+          const previousMetadata = await metadata(c, marker.previous.generation);
+          if (previousMetadata !== null) {
+            const previous = original(c, prepared, previousMetadata);
+            if (published !== null && !same(previous.proof, published)) fail();
+            // A prepared version may have completed its one authorized PATCH while retired.
+            await pinned(path(c), previous.proof.generation, previous.proof.metageneration).delete({
+              ignoreNotFound: true,
+            });
+          }
+          const afterMetadata = await metadata(c);
+          if (afterMetadata === null) fail();
+          const after = inspect(c, afterMetadata);
+          if (
+            after.state !== 'retired' ||
+            !same(after.proof, marker.proof) ||
+            !same(after.prepared, prepared)
+          )
+            fail();
+          return marker.proof;
+        }
+        const current = currentMetadata === null ? null : original(c, prepared, currentMetadata);
+        if (published !== null && current !== null && !same(current.proof, published)) fail();
+        try {
+          await save(
+            c,
+            Buffer.alloc(0),
+            {
+              restoreState: 'retired',
+              preparedGeneration: prepared.generation,
+              preparedMetageneration: prepared.metageneration,
+              replacedGeneration: current?.proof.generation ?? prepared.generation,
+              replacedMetageneration: current?.proof.metageneration ?? prepared.metageneration,
+            },
+            {
+              ifGenerationMatch: current?.proof.generation ?? 0,
+              ...(current ? { ifMetagenerationMatch: current.proof.metageneration } : {}),
+            },
+          );
+        } catch (error) {
+          if (error.code !== 412) throw error;
+        }
+      }
+      fail();
+    },
     async accept(input, proof) {
       const c = bookRestoreCoverStorageContext(input),
         expected = bookRestoreStorageProof(proof);
@@ -208,6 +308,7 @@ export function createBookRestoreCoverStorage(bucket) {
       if (expected !== null) bookRestoreStorageProof(expected);
       for (let attempt = 0; attempt < 4; attempt++) {
         const current = await head(c);
+        if (current?.state === 'retired') fail();
         if (current?.state === 'fenced') {
           if (expected !== null && (!current.previous || !same(current.previous, expected))) fail();
           if (current.previous) {

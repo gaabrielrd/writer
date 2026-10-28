@@ -85,6 +85,9 @@ export async function bookRestoreStorageWire(t) {
       if (qs.ifGenerationMatch !== undefined && v.generation !== qs.ifGenerationMatch)
         return failure(412);
       if (method === 'DELETE') {
+        await hooks.beforeDelete?.(v, qs);
+        if (qs.ifMetagenerationMatch !== undefined && v.metageneration !== qs.ifMetagenerationMatch)
+          return failure(412);
         versions.get(name).delete(v.generation);
         if (current.get(name)?.generation === v.generation) current.delete(name);
         res.writeHead(204);

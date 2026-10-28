@@ -101,12 +101,21 @@ test('SDK restored media resumes after external failure, commits URLs and privat
   await assertFails(updateDoc(doc(own, image.ref.path), { url: 'https://forged.invalid' }));
   const library = createImageLibraryService({
     db: admin,
-    assets: { remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }) },
+    assets: {
+      retireRestoreImage: f.assets.retire,
+      remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }),
+    },
   });
   await library.detach(uid, f.p.bookId, imageId);
   await rootRef.delete();
   await admin.doc('deletedBooks/' + f.p.bookId).create({ ownerId: uid, kind: 'normal-deletion' });
   await library.remove(uid, { id: imageId });
+  const retired = f.storage.version(image.data().path);
+  assert.equal(retired.bytes.length, 0);
+  assert.equal(retired.metadata.metadata.restoreState, 'retired');
+  assert.equal(retired.metadata.metadata.firebaseStorageDownloadTokens, undefined);
+  assert.equal(f.storage.versions.get(image.data().path).size, 1);
+  assert.equal((await imageRef.get()).createTime.isEqual(image.createTime), true);
   const status = await mediaState(f),
     beforeEvents = f.storage.events.length;
   assert.equal(status.media.state, 'ready');
@@ -118,6 +127,24 @@ test('SDK restored media resumes after external failure, commits URLs and privat
     await f.factory().getBookRestore(uid, { restoreId: f.id, jobToken: f.p.jobToken }),
     f.p,
   );
+  const originalDeleted = await imageRef.get(),
+    deletedValue = originalDeleted.data(),
+    racingLibrary = createImageLibraryService({
+      db: admin,
+      assets: {
+        async retireRestoreImage(...args) {
+          const result = await f.assets.retire(...args);
+          await imageRef.delete();
+          await imageRef.create(deletedValue);
+          return result;
+        },
+      },
+    });
+  await assert.rejects(() => racingLibrary.remove(uid, { id: imageId }));
+  const recreatedDeleted = await imageRef.get();
+  assert.equal(recreatedDeleted.createTime.isEqual(originalDeleted.createTime), false);
+  assert.deepEqual(recreatedDeleted.data(), deletedValue);
+  assert.equal(f.storage.version(image.data().path).bytes.length, 0);
   const value = outcome.data();
   await outcome.ref.delete();
   await outcome.ref.create(value);

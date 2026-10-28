@@ -295,6 +295,9 @@ const assets = {
     const [metadata] = await file.getMetadata();
     await file.setMetadata({ metadata: { ...metadata.metadata, accepted: 'true' } });
   },
+  async retireRestoreImage(context, proof, publishedProof) {
+    return createBookRestoreCoverStorage(bucket).retire(context, proof, publishedProof);
+  },
   async remove(path) {
     await bucket().file(path).delete({ ignoreNotFound: true });
   },

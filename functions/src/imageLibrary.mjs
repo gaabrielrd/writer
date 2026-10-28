@@ -1,3 +1,9 @@
+import {
+  restoredImageRemovalPlan,
+  restoredImageRemovalClaim,
+  verifyRestoredImageRemovalClaim,
+} from './restoredImageRemoval.mjs';
+import { bookRestoreStorageProof } from './bookRestoreCoverStorageContracts.mjs';
 import { readBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { GenerationError, validateId } from './generation.mjs';
 import { prepareUniverseLink } from './universes.mjs';
@@ -102,19 +108,55 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
     async remove(uid, data) {
       authorize(uid);
       const ref = imageRef(db, uid, data.id);
-      const path = await db.runTransaction(async (tx) => {
-        const record = (await tx.get(ref)).data();
-        if (!record || record.state === 'deleted') return null;
+      const removal = await db.runTransaction(async (tx) => {
+        const snapshot = await tx.get(ref),
+          record = snapshot.data();
+        if (!record) return null;
+        const restored = restoredImageRemovalPlan(uid, ref.id, record);
+        if (record.state === 'deleted' && !restored) return null;
         if (imageUseCount(record) > 0)
           fail(
             'failed-precondition',
             'A imagem está em uso. Remova seus vínculos antes de excluir.',
           );
+        if (restored) {
+          if (
+            (
+              await tx.get(
+                db
+                  .collection(ref.path + '/uses')
+                  .select()
+                  .limit(1),
+              )
+            ).docs.length
+          )
+            fail('failed-precondition', 'O contador de usos da imagem está inconsistente.');
+          if (typeof assets?.retireRestoreImage !== 'function')
+            fail('failed-precondition', 'A retirada da imagem está indisponível.');
+          const claimed = ['deleting', 'deleted'].includes(record.state)
+            ? record
+            : { ...record, state: 'deleting', updatedAt: now() };
+          const claim = restoredImageRemovalClaim(snapshot, claimed);
+          if (claimed !== record)
+            tx.update(ref, { state: claimed.state, updatedAt: claimed.updatedAt });
+          return { restored, claim };
+        }
         tx.update(ref, { state: 'deleting', updatedAt: now() });
-        return record.path;
+        return { path: record.path };
       });
-      if (path) {
-        await assets.remove(path);
+      if (removal?.restored) {
+        const r = removal.restored,
+          marker = bookRestoreStorageProof(
+            await assets.retireRestoreImage(r.context, r.proof, r.publishedProof),
+          );
+        if (marker.generation === r.proof.generation)
+          fail('failed-precondition', 'A retirada da imagem não foi confirmada.');
+        await db.runTransaction(async (tx) => {
+          const current = verifyRestoredImageRemovalClaim(await tx.get(ref), removal.claim);
+          if (current.state !== 'deleted') tx.update(ref, { state: 'deleted', updatedAt: now() });
+        });
+      } else if (removal?.path) {
+        await assets.remove(removal.path);
         await ref.update({ state: 'deleted', updatedAt: now() });
       }
       return { deleted: true };

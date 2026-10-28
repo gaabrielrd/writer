@@ -842,3 +842,9 @@ bytes em arrays numéricos canônicos e prefixo raw privado comprovado. Revalide
 fonte/head/binding antes do commit de cada frame; image-bytes-ready não autoriza
 biblioteca, URL, Storage ou ativação. Decodifique PNG integralmente e reserve/fence
 o I/O na etapa de materialização (ADR 0202).
+
+Na exclusão de imagens restauradas, preserve marcador Storage retired vazio,
+privado e permanente. Use somente contexto/provas da biblioteca, CAS decimal
+exato e remoção da geração original comprovada. Não faça fallback para delete
+bruto. Confirme uses vazia antes de deleting e nascimento/conteúdo da biblioteca
+antes de deleted; falha externa/Firestore deve permitir retomada (ADR 0203).

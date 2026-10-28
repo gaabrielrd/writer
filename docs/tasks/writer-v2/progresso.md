@@ -270,3 +270,13 @@ um SDK demo positivos em seleções dirigidas; resultados e limites na
 Suíte integral no fechamento do bloco de mídia. Storage/decodificação/fence,
 biblioteca/usos/ativação, agregados/audit, recuperação cifrada/UI/roundtrip,
 P2/P3/D/F2-09, fases seguintes, gates e macro 8/35 permanecem abertos.
+
+[Retirada segura 181](execucao/181-retirada-segura-de-imagens-restauradas.md)
+fecha a corrida reproduzida de upload atrasado após exclusão de uma imagem
+restaurada. Marcador privado permanente e provas nativas preservam bytes/records
+alheios; imagens legadas conservam fluxo anterior. 23 casos novos, 49 regressões
+distintas em seleções e um SDK Firestore ampliado positivos; detalhes na
+[evidência](../../entregas/2026-10-28-writer-v2-retirada-segura-de-imagens-restauradas.md).
+Suíte integral no fechamento de mídia. Materialização Storage das aventuras,
+ativação e demais pendências de P2/P3/D/F2-09/fases/gates continuam abertas;
+macro 8/35 preservada.

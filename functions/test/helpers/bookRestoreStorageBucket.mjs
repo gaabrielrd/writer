@@ -99,6 +99,7 @@ export function bookRestoreStorageBucket() {
           return Readable.from([Buffer.from(v.bytes)]);
         },
         async delete(args) {
+          await hooks.beforeDelete?.(path, options);
           events.push({ method: 'delete', path, options: structuredClone(options), args });
           let v;
           try {
@@ -110,6 +111,11 @@ export function bookRestoreStorageBucket() {
           if (
             options.preconditionOpts?.ifGenerationMatch !== undefined &&
             String(options.preconditionOpts.ifGenerationMatch) !== v.metadata.generation
+          )
+            throw error(412);
+          if (
+            options.preconditionOpts?.ifMetagenerationMatch !== undefined &&
+            String(options.preconditionOpts.ifMetagenerationMatch) !== v.metadata.metageneration
           )
             throw error(412);
           versions.get(path).delete(v.metadata.generation);

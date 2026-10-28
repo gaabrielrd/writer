@@ -258,7 +258,10 @@ test('deleting the own detached image during external work prevents resurrection
     imageId = f.p.preparation.cover.imageId,
     library = createImageLibraryService({
       db: f.db,
-      assets: { remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }) },
+      assets: {
+        retireRestoreImage: f.assets.retire,
+        remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }),
+      },
     });
   f.hooks.after = async () => {
     await library.detach(uid, f.p.bookId, imageId);
@@ -389,7 +392,10 @@ test('history remains usable after prepared cover definitions are cleaned and af
     imageId = f.p.preparation.cover.imageId,
     library = createImageLibraryService({
       db: f.db,
-      assets: { remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }) },
+      assets: {
+        retireRestoreImage: f.assets.retire,
+        remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }),
+      },
     });
   await f.db.runTransaction((tx) => {
     tx.delete(f.db.doc(f.root + '/preparedCovers/current'));
@@ -436,7 +442,10 @@ test('a confirmed original owner deletion completes media as unavailable without
     imageId = f.p.preparation.cover.imageId,
     library = createImageLibraryService({
       db: f.db,
-      assets: { remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }) },
+      assets: {
+        retireRestoreImage: f.assets.retire,
+        remove: (path) => f.storage.bucket().file(path).delete({ ignoreNotFound: true }),
+      },
     });
   await library.detach(uid, f.p.bookId, imageId);
   await library.remove(uid, { id: imageId });
@@ -456,7 +465,10 @@ test('a deleting or recreated deleted image is not treated as an original owner 
       path = 'users/' + uid + '/imageLibrary/' + imageId,
       library = createImageLibraryService({
         db: f.db,
-        assets: { remove: (p) => f.storage.bucket().file(p).delete({ ignoreNotFound: true }) },
+        assets: {
+          retireRestoreImage: f.assets.retire,
+          remove: (p) => f.storage.bucket().file(p).delete({ ignoreNotFound: true }),
+        },
       });
     await library.detach(uid, f.p.bookId, imageId);
     if (recreated) {

@@ -3227,3 +3227,10 @@ avanço copia até 65.536 bytes como array numérico canônico; imageIndex priva
 preserva o cursor histórico. Revalide fonte, head e binding no commit atômico.
 Não crie biblioteca/uso/URL nem aceite PNG apenas pela assinatura ou SHA. Storage,
 decodificação integral e fence antes da limpeza pertencem à integração seguinte.
+
+Na retirada de imagens restauradas (ADR 0203), use provas da biblioteca e
+assets.retireRestoreImage para conservar um marcador Storage vazio permanente.
+Claim deleting exige contador zero e uses vazia; depois do I/O, finalize deleted
+somente na mesma encarnação nativa e com conteúdo original. Delete físico bruto
+continua apenas para imagens sem origem de restauração; nunca libere o caminho
+que um upload create-only antigo ainda pode alcançar.
