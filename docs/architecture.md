@@ -3867,3 +3867,14 @@ anteriores e permite revisar após alteração de acesso; cancel limpa estado/ch
 Prova é somente resumo de revisão atual: materialização deve reautorizar cada
 recurso na escrita. Remapeamento/mídia, C4 dos temporários antes de ativação e
 Estúdio/ciclos continuam pendentes.
+
+## Materialização própria de campanhas
+
+A [ADR 0263](decisions/0263-campaign-own-materialization.md) acrescenta
+campaignRestoreOwnMaterialization, com framing e parser próprios existentes.
+IDs são remapeados por domínio/encarnação e controles ordinários reconstruídos.
+ownMaterialization cifra cursores/metadata no job; ownWrites registra alvos
+nativos do mesmo recibo. Auditoria e coleta conferem metadata/birth sem prosa,
+antes de índices/chunks. Root permanece pending sem ownerId. Prova própria
+não ativa nem autoriza derivados; base/lore/mídia, C4 dos temporários e
+auditoria física/ativação/Estúdio seguem necessários.

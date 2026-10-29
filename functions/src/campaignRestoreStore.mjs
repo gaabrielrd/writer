@@ -132,6 +132,7 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
         'check-derived',
         'review-origins',
         'restart-origins',
+        'materialize-own',
       ].includes(v.action)
     )
       bad();
@@ -254,7 +255,14 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
     progress: progress(l),
   });
   async function empty(tx, uid, rid) {
-    for (const name of ['chunks', 'receipts', 'reviewRows', 'derivedRows', 'derivedPositions'])
+    for (const name of [
+      'chunks',
+      'receipts',
+      'reviewRows',
+      'derivedRows',
+      'derivedPositions',
+      'ownWrites',
+    ])
       if (
         (
           await tx.get(

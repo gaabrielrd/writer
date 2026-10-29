@@ -2408,3 +2408,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência](../../../entregas/2026-10-29-writer-v2-revisao-retomavel-das-origens.md).
      Materialização/remapeamento/mídia, C4 da ativação e Estúdio/ciclos ainda
      pendentes. Macro 8/35; somente commit local.
+
+233. [Materialização dos dados próprios](233-materializacao-dos-dados-proprios.md):
+     notas/sessões/checklist/preparação/vínculos com novas identidades e
+     controles ordinários. Journal nativo, auditoria/coleta sem prosa.
+     258 testes dirigidos (19 novos) e um cenário SDK/Rules positivos;
+     [evidência](../../../entregas/2026-10-29-writer-v2-materializacao-propria-de-campanhas.md).
+     Base/lore/derivados/mídia, C4 da ativação e UI/ciclos continuam pendentes.
+     Macro 8/35; validate integral no fechamento do bloco, somente commit local.

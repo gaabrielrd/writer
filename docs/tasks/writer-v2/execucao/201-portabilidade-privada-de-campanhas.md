@@ -452,3 +452,14 @@ compatibilidade positivos. Validate integral 227–232 verde: 9.871 testes,
 cobertura/limites e lint/sintaxe/typecheck/build/smoke preservados.
 Materialização/remapeamento/mídia, C4 da ativação e Estúdio/ciclos continuam
 pendentes; P3/D/F2-09 e macro 8/35 abertos. Somente commit local.
+
+### Materialização própria retomável — incremento 233
+
+[Plano 233](233-materializacao-dos-dados-proprios.md) e
+[ADR 0263](../../../decisions/0263-campaign-own-materialization.md) preparam
+os próprios nos caminhos ordinários, com IDs remapeados e controles reconstruídos.
+Journal/auditoria/coleta nativos precedem a composição do produtor; raiz
+permanece pendente. 258 testes dirigidos e um cenário SDK/Rules positivos.
+Base/lore/derivados/mídia, C4 dos temporários, auditoria física/ativação e
+Estúdio/ciclos continuam necessários. Macro 8/35 e P3/D/F2-09 abertos;
+validate integral no fechamento do bloco de materialização/ativação.

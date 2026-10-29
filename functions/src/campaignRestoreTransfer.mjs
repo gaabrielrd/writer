@@ -8,6 +8,7 @@ import { createCampaignRestoreFileReview } from './campaignRestoreFileReview.mjs
 import { createCampaignRestoreOwnReview } from './campaignRestoreOwnReview.mjs';
 import { createCampaignRestoreDerivedReview } from './campaignRestoreDerivedReview.mjs';
 import { createCampaignRestoreDerivedSemantics } from './campaignRestoreDerivedSemantics.mjs';
+import { createCampaignRestoreOwnMaterialization } from './campaignRestoreOwnMaterialization.mjs';
 import { createCampaignRestoreOriginReview } from './campaignRestoreOriginReview.mjs';
 import { seal, open } from './campaignRestoreCrypto.mjs';
 import {
@@ -376,6 +377,14 @@ export function createCampaignRestoreTransferService(options) {
       openIndex: (uid, input) => service.openCampaignRestoreDerivedIndex(uid, input),
       derivedSemantics: (uid, input) => service.getCampaignRestoreDerivedSemantics(uid, input),
       projectWitness: (uid, input) => service.getCampaignRestoreProjectWitness(uid, input),
+    }),
+  );
+  Object.assign(
+    service,
+    createCampaignRestoreOwnMaterialization({
+      store,
+      openSource: (uid, input) => service.openCampaignRestoreSource(uid, input),
+      ownSemantics: (uid, input) => service.getCampaignRestoreOwnSemantics(uid, input),
     }),
   );
   return service;

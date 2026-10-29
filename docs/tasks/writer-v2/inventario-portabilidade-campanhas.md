@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 232. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 233. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -61,8 +61,8 @@ não por um fluxo de importação disponível ao usuário.
 
 Os incrementos 227–232 implementam upload, integridade, revisão própria/
 derivada e revisão de origens duráveis, com coleta pré-ativação, conforme abaixo.
-Remapeamento/materialização retomável, mídia exclusiva temporária e ativação
-ainda não têm produtor. Não são cobertos por inferência pelas listas C4
+O incremento 233 acrescenta materialização própria e sua coleta, conforme abaixo.
+Materialização derivada, mídia exclusiva temporária e ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
 atuais. Cada recurso precisa de dono/campanha/encarnação consultáveis, reserva
 conferida em mutações e cancelamento/coleta versionados antes da primeira gravação.
 
@@ -181,3 +181,26 @@ A [evidência](../../entregas/2026-10-29-writer-v2-revisao-retomavel-das-origens
 separa SDK dirigido, compatibilidade e avisos do build. Isso valida upload/
 revisões internas; materialização, integração C4 antes de ativação e interface
 ainda precisam de implementação e validação próprias.
+
+## Materialização própria — incremento 233
+
+ownWrites/ORDINAL sob JOB é journal mínimo schema 1 com conta/restauração/
+encarnação/ordinal, operação e até quatro alvos collection/id/metadataHash.
+Mesma criação nativa do recibo e dos alvos; formatos ordinários não recebem
+campos extras. ownMaterialization no job cifra estado limitado a 32 KiB.
+Não há coleção de mapeamento: IDs são determinísticos por domínio e encarnação.
+
+Alvos: notes, sessions, workChecklist, preparationItems/preparationBodies,
+sessionReferences/sessionPreparationLinks e seus controles globais/por sessão,
+mais workProgress quando presente ou necessário ao checklist.
+Raiz permanece marcador; título/progresso são preparados em cifra no job.
+
+Antes do produtor, cancel/coleta passam a retirar estes alvos e journals por
+metadata/birth, até 25 journals por passo, antes de índices/chunks. Vazio das
+13 famílias é conferido; órfãos/estrangeiros/alterados/recriados são preservados
+sem avanço. Cancel limpa cifra/chave mas mantém contadores mínimos de coleta.
+Layouts C4 1–4 permanecem; integrar temporários antes da ativação.
+A prova própria não certifica a auditoria física final da campanha ativa.
+[Plano 233](execucao/233-materializacao-dos-dados-proprios.md),
+[ADR 0263](../../decisions/0263-campaign-own-materialization.md) e
+[evidência](../../entregas/2026-10-29-writer-v2-materializacao-propria-de-campanhas.md).

@@ -1208,3 +1208,13 @@ Restart explícito não exige clock antigo e limpa somente a revisão; cancel
 limpa campo/chave. Omissa não revive e legado v1 conserva unproven. A prova
 campaign-origin-review-only não concede recurso: reautorize cada origem na
 transação de materialização. Preserve C4 1–4 (ADR 0262).
+
+Na materialização própria de campanhas, preserve o marcador sem ownerId até
+ativação. Reuse fonte/DTO próprio até 4 MiB, 1–25 frames e no máximo um DTO
+concluído; estado cifrado até 32 KiB sem texto de notas. Remapeie IDs por
+conta/restauração/encarnação/domínio e reconstrua controles. ownWrites e alvos
+têm mesmo birth do recibo, whitelists/masks e metadataHash; audite/colete sem
+prosa. Cancel retira cifra/chave e coleta alvos/journals antes dos índices;
+vazio final de todas as famílias e recusa de órfãos/recriações são obrigatórios.
+Preparação própria não concede derivados ou ativação; C4 adequado e auditoria
+física da ativação continuam gates. Preserve layouts 1–4 (ADR 0263).

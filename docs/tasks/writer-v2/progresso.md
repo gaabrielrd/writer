@@ -861,3 +861,10 @@ bloco 227–232 verde: 9.871 testes, cobertura preservada e build/smoke positivo
 Materialização/remapeamento/mídia, C4 dos temporários antes da ativação e
 Estúdio/ciclos continuam necessários. Prova de revisão não é grant por recurso.
 Macro permanece 8/35 (22,9%); P3/D/F2-09 e condições humanas/comerciais abertos.
+
+O [incremento 233](execucao/233-materializacao-dos-dados-proprios.md) materializa
+os próprios da campanha reservada com novas identidades e controles ordinários,
+journal nativo e coleta sem prosa antes dos índices. 258 testes dirigidos
+(19 novos) e um cenário SDK/Rules positivos. Não ativa a raiz; ainda faltam
+base/lore/derivados/mídia, C4 dos temporários, auditoria física/ativação e
+Estúdio/ciclos. Macro 8/35 (22,9%), com validate integral no fechamento do bloco.
