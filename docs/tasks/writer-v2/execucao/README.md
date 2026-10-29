@@ -2252,3 +2252,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-auditoria-conjunta-do-backup.md).
      Manifesto/atestado, framing/arquivo, persistência/cleanup, restauração/UI/ciclo
      P3/D/F2-09 pendentes; macro 8/35, somente commit local.
+
+212. [Manifesto e procedência assinada](212-manifesto-e-procedencia-assinada.md):
+     raízes nativas de conteúdo/evidências, nascimento de origens e Ed25519 com
+     chave servidor versionada; verificação independente das bases antigas.
+     31 testes novos e 119 regressões Node positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-procedencia-assinada-do-backup.md).
+     Framing/arquivo, cobertura/autorizações atuais, persistência/cleanup e
+     restauração/UI/ciclo P3/D/F2-09 pendentes; macro 8/35, somente commit local.

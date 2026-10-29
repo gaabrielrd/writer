@@ -228,3 +228,13 @@ somente páginas/unidades limitadas, hashes e contadores. Cobertura/órfãos,
 positivos. campaign-native-audit não é assinatura nem arquivo. Seguem manifesto/
 atestado portátil, framing, persistência/cleanup C4 v1–v4, restauração e UI/ciclo.
 P3/D/F2-09 continuam abertos; macro 8/35, commit local, sem CI.
+
+## Passos 3–4 — manifesto e procedência assinada
+
+O [plano 212](212-manifesto-e-procedencia-assinada.md) acrescenta raiz de
+nascimento das origens e assinatura de manifesto produzida somente após a
+auditoria real. Verificação de emissão dispensa as bases antigas e não é grant.
+31 testes novos e 119 regressões Node positivos. Faltam framing/arquivo,
+cobertura de conteúdo/evidências, reautorização por nascimento, persistência/
+cleanup, restauração/UI/ciclo. Chaves reais não foram configuradas. P3/D/F2-09
+abertos, macro 8/35; somente commit local, validate integral no grande bloco.

@@ -688,3 +688,15 @@ origem indisponível preserva próprios. 116 Node dirigidos e 38 Vitest positivo
 Manifesto/atestado portátil, framing/arquivo, persistência/cleanup, restauração/
 UI/ciclo P3/D/F2-09 continuam pendentes; macro **8/35**. Validate integral no
 fechamento do grande bloco; somente commit local, sem CI/push/deploy.
+
+## 2026-10-29 — manifesto e procedência assinada em P3
+
+O [plano 212](execucao/212-manifesto-e-procedencia-assinada.md) autentica raízes
+nativas de conteúdo e evidências de nascimento, sem depender das bases antigas
+para verificar emissão. Ed25519 por chave servidor versionada; conta/domínio/
+keyId fixados. 31 testes novos e 119 regressões Node dirigidas positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-procedencia-assinada-do-backup.md).
+Framing/arquivo, cobertura e autorização atual das evidências, persistência/
+cleanup e restauração/UI/ciclo P3/D/F2-09 continuam pendentes; macro **8/35**.
+Nenhuma chave real/endpoint/implantação. Validate integral no grande bloco;
+somente commit local, sem CI/push/deploy.

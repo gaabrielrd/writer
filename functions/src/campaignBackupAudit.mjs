@@ -8,6 +8,7 @@ import { createCampaignBackupBaseInventoryService } from './campaignBackupBaseIn
 import { createCampaignBackupLoreService } from './campaignBackupLore.mjs';
 import { createCampaignBackupLoreInventoryService } from './campaignBackupLoreInventory.mjs';
 import { createCampaignBackupImageService } from './campaignBackupImage.mjs';
+import { createCampaignBackupWitnessService } from './campaignBackupWitness.mjs';
 import {
   CAMPAIGN_OWN_FAMILIES,
   CAMPAIGN_OWN_CHUNK_BYTES as CHUNK,
@@ -39,6 +40,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
     createCampaignBackupLoreService({ db }),
     createCampaignBackupLoreInventoryService({ db }),
     createCampaignBackupImageService({ db, storage }),
+    createCampaignBackupWitnessService({ db }),
   );
   return {
     auditCampaignBackup(uid, data, options = {}) {
@@ -75,7 +77,8 @@ export function createCampaignBackupAuditService({ db, storage }) {
         async function* scan(pass) {
           const content = createHash('sha256'),
             inventory = createHash('sha256'),
-            native = createHash('sha256');
+            native = createHash('sha256'),
+            provenance = createHash('sha256');
           let units = 0,
             bytes = 0,
             chunks = 0,
@@ -83,7 +86,9 @@ export function createCampaignBackupAuditService({ db, storage }) {
             resources = 0,
             omitted = 0,
             unavailable = 0,
-            pagesLegacy = false;
+            pagesLegacy = false,
+            witnesses = 0,
+            witnessBytes = 0;
           const fold = (hasher, v) => hasher.update(JSON.stringify(v) + '\n'),
             observe = (v) => fold(native, v),
             unit = (section, id, field, result) => {
@@ -99,6 +104,19 @@ export function createCampaignBackupAuditService({ db, storage }) {
           fold(content, ['writer-campaign-logical-units-v1', campaignId, derived.availability]);
           fold(inventory, ['writer-campaign-native-inventory-v1', own, derived]);
           fold(native, ['writer-campaign-native-content-v1', own, derived]);
+          fold(provenance, ['writer-campaign-witnesses-v1', campaignId]);
+          async function witness(method, input, section, id) {
+            const result = await call(method, input);
+            if (result.outcome === 'available') {
+              const encoded = Buffer.from(JSON.stringify(result.content));
+              if (encoded.length !== result.byteLength || sha(encoded) !== result.contentHash)
+                fail();
+              witnessBytes = counter(witnessBytes, encoded.length);
+            }
+            witnesses = counter(witnesses);
+            fold(provenance, [section, id, result.outcome, result.content ?? null]);
+            observe(['witness', method, result.witnessToken ?? result]);
+          }
           async function* list(method, input, key = 'id') {
             let cursor = null,
               last = null;
@@ -223,6 +241,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
                 'base',
                 derived.base.id,
               );
+              await witness('getCampaignBackupBaseWitness', request, 'base', derived.base.id);
               yield progress('base:snapshot');
               check();
               for await (const page of list('listCampaignBackupBaseItems', request)) {
@@ -231,6 +250,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
                   await readChunked('readCampaignBackupBaseItem', input, 'base:item', ref.id);
                   const audit = await call('auditCampaignBackupBaseItem', input);
                   observe(['base:item', audit]);
+                  await witness('getCampaignBackupItemWitness', input, 'item', ref.id);
                   if (audit.availability === 'available')
                     for (const field of audit.fields)
                       unit('base:field', ref.id, field.field, {
@@ -278,7 +298,11 @@ export function createCampaignBackupAuditService({ db, storage }) {
                   yield progress('base:' + family);
                   check();
                 }
-            } else unit('base', null, null, { outcome: derived.availability });
+            } else {
+              unit('base', null, null, { outcome: derived.availability });
+              witnesses = counter(witnesses);
+              fold(provenance, ['base', null, derived.availability, null]);
+            }
             for await (const page of list('listCampaignBackupLoreVariants', request)) {
               for (const ref of page.items) {
                 const input = { ...request, id: ref.id, variantToken: ref.variantToken },
@@ -300,6 +324,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
                   });
                 }
                 observe(['lore:anchor', anchor.anchorToken ?? anchor]);
+                await witness('getCampaignBackupLoreWitness', input, 'anchor', ref.id);
                 if (anchor.outcome === 'unavailable')
                   unit('anchor', ref.id, null, { outcome: 'unavailable' });
                 else {
@@ -369,11 +394,17 @@ export function createCampaignBackupAuditService({ db, storage }) {
                 digest: content.digest('hex'),
               }),
               nativeDigest: native.digest('hex'),
+              provenance: Object.freeze({
+                units: witnesses,
+                bytes: witnessBytes,
+                digest: provenance.digest('hex'),
+              }),
             };
           } finally {
             content.destroy();
             inventory.destroy();
             native.destroy();
+            provenance.destroy();
           }
         }
         // Each pass retains only hashes, counters and its current bounded pages.

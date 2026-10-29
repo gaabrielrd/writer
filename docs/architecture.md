@@ -3625,3 +3625,14 @@ manifesto de cliente nem reúne o projeto em memória. Progresso é provisório;
 campaign-native-audit é interno, sem assinatura/grant ou habilitação do arquivo.
 Origem indisponível preserva próprios e omissão explícita dos derivados.
 Atestado portátil, persistência/cleanup e restauração/UI continuam pendentes.
+
+## Manifesto e evidências de procedência de campanhas
+
+A [ADR 0242](decisions/0242-campaign-backup-signed-manifest.md) acrescenta
+projeções fechadas de nascimento de base/item/âncora e raiz de evidências nas
+duas passagens nativas. Manifesto compacto e Ed25519 são emitidos apenas a
+partir do auditor, com chave privada injetada no servidor. Verificação por
+registro confiável dispensa campanha/base antigas, vincula conta e distingue
+active/verify-only/revoked. campaign-issuance-only não valida frames, raízes do
+arquivo ou acesso atual. Esses consumidores, persistência/cleanup, restauração
+e UI/ciclo continuam pendentes; nenhuma chave real/endpoint foi configurada.

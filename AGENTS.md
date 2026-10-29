@@ -1049,3 +1049,8 @@ Na auditoria conjunta de campanhas, reconfira todas as famílias e bytes nativos
 desde o início, incluindo controles/omissões, cobertura, lojas/órfãos e imagens.
 Compare raízes/contagens e fontes finais; não certifique listas/hashes do cliente.
 Trate campaign-native-audit como prova interna efêmera, sem grant (ADR 0241).
+
+No manifesto de campanha, emita assinatura somente após auditoria nativa completa,
+incluindo raiz das evidências de nascimento. Fixe Ed25519/domínio/keyId e chaves
+confiáveis do servidor. campaign-issuance-only não valida arquivo nem concede
+acesso; exija raízes, vínculos e autorização atual antes da restauração (ADR 0242).

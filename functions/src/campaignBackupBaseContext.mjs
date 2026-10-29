@@ -282,6 +282,18 @@ export async function campaignBackupBaseAnchor(
     path,
     base: base.value,
     baseIdentity: base.native,
+    originWitness: {
+      kind: 'base',
+      baseId: capturedBaseId,
+      capturedAt: b.capturedAt,
+      adventure: { id: b.adventureId, born: adventure.native.created },
+      universe:
+        b.universeId == null
+          ? { kind: 'none' }
+          : globalLore === 'available'
+            ? { kind: 'reference', id: b.universeId, born: worldFacts.born }
+            : { kind: 'unavailable', id: b.universeId },
+    },
     head,
     inspect,
     tx,
