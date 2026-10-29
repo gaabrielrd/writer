@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 231. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 232. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -59,10 +59,10 @@ não por um fluxo de importação disponível ao usuário.
 
 ## Recursos que ainda não existem
 
-Os incrementos 227–231 implementam upload, integridade e revisão própria/
-derivada duráveis, com coleta pré-ativação, conforme abaixo. Índice/revisão de
-origens, remapeamento/materialização retomável, mídia exclusiva temporária e
-ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
+Os incrementos 227–232 implementam upload, integridade, revisão própria/
+derivada e revisão de origens duráveis, com coleta pré-ativação, conforme abaixo.
+Remapeamento/materialização retomável, mídia exclusiva temporária e ativação
+ainda não têm produtor. Não são cobertos por inferência pelas listas C4
 atuais. Cada recurso precisa de dono/campanha/encarnação consultáveis, reserva
 conferida em mutações e cancelamento/coleta versionados antes da primeira gravação.
 
@@ -157,3 +157,27 @@ conceder autorização atual da origem. Origens, materialização/mídia e C4 da
 ativação continuam gates. [Plano 231](execucao/231-verificacao-derivada-por-dependencia.md),
 [ADR 0261](../../decisions/0261-campaign-resumable-derived-semantics.md) e
 [evidência](../../entregas/2026-10-29-writer-v2-verificacao-derivada-por-dependencia.md).
+
+## Revisão persistida de origens — incremento 232
+
+originReview opcional guarda captura/rechecagem cifradas no job, até 64 KiB,
+com binding a arquivo/índice/project/encarnação e clock corrente. Não cria
+coleção de decisões/testemunhas: derivedRows w:* fornece ordem e own fornece
+project validado. Recibos/progresso guardam somente metadata mínima.
+
+Cancelamento limpa originReview atomicamente com estados/chave; coleta de pares,
+own e chunks permanece. Restart explícito retira só a revisão, preservando as
+etapas concluídas e sem exigir clock antigo. Jobs sem campo continuam válidos.
+Prova é resumo de revisão, não grant por recurso: materialização deve revalidar
+cada origem na escrita. C4 1–4 não mudou; temporários exigem integração antes
+da ativação. [Plano 232](execucao/232-revisao-de-origens-retomavel.md) e
+[ADR 0262](../../decisions/0262-campaign-resumable-origin-review.md).
+
+## Validação integral do bloco 227–232
+
+9.871 testes positivos: 4.978 frontend, 94 scripts e 4.799 Functions.
+Cobertura/limites, sintaxe de 472 módulos, lint/typecheck/build/smoke positivos.
+A [evidência](../../entregas/2026-10-29-writer-v2-revisao-retomavel-das-origens.md)
+separa SDK dirigido, compatibilidade e avisos do build. Isso valida upload/
+revisões internas; materialização, integração C4 antes de ativação e interface
+ainda precisam de implementação e validação próprias.

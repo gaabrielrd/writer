@@ -1198,3 +1198,13 @@ conta/encarnação/CAS, binding de arquivo/índice/contexto e codec hash-wasm 4.
 Progresso/recibo não expõem estado ou relações. Cancel limpa campo/chave antes
 da coleta existente; ausência mantém jobs antigos. Prova reconfere chave emissora
 e continua apenas semântica, sem origem/compra/ativação (ADR 0261).
+
+Na revisão persistida de origens, compartilhe campaignBackupOriginChecks e
+leitores correntes; reutilize derivedRows w:* e project do own validado.
+Capture/recheck limitam 1–25 eventos; autentique página antes de ler origens
+por metadata e confira clock também na transação de checkpoint. originReview
+no job é cifrado até 64 KiB por conta/encarnação/CAS, sem nova coleção.
+Restart explícito não exige clock antigo e limpa somente a revisão; cancel
+limpa campo/chave. Omissa não revive e legado v1 conserva unproven. A prova
+campaign-origin-review-only não concede recurso: reautorize cada origem na
+transação de materialização. Preserve C4 1–4 (ADR 0262).

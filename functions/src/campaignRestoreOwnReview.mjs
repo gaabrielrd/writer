@@ -305,6 +305,41 @@ export function createCampaignRestoreOwnReview({ store, openSource, fileIntegrit
         base.key.bytes.fill(0);
       }
     },
+    async getCampaignRestoreProjectWitness(uid, input) {
+      authorize(uid);
+      closed(input, ['restoreId', 'jobToken']);
+      const rid = id(input.restoreId),
+        token = hash(input.jobToken),
+        seed = await db.runTransaction(async (tx) => {
+          const l = await store.load(tx, uid, rid, token);
+          if (l.job.ownReview?.phase !== 'verified')
+            fail('failed-precondition', 'own-review-incomplete');
+          return { l, key: await store.key(tx, l, true) };
+        });
+      try {
+        const integrity = await file(uid, { restoreId: rid, jobToken: token }),
+          s = decodeState(seed.l, seed.key);
+        checkOwnEnvelope(s.root, s.progress, s.project, integrity);
+        const campaignId = integrity.manifest.originCampaignId,
+          result =
+            integrity.manifest.provenanceVersion === 2
+              ? campaignFileWitness([
+                  'project',
+                  campaignId,
+                  'available',
+                  { kind: 'project', campaignId, universe: s.project.universe },
+                ])
+              : null;
+        await db.runTransaction(async (tx) => {
+          const live = await store.load(tx, uid, rid, token);
+          if (digest(live.job) !== digest(seed.l.job))
+            fail('failed-precondition', 'checkpoint-conflict');
+        });
+        return result;
+      } finally {
+        seed.key.bytes.fill(0);
+      }
+    },
     async getCampaignRestoreOwnSemantics(uid, input) {
       authorize(uid);
       closed(input, ['restoreId', 'jobToken']);

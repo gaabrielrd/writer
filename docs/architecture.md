@@ -3854,3 +3854,16 @@ base vem da porta do índice; derivedCheck cifra cursores/SHA no próprio job,
 vinculado ao índice/arquivo/encarnação. CAS/recibos e cancelamento preservados,
 sem nova coleção. A prova interna revalida assinatura e vale somente semântica.
 Origens persistidas, materialização, C4 da ativação e UI permanecem pendentes.
+
+## Revisão persistida de autorização das origens
+
+A [ADR 0262](decisions/0262-campaign-resumable-origin-review.md) compartilha
+campaignBackupOriginChecks e leitores correntes com campaignRestoreOriginReview.
+Reutiliza testemunhas de derivedRows e reconstrói project do own concluído.
+Captura/rechecagem limitam eventos e comparam o mesmo hash anterior; clock é
+revalidado também na transação que grava o checkpoint. originReview cifrado
+fica no job, até 64 KiB, sem nova coleção. Restart explícito preserva etapas
+anteriores e permite revisar após alteração de acesso; cancel limpa estado/chave.
+Prova é somente resumo de revisão atual: materialização deve reautorizar cada
+recurso na escrita. Remapeamento/mídia, C4 dos temporários antes de ativação e
+Estúdio/ciclos continuam pendentes.

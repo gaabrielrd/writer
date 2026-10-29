@@ -437,3 +437,18 @@ testes dirigidos, uma jornada SDK/Rules e cinco perfis antigos/novos/retomados
 idênticos positivos. Próximo: autorização de origens persistida, depois
 materialização/ativação/C4 dos temporários e Estúdio/ciclos. P3/D/F2-09 e
 macro 8/35 abertos; full validate no fechamento do bloco.
+
+### Revisão persistida de origens e fechamento do bloco — incremento 232
+
+[Plano 232](232-revisao-de-origens-retomavel.md) e
+[ADR 0262](../../../decisions/0262-campaign-resumable-origin-review.md)
+reutilizam testemunhas autenticadas e executam captura/rechecagem limitadas,
+com clock também na gravação do checkpoint. Restart explícito preserva as
+etapas anteriores; cancel limpa estado/chave. A prova é resumo de revisão,
+não grant: materialização deve reautorizar cada recurso em sua escrita.
+
+17 casos novos, 56 regressões, uma jornada SDK/Rules e cinco perfis de
+compatibilidade positivos. Validate integral 227–232 verde: 9.871 testes,
+cobertura/limites e lint/sintaxe/typecheck/build/smoke preservados.
+Materialização/remapeamento/mídia, C4 da ativação e Estúdio/ciclos continuam
+pendentes; P3/D/F2-09 e macro 8/35 abertos. Somente commit local.

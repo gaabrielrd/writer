@@ -130,6 +130,8 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
         'review-own-check',
         'index-derived',
         'check-derived',
+        'review-origins',
+        'restart-origins',
       ].includes(v.action)
     )
       bad();

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { ORIGIN_REVIEW_BYTES, ORIGIN_REVIEW_PHASES } from './campaignRestoreOriginFormat.mjs';
 import { DERIVED_SECTIONS, DERIVED_STATE_BYTES } from './campaignRestoreDerivedFormat.mjs';
 import { GenerationError } from './generationError.mjs';
 import { campaignBackupIdentity } from './campaignBackupSource.mjs';
@@ -129,6 +130,7 @@ export function parseJob(v, uid, rid) {
     'derivedReview',
     'derivedIndex',
     'derivedCheck',
+    'originReview',
   ]);
   if (
     v.schemaVersion !== 1 ||
@@ -367,6 +369,46 @@ export function parseJob(v, uid, rid) {
         bad();
     }
   }
+  if (v.originReview !== undefined && v.originReview !== null) {
+    const r = closed(v.originReview, [
+      'schemaVersion',
+      'phase',
+      'checkpoint',
+      'processedWitnesses',
+      'scannedRows',
+      'totalWitnesses',
+      'totalRows',
+      'payload',
+    ]);
+    if (
+      r.schemaVersion !== 1 ||
+      v.state !== 'bytes-verified' ||
+      v.derivedCheck?.phase !== 'verified' ||
+      !ORIGIN_REVIEW_PHASES.includes(r.phase) ||
+      integer(r.checkpoint, 1, v.checkpoint) !== r.checkpoint ||
+      r.totalRows !== v.derivedIndex?.rows ||
+      integer(r.totalWitnesses, 1, 0xffffffff) !== r.totalWitnesses ||
+      integer(r.processedWitnesses, 0, r.totalWitnesses) !== r.processedWitnesses ||
+      integer(r.scannedRows, 0, r.totalRows) !== r.scannedRows ||
+      (r.phase === 'verified' &&
+        (r.scannedRows !== r.totalRows || r.processedWitnesses !== r.totalWitnesses))
+    )
+      bad();
+    closed(r.payload, ['iv', 'tag', 'data']);
+    for (const k of ['iv', 'tag', 'data']) {
+      const max = k === 'iv' ? 12 : k === 'tag' ? 16 : ORIGIN_REVIEW_BYTES,
+        encoded = r.payload[k];
+      if (typeof encoded !== 'string' || encoded.length > 4 * Math.ceil(max / 3)) bad();
+      const b = Buffer.from(encoded, 'base64');
+      if (
+        b.toString('base64') !== encoded ||
+        b.length > max ||
+        (k !== 'data' && b.length !== max) ||
+        (k === 'data' && !b.length)
+      )
+        bad();
+    }
+  }
   return structuredClone(v);
 }
 export const progress = (l) => ({
@@ -411,6 +453,13 @@ export const progress = (l) => ({
     ? {
         derivedCheck: Object.fromEntries(
           Object.entries(l.job.derivedCheck).filter(([k]) => k !== 'payload' && k !== 'checkpoint'),
+        ),
+      }
+    : {}),
+  ...(l.job.originReview
+    ? {
+        originReview: Object.fromEntries(
+          Object.entries(l.job.originReview).filter(([k]) => k !== 'payload' && k !== 'checkpoint'),
         ),
       }
     : {}),

@@ -32,6 +32,7 @@ export async function campaignOriginClock(tx, db, uid, expected) {
   if (expected !== undefined && token !== expected) originReviewChanged();
   return token;
 }
+import { readCampaignSourceAccess } from './campaignSourceAccess.mjs';
 export { readCampaignSourceAccess as readCampaignOriginAccess } from './campaignSourceAccess.mjs';
 
 /** Organizational link is independent of the captured adventure and its universe. */
@@ -53,4 +54,14 @@ export async function readCampaignOrganizationalUniverseAccess(tx, db, uid, univ
         : 'unavailable',
     proof: digest(fact(world)),
   };
+}
+
+/** All callers use the same account clock and metadata-only source readers. */
+export async function readCampaignOriginWitnessAccess(tx, db, uid, clock, prepared, record) {
+  await campaignOriginClock(tx, db, uid, clock);
+  if (prepared.section === 'project')
+    return readCampaignOrganizationalUniverseAccess(tx, db, uid, prepared.content.universe);
+  return prepared.omission
+    ? { availability: prepared.omission, proof: digest(['exported-omission', record]) }
+    : readCampaignSourceAccess(tx, db, uid, prepared.base, prepared.item);
 }

@@ -852,3 +852,12 @@ foram preservados; checkpoint cifrado não acumula dependências. 379 testes
 dirigidos (15 novos), uma jornada SDK/Rules e cinco perfis de compatibilidade
 positivos. Origens persistidas, materialização/ativação/C4 e Estúdio/ciclos ainda
 necessários; macro 8/35 (22,9%), somente commit local.
+
+O [incremento 232](execucao/232-revisao-de-origens-retomavel.md) acrescenta revisão
+de autorização das origens persistida, com captura/rechecagem, clock no
+checkpoint e restart explícito. 17 casos novos, 56 regressões, uma jornada
+SDK/Rules e cinco perfis de compatibilidade positivos. Validate integral do
+bloco 227–232 verde: 9.871 testes, cobertura preservada e build/smoke positivos.
+Materialização/remapeamento/mídia, C4 dos temporários antes da ativação e
+Estúdio/ciclos continuam necessários. Prova de revisão não é grant por recurso.
+Macro permanece 8/35 (22,9%); P3/D/F2-09 e condições humanas/comerciais abertos.

@@ -2399,3 +2399,12 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-verificacao-derivada-por-dependencia.md).
      Origens persistidas, materialização/ativação/C4 e UI/ciclos continuam
      pendentes. Macro 8/35; somente commit local.
+
+232. [Revisão de origens retomável](232-revisao-de-origens-retomavel.md):
+     captura/rechecagem compartilham regras e usam testemunhas já autenticadas.
+     Clock também no checkpoint; restart explícito preserva etapas concluídas.
+     17 novos, 56 regressões, uma jornada SDK/Rules e cinco perfis de
+     compatibilidade positivos. Validate integral 227–232 verde com 9.871 testes;
+     [evidência](../../../entregas/2026-10-29-writer-v2-revisao-retomavel-das-origens.md).
+     Materialização/remapeamento/mídia, C4 da ativação e Estúdio/ciclos ainda
+     pendentes. Macro 8/35; somente commit local.
