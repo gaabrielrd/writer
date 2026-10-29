@@ -1,6 +1,76 @@
 {
   "indexes": [
     {
+      "collectionGroup": "editorChatContexts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "summary.target.kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.target.id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.projectToken",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "summary.phase",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "editorChatContextBodies",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "frozen.source.target.kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "frozen.source.target.id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "frozen.source.projectToken",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "turnBodies",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "context.source.target.kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "context.source.target.id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "context.source.projectToken",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "editorChatOperations",
       "queryScope": "COLLECTION",
       "fields": [

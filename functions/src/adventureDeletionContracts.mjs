@@ -219,6 +219,22 @@ export function adventureDeletionOwned(value, uid, id) {
     adventureDeletionInconsistent();
   return p;
 }
+/** Reopen an earlier known phase without retaining later empty certificates. */
+export function adventureDeletionReopen(p, phase, part = 0) {
+  const index = ADVENTURE_DELETION_PHASES.indexOf(phase);
+  if (index < 0 || index >= ADVENTURE_DELETION_PHASES.indexOf(p.phase))
+    adventureDeletionInconsistent();
+  return {
+    ...p,
+    phase,
+    part,
+    cursor: null,
+    parentId: null,
+    childPart: 0,
+    childCursor: null,
+    certified: ADVENTURE_DELETION_PHASES.slice(0, index),
+  };
+}
 export function adventureDeletionProgress(p, snapshot) {
   return {
     ...adventureDeletionIdentity(p),

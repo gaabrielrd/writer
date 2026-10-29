@@ -114,7 +114,7 @@ test('old receipts survive later checkpoints, while stale checkpoints, altered r
   });
   await assert.rejects(() => b.api.advanceAdventureDeletion('other', r), { code: 'not-found' });
 });
-test('unsupported final verification keeps its checkpoint after the completed cleanup phases', async () => {
+test('terminal verification follows the completed cleanup phases without skipping their certificates', async () => {
   const f = await editorChatConversationFixture({
       kind: 'adventure',
       database: adventureDeletionDb(),
@@ -129,12 +129,17 @@ test('unsupported final verification keeps its checkpoint after the completed cl
     f.records.get('users/' + uid + '/adventureDeletions/' + p.deletionId).certified,
     ['quiescence', 'media', 'images', 'children', 'controls', 'activity'],
   );
-  const before = structuredClone(f.records);
-  await assert.rejects(
-    () => b.api.advanceAdventureDeletion(uid, step(p, 100)),
-    (e) => e.details?.reason === 'adventure-deletion-step-unavailable',
+  for (let n = 0; !p.complete; n++) {
+    assert.ok(n < 30);
+    p = (await b.api.advanceAdventureDeletion(uid, step(p, 100 + n))).progress;
+  }
+  assert.equal(p.phase, 'complete');
+  assert.equal(p.state, 'deleted');
+  assert.equal(f.records.has('adventures/' + f.target.id), false);
+  assert.deepEqual(
+    f.records.get('users/' + uid + '/adventureDeletions/' + p.deletionId).certified,
+    ['quiescence', 'media', 'images', 'children', 'controls', 'activity', 'verify'],
   );
-  assert.deepEqual(f.records, before);
 });
 test('a held provider completion cannot restore context or mutate the stopped turn after quiescence', async () => {
   let entered, release;

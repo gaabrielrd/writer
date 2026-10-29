@@ -498,3 +498,11 @@ recibos e outros projetos; órfão sem atribuição verificável recusa sem ler 
 [evidência parcial](../../entregas/2026-10-28-writer-v2-chat-e-retomada-na-exclusao-de-aventuras.md).
 Chega a verify em deleting; fechamento terminal/raiz, cliente/UI e validate
 integral continuam pendentes. Macro **8/35**, P2/P3/D/F2-09 e gates inalterados.
+
+A verificação terminal interna do plano 199 está implementada: segunda inspeção
+limitada do chat, consultas vazias atuais e reabertura de fase conhecida.
+Raiz/reserva terminal/job/recibo são atômicos e conferidos por relógios nativos.
+123 Node e seis SDK/Rules passaram, com correções e limites na
+[evidência parcial](../../entregas/2026-10-28-writer-v2-verificacao-terminal-da-exclusao-de-aventuras.md).
+Motor chega a complete; transporte/cliente/UI/retomada, política final das perguntas
+e validate integral ainda faltam. Macro **8/35**, P2/P3/D/F2-09 e gates inalterados.

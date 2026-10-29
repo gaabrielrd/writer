@@ -3459,3 +3459,14 @@ outros projetos são preservados; controles são revalidados antes do certificad
 Atividade canônica é retirada com revisão da conta/checkpoint/recibo atômicos,
 preservando accessedAt. O serviço chega a verify, ainda sem fechamento da raiz,
 endpoint, cliente ou interface.
+
+## Verificação terminal da exclusão de aventuras
+
+A [ADR 0227](decisions/0227-adventure-deletion-terminal-verification.md) acrescenta
+segunda passagem do chat por metadata e observações vazias no commit final:
+inventário, usos, fontes/chaves/mídia, atividade e chat indexado por escopo.
+Reaparecimento conhecido reabre a fase responsável e trunca certificados;
+contradição corpo/controle recusa em vez de repetir um ciclo. Raiz, reserva
+terminal, job e recibo são compostos atomicamente. Leitura terminal exige raiz
+ausente e relógios nativos conjuntos. O motor interno chega a complete; transporte
+autenticado, cliente/UI/recuperação e validação integrada ainda faltam.

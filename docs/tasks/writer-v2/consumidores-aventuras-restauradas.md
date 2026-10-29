@@ -96,3 +96,11 @@ Perguntas próprias e outros projetos permanecem; atribuição incerta recusa.
 [Evidência parcial](../../entregas/2026-10-28-writer-v2-chat-e-retomada-na-exclusao-de-aventuras.md):
 56 Node e três SDK/Rules positivos. Chega a verify em deleting; raiz/final,
 cliente/UI e validate integral continuam pendentes. Não fecha plano 199.
+
+Verificação final e remoção da raiz agora existem no motor interno: nova passagem
+do chat, vazios atuais e reabertura de fase conhecida, com reserva/job/recibo
+terminais no mesmo commit. 123 Node e seis SDK/Rules passaram;
+[evidência parcial](../../entregas/2026-10-28-writer-v2-verificacao-terminal-da-exclusao-de-aventuras.md).
+O double percorre aventura restaurada; os novos SDK usam criação pelo Estúdio.
+Roundtrip amplo, transporte/cliente/UI e validate integral ainda faltam. Plano 199
+permanece aberto; perguntas próprias preservadas e política final pendente.

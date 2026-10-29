@@ -1,6 +1,7 @@
 import { validateId } from './generation.mjs';
 import { advanceAdventureQuiescence } from './adventureDeletionQuiescence.mjs';
 import { advanceAdventureDeletionCleanup } from './adventureDeletionCleanup.mjs';
+import { verifyAdventureDeletion } from './adventureDeletionVerify.mjs';
 import {
   readWorkMetadata,
   workDate,
@@ -127,8 +128,10 @@ export async function readAdventureDeletionJob(tx, db, uid, id, supplied) {
     (p.checkpoint === 0 ? last.receipt.action !== 'start' : last.receipt.action !== 'advance')
   )
     inconsistent();
+  if (digest(born(reserved, true)) !== digest(born(p.state === 'deleted' ? latest : first)))
+    inconsistent();
   const loaded = { p, snapshot, reservation, first, latest };
-  if (p.state !== 'deleted') loaded.root = await readAdventureDeletionRoot(tx, db, loaded);
+  loaded.root = await readAdventureDeletionRoot(tx, db, loaded);
   return { ...loaded, progress: progress(p, snapshot) };
 }
 /** Revocation is retained even if an external removal has already removed the root. */
@@ -144,6 +147,7 @@ export async function readAdventureDeletionRoot(tx, db, loaded) {
       'deletionId',
     ]),
     root = snapshot.data();
+  if (p.state === 'deleted' && snapshot.exists) inconsistent();
   if (
     snapshot.exists &&
     (!root ||
@@ -317,10 +321,18 @@ export function createAdventureDeletionService({ db, assets, now = Date.now }) {
           const unit =
             p.phase === 'quiescence'
               ? await advanceAdventureQuiescence(tx, db, p, now, input.operationId, io)
-              : { value: await advanceAdventureDeletionCleanup(tx, db, p, now) };
+              : {
+                  value:
+                    p.phase === 'verify'
+                      ? await verifyAdventureDeletion(tx, db, p, now)
+                      : await advanceAdventureDeletionCleanup(tx, db, p, now),
+                };
           if (unit.pending) return { pending: unit.pending };
           const value = {
             ...unit.value,
+            deletedDocuments:
+              unit.value.deletedDocuments +
+              Number(unit.value.state === 'deleted' && loaded.root.snapshot.exists),
             checkpoint: p.checkpoint + 1,
             updatedAt: workDate(now, p.updatedAt),
             lastOperationId: input.operationId,
@@ -333,6 +345,10 @@ export function createAdventureDeletionService({ db, assets, now = Date.now }) {
             expectedCheckpoint: input.expectedCheckpoint,
             confirmedCheckpoint: value.checkpoint,
           };
+          if (value.state === 'deleted') {
+            if (loaded.root.snapshot.exists) tx.delete(loaded.root.ref);
+            tx.update(loaded.reservation.ref, { state: 'deleted', updatedAt: value.updatedAt });
+          }
           tx.set(db.doc(adventureDeletionPath(uid, p.deletionId)), value);
           tx.create(ref, {
             schemaVersion: 1,

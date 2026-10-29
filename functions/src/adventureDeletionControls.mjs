@@ -16,6 +16,8 @@ import {
 import {
   adventureDeletionInconsistent as invalid,
   adventureDeletionSameBirth as sameBirth,
+  adventureDeletionReopen as reopen,
+  digest,
 } from './adventureDeletionContracts.mjs';
 const id = (v) => typeof v === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(v);
 const hash = (v) => typeof v === 'string' && /^[a-f0-9]{64}$/.test(v);
@@ -23,7 +25,7 @@ const move = (p, part) => ({ ...p, part, cursor: null });
 function pageEnd(p, docs) {
   return docs.length ? { ...p, cursor: docs.at(-1).id } : move(p, p.part + 1);
 }
-async function contextBodies(tx, db, p, now) {
+async function contextBodies(tx, db, p, now, inspect = false) {
   let q = db
     .collection('users/' + p.ownerId + '/editorChatContextBodies')
     .orderBy('__name__')
@@ -56,8 +58,11 @@ async function contextBodies(tx, db, p, now) {
       (header.summary.contextToken !== v.contextToken || !sameBirth(snapshot, header.snapshot))
     )
       invalid();
+    if (header && v.frozen?.source && digest(chatScope(v.frozen.source)) !== digest(origin))
+      invalid();
     if (!ownChatScope(origin, p, scope.token)) continue;
     assertChatBeforeDeletion(snapshot, p, scope);
+    if (inspect) return { dirty: true };
     if (header) {
       const summary = normalizeEditorChatDTO('context', {
         ...header.summary,
@@ -113,7 +118,7 @@ function decodeCursor(cursor, uid) {
   turnAddress(path, uid);
   return path;
 }
-async function turnBodies(tx, db, p) {
+async function turnBodies(tx, db, p, inspect = false) {
   if (typeof db.collectionGroup !== 'function') invalid();
   const root = 'users/' + p.ownerId + '/editorChats';
   let q = db
@@ -149,6 +154,7 @@ async function turnBodies(tx, db, p) {
       conversation = await readEditorChatConversation(tx, db, p.ownerId, conversationId);
       origin = chatScope(conversation.summary);
       if (conversation.summary.conversationToken !== v.conversationToken) invalid();
+      if (digest(chatScope(v.context?.source)) !== digest(origin)) invalid();
       assertChatCreatedBefore(parent, snapshot);
     } else {
       const proof = await orphanConversationScope(tx, db, p.ownerId, conversationId, v);
@@ -182,6 +188,7 @@ async function turnBodies(tx, db, p) {
         invalid();
     } else await assertOrphanTurnBirth(tx, db, p.ownerId, snapshot, v);
     assertChatBeforeDeletion(snapshot, p, scope);
+    if (inspect) return { dirty: true };
     remove.push(snapshot.ref);
   }
   for (const ref of remove) tx.delete(ref);
@@ -252,4 +259,16 @@ export async function prepareAdventureDeletionControls(tx, db, p, now) {
       certified: [...p.certified, 'controls'],
     };
   invalid();
+}
+
+/** Read-only second pass. Mutations remain in the earlier cleanup phase. */
+export async function inspectAdventureDeletionControls(tx, db, p, now) {
+  let value;
+  if (p.part === 0) value = await contextBodies(tx, db, p, now, true);
+  else if (p.part === 1) value = await turnBodies(tx, db, p, true);
+  else if (p.part === 2 || p.part === 3) value = await verifyHeaders(tx, db, p, p.part === 3);
+  else invalid();
+  if (value.dirty) return reopen(p, 'controls', p.part);
+  if (value.part < p.part) return reopen(p, 'controls', value.part);
+  return value;
 }

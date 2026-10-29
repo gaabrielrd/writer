@@ -338,3 +338,44 @@ e [ADR 0226](../../../decisions/0226-adventure-deletion-chat-and-activity.md).
 Chega a verify em deleting; verificação terminal/raiz e exposição/cliente/UI
 ainda faltam. Política final de perguntas permanece pendente. Macro 8/35
 inalterada; validate integral no fechamento do bloco.
+
+## Próxima integração — verificação e fechamento nativos
+
+Base 1d7a6b6 conferida limpa. Implementar segunda passagem limitada e somente
+por metadata dos corpos/controles do chat. Cada avanço conserva checkpoint e
+cursor; conteúdo próprio comprovado reabre controls, sem certificar vazio.
+Não apagar perguntas nem decidir a política final pendente.
+
+No commit terminal, reler as 23 famílias com limite um, usos de imagens, fontes/
+chaves/mídia, retomada canônica e corpos derivados por escopo indexado. Reabrir
+família/fase conhecida reaparecida e truncar certificados posteriores; identidade
+recriada ou sem prova continua recusada. As varreduras apoiam-se na reserva
+permanente e nos guards que impedem novos escritores da origem. Não substituir
+a leitura final por contadores ou certificados anteriores.
+
+Remover raiz quando presente e atualizar reserva deleted, job completo e recibo
+na mesma transação. Preservar nascimento original; leitor terminal exige raiz
+ausente e updateTime da reserva/job igual ao nascimento do último recibo.
+Retry antigo devolve recibo original/progresso atual, sem repetir efeitos.
+Recusar reserva/job/raiz recriados, mesmo com metadata copiada.
+
+Arquivos: adventureDeletion.mjs, Controls/Activity e novo Verify, índices locais,
+testes Node/SDK e documentação/ADR. Sem endpoint, cliente/UI ou migração pública.
+Testar ciclo completo/raiz ausente, reaparecimento em família/imagem/chat/atividade,
+perguntas legíveis, transação final/rollback/ACK perdido e provas nativas. Rodar
+somente checks/testes afetados; validate integral permanece no fechamento 198–199.
+
+## Resultado parcial — verificação terminal implementada
+
+Segunda passagem limitada do chat e consultas finais de inventário/usos/fontes/
+atividade/corpos implementadas. Conteúdo conhecido reabre sua fase, truncando
+certificados. Contradição corpo/controle recusa por metadata, sem ciclo de
+reabertura. Remoção da raiz, reserva deleted, job completo e recibo são atômicos;
+leitor exige raiz ausente e relógios nativos conjuntos.
+
+123 Node e seis SDK/Rules positivos; resultados reais/correções/limites na
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-verificacao-terminal-da-exclusao-de-aventuras.md)
+e [ADR 0227](../../../decisions/0227-adventure-deletion-terminal-verification.md).
+Motor interno chega a complete. Transporte autenticado, cliente/UI/recarga,
+política final de perguntas e validate integral continuam abertos; não conclui
+199/P2/P3/D/F2-09/V2. Macro 8/35 e gates preservados.

@@ -990,3 +990,10 @@ reconstruído; órfão temporário sem origem verificável recusa sem ler captur
 Preserve perguntas/recibos e outros projetos, inclusive criados após o início.
 Cursor de grupo guarda o caminho completo. Retire retomada canônica com revisão
 atômica da conta, preservando accessedAt; alias/inconsistência recusam (ADR 0226).
+
+Na verificação terminal da aventura, repita a inspeção limitada do chat e releia
+inventário/usos/fontes/atividade no commit final. Conteúdo próprio conhecido
+reabre sua fase e trunca certificados; corpo/controle com escopos contraditórios
+recusa. Remova raiz, atualize reserva e grave job/recibo atomicamente. Leitor
+terminal exige raiz ausente e updateTime de reserva/job igual ao nascimento do
+último recibo; enquanto deleting, reserva conserva o relógio inicial (ADR 0227).

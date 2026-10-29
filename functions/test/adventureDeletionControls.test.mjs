@@ -326,7 +326,7 @@ test('turn pages use full document cursors, remove 10/10/3/0 derived records and
   await until(f, b.api, p, 'verify');
 });
 
-for (const broken of ['birth', 'attempt', 'owner', 'send-receipt'])
+for (const broken of ['birth', 'attempt', 'owner', 'send-receipt', 'scope'])
   test(
     'derived body with inconsistent ' + broken + ' remains preserved with its checkpoint',
     async () => {
@@ -343,6 +343,7 @@ for (const broken of ['birth', 'attempt', 'owner', 'send-receipt'])
       }
       if (broken === 'attempt') f.records.get(path).attemptToken = 'f'.repeat(64);
       if (broken === 'owner') f.records.get(path).ownerId = 'other';
+      if (broken === 'scope') f.records.get(path).context.source.target.id = 'wrong-source';
       if (broken === 'send-receipt') {
         await f.db.runTransaction((tx) =>
           tx.delete(f.db.doc(convPath(f) + '/turns/' + sent.turn.turnId)),

@@ -1,6 +1,7 @@
 import { readWorkMetadata, digest } from './workProgressContracts.mjs';
 import { adventureDeletionInconsistent as invalid } from './adventureDeletionContracts.mjs';
-export async function prepareAdventureDeletionActivity(tx, db, p) {
+/** Metadata-only identity check shared by retirement and terminal verification. */
+export async function readAdventureDeletionActivity(tx, db, p) {
   const target = { kind: 'adventure', id: p.adventureId },
     ref = db.doc('users/' + p.ownerId + '/workActivity/' + digest(target)),
     snapshot = await readWorkMetadata(tx, ref, ['target.kind', 'target.id', 'kind']),
@@ -21,6 +22,12 @@ export async function prepareAdventureDeletionActivity(tx, db, p) {
     const v = snapshot.data();
     if (v.target?.kind !== target.kind || v.target.id !== target.id || v.kind !== target.kind)
       invalid();
+  }
+  return { ref, snapshot };
+}
+export async function prepareAdventureDeletionActivity(tx, db, p) {
+  const { ref, snapshot } = await readAdventureDeletionActivity(tx, db, p);
+  if (snapshot.exists) {
     const stateRef = db.doc('users/' + p.ownerId + '/workActivityState/current'),
       state = await readWorkMetadata(tx, stateRef, ['revision', 'accessedAt']);
     const s = state.data();
