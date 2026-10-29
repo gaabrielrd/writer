@@ -3636,3 +3636,13 @@ registro confiável dispensa campanha/base antigas, vincula conta e distingue
 active/verify-only/revoked. campaign-issuance-only não valida frames, raízes do
 arquivo ou acesso atual. Esses consumidores, persistência/cleanup, restauração
 e UI/ciclo continuam pendentes; nenhuma chave real/endpoint foi configurada.
+
+## Arquivo nativo de campanha
+
+A [ADR 0243](decisions/0243-campaign-native-backup-file.md) usa o contêiner neutro
+com magic próprio, encoder incremental e registros unit/data/witness. O callback
+interno da auditoria publica apenas a passagem capture e aguarda cada escrita.
+Sink temporário confirma após reconferência/assinatura/footer; validador separado
+confere bytes, ordinais, ambas as raízes e emissão antes de retornar integridade.
+Não há array do projeto, endpoint ou adaptador persistente novo. Autorização atual,
+consumidores de vínculos, cleanup/retomada, restauração e UI continuam pendentes.

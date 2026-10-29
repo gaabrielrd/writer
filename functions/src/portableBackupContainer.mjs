@@ -198,6 +198,74 @@ export function createPortableBackupContainer(magic, FormatError) {
     };
   }
 
+  /** Incremental counterpart of encodeBackup for a transactional, backpressured sink. */
+  function createBackupEncoder({ signal } = {}) {
+    let previous = null,
+      count = 0,
+      payloadBytes = 0,
+      busy = false,
+      closed = false;
+    async function action(run, final = false) {
+      if (busy || closed) fail('invalid-state', 'Encoder is busy or closed.');
+      busy = true;
+      try {
+        signal?.throwIfAborted();
+        const bytes = await run();
+        signal?.throwIfAborted();
+        if (closed) fail('invalid-state', 'Encoder was aborted.');
+        if (final) closed = true;
+        return bytes;
+      } catch (error) {
+        closed = true;
+        throw error;
+      } finally {
+        busy = false;
+      }
+    }
+    return Object.freeze({
+      start: () =>
+        action(async () => {
+          if (previous !== null) fail('invalid-state', 'Encoder was already started.');
+          const bytes = header();
+          previous = await digest(bytes, signal);
+          return bytes;
+        }),
+      write: (record) =>
+        action(async () => {
+          if (previous === null) fail('invalid-state', 'Start encoder first.');
+          if (count === PORTABLE_BACKUP_LIMITS.maxRecords)
+            fail('limit-exceeded', 'Too many records.');
+          const metadata = recordMetadata(record),
+            raw = record.payload;
+          if (!isBytes(raw)) fail('invalid-record', 'Payload must be bytes.');
+          if (raw.length > PORTABLE_BACKUP_LIMITS.maxPayloadBytes)
+            fail('limit-exceeded', 'Split payload into bounded records.');
+          const payload = new Uint8Array(raw),
+            total = safeSum(payloadBytes, payload.length),
+            output = await frame(count, metadata, payload, previous, signal);
+          previous = output.hash;
+          count++;
+          payloadBytes = total;
+          return output.bytes;
+        }),
+      finish: () =>
+        action(async () => {
+          if (previous === null) fail('invalid-state', 'Start encoder first.');
+          const output = await frame(
+            count,
+            { type: 'end', records: count, payloadBytes, chain: hex(previous) },
+            new Uint8Array(),
+            previous,
+            signal,
+          );
+          return output.bytes;
+        }, true),
+      abort: () => {
+        closed = true;
+      },
+    });
+  }
+
   function cursorValues(cursor, size) {
     const keys = ['schemaVersion', 'size', 'offset', 'records', 'payloadBytes', 'previous', 'done'];
     if (
@@ -417,5 +485,11 @@ export function createPortableBackupContainer(magic, FormatError) {
     return { bytes: step.record.payload, cursor: step.cursor };
   }
 
-  return Object.freeze({ encodeBackup, readBackupFrame, decodeBackup, readBackupIndexedPart });
+  return Object.freeze({
+    encodeBackup,
+    readBackupFrame,
+    decodeBackup,
+    readBackupIndexedPart,
+    createBackupEncoder,
+  });
 }

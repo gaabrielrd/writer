@@ -238,3 +238,13 @@ auditoria real. Verificação de emissão dispensa as bases antigas e não é gr
 cobertura de conteúdo/evidências, reautorização por nascimento, persistência/
 cleanup, restauração/UI/ciclo. Chaves reais não foram configuradas. P3/D/F2-09
 abertos, macro 8/35; somente commit local, validate integral no grande bloco.
+
+## Passos 3–4 — arquivo por fluxo e integridade completa
+
+O [plano 213](213-arquivo-nativo-de-campanha.md) publica unidades/bytes/evidências
+para destino temporário, com contêiner próprio e manifesto assinado após
+reconferência. Validação independente cobre cadeia/EOF, unidades e ambas as
+raízes, inclusive arquivos reencadeados. 29 testes novos e 81 regressões Node
+positivos. Integridade não autoriza origem atual ou restauração. Seguem
+consumidores de vínculos/nascimento, cleanup C4 v1–v4, persistência/retomada,
+restauração/UI/ciclo. P3/D/F2-09 abertos; macro 8/35, somente commit local.

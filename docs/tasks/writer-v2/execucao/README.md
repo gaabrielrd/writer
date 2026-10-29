@@ -2260,3 +2260,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-procedencia-assinada-do-backup.md).
      Framing/arquivo, cobertura/autorizações atuais, persistência/cleanup e
      restauração/UI/ciclo P3/D/F2-09 pendentes; macro 8/35, somente commit local.
+
+213. [Arquivo nativo de campanha](213-arquivo-nativo-de-campanha.md):
+     saída por fluxo, destino temporário, contêiner próprio e validação de bytes/
+     raízes assinadas. 29 testes novos e 81 regressões Node positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-arquivo-nativo-de-campanha.md).
+     Autorização atual/vínculos, cleanup/persistência/retomada, restauração/UI/ciclo
+     P3/D/F2-09 pendentes; macro 8/35, somente commit local.

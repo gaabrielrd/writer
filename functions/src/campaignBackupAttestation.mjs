@@ -126,7 +126,10 @@ export function createCampaignBackupAttestationService({
   checkKey();
   return {
     async issueCampaignBackupAttestation(uid, data, options = {}) {
-      const iterator = audit.auditCampaignBackup(uid, data, { signal: options.signal }),
+      const iterator = audit.auditCampaignBackup(uid, data, {
+          signal: options.signal,
+          onRecord: options.onRecord,
+        }),
         signal = options.signal,
         progress = options.onProgress;
       if (progress !== undefined && typeof progress !== 'function') setup();

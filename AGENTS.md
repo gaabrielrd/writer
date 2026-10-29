@@ -1054,3 +1054,8 @@ No manifesto de campanha, emita assinatura somente após auditoria nativa comple
 incluindo raiz das evidências de nascimento. Fixe Ed25519/domínio/keyId e chaves
 confiáveis do servidor. campaign-issuance-only não valida arquivo nem concede
 acesso; exija raízes, vínculos e autorização atual antes da restauração (ADR 0242).
+
+No arquivo de campanha, publique bytes somente em destino temporário com
+pressão de consumo. Confirme após reconferência nativa, assinatura e footer.
+Confira cada unidade e ambas as raízes; cadeia refeita não substitui assinatura.
+campaign-file-integrity-only não concede acesso nem autoriza restauração (ADR 0243).

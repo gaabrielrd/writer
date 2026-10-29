@@ -700,3 +700,14 @@ Framing/arquivo, cobertura e autorização atual das evidências, persistência/
 cleanup e restauração/UI/ciclo P3/D/F2-09 continuam pendentes; macro **8/35**.
 Nenhuma chave real/endpoint/implantação. Validate integral no grande bloco;
 somente commit local, sem CI/push/deploy.
+
+## 2026-10-29 — arquivo nativo de campanha em P3
+
+O [plano 213](execucao/213-arquivo-nativo-de-campanha.md) monta e valida arquivo
+completo por partes, com contêiner próprio, raízes/assinatura e destino temporário.
+Bytes reencadeados pelo atacante não passam na conferência do manifesto.
+29 testes novos e 81 regressões Node positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-arquivo-nativo-de-campanha.md).
+Retorno prova somente integridade/emissão. Autorização atual/vínculos, cleanup/
+persistência/retomada, restauração/UI/ciclo P3/D/F2-09 permanecem pendentes;
+macro **8/35**. Sem endpoint/adaptador real/CI/push/deploy; validate no grande bloco.

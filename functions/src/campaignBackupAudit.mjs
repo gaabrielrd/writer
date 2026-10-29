@@ -48,6 +48,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
         campaignId = intent.campaignId,
         expected = intent.expected,
         signal = options.signal,
+        onRecord = options.onRecord,
         controller = new AbortController(),
         check = () => {
           signal?.throwIfAborted();
@@ -59,6 +60,20 @@ export function createCampaignBackupAuditService({ db, storage }) {
           check();
           return value;
         };
+      if (onRecord !== undefined && typeof onRecord !== 'function')
+        workFail('invalid-argument', 'Destino de captura inválido.');
+      async function publish(record) {
+        if (!onRecord) return;
+        check();
+        await onRecord(Object.freeze({ ...record, payload: Buffer.from(record.payload) }));
+        check();
+      }
+      function partBytes(raw) {
+        if (typeof raw !== 'string' || raw.length > 87384) fail();
+        const bytes = Buffer.from(raw, 'base64');
+        if (bytes.length > CHUNK || bytes.toString('base64') !== raw) fail();
+        return bytes;
+      }
       async function* run() {
         check();
         const own = await call('getCampaignBackupSource', {
@@ -74,6 +89,21 @@ export function createCampaignBackupAuditService({ db, storage }) {
             sourceToken: own.sourceToken,
             derivedToken: derived.derivedToken,
           };
+        await publish({
+          kind: 'campaign',
+          id: 'header',
+          part: 0,
+          payload: Buffer.from(
+            JSON.stringify({
+              schemaVersion: 1,
+              kind: 'writer-campaign',
+              contentVersion: 1,
+              provenanceVersion: 1,
+              originCampaignId: campaignId,
+              availability: derived.availability,
+            }),
+          ),
+        });
         async function* scan(pass) {
           const content = createHash('sha256'),
             inventory = createHash('sha256'),
@@ -91,7 +121,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
             witnessBytes = 0;
           const fold = (hasher, v) => hasher.update(JSON.stringify(v) + '\n'),
             observe = (v) => fold(native, v),
-            unit = (section, id, field, result) => {
+            unit = async (section, id, field, result, read) => {
               const descriptor = { section, id, ...(field === null ? {} : { field }), ...result };
               units = counter(units);
               bytes = counter(bytes, result.byteLength ?? 0);
@@ -99,8 +129,46 @@ export function createCampaignBackupAuditService({ db, storage }) {
               if (result.outcome === 'omitted') omitted = counter(omitted);
               if (result.outcome === 'unavailable') unavailable = counter(unavailable);
               fold(content, descriptor);
+              if (pass !== 'capture' || !onRecord) return;
+              const ordinal = String(units - 1);
+              await publish({
+                kind: 'unit',
+                id: ordinal,
+                part: 0,
+                payload: Buffer.from(JSON.stringify(descriptor)),
+              });
+              if (result.outcome !== 'available') return;
+              if (typeof read !== 'function') fail();
+              const hash = createHash('sha256');
+              let size = 0;
+              try {
+                for (let index = 0; index < result.chunkCount; index++) {
+                  const value = await read(index);
+                  check();
+                  if (
+                    !Buffer.isBuffer(value) ||
+                    value.length !== Math.min(CHUNK, result.byteLength - index * CHUNK)
+                  )
+                    fail();
+                  if (
+                    section === 'image' &&
+                    index === 0 &&
+                    value.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a'
+                  )
+                    fail();
+                  size = counter(size, value.length);
+                  hash.update(value);
+                  await publish({ kind: 'data', id: ordinal, part: index, payload: value });
+                }
+                if (size !== result.byteLength || hash.digest('hex') !== result.contentHash) fail();
+              } finally {
+                hash.destroy();
+              }
             },
-            progress = (stage) => Object.freeze({ pass, stage, units, pages, resources });
+            progress = (stage) => {
+              check();
+              return Object.freeze({ pass, stage, units, pages, resources });
+            };
           fold(content, ['writer-campaign-logical-units-v1', campaignId, derived.availability]);
           fold(inventory, ['writer-campaign-native-inventory-v1', own, derived]);
           fold(native, ['writer-campaign-native-content-v1', own, derived]);
@@ -114,7 +182,15 @@ export function createCampaignBackupAuditService({ db, storage }) {
               witnessBytes = counter(witnessBytes, encoded.length);
             }
             witnesses = counter(witnesses);
-            fold(provenance, [section, id, result.outcome, result.content ?? null]);
+            const record = [section, id, result.outcome, result.content ?? null];
+            fold(provenance, record);
+            if (pass === 'capture')
+              await publish({
+                kind: 'witness',
+                id: String(witnesses - 1),
+                part: 0,
+                payload: Buffer.from(JSON.stringify(record)),
+              });
             observe(['witness', method, result.witnessToken ?? result]);
           }
           async function* list(method, input, key = 'id') {
@@ -157,7 +233,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
                 if (r.outcome === 'omitted' || r.outcome === 'unavailable') {
                   if (index !== 0) fail();
                   observe([method, input, r]);
-                  unit(section, id, null, {
+                  await unit(section, id, null, {
                     outcome: r.outcome,
                     ...(r.reason ? { reason: r.reason } : {}),
                   });
@@ -193,7 +269,24 @@ export function createCampaignBackupAuditService({ db, storage }) {
               }
               if (total !== manifest.byteLength || hasher.digest('hex') !== manifest.contentHash)
                 fail();
-              unit(section, id, null, { outcome: 'available', ...manifest });
+              await unit(
+                section,
+                id,
+                null,
+                { outcome: 'available', ...manifest },
+                async (index) => {
+                  const r = await call(method, { ...input, index });
+                  if (
+                    r.outcome !== 'chunk' ||
+                    r.index !== index ||
+                    r.byteLength !== manifest.byteLength ||
+                    r.chunkCount !== manifest.chunkCount ||
+                    r.contentHash !== manifest.contentHash
+                  )
+                    fail();
+                  return partBytes(r.chunkBase64);
+                },
+              );
               observe([method, input, manifest]);
             } finally {
               hasher.destroy();
@@ -253,12 +346,32 @@ export function createCampaignBackupAuditService({ db, storage }) {
                   await witness('getCampaignBackupItemWitness', input, 'item', ref.id);
                   if (audit.availability === 'available')
                     for (const field of audit.fields)
-                      unit('base:field', ref.id, field.field, {
-                        outcome: 'available',
-                        byteLength: field.bytes,
-                        chunkCount: field.chunkCount,
-                        contentHash: field.sha256,
-                      });
+                      await unit(
+                        'base:field',
+                        ref.id,
+                        field.field,
+                        {
+                          outcome: 'available',
+                          byteLength: field.bytes,
+                          chunkCount: field.chunkCount,
+                          contentHash: field.sha256,
+                        },
+                        async (index) => {
+                          const r = await call('readCampaignBackupBaseText', {
+                            ...input,
+                            field: field.field,
+                            index,
+                          });
+                          if (
+                            r.index !== index ||
+                            r.fieldHash !== field.sha256 ||
+                            r.fieldBytes !== field.bytes ||
+                            r.fieldChunkCount !== field.chunkCount
+                          )
+                            fail();
+                          return partBytes(r.chunkBase64);
+                        },
+                      );
                 }
                 yield progress('base:items');
                 check();
@@ -273,7 +386,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
                     if (family === 'images') {
                       const image = await call('getCampaignBackupImage', input);
                       observe(['base:image', image]);
-                      unit(
+                      await unit(
                         'image',
                         ref.id,
                         null,
@@ -286,6 +399,23 @@ export function createCampaignBackupAuditService({ db, storage }) {
                               chunkCount: image.chunkCount,
                               contentHash: image.contentHash,
                             },
+                        async (index) => {
+                          const r = await call('readCampaignBackupImageChunk', {
+                            ...input,
+                            imageToken: image.imageToken,
+                            index,
+                          });
+                          if (
+                            r.index !== index ||
+                            r.byteLength !== image.byteLength ||
+                            r.chunkCount !== image.chunkCount ||
+                            r.imageToken !== image.imageToken
+                          )
+                            fail();
+                          const bytes = partBytes(r.chunkBase64);
+                          if (sha(bytes) !== r.chunkHash) fail();
+                          return bytes;
+                        },
                       );
                     } else
                       await readChunked(
@@ -299,9 +429,16 @@ export function createCampaignBackupAuditService({ db, storage }) {
                   check();
                 }
             } else {
-              unit('base', null, null, { outcome: derived.availability });
+              await unit('base', null, null, { outcome: derived.availability });
               witnesses = counter(witnesses);
               fold(provenance, ['base', null, derived.availability, null]);
+              if (pass === 'capture')
+                await publish({
+                  kind: 'witness',
+                  id: String(witnesses - 1),
+                  part: 0,
+                  payload: Buffer.from(JSON.stringify(['base', null, derived.availability, null])),
+                });
             }
             for await (const page of list('listCampaignBackupLoreVariants', request)) {
               for (const ref of page.items) {
@@ -311,39 +448,72 @@ export function createCampaignBackupAuditService({ db, storage }) {
                   anchor = await call('readCampaignBackupLoreAnchor', input);
                 observe(['lore:variant', variant.contentToken ?? variant, coverage]);
                 if (variant.outcome === 'unavailable')
-                  unit('variant', ref.id, null, { outcome: 'unavailable' });
+                  await unit('variant', ref.id, null, { outcome: 'unavailable' });
                 else {
                   const encoded = Buffer.from(JSON.stringify(variant.content));
                   if (encoded.length !== variant.byteLength || sha(encoded) !== variant.contentHash)
                     fail();
-                  unit('variant', ref.id, null, {
-                    outcome: 'available',
-                    byteLength: variant.byteLength,
-                    chunkCount: Math.ceil(variant.byteLength / CHUNK),
-                    contentHash: variant.contentHash,
-                  });
+                  await unit(
+                    'variant',
+                    ref.id,
+                    null,
+                    {
+                      outcome: 'available',
+                      byteLength: variant.byteLength,
+                      chunkCount: Math.ceil(variant.byteLength / CHUNK),
+                      contentHash: variant.contentHash,
+                    },
+                    (index) => encoded.subarray(index * CHUNK, (index + 1) * CHUNK),
+                  );
                 }
                 observe(['lore:anchor', anchor.anchorToken ?? anchor]);
                 await witness('getCampaignBackupLoreWitness', input, 'anchor', ref.id);
                 if (anchor.outcome === 'unavailable')
-                  unit('anchor', ref.id, null, { outcome: 'unavailable' });
+                  await unit('anchor', ref.id, null, { outcome: 'unavailable' });
                 else {
                   const encoded = Buffer.from(JSON.stringify(anchor.content));
                   if (encoded.length !== anchor.byteLength || sha(encoded) !== anchor.contentHash)
                     fail();
-                  unit('anchor', anchor.content.anchorKey, null, {
-                    outcome: 'available',
-                    byteLength: anchor.byteLength,
-                    chunkCount: Math.ceil(anchor.byteLength / CHUNK),
-                    contentHash: anchor.contentHash,
-                  });
-                  for (const field of anchor.fields)
-                    unit('anchor:field', anchor.content.anchorKey, field.field, {
+                  await unit(
+                    'anchor',
+                    anchor.content.anchorKey,
+                    null,
+                    {
                       outcome: 'available',
-                      byteLength: field.bytes,
-                      chunkCount: field.chunkCount,
-                      contentHash: field.sha256,
-                    });
+                      byteLength: anchor.byteLength,
+                      chunkCount: Math.ceil(anchor.byteLength / CHUNK),
+                      contentHash: anchor.contentHash,
+                    },
+                    (index) => encoded.subarray(index * CHUNK, (index + 1) * CHUNK),
+                  );
+                  for (const field of anchor.fields)
+                    await unit(
+                      'anchor:field',
+                      anchor.content.anchorKey,
+                      field.field,
+                      {
+                        outcome: 'available',
+                        byteLength: field.bytes,
+                        chunkCount: field.chunkCount,
+                        contentHash: field.sha256,
+                      },
+                      async (index) => {
+                        const r = await call('readCampaignBackupLoreAnchorText', {
+                          ...input,
+                          field: field.field,
+                          index,
+                        });
+                        if (
+                          r.outcome !== 'chunk' ||
+                          r.index !== index ||
+                          r.fieldHash !== field.sha256 ||
+                          r.fieldBytes !== field.bytes ||
+                          r.fieldChunkCount !== field.chunkCount
+                        )
+                          fail();
+                        return partBytes(r.chunkBase64);
+                      },
+                    );
                 }
               }
               yield progress('lore:variants');
