@@ -1577,6 +1577,15 @@
       "indexes": []
     },
     {
+      "collectionGroup": "loreVariantBodies",
+      "fieldPath": "campaignToken",
+      "indexes": [
+        { "order": "ASCENDING", "queryScope": "COLLECTION" },
+        { "order": "DESCENDING", "queryScope": "COLLECTION" },
+        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
+      ]
+    },
+    {
       "collectionGroup": "loreVariants",
       "fieldPath": "manifest",
       "indexes": []

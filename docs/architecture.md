@@ -3593,3 +3593,13 @@ uma entidade limitada por chamada; DTO conserva estado e projeta relações
 revogadas. Cabeçalho/auditoria/texto da âncora preservam a edição antiga.
 Inventário físico dos bindings, reconferência conjunta, binários e atestado/
 arquivo/restauração/UI seguem pendentes, sem novos produtores persistentes.
+
+## Inventário físico do grafo de corpos de variantes
+
+A [ADR 0239](decisions/0239-campaign-lore-physical-body-inventory.md) enumera
+lojas legadas/gerações e corpos com referência ativa, indisponibilidade ou
+resíduo operacional. Cobertura por variante confere partes e tokens físicos;
+sonda de grupo por encarnação detecta pai ausente com cursor de caminho completo.
+Nenhum inventário lê prosa. Índice local habilita apenas metadata do cohort,
+sem comprovar ativação remota. Reconferência conjunta, binários, atestado,
+arquivo/restauração/UI continuam pendentes; C4 genérico permanece separado.

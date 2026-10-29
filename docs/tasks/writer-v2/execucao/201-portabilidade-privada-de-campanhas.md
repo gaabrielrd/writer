@@ -198,3 +198,12 @@ preservados, com autorização da âncora e da base do corpo antes de conteúdo.
 74 Node e 29 Vitest dirigidos positivos. Ainda faltam inventário físico do grafo
 de bindings, reconferência conjunta, binários/imagens, manifesto/atestado e
 arquivo/restauração/UI/ciclo. P3/D/F2-09 abertos; macro 8/35, commit local.
+
+## Passos 3–4 — corpos físicos das variantes
+
+O [plano 209](209-inventario-fisico-das-variantes.md) acrescenta inventário de
+lojas/corpos, cobertura por binding e sonda de órfãos da encarnação, sem prosa.
+Resíduo operacional não vira conteúdo portátil. 25 testes novos e 28 regressões
+dirigidos positivos. Reconferência/reconciliação conjuntas, imagens, atestado e
+arquivo/restauração/UI/ciclo seguem obrigatórios. P3/D/F2-09 abertos; macro
+8/35, somente commit local. Não é certificado de vazio de árvore arbitrária.

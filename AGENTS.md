@@ -1031,3 +1031,10 @@ da âncora congelada quanto da base do corpo antes de nome/manifesto/prosa:
 âncora nova não reautoriza corpo anterior à ficha recriada. Preserve removed/
 inactive/legacy e omita descrição de alvo revogado. JSON canônico fica limitado
 à entidade nativa; proofs privados não são procedência/grant (ADR 0238).
+
+No inventário físico de variantes, enumere lojas e corpos conhecidos sem filtrar
+token; separe referidos/revogados de resíduos operacionais. Cobertura deve exigir
+todas as partes e coincidir com tokens físicos. A sonda collectionGroup usa o
+campaignToken da encarnação, máscara fixa e cursor por referência completa,
+detectando pai ausente sem ler prosa. Não anuncie vazio de árvore arbitrária
+nem inclua resíduos como conteúdo portátil (ADR 0239).

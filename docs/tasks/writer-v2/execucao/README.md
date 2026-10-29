@@ -2231,3 +2231,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      e 29 Vitest positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-variantes-no-backup.md).
      Inventário físico dos bindings, reconferência conjunta, binários e atestado/
      arquivo/restauração/UI/ciclo P3/D/F2-09 pendentes; macro 8/35, commit local.
+
+209. [Corpos físicos das variantes](209-inventario-fisico-das-variantes.md):
+     lojas, corpos, cobertura por binding e sonda de órfãos por encarnação,
+     sem prosa. 25 testes novos e 28 regressões positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-corpos-fisicos-das-variantes.md).
+     Reconferência conjunta, binários, atestado/arquivo/restauração/UI/ciclo
+     P3/D/F2-09 pendentes; macro 8/35, commit local.
