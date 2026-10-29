@@ -775,3 +775,9 @@ prova original aos backups/âncoras de cópias, com emissão assinada e revisão
 completa de arquivo rico positivas. 20 novos e 373 regressões passaram.
 Referências opacas, C4 e materialização/ativação/Estúdio continuam pendentes;
 macro permanece 8/35 (22,9%), sem suite integral repetida neste incremento.
+
+O [incremento 221](execucao/221-referencias-portateis-da-base.md) prepara links e
+ledger portáteis na base restaurada, sem reconstruir origem por hash. Leitura e
+reexportação assinada/revisão completa passaram; 21 novos e 251 regressões positivos.
+Sessões/relações externas, C4 e restauração persistente/Estúdio ainda pendem.
+Macro permanece 8/35 (22,9%); somente commit local e checks dirigidos.

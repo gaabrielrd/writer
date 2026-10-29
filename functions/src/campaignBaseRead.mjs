@@ -1,3 +1,9 @@
+import {
+  portableCampaignLink,
+  portableCampaignLedger,
+  matchPortableCampaignLedger,
+  matchPortableCampaignLedgerOrigin,
+} from './campaignPortableReferences.mjs';
 import { restoredCampaignBaseSource } from './campaignRestoredSource.mjs';
 import { loreRelationOrigin, loreReferenceOrigin } from './campaignLoreOrigin.mjs';
 import { readWorkMetadata } from './workProgressContracts.mjs';
@@ -228,7 +234,7 @@ export function createCampaignBaseReadService({
           .where('sourceKey', '==', sourceKey)
           .orderBy('__name__')
           .limit(count + 1)
-          .select('kind', 'sourceKey', 'reference');
+          .select('kind', 'sourceKey', 'reference', 'referenceMode', 'portableReference');
         if (cursor) query = query.startAfter(cursor.key);
         const docs = (await tx.get(query)).docs,
           items = [];
@@ -451,6 +457,51 @@ export function createCampaignBaseReadService({
 }
 
 export async function projectedReference(tx, db, context, link, key) {
+  const portable = portableCampaignLink(context.base, key, link);
+  if (portable) {
+    if (portable.ledgerId !== null) {
+      const ledger = (
+        await readWorkMetadata(tx, db.doc(context.path + '/loreReferences/' + portable.ledgerId), [
+          'referenceKey',
+          'processed',
+          'reference',
+          'sourceKey',
+          'available',
+          'referenceMode',
+          'portableReference',
+        ])
+      ).data();
+      matchPortableCampaignLedger(
+        portable,
+        portableCampaignLedger(context.base, portable.ledgerId, ledger),
+      );
+    }
+    let available = false;
+    if (portable.target.available) {
+      const target = (
+        await readWorkMetadata(tx, db.doc(context.path + '/items/' + portable.target.sourceKey), [
+          'sourceKey',
+          'kind',
+          'origin',
+          'originAdventureToken',
+        ])
+      ).data();
+      if (target?.kind === 'lore' && portable.ledgerId !== null)
+        matchPortableCampaignLedgerOrigin(portable.ledgerId, target.origin);
+      available =
+        !!target &&
+        target.kind === portable.target.kind &&
+        target.sourceKey === portable.target.sourceKey &&
+        (await baseItemAvailable(tx, db, context, target));
+    }
+    return {
+      key,
+      kind: link.kind,
+      sourceKey: link.sourceKey,
+      targetKey: available ? portable.target.sourceKey : null,
+      available,
+    };
+  }
   const reference = link.reference;
   let origin = null;
   const lore =

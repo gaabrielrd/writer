@@ -1,3 +1,9 @@
+import {
+  portableCampaignLink,
+  portableCampaignLedger,
+  matchPortableCampaignLedger,
+  matchPortableCampaignLedgerOrigin,
+} from './campaignPortableReferences.mjs';
 import { campaignBackupIdentity } from './campaignBackupSource.mjs';
 import {
   baseMasked,
@@ -19,13 +25,15 @@ import { digest, workId } from './workProgressContracts.mjs';
 
 export const BASE_RESOURCES = Object.freeze({
   bodies: Object.freeze(['sourceKey', 'field', 'index']),
-  links: Object.freeze(['kind', 'sourceKey', 'reference']),
+  links: Object.freeze(['kind', 'sourceKey', 'reference', 'referenceMode', 'portableReference']),
   loreReferences: Object.freeze([
     'referenceKey',
     'reference',
     'available',
     'processed',
     'sourceKey',
+    'referenceMode',
+    'portableReference',
   ]),
   images: Object.freeze(['imageKey', 'imageId', 'state', 'path', 'generation', 'size', 'useKey']),
 });
@@ -81,6 +89,50 @@ function loreTarget(ref) {
       : { kind: 'book-lore', bookId: ref.scopeId, id: ref.entityId };
 }
 async function ledger(c, key, h, witness = true) {
+  const portable = portableCampaignLedger(c.base, key, h.value);
+  if (portable) {
+    let target = null,
+      linked = null;
+    if (!portable.target.available) {
+      const absent = await baseMasked(
+        c.tx,
+        c.db.doc(c.path + '/items/' + portable.target.sourceKey),
+        ['sourceKey'],
+      );
+      if (absent.snapshot.exists) baseInconsistent();
+    }
+    if (portable.target.available) {
+      target = await c.inspect(portable.target.sourceKey, true);
+      if (!target || target.value.kind !== 'lore') baseInconsistent();
+      matchPortableCampaignLedgerOrigin(key, target.value.origin);
+    }
+    if (witness) {
+      const q = c.db
+        .collection(c.path + '/links')
+        .where('portableReference.ledgerId', '==', key)
+        .orderBy('__name__')
+        .limit(1)
+        .select(...BASE_RESOURCES.links);
+      const result = await c.tx.get(q);
+      if (!Array.isArray(result?.docs) || result.docs.length !== 1) baseInconsistent();
+      const doc = result.docs[0];
+      if (!doc.exists || !baseHash(doc.id) || doc.ref?.path !== c.path + '/links/' + doc.id)
+        baseInconsistent();
+      const linkValue = doc.data(),
+        link = portableCampaignLink(c.base, doc.id, linkValue);
+      if (!link || link.ledgerId !== key) baseInconsistent();
+      matchPortableCampaignLedger(link, portable);
+      const owner = await source(c, linkValue.sourceKey, linkValue.kind);
+      linked = { id: doc.id, native: campaignBackupIdentity(doc), owner: owner.itemToken };
+    }
+    return {
+      target: {
+        ...portable.target,
+        available: portable.target.available && target?.availability === 'available',
+      },
+      dependencies: { target: target?.itemToken ?? null, witness: linked },
+    };
+  }
   const v = h.value,
     ref = typed(loreReference, v?.reference),
     origin = loreReferenceOrigin(ref, c.base);
@@ -142,6 +194,45 @@ async function link(c, key, h) {
   const v = h.value;
   if (!v || !['scene', 'narrative'].includes(v.kind)) baseInconsistent();
   const owner = await source(c, v.sourceKey, v.kind);
+  const portable = portableCampaignLink(c.base, key, v);
+  if (portable) {
+    let target = { ...portable.target, available: false },
+      dependency = null;
+    if (portable.ledgerId !== null) {
+      const current = await baseMasked(
+        c.tx,
+        c.db.doc(c.path + '/loreReferences/' + portable.ledgerId),
+        BASE_RESOURCES.loreReferences,
+      );
+      if (!current.snapshot.exists) baseInconsistent();
+      const declaration = portableCampaignLedger(c.base, portable.ledgerId, current.value);
+      matchPortableCampaignLedger(portable, declaration);
+      const read = await ledger(c, portable.ledgerId, current, false);
+      target = read.target;
+      dependency = { native: current.native, ...read.dependencies };
+    } else if (!portable.target.available) {
+      const absent = await baseMasked(
+        c.tx,
+        c.db.doc(c.path + '/items/' + portable.target.sourceKey),
+        ['sourceKey'],
+      );
+      if (absent.snapshot.exists) baseInconsistent();
+    } else if (portable.target.available) {
+      const head = await c.inspect(portable.target.sourceKey, true);
+      if (!head || head.value.kind !== portable.target.kind) baseInconsistent();
+      target.available = head.availability === 'available';
+      dependency = head.itemToken;
+    }
+    return entry(
+      c,
+      'links',
+      key,
+      h,
+      'available',
+      { owner: owner.itemToken, target: dependency },
+      { id: key, kind: v.kind, sourceKey: v.sourceKey, target },
+    );
+  }
   const ref =
     v.kind === 'scene'
       ? { kind: 'lore', reference: typed(loreReference, v.reference) }

@@ -2316,3 +2316,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      20 novos e 373 regressões passaram. [Evidência parcial](../../../entregas/2026-10-29-writer-v2-backup-das-campanhas-restauradas.md).
      Referências opacas, C4 e restauração persistente/UI/ciclos pendentes;
      macro 8/35, validação dirigida e somente commit local.
+
+221. [Referências portáteis da base](221-referencias-portateis-da-base.md):
+     links/ledger lógicos fechados, ausência explícita, autorização e
+     correspondência canônica/reversa. Arquivo assinado/revisado positivo;
+     21 novos e 251 regressões passaram. [Evidência parcial](../../../entregas/2026-10-29-writer-v2-referencias-portateis-da-base.md).
+     Sessões/relações externas, C4 e restauração persistente/UI/ciclos pendentes;
+     macro 8/35, validação dirigida e somente commit local.

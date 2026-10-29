@@ -1101,3 +1101,9 @@ de prosa. Inclua a prova nos tokens; reemita com o ID privado atual e os
 nascimentos originais, sem procurar a base antiga nem serializar os marcadores
 privados. Âncoras retidas mantêm sua própria autorização após adoção nativa.
 Não substitua esta prova pelo nascimento mais recente da cópia (ADR 0250).
+
+Em bases restauradas, referências portáteis usam marcadores fechados somente
+derivados do arquivo autenticado. Não reconstrua origem por hash/ID. Leitor normal
+não resolve alvo declarado ausente; backup verifica coerência física por metadata.
+Confira link/ledger nos dois sentidos, chave canônica e autorização atual do alvo
+disponível. Preserve DTOs e mantenha marcadores privados fora do arquivo (ADR 0251).

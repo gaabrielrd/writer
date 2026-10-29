@@ -321,3 +321,12 @@ revisão completa de cópia rica passaram sem base antiga e sem substituir
 conteúdo congelado por revisão viva; 20 novos e 373 regressões positivos.
 Referências opacas e inventário/cleanup C4 v1–v4 ainda antecedem qualquer
 produtor persistente; upload/retomada, materialização/ativação e UI/ciclos pendem.
+
+### Referências lógicas da base — incremento 221
+
+[Plano 221](221-referencias-portateis-da-base.md) e
+[ADR 0251](../../../decisions/0251-campaign-portable-base-references.md) preparam
+a leitura/reexportação de links/ledger sem reconstruir origem por hash.
+21 novos e 251 regressões positivos, com emissão assinada/revisão completa.
+Vínculos de sessões e relações externas de lore/variantes continuam necessários;
+depois inventário/cleanup C4 v1–v4 antes de materializar dados persistentes.

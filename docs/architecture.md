@@ -3723,3 +3723,14 @@ Testemunhas públicas usam o ID privado atual da base com o nascimento original;
 a emissão preserva a edição congelada sem serializar marcadores privados.
 As mesmas verificações protegem inventário, leitura, imagens e emissão/revisão.
 Não há produtor persistente: referências opacas e C4 v1–v4 continuam pré-requisitos.
+
+## Referências portáteis da base congelada
+
+A [ADR 0251](decisions/0251-campaign-portable-base-references.md) define marcadores
+privados fechados de link/ledger em bases restauradas. campaignPortableReferences
+compartilha validação de descritor, correspondência e chave canônica.
+campaignBaseRead projeta o DTO existente sem reconstruir referência bruta;
+campaignBackupBaseResources confere metadata, autorização e testemunha reversa
+limitada. Ausência explícita não é resolvida automaticamente e contradições
+físicas impedem reexportação. Formato público preservado; sem novo produtor.
+Sessões/relações externas e C4 continuam antes da restauração persistente.
