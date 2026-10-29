@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 233. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 234. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -62,7 +62,8 @@ não por um fluxo de importação disponível ao usuário.
 Os incrementos 227–232 implementam upload, integridade, revisão própria/
 derivada e revisão de origens duráveis, com coleta pré-ativação, conforme abaixo.
 O incremento 233 acrescenta materialização própria e sua coleta, conforme abaixo.
-Materialização derivada, mídia exclusiva temporária e ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
+O incremento 234 acrescenta a base arquivada e sua coleta. Variantes/âncoras,
+mídia exclusiva temporária e ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
 atuais. Cada recurso precisa de dono/campanha/encarnação consultáveis, reserva
 conferida em mutações e cancelamento/coleta versionados antes da primeira gravação.
 
@@ -204,3 +205,24 @@ A prova própria não certifica a auditoria física final da campanha ativa.
 [Plano 233](execucao/233-materializacao-dos-dados-proprios.md),
 [ADR 0263](../../decisions/0263-campaign-own-materialization.md) e
 [evidência](../../entregas/2026-10-29-writer-v2-materializacao-propria-de-campanhas.md).
+
+## Base arquivada — incremento 234
+
+baseWrites/ORDINAL sob JOB usa o journal nativo compartilhado com own,
+conservando o wire próprio. Acrescenta sourceKey limitado para auditoria
+autorizada dos alvos registrados. Alvos ficam sob users/UID/campaignBases/BASE:
+root/items/bodies/links/loreReferences; images entra no inventário para
+recusar órfãos, sem produtor de binário/pin neste incremento.
+
+Localizadores opcionais cifrados em derivedRows contêm ID/cursor inicial,
+não prosa; portas antigas/hash permanecem. baseMaterialization cifra estado
+até 8 KiB no job; texto por frames/chunks nativos, sem corpo crescente.
+A base pai nasce após filhos e fica preparing; campanha continua pending.
+
+Cancel retira cifra/chave e coleta baseWrites/alvos antes de próprios e índices.
+Antes de excluir pai, consulta limitada por nomes confere que filhos restantes
+estão no mesmo lote. Órfãos/recriados/alterados são preservados sem avanço;
+coleta não lê prosa nem exige origem disponível. Layouts C4 1–4 permanecem.
+[Plano 234](execucao/234-materializacao-da-base-congelada.md),
+[ADR 0264](../../decisions/0264-campaign-frozen-base-materialization.md) e
+[evidência](../../entregas/2026-10-29-writer-v2-materializacao-da-base-congelada.md).

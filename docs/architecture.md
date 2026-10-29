@@ -3878,3 +3878,17 @@ nativos do mesmo recibo. Auditoria e coleta conferem metadata/birth sem prosa,
 antes de índices/chunks. Root permanece pending sem ownerId. Prova própria
 não ativa nem autoriza derivados; base/lore/mídia, C4 dos temporários e
 auditoria física/ativação/Estúdio seguem necessários.
+
+## Materialização da base arquivada
+
+A [ADR 0264](decisions/0264-campaign-frozen-base-materialization.md) acrescenta
+location cifrado opcional no índice derivado e porta interna locate, conservando
+as portas e hash anteriores. campaignRestoreBaseMaterialization reautoriza
+cada fonte antes de prosa e na escrita. Campos UTF-8/legados viram chunks
+nativos, itens são publicados após campos e a base permanece preparing.
+
+campaignRestoreNativeWrites é compartilhado com own; baseWrites vincula alvos
+ao mesmo recibo/nascimento e à fonte. Cancel/coleta remove base antes de own
+e índices, preservando o pai quando houver filho desconhecido. Marcadores
+portáteis e sourceEvidence servem aos leitores existentes; não concedem acesso.
+Variantes/âncoras/mídia, C4 dos temporários e auditoria/ativação continuam próximos.

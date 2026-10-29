@@ -2416,3 +2416,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência](../../../entregas/2026-10-29-writer-v2-materializacao-propria-de-campanhas.md).
      Base/lore/derivados/mídia, C4 da ativação e UI/ciclos continuam pendentes.
      Macro 8/35; validate integral no fechamento do bloco, somente commit local.
+
+234. [Materialização da base congelada](234-materializacao-da-base-congelada.md):
+     estrutura/lore/texto arquivados, autorização antes de prosa e na escrita.
+     Localizadores aditivos, journal nativo compartilhado e coleta protegendo pai.
+     276 casos Node distintos (18 novos) e um cenário SDK/Rules positivos;
+     [evidência](../../../entregas/2026-10-29-writer-v2-materializacao-da-base-congelada.md).
+     Variantes/âncoras/mídia, C4, auditoria/ativação e UI/ciclos continuam abertos.
+     Macro 8/35; validate integral no fechamento do bloco, somente commit local.

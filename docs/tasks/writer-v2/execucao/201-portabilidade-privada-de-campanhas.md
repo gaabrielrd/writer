@@ -463,3 +463,14 @@ permanece pendente. 258 testes dirigidos e um cenário SDK/Rules positivos.
 Base/lore/derivados/mídia, C4 dos temporários, auditoria física/ativação e
 Estúdio/ciclos continuam necessários. Macro 8/35 e P3/D/F2-09 abertos;
 validate integral no fechamento do bloco de materialização/ativação.
+
+### Materialização da base arquivada — incremento 234
+
+[Plano 234](234-materializacao-da-base-congelada.md) e
+[ADR 0264](../../../decisions/0264-campaign-frozen-base-materialization.md)
+materializam estrutura/texto/lore da edição arquivada com autorização por recurso,
+localizadores cifrados e journal nativo/coleta antes do produtor.
+276 casos Node distintos e um cenário SDK/Rules positivos.
+Variantes/âncoras/mídia, universo autorizado, C4 dos temporários, auditoria física/
+ativação e Estúdio/ciclos permanecem. P3/D/F2-09 e macro 8/35 abertos;
+validate integral no fechamento do bloco, somente commit local.

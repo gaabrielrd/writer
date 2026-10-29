@@ -7,12 +7,14 @@ import {
   fail,
   chunkId,
 } from './campaignRestoreContracts.mjs';
+import { createCampaignRestoreBaseWrites } from './campaignRestoreBaseWrites.mjs';
 import { CHUNK_META } from './campaignRestoreStore.mjs';
 import { createCampaignRestoreOwnWrites } from './campaignRestoreOwnWrites.mjs';
 import { createCampaignRestoreDerivedIndex } from './campaignRestoreDerivedIndex.mjs';
 import { createCampaignRestoreReviewIndex } from './campaignRestoreReviewIndex.mjs';
 export function createCampaignRestoreCleanup(store) {
   const { db } = store,
+    baseWrites = createCampaignRestoreBaseWrites(store),
     ownWrites = createCampaignRestoreOwnWrites(store),
     reviewIndex = createCampaignRestoreReviewIndex(store),
     derivedIndex = createCampaignRestoreDerivedIndex(store);
@@ -38,6 +40,15 @@ export function createCampaignRestoreCleanup(store) {
           ...(Object.hasOwn(l.job, 'derivedReview') ? { derivedReview: null } : {}),
           ...(Object.hasOwn(l.job, 'derivedCheck') ? { derivedCheck: null } : {}),
           ...(Object.hasOwn(l.job, 'originReview') ? { originReview: null } : {}),
+          ...(l.job.baseMaterialization
+            ? {
+                baseMaterialization: {
+                  ...l.job.baseMaterialization,
+                  phase: 'cleaning',
+                  payload: null,
+                },
+              }
+            : {}),
           ...(l.job.ownMaterialization
             ? {
                 ownMaterialization: {
@@ -64,6 +75,7 @@ export function createCampaignRestoreCleanup(store) {
         if (request.expectedCheckpoint !== l.job.checkpoint)
           fail('failed-precondition', 'checkpoint-conflict');
         if (l.job.state !== 'cancelling') fail('failed-precondition', 'state-conflict');
+        if (await baseWrites.cleanup(tx, l, request, fp)) return null;
         if (await ownWrites.cleanup(tx, l, request, fp)) return null;
         if (await derivedIndex.cleanup(tx, l, request, fp)) return null;
         if (await reviewIndex.cleanup(tx, l, request, fp)) return null;

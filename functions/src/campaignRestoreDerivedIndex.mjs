@@ -68,7 +68,33 @@ export function createCampaignRestoreDerivedIndex(store) {
     point = (l, section, p) =>
       db.doc(l.ref.path + '/derivedPositions/' + section + '-' + chunkId(p));
   function rowShape(row) {
-    closed(row, ['index', 'section', 'key', 'position', 'value']);
+    closed(row, ['index', 'section', 'key', 'position', 'value'], ['location']);
+    if (row.location) {
+      const loc = closed(row.location, ['id', 'start']),
+        c = closed(loc.start, [
+          'schemaVersion',
+          'size',
+          'offset',
+          'records',
+          'payloadBytes',
+          'previous',
+          'done',
+        ]);
+      if (
+        typeof loc.id !== 'string' ||
+        !/^[0-9]+$/.test(loc.id) ||
+        String(integer(Number(loc.id), 0, 0xffffffff)) !== loc.id ||
+        c.schemaVersion !== 1 ||
+        c.done !== false
+      )
+        bad();
+      integer(c.size, 16);
+      integer(c.offset, 16, c.size);
+      integer(c.records, 1, 0xffffffff);
+      integer(c.payloadBytes);
+      hash(c.previous);
+      if (Buffer.byteLength(JSON.stringify(loc)) > 2048) bad();
+    }
     integer(row.index, 0, 0xfffffffe);
     integer(row.position, 0, 0xfffffffe);
     if (
@@ -182,7 +208,7 @@ export function createCampaignRestoreDerivedIndex(store) {
     if (full && v.cipherHash !== digest(v.payload)) bad();
     return { value: v, pointer };
   }
-  function decode(l, key, v) {
+  function decode(l, key, v, withLocation = false) {
     let row;
     try {
       row = JSON.parse(
@@ -202,7 +228,10 @@ export function createCampaignRestoreDerivedIndex(store) {
       Buffer.byteLength(JSON.stringify(row)) !== v.byteLength
     )
       bad();
-    return row;
+    if (row.location && row.location.start.size !== l.job.source.byteLength) bad();
+    return withLocation
+      ? row
+      : Object.fromEntries(Object.entries(row).filter(([k]) => k !== 'location'));
   }
   async function get(tx, l, key, n) {
     return decode(l, key, (await verify(tx, l, await tx.get(ref(l, n)), true)).value);
@@ -324,5 +353,16 @@ export function createCampaignRestoreDerivedIndex(store) {
     }
     return true;
   }
-  return { draft, page, lookup, reverse, available, cleanup };
+  async function locate(tx, l, key, section, k) {
+    const row = await lookup(tx, l, key, section, k);
+    if (!row) return null;
+    const raw = decode(
+      l,
+      key,
+      (await verify(tx, l, await tx.get(ref(l, row.index)), true)).value,
+      true,
+    );
+    return raw.location ?? null;
+  }
+  return { draft, page, lookup, reverse, available, cleanup, locate };
 }

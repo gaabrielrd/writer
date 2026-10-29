@@ -1218,3 +1218,13 @@ prosa. Cancel retira cifra/chave e coleta alvos/journals antes dos índices;
 vazio final de todas as famílias e recusa de órfãos/recriações são obrigatórios.
 Preparação própria não concede derivados ou ativação; C4 adequado e auditoria
 física da ativação continuam gates. Preserve layouts 1–4 (ADR 0263).
+
+Na materialização da base arquivada, autorize por testemunha/nascimento antes
+de abrir prosa via locate e repita o guard/proof na escrita. Location cifrado
+do índice é opcional; mantenha read/lookup/hash e recuse falta de posição sem
+reset automático. Checkpoint até 8 KiB, JSON até 4 MiB, texto por frame; legado
+recompõe chunks completos sem truncar e sem duplicar corpo emprestado.
+Base fica preparing e campanha pending. Journal nativo compartilhado mantém
+wire de own e acrescenta baseWrites; colete base antes de own/índices, sem
+prosa/guard de origem. Antes de apagar pai, confirme filhos no lote; preserve
+órfãos/recriados. C4 1–4 e gate de ativação permanecem (ADR 0264).

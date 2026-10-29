@@ -133,6 +133,7 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
         'review-origins',
         'restart-origins',
         'materialize-own',
+        'materialize-base',
       ].includes(v.action)
     )
       bad();
@@ -262,6 +263,7 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
       'derivedRows',
       'derivedPositions',
       'ownWrites',
+      'baseWrites',
     ])
       if (
         (

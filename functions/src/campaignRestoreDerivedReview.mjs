@@ -132,10 +132,18 @@ export function createCampaignRestoreDerivedReview({ store, openSource, ownSeman
         const own = await authority(uid, r),
           source = await openSource(uid, { restoreId: r.restoreId, jobToken: r.jobToken }),
           s = state(seed.l, seed.key),
-          drafts = [],
-          staging = createCampaignDerivedStaging(s.staging, (row) => {
-            drafts.push(index.draft(seed.l, seed.key, row, r.operationId));
-          });
+          drafts = [];
+        let location = null;
+        const staging = createCampaignDerivedStaging(s.staging, (row) => {
+          drafts.push(
+            index.draft(
+              seed.l,
+              seed.key,
+              { ...row, ...(location ? { location } : {}) },
+              r.operationId,
+            ),
+          );
+        });
         for (let n = 0; n < r.limit; n++) {
           const step = await readCampaignBackupFrame(source, s.cursor);
           s.cursor = step.cursor;
@@ -188,7 +196,9 @@ export function createCampaignRestoreDerivedReview({ store, openSource, ownSeman
                   payload = json
                     ? await readCampaignRestoreJsonUnit(source, a, invalid, JSON_BYTES)
                     : null;
+                location = { id: a.id, start: a.start };
                 await staging.unit(a.unit, payload, own.manifest.contentVersion);
+                location = null;
               }
               s.active = null;
             }
@@ -293,6 +303,7 @@ export function createCampaignRestoreDerivedReview({ store, openSource, ownSeman
           return read((tx, l, k) => index.page(tx, l, k, start, limit));
         },
         lookup: (section, key) => read((tx, l, k) => index.lookup(tx, l, k, section, key)),
+        locate: (section, key) => read((tx, l, k) => index.locate(tx, l, k, section, key)),
         reverse: (kind, key) => read((tx, l, k) => index.reverse(tx, l, k, kind, key)),
       });
     },

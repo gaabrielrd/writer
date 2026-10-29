@@ -868,3 +868,11 @@ journal nativo e coleta sem prosa antes dos índices. 258 testes dirigidos
 (19 novos) e um cenário SDK/Rules positivos. Não ativa a raiz; ainda faltam
 base/lore/derivados/mídia, C4 dos temporários, auditoria física/ativação e
 Estúdio/ciclos. Macro 8/35 (22,9%), com validate integral no fechamento do bloco.
+
+O [incremento 234](execucao/234-materializacao-da-base-congelada.md) materializa
+a base arquivada com estrutura/texto/lore e procedência originais, sem recaptura.
+Autorização por recurso antes da prosa e na escrita; journal/coleta preservam pai
+com filho desconhecido. 276 casos Node distintos (18 novos) e um cenário SDK/
+Rules positivos. Variantes/âncoras/mídia, C4 dos temporários, auditoria física/
+ativação e Estúdio/ciclos continuam necessários. Macro 8/35 (22,9%); somente
+checks dirigidos, com validate integral reservado ao fechamento do bloco.
