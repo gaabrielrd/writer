@@ -481,3 +481,12 @@ originais com a exclusão. Biblioteca ativa/personas e jobs ativados permanecem.
 registram os resultados e limites. Quiescência avança para media após as fontes;
 limpeza inteira/cliente/UI ainda faltam. Macro **8/35**, P2/P3/D/F2-09 e gates
 continuam abertos. Sem novo validate integral ou operação remota.
+
+A limpeza interna do plano 199 agora remove usos tipados de imagens com
+contadores por lote e percorre as 23 famílias de autoria, incluindo órfãos.
+78 Node distintos e 14 SDK/Rules distintos positivos em rodadas, com
+[limites/evidência](../../entregas/2026-10-28-writer-v2-usos-e-autoria-na-exclusao-de-aventuras.md).
+Imagens ativas independentes e dados de outros projetos/contas são preservados;
+conteúdo conhecido reaparecido reabre a família antes da certificação.
+Chega a controls em deleting; controles/atividade/final/cliente/UI continuam
+abertos. Sem novo validate integral, CI ou remoto. Macro **8/35** inalterada.

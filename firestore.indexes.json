@@ -1,6 +1,42 @@
 {
   "indexes": [
     {
+      "collectionGroup": "uses",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "adventureId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "imageLibrary",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "restoreOrigin.target.kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "restoreOrigin.target.id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "adventureImportOperations",
       "queryScope": "COLLECTION",
       "fields": [

@@ -1,14 +1,18 @@
 import assert from 'node:assert/strict';
 import { adventureImportDb } from './adventureImportDb.mjs';
 const compare = (a, b) => Buffer.compare(Buffer.from(a), Buffer.from(b));
-export function adventureDeletionDb() {
-  const f = adventureImportDb({ nativeUpdates: true }),
+export function adventureDeletionDb(database) {
+  const f = database ?? adventureImportDb({ nativeUpdates: true }),
     run = f.db.runTransaction.bind(f.db),
     groupReads = [];
   const query = (group, options = {}) => ({
     deletionGroup: true,
     group,
     options,
+    where: (field, op, value) => {
+      assert.equal(op, '==');
+      return query(group, { ...options, filters: [...(options.filters ?? []), [field, value]] });
+    },
     orderBy: (field, direction = 'asc') => {
       assert.equal(field, '__name__');
       assert.equal(direction, 'asc');
@@ -36,7 +40,11 @@ export function adventureDeletionDb() {
               (path) =>
                 path.split('/').at(-2) === ref.group &&
                 compare(path, lower) >= 0 &&
-                compare(path, upper) < 0,
+                compare(path, upper) < 0 &&
+                (ref.options.filters ?? []).every(
+                  ([field, value]) =>
+                    field.split('.').reduce((v, k) => v?.[k], f.records.get(path)) === value,
+                ),
             )
             .sort(compare)
             .slice(0, maximum);

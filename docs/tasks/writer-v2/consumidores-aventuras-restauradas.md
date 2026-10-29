@@ -81,3 +81,11 @@ preservados. Importações retiram manifests por recibos/nascimento e páginas,
 sem hidratar o manuscrito. Veja a
 [evidência parcial](../../entregas/2026-10-28-writer-v2-fontes-na-exclusao-de-aventuras.md).
 Usos restantes, autoria/controles/atividade, verificação final e UI ainda faltam.
+
+Usos e autoria agora possuem processadores internos limitados: contador agregado
+por imagem, biblioteca independente preservada e inventário completo por famílias,
+incluindo pais ausentes. Fonte restaurada foi percorrida em Node; consultas e
+transações foram provadas pelo SDK local em dados sintéticos de autoria/usos.
+[Evidência parcial](../../entregas/2026-10-28-writer-v2-usos-e-autoria-na-exclusao-de-aventuras.md).
+Controles/atividade/vazio terminal e interface ainda faltam; a raiz permanece
+marcada até os passos finais. Não comprova exclusão completa de projeto.

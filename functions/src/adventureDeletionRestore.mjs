@@ -19,8 +19,7 @@ export const adventureDeletionSourceOperationId = (p, operationId, kind) =>
     kind,
   });
 
-/** One original media or archive checkpoint, atomically composed with deletion. */
-export async function prepareAdventureDeletionRestore(tx, db, p, now, operationId, io) {
+async function readSource(tx, db, p, now) {
   const rows = await tx.get(
     db
       .collection('users/' + p.ownerId + '/adventureRestores')
@@ -35,8 +34,8 @@ export async function prepareAdventureDeletionRestore(tx, db, p, now, operationI
         fieldMask: ['kind'],
       })
     )[0];
-    if (io || (reserved.exists && reserved.data()?.kind === 'job')) invalid();
-    return { value: { ...p, part: 3, cursor: null } };
+    if (reserved.exists && reserved.data()?.kind === 'job') invalid();
+    return null;
   }
   if (
     rows.docs.length !== 1 ||
@@ -51,6 +50,17 @@ export async function prepareAdventureDeletionRestore(tx, db, p, now, operationI
     adventureIdentityToken(p.ownerId, p.adventureId, l.snapshot) !== p.adventureToken
   )
     invalid();
+  return { store, l };
+}
+
+/** One original media or archive checkpoint, atomically composed with deletion. */
+export async function prepareAdventureDeletionRestore(tx, db, p, now, operationId, io) {
+  const source = await readSource(tx, db, p, now);
+  if (!source) {
+    if (io) invalid();
+    return { value: { ...p, part: 3, cursor: null } };
+  }
+  const { store, l } = source;
   const mediaStore = createAdventureRestoreMediaStore(store),
     media = await mediaStore.load(tx, l);
   if (!media.value.complete) {
@@ -118,4 +128,16 @@ export async function prepareAdventureDeletionRestore(tx, db, p, now, operationI
     expectedCheckpoint: archive.value?.checkpoint ?? 0,
   });
   return { value: { ...p, deletedDocuments: sum(p.deletedDocuments, unit.removedDocuments) } };
+}
+
+/** Read-only gate: neither a historical job nor its counters authorize new media. */
+export async function assertAdventureDeletionRestoreClosed(tx, db, p, now) {
+  const source = await readSource(tx, db, p, now);
+  if (!source) return;
+  const { store, l } = source,
+    media = await createAdventureRestoreMediaStore(store).load(tx, l);
+  if (!media.value.complete) invalid();
+  const archive = await createAdventureRestoreArchiveStore(store).load(tx, l, media);
+  if (archive.value?.phase !== 'done') invalid();
+  await assertAdventureRestoreArchiveCollected(store, tx, l);
 }

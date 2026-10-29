@@ -1,5 +1,6 @@
 import { validateId } from './generation.mjs';
 import { advanceAdventureQuiescence } from './adventureDeletionQuiescence.mjs';
+import { advanceAdventureDeletionCleanup } from './adventureDeletionCleanup.mjs';
 import {
   readWorkMetadata,
   workDate,
@@ -312,14 +313,11 @@ export function createAdventureDeletionService({ db, assets, now = Date.now }) {
               'O progresso mudou. Consulte a exclusão antes de continuar.',
               'checkpoint-conflict',
             );
-          if (p.phase !== 'quiescence')
-            workFail(
-              'failed-precondition',
-              'Esta etapa da exclusão ainda está em implementação.',
-              'adventure-deletion-step-unavailable',
-            );
           if (!Number.isSafeInteger(p.checkpoint + 1)) inconsistent();
-          const unit = await advanceAdventureQuiescence(tx, db, p, now, input.operationId, io);
+          const unit =
+            p.phase === 'quiescence'
+              ? await advanceAdventureQuiescence(tx, db, p, now, input.operationId, io)
+              : { value: await advanceAdventureDeletionCleanup(tx, db, p, now) };
           if (unit.pending) return { pending: unit.pending };
           const value = {
             ...unit.value,

@@ -3437,3 +3437,14 @@ Importação prova a raiz pelo recibo da ativação e remove manifests por metad
 em páginas de oito, sem ler corpo/título. Reserva sem head, gap, chave órfã ou
 artefato reaparecido impedem saltar a fonte. A quiescência pode avançar para media;
 fases seguintes, cliente/UI e fechamento integral do plano 199 permanecem abertos.
+
+## Usos e autoria na exclusão de aventuras
+
+A [ADR 0225](decisions/0225-adventure-deletion-images-and-authorship.md) acrescenta
+portão de mídia por provas atuais e limpeza limitada de vínculos da biblioteca.
+Consulta de grupo uses é enquadrada no namespace do UID e valida a chave tipada;
+contadores são agregados por imagem, mantendo cópias/arquivos independentes.
+Children consome o inventário v1 de 23 famílias por metadata, sem exigir pais.
+Vazio final relê as famílias e reabre conteúdo próprio reaparecido. Recibos e
+checkpoint acompanham cada lote atomicamente. O serviço continua interno e
+chega a controls ainda em deleting; fechamento final e cliente/UI permanecem.

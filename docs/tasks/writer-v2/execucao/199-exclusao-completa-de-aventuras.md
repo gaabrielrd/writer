@@ -258,3 +258,43 @@ limites e checks reais estão na
 [evidência parcial](../../../entregas/2026-10-28-writer-v2-fontes-na-exclusao-de-aventuras.md)
 e decisão na [ADR 0224](../../../decisions/0224-adventure-deletion-source-retirement.md).
 Não conclui exclusão inteira, interface, P2/P3/D/F2-09 ou macro 8/35.
+
+## Próximos processadores — mídia, usos e autoria
+
+Base 916490c conferida limpa. Implementar o portão de mídia pela mesma
+identidade de fonte, sidecars originais completos e ausência de preparação/chaves
+remanescentes, sem publicar nem apagar cópias ativas.
+
+A limpeza de usos consulta o grupo uses dentro do namespace da biblioteca do
+UID, por adventureId, em lotes de 25. Conferir caminho/tipo/recurso/chave exatos;
+agrupar por imagem antes de atualizar useCount, preservando usos de outros
+projetos e bytes/metadata independentes. Uso órfão com imagem ausente pode ser
+retirado sem recriar imagem ou contador. Cabeçalho presente inconsistente
+recusa o lote inteiro. O vazio é outra observação. Declarar índice local.
+
+Processar então as 23 famílias do inventário já aprovado, com até 25 remoções,
+recibo e checkpoint por transação, sem carregar prosa ou depender de pais.
+Consulta vazia avança a família; outra verificação de todas as famílias vazias
+precede a fase controls. Raiz marcada/reserva permanecem até o fechamento
+integral, ainda não implementado.
+
+Testes dirigidos de contadores compartilhados, outras contas/projetos, órfãos,
+rollback/ACK/replay/concorrência, famílias/filhos e reaparecimento atrás da
+varredura. SDK real de consultas/contagens e transações; sem dados reais.
+Controles/chat derivado/atividade/verificação final e cliente/UI continuam
+necessários, com validate integral no fechamento do bloco.
+
+## Resultado parcial — usos e autoria implementados
+
+Mídia passa por portão de leitura; usos de imagens são retirados em 25/25/3/0
+com contador agregado por imagem, preservando cópias e outros projetos/contas.
+As 23 famílias são removidas por metadata e vazios separados, mesmo sem heads.
+Reaparecimento de conteúdo próprio conhecido reabre sua família antes do
+certificado, em vez de exigir exclusão manual ou declarar vazio falso.
+
+78 Node e 14 SDK/Rules distintos positivos em rodadas sobrepostas; resultados,
+correções de asserção e limites estão na
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-usos-e-autoria-na-exclusao-de-aventuras.md)
+e na [ADR 0225](../../../decisions/0225-adventure-deletion-images-and-authorship.md).
+Job chega a controls em deleting. Controles/chat derivado/atividade/final,
+interface e validate integral continuam pendentes; macro 8/35 inalterada.

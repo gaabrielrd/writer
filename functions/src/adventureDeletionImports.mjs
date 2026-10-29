@@ -201,3 +201,21 @@ export async function prepareAdventureDeletionImport(tx, db, p) {
     deletedDocuments: p.deletedDocuments + rows.docs.length,
   };
 }
+
+export async function assertAdventureDeletionImportCollected(tx, db, p) {
+  const loaded = await loadImport(tx, db, p);
+  if (
+    loaded &&
+    (
+      await tx.get(
+        db
+          .collection(
+            'users/' + p.ownerId + '/adventureImports/' + loaded.view.importId + '/sections',
+          )
+          .select()
+          .limit(1),
+      )
+    ).docs.length
+  )
+    invalid();
+}

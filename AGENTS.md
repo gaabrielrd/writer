@@ -976,3 +976,10 @@ a intenção após I/O; não publique no encerramento. Preserve biblioteca ativa
 personas e recibos. Retire a chave pela primeira coleta original após mídia,
 sem quebrar seu sidecar. Reserva de fonte sem head e artefato reaparecido
 impedem certificação; importação prova a raiz pelo recibo de ativação (ADR 0224).
+
+Na limpeza de aventura, consulte usos de imagem somente no namespace do UID,
+por caminho/tipo/recurso/chave tipados. Agregue decrementos por imagem em cada
+página e preserve arquivos/metadata independentes. Uso sem imagem não recria
+contador. Remova autoria pelo inventário limitado, sem carregar prosa ou exigir
+pais. Reabra família conhecida que reaparecer antes do vazio final; não certifique
+nem apague caminhos ou donos inesperados (ADR 0225).

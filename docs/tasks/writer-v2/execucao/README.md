@@ -2134,3 +2134,14 @@ Veja [ADR 0224](../../../decisions/0224-adventure-deletion-source-retirement.md)
 [evidência parcial](../../../entregas/2026-10-28-writer-v2-fontes-na-exclusao-de-aventuras.md).
 Fases seguintes, cliente/UI e validação integrada permanecem pendentes.
 Plano 199 e macro 8/35 não são concluídos por este incremento.
+
+### Plano 199 — usos e autoria em lotes
+
+Portão de mídia, vínculos tipados de imagens com contadores agregados e 23
+famílias de autoria integrados ao avanço privado. Consulta vazia final reabre
+família própria reaparecida; não remove arquivo independente nem outra conta.
+78 Node e 14 SDK/Rules distintos positivos em rodadas; veja
+[ADR 0225](../../../decisions/0225-adventure-deletion-images-and-authorship.md) e
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-usos-e-autoria-na-exclusao-de-aventuras.md).
+Controles, atividade, fechamento terminal, cliente/UI e validate integral ainda
+faltam. Plano 199, P2/P3/D/F2-09 e macro 8/35 permanecem abertos.
