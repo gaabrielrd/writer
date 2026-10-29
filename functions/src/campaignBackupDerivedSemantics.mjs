@@ -1,33 +1,16 @@
 import { randomBytes, createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { validateCampaignBackupFile } from './campaignBackupFileValidation.mjs';
+import { campaignDerivedBad as bad } from './campaignBackupDerivedContent.mjs';
 import {
-  parseCampaignDerivedUnit,
-  campaignDerivedBad as bad,
-} from './campaignBackupDerivedContent.mjs';
+  keyFor,
+  sourceMatches,
+  createCampaignDerivedStageState,
+  createCampaignDerivedStaging,
+} from './campaignBackupDerivedStaging.mjs';
 import { closedCampaignRecord, campaignManifestId } from './portableCampaignManifest.mjs';
 import { createCampaignBackupAttestationVerifier } from './campaignBackupAttestation.mjs';
 import { baseBodyKey } from './campaignBaseContracts.mjs';
 import { digest, workFail } from './workProgressContracts.mjs';
-const ordered = [
-  'base:item',
-  'base:bodies',
-  'base:links',
-  'base:loreReferences',
-  'image',
-  'variant',
-  'w:item',
-  'w:anchor',
-];
-const ranks = [
-  'base',
-  'base:item',
-  'base:bodies',
-  'base:links',
-  'base:loreReferences',
-  'image',
-  'variant',
-];
-const keyFor = (id, field = null) => JSON.stringify([id, field]);
 const safeAdd = (a, b = 1) => {
   const n = a + b;
   if (!Number.isSafeInteger(n) || n < 0) bad();
@@ -35,15 +18,6 @@ const safeAdd = (a, b = 1) => {
 };
 const available = (r) => r?.value?.unit?.outcome === 'available';
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-function sourceMatches(source, witness) {
-  if (
-    !source ||
-    source.adventureId !== witness.adventure.id ||
-    source.capturedAt !== witness.capturedAt ||
-    source.universeId !== (witness.universe.kind === 'none' ? null : witness.universe.id)
-  )
-    bad();
-}
 function itemMatches(item, witness, base) {
   if (
     item.sourceKey !== witness.sourceKey ||
@@ -115,29 +89,15 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
             )
             .update(bytes)
             .digest(),
-        sizes = Object.create(null),
-        last = Object.create(null);
-      let stored = 0,
-        lastRank = -1,
-        lastVariant = null,
-        awaitingAnchor = false,
-        pending = null,
-        baseUnit = null,
-        baseWitness = null;
-      async function stage(section, id, field, value) {
-        check();
-        const key = keyFor(id, field),
-          position = sizes[section] ?? 0;
-        if (ordered.includes(section) && last[section] !== undefined && key <= last[section]) bad();
-        last[section] = key;
-        sizes[section] = safeAdd(position);
-        const row = { index: stored, section, key, position },
-          payload = Buffer.from(JSON.stringify(value));
-        if (payload.length > 65536) bad();
-        await write(Object.freeze({ ...row, payload, tag: mac(row, payload).toString('hex') }));
-        check();
-        stored = safeAdd(stored);
-      }
+        state = createCampaignDerivedStageState(),
+        staging = createCampaignDerivedStaging(state, async (row) => {
+          check();
+          const { index, section, key, position, value } = row,
+            meta = { index, section, key, position },
+            payload = Buffer.from(JSON.stringify(value));
+          await write(Object.freeze({ ...meta, payload, tag: mac(meta, payload).toString('hex') }));
+          check();
+        });
       function detach(raw, expected) {
         if (!closedCampaignRecord(raw, ['index', 'section', 'key', 'position', 'payload', 'tag']))
           bad();
@@ -147,14 +107,14 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
         if (
           !Number.isSafeInteger(r.index) ||
           r.index < 0 ||
-          r.index >= stored ||
+          r.index >= state.stored ||
           (expected !== undefined && r.index !== expected) ||
           typeof r.section !== 'string' ||
-          !Object.hasOwn(sizes, r.section) ||
+          !Object.hasOwn(state.sizes, r.section) ||
           typeof r.key !== 'string' ||
           !Number.isSafeInteger(r.position) ||
           r.position < 0 ||
-          r.position >= sizes[r.section] ||
+          r.position >= state.sizes[r.section] ||
           !(bytes instanceof Uint8Array) ||
           bytes.length > 65536 ||
           typeof tag !== 'string' ||
@@ -180,7 +140,7 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
           if (!optional || !['base:item', 'variant'].includes(section)) bad();
           const before = raw.before === null ? null : detach(raw.before),
             after = raw.after === null ? null : detach(raw.after),
-            size = sizes[section] ?? 0;
+            size = state.sizes[section] ?? 0;
           if (
             (before && (before.section !== section || before.key >= key)) ||
             (after && (after.section !== section || after.key <= key)) ||
@@ -243,82 +203,11 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
                 check();
               }
             : undefined,
-          onWitness: async ({ record }) => {
-            const [section, id] = record;
-            if (section === 'project') return;
-            if (section === 'base') {
-              if (baseWitness) bad();
-              baseWitness = record;
-            }
-            await stage('w:' + section, id, null, { record });
-          },
-          onDerivedUnit: async ({ unit, payload, contentVersion }) => {
-            const section = unit.section,
-              field = section === 'base:field' || section === 'anchor:field';
-            if (field) {
-              if (!pending || section !== pending.section || unit.id !== pending.id) bad();
-              const expected = pending.fields[pending.index++];
-              if (
-                !expected ||
-                unit.field !== expected.field ||
-                unit.byteLength !== expected.bytes ||
-                unit.chunkCount !== expected.chunkCount ||
-                unit.contentHash !== expected.sha256
-              )
-                bad();
-              if (pending.index === pending.fields.length) pending = null;
-            } else {
-              if (pending) bad();
-              if (awaitingAnchor && section !== 'anchor') bad();
-              if (section !== 'anchor') {
-                const rank = ranks.indexOf(section);
-                if (rank < lastRank || rank < 0) bad();
-                lastRank = rank;
-              }
-            }
-            const meta = parseCampaignDerivedUnit(unit, payload, contentVersion);
-            if (section === 'base') {
-              if (baseUnit) bad();
-              baseUnit = { unit, meta };
-            }
-            if (section === 'variant') {
-              lastVariant = { unit, meta };
-              awaitingAnchor = true;
-            }
-            if (section === 'anchor') {
-              if (!awaitingAnchor || !lastVariant || unit.outcome !== lastVariant.unit.outcome)
-                bad();
-              if (unit.id !== (meta ? lastVariant.meta.anchorKey : lastVariant.unit.id)) bad();
-              awaitingAnchor = false;
-            }
-            const fields =
-              section === 'base:item'
-                ? meta?.fields
-                : section === 'anchor'
-                  ? meta?.item.fields
-                  : null;
-            if (fields?.length)
-              pending = {
-                section: section === 'anchor' ? 'anchor:field' : 'base:field',
-                id: unit.id,
-                fields,
-                index: 0,
-              };
-            await stage(section, unit.id, unit.field ?? null, { unit, meta });
-          },
+          onWitness: ({ record }) => staging.witness(record),
+          onDerivedUnit: ({ unit, payload, contentVersion }) =>
+            staging.unit(unit, payload, contentVersion),
         });
-        if (
-          pending ||
-          awaitingAnchor ||
-          !baseUnit ||
-          !baseWitness ||
-          baseUnit.unit.outcome !== file.manifest.availability ||
-          baseWitness[2] !== file.manifest.availability ||
-          baseUnit.unit.id !== baseWitness[1]
-        )
-          bad();
-        const active = baseWitness[2] === 'available' ? baseWitness[3] : null;
-        if (active) sourceMatches(baseUnit.meta, active);
+        const active = staging.finish(file);
         check();
         await seal();
         check();
@@ -341,9 +230,9 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
           JSON.stringify(['writer-campaign-derived-semantics-v1', uid, file.seal.chainHash]) + '\n',
         );
         try {
-          for (let start = 0; start < stored; start += 25) {
+          for (let start = 0; start < state.stored; start += 25) {
             check();
-            const length = Math.min(25, stored - start),
+            const length = Math.min(25, state.stored - start),
               raw = await read(start, length);
             check();
             if (!Array.isArray(raw) || raw.length !== length) bad();
@@ -362,7 +251,7 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
               if (s === 'base') {
                 if (active && u.id !== active.baseId) bad();
               } else if (s === 'w:base') {
-                if (!same(w, baseWitness)) bad();
+                if (!same(w, state.baseWitness)) bad();
               } else if (s === 'w:item') {
                 const item = await dep('base:item', w[1], null, false);
                 if (item.value.unit.outcome !== w[3].availability) bad();
@@ -566,12 +455,12 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
             }
             if (onProgress) {
               await onProgress(
-                Object.freeze({ phase: 'derived', processed: counts.records, total: stored }),
+                Object.freeze({ phase: 'derived', processed: counts.records, total: state.stored }),
               );
               check();
             }
           }
-          if (counts.records !== stored) bad();
+          if (counts.records !== state.stored) bad();
           createCampaignBackupAttestationVerifier({ keys, now }).verifyCampaignBackupAttestation(
             uid,
             { manifest: file.manifest, attestation: file.attestation },

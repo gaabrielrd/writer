@@ -415,3 +415,14 @@ chunks. 271 testes dirigidos e cinco SDK/Rules positivos, com jornada real
 ampliada de vínculos/CAS/retomada/coleta. Semântica derivada/origens persistidas,
 materialização/ativação/C4 dos jobs/índice e Estúdio/ciclos continuam necessários.
 P3/D/F2-09 e macro 8/35 abertos; full validate no fechamento do bloco.
+
+### Índice derivado e ausência — incremento 230
+
+[Plano 230](230-indice-derivado-persistente.md) e
+[ADR 0260](../../../decisions/0260-campaign-persistent-derived-index.md)
+compartilham staging e persistem metadata/posições autenticadas. Lookup/reverse,
+ausência por vizinhos, UTF-8 legado e coleta por pares antes de own/chunks.
+364 casos dirigidos distintos e uma jornada SDK/Rules com 71 pares positivos.
+Ainda falta o verificador derivado por dependência; portas usadas pelo completo
+em teste não substituem retomada em produção. Depois origens, materialização/
+ativação/C4 dos temporários e Estúdio/ciclos. P3/D/F2-09 e macro 8/35 abertos.

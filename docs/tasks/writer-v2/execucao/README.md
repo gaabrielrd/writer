@@ -2383,3 +2383,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-revisao-propria-persistida-de-campanhas.md).
      Derivados/origens persistidos, materialização/ativação/C4 dos jobs/índice e
      UI/ciclos continuam abertos. Macro 8/35; somente commit local.
+
+230. [Índice derivado persistente](230-indice-derivado-persistente.md):
+     staging compartilhado, linhas cifradas e posições autenticadas, lookup/
+     ausência/reverse e coleta antes de own/chunks. 364 casos dirigidos distintos
+     (23 novos) e uma jornada SDK/Rules com 71 pares positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-indice-derivado-persistente.md).
+     Verificador derivado retomável por dependência, origens, materialização/
+     ativação/C4 e UI/ciclos continuam pendentes. Macro 8/35; somente commit local.

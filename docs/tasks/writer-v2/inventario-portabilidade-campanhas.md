@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 229. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 230. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -59,10 +59,10 @@ não por um fluxo de importação disponível ao usuário.
 
 ## Recursos que ainda não existem
 
-Os incrementos 227–229 implementam upload, checkpoint de integridade e índice/
-revisão própria duráveis, com coleta pré-ativação, conforme abaixo. Índices da
-semântica derivada e de origens, remapeamento/materialização retomável, mídia
-exclusiva temporária e ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
+Os incrementos 227–230 implementam upload, checkpoint de integridade, índice/
+revisão própria e índice derivado duráveis, com coleta pré-ativação, conforme
+abaixo. Verificador derivado retomável, índice/revisão de origens, remapeamento/
+materialização retomável, mídia exclusiva temporária e ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
 atuais. Cada recurso precisa de dono/campanha/encarnação consultáveis, reserva
 conferida em mutações e cancelamento/coleta versionados antes da primeira gravação.
 
@@ -119,8 +119,28 @@ Recibos preservados contêm apenas hashes mínimos, não ciphertext/prosa.
 
 Família é server-only nas Rules recursivas existentes. Nenhum layout C4 1–4 foi
 alterado: integrar jobs/índice ao C4 apropriado antes de ativação continua gate.
-Índices derivados/origens ainda exigem seus contratos de reserva/coleta antes
-do produtor; não reinterpretar linhas own como outra etapa.
+O índice derivado é acrescentado em 230, abaixo; origens ainda exigem seus
+contratos de reserva/coleta antes do produtor. Não reinterpretar linhas own.
 [Plano 229](execucao/229-revisao-propria-com-indice-persistido.md),
 [ADR 0259](../../decisions/0259-campaign-persistent-own-semantic-review.md) e
 [evidência](../../entregas/2026-10-29-writer-v2-revisao-propria-persistida-de-campanhas.md).
+
+## Índice derivado e posições — incremento 230
+
+| Família                   | Endereço                            | Coleta/preservação                                             |
+| ------------------------- | ----------------------------------- | -------------------------------------------------------------- |
+| Metadata derivada cifrada | JOB/derivedRows/ORDINAL             | Seção/posição, hashes e recibo nativo; coleta por ordinal/mask |
+| Posição autenticada       | JOB/derivedPositions/SEÇÃO-POSIÇÃO  | Aponta para linha/hash com mesmo birth; apaga no mesmo passo   |
+| Estado/contadores         | derivedReview e derivedIndex no job | Cancel limpa cifra; rows/cleanedRows/sizes mínimos preservados |
+
+Antes do produtor, cleanup passou a retirar até 25 pares por passo (até 50 docs),
+com metadataHash/pointerHash/birth do recibo. Depois das linhas, exige ausência
+de posições, inclusive órfãs sem linha, antes de own/chunks. Estranhos/par
+inconsistente interrompem sem apagar alheios. Rules recursivas são server-only.
+Certificado é campaign-derived-index-only; nenhuma autorização de origem.
+
+C4 1–4 não inclui estes temporários; integrar ao C4 apropriado antes de campanha
+ativa. Verificador por dependência, origens persistidas e materialização/UI ainda
+pendem. [Plano 230](execucao/230-indice-derivado-persistente.md),
+[ADR 0260](../../decisions/0260-campaign-persistent-derived-index.md) e
+[evidência](../../entregas/2026-10-29-writer-v2-indice-derivado-persistente.md).

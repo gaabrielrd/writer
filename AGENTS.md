@@ -1178,3 +1178,14 @@ não guarde partes no checkpoint nem reduza esse suporte. Confira até 25 linhas
 por passo. Cancel limpa estados/chave; colete ordinais por masks/nome antes de
 chunks, inclusive órfãos sem índice. Preserve schema/contadores e checkpoints
 anteriores; semântica própria não concede derivado/origem/ativação (ADR 0259).
+
+No staging derivado persistente, reutilize campaignBackupDerivedStaging e exija
+integridade/own concluídos. derivedRows e derivedPositions são famílias novas,
+com seção/posição, cifra de metadata e birth/metadataHash/pointerHash do mesmo
+recibo. Autentique o par antes de usar/apagar. Ausência em base:item/variant exige
+busca por posições/vizinhos adjacentes; query vazia não basta. Reverse é existência,
+não unicidade. Preserve UTF-8 legado com cauda até 3 bytes, campos vazios e
+unresolved v3. Checkpoint até 256 KiB, DTO até 4 MiB fora dele; não acumule texto/
+imagem. Colete até 25 pares antes de own/chunks e confirme posições órfãs ausentes.
+Certificado é apenas campaign-derived-index-only; verificador por dependência,
+origens e C4 dos temporários antecedem ativação (ADR 0260).

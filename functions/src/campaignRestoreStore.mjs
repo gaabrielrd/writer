@@ -128,6 +128,7 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
         'review-file',
         'review-own-index',
         'review-own-check',
+        'index-derived',
       ].includes(v.action)
     )
       bad();
@@ -250,7 +251,7 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
     progress: progress(l),
   });
   async function empty(tx, uid, rid) {
-    for (const name of ['chunks', 'receipts', 'reviewRows'])
+    for (const name of ['chunks', 'receipts', 'reviewRows', 'derivedRows', 'derivedPositions'])
       if (
         (
           await tx.get(

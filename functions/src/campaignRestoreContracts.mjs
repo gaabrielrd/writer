@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { DERIVED_SECTIONS, DERIVED_STATE_BYTES } from './campaignRestoreDerivedFormat.mjs';
 import { GenerationError } from './generationError.mjs';
 import { campaignBackupIdentity } from './campaignBackupSource.mjs';
 export const RESTORE_DOMAIN = 'writer-campaign-restore-v1';
@@ -121,7 +122,13 @@ export const JOB_FIELDS = [
   'updatedAt',
 ];
 export function parseJob(v, uid, rid) {
-  closed(v, JOB_FIELDS, ['fileReview', 'ownReview', 'reviewIndex']);
+  closed(v, JOB_FIELDS, [
+    'fileReview',
+    'ownReview',
+    'reviewIndex',
+    'derivedReview',
+    'derivedIndex',
+  ]);
   if (
     v.schemaVersion !== 1 ||
     v.hashAlgorithm !== RESTORE_HASH_ALGORITHM ||
@@ -261,6 +268,66 @@ export function parseJob(v, uid, rid) {
         bad();
     }
   }
+  if (v.derivedIndex !== undefined) {
+    const r = closed(v.derivedIndex, ['schemaVersion', 'rows', 'cleanedRows', 'sizes', 'sealed']);
+    if (
+      r.schemaVersion !== 1 ||
+      typeof r.sealed !== 'boolean' ||
+      integer(r.rows, 0, 0xffffffff) < integer(r.cleanedRows) ||
+      (!['cancelling', 'cancelled'].includes(v.state) && r.cleanedRows !== 0) ||
+      (v.state === 'cancelled' && r.cleanedRows !== r.rows) ||
+      !r.sizes ||
+      typeof r.sizes !== 'object' ||
+      Array.isArray(r.sizes)
+    )
+      bad();
+    const sections = DERIVED_SECTIONS;
+    let total = 0;
+    for (const [k, n] of Object.entries(r.sizes)) {
+      if (!sections.includes(k)) bad();
+      total += integer(n, 0, r.rows);
+    }
+    if (total !== r.rows) bad();
+  }
+  if (v.derivedReview !== undefined && v.derivedReview !== null) {
+    const r = closed(v.derivedReview, [
+      'schemaVersion',
+      'phase',
+      'checkpoint',
+      'records',
+      'offset',
+      'rows',
+      'payload',
+    ]);
+    if (
+      r.schemaVersion !== 1 ||
+      v.state !== 'bytes-verified' ||
+      v.ownReview?.phase !== 'verified' ||
+      !v.derivedIndex ||
+      !['indexing', 'indexed'].includes(r.phase) ||
+      integer(r.checkpoint, 1, v.checkpoint) !== r.checkpoint ||
+      integer(r.records, 1, 0xffffffff) !== r.records ||
+      integer(r.offset, 16, v.source.byteLength) !== r.offset ||
+      r.rows !== v.derivedIndex.rows ||
+      (r.phase === 'indexed') !== v.derivedIndex.sealed ||
+      (r.phase === 'indexed' && r.offset !== v.source.byteLength)
+    )
+      bad();
+    closed(r.payload, ['iv', 'tag', 'data']);
+    for (const k of ['iv', 'tag', 'data']) {
+      const max = k === 'iv' ? 12 : k === 'tag' ? 16 : DERIVED_STATE_BYTES,
+        encoded = r.payload[k];
+      if (typeof encoded !== 'string' || encoded.length > 4 * Math.ceil(max / 3)) bad();
+      const b = Buffer.from(encoded, 'base64');
+      if (
+        b.toString('base64') !== encoded ||
+        b.length > max ||
+        (k !== 'data' && b.length !== max) ||
+        (k === 'data' && !b.length)
+      )
+        bad();
+    }
+  }
   return structuredClone(v);
 }
 export const progress = (l) => ({
@@ -291,6 +358,16 @@ export const progress = (l) => ({
       }
     : {}),
   ...(l.job.reviewIndex ? { reviewIndex: structuredClone(l.job.reviewIndex) } : {}),
+  ...(l.job.derivedReview
+    ? {
+        derivedReview: Object.fromEntries(
+          Object.entries(l.job.derivedReview).filter(
+            ([k]) => k !== 'payload' && k !== 'checkpoint',
+          ),
+        ),
+      }
+    : {}),
+  ...(l.job.derivedIndex ? { derivedIndex: structuredClone(l.job.derivedIndex) } : {}),
   createdAt: l.job.createdAt,
   updatedAt: l.job.updatedAt,
 });

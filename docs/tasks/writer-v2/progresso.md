@@ -837,3 +837,11 @@ acima de 2 MiB, vínculos e legado v1. 271 testes dirigidos (21 novos) e cinco
 SDK/Rules positivos; uma jornada SDK ampliada com vínculos/CAS/coleta reais.
 Derivados/origens persistidos, materialização/ativação/C4 e UI/ciclos continuam
 necessários; macro 8/35 (22,9%), somente commit local.
+
+O [incremento 230](execucao/230-indice-derivado-persistente.md) implementa staging
+derivado cifrado, posições para prova de ausência e coleta antes de own/chunks.
+Portas persistidas serviram ao verificador completo em teste de referência;
+certificado de produção continua somente de índice. 364 casos dirigidos distintos
+(23 novos) e uma jornada SDK/Rules com 71 pares positivos. Verificador derivado
+retomável por dependência, origens, materialização/ativação/C4 e UI/ciclos ainda
+necessários. Macro 8/35 (22,9%), somente commit local.

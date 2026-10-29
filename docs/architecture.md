@@ -3832,3 +3832,14 @@ limitada não aceita duplicatas; páginas são autenticadas antes de dependênci
 O parser ainda aceita um DTO de 4 MiB, sem corpo no checkpoint/índice. Cancel
 revoga chave/estados; coleta metadata do índice antes dos chunks. Sem endpoint
 público ou ativação; derivados/origens persistidos e C4 da ativação continuam.
+
+## Índice derivado persistido de campanhas
+
+A [ADR 0260](decisions/0260-campaign-persistent-derived-index.md) compartilha
+campaignBackupDerivedStaging e separa derivedRows/derivedPositions de own.
+Produtor avança por frames e cifra metadata; posições autenticadas sustentam
+lookup e prova de ausência sem índice em memória. Read/lookup/reverse revalidam
+job/chave/par nativo. JSON limitado é compartilhado com own; UTF-8 serializa cauda
+mínima, não texto. Cancel/coleta retira pares e confirma órfãos antes de own/chunks.
+Certificado é apenas de indexação. Verificador derivado por dependência, origens,
+materialização, C4 da ativação e UI continuam pendentes.

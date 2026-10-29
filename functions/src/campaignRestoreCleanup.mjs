@@ -8,10 +8,12 @@ import {
   chunkId,
 } from './campaignRestoreContracts.mjs';
 import { CHUNK_META } from './campaignRestoreStore.mjs';
+import { createCampaignRestoreDerivedIndex } from './campaignRestoreDerivedIndex.mjs';
 import { createCampaignRestoreReviewIndex } from './campaignRestoreReviewIndex.mjs';
 export function createCampaignRestoreCleanup(store) {
   const { db } = store,
-    reviewIndex = createCampaignRestoreReviewIndex(store);
+    reviewIndex = createCampaignRestoreReviewIndex(store),
+    derivedIndex = createCampaignRestoreDerivedIndex(store);
   return {
     async cancelCampaignRestore(uid, input) {
       authorize(uid);
@@ -31,6 +33,7 @@ export function createCampaignRestoreCleanup(store) {
           hashState: null,
           ...(Object.hasOwn(l.job, 'fileReview') ? { fileReview: null } : {}),
           ...(Object.hasOwn(l.job, 'ownReview') ? { ownReview: null } : {}),
+          ...(Object.hasOwn(l.job, 'derivedReview') ? { derivedReview: null } : {}),
         });
         tx.delete(key.ref);
         return null;
@@ -48,6 +51,7 @@ export function createCampaignRestoreCleanup(store) {
         if (request.expectedCheckpoint !== l.job.checkpoint)
           fail('failed-precondition', 'checkpoint-conflict');
         if (l.job.state !== 'cancelling') fail('failed-precondition', 'state-conflict');
+        if (await derivedIndex.cleanup(tx, l, request, fp)) return null;
         if (await reviewIndex.cleanup(tx, l, request, fp)) return null;
         const rows = (
           await tx.get(

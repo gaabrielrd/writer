@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { readCampaignRestoreJsonUnit } from './campaignRestoreJsonUnit.mjs';
 import { createSHA256 } from 'hash-wasm';
 import { readCampaignBackupFrame } from './campaignBackupContainer.mjs';
 import {
@@ -113,34 +113,8 @@ function decodeState(l, key) {
   if (s.phase !== 'indexing' && (s.active || !s.cursor.done || !s.hashState)) bad();
   return s;
 }
-async function ownPayload(source, active) {
-  const u = active.unit;
-  if (u.byteLength > CAMPAIGN_OWN_JSON_BYTES || u.chunkCount > 64) ownBad();
-  const parts = [],
-    h = createHash('sha256');
-  let cursor = active.start;
-  try {
-    for (let n = 0; n < u.chunkCount; n++) {
-      const step = await readCampaignBackupFrame(source, cursor);
-      cursor = step.cursor;
-      const r = step.record;
-      if (
-        !r ||
-        r.kind !== 'data' ||
-        r.id !== active.id ||
-        r.part !== n ||
-        r.payload.length !== Math.min(65536, u.byteLength - n * 65536)
-      )
-        ownBad();
-      parts.push(Buffer.from(r.payload));
-      h.update(r.payload);
-    }
-    if (h.digest('hex') !== u.contentHash) ownBad();
-    return Buffer.concat(parts, u.byteLength);
-  } finally {
-    h.destroy();
-  }
-}
+const ownPayload = (source, active) =>
+  readCampaignRestoreJsonUnit(source, active, ownBad, CAMPAIGN_OWN_JSON_BYTES);
 /** Internal own-data semantics only. It neither grants derivative access nor activates a campaign. */
 export function createCampaignRestoreOwnReview({ store, openSource, fileIntegrity }) {
   const { db } = store,
