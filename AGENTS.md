@@ -1095,3 +1095,9 @@ exatos, dono/versão/C4 antes de texto; mantenha provas fora dos DTOs. Evidênci
 fica por base, inclusive âncoras retidas; candidatas nativas futuras conservam
 seu contrato. Não habilite produtor persistente antes de integrar backup e C4
 (ADR 0249).
+
+Nos backups de bases restauradas, reutilize a prova exata por base/item antes
+de prosa. Inclua a prova nos tokens; reemita com o ID privado atual e os
+nascimentos originais, sem procurar a base antiga nem serializar os marcadores
+privados. Âncoras retidas mantêm sua própria autorização após adoção nativa.
+Não substitua esta prova pelo nascimento mais recente da cópia (ADR 0250).

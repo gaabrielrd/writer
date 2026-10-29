@@ -3710,5 +3710,16 @@ C4; a API de revisão anterior permanece exportada. campaignRestoredSource
 valida marcadores fechados/vínculos, sem depender do inventário de backup.
 Leitores de base/referências, lore/âncoras e C3 verificam metadata antes do texto;
 projeções não expõem provas e incluem sua identidade no token quando restauradas.
-Capturas nativas futuras continuam adotáveis. Backup/reexportação e C4 precisam
-ser integrados antes de qualquer produtor persistente de restauração.
+Capturas nativas futuras continuam adotáveis. A integração de backup/reexportação
+está descrita a seguir; referências opacas e C4 ainda antecedem qualquer produtor
+persistente de restauração.
+
+## Backup das bases restauradas de campanha
+
+A [ADR 0250](decisions/0250-campaign-restored-backup-readers.md) integra a evidência
+aos contextos de fonte derivada, base/âncoras e corpos de variante. A validação
+pura de item é compartilhada, e a prova participa dos tokens de captura.
+Testemunhas públicas usam o ID privado atual da base com o nascimento original;
+a emissão preserva a edição congelada sem serializar marcadores privados.
+As mesmas verificações protegem inventário, leitura, imagens e emissão/revisão.
+Não há produtor persistente: referências opacas e C4 v1–v4 continuam pré-requisitos.

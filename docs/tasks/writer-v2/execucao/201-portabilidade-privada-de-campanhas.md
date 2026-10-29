@@ -311,3 +311,13 @@ base/item/referências, lore/âncoras retidas e comparação com provas privadas
 base e autorização por nascimento original. 31 novos e 122 regressões dirigidos
 positivos. Não habilita produtor persistente: backup/reexportação, referências
 opacas e inventário/cleanup C4 v1–v4 continuam antes da materialização.
+
+### Backup das cópias restauradas — incremento 220
+
+[Plano 220](220-backup-das-campanhas-restauradas.md) e
+[ADR 0250](../../../decisions/0250-campaign-restored-backup-readers.md) integram
+a prova original a fontes/itens/âncoras/corpos do backup. Emissão assinada e
+revisão completa de cópia rica passaram sem base antiga e sem substituir
+conteúdo congelado por revisão viva; 20 novos e 373 regressões positivos.
+Referências opacas e inventário/cleanup C4 v1–v4 ainda antecedem qualquer
+produtor persistente; upload/retomada, materialização/ativação e UI/ciclos pendem.

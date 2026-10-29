@@ -1,3 +1,4 @@
+import { readRestoredCampaignBaseAccess } from './campaignRestoredSource.mjs';
 import { readCampaignBackupDerivedSource } from './campaignBackupDerivedSource.mjs';
 import { campaignBackupIdentity } from './campaignBackupSource.mjs';
 import { campaignBackupBaseAnchor, baseMasked, baseHash } from './campaignBackupBaseContext.mjs';
@@ -89,6 +90,10 @@ async function bodyOrigin(tx, c, head, item) {
       'campaignId',
       'adventureId',
       'state',
+      'universeId',
+      'capturedAt',
+      'sourceMode',
+      'sourceEvidence',
     ]);
   if (
     !base.snapshot.exists ||
@@ -123,9 +128,17 @@ async function bodyOrigin(tx, c, head, item) {
       loreBackupBad();
     generation = g.native;
   }
+  const restoredAccess = await readRestoredCampaignBaseAccess(tx, c.db, c.uid, base.value);
   const born = item.authorization?.born;
   if (!born) loreBackupBad();
-  return { available: bornBefore(born, base.native.created), native: base.native, generation };
+  return {
+    available: restoredAccess
+      ? restoredAccess.availability === 'available'
+      : bornBefore(born, base.native.created),
+    native: base.native,
+    generation,
+    ...(restoredAccess ? { restoredSourceProof: digest(restoredAccess) } : {}),
+  };
 }
 
 /** Current source must be revalidated here even if all origins are unavailable. */

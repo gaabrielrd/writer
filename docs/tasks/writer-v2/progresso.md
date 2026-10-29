@@ -769,3 +769,9 @@ leitores normais de bases restauradas com identidade original exata de fontes,
 inclusive âncoras retidas e C3. 31 novos e 122 regressões dirigidas passaram.
 Não cria materializador: backup/reexportação, referências opacas, C4 e restante
 de P3/D continuam pendentes; macro permanece 8/35 (22,9%).
+
+O [incremento 220](execucao/220-backup-das-campanhas-restauradas.md) integra a
+prova original aos backups/âncoras de cópias, com emissão assinada e revisão
+completa de arquivo rico positivas. 20 novos e 373 regressões passaram.
+Referências opacas, C4 e materialização/ativação/Estúdio continuam pendentes;
+macro permanece 8/35 (22,9%), sem suite integral repetida neste incremento.

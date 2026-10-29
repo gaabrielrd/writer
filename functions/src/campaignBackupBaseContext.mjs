@@ -1,3 +1,8 @@
+import {
+  readRestoredCampaignBaseAccess,
+  restoredCampaignItemSource,
+} from './campaignRestoredSource.mjs';
+import { readCampaignSourceAccess } from './campaignSourceAccess.mjs';
 import { campaignBackupIdentity } from './campaignBackupSource.mjs';
 import { readCampaignBackupDerivedSource } from './campaignBackupDerivedSource.mjs';
 import { basePath } from './campaignBaseContracts.mjs';
@@ -24,6 +29,7 @@ export const BASE_ITEM_HEAD = Object.freeze([
   'origin',
   'parentKey',
   'originAdventureToken',
+  'sourceEvidence',
 ]);
 export async function baseMasked(tx, ref, fieldMask) {
   const result = await tx.getAll(ref, { fieldMask }),
@@ -82,6 +88,8 @@ export async function campaignBackupBaseAnchor(
       'state',
       'sourceToken',
       'capturedAt',
+      'sourceMode',
+      'sourceEvidence',
     ]);
   if (!base.snapshot.exists) return null;
   const b = base.value;
@@ -100,6 +108,8 @@ export async function campaignBackupBaseAnchor(
     baseInconsistent();
   id(b.adventureId);
   if (b.universeId != null) id(b.universeId);
+  const restoredAccess = await readRestoredCampaignBaseAccess(tx, input.db, input.uid, b);
+  if (restoredAccess && restoredAccess.availability !== 'available') return null;
   const adventure = await baseMasked(tx, input.db.doc('adventures/' + b.adventureId), [
     'ownerId',
     'schemaVersion',
@@ -109,7 +119,7 @@ export async function campaignBackupBaseAnchor(
     !adventure.snapshot.exists ||
     adventure.value.ownerId !== input.uid ||
     adventure.value.deleting ||
-    !before(adventure.native.created, base.native.created)
+    (!restoredAccess && !before(adventure.native.created, base.native.created))
   )
     return null;
   if (adventure.value.schemaVersion !== 1) baseInconsistent();
@@ -127,7 +137,9 @@ export async function campaignBackupBaseAnchor(
       world.snapshot.exists &&
       world.value.authorId === input.uid &&
       !world.value.deleting &&
-      before(world.native.created, base.native.created);
+      (restoredAccess
+        ? restoredAccess.globalLore === 'available'
+        : before(world.native.created, base.native.created));
     globalLore = available ? 'available' : 'unavailable';
     worldFacts = { born: world.native?.created ?? null, available };
     if (available) {
@@ -139,7 +151,12 @@ export async function campaignBackupBaseAnchor(
     }
   }
   const source = { ...current, base: { id: capturedBaseId, capturedAt: b.capturedAt, globalLore } },
-    captureFacts = { base: base.native, adventure: adventure.native.created, world: worldFacts },
+    captureFacts = {
+      base: base.native,
+      adventure: adventure.native.created,
+      world: worldFacts,
+      ...(restoredAccess ? { restoredSourceProof: digest(restoredAccess) } : {}),
+    },
     heads = new Map(),
     proven = new Map();
   const anchor = {
@@ -176,7 +193,8 @@ export async function campaignBackupBaseAnchor(
     let parent = null,
       authorization = null,
       available = true;
-    const o = v.origin;
+    const o = v.origin,
+      restoredItem = restoredCampaignItemSource(b, v);
     if (v.kind === 'lore') {
       try {
         validLoreOrigin(o, base.value);
@@ -184,7 +202,22 @@ export async function campaignBackupBaseAnchor(
         baseInconsistent();
       }
       if (v.parentKey !== null) baseInconsistent();
-      if (o.kind === 'lore') {
+      if (restoredItem) {
+        const access = await readCampaignSourceAccess(
+          tx,
+          input.db,
+          input.uid,
+          restoredAccess.source,
+          restoredItem,
+        );
+        available = access.availability === 'available';
+        authorization = {
+          available,
+          born: restoredItem.origin.born,
+          proof: access.proof,
+          ...(o.kind === 'adventure-lore' ? { adventureToken } : {}),
+        };
+      } else if (o.kind === 'lore') {
         if (source.base.globalLore !== 'available') {
           available = false;
           authorization = { available: false };

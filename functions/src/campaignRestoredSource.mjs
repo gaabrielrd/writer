@@ -98,6 +98,16 @@ function itemSource(baseProof, item) {
     bad();
   return source;
 }
+/** Pure binding check for server-owned restored metadata, shared by normal and backup readers. */
+export function restoredCampaignItemSource(base, item) {
+  const baseProof = restoredCampaignBaseSource(base);
+  if (!baseProof) {
+    if (Object.hasOwn(item, 'sourceEvidence')) bad();
+    return null;
+  }
+  if (item.kind === 'lore') assertLoreItemOrigin(item, base);
+  return itemSource(baseProof, item);
+}
 export async function restoredCampaignItemAvailable(tx, db, context, item) {
   const baseProof = restoredCampaignBaseSource(context.base);
   if (!baseProof) {
@@ -121,8 +131,7 @@ export async function restoredCampaignItemAvailable(tx, db, context, item) {
     digest(head.origin) !== digest(item.origin)
   )
     bad();
-  if (head.kind === 'lore') assertLoreItemOrigin(head, context.base);
-  const source = itemSource(baseProof, head);
+  const source = restoredCampaignItemSource(context.base, head);
   const access = await readCampaignSourceAccess(tx, db, context.uid, baseProof.source, source);
   return access.availability === 'available';
 }

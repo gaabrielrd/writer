@@ -4,6 +4,7 @@ import {
   campaignBackupIdentity,
   readCampaignBackupSource,
 } from './campaignBackupSource.mjs';
+import { readRestoredCampaignBaseAccess } from './campaignRestoredSource.mjs';
 import { campaignIdentityToken } from './campaignIdentity.mjs';
 import { readAdventureDeletionReservation } from './adventureDeletionGuard.mjs';
 import { readCampaignAuthorization } from './campaignAuthorization.mjs';
@@ -149,6 +150,8 @@ export async function readCampaignBackupDerivedSource(tx, context) {
     'sourceToken',
     'state',
     'capturedAt',
+    'sourceMode',
+    'sourceEvidence',
   ]);
   const dependencies = { guard: guard.native, base: captured.native };
   if (!captured.snapshot.exists) return finish('unavailable', null, dependencies);
@@ -167,6 +170,12 @@ export async function readCampaignBackupDerivedSource(tx, context) {
     base.capturedAt > 8640000000000000
   )
     inconsistent();
+  const restoredAccess = await readRestoredCampaignBaseAccess(tx, db, uid, base);
+  if (restoredAccess) {
+    dependencies.restoredSourceProof = digest(restoredAccess);
+    if (restoredAccess.availability !== 'available')
+      return finish('unavailable', null, dependencies);
+  }
   const universeId = base.universeId == null ? null : storedId(base.universeId),
     reservation = await readAdventureDeletionReservation(tx, db, adventureId);
   if (reservation.record) return finish('unavailable', null, { ...dependencies, retired: true });
@@ -180,7 +189,7 @@ export async function readCampaignBackupDerivedSource(tx, context) {
     !adventure.snapshot.exists ||
     adventure.value?.ownerId !== uid ||
     adventure.value?.deleting ||
-    !bornBefore(adventure.native.created, captured.native.created)
+    (!restoredAccess && !bornBefore(adventure.native.created, captured.native.created))
   )
     return finish('unavailable', null, {
       ...dependencies,
@@ -221,7 +230,9 @@ export async function readCampaignBackupDerivedSource(tx, context) {
       world.snapshot.exists &&
       world.value?.authorId === uid &&
       !world.value.deleting &&
-      bornBefore(world.native.created, captured.native.created);
+      (restoredAccess
+        ? restoredAccess.globalLore === 'available'
+        : bornBefore(world.native.created, captured.native.created));
     globalLore = available ? 'available' : 'unavailable';
     worldFacts = {
       born: world.native?.created ?? null,

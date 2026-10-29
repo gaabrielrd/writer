@@ -2309,3 +2309,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      regressões dirigidas positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-identidade-das-fontes-restauradas.md).
      Backup/reexportação, referências opacas, C4 e restauração persistente/UI/ciclos
      pendem; suite integral no grande bloco, macro 8/35 e somente commit local.
+
+220. [Backup das campanhas restauradas](220-backup-das-campanhas-restauradas.md):
+     prova original nas fontes/itens/âncoras/corpos, com testemunha reemitida
+     usando a base privada atual. Arquivo rico assinado/revisado positivo;
+     20 novos e 373 regressões passaram. [Evidência parcial](../../../entregas/2026-10-29-writer-v2-backup-das-campanhas-restauradas.md).
+     Referências opacas, C4 e restauração persistente/UI/ciclos pendentes;
+     macro 8/35, validação dirigida e somente commit local.
