@@ -1,3 +1,4 @@
+import { portableBaseLoreRelations } from './campaignPortableRelations.mjs';
 import {
   portableCampaignLink,
   portableCampaignLedger,
@@ -63,6 +64,7 @@ export function summary(item) {
 }
 
 export async function projectedStructured(tx, db, context, item) {
+  const portableRelations = portableBaseLoreRelations(context.base, item);
   const stored = item.structured ?? {},
     result = {};
   const fields =
@@ -93,6 +95,34 @@ export async function projectedStructured(tx, db, context, item) {
   }
   if (item.kind === 'lore') {
     result.relations = [];
+    if (portableRelations !== null) {
+      for (const relation of portableRelations) {
+        if (!relation.available) continue;
+        const target = (
+          await readWorkMetadata(tx, db.doc(context.path + '/items/' + relation.targetKey), [
+            'sourceKey',
+            'kind',
+            'title',
+            'origin',
+            'originAdventureToken',
+          ])
+        ).data();
+        if (
+          !target ||
+          target.kind !== 'lore' ||
+          target.sourceKey !== relation.targetKey ||
+          !(await baseItemAvailable(tx, db, context, target))
+        )
+          continue;
+        result.relations.push({
+          targetKey: relation.targetKey,
+          title: target.title,
+          relationType: relation.relationType,
+          description: relation.description ?? '',
+        });
+      }
+      return result;
+    }
     if (!Array.isArray(stored.relations ?? []) || (stored.relations?.length ?? 0) > 50)
       inconsistent();
     for (const relation of stored.relations ?? []) {

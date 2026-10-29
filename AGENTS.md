@@ -1113,3 +1113,10 @@ vínculo, corpo ou mídia de base restaurada. Preserve a resolução pela base
 ativa/C2 atual, sem fallback histórico nem busca por hash/nome em origem viva.
 Referência própria não é grant; ausência fica neutra e adoção explícita invalida
 o contexto anterior sem reescrever S1 (ADR 0252).
+
+No lore congelado restaurado, relações portáteis usam marcador fechado, sem
+reconstruir targetEntityId. Exiba apenas alvos autorizados na mesma base/âncora;
+preserve chave/estado dos demais e não invente descritores. Backup conserva
+DTO/ordem e recusa contradição física por metadata. Escrita/descarte de variante
+não altera a base original; corpos opacos de variantes ainda exigem contrato
+próprio antes do produtor persistente (ADR 0253).

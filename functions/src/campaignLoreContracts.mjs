@@ -1,3 +1,4 @@
+import { portableBaseLoreRelations } from './campaignPortableRelations.mjs';
 import { assertLoreItemOrigin, loreRelationOrigin } from './campaignLoreOrigin.mjs';
 import { validateId } from './generation.mjs';
 import {
@@ -438,6 +439,7 @@ export async function readBaseEntity(tx, db, context, item) {
   if (!item || item.sourceKey !== expectedKey) inconsistent();
   assertLoreItemOrigin(item, context.base);
   if (!(await baseItemAvailable(tx, db, context, item))) fail('not-found', 'Ficha indisponível.');
+  const portableRelations = portableBaseLoreRelations(context.base, item);
   if (!Array.isArray(item.fields) || item.fields.length > 6) inconsistent();
   const texts = {},
     allowed = ['summary', 'details', ...textNames];
@@ -486,21 +488,46 @@ export async function readBaseEntity(tx, db, context, item) {
     !Array.isArray(stored.aliases) ||
     stored.aliases.length > 20 ||
     stored.aliases.some((value) => !utf8(value) || value.length > 200) ||
-    !Array.isArray(stored.relations) ||
-    stored.relations.length > 50
+    (portableRelations === null &&
+      (!Array.isArray(stored.relations) || stored.relations.length > 50))
   )
     inconsistent();
   const relations = [];
-  for (const relation of stored.relations) {
-    const origin = loreRelationOrigin(relation.targetEntityId, context.base);
-    if (!origin) continue;
-    if (!utf8(relation.relationType) || !utf8(relation.description ?? '')) inconsistent();
-    relations.push({
-      targetKey: baseSourceKey(origin),
-      relationType: relation.relationType,
-      description: relation.description ?? '',
-    });
-  }
+  if (portableRelations !== null) {
+    for (const relation of portableRelations) {
+      if (!relation.available) continue;
+      const target = (
+        await readWorkMetadata(tx, db.doc(context.path + '/items/' + relation.targetKey), [
+          'sourceKey',
+          'kind',
+          'origin',
+          'originAdventureToken',
+        ])
+      ).data();
+      if (
+        !target ||
+        target.kind !== 'lore' ||
+        target.sourceKey !== relation.targetKey ||
+        !(await baseItemAvailable(tx, db, context, target))
+      )
+        continue;
+      relations.push({
+        targetKey: relation.targetKey,
+        relationType: relation.relationType,
+        description: relation.description ?? '',
+      });
+    }
+  } else
+    for (const relation of stored.relations) {
+      const origin = loreRelationOrigin(relation.targetEntityId, context.base);
+      if (!origin) continue;
+      if (!utf8(relation.relationType) || !utf8(relation.description ?? '')) inconsistent();
+      relations.push({
+        targetKey: baseSourceKey(origin),
+        relationType: relation.relationType,
+        description: relation.description ?? '',
+      });
+    }
   return {
     name: item.title,
     aliases: stored.aliases,

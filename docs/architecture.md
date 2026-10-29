@@ -3744,3 +3744,13 @@ O vínculo próprio continua declarativo, resolvido pela base ativa/C2 atual:
 ausência neutra, sem origem viva e sem retenção histórica de cenas.
 Adoção explícita muda a projeção, preservando S1. Nenhuma mudança de formato
 ou estado permanente de referência; relações portáteis e C4 continuam pendentes.
+
+## Relações portáteis do lore congelado
+
+A [ADR 0253](decisions/0253-campaign-portable-frozen-lore-relations.md) usa
+campaignPortableRelations para validar structured.relationMode/portableRelations
+em base restaurada. campaignBaseRead, readBaseEntity e campaignBackupBaseContent
+consomem a representação sem fabricar IDs/labels. Alvos sem prova ficam neutros;
+descritores originais permanecem privados e não são usados como grant.
+Backup conserva DTO e ordem; variante inteira/descarte mantém a base intacta.
+Corpos de variantes e C4 permanecem antes da materialização persistente.

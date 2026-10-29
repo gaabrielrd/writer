@@ -2330,3 +2330,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      passaram; [evidência parcial](../../../entregas/2026-10-29-writer-v2-materiais-restaurados-nas-sessoes.md).
      Relações externas, C4 e restauração persistente/UI/ciclos pendentes;
      macro 8/35, checks dirigidos e somente commit local.
+
+223. [Relações portáteis do lore congelado](223-relacoes-portateis-do-lore-congelado.md):
+     validador e leitores normal/C2/backup, ordem/múltiplos tipos e chaves
+     indisponíveis preservadas. Emissão/revisão e âncora legada positivas;
+     20 novos e 179 regressões passaram. [Evidência parcial](../../../entregas/2026-10-29-writer-v2-relacoes-portateis-do-lore-congelado.md).
+     Corpos de variantes, C4 e restauração persistente/UI/ciclos pendentes;
+     macro 8/35, checks dirigidos e somente commit local.

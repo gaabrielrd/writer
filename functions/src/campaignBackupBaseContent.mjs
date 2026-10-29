@@ -1,3 +1,4 @@
+import { portableBaseLoreRelations } from './campaignPortableRelations.mjs';
 import { validateCapturedFields, validItem } from './campaignBaseValidation.mjs';
 import { loreRelationOrigin } from './campaignLoreOrigin.mjs';
 import { digest } from './workProgressContracts.mjs';
@@ -32,6 +33,8 @@ export const BASE_CONTENT_FIELDS = Object.freeze([
   'structured.category',
   'structured.isPublic',
   'structured.relations',
+  'structured.relationMode',
+  'structured.portableRelations',
   'image',
 ]);
 const text = (value) => {
@@ -89,6 +92,7 @@ export async function campaignBackupBaseFields(c, item, h) {
   return result;
 }
 async function structured(c, item) {
+  const portableRelations = portableBaseLoreRelations(c.base, item);
   const stored = item.structured ?? {},
     result = {};
   const allowed =
@@ -115,6 +119,27 @@ async function structured(c, item) {
     result[key] = value;
   }
   if (item.kind === 'lore') {
+    if (portableRelations !== null) {
+      result.relations = [];
+      for (const relation of portableRelations) {
+        if (!relation.available) {
+          const head = await baseMasked(c.tx, c.db.doc(c.path + '/items/' + relation.targetKey), [
+            'sourceKey',
+          ]);
+          if (head.snapshot.exists) baseInconsistent();
+          result.relations.push({ targetKey: relation.targetKey, available: false });
+          continue;
+        }
+        const target = await c.inspect(relation.targetKey, true);
+        if (target && target.value.kind !== 'lore') baseInconsistent();
+        result.relations.push(
+          target?.availability === 'available'
+            ? { ...relation }
+            : { targetKey: relation.targetKey, available: false },
+        );
+      }
+      return result;
+    }
     const relations = stored.relations ?? [];
     if (!Array.isArray(relations) || relations.length > 50) baseInconsistent();
     result.relations = [];

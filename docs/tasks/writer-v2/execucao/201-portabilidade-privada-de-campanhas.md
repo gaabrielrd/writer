@@ -339,3 +339,12 @@ a prova por cena/bloco nos caminhos S2, inclusive candidatos e mídia.
 16 novos e 27 regressões positivos. Não muda o DTO próprio de vínculo nem
 o contrato de adoção explícita. Relações externas e inventário/cleanup C4 v1–v4
 continuam antes do produtor persistente; materialização/ativação/UI/ciclos pendem.
+
+### Relações lógicas do lore congelado — incremento 223
+
+[Plano 223](223-relacoes-portateis-do-lore-congelado.md) e
+[ADR 0253](../../../decisions/0253-campaign-portable-frozen-lore-relations.md)
+preparam relações da base em leitura/C2/backup sem reconstruir IDs/descritores.
+20 novos e 179 regressões positivos, incluindo save/discard e âncora retida
+após adoção/restauração. Corpos opacos de variantes, inventário/cleanup C4 e
+restauração persistente/Estúdio/ciclos continuam necessários.

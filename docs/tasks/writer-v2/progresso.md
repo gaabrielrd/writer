@@ -787,3 +787,9 @@ para conferir a prova das cenas/blocos restaurados antes de material/mídia.
 16 novos e 27 regressões positivos, com reexportação/revisão completa de vínculo
 sem alvo e adoção explícita preservando S1. Relações externas, C4 e restauração
 persistente/Estúdio continuam pendentes; macro 8/35 (22,9%), somente commit local.
+
+O [incremento 223](execucao/223-relacoes-portateis-do-lore-congelado.md) prepara
+relações portáteis do lore congelado em leitura/C2/backup, preservando chaves
+não resolvidas e base original em save/discard. 20 novos e 179 regressões positivos.
+Corpos opacos de variantes, C4 e restauração persistente/Estúdio ainda pendem;
+macro 8/35 (22,9%), checks dirigidos e somente commit local.
