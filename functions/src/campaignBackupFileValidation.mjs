@@ -116,7 +116,7 @@ export async function validateCampaignBackupFile(
           r.kind !== 'data' ||
           r.id !== active.id ||
           r.part !== active.index ||
-          (header.contentVersion === 2 && campaignTextUnit(active.unit.section)
+          (header.contentVersion >= 2 && campaignTextUnit(active.unit.section)
             ? !campaignFieldChunk(
                 r.payload,
                 active.index,
@@ -171,6 +171,7 @@ export async function validateCampaignBackupFile(
             await onDerivedUnit(
               Object.freeze({
                 index: Number(active.id),
+                contentVersion: header.contentVersion,
                 unit: Object.freeze(active.unit),
                 payload: active.parts ? Buffer.concat(active.parts, active.bytes) : null,
               }),
@@ -211,7 +212,12 @@ export async function validateCampaignBackupFile(
           };
         else if (own || derived) {
           await (own ? onOwnUnit : onDerivedUnit)(
-            Object.freeze({ index: units - 1, unit: Object.freeze(unit), payload: null }),
+            Object.freeze({
+              index: units - 1,
+              unit: Object.freeze(unit),
+              payload: null,
+              ...(derived ? { contentVersion: header.contentVersion } : {}),
+            }),
           );
           signal?.throwIfAborted();
         }

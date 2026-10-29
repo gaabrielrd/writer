@@ -1,6 +1,6 @@
 import { validItem, validateCapturedFields } from './campaignBaseValidation.mjs';
 import { categories, entityInput } from './campaignLoreContracts.mjs';
-import { campaignManifestId } from './portableCampaignManifest.mjs';
+import { campaignManifestId, CAMPAIGN_CONTENT_VERSIONS } from './portableCampaignManifest.mjs';
 import { digest, workFail } from './workProgressContracts.mjs';
 export const campaignDerivedBad = () =>
   workFail(
@@ -47,8 +47,18 @@ function target(v) {
   bool(v.available);
   return v;
 }
-function relation(v, variant = false, sourceKey) {
-  closed(v, ['targetKey', 'available'], v?.available ? ['relationType', 'description'] : []);
+function relation(v, variant = false, sourceKey, contentVersion = 2) {
+  const unresolved = Object.hasOwn(v ?? {}, 'unresolved');
+  if (
+    unresolved &&
+    (!variant || contentVersion !== 3 || v.unresolved !== true || v.available !== false)
+  )
+    bad();
+  closed(
+    v,
+    ['targetKey', 'available'],
+    v?.available ? ['relationType', 'description'] : unresolved ? ['unresolved'] : [],
+  );
   hashed(v.targetKey);
   bool(v.available);
   if (variant && v.targetKey === sourceKey) bad();
@@ -56,7 +66,11 @@ function relation(v, variant = false, sourceKey) {
     text(v.relationType);
     if (Object.hasOwn(v, 'description')) text(v.description);
   }
-  return { targetKey: v.targetKey, available: v.available };
+  return {
+    targetKey: v.targetKey,
+    available: v.available,
+    ...(unresolved ? { unresolved: true } : {}),
+  };
 }
 function snapshot(v) {
   closed(v, ['adventureId', 'universeId', 'capturedAt', 'title', 'synopsis', 'language']);
@@ -164,7 +178,7 @@ function item(v, key) {
     relations: (v.structured.relations ?? []).map((r) => relation(r)),
   };
 }
-function variant(v, key) {
+function variant(v, key, contentVersion) {
   closed(
     v,
     ['sourceKey', 'anchorKey', 'mode', 'name', 'category'],
@@ -200,7 +214,7 @@ function variant(v, key) {
       relations: e.relations
         .filter((r) => r.available)
         .map((r) => {
-          relation(r, true, key);
+          relation(r, true, key, contentVersion);
           closed(r, ['targetKey', 'available', 'relationType', 'description']);
           return {
             targetKey: r.targetKey,
@@ -221,7 +235,7 @@ function variant(v, key) {
       e.category !== v.category
     )
       bad();
-    for (const r of e.relations) relations.push(relation(r, true, key));
+    for (const r of e.relations) relations.push(relation(r, true, key, contentVersion));
   } else if (mode !== 'base' || Object.hasOwn(v, 'entity')) bad();
   return {
     sourceKey: key,
@@ -233,7 +247,8 @@ function variant(v, key) {
   };
 }
 /** Closed portable DTOs, compact metadata only; this does not authorize any declared origin. */
-export function parseCampaignDerivedUnit(unit, bytes) {
+export function parseCampaignDerivedUnit(unit, bytes, contentVersion = 2) {
+  if (!CAMPAIGN_CONTENT_VERSIONS.includes(contentVersion)) bad();
   if (
     unit.outcome !== 'available' ||
     ['base:field', 'anchor:field', 'image'].includes(unit.section)
@@ -273,7 +288,7 @@ export function parseCampaignDerivedUnit(unit, bytes) {
       bool(v.available);
       return v;
     case 'variant':
-      return variant(v, unit.id);
+      return variant(v, unit.id, contentVersion);
     case 'anchor':
       closed(v, ['anchorKey', 'source', 'item']);
       if (v.anchorKey !== unit.id) bad();

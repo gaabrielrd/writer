@@ -191,14 +191,14 @@ function index(own = false) {
     },
   };
 }
-test('native long scene, principal/additional blocks and lore/anchor export literal UTF8 into a real signed v2 file', async () => {
+test('native long scene, principal/additional blocks and lore/anchor export literal UTF8 into a real signed current v3 file', async () => {
   const f = await fixture(),
     valid = await f.validate(),
     all = await records(f),
     entries = groups(all);
-  assert.equal(valid.manifest.contentVersion, 2);
+  assert.equal(valid.manifest.contentVersion, 3);
   assert.equal(valid.manifest.provenanceVersion, 2);
-  assert.equal(f.packet.manifest.contentVersion, 2);
+  assert.equal(f.packet.manifest.contentVersion, 3);
   let longFields = 0,
     empty = 0,
     variable = 0,
@@ -298,7 +298,7 @@ for (const mode of ['header-version', 'manifest-version', 'both-versions', 'unkn
       all = await records(f),
       header = json(all[0]),
       packet = json(all.at(-1));
-    if (mode !== 'manifest-version') header.contentVersion = mode === 'unknown-version' ? 3 : 1;
+    if (mode !== 'manifest-version') header.contentVersion = mode === 'unknown-version' ? 4 : 1;
     if (mode === 'manifest-version' || mode === 'both-versions') packet.manifest.contentVersion = 1;
     all[0].payload = payload(header);
     all.at(-1).payload = payload(packet);
@@ -393,7 +393,7 @@ test('retained legacy anchor preserves its long frozen lore after adoption and o
     anchor = groups(all).find(
       (g) => g.descriptor.section === 'anchor:field' && g.descriptor.field === 'details',
     );
-  assert.equal(valid.manifest.contentVersion, 2);
+  assert.equal(valid.manifest.contentVersion, 3);
   assert.equal(Buffer.concat(anchor.chunks.map((r) => r.payload)).toString(), f.expectedLore);
   await f.db.recursiveDelete(f.db.doc('users/' + uid + '/campaignBases/' + oldBase));
   assert.equal(
@@ -426,7 +426,7 @@ test('native boundary loss can require more chunks than fixed ceil and the signe
     );
     assert.equal(Buffer.concat(field.chunks.map((r) => r.payload)).toString(), text);
   }
-  assert.equal((await f.validate()).manifest.contentVersion, 2);
+  assert.equal((await f.validate()).manifest.contentVersion, 3);
   await legacy(f);
   await assert.rejects(f.validate());
 });

@@ -252,7 +252,7 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
             }
             await stage('w:' + section, id, null, { record });
           },
-          onDerivedUnit: async ({ unit, payload }) => {
+          onDerivedUnit: async ({ unit, payload, contentVersion }) => {
             const section = unit.section,
               field = section === 'base:field' || section === 'anchor:field';
             if (field) {
@@ -276,7 +276,7 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
                 lastRank = rank;
               }
             }
-            const meta = parseCampaignDerivedUnit(unit, payload);
+            const meta = parseCampaignDerivedUnit(unit, payload, contentVersion);
             if (section === 'base') {
               if (baseUnit) bad();
               baseUnit = { unit, meta };
@@ -335,6 +335,7 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
             anchors: 0,
             unavailable: 0,
             externalAnchorTargets: 0,
+            unresolvedRelations: 0,
           };
         hash.update(
           JSON.stringify(['writer-campaign-derived-semantics-v1', uid, file.seal.chainHash]) + '\n',
@@ -530,8 +531,13 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
                       proof[3].base.baseId !== active.baseId
                     )
                       bad();
-                    for (const r of m.relations)
-                      if ((await relationTarget(r.targetKey, true)) !== r.available) bad();
+                    for (const r of m.relations) {
+                      if (r.unresolved) {
+                        const target = await find('base:item', r.targetKey, null, true);
+                        if (target && available(target) && target.value.meta.kind !== 'lore') bad();
+                        counts.unresolvedRelations = safeAdd(counts.unresolvedRelations);
+                      } else if ((await relationTarget(r.targetKey, true)) !== r.available) bad();
+                    }
                   } else await dep('anchor', u.id, null, false);
                 } else if (s === 'anchor') {
                   counts.anchors = safeAdd(counts.anchors);

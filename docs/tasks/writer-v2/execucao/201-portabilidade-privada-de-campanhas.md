@@ -348,3 +348,13 @@ preparam relações da base em leitura/C2/backup sem reconstruir IDs/descritores
 20 novos e 179 regressões positivos, incluindo save/discard e âncora retida
 após adoção/restauração. Corpos opacos de variantes, inventário/cleanup C4 e
 restauração persistente/Estúdio/ciclos continuam necessários.
+
+### Formato das relações não resolvidas — incremento 224, etapa A
+
+[Plano 224](224-corpos-de-variantes-com-relacoes-opacas.md) e
+[ADR 0254](../../../decisions/0254-campaign-unresolved-relation-format.md) versionam
+conteúdo/raiz lógica em 3 para conservar relação não resolvida independentemente
+da disponibilidade do alvo. Leitura 1/2 continua estrita. 22 novos e 542 regressões
+positivos. Etapa B de codec privado e ciclo completo de edição/adoção/reexportação
+continua obrigatória, seguida por inventário/cleanup C4 antes de persistência.
+P3/D/F2-09, ativação/Estúdio/ciclos e macro 8/35 permanecem abertos.

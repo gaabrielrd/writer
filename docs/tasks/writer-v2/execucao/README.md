@@ -2337,3 +2337,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      20 novos e 179 regressões passaram. [Evidência parcial](../../../entregas/2026-10-29-writer-v2-relacoes-portateis-do-lore-congelado.md).
      Corpos de variantes, C4 e restauração persistente/UI/ciclos pendentes;
      macro 8/35, checks dirigidos e somente commit local.
+
+224. [Formato versionado das relações não resolvidas](224-corpos-de-variantes-com-relacoes-opacas.md):
+     etapa A implementa emissão/revisão v3, com gramáticas 1/2 preservadas;
+     unresolved true somente em relação false de variante. 22 novos e 542 regressões
+     passaram; [evidência parcial](../../../entregas/2026-10-29-writer-v2-formato-das-relacoes-nao-resolvidas.md).
+     Etapa B de codec privado/ciclo da variante, C4 e restauração persistente/UI/ciclos
+     pendentes; macro 8/35, checks dirigidos e somente commit local.

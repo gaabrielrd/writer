@@ -1076,11 +1076,12 @@ Autentique arquivo e metadata de toda página antes de joins/callbacks; preserve
 omissões válidas e confira raiz/project. campaign-own-semantics-only não autoriza
 alvo derivado nem ativação. Descarte índice/chave sempre (ADR 0246).
 
-Emita backup de campanha com contentVersion 2 e raiz lógica v2; confira a versão
+Emita backup de campanha com contentVersion 3 e raiz lógica v3; confira a versão
 auditada/assinada contra o header. Somente base:field/anchor:field usam chunks
-UTF-8 nativos, completos e máximos até 64 KiB; JSON/imagens mantêm partes fixas.
-Reutilize campaignBackupTextChunks e preserve leitura v1 sem reinterpretá-la.
-SHA/tamanho/ordinais e autorização continuam obrigatórios (ADR 0247).
+UTF-8 nativos, completos e máximos até 64 KiB em v2/v3; JSON/imagens mantêm partes
+fixas. Reutilize campaignBackupTextChunks e preserve leitura v1/v2 com suas
+gramáticas originais. SHA/tamanho/ordinais e autorização continuam obrigatórios
+(ADR 0247; emissão atualizada pela ADR 0254).
 
 Na revisão derivada do backup, confira DTOs fechados, cobertura e joins antes
 de materializar. Autentique posições/vizinhos do índice para aceitar ausência
@@ -1120,3 +1121,10 @@ preserve chave/estado dos demais e não invente descritores. Backup conserva
 DTO/ordem e recusa contradição física por metadata. Escrita/descarte de variante
 não altera a base original; corpos opacos de variantes ainda exigem contrato
 próprio antes do produtor persistente (ADR 0253).
+
+No arquivo de campanha v3, aceite unresolved true somente em relação false de
+variante, sem labels/self/campos extras. Preserve a gramática e os joins de v1/v2;
+relações sem marcador continuam estritas. A chave não concede acesso nem resolve
+alvo automaticamente. Callback derivado recebe versão provisória do header;
+revisão não materializa. Codec privado/ciclo da variante continuam necessários
+antes do produtor persistente (ADR 0254).

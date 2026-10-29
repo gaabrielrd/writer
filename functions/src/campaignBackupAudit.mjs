@@ -1,3 +1,4 @@
+import { CAMPAIGN_CONTENT_VERSION } from './portableCampaignManifest.mjs';
 import { createHash } from 'node:crypto';
 import { campaignTextUnit, campaignFieldChunk } from './campaignBackupTextChunks.mjs';
 import { campaignBackupScope, createCampaignBackupSourceService } from './campaignBackupSource.mjs';
@@ -98,7 +99,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
             JSON.stringify({
               schemaVersion: 1,
               kind: 'writer-campaign',
-              contentVersion: 2,
+              contentVersion: CAMPAIGN_CONTENT_VERSION,
               provenanceVersion: 2,
               originCampaignId: campaignId,
               availability: derived.availability,
@@ -181,7 +182,11 @@ export function createCampaignBackupAuditService({ db, storage }) {
               check();
               return Object.freeze({ pass, stage, units, pages, resources });
             };
-          fold(content, ['writer-campaign-logical-units-v2', campaignId, derived.availability]);
+          fold(content, [
+            'writer-campaign-logical-units-v' + CAMPAIGN_CONTENT_VERSION,
+            campaignId,
+            derived.availability,
+          ]);
           fold(inventory, ['writer-campaign-native-inventory-v1', own, derived]);
           fold(native, ['writer-campaign-native-content-v1', own, derived]);
           fold(provenance, ['writer-campaign-witnesses-v2', campaignId]);
@@ -598,7 +603,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
         return Object.freeze({
           schemaVersion: 1,
           validation: 'campaign-native-audit',
-          contentVersion: 2,
+          contentVersion: CAMPAIGN_CONTENT_VERSION,
           campaignId,
           sourceToken: own.sourceToken,
           derivedToken: derived.derivedToken,

@@ -1,6 +1,10 @@
 import { CAMPAIGN_OWN_FAMILIES } from './campaignBackupOwnDefinitions.mjs';
 import { CAMPAIGN_BASE_FIELDS } from './campaignBackupBaseDefinitions.mjs';
-import { campaignManifestId, closedCampaignRecord } from './portableCampaignManifest.mjs';
+import {
+  campaignManifestId,
+  closedCampaignRecord,
+  CAMPAIGN_CONTENT_VERSIONS,
+} from './portableCampaignManifest.mjs';
 import { validatePortableCampaignWitness } from './portableCampaignProvenance.mjs';
 import { CampaignBackupFormatError } from './campaignBackupContainer.mjs';
 import { campaignFieldChunkCount } from './campaignBackupTextChunks.mjs';
@@ -51,7 +55,7 @@ export function campaignFileHeader(v) {
     ]) ||
     v.schemaVersion !== 1 ||
     v.kind !== 'writer-campaign' ||
-    ![1, 2].includes(v.contentVersion) ||
+    !CAMPAIGN_CONTENT_VERSIONS.includes(v.contentVersion) ||
     ![1, 2].includes(v.provenanceVersion) ||
     !['none', 'available', 'unavailable'].includes(v.availability)
   )
@@ -66,7 +70,7 @@ export function campaignFileHeader(v) {
   };
 }
 export function campaignFileUnit(v, contentVersion = 1) {
-  if (![1, 2].includes(contentVersion)) campaignFileBad();
+  if (!CAMPAIGN_CONTENT_VERSIONS.includes(contentVersion)) campaignFileBad();
   if (!v || !sections.includes(v.section)) campaignFileBad();
   const field = ['base:field', 'anchor:field'].includes(v.section),
     image = v.section === 'image',
@@ -127,7 +131,7 @@ export function campaignFileUnit(v, contentVersion = 1) {
     if (
       !count(v.byteLength) ||
       !count(v.chunkCount) ||
-      (field && contentVersion === 2
+      (field && contentVersion >= 2
         ? !campaignFieldChunkCount(v.byteLength, v.chunkCount)
         : v.chunkCount !== Math.max(1, Math.ceil(v.byteLength / 65536))) ||
       !hash(v.contentHash) ||

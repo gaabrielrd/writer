@@ -793,3 +793,10 @@ relações portáteis do lore congelado em leitura/C2/backup, preservando chaves
 não resolvidas e base original em save/discard. 20 novos e 179 regressões positivos.
 Corpos opacos de variantes, C4 e restauração persistente/Estúdio ainda pendem;
 macro 8/35 (22,9%), checks dirigidos e somente commit local.
+
+O [incremento 224](execucao/224-corpos-de-variantes-com-relacoes-opacas.md), etapa A,
+versiona o arquivo para separar relação não resolvida da disponibilidade do alvo.
+Emissão/revisão v3 e leitura estrita 1/2 passaram em 22 casos novos e 542 regressões.
+Codec privado e preservação dos corpos em edição/adoção/reexportação são a etapa B
+seguinte, ainda pendente. C4 e restauração persistente/Estúdio continuam pendentes;
+macro 8/35 (22,9%), checks dirigidos e somente commit local.

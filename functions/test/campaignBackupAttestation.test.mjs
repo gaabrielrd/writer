@@ -233,7 +233,7 @@ for (const [name, mutate] of [
   [
     'version',
     (p) => {
-      p.manifest.contentVersion = 3;
+      p.manifest.contentVersion = 4;
     },
   ],
   [

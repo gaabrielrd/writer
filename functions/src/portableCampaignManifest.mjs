@@ -3,6 +3,8 @@ const encoder = new TextEncoder(),
 const bad = () => {
   throw new TypeError('Manifesto portátil de campanha inválido.');
 };
+export const CAMPAIGN_CONTENT_VERSION = 3;
+export const CAMPAIGN_CONTENT_VERSIONS = Object.freeze([1, 2, 3]);
 export const CAMPAIGN_ATTESTATION_DOMAIN = 'writer-private-campaign-backup-v1';
 export const closedCampaignRecord = (v, keys) =>
   !!v &&
@@ -51,7 +53,7 @@ export function validatePortableCampaignManifest(v) {
     ]) ||
     v.schemaVersion !== 1 ||
     v.kind !== 'writer-campaign' ||
-    ![1, 2].includes(v.contentVersion) ||
+    !CAMPAIGN_CONTENT_VERSIONS.includes(v.contentVersion) ||
     ![1, 2].includes(v.provenanceVersion) ||
     !hash(v.ownerBinding) ||
     !['none', 'available', 'unavailable'].includes(v.availability) ||

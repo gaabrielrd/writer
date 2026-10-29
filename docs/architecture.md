@@ -3754,3 +3754,15 @@ consomem a representação sem fabricar IDs/labels. Alvos sem prova ficam neutro
 descritores originais permanecem privados e não são usados como grant.
 Backup conserva DTO e ordem; variante inteira/descarte mantém a base intacta.
 Corpos de variantes e C4 permanecem antes da materialização persistente.
+
+## Relações não resolvidas no arquivo de campanha
+
+A [ADR 0254](decisions/0254-campaign-unresolved-relation-format.md) atualiza a
+emissão para contentVersion 3/raiz lógica v3, com framing 1 e procedência 2.
+Versões 1/2 mantêm gramática e joins; chunks UTF-8 nativos valem nas versões 2/3.
+Somente relação false de variante pode trazer unresolved true, sem descritores.
+O índice confere tipo do alvo disponível; não resolve a relação nem autoriza
+origem. Prova interna conta unresolvedRelations. O callback derivado recebe
+versão do header ainda provisório, sem permitir escrita ativa.
+Esta etapa é de formato/revisão; codec privado, edição/adoção/reexportação de
+corpos opacos e C4 continuam antes de qualquer produtor persistente.
