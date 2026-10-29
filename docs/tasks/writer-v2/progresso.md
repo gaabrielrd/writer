@@ -1,6 +1,6 @@
 # Progresso do Writer V2
 
-**Snapshot local:** 2026-10-28, branch `codex/writer-v2`. Geração/restauração de aventuras pela interface e fechamento integral 195–197 verdes. L/I/A/P1 implementados; auditoria de P2, P3/D e F2-09 continuam abertos. Durante o desenvolvimento, somente commits locais, sem acompanhamento de CI.
+**Snapshot local:** 2026-10-29, branch `codex/writer-v2`. Geração/restauração e exclusão de aventuras integradas localmente, com ciclo rico restaurado e validate integral 198–199 verdes. L/I/A/P1 implementados; política final das perguntas, auditoria de P2, P3/D e F2-09 continuam abertas. Durante o desenvolvimento, somente commits locais, sem acompanhamento de CI.
 Este relatório conta tarefas do plano, sem atribuir o mesmo esforço a cada tarefa.
 
 | Fase                          | Total de tarefas | Implementadas | Restantes |
@@ -524,3 +524,22 @@ CAS local passaram em 67 Vitest, 12 Node e 18 jornadas Chromium isoladas;
 Catálogo/composição, binding HTTP/índices/mídia, ciclo integrado e validate
 integral continuam necessários. Perguntas preservadas com política final
 pendente. Macro **8/35**, P2/P3/D/F2-09 e gates inalterados.
+
+## Fechamento técnico local 198–199 — 2026-10-29
+
+O [ciclo restaurado e exclusão](../../entregas/2026-10-29-writer-v2-validacao-integral-das-aventuras.md)
+comprovou uso normal, segunda captura/restauração, exclusão inteira da primeira
+cópia e preservação de original, segunda cópia, aventura irmã e campanha.
+Pergunta própria permanece legível; contexto/resposta/base derivada ficam
+indisponíveis. Replay histórico não recria conteúdo nem chaves.
+
+Validate integral verde: 4.890 frontend em 367 arquivos, 94 scripts, 3.989
+Functions, sintaxe de 407 módulos, tipos/build/smoke. Cobertura global
+89,67% instruções, 85,86% ramos, 90,88% funções e 92,84% linhas.
+Mantidos os limites. Detalhes e falhas iniciais do roteiro na evidência.
+
+O código de produção não mudou neste fechamento de testes. Os seis bindings e
+as rotas já estão em 38c6673, com 36 jornadas Chromium na integração anterior.
+Plano 199 conserva a confirmação pendente da política de perguntas; P2 mantém
+auditoria final, e P3/D/F2-09 continuam obrigatórios. Macro 8/35 e gates
+humanos/comerciais inalterados. Somente commits locais, sem CI/remoto/deploy.

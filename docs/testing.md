@@ -3221,3 +3221,18 @@ pausa, reload do pedido exato, catálogo sem raiz, URL antiga e troca de conta.
 Três jornadas de rota e três de diálogo são repetidas nos seis temas/viewports.
 A [evidência parcial](entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md)
 separa esses testes dirigidos do validate integral ainda pendente de 198–199.
+
+## Fechamento integrado das aventuras restauradas
+
+adventureRestoredConsumers.test.mjs estende as jornadas rica e vazia com
+adventureRestoredDeletionFixture.mjs: serviços reais percorrem exclusão, conversa,
+atividade, imagem compartilhada, irmã e campanha capturada, com doubles de
+metadata/Storage. Confere perda do ACK terminal/replay, raiz e descendentes
+ausentes, reserva/job/recibo nativos, pergunta e notas preservadas, origem
+indisponível e não recriação por recibos antigos ou creators.
+
+A [validação integral 198–199](entregas/2026-10-29-writer-v2-validacao-integral-das-aventuras.md)
+passou com 4.890 frontend, 94 scripts e 3.989 Functions, além de tipos/build/smoke.
+Não houve mudança de produção nem nova rodada de browser/Rules; as 36 jornadas
+do binding/rotas em 38c6673 permanecem evidência anterior, distinguida no registro.
+Política de perguntas e aceites humanos/comerciais não são aprovados pelos testes.

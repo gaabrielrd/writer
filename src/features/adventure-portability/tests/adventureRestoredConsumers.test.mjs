@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { it, expect } from 'vitest';
 import { captureAdventure, restoreAdventure } from './adventureRoundtripFixture.mjs';
+import { assertRestoredAdventureDeletion } from './adventureRestoredDeletionFixture.mjs';
 import { adventureBackupExportFixture } from '../../../../functions/test/helpers/adventureBackupExportFixture.mjs';
 import { createStudioService } from '../../../../functions/src/studio.mjs';
 import { createImageLibraryService } from '../../../../functions/src/imageLibrary.mjs';
@@ -321,6 +322,15 @@ it('ordinary capture and full restoration remain usable after source collection,
     ).content,
   ).toBe('Rascunho distinto 🐉');
   expect(await versions(againApi.history, again.target)).toHaveLength(4);
+  const secondCopy = structuredClone(again.records);
+  await assertRestoredAdventureDeletion(f, {
+    scope,
+    context,
+    scene: current,
+    blockResource: block.resource,
+    imageId: image.image.imageId,
+  });
+  expect(again.records).toEqual(secondCopy);
   expect(original.records).toEqual(before);
 }, 60000);
 
@@ -349,6 +359,7 @@ it('a genuinely empty adventure captured from Studio restores without invented s
   expect([...f.records.keys()].filter((p) => p.startsWith('users/author/imageLibrary/'))).toEqual(
     [],
   );
+  await assertRestoredAdventureDeletion(f);
   expect(original.records).toEqual(before);
 }, 30000);
 

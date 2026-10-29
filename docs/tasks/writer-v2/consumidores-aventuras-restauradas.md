@@ -1,55 +1,68 @@
 # Consumidores das aventuras restauradas
 
-Snapshot local de 2026-10-28, base fe49e9f mais
-[plano 198](execucao/198-ciclo-normal-das-aventuras-restauradas.md).
-Não é certificação de produção nem conclusão de P2/F2-09.
+Snapshot local de 2026-10-29, código-base 38c6673 e fechamento técnico dirigido
+dos [planos 198](execucao/198-ciclo-normal-das-aventuras-restauradas.md) e
+[199](execucao/199-exclusao-completa-de-aventuras.md).
+[Validação integral local](../../entregas/2026-10-29-writer-v2-validacao-integral-das-aventuras.md):
+4.890 frontend, 94 scripts e 3.989 Functions passaram, além de tipos/build/smoke.
+Não certifica produção, aceites humanos ou conclusão de P2/F2-09.
 
-## Evidência de ciclo normal
+## Evidência de ciclo normal e exclusão
 
-adventureRestoredConsumers.test.mjs usa o produtor TypeScript real, 17 leitores
+adventureRestoredConsumers.test.mjs usa o produtor TypeScript real, leitores
 atuais, restauração/Storage/auditoria/ativação/mídia/coleta e consumidores normais.
-Nenhuma raiz é inserida diretamente no destino. Após coletar a fonte, a cópia
-é editada e recapturada; uma segunda restauração conserva as alterações.
-Dados históricos de entrada (parte legada e pai ausente) são identificados como
-fixtures, sem trocar o caminho real da restauração.
+Nenhuma raiz é inserida diretamente no destino. Após coletar a fonte, a cópia é
+editada e recapturada; uma segunda restauração conserva as alterações.
+A primeira cópia percorre então a exclusão completa, enquanto original, segunda
+cópia, aventura irmã e campanha capturada são preservados.
 
-| Família                            | Escrita / leitura normais                                                                      | Evidência e exclusão                                                                                                                                                       |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Raiz privada / Estúdio             | Studio cria/lê/lista; owner atual é conferido.                                                 | A cópia abre após coleta. Exclusão completa da aventura ainda falta.                                                                                                       |
-| Partes / agrupadores               | Scenes cria/ordena; listSceneGroups/getSceneGroup; texto anterior é fonte preservada separada. | Fonte legada visível/sanitizada e conservada no segundo backup. deleteSceneGroups já destaca cenas para Sem parte; contrato/regressão de scenes.                           |
-| Cenas / corpo / planejamento       | Scenes e ledger; getScene/listScenes, editor e composição existentes.                          | Edição na cópia, arquivo/restauração, referências e contadores. Corpo exato e original intacto.                                                                            |
-| Parte ausente                      | Leitura por identidade conserva parentId; listOrphanScenes percorre heads paginados.           | Prévia privada; recoverOrphanScene confirma CAS/ausência, move para Sem parte e guarda formerParentId. Não cria parte. Recaptura e edição após recuperar comprovadas.      |
-| Blocos / audiência                 | AdventureBlocks e ledger; list/get/update/delete.                                              | Reescrita e audiência gm na cópia. Exclusão conserva histórico sem recriar o bloco.                                                                                        |
-| Referências de cena                | set/listSceneReferences e índices derivados.                                                   | Vínculo de lore remapeado para a aventura nova e resolução normal após coleta.                                                                                             |
-| Arcos / marcos / eventos           | NarrativePlanning/Jobs, leitores e links.                                                      | Leitura de arco/marco/evento e link para cena remapeada; data textual preservada. Exclusão por jobs normais permanece no contrato anterior.                                |
-| Lore próprio                       | AdventureLore metadata/corpo/CAS; list/get/save/delete.                                        | Leitura/edição na cópia e contexto de IA com texto alterado; sem converter referência externa em autoria.                                                                  |
-| Persona                            | Bindings e biblioteca/lotes ativos; contexto e backup.                                         | Definição restaurada e complemento custom no contexto; permanece após coleta/recaptura.                                                                                    |
-| Progresso / checklist / ledger     | WorkProgress e writers de texto/estrutura.                                                     | Contagem pronta, checklist, mudanças de corpo/bloco e recuperação. Preferências/fuso da conta não viram autoria portátil.                                                  |
-| Histórico / rascunho               | WorkHistory; list/read/create/restore/delete.                                                  | Paginação de uma versão/chunk, duas manuais e rascunho; before-restore conserva texto anterior. Histórico de bloco removido não ressuscita recurso.                        |
-| Imagem / uso / bytes               | Biblioteca, setters tipados, Storage por geração.                                              | Getter do vínculo e lista normal da biblioteca após ativação; bytes recapturados e nova restauração. Detach/exclusão de bloco preserva cópia própria sem vínculo indevido. |
-| Universo                           | Universo/Studio, origem nativa e revisão final de ativação.                                    | Origem ausente no destino não copia prosa global, não cria universo e não concede vínculo. Casos de autorização/ABA/revisão continuam nos testes próprios.                 |
-| Contextos e operações de IA        | EditorChatContext e provedores/aplicação separados.                                            | Prepare/advance/inspect normais após edição; lore/persona remapeados. Sem provedor ou débito neste ensaio. Chat/operação/chave não entram no arquivo.                      |
-| Preparação / recuperação / recibos | Serviços de restauração e sidecars, transporte/journal próprios.                               | Fonte/chave coletadas antes do uso normal; job ativado e recibos preservados. Recibo histórico não concede acesso atual.                                                   |
+O ciclo vazio usa criação normal do Estúdio, captura/restauração completas e
+perda do ACK após o commit terminal, seguida de replay exato sem novo efeito.
+Entradas históricas (parte legada e pai ausente) continuam fixtures identificadas,
+com restauração, leitura e recuperação pelos serviços reais.
 
-## Limites e lacunas explícitas
+| Família                            | Escrita / leitura normais                                          | Evidência e exclusão                                                                                                                                        |
+| ---------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Raiz privada / Estúdio             | Criação, leitura e catálogo com owner atual.                       | Raiz e todos os descendentes ausentes ao final; reserva/job/recibo nativos, consulta/listagem/replay terminal sem recriação.                                |
+| Partes / agrupadores               | Scenes, fonte preservada e composição.                             | Legado recapturado; partes reais preenchidas antes da exclusão e retiradas no ciclo rico.                                                                   |
+| Cenas / corpo / planejamento       | Scenes e ledger, texto e edição normais.                           | Corpo exato antes da exclusão, nenhum descendente após; aventura irmã mantém corpo e retomada próprios.                                                     |
+| Parte ausente                      | Listagem paginada, leitura por identidade e recuperação explícita. | CAS/ausência e formerParentId; edição/recaptura sem parte fictícia. Órfãos na exclusão possuem contrato e testes próprios de inventário.                    |
+| Blocos / audiência                 | AdventureBlocks, ledger e histórico.                               | Reescrita e audiência gm; exclusão do projeto retira bloco/corpos/histórico, sem recriar recurso.                                                           |
+| Referências de cena                | Set/list e índices de lore.                                        | Origem remapeada lida normalmente; nenhum vínculo descendente permanece na raiz excluída.                                                                   |
+| Arcos / marcos / eventos           | NarrativePlanning e links.                                         | Texto/data manual e IDs remapeados; famílias preenchidas e removidas pela exclusão inteira.                                                                 |
+| Lore próprio                       | Metadata/corpo/CAS pelo serviço.                                   | Edição e contexto com lore alterado; todos os corpos/índices próprios removidos. Sem converter origem externa em autoria.                                   |
+| Persona                            | Bindings e biblioteca/lotes ativos.                                | Complemento restaurado usado no contexto; perfis não vazios e seus dados preservados após a exclusão.                                                       |
+| Progresso / checklist / ledger     | Writers e WorkProgress.                                            | Checklist/manuscrito removidos; atividade própria retirada com revisão da conta, accessedAt e retomada da irmã preservados.                                 |
+| Histórico / rascunho               | List/read/create/restore; before-restore.                          | Histórico integral e rascunho recuperado antes; nenhum filho de versão permanece após excluir. Versão de bloco removido não recria recurso.                 |
+| Imagem / uso / bytes               | Biblioteca, setters tipados e Storage por geração.                 | Duas cópias restauradas reais, usos próprios retirados e contadores ajustados; bytes/gerações e usos da irmã/campanha permanecem exatos.                    |
+| Universo                           | Origem nativa, autorização e revisão de ativação.                  | Origem indisponível não copia lore nem cria universo; autorização/ABA/desvínculo pertencem também às regressões específicas.                                |
+| Contextos / chat                   | Prepare/advance/inspect, conversa e geração local de teste.        | Contexto/resposta derivados retirados; pergunta própria exata legível com answer null e apresentação bloqueada. Nenhuma IA remota ou cobrança neste ensaio. |
+| Preparação / recuperação / recibos | Restauração e sidecars.                                            | Fontes/chave coletadas; job e recibos preservados. Replay da ativação antiga apenas confirma metadata sem raiz nova.                                        |
+| Campanha capturada                 | Capture/BaseRead e notas próprias.                                 | Captura real antes da exclusão; base deixa de ser legível quando a origem é removida, enquanto campanha, notas e seus usos de imagem permanecem.            |
 
-- Falta exclusão completa de aventura, com reserva/fence, limpeza por famílias,
-  universo/retomada, contextos, usos de imagens e preservação das cópias próprias.
-  Não substituir pelo cleanup da preparação nem por deleteSceneBook.
-- Campanhas a partir da cópia e duas mesas independentes no mesmo universo
-  pertencem também ao fechamento integrado D; esta matriz não inventa esse ensaio.
+## Limites e pendências explícitos
+
+- A exclusão completa está integrada localmente no projeto/Estúdio, com retomada e
+  binding SDK; ver [integração](../../entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md).
+  A política final das perguntas continua pendente; o motor preserva perguntas.
+- P2 conserva sua auditoria final de requisitos. P3 deve portar campanhas e D deve
+  demonstrar conto/aventura e duas mesas no mesmo universo; o ensaio de uma
+  campanha capturada aqui não substitui essas entregas.
 - Comércio/publicação/permissões da compra pertencem às fases posteriores.
-  Arquivo privado não concede direito comercial nem acesso externo.
-- O corpus é sintético e usa doubles de metadata/Storage. Auth/App Check/SDK/
-  chooser da jornada nativa são sintéticos; dados/navegador reais não foram usados.
-- SDK real local prova exports/headers/limites e recusas sem Auth/App Check.
-  Não comprova configuração/credenciais ou Rules de produção.
-- Os endpoints novos precisam de implantação coordenada para uso com conta real.
-  Nada foi enviado/deployado; o validate integral de fe49e9f é base anterior.
-- O próximo validate integral fecha o bloco de exclusão/auditoria de P2.
-  Neste incremento foram executados os testes e checks dirigidos da entrega.
+  Backup privado não concede direito comercial, compra ou acesso externo.
+- O corpus usa dados sintéticos e doubles de metadata/Storage, com serviços reais.
+  As 36 jornadas de browser da integração anterior têm rotas/providers/journal
+  reais e auth/RPC fictícios. Não foram repetidas por mudanças somente de testes.
+- SDK real local prova exports/headers/limites e recusas HTTP, não credenciais,
+  atestado positivo ou Rules de produção. Nenhum novo SDK/Rules foi executado
+  neste fechamento; a suíte integral inclui os testes SDK existentes.
+- Endpoints novos dependem de implantação coordenada para uso com conta real.
+  Nenhuma CI, publicação, envio remoto, merge ou implantação foi executado.
 
-Veja a [evidência local](../../entregas/2026-10-28-writer-v2-ciclo-normal-das-aventuras-restauradas.md).
+## Histórico da preparação
+
+Os registros seguintes preservam os estados anteriores da implementação.
+A descrição atual e os limites deste snapshot estão acima.
 
 ## Preparação da exclusão — plano 199 aberto
 

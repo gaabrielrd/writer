@@ -83,12 +83,16 @@ Não introduzir dependência nem política comercial nova.
 
 ## Aceites
 
-- [ ] Inventário e gates completos contra recriação/retomada.
-- [ ] Fonte/início e limpeza de todas as famílias, com vínculo/metadata preservados.
-- [ ] Cópias próprias/mesas alheias preservadas e derivação revogada corretamente.
-- [ ] UI/retomada e contratos SDK/Rules/browser comprovados.
-- [ ] Regressões dirigidas e validate integral verdes.
-- [ ] Revisão, documentação/evidência e commits locais.
+- [x] Inventário e gates completos contra recriação/retomada, conforme contratos/testes registrados.
+- [x] Fonte/início e limpeza de todas as famílias, com vínculo/metadata preservados.
+- [x] Cópias próprias/mesas alheias preservadas e derivação revogada corretamente.
+- [x] UI/retomada e contratos SDK/Rules/browser comprovados nos registros correspondentes.
+- [x] Regressões dirigidas e validate integral locais verdes.
+- [x] Revisão, documentação/evidência e commits locais do fechamento técnico.
+- [ ] Confirmação do operador da política final de perguntas do chat. O motor atual as preserva.
+
+O fechamento técnico não encerra esta decisão pendente nem certifica P2/P3/D/F2-09,
+produção ou aceites humanos/comerciais. A evidência atual está no fechamento abaixo.
 
 ## Estado de implementação — em andamento
 
@@ -531,3 +535,57 @@ Depois, executar o validate integral do bloco conforme orientação de testes
 dirigidos por ajuste. Registrar resultado real, resolver falhas no escopo e
 manter a política final de perguntas explicitamente pendente até resposta.
 Nenhum gate humano/comercial, CI ou deploy é aprovado por testes locais.
+
+## Fechamento dirigido em execução — ciclo restaurado rico e vazio
+
+Base 38c6673 conferida limpa em 2026-10-29; o incremento anterior produziu
+progresso verificável (commit, 161 Vitest, 15 Node, 36 Chromium e build).
+Estender o corpus adventureRestoredConsumers existente, sem substituir seus
+leitores/autores normais por fixtures simplificadas: a primeira jornada já
+captura duas gerações com imagem/histórico/lore/contexto; a vazia é criada pelo
+Estúdio e restaurada pelo mesmo pipeline completo.
+
+Acrescentar helper de asserção de exclusão a essas jornadas. No caso rico,
+criar conversa/pergunta/resposta usando o contexto pronto, registrar atividade
+e um projeto irmão real que reutiliza a imagem; conferir reserva e raiz,
+remoção de famílias/corpos/usos/contextos, preservação da biblioteca/personas/
+job/recibos/pergunta e do outro projeto. Consultar o chat sem derivação após
+encerrar e provar que captura/autoria/recriação não atravessam a reserva.
+
+No caso vazio, injetar ACK perdido após um commit de exclusão e repetir a mesma
+operação, conferindo recibo e ausência de efeito duplicado. Preservar estados
+terminal/recibos e a consulta após raiz ausente. O adaptador de banco já usado
+pela exclusão acrescentará consultas collectionGroup ao banco nativo simulado
+da restauração; não alterar o produto para satisfazer o double.
+
+Arquivos: este plano, adventureRestoredConsumers.test.mjs e helper de teste;
+documentação/matriz/evidência após os resultados. Corrigir produção somente se
+uma falha real for demonstrada. Rodar primeiro o corpus dirigido; depois o
+validate integral do bloco 198–199. Regras, CI e operação remota não fazem parte
+deste fechamento; perguntas do chat continuam aguardando decisão final.
+
+## Fechamento técnico local 198–199 — 2026-10-29
+
+Ciclos rico e vazio foram estendidos sobre o mesmo produtor/restaurador e
+consumidores normais. O rico cria conversa real de teste, aventura irmã com
+imagem compartilhada e uma campanha capturada antes de excluir a cópia.
+Comprova raiz/descendentes ausentes, retirada de contexto/resposta e atividade,
+preservação de imagens/personas/job/recibos/pergunta, dados da irmã e notas da
+campanha. A base perde acesso à origem. Original e segunda cópia são comparados.
+
+O vazio perde o ACK após o commit terminal e recupera recibo sem efeito repetido.
+Relógios nativos de reserva/job/recibo são conjuntos; consulta, catálogo,
+resolução e replay não recriam raiz, fonte ou chave. Creators e backup recusam
+a origem reservada. Não houve alteração de produção para satisfazer a prova.
+
+Dois casos dirigidos passaram em 7,80 s; o corpus inteiro integra os 4.890
+frontend/367 arquivos do validate integral verde. Também passaram 94 scripts,
+3.989 Functions, sintaxe de 407 módulos, tipos, build e smoke, com cobertura
+global 89,67/85,86/90,88/92,84 e limites mantidos.
+Ver [evidência](../../../entregas/2026-10-29-writer-v2-validacao-integral-das-aventuras.md).
+
+A política final de perguntas continua aguardando confirmação; preservação atual
+foi comprovada, não decidida novamente. Plano 199 permanece aberto apenas quanto
+a essa definição. P2 requer auditoria final; P3/D/F2-09 e gates gerais permanecem
+abertos, macro 8/35. Próximo passo independente: auditar os aceites integrais
+de P2 no plano 147, com evidências de 148–199, antes de iniciar P3.

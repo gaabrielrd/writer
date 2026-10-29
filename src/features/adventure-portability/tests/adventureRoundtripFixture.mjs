@@ -79,6 +79,7 @@ export async function restoreAdventure(bytes) {
     ...f,
     p,
     review,
+    activationRequest: request,
     storage,
     assets,
     backupAssets: createBookBackupAssetStorage(storage.bucket),

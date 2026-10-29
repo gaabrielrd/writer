@@ -50,7 +50,9 @@ com pausa/retomada, catálogo de retomada no Estúdio, ações na página/cartã
 consulta após a raiz desaparecer. Os seis callables estão ligados localmente
 à fronteira autenticada; as rotas foram conferidas no Chromium isolado. Veja a
 [evidência parcial da integração](docs/entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md).
-Ciclo rico restaurado e validação integral do bloco ainda estão pendentes.
+Ciclo rico restaurado e validação integral do bloco 198–199 passaram localmente;
+veja o [fechamento técnico](docs/entregas/2026-10-29-writer-v2-validacao-integral-das-aventuras.md).
+A política final das perguntas e a auditoria restante de P2 continuam pendentes.
 Consulte a
 [evidência parcial](docs/entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
 A portabilidade completa continua aberta. Não houve implantação.

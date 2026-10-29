@@ -2155,3 +2155,12 @@ Veja a [ADR 0230](../../../decisions/0230-adventure-deletion-catalog-routes-and-
 e a [evidência dirigida](../../../entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md).
 Ciclo rico restaurado, validate integral e política final do chat seguem pendentes.
 Plano 199, P2/P3/D/F2-09/V2 e macro 8/35 permanecem abertos; somente commit local.
+
+### Fechamento técnico 198–199 — ciclo restaurado e exclusão
+
+[Validação integral local](../../../entregas/2026-10-29-writer-v2-validacao-integral-das-aventuras.md)
+verde: 4.890 frontend, 94 scripts, 3.989 Functions, sintaxe de 407 módulos,
+tipos/build/smoke e cobertura preservada. Ciclo rico/vazio usa serviços reais
+sobre dados/portas de teste, com origem, segunda cópia, irmã e campanha preservadas.
+199 aguarda a política final das perguntas; auditoria final P2, P3/D/F2-09,
+macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
