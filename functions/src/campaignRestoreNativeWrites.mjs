@@ -29,6 +29,7 @@ export function createCampaignRestoreNativeWrites(
     targetFields,
     parent = false,
     bindingFields = [],
+    bindingOptionalFields = [],
     validateBinding = () => {},
   },
 ) {
@@ -77,7 +78,7 @@ export function createCampaignRestoreNativeWrites(
     await emptyTargets(tx, l);
   }
   async function prepare(tx, l, operationId, targets, binding = {}) {
-    closed(binding, bindingFields);
+    closed(binding, bindingFields, bindingOptionalFields);
     validateBinding(binding);
     if (!targets.length || targets.length > 4) bad();
     const index = l.job[controlField]?.written ?? 0,
@@ -120,7 +121,11 @@ export function createCampaignRestoreNativeWrites(
   }
   async function verify(tx, l, snapshot, guard) {
     if (!snapshot.exists) bad();
-    const v = closed(snapshot.data(), [...NATIVE_WRITE_FIELDS, ...bindingFields]);
+    const v = closed(
+      snapshot.data(),
+      [...NATIVE_WRITE_FIELDS, ...bindingFields],
+      bindingOptionalFields,
+    );
     if (
       v.schemaVersion !== 1 ||
       v.ownerId !== l.uid ||
@@ -187,7 +192,7 @@ export function createCampaignRestoreNativeWrites(
           db
             .collection(l.ref.path + '/' + journalCollection)
             .orderBy('__name__')
-            .select(...NATIVE_WRITE_FIELDS, ...bindingFields)
+            .select(...NATIVE_WRITE_FIELDS, ...bindingFields, ...bindingOptionalFields)
             .limit(request.limit + 1),
         )
       ).docs,

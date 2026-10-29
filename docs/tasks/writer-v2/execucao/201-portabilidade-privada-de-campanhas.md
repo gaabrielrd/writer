@@ -496,3 +496,13 @@ e coleta sem chave/grant. Âncora equivalente ativa é reutilizada; omissões
 não revivem. Geração e bases permanecem preparing.
 Mídia/pins, universo organizacional, C4 dos temporários, auditoria física/
 ativação e Estúdio/ciclos continuam; P3/D/F2-09 e macro 8/35 abertos.
+
+### Retomada nativa das variantes — incremento 237
+
+[Plano 237](237-retomada-nativa-das-variantes.md) e
+[ADR 0267](../../../decisions/0267-campaign-variant-authorization-edition.md)
+corrigem a continuação de corpo parcial após reautorizar a mesma origem.
+Decisão de edição e prova corrente estrita são separadas por codec opcional;
+wire legado continua legível/coletável, sem conversão silenciosa.
+Arquivo/bytes/revisões/permissões não mudam. Mídia/universo organizacional/
+C4/auditoria física/ativação e Estúdio/ciclos seguem; macro 8/35 aberto.

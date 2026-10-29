@@ -5,6 +5,7 @@ import {
 } from './campaignRestoreAnchorFormat.mjs';
 import {
   VARIANT_MATERIALIZATION_BYTES,
+  VARIANT_AUTHORIZATION_CODEC,
   VARIANT_MATERIALIZATION_PHASES,
 } from './campaignRestoreVariantFormat.mjs';
 import {
@@ -533,20 +534,29 @@ export function parseJob(v, uid, rid) {
     }
   }
   if (v.variantMaterialization !== undefined && v.variantMaterialization !== null) {
-    const m = closed(v.variantMaterialization, [
-      'schemaVersion',
-      'phase',
-      'checkpoint',
-      'processedRows',
-      'totalRows',
-      'written',
-      'cleaned',
-      'audited',
-      'availability',
-      'variants',
-      'omitted',
-      'payload',
-    ]);
+    const m = closed(
+      v.variantMaterialization,
+      [
+        'schemaVersion',
+        'phase',
+        'checkpoint',
+        'processedRows',
+        'totalRows',
+        'written',
+        'cleaned',
+        'audited',
+        'availability',
+        'variants',
+        'omitted',
+        'payload',
+      ],
+      ['authorizationCodec'],
+    );
+    if (
+      Object.hasOwn(m, 'authorizationCodec') &&
+      m.authorizationCodec !== VARIANT_AUTHORIZATION_CODEC
+    )
+      bad();
     if (
       m.schemaVersion !== 1 ||
       integer(m.variants) !== m.variants ||
@@ -733,7 +743,7 @@ export const progress = (l) => ({
     ? {
         variantMaterialization: Object.fromEntries(
           Object.entries(l.job.variantMaterialization).filter(
-            ([k]) => k !== 'payload' && k !== 'checkpoint',
+            ([k]) => k !== 'payload' && k !== 'checkpoint' && k !== 'authorizationCodec',
           ),
         ),
       }

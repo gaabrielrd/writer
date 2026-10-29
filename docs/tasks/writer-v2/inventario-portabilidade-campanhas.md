@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 236. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 237. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -267,3 +267,18 @@ recriação e filhos estrangeiros preservam o material sem avanço.
 C4 apropriado para temporários permanece gate antes da ativação.
 [Plano 236](execucao/236-materializacao-das-ancoras-historicas.md) e
 [ADR 0266](../../decisions/0266-campaign-historical-anchor-materialization.md).
+
+## Retomada versionada das variantes — incremento 237
+
+variantMaterialization/variantWrites novos têm authorizationCodec edition-v1
+opcional no esquema para preservar jobs anteriores. O hash persiste edição/
+testemunhas/mapeamento/disponibilidades, sem timestamps correntes de acesso.
+Prova corrente estrita continua revalidada antes de bytes e na escrita.
+
+Nenhuma coleção nova. bindingOptionalFields do journal é fechado e vazio
+por padrão; leitura/coleta de variantWrites e seleção pelas âncoras incluem
+o discriminante. Fonte/codec do corpo/revisões permanecem.
+Legado não é reescrito: prova parcial alterada retorna motivo explícito de
+nova preparação, com cancel/coleta ainda disponíveis sem grant/chave.
+[Plano 237](execucao/237-retomada-nativa-das-variantes.md) e
+[ADR 0267](../../decisions/0267-campaign-variant-authorization-edition.md).

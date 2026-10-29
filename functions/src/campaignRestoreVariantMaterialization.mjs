@@ -5,6 +5,7 @@ import { createCampaignRestoreVariantWrites } from './campaignRestoreVariantWrit
 import { createCampaignRestoreVariantOrigin } from './campaignRestoreVariantOrigin.mjs';
 import {
   VARIANT_MATERIALIZATION_BYTES,
+  VARIANT_AUTHORIZATION_CODEC,
   restoredLoreGenerationId,
 } from './campaignRestoreVariantFormat.mjs';
 import { restoredBaseId } from './campaignRestoreBaseFormat.mjs';
@@ -29,6 +30,12 @@ import {
 
 const aad = (l, cp) => [RESTORE_DOMAIN, l.uid, l.rid, l.token, 'variant-materialization', cp],
   binding = (ctx) => digest([ctx.proof, ctx.port.certificate, ctx.port.context]),
+  codecFields = (s) => (s.authorizationCodec ? { authorizationCodec: s.authorizationCodec } : {}),
+  authorizationValue = (permission, codec) => (codec ? permission.decision : permission.proof),
+  authorizationChanged = (codec) => {
+    if (!codec) fail('failed-precondition', 'variant-authorization-restart-required');
+    originReviewChanged();
+  },
   projection = (s, totalRows) => ({
     schemaVersion: 1,
     phase: s.phase,
@@ -41,6 +48,7 @@ const aad = (l, cp) => [RESTORE_DOMAIN, l.uid, l.rid, l.token, 'variant-material
     availability: s.availability,
     variants: s.variants,
     omitted: s.omitted,
+    ...codecFields(s),
   }),
   target = (collection, id, value) => ({ collection, id, value });
 function decode(l, key, ctx) {
@@ -57,18 +65,27 @@ function decode(l, key, ctx) {
   } catch {
     bad();
   }
-  closed(s, [
-    'schemaVersion',
-    'scope',
-    'phase',
-    'row',
-    'written',
-    'audited',
-    'availability',
-    'variants',
-    'omitted',
-    'pending',
-  ]);
+  closed(
+    s,
+    [
+      'schemaVersion',
+      'scope',
+      'phase',
+      'row',
+      'written',
+      'audited',
+      'availability',
+      'variants',
+      'omitted',
+      'pending',
+    ],
+    ['authorizationCodec'],
+  );
+  if (
+    Object.hasOwn(s, 'authorizationCodec') &&
+    s.authorizationCodec !== VARIANT_AUTHORIZATION_CODEC
+  )
+    bad();
   if (
     s.schemaVersion !== 1 ||
     s.scope !== binding(ctx) ||
@@ -196,13 +213,17 @@ export function createCampaignRestoreVariantMaterialization({
         continue;
       }
       const permission = await before(uid, r, seed, ctx, row.index);
-      if (s.pending && permission.proof !== s.pending.authorizationHash) originReviewChanged();
       if (permission.availability !== 'available') {
         if (s.pending) originReviewChanged();
         s.row++;
         s.omitted++;
         continue;
       }
+      if (
+        s.pending &&
+        authorizationValue(permission, s.authorizationCodec) !== s.pending.authorizationHash
+      )
+        authorizationChanged(s.authorizationCodec);
       const dto = await json(uid, r, row, ctx),
         campaignToken = campaignIdentityToken(uid, seed.l.job.campaignId, seed.l.snapshot),
         scope = {
@@ -265,7 +286,12 @@ export function createCampaignRestoreVariantMaterialization({
         s.row++;
         s.variants++;
         s.pending = null;
-      } else s.pending = { row: row.index, chunk: end, authorizationHash: permission.proof };
+      } else
+        s.pending = {
+          row: row.index,
+          chunk: end,
+          authorizationHash: authorizationValue(permission, s.authorizationCodec),
+        };
       return { targets, permission, row: row.index };
     }
     return { targets: [], permission: null, row: null };
@@ -294,6 +320,7 @@ export function createCampaignRestoreVariantMaterialization({
             : {
                 schemaVersion: 1,
                 scope: binding(ctx),
+                authorizationCodec: VARIANT_AUTHORIZATION_CODEC,
                 phase: 'copying',
                 row: 0,
                 written: 0,
@@ -322,7 +349,12 @@ export function createCampaignRestoreVariantMaterialization({
             originReviewChanged();
           if (action.permission) {
             const current = await origins.authorization(tx, l, seed.key, ctx, action.row);
-            if (current.availability !== 'available' || current.proof !== action.permission.proof)
+            if (
+              current.availability !== 'available' ||
+              current.proof !== action.permission.proof ||
+              authorizationValue(current, s.authorizationCodec) !==
+                authorizationValue(action.permission, s.authorizationCodec)
+            )
               originReviewChanged();
           }
           const next = structuredClone(s);
@@ -330,18 +362,21 @@ export function createCampaignRestoreVariantMaterialization({
             // Each authorization may inspect 50 targets: bound that work to one journal.
             next.audited = await writes.audit(tx, l, next.audited, 1, async (journal) => {
               const current = await origins.authorization(tx, l, seed.key, ctx, journal.row);
+              if ((journal.authorizationCodec ?? null) !== (s.authorizationCodec ?? null)) bad();
+              if (current.availability !== 'available') originReviewChanged();
               if (
-                current.availability !== 'available' ||
-                current.proof !== journal.authorizationHash
+                authorizationValue(current, journal.authorizationCodec) !==
+                journal.authorizationHash
               )
-                originReviewChanged();
+                authorizationChanged(journal.authorizationCodec);
             });
             if (next.audited === next.written) next.phase = 'ready';
           }
           const write = action.targets.length
             ? await writes.prepare(tx, l, r.operationId, action.targets, {
                 row: action.row,
-                authorizationHash: action.permission.proof,
+                authorizationHash: authorizationValue(action.permission, s.authorizationCodec),
+                ...codecFields(s),
               })
             : null;
           if (write) next.written++;

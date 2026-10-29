@@ -65,7 +65,12 @@ export function createCampaignRestoreVariantOrigin(store, index) {
   }
   async function authorization(tx, l, key, ctx, rowIndex) {
     const active = await base(tx, l, ctx);
-    if (rowIndex === null || active.availability !== 'available') return active;
+    if (active.availability !== 'available') return active;
+    if (rowIndex === null)
+      return {
+        ...active,
+        decision: digest([ctx.proof.archive, ctx.port.context.active, 'lore-generation']),
+      };
     const row = (await index.page(tx, l, key, rowIndex, 1))[0];
     if (row?.section !== 'variant' || row.value.unit.outcome !== 'available') bad();
     const owner = await anchor(tx, l, key, ctx, row.value.meta);
@@ -85,6 +90,13 @@ export function createCampaignRestoreVariantOrigin(store, index) {
       anchor: owner.anchor,
       relations,
       proof: digest([active.proof, owner.proof, permissions]),
+      decision: digest([
+        ctx.proof.archive,
+        ctx.port.context.active,
+        row.value.meta,
+        owner.anchor,
+        relations,
+      ]),
     };
   }
   return { base, anchor, authorization };

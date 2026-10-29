@@ -1258,3 +1258,15 @@ slots após vazio físico, base ativa/own/índices, sem chave/prosa/grant.
 Journal compartilhado recebe binding só para resolver destino; mantenha wire
 de own/base/variant e use wrapper específico para múltiplos pais.
 C4 adequado/auditoria física/ativação seguem gates; layouts 1–4 intactos (ADR 0266).
+
+Na retomada de variantes restauradas, novos jobs/journals usam authorizationCodec
+edition-v1. Congele arquivo/testemunhas/âncora/disponibilidades dos alvos,
+sem timestamps correntes. Autorize antes de bytes e compare prova corrente
+estrita novamente na escrita. Mesma origem reautorizada retoma; revogar/devolver
+durante os mesmos bytes invalida aquela escrita. Relação opaca não revive.
+Discriminante é interno, omitido do progresso. Job/journal sem campo mantém
+validação legada; não converta cifras/decisões antigas. Prova legada parcial
+alterada retorna variant-authorization-restart-required e mantém cancel/coleta.
+bindingOptionalFields é fechado e vazio por padrão no journal compartilhado;
+âncoras precisam selecionar o codec ao conferir variantWrites. Preserve wire
+own/base/anchor e recuse codecs desconhecidos/mistura de modos (ADR 0267).

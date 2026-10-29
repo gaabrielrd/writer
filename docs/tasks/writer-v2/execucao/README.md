@@ -2441,3 +2441,12 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência](../../../entregas/2026-10-29-writer-v2-materializacao-das-ancoras-historicas.md).
      Mídia/universo organizacional/C4/auditoria física/ativação e UI permanecem.
      Macro 8/35; validate integral no fechamento do bloco, somente commit local.
+
+237. [Retomada nativa das variantes](237-retomada-nativa-das-variantes.md):
+     corpo parcial retoma após reautorizar a mesma origem/alvo. Prova corrente
+     estrita continua bloqueando mudança durante bytes. Codec interno aditivo
+     preserva leitura/coleta e prefixos legados, com restart explícito quando
+     a prova antiga mudou. 326 casos Node distintos e uma jornada SDK/Rules
+     positivos; [evidência](../../../entregas/2026-10-29-writer-v2-retomada-nativa-das-variantes.md).
+     Mídia/universo/C4/auditoria física/ativação e UI/ciclos ainda pendentes.
+     Macro 8/35; validate integral no fechamento do bloco, somente commit local.

@@ -33,7 +33,7 @@ export function createCampaignRestoreAnchorOrigin(store, index) {
           store.db
             .collection(l.ref.path + '/variantWrites')
             .where('row', '==', variant.index)
-            .select(...NATIVE_WRITE_FIELDS, 'row', 'authorizationHash')
+            .select(...NATIVE_WRITE_FIELDS, 'row', 'authorizationHash', 'authorizationCodec')
             .limit(6),
         )
       ).docs;

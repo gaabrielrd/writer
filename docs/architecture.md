@@ -3922,3 +3922,18 @@ antes de bytes e na escrita, com slot e decisão congelada. Variante omitida
 não revive; âncora equivalente ativa é reutilizada sem prosa.
 Cancel coleta geração, âncoras/slots, base ativa e próprios/índices/chunks.
 Mídia, C4 dos temporários, auditoria física/ativação e Estúdio permanecem gates.
+
+## Retomada nativa das variantes
+
+A [ADR 0267](decisions/0267-campaign-variant-authorization-edition.md) separa
+a decisão estável da edição/disponibilidades da prova corrente de acesso.
+Novas variantes usam authorizationCodec edition-v1 no estado/job/journal,
+sem expor o campo no progresso. Cada tentativa reautoriza origem/alvos e
+compara a prova estrita antes/depois de I/O, permitindo retry revalidado da
+mesma origem após alteração nativa de metadata.
+
+Journal compartilhado aceita opcionais fechados por configuração; âncoras
+selecionam o codec de variantWrites ao validar sua procedência nativa.
+Wire antigo continua legível/coletável. Legado parcial cuja prova mudou exige
+nova preparação explícita, preservando dados. Fixture fictícia anterior à
+mudança comprova a leitura sem depender do histórico Git.

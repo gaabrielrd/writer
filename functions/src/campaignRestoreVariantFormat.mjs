@@ -1,4 +1,5 @@
 import { digest } from './sceneContracts.mjs';
+export const VARIANT_AUTHORIZATION_CODEC = 'edition-v1';
 export const VARIANT_MATERIALIZATION_BYTES = 8192;
 export const VARIANT_MATERIALIZATION_PHASES = ['copying', 'root', 'audit', 'ready', 'cleaning'];
 export const restoredLoreGenerationId = (l) =>

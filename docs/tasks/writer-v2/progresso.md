@@ -893,3 +893,11 @@ Rules positivos após corrigir retry da mesma origem com metadata nativa alterad
 Mídia/pins, universo organizacional, C4 dos temporários, auditoria física/
 ativação e Estúdio/ciclos permanecem. Macro 8/35 (22,9%); checks dirigidos,
 validate integral no fechamento do bloco, somente commit local.
+
+O [incremento 237](execucao/237-retomada-nativa-das-variantes.md) corrige a retomada
+de corpo parcial após reautorizar a mesma origem/alvo. Codec interno de edição
+separa decisão estável de prova corrente estrita, preservando wire legado/
+prefixos e coleta; legado incompatível recebe motivo explícito de restart.
+326 casos Node distintos (sete novos) e uma jornada SDK/Rules positivos.
+Mídia/universo organizacional/C4/auditoria física/ativação/Estúdio permanecem;
+macro 8/35 (22,9%), checks dirigidos e validate integral no fechamento do bloco.
