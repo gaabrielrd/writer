@@ -490,3 +490,11 @@ Imagens ativas independentes e dados de outros projetos/contas são preservados;
 conteúdo conhecido reaparecido reabre a família antes da certificação.
 Chega a controls em deleting; controles/atividade/final/cliente/UI continuam
 abertos. Sem novo validate integral, CI ou remoto. Macro **8/35** inalterada.
+
+O mesmo plano 199 agora retira corpos derivados do chat por metadata/provas
+nativas e a retomada canônica com revisão atômica da conta. Preserva perguntas,
+recibos e outros projetos; órfão sem atribuição verificável recusa sem ler prosa.
+56 Node e três SDK/Rules passaram; veja
+[evidência parcial](../../entregas/2026-10-28-writer-v2-chat-e-retomada-na-exclusao-de-aventuras.md).
+Chega a verify em deleting; fechamento terminal/raiz, cliente/UI e validate
+integral continuam pendentes. Macro **8/35**, P2/P3/D/F2-09 e gates inalterados.

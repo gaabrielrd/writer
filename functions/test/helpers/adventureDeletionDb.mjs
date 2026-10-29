@@ -19,6 +19,7 @@ export function adventureDeletionDb(database) {
       return query(group, { ...options, ordered: true });
     },
     startAt: (ref) => query(group, { ...options, lower: ref.path }),
+    startAfter: (ref) => query(group, { ...options, lower: ref.path, exclusive: true }),
     endBefore: (ref) => query(group, { ...options, upper: ref.path }),
     select: (...fields) => query(group, { ...options, fields }),
     limit: (maximum) => query(group, { ...options, maximum }),
@@ -39,7 +40,7 @@ export function adventureDeletionDb(database) {
             .filter(
               (path) =>
                 path.split('/').at(-2) === ref.group &&
-                compare(path, lower) >= 0 &&
+                (ref.options.exclusive ? compare(path, lower) > 0 : compare(path, lower) >= 0) &&
                 compare(path, upper) < 0 &&
                 (ref.options.filters ?? []).every(
                   ([field, value]) =>

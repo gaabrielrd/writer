@@ -1,6 +1,86 @@
 {
   "indexes": [
     {
+      "collectionGroup": "editorChatOperations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "action",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receipt.result.contextId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receipt.result.phase",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "editorChatOperations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "action",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receipt.result.conversationId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "editorChatOperations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "action",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receipt.result.conversationId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "receipt.result.turnId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "workActivity",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "target.kind",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "target.id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "uses",
       "queryScope": "COLLECTION_GROUP",
       "fields": [

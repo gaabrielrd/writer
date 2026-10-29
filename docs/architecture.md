@@ -3448,3 +3448,14 @@ Children consome o inventário v1 de 23 famílias por metadata, sem exigir pais.
 Vazio final relê as famílias e reabre conteúdo próprio reaparecido. Recibos e
 checkpoint acompanham cada lote atomicamente. O serviço continua interno e
 chega a controls ainda em deleting; fechamento final e cliente/UI permanecem.
+
+## Chat derivado e retomada na exclusão de aventuras
+
+A [ADR 0226](decisions/0226-adventure-deletion-chat-and-activity.md) acrescenta
+páginas de dez corpos por metadata e intervalo documental do UID. Atribuição de
+órfãos exige recibo original, hash reconstruído e nascimento nativo, sem ler
+captura/prosa ou reconstruir pais. Origem incerta recusa. Perguntas, recibos e
+outros projetos são preservados; controles são revalidados antes do certificado.
+Atividade canônica é retirada com revisão da conta/checkpoint/recibo atômicos,
+preservando accessedAt. O serviço chega a verify, ainda sem fechamento da raiz,
+endpoint, cliente ou interface.

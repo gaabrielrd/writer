@@ -1,4 +1,6 @@
 import { readWorkMetadata, workFail } from './workProgressContracts.mjs';
+import { prepareAdventureDeletionControls } from './adventureDeletionControls.mjs';
+import { prepareAdventureDeletionActivity } from './adventureDeletionActivity.mjs';
 import { adventureImageUseKey } from './adventureBlockImages.mjs';
 import { adventureDeletionInconsistent as invalid } from './adventureDeletionContracts.mjs';
 import { assertAdventureDeletionRestoreClosed } from './adventureDeletionRestore.mjs';
@@ -157,6 +159,8 @@ export async function advanceAdventureDeletionCleanup(tx, db, p, now) {
       deletedDocuments: p.deletedDocuments + page.documents.length,
     };
   }
+  if (p.phase === 'controls') return prepareAdventureDeletionControls(tx, db, p, now);
+  if (p.phase === 'activity') return prepareAdventureDeletionActivity(tx, db, p);
   workFail(
     'failed-precondition',
     'Esta etapa da exclusão ainda está em implementação.',

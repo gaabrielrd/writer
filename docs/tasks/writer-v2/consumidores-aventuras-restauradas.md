@@ -89,3 +89,10 @@ transações foram provadas pelo SDK local em dados sintéticos de autoria/usos.
 [Evidência parcial](../../entregas/2026-10-28-writer-v2-usos-e-autoria-na-exclusao-de-aventuras.md).
 Controles/atividade/vazio terminal e interface ainda faltam; a raiz permanece
 marcada até os passos finais. Não comprova exclusão completa de projeto.
+
+Corpos derivados do chat e retomada também possuem processadores internos:
+páginas por metadata, prova nativa/hash de órfãos e revisão da conta atômica.
+Perguntas próprias e outros projetos permanecem; atribuição incerta recusa.
+[Evidência parcial](../../entregas/2026-10-28-writer-v2-chat-e-retomada-na-exclusao-de-aventuras.md):
+56 Node e três SDK/Rules positivos. Chega a verify em deleting; raiz/final,
+cliente/UI e validate integral continuam pendentes. Não fecha plano 199.

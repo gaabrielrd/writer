@@ -41,9 +41,11 @@ para validação e limites. A exclusão completa está em andamento: guards de
 reserva permanente, Rules e fonte privada de confirmação estão preparados,
 com início/job, encerramento de contextos/turnos e coleta privada das fontes.
 A limpeza interna já retira vínculos de imagens e autoria em lotes, incluindo
-filhos sem pai, preservando cópias independentes da biblioteca. Controles,
-fechamento final e interface pública ainda faltam; veja a
-[evidência parcial de autoria](docs/entregas/2026-10-28-writer-v2-usos-e-autoria-na-exclusao-de-aventuras.md).
+filhos sem pai, preservando cópias independentes da biblioteca. Também retira
+corpos derivados do chat e a retomada da aventura, preservando perguntas
+próprias e outros projetos. Verificação terminal, fechamento da raiz e interface
+pública ainda faltam; veja a
+[evidência parcial de chat e retomada](docs/entregas/2026-10-28-writer-v2-chat-e-retomada-na-exclusao-de-aventuras.md).
 Consulte a
 [evidência parcial](docs/entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
 A portabilidade completa continua aberta. Não houve implantação.

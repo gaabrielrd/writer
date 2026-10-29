@@ -983,3 +983,10 @@ página e preserve arquivos/metadata independentes. Uso sem imagem não recria
 contador. Remova autoria pelo inventário limitado, sem carregar prosa ou exigir
 pais. Reabra família conhecida que reaparecer antes do vazio final; não certifique
 nem apague caminhos ou donos inesperados (ADR 0225).
+
+Na limpeza derivada do chat da aventura, use páginas por metadata e escopo exato
+do UID/projeto/nascimento. Órfão pronto exige recibo original imutável e hash
+reconstruído; órfão temporário sem origem verificável recusa sem ler captura.
+Preserve perguntas/recibos e outros projetos, inclusive criados após o início.
+Cursor de grupo guarda o caminho completo. Retire retomada canônica com revisão
+atômica da conta, preservando accessedAt; alias/inconsistência recusam (ADR 0226).

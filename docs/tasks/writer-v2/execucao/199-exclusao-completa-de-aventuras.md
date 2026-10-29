@@ -298,3 +298,43 @@ correções de asserção e limites estão na
 e na [ADR 0225](../../../decisions/0225-adventure-deletion-images-and-authorship.md).
 Job chega a controls em deleting. Controles/chat derivado/atividade/final,
 interface e validate integral continuam pendentes; macro 8/35 inalterada.
+
+## Próxima integração — corpos derivados do chat e retomada
+
+Base 4a9e46e conferida limpa. Auditar os produtores: recibos de cenas,
+histórico, progresso, blocos, lore e chat conservam IDs/hashes/revisões, sem
+prosa. Preservar esses recibos opacos e limites da conta; não apagar por prefixo
+nem quebrar a resolução histórica. Autorizações atuais continuam obrigatórias.
+
+Limpar contextos e corpos de turnos por páginas de metadata no UID. Conferir
+controle/token/escopo e nascimento original; preservar perguntas, metadados de
+turnos e conversas. Para órfãos com origem congelada, exigir prova nativa e hash
+do pedido original de preparação/conversa antes de atribuir o escopo.
+Órfão temporário sem controle nem origem verificável recusa sem ler captura
+ou escolher um projeto por suposição. Recusas preservam a página inteira.
+
+Revalidar controles próprios e ausência de corpos antes de certificar controls.
+A origem revogada não permite geração tardia, aplicação ou débito; testes devem
+provar que perguntas próprias continuam acessíveis sem ler respostas removidas.
+Não usar o cleanup geral da conversa, que também remove perguntas.
+
+Retirar depois a retomada canônica da aventura e invalidar o cursor da conta
+por revisão atômica, preservando outros projetos e accessedAt. Dados de controle
+inconsistentes recusam sem remoção parcial. Verificação terminal e remoção da
+raiz/cliente/UI continuam próprias; política final de perguntas ainda pendente.
+
+## Resultado parcial — chat derivado e retomada
+
+Processadores implementados com páginas de dez por metadata e recibos/hash/
+nascimento para órfãos prontos. Perguntas próprias e recibos preservados;
+outros projetos criados depois do início também permanecem. Órfão temporário
+sem origem verificável recusa sem ler a captura. Atividade canônica sai com
+revisão da conta/checkpoint/recibo no mesmo commit, sem mudar accessedAt.
+
+56 Node dirigidos e três SDK/Rules positivos; correção da fixture, resultados
+e limites na
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-chat-e-retomada-na-exclusao-de-aventuras.md)
+e [ADR 0226](../../../decisions/0226-adventure-deletion-chat-and-activity.md).
+Chega a verify em deleting; verificação terminal/raiz e exposição/cliente/UI
+ainda faltam. Política final de perguntas permanece pendente. Macro 8/35
+inalterada; validate integral no fechamento do bloco.
