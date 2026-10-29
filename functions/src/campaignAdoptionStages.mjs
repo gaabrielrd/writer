@@ -162,6 +162,7 @@ async function overlayStage(tx, db, p, c, now) {
   if (!keep) {
     delete value.previousMode;
     delete value.bodyBinding;
+    delete value.bodyCodec;
   }
   if (
     candidate &&
@@ -203,6 +204,7 @@ async function authorizationStage(tx, db, p, c, now) {
   if (record && record.mode !== 'removed' && record.overlay?.manifest) {
     const entity = await readVariantEntity(tx, db, context, record.overlay);
     for (const relation of entity.relations) {
+      if (relation.available === false) continue;
       const target = await loreRecord(tx, db, context, relation.targetKey);
       if (target && target.mode !== 'removed') continue;
       const oldTarget = await loreRecord(tx, db, c.current, relation.targetKey);
@@ -213,6 +215,7 @@ async function authorizationStage(tx, db, p, c, now) {
   if (record && record.mode === 'removed' && record.overlay?.previousMode === 'override') {
     const entity = await readVariantEntity(tx, db, context, record.overlay);
     for (const relation of entity.relations) {
+      if (relation.available === false) continue;
       const target = await loreRecord(tx, db, context, relation.targetKey);
       if (!target || target.mode === 'removed') {
         const oldTarget = await loreRecord(tx, db, c.current, relation.targetKey);

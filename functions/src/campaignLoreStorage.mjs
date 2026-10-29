@@ -221,6 +221,7 @@ export async function anchorContext(tx, db, context, anchor) {
   return { ...context, base, path, world };
 }
 export const loreOverlayFields = [
+  'bodyCodec',
   'schemaVersion',
   'ownerId',
   'campaignId',

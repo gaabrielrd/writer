@@ -1,3 +1,4 @@
+import { variantBodyCodec } from './campaignVariantBodyCodec.mjs';
 import { readRestoredCampaignBaseAccess } from './campaignRestoredSource.mjs';
 import { readCampaignBackupDerivedSource } from './campaignBackupDerivedSource.mjs';
 import { campaignBackupIdentity } from './campaignBackupSource.mjs';
@@ -18,6 +19,7 @@ export const loreBackupChanged = () =>
     'campaign-backup-lore-variant-changed',
   );
 export const LORE_BACKUP_HEAD = Object.freeze([
+  'bodyCodec',
   'schemaVersion',
   'ownerId',
   'campaignId',
@@ -255,6 +257,11 @@ export async function campaignBackupLoreContext(tx, input) {
       (v.retainedLegacy !== undefined && typeof v.retainedLegacy !== 'boolean')
     )
       loreBackupBad();
+    try {
+      variantBodyCodec(v);
+    } catch {
+      loreBackupBad();
+    }
     const a = v.anchor ?? { capturedBaseId: baseId, sourceKey: key };
     if (
       !a ||

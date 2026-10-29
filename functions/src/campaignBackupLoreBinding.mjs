@@ -1,3 +1,4 @@
+import { variantBodyCodec } from './campaignVariantBodyCodec.mjs';
 import { LORE_BYTES, CHUNK_BYTES } from './campaignLoreContracts.mjs';
 import { normalizedBodyBinding } from './campaignLoreStorage.mjs';
 import { baseMasked, baseHash } from './campaignBackupBaseContext.mjs';
@@ -10,10 +11,21 @@ export async function campaignBackupLoreBinding(c, unit) {
   const read = await baseMasked(c.tx, c.db.doc(c.lorePath + '/loreVariants/' + unit.entry.id), [
     'manifest',
     'bodyBinding',
+    'bodyCodec',
   ]);
-  if (digest(read.native) !== digest(unit.native)) loreBackupChanged();
+  if (
+    digest(read.native) !== digest(unit.native) ||
+    Object.hasOwn(read.value, 'bodyCodec') !== Object.hasOwn(unit.value, 'bodyCodec') ||
+    read.value.bodyCodec !== unit.value.bodyCodec
+  )
+    loreBackupChanged();
   const overlay = { ...unit.value, ...read.value },
     mode = overlay.mode === 'removed' ? overlay.previousMode : overlay.mode;
+  try {
+    variantBodyCodec(overlay);
+  } catch {
+    loreBackupBad();
+  }
   if (mode === 'base') {
     if (overlay.manifest != null || overlay.bodyBinding != null) loreBackupBad();
     return { binding: null, manifest: null, scope: null };

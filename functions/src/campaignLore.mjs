@@ -1,3 +1,8 @@
+import {
+  PORTABLE_VARIANT_BODY_CODEC,
+  variantBodyCodec,
+  mergeVariantRelations,
+} from './campaignVariantBodyCodec.mjs';
 import { workLimit, workDate, workConflict } from './workProgressContracts.mjs';
 import {
   decodeBaseCursor,
@@ -22,6 +27,7 @@ import {
   entityInput,
   loreState,
   bodyPlan,
+  readVariantEntity,
   bodyRefs,
   variantChunkId,
   confirmationHash,
@@ -83,7 +89,14 @@ export function createCampaignLoreService({ db, now = Date.now }) {
         ].sort();
         if (digest(actualKeys) !== digest(descriptor.relatedSourceKeys))
           fail('invalid-argument', 'Os alvos não correspondem à preparação imutável.');
-        preparedBody = bodyPlan(context, descriptor.sourceKey, revision, entity);
+        if (record.mode === 'override' && variantBodyCodec(record.overlay)) {
+          const previousEntity = await readVariantEntity(tx, db, context, record.overlay);
+          entity = mergeVariantRelations(entity, previousEntity);
+        }
+        const bodyCodec = entity.relations.some((relation) => relation.available === false)
+          ? PORTABLE_VARIANT_BODY_CODEC
+          : undefined;
+        preparedBody = bodyPlan(context, descriptor.sourceKey, revision, entity, bodyCodec);
       }
       const timestamp = workDate(now, record.overlay?.updatedAt ?? 0),
         mode =
@@ -119,6 +132,13 @@ export function createCampaignLoreService({ db, now = Date.now }) {
             : action === 'discard'
               ? null
               : (record.overlay?.manifest ?? null),
+        ...(action === 'save'
+          ? preparedBody.bodyCodec
+            ? { bodyCodec: preparedBody.bodyCodec }
+            : {}
+          : action !== 'discard' && variantBodyCodec(record.overlay ?? {})
+            ? { bodyCodec: record.overlay.bodyCodec }
+            : {}),
         ...(action === 'remove' ? { previousMode: record.mode } : {}),
         ...(context.generationId
           ? {

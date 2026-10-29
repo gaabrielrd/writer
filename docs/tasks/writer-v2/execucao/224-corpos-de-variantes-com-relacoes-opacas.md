@@ -2,7 +2,7 @@
 
 - Data: 2026-10-29.
 - Base: f8d13ea; sequência de [223](223-relacoes-portateis-do-lore-congelado.md).
-- Estado: etapa A implementada e validada localmente; etapa B de codec/ciclo pendente.
+- Estado: etapa A implementada e validada localmente; etapa B implementada no [225](225-ciclo-das-variantes-com-relacoes-nao-resolvidas.md).
 
 ## Objetivo e aceite
 
@@ -103,8 +103,8 @@ ESLint dirigido e sintaxe de 449 módulos Functions positivos; checks de formato
 arquitetura, documentação e diff final registrados na
 [evidência](../../../entregas/2026-10-29-writer-v2-formato-das-relacoes-nao-resolvidas.md).
 
-A etapa B acima continua pendente: este resultado não implementa codec privado,
-merge de escrita, remoção/restauração/descarte ou adoção de corpos opacos.
-Continuar no incremento 225 sem habilitar produtor persistente; validar o grande
-bloco de leitores/cleanup antes de materialização. Sem validate integral repetido,
-CI ou alterações remotas; somente commit local.
+A etapa A não implementou codec privado, merge de escrita, remoção/restauração/
+descarte ou adoção de corpos opacos. A etapa B foi implementada e validada depois,
+no [225](225-ciclo-das-variantes-com-relacoes-nao-resolvidas.md), sem produtor
+persistente. Validar o grande bloco de leitores/cleanup antes de materialização.
+Sem validate integral repetido ou alterações remotas nesta etapa A; somente commit local.

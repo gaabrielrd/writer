@@ -358,3 +358,14 @@ da disponibilidade do alvo. Leitura 1/2 continua estrita. 22 novos e 542 regress
 positivos. Etapa B de codec privado e ciclo completo de edição/adoção/reexportação
 continua obrigatória, seguida por inventário/cleanup C4 antes de persistência.
 P3/D/F2-09, ativação/Estúdio/ciclos e macro 8/35 permanecem abertos.
+
+### Ciclo das variantes portáteis — incremento 225, etapa B
+
+[Plano 225](225-ciclo-das-variantes-com-relacoes-nao-resolvidas.md) e
+[ADR 0255](../../../decisions/0255-campaign-portable-variant-body-lifecycle.md)
+integram o codec privado aos leitores, save/remove/restore/discard, adoção e
+backup. Preservação de chaves/ordem e reexportação assinada/revisada positivas;
+41 novos e 627 regressões passaram. A entidade do cliente permanece nativa.
+Próximo: inventário/cleanup C4 v1–v4 e validate do bloco de leitores/cleanup
+antes de produtor persistente, upload/retomada, materialização/ativação e
+Estúdio/ciclos. P3/D/F2-09 e macro 8/35 continuam abertos.

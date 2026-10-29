@@ -800,3 +800,10 @@ Emissão/revisão v3 e leitura estrita 1/2 passaram em 22 casos novos e 542 regr
 Codec privado e preservação dos corpos em edição/adoção/reexportação são a etapa B
 seguinte, ainda pendente. C4 e restauração persistente/Estúdio continuam pendentes;
 macro 8/35 (22,9%), checks dirigidos e somente commit local.
+
+O [incremento 225](execucao/225-ciclo-das-variantes-com-relacoes-nao-resolvidas.md)
+implementa a etapa B de variantes portáteis: leitura/edição com preservação de
+chaves e ordem, remoção/restauração/descarte, adoção e reexportação assinada.
+41 casos novos e 627 regressões passaram. Inventário/cleanup C4 v1–v4 é o próximo
+passo antes de produtor persistente, upload/retomada, materialização/ativação e
+Estúdio/ciclos. Macro 8/35 (22,9%); somente commit local e checks dirigidos.

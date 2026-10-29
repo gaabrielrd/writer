@@ -2344,3 +2344,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      passaram; [evidência parcial](../../../entregas/2026-10-29-writer-v2-formato-das-relacoes-nao-resolvidas.md).
      Etapa B de codec privado/ciclo da variante, C4 e restauração persistente/UI/ciclos
      pendentes; macro 8/35, checks dirigidos e somente commit local.
+
+225. [Ciclo das variantes com relações não resolvidas](225-ciclo-das-variantes-com-relacoes-nao-resolvidas.md):
+     etapa B de 224 integra codec privado, merge de edição, remoção/restauração/
+     descarte, C3 e reexportação v3. 41 novos e 627 regressões passaram;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-ciclo-das-variantes-portateis.md).
+     Inventário/cleanup C4 v1–v4 antecede produtor persistente e UI/ciclos;
+     macro 8/35, testes dirigidos e somente commit local.

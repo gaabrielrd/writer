@@ -1119,12 +1119,22 @@ No lore congelado restaurado, relações portáteis usam marcador fechado, sem
 reconstruir targetEntityId. Exiba apenas alvos autorizados na mesma base/âncora;
 preserve chave/estado dos demais e não invente descritores. Backup conserva
 DTO/ordem e recusa contradição física por metadata. Escrita/descarte de variante
-não altera a base original; corpos opacos de variantes ainda exigem contrato
-próprio antes do produtor persistente (ADR 0253).
+não altera a base original. Corpos opacos de variantes seguem o codec/ciclo
+privado da ADR 0255 antes do produtor persistente (ADR 0253).
 
 No arquivo de campanha v3, aceite unresolved true somente em relação false de
 variante, sem labels/self/campos extras. Preserve a gramática e os joins de v1/v2;
 relações sem marcador continuam estritas. A chave não concede acesso nem resolve
 alvo automaticamente. Callback derivado recebe versão provisória do header;
-revisão não materializa. Codec privado/ciclo da variante continuam necessários
-antes do produtor persistente (ADR 0254).
+revisão não materializa. Integre o codec/ciclo da ADR 0255 e C4 antes do produtor
+persistente de restauração (ADR 0254).
+
+Em variantes, bodyCodec portable-relations-v1 é metadata privada de serialização,
+permitida apenas em override/removed anterior override. Ausência usa JSON nativo;
+presença inválida falha antes do corpo, sem inferência. Preserve chaves false na
+mescla de save após validar entrada selada/alvos/autorização, com 50 relações e
+900.000 bytes; reenvio de descritor conhecido não resolve false da mesma chave.
+Projeção/adoção/backup não consultam alvo false. Remove/restore/keep-local conservam
+codec; discard/use-candidate/discard-local limpam quando retiram o corpo. Masks/
+tokens e releituras conferem presença/valor. Emita unresolved true no arquivo v3,
+sem expor codec nem habilitar produtor de restauração antes de C4 (ADR 0255).

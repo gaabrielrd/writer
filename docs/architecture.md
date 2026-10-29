@@ -3766,3 +3766,18 @@ origem. Prova interna conta unresolvedRelations. O callback derivado recebe
 versão do header ainda provisório, sem permitir escrita ativa.
 Esta etapa é de formato/revisão; codec privado, edição/adoção/reexportação de
 corpos opacos e C4 continuam antes de qualquer produtor persistente.
+
+## Ciclo dos corpos portáteis das variantes
+
+A [ADR 0255](decisions/0255-campaign-portable-variant-body-lifecycle.md) integra
+campaignVariantBodyCodec a leitura/C2, storage, adoção e backup. Validação nativa
+é injetada sem ciclo; bodyCodec privado ausente conserva JSON anterior e flag
+inválida falha antes do corpo. Save conserva false após validação da entrada
+selada e dos alvos, com limites sobre o corpo completo. Descritores anteriores
+reenviados não resolvem uma declaração adicional da mesma chave.
+Remove/restore/keep-local conservam codec e binding; descarte ou escolha da
+candidata limpa o codec ao retirar o corpo. Adoção permite chunks anteriores e
+base ativa nativa, sem consultas para relações false. Reexportação usa unresolved
+true de v3 e não expõe metadata privada. Masks/tokens e releituras conferem codec.
+Esta etapa conclui o ciclo interno previsto em 224; C4 e produtor/ativação/
+interface de restauração continuam necessários antes da portabilidade completa.

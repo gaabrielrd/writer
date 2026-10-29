@@ -1,3 +1,8 @@
+import {
+  variantBodyCodec,
+  parseVariantBody,
+  serializeVariantBody,
+} from './campaignVariantBodyCodec.mjs';
 import { portableBaseLoreRelations } from './campaignPortableRelations.mjs';
 import { assertLoreItemOrigin, loreRelationOrigin } from './campaignLoreOrigin.mjs';
 import { validateId } from './generation.mjs';
@@ -254,6 +259,7 @@ export function overlayRecord(value, context, key) {
     !categories.includes(value.category)
   )
     inconsistent();
+  variantBodyCodec(value);
   const bodyMode = value.mode === 'removed' ? value.previousMode : value.mode;
   if (!['base', 'override'].includes(bodyMode)) inconsistent();
   if (bodyMode === 'override') {
@@ -358,10 +364,11 @@ export function bodyRefs(db, context, record) {
       )
     : [];
 }
-export function bodyPlan(context, key, revision, entity) {
-  const content = JSON.stringify(entity),
+export function bodyPlan(context, key, revision, entity, bodyCodec) {
+  const content = serializeVariantBody(entity, key, bodyCodec, entityInput),
     chunks = splitHistoryContent(content);
   return {
+    ...(bodyCodec === undefined ? {} : { bodyCodec }),
     bodyBinding: {
       schemaVersion: 1,
       layout: context.generationId ? 'generation' : 'legacy',
@@ -387,6 +394,7 @@ export function bodyPlan(context, key, revision, entity) {
   };
 }
 export async function readVariantEntity(tx, db, context, record) {
+  variantBodyCodec(record);
   const binding = normalizedBodyBinding(context, record);
   await validateBodyStorage(tx, db, context, binding);
   const refs = bodyRefs(db, context, record),
@@ -412,14 +420,7 @@ export async function readVariantEntity(tx, db, context, record) {
     digest(content) !== record.manifest.sha256
   )
     inconsistent();
-  let parsed;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    inconsistent();
-  }
-  const entity = entityInput(parsed, record.sourceKey);
-  if (JSON.stringify(entity) !== content) inconsistent();
+  const entity = parseVariantBody(content, record, entityInput);
   if (entity.name !== record.name || entity.category !== record.category) inconsistent();
   return entity;
 }
@@ -541,6 +542,7 @@ export async function readBaseEntity(tx, db, context, item) {
 export async function projectEntity(tx, db, context, entity) {
   const relations = [];
   for (const relation of entity.relations) {
+    if (relation.available === false) continue;
     const target = await loreRecord(tx, db, context, relation.targetKey);
     if (target && target.mode !== 'removed')
       relations.push({ ...relation, targetName: target.name });

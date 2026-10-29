@@ -1,3 +1,4 @@
+import { parseVariantBody } from './campaignVariantBodyCodec.mjs';
 import { createHash } from 'node:crypto';
 import { overlayRecord, entityInput, bodyRefs, LORE_BYTES } from './campaignLoreContracts.mjs';
 import { normalizedBodyBinding, bindingPath } from './campaignLoreStorage.mjs';
@@ -5,7 +6,7 @@ import { basePath } from './campaignBaseContracts.mjs';
 import { baseMasked } from './campaignBackupBaseContext.mjs';
 import { loreBackupBad, loreBackupChanged } from './campaignBackupLoreContext.mjs';
 import { digest } from './workProgressContracts.mjs';
-const CONTENT = ['name', 'category', 'manifest', 'bodyBinding'];
+const CONTENT = ['name', 'category', 'manifest', 'bodyBinding', 'bodyCodec'];
 const safe = (v, min = 0) => Number.isSafeInteger(v) && v >= min;
 function compat(c) {
   return {
@@ -104,22 +105,15 @@ async function entity(c, unit, overlay) {
   if (bytes !== overlay.manifest.bytes || hash.digest('hex') !== overlay.manifest.sha256)
     loreBackupBad();
   const raw = texts.join('');
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    loreBackupBad();
-  }
-  const value = typed(() => entityInput(parsed, overlay.sourceKey));
-  if (
-    JSON.stringify(value) !== raw ||
-    value.name !== overlay.name ||
-    value.category !== overlay.category
-  )
-    loreBackupBad();
+  const value = typed(() => parseVariantBody(raw, overlay, entityInput));
+  if (value.name !== overlay.name || value.category !== overlay.category) loreBackupBad();
   const relations = [],
     targets = [];
   for (const relation of value.relations) {
+    if (relation.available === false) {
+      relations.push({ targetKey: relation.targetKey, available: false, unresolved: true });
+      continue;
+    }
     const target = await c.target(relation.targetKey);
     targets.push([relation.targetKey, target]);
     relations.push(
@@ -142,7 +136,12 @@ export async function campaignBackupLoreContent(c, unit, expected) {
     c.db.doc(c.lorePath + '/loreVariants/' + unit.entry.id),
     CONTENT,
   );
-  if (digest(read.native) !== digest(unit.native)) loreBackupChanged();
+  if (
+    digest(read.native) !== digest(unit.native) ||
+    Object.hasOwn(read.value, 'bodyCodec') !== Object.hasOwn(unit.value, 'bodyCodec') ||
+    read.value.bodyCodec !== unit.value.bodyCodec
+  )
+    loreBackupChanged();
   const overlay = typed(() =>
     overlayRecord({ ...unit.value, ...read.value }, compat(c), unit.entry.id),
   );
