@@ -1004,3 +1004,9 @@ deletionToken antes de enviar. Use Web Locks/CAS por UID/aventura e guarde
 somente metadata, sem título/prosa/chaves. Confira conta após awaits e recibo
 antes de aposentar pendência. Conflito exige erro definitivo e consulta atual
 do mesmo job; permita reabertura de fase com pisos monotônicos (ADR 0228).
+
+No diálogo de exclusão de aventura, renove a sessão por conta/alvo/abertura e
+pause antes da próxima unidade. Confira a pendência capturada ao recuperar ou
+encerrar início. Replay também exige reserva segura. Notifique revogação após
+prova válida e antes do CAS local; não recircule leituras pelo próprio pulso.
+No dispatcher, confira auth/App Check antes de construir o serviço (ADR 0229).

@@ -515,3 +515,12 @@ com as factories reais do servidor sobre double e ACK perdido; veja
 Sem endpoint novo ou composição na UI. Transporte autenticado, hook/tela/recarga
 real, política final de perguntas e validate integral continuam abertos.
 Macro **8/35**, P2/P3/D/F2-09 e gates inalterados.
+
+O plano 199 agora possui diálogo/hook próprios e dispatcher privado lazy com
+auth/contexto App Check antes da construção. Fonte por nova abertura,
+pausa entre unidades, confirmação da pendência capturada e revogação antes do
+CAS local passaram em 67 Vitest, 12 Node e 18 jornadas Chromium isoladas;
+[evidência parcial](../../entregas/2026-10-28-writer-v2-fronteira-e-dialogo-da-exclusao-de-aventuras.md).
+Catálogo/composição, binding HTTP/índices/mídia, ciclo integrado e validate
+integral continuam necessários. Perguntas preservadas com política final
+pendente. Macro **8/35**, P2/P3/D/F2-09 e gates inalterados.

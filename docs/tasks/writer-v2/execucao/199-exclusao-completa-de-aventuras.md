@@ -426,3 +426,46 @@ reais sobre double até remoção terminal. Veja
 e [ADR 0228](../../../decisions/0228-adventure-deletion-client-recovery.md).
 Sem endpoint exportado ou hook/UI composto. Transporte autenticado, browser,
 política final das perguntas e validate integral ainda faltam; macro 8/35.
+
+## Próxima integração — fronteira autenticada e diálogo privado
+
+Base 6e5027c conferida limpa. Preparar dispatcher fechado de seis comandos,
+com UID e contexto App Check conferidos antes de construir/selecionar serviço,
+headers privados e opções onCall explícitas. Porta de Storage continua a mesma
+de imagens restauradas; não criar outra via de retirada. Não exportar os
+endpoints em index antes dos gates de recuperação/interface integrados.
+
+Implementar hook e diálogo próprios na feature folha: conta/alvo por sessão,
+gerações de leitura, fonte atual, confirmação explícita, progresso, falha/retry,
+resolução do início e conflito. Encerrar/pausar impede próxima unidade, enquanto
+a etapa em andamento ainda pode confirmar seu recibo. Reabrir/recarregar apenas
+consulta, sem avanço automático. Confirmar a pendência capturada no segundo
+diálogo; mudança em outra aba recusa, sem cancelar pedido diferente.
+
+Acrescentar callback de revogação somente após validar progresso/recibo do
+servidor, antes do CAS local: falha de armazenamento posterior não deve manter
+a apresentação original ativa. Nunca notificar com resposta forjada ou após
+troca de conta. Metadados locais permanecem protegidos por CAS e não são
+apagados junto da tela. Perguntas próprias continuam preservadas, sem decidir
+a política final pendente.
+
+Arquivos: adventureDeletionCallable.mjs/teste; cliente (callback e comparação
+da confirmação), hook/components/CSS e testes; documentação/ADR. Diálogo
+standalone, ainda sem preparação de catálogo/Studio, exports de index servidor
+ou release. Compor e provar o fluxo no navegador no próximo passo integrado,
+antes do fechamento amplo. Usar kit/tokens do styleguide e testes dirigidos.
+
+## Resultado parcial — fronteira e diálogo isolados
+
+Dispatcher privado de seis comandos e hook/diálogo reais implementados.
+Guards precedem construção; apresentação renova por conta/alvo/abertura,
+pausa entre unidades e compara confirmação com o pedido capturado.
+Replay exige reserva segura e prova de revogação precede CAS local.
+
+67 Vitest, 12 Node e 18 jornadas Chromium positivos; três jornadas repetidas
+nos três temas/desktop/celular, incluindo reload e pedido exato no diário real.
+Veja [evidência parcial](../../../entregas/2026-10-28-writer-v2-fronteira-e-dialogo-da-exclusao-de-aventuras.md)
+e [ADR 0229](../../../decisions/0229-adventure-deletion-boundary-and-dialog.md).
+O browser tem auth/transporte fictícios e componentes/journal reais.
+Ainda sem catálogo/Studio/rotas ou binding de index; integração, ciclo amplo,
+política final das perguntas e validate integral continuam abertos. Macro 8/35.

@@ -125,7 +125,7 @@ export function server() {
     return structuredClone({ receipt, progress: job });
   };
   const transport = {
-    getSource: vi.fn(() => Promise.resolve(structuredClone(source))),
+    getSource: vi.fn((): Promise<typeof source | null> => Promise.resolve(structuredClone(source))),
     get: vi.fn(() =>
       Promise.resolve({
         schemaVersion: 1,

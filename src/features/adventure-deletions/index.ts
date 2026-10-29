@@ -5,3 +5,8 @@ export {
 } from './services/adventureDeletionClient';
 export { identityOf, floorOf, phaseLabels, readLookup } from './model/adventureDeletionContracts';
 export type * from './model/adventureDeletion';
+
+export {
+  AdventureDeletionDialog,
+  type AdventureDeletionDialogProps,
+} from './components/AdventureDeletionDialog';

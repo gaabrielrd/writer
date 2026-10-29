@@ -3481,3 +3481,14 @@ uma unidade e revalida conta após awaits; diário metadata por UID/aventura usa
 Web Locks/CAS antes do envio. ACK perdido retoma pedido exato; conflito requer
 erro definitivo e consulta atual. Não guardar título/prosa/chave nem avançar ao
 recarregar. Adaptador Firebase está preparado, sem endpoint exportado ou UI.
+
+## Fronteira privada e diálogo de exclusão de aventuras
+
+A [ADR 0229](decisions/0229-adventure-deletion-boundary-and-dialog.md) prepara
+dispatcher lazy de seis comandos, com auth/contexto App Check antes de criar
+serviço e opções onCall/headers privados explícitos. Ainda sem binding em index.
+Hook/diálogo renovam apresentação por UID/alvo/abertura e preservam pedido após
+fechamento, quota ou resposta tardia. Unidade seguinte exige aberto/conta/pausa
+conferidos; leitura/reload não avançam. Confirmação captura o envelope mostrado,
+replay exige reserva segura e revogação validada precede o CAS local.
+Prévia isolada usa os componentes/journal reais, sem composição no produto.

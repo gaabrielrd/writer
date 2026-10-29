@@ -41,6 +41,10 @@ const replacements = new Map(
     ],
     ['src/features/campaign-lore/services/campaignLoreCallables.ts', 'campaignLoreFixture.ts'],
     [
+      'src/features/adventure-deletions/services/adventureDeletionTransport.ts',
+      'adventureDeletionDialogFixture.ts',
+    ],
+    [
       'src/features/campaign-adoptions/services/campaignAdoptionCallables.ts',
       'campaignAdoptionFixture.ts',
     ],

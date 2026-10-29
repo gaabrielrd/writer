@@ -339,3 +339,50 @@ it('recusa cursor coercível e campos extras antes de consultar catálogo', asyn
   await expect(client.list({ extra: true } as unknown as { limit?: number })).rejects.toThrow();
   expect(s.transport.list).not.toHaveBeenCalled();
 });
+
+it('revogação só notifica depois do recibo válido e antes de falhar o CAS local', async () => {
+  const s = server(),
+    notify = vi.fn(),
+    client = createAdventureDeletionClient({
+      uid,
+      adventureId,
+      isActive: () => true,
+      transport: s.transport,
+      onRevoked: notify,
+    }),
+    send = s.transport.start.getMockImplementation()!;
+  const write = localStorage.setItem.bind(localStorage);
+  let quota = false;
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation((key, value) => {
+    if (quota) throw Error('Quota after proof');
+    write(key, value);
+  });
+  s.transport.start.mockImplementation(async (input) => {
+    const reply = await send(input);
+    quota = true;
+    return reply;
+  });
+  await expect(client.start(source, deletionId)).rejects.toThrow('Quota after proof');
+  expect(notify).toHaveBeenCalledOnce();
+  expect(notify.mock.calls[0]?.[0]).toMatchObject({ revoked: true, deletionId });
+  expect(recovery.readDeletion(uid, adventureId)).toEqual(start);
+});
+it('confirmação capturada não recupera nem cancela outra intenção local', async () => {
+  const s = server(),
+    client = make(s),
+    changed = { ...start, input: { ...start.input, operationId: 'changed-local-start-0001' } };
+  localStorage.setItem(storageKey, JSON.stringify(changed));
+  await expect(client.cancelStart(start)).rejects.toThrow('mudou');
+  await expect(client.recover(start)).rejects.toThrow('mudou');
+  expect(s.transport.start).not.toHaveBeenCalled();
+  expect(s.transport.resolveStart).not.toHaveBeenCalled();
+  expect(recovery.readDeletion(uid, adventureId)).toEqual(changed);
+});
+it('retomada pendente não envia I/O se a reserva segura deixou de estar disponível', async () => {
+  const s = server();
+  localStorage.setItem(storageKey, JSON.stringify(start));
+  Object.defineProperty(navigator, 'locks', { configurable: true, value: undefined });
+  await expect(make(s).recover(start)).rejects.toThrow('reserva');
+  expect(s.transport.start).not.toHaveBeenCalled();
+  expect(recovery.readDeletion(uid, adventureId)).toEqual(start);
+});

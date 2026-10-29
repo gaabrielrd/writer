@@ -3,6 +3,7 @@ import type {
   AdventureDeletionPending as Pending,
   AdventureDeletionProgress as Progress,
   AdventureDeletionControl as Control,
+  AdventureDeletionStartPending as StartPending,
 } from '../model/adventureDeletion';
 import {
   assertScope,
@@ -11,6 +12,8 @@ import {
   readSource,
   readLookup,
   readPage,
+  readMutation,
+  readCanceled,
   reason,
 } from '../model/adventureDeletionContracts';
 import * as recovery from './adventureDeletionRecovery';
@@ -23,6 +26,7 @@ export interface AdventureDeletionClientOptions {
   uid: string;
   adventureId: string;
   isActive: () => boolean;
+  onRevoked?: (progress: Progress) => void;
   transport?: AdventureDeletionTransport;
 }
 export function createAdventureDeletionClient(options: AdventureDeletionClientOptions) {
@@ -51,6 +55,8 @@ export function createAdventureDeletionClient(options: AdventureDeletionClientOp
   async function perform(value: Pending) {
     const op = structuredClone(value);
     check();
+    if (!recovery.recoveryAvailable())
+      fail('Este navegador não permite preservar pedidos com reserva segura.');
     recovery.assertCurrent(op);
     let response: unknown;
     try {
@@ -67,7 +73,15 @@ export function createAdventureDeletionClient(options: AdventureDeletionClientOp
     }
     check();
     recovery.assertCurrent(op);
-    const result = await recovery.settleDeletion(op, response, check);
+    const proof =
+      response && typeof response === 'object' && 'kind' in response
+        ? readCanceled(response, op)
+        : readMutation(response, op);
+    if (!('kind' in proof)) {
+      check();
+      options.onRevoked?.(structuredClone(proof.progress));
+    }
+    const result = await recovery.settleDeletion(op, proof, check);
     check();
     conflict = null;
     return result;
@@ -88,11 +102,12 @@ export function createAdventureDeletionClient(options: AdventureDeletionClientOp
       if (!recovery.recoveryAvailable()) {
         const value = await transport.get({ adventureId });
         check();
-        return {
-          control: null,
-          progress: readLookup(value, uid, adventureId).deletion,
-          readOnly: true,
-        };
+        const progress = readLookup(value, uid, adventureId).deletion;
+        if (progress) {
+          check();
+          options.onRevoked?.(structuredClone(progress));
+        }
+        return { control: null, progress, readOnly: true };
       }
       const expected = local();
       if (expected && expected.kind !== 'known')
@@ -105,6 +120,8 @@ export function createAdventureDeletionClient(options: AdventureDeletionClientOp
           fail('O controle preservado ainda não pôde ser confirmado.');
         return { control: null, progress: null, readOnly: false };
       }
+      check();
+      options.onRevoked?.(structuredClone(lookup.deletion));
       const control = await recovery.rememberDeletion(
         uid,
         adventureId,
@@ -137,17 +154,23 @@ export function createAdventureDeletionClient(options: AdventureDeletionClientOp
         return perform(op);
       });
     },
-    async recover() {
+    async recover(expected?: Pending) {
+      const captured = expected ? structuredClone(expected) : undefined;
       return run(async () => {
         const op = local();
         if (!op || op.kind === 'known') fail('Não há pedido pendente para recuperar.');
+        if (captured && canonical(captured) !== canonical(op))
+          fail('O pedido mudou em outra aba e foi preservado.');
         return perform(op);
       });
     },
-    async cancelStart() {
+    async cancelStart(expected?: StartPending) {
+      const captured = expected ? structuredClone(expected) : undefined;
       return run(async () => {
         const old = local();
         if (old?.kind !== 'start') fail('Não há início preservado para encerrar.');
+        if (captured && canonical(captured) !== canonical(old))
+          fail('O pedido mudou em outra aba e foi preservado.');
         const op = await recovery.cancelDeletionStart(old, check);
         check();
         return perform(op);
@@ -184,7 +207,12 @@ export function createAdventureDeletionClient(options: AdventureDeletionClientOp
         const response = await transport.get({ adventureId });
         check();
         recovery.assertCurrent(op);
-        const next = await recovery.settleDeletionConflict(op, response, check);
+        const proof = readLookup(response, uid, adventureId, op.identity, op.floor);
+        if (proof.deletion) {
+          check();
+          options.onRevoked?.(structuredClone(proof.deletion));
+        }
+        const next = await recovery.settleDeletionConflict(op, proof, check);
         check();
         conflict = null;
         return next;

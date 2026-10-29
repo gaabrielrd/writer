@@ -45,9 +45,10 @@ filhos sem pai, preservando cópias independentes da biblioteca. Também retira
 corpos derivados do chat e a retomada da aventura, preservando perguntas
 próprias e outros projetos. O motor interno já verifica o vazio final e remove
 a raiz atomicamente com reserva/job/recibo. O contrato cliente e a recuperação
-de pedidos por metadata estão preparados localmente; transporte autenticado e
-interface pública ainda faltam. Veja a
-[evidência parcial do cliente](docs/entregas/2026-10-28-writer-v2-cliente-e-recuperacao-da-exclusao-de-aventuras.md).
+de pedidos por metadata estão preparados localmente. Há um diálogo próprio,
+com pausa/retomada e prova no Chromium isolado; catálogo de retomada, composição
+na tela principal e binding autenticado ainda faltam. Veja a
+[evidência parcial do diálogo](docs/entregas/2026-10-28-writer-v2-fronteira-e-dialogo-da-exclusao-de-aventuras.md).
 Consulte a
 [evidência parcial](docs/entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
 A portabilidade completa continua aberta. Não houve implantação.

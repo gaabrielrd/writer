@@ -112,3 +112,12 @@ deletionToken, recibos e diário metadata por UID/aventura com Web Locks/CAS.
 O ciclo cliente/serviço usa factories reais sobre double, não HTTP/SDK ou conta
 real. Transporte autenticado, tela, retomada no navegador e validate integral
 continuam necessários; não fecha plano 199.
+
+Diálogo/hook standalone e dispatcher autenticado privado preparados: nova sessão
+por conta/alvo/abertura, pausa, confirmação exata, replay com reserva segura e
+revogação comprovada antes do CAS local. 67 Vitest, 12 Node e 18 jornadas
+Chromium isoladas positivos;
+[evidência parcial](../../entregas/2026-10-28-writer-v2-fronteira-e-dialogo-da-exclusao-de-aventuras.md).
+A rota principal/Estúdio, catálogo e binding HTTP ainda não usam esse diálogo.
+Auth/transporte são fictícios no browser; ciclo rico restaurado e validate
+integral permanecem no fechamento do plano 199.
