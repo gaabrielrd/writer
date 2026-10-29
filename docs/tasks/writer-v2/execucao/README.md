@@ -2202,3 +2202,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      dirigidos positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-captura-incremental-dos-proprios.md).
      Base/procedência/variantes/mídia, arquivo completo, restauração/UI/ciclo
      P3/D/F2-09 e gates permanecem abertos; macro 8/35, somente commit local.
+
+205. [Origem autorizada da base congelada](205-origem-autorizada-da-base-congelada.md):
+     primeiro gate somente de metadados, com edição antiga preservada,
+     encarnação/reservas permanentes, lore global separado e controles C3.
+     20 Node dirigidos positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-origem-autorizada-da-base.md).
+     Não é assinatura/atestado portátil ou autorização de ficha individual.
+     Manifesto/base/variantes/mídia, arquivo/restauração/UI/ciclo P3/D/F2-09
+     e gates permanecem abertos; macro 8/35, somente commit local.

@@ -606,3 +606,14 @@ own-data-only somente no término natural; sem índice persistido/arquivo final.
 21 Vitest e 57 Node dirigidos passaram; [evidência parcial](../../entregas/2026-10-29-writer-v2-captura-incremental-dos-proprios.md).
 Base/procedência/variantes/mídia, restauração/UI/ciclo P3/D/F2-09 e gates seguem
 pendentes; macro **8/35**. Somente commit local, validate integral no grande bloco.
+
+## 2026-10-29 — primeiro gate de origem da base congelada em P3
+
+O [plano 205](execucao/205-origem-autorizada-da-base-congelada.md) confere a origem
+atual por metadados/encarnação, preservando a edição antiga quando o texto muda
+e bloqueando origem recriada/reservada. Lore global permanece separado da
+estrutura própria; estado/geração/guard/clock C3 são conferidos. 20 testes
+dirigidos passaram; [evidência parcial](../../entregas/2026-10-29-writer-v2-origem-autorizada-da-base.md).
+É âncora privada, não manifesto/atestado ou gate de ficha individual.
+Base/variantes/mídia, arquivo/restauração/UI/ciclo P3/D/F2-09 e gates seguem
+pendentes; macro **8/35**. Somente commit local, sem CI.

@@ -3549,3 +3549,14 @@ guard de contexto e um slot sujeito à pressão de consumo. Hash incremental de
 páginas/itens é reconferido em segunda passagem desde o começo e âncora final.
 A prova own-data-only não certifica arquivo completo ou autorização da base.
 Não cria armazenamento/job/endpoint/UI; C4 permanece v1–v4 até novos produtores.
+
+## Origem autorizada da base congelada na portabilidade
+
+A [ADR 0235](decisions/0235-campaign-backup-derived-origin-gate.md) acrescenta
+gate privado somente de metadados após âncora/C4. Para produtores nativos v1,
+nascimento da origem posterior ao da base indica outra encarnação. Texto/nome
+atual não substitui a edição congelada; lore global tem disponibilidade separada.
+Estado/geração/guard/clock têm escopo nativo e adoção em preparação bloqueia.
+Token não é atestado nem autorização individual; none não prova coleções vazias.
+Bases restauradas exigem procedência/recibo explícitos e consumidores preparados
+antes da ativação. Nenhum produtor/assinatura/endpoint/persistência novo.

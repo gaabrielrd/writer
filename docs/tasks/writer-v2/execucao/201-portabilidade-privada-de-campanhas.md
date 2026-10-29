@@ -160,3 +160,12 @@ nove famílias desde o início. Prova own-data-only apenas no término natural;
 não é arquivo/selo/procedência ou grant. 21 testes novos e 57 regressões backend
 passaram. Sem persistência nova; base/variantes/mídia e demais passos P3/D/F2-09
 continuam pendentes; macro 8/35.
+
+## Passo 3 — origem autorizada da base congelada
+
+O [plano 205](205-origem-autorizada-da-base-congelada.md) implementa primeiro o
+gate privado de metadados/encarnação. Editar a origem mantém a edição antiga;
+origem recriada/deletada não autoriza essa base. Lore global tem disponibilidade
+separada; guard/clock/geração conferidos. 20 testes direcionados positivos.
+Manifesto/atestado, gates individuais, variantes/legadas/mídia e demais passos
+P3/D/F2-09 continuam pendentes; macro 8/35. Token não é procedência portátil.
