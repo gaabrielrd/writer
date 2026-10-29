@@ -207,3 +207,14 @@ Resíduo operacional não vira conteúdo portátil. 25 testes novos e 28 regress
 dirigidos positivos. Reconferência/reconciliação conjuntas, imagens, atestado e
 arquivo/restauração/UI/ciclo seguem obrigatórios. P3/D/F2-09 abertos; macro
 8/35, somente commit local. Não é certificado de vazio de árvore arbitrária.
+
+## Passos 3–4 — imagens congeladas por geração exata
+
+O [plano 210](210-imagens-congeladas-do-backup.md) lê PNG/hash/ranges com a
+geração decimal exata, reautoriza antes/depois de I/O e oferece fluxo cliente
+com SHA integral, pressão de consumo e interrupção. 117 testes Node distintos
+e 38 Vitest dirigidos positivos. Prova parcial não atesta arquivo completo.
+Seguem reconferência/reconciliação conjuntas de todas as famílias, manifesto/
+atestado nativo, framing, persistência/cleanup, restauração e UI/ciclo.
+Ampliar C4 v1–v4 e consumidores antes de produtores persistentes. P3/D/F2-09
+abertos; macro 8/35, somente commit local, validate integral no grande bloco.

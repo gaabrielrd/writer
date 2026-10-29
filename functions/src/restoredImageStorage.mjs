@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { createBookBackupAssetStorage } from './bookBackupAssetStorage.mjs';
+import { pinnedStorageFile } from './pinnedStorageFile.mjs';
 import {
   bookRestoreCoverStorageContext,
   bookRestoreStorageProof,
@@ -9,27 +10,9 @@ const fail = () => {
 };
 const same = (a, b) => a.generation === b.generation && a.metageneration === b.metageneration;
 export function createRestoredImageStorage(bucket) {
-  function pinned(path, generation, metageneration = null) {
-    const file = bucket().file(path, {
-      generation,
-      preconditionOpts: {
-        ifGenerationMatch: generation,
-        ...(metageneration === null ? {} : { ifMetagenerationMatch: metageneration }),
-      },
-    });
-    // The SDK coerces constructor generation to Number. Keep the exact decimal on the wire.
-    file.interceptors.push({
-      request(options) {
-        return { ...options, qs: { ...options.qs, generation } };
-      },
-    });
-    return file;
-  }
-  const reads = createBookBackupAssetStorage(() => ({
-    file(path, options) {
-      return options?.generation ? pinned(path, options.generation) : bucket().file(path);
-    },
-  }));
+  const pinned = (path, generation, metageneration = null) =>
+    pinnedStorageFile(bucket, path, generation, metageneration);
+  const reads = createBookBackupAssetStorage(bucket);
   const path = (c) => 'book-covers/' + c.ownerId + '/' + c.imageId + '.png';
   const identity = (c) => ({
     writerRestoreSchema: '1',

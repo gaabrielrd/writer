@@ -3603,3 +3603,14 @@ sonda de grupo por encarnação detecta pai ausente com cursor de caminho comple
 Nenhum inventário lê prosa. Índice local habilita apenas metadata do cohort,
 sem comprovar ativação remota. Reconferência conjunta, binários, atestado,
 arquivo/restauração/UI continuam pendentes; C4 genérico permanece separado.
+
+## Imagens congeladas no backup de campanhas
+
+A [ADR 0240](decisions/0240-campaign-backup-pinned-images.md) preserva geração
+decimal exata no adapter compartilhado, também na metadata. Manifesto e ranges
+limitados exigem pin/bloco/biblioteca/uso e reautorização antes/depois de I/O.
+Versão ausente não usa fallback. Fluxo cliente verifica PNG/SHA/tamanho,
+envelopes e contexto com um slot; só término natural após verify retorna
+frozen-image-bytes-only. Imagem indisponível tem resultado distinto sem Storage.
+Não há endpoint nem persistência novos. Manifesto/atestado e reconferência
+conjunta, arquivo/restauração/UI/ciclo continuam separados.

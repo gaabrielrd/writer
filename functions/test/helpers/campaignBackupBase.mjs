@@ -4,9 +4,9 @@ import { createCampaignBackupSourceService } from '../../src/campaignBackupSourc
 import { createCampaignBackupDerivedSourceService } from '../../src/campaignBackupDerivedSource.mjs';
 import { createCampaignBackupBaseReadService } from '../../src/campaignBackupBaseRead.mjs';
 export { uid };
-export async function baseFixture(beforeCapture) {
+export async function baseFixture(beforeCapture, assets) {
   const data = studioDb(),
-    domain = await comparisonFixture(data.db, undefined, beforeCapture),
+    domain = await comparisonFixture(data.db, assets, beforeCapture),
     f = { ...data, ...domain };
   f.id = f.campaign.id;
   f.path = 'users/' + uid + '/campaignBases/' + f.campaign.activeBaseId;

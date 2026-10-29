@@ -1,12 +1,17 @@
 import { createHash } from 'node:crypto';
+import { pinnedStorageFile } from './pinnedStorageFile.mjs';
 function bound(value, max) {
   if (!Number.isSafeInteger(value) || value < 1 || value > max)
     throw new RangeError('Leitura Storage fora do limite.');
 }
 export function createBookBackupAssetStorage(bucket) {
   return {
-    async metadata(path) {
-      const [value] = await bucket().file(path).getMetadata();
+    async metadata(path, generation) {
+      const file =
+        generation === undefined
+          ? bucket().file(path)
+          : pinnedStorageFile(bucket, path, generation);
+      const [value] = await file.getMetadata();
       return {
         generation: String(value.generation),
         metageneration: String(value.metageneration),
@@ -17,9 +22,10 @@ export function createBookBackupAssetStorage(bucket) {
     },
     async hashGeneration(path, generation, maxBytes) {
       bound(maxBytes, 16 * 1024 * 1024);
-      const stream = bucket()
-          .file(path, { generation })
-          .createReadStream({ decompress: false, validation: 'crc32c' }),
+      const stream = pinnedStorageFile(bucket, path, generation).createReadStream({
+          decompress: false,
+          validation: 'crc32c',
+        }),
         hash = createHash('sha256');
       let byteLength = 0,
         prefix = Buffer.alloc(0);
@@ -42,9 +48,12 @@ export function createBookBackupAssetStorage(bucket) {
         throw new RangeError('Range inválido.');
       const length = end - start + 1;
       bound(length, 65536);
-      const stream = bucket()
-          .file(path, { generation })
-          .createReadStream({ start, end, decompress: false, validation: false }),
+      const stream = pinnedStorageFile(bucket, path, generation).createReadStream({
+          start,
+          end,
+          decompress: false,
+          validation: false,
+        }),
         chunks = [];
       let size = 0;
       try {

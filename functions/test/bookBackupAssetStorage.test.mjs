@@ -12,6 +12,7 @@ function fixture(bytes = Buffer.alloc(140000, 7)) {
     file(path, options) {
       calls.push({ path, options });
       return {
+        interceptors: [],
         async getMetadata() {
           return [
             {
@@ -56,7 +57,10 @@ test('full image hash consumes a CRC32C stream with pinned generation and exact 
     contentHash: hash(f.bytes),
     signature: f.bytes.subarray(0, 8).toString('hex'),
   });
-  assert.deepEqual(f.calls[0], { path: 'own/path', options: { generation: '12' } });
+  assert.deepEqual(f.calls[0], {
+    path: 'own/path',
+    options: { generation: '12', preconditionOpts: { ifGenerationMatch: '12' } },
+  });
   assert.deepEqual(f.calls[1].settings, { decompress: false, validation: 'crc32c' });
   assert.equal(f.streams[0].destroyed, true);
 });

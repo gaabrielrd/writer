@@ -1038,3 +1038,9 @@ todas as partes e coincidir com tokens físicos. A sonda collectionGroup usa o
 campaignToken da encarnação, máscara fixa e cursor por referência completa,
 detectando pai ausente sem ler prosa. Não anuncie vazio de árvore arbitrária
 nem inclua resíduos como conteúdo portátil (ADR 0239).
+
+No backup de imagens de campanha, reautorize fonte/base/bloco/biblioteca/uso
+antes/depois de todo I/O, inclusive falhas. Selecione a geração decimal exata
+com pinnedStorageFile, também na metadata; nunca use a versão atual como fallback.
+Confira PNG/SHA/tamanho e ranges limitados; não exponha pins no DTO. Exija
+verify final no fluxo cliente; frozen-image-bytes-only não atesta arquivo (ADR 0240).

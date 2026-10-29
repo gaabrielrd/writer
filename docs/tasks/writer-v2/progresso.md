@@ -665,3 +665,15 @@ iguais entre lojas. 25 testes novos e 28 regressões dirigidos positivos;
 Reconferência conjunta, imagens/Storage, atestado/arquivo/restauração/UI/ciclo
 P3/D/F2-09 continuam pendentes; macro **8/35**. Índice somente local, sem CI/
 push/deploy. Validate integral no fechamento do grande bloco.
+
+## 2026-10-29 — imagens congeladas no backup P3
+
+O [plano 210](execucao/210-imagens-congeladas-do-backup.md) lê metadata,
+hash e ranges pela geração exata, sem fallback para a versão atual. Autorização
+antes/depois de I/O, inclusive falha, e fluxo cliente com integridade integral,
+pressão de consumo e interrupção. Prova frozen-image-bytes-only é parcial.
+117 Node distintos e 38 Vitest dirigidos positivos; veja a
+[evidência parcial](../../entregas/2026-10-29-writer-v2-imagens-congeladas-no-backup.md).
+Reconferência conjunta, manifesto/atestado, arquivo/restauração/UI/ciclo P3/D/
+F2-09 continuam pendentes; macro **8/35**. Validate integral no fechamento
+do grande bloco; somente commit local, sem CI/push/deploy.

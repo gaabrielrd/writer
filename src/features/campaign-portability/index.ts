@@ -22,3 +22,12 @@ export type {
   CampaignBaseFieldChunk,
   CampaignBaseFieldProof,
 } from './services/streamCampaignBaseField';
+
+export { streamCampaignImage, CampaignImageCaptureError } from './services/streamCampaignImage';
+export type {
+  CampaignImageRef,
+  CampaignImageMethod,
+  CampaignImageApi,
+  CampaignImageChunk,
+  CampaignImageProof,
+} from './services/streamCampaignImage';

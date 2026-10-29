@@ -2238,3 +2238,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-corpos-fisicos-das-variantes.md).
      Reconferência conjunta, binários, atestado/arquivo/restauração/UI/ciclo
      P3/D/F2-09 pendentes; macro 8/35, commit local.
+
+210. [Imagens congeladas no backup](210-imagens-congeladas-do-backup.md):
+     metadata/hash/ranges por geração decimal exata e fluxo cliente com SHA,
+     contexto e interrupção. 117 Node distintos e 38 Vitest dirigidos positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-imagens-congeladas-no-backup.md).
+     Reconferência conjunta, manifesto/atestado, arquivo/restauração/UI/ciclo
+     P3/D/F2-09 pendentes; macro 8/35, somente commit local.
