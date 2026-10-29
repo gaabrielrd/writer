@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 227. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 228. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -94,3 +94,15 @@ aceita início C4 como campanha ativa. A coleta temporária v1 é própria; inte
 nova versão C4 para estes recursos antes da ativação futura, preservando 1–4.
 [ADR 0257](../../decisions/0257-campaign-private-resumable-upload.md) e
 [evidência](../../entregas/2026-10-29-writer-v2-upload-privado-retomavel-de-campanhas.md).
+
+## Checkpoint de integridade no job — incremento 228
+
+fileReview opcional guarda estado cifrado e metadata limitada dentro do job,
+sem coleção nova. Jobs antigos sem o campo permanecem válidos. Cancelamento
+limpa o estado do campo e remove a chave atomicamente, sem decifrar o estado; a coleta v1 dos
+chunks continua igual. Recibos/testemunhas não guardam ciphertext nem conteúdo.
+Prova interna vale somente integridade e revalida chave emissora atual.
+Ainda faltam índices semânticos duráveis e seu inventário/coleta antes de
+produzir. C4 dos jobs antes de ativação continua obrigatório, sem inserir
+famílias nos layouts antigos. Veja [plano 228](execucao/228-integridade-de-campanhas-com-checkpoint.md)
+e [ADR 0258](../../decisions/0258-campaign-resumable-file-integrity.md).

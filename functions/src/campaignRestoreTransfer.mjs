@@ -4,6 +4,7 @@ import { readWorkMetadata } from './workProgressContracts.mjs';
 import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 import { createCampaignRestoreStore, KEY_FIELDS } from './campaignRestoreStore.mjs';
 import { createCampaignRestoreCleanup } from './campaignRestoreCleanup.mjs';
+import { createCampaignRestoreFileReview } from './campaignRestoreFileReview.mjs';
 import { seal, open } from './campaignRestoreCrypto.mjs';
 import {
   RESTORE_DOMAIN,
@@ -333,5 +334,13 @@ export function createCampaignRestoreTransferService(options) {
     },
     ...createCampaignRestoreCleanup(store),
   };
+  Object.assign(
+    service,
+    createCampaignRestoreFileReview({
+      store,
+      keys: options.keys,
+      openSource: (uid, input) => service.openCampaignRestoreSource(uid, input),
+    }),
+  );
   return service;
 }

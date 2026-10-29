@@ -822,3 +822,10 @@ cancelamento/coleta. 49 novos e 50 regressões positivos (99/99), mais 19 casos
 SDK/Rules distintos positivos. Um arquivo real assinado foi revisado a partir
 da fonte persistida. Ainda faltam revisão persistida, materialização/ativação,
 integração C4 dos jobs e Estúdio/ciclos; macro 8/35 (22,9%), somente commit local.
+
+O [incremento 228](execucao/228-integridade-de-campanhas-com-checkpoint.md) acrescenta
+verificação retomável de integridade/assinatura, com checkpoint cifrado no job
+e cancelamento atômico. Máquina comum preserva o revisor completo. 320 testes
+dirigidos (36 novos) e cinco casos SDK/Rules (dois novos) positivos. Índices
+semânticos/autorização de origens persistidos, materialização/ativação/C4 dos
+jobs e Estúdio/ciclos continuam pendentes; macro 8/35, somente commit local.

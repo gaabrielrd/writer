@@ -1157,3 +1157,13 @@ de coletar até 25 chunks por metadata; preserve estrangeiros/órfãos sem avan�
 Studio/captura consultam reserva mesmo sem marcador. Famílias são server-only.
 Temporário pré-ativação tem coleta própria v1; mantenha C4 1–4 e integre nova
 versão C4 dos jobs antes de habilitar campanha ativa (ADR 0257).
+
+Na integridade retomável de campanhas, use campaignBackupFileScanner como
+máquina única da gramática, com checkpoint host-trusted/schema 1/hash-wasm 4.12.0.
+Não aceite cursor/estado do cliente nem callbacks no modo exportável; não acumule
+partes de texto. Cifre fileReview dentro do job por conta/encarnação/CAS e limite
+1–25 frames. Preserve jobs sem o campo e descarte o checkpoint com a chave ao
+cancelar. Após leituras, reconfira CAS/job antes de gravar; replay mantém recibo
+original. Prova interna revalida a chave emissora e vale somente integridade,
+sem grant/semântica/origem ativa. Índices semânticos futuros exigem inventário/
+coleta antes do produtor e C4 próprio antes de ativação (ADR 0258).

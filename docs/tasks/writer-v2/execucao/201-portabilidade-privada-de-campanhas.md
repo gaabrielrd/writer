@@ -393,3 +393,14 @@ Não alterar inventários C4 1–4; integrar os recursos a C4 antes da futura at
 49 novos e 50 regressões, mais 19 casos SDK/Rules distintos, positivos. A fonte
 persistida já foi composta com revisão completa real assinada. Revisão persistida,
 remapeamento/materialização, mídia, ativação e Estúdio/ciclos continuam pendentes.
+
+### Integridade com checkpoint — incremento 228
+
+[Plano 228](228-integridade-de-campanhas-com-checkpoint.md) e
+[ADR 0258](../../../decisions/0258-campaign-resumable-file-integrity.md) extraem
+máquina única de arquivo e persistem estado cifrado limitado no próprio job.
+Retomada por frame, assinatura atual e cancelamento/CAS concorrentes comprovados
+em 320 testes dirigidos e cinco SDK/Rules. Não é revisão semântica nem grant:
+índices semânticos duráveis e sua coleta, revisão própria/derivada/origens,
+materialização/ativação/C4 dos jobs e Estúdio/ciclos continuam necessários.
+P3/D/F2-09 e macro 8/35 continuam abertos; full validate no fechamento do bloco.

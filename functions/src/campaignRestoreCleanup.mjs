@@ -24,7 +24,11 @@ export function createCampaignRestoreCleanup(store) {
         if (!['uploading', 'bytes-verified', 'rejected'].includes(l.job.state))
           fail('failed-precondition', 'state-conflict');
         const key = await store.key(tx, l);
-        store.commit(tx, l, request, 'cancel', fp, { state: 'cancelling', hashState: null });
+        store.commit(tx, l, request, 'cancel', fp, {
+          state: 'cancelling',
+          hashState: null,
+          ...(Object.hasOwn(l.job, 'fileReview') ? { fileReview: null } : {}),
+        });
         tx.delete(key.ref);
         return null;
       });

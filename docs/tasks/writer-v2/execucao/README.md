@@ -2367,3 +2367,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-upload-privado-retomavel-de-campanhas.md).
      Revisão persistida, materialização/ativação, C4 dos jobs e Estúdio/ciclos
      continuam abertos. Macro 8/35; sem endpoint público, somente commit local.
+
+228. [Integridade de campanhas com checkpoint](228-integridade-de-campanhas-com-checkpoint.md):
+     máquina compartilhada da revisão completa e modo retomável, estado cifrado
+     no job, 1–25 frames, CAS/recibos e revogação/cancelamento. 320 testes dirigidos
+     (36 novos) e cinco SDK/Rules (dois novos) positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-integridade-retomavel-de-campanhas.md).
+     Semântica/origens persistidas, materialização/ativação/C4 dos jobs e UI/ciclos
+     continuam abertos. Macro 8/35; sem endpoint público, somente commit local.

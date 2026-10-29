@@ -3808,3 +3808,15 @@ Cancel revoga chave e coleta metadata em lotes, sem adotar órfãos/recriações
 Rules fecham todas as famílias; criação nativa consulta reserva. Este é núcleo
 interno, sem callable/UI/ativação. Temporário tem coleta v1 própria; ativação exige
 integrar seus recursos a C4 apropriado, sem reinterpretar layouts 1–4.
+
+## Revisão persistida da integridade de campanhas
+
+A [ADR 0258](decisions/0258-campaign-resumable-file-integrity.md) extrai
+campaignBackupFileScanner como máquina compartilhada pela revisão completa e
+pelo avanço retomável. O modo com callbacks conserva staging temporário; somente
+o modo retomável de integridade sem callbacks exporta checkpoint host-trusted com hashes/cursor.
+campaignRestoreFileReview cifra o estado limitado no próprio job, reconfere CAS
+após ler até 25 frames e conserva recibos nativos. Cancel limpa estado/chave antes
+da coleta de chunks; nenhum novo path. A prova interna reconfere chave emissora
+e comprova somente integridade/assinatura. Semântica/origens duráveis, produtores
+de índices com coleta, materialização, C4 de ativação e UI continuam pendentes.

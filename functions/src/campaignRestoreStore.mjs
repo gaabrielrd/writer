@@ -120,7 +120,7 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
       v.campaignId !== l.job.campaignId ||
       v.startFingerprint !== l.job.startFingerprint ||
       v.operationId !== oid ||
-      !['start', 'append', 'cancel', 'cleanup'].includes(v.action)
+      !['start', 'append', 'cancel', 'cleanup', 'review-file'].includes(v.action)
     )
       bad();
     hash(v.requestHash);

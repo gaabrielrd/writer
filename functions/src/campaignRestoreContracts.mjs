@@ -121,7 +121,7 @@ export const JOB_FIELDS = [
   'updatedAt',
 ];
 export function parseJob(v, uid, rid) {
-  closed(v, JOB_FIELDS);
+  closed(v, JOB_FIELDS, ['fileReview']);
   if (
     v.schemaVersion !== 1 ||
     v.hashAlgorithm !== RESTORE_HASH_ALGORITHM ||
@@ -169,6 +169,45 @@ export function parseJob(v, uid, rid) {
   if (['cancelling', 'cancelled'].includes(v.state) && v.hashState !== null) bad();
   if (!['cancelling', 'cancelled'].includes(v.state) && v.cleanedChunks !== 0) bad();
   if (v.state === 'cancelled' && v.cleanedChunks !== v.uploadedChunks) bad();
+  if (v.fileReview !== undefined && v.fileReview !== null) {
+    const f = closed(v.fileReview, [
+      'schemaVersion',
+      'status',
+      'checkpoint',
+      'records',
+      'offset',
+      'units',
+      'witnesses',
+      'payload',
+    ]);
+    if (
+      v.state !== 'bytes-verified' ||
+      f.schemaVersion !== 1 ||
+      !['running', 'verified'].includes(f.status) ||
+      f.checkpoint !== v.checkpoint ||
+      integer(f.records, 1, 0xffffffff) < f.units ||
+      integer(f.records) < f.witnesses ||
+      integer(f.offset, 16, v.source.byteLength) !== f.offset ||
+      (f.status === 'verified' && f.offset !== v.source.byteLength)
+    )
+      bad();
+    integer(f.units);
+    integer(f.witnesses);
+    closed(f.payload, ['iv', 'tag', 'data']);
+    for (const k of ['iv', 'tag', 'data']) {
+      const max = k === 'iv' ? 12 : k === 'tag' ? 16 : 65536;
+      const encoded = f.payload[k];
+      if (typeof encoded !== 'string' || encoded.length > 4 * Math.ceil(max / 3)) bad();
+      const b = Buffer.from(encoded, 'base64');
+      if (
+        b.toString('base64') !== encoded ||
+        b.length > max ||
+        (k !== 'data' && b.length !== max) ||
+        (k === 'data' && !b.length)
+      )
+        bad();
+    }
+  }
   return structuredClone(v);
 }
 export const progress = (l) => ({
@@ -184,6 +223,13 @@ export const progress = (l) => ({
   uploadedBytes: l.job.uploadedBytes,
   cleanedChunks: l.job.cleanedChunks,
   computedHash: l.job.computedHash,
+  ...(l.job.fileReview
+    ? {
+        fileReview: Object.fromEntries(
+          Object.entries(l.job.fileReview).filter(([k]) => k !== 'payload' && k !== 'checkpoint'),
+        ),
+      }
+    : {}),
   createdAt: l.job.createdAt,
   updatedAt: l.job.updatedAt,
 });

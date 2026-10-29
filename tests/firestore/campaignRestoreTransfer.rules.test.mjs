@@ -1,4 +1,7 @@
 import test, { before, beforeEach, after } from 'node:test';
+import { generateKeyPairSync } from 'node:crypto';
+import { createCampaignBackupFileService } from '../../functions/src/campaignBackupFile.mjs';
+import { encodeCampaignBackup } from '../../functions/src/campaignBackupContainer.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -199,4 +202,174 @@ test('real cancellation revokes the key, paginates metadata cleanup, preserves n
       .campaignId,
     fence.campaignId,
   );
+});
+
+test('real signed campaign integrity resumes encrypted frames across services and revalidates its issuance key', async () => {
+  const pair = generateKeyPairSync('ed25519'),
+    keys = [{ id: 'restore-review-sdk', state: 'active', publicKey: pair.publicKey }],
+    native = await createStudioService({ db: admin }).createCampaign(uid, {
+      operationId: 'campaign-review-sdk-original',
+      title: 'Private original',
+    });
+  const frames = [];
+  await createCampaignBackupFileService({
+    db: admin,
+    storage: {},
+    keys,
+    keyId: keys[0].id,
+    privateKey: pair.privateKey,
+    now: () => 5000,
+  }).writeCampaignBackupFile(
+    uid,
+    { campaignId: native.id },
+    {
+      sink: {
+        async write(b) {
+          frames.push(Buffer.from(b));
+        },
+        async commit() {},
+        async abort() {
+          frames.length = 0;
+        },
+      },
+    },
+  );
+  const data = Buffer.concat(frames);
+  api = createCampaignRestoreTransferService({ db: admin, keys, now: () => 6000 });
+  let p = (
+    await api.startCampaignRestore(uid, {
+      ...input,
+      source: { ...input.source, byteLength: data.length, sha256: sha(data) },
+    })
+  ).progress;
+  for (let n = 0; n < Math.ceil(data.length / 65536); n++) {
+    const b = data.subarray(n * 65536, (n + 1) * 65536);
+    p = (
+      await api.appendCampaignRestoreChunk(
+        uid,
+        mut(p, 'campaign-review-sdk-upload-' + n, {
+          index: n,
+          chunkHash: sha(b),
+          chunkBase64: b.toString('base64'),
+        }),
+      )
+    ).progress;
+  }
+  const q = mut(p, 'campaign-review-sdk-step-0', { limit: 1 }),
+    first = await api.advanceCampaignRestoreFileReview(uid, q);
+  assert.equal(first.progress.fileReview.records, 1);
+  assert.deepEqual(await api.advanceCampaignRestoreFileReview(uid, q), first);
+  api = createCampaignRestoreTransferService({ db: admin, keys, now: () => 6000 });
+  p = (await api.getCampaignRestore(uid, { restoreId: rid })).progress;
+  let n = 1;
+  while (p.fileReview.status !== 'verified' && n < 50)
+    p = (
+      await api.advanceCampaignRestoreFileReview(
+        uid,
+        mut(p, 'campaign-review-sdk-step-' + n++, { limit: 3 }),
+      )
+    ).progress;
+  assert.equal(p.fileReview.status, 'verified');
+  const proof = await api.getCampaignRestoreFileIntegrity(uid, {
+    restoreId: rid,
+    jobToken: p.jobToken,
+  });
+  assert.equal(proof.validation, 'campaign-file-integrity-only');
+  const stored = (await admin.doc('users/' + uid + '/campaignRestores/' + rid).get()).data();
+  assert.ok(stored.fileReview.payload.data);
+  assert.doesNotMatch(JSON.stringify(p), /payload|attestation|originCampaignId|Private original/);
+  await assertFails(
+    getDoc(
+      doc(env.authenticatedContext(uid).firestore(), 'users/' + uid + '/campaignRestores/' + rid),
+    ),
+  );
+  keys[0].state = 'revoked';
+  await assert.rejects(
+    api.getCampaignRestoreFileIntegrity(uid, { restoreId: rid, jobToken: p.jobToken }),
+    (e) => e.details?.reason === 'campaign-backup-invalid-attestation',
+  );
+  const cancelled = await api.cancelCampaignRestore(uid, mut(p, 'campaign-review-sdk-cancel'));
+  assert.equal(
+    (await admin.doc('users/' + uid + '/campaignRestores/' + rid).get()).data().fileReview,
+    null,
+  );
+  assert.equal(
+    (await admin.doc('users/' + uid + '/campaignRestoreKeys/' + rid).get()).exists,
+    false,
+  );
+  assert.deepEqual((await api.advanceCampaignRestoreFileReview(uid, q)).receipt, first.receipt);
+  assert.equal(cancelled.progress.state, 'cancelling');
+});
+test('real competing file reviewers commit a single checkpoint and preserve cancellation during a pending read', async () => {
+  // A bounded prefix needs no attestation yet; an independently encoded header is enough
+  // to exercise native locking, CAS and cancellation before any semantic proof.
+  const header = {
+      schemaVersion: 1,
+      kind: 'writer-campaign',
+      contentVersion: 3,
+      provenanceVersion: 2,
+      originCampaignId: 'campaign-sdk-prefix-source',
+      availability: 'none',
+    },
+    frames = [];
+  for await (const b of encodeCampaignBackup([
+    { kind: 'campaign', id: 'header', part: 0, payload: Buffer.from(JSON.stringify(header)) },
+  ]))
+    frames.push(Buffer.from(b));
+  const data = Buffer.concat(frames);
+  api = createCampaignRestoreTransferService({ db: admin });
+  let p = (
+    await api.startCampaignRestore(uid, {
+      ...input,
+      source: { ...input.source, byteLength: data.length, sha256: sha(data) },
+    })
+  ).progress;
+  p = (
+    await api.appendCampaignRestoreChunk(
+      uid,
+      mut(p, 'campaign-review-sdk-prefix', {
+        index: 0,
+        chunkHash: sha(data),
+        chunkBase64: data.toString('base64'),
+      }),
+    )
+  ).progress;
+  const results = await Promise.allSettled([
+    api.advanceCampaignRestoreFileReview(uid, mut(p, 'campaign-review-sdk-race-a', { limit: 1 })),
+    api.advanceCampaignRestoreFileReview(uid, mut(p, 'campaign-review-sdk-race-b', { limit: 1 })),
+  ]);
+  assert.equal(results.filter((r) => r.status === 'fulfilled').length, 1);
+  assert.equal(
+    results.find((r) => r.status === 'rejected').reason.details.reason,
+    'checkpoint-conflict',
+  );
+  p = (await api.getCampaignRestore(uid, { restoreId: rid })).progress;
+  const original = api.openCampaignRestoreSource.bind(api);
+  let entered, release;
+  const arrival = new Promise((r) => (entered = r)),
+    gate = new Promise((r) => (release = r));
+  api.openCampaignRestoreSource = async (...args) => {
+    const port = await original(...args);
+    return {
+      size: port.size,
+      async read(o, n) {
+        entered();
+        await gate;
+        return port.read(o, n);
+      },
+    };
+  };
+  const pending = api
+    .advanceCampaignRestoreFileReview(uid, mut(p, 'campaign-review-sdk-pending', { limit: 1 }))
+    .then(
+      (value) => ({ value }),
+      (error) => ({ error }),
+    );
+  await arrival;
+  await api.cancelCampaignRestore(uid, mut(p, 'campaign-review-sdk-interrupt'));
+  release();
+  assert.ok((await pending).error);
+  const stored = (await admin.doc('users/' + uid + '/campaignRestores/' + rid).get()).data();
+  assert.equal(stored.state, 'cancelling');
+  assert.equal(stored.fileReview, null);
 });
