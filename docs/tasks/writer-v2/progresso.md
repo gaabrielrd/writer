@@ -732,3 +732,13 @@ próprio; v1 permanece legível com vínculo não comprovado para religação.
 [evidência parcial](../../entregas/2026-10-29-writer-v2-universo-organizacional-no-backup.md).
 Vínculos semânticos/consumidores, C4, persistência/retomada e restauração/UI/ciclo
 P3/D/F2-09 continuam abertos; macro **8/35**, somente commit local. Validate no bloco.
+
+## 2026-10-29 — semântica própria do arquivo de campanha
+
+O [plano 216](execucao/216-semantica-dos-dados-proprios-da-campanha.md) valida
+DTOs próprios pelo domínio, organização raiz/project e joins de sessões,
+preparação/corpos/vínculos em índice temporário autenticado, sem prosa.
+47 testes novos e 157 regressões Node positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-semantica-dos-dados-proprios.md).
+Derivados/consumidores, C4, persistência, restauração/ativação e UI/ciclo
+P3/D/F2-09 continuam pendentes; macro **8/35**. Somente commit local.

@@ -268,3 +268,13 @@ revisão separada. Arquivos v1 permanecem legíveis com vínculo unproven; não 
 apenas pelo ID ou substituir pelo universo da base. 21 testes novos e 117
 regressões passaram; vínculos semânticos completos, consumidores, cleanup C4,
 persistência/retomada e restauração/UI/ciclo continuam pendentes.
+
+## Passo 6 — semântica própria antes da materialização
+
+O [plano 216](216-semantica-dos-dados-proprios-da-campanha.md) prepara a leitura
+dos próprios com DTOs canônicos, joins de sessão/preparação/corpo/controles e
+organização raiz/project. Índice MAC temporário não guarda prosa, preserva
+omissões legítimas e não autoriza o alvo derivado. 47 novos e 157 regressões
+Node positivos. Semântica completa da base/lore/imagens e consumidores
+ordinários continuam pendentes, seguidos por C4 antes de produtores persistentes,
+upload/retomada, materialização/ativação e UI/ciclos. P3/D/F2-09 e macro 8/35 abertos.

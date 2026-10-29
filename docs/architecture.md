@@ -3667,3 +3667,14 @@ passagens, inclusive em campanha independente ou com derivados indisponíveis.
 Leitura v1 conserva próprios e sinaliza organizationalUniverse unproven; nunca
 reconstrói prova por ID bruto. Contadores derivados são separados do vínculo.
 Materialização, união semântica dos DTOs, consumidores e cleanup continuam pendentes.
+
+## Semântica própria da campanha portátil
+
+A [ADR 0246](decisions/0246-campaign-own-backup-semantics.md) reutiliza o serializer
+de domínio para validar cada DTO próprio fechado e sua representação literal.
+O leitor oferece onOwnUnit provisório após hash da unidade; captura no máximo
+uma unidade serializada de 4 MiB, sem alterar limites de domínio/chunks.
+Índice temporário contém só metadata com MAC efêmero; após arquivo autenticado,
+páginas de 25 conferem os joins S1/S2/S3 e a organização raiz/project.
+Omissões legítimas e v1 permanecem explícitos; semântica de derivados e autorização
+são gates separados. Sem adaptador persistente ou escrita/ativação nova.

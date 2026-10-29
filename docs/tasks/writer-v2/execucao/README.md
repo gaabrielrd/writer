@@ -2281,3 +2281,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-universo-organizacional-no-backup.md).
      Vínculos/consumidores, C4, persistência e restauração/UI/ciclo continuam
      pendentes; P3/D/F2-09 abertos, macro 8/35, somente commit local.
+
+216. [Semântica dos dados próprios](216-semantica-dos-dados-proprios-da-campanha.md):
+     DTOs fechados pelo domínio, joins S1/S2/S3 e raiz/project, índice temporário
+     somente de metadata e omissões legítimas. 47 novos e 157 regressões positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-semantica-dos-dados-proprios.md).
+     Semântica derivada/consumidores, C4, persistência, restauração/ativação e
+     UI/ciclos permanecem abertos; macro 8/35, somente commit local.

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { CAMPAIGN_OWN_JSON_BYTES } from './campaignBackupOwnDefinitions.mjs';
 import { workId, workFail } from './workProgressContracts.mjs';
 import { readCampaignBackupFrame } from './campaignBackupContainer.mjs';
 import { createCampaignBackupAttestationVerifier } from './campaignBackupAttestation.mjs';
@@ -23,13 +24,14 @@ const add = (v, n = 1) => {
 export async function validateCampaignBackupFile(
   uid,
   source,
-  { keys, now = Date.now, signal, onProgress, onWitness } = {},
+  { keys, now = Date.now, signal, onProgress, onWitness, onOwnUnit } = {},
 ) {
   if (typeof uid !== 'string' || !uid) workFail('unauthenticated', 'Entre na sua conta.');
   workId(uid);
   if (
     (onProgress !== undefined && typeof onProgress !== 'function') ||
-    (onWitness !== undefined && typeof onWitness !== 'function')
+    (onWitness !== undefined && typeof onWitness !== 'function') ||
+    (onOwnUnit !== undefined && typeof onOwnUnit !== 'function')
   )
     throw new TypeError('Progresso de validação inválido.');
   if (
@@ -120,6 +122,7 @@ export async function validateCampaignBackupFile(
           Buffer.from(r.payload.subarray(0, 8)).toString('hex') !== '89504e470d0a1a0a'
         )
           bad();
+        if (active.parts) active.parts.push(Buffer.from(r.payload));
         active.hash.update(r.payload);
         active.bytes = add(active.bytes, r.payload.length);
         active.index++;
@@ -127,6 +130,16 @@ export async function validateCampaignBackupFile(
           const digest = active.hash.digest('hex');
           active.hash.destroy();
           if (active.bytes !== active.unit.byteLength || digest !== active.unit.contentHash) bad();
+          if (active.parts) {
+            await onOwnUnit(
+              Object.freeze({
+                index: Number(active.id),
+                unit: Object.freeze(active.unit),
+                payload: Buffer.concat(active.parts, active.bytes),
+              }),
+            );
+            signal?.throwIfAborted();
+          }
           active = null;
         }
       } else if (r.kind === 'unit') {
@@ -140,8 +153,23 @@ export async function validateCampaignBackupFile(
         if (unit.outcome === 'omitted') omitted = add(omitted);
         if (unit.outcome === 'unavailable') unavailable = add(unavailable);
         fold(content, unit);
+        const own = onOwnUnit && unit.section.startsWith('own:');
+        if (own && unit.outcome === 'available' && unit.byteLength > CAMPAIGN_OWN_JSON_BYTES) bad();
         if (unit.outcome === 'available')
-          active = { id: r.id, unit, index: 0, bytes: 0, hash: createHash('sha256') };
+          active = {
+            id: r.id,
+            unit,
+            index: 0,
+            bytes: 0,
+            hash: createHash('sha256'),
+            ...(own ? { parts: [] } : {}),
+          };
+        else if (own) {
+          await onOwnUnit(
+            Object.freeze({ index: units - 1, unit: Object.freeze(unit), payload: null }),
+          );
+          signal?.throwIfAborted();
+        }
       } else if (r.kind === 'witness') {
         if (r.id !== String(witnesses) || r.part !== 0) bad();
         const witness = campaignFileJson(r.payload, campaignFileWitness, 65536);

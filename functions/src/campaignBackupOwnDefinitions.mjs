@@ -53,3 +53,6 @@ export const CAMPAIGN_OWN_DEFINITIONS = Object.freeze(
 export const CAMPAIGN_OWN_FAMILIES = Object.freeze(Object.keys(CAMPAIGN_OWN_DEFINITIONS));
 export const CAMPAIGN_OWN_PAGE_ITEMS = 25;
 export const CAMPAIGN_OWN_CHUNK_BYTES = 65536;
+
+// One serialized own DTO; covers JSON escaping of all current domain limits.
+export const CAMPAIGN_OWN_JSON_BYTES = 4 * 1024 * 1024;

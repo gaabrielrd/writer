@@ -17,3 +17,5 @@ export const CAMPAIGN_OWN_DEFINITIONS: Readonly<Record<CampaignOwnFamily, Campai
 export const CAMPAIGN_OWN_FAMILIES: readonly CampaignOwnFamily[];
 export const CAMPAIGN_OWN_PAGE_ITEMS: 25;
 export const CAMPAIGN_OWN_CHUNK_BYTES: 65536;
+
+export const CAMPAIGN_OWN_JSON_BYTES: number;

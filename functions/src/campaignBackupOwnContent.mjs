@@ -1,4 +1,5 @@
 import { validNoteContent, validNoteTitle } from './campaignNotesContracts.mjs';
+import { CAMPAIGN_OWN_JSON_BYTES } from './campaignBackupOwnDefinitions.mjs';
 import {
   utf8,
   validTitle,
@@ -165,4 +166,37 @@ export function serializeCampaignBackupOwnContent(kind, resourceId, value, prese
   }
   const json = JSON.stringify({ schemaVersion: 1, kind, id: resourceId, present, data });
   return { json, bytes: Buffer.from(json, 'utf8') };
+}
+
+/** Inverse closed projection for one portable unit; never authorizes its declared origins. */
+export function parseCampaignBackupOwnContent(kind, resourceId, bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.length > CAMPAIGN_OWN_JSON_BYTES) invalid();
+  const input = Buffer.from(bytes),
+    raw = input.toString('utf8');
+  if (!Buffer.from(raw, 'utf8').equals(input)) invalid();
+  let value;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    invalid();
+  }
+  if (
+    !object(value) ||
+    Object.keys(value).length !== 5 ||
+    !['schemaVersion', 'kind', 'id', 'present', 'data'].every((k) => Object.hasOwn(value, k)) ||
+    value.schemaVersion !== 1 ||
+    value.kind !== kind ||
+    value.id !== resourceId
+  )
+    invalid();
+  const canonical = serializeCampaignBackupOwnContent(kind, resourceId, value.data, value.present);
+  if (canonical.json !== raw) invalid();
+  const freeze = (v) => {
+    if (v && typeof v === 'object') {
+      for (const child of Object.values(v)) freeze(child);
+      Object.freeze(v);
+    }
+    return v;
+  };
+  return freeze(value);
 }

@@ -1069,3 +1069,9 @@ No backup de campanha, confira universo organizacional separadamente da base.
 Emita provenanceVersion 2 com project único/primeiro e nascimento nativo;
 leia v1 com vínculo unproven, sem religar por ID bruto ou pelo universo da base.
 Reautorize o vínculo antes da futura ativação; revisão não concede grant (ADR 0245).
+
+Na semântica própria do backup de campanha, reutilize a projeção canônica do
+domínio. onOwnUnit é provisório, limitado por unidade, sem escrita ativa.
+Autentique arquivo e metadata de toda página antes de joins/callbacks; preserve
+omissões válidas e confira raiz/project. campaign-own-semantics-only não autoriza
+alvo derivado nem ativação. Descarte índice/chave sempre (ADR 0246).
