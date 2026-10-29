@@ -3505,3 +3505,15 @@ IDs nativos longos não dependem do orçamento dos pulsos de apresentação.
 Seis exports reais de index usam dispatcher lazy, App Check, headers privados e
 a porta de mídia restaurada existente. As rotas/SDK foram conferidos localmente;
 ciclo rico, fechamento integral e política final do chat continuam pendentes.
+
+## Âncora privada da portabilidade de campanhas
+
+A [ADR 0231](decisions/0231-campaign-backup-private-source-anchor.md) acrescenta
+conferência interna somente leitura da raiz e de cinco controles globais.
+Reserva C4 e ownership precedem controles; todas as leituras usam máscaras
+fixas e identidades nativas. Ausências não criam documentos. A resposta mínima
+não contém prosa, grants ou proveniência e não consulta aventura/base para
+conferir próprios. Vínculos por sessão exigem controles/provas separados:
+a âncora não certifica captura completa nem autorização da edição congelada.
+Sem endpoint, arquivo, persistência ou UI; inventário C4 segue v1–v4 até a
+integração explícita dos futuros produtores de P3.

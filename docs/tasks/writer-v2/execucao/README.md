@@ -2171,3 +2171,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      limites/credenciais/produção separados das provas. Política final de 199,
      P3/D/F2-09 e gates gerais pendentes; macro 8/35. Somente documentação,
      sem repetir a suíte integral por ausência de mudança de comportamento.
+
+201. [Portabilidade privada de campanhas](201-portabilidade-privada-de-campanhas.md):
+     inventário P3 e primeiro serviço interno da âncora de raiz/cinco controles,
+     somente metadata, com C4/encarnação e 18 testes dirigidos positivos.
+     A âncora não cobre vínculos por sessão nem autoriza a edição congelada.
+     Arquivo/restauração/UI/ciclo P3 e D/F2-09 continuam pendentes; macro 8/35.
+     [Evidência parcial](../../../entregas/2026-10-29-writer-v2-ancora-privada-de-campanhas.md).

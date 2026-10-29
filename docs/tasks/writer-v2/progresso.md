@@ -559,3 +559,15 @@ Plano 199 aguarda a política final das perguntas; P3/D/F2-09 continuam obrigat�
 e os aceites humanos/comerciais seguem abertos. A contagem permanece 8/35.
 Próxima implementação: portabilidade privada de campanhas com edição congelada,
 procedência comprovada e próprios/derivados tratados conforme acesso atual.
+
+## 2026-10-29 — primeiro incremento interno de P3
+
+[Plano 201](execucao/201-portabilidade-privada-de-campanhas.md) registra inventário
+e sequência de campanhas. Âncora privada da raiz/cinco controles globais está
+implementada com máscaras, identidade nativa, reserva C4 e 18 testes dirigidos
+positivos. Não lê prosa nem cria estado. Escritor real de vínculo por sessão
+demonstra que a âncora não substitui provas completas por família/recurso.
+Veja a [evidência parcial](../../entregas/2026-10-29-writer-v2-ancora-privada-de-campanhas.md).
+Captura integral, procedência, arquivo/restauração/UI/ciclo P3 e D/F2-09 seguem
+pendentes; macro **8/35**, retenção final de 199 e gates não mudam. Validate
+integral será executado no fechamento do bloco novo. Somente commits locais.
