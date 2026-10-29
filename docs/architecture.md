@@ -3582,3 +3582,14 @@ bytes e provas nativas por campo sem concatenar texto. Leitor/auditor compartilh
 partes e validadores sem ciclo de imports. Índice local habilita somente a chave
 lógica de imagem sob o mapa excluído. Segunda passagem/reconciliação completas,
 Storage/binários, variantes/legadas, atestado/restauração/UI seguem pendentes.
+
+## Variantes e âncoras antigas no backup de campanhas
+
+A [ADR 0238](decisions/0238-campaign-backup-lore-anchors.md) roteia variantes
+pelo layout/geração ready declarados e segue bodyBinding exato, inclusive
+corpos anteriores. Metadata de âncora e base do corpo exige a mesma encarnação
+atual da origem antes de qualquer prosa. Leitura canônica e SHA integral usam
+uma entidade limitada por chamada; DTO conserva estado e projeta relações
+revogadas. Cabeçalho/auditoria/texto da âncora preservam a edição antiga.
+Inventário físico dos bindings, reconferência conjunta, binários e atestado/
+arquivo/restauração/UI seguem pendentes, sem novos produtores persistentes.

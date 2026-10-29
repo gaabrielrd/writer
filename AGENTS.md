@@ -1024,3 +1024,10 @@ campo sem concatenar o texto, preservando partes e provas nativas. Registre
 indisponibilidade sem manifests/prosa revogados e reconcilie todas as famílias
 antes de atestar. Indexe só image.imageKey sob o mapa excluído; não indexe sua
 prosa nem confunda índice local com ativado (ADR 0237).
+
+No backup de variantes, siga a geração e o bodyBinding declarados, inclusive
+corpos anteriores; ponteiro inválido não admite fallback. Prove a origem tanto
+da âncora congelada quanto da base do corpo antes de nome/manifesto/prosa:
+âncora nova não reautoriza corpo anterior à ficha recriada. Preserve removed/
+inactive/legacy e omita descrição de alvo revogado. JSON canônico fica limitado
+à entidade nativa; proofs privados não são procedência/grant (ADR 0238).

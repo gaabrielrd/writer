@@ -642,3 +642,15 @@ por item, sem montar texto completo. Revogadas permanecem indisponíveis.
 Segunda passagem/reconciliação conjuntas, variantes/legadas/mídia, manifesto/
 atestado, arquivo/restauração/UI/ciclo P3/D/F2-09 continuam abertos; macro **8/35**.
 Somente commit local, sem CI. Validate integral no fechamento do grande bloco.
+
+## 2026-10-29 — variantes e âncoras congeladas no backup P3
+
+O [plano 208](execucao/208-variantes-e-ancoras-do-lore.md) lê variantes legado/
+geração e âncoras antigas, seguindo corpos por binding exato e preservando
+removed/inactive/legacy. Origem precisa autorizar âncora e base do corpo;
+avanço da âncora não reautoriza corpo anterior à ficha recriada. SHA/JSON
+canônico e relações são conferidos antes do DTO. 74 Node e 29 Vitest dirigidos
+positivos; [evidência parcial](../../entregas/2026-10-29-writer-v2-variantes-no-backup.md).
+Inventário físico dos bindings, reconferência conjunta, binários, atestado/
+arquivo/restauração/UI/ciclo P3/D/F2-09 permanecem abertos; macro **8/35**.
+Somente commit local; validate integral no fechamento do grande bloco.

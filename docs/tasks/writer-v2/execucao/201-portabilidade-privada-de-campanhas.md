@@ -189,3 +189,12 @@ bytes de cada campo. Detecta corpos/pins ausentes e órfãos em passes opostos.
 compor segunda passagem/reconciliação integrais, variantes/legadas/bodyBindings,
 binários/Storage e atestado nativo antes do arquivo/restauração/UI/ciclo P3.
 Não fecha passos 3–4 nem P3/D/F2-09; macro 8/35, somente commit local.
+
+## Passos 3–4 — variantes e âncoras congeladas
+
+O [plano 208](208-variantes-e-ancoras-do-lore.md) inventaria variantes da geração
+declarada e lê corpo/âncora por bindings exatos. Removed/inactive/legacy são
+preservados, com autorização da âncora e da base do corpo antes de conteúdo.
+74 Node e 29 Vitest dirigidos positivos. Ainda faltam inventário físico do grafo
+de bindings, reconferência conjunta, binários/imagens, manifesto/atestado e
+arquivo/restauração/UI/ciclo. P3/D/F2-09 abertos; macro 8/35, commit local.

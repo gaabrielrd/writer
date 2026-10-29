@@ -2224,3 +2224,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-inventario-fisico-da-base.md).
      Segunda passagem/reconciliação integrais, variantes/legadas/binários,
      atestado/arquivo/restauração/UI/ciclo P3/D/F2-09 pendentes; macro 8/35.
+
+208. [Variantes e âncoras do lore](208-variantes-e-ancoras-do-lore.md):
+     inventário e leitores legado/geração, corpos vinculados anteriores e âncoras
+     antigas, com origem conferida antes da prosa e SHA/JSON canônico. 74 Node
+     e 29 Vitest positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-variantes-no-backup.md).
+     Inventário físico dos bindings, reconferência conjunta, binários e atestado/
+     arquivo/restauração/UI/ciclo P3/D/F2-09 pendentes; macro 8/35, commit local.

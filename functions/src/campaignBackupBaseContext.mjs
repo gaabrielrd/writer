@@ -60,12 +60,86 @@ export async function campaignBackupBaseContext(tx, input) {
       'A base da campanha está indisponível.',
       'campaign-backup-base-unavailable',
     );
-  const path = basePath(input.uid, source.base.id),
-    base = await baseMasked(tx, input.db.doc(path), ['adventureId', 'universeId']),
-    adventure = await baseMasked(tx, input.db.doc('adventures/' + base.value.adventureId), [
+  return campaignBackupBaseAnchor(tx, input, source, source.base.id);
+}
+/** Internal: the caller must first revalidate the current derived source in this transaction. */
+export async function campaignBackupBaseAnchor(
+  tx,
+  input,
+  current,
+  capturedBaseId,
+  expectedAdventureId,
+) {
+  if (!baseHash(capturedBaseId)) baseInconsistent();
+  const path = basePath(input.uid, capturedBaseId),
+    base = await baseMasked(tx, input.db.doc(path), [
+      'id',
+      'schemaVersion',
       'ownerId',
-    ]),
-    adventureToken = adventureIdentityToken(input.uid, base.value.adventureId, adventure.snapshot),
+      'campaignId',
+      'adventureId',
+      'universeId',
+      'state',
+      'sourceToken',
+      'capturedAt',
+    ]);
+  if (!base.snapshot.exists) return null;
+  const b = base.value;
+  if (
+    b.id !== capturedBaseId ||
+    b.schemaVersion !== 1 ||
+    b.ownerId !== input.uid ||
+    b.campaignId !== input.campaignId ||
+    b.state !== 'ready' ||
+    !baseHash(b.sourceToken) ||
+    !Number.isFinite(b.capturedAt) ||
+    b.capturedAt < 0 ||
+    b.capturedAt > 8640000000000000 ||
+    (expectedAdventureId !== undefined && b.adventureId !== expectedAdventureId)
+  )
+    baseInconsistent();
+  id(b.adventureId);
+  if (b.universeId != null) id(b.universeId);
+  const adventure = await baseMasked(tx, input.db.doc('adventures/' + b.adventureId), [
+    'ownerId',
+    'schemaVersion',
+    'deleting',
+  ]);
+  if (
+    !adventure.snapshot.exists ||
+    adventure.value.ownerId !== input.uid ||
+    adventure.value.deleting ||
+    !before(adventure.native.created, base.native.created)
+  )
+    return null;
+  if (adventure.value.schemaVersion !== 1) baseInconsistent();
+  const adventureToken = adventureIdentityToken(input.uid, b.adventureId, adventure.snapshot);
+  let globalLore = 'none',
+    worldFacts = null;
+  if (b.universeId != null) {
+    const world = await baseMasked(tx, input.db.doc('universes/' + b.universeId), [
+      'authorId',
+      'deleting',
+      'loreVersion',
+      'privacyVersion',
+    ]);
+    const available =
+      world.snapshot.exists &&
+      world.value.authorId === input.uid &&
+      !world.value.deleting &&
+      before(world.native.created, base.native.created);
+    globalLore = available ? 'available' : 'unavailable';
+    worldFacts = { born: world.native?.created ?? null, available };
+    if (available) {
+      for (const key of ['loreVersion', 'privacyVersion']) {
+        const value = world.value[key];
+        if (value !== undefined && (!Number.isSafeInteger(value) || value < 0)) baseInconsistent();
+        worldFacts[key] = value ?? null;
+      }
+    }
+  }
+  const source = { ...current, base: { id: capturedBaseId, capturedAt: b.capturedAt, globalLore } },
+    captureFacts = { base: base.native, adventure: adventure.native.created, world: worldFacts },
     heads = new Map(),
     proven = new Map();
   const anchor = {
@@ -73,7 +147,7 @@ export async function campaignBackupBaseContext(tx, input) {
     campaignId: input.campaignId,
     sourceToken: source.sourceToken,
     derivedToken: source.derivedToken,
-    baseId: source.base.id,
+    baseId: capturedBaseId,
   };
   async function head(key) {
     if (!baseHash(key)) baseInconsistent();
@@ -187,11 +261,17 @@ export async function campaignBackupBaseContext(tx, input) {
       ...anchor,
       id: key,
       native: h.native,
+      capture: captureFacts,
       head: v,
       parent: parent?.itemToken ?? null,
       authorization,
     });
-    const result = { ...h, itemToken, availability: available ? 'available' : 'unavailable' };
+    const result = {
+      ...h,
+      itemToken,
+      authorization,
+      availability: available ? 'available' : 'unavailable',
+    };
     proven.set(key, result);
     return result;
   }
