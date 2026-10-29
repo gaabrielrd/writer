@@ -1107,3 +1107,9 @@ derivados do arquivo autenticado. Não reconstrua origem por hash/ID. Leitor nor
 não resolve alvo declarado ausente; backup verifica coerência física por metadata.
 Confira link/ledger nos dois sentidos, chave canônica e autorização atual do alvo
 disponível. Preserve DTOs e mantenha marcadores privados fora do arquivo (ADR 0251).
+
+Em S2, passe metadata de cena/bloco por baseItemAvailable antes de candidato,
+vínculo, corpo ou mídia de base restaurada. Preserve a resolução pela base
+ativa/C2 atual, sem fallback histórico nem busca por hash/nome em origem viva.
+Referência própria não é grant; ausência fica neutra e adoção explícita invalida
+o contexto anterior sem reescrever S1 (ADR 0252).

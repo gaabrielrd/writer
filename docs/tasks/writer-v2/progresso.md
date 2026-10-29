@@ -781,3 +781,9 @@ ledger portáteis na base restaurada, sem reconstruir origem por hash. Leitura e
 reexportação assinada/revisão completa passaram; 21 novos e 251 regressões positivos.
 Sessões/relações externas, C4 e restauração persistente/Estúdio ainda pendem.
 Macro permanece 8/35 (22,9%); somente commit local e checks dirigidos.
+
+O [incremento 222](execucao/222-materiais-restaurados-nas-sessoes.md) prepara S2
+para conferir a prova das cenas/blocos restaurados antes de material/mídia.
+16 novos e 27 regressões positivos, com reexportação/revisão completa de vínculo
+sem alvo e adoção explícita preservando S1. Relações externas, C4 e restauração
+persistente/Estúdio continuam pendentes; macro 8/35 (22,9%), somente commit local.

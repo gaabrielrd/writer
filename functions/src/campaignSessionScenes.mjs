@@ -97,7 +97,10 @@ export function createCampaignSessionScenesService({
           .select(...blockFields);
         if (cursor) query = query.startAfter(cursor.order, cursor.key);
         const docs = (await tx.get(query)).docs;
-        result.items = docs.slice(0, size).map((doc) => blockSummary(doc.data(), access, doc.id));
+        for (const doc of docs.slice(0, size)) {
+          const item = await readBlockMetadata(tx, db, access, doc.id, [], doc.data());
+          if (item) result.items.push(blockSummary(item, access, doc.id));
+        }
         if (docs.length > size) {
           const last = docs[size - 1];
           result.nextCursor = encodeBaseCursor({

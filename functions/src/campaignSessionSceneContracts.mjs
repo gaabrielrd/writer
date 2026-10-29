@@ -1,7 +1,7 @@
 import { validateId } from './generation.mjs';
 import { workRevision, workConflict } from './workProgressContracts.mjs';
 import { token } from './campaignSessionsContracts.mjs';
-import { baseSourceKey } from './campaignBaseContracts.mjs';
+import { baseSourceKey, baseItemAvailable } from './campaignBaseContracts.mjs';
 import { validateCapturedFields } from './campaignBaseRead.mjs';
 import {
   fail,
@@ -42,6 +42,7 @@ export const blockFields = [
   'role',
   'archived',
   'structured.ownArchived',
+  'sourceEvidence',
 ];
 export const narrativeTypes = [
   'introduction',
@@ -153,17 +154,19 @@ export function blockSummary(item, access, key) {
     ownArchived,
   };
 }
-export async function readBlockMetadata(tx, db, access, key, extra = []) {
+export async function readBlockMetadata(tx, db, access, key, extra = [], supplied) {
   if (!access.scene) return null;
-  const item = (
-    await readWorkMetadata(tx, db.doc(access.context.path + '/items/' + key), [
-      ...blockFields,
-      ...extra,
-    ])
-  ).data();
+  const item =
+    supplied ??
+    (
+      await readWorkMetadata(tx, db.doc(access.context.path + '/items/' + key), [
+        ...blockFields,
+        ...extra,
+      ])
+    ).data();
   if (!item) return null;
   blockSummary(item, access, key);
-  return item;
+  return (await baseItemAvailable(tx, db, access.context, item)) ? item : null;
 }
 export function validateSceneBindings(scene, context) {
   sceneCandidate(scene, context, scene.sourceKey);

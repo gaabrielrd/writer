@@ -330,3 +330,12 @@ a leitura/reexportação de links/ledger sem reconstruir origem por hash.
 21 novos e 251 regressões positivos, com emissão assinada/revisão completa.
 Vínculos de sessões e relações externas de lore/variantes continuam necessários;
 depois inventário/cleanup C4 v1–v4 antes de materializar dados persistentes.
+
+### Materiais de sessão da cópia — incremento 222
+
+[Plano 222](222-materiais-restaurados-nas-sessoes.md) e
+[ADR 0252](../../../decisions/0252-campaign-restored-session-materials.md) conferem
+a prova por cena/bloco nos caminhos S2, inclusive candidatos e mídia.
+16 novos e 27 regressões positivos. Não muda o DTO próprio de vínculo nem
+o contrato de adoção explícita. Relações externas e inventário/cleanup C4 v1–v4
+continuam antes do produtor persistente; materialização/ativação/UI/ciclos pendem.

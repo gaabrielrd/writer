@@ -2323,3 +2323,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      21 novos e 251 regressões passaram. [Evidência parcial](../../../entregas/2026-10-29-writer-v2-referencias-portateis-da-base.md).
      Sessões/relações externas, C4 e restauração persistente/UI/ciclos pendentes;
      macro 8/35, validação dirigida e somente commit local.
+
+222. [Materiais restaurados nas sessões](222-materiais-restaurados-nas-sessoes.md):
+     prova por item nos caminhos S2 de cenas/blocos, candidatos, texto e imagem;
+     ausência neutra e adoção explícita conservadas. 16 novos e 27 regressões
+     passaram; [evidência parcial](../../../entregas/2026-10-29-writer-v2-materiais-restaurados-nas-sessoes.md).
+     Relações externas, C4 e restauração persistente/UI/ciclos pendentes;
+     macro 8/35, checks dirigidos e somente commit local.

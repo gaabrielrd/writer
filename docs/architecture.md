@@ -3734,3 +3734,13 @@ campaignBackupBaseResources confere metadata, autorização e testemunha reversa
 limitada. Ausência explícita não é resolvida automaticamente e contradições
 físicas impedem reexportação. Formato público preservado; sem novo produtor.
 Sessões/relações externas e C4 continuam antes da restauração persistente.
+
+## Materiais restaurados na sessão
+
+A [ADR 0252](decisions/0252-campaign-restored-session-materials.md) aplica os gates
+de baseItemAvailable em sceneRecord/readBlockMetadata e nas janelas S2.
+Metadata fornecida pela consulta é reaproveitada antes de prosa/Storage.
+O vínculo próprio continua declarativo, resolvido pela base ativa/C2 atual:
+ausência neutra, sem origem viva e sem retenção histórica de cenas.
+Adoção explícita muda a projeção, preservando S1. Nenhuma mudança de formato
+ou estado permanente de referência; relações portáteis e C4 continuam pendentes.

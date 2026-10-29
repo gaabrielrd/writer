@@ -18,7 +18,7 @@ import {
   readSessionMetadata,
 } from './campaignSessionsContracts.mjs';
 import { loreContext, loreEnvelope } from './campaignLoreContracts.mjs';
-import { baseSourceKey } from './campaignBaseContracts.mjs';
+import { baseSourceKey, baseItemAvailable } from './campaignBaseContracts.mjs';
 export { closed, fail, readWorkMetadata, digest, safe, bounded };
 export const scopeFields = ['campaignId', 'campaignToken', 'sessionId', 'expectedSessionRevision'];
 export const addFields = [
@@ -227,6 +227,7 @@ export const sceneFields = [
   'archived',
   'orderKey',
   'stage',
+  'sourceEvidence',
 ];
 export function sceneCandidate(item, context, key) {
   const origin = item.origin;
@@ -264,7 +265,7 @@ export async function sceneRecord(tx, db, context, key, supplied) {
     (await readWorkMetadata(tx, db.doc(context.path + '/items/' + key), sceneFields)).data();
   if (!item) return null;
   sceneCandidate(item, context, key);
-  return item;
+  return (await baseItemAvailable(tx, db, context, item)) ? item : null;
 }
 export async function optionalLore(tx, db, c) {
   return loreContext(

@@ -263,8 +263,10 @@ export function createCampaignSessionReferencesService({ db, now = Date.now }) {
             .select(...sceneFields);
           if (cursor) query = query.startAfter(cursor.order, cursor.key);
           const docs = (await tx.get(query)).docs;
-          for (const doc of docs.slice(0, size))
-            items.push(sceneCandidate(doc.data(), context, doc.id));
+          for (const doc of docs.slice(0, size)) {
+            const item = await sceneRecord(tx, db, context, doc.id, doc.data());
+            if (item) items.push(sceneCandidate(item, context, doc.id));
+          }
           if (docs.length > size) {
             const last = docs[size - 1];
             nextCursor = encodeBaseCursor({
