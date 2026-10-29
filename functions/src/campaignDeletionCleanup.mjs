@@ -1,12 +1,7 @@
+import { campaignDeletionInventory } from './campaignDeletionInventory.mjs';
 import { readWorkMetadata } from './workProgressContracts.mjs';
 import { basePath, baseImageKey, baseImageUseKey } from './campaignBaseContracts.mjs';
-import {
-  fail,
-  digest,
-  revision,
-  deletionPhases,
-  cleanupVersion,
-} from './campaignDeletionContracts.mjs';
+import { fail, digest, revision, deletionPhases } from './campaignDeletionContracts.mjs';
 
 const own = (v, p) => {
   if (!v || v.ownerId !== p.ownerId || v.campaignId !== p.campaignId)
@@ -67,23 +62,10 @@ async function sanitize(tx, db, p, specs) {
   }
   return docs.length > 25 ? { ...p, cursor: docs[24].id } : { ...p, part: part + 1, cursor: null };
 }
-async function controls(tx, db, p) {
-  const part = p.part ?? 0;
-  if (part !== 2)
-    return sanitize(tx, db, p, [
-      {
-        collection: 'campaignPreparations',
-        fields: ['ownerId', 'campaignId', 'id'],
-        value: (v, id) => ({ id, captureId: id }),
-      },
-      {
-        collection: 'campaignComparisons',
-        fields: ['ownerId', 'campaignId', 'id'],
-        value: (v, id) => ({ id, comparisonId: id }),
-      },
-      null,
-      { collection: 'campaignAdoptionGuards', fields: ['ownerId', 'campaignId'] },
-    ]);
+async function controls(tx, db, p, specs) {
+  const part = p.part ?? 0,
+    adoptionPart = specs.indexOf(null);
+  if (part !== adoptionPart) return sanitize(tx, db, p, specs);
   let adoptionId = p.childId;
   if (!adoptionId) {
     const first = (
@@ -97,7 +79,7 @@ async function controls(tx, db, p) {
         ['campaignId', p.campaignId],
       )
     ).docs[0];
-    if (!first) return { ...p, part: 3, cursor: null };
+    if (!first) return { ...p, part: adoptionPart + 1, cursor: null };
     own(first.data(), p);
     adoptionId = first.id;
   }
@@ -180,7 +162,7 @@ async function image(tx, db, p, path) {
   tx.delete(doc.ref);
   return true;
 }
-async function tree(tx, db, p, generation = false) {
+async function tree(tx, db, p, inventory, generation = false) {
   const collection = generation
     ? `campaigns/${p.campaignId}/loreGenerations`
     : `users/${p.ownerId}/campaignBases`;
@@ -202,9 +184,7 @@ async function tree(tx, db, p, generation = false) {
     childId = doc.id;
   }
   const path = generation ? `${collection}/${childId}` : basePath(p.ownerId, childId),
-    collections = generation
-      ? ['loreVariants', 'loreVariantBodies']
-      : ['images', 'bodies', 'links', 'loreReferences', 'items'],
+    collections = generation ? inventory.generations : inventory.base,
     childPart = p.childPart ?? 0,
     working = { ...p, childId, childPart };
   if (!Number.isSafeInteger(childPart) || childPart < 0 || childPart >= collections.length)
@@ -231,69 +211,13 @@ async function tree(tx, db, p, generation = false) {
   return { ...working, childPart: childPart + 1 };
 }
 export async function cleanupCampaignStep(tx, db, p) {
-  const version = cleanupVersion(p);
-  if (p.phase === 'recovery')
-    return sanitize(tx, db, p, [
-      {
-        collection: 'campaignVariantOperations',
-        fields: ['ownerId', 'campaignId', 'descriptorHash', 'fingerprint'],
-        value: (v) => ({
-          ...(v.descriptorHash ? { descriptorHash: v.descriptorHash } : {}),
-          ...(v.fingerprint ? { fingerprint: v.fingerprint } : {}),
-        }),
-      },
-      {
-        collection: 'campaignVariantResolutionOperations',
-        filter: 'result.request.campaignId',
-        fields: ['ownerId', 'fingerprint'],
-        value: (v) => ({ fingerprint: v.fingerprint }),
-      },
-      {
-        collection: 'campaignComparisonStartFences',
-        filter: 'request.campaignId',
-        fields: ['ownerId', 'fingerprint'],
-        value: (v) => ({ fingerprint: v.fingerprint }),
-      },
-      ...(version >= 2
-        ? [{ collection: 'campaignSessionOperations', fields: ['ownerId', 'campaignId'] }]
-        : []),
-      ...(version >= 3
-        ? [
-            { collection: 'campaignSessionReferenceOperations', fields: ['ownerId', 'campaignId'] },
-            { collection: 'campaignSessionReferenceFences', fields: ['ownerId', 'campaignId'] },
-          ]
-        : []),
-      ...(version === 4
-        ? [
-            { collection: 'campaignPreparationOperations', fields: ['ownerId', 'campaignId'] },
-            { collection: 'campaignPreparationFences', fields: ['ownerId', 'campaignId'] },
-          ]
-        : []),
-    ]);
-  if (p.phase === 'controls') return controls(tx, db, p);
-  if (p.phase === 'bases') return tree(tx, db, p);
-  if (p.phase === 'lore-generations') return tree(tx, db, p, true);
+  const inventory = campaignDeletionInventory(p);
+  if (p.phase === 'recovery') return sanitize(tx, db, p, inventory.recovery);
+  if (p.phase === 'controls') return controls(tx, db, p, inventory.controls);
+  if (p.phase === 'bases') return tree(tx, db, p, inventory);
+  if (p.phase === 'lore-generations') return tree(tx, db, p, inventory, true);
   if (p.phase === 'campaign-children') {
-    const collections = [
-        'notes',
-        'noteState',
-        'workChecklist',
-        'workProgress',
-        'loreVariants',
-        'loreVariantBodies',
-        'loreVariantState',
-        ...(version >= 2 ? ['sessions', 'sessionState'] : []),
-        ...(version >= 3 ? ['sessionReferences', 'sessionReferenceState'] : []),
-        ...(version === 4
-          ? [
-              'preparationItems',
-              'preparationBodies',
-              'preparationState',
-              'sessionPreparationLinks',
-              'sessionPreparationState',
-            ]
-          : []),
-      ],
+    const collections = inventory.children,
       part = p.part ?? 0;
     if (part >= collections.length) return advancePhase(p);
     const docs = (await page(tx, db, `campaigns/${p.campaignId}/${collections[part]}`, null)).docs;

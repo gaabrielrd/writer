@@ -1,3 +1,5 @@
+import { cleanupVersion, campaignDeletionInventory } from './campaignDeletionInventory.mjs';
+export { cleanupVersion };
 import { validateId } from './generation.mjs';
 import {
   workClosed,
@@ -32,12 +34,7 @@ export const deletionPhases = [
   'finalizing',
   'complete',
 ];
-export function cleanupVersion(p) {
-  const value = Object.hasOwn(p, 'cleanupVersion') ? p.cleanupVersion : 1;
-  if (value !== 1 && value !== 2 && value !== 3 && value !== 4)
-    workFail('failed-precondition', 'A versão da limpeza não é suportada.');
-  return value;
-}
+
 export const hash = (value) => {
   if (typeof value !== 'string' || !/^[a-f0-9]{64}$/.test(value))
     workFail('invalid-argument', 'Identidade inválida.');
@@ -114,7 +111,8 @@ export function owned(p, uid, deletionId) {
       workFail('failed-precondition', 'O registro terminal está inconsistente.');
     return p;
   }
-  const version = cleanupVersion(p);
+  const inventory = campaignDeletionInventory(p),
+    adoptionPart = inventory.controls.indexOf(null);
   const internal = ['part', 'cursor', 'childId', 'childPart', 'childCursor', 'certified'],
     nullableId = (value) =>
       value === null ||
@@ -123,11 +121,11 @@ export function owned(p, uid, deletionId) {
         !value.includes('/') &&
         Buffer.byteLength(value) <= 1500),
     maxima = {
-      recovery: version === 4 ? 8 : version === 3 ? 6 : version === 2 ? 4 : 3,
-      controls: 4,
+      recovery: inventory.recovery.length,
+      controls: inventory.controls.length,
       bases: 0,
       'lore-generations': 0,
-      'campaign-children': version === 4 ? 16 : version === 3 ? 11 : version === 2 ? 9 : 7,
+      'campaign-children': inventory.children.length,
       activity: 0,
       finalizing: 0,
     },
@@ -149,10 +147,13 @@ export function owned(p, uid, deletionId) {
     digest(p.certified) !== digest(deletionPhases.slice(0, phaseIndex)) ||
     (p.childId === null && (p.childPart !== 0 || p.childCursor !== null)) ||
     (p.childId !== null && !['controls', 'bases', 'lore-generations'].includes(p.phase)) ||
-    (p.phase === 'controls' && p.childId !== null && (p.part !== 2 || p.childPart > 1)) ||
-    (p.phase === 'bases' && p.childPart > 4) ||
-    (p.phase === 'lore-generations' && p.childPart > 1) ||
-    (p.childCursor !== null && !(p.phase === 'controls' && p.part === 2 && p.childPart === 1)) ||
+    (p.phase === 'controls' &&
+      p.childId !== null &&
+      (p.part !== adoptionPart || p.childPart > 1)) ||
+    (p.phase === 'bases' && p.childPart >= inventory.base.length) ||
+    (p.phase === 'lore-generations' && p.childPart >= inventory.generations.length) ||
+    (p.childCursor !== null &&
+      !(p.phase === 'controls' && p.part === adoptionPart && p.childPart === 1)) ||
     (p.cursor !== null && !['recovery', 'controls'].includes(p.phase))
   )
     workFail('failed-precondition', 'O checkpoint interno da exclusão está inconsistente.');

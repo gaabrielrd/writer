@@ -1138,3 +1138,11 @@ Projeção/adoção/backup não consultam alvo false. Remove/restore/keep-local 
 codec; discard/use-candidate/discard-local limpam quando retiram o corpo. Masks/
 tokens e releituras conferem presença/valor. Emita unresolved true no arquivo v3,
 sem expor codec nem habilitar produtor de restauração antes de C4 (ADR 0255).
+
+No C4 de campanhas, use campaignDeletionInventory como fonte comum dos layouts
+1–4 para executar e validar checkpoints. Preserve ordem/masks/whitelists de cada
+versão e v1 implícita; nova família exige versão e coleta/reserva antes do produtor.
+Apague provas/flags restauradas com seus documentos sem autorizar fonte; enumere
+todas as bases/gerações registradas e mantenha pais até retirar filhos. Nos passos,
+guard da raiz lê somente identidade/marca, sem título/procedência. Biblioteca e
+pins alheios permanecem; falha não avança checkpoint nem contador (ADR 0256).

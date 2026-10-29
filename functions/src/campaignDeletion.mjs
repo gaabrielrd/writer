@@ -44,6 +44,7 @@ const rootFields = [
   'activeBaseId',
   'updatedAt',
 ];
+const guardFields = ['ownerId', 'schemaVersion', 'deleting', 'deletionId'];
 const progressFields = [
   'schemaVersion',
   'ownerId',
@@ -123,7 +124,7 @@ export function createCampaignDeletionService({ db, now = Date.now }) {
   }
   async function currentRoot(tx, p) {
     const ref = db.doc('campaigns/' + p.campaignId),
-      snapshot = await readWorkMetadata(tx, ref, rootFields),
+      snapshot = await readWorkMetadata(tx, ref, guardFields),
       root = snapshot.data();
     if (
       root &&

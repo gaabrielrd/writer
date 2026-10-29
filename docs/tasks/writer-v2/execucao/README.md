@@ -2351,3 +2351,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-ciclo-das-variantes-portateis.md).
      Inventário/cleanup C4 v1–v4 antecede produtor persistente e UI/ciclos;
      macro 8/35, testes dirigidos e somente commit local.
+
+226. [Inventário C4 das campanhas restauradas](226-inventario-c4-das-campanhas-restauradas.md):
+     definição única dos layouts 1–4 para cursor/executor e guard sem prosa.
+     11 novos e 57 regressões positivos; validate integral 219–226 verde, 9.710 testes.
+     [Inventário físico](../inventario-portabilidade-campanhas.md) e
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-inventario-c4-das-campanhas-restauradas.md).
+     Recursos futuros exigem coleta/reserva antes do produtor; restauração
+     persistente/UI/ciclos e macro 8/35 continuam abertos.

@@ -369,3 +369,15 @@ backup. Preservação de chaves/ordem e reexportação assinada/revisada positiv
 Próximo: inventário/cleanup C4 v1–v4 e validate do bloco de leitores/cleanup
 antes de produtor persistente, upload/retomada, materialização/ativação e
 Estúdio/ciclos. P3/D/F2-09 e macro 8/35 continuam abertos.
+
+### Inventário C4 dos dados materializados — incremento 226
+
+[Plano 226](226-inventario-c4-das-campanhas-restauradas.md) e
+[ADR 0256](../../../decisions/0256-campaign-versioned-deletion-inventory.md)
+centralizam layouts 1–4 e provam exclusão de prova/codec/corpos emprestados e pins,
+sem prosa, autorização da origem ou reinterpretação de job antigo. 11 novos e
+57 regressões positivos; validate integral 219–226 verde com 9.710 testes.
+O [inventário físico](../inventario-portabilidade-campanhas.md) não declara jobs,
+uploads ou índices futuros como coletados: integrar seus contratos de coleta,
+cancelamento e reservas antes de qualquer produtor. Depois upload/retomada,
+remapeamento/materialização/ativação e Estúdio/ciclos. P3/D/F2-09 permanecem abertos.

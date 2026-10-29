@@ -807,3 +807,11 @@ chaves e ordem, remoção/restauração/descarte, adoção e reexportação assi
 41 casos novos e 627 regressões passaram. Inventário/cleanup C4 v1–v4 é o próximo
 passo antes de produtor persistente, upload/retomada, materialização/ativação e
 Estúdio/ciclos. Macro 8/35 (22,9%); somente commit local e checks dirigidos.
+
+O [incremento 226](execucao/226-inventario-c4-das-campanhas-restauradas.md)
+centraliza o inventário C4 v1–v4 e prova a coleta dos dados restaurados atuais,
+corpos emprestados, gerações antigas e pins compartilhados. 11 novos e 57
+regressões passaram; validate integral do bloco 219–226 verde com 9.710 testes.
+O [inventário](inventario-portabilidade-campanhas.md) distingue os recursos
+futuros que ainda exigem coleta/reservas antes do produtor. Upload/retomada,
+materialização/ativação e Estúdio/ciclos permanecem; macro 8/35 (22,9%).

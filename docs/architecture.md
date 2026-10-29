@@ -3781,3 +3781,17 @@ base ativa nativa, sem consultas para relações false. Reexportação usa unres
 true de v3 e não expõe metadata privada. Masks/tokens e releituras conferem codec.
 Esta etapa conclui o ciclo interno previsto em 224; C4 e produtor/ativação/
 interface de restauração continuam necessários antes da portabilidade completa.
+
+## Inventário C4 das campanhas restauradas
+
+A [ADR 0256](decisions/0256-campaign-versioned-deletion-inventory.md) centraliza
+os layouts imutáveis 1–4 em campaignDeletionInventory. Validador e executor usam
+as mesmas famílias/limites, conservando jobs e máscaras existentes. currentRoot
+usa máscara própria sem prosa; confirmação mantém seu contrato.
+Provas por base/item e codecs portáteis são apagados com os documentos atuais,
+sem consulta da autorização original. Bases/gerações físicas incluem corpos
+emprestados e âncoras antigas; pins são retirados atomicamente por etapa.
+O [inventário de portabilidade](tasks/writer-v2/inventario-portabilidade-campanhas.md)
+distingue dados materializados e recursos futuros ainda sem produtor. Jobs,
+uploads e índices duráveis futuros exigem coleta/cancelamento e reserva próprios
+antes de gravação. Este passo não habilita a restauração persistente.
