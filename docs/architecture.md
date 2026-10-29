@@ -3700,3 +3700,15 @@ A revisão composta executa próprios/derivados/origens, exige a mesma cadeia/
 tamanho/manifesto e descarta cada índice. Referências históricas externas ficam
 não resolvidas, sem grant. Leitores de procedência restaurada, C4, persistência
 e materialização/ativação/UI continuam tarefas seguintes.
+
+## Identidade de origem nas bases restauradas de campanha
+
+A [ADR 0249](decisions/0249-campaign-restored-source-readers.md) mantém o tipo
+público de procedência e acrescenta evidência privada por base/item. O núcleo
+campaignSourceAccess confere fontes por nascimento nativo exato, dono/versão e
+C4; a API de revisão anterior permanece exportada. campaignRestoredSource
+valida marcadores fechados/vínculos, sem depender do inventário de backup.
+Leitores de base/referências, lore/âncoras e C3 verificam metadata antes do texto;
+projeções não expõem provas e incluem sua identidade no token quando restauradas.
+Capturas nativas futuras continuam adotáveis. Backup/reexportação e C4 precisam
+ser integrados antes de qualquer produtor persistente de restauração.

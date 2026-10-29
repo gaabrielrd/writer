@@ -302,3 +302,12 @@ código 0).
 Faltam leitores/consumidores de procedência e referências opacas restauradas,
 inventário/cleanup C4 v1–v4 antes de persistir, upload/retomada, nova cópia/
 materialização/ativação e interface/ciclos. Não encerrar P3/D/F2-09 ou macro 8/35.
+
+### Leitores de origem restaurada — incremento 219
+
+[Plano 219](219-identidade-das-fontes-nos-leitores.md) e
+[ADR 0249](../../../decisions/0249-campaign-restored-source-readers.md) preparam
+base/item/referências, lore/âncoras retidas e comparação com provas privadas por
+base e autorização por nascimento original. 31 novos e 122 regressões dirigidos
+positivos. Não habilita produtor persistente: backup/reexportação, referências
+opacas e inventário/cleanup C4 v1–v4 continuam antes da materialização.

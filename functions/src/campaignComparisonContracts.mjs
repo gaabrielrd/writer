@@ -1,3 +1,4 @@
+import { readRestoredCampaignBaseAccess } from './campaignRestoredSource.mjs';
 import { adventureIdentityToken } from './campaignLoreOrigin.mjs';
 import {
   captureScope,
@@ -80,7 +81,8 @@ const baseFields = [
   'adventureId',
   'universeId',
   'capturedAt',
-  'snapshot',
+  'sourceMode',
+  'sourceEvidence',
 ];
 export async function observeCampaign(tx, db, uid, campaignId, expected = null) {
   if ((await readCampaignDeletionReservation(tx, db, campaignId)).record)
@@ -120,6 +122,9 @@ export async function observeCampaign(tx, db, uid, campaignId, expected = null) 
     base.state !== 'ready'
   )
     return { available: false, reason: 'base-changed' };
+  const sourceAccess = await readRestoredCampaignBaseAccess(tx, db, uid, base);
+  if (sourceAccess && sourceAccess.availability !== 'available')
+    return { available: false, reason: 'source-unavailable' };
   const adventure = (
     await readWorkMetadata(tx, db.doc('adventures/' + base.adventureId), [
       'ownerId',
@@ -160,8 +165,13 @@ export async function observeComparison(tx, db, p, checkSourceToken = false) {
 }
 export async function generationContext(tx, db, uid, campaignId, base) {
   await assertAdventureNotDeleted(tx, db, uid, base.adventureId);
+  const sourceAccess = await readRestoredCampaignBaseAccess(tx, db, uid, base);
+  if (sourceAccess && sourceAccess.availability !== 'available')
+    fail('not-found', 'Origem indisponível.');
+  const snapshot = (await readWorkMetadata(tx, db.doc(basePath(uid, base.id)), ['snapshot'])).data()
+    ?.snapshot;
   let world = null;
-  if (base.universeId != null)
+  if (base.universeId != null && (!sourceAccess || sourceAccess.globalLore === 'available'))
     world = (
       await readWorkMetadata(tx, db.doc('universes/' + base.universeId), [
         'authorId',
@@ -180,7 +190,7 @@ export async function generationContext(tx, db, uid, campaignId, base) {
   return {
     uid,
     campaignId,
-    base,
+    base: { ...base, snapshot },
     adventure,
     adventureSnapshot,
     path: basePath(uid, base.id),
@@ -196,6 +206,7 @@ export async function generationContext(tx, db, uid, campaignId, base) {
         ? adventureIdentityToken(uid, base.adventureId, adventureSnapshot)
         : null,
       privacyVersion: world?.privacyVersion ?? null,
+      ...(sourceAccess ? { restoredSourceProof: digest(sourceAccess) } : {}),
     }),
   };
 }

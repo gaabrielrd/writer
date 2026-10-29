@@ -2302,3 +2302,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-revisao-completa-do-arquivo-de-campanha.md).
      Validate integral local do bloco passou (código 0). Consumidores restaurados, C4,
      persistência e restauração/UI/ciclos pendentes; macro 8/35, somente commit local.
+
+219. [Identidade das fontes nos leitores](219-identidade-das-fontes-nos-leitores.md):
+     evidência privada por base/item e nascimento original exato nas leituras,
+     âncoras e C3; futura candidata nativa permanece adotável. 31 novos e 122
+     regressões dirigidas positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-identidade-das-fontes-restauradas.md).
+     Backup/reexportação, referências opacas, C4 e restauração persistente/UI/ciclos
+     pendem; suite integral no grande bloco, macro 8/35 e somente commit local.

@@ -1,3 +1,4 @@
+import { restoredCampaignBaseSource } from './campaignRestoredSource.mjs';
 import { loreRelationOrigin, loreReferenceOrigin } from './campaignLoreOrigin.mjs';
 import { readWorkMetadata } from './workProgressContracts.mjs';
 import {
@@ -202,7 +203,15 @@ export function createCampaignBaseReadService({
         count = limit(data.limit);
       return db.runTransaction(async (tx) => {
         const context = await readCampaignBase(tx, db, uid, campaignId);
-        const source = (await tx.get(db.doc(context.path + '/items/' + sourceKey))).data();
+        const sourceRef = db.doc(context.path + '/items/' + sourceKey);
+        if (restoredCampaignBaseSource(context.base)) {
+          const head = (
+            await readWorkMetadata(tx, sourceRef, ['sourceKey', 'kind', 'origin'])
+          ).data();
+          if (!head || !(await baseItemAvailable(tx, db, context, head)))
+            fail('not-found', 'Item indisponível.');
+        }
+        const source = (await tx.get(sourceRef)).data();
         if (!source || !(await baseItemAvailable(tx, db, context, source)))
           fail('not-found', 'Item indisponível.');
         const scope = {
@@ -263,7 +272,15 @@ export function createCampaignBaseReadService({
         let after = null;
         if (cursor) {
           hash(cursor.key);
-          after = (await tx.get(db.doc(context.path + '/items/' + cursor.key))).data();
+          after = (
+            await readWorkMetadata(tx, db.doc(context.path + '/items/' + cursor.key), [
+              'sourceKey',
+              'kind',
+              'orderKey',
+              'parentKey',
+              'archived',
+            ])
+          ).data();
           if (
             !after ||
             after.sourceKey !== cursor.key ||
@@ -341,7 +358,15 @@ export function createCampaignBaseReadService({
         fail('invalid-argument', 'Página inválida.');
       return db.runTransaction(async (tx) => {
         const context = await readCampaignBase(tx, db, uid, campaignId);
-        const stored = (await tx.get(db.doc(context.path + '/items/' + key))).data();
+        const itemRef = db.doc(context.path + '/items/' + key);
+        if (restoredCampaignBaseSource(context.base)) {
+          const head = (
+            await readWorkMetadata(tx, itemRef, ['sourceKey', 'kind', 'origin'])
+          ).data();
+          if (!head || !(await baseItemAvailable(tx, db, context, head)))
+            fail('not-found', 'Item indisponível.');
+        }
+        const stored = (await tx.get(itemRef)).data();
         if (!stored || !(await baseItemAvailable(tx, db, context, stored)))
           fail('not-found', 'Item indisponível.');
         validItem(stored, key);

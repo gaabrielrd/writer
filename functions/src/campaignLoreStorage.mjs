@@ -1,4 +1,5 @@
 import { digest, workFail, workId, readWorkMetadata } from './workProgressContracts.mjs';
+import { readRestoredCampaignBaseAccess } from './campaignRestoredSource.mjs';
 import { basePath } from './campaignBaseContracts.mjs';
 
 const bad = () => workFail('failed-precondition', 'O armazenamento do lore está inconsistente.');
@@ -189,6 +190,9 @@ export async function anchorContext(tx, db, context, anchor) {
       'schemaVersion',
       'state',
       'universeId',
+      'capturedAt',
+      'sourceMode',
+      'sourceEvidence',
     ])
   ).data();
   if (
@@ -201,8 +205,10 @@ export async function anchorContext(tx, db, context, anchor) {
     base.state !== 'ready'
   )
     bad();
+  const sourceAccess = await readRestoredCampaignBaseAccess(tx, db, context.uid, base);
+  if (sourceAccess && sourceAccess.availability !== 'available') bad();
   const world =
-    base.universeId == null
+    base.universeId == null || (sourceAccess && sourceAccess.globalLore !== 'available')
       ? null
       : (
           await readWorkMetadata(tx, db.doc(`universes/${workId(base.universeId)}`), [

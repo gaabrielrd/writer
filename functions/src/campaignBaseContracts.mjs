@@ -11,6 +11,11 @@ import { splitHistoryContent } from './workHistoryContracts.mjs';
 import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 import { readAdventureDeletionReservation } from './adventureDeletionGuard.mjs';
 
+import {
+  readRestoredCampaignBaseAccess,
+  restoredCampaignItemAvailable,
+} from './campaignRestoredSource.mjs';
+
 const id = workId;
 export { workClosed as closed, workFail as fail, workId as id, digest, workLimit as limit };
 export const BASE_PAGE_BYTES = 4 * 1024 * 1024;
@@ -243,19 +248,38 @@ export async function readCampaignBase(tx, db, uid, campaignId, { optionalSource
     if (optionalSource) return null;
     workFail('not-found', 'Origem indisponível.');
   }
-  const ref = db.doc(basePath(uid, campaign.activeBaseId)),
-    base = (await tx.get(ref)).data();
-  if (optionalSource && !base) return null;
+  const ref = db.doc(basePath(uid, campaign.activeBaseId));
+  const head = (
+    await readWorkMetadata(tx, ref, [
+      'id',
+      'ownerId',
+      'campaignId',
+      'adventureId',
+      'schemaVersion',
+      'state',
+      'universeId',
+      'capturedAt',
+      'sourceMode',
+      'sourceEvidence',
+    ])
+  ).data();
+  if (optionalSource && !head) return null;
   if (
-    !base ||
-    base.ownerId !== uid ||
-    base.id !== campaign.activeBaseId ||
-    base.state !== 'ready' ||
-    base.campaignId !== campaignId ||
-    base.adventureId !== campaign.provenance.adventureId
+    !head ||
+    head.ownerId !== uid ||
+    head.id !== campaign.activeBaseId ||
+    head.state !== 'ready' ||
+    head.campaignId !== campaignId ||
+    head.adventureId !== campaign.provenance.adventureId
   )
     workFail(optionalSource ? 'failed-precondition' : 'not-found', 'Base indisponível.');
-  if (base.schemaVersion !== 1) workFail('failed-precondition', 'Versão da base não suportada.');
+  if (head.schemaVersion !== 1) workFail('failed-precondition', 'Versão da base não suportada.');
+  const sourceAccess = head ? await readRestoredCampaignBaseAccess(tx, db, uid, head) : null;
+  if (sourceAccess && sourceAccess.availability !== 'available') {
+    if (optionalSource) return null;
+    workFail('not-found', 'Origem indisponível.');
+  }
+  const base = (await tx.get(ref)).data();
   const adventureSnapshot = await tx.get(db.doc('adventures/' + id(base.adventureId))),
     adventure = adventureSnapshot.data();
   if (optionalSource && adventure && (adventure.ownerId !== uid || adventure.schemaVersion !== 1))
@@ -266,7 +290,7 @@ export async function readCampaignBase(tx, db, uid, campaignId, { optionalSource
   if (adventure.schemaVersion !== 1)
     workFail('failed-precondition', 'Versão da aventura não suportada.');
   let world = null;
-  if (base.universeId != null) {
+  if (base.universeId != null && (!sourceAccess || sourceAccess.globalLore === 'available')) {
     const worldSnapshot = await tx.get(db.doc('universes/' + id(base.universeId)));
     world = worldSnapshot.data();
   }
@@ -280,6 +304,7 @@ export async function readCampaignBase(tx, db, uid, campaignId, { optionalSource
     localLoreVersion: adventure.loreVersion ?? 0,
     localAdventureToken: adventureIdentityToken(uid, base.adventureId, adventureSnapshot),
     privacyVersion: world?.privacyVersion ?? null,
+    ...(sourceAccess ? { restoredSourceProof: digest(sourceAccess) } : {}),
   });
   return {
     uid,
@@ -296,6 +321,8 @@ export async function readCampaignBase(tx, db, uid, campaignId, { optionalSource
   };
 }
 export async function baseItemAvailable(tx, db, context, item) {
+  const restored = await restoredCampaignItemAvailable(tx, db, context, item);
+  if (restored !== null) return restored;
   if (item.kind !== 'lore') return true;
   const origin = assertLoreItemOrigin(item, context.base);
   if (origin.kind === 'adventure-lore') {

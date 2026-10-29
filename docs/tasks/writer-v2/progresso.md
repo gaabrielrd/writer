@@ -763,3 +763,9 @@ externas não resolvidas. Compõe próprios/derivados/origens para a mesma cadei
 Validação integral local do bloco interno passou (npm run validate, código 0).
 Consumidores restaurados,
 C4, persistência e restauração/UI/ciclos P3/D/F2-09 continuam pendentes; macro **8/35**.
+
+O [incremento 219](execucao/219-identidade-das-fontes-nos-leitores.md) prepara
+leitores normais de bases restauradas com identidade original exata de fontes,
+inclusive âncoras retidas e C3. 31 novos e 122 regressões dirigidas passaram.
+Não cria materializador: backup/reexportação, referências opacas, C4 e restante
+de P3/D continuam pendentes; macro permanece 8/35 (22,9%).

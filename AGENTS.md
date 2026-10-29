@@ -1087,3 +1087,11 @@ de materializar. Autentique posições/vizinhos do índice para aceitar ausênci
 opcional; reverse exige testemunha positiva. Preserve referências externas de
 âncora como não resolvidas. Componha próprios/derivados/origens só para a mesma
 cadeia/tamanho/manifesto; campaign-backup-review-only não ativa cópia (ADR 0248).
+
+Nos leitores de campanha restaurada, exija sourceMode=restored e sourceEvidence
+fechada na base, com testemunhas de itens da mesma cadeia/base antiga. Não use o
+nascimento da nova cópia para autorizar fonte antiga. Reautorize nascimentos
+exatos, dono/versão/C4 antes de texto; mantenha provas fora dos DTOs. Evidência
+fica por base, inclusive âncoras retidas; candidatas nativas futuras conservam
+seu contrato. Não habilite produtor persistente antes de integrar backup e C4
+(ADR 0249).
