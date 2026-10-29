@@ -876,3 +876,11 @@ com filho desconhecido. 276 casos Node distintos (18 novos) e um cenário SDK/
 Rules positivos. Variantes/âncoras/mídia, C4 dos temporários, auditoria física/
 ativação e Estúdio/ciclos continuam necessários. Macro 8/35 (22,9%); somente
 checks dirigidos, com validate integral reservado ao fechamento do bloco.
+
+O [incremento 235](execucao/235-materializacao-das-variantes-de-lore.md) materializa
+geração/variantes/corpos com estados/textos/relações opacas, mapeamento histórico
+e autorização antes do DTO e na escrita. Coleta precede base; geração preparing.
+296 casos Node distintos (20 novos) e uma jornada SDK/Rules positivos em rodadas.
+Bases históricas/âncoras/mídia, C4 dos temporários, auditoria física/ativação e
+Estúdio/ciclos continuam necessários. Macro permanece 8/35 (22,9%); somente
+checks dirigidos, com validate integral no fechamento do bloco.

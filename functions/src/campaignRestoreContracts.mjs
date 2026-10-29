@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
 import {
+  VARIANT_MATERIALIZATION_BYTES,
+  VARIANT_MATERIALIZATION_PHASES,
+} from './campaignRestoreVariantFormat.mjs';
+import {
   BASE_MATERIALIZATION_BYTES,
   BASE_MATERIALIZATION_PHASES,
 } from './campaignRestoreBaseFormat.mjs';
@@ -141,6 +145,7 @@ export function parseJob(v, uid, rid) {
     'originReview',
     'ownMaterialization',
     'baseMaterialization',
+    'variantMaterialization',
   ]);
   if (
     v.schemaVersion !== 1 ||
@@ -522,6 +527,63 @@ export function parseJob(v, uid, rid) {
       }
     }
   }
+  if (v.variantMaterialization !== undefined && v.variantMaterialization !== null) {
+    const m = closed(v.variantMaterialization, [
+      'schemaVersion',
+      'phase',
+      'checkpoint',
+      'processedRows',
+      'totalRows',
+      'written',
+      'cleaned',
+      'audited',
+      'availability',
+      'variants',
+      'omitted',
+      'payload',
+    ]);
+    if (
+      m.schemaVersion !== 1 ||
+      integer(m.variants) !== m.variants ||
+      integer(m.omitted) !== m.omitted ||
+      !VARIANT_MATERIALIZATION_PHASES.includes(m.phase) ||
+      integer(m.checkpoint, 1, v.checkpoint) !== m.checkpoint ||
+      m.totalRows !== v.derivedIndex?.rows ||
+      integer(m.processedRows, 0, m.totalRows) !== m.processedRows ||
+      integer(m.written) !== m.written ||
+      integer(m.cleaned, 0, m.written) !== m.cleaned ||
+      integer(m.audited, 0, m.written) !== m.audited ||
+      !['available', 'unavailable', 'none'].includes(m.availability) ||
+      (m.phase === 'ready' && (m.processedRows !== m.totalRows || m.audited !== m.written))
+    )
+      bad();
+    if (m.phase === 'cleaning') {
+      if (!['cancelling', 'cancelled'].includes(v.state) || m.payload !== null) bad();
+    } else {
+      if (
+        v.state !== 'bytes-verified' ||
+        v.derivedCheck?.phase !== 'verified' ||
+        v.ownMaterialization?.phase !== 'ready' ||
+        v.baseMaterialization?.phase !== 'ready' ||
+        m.cleaned !== 0
+      )
+        bad();
+      closed(m.payload, ['iv', 'tag', 'data']);
+      for (const k of ['iv', 'tag', 'data']) {
+        const max = k === 'iv' ? 12 : k === 'tag' ? 16 : VARIANT_MATERIALIZATION_BYTES,
+          encoded = m.payload[k];
+        if (typeof encoded !== 'string' || encoded.length > 4 * Math.ceil(max / 3)) bad();
+        const bytes = Buffer.from(encoded, 'base64');
+        if (
+          bytes.toString('base64') !== encoded ||
+          bytes.length > max ||
+          (k !== 'data' && bytes.length !== max) ||
+          (k === 'data' && !bytes.length)
+        )
+          bad();
+      }
+    }
+  }
 
   return structuredClone(v);
 }
@@ -590,6 +652,15 @@ export const progress = (l) => ({
     ? {
         baseMaterialization: Object.fromEntries(
           Object.entries(l.job.baseMaterialization).filter(
+            ([k]) => k !== 'payload' && k !== 'checkpoint',
+          ),
+        ),
+      }
+    : {}),
+  ...(l.job.variantMaterialization
+    ? {
+        variantMaterialization: Object.fromEntries(
+          Object.entries(l.job.variantMaterialization).filter(
             ([k]) => k !== 'payload' && k !== 'checkpoint',
           ),
         ),

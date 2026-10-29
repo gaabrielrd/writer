@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 234. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 235. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -226,3 +226,22 @@ coleta não lê prosa nem exige origem disponível. Layouts C4 1–4 permanecem.
 [Plano 234](execucao/234-materializacao-da-base-congelada.md),
 [ADR 0264](../../decisions/0264-campaign-frozen-base-materialization.md) e
 [evidência](../../entregas/2026-10-29-writer-v2-materializacao-da-base-congelada.md).
+
+## Variantes arquivadas — incremento 235
+
+variantWrites/ORDINAL sob JOB usa o journal nativo compartilhado, vinculando
+row do índice e authorizationHash aos alvos e recibo de mesmo nascimento.
+Alvos: campaigns/CID/loreGenerations/GEN e loreVariants/loreVariantBodies.
+A geração determinística nasce após filhos e fica preparing. Controle global
+loreVariantState/ponte ativa serão publicados na futura ativação, não agora.
+
+variantMaterialization cifra estado até 8 KiB no job, sem texto de variante
+ou listas crescentes. IDs históricos derivam de conta/restauração/encarnação/
+anchorKey; este incremento só prepara o vínculo, sem criar essas bases.
+
+Cancel limpa cifra/chave e coleta variantWrites/alvos antes de base/own e
+índices. Consulta limitada por nomes impede apagar geração com filho estranho;
+coleta não lê prosa nem precisa de permissão da origem. Integração dos novos
+temporários ao C4 apropriado continua obrigatória antes de ativação.
+[Plano 235](execucao/235-materializacao-das-variantes-de-lore.md) e
+[ADR 0265](../../decisions/0265-campaign-variant-materialization.md).

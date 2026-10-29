@@ -474,3 +474,14 @@ localizadores cifrados e journal nativo/coleta antes do produtor.
 Variantes/âncoras/mídia, universo autorizado, C4 dos temporários, auditoria física/
 ativação e Estúdio/ciclos permanecem. P3/D/F2-09 e macro 8/35 abertos;
 validate integral no fechamento do bloco, somente commit local.
+
+### Materialização das variantes — incremento 235
+
+[Plano 235](235-materializacao-das-variantes-de-lore.md) e
+[ADR 0265](../../../decisions/0265-campaign-variant-materialization.md)
+preparam geração/corpos nativos preservando texto/estados e relações opacas.
+Guards atuais antes de DTO e na escrita; digest por corpo/journal impede
+continuar com decisões de autorização diferentes. Cancel/coleta precede base.
+Âncoras históricas têm mapeamento, mas ainda precisam ser materializadas.
+C4 dos temporários, mídia, controles/ponte ativos, auditoria física/ativação
+e Estúdio/ciclos continuam abertos. P3/D/F2-09 e macro 8/35 permanecem.

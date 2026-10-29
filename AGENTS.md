@@ -1228,3 +1228,17 @@ Base fica preparing e campanha pending. Journal nativo compartilhado mantém
 wire de own e acrescenta baseWrites; colete base antes de own/índices, sem
 prosa/guard de origem. Antes de apagar pai, confirme filhos no lote; preserve
 órfãos/recriados. C4 1–4 e gate de ativação permanecem (ADR 0264).
+
+Na materialização das variantes restauradas, use geração determinística e
+bodyPlan/variantChunkId/portable-relations-v1 nativos; preserve estados/textos
+e relações opacas. Autorize base ativa, w:anchor da variante e alvos por metadata
+antes do DTO e repita a prova na escrita. Congele digest de autorização por
+corpo/journal; mudanças interrompem avanço. Audite um journal por chamada,
+pois a autorização pode incluir 50 alvos. Checkpoint cifrado até 8 KiB sem
+prosa crescente; até um DTO e três corpos mais overlay por chamada.
+Mapeie âncoras à base ativa somente com testemunha igual/item presente;
+demais bases históricas têm IDs próprios e precisam ser materializadas antes
+da ativação. Geração fica preparing; controle/ponte ativos só na ativação.
+Colete variantWrites/geração antes de base/own/índices, sem chave/prosa/grant,
+preservando pai com filho estrangeiro. Prova parcial não concede acesso;
+C4 adequado/auditoria física continuam gates, layouts 1–4 intactos (ADR 0265).

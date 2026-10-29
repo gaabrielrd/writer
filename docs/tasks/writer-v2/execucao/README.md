@@ -2424,3 +2424,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência](../../../entregas/2026-10-29-writer-v2-materializacao-da-base-congelada.md).
      Variantes/âncoras/mídia, C4, auditoria/ativação e UI/ciclos continuam abertos.
      Macro 8/35; validate integral no fechamento do bloco, somente commit local.
+
+235. [Materialização das variantes de lore](235-materializacao-das-variantes-de-lore.md):
+     geração/corpos nativos, estados/relações opacas e mapeamento histórico.
+     Guard antes de DTO e na escrita, journal/coleta antes da base.
+     296 casos Node distintos e uma jornada SDK/Rules positivos;
+     [evidência](../../../entregas/2026-10-29-writer-v2-materializacao-das-variantes-de-lore.md).
+     Bases históricas/mídia/C4/auditoria/ativação e UI/ciclos continuam abertos.
+     Macro 8/35; validate integral no fechamento do bloco, somente commit local.

@@ -3892,3 +3892,18 @@ ao mesmo recibo/nascimento e à fonte. Cancel/coleta remove base antes de own
 e índices, preservando o pai quando houver filho desconhecido. Marcadores
 portáteis e sourceEvidence servem aos leitores existentes; não concedem acesso.
 Variantes/âncoras/mídia, C4 dos temporários e auditoria/ativação continuam próximos.
+
+## Materialização das variantes arquivadas
+
+A [ADR 0265](decisions/0265-campaign-variant-materialization.md) acrescenta
+campaignRestoreVariantMaterialization/Origin e geração determinística de lore.
+Corpos usam codec portátil/binding nativos; estados/textos e relações opacas
+permanecem. Autorização por testemunhas precede DTO e é repetida na escrita;
+digest congela decisões de alvos durante lotes/auditoria. Checkpoint cifrado
+até 8 KiB não contém texto crescente.
+
+variantWrites registra alvos/birth e é coletado antes de base/own/índices.
+Geração continua preparing e campanha pending. Mapeamento histórico já é
+determinístico, mas suas bases ainda precisam de produtor. Controle global/
+ponte de geração, C4 dos temporários, mídia e auditoria física/ativação são
+gates futuros; o certificado de variantes é parcial e não concede acesso.
