@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 228. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 229. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -59,10 +59,10 @@ não por um fluxo de importação disponível ao usuário.
 
 ## Recursos que ainda não existem
 
-O incremento 227 implementa job/reserva/chave/recibos e upload temporário cifrado,
-com coleta própria v1 antes de ativação, conforme abaixo. Índices duráveis da
-revisão, remapeamento/materialização retomável, mídia exclusiva temporária e
-ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
+Os incrementos 227–229 implementam upload, checkpoint de integridade e índice/
+revisão própria duráveis, com coleta pré-ativação, conforme abaixo. Índices da
+semântica derivada e de origens, remapeamento/materialização retomável, mídia
+exclusiva temporária e ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
 atuais. Cada recurso precisa de dono/campanha/encarnação consultáveis, reserva
 conferida em mutações e cancelamento/coleta versionados antes da primeira gravação.
 
@@ -102,7 +102,25 @@ sem coleção nova. Jobs antigos sem o campo permanecem válidos. Cancelamento
 limpa o estado do campo e remove a chave atomicamente, sem decifrar o estado; a coleta v1 dos
 chunks continua igual. Recibos/testemunhas não guardam ciphertext nem conteúdo.
 Prova interna vale somente integridade e revalida chave emissora atual.
-Ainda faltam índices semânticos duráveis e seu inventário/coleta antes de
-produzir. C4 dos jobs antes de ativação continua obrigatório, sem inserir
+Neste incremento ainda faltavam índices semânticos duráveis; o próprio foi
+acrescentado em 229, abaixo. C4 dos jobs antes de ativação continua obrigatório, sem inserir
 famílias nos layouts antigos. Veja [plano 228](execucao/228-integridade-de-campanhas-com-checkpoint.md)
 e [ADR 0258](../../decisions/0258-campaign-resumable-file-integrity.md).
+
+## Índice e revisão própria — incremento 229
+
+Nova família JOB/reviewRows/ORDINAL, schema 1/kind own: metadata cifrada e
+identityHash, ordinal contíguo e prova nativa no recibo/testemunha. OwnReview
+cifrado permanece no job; reviewIndex schema 1 guarda rows/cleanedRows.
+Cancel limpa estados/chave; coleta até 25 linhas por nome/masks antes dos
+chunks e confirma ausência. Índices/órfãos sem identityHash também são vistos.
+Linha estrangeira, recriada ou divergente interrompe o passo sem avanço.
+Recibos preservados contêm apenas hashes mínimos, não ciphertext/prosa.
+
+Família é server-only nas Rules recursivas existentes. Nenhum layout C4 1–4 foi
+alterado: integrar jobs/índice ao C4 apropriado antes de ativação continua gate.
+Índices derivados/origens ainda exigem seus contratos de reserva/coleta antes
+do produtor; não reinterpretar linhas own como outra etapa.
+[Plano 229](execucao/229-revisao-propria-com-indice-persistido.md),
+[ADR 0259](../../decisions/0259-campaign-persistent-own-semantic-review.md) e
+[evidência](../../entregas/2026-10-29-writer-v2-revisao-propria-persistida-de-campanhas.md).

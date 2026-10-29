@@ -5,6 +5,7 @@ import { assertCampaignNotDeleted } from './campaignDeletionGuard.mjs';
 import { createCampaignRestoreStore, KEY_FIELDS } from './campaignRestoreStore.mjs';
 import { createCampaignRestoreCleanup } from './campaignRestoreCleanup.mjs';
 import { createCampaignRestoreFileReview } from './campaignRestoreFileReview.mjs';
+import { createCampaignRestoreOwnReview } from './campaignRestoreOwnReview.mjs';
 import { seal, open } from './campaignRestoreCrypto.mjs';
 import {
   RESTORE_DOMAIN,
@@ -340,6 +341,14 @@ export function createCampaignRestoreTransferService(options) {
       store,
       keys: options.keys,
       openSource: (uid, input) => service.openCampaignRestoreSource(uid, input),
+    }),
+  );
+  Object.assign(
+    service,
+    createCampaignRestoreOwnReview({
+      store,
+      openSource: (uid, input) => service.openCampaignRestoreSource(uid, input),
+      fileIntegrity: (uid, input) => service.getCampaignRestoreFileIntegrity(uid, input),
     }),
   );
   return service;

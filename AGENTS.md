@@ -1167,3 +1167,14 @@ cancelar. Após leituras, reconfira CAS/job antes de gravar; replay mantém reci
 original. Prova interna revalida a chave emissora e vale somente integridade,
 sem grant/semântica/origem ativa. Índices semânticos futuros exigem inventário/
 coleta antes do produtor e C4 próprio antes de ativação (ADR 0258).
+
+Na revisão própria persistente de campanhas, reutilize campaignBackupOwnChecks
+para metadata/envelope/vínculos e exija integridade concluída. reviewRows v1/kind
+own contém metadata cifrada por conta/encarnação/ordinal; confira nascimento
+com recibo/testemunha e metadataHash, cipherHash e identidade antes de uso.
+Autentique a página inteira antes de lookup limitado a 2; não escolha duplicata.
+Indexe até 25 frames mais leitura limitada do DTO concluído (até 4 MiB/64 partes);
+não guarde partes no checkpoint nem reduza esse suporte. Confira até 25 linhas
+por passo. Cancel limpa estados/chave; colete ordinais por masks/nome antes de
+chunks, inclusive órfãos sem índice. Preserve schema/contadores e checkpoints
+anteriores; semântica própria não concede derivado/origem/ativação (ADR 0259).

@@ -1,5 +1,7 @@
 import test, { before, beforeEach, after } from 'node:test';
 import { generateKeyPairSync } from 'node:crypto';
+import { createCampaignSessionsService } from '../../functions/src/campaignSessions.mjs';
+import { createCampaignPreparationService } from '../../functions/src/campaignPreparation.mjs';
 import { createCampaignBackupFileService } from '../../functions/src/campaignBackupFile.mjs';
 import { encodeCampaignBackup } from '../../functions/src/campaignBackupContainer.mjs';
 import assert from 'node:assert/strict';
@@ -204,13 +206,52 @@ test('real cancellation revokes the key, paginates metadata cleanup, preserves n
   );
 });
 
-test('real signed campaign integrity resumes encrypted frames across services and revalidates its issuance key', async () => {
+test('real signed campaign integrity and own semantics resume encrypted steps with native joins, CAS, cancellation and revocation', async () => {
   const pair = generateKeyPairSync('ed25519'),
     keys = [{ id: 'restore-review-sdk', state: 'active', publicKey: pair.publicKey }],
     native = await createStudioService({ db: admin }).createCampaign(uid, {
       operationId: 'campaign-review-sdk-original',
       title: 'Private original',
     });
+  const sessions = createCampaignSessionsService({ db: admin }),
+    preparation = createCampaignPreparationService({ db: admin }),
+    scope = {
+      campaignId: native.id,
+      campaignToken: (await sessions.listCampaignSessions(uid, { campaignId: native.id }))
+        .campaignToken,
+    };
+  await sessions.saveCampaignSession(uid, {
+    ...scope,
+    sessionId: 'sdk-own-session-0001',
+    operationId: 'sdk-own-session-0001',
+    expectedRevision: 0,
+    title: 'PRIVATE SESSION',
+    summary: 'PRIVATE SUMMARY',
+    status: 'planned',
+    scheduledDate: null,
+  });
+  await preparation.saveCampaignPreparationItem(uid, {
+    ...scope,
+    itemId: 'sdk-own-clue-0001',
+    operationId: 'sdk-own-clue-0001',
+    expectedRevision: 0,
+    expectedItemCollectionRevision: 0,
+    kind: 'clue',
+    title: 'PRIVATE CLUE',
+    status: 'pending',
+    body: { text: 'PRIVATE CLUE', condition: 'PRIVATE CONDITION', recipient: 'PRIVATE RECIPIENT' },
+  });
+  await preparation.addCampaignSessionPreparationLink(uid, {
+    ...scope,
+    sessionId: 'sdk-own-session-0001',
+    expectedSessionRevision: 1,
+    linkId: 'sdk-own-link-0001',
+    operationId: 'sdk-own-link-0001',
+    expectedRevision: 0,
+    expectedLinkCollectionRevision: 0,
+    itemId: 'sdk-own-clue-0001',
+    expectedItemRevision: 1,
+  });
   const frames = [];
   await createCampaignBackupFileService({
     db: admin,
@@ -283,6 +324,50 @@ test('real signed campaign integrity resumes encrypted frames across services an
       doc(env.authenticatedContext(uid).firestore(), 'users/' + uid + '/campaignRestores/' + rid),
     ),
   );
+  while ((!p.ownReview || p.ownReview.phase === 'indexing') && n < 100)
+    p = (
+      await api.advanceCampaignRestoreOwnReview(
+        uid,
+        mut(p, 'campaign-sdk-own-index-' + n++, { limit: 3 }),
+      )
+    ).progress;
+  assert.equal(p.ownReview.phase, 'checking');
+  const race = await Promise.allSettled([
+    api.advanceCampaignRestoreOwnReview(uid, mut(p, 'campaign-sdk-own-race-a', { limit: 1 })),
+    api.advanceCampaignRestoreOwnReview(uid, mut(p, 'campaign-sdk-own-race-b', { limit: 1 })),
+  ]);
+  assert.equal(race.filter((r) => r.status === 'fulfilled').length, 1);
+  assert.equal(
+    race.find((r) => r.status === 'rejected').reason.details.reason,
+    'checkpoint-conflict',
+  );
+  api = createCampaignRestoreTransferService({ db: admin, keys, now: () => 6000 });
+  p = (await api.getCampaignRestore(uid, { restoreId: rid })).progress;
+  while (p.ownReview.phase === 'checking' && n < 150)
+    p = (
+      await api.advanceCampaignRestoreOwnReview(
+        uid,
+        mut(p, 'campaign-sdk-own-check-' + n++, { limit: 3 }),
+      )
+    ).progress;
+  const own = await api.getCampaignRestoreOwnSemantics(uid, {
+    restoreId: rid,
+    jobToken: p.jobToken,
+  });
+  assert.equal(own.validation, 'campaign-own-semantics-only');
+  assert.equal(own.own.sessionLinks, 1);
+  assert.equal(own.own.preparationBodies, 1);
+  assert.equal(own.own.sessions, 1);
+  const rowPath = 'users/' + uid + '/campaignRestores/' + rid + '/reviewRows/' + chunkId(0);
+  await assertFails(getDoc(doc(env.authenticatedContext(uid).firestore(), rowPath)));
+  await assertFails(
+    getDocs(
+      collection(
+        env.authenticatedContext(uid).firestore(),
+        'users/' + uid + '/campaignRestores/' + rid + '/reviewRows',
+      ),
+    ),
+  );
   keys[0].state = 'revoked';
   await assert.rejects(
     api.getCampaignRestoreFileIntegrity(uid, { restoreId: rid, jobToken: p.jobToken }),
@@ -299,6 +384,33 @@ test('real signed campaign integrity resumes encrypted frames across services an
   );
   assert.deepEqual((await api.advanceCampaignRestoreFileReview(uid, q)).receipt, first.receipt);
   assert.equal(cancelled.progress.state, 'cancelling');
+  p = cancelled.progress;
+  p = (
+    await api.advanceCampaignRestoreCleanup(
+      uid,
+      mut(p, 'campaign-sdk-own-clean-first', { limit: 2 }),
+    )
+  ).progress;
+  assert.equal(p.reviewIndex.cleanedRows, 2);
+  assert.equal(p.cleanedChunks, 0);
+  while (p.state !== 'cancelled' && n < 200)
+    p = (
+      await api.advanceCampaignRestoreCleanup(
+        uid,
+        mut(p, 'campaign-sdk-own-clean-' + n++, { limit: 2 }),
+      )
+    ).progress;
+  assert.equal(p.state, 'cancelled');
+  assert.equal(p.reviewIndex.cleanedRows, p.reviewIndex.rows);
+  assert.equal(
+    (await admin.collection('users/' + uid + '/campaignRestores/' + rid + '/reviewRows').get())
+      .empty,
+    true,
+  );
+  assert.equal(
+    (await admin.doc('users/' + uid + '/campaignRestores/' + rid).get()).data().ownReview,
+    null,
+  );
 });
 test('real competing file reviewers commit a single checkpoint and preserve cancellation during a pending read', async () => {
   // A bounded prefix needs no attestation yet; an independently encoded header is enough

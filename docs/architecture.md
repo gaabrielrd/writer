@@ -3820,3 +3820,15 @@ após ler até 25 frames e conserva recibos nativos. Cancel limpa estado/chave a
 da coleta de chunks; nenhum novo path. A prova interna reconfere chave emissora
 e comprova somente integridade/assinatura. Semântica/origens duráveis, produtores
 de índices com coleta, materialização, C4 de ativação e UI continuam pendentes.
+
+## Revisão própria persistida de campanhas
+
+A [ADR 0259](decisions/0259-campaign-persistent-own-semantic-review.md) compartilha
+as regras em campaignBackupOwnChecks e acrescenta campaignRestoreOwnReview.
+Após integridade, indexa frames e confere páginas com CAS/recibos nativos.
+campaignRestoreReviewIndex cifra somente metadata de vínculos em reviewRows,
+com ordinal, identityHash, metadataHash e birth do recibo. Consulta de igualdade
+limitada não aceita duplicatas; páginas são autenticadas antes de dependências.
+O parser ainda aceita um DTO de 4 MiB, sem corpo no checkpoint/índice. Cancel
+revoga chave/estados; coleta metadata do índice antes dos chunks. Sem endpoint
+público ou ativação; derivados/origens persistidos e C4 da ativação continuam.

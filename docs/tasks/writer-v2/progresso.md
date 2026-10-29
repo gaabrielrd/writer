@@ -829,3 +829,11 @@ e cancelamento atômico. Máquina comum preserva o revisor completo. 320 testes
 dirigidos (36 novos) e cinco casos SDK/Rules (dois novos) positivos. Índices
 semânticos/autorização de origens persistidos, materialização/ativação/C4 dos
 jobs e Estúdio/ciclos continuam pendentes; macro 8/35, somente commit local.
+
+O [incremento 229](execucao/229-revisao-propria-com-indice-persistido.md) implementa
+índice próprio cifrado/autenticado e revisão semântica própria retomável, com
+coleta antes dos chunks. Prova equivalente ao revisor completo, inclusive DTO
+acima de 2 MiB, vínculos e legado v1. 271 testes dirigidos (21 novos) e cinco
+SDK/Rules positivos; uma jornada SDK ampliada com vínculos/CAS/coleta reais.
+Derivados/origens persistidos, materialização/ativação/C4 e UI/ciclos continuam
+necessários; macro 8/35 (22,9%), somente commit local.

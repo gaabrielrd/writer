@@ -121,7 +121,7 @@ export const JOB_FIELDS = [
   'updatedAt',
 ];
 export function parseJob(v, uid, rid) {
-  closed(v, JOB_FIELDS, ['fileReview']);
+  closed(v, JOB_FIELDS, ['fileReview', 'ownReview', 'reviewIndex']);
   if (
     v.schemaVersion !== 1 ||
     v.hashAlgorithm !== RESTORE_HASH_ALGORITHM ||
@@ -184,7 +184,7 @@ export function parseJob(v, uid, rid) {
       v.state !== 'bytes-verified' ||
       f.schemaVersion !== 1 ||
       !['running', 'verified'].includes(f.status) ||
-      f.checkpoint !== v.checkpoint ||
+      integer(f.checkpoint, 1, v.checkpoint) !== f.checkpoint ||
       integer(f.records, 1, 0xffffffff) < f.units ||
       integer(f.records) < f.witnesses ||
       integer(f.offset, 16, v.source.byteLength) !== f.offset ||
@@ -197,6 +197,59 @@ export function parseJob(v, uid, rid) {
     for (const k of ['iv', 'tag', 'data']) {
       const max = k === 'iv' ? 12 : k === 'tag' ? 16 : 65536;
       const encoded = f.payload[k];
+      if (typeof encoded !== 'string' || encoded.length > 4 * Math.ceil(max / 3)) bad();
+      const b = Buffer.from(encoded, 'base64');
+      if (
+        b.toString('base64') !== encoded ||
+        b.length > max ||
+        (k !== 'data' && b.length !== max) ||
+        (k === 'data' && !b.length)
+      )
+        bad();
+    }
+  }
+  if (v.reviewIndex !== undefined) {
+    const r = closed(v.reviewIndex, ['schemaVersion', 'rows', 'cleanedRows']);
+    if (
+      r.schemaVersion !== 1 ||
+      integer(r.rows, 0, 0xffffffff) < integer(r.cleanedRows) ||
+      (!['cancelling', 'cancelled'].includes(v.state) && r.cleanedRows !== 0) ||
+      (v.state === 'cancelled' && r.cleanedRows !== r.rows)
+    )
+      bad();
+  }
+  if (v.ownReview !== undefined && v.ownReview !== null) {
+    const r = closed(v.ownReview, [
+      'schemaVersion',
+      'phase',
+      'checkpoint',
+      'records',
+      'offset',
+      'rows',
+      'processed',
+      'payload',
+    ]);
+    if (
+      r.schemaVersion !== 1 ||
+      v.state !== 'bytes-verified' ||
+      v.fileReview?.status !== 'verified' ||
+      !v.reviewIndex ||
+      !['indexing', 'checking', 'verified'].includes(r.phase) ||
+      integer(r.checkpoint, 1, v.checkpoint) !== r.checkpoint ||
+      integer(r.records, 1, 0xffffffff) !== r.records ||
+      integer(r.offset, 16, v.source.byteLength) !== r.offset ||
+      integer(r.rows) !== v.reviewIndex.rows ||
+      integer(r.processed) > r.rows ||
+      (r.phase === 'indexing'
+        ? r.processed !== 0
+        : r.offset !== v.source.byteLength || r.rows < 2) ||
+      (r.phase === 'verified' && r.processed !== r.rows)
+    )
+      bad();
+    closed(r.payload, ['iv', 'tag', 'data']);
+    for (const k of ['iv', 'tag', 'data']) {
+      const max = k === 'iv' ? 12 : k === 'tag' ? 16 : 65536,
+        encoded = r.payload[k];
       if (typeof encoded !== 'string' || encoded.length > 4 * Math.ceil(max / 3)) bad();
       const b = Buffer.from(encoded, 'base64');
       if (
@@ -230,6 +283,14 @@ export const progress = (l) => ({
         ),
       }
     : {}),
+  ...(l.job.ownReview
+    ? {
+        ownReview: Object.fromEntries(
+          Object.entries(l.job.ownReview).filter(([k]) => k !== 'payload' && k !== 'checkpoint'),
+        ),
+      }
+    : {}),
+  ...(l.job.reviewIndex ? { reviewIndex: structuredClone(l.job.reviewIndex) } : {}),
   createdAt: l.job.createdAt,
   updatedAt: l.job.updatedAt,
 });

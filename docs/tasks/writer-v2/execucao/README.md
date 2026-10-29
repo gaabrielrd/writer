@@ -2375,3 +2375,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-integridade-retomavel-de-campanhas.md).
      Semântica/origens persistidas, materialização/ativação/C4 dos jobs e UI/ciclos
      continuam abertos. Macro 8/35; sem endpoint público, somente commit local.
+
+229. [Revisão própria com índice persistido](229-revisao-propria-com-indice-persistido.md):
+     checks compartilhados, índice cifrado/autenticado com coleta antes de chunks
+     e revisão própria em passos. DTO até 4 MiB preservado sem corpo no checkpoint.
+     271 testes dirigidos (21 novos) e cinco SDK/Rules, com uma jornada ampliada,
+     positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-revisao-propria-persistida-de-campanhas.md).
+     Derivados/origens persistidos, materialização/ativação/C4 dos jobs/índice e
+     UI/ciclos continuam abertos. Macro 8/35; somente commit local.

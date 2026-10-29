@@ -120,7 +120,15 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
       v.campaignId !== l.job.campaignId ||
       v.startFingerprint !== l.job.startFingerprint ||
       v.operationId !== oid ||
-      !['start', 'append', 'cancel', 'cleanup', 'review-file'].includes(v.action)
+      ![
+        'start',
+        'append',
+        'cancel',
+        'cleanup',
+        'review-file',
+        'review-own-index',
+        'review-own-check',
+      ].includes(v.action)
     )
       bad();
     hash(v.requestHash);
@@ -242,7 +250,7 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
     progress: progress(l),
   });
   async function empty(tx, uid, rid) {
-    for (const name of ['chunks', 'receipts'])
+    for (const name of ['chunks', 'receipts', 'reviewRows'])
       if (
         (
           await tx.get(

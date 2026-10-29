@@ -404,3 +404,14 @@ em 320 testes dirigidos e cinco SDK/Rules. Não é revisão semântica nem grant
 índices semânticos duráveis e sua coleta, revisão própria/derivada/origens,
 materialização/ativação/C4 dos jobs e Estúdio/ciclos continuam necessários.
 P3/D/F2-09 e macro 8/35 continuam abertos; full validate no fechamento do bloco.
+
+### Índice e semântica própria persistidos — incremento 229
+
+[Plano 229](229-revisao-propria-com-indice-persistido.md) e
+[ADR 0259](../../../decisions/0259-campaign-persistent-own-semantic-review.md)
+reutilizam checks próprios e persistem índice cifrado de metadata com prova
+nativa/recibo. Indexação e conferência retomáveis, DTO 4 MiB e coleta antes de
+chunks. 271 testes dirigidos e cinco SDK/Rules positivos, com jornada real
+ampliada de vínculos/CAS/retomada/coleta. Semântica derivada/origens persistidas,
+materialização/ativação/C4 dos jobs/índice e Estúdio/ciclos continuam necessários.
+P3/D/F2-09 e macro 8/35 abertos; full validate no fechamento do bloco.
