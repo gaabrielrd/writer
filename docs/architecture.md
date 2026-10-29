@@ -3571,3 +3571,14 @@ pai com manifesto idêntico. Fluxo cliente confere SHA/tamanho e interrupções
 sem montar o campo completo. Prova frozen-field-bytes-only não certifica base
 ou arquivo inteiro. Inventário físico, atestado servidor, variantes/mídia,
 restauração e UI continuam pendentes; sem novos produtores persistentes.
+
+## Inventário físico e auditoria dos campos congelados
+
+A [ADR 0237](decisions/0237-campaign-frozen-physical-inventory.md) acrescenta
+leitura limitada de bodies/links/loreReferences/images e snapshot. Conferência
+nos dois sentidos detecta partes ausentes, órfãos e pins sem bloco; revogação
+mantém omissão explícita sem prosa/manifests. Auditoria servidor acumula SHA/
+bytes e provas nativas por campo sem concatenar texto. Leitor/auditor compartilham
+partes e validadores sem ciclo de imports. Índice local habilita somente a chave
+lógica de imagem sob o mapa excluído. Segunda passagem/reconciliação completas,
+Storage/binários, variantes/legadas, atestado/restauração/UI seguem pendentes.

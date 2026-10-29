@@ -630,3 +630,15 @@ SHA/tamanho integral e interrupções, com prova frozen-field-bytes-only.
 Inventário físico completo/órfãos, variantes/legadas/mídia, manifesto/atestado,
 arquivo/restauração/UI/ciclo P3/D/F2-09 continuam abertos; macro **8/35**.
 Validate integral no fechamento do grande bloco; somente commit local, sem CI.
+
+## 2026-10-29 — inventário físico e auditoria servidor da base em P3
+
+O [plano 207](execucao/207-inventario-fisico-e-auditoria-da-base.md) acrescenta
+quatro famílias físicas e snapshot, com conferência de corpos/manifests,
+links/ledger e imagem/bloco/uso. SHA/tamanho integrais são conferidos no servidor
+por item, sem montar texto completo. Revogadas permanecem indisponíveis.
+26 testes Node novos, 31 regressões e 29 Vitest dirigidos positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-inventario-fisico-da-base.md).
+Segunda passagem/reconciliação conjuntas, variantes/legadas/mídia, manifesto/
+atestado, arquivo/restauração/UI/ciclo P3/D/F2-09 continuam abertos; macro **8/35**.
+Somente commit local, sem CI. Validate integral no fechamento do grande bloco.

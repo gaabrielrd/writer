@@ -179,3 +179,13 @@ autorização individual de fichas, partes limitadas e fluxo SHA no cliente.
 inventário físico completo/cobertura/órfãos, variantes/legadas, imagens e
 manifesto/atestado servidor seguem obrigatórios. Arquivo/restauração/UI/ciclo
 P3/D/F2-09 continuam abertos; macro 8/35. Somente commit local.
+
+## Passos 3–4 — inventário físico e auditoria por item
+
+O [plano 207](207-inventario-fisico-e-auditoria-da-base.md) inventaria quatro
+famílias físicas e lê snapshot, com provas de vínculos e auditoria servidor dos
+bytes de cada campo. Detecta corpos/pins ausentes e órfãos em passes opostos.
+26 testes Node novos, 31 regressões e 29 Vitest positivos. Ainda é necessário
+compor segunda passagem/reconciliação integrais, variantes/legadas/bodyBindings,
+binários/Storage e atestado nativo antes do arquivo/restauração/UI/ciclo P3.
+Não fecha passos 3–4 nem P3/D/F2-09; macro 8/35, somente commit local.

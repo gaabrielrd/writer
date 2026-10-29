@@ -1612,6 +1612,16 @@
       "indexes": []
     },
     {
+      "collectionGroup": "items",
+      "fieldPath": "image.imageKey",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
       "collectionGroup": "assistedSessions",
       "fieldPath": "expiresAt",
       "indexes": [

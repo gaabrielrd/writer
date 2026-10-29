@@ -17,7 +17,7 @@ import {
   CAMPAIGN_BASE_CHUNK_BYTES as CHUNK,
   CAMPAIGN_BASE_PAGE_ITEMS as PAGE,
 } from './campaignBackupBaseDefinitions.mjs';
-import { baseBodyKey } from './campaignBaseContracts.mjs';
+import { readCampaignBackupBaseBody } from './campaignBackupBaseBodies.mjs';
 import { digest, workClosed, workFail } from './workProgressContracts.mjs';
 
 const invalid = () => workFail('invalid-argument', 'Pedido de recurso congelado inválido.');
@@ -188,53 +188,17 @@ export function createCampaignBackupBaseReadService({ db }) {
           );
         const manifest = content.fields.find((f) => f.field === c.field);
         if (!manifest || c.index >= manifest.chunkCount) invalid();
-        const id = baseBodyKey(manifest.bodySourceKey, c.field, c.index),
-          ref = db.doc(c.path + '/bodies/' + id),
-          h = await baseMasked(tx, ref, ['sourceKey', 'field', 'index']);
-        if (
-          !h.snapshot.exists ||
-          h.value.sourceKey !== manifest.bodySourceKey ||
-          h.value.field !== c.field ||
-          h.value.index !== c.index
-        )
-          baseInconsistent();
-        const body = await baseMasked(tx, ref, ['content']);
-        if (digest(h.native) !== digest(body.native)) baseChanged();
-        const value = body.value?.content;
-        if (typeof value !== 'string') baseInconsistent();
-        const bytes = Buffer.from(value, 'utf8');
-        if (
-          bytes.toString('utf8') !== value ||
-          bytes.length > CHUNK ||
-          (bytes.length === 0 &&
-            !(manifest.bytes === 0 && manifest.chunkCount === 1 && c.index === 0)) ||
-          bytes.length > manifest.bytes
-        )
-          baseInconsistent();
-        if (
-          manifest.chunkCount === 1 &&
-          (bytes.length !== manifest.bytes || digest(value) !== manifest.sha256)
-        )
-          baseInconsistent();
+        const body = await readCampaignBackupBaseBody(c, manifest, c.index);
         return {
           ...envelope(c, head),
           field: c.field,
           index: c.index,
-          byteLength: bytes.length,
+          byteLength: body.bytes.length,
           fieldBytes: manifest.bytes,
           fieldChunkCount: manifest.chunkCount,
           fieldHash: manifest.sha256,
-          bodyToken: digest({
-            version: 1,
-            kind: 'campaign-backup-frozen-body',
-            uid: c.uid,
-            ...c.anchor,
-            bodySourceKey: manifest.bodySourceKey,
-            field: c.field,
-            index: c.index,
-            native: h.native,
-          }),
-          chunkBase64: bytes.toString('base64'),
+          bodyToken: body.bodyToken,
+          chunkBase64: body.bytes.toString('base64'),
         };
       });
     },

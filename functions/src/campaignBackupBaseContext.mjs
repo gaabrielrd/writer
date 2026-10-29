@@ -195,5 +195,15 @@ export async function campaignBackupBaseContext(tx, input) {
     proven.set(key, result);
     return result;
   }
-  return { ...input, source, anchor, path, base: base.value, head, inspect, tx };
+  return {
+    ...input,
+    source,
+    anchor,
+    path,
+    base: base.value,
+    baseIdentity: base.native,
+    head,
+    inspect,
+    tx,
+  };
 }

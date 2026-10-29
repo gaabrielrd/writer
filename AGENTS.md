@@ -1017,3 +1017,10 @@ Conserve campos literais e compartilhamento content apenas cena/principal com
 manifesto idêntico. Confira SHA/tamanho integral no fluxo cliente; essa prova
 não substitui inventário físico/atestado servidor nem concede acesso. Sem
 produtores persistentes antes de ampliar C4 e a procedência (ADR 0236).
+
+No inventário físico de bases, confira corpos/manifests e imagens/blocos nos dois
+sentidos; ledger de lore exige link testemunha. Faça SHA integral no servidor por
+campo sem concatenar o texto, preservando partes e provas nativas. Registre
+indisponibilidade sem manifests/prosa revogados e reconcilie todas as famílias
+antes de atestar. Indexe só image.imageKey sob o mapa excluído; não indexe sua
+prosa nem confunda índice local com ativado (ADR 0237).

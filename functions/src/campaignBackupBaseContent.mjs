@@ -1,4 +1,4 @@
-import { validateCapturedFields, validItem } from './campaignBaseRead.mjs';
+import { validateCapturedFields, validItem } from './campaignBaseValidation.mjs';
 import { loreRelationOrigin } from './campaignLoreOrigin.mjs';
 import { digest } from './workProgressContracts.mjs';
 import {
@@ -49,7 +49,7 @@ function fieldDTO(f) {
     bodySourceKey: f.bodySourceKey,
   };
 }
-async function fields(c, item, h) {
+export async function campaignBackupBaseFields(c, item, h) {
   let manifests;
   try {
     manifests = validateCapturedFields(item);
@@ -171,7 +171,7 @@ export async function campaignBackupBaseContent(c, id, expected) {
     if (enums[key] && !enums[key].includes(v[key])) baseInconsistent();
   }
   if (v.kind === 'block' && v.role !== v.origin.role) baseInconsistent();
-  dto.fields = await fields(c, v, h);
+  dto.fields = await campaignBackupBaseFields(c, v, h);
   dto.structured = await structured(c, v);
   if (v.image != null) {
     if (!baseHash(v.image.imageKey)) baseInconsistent();

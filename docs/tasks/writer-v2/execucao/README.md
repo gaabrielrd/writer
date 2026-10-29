@@ -2217,3 +2217,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      11 regressões e 29 Vitest positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-textos-da-base-congelada.md).
      Inventário físico completo/variantes/legadas/mídia, manifesto/atestado,
      arquivo/restauração/UI/ciclo P3/D/F2-09 pendentes; macro 8/35, commit local.
+
+207. [Inventário físico e auditoria da base](207-inventario-fisico-e-auditoria-da-base.md):
+     quatro famílias e snapshot, provas de vínculos nos dois sentidos e auditoria
+     SHA/bytes servidor por campo. 26 Node novos, 31 regressões e 29 Vitest
+     positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-inventario-fisico-da-base.md).
+     Segunda passagem/reconciliação integrais, variantes/legadas/binários,
+     atestado/arquivo/restauração/UI/ciclo P3/D/F2-09 pendentes; macro 8/35.
