@@ -1,5 +1,12 @@
 # W2-F2-09 — Integrar lore, importação e portabilidade
 
+**Snapshot local de 2026-10-29:** L/I/A/P1 e implementação técnica P2 presentes;
+[auditoria técnica P2](../execucao/200-auditoria-tecnica-da-portabilidade-de-aventuras.md)
+conferiu os nove passos, conteúdo, recuperação e ciclo/exclusão. Validate
+integral de 8d7bb5a verde. Política final das perguntas ligada a 199, P3/D e
+os aceites gerais permanecem abertos. Não houve CI ou implantação.
+A referência de 2026-10-21 abaixo é histórica, sem substituir este estado atual.
+
 **Estado em 2026-10-21:** L concluído tecnicamente em `087bced`, com CI geral/regras
 verdes, sob [contrato fechado](../execucao/26-lore-proprio-de-aventura.md). Falhas e
 correções estão preservadas na [entrega L](../../../entregas/2026-10-21-writer-v2-lore-proprio-de-aventura.md).

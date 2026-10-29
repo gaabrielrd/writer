@@ -6,7 +6,12 @@ integral C4 em `0006a66`, com CI/regras verdes.
 F2-08 S1/c95253a e S2A/d9b7988 concluídos tecnicamente, com CI/regras verdes.
 S2B concluído tecnicamente em `56cbb06`, com CI/regras verdes. S3 implementado e
 validado localmente em `a9b588a`; CI geral falhou por timeouts visuais e a correção
-passou na validação dirigida, CI geral e regras em `e924890`. F2-09 L validado localmente, com CI do novo incremento pendente; ver [sequência detalhada](../execucao/25-lore-importacao-e-portabilidade.md).
+passou na validação dirigida, CI geral e regras em `e924890`.
+No snapshot local de 2026-10-29, F2-09 reúne L/I/A/P1 e implementação técnica P2,
+com [auditoria P2](../execucao/200-auditoria-tecnica-da-portabilidade-de-aventuras.md)
+e validate integral local verdes. Política de perguntas de 199, P3/D e F2-09
+continuam abertos. Durante o desenvolvimento, somente commits locais e nenhuma CI;
+ver [sequência detalhada](../execucao/25-lore-importacao-e-portabilidade.md).
 Ver [contrato S3](../execucao/24-pistas-missoes-e-pendencias.md) e
 [entrega](../../../entregas/2026-10-21-writer-v2-pistas-e-missoes.md).
 Condições humanas/comerciais conservam seus aceites.

@@ -1,6 +1,6 @@
 # Progresso do Writer V2
 
-**Snapshot local:** 2026-10-29, branch `codex/writer-v2`. Geração/restauração e exclusão de aventuras integradas localmente, com ciclo rico restaurado e validate integral 198–199 verdes. L/I/A/P1 implementados; política final das perguntas, auditoria de P2, P3/D e F2-09 continuam abertas. Durante o desenvolvimento, somente commits locais, sem acompanhamento de CI.
+**Snapshot local:** 2026-10-29, branch `codex/writer-v2`. Geração/restauração e exclusão de aventuras integradas localmente, com ciclo rico restaurado e validate integral 198–199 verdes. L/I/A/P1 e implementação técnica P2 presentes; a auditoria técnica P2 foi concluída. Política final das perguntas, P3/D e F2-09 continuam abertas. Durante o desenvolvimento, somente commits locais, sem acompanhamento de CI.
 Este relatório conta tarefas do plano, sem atribuir o mesmo esforço a cada tarefa.
 
 | Fase                          | Total de tarefas | Implementadas | Restantes |
@@ -543,3 +543,19 @@ as rotas já estão em 38c6673, com 36 jornadas Chromium na integração anterio
 Plano 199 conserva a confirmação pendente da política de perguntas; P2 mantém
 auditoria final, e P3/D/F2-09 continuam obrigatórios. Macro 8/35 e gates
 humanos/comerciais inalterados. Somente commits locais, sem CI/remoto/deploy.
+
+## Auditoria técnica de P2 — 2026-10-29
+
+A [auditoria 200](execucao/200-auditoria-tecnica-da-portabilidade-de-aventuras.md)
+concluiu o cruzamento dos nove passos e todos os grupos de conteúdo do plano 147.
+Há implementação e evidência técnica local para captura/restauração/recuperação/
+UI e exclusão, com limites de plataforma e operação explícitos.
+
+Nenhuma produção ou teste foi alterado; o validate integral de 8d7bb5a e relatórios
+originais continuam a fonte das regressões, sem nova rodada atribuída à auditoria.
+O probe de limites conferiu comprimentos medidos de F1, não importação dos PDFs.
+
+Plano 199 aguarda a política final das perguntas; P3/D/F2-09 continuam obrigatórios
+e os aceites humanos/comerciais seguem abertos. A contagem permanece 8/35.
+Próxima implementação: portabilidade privada de campanhas com edição congelada,
+procedência comprovada e próprios/derivados tratados conforme acesso atual.

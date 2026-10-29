@@ -2164,3 +2164,10 @@ tipos/build/smoke e cobertura preservada. Ciclo rico/vazio usa serviços reais
 sobre dados/portas de teste, com origem, segunda cópia, irmã e campanha preservadas.
 199 aguarda a política final das perguntas; auditoria final P2, P3/D/F2-09,
 macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
+
+200. [Auditoria técnica integral de P2](200-auditoria-tecnica-da-portabilidade-de-aventuras.md):
+     nove passos e todos os grupos de conteúdo cruzados com fonte/testes/
+     artefatos atuais em 8d7bb5a. Implementação v1 verificada localmente;
+     limites/credenciais/produção separados das provas. Política final de 199,
+     P3/D/F2-09 e gates gerais pendentes; macro 8/35. Somente documentação,
+     sem repetir a suíte integral por ausência de mudança de comportamento.

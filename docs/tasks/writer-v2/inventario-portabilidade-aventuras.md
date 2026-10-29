@@ -142,3 +142,23 @@ prévia e recuperação explícita idempotente para Sem parte, sem criar agrupad
 registra 35 Vitest distintos, 30 Node/SDK e nove verificações Chromium.
 Falta exclusão completa de aventura antes de P2; P3/D/F2-09 e macro 8/35 continuam
 abertos. Validate integral no fechamento desse bloco; sem operação remota.
+
+## Auditoria técnica integral — 200, 2026-10-29
+
+A [auditoria atual](execucao/200-auditoria-tecnica-da-portabilidade-de-aventuras.md)
+cruzou os nove passos do plano 147 com serializers/validadores, serviços, testes
+e relatórios originais. Fonte, todas as famílias, oito seções, histórico/draft,
+mídia/persona/universo, remap/revisão/recuperação/cleanup/UI e exclusão possuem
+implementação e provas locais. O caso de persona de cena usa seu próprio head;
+recontagem/última página não substituem a segunda passagem integral.
+
+Validate de 8d7bb5a verde: 4.890 frontend, 94 scripts e 3.989 Functions.
+Relatórios nativos 197/198 e as 36 jornadas de 38c6673 foram conferidos, com
+sobreposições e auth/doubles distinguidos. A inspeção de limites aceitou apenas
+os comprimentos medidos de F1; não simulou importar/restaurar os PDFs reais.
+
+A implementação técnica P2 atende o escopo v1 auditado. Plano 199 conserva a
+decisão final de retenção das perguntas; P3/D/F2-09 e gates gerais não fecham
+por essa conclusão. Próximo trabalho é o contrato de portabilidade de campanha,
+sem transportar chat/grants nem converter derivação revogada em nota própria.
+Macro 8/35 inalterada; somente commit local.

@@ -52,7 +52,8 @@ consulta após a raiz desaparecer. Os seis callables estão ligados localmente
 [evidência parcial da integração](docs/entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md).
 Ciclo rico restaurado e validação integral do bloco 198–199 passaram localmente;
 veja o [fechamento técnico](docs/entregas/2026-10-29-writer-v2-validacao-integral-das-aventuras.md).
-A política final das perguntas e a auditoria restante de P2 continuam pendentes.
+A [auditoria técnica de P2](docs/tasks/writer-v2/execucao/200-auditoria-tecnica-da-portabilidade-de-aventuras.md)
+foi concluída localmente; a política final das perguntas e P3/D continuam pendentes.
 Consulte a
 [evidência parcial](docs/entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
 A portabilidade completa continua aberta. Não houve implantação.

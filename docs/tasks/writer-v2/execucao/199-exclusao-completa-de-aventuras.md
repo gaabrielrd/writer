@@ -589,3 +589,15 @@ foi comprovada, não decidida novamente. Plano 199 permanece aberto apenas quant
 a essa definição. P2 requer auditoria final; P3/D/F2-09 e gates gerais permanecem
 abertos, macro 8/35. Próximo passo independente: auditar os aceites integrais
 de P2 no plano 147, com evidências de 148–199, antes de iniciar P3.
+
+## Auditoria de P2 concluída — 200
+
+A [auditoria técnica](200-auditoria-tecnica-da-portabilidade-de-aventuras.md)
+conferiu os nove passos de P2 e atualizou o inventário/matriz. Não identificou
+nova lacuna técnica pelo cruzamento de requisitos atuais; não transforma
+doubles/credenciais sintéticas em certificação de produção.
+
+A decisão final de retenção das perguntas deste plano permanece pendente.
+P3 não transporta conversas e pode começar pelo contrato técnico independente,
+mantendo essa definição aberta. Nenhum acesso por origem/compra é concedido por
+essa passagem. Macro 8/35 e objetivo integral preservados.

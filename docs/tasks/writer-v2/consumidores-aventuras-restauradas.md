@@ -45,9 +45,10 @@ com restauração, leitura e recuperação pelos serviços reais.
 - A exclusão completa está integrada localmente no projeto/Estúdio, com retomada e
   binding SDK; ver [integração](../../entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md).
   A política final das perguntas continua pendente; o motor preserva perguntas.
-- P2 conserva sua auditoria final de requisitos. P3 deve portar campanhas e D deve
-  demonstrar conto/aventura e duas mesas no mesmo universo; o ensaio de uma
-  campanha capturada aqui não substitui essas entregas.
+- A [auditoria técnica P2](execucao/200-auditoria-tecnica-da-portabilidade-de-aventuras.md)
+  conferiu os nove passos e os grupos de conteúdo. A decisão de retenção ligada
+  a 199 continua pendente. P3 deve portar campanhas e D deve demonstrar conto/
+  aventura e duas mesas; uma campanha neste corpus não substitui essas entregas.
 - Comércio/publicação/permissões da compra pertencem às fases posteriores.
   Backup privado não concede direito comercial, compra ou acesso externo.
 - O corpus usa dados sintéticos e doubles de metadata/Storage, com serviços reais.

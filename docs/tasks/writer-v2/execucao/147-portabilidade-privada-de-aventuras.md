@@ -117,3 +117,18 @@ controles de ordem, corpos, planner e referências. São leitores internos com
 provas próprias, não selo global ou backup integral. 118 Node e três SDK
 positivos no incremento 149. Narrativa/lore/demais famílias, pacote/restore/UI
 e validação integral de P2 continuam pendentes.
+
+## Auditoria dos nove passos — plano 200
+
+A [matriz técnica integral](200-auditoria-tecnica-da-portabilidade-de-aventuras.md)
+de 2026-10-29, base 8d7bb5a, conferiu cada passo 1–9 e os grupos de conteúdo
+contra código, testes e artefatos originais. A implementação v1 está presente
+e verificada localmente: captura completa/segunda passagem, formato próprio,
+leitor/revisão, nova cópia/remap, recuperação/cancelamento/cleanup, ativação/mídia,
+UI e ciclo normal/exclusão. Não foram adicionados testes espelhando constantes.
+
+A política final das perguntas do chat ligada a 199 continua pendente;
+portabilidade não inclui essas conversas. Essa decisão não foi inferida nem
+aprovada pela auditoria. O contrato técnico de P3 pode ser preparado sem
+alterar tal política, preservando procedência, edição congelada e acesso atual.
+P3/D/F2-09, macro 8/35 e gates humanos/comerciais/operação continuam abertos.
