@@ -596,3 +596,13 @@ Veja a [evidência parcial](../../entregas/2026-10-29-writer-v2-conteudo-proprio
 Composição/segunda passagem do arquivo, base/procedência, restauração/UI/ciclo
 P3/D/F2-09 e gates continuam abertos; macro **8/35** inalterada. Somente commit
 local; validate integral no fechamento do grande bloco.
+
+## 2026-10-29 — captura incremental e reconferência dos próprios de P3
+
+O [plano 204](execucao/204-captura-incremental-dos-proprios-de-campanha.md)
+transmite partes próprias com pressão de consumo, hashes e segunda passagem
+das nove famílias, detectando alterações S2/S3 sem mudança global. Prova
+own-data-only somente no término natural; sem índice persistido/arquivo final.
+21 Vitest e 57 Node dirigidos passaram; [evidência parcial](../../entregas/2026-10-29-writer-v2-captura-incremental-dos-proprios.md).
+Base/procedência/variantes/mídia, restauração/UI/ciclo P3/D/F2-09 e gates seguem
+pendentes; macro **8/35**. Somente commit local, validate integral no grande bloco.

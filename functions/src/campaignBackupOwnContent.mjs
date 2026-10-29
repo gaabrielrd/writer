@@ -12,7 +12,7 @@ import {
   statuses as preparationStatuses,
 } from './campaignPreparationContracts.mjs';
 
-export const CAMPAIGN_OWN_CHUNK_BYTES = 65536;
+export { CAMPAIGN_OWN_CHUNK_BYTES } from './campaignBackupOwnDefinitions.mjs';
 export const CAMPAIGN_OWN_FIELDS = Object.freeze(
   Object.fromEntries(
     Object.entries({

@@ -102,3 +102,10 @@ Ainda não compõe arquivo, segunda passagem integral, prova de procedência,
 autorização da base/universo, mídia, restauração, UI, jobs ou limpeza nova.
 Inventário C4 segue v1–v4 até a evolução explícita antes de produtores persistentes.
 Apenas ler DTOs não satisfaz o passo 2 inteiro nem P3/D/F2-09.
+
+## Continuidade — captura incremental própria
+
+O [plano 204](204-captura-incremental-dos-proprios-de-campanha.md) compõe as partes
+por unidade, valida manifestos/base64/SHA e repete o inventário completo antes de
+retornar own-data-only. Sem índice persistido ou buffer do projeto; sem selo de
+arquivo completo, base/procedência, restauração ou UI. Demais passos P3 pendentes.

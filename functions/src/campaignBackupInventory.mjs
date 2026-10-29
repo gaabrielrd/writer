@@ -4,6 +4,11 @@ import {
   campaignBackupIdentity,
   readCampaignBackupSource,
 } from './campaignBackupSource.mjs';
+import {
+  CAMPAIGN_OWN_DEFINITIONS as families,
+  CAMPAIGN_OWN_ITEM_FIELDS as itemFields,
+  CAMPAIGN_OWN_PAGE_ITEMS,
+} from './campaignBackupOwnDefinitions.mjs';
 import { campaignIdentityToken } from './campaignIdentity.mjs';
 import { digest, workClosed, workFail, workId } from './workProgressContracts.mjs';
 
@@ -23,8 +28,6 @@ const validId = (value) => {
   }
   return value;
 };
-const ownFields = ['schemaVersion', 'ownerId', 'campaignId', 'campaignToken', 'revision'];
-const itemFields = ['id', ...ownFields, 'deleted', 'createdAt', 'updatedAt'];
 const headFields = [
   ...itemFields,
   'sessionId',
@@ -37,29 +40,7 @@ const headFields = [
   'checklistCompleted',
   'completed',
 ];
-const families = Object.freeze({
-  note: { collection: 'notes', fields: itemFields },
-  session: { collection: 'sessions', fields: [...itemFields, 'order'] },
-  checklist: {
-    collection: 'workChecklist',
-    fields: ['id', 'revision', 'completed', 'createdAt', 'updatedAt'],
-  },
-  'preparation-item': { collection: 'preparationItems', fields: [...itemFields, 'kind', 'order'] },
-  'preparation-body': { collection: 'preparationBodies', fields: ['id', ...ownFields, 'kind'] },
-  'session-reference': { collection: 'sessionReferences', fields: [...itemFields, 'sessionId'] },
-  'session-reference-state': {
-    collection: 'sessionReferenceState',
-    fields: [...ownFields, 'sessionId'],
-  },
-  'session-preparation-link': {
-    collection: 'sessionPreparationLinks',
-    fields: [...itemFields, 'sessionId', 'itemId', 'order'],
-  },
-  'session-preparation-state': {
-    collection: 'sessionPreparationState',
-    fields: [...ownFields, 'sessionId', 'nextOrder'],
-  },
-});
+
 function input(db, uid, data) {
   const context = campaignBackupScope(db, uid, data, [
     'sourceToken',
@@ -71,8 +52,8 @@ function input(db, uid, data) {
   if (typeof data.family !== 'string' || !Object.hasOwn(families, data.family)) invalid();
   const family = data.family,
     expected = campaignBackupToken(data.sourceToken),
-    limit = Object.hasOwn(data, 'limit') ? data.limit : 25;
-  if (!safe(limit, 1) || limit > 25) invalid();
+    limit = Object.hasOwn(data, 'limit') ? data.limit : CAMPAIGN_OWN_PAGE_ITEMS;
+  if (!safe(limit, 1) || limit > CAMPAIGN_OWN_PAGE_ITEMS) invalid();
   const pageExpected = Object.hasOwn(data, 'expectedPageToken')
     ? campaignBackupToken(data.expectedPageToken)
     : undefined;

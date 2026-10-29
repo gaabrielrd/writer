@@ -3539,3 +3539,13 @@ Controles/tombstones e vínculos de pais inativos geram omissão interna explíc
 Raiz/progresso usam a âncora; declarações de origem/universo/alvo S2 não autorizam
 derivados. Sem endpoint, arquivo ou persistência nova; segunda passagem completa,
 procedência, restauração e interface continuam pendentes.
+
+## Captura incremental e reconferência dos próprios de campanha
+
+A [ADR 0234](decisions/0234-campaign-own-stream-and-replay.md) acrescenta a folha
+campaign-portability com API injetada, shared/streams e definições puras comuns
+a Functions. Partes são provisórias, com manifestos fechados/SHA por unidade,
+guard de contexto e um slot sujeito à pressão de consumo. Hash incremental de
+páginas/itens é reconferido em segunda passagem desde o começo e âncora final.
+A prova own-data-only não certifica arquivo completo ou autorização da base.
+Não cria armazenamento/job/endpoint/UI; C4 permanece v1–v4 até novos produtores.

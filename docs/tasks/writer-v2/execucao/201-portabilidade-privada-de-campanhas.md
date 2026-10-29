@@ -151,3 +151,12 @@ unidade/dependências. 57 testes dirigidos passaram, incluindo 19 novos.
 Controles/tombstones e vínculos de pais inativos são omitidos explicitamente;
 itens/corpos ativos permanecem próprios. Ainda faltam composição/segunda
 passagem integral do arquivo e os demais passos de P3/D/F2-09; macro 8/35.
+
+## Passo 2 — captura incremental e segunda passagem dos próprios
+
+O [plano 204](204-captura-incremental-dos-proprios-de-campanha.md) transmite as
+partes próprias com pressão de consumo, hashes integrais e reconferência das
+nove famílias desde o início. Prova own-data-only apenas no término natural;
+não é arquivo/selo/procedência ou grant. 21 testes novos e 57 regressões backend
+passaram. Sem persistência nova; base/variantes/mídia e demais passos P3/D/F2-09
+continuam pendentes; macro 8/35.

@@ -2194,3 +2194,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      positivos (19 novos), sem produtor persistente. [Evidência parcial](../../../entregas/2026-10-29-writer-v2-conteudo-proprio-de-campanhas.md).
      Arquivo/segunda passagem, base/procedência, restauração/UI/ciclo P3,
      D/F2-09 e gates continuam abertos; macro 8/35, somente commit local.
+
+204. [Captura incremental dos próprios](204-captura-incremental-dos-proprios-de-campanha.md):
+     fluxo provisório de partes, pressão de consumo e SHA integral por unidade,
+     com segunda passagem das nove famílias e âncora final. Prova own-data-only;
+     nenhum índice persistido/selo de arquivo ou grant. 21 Vitest e 57 Node
+     dirigidos positivos; [evidência parcial](../../../entregas/2026-10-29-writer-v2-captura-incremental-dos-proprios.md).
+     Base/procedência/variantes/mídia, arquivo completo, restauração/UI/ciclo
+     P3/D/F2-09 e gates permanecem abertos; macro 8/35, somente commit local.
