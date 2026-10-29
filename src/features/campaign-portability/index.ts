@@ -10,3 +10,15 @@ export type {
   CampaignOwnKind,
   CampaignOwnPortableKind,
 } from './services/campaignOwnContracts';
+
+export {
+  streamCampaignBaseField,
+  CampaignBaseCaptureError,
+} from './services/streamCampaignBaseField';
+export type {
+  CampaignBaseFieldManifest,
+  CampaignBaseFieldRef,
+  CampaignBaseFieldApi,
+  CampaignBaseFieldChunk,
+  CampaignBaseFieldProof,
+} from './services/streamCampaignBaseField';

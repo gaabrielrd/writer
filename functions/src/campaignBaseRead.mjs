@@ -22,6 +22,7 @@ import {
   encodeBaseCursor,
 } from './campaignBaseContracts.mjs';
 import { CHUNK_BYTES } from './workHistoryContracts.mjs';
+import { CAMPAIGN_BASE_FIELDS as textFields } from './campaignBackupBaseDefinitions.mjs';
 import { deriveAdventurePreviewImage } from './adventurePreview.mjs';
 import { PREVIEW_IMAGE_BYTES } from './adventurePreviewContracts.mjs';
 
@@ -69,15 +70,7 @@ export function validItem(item, key) {
     inconsistent();
   return item;
 }
-const textFields = {
-  part: ['legacyContent'],
-  scene: ['content', 'objective', 'conflict', 'pointOfView'],
-  block: ['content'],
-  arc: ['initialState', 'objective', 'plannedOutcome'],
-  milestone: ['notes'],
-  event: ['description'],
-  lore: ['summary', 'details', 'appearance', 'personality', 'history', 'notes'],
-};
+
 export async function projectedStructured(tx, db, context, item) {
   const stored = item.structured ?? {},
     result = {};

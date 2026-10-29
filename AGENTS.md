@@ -1010,3 +1010,10 @@ pause antes da próxima unidade. Confira a pendência capturada ao recuperar ou
 encerrar início. Replay também exige reserva segura. Notifique revogação após
 prova válida e antes do CAS local; não recircule leituras pelo próprio pulso.
 No dispatcher, confira auth/App Check antes de construir o serviço (ADR 0229).
+
+Na portabilidade da base congelada, prove item/pais e origem individual da ficha
+antes de prosa/manifestos. Revogada/recriada não retorna nome/texto/hash antigo.
+Conserve campos literais e compartilhamento content apenas cena/principal com
+manifesto idêntico. Confira SHA/tamanho integral no fluxo cliente; essa prova
+não substitui inventário físico/atestado servidor nem concede acesso. Sem
+produtores persistentes antes de ampliar C4 e a procedência (ADR 0236).

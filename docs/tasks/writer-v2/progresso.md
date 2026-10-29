@@ -617,3 +617,16 @@ dirigidos passaram; [evidência parcial](../../entregas/2026-10-29-writer-v2-ori
 É âncora privada, não manifesto/atestado ou gate de ficha individual.
 Base/variantes/mídia, arquivo/restauração/UI/ciclo P3/D/F2-09 e gates seguem
 pendentes; macro **8/35**. Somente commit local, sem CI.
+
+## 2026-10-29 — itens e campos congelados de P3
+
+O [plano 206](execucao/206-itens-e-textos-da-base-congelada.md) lê os sete tipos
+da base exata com hierarquia e autorização por ficha, cabeçalho lógico fechado
+e partes de texto limitadas. Principal compartilha somente a própria cena;
+ficha revogada/recriada não revela prosa/nome/hash antigo. Fluxo cliente confere
+SHA/tamanho integral e interrupções, com prova frozen-field-bytes-only.
+20 testes Node novos, 11 regressões e 29 Vitest dirigidos positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-textos-da-base-congelada.md).
+Inventário físico completo/órfãos, variantes/legadas/mídia, manifesto/atestado,
+arquivo/restauração/UI/ciclo P3/D/F2-09 continuam abertos; macro **8/35**.
+Validate integral no fechamento do grande bloco; somente commit local, sem CI.

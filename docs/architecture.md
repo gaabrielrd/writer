@@ -3560,3 +3560,14 @@ Estado/geração/guard/clock têm escopo nativo e adoção em preparação bloqu
 Token não é atestado nem autorização individual; none não prova coleções vazias.
 Bases restauradas exigem procedência/recibo explícitos e consumidores preparados
 antes da ativação. Nenhum produtor/assinatura/endpoint/persistência novo.
+
+## Leitura dos itens e campos congelados de campanha
+
+A [ADR 0236](decisions/0236-campaign-backup-frozen-fields.md) exige o gate de
+origem em cada transação e prova de item/pais antes de prosa. Cabeçalhos lógicos
+fechados e campos de texto limitados preservam a edição congelada; lore revogado
+não revela hashes/texto antigos. Bloco principal só compartilha content da cena
+pai com manifesto idêntico. Fluxo cliente confere SHA/tamanho e interrupções
+sem montar o campo completo. Prova frozen-field-bytes-only não certifica base
+ou arquivo inteiro. Inventário físico, atestado servidor, variantes/mídia,
+restauração e UI continuam pendentes; sem novos produtores persistentes.

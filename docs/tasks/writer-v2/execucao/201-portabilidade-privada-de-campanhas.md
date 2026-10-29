@@ -169,3 +169,13 @@ origem recriada/deletada não autoriza essa base. Lore global tem disponibilidad
 separada; guard/clock/geração conferidos. 20 testes direcionados positivos.
 Manifesto/atestado, gates individuais, variantes/legadas/mídia e demais passos
 P3/D/F2-09 continuam pendentes; macro 8/35. Token não é procedência portátil.
+
+## Passo 3 — itens e campos congelados
+
+O [plano 206](206-itens-e-textos-da-base-congelada.md) acrescenta inventário
+lógico dos sete tipos e campos de texto da base exata, com hierarquia,
+autorização individual de fichas, partes limitadas e fluxo SHA no cliente.
+20 Node novos, 11 regressões e 29 Vitest positivos. Não fecha o passo 3:
+inventário físico completo/cobertura/órfãos, variantes/legadas, imagens e
+manifesto/atestado servidor seguem obrigatórios. Arquivo/restauração/UI/ciclo
+P3/D/F2-09 continuam abertos; macro 8/35. Somente commit local.
