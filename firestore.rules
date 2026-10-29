@@ -403,6 +403,10 @@ service cloud.firestore {
       match /campaignAdoptionGuards/{id} { allow read, write: if false; }
       match /campaignVariantResolutionOperations/{id} { allow read, write: if false; }
       match /campaignAuthorization/{id} { allow read, write: if false; }
+      match /campaignRestores/{document=**} { allow read, write: if false; }
+      match /campaignRestoreOperations/{document=**} { allow read, write: if false; }
+      match /campaignRestoreKeys/{document=**} { allow read, write: if false; }
+      match /campaignRestoreStartFences/{document=**} { allow read, write: if false; }
       match /campaignDeletions/{document=**} { allow read, write: if false; }
       match /campaignDeletionOperations/{id} { allow read, write: if false; }
       match /campaignDeletionStartFences/{id} { allow read, write: if false; }
@@ -524,6 +528,7 @@ service cloud.firestore {
     }
 
     match /adventureDeletionReservations/{adventureId} { allow read, write: if false; }
+    match /campaignRestoreReservations/{campaignId} { allow read, write: if false; }
     match /campaignDeletionReservations/{campaignId} { allow read, write: if false; }
 
     match /campaigns/{campaignId} {

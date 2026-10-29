@@ -815,3 +815,10 @@ regressões passaram; validate integral do bloco 219–226 verde com 9.710 teste
 O [inventário](inventario-portabilidade-campanhas.md) distingue os recursos
 futuros que ainda exigem coleta/reservas antes do produtor. Upload/retomada,
 materialização/ativação e Estúdio/ciclos permanecem; macro 8/35 (22,9%).
+
+O [incremento 227](execucao/227-upload-privado-retomavel-de-campanhas.md) implementa
+núcleo interno de upload cifrado, retomada, SHA completo, reserva/fence e
+cancelamento/coleta. 49 novos e 50 regressões positivos (99/99), mais 19 casos
+SDK/Rules distintos positivos. Um arquivo real assinado foi revisado a partir
+da fonte persistida. Ainda faltam revisão persistida, materialização/ativação,
+integração C4 dos jobs e Estúdio/ciclos; macro 8/35 (22,9%), somente commit local.

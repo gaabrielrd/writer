@@ -1,3 +1,4 @@
+import { assertCampaignRestoreNotReserved } from './campaignRestoreGuard.mjs';
 import { validateId } from './generation.mjs';
 import {
   assertCampaignNotDeleted,
@@ -144,6 +145,7 @@ export function createCampaignCaptureService({ db, assets, now = Date.now }) {
         campaignId = digest({ uid, captureId, kind: 'campaign' });
       return db.runTransaction(async (tx) => {
         await assertCampaignNotDeleted(tx, db, uid, campaignId);
+        await assertCampaignRestoreNotReserved(tx, db, uid, campaignId);
         const previous = await prior(tx, op),
           ref = prepRef(uid, captureId),
           current = (await tx.get(ref)).data();

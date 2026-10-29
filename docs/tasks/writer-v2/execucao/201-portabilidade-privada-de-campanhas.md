@@ -381,3 +381,15 @@ O [inventário físico](../inventario-portabilidade-campanhas.md) não declara j
 uploads ou índices futuros como coletados: integrar seus contratos de coleta,
 cancelamento e reservas antes de qualquer produtor. Depois upload/retomada,
 remapeamento/materialização/ativação e Estúdio/ciclos. P3/D/F2-09 permanecem abertos.
+
+### Upload temporário antes de ativação — incremento 227
+
+[Plano 227](227-upload-privado-retomavel-de-campanhas.md) e
+[ADR 0257](../../../decisions/0257-campaign-private-resumable-upload.md) acrescentam
+job reservado/cifrado com retomada e coleta própria v1 antes do append. Marcador
+sem ownerId não é mesa ativa: C4 público não inicia nele; mutações ativas do
+upload consultam sua barreira e a criação nativa consulta a reserva do upload.
+Não alterar inventários C4 1–4; integrar os recursos a C4 antes da futura ativação.
+49 novos e 50 regressões, mais 19 casos SDK/Rules distintos, positivos. A fonte
+persistida já foi composta com revisão completa real assinada. Revisão persistida,
+remapeamento/materialização, mídia, ativação e Estúdio/ciclos continuam pendentes.

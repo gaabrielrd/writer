@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 226. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 227. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -59,12 +59,12 @@ não por um fluxo de importação disponível ao usuário.
 
 ## Recursos que ainda não existem
 
-Jobs/reservas de restauração, upload de arquivo, índices duráveis da revisão,
-remapeamento/materialização retomável, mídia exclusiva temporária e ativação
-ainda não têm produtor persistente de campanha. Não são cobertos por inferência
-pelas listas C4 atuais. Cada futuro recurso precisa de dono/campanha/encarnação
-consultáveis, reserva conferida em toda mutação, cancelamento/coleta próprios,
-inventário versionado e limpeza antes da primeira gravação.
+O incremento 227 implementa job/reserva/chave/recibos e upload temporário cifrado,
+com coleta própria v1 antes de ativação, conforme abaixo. Índices duráveis da
+revisão, remapeamento/materialização retomável, mídia exclusiva temporária e
+ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
+atuais. Cada recurso precisa de dono/campanha/encarnação consultáveis, reserva
+conferida em mutações e cancelamento/coleta versionados antes da primeira gravação.
 
 A interface deverá revisar omissões, autorização e relações não resolvidas
 antes de confirmar nova cópia. Ainda faltam Estúdio, ciclos completos e
@@ -76,3 +76,21 @@ Validate integral 219–226 positivo: 9.710 testes (4.978 frontend, 94 scripts,
 4.638 Functions), cobertura/limites preservados e sintaxe/lint/typecheck/build/
 smoke positivos. A [entrega](../../entregas/2026-10-29-writer-v2-inventario-c4-das-campanhas-restauradas.md)
 registra resultados, limites e o escopo que ainda não tem produtor persistente.
+
+## Upload temporário pré-ativação — 227
+
+| Família nova          | Endereço                                                   | Ciclo fechado                                                                     |
+| --------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Job                   | users/UID/campaignRestores/RID                             | Identidade nativa, SHA/CAS, estado fechado; terminal sem payload/chave            |
+| Chunks cifrados       | JOB/chunks/ÍNDICE                                          | Append até 64 KiB; coleta por metadata/recibo até 25, com sequência e vazio final |
+| Recibos e testemunhas | users/UID/campaignRestoreOperations/OID e JOB/receipts/OID | Imutáveis, hashes/IDs/checkpoints, sem payload ou segredo; retidos no terminal    |
+| Chave privada         | users/UID/campaignRestoreKeys/RID                          | Nascimento inicial; retirada atômica no cancelamento, antes da coleta             |
+| Fence desconhecido    | users/UID/campaignRestoreStartFences/RID                   | Vence start tardio; metadata mínima permanente                                    |
+| Reserva e marcador    | campaignRestoreReservations/CID e campaigns/CID            | Alvo derivado servidor; pending/retired sem ownerId, invisível e sem grant        |
+
+Rules negam SDK. Originais/mesas não são criados por esse núcleo interno. A
+barreira C4 é consultada nas mutações ativas, mas o marcador sem ownerId não
+aceita início C4 como campanha ativa. A coleta temporária v1 é própria; integrar
+nova versão C4 para estes recursos antes da ativação futura, preservando 1–4.
+[ADR 0257](../../decisions/0257-campaign-private-resumable-upload.md) e
+[evidência](../../entregas/2026-10-29-writer-v2-upload-privado-retomavel-de-campanhas.md).

@@ -2359,3 +2359,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-inventario-c4-das-campanhas-restauradas.md).
      Recursos futuros exigem coleta/reserva antes do produtor; restauração
      persistente/UI/ciclos e macro 8/35 continuam abertos.
+
+227. [Upload privado retomável de campanhas](227-upload-privado-retomavel-de-campanhas.md):
+     núcleo interno com reserva, cifra, SHA/CAS/retomada, cancelamento/coleta e
+     fonte de leitura composta com revisão assinada. 99 testes dirigidos e
+     19 casos SDK/Rules distintos positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-upload-privado-retomavel-de-campanhas.md).
+     Revisão persistida, materialização/ativação, C4 dos jobs e Estúdio/ciclos
+     continuam abertos. Macro 8/35; sem endpoint público, somente commit local.

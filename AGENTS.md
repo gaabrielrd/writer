@@ -1141,8 +1141,19 @@ sem expor codec nem habilitar produtor de restauração antes de C4 (ADR 0255).
 
 No C4 de campanhas, use campaignDeletionInventory como fonte comum dos layouts
 1–4 para executar e validar checkpoints. Preserve ordem/masks/whitelists de cada
-versão e v1 implícita; nova família exige versão e coleta/reserva antes do produtor.
+versão e v1 implícita; nova família do C4 exige versão/coleta/reserva antes de ligar
+seus recursos à mesa ativa. Temporários pré-ativação seguem também a ADR 0257.
 Apague provas/flags restauradas com seus documentos sem autorizar fonte; enumere
 todas as bases/gerações registradas e mantenha pais até retirar filhos. Nos passos,
 guard da raiz lê somente identidade/marca, sem título/procedência. Biblioteca e
 pins alheios permanecem; falha não avança checkpoint nem contador (ADR 0256).
+
+No upload de campanhas, reserve job/marcador/chave/recibo/testemunha atomicamente;
+confira nascimentos nativos, imutabilidade e jobToken. Cifre bytes/estado SHA com
+AAD de conta/encarnação/unidade e fixe sha256/hash-wasm@4.12.0. Append usa CAS e
+bloco até 64 KiB; fonte interna limita metadata+payload do framing e revalida
+cada unidade. Bytes-verified não é assinatura/grant. Cancel retira a chave antes
+de coletar até 25 chunks por metadata; preserve estrangeiros/órfãos sem avanço.
+Studio/captura consultam reserva mesmo sem marcador. Famílias são server-only.
+Temporário pré-ativação tem coleta própria v1; mantenha C4 1–4 e integre nova
+versão C4 dos jobs antes de habilitar campanha ativa (ADR 0257).

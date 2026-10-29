@@ -1,3 +1,4 @@
+import { assertCampaignRestoreNotReserved } from './campaignRestoreGuard.mjs';
 import { createHash } from 'node:crypto';
 import {
   assertAdventureNotDeleted,
@@ -178,7 +179,10 @@ export function createStudioService({ db, now = Date.now }) {
     const ref = db.doc(`${domains[kind].collection}/${id}`);
     const receipt = db.doc(`users/${uid}/studioOperations/${id}`);
     return db.runTransaction(async (tx) => {
-      if (kind === 'campaign') await assertCampaignNotDeleted(tx, db, uid, id);
+      if (kind === 'campaign') {
+        await assertCampaignNotDeleted(tx, db, uid, id);
+        await assertCampaignRestoreNotReserved(tx, db, uid, id);
+      }
       if (kind === 'adventure') await assertAdventureNotDeleted(tx, db, uid, id);
       const [existing, operation, importReservation] = await Promise.all([
         tx.get(ref),

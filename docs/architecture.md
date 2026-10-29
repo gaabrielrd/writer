@@ -3795,3 +3795,16 @@ O [inventário de portabilidade](tasks/writer-v2/inventario-portabilidade-campan
 distingue dados materializados e recursos futuros ainda sem produtor. Jobs,
 uploads e índices duráveis futuros exigem coleta/cancelamento e reserva próprios
 antes de gravação. Este passo não habilita a restauração persistente.
+
+## Upload privado retomável de campanhas
+
+A [ADR 0257](decisions/0257-campaign-private-resumable-upload.md) separa contratos,
+guard, cifra, store/recibos, cancelamento/coleta e transferência. Job/reserva/
+marcador sem ownerId/chave/recibo/testemunha têm nascimento atômico; últimos
+recibos conferem atualização do job. Dados e estado SHA são cifrados por unidade,
+com digest canônico e codec de hash fixado. Append 64 KiB e fonte limitada ao
+framing conservam pressão de consumo; revisão composta já aceita a fonte em teste.
+Cancel revoga chave e coleta metadata em lotes, sem adotar órfãos/recriações.
+Rules fecham todas as famílias; criação nativa consulta reserva. Este é núcleo
+interno, sem callable/UI/ativação. Temporário tem coleta v1 própria; ativação exige
+integrar seus recursos a C4 apropriado, sem reinterpretar layouts 1–4.
