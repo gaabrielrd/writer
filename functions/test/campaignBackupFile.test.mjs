@@ -154,7 +154,7 @@ test('unavailable derived source still yields a valid own-data file with explici
   const { destination } = await f.write(),
     valid = await f.validate(destination.bytes());
   assert.equal(valid.manifest.availability, 'unavailable');
-  assert.equal(valid.manifest.provenance.bytes, 0);
+  assert.ok(valid.manifest.provenance.bytes > 0);
   assert.equal(f.controls.events.length, 0);
 });
 for (const mode of ['write', 'commit', 'abort-signal', 'capture-change'])
@@ -239,7 +239,7 @@ for (const mutate of [
     r.payload = bytes({ ...json(r), contentHash: '0'.repeat(64) });
   },
   (records) => {
-    const r = records.find((r) => r.kind === 'witness');
+    const r = records.find((r) => r.kind === 'witness' && json(r)[0] === 'base');
     const v = json(r);
     v[3].adventure.born.nanoseconds++;
     r.payload = bytes(v);
@@ -439,7 +439,7 @@ test('independent empty campaign has a complete sealed file without a derived ba
   });
   assert.equal(proof.manifest.availability, 'none');
   assert.equal(proof.manifest.content.units, 3);
-  assert.equal(proof.manifest.provenance.bytes, 0);
+  assert.ok(proof.manifest.provenance.bytes > 0);
   assert.equal(destination.commits, 1);
 });
 
@@ -505,14 +505,14 @@ for (const section of ['content', 'provenance'])
           hash.update(JSON.stringify(json(r)) + '\n');
         packet.manifest.content.digest = hash.digest('hex');
       } else {
-        const witness = records.find((r) => r.kind === 'witness'),
+        const witness = records.find((r) => r.kind === 'witness' && json(r)[0] === 'base'),
           value = json(witness);
         value[3].adventure.born.nanoseconds++;
         witness.payload = bytes(value);
         const hash = createHash('sha256');
         let total = 0;
         hash.update(
-          JSON.stringify(['writer-campaign-witnesses-v1', header.originCampaignId]) + '\n',
+          JSON.stringify(['writer-campaign-witnesses-v2', header.originCampaignId]) + '\n',
         );
         for (const r of records.filter((r) => r.kind === 'witness')) {
           const v = json(r);

@@ -96,6 +96,14 @@ function item(v) {
 }
 /** Pure closed projections; these facts require an authenticated manifest and current authorization. */
 export function validatePortableCampaignWitness(v) {
+  if (v?.kind === 'project') {
+    if (!closed(v, ['kind', 'campaignId', 'universe'])) bad();
+    return Object.freeze({
+      kind: 'project',
+      campaignId: id(v.campaignId),
+      universe: universe(v.universe),
+    });
+  }
   if (v?.kind === 'base') return base(v);
   if (v?.kind === 'item') return item(v);
   if (

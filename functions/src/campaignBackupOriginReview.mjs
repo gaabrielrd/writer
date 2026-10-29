@@ -5,6 +5,7 @@ import { closedCampaignRecord, campaignManifestId } from './portableCampaignMani
 import {
   campaignOriginClock,
   readCampaignOriginAccess,
+  readCampaignOrganizationalUniverseAccess,
   originReviewChanged,
 } from './campaignBackupOriginAccess.mjs';
 import { workFail, digest } from './workProgressContracts.mjs';
@@ -78,6 +79,8 @@ export function createCampaignBackupOriginReviewService({ db, keys, now = Date.n
           const hash = createHash('sha256');
           let activeBase = null,
             sawBase = false,
+            sawProject = false,
+            organizationalUniverse = Object.freeze({ availability: 'unproven' }),
             processed = 0,
             available = 0,
             unavailable = 0,
@@ -118,8 +121,22 @@ export function createCampaignBackupOriginReviewService({ db, keys, now = Date.n
                 let base = null,
                   item = null,
                   omission = null;
-                if (section === 'base') {
-                  if (sawBase || processed !== 0 || outcome !== file.manifest.availability) bad();
+                if (section === 'project') {
+                  if (
+                    file.manifest.provenanceVersion !== 2 ||
+                    sawProject ||
+                    processed !== 0 ||
+                    id !== file.manifest.originCampaignId
+                  )
+                    bad();
+                  sawProject = true;
+                } else if (section === 'base') {
+                  if (
+                    sawBase ||
+                    processed !== (sawProject ? 1 : 0) ||
+                    outcome !== file.manifest.availability
+                  )
+                    bad();
                   sawBase = true;
                   if (outcome === 'available') {
                     activeBase = content;
@@ -147,13 +164,20 @@ export function createCampaignBackupOriginReviewService({ db, keys, now = Date.n
                 }
                 const result = await db.runTransaction(async (tx) => {
                   await campaignOriginClock(tx, db, uid, clock);
+                  if (section === 'project')
+                    return readCampaignOrganizationalUniverseAccess(tx, db, uid, content.universe);
                   return omission
                     ? { availability: omission, proof: digest(['exported-omission', record]) }
                     : readCampaignOriginAccess(tx, db, uid, base, item);
                 });
                 check();
                 processed = add(processed);
-                if (result.availability === 'available') available = add(available);
+                if (section === 'project') {
+                  organizationalUniverse = Object.freeze({
+                    availability: result.availability,
+                    ...(content.universe.kind === 'none' ? {} : { id: content.universe.id }),
+                  });
+                } else if (result.availability === 'available') available = add(available);
                 else if (result.availability === 'unavailable') unavailable = add(unavailable);
                 else none = add(none);
                 if (result.globalLore === 'unavailable') globalUnavailable = add(globalUnavailable);
@@ -177,11 +201,18 @@ export function createCampaignBackupOriginReviewService({ db, keys, now = Date.n
                 check();
               }
             }
-            if (!sawBase || processed !== stored) bad();
+            if (
+              !sawBase ||
+              processed !== stored ||
+              (file.manifest.provenanceVersion === 2 && !sawProject)
+            )
+              bad();
             await db.runTransaction((tx) => campaignOriginClock(tx, db, uid, clock));
             check();
             return Object.freeze({
               witnesses: processed,
+              derivedWitnesses: processed - (sawProject ? 1 : 0),
+              organizationalUniverse,
               available,
               unavailable,
               none,

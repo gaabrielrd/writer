@@ -259,10 +259,12 @@ restauração; faltam vínculos semânticos e consumidores ordinários de proced
 cleanup C4 v1–v4, persistência/retomada, materialização/ativação e UI/ciclo.
 P3/D/F2-09 abertos; macro 8/35, somente commit local, validate no grande bloco.
 
-### Próximo contrato obrigatório: universo organizacional
+### Contrato do universo organizacional
 
 A revisão 214 cobre origens derivadas. A raiz conserva universeId, que pode ser
-distinto do universo congelado ou existir sem base. Falta sua própria evidência
-de nascimento e a política de compatibilidade das versões sem essa prova.
-Implementar esse contrato antes da materialização; não religar apenas pelo ID
-ou substituir pelo universo da base.
+distinto do universo congelado ou existir sem base. O [plano 215](215-universo-organizacional-no-backup.md)
+acrescentou evidência project com nascimento próprio, provenanceVersion 2 e
+revisão separada. Arquivos v1 permanecem legíveis com vínculo unproven; não religar
+apenas pelo ID ou substituir pelo universo da base. 21 testes novos e 117
+regressões passaram; vínculos semânticos completos, consumidores, cleanup C4,
+persistência/retomada e restauração/UI/ciclo continuam pendentes.

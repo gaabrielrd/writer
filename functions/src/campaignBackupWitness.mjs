@@ -2,7 +2,9 @@ import { campaignBackupScope, campaignBackupToken } from './campaignBackupSource
 import { campaignBackupBaseContext, baseChanged } from './campaignBackupBaseContext.mjs';
 import { campaignBackupLoreContext, loreBackupChanged } from './campaignBackupLoreContext.mjs';
 import { validatePortableCampaignWitness } from './portableCampaignProvenance.mjs';
-import { digest } from './workProgressContracts.mjs';
+import { digest, workId } from './workProgressContracts.mjs';
+import { readCampaignBackupDerivedSource } from './campaignBackupDerivedSource.mjs';
+import { baseMasked, baseInconsistent } from './campaignBackupBaseContext.mjs';
 function input(db, uid, data, keys) {
   const c = campaignBackupScope(db, uid, data, ['sourceToken', 'derivedToken', ...keys]);
   return {
@@ -55,6 +57,36 @@ function result(common, content, proof) {
 }
 export function createCampaignBackupWitnessService({ db }) {
   return {
+    async getCampaignBackupProjectWitness(uid, data) {
+      const p = input(db, uid, data, []);
+      return db.runTransaction(async (tx) => {
+        const source = await readCampaignBackupDerivedSource(tx, p),
+          root = await baseMasked(tx, db.doc(p.path), ['ownerId', 'universeId']);
+        if (root.value?.ownerId !== uid) baseInconsistent();
+        let universe = { kind: 'none' },
+          world = null;
+        if (root.value.universeId != null) {
+          const id = workId(root.value.universeId);
+          world = await baseMasked(tx, db.doc('universes/' + id), ['authorId', 'deleting']);
+          universe =
+            world.snapshot.exists && world.value.authorId === uid && !world.value.deleting
+              ? { kind: 'reference', id, born: world.native.created }
+              : { kind: 'unavailable', id };
+        }
+        return result(
+          {
+            campaignId: p.campaignId,
+            sourceToken: source.sourceToken,
+            derivedToken: source.derivedToken,
+          },
+          { kind: 'project', campaignId: p.campaignId, universe },
+          {
+            root: root.native,
+            world: world && { native: world.native, value: world.value ?? null },
+          },
+        );
+      });
+    },
     async getCampaignBackupBaseWitness(uid, data) {
       const p = input(db, uid, data, []);
       return db.runTransaction(async (tx) => {

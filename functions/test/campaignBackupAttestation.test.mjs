@@ -87,7 +87,7 @@ test('provenance root equals a bounded replay of actual native base/item/anchor 
   const f = await fixture(),
     packet = await emitted(f),
     hash = createHash('sha256');
-  hash.update(JSON.stringify(['writer-campaign-witnesses-v1', f.id]) + '\n');
+  hash.update(JSON.stringify(['writer-campaign-witnesses-v2', f.id]) + '\n');
   let units = 0,
     bytes = 0;
   const fold = (section, id, r) => {
@@ -95,6 +95,7 @@ test('provenance root equals a bounded replay of actual native base/item/anchor 
     units++;
     bytes += r.byteLength ?? 0;
   };
+  fold('project', f.id, await f.witnesses.getCampaignBackupProjectWitness(uid, f.anchor));
   fold('base', f.campaign.activeBaseId, await f.baseWitness());
   const base = createCampaignBackupBaseReadService({ db: f.db });
   let cursor = null;
@@ -164,7 +165,7 @@ test('unavailable adventure still issues own-content manifest with explicit deri
   const packet = await emitted(f);
   assert.equal(packet.manifest.availability, 'unavailable');
   assert.ok(packet.manifest.content.unavailable > 0);
-  assert.equal(packet.manifest.provenance.bytes, 0);
+  assert.ok(packet.manifest.provenance.bytes > 0);
   assert.equal(f.controls.events.length, 0);
   assert.equal(f.verify(uid, packet).validation, 'campaign-issuance-only');
 });

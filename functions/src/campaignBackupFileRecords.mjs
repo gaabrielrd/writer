@@ -51,7 +51,7 @@ export function campaignFileHeader(v) {
     v.schemaVersion !== 1 ||
     v.kind !== 'writer-campaign' ||
     v.contentVersion !== 1 ||
-    v.provenanceVersion !== 1 ||
+    ![1, 2].includes(v.provenanceVersion) ||
     !['none', 'available', 'unavailable'].includes(v.availability)
   )
     campaignFileBad();
@@ -59,7 +59,7 @@ export function campaignFileHeader(v) {
     schemaVersion: 1,
     kind: 'writer-campaign',
     contentVersion: 1,
-    provenanceVersion: 1,
+    provenanceVersion: v.provenanceVersion,
     originCampaignId: campaignManifestId(v.originCampaignId),
     availability: v.availability,
   };
@@ -140,12 +140,13 @@ export function campaignFileUnit(v) {
   return out;
 }
 export function campaignFileWitness(v) {
-  if (!Array.isArray(v) || v.length !== 4 || !['base', 'item', 'anchor'].includes(v[0]))
+  if (!Array.isArray(v) || v.length !== 4 || !['project', 'base', 'item', 'anchor'].includes(v[0]))
     campaignFileBad();
   const [section, id, outcome, raw] = v;
   if (outcome === 'available') {
     const content = validatePortableCampaignWitness(raw);
     if (
+      (section === 'project' && (content.kind !== 'project' || id !== content.campaignId)) ||
       (section === 'base' && (content.kind !== 'base' || id !== content.baseId)) ||
       (section === 'item' && (content.kind !== 'item' || id !== content.sourceKey)) ||
       (section === 'anchor' && (content.kind !== 'anchor' || id !== content.item.sourceKey))

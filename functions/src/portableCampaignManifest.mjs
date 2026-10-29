@@ -52,7 +52,7 @@ export function validatePortableCampaignManifest(v) {
     v.schemaVersion !== 1 ||
     v.kind !== 'writer-campaign' ||
     v.contentVersion !== 1 ||
-    v.provenanceVersion !== 1 ||
+    ![1, 2].includes(v.provenanceVersion) ||
     !hash(v.ownerBinding) ||
     !['none', 'available', 'unavailable'].includes(v.availability) ||
     !count(v.issuedAt) ||
@@ -63,7 +63,7 @@ export function validatePortableCampaignManifest(v) {
     provenance = totals(v.provenance, ['units', 'bytes']);
   if (
     content.units < 3 ||
-    provenance.units < 1 ||
+    provenance.units < (v.provenanceVersion === 2 ? 2 : 1) ||
     content.omitted + content.unavailable > content.units ||
     content.chunks > content.bytes
   )
@@ -72,7 +72,7 @@ export function validatePortableCampaignManifest(v) {
     schemaVersion: 1,
     kind: 'writer-campaign',
     contentVersion: 1,
-    provenanceVersion: 1,
+    provenanceVersion: v.provenanceVersion,
     ownerBinding: v.ownerBinding,
     originCampaignId: campaignManifestId(v.originCampaignId),
     availability: v.availability,

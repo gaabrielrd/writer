@@ -135,3 +135,24 @@ export async function readCampaignOriginAccess(tx, db, uid, base, item) {
   }
   return { availability: available ? 'available' : 'unavailable', proof: digest(facts) };
 }
+
+/** Organizational link is independent of the captured adventure and its universe. */
+export async function readCampaignOrganizationalUniverseAccess(tx, db, uid, universe) {
+  masked(tx);
+  if (universe.kind !== 'reference')
+    return {
+      availability: universe.kind === 'none' ? 'none' : 'unavailable',
+      proof: digest(['exported-organizational-universe', universe]),
+    };
+  const world = await baseMasked(tx, db.doc('universes/' + universe.id), ['authorId', 'deleting']);
+  return {
+    availability:
+      world.snapshot.exists &&
+      world.value.authorId === uid &&
+      !world.value.deleting &&
+      same(world.native?.created, universe.born)
+        ? 'available'
+        : 'unavailable',
+    proof: digest(fact(world)),
+  };
+}

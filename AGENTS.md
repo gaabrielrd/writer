@@ -1064,3 +1064,8 @@ Na revisão de origens do arquivo, autentique o arquivo antes de consultar orige
 Valide MAC/ordinal de toda a página do índice temporário antes de await nativo.
 Exija nascimento exato, C4, clock e reconferência; zere a chave e descarte o índice.
 campaign-origin-review-only e callbacks provisórios não autorizam ativação (ADR 0244).
+
+No backup de campanha, confira universo organizacional separadamente da base.
+Emita provenanceVersion 2 com project único/primeiro e nascimento nativo;
+leia v1 com vínculo unproven, sem religar por ID bruto ou pelo universo da base.
+Reautorize o vínculo antes da futura ativação; revisão não concede grant (ADR 0245).

@@ -722,3 +722,13 @@ acesso. 35 testes novos e 60 regressões Node positivos;
 Prova efêmera não ativa restauração. Vínculos semânticos, consumidores de
 procedência, cleanup/persistência/retomada e restauração/UI/ciclo P3/D/F2-09
 continuam pendentes; macro **8/35**. Somente commit local; validate no grande bloco.
+
+## 2026-10-29 — universo organizacional portátil em P3
+
+O [plano 215](execucao/215-universo-organizacional-no-backup.md) separa o universo
+organizacional do universo da base no backup/revisão. Emissão v2 inclui nascimento
+próprio; v1 permanece legível com vínculo não comprovado para religação.
+21 testes novos e 117 regressões Node positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-universo-organizacional-no-backup.md).
+Vínculos semânticos/consumidores, C4, persistência/retomada e restauração/UI/ciclo
+P3/D/F2-09 continuam abertos; macro **8/35**, somente commit local. Validate no bloco.

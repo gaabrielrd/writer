@@ -98,7 +98,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
               schemaVersion: 1,
               kind: 'writer-campaign',
               contentVersion: 1,
-              provenanceVersion: 1,
+              provenanceVersion: 2,
               originCampaignId: campaignId,
               availability: derived.availability,
             }),
@@ -172,7 +172,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
           fold(content, ['writer-campaign-logical-units-v1', campaignId, derived.availability]);
           fold(inventory, ['writer-campaign-native-inventory-v1', own, derived]);
           fold(native, ['writer-campaign-native-content-v1', own, derived]);
-          fold(provenance, ['writer-campaign-witnesses-v1', campaignId]);
+          fold(provenance, ['writer-campaign-witnesses-v2', campaignId]);
           async function witness(method, input, section, id) {
             const result = await call(method, input);
             if (result.outcome === 'available') {
@@ -322,6 +322,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
                 yield progress('own:' + family);
                 check();
               }
+            await witness('getCampaignBackupProjectWitness', request, 'project', campaignId);
             if (derived.availability === 'available') {
               await readChunked(
                 'readCampaignBackupBaseResource',

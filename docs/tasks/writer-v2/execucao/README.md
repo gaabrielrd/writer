@@ -2274,3 +2274,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-revisao-das-origens-do-backup.md).
      Vínculos/consumidores, cleanup/persistência/retomada e restauração/UI/ciclo
      P3/D/F2-09 pendentes; macro 8/35, somente commit local.
+
+215. [Universo organizacional no backup](215-universo-organizacional-no-backup.md):
+     evidência project e revisão separada, emissão provenanceVersion 2 e leitura
+     v1 sem prova inventada. 21 testes novos e 117 regressões Node positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-universo-organizacional-no-backup.md).
+     Vínculos/consumidores, C4, persistência e restauração/UI/ciclo continuam
+     pendentes; P3/D/F2-09 abertos, macro 8/35, somente commit local.

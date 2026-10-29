@@ -3656,3 +3656,14 @@ Gates mascarados conferem nascimento exato, owner, C4 e clock em duas passagens,
 sem prosa nem dependência das bases antigas. Atuação da chave é revalidada ao
 final. Índice/chave são descartados; prova de revisão é efêmera e não é grant.
 Adaptador persistente, vínculos do domínio, restauração/ativação e UI seguem pendentes.
+
+## Universo organizacional portátil da campanha
+
+A [ADR 0245](decisions/0245-campaign-organizational-universe-provenance.md) separa
+a evidência project do universo da base. Novas emissões usam provenanceVersion 2,
+com raiz de evidências v2 e project único/primeiro; framing/contentVersion 1.
+Metadata e nascimento nativos são conferidos na captura e revisão em duas
+passagens, inclusive em campanha independente ou com derivados indisponíveis.
+Leitura v1 conserva próprios e sinaliza organizationalUniverse unproven; nunca
+reconstrói prova por ID bruto. Contadores derivados são separados do vínculo.
+Materialização, união semântica dos DTOs, consumidores e cleanup continuam pendentes.

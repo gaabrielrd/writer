@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generateKeyPairSync } from 'node:crypto';
+import { generateKeyPairSync, createHash, sign } from 'node:crypto';
+import { encodeCampaignBackup, decodeCampaignBackup } from '../src/campaignBackupContainer.mjs';
+import { validateCampaignBackupFile } from '../src/campaignBackupFileValidation.mjs';
+import { CAMPAIGN_ATTESTATION_DOMAIN } from '../src/portableCampaignManifest.mjs';
+import { createCampaignBackupWitnessService } from '../src/campaignBackupWitness.mjs';
 import { createCampaignBackupFileService } from '../src/campaignBackupFile.mjs';
 import { createCampaignBackupOriginReviewService } from '../src/campaignBackupOriginReview.mjs';
 import {
@@ -44,6 +48,7 @@ async function fixture(beforeCapture) {
     f = await backupLoreFixture(beforeCapture, campaignBackupLoreDb(), media.storage),
     pair = generateKeyPairSync('ed25519');
   Object.assign(f, media);
+  f.signingPair = pair;
   await f.save('origin-review-variant', 0, entity());
   await f.refresh();
   f.keys = [{ id: 'origin-test-key', state: 'active', publicKey: pair.publicKey }];
@@ -235,7 +240,8 @@ test('exported unavailable origins stay unavailable without probing a newly recr
   const r = await f.run();
   assert.ok(r.origins.unavailable > 0);
   assert.equal(r.origins.available, 0);
-  noOriginReads(f);
+  assert.ok(f.metadataReads.every((r) => !r.path.startsWith('adventures/')));
+  assert.equal(r.origins.organizationalUniverse.availability, 'available');
 });
 test('invalid signature, wrong account and corrupt footer cause no origin or clock reads and dispose the provisional index', async () => {
   for (const mode of ['signature', 'account', 'footer']) {
@@ -644,4 +650,387 @@ test('independent empty backup preserves an absent authorization clock and has n
   assert.deepEqual([...data.records], before);
   assert.equal(data.records.has('users/' + uid + '/campaignAuthorization/current'), false);
   assert.equal(index.disposed, 1);
+});
+
+async function organizationalWorld(f, id = 'organizational-world') {
+  await f.db.runTransaction(async (tx) =>
+    tx.create(f.db.doc('universes/' + id), { authorId: uid, deleting: false }),
+  );
+  await patch(f, f.path, { universeId: id });
+  await f.refresh();
+  f.file = await f.makeFile();
+  return id;
+}
+async function rewriteOrganizationalFile(f, mutate, alterPacket) {
+  const records = [];
+  for await (const r of decodeCampaignBackup(f.source()))
+    records.push({ ...r, payload: Buffer.from(r.payload) });
+  const header = JSON.parse(records[0].payload),
+    packet = JSON.parse(records.at(-1).payload);
+  mutate(records, header, packet);
+  records[0].payload = Buffer.from(JSON.stringify(header));
+  const root = createHash('sha256');
+  root.update(
+    JSON.stringify([
+      'writer-campaign-witnesses-v' + header.provenanceVersion,
+      header.originCampaignId,
+    ]) + '\n',
+  );
+  let count = 0,
+    bytes = 0;
+  for (const r of records)
+    if (r.kind === 'witness') {
+      r.id = String(count++);
+      const value = JSON.parse(r.payload);
+      root.update(JSON.stringify(value) + '\n');
+      bytes += value[3] === null ? 0 : Buffer.byteLength(JSON.stringify(value[3]));
+    }
+  packet.manifest.provenanceVersion = header.provenanceVersion;
+  packet.manifest.provenance = { units: count, bytes, digest: root.digest('hex') };
+  alterPacket?.(packet);
+  packet.attestation.signature = sign(
+    null,
+    Buffer.from(
+      CAMPAIGN_ATTESTATION_DOMAIN +
+        '\0' +
+        JSON.stringify({
+          schemaVersion: 1,
+          algorithm: 'Ed25519',
+          keyId: packet.attestation.keyId,
+          manifest: packet.manifest,
+        }),
+    ),
+    f.signingPair.privateKey,
+  ).toString('base64url');
+  records.at(-1).payload = Buffer.from(JSON.stringify(packet));
+  const frames = [];
+  for await (const frame of encodeCampaignBackup(records)) frames.push(Buffer.from(frame));
+  f.file = Buffer.concat(frames);
+}
+test('organizational universe is a separate signed birth witness, independent of the captured base universe', async () => {
+  const f = await fixture(),
+    id = await organizationalWorld(f),
+    decisions = [];
+  const witness = await createCampaignBackupWitnessService({
+    db: f.db,
+  }).getCampaignBackupProjectWitness(uid, f.anchor);
+  assert.equal(witness.content.kind, 'project');
+  assert.equal(witness.content.universe.id, id);
+  const world = await f.db.doc('universes/' + id).get();
+  assert.deepEqual(witness.content.universe.born, {
+    seconds: world.createTime.seconds,
+    nanoseconds: world.createTime.nanoseconds,
+  });
+  assert.ok(Object.isFrozen(witness.content.universe.born));
+  await patch(f, 'universes/world', { deleting: true });
+  const result = await f.run(temporaryIndex(), { onDecision: (d) => decisions.push(d) });
+  assert.equal(result.manifest.provenanceVersion, 2);
+  assert.deepEqual(result.origins.organizationalUniverse, { availability: 'available', id });
+  assert.equal(decisions[0].section, 'project');
+  assert.equal(decisions[0].id, f.id);
+  assert.ok(result.origins.globalUnavailable > 0);
+  assert.equal(result.origins.derivedWitnesses + 1, result.origins.witnesses);
+});
+for (const mode of ['missing', 'recreated', 'owner', 'deleting'])
+  test(
+    'organizational universe ' + mode + ' cannot inherit access from the base universe',
+    async () => {
+      const f = await fixture(),
+        id = await organizationalWorld(f),
+        path = 'universes/' + id,
+        value = f.records.get(path);
+      if (['missing', 'recreated'].includes(mode)) await remove(f, path);
+      if (mode === 'recreated')
+        await f.db.runTransaction(async (tx) => tx.create(f.db.doc(path), value));
+      if (mode === 'owner') await patch(f, path, { authorId: 'other-author' });
+      if (mode === 'deleting') await patch(f, path, { deleting: true });
+      const result = await f.run();
+      assert.deepEqual(result.origins.organizationalUniverse, { availability: 'unavailable', id });
+      assert.equal(result.origins.unavailable, 0);
+      assert.ok(result.origins.available > 0);
+    },
+  );
+test('organizational universe unavailable at export is not probed or revived later; own file remains valid', async () => {
+  const f = await fixture(),
+    id = await organizationalWorld(f),
+    path = 'universes/' + id,
+    value = f.records.get(path);
+  await remove(f, path);
+  await f.refresh();
+  f.file = await f.makeFile();
+  await f.db.runTransaction(async (tx) => tx.create(f.db.doc(path), value));
+  f.metadataReads.length = 0;
+  const result = await f.run();
+  assert.equal(result.origins.organizationalUniverse.availability, 'unavailable');
+  assert.equal(
+    f.metadataReads.some((r) => r.path === path),
+    false,
+  );
+  assert.ok(result.manifest.content.bytes > 0);
+});
+test('organizational link remains available when the captured adventure is no longer authorized', async () => {
+  const f = await fixture(),
+    id = await organizationalWorld(f);
+  await patch(f, 'adventures/' + f.campaign.provenance.adventureId, { deleting: true });
+  f.file = await f.makeFile();
+  const result = await f.run();
+  assert.equal(result.manifest.availability, 'unavailable');
+  assert.deepEqual(result.origins.organizationalUniverse, { availability: 'available', id });
+  assert.equal(result.origins.available, 0);
+});
+test('organizational universe changes between native audit passes withhold the signature and abort output', async () => {
+  const f = await fixture(),
+    id = await organizationalWorld(f),
+    frames = [];
+  let changed = false,
+    aborted = 0;
+  await assert.rejects(
+    f.writer.writeCampaignBackupFile(
+      uid,
+      { campaignId: f.id },
+      {
+        sink: {
+          write: async (b) => frames.push(Buffer.from(b)),
+          commit: async () => assert.fail('changed source must not commit'),
+          abort: async () => {
+            aborted++;
+            frames.length = 0;
+          },
+        },
+        onProgress: async (p) => {
+          if (!changed && p.pass === 'capture' && p.stage === 'base:snapshot') {
+            changed = true;
+            await patch(f, 'universes/' + id, { deleting: true });
+          }
+        },
+      },
+    ),
+  );
+  assert.equal(changed, true);
+  assert.equal(aborted, 1);
+  assert.equal(frames.length, 0);
+});
+test('organizational universe changes between authorization passes withhold final review', async () => {
+  const f = await fixture(),
+    id = await organizationalWorld(f);
+  let changedWorld = false;
+  await assert.rejects(
+    f.run(temporaryIndex(), {
+      onProgress: async (p) => {
+        if (
+          !changedWorld &&
+          p.phase === 'origins' &&
+          p.pass === 'capture' &&
+          p.processed === p.total
+        ) {
+          changedWorld = true;
+          await patch(f, 'universes/' + id, { deleting: true });
+        }
+      },
+    }),
+    changed,
+  );
+  assert.equal(changedWorld, true);
+});
+test('organizational legacy v1 file verifies its real signature but returns unproven without borrowing the base world', async () => {
+  const f = await fixture(),
+    id = await organizationalWorld(f);
+  await rewriteOrganizationalFile(f, (records, header) => {
+    header.provenanceVersion = 1;
+    const i = records.findIndex(
+      (r) => r.kind === 'witness' && JSON.parse(r.payload)[0] === 'project',
+    );
+    records.splice(i, 1);
+  });
+  f.metadataReads.length = 0;
+  const proof = await validateCampaignBackupFile(uid, f.source(), {
+    keys: f.keys,
+    now: () => 6000,
+  });
+  assert.equal(proof.manifest.provenanceVersion, 1);
+  const result = await f.run();
+  assert.deepEqual(result.origins.organizationalUniverse, { availability: 'unproven' });
+  assert.ok(result.origins.available > 0);
+  assert.equal(
+    f.metadataReads.some((r) => r.path === 'universes/' + id),
+    false,
+  );
+});
+for (const mode of [
+  'missing',
+  'duplicate',
+  'foreign',
+  'late',
+  'v1-with-project',
+  'unknown-version',
+  'manifest-version',
+])
+  test(
+    'organizational signed malformed ' + mode + ' file refuses before any origin query',
+    async () => {
+      const f = await fixture();
+      await rewriteOrganizationalFile(
+        f,
+        (records, header) => {
+          const i = records.findIndex(
+            (r) => r.kind === 'witness' && JSON.parse(r.payload)[0] === 'project',
+          );
+          if (mode === 'missing') records.splice(i, 1);
+          if (mode === 'duplicate')
+            records.splice(i, 0, { ...records[i], payload: Buffer.from(records[i].payload) });
+          if (mode === 'foreign') {
+            const value = JSON.parse(records[i].payload);
+            value[1] = value[3].campaignId = 'foreign-campaign';
+            records[i].payload = Buffer.from(JSON.stringify(value));
+          }
+          if (mode === 'late') {
+            const project = records.splice(i, 1)[0],
+              b = records.findIndex((r) => r.kind === 'witness');
+            records.splice(b + 1, 0, project);
+          }
+          if (mode === 'v1-with-project') header.provenanceVersion = 1;
+          if (mode === 'unknown-version') header.provenanceVersion = 3;
+        },
+        mode === 'manifest-version'
+          ? (p) => {
+              p.manifest.provenanceVersion = 1;
+            }
+          : undefined,
+      );
+      f.metadataReads.length = 0;
+      const index = temporaryIndex();
+      await assert.rejects(f.run(index));
+      assert.equal(f.metadataReads.length, 0);
+      assert.equal(index.disposed, 1);
+    },
+  );
+test('organizational universe of an independent campaign is preserved without requiring an adventure', async () => {
+  const { createStudioService } = await import('../src/studio.mjs'),
+    data = campaignBackupLoreDb(),
+    pair = generateKeyPairSync('ed25519'),
+    id = 'independent-world-campaign',
+    worldId = 'independent-world',
+    keys = [{ id: 'independent-world-key', state: 'active', publicKey: pair.publicKey }],
+    frames = [];
+  await data.db.runTransaction(async (tx) =>
+    tx.create(data.db.doc('universes/' + worldId), { authorId: uid }),
+  );
+  await createStudioService({ db: data.db }).createCampaign(uid, {
+    operationId: id,
+    title: 'Own campaign',
+    universeId: worldId,
+  });
+  await createCampaignBackupFileService({
+    db: data.db,
+    storage: {},
+    keys,
+    keyId: keys[0].id,
+    privateKey: pair.privateKey,
+    now: () => 1000,
+  }).writeCampaignBackupFile(
+    uid,
+    { campaignId: id },
+    {
+      sink: {
+        write: async (b) => frames.push(Buffer.from(b)),
+        commit: async () => {},
+        abort: async () => {},
+      },
+    },
+  );
+  const file = Buffer.concat(frames),
+    before = structuredClone([...data.records]);
+  data.metadataReads.length = 0;
+  const result = await createCampaignBackupOriginReviewService({
+    db: data.db,
+    keys,
+    now: () => 2000,
+  }).reviewCampaignBackupOrigins(
+    uid,
+    { size: file.length, read: async (offset, length) => file.subarray(offset, offset + length) },
+    { index: temporaryIndex().port },
+  );
+  assert.equal(result.manifest.availability, 'none');
+  assert.deepEqual(result.origins.organizationalUniverse, {
+    availability: 'available',
+    id: worldId,
+  });
+  assert.equal(result.origins.none, 1);
+  assert.equal(result.origins.available, 0);
+  assert.equal(
+    data.metadataReads.some((r) => r.path.startsWith('adventures/')),
+    false,
+  );
+  assert.deepEqual([...data.records], before);
+});
+
+test('organizational v1 unavailable derivatives still preserve signed own content without querying the root universe', async () => {
+  const f = await fixture(),
+    id = await organizationalWorld(f);
+  await patch(f, 'adventures/' + f.campaign.provenance.adventureId, { deleting: true });
+  f.file = await f.makeFile();
+  await rewriteOrganizationalFile(f, (records, header) => {
+    header.provenanceVersion = 1;
+    records.splice(
+      records.findIndex((r) => r.kind === 'witness' && JSON.parse(r.payload)[0] === 'project'),
+      1,
+    );
+  });
+  f.keys[0].state = 'verify-only';
+  f.metadataReads.length = 0;
+  const result = await f.run();
+  assert.equal(result.manifest.provenanceVersion, 1);
+  assert.equal(result.manifest.availability, 'unavailable');
+  assert.deepEqual(result.origins.organizationalUniverse, { availability: 'unproven' });
+  assert.ok(result.manifest.content.bytes > 0);
+  assert.equal(
+    f.metadataReads.some((r) => r.path === 'universes/' + id),
+    false,
+  );
+});
+test('organizational campaign root link change during export cannot sign a mixed root and project witness', async () => {
+  const f = await fixture(),
+    frames = [];
+  let changedLink = false,
+    aborts = 0;
+  await assert.rejects(
+    f.writer.writeCampaignBackupFile(
+      uid,
+      { campaignId: f.id },
+      {
+        sink: {
+          write: async (b) => frames.push(Buffer.from(b)),
+          commit: async () => assert.fail('mixed root must not commit'),
+          abort: async () => {
+            aborts++;
+            frames.length = 0;
+          },
+        },
+        onProgress: async (p) => {
+          if (!changedLink && p.pass === 'capture' && p.stage === 'own:campaign') {
+            changedLink = true;
+            await patch(f, f.path, { universeId: null });
+          }
+        },
+      },
+    ),
+  );
+  assert.equal(changedLink, true);
+  assert.equal(aborts, 1);
+  assert.equal(frames.length, 0);
+});
+test('organizational closed witness rejects unknown fields and malformed birth even with a trusted signature', async () => {
+  for (const mode of ['extra', 'born']) {
+    const f = await fixture();
+    await rewriteOrganizationalFile(f, (records) => {
+      const record = records.find((r) => r.kind === 'witness'),
+        value = JSON.parse(record.payload);
+      if (mode === 'extra') value[3].privatePath = 'secret/path';
+      else value[3].universe.born.nanoseconds = 1000000000;
+      record.payload = Buffer.from(JSON.stringify(value));
+    });
+    f.metadataReads.length = 0;
+    await assert.rejects(f.run());
+    assert.equal(f.metadataReads.length, 0);
+  }
 });

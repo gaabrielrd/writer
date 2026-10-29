@@ -152,7 +152,7 @@ export function createCampaignBackupAttestationService({
             schemaVersion: 1,
             kind: 'writer-campaign',
             contentVersion: 1,
-            provenanceVersion: 1,
+            provenanceVersion: 2,
             ownerBinding: campaignBackupOwnerBinding(uid),
             originCampaignId: proof.campaignId,
             availability: proof.availability,

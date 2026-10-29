@@ -62,7 +62,8 @@ export async function validateCampaignBackupFile(
     omitted = 0,
     unavailable = 0,
     witnesses = 0,
-    witnessBytes = 0;
+    witnessBytes = 0,
+    sawProject = false;
   try {
     for (;;) {
       signal?.throwIfAborted();
@@ -70,12 +71,13 @@ export async function validateCampaignBackupFile(
       signal?.throwIfAborted();
       cursor = step.cursor;
       if (step.seal) {
-        if (!packet || active) bad();
+        if (!packet || active || (header.provenanceVersion === 2 && !sawProject)) bad();
         const verified = verifier.verifyCampaignBackupAttestation(uid, packet),
           m = verified.manifest,
           actual = { units, bytes, chunks, omitted, unavailable, digest: content.digest('hex') },
           origins = { units: witnesses, bytes: witnessBytes, digest: provenance.digest('hex') };
         if (
+          m.provenanceVersion !== header.provenanceVersion ||
           m.originCampaignId !== header.originCampaignId ||
           m.availability !== header.availability ||
           JSON.stringify(m.content) !== JSON.stringify(actual) ||
@@ -100,7 +102,10 @@ export async function validateCampaignBackupFile(
           header.originCampaignId,
           header.availability,
         ]);
-        fold(provenance, ['writer-campaign-witnesses-v1', header.originCampaignId]);
+        fold(provenance, [
+          'writer-campaign-witnesses-v' + header.provenanceVersion,
+          header.originCampaignId,
+        ]);
       } else if (active) {
         if (
           r.kind !== 'data' ||
@@ -140,6 +145,16 @@ export async function validateCampaignBackupFile(
       } else if (r.kind === 'witness') {
         if (r.id !== String(witnesses) || r.part !== 0) bad();
         const witness = campaignFileJson(r.payload, campaignFileWitness, 65536);
+        if (witness[0] === 'project') {
+          if (
+            header.provenanceVersion !== 2 ||
+            witnesses !== 0 ||
+            sawProject ||
+            witness[1] !== header.originCampaignId
+          )
+            bad();
+          sawProject = true;
+        } else if (header.provenanceVersion === 2 && !sawProject) bad();
         witnesses = add(witnesses);
         witnessBytes = add(
           witnessBytes,
