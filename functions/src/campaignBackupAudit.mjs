@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { campaignTextUnit, campaignFieldChunk } from './campaignBackupTextChunks.mjs';
 import { campaignBackupScope, createCampaignBackupSourceService } from './campaignBackupSource.mjs';
 import { createCampaignBackupDerivedSourceService } from './campaignBackupDerivedSource.mjs';
 import { createCampaignBackupInventoryService } from './campaignBackupInventory.mjs';
@@ -97,7 +98,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
             JSON.stringify({
               schemaVersion: 1,
               kind: 'writer-campaign',
-              contentVersion: 1,
+              contentVersion: 2,
               provenanceVersion: 2,
               originCampaignId: campaignId,
               availability: derived.availability,
@@ -140,14 +141,23 @@ export function createCampaignBackupAuditService({ db, storage }) {
               if (result.outcome !== 'available') return;
               if (typeof read !== 'function') fail();
               const hash = createHash('sha256');
-              let size = 0;
+              let size = 0,
+                previousLength;
               try {
                 for (let index = 0; index < result.chunkCount; index++) {
                   const value = await read(index);
                   check();
                   if (
                     !Buffer.isBuffer(value) ||
-                    value.length !== Math.min(CHUNK, result.byteLength - index * CHUNK)
+                    (campaignTextUnit(section)
+                      ? !campaignFieldChunk(
+                          value,
+                          index,
+                          result.chunkCount,
+                          result.byteLength,
+                          previousLength,
+                        )
+                      : value.length !== Math.min(CHUNK, result.byteLength - index * CHUNK))
                   )
                     fail();
                   if (
@@ -156,7 +166,9 @@ export function createCampaignBackupAuditService({ db, storage }) {
                     value.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a'
                   )
                     fail();
+                  previousLength = value.length;
                   size = counter(size, value.length);
+                  if (size > result.byteLength) fail();
                   hash.update(value);
                   await publish({ kind: 'data', id: ordinal, part: index, payload: value });
                 }
@@ -169,7 +181,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
               check();
               return Object.freeze({ pass, stage, units, pages, resources });
             };
-          fold(content, ['writer-campaign-logical-units-v1', campaignId, derived.availability]);
+          fold(content, ['writer-campaign-logical-units-v2', campaignId, derived.availability]);
           fold(inventory, ['writer-campaign-native-inventory-v1', own, derived]);
           fold(native, ['writer-campaign-native-content-v1', own, derived]);
           fold(provenance, ['writer-campaign-witnesses-v2', campaignId]);
@@ -586,6 +598,7 @@ export function createCampaignBackupAuditService({ db, storage }) {
         return Object.freeze({
           schemaVersion: 1,
           validation: 'campaign-native-audit',
+          contentVersion: 2,
           campaignId,
           sourceToken: own.sourceToken,
           derivedToken: derived.derivedToken,

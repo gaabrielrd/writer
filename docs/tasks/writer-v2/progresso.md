@@ -742,3 +742,13 @@ preparação/corpos/vínculos em índice temporário autenticado, sem prosa.
 [evidência parcial](../../entregas/2026-10-29-writer-v2-semantica-dos-dados-proprios.md).
 Derivados/consumidores, C4, persistência, restauração/ativação e UI/ciclo
 P3/D/F2-09 continuam pendentes; macro **8/35**. Somente commit local.
+
+## 2026-10-29 — correção de campos UTF-8 no arquivo de campanha
+
+Na inspeção derivada, o [plano 217](execucao/217-campos-utf8-no-arquivo-de-campanha.md)
+reproduziu e corrigiu a exportação de texto congelado multibyte. Emissão
+contentVersion 2 conserva chunks nativos; leitor mantém v1 sem reinterpretar.
+19 novos e 231 regressões Node positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-campos-utf8-no-backup-de-campanhas.md).
+Joins derivados/consumidores, C4, persistência e restauração/UI/ciclo continuam
+pendentes; P3/D/F2-09 e macro **8/35** abertos, somente commit local.

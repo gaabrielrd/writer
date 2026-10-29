@@ -161,7 +161,11 @@ async function rewrite(f, mutate) {
     content = createHash('sha256'),
     provenance = createHash('sha256');
   const fold = (h, v) => h.update(JSON.stringify(v) + '\n');
-  fold(content, ['writer-campaign-logical-units-v1', header.originCampaignId, header.availability]);
+  fold(content, [
+    'writer-campaign-logical-units-v' + header.contentVersion,
+    header.originCampaignId,
+    header.availability,
+  ]);
   fold(provenance, [
     'writer-campaign-witnesses-v' + header.provenanceVersion,
     header.originCampaignId,

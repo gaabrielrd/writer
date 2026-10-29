@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { campaignFieldChunk } from './campaignBackupTextChunks.mjs';
 import { baseBodyKey } from './campaignBaseContracts.mjs';
 import { campaignBackupBaseFields } from './campaignBackupBaseContent.mjs';
 import { baseMasked, baseInconsistent, baseChanged } from './campaignBackupBaseContext.mjs';
@@ -65,7 +66,8 @@ export async function readCampaignBackupBaseBody(c, manifest, index) {
 export async function auditCampaignBackupBaseField(c, owner, manifest) {
   const content = createHash('sha256'),
     native = createHash('sha256');
-  let bytes = 0;
+  let bytes = 0,
+    previousLength;
   native.update(
     JSON.stringify([
       'writer-frozen-field-native-v1',
@@ -77,6 +79,9 @@ export async function auditCampaignBackupBaseField(c, owner, manifest) {
   );
   for (let index = 0; index < manifest.chunkCount; index++) {
     const body = await readCampaignBackupBaseBody(c, manifest, index);
+    if (!campaignFieldChunk(body.bytes, index, manifest.chunkCount, manifest.bytes, previousLength))
+      baseInconsistent();
+    previousLength = body.bytes.length;
     bytes += body.bytes.length;
     if (!Number.isSafeInteger(bytes) || bytes > manifest.bytes) baseInconsistent();
     content.update(body.bytes);

@@ -51,7 +51,7 @@ export function validatePortableCampaignManifest(v) {
     ]) ||
     v.schemaVersion !== 1 ||
     v.kind !== 'writer-campaign' ||
-    v.contentVersion !== 1 ||
+    ![1, 2].includes(v.contentVersion) ||
     ![1, 2].includes(v.provenanceVersion) ||
     !hash(v.ownerBinding) ||
     !['none', 'available', 'unavailable'].includes(v.availability) ||
@@ -71,7 +71,7 @@ export function validatePortableCampaignManifest(v) {
   return Object.freeze({
     schemaVersion: 1,
     kind: 'writer-campaign',
-    contentVersion: 1,
+    contentVersion: v.contentVersion,
     provenanceVersion: v.provenanceVersion,
     ownerBinding: v.ownerBinding,
     originCampaignId: campaignManifestId(v.originCampaignId),

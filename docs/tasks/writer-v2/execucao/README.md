@@ -2288,3 +2288,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-semantica-dos-dados-proprios.md).
      Semântica derivada/consumidores, C4, persistência, restauração/ativação e
      UI/ciclos permanecem abertos; macro 8/35, somente commit local.
+
+217. [Campos UTF-8 no arquivo de campanha](217-campos-utf8-no-arquivo-de-campanha.md):
+     corrige exportação de cena/lore longos usando chunks nativos, contentVersion
+     2 e domínio v2, com leitura v1 preservada. 19 novos e 231 regressões positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-campos-utf8-no-backup-de-campanhas.md).
+     Semântica derivada/consumidores, C4, persistência e restauração/UI/ciclos
+     seguem abertos; macro 8/35, somente commit local.

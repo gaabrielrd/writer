@@ -151,7 +151,7 @@ export function createCampaignBackupAttestationService({
           manifest = validatePortableCampaignManifest({
             schemaVersion: 1,
             kind: 'writer-campaign',
-            contentVersion: 1,
+            contentVersion: proof.contentVersion,
             provenanceVersion: 2,
             ownerBinding: campaignBackupOwnerBinding(uid),
             originCampaignId: proof.campaignId,

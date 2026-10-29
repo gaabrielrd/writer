@@ -496,7 +496,7 @@ for (const section of ['content', 'provenance'])
         const hash = createHash('sha256');
         hash.update(
           JSON.stringify([
-            'writer-campaign-logical-units-v1',
+            'writer-campaign-logical-units-v' + header.contentVersion,
             header.originCampaignId,
             header.availability,
           ]) + '\n',

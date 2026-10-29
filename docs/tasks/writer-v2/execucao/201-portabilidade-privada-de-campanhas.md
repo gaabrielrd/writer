@@ -278,3 +278,13 @@ omissões legítimas e não autoriza o alvo derivado. 47 novos e 157 regressões
 Node positivos. Semântica completa da base/lore/imagens e consumidores
 ordinários continuam pendentes, seguidos por C4 antes de produtores persistentes,
 upload/retomada, materialização/ativação e UI/ciclos. P3/D/F2-09 e macro 8/35 abertos.
+
+## Passos 3–4 — correção necessária dos campos UTF-8
+
+O [plano 217](217-campos-utf8-no-arquivo-de-campanha.md) remove uma falha real
+descoberta ao inspecionar os derivados: chunks nativos de texto não são sempre
+fixos em 65.536 bytes. Emissão contentVersion 2 conserva as fronteiras e leitor
+mantém v1 original, com versão/domínio assinados. 19 novos e 231 regressões
+positivos, inclusive campo que exige três partes para 131.072 bytes e lore legado.
+Não encerra a semântica completa dos derivados ou os passos 5–9; P3/D/F2-09
+e macro 8/35 permanecem abertos, validate no fechamento do grande bloco.

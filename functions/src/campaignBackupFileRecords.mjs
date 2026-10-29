@@ -3,6 +3,7 @@ import { CAMPAIGN_BASE_FIELDS } from './campaignBackupBaseDefinitions.mjs';
 import { campaignManifestId, closedCampaignRecord } from './portableCampaignManifest.mjs';
 import { validatePortableCampaignWitness } from './portableCampaignProvenance.mjs';
 import { CampaignBackupFormatError } from './campaignBackupContainer.mjs';
+import { campaignFieldChunkCount } from './campaignBackupTextChunks.mjs';
 const encoder = new TextEncoder(),
   decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
 export const campaignFileBad = () => {
@@ -50,7 +51,7 @@ export function campaignFileHeader(v) {
     ]) ||
     v.schemaVersion !== 1 ||
     v.kind !== 'writer-campaign' ||
-    v.contentVersion !== 1 ||
+    ![1, 2].includes(v.contentVersion) ||
     ![1, 2].includes(v.provenanceVersion) ||
     !['none', 'available', 'unavailable'].includes(v.availability)
   )
@@ -58,13 +59,14 @@ export function campaignFileHeader(v) {
   return {
     schemaVersion: 1,
     kind: 'writer-campaign',
-    contentVersion: 1,
+    contentVersion: v.contentVersion,
     provenanceVersion: v.provenanceVersion,
     originCampaignId: campaignManifestId(v.originCampaignId),
     availability: v.availability,
   };
 }
-export function campaignFileUnit(v) {
+export function campaignFileUnit(v, contentVersion = 1) {
+  if (![1, 2].includes(contentVersion)) campaignFileBad();
   if (!v || !sections.includes(v.section)) campaignFileBad();
   const field = ['base:field', 'anchor:field'].includes(v.section),
     image = v.section === 'image',
@@ -125,7 +127,9 @@ export function campaignFileUnit(v) {
     if (
       !count(v.byteLength) ||
       !count(v.chunkCount) ||
-      v.chunkCount !== Math.max(1, Math.ceil(v.byteLength / 65536)) ||
+      (field && contentVersion === 2
+        ? !campaignFieldChunkCount(v.byteLength, v.chunkCount)
+        : v.chunkCount !== Math.max(1, Math.ceil(v.byteLength / 65536))) ||
       !hash(v.contentHash) ||
       (image && (v.contentType !== 'image/png' || v.byteLength < 8 || v.byteLength > 16777216))
     )

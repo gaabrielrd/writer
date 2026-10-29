@@ -3678,3 +3678,13 @@ uma unidade serializada de 4 MiB, sem alterar limites de domínio/chunks.
 páginas de 25 conferem os joins S1/S2/S3 e a organização raiz/project.
 Omissões legítimas e v1 permanecem explícitos; semântica de derivados e autorização
 são gates separados. Sem adaptador persistente ou escrita/ativação nova.
+
+## Campos UTF-8 no conteúdo portátil de campanha v2
+
+A [ADR 0247](decisions/0247-campaign-backup-utf8-fields-v2.md) substitui apenas a
+versão de conteúdo da emissão: contentVersion 2/raiz lógica v2, com framing 1
+e provenanceVersion 2. Campo congelado/âncora conserva seus chunks UTF-8 nativos,
+com até 64 KiB e fronteira máxima, verificados por contrato compartilhado.
+O leitor mantém contentVersion 1 com regras fixas originais e exige versão
+igual no header/manifesto. JSON/imagens continuam fixos; não juntar campo
+inteiro em RAM. A semântica completa dos derivados e restauração seguem abertas.

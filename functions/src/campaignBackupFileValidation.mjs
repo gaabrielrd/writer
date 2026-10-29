@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { campaignTextUnit, campaignFieldChunk } from './campaignBackupTextChunks.mjs';
 import { CAMPAIGN_OWN_JSON_BYTES } from './campaignBackupOwnDefinitions.mjs';
 import { workId, workFail } from './workProgressContracts.mjs';
 import { readCampaignBackupFrame } from './campaignBackupContainer.mjs';
@@ -79,6 +80,7 @@ export async function validateCampaignBackupFile(
           actual = { units, bytes, chunks, omitted, unavailable, digest: content.digest('hex') },
           origins = { units: witnesses, bytes: witnessBytes, digest: provenance.digest('hex') };
         if (
+          m.contentVersion !== header.contentVersion ||
           m.provenanceVersion !== header.provenanceVersion ||
           m.originCampaignId !== header.originCampaignId ||
           m.availability !== header.availability ||
@@ -100,7 +102,7 @@ export async function validateCampaignBackupFile(
         if (r.kind !== 'campaign' || r.id !== 'header' || r.part !== 0) bad();
         header = campaignFileJson(r.payload, campaignFileHeader);
         fold(content, [
-          'writer-campaign-logical-units-v1',
+          'writer-campaign-logical-units-v' + header.contentVersion,
           header.originCampaignId,
           header.availability,
         ]);
@@ -113,7 +115,15 @@ export async function validateCampaignBackupFile(
           r.kind !== 'data' ||
           r.id !== active.id ||
           r.part !== active.index ||
-          r.payload.length !== Math.min(65536, active.unit.byteLength - active.bytes)
+          (header.contentVersion === 2 && campaignTextUnit(active.unit.section)
+            ? !campaignFieldChunk(
+                r.payload,
+                active.index,
+                active.unit.chunkCount,
+                active.unit.byteLength,
+                active.previousLength,
+              )
+            : r.payload.length !== Math.min(65536, active.unit.byteLength - active.bytes))
         )
           bad();
         if (
@@ -125,6 +135,8 @@ export async function validateCampaignBackupFile(
         if (active.parts) active.parts.push(Buffer.from(r.payload));
         active.hash.update(r.payload);
         active.bytes = add(active.bytes, r.payload.length);
+        if (active.bytes > active.unit.byteLength) bad();
+        active.previousLength = r.payload.length;
         active.index++;
         if (active.index === active.unit.chunkCount) {
           const digest = active.hash.digest('hex');
@@ -144,7 +156,7 @@ export async function validateCampaignBackupFile(
         }
       } else if (r.kind === 'unit') {
         if (r.id !== String(units) || r.part !== 0) bad();
-        const unit = campaignFileJson(r.payload, campaignFileUnit);
+        const unit = campaignFileJson(r.payload, (v) => campaignFileUnit(v, header.contentVersion));
         if (unit.section === 'own:campaign' && unit.id !== header.originCampaignId) bad();
         if (unit.section === 'own:progress' && unit.id !== 'current') bad();
         units = add(units);

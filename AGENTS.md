@@ -1075,3 +1075,9 @@ domínio. onOwnUnit é provisório, limitado por unidade, sem escrita ativa.
 Autentique arquivo e metadata de toda página antes de joins/callbacks; preserve
 omissões válidas e confira raiz/project. campaign-own-semantics-only não autoriza
 alvo derivado nem ativação. Descarte índice/chave sempre (ADR 0246).
+
+Emita backup de campanha com contentVersion 2 e raiz lógica v2; confira a versão
+auditada/assinada contra o header. Somente base:field/anchor:field usam chunks
+UTF-8 nativos, completos e máximos até 64 KiB; JSON/imagens mantêm partes fixas.
+Reutilize campaignBackupTextChunks e preserve leitura v1 sem reinterpretá-la.
+SHA/tamanho/ordinais e autorização continuam obrigatórios (ADR 0247).
