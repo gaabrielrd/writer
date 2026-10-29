@@ -218,3 +218,13 @@ Seguem reconferência/reconciliação conjuntas de todas as famílias, manifesto
 atestado nativo, framing, persistência/cleanup, restauração e UI/ciclo.
 Ampliar C4 v1–v4 e consumidores antes de produtores persistentes. P3/D/F2-09
 abertos; macro 8/35, somente commit local, validate integral no grande bloco.
+
+## Passos 3–4 — auditoria nativa conjunta
+
+O [plano 211](211-auditoria-conjunta-do-backup.md) reúne todas as famílias,
+conteúdos e provas em duas passagens completas com fontes finais, mantendo
+somente páginas/unidades limitadas, hashes e contadores. Cobertura/órfãos,
+âncoras antigas e imagens exatas são revalidados. 116 Node e 38 Vitest dirigidos
+positivos. campaign-native-audit não é assinatura nem arquivo. Seguem manifesto/
+atestado portátil, framing, persistência/cleanup C4 v1–v4, restauração e UI/ciclo.
+P3/D/F2-09 continuam abertos; macro 8/35, commit local, sem CI.

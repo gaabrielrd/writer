@@ -1044,3 +1044,8 @@ antes/depois de todo I/O, inclusive falhas. Selecione a geração decimal exata
 com pinnedStorageFile, também na metadata; nunca use a versão atual como fallback.
 Confira PNG/SHA/tamanho e ranges limitados; não exponha pins no DTO. Exija
 verify final no fluxo cliente; frozen-image-bytes-only não atesta arquivo (ADR 0240).
+
+Na auditoria conjunta de campanhas, reconfira todas as famílias e bytes nativos
+desde o início, incluindo controles/omissões, cobertura, lojas/órfãos e imagens.
+Compare raízes/contagens e fontes finais; não certifique listas/hashes do cliente.
+Trate campaign-native-audit como prova interna efêmera, sem grant (ADR 0241).

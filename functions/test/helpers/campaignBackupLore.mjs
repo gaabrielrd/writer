@@ -4,8 +4,8 @@ import { createCampaignBackupSourceService } from '../../src/campaignBackupSourc
 import { createCampaignBackupDerivedSourceService } from '../../src/campaignBackupDerivedSource.mjs';
 import { createCampaignBackupLoreService } from '../../src/campaignBackupLore.mjs';
 export { uid, op, heroKey, entity };
-export async function backupLoreFixture(beforeCapture, data = studioDb()) {
-  const domain = await adoptionFixture(data.db, beforeCapture),
+export async function backupLoreFixture(beforeCapture, data = studioDb(), assets) {
+  const domain = await adoptionFixture(data.db, beforeCapture, assets),
     f = { ...data, ...domain };
   f.id = f.campaign.id;
   f.path = 'campaigns/' + f.id;

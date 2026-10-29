@@ -126,7 +126,7 @@ for (const [name, change] of [
   ['pin generation changed', (f) => f.patch(f.imagePath, { generation: '2' })],
   [
     'source adventure revoked',
-    (f) => f.patch('adventures/' + f.campaign.adventureId, { deleting: true }),
+    (f) => f.patch('adventures/' + f.campaign.provenance.adventureId, { deleting: true }),
   ],
   ['campaign deletion', (f) => f.patch('campaigns/' + f.id, { deleting: true })],
   ['active base adoption', (f) => f.patch('campaigns/' + f.id, { activeBaseId: '0'.repeat(64) })],
@@ -141,8 +141,13 @@ for (const [name, change] of [
   test(name + ' during Storage read suppresses data', async () => {
     const f = await imageFixture(),
       m = await f.get();
-    f.controls.hooks.range = () => change(f);
+    let applied = false;
+    f.controls.hooks.range = async () => {
+      await change(f);
+      applied = true;
+    };
     await assert.rejects(f.chunk(m));
+    assert.equal(applied, true, 'The native mutation must succeed before access is refused');
   });
 for (const stage of ['metadata', 'hash', 'range'])
   test('reauthorizes after ' + stage + ' I/O, including provider failure', async () => {

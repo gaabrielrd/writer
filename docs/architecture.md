@@ -3614,3 +3614,14 @@ envelopes e contexto com um slot; só término natural após verify retorna
 frozen-image-bytes-only. Imagem indisponível tem resultado distinto sem Storage.
 Não há endpoint nem persistência novos. Manifesto/atestado e reconferência
 conjunta, arquivo/restauração/UI/ciclo continuam separados.
+
+## Auditoria conjunta da portabilidade de campanhas
+
+A [ADR 0241](decisions/0241-campaign-backup-joint-native-audit.md) compõe os
+leitores nativos em duas passagens completas. Próprios/controles, base/campos,
+recursos físicos, variantes/âncoras/bindings, lojas/órfãos e imagens contribuem
+para raízes incrementais de conteúdo/inventário/dependências. Não recebe
+manifesto de cliente nem reúne o projeto em memória. Progresso é provisório;
+campaign-native-audit é interno, sem assinatura/grant ou habilitação do arquivo.
+Origem indisponível preserva próprios e omissão explícita dos derivados.
+Atestado portátil, persistência/cleanup e restauração/UI continuam pendentes.

@@ -5,7 +5,7 @@ import { createBookBackupAssetStorage } from '../../src/bookBackupAssetStorage.m
 import { createCampaignBackupBaseInventoryService } from '../../src/campaignBackupBaseInventory.mjs';
 import { createCampaignBackupImageService } from '../../src/campaignBackupImage.mjs';
 export { uid };
-export async function imageFixture() {
+export async function imageStorageFixture() {
   const bytes = await sharp({
       create: { width: 192, height: 192, channels: 3, background: { r: 31, g: 87, b: 163 } },
     })
@@ -61,7 +61,24 @@ export async function imageFixture() {
       };
     },
   });
-  const storage = createBookBackupAssetStorage(bucket),
+  return {
+    bytes,
+    generation,
+    versions,
+    controls,
+    storage: createBookBackupAssetStorage(bucket),
+    storagePath: path,
+  };
+}
+export async function imageFixture() {
+  const {
+      bytes,
+      generation,
+      versions,
+      controls,
+      storage,
+      storagePath: path,
+    } = await imageStorageFixture(),
     f = await baseFixture(undefined, storage);
   Object.assign(f, { bytes, generation, versions, controls, storage, storagePath: path });
   f.imageService = createCampaignBackupImageService({ db: f.db, storage });

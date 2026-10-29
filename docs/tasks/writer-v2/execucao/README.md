@@ -2245,3 +2245,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-imagens-congeladas-no-backup.md).
      Reconferência conjunta, manifesto/atestado, arquivo/restauração/UI/ciclo
      P3/D/F2-09 pendentes; macro 8/35, somente commit local.
+
+211. [Auditoria conjunta do backup](211-auditoria-conjunta-do-backup.md):
+     duas passagens nativas de todas as famílias/bytes com raízes incrementais,
+     cobertura e omissões. 116 Node e 38 Vitest dirigidos positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-auditoria-conjunta-do-backup.md).
+     Manifesto/atestado, framing/arquivo, persistência/cleanup, restauração/UI/ciclo
+     P3/D/F2-09 pendentes; macro 8/35, somente commit local.

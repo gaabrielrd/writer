@@ -89,3 +89,13 @@ AGENTS.md. Revisão conferiu autorização, pins decimais, limites, ausência de
 novos produtores persistentes e escopo das provas; nenhum bloqueador pendente.
 Servidor manual Vite da branch foi preservado na porta 5173, com /studio e
 /src/main.tsx respondendo HTTP 200.
+
+## Revisão posterior no plano 211
+
+A integração rica revelou que o teste de revogação da aventura referenciava
+campaign.adventureId, enquanto o ID está em campaign.provenance.adventureId.
+Uma falha do preparo podia satisfazer a expectativa genérica de recusa Storage.
+O caminho foi corrigido e os sete casos de mutação agora exigem que a alteração
+nativa complete antes da recusa. A suíte de imagens (23) passou novamente no
+conjunto dirigido do [plano 211](../tasks/writer-v2/execucao/211-auditoria-conjunta-do-backup.md).
+O código de produção de imagens não precisou mudar.

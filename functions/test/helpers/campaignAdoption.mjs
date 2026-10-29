@@ -64,8 +64,8 @@ export function measuredDb(db) {
     },
   };
 }
-export async function adoptionFixture(db, beforeCapture) {
-  const f = await comparisonFixture(db, undefined, beforeCapture);
+export async function adoptionFixture(db, beforeCapture, assets) {
+  const f = await comparisonFixture(db, assets, beforeCapture);
   f.lore = createCampaignLoreService({ db });
   f.recovery = createCampaignVariantRecoveryService({ db });
   f.remote = createCampaignVariantRemoteRecoveryService({ db });

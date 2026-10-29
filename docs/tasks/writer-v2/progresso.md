@@ -677,3 +677,14 @@ pressão de consumo e interrupção. Prova frozen-image-bytes-only é parcial.
 Reconferência conjunta, manifesto/atestado, arquivo/restauração/UI/ciclo P3/D/
 F2-09 continuam pendentes; macro **8/35**. Validate integral no fechamento
 do grande bloco; somente commit local, sem CI/push/deploy.
+
+## 2026-10-29 — auditoria nativa conjunta do backup P3
+
+O [plano 211](execucao/211-auditoria-conjunta-do-backup.md) compõe duas passagens
+completas sobre próprios/base/lore/imagens e todos os inventários físicos,
+com cobertura, órfãos e fontes finais. Prova interna sem prosa ou grant;
+origem indisponível preserva próprios. 116 Node dirigidos e 38 Vitest positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-auditoria-conjunta-do-backup.md).
+Manifesto/atestado portátil, framing/arquivo, persistência/cleanup, restauração/
+UI/ciclo P3/D/F2-09 continuam pendentes; macro **8/35**. Validate integral no
+fechamento do grande bloco; somente commit local, sem CI/push/deploy.
