@@ -2295,3 +2295,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-campos-utf8-no-backup-de-campanhas.md).
      Semântica derivada/consumidores, C4, persistência e restauração/UI/ciclos
      seguem abertos; macro 8/35, somente commit local.
+
+218. [Semântica dos derivados e revisão composta](218-semantica-dos-derivados-da-campanha.md):
+     DTOs/joins, ausências autenticadas e composição de próprios/derivados/origens
+     na mesma cadeia. 62 novos e 151 regressões dirigidas positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-revisao-completa-do-arquivo-de-campanha.md).
+     Validate integral local do bloco passou (código 0). Consumidores restaurados, C4,
+     persistência e restauração/UI/ciclos pendentes; macro 8/35, somente commit local.

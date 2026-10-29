@@ -25,14 +25,15 @@ const add = (v, n = 1) => {
 export async function validateCampaignBackupFile(
   uid,
   source,
-  { keys, now = Date.now, signal, onProgress, onWitness, onOwnUnit } = {},
+  { keys, now = Date.now, signal, onProgress, onWitness, onOwnUnit, onDerivedUnit } = {},
 ) {
   if (typeof uid !== 'string' || !uid) workFail('unauthenticated', 'Entre na sua conta.');
   workId(uid);
   if (
     (onProgress !== undefined && typeof onProgress !== 'function') ||
     (onWitness !== undefined && typeof onWitness !== 'function') ||
-    (onOwnUnit !== undefined && typeof onOwnUnit !== 'function')
+    (onOwnUnit !== undefined && typeof onOwnUnit !== 'function') ||
+    (onDerivedUnit !== undefined && typeof onDerivedUnit !== 'function')
   )
     throw new TypeError('Progresso de validação inválido.');
   if (
@@ -132,6 +133,13 @@ export async function validateCampaignBackupFile(
           Buffer.from(r.payload.subarray(0, 8)).toString('hex') !== '89504e470d0a1a0a'
         )
           bad();
+        if (active.utf8) {
+          try {
+            active.utf8.decode(r.payload, { stream: true });
+          } catch {
+            bad();
+          }
+        }
         if (active.parts) active.parts.push(Buffer.from(r.payload));
         active.hash.update(r.payload);
         active.bytes = add(active.bytes, r.payload.length);
@@ -142,12 +150,29 @@ export async function validateCampaignBackupFile(
           const digest = active.hash.digest('hex');
           active.hash.destroy();
           if (active.bytes !== active.unit.byteLength || digest !== active.unit.contentHash) bad();
-          if (active.parts) {
+          if (active.utf8) {
+            try {
+              active.utf8.decode();
+            } catch {
+              bad();
+            }
+          }
+          if (active.own) {
             await onOwnUnit(
               Object.freeze({
                 index: Number(active.id),
                 unit: Object.freeze(active.unit),
                 payload: Buffer.concat(active.parts, active.bytes),
+              }),
+            );
+            signal?.throwIfAborted();
+          }
+          if (active.derived) {
+            await onDerivedUnit(
+              Object.freeze({
+                index: Number(active.id),
+                unit: Object.freeze(active.unit),
+                payload: active.parts ? Buffer.concat(active.parts, active.bytes) : null,
               }),
             );
             signal?.throwIfAborted();
@@ -165,8 +190,11 @@ export async function validateCampaignBackupFile(
         if (unit.outcome === 'omitted') omitted = add(omitted);
         if (unit.outcome === 'unavailable') unavailable = add(unavailable);
         fold(content, unit);
-        const own = onOwnUnit && unit.section.startsWith('own:');
-        if (own && unit.outcome === 'available' && unit.byteLength > CAMPAIGN_OWN_JSON_BYTES) bad();
+        const own = onOwnUnit && unit.section.startsWith('own:'),
+          derived = onDerivedUnit && !unit.section.startsWith('own:'),
+          json = own || (derived && !campaignTextUnit(unit.section) && unit.section !== 'image');
+        if (json && unit.outcome === 'available' && unit.byteLength > CAMPAIGN_OWN_JSON_BYTES)
+          bad();
         if (unit.outcome === 'available')
           active = {
             id: r.id,
@@ -174,10 +202,15 @@ export async function validateCampaignBackupFile(
             index: 0,
             bytes: 0,
             hash: createHash('sha256'),
-            ...(own ? { parts: [] } : {}),
+            own,
+            derived,
+            ...(json ? { parts: [] } : {}),
+            ...(derived && campaignTextUnit(unit.section)
+              ? { utf8: new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }) }
+              : {}),
           };
-        else if (own) {
-          await onOwnUnit(
+        else if (own || derived) {
+          await (own ? onOwnUnit : onDerivedUnit)(
             Object.freeze({ index: units - 1, unit: Object.freeze(unit), payload: null }),
           );
           signal?.throwIfAborted();

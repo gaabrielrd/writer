@@ -1081,3 +1081,9 @@ auditada/assinada contra o header. Somente base:field/anchor:field usam chunks
 UTF-8 nativos, completos e máximos até 64 KiB; JSON/imagens mantêm partes fixas.
 Reutilize campaignBackupTextChunks e preserve leitura v1 sem reinterpretá-la.
 SHA/tamanho/ordinais e autorização continuam obrigatórios (ADR 0247).
+
+Na revisão derivada do backup, confira DTOs fechados, cobertura e joins antes
+de materializar. Autentique posições/vizinhos do índice para aceitar ausência
+opcional; reverse exige testemunha positiva. Preserve referências externas de
+âncora como não resolvidas. Componha próprios/derivados/origens só para a mesma
+cadeia/tamanho/manifesto; campaign-backup-review-only não ativa cópia (ADR 0248).

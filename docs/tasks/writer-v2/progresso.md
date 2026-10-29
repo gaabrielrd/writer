@@ -752,3 +752,14 @@ contentVersion 2 conserva chunks nativos; leitor mantém v1 sem reinterpretar.
 [evidência parcial](../../entregas/2026-10-29-writer-v2-campos-utf8-no-backup-de-campanhas.md).
 Joins derivados/consumidores, C4, persistência e restauração/UI/ciclo continuam
 pendentes; P3/D/F2-09 e macro **8/35** abertos, somente commit local.
+
+## 2026-10-29 — revisão derivada e composta do arquivo
+
+O [plano 218](execucao/218-semantica-dos-derivados-da-campanha.md) confere DTOs e
+joins derivados em índice MAC, com provas de ausência e referências legadas
+externas não resolvidas. Compõe próprios/derivados/origens para a mesma cadeia.
+62 novos e 151 regressões Node positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-revisao-completa-do-arquivo-de-campanha.md).
+Validação integral local do bloco interno passou (npm run validate, código 0).
+Consumidores restaurados,
+C4, persistência e restauração/UI/ciclos P3/D/F2-09 continuam pendentes; macro **8/35**.

@@ -3688,3 +3688,15 @@ com até 64 KiB e fronteira máxima, verificados por contrato compartilhado.
 O leitor mantém contentVersion 1 com regras fixas originais e exige versão
 igual no header/manifesto. JSON/imagens continuam fixos; não juntar campo
 inteiro em RAM. A semântica completa dos derivados e restauração seguem abertas.
+
+## Revisão semântica derivada e composição de campanhas
+
+A [ADR 0248](decisions/0248-campaign-derived-semantics-and-review.md) acrescenta
+DTOs fechados e joins de estrutura, manifestos/corpos, links/ledger, imagens e
+variantes/âncoras. onDerivedUnit é provisório, limitado por unidade e com texto
+por fluxo. Índice MAC temporário só de metadata usa vizinhos autenticados para
+ausência e testemunhas positivas para reverse, sem mapa do projeto em RAM.
+A revisão composta executa próprios/derivados/origens, exige a mesma cadeia/
+tamanho/manifesto e descarta cada índice. Referências históricas externas ficam
+não resolvidas, sem grant. Leitores de procedência restaurada, C4, persistência
+e materialização/ativação/UI continuam tarefas seguintes.

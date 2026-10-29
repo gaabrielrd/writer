@@ -288,3 +288,17 @@ mantém v1 original, com versão/domínio assinados. 19 novos e 231 regressões
 positivos, inclusive campo que exige três partes para 131.072 bytes e lore legado.
 Não encerra a semântica completa dos derivados ou os passos 5–9; P3/D/F2-09
 e macro 8/35 permanecem abertos, validate no fechamento do grande bloco.
+
+## Passos 3–4 e 6 — semântica derivada e revisão composta
+
+O [plano 218](218-semantica-dos-derivados-da-campanha.md) confere os derivados
+presentes e suas ausências explícitas, com DTOs fechados e joins de campos/
+corpos, pais, links/ledger, imagens e âncoras. A revisão composta exige a mesma
+cadeia/tamanho/manifesto para próprios/derivados/origens. Referências de âncora
+externas são não resolvidas e não concedem acesso. 62 novos e 151 regressões
+dirigidas positivos; validação integral local do bloco passou (npm run validate,
+código 0).
+
+Faltam leitores/consumidores de procedência e referências opacas restauradas,
+inventário/cleanup C4 v1–v4 antes de persistir, upload/retomada, nova cópia/
+materialização/ativação e interface/ciclos. Não encerrar P3/D/F2-09 ou macro 8/35.
