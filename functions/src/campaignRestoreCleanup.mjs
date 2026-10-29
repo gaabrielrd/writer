@@ -7,6 +7,7 @@ import {
   fail,
   chunkId,
 } from './campaignRestoreContracts.mjs';
+import { createCampaignRestoreAnchorWrites } from './campaignRestoreAnchorWrites.mjs';
 import { createCampaignRestoreVariantWrites } from './campaignRestoreVariantWrites.mjs';
 import { createCampaignRestoreBaseWrites } from './campaignRestoreBaseWrites.mjs';
 import { CHUNK_META } from './campaignRestoreStore.mjs';
@@ -15,6 +16,7 @@ import { createCampaignRestoreDerivedIndex } from './campaignRestoreDerivedIndex
 import { createCampaignRestoreReviewIndex } from './campaignRestoreReviewIndex.mjs';
 export function createCampaignRestoreCleanup(store) {
   const { db } = store,
+    anchorWrites = createCampaignRestoreAnchorWrites(store),
     variantWrites = createCampaignRestoreVariantWrites(store),
     baseWrites = createCampaignRestoreBaseWrites(store),
     ownWrites = createCampaignRestoreOwnWrites(store),
@@ -42,6 +44,15 @@ export function createCampaignRestoreCleanup(store) {
           ...(Object.hasOwn(l.job, 'derivedReview') ? { derivedReview: null } : {}),
           ...(Object.hasOwn(l.job, 'derivedCheck') ? { derivedCheck: null } : {}),
           ...(Object.hasOwn(l.job, 'originReview') ? { originReview: null } : {}),
+          ...(l.job.anchorMaterialization
+            ? {
+                anchorMaterialization: {
+                  ...l.job.anchorMaterialization,
+                  phase: 'cleaning',
+                  payload: null,
+                },
+              }
+            : {}),
           ...(l.job.variantMaterialization
             ? {
                 variantMaterialization: {
@@ -87,6 +98,7 @@ export function createCampaignRestoreCleanup(store) {
           fail('failed-precondition', 'checkpoint-conflict');
         if (l.job.state !== 'cancelling') fail('failed-precondition', 'state-conflict');
         if (await variantWrites.cleanup(tx, l, request, fp)) return null;
+        if (await anchorWrites.cleanup(tx, l, request, fp)) return null;
         if (await baseWrites.cleanup(tx, l, request, fp)) return null;
         if (await ownWrites.cleanup(tx, l, request, fp)) return null;
         if (await derivedIndex.cleanup(tx, l, request, fp)) return null;

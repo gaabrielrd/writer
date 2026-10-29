@@ -485,3 +485,14 @@ continuar com decisões de autorização diferentes. Cancel/coleta precede base.
 Âncoras históricas têm mapeamento, mas ainda precisam ser materializadas.
 C4 dos temporários, mídia, controles/ponte ativos, auditoria física/ativação
 e Estúdio/ciclos continuam abertos. P3/D/F2-09 e macro 8/35 permanecem.
+
+### Bases históricas de lore — incremento 236
+
+[Plano 236](236-materializacao-das-ancoras-historicas.md) e
+[ADR 0266](../../../decisions/0266-campaign-historical-anchor-materialization.md)
+materializam fichas/corpos/bases das âncoras históricas com procedência original.
+Slots precedem filhos; guards atuais e journal nativo protegem leitura/escrita
+e coleta sem chave/grant. Âncora equivalente ativa é reutilizada; omissões
+não revivem. Geração e bases permanecem preparing.
+Mídia/pins, universo organizacional, C4 dos temporários, auditoria física/
+ativação e Estúdio/ciclos continuam; P3/D/F2-09 e macro 8/35 abertos.

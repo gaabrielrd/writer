@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 235. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 236. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -245,3 +245,25 @@ coleta não lê prosa nem precisa de permissão da origem. Integração dos novo
 temporários ao C4 apropriado continua obrigatória antes de ativação.
 [Plano 235](execucao/235-materializacao-das-variantes-de-lore.md) e
 [ADR 0265](../../decisions/0265-campaign-variant-materialization.md).
+
+## Bases históricas — incremento 236
+
+anchorSlots/ORDINAL sob JOB é inventário imutável de conta/restauração/
+encarnação/operação, anchorKey/sourceKey/linha e authorizationHash.
+Registra destino vazio antes de filhos, com mesmo nascimento do recibo.
+anchorWrites/ORDINAL compartilha journal nativo e inclui binding fechado ao
+slot. Root deriva de restoredAnchorBaseId; não recebe caminho do cliente.
+
+Alvos sob users/UID/campaignBases/ANCHOR: root/items/bodies; demais famílias
+BASE entram na conferência de vazio/órfãos. Cada âncora histórica possui uma
+ficha e corpos próprios, snapshot/testemunhas originais. Âncora ativa equivalente
+não registra slot ou duplica corpos. Raízes permanecem preparing.
+
+anchorMaterialization cifra até 8 KiB; cancel retira cifra/chave e guarda
+contadores de journals/slots coletados. Coleta geração antes de âncoras,
+filhos antes dos pais e slots somente depois de vazio físico, antes de base
+ativa/own/índices/chunks. Não exige grant da origem nem lê prosa; corrupção,
+recriação e filhos estrangeiros preservam o material sem avanço.
+C4 apropriado para temporários permanece gate antes da ativação.
+[Plano 236](execucao/236-materializacao-das-ancoras-historicas.md) e
+[ADR 0266](../../decisions/0266-campaign-historical-anchor-materialization.md).

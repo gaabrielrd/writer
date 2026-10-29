@@ -87,5 +87,5 @@ export function createCampaignRestoreVariantOrigin(store, index) {
       proof: digest([active.proof, owner.proof, permissions]),
     };
   }
-  return { base, authorization };
+  return { base, anchor, authorization };
 }

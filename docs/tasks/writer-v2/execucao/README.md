@@ -2432,3 +2432,12 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência](../../../entregas/2026-10-29-writer-v2-materializacao-das-variantes-de-lore.md).
      Bases históricas/mídia/C4/auditoria/ativação e UI/ciclos continuam abertos.
      Macro 8/35; validate integral no fechamento do bloco, somente commit local.
+
+236. [Materialização das âncoras históricas](236-materializacao-das-ancoras-historicas.md):
+     fichas/campos/bases com testemunhas históricas; slots antes dos filhos.
+     Guard corrente e decisão estável permitem retry da mesma origem; coleta
+     sem chave/grant preserva pai com filho estrangeiro. 319 casos Node distintos
+     e uma jornada SDK/Rules positivos;
+     [evidência](../../../entregas/2026-10-29-writer-v2-materializacao-das-ancoras-historicas.md).
+     Mídia/universo organizacional/C4/auditoria física/ativação e UI permanecem.
+     Macro 8/35; validate integral no fechamento do bloco, somente commit local.

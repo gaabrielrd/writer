@@ -884,3 +884,12 @@ e autorização antes do DTO e na escrita. Coleta precede base; geração prepar
 Bases históricas/âncoras/mídia, C4 dos temporários, auditoria física/ativação e
 Estúdio/ciclos continuam necessários. Macro permanece 8/35 (22,9%); somente
 checks dirigidos, com validate integral no fechamento do bloco.
+
+O [incremento 236](execucao/236-materializacao-das-ancoras-historicas.md) materializa
+bases históricas/fichas/campos com procedência original, slots antes dos filhos
+e coleta protegendo pais. Âncora ativa equivalente é reutilizada sem prosa;
+omissões não revivem. 319 casos Node distintos (23 novos) e uma jornada SDK/
+Rules positivos após corrigir retry da mesma origem com metadata nativa alterada.
+Mídia/pins, universo organizacional, C4 dos temporários, auditoria física/
+ativação e Estúdio/ciclos permanecem. Macro 8/35 (22,9%); checks dirigidos,
+validate integral no fechamento do bloco, somente commit local.

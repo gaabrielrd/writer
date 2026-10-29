@@ -3907,3 +3907,18 @@ Geração continua preparing e campanha pending. Mapeamento histórico já é
 determinístico, mas suas bases ainda precisam de produtor. Controle global/
 ponte de geração, C4 dos temporários, mídia e auditoria física/ativação são
 gates futuros; o certificado de variantes é parcial e não concede acesso.
+
+## Bases históricas das variantes restauradas
+
+A [ADR 0266](decisions/0266-campaign-historical-anchor-materialization.md)
+acrescenta campaignRestoreAnchorMaterialization/Origin/Writes/Format.
+anchorSlots registra cada destino antes dos filhos, ligado ao recibo/nascimento.
+anchorWrites usa o journal nativo com binding fechado ao slot e raiz derivada;
+o wrapper específico coleta múltiplas bases sem mudar os journals anteriores.
+
+Campos históricos usam frames/hash/codec existentes; ficha após campos e pai
+preparing após ficha. Snapshot e testemunhas são da âncora original. Guards
+antes de bytes e na escrita, com slot e decisão congelada. Variante omitida
+não revive; âncora equivalente ativa é reutilizada sem prosa.
+Cancel coleta geração, âncoras/slots, base ativa e próprios/índices/chunks.
+Mídia, C4 dos temporários, auditoria física/ativação e Estúdio permanecem gates.

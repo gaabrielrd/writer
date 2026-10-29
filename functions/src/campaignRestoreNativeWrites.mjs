@@ -38,23 +38,23 @@ export function createCampaignRestoreNativeWrites(
       Object.fromEntries(
         targetFields[collection].filter((k) => Object.hasOwn(value, k)).map((k) => [k, value[k]]),
       ),
-    targetRef = (l, t) => {
-      const root = targetRoot(l);
+    targetRef = (l, t, binding) => {
+      const root = targetRoot(l, binding);
       if (t.collection === 'root' && t.id !== root.split('/').at(-1)) bad();
       return db.doc(t.collection === 'root' ? root : root + '/' + t.collection + '/' + t.id);
     };
-  async function emptyTargets(tx, l) {
+  async function emptyTargets(tx, l, binding = {}) {
     for (const collection of Object.keys(targetFields))
       if (collection === 'root') {
         const snapshot = (
-          await tx.getAll(db.doc(targetRoot(l)), { fieldMask: targetFields.root })
+          await tx.getAll(db.doc(targetRoot(l, binding)), { fieldMask: targetFields.root })
         )[0];
         if (snapshot.exists) bad();
       } else if (
         (
           await tx.get(
             db
-              .collection(targetRoot(l) + '/' + collection)
+              .collection(targetRoot(l, binding) + '/' + collection)
               .select()
               .limit(1),
           )
@@ -107,7 +107,7 @@ export function createCampaignRestoreNativeWrites(
         targets: entries,
       },
       journalRef = ref(l, index),
-      targetRefs = entries.map((t) => targetRef(l, t));
+      targetRefs = entries.map((t) => targetRef(l, t, binding));
     if ((await tx.get(journalRef)).exists) bad();
     for (const r of targetRefs) if ((await tx.get(r)).exists) bad();
     return {
@@ -156,7 +156,7 @@ export function createCampaignRestoreNativeWrites(
         t.id.includes('/')
       )
         bad();
-      const path = targetRef(l, t).path;
+      const path = targetRef(l, t, v).path;
       if (seen.has(path)) bad();
       seen.add(path);
       const r = db.doc(path),
@@ -224,5 +224,5 @@ export function createCampaignRestoreNativeWrites(
     await emptyTargets(tx, l);
     return false;
   }
-  return { empty, prepare, audit, verify, cleanup };
+  return { empty, emptyTargets, prepare, audit, verify, cleanup };
 }

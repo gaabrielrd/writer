@@ -135,6 +135,7 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
         'materialize-own',
         'materialize-base',
         'materialize-variants',
+        'materialize-anchors',
       ].includes(v.action)
     )
       bad();
@@ -266,6 +267,8 @@ export function createCampaignRestoreStore({ db, now = Date.now }) {
       'ownWrites',
       'baseWrites',
       'variantWrites',
+      'anchorWrites',
+      'anchorSlots',
     ])
       if (
         (

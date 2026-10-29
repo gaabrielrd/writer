@@ -1242,3 +1242,19 @@ da ativação. Geração fica preparing; controle/ponte ativos só na ativação
 Colete variantWrites/geração antes de base/own/índices, sem chave/prosa/grant,
 preservando pai com filho estrangeiro. Prova parcial não concede acesso;
 C4 adequado/auditoria física continuam gates, layouts 1–4 intactos (ADR 0265).
+
+Na materialização de âncoras históricas, reuse restoredAnchorBaseId e o
+mapeamento do overlay nativo confirmado por journal de variantes. Não reviva
+omissões nem recapture a aventura. Registre anchorSlots com birth do recibo,
+destino vazio e binding fechado antes dos filhos; slot não concede acesso.
+Reautorize base ativa/origem histórica e slot antes de bytes e na escrita,
+congelando decisão de edição/origem, sem timestamps de acesso. Prova corrente
+estrita continua comparada antes/depois de I/O; reautorização da mesma origem
+pode retomar, recriação não herda acesso. Snapshot/procedência são históricos;
+corpos próprios usam
+codec de campo existente, checkpoint cifrado até 8 KiB sem texto crescente.
+Pai preparing nasce após ficha/campos. Colete geração, anchorWrites/filhos/pais,
+slots após vazio físico, base ativa/own/índices, sem chave/prosa/grant.
+Journal compartilhado recebe binding só para resolver destino; mantenha wire
+de own/base/variant e use wrapper específico para múltiplos pais.
+C4 adequado/auditoria física/ativação seguem gates; layouts 1–4 intactos (ADR 0266).
