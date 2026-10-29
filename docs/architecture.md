@@ -3517,3 +3517,14 @@ conferir próprios. Vínculos por sessão exigem controles/provas separados:
 a âncora não certifica captura completa nem autorização da edição congelada.
 Sem endpoint, arquivo, persistência ou UI; inventário C4 segue v1–v4 até a
 integração explícita dos futuros produtores de P3.
+
+## Inventário próprio e provas por sessão da campanha
+
+A [ADR 0232](decisions/0232-campaign-backup-own-inventory.md) cobre nove coleções
+diretas com select de metadados, páginas de até 25 e lookahead. A âncora/C4
+precedem a query. Tokens por unidade vinculam encarnação/updateTime e pais/
+controles; a sessão observa seus controles opcionais S2/S3. Tombstones mantêm
+vínculos observáveis e corpo exige cabeçalho ativo correspondente. Cache limita-se
+à transação/página. Cursor e pageToken não autorizam arquivo nem certificam
+cobertura completa: o arquivador futuro precisa uma segunda passagem integral.
+Sem endpoint, prosa/persistência nova ou mudança do inventário C4.

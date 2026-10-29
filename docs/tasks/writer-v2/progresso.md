@@ -571,3 +571,15 @@ Veja a [evidência parcial](../../entregas/2026-10-29-writer-v2-ancora-privada-d
 Captura integral, procedência, arquivo/restauração/UI/ciclo P3 e D/F2-09 seguem
 pendentes; macro **8/35**, retenção final de 199 e gates não mudam. Validate
 integral será executado no fechamento do bloco novo. Somente commits locais.
+
+## 2026-10-29 — inventário próprio e provas por sessão de P3
+
+O [plano 202](execucao/202-inventario-proprio-da-portabilidade-de-campanhas.md)
+acrescenta inventário interno das nove famílias próprias/estruturais, por páginas
+limitadas e provas nativas por recurso/sessão. S2/S3 reais invalidam essas provas
+sem mudar a âncora global. Vínculos de sessão/item excluído continuam observáveis;
+61 notas paginam sem limite total artificial. 38 testes direcionados positivos,
+incluindo 20 novos; [evidência parcial](../../entregas/2026-10-29-writer-v2-inventario-proprio-de-campanhas.md).
+DTOs/texto em chunks, arquivo/segunda passagem, procedência/base, restauração/
+UI/ciclo P3 e D/F2-09 seguem pendentes. Macro **8/35**, política final de 199 e
+gates preservados; validate integral no fechamento do bloco. Somente commit local.

@@ -2178,3 +2178,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      A âncora não cobre vínculos por sessão nem autoriza a edição congelada.
      Arquivo/restauração/UI/ciclo P3 e D/F2-09 continuam pendentes; macro 8/35.
      [Evidência parcial](../../../entregas/2026-10-29-writer-v2-ancora-privada-de-campanhas.md).
+
+202. [Inventário próprio da portabilidade de campanhas](202-inventario-proprio-da-portabilidade-de-campanhas.md):
+     nove famílias por páginas limitadas, provas nativas por unidade/sessão e
+     lookahead, sem prosa/escrita. Escritores S2/S3 invalidam prova sem mudar a
+     âncora global; tombstones e vínculos preservados. 38 testes direcionados
+     positivos (20 novos/18 da âncora). [Evidência parcial](../../../entregas/2026-10-29-writer-v2-inventario-proprio-de-campanhas.md).
+     Conteúdo/chunks, arquivo, procedência/base, restauração/UI/ciclo P3,
+     D/F2-09 e gates continuam pendentes; macro 8/35, somente commit local.

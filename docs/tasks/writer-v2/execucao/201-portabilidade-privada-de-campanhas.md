@@ -132,3 +132,13 @@ migração ou implantação neste primeiro incremento. Um token consistente
 não certifica disponibilidade da base ou compatibilidade completa da campanha.
 Os portões humanos/comerciais e provas em credenciais reais continuam distintos
 da evidência dos bancos/portas de teste.
+
+## Passo 2 — inventário próprio por unidade e sessão
+
+O [plano 202](202-inventario-proprio-da-portabilidade-de-campanhas.md) implementa
+o inventário interno de nove famílias, com lookahead, provas nativas por recurso
+e controles/dependências por sessão. 20 testes novos e 18 da âncora passaram.
+Sessão/item excluído mantém vínculos observáveis; cursor/página não certificam
+o projeto completo. Ainda faltam DTOs/texto em chunks e composição/segunda
+passagem do arquivo, além da procedência/base, restauração e interface P3.
+Não fecha o passo 2 inteiro, P3/D/F2-09 ou a macro 8/35.

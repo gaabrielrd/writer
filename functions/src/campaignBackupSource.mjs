@@ -31,7 +31,7 @@ function stamp(value) {
     inconsistent();
   return { seconds: value.seconds, nanoseconds: value.nanoseconds };
 }
-function identity(snapshot) {
+export function campaignBackupIdentity(snapshot) {
   if (!snapshot.exists) return null;
   const created = stamp(snapshot.createTime),
     updated = stamp(snapshot.updateTime);
@@ -42,15 +42,18 @@ function identity(snapshot) {
     inconsistent();
   return { created, updated };
 }
-function scope(db, uid, data) {
+export function campaignBackupToken(value) {
+  if (!hash(value)) workFail('invalid-argument', 'Token de captura inválido.');
+  return value;
+}
+export function campaignBackupScope(db, uid, data, keys = ['expectedSourceToken']) {
   if (typeof uid !== 'string' || !uid) workFail('unauthenticated', 'Entre na sua conta.');
   workId(uid);
-  workClosed(data, ['campaignId', 'expectedSourceToken']);
+  workClosed(data, ['campaignId', ...keys]);
   const campaignId = workId(data.campaignId);
   let expected;
   if (Object.hasOwn(data, 'expectedSourceToken')) {
-    if (!hash(data.expectedSourceToken)) workFail('invalid-argument', 'Token de captura inválido.');
-    expected = data.expectedSourceToken;
+    expected = campaignBackupToken(data.expectedSourceToken);
   }
   return { db, uid, campaignId, expected, path: 'campaigns/' + campaignId };
 }
@@ -88,7 +91,7 @@ export async function readCampaignBackupSource(tx, context) {
   if (!snapshot.exists || !root || root.ownerId !== uid || root.deleting)
     workFail('not-found', 'Campanha indisponível.');
   if (root.schemaVersion !== 1 || !revision(root.revision, 1)) inconsistent();
-  const project = identity(snapshot),
+  const project = campaignBackupIdentity(snapshot),
     campaignToken = campaignIdentityToken(uid, campaignId, snapshot),
     controlIdentities = {};
   for (const [name, extraFields] of controls) {
@@ -98,7 +101,7 @@ export async function readCampaignBackupSource(tx, context) {
       name === 'workProgress' ? extraFields : [...controlFields, ...extraFields],
     );
     if (current.exists) validateControl(name, current.data(), context, campaignToken);
-    controlIdentities[name] = identity(current);
+    controlIdentities[name] = campaignBackupIdentity(current);
   }
   const sourceToken = digest({
     version: 1,
@@ -120,7 +123,7 @@ export async function readCampaignBackupSource(tx, context) {
 export function createCampaignBackupSourceService({ db }) {
   return {
     async getCampaignBackupSource(uid, data) {
-      const context = scope(db, uid, data);
+      const context = campaignBackupScope(db, uid, data);
       return db.runTransaction((tx) => readCampaignBackupSource(tx, context));
     },
   };
