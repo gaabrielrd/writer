@@ -583,3 +583,16 @@ incluindo 20 novos; [evidência parcial](../../entregas/2026-10-29-writer-v2-inv
 DTOs/texto em chunks, arquivo/segunda passagem, procedência/base, restauração/
 UI/ciclo P3 e D/F2-09 seguem pendentes. Macro **8/35**, política final de 199 e
 gates preservados; validate integral no fechamento do bloco. Somente commit local.
+
+## 2026-10-29 — conteúdo próprio de P3 em partes verificadas
+
+O [plano 203](execucao/203-conteudo-proprio-da-portabilidade-de-campanhas.md)
+acrescenta nove DTOs fechados e leitura de texto em partes de até 65.536 bytes,
+após conferir a prova da unidade e dependências. Controles/tombstones/pais
+inativos são omitidos sem recriação; próprios ativos continuam recuperáveis
+quando sessão/origem desaparece. 57 testes dirigidos passaram, incluindo
+texto multibyte/BOM e corpo válido acima de 2 MiB após escapes.
+Veja a [evidência parcial](../../entregas/2026-10-29-writer-v2-conteudo-proprio-de-campanhas.md).
+Composição/segunda passagem do arquivo, base/procedência, restauração/UI/ciclo
+P3/D/F2-09 e gates continuam abertos; macro **8/35** inalterada. Somente commit
+local; validate integral no fechamento do grande bloco.

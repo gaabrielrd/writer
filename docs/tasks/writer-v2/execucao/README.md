@@ -2186,3 +2186,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      positivos (20 novos/18 da âncora). [Evidência parcial](../../../entregas/2026-10-29-writer-v2-inventario-proprio-de-campanhas.md).
      Conteúdo/chunks, arquivo, procedência/base, restauração/UI/ciclo P3,
      D/F2-09 e gates continuam pendentes; macro 8/35, somente commit local.
+
+203. [Conteúdo próprio da portabilidade de campanhas](203-conteudo-proprio-da-portabilidade-de-campanhas.md):
+     nove DTOs fechados e leitor por partes de 65.536 bytes, após prova de
+     unidade/pais/controles. Texto literal, estados e ordens preservados;
+     controles/tombstones/pais inativos têm omissão explícita. 57 testes dirigidos
+     positivos (19 novos), sem produtor persistente. [Evidência parcial](../../../entregas/2026-10-29-writer-v2-conteudo-proprio-de-campanhas.md).
+     Arquivo/segunda passagem, base/procedência, restauração/UI/ciclo P3,
+     D/F2-09 e gates continuam abertos; macro 8/35, somente commit local.

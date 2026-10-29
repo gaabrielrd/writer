@@ -113,3 +113,12 @@ tombstone válido. Estado impossível não é truncado nem escondido.
 Sem DTO de conteúdo, arquivador, prova de procedência, assinatura, mídia,
 restauração, C4 novo, Rules, endpoint ou UI neste incremento. A política de
 perguntas do plano 199 e gates humanos/comerciais não são alterados.
+
+## Continuidade — conteúdo em partes
+
+O [plano 203](203-conteudo-proprio-da-portabilidade-de-campanhas.md) reutiliza
+a prova do inventário para conferir uma unidade por ID antes de ler texto.
+A entry id/itemToken e a página permanecem iguais; elegibilidade de conteúdo
+é interna e separada. Controles/tombstones/pais inativos geram omissão sem
+chunk, não restauram registros excluídos. Composição/segunda passagem do arquivo,
+procedência/base e os demais passos de P3 permanecem pendentes.

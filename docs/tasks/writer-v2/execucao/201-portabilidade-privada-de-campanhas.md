@@ -142,3 +142,12 @@ Sessão/item excluído mantém vínculos observáveis; cursor/página não certi
 o projeto completo. Ainda faltam DTOs/texto em chunks e composição/segunda
 passagem do arquivo, além da procedência/base, restauração e interface P3.
 Não fecha o passo 2 inteiro, P3/D/F2-09 ou a macro 8/35.
+
+## Passo 2 — conteúdo próprio em partes verificadas
+
+O [plano 203](203-conteudo-proprio-da-portabilidade-de-campanhas.md) acrescenta
+nove DTOs próprios e leitura por partes de até 65.536 bytes após a prova de
+unidade/dependências. 57 testes dirigidos passaram, incluindo 19 novos.
+Controles/tombstones e vínculos de pais inativos são omitidos explicitamente;
+itens/corpos ativos permanecem próprios. Ainda faltam composição/segunda
+passagem integral do arquivo e os demais passos de P3/D/F2-09; macro 8/35.

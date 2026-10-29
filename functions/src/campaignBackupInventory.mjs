@@ -222,6 +222,11 @@ async function unit(snapshot, c, reader) {
   const value = snapshot.data(),
     id = validId(snapshot.id),
     dependencies = {};
+  let omission = ['session-reference-state', 'session-preparation-state'].includes(c.family)
+    ? 'control'
+    : value?.deleted
+      ? 'deleted'
+      : null;
   const bind = (key, result) => {
     dependencies[key] = result.native;
     return result.value;
@@ -272,7 +277,8 @@ async function unit(snapshot, c, reader) {
       own(value, c);
       const sessionId = validId(value.sessionId),
         reference = c.family === 'session-reference';
-      bind('session', await reader.session(sessionId));
+      const parent = bind('session', await reader.session(sessionId));
+      if (parent.deleted && omission === null) omission = 'inactive-parent';
       const control = bind(
         'control',
         await reader.perSession(
@@ -281,8 +287,10 @@ async function unit(snapshot, c, reader) {
         ),
       );
       item(value, c, id, control, !reference);
-      if (!reference && !value.deleted)
-        bind('item', await reader.preparation(validId(value.itemId)));
+      if (!reference && !value.deleted) {
+        const target = bind('item', await reader.preparation(validId(value.itemId)));
+        if (target.deleted && omission === null) omission = 'inactive-parent';
+      }
       break;
     }
     case 'session-reference-state':
@@ -298,18 +306,55 @@ async function unit(snapshot, c, reader) {
     }
   }
   return {
-    id,
-    itemToken: digest({
-      version: 1,
-      uid: c.uid,
-      campaignId: c.campaignId,
-      sourceToken: c.expected,
-      family: c.family,
+    omission,
+    entry: {
       id,
-      native: campaignBackupIdentity(snapshot),
-      dependencies,
-    }),
+      itemToken: digest({
+        version: 1,
+        uid: c.uid,
+        campaignId: c.campaignId,
+        sourceToken: c.expected,
+        family: c.family,
+        id,
+        native: campaignBackupIdentity(snapshot),
+        dependencies,
+      }),
+    },
   };
+}
+
+async function readInventoryContext(tx, context) {
+  const source = await readCampaignBackupSource(tx, context),
+    roots = await tx.getAll(context.db.doc(context.path), { fieldMask: ['ownerId'] }),
+    root = roots?.[0];
+  if (!root?.exists || root.data()?.ownerId !== context.uid) inconsistent();
+  campaignBackupIdentity(root);
+  return {
+    source,
+    c: { ...context, campaignToken: campaignIdentityToken(context.uid, context.campaignId, root) },
+  };
+}
+const itemChanged = () =>
+  workFail(
+    'failed-precondition',
+    'O recurso mudou. Reinicie a captura.',
+    'campaign-backup-item-changed',
+  );
+/** Internal metadata proof: callers must not read prose until this succeeds. */
+export async function readCampaignBackupOwnItem(tx, context, family, id, itemExpected) {
+  if (typeof family !== 'string' || !Object.hasOwn(families, family)) invalid();
+  workId(id);
+  const expected = campaignBackupToken(itemExpected),
+    { source, c } = await readInventoryContext(tx, { ...context, family }),
+    ref = c.db.doc(c.path + '/' + families[family].collection + '/' + id),
+    snapshots = await tx.getAll(ref, { fieldMask: families[family].fields }),
+    snapshot = snapshots?.[0];
+  if (!Array.isArray(snapshots) || snapshots.length !== 1 || snapshot?.ref?.path !== ref.path)
+    inconsistent();
+  if (!snapshot.exists) itemChanged();
+  const observed = await unit(snapshot, c, pageContext(tx, c));
+  if (observed.entry.itemToken !== expected) itemChanged();
+  return { source, ...observed, snapshot, value: snapshot.data(), ref };
 }
 
 /** Metadata inventory only; complete archive coverage requires a second full pass. */
@@ -318,15 +363,7 @@ export function createCampaignBackupInventoryService({ db }) {
     async listCampaignBackupOwnInventory(uid, data) {
       const context = input(db, uid, data);
       return db.runTransaction(async (tx) => {
-        const source = await readCampaignBackupSource(tx, context),
-          roots = await tx.getAll(db.doc(context.path), { fieldMask: ['ownerId'] }),
-          root = roots?.[0];
-        if (!root?.exists || root.data()?.ownerId !== uid) inconsistent();
-        campaignBackupIdentity(root);
-        const c = {
-            ...context,
-            campaignToken: campaignIdentityToken(uid, context.campaignId, root),
-          },
+        const { source, c } = await readInventoryContext(tx, context),
           definition = families[c.family],
           collection = c.path + '/' + definition.collection;
         let query = db
@@ -348,7 +385,7 @@ export function createCampaignBackupInventoryService({ db }) {
             (previous !== null && Buffer.compare(Buffer.from(id), Buffer.from(previous)) <= 0)
           )
             inconsistent();
-          observed.push(await unit(snapshot, c, reader));
+          observed.push((await unit(snapshot, c, reader)).entry);
           previous = id;
         }
         const pageToken = digest({ ...c.cursorScope, after: c.after, observed });

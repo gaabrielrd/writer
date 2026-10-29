@@ -3528,3 +3528,14 @@ vínculos observáveis e corpo exige cabeçalho ativo correspondente. Cache limi
 à transação/página. Cursor e pageToken não autorizam arquivo nem certificam
 cobertura completa: o arquivador futuro precisa uma segunda passagem integral.
 Sem endpoint, prosa/persistência nova ou mudança do inventário C4.
+
+## Conteúdo próprio da campanha por partes verificadas
+
+A [ADR 0233](decisions/0233-campaign-backup-own-content-chunks.md) reutiliza a prova
+do inventário antes da máscara de texto. DTOs próprios são fechados e não levam
+revisões/tokens/controles. Campos de corpo têm ordem canônica, texto mantém
+UTF-8 literal e partes limitadas por bytes só são decodificadas após reconstrução.
+Controles/tombstones e vínculos de pais inativos geram omissão interna explícita.
+Raiz/progresso usam a âncora; declarações de origem/universo/alvo S2 não autorizam
+derivados. Sem endpoint, arquivo ou persistência nova; segunda passagem completa,
+procedência, restauração e interface continuam pendentes.
