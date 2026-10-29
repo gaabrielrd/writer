@@ -3201,3 +3201,23 @@ cifrado, ativação explícita, mídia/coleta e descarte terminal sem chave.
 Temas, largura de 320 px e foco/teclado são verificados; imagens aguardam as
 transições existentes. Não são prova de dispositivo/leitor de tela/zoom físico,
 credenciais reais, implantação ou produção. Validate integral no próximo bloco.
+
+## Exclusão de aventuras no Estúdio
+
+AdventureDeletionPreparations, AdventurePage, StudioPage e useStudioProjects
+cobrem união remota/local, paginação, identidade/pisos, conta trocada, pedido
+preservado, remoção do cartão sem desmontar diálogo e resposta tardia após
+revogação. O diálogo cobre também ID nativo longo e limite menor do pulso.
+
+adventureDeletionCallableSdk.test.mjs importa index real, verifica opções/
+headers/guards e percorre os seis comandos no banco de teste. HTTP de loopback
+usa JWT sintético aceito apenas no modo Auth Emulator, com consulta de usuário
+respondida localmente; App Check ausente/malformado recusa antes do banco.
+Não há prova positiva de atestado real nem acesso a credenciais/dados remotos.
+
+adventure-deletion-routes.visual.ts usa rotas/providers/journal reais e transporte
+por UID/aventura sincronizado com a reserva do StudioStore. Prova página/cartão,
+pausa, reload do pedido exato, catálogo sem raiz, URL antiga e troca de conta.
+Três jornadas de rota e três de diálogo são repetidas nos seis temas/viewports.
+A [evidência parcial](entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md)
+separa esses testes dirigidos do validate integral ainda pendente de 198–199.

@@ -3492,3 +3492,16 @@ fechamento, quota ou resposta tardia. Unidade seguinte exige aberto/conta/pausa
 conferidos; leitura/reload não avançam. Confirmação captura o envelope mostrado,
 replay exige reserva segura e revogação validada precede o CAS local.
 Prévia isolada usa os componentes/journal reais, sem composição no produto.
+
+## Catálogo, rotas e binding da exclusão de aventuras
+
+A [ADR 0230](decisions/0230-adventure-deletion-catalog-routes-and-binding.md) integra
+a folha somente por adventures no Estúdio. Catálogo remoto paginado une controles
+metadata locais, verifica conta/cursor/identidade/pisos e conserva linhas válidas
+em erro. Notificação local não dispara consulta remota por unidade. O diálogo
+fica fora do cartão/ramo removido: prova esconde original e atualiza aventuras
+da conta, mantendo a sessão até confirmar o recibo. URL antiga consulta o job.
+IDs nativos longos não dependem do orçamento dos pulsos de apresentação.
+Seis exports reais de index usam dispatcher lazy, App Check, headers privados e
+a porta de mídia restaurada existente. As rotas/SDK foram conferidos localmente;
+ciclo rico, fechamento integral e política final do chat continuam pendentes.

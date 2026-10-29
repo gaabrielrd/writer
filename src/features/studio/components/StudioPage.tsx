@@ -6,7 +6,7 @@ import {
   AdventureRestoreDialog,
   AdventureRestorePreparations,
 } from '@/features/adventure-portability';
-import { getAdventure } from '@/features/adventures';
+import { AdventureDeletionPreparations, getAdventure } from '@/features/adventures';
 import { ContinueWorkPanel } from '@/features/work-progress';
 import { useAuth } from '@/features/auth';
 import { AdventureImportDialog, AdventureImportPreparations } from '@/features/adventure-import';
@@ -192,6 +192,7 @@ function StudioSession({ ownerId }: { ownerId: string }) {
         }}
       />
 
+      <AdventureDeletionPreparations />
       <CampaignDeletionPreparations />
       <CampaignComparisonPreparations
         onReviewAdoption={(context) => {

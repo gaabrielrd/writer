@@ -156,6 +156,7 @@ function DeletionSession({
           {p && (
             <section className={styles.stack} aria-label="Progresso da exclusão da aventura">
               <h3>{p.complete ? 'Aventura excluída' : 'Acesso à aventura encerrado'}</h3>
+              <p className={styles.text}>{p.title}</p>
               <p role="status">Etapa: {phaseLabels[p.phase]}</p>
               <p>A exclusão não pode ser desfeita por esta operação.</p>
               {!pending && !p.complete && !op.busy && (

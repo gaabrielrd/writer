@@ -4,6 +4,7 @@ import { BookOpen, Map } from 'lucide-react';
 import { editorialStateLabels, type EditorialState } from '@/features/work-progress';
 import { BookCard } from '@/features/books';
 import { CampaignDeletionControls } from '@/features/campaigns';
+import { AdventureDeletionDialog } from '@/features/adventures';
 import {
   Alert,
   Badge,
@@ -29,6 +30,8 @@ import {
 import styles from './StudioPage.module.css';
 
 export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
+  const [deletionId, setDeletionId] = useState<string | null>(null),
+    [deletionOpen, setDeletionOpen] = useState(false);
   const [status, setStatus] = useState<'all' | StudioStatus>('all');
   const [editorialState, setEditorialState] = useState<'all' | EditorialState>('all');
   const { result, loading, refresh, loadMore } = useStudioProjects(kind, status, editorialState);
@@ -161,6 +164,22 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
                     {formatProjectDate(project.updatedAt)}
                   </time>
                 </p>
+                {project.kind === 'adventure' && (
+                  <Dropdown
+                    mode="action"
+                    label={'Ações da aventura ' + project.title}
+                    trigger={<Button variant="outline">Ações da aventura</Button>}
+                  >
+                    <DropdownItem
+                      onSelect={() => {
+                        setDeletionId(project.id);
+                        setDeletionOpen(true);
+                      }}
+                    >
+                      Excluir aventura
+                    </DropdownItem>
+                  </Dropdown>
+                )}
                 {project.kind === 'campaign' && (
                   <CampaignDeletionControls
                     campaignId={project.id}
@@ -192,6 +211,16 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
             </Button>
           )}
         </>
+      )}
+      {deletionId && (
+        <AdventureDeletionDialog
+          adventureId={deletionId}
+          open={deletionOpen}
+          onClose={() => {
+            setDeletionOpen(false);
+            refresh();
+          }}
+        />
       )}
     </section>
   );

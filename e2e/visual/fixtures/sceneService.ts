@@ -594,3 +594,46 @@ export async function listSceneSources(input: SceneSourceListInput) {
     }));
   return fixturePage(state, values, input, 'sources');
 }
+
+export async function listOrphanScenes(input: {
+  target: SceneProject;
+  cursor?: string | null;
+  limit?: number;
+}) {
+  const state = await fixtureSceneState(input.target);
+  const values = Object.values(state.scenes).filter(
+    (scene) => scene.parentId !== null && !state.groups[scene.parentId],
+  );
+  return fixturePage(state, values, input, 'orphans');
+}
+export async function recoverOrphanScene(input: {
+  target: SceneProject;
+  sceneId: string;
+  expectedRevision: number;
+  expectedMissingParentId: string;
+  operationId: string;
+}): Promise<SceneMutationResult> {
+  const state = await fixtureSceneState(input.target),
+    previous = receiptResult(state, input.operationId, input);
+  if (previous.result) return previous.result;
+  const scene = fixtureScene(state, input.sceneId);
+  fixtureCas(scene, input.expectedRevision);
+  if (
+    scene.parentId !== input.expectedMissingParentId ||
+    state.groups[input.expectedMissingParentId]
+  )
+    throw fixtureSceneError();
+  scene.formerParentId = scene.parentId;
+  scene.parentId = null;
+  scene.rank = fixtureRank(fixtureOrdered(state, null).length);
+  scene.revision++;
+  scene.updatedAt = FIXTURE_TIME + scene.revision;
+  state.receipts[input.operationId] = {
+    fingerprint: previous.fingerprint,
+    sceneId: scene.id,
+    revision: scene.revision,
+  };
+  fixtureUpdateCounts(state, [null], true);
+  lostResponse('recoverOrphanScene');
+  return summaryResult(state, scene.id, [null]);
+}

@@ -469,3 +469,65 @@ e [ADR 0229](../../../decisions/0229-adventure-deletion-boundary-and-dialog.md).
 O browser tem auth/transporte fictícios e componentes/journal reais.
 Ainda sem catálogo/Studio/rotas ou binding de index; integração, ciclo amplo,
 política final das perguntas e validate integral continuam abertos. Macro 8/35.
+
+## Próxima integração — catálogo, rotas e binding real
+
+Base 2dbfa02 conferida limpa. Compor retomada de aventuras pela interface pública
+de adventures no Estúdio, com catálogo remoto paginado e controles metadata
+locais, conta/alvo atuais, cursor sem repetição e prova de identidade/pisos em
+sobreposição de páginas. Falha mantém linhas verificadas e não apaga controles.
+Lista vazia não cria efeitos; abrir uma entrada apenas consulta.
+
+Adicionar ações na página e nos cartões de aventura. Manter o diálogo fora da
+lista/ramo de conteúdo removido: revogação esconde conteúdo original e atualiza
+a lista, mas não desmonta a sessão antes do recibo/limpeza. Fechar retorna ao
+Estúdio quando a origem foi revogada; URL antiga oferece consulta da exclusão.
+Operações editoriais pendentes continuam preservadas e impedem nova confirmação
+na apresentação original.
+
+Depois dos gates locais, ligar os seis exports em index ao dispatcher lazy e à
+porta existente createRestoredImageStorage(bucket), com App Check e headers
+privados. Provar opções/binding real, comandos, rejeição pré-I/O de auth/contexto
+inválidos e HTTP sem atestado. Não usar conta real nem enviar deploy.
+
+Generalizar o transporte visual para UID/projeto e sincronizar reservas/remoção
+com StudioStore; fixture fixa do diálogo não comprova a rota. Validar rotas
+reais/retomada após raiz ausente, reload/pedido incerto, outros projetos
+preservados, três temas/mobile/teclado. Testes dirigidos por ajuste; ciclo rico
+restaurado e validate integral continuam no fechamento 198–199. Política final
+de perguntas e gates gerais não são declarados concluídos.
+
+## Resultado parcial — integração no Estúdio
+
+Catálogo paginado remoto une metadata local por conta sem depender da raiz;
+sobreposições validam identidade/pisos e erros preservam linhas verificadas.
+Página/cartão abrem o diálogo fora do conteúdo removido. Prova validada esconde
+original e atualiza aventuras da conta, sem desmontar a limpeza. URL antiga
+consulta o job. Rascunhos e controles pendentes não são descartados.
+
+Seis exports reais foram ligados ao dispatcher lazy e à porta existente de mídia
+restaurada, com App Check/headers privados. SDK real sobre banco de teste e HTTP
+com usuário Auth Emulator sintético local comprovam os limites da fronteira.
+Chromium das rotas usa auth/transporte fictícios por UID/projeto, com reserva/
+remoção compartilhadas com StudioStore; o journal e os componentes são reais.
+
+Ver [ADR 0230](../../../decisions/0230-adventure-deletion-catalog-routes-and-binding.md)
+e [evidência parcial](../../../entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md).
+O caso de ID nativo longo preserva a notificação da página mesmo quando o pulso
+opcional excederia seu orçamento. Ciclo rico restaurado, validate integral de
+198–199 e política final das perguntas continuam pendentes. Macro 8/35 inalterada.
+Nenhuma credencial real ou dado de produção foi usado; somente commit local.
+
+## Próximo fechamento — prova rica de 198–199
+
+Acrescentar ao corpus nativo já restaurado um percurso de exclusão completo,
+com conteúdo/corpos, histórico, blocos, referências, lore, imagens com uso próprio
+e cópias independentes, contextos/recibos e atividade. Usar serviços reais sobre
+portas de teste; conferir raiz ausente/reserva terminal/job/recibo, consulta e
+replay após fechamento, fontes/chaves retiradas e preservação de outro projeto.
+Não usar a fixture visual de três unidades como prova de limpeza nativa.
+
+Depois, executar o validate integral do bloco conforme orientação de testes
+dirigidos por ajuste. Registrar resultado real, resolver falhas no escopo e
+manter a política final de perguntas explicitamente pendente até resposta.
+Nenhum gate humano/comercial, CI ou deploy é aprovado por testes locais.

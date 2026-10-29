@@ -11,12 +11,12 @@ import {
   fail,
   readSource,
   readLookup,
-  readPage,
   readMutation,
   readCanceled,
   reason,
 } from '../model/adventureDeletionContracts';
 import * as recovery from './adventureDeletionRecovery';
+import { listAdventureDeletions } from './adventureDeletionCatalog';
 import {
   adventureDeletionTransport,
   type AdventureDeletionTransport,
@@ -218,25 +218,8 @@ export function createAdventureDeletionClient(options: AdventureDeletionClientOp
         return next;
       });
     },
-    async list(input: { cursor?: string; limit?: number } = {}, visited = new Set<string>()) {
-      const snapshot = structuredClone(input),
-        seen = new Set(visited);
-      if (
-        !snapshot ||
-        typeof snapshot !== 'object' ||
-        Array.isArray(snapshot) ||
-        Object.keys(snapshot).some((k) => !['cursor', 'limit'].includes(k)) ||
-        (snapshot.limit !== undefined &&
-          (!Number.isInteger(snapshot.limit) || snapshot.limit < 1 || snapshot.limit > 50)) ||
-        (snapshot.cursor !== undefined &&
-          (typeof snapshot.cursor !== 'string' || !/^[A-Za-z0-9_-]{1,4096}$/.test(snapshot.cursor)))
-      )
-        fail('Página de exclusão inválida.');
-      if (snapshot.cursor) seen.add(snapshot.cursor);
-      check();
-      const response = await transport.list(snapshot);
-      check();
-      return readPage(response, uid, snapshot.limit ?? 25, seen);
+    list(input: { cursor?: string; limit?: number } = {}, visited = new Set<string>()) {
+      return listAdventureDeletions({ uid, check, transport }, input, visited);
     },
   };
 }

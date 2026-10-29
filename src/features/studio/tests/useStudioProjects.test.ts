@@ -229,3 +229,18 @@ it('apresenta erro recuperável se o servidor repetir uma janela sem avançar', 
   expect(listAdventures).toHaveBeenCalledTimes(2);
   expect(result.current.loading).toBe(false);
 });
+
+it('invalida somente as aventuras da mesma conta ao receber revogação', async () => {
+  const { publishInvalidation } = await import('@/shared/services');
+  vi.mocked(listAdventures).mockResolvedValue({ items: [adventure], nextCursor: null });
+  const { result } = renderHook(() => useStudioProjects('adventure', 'all'));
+  await waitFor(() => expect(result.current.result?.items).toEqual([adventure]));
+  const before = vi.mocked(listAdventures).mock.calls.length;
+  act(() => publishInvalidation({ actorId: 'other', scope: 'adventures' }));
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'campaigns' }));
+  expect(listAdventures).toHaveBeenCalledTimes(before);
+  vi.mocked(listAdventures).mockResolvedValue({ items: [], nextCursor: null });
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'adventures' }));
+  await waitFor(() => expect(result.current.result?.items).toEqual([]));
+  expect(listAdventures).toHaveBeenCalledTimes(before + 1);
+});

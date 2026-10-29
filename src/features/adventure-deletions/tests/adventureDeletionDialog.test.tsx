@@ -384,3 +384,33 @@ it('fonte ausente apresenta indisponibilidade sem oferecer confirmação destrut
   ).not.toBeInTheDocument();
   expect(s.transport.start).not.toHaveBeenCalled();
 });
+
+it('revogação de ID nativo longo não depende do orçamento do pulso de apresentação', async () => {
+  const id = 'a'.repeat(1500),
+    revoked = vi.fn(),
+    held = deferred<Awaited<ReturnType<typeof s.transport.advance>>>();
+  s.transport.getSource.mockResolvedValueOnce({ ...source, adventureId: id });
+  s.transport.get.mockResolvedValueOnce({
+    schemaVersion: 1,
+    ownerId: uid,
+    lookup: { adventureId: id },
+    deletion: null,
+  });
+  s.transport.start.mockImplementationOnce((input) =>
+    Promise.resolve({
+      receipt: {
+        operationId: input.operationId,
+        action: 'start',
+        expectedCheckpoint: null,
+        confirmedCheckpoint: 0,
+      },
+      progress: { ...progress, adventureId: id, deletionId: input.operationId },
+    }),
+  );
+  s.transport.advance.mockReturnValueOnce(held.promise);
+  render(<AdventureDeletionDialog adventureId={id} open onClose={vi.fn()} onRevoked={revoked} />);
+  await userEvent.click(await confirmedButton());
+  await waitFor(() => expect(revoked).toHaveBeenCalledOnce());
+  expect(revoked.mock.calls[0]?.[0]).toMatchObject({ adventureId: id, revoked: true });
+  expect(screen.getByRole('heading', { name: 'Acesso à aventura encerrado' })).toBeVisible();
+});

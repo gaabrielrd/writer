@@ -3,6 +3,7 @@ import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Link, MemoryRouter, Route, Routes } from 'react-router';
 import { chooseDropdown } from '@/test/dropdown';
+import { publishInvalidation } from '@/shared/services';
 import { StudioPage } from '../components/StudioPage';
 import {
   createBook,
@@ -207,6 +208,30 @@ vi.mock('@/features/adventure-import', () => ({
   AdventureImportPreparations: () => null,
 }));
 vi.mock('@/features/adventures', () => ({
+  AdventureDeletionPreparations: () => null,
+  AdventureDeletionDialog: ({
+    open,
+    onClose,
+    adventureId,
+  }: {
+    open: boolean;
+    onClose: () => void;
+    adventureId: string;
+  }) =>
+    open ? (
+      <section aria-label="Exclusão observada no Estúdio">
+        <p>{adventureId}</p>
+        <button
+          onClick={() => {
+            vi.mocked(listAdventures).mockResolvedValue({ items: [], nextCursor: null });
+            publishInvalidation({ actorId: 'owner', scope: 'adventures' });
+          }}
+        >
+          Revogar aventura observada
+        </button>
+        <button onClick={onClose}>Fechar exclusão observada</button>
+      </section>
+    ) : null,
   listAdventures: vi.fn(),
   createAdventure: vi.fn(),
   getAdventure: vi.fn(),
@@ -762,4 +787,36 @@ it('troca de conta durante leitura da aventura impede navegação tardia', async
   act(() => release(restoredAdventure));
   await waitFor(() => expect(adventureRestore.guard).toHaveBeenCalledTimes(1));
   expect(screen.queryByRole('heading', { name: 'Aventura aberta' })).not.toBeInTheDocument();
+});
+
+it('mantém o diálogo de exclusão quando a invalidação retira o cartão sem alterar os outros projetos', async () => {
+  vi.mocked(listAdventures).mockResolvedValue({
+    items: [
+      {
+        id: 'adventure-project-0001',
+        kind: 'adventure',
+        title: 'Aventura a excluir',
+        status: 'draft',
+        revision: 1,
+        universeId: null,
+        createdAt: 1000,
+        updatedAt: 2000,
+      },
+    ],
+    nextCursor: null,
+  });
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Ações da aventura' }));
+  await userEvent.click(screen.getByRole('menuitem', { name: 'Excluir aventura' }));
+  const dialog = screen.getByRole('region', { name: 'Exclusão observada no Estúdio' });
+  expect(dialog).toHaveTextContent('adventure-project-0001');
+  await userEvent.click(screen.getByRole('button', { name: 'Revogar aventura observada' }));
+  await waitFor(() =>
+    expect(screen.queryByRole('link', { name: /Aventura a excluir/ })).not.toBeInTheDocument(),
+  );
+  expect(dialog).toBeInTheDocument();
+  expect(screen.getByRole('link', { name: 'Livro existente' })).toBeVisible();
+  expect(screen.getByRole('link', { name: /Mesa existente/ })).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar exclusão observada' }));
+  expect(dialog).not.toBeInTheDocument();
 });

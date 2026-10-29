@@ -89,8 +89,14 @@ export function useAdventureDeletion(options: Options) {
       setView((current) => ({ ...current, progress: next, source: null }));
       if (!notified.current) {
         notified.current = true;
-        publishInvalidation({ actorId: uid, scope: 'adventure:' + adventureId });
         latest.current.onRevoked?.(structuredClone(next));
+        // A presentation hint has a smaller wire budget than a native document ID.
+        // It must never prevent hiding an original whose revocation is confirmed.
+        if (uid.length <= 1024) {
+          publishInvalidation({ actorId: uid, scope: 'adventures' });
+          const scope = 'adventure:' + adventureId;
+          if (scope.length <= 1024) publishInvalidation({ actorId: uid, scope });
+        }
       }
     },
     [active, uid, adventureId],

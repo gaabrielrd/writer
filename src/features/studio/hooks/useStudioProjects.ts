@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
+import { subscribeInvalidation } from '@/shared/services';
 import type { EditorialState } from '@/features/work-progress';
 import { listStudioBooks, prepareStudioBooks, type BookStatus } from '@/features/books';
 import { listAdventures, type AdventureStatus } from '@/features/adventures';
@@ -111,6 +112,10 @@ export function useStudioProjects(
     };
   }, [key, uid, kind, status, editorialState]);
   const refresh = useCallback(() => setAttempt((value) => value + 1), []);
+  useEffect(() => {
+    if (!uid || kind !== 'adventure') return;
+    return subscribeInvalidation({ actorId: uid, scope: 'adventures' }, refresh);
+  }, [uid, kind, refresh]);
   const loadMore = async () => {
     const control = controlRef.current;
     if (

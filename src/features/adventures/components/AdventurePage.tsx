@@ -14,6 +14,11 @@ import {
   subscribeEditorChatOperation,
 } from '@/features/ai-assistant';
 import { AdventureBackupDialog } from '@/features/adventure-portability';
+import {
+  AdventureDeletionDialog,
+  isAdventureDeletionId,
+  type AdventureDeletionProgress,
+} from '@/features/adventure-deletions';
 import { WorkHistoryDialog } from '@/features/manuscript-history';
 import { LoreCollection } from '@/features/lore';
 import { BusyNavigationGuard } from '@/features/editor';
@@ -46,6 +51,8 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const { setPendingEditorOperation } = useAuth();
   const navigate = useNavigate();
   const [captureOpen, setCaptureOpen] = useState(false);
+  const [deletionOpen, setDeletionOpen] = useState(false);
+  const [revoked, setRevoked] = useState<AdventureDeletionProgress | null>(null);
   const [backupOpen, setBackupOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -71,7 +78,7 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
     }, [ownerId, personaScope]),
     () => 'clear',
   );
-  const pending = loreBusy || personaBusy || personaJournal !== 'clear';
+  const pending = !revoked && (loreBusy || personaBusy || personaJournal !== 'clear');
   useEffect(() => {
     setPendingEditorOperation(pending);
     return () => setPendingEditorOperation(false);
@@ -138,7 +145,7 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const activity = useWorkActivity({
     target: { kind: 'adventure', id },
     resource: { kind: 'project' },
-    enabled: Boolean(result?.adventure && result.adventure.ownerId === ownerId),
+    enabled: Boolean(!revoked && result?.adventure && result.adventure.ownerId === ownerId),
   });
   const back = (
     <Link to="/studio" className={buttonVariants({ variant: 'secondary' })}>
@@ -146,13 +153,30 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
     </Link>
   );
   const recovery =
-    personaJournal !== 'clear' ? (
+    !revoked && personaJournal !== 'clear' ? (
       <Button variant="outline" onClick={() => setPersonaOpen(true)}>
         Recuperar pedido de persona
       </Button>
     ) : null;
   let content;
-  if (!result || (result.error && result.attempt !== attempt))
+  if (revoked)
+    content = (
+      <div className={styles.page}>
+        <EmptyState
+          title="Acesso à aventura encerrado"
+          description="A exclusão foi confirmada. A limpeza pode ser retomada sem reabrir o conteúdo original."
+          action={
+            <>
+              {back}
+              <Button variant="outline" onClick={() => setDeletionOpen(true)}>
+                Consultar exclusão desta aventura
+              </Button>
+            </>
+          }
+        />
+      </div>
+    );
+  else if (!result || (result.error && result.attempt !== attempt))
     content = <LoadingState label="Carregando aventura..." />;
   else if (result.error)
     content = (
@@ -178,6 +202,11 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
           action={back}
         />
         {recovery}
+        {isAdventureDeletionId(id) && (
+          <Button variant="outline" onClick={() => setDeletionOpen(true)}>
+            Consultar exclusão desta aventura
+          </Button>
+        )}
       </>
     );
   else {
@@ -232,6 +261,13 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
           actions={
             <div className={styles.headerActions}>
               {back}
+              <Button
+                variant="destructive"
+                disabled={pending || backupOpen || captureOpen || historyOpen || personaOpen}
+                onClick={() => setDeletionOpen(true)}
+              >
+                Excluir aventura
+              </Button>
               <Button variant="outline" disabled={pending} onClick={() => setBackupOpen(true)}>
                 Backup da aventura
               </Button>
@@ -367,7 +403,24 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   return (
     <>
       <BusyNavigationGuard busy={pending} />
-      {personaOpen && (
+      {isAdventureDeletionId(id) && (
+        <AdventureDeletionDialog
+          adventureId={id}
+          open={deletionOpen}
+          onRevoked={(value) => {
+            setRevoked(value);
+            setBackupOpen(false);
+            setCaptureOpen(false);
+            setHistoryOpen(false);
+            setPersonaOpen(false);
+          }}
+          onClose={() => {
+            setDeletionOpen(false);
+            if (revoked) void navigate('/studio');
+          }}
+        />
+      )}
+      {!revoked && personaOpen && (
         <AdventurePersonaDialog
           uid={ownerId}
           adventureId={id}

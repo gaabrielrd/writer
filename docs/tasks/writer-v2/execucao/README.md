@@ -2145,3 +2145,13 @@ família própria reaparecida; não remove arquivo independente nem outra conta.
 [evidência parcial](../../../entregas/2026-10-28-writer-v2-usos-e-autoria-na-exclusao-de-aventuras.md).
 Controles, atividade, fechamento terminal, cliente/UI e validate integral ainda
 faltam. Plano 199, P2/P3/D/F2-09 e macro 8/35 permanecem abertos.
+
+### Plano 199 — exclusão de aventuras no Estúdio
+
+Catálogo remoto/local por conta, ações na página/cartão, sessão fora do conteúdo
+revogado e consulta pela URL antiga estão compostos localmente. Seis exports de
+index usam guards lazy, App Check, headers privados e a porta existente de mídia.
+Veja a [ADR 0230](../../../decisions/0230-adventure-deletion-catalog-routes-and-binding.md)
+e a [evidência dirigida](../../../entregas/2026-10-29-writer-v2-exclusao-de-aventuras-no-estudio.md).
+Ciclo rico restaurado, validate integral e política final do chat seguem pendentes.
+Plano 199, P2/P3/D/F2-09/V2 e macro 8/35 permanecem abertos; somente commit local.

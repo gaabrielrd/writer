@@ -8,6 +8,13 @@ import {
   invokeAdventureBackupCallable,
   setAdventureBackupHeaders,
 } from './adventureBackupCallable.mjs';
+import {
+  ADVENTURE_DELETION_METHODS,
+  ADVENTURE_DELETION_CALLABLE_OPTIONS,
+  invokeAdventureDeletionCallable,
+  setAdventureDeletionHeaders,
+} from './adventureDeletionCallable.mjs';
+import { createAdventureDeletionService } from './adventureDeletion.mjs';
 import { createAdventureBackupService } from './adventureBackupService.mjs';
 import { createAdventureRestoreTransferService } from './adventureRestoreTransfer.mjs';
 import { createRestoredImageStorage } from './restoredImageStorage.mjs';
@@ -381,6 +388,7 @@ const callable = (method, secrets = []) =>
         : 120,
       memory: '512MiB',
       maxInstances: 5,
+      ...(ADVENTURE_DELETION_METHODS.includes(method) ? ADVENTURE_DELETION_CALLABLE_OPTIONS : {}),
       secrets,
     },
     async (request) => {
@@ -389,6 +397,7 @@ const callable = (method, secrets = []) =>
       setBookRestoreHeaders(method, request);
       setAdventureRestoreHeaders(method, request);
       setAdventureBackupHeaders(method, request);
+      setAdventureDeletionHeaders(method, request);
       setBookLoreReadHeaders(method, request);
       setBookPublicationHeaders(method, request);
       setBookLoreEditHeaders(method, request);
@@ -401,6 +410,13 @@ const callable = (method, secrets = []) =>
       }
       setCampaignVariantRecoveryHeaders(method, request);
       try {
+        if (ADVENTURE_DELETION_METHODS.includes(method))
+          return await invokeAdventureDeletionCallable(
+            () =>
+              createAdventureDeletionService({ db, assets: createRestoredImageStorage(bucket) }),
+            method,
+            request,
+          );
         if (ADVENTURE_BACKUP_METHODS.includes(method))
           return await invokeAdventureBackupCallable(
             createAdventureBackupService({ db, assets: backupStorage }),
@@ -609,6 +625,12 @@ export const restoreCampaignLore = callable('restoreCampaignLore');
 export const discardCampaignLoreVariant = callable('discardCampaignLoreVariant');
 export const resolveCampaignLoreOperation = callable('resolveCampaignLoreOperation');
 export const listCampaignLoreOperations = callable('listCampaignLoreOperations');
+export const getAdventureDeletionSource = callable('getAdventureDeletionSource');
+export const startAdventureDeletion = callable('startAdventureDeletion');
+export const resolveAdventureDeletionStart = callable('resolveAdventureDeletionStart');
+export const getAdventureDeletion = callable('getAdventureDeletion');
+export const listAdventureDeletions = callable('listAdventureDeletions');
+export const advanceAdventureDeletion = callable('advanceAdventureDeletion');
 export const getCampaignDeletionSource = callable('getCampaignDeletionSource');
 export const startCampaignDeletion = callable('startCampaignDeletion');
 export const resolveCampaignDeletionStart = callable('resolveCampaignDeletionStart');

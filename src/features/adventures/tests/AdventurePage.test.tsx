@@ -397,3 +397,104 @@ it('operações de persona pendentes bloqueiam abertura de nova captura', async 
   render(tree());
   expect(await screen.findByRole('button', { name: 'Backup da aventura' })).toBeDisabled();
 });
+
+type DeletionProps = Parameters<
+  typeof import('@/features/adventure-deletions').AdventureDeletionDialog
+>[0];
+const deletionView = vi.hoisted(() => ({ props: null as DeletionProps | null }));
+vi.mock('@/features/adventure-deletions', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/features/adventure-deletions')>()),
+  AdventureDeletionDialog: (props: DeletionProps) => {
+    deletionView.props = props;
+    return props.open ? (
+      <section aria-label="Exclusão observada na aventura">
+        <p>{props.adventureId}</p>
+        <button
+          onClick={() =>
+            props.onRevoked?.({
+              schemaVersion: 1,
+              ownerId: 'owner',
+              adventureId: props.adventureId,
+              adventureToken: 'a'.repeat(64),
+              deletionId: 'observed-deletion-0001',
+              deletionToken: 'b'.repeat(64),
+              checkpoint: 1,
+              deletedDocuments: 0,
+              createdAt: 1000,
+              updatedAt: 1001,
+              complete: false,
+              phase: 'controls',
+              title: 'Título conferido',
+              state: 'deleting',
+              revoked: true,
+            })
+          }
+        >
+          Confirmar revogação observada
+        </button>
+        <button onClick={props.onClose}>Fechar exclusão observada</button>
+      </section>
+    ) : null;
+  },
+}));
+it('revogação confirmada esconde o conteúdo e conserva o diálogo até voltar ao Estúdio', async () => {
+  render(tree('?tab=lore'));
+  await userEvent.click(await screen.findByRole('button', { name: 'Excluir aventura' }));
+  const dialog = screen.getByRole('region', { name: 'Exclusão observada na aventura' });
+  expect(screen.getByText('História privada')).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar revogação observada' }));
+  expect(screen.getByText('Acesso à aventura encerrado')).toBeVisible();
+  expect(screen.queryByText('História privada')).not.toBeInTheDocument();
+  expect(screen.queryByLabelText('Rascunho de lore')).not.toBeInTheDocument();
+  expect(dialog).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Backup da aventura' })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar exclusão observada' }));
+  expect(await screen.findByRole('heading', { name: 'Estúdio' })).toBeVisible();
+});
+it('URL antiga permite consultar a exclusão mesmo sem raiz disponível', async () => {
+  vi.mocked(getAdventure).mockResolvedValue(null);
+  render(tree());
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Consultar exclusão desta aventura' }),
+  );
+  expect(screen.getByRole('region', { name: 'Exclusão observada na aventura' })).toHaveTextContent(
+    'project',
+  );
+});
+it('rascunho de lore e recuperação de persona pendentes impedem iniciar exclusão pela página', async () => {
+  render(tree('?tab=lore'));
+  await screen.findByRole('heading', { name: 'Meu projeto' });
+  await userEvent.type(screen.getByLabelText('Rascunho de lore'), 'Texto próprio');
+  expect(screen.getByRole('button', { name: 'Excluir aventura' })).toBeDisabled();
+});
+it('um diálogo editorial aberto impede abrir a exclusão simultaneamente', async () => {
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Backup da aventura' }));
+  expect(screen.getByRole('button', { name: 'Excluir aventura' })).toBeDisabled();
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar backup observado' }));
+  expect(screen.getByRole('button', { name: 'Excluir aventura' })).toBeEnabled();
+});
+it('resposta tardia de metadados não reabre conteúdo após a revogação', async () => {
+  let finish!: (value: Adventure) => void;
+  vi.mocked(getAdventure)
+    .mockResolvedValueOnce(resource)
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+  render(tree());
+  await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Persona alterada' }));
+  await waitFor(() => expect(getAdventure).toHaveBeenCalledTimes(2));
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar persona' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir aventura' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar revogação observada' }));
+  await act(async () => {
+    finish({ ...resource, title: 'Título tardio', synopsis: 'Conteúdo tardio' });
+    await Promise.resolve();
+  });
+  expect(screen.queryByText('Conteúdo tardio')).not.toBeInTheDocument();
+  expect(screen.getByText('Acesso à aventura encerrado')).toBeVisible();
+});

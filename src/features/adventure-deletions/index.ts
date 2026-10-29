@@ -10,3 +10,7 @@ export {
   AdventureDeletionDialog,
   type AdventureDeletionDialogProps,
 } from './components/AdventureDeletionDialog';
+
+export { AdventureDeletionPreparations } from './components/AdventureDeletionPreparations';
+
+export { nativeId as isAdventureDeletionId } from './model/adventureDeletionContracts';

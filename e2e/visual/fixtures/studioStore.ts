@@ -123,6 +123,7 @@ export function fixtureList(kind: Kind, input: ListInput) {
   }
   const items = [...stores[kind].values()]
     .filter((project) => project.ownerId === fixtureOwner())
+    .filter((project) => kind !== 'adventure' || !fixtureAdventureDeletionReservation(project.id))
     .filter((project) => kind !== 'campaign' || !fixtureCampaignDeletionReservation(project.id))
     .filter((project) => !input.status || input.status === 'all' || project.status === input.status)
     .sort((left, right) => right.updatedAt - left.updatedAt || right.id.localeCompare(left.id));
@@ -148,6 +149,7 @@ export function fixtureList(kind: Kind, input: ListInput) {
 export function fixtureGet(kind: 'adventure', id: string): Promise<Adventure | null>;
 export function fixtureGet(kind: 'campaign', id: string): Promise<Campaign | null>;
 export function fixtureGet(kind: Kind, id: string): Promise<Project | null> {
+  if (kind === 'adventure' && fixtureAdventureDeletionReservation(id)) return Promise.resolve(null);
   if (kind === 'campaign' && fixtureCampaignDeletionReservation(id)) return Promise.resolve(null);
   const project = stores[kind].get(projectKey(fixtureOwner(), id));
   return Promise.resolve(structuredClone(project?.ownerId === fixtureOwner() ? project : null));
@@ -199,6 +201,7 @@ export async function fixtureCreate(
     if (previous.payload !== payload)
       throw new Error('Esta operação já foi usada com outros dados.');
     if (kind === 'campaign') fixtureAssertCampaignWritable(previous.project.id, ownerId);
+    if (kind === 'adventure') fixtureAssertAdventureWritable(previous.project.id, ownerId);
     const current = stores[kind].get(projectKey(ownerId, previous.project.id));
     if (!current)
       throw Object.assign(new Error('Projeto indisponível.'), { code: 'functions/not-found' });
@@ -215,6 +218,7 @@ export async function fixtureCreate(
     updatedAt: FIXTURE_TIME,
   };
   if (kind === 'campaign') fixtureAssertCampaignWritable(common.id, ownerId);
+  if (kind === 'adventure') fixtureAssertAdventureWritable(common.id, ownerId);
   const project =
     kind === 'adventure'
       ? {
@@ -253,11 +257,13 @@ export function fixtureInstallImportedAdventure(root: Adventure): void {
   if (root.ownerId !== fixtureOwner() || root.origin.kind !== 'imported')
     throw new Error('A importação não pertence à conta atual.');
   const key = projectKey(root.ownerId, root.id);
+  fixtureAssertAdventureWritable(root.id, root.ownerId);
   if (stores.adventure.has(key)) throw new Error('O ID da aventura já foi utilizado.');
   stores.adventure.set(key, structuredClone(root));
   persistStudio();
 }
 export function fixturePatchProject(kind: Kind, id: string, patch: Partial<Project>): void {
+  if (kind === 'adventure') fixtureAssertAdventureWritable(id);
   if (kind === 'campaign') fixtureAssertCampaignWritable(id);
   const value = stores[kind].get(projectKey(fixtureOwner(), id));
   if (value?.ownerId === fixtureOwner()) {
@@ -448,4 +454,52 @@ function creationHash(value: string): string {
   let hash = 2166136261;
   for (const character of value) hash = Math.imul(hash ^ character.codePointAt(0)!, 16777619);
   return (hash >>> 0).toString(16).padStart(8, '0').repeat(8);
+}
+
+interface AdventureReservation {
+  ownerId: string;
+  adventureId: string;
+  deletionId: string;
+  state: 'deleting' | 'deleted';
+}
+const adventureReservationsKey = 'writer.visual.adventure-deletion-reservations';
+function adventureReservations(): Record<string, AdventureReservation> {
+  return JSON.parse(localStorage.getItem(adventureReservationsKey) ?? '{}') as Record<
+    string,
+    AdventureReservation
+  >;
+}
+export function fixtureAdventureDeletionReservation(
+  id: string,
+  uid = fixtureOwner(),
+): AdventureReservation | null {
+  return structuredClone(adventureReservations()[projectKey(uid, id)] ?? null);
+}
+export function fixtureAssertAdventureWritable(id: string, uid = fixtureOwner()) {
+  if (fixtureAdventureDeletionReservation(id, uid))
+    throw Object.assign(Error('Aventura em exclusão ou já excluída.'), {
+      code: 'functions/failed-precondition',
+    });
+}
+export function fixtureReserveAdventureDeletion(uid: string, id: string, deletionId: string) {
+  if (uid !== fixtureOwner()) throw Error('Simulated account mismatch');
+  const values = adventureReservations(),
+    key = projectKey(uid, id),
+    old = values[key];
+  if (old && old.deletionId !== deletionId) throw Error('Simulated reservation mismatch');
+  values[key] = old ?? { ownerId: uid, adventureId: id, deletionId, state: 'deleting' };
+  localStorage.setItem(adventureReservationsKey, JSON.stringify(values));
+}
+export function fixtureFinishAdventureDeletion(uid: string, id: string, deletionId: string) {
+  const values = adventureReservations(),
+    key = projectKey(uid, id),
+    old = values[key];
+  if (uid !== fixtureOwner() || !old || old.deletionId !== deletionId)
+    throw Error('Simulated reservation mismatch');
+  stores.adventure.delete(key);
+  delete projectPatches[JSON.stringify([uid, 'adventure', id])];
+  sessionStorage.setItem('writer.visual.studio-patches', JSON.stringify(projectPatches));
+  persistStudio();
+  values[key] = { ...old, state: 'deleted' };
+  localStorage.setItem(adventureReservationsKey, JSON.stringify(values));
 }
