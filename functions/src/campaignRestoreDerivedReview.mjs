@@ -247,20 +247,24 @@ export function createCampaignRestoreDerivedReview({ store, openSource, ownSeman
       closed(input, ['restoreId', 'jobToken']);
       const r = { restoreId: id(input.restoreId), jobToken: hash(input.jobToken) },
         own = await authority(uid, r);
-      const control = await db.runTransaction(async (tx) => {
+      const prepared = await db.runTransaction(async (tx) => {
         const l = await requireReady(tx, uid, r);
         if (l.job.derivedReview?.phase !== 'indexed' || !l.job.derivedIndex?.sealed)
           fail('failed-precondition', 'derived-index-incomplete');
         const key = await store.key(tx, l, true);
         try {
           const s = state(l, key);
-          createCampaignDerivedStaging(s.staging, () => bad()).finish(own);
-          return structuredClone(l.job.derivedIndex);
+          const active = createCampaignDerivedStaging(s.staging, () => bad()).finish(own);
+          return {
+            control: structuredClone(l.job.derivedIndex),
+            context: structuredClone({ active, baseWitness: s.staging.baseWitness }),
+          };
         } finally {
           key.bytes.fill(0);
         }
       });
-      const token = digest(control);
+      const control = prepared.control,
+        token = digest(control);
       async function read(run) {
         return db.runTransaction(async (tx) => {
           const l = await requireReady(tx, uid, r);
@@ -275,6 +279,7 @@ export function createCampaignRestoreDerivedReview({ store, openSource, ownSeman
         });
       }
       return Object.freeze({
+        context: Object.freeze(prepared.context),
         certificate: Object.freeze({
           validation: 'campaign-derived-index-only',
           manifest: own.manifest,

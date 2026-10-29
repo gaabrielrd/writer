@@ -426,3 +426,14 @@ ausência por vizinhos, UTF-8 legado e coleta por pares antes de own/chunks.
 Ainda falta o verificador derivado por dependência; portas usadas pelo completo
 em teste não substituem retomada em produção. Depois origens, materialização/
 ativação/C4 dos temporários e Estúdio/ciclos. P3/D/F2-09 e macro 8/35 abertos.
+
+### Semântica derivada por dependência — incremento 231
+
+[Plano 231](231-verificacao-derivada-por-dependencia.md) e
+[ADR 0261](../../../decisions/0261-campaign-resumable-derived-semantics.md)
+compartilham máquina de passos e mantêm digest anterior sem deps crescente.
+Checkpoint cifrado retoma dentro do item com CAS/recibos/cancelamento. 379
+testes dirigidos, uma jornada SDK/Rules e cinco perfis antigos/novos/retomados
+idênticos positivos. Próximo: autorização de origens persistida, depois
+materialização/ativação/C4 dos temporários e Estúdio/ciclos. P3/D/F2-09 e
+macro 8/35 abertos; full validate no fechamento do bloco.

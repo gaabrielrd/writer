@@ -3843,3 +3843,14 @@ job/chave/par nativo. JSON limitado é compartilhado com own; UTF-8 serializa ca
 mínima, não texto. Cancel/coleta retira pares e confirma órfãos antes de own/chunks.
 Certificado é apenas de indexação. Verificador derivado por dependência, origens,
 materialização, C4 da ativação e UI continuam pendentes.
+
+## Verificação derivada por dependência
+
+A [ADR 0261](decisions/0261-campaign-resumable-derived-semantics.md) compartilha
+campaignBackupDerivedRowWalk entre o revisor completo e
+campaignRestoreDerivedSemantics. Fases de campo/parte/relação permitem retomar
+sem deps crescente e emitem o hash anterior em fragmentos. Contexto validado da
+base vem da porta do índice; derivedCheck cifra cursores/SHA no próprio job,
+vinculado ao índice/arquivo/encarnação. CAS/recibos e cancelamento preservados,
+sem nova coleção. A prova interna revalida assinatura e vale somente semântica.
+Origens persistidas, materialização, C4 da ativação e UI permanecem pendentes.

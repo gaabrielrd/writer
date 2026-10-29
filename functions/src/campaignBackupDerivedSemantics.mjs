@@ -3,51 +3,17 @@ import { validateCampaignBackupFile } from './campaignBackupFileValidation.mjs';
 import { campaignDerivedBad as bad } from './campaignBackupDerivedContent.mjs';
 import {
   keyFor,
-  sourceMatches,
   createCampaignDerivedStageState,
   createCampaignDerivedStaging,
 } from './campaignBackupDerivedStaging.mjs';
 import { closedCampaignRecord, campaignManifestId } from './portableCampaignManifest.mjs';
 import { createCampaignBackupAttestationVerifier } from './campaignBackupAttestation.mjs';
-import { baseBodyKey } from './campaignBaseContracts.mjs';
-import { digest, workFail } from './workProgressContracts.mjs';
-const safeAdd = (a, b = 1) => {
-  const n = a + b;
-  if (!Number.isSafeInteger(n) || n < 0) bad();
-  return n;
-};
-const available = (r) => r?.value?.unit?.outcome === 'available';
-const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-function itemMatches(item, witness, base) {
-  if (
-    item.sourceKey !== witness.sourceKey ||
-    witness.baseId !== base.baseId ||
-    witness.availability !== 'available'
-  )
-    bad();
-  const o = item.origin,
-    w = witness.origin;
-  if (item.kind === 'lore') {
-    if (
-      o.kind === 'lore'
-        ? w.kind !== 'lore' ||
-          w.scopeId !== o.scopeId ||
-          w.entityId !== o.id ||
-          base.universe.kind !== 'reference' ||
-          base.universe.id !== o.scopeId
-        : w.kind !== 'adventure-lore' ||
-          w.adventureId !== o.adventureId ||
-          w.entityId !== o.id ||
-          o.adventureId !== base.adventure.id
-    )
-      bad();
-  } else if (
-    w.kind !== 'adventure' ||
-    w.adventureId !== o.adventureId ||
-    o.adventureId !== base.adventure.id
-  )
-    bad();
-}
+import {
+  advanceCampaignDerivedRow,
+  createCampaignDerivedRowState,
+  campaignDerivedCounts,
+} from './campaignBackupDerivedRowWalk.mjs';
+import { workFail } from './workProgressContracts.mjs';
 /** All lookups refer to authenticated temporary metadata; no native origin queries or grants. */
 export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.now }) {
   return {
@@ -153,45 +119,6 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
         if (row.section !== section || row.key !== key) bad();
         return row;
       }
-      async function live(section, id, field = null) {
-        const r = await find(section, id, field);
-        if (!available(r)) bad();
-        return r;
-      }
-      async function relationTarget(key, isVariant = false) {
-        const v = isVariant ? await find('variant', key, null, true) : null;
-        if (v)
-          return (
-            available(v) &&
-            v.value.meta.mode !== 'removed' &&
-            v.value.meta.participation !== 'inactive'
-          );
-        const item = await find('base:item', key, null, true);
-        if (item && available(item) && item.value.meta.kind !== 'lore') bad();
-        return available(item);
-      }
-      async function witnessOwner(kind, key) {
-        check();
-        const row = detach(await reverse(kind, key));
-        check();
-        if (
-          kind === 'image'
-            ? row.section !== 'base:item' ||
-              !available(row) ||
-              row.value.meta.kind !== 'block' ||
-              row.value.meta.image !== key
-            : kind === 'ledger'
-              ? row.section !== 'base:loreReferences' ||
-                !available(row) ||
-                row.value.meta.targetKey !== key
-              : row.section !== 'base:links' ||
-                !available(row) ||
-                row.value.meta.target.kind !== 'lore' ||
-                row.value.meta.target.sourceKey !== key
-        )
-          bad();
-        return row;
-      }
       try {
         const file = await validateCampaignBackupFile(uid, source, {
           keys,
@@ -212,20 +139,7 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
         await seal();
         check();
         const hash = createHash('sha256'),
-          counts = {
-            records: 0,
-            items: 0,
-            fields: 0,
-            bodies: 0,
-            links: 0,
-            ledger: 0,
-            images: 0,
-            variants: 0,
-            anchors: 0,
-            unavailable: 0,
-            externalAnchorTargets: 0,
-            unresolvedRelations: 0,
-          };
+          counts = campaignDerivedCounts();
         hash.update(
           JSON.stringify(['writer-campaign-derived-semantics-v1', uid, file.seal.chainHash]) + '\n',
         );
@@ -239,215 +153,26 @@ export function createCampaignBackupDerivedSemanticsService({ keys, now = Date.n
             const page = Array.from({ length }, (_, i) => detach(raw[i], start + i));
             for (const row of page) {
               const s = row.section,
-                { unit: u, meta: m, record: w } = row.value,
-                deps = [];
-              const dep = async (section, id, field = null, required = true) => {
-                const r = required
-                  ? await live(section, id, field)
-                  : await find(section, id, field);
-                deps.push([r.section, r.key, r.value]);
-                return r;
-              };
-              if (s === 'base') {
-                if (active && u.id !== active.baseId) bad();
-              } else if (s === 'w:base') {
-                if (!same(w, state.baseWitness)) bad();
-              } else if (s === 'w:item') {
-                const item = await dep('base:item', w[1], null, false);
-                if (item.value.unit.outcome !== w[3].availability) bad();
-              } else if (s === 'w:anchor') {
-                const v = await dep('variant', w[1], null, false);
-                if (v.value.unit.outcome !== w[2]) bad();
-              } else {
-                if ((s.startsWith('base:') || s === 'image') && !active) bad();
-                if (u.outcome !== 'available') counts.unavailable = safeAdd(counts.unavailable);
-                if (s === 'base:item') {
-                  counts.items = safeAdd(counts.items);
-                  const witness = await dep('w:item', u.id, null, false),
-                    proof = witness.value.record;
-                  if (
-                    proof[2] !== 'available' ||
-                    proof[3].baseId !== active.baseId ||
-                    proof[3].availability !== u.outcome
-                  )
-                    bad();
-                  if (m) {
-                    itemMatches(m, proof[3], active);
-                    if (m.kind === 'lore') await witnessOwner('ledger', u.id);
-                    let parent = null;
-                    const kind =
-                      m.kind === 'block'
-                        ? 'scene'
-                        : m.kind === 'milestone'
-                          ? 'arc'
-                          : m.kind === 'scene' && m.parentKey !== null
-                            ? 'part'
-                            : null;
-                    if (kind) {
-                      parent = (await dep('base:item', m.parentKey)).value.meta;
-                      if (parent.kind !== kind) bad();
-                    } else if (m.parentKey !== null) bad();
-                    if (
-                      m.kind === 'milestone' &&
-                      m.parentKey !==
-                        digest({
-                          adventureId: m.origin.adventureId,
-                          kind: 'arc',
-                          id: m.origin.arcId,
-                        })
-                    )
-                      bad();
-                    if (m.kind === 'block' && m.role === 'main' && m.origin.id !== parent.origin.id)
-                      bad();
-                    if (m.image !== null) {
-                      if (m.kind !== 'block') bad();
-                      await dep('image', m.image, null, false);
-                    }
-                    for (const f of m.fields) {
-                      await dep('base:field', u.id, f.field);
-                      if (f.bodySourceKey !== u.id) {
-                        if (
-                          m.kind !== 'block' ||
-                          m.role !== 'main' ||
-                          f.field !== 'content' ||
-                          f.bodySourceKey !== m.parentKey ||
-                          !parent.fields.some((p) => same(p, f))
-                        )
-                          bad();
-                      } else
-                        for (let i = 0; i < f.chunkCount; i++) {
-                          const body = (await dep('base:bodies', baseBodyKey(u.id, f.field, i)))
-                            .value.meta;
-                          if (body.sourceKey !== u.id || body.field !== f.field || body.index !== i)
-                            bad();
-                        }
-                    }
-                    for (const r of m.relations)
-                      if ((await relationTarget(r.targetKey)) !== r.available) bad();
-                  }
-                } else if (s === 'base:field' || s === 'anchor:field') {
-                  counts.fields = safeAdd(counts.fields);
-                  const owner = (await dep(s === 'base:field' ? 'base:item' : 'anchor', u.id)).value
-                      .meta,
-                    fields = s === 'base:field' ? owner.fields : owner.item.fields;
-                  if (
-                    !fields.some(
-                      (f) =>
-                        f.field === u.field &&
-                        f.bytes === u.byteLength &&
-                        f.chunkCount === u.chunkCount &&
-                        f.sha256 === u.contentHash,
-                    )
-                  )
-                    bad();
-                } else if (s === 'base:bodies') {
-                  counts.bodies = safeAdd(counts.bodies);
-                  if (m) {
-                    const owner = (await dep('base:item', m.sourceKey)).value.meta,
-                      f = owner.fields.find((f) => f.field === m.field);
-                    if (
-                      !f ||
-                      f.bodySourceKey !== m.sourceKey ||
-                      m.index >= f.chunkCount ||
-                      baseBodyKey(m.sourceKey, m.field, m.index) !== u.id
-                    )
-                      bad();
-                  }
-                } else if (s === 'base:links') {
-                  counts.links = safeAdd(counts.links);
-                  if (m) {
-                    const owner = (await dep('base:item', m.sourceKey)).value.meta;
-                    if (
-                      m.kind === 'scene'
-                        ? owner.kind !== 'scene'
-                        : !['scene', 'arc', 'milestone', 'event'].includes(owner.kind)
-                    )
-                      bad();
-                    const t = await find('base:item', m.target.sourceKey, null, true);
-                    if (
-                      available(t) !== m.target.available ||
-                      (t && available(t) && t.value.meta.kind !== m.target.kind)
-                    )
-                      bad();
-                    if (t) deps.push([t.section, t.key, t.value]);
-                    if (m.target.kind === 'lore' && m.target.available) {
-                      const o = t.value.meta.origin;
-                      const ref =
-                        o.kind === 'lore'
-                          ? { kind: 'universe', scopeId: o.scopeId, entityId: o.id }
-                          : { kind: 'adventure', scopeId: o.adventureId, entityId: o.id };
-                      const ledger = (await dep('base:loreReferences', digest(ref))).value.meta;
-                      if (ledger.targetKey !== m.target.sourceKey || !ledger.available) bad();
-                    }
-                  }
-                } else if (s === 'base:loreReferences') {
-                  counts.ledger = safeAdd(counts.ledger);
-                  if (m) {
-                    await witnessOwner('lore', m.targetKey);
-                    const t = await find('base:item', m.targetKey, null, true);
-                    if (available(t) !== m.available) bad();
-                    if (m.available) {
-                      const o = t.value.meta.origin;
-                      if (t.value.meta.kind !== 'lore') bad();
-                      const ref =
-                        o.kind === 'lore'
-                          ? { kind: 'universe', scopeId: o.scopeId, entityId: o.id }
-                          : { kind: 'adventure', scopeId: o.adventureId, entityId: o.id };
-                      if (digest(ref) !== u.id) bad();
-                    }
-                  }
-                } else if (s === 'image') {
-                  counts.images = safeAdd(counts.images);
-                  await witnessOwner('image', u.id);
-                } else if (s === 'variant') {
-                  counts.variants = safeAdd(counts.variants);
-                  const proof = (await dep('w:anchor', u.id, null, false)).value.record;
-                  if (proof[2] !== u.outcome) bad();
-                  if (m) {
-                    const anchor = (await dep('anchor', m.anchorKey)).value.meta;
-                    if (
-                      anchor.item.sourceKey !== u.id ||
-                      proof[3].anchorKey !== m.anchorKey ||
-                      m.anchorKey !==
-                        digest({ capturedBaseId: proof[3].base.baseId, sourceKey: u.id })
-                    )
-                      bad();
-                    sourceMatches(anchor.source, proof[3].base);
-                    itemMatches(anchor.item, proof[3].item, proof[3].base);
-                    if (
-                      active &&
-                      !['legacy', 'inactive'].includes(m.participation) &&
-                      proof[3].base.baseId !== active.baseId
-                    )
-                      bad();
-                    for (const r of m.relations) {
-                      if (r.unresolved) {
-                        const target = await find('base:item', r.targetKey, null, true);
-                        if (target && available(target) && target.value.meta.kind !== 'lore') bad();
-                        counts.unresolvedRelations = safeAdd(counts.unresolvedRelations);
-                      } else if ((await relationTarget(r.targetKey, true)) !== r.available) bad();
-                    }
-                  } else await dep('anchor', u.id, null, false);
-                } else if (s === 'anchor') {
-                  counts.anchors = safeAdd(counts.anchors);
-                  if (m) {
-                    if (m.item.kind !== 'lore') bad();
-                    for (const f of m.item.fields) {
-                      if (f.bodySourceKey !== m.item.sourceKey) bad();
-                      await dep('anchor:field', u.id, f.field);
-                    }
-                    for (const r of m.item.relations) {
-                      const a = await find('base:item', r.targetKey, null, true),
-                        v = await find('variant', r.targetKey, null, true);
-                      if (a && available(a) && a.value.meta.kind !== 'lore') bad();
-                      if (!a && !v)
-                        counts.externalAnchorTargets = safeAdd(counts.externalAnchorTargets);
-                    }
-                  }
-                }
+                walk = createCampaignDerivedRowState(row);
+              while (!walk.done) {
+                check();
+                await advanceCampaignDerivedRow({
+                  row,
+                  context: { active, baseWitness: state.baseWitness },
+                  counts,
+                  state: walk,
+                  write: (s) => hash.update(s),
+                  readers: {
+                    find,
+                    reverse: async (kind, key) => {
+                      check();
+                      const r = detach(await reverse(kind, key));
+                      check();
+                      return r;
+                    },
+                  },
+                });
               }
-              counts.records = safeAdd(counts.records);
-              hash.update(JSON.stringify([row.section, row.key, row.value, deps]) + '\n');
               if (onDecision) {
                 await onDecision(Object.freeze({ section: s, key: row.key, index: row.index }));
                 check();

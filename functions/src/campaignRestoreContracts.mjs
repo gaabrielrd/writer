@@ -128,6 +128,7 @@ export function parseJob(v, uid, rid) {
     'reviewIndex',
     'derivedReview',
     'derivedIndex',
+    'derivedCheck',
   ]);
   if (
     v.schemaVersion !== 1 ||
@@ -328,6 +329,44 @@ export function parseJob(v, uid, rid) {
         bad();
     }
   }
+  if (v.derivedCheck !== undefined && v.derivedCheck !== null) {
+    const r = closed(v.derivedCheck, [
+      'schemaVersion',
+      'phase',
+      'checkpoint',
+      'processedRows',
+      'steps',
+      'totalRows',
+      'payload',
+    ]);
+    if (
+      r.schemaVersion !== 1 ||
+      v.state !== 'bytes-verified' ||
+      v.derivedReview?.phase !== 'indexed' ||
+      !v.derivedIndex?.sealed ||
+      !['checking', 'verified'].includes(r.phase) ||
+      integer(r.checkpoint, 1, v.checkpoint) !== r.checkpoint ||
+      integer(r.steps, 1) !== r.steps ||
+      r.totalRows !== v.derivedIndex.rows ||
+      integer(r.processedRows, 0, r.totalRows) !== r.processedRows ||
+      (r.phase === 'verified') !== (r.processedRows === r.totalRows)
+    )
+      bad();
+    closed(r.payload, ['iv', 'tag', 'data']);
+    for (const k of ['iv', 'tag', 'data']) {
+      const max = k === 'iv' ? 12 : k === 'tag' ? 16 : DERIVED_STATE_BYTES,
+        encoded = r.payload[k];
+      if (typeof encoded !== 'string' || encoded.length > 4 * Math.ceil(max / 3)) bad();
+      const b = Buffer.from(encoded, 'base64');
+      if (
+        b.toString('base64') !== encoded ||
+        b.length > max ||
+        (k !== 'data' && b.length !== max) ||
+        (k === 'data' && !b.length)
+      )
+        bad();
+    }
+  }
   return structuredClone(v);
 }
 export const progress = (l) => ({
@@ -368,6 +407,13 @@ export const progress = (l) => ({
       }
     : {}),
   ...(l.job.derivedIndex ? { derivedIndex: structuredClone(l.job.derivedIndex) } : {}),
+  ...(l.job.derivedCheck
+    ? {
+        derivedCheck: Object.fromEntries(
+          Object.entries(l.job.derivedCheck).filter(([k]) => k !== 'payload' && k !== 'checkpoint'),
+        ),
+      }
+    : {}),
   createdAt: l.job.createdAt,
   updatedAt: l.job.updatedAt,
 });

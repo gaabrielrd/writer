@@ -34,6 +34,7 @@ export function createCampaignRestoreCleanup(store) {
           ...(Object.hasOwn(l.job, 'fileReview') ? { fileReview: null } : {}),
           ...(Object.hasOwn(l.job, 'ownReview') ? { ownReview: null } : {}),
           ...(Object.hasOwn(l.job, 'derivedReview') ? { derivedReview: null } : {}),
+          ...(Object.hasOwn(l.job, 'derivedCheck') ? { derivedCheck: null } : {}),
         });
         tx.delete(key.ref);
         return null;

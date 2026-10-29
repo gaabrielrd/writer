@@ -1,6 +1,6 @@
 # Inventário da portabilidade privada de campanhas
 
-Snapshot local: 2026-10-29, incremento 230. P3/D/F2-09 continuam abertos.
+Snapshot local: 2026-10-29, incremento 231. P3/D/F2-09 continuam abertos.
 Este inventário distingue dados já persistidos dos recursos futuros.
 Referências: [plano P3](execucao/201-portabilidade-privada-de-campanhas.md),
 [plano 226](execucao/226-inventario-c4-das-campanhas-restauradas.md) e
@@ -59,10 +59,10 @@ não por um fluxo de importação disponível ao usuário.
 
 ## Recursos que ainda não existem
 
-Os incrementos 227–230 implementam upload, checkpoint de integridade, índice/
-revisão própria e índice derivado duráveis, com coleta pré-ativação, conforme
-abaixo. Verificador derivado retomável, índice/revisão de origens, remapeamento/
-materialização retomável, mídia exclusiva temporária e ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
+Os incrementos 227–231 implementam upload, integridade e revisão própria/
+derivada duráveis, com coleta pré-ativação, conforme abaixo. Índice/revisão de
+origens, remapeamento/materialização retomável, mídia exclusiva temporária e
+ativação ainda não têm produtor. Não são cobertos por inferência pelas listas C4
 atuais. Cada recurso precisa de dono/campanha/encarnação consultáveis, reserva
 conferida em mutações e cancelamento/coleta versionados antes da primeira gravação.
 
@@ -144,3 +144,16 @@ ativa. Verificador por dependência, origens persistidas e materialização/UI a
 pendem. [Plano 230](execucao/230-indice-derivado-persistente.md),
 [ADR 0260](../../decisions/0260-campaign-persistent-derived-index.md) e
 [evidência](../../entregas/2026-10-29-writer-v2-indice-derivado-persistente.md).
+
+## Verificação semântica derivada — incremento 231
+
+derivedCheck opcional no job cifra fase/cursores/contadores/SHA, até 256 KiB,
+vinculado ao arquivo, índice/contexto e encarnação. Não há nova coleção. Cancel
+limpa esse estado junto dos demais e revoga chave atomicamente, antes da coleta.
+Recibos mínimos não guardam ciphertext/relações. Jobs sem campo continuam válidos.
+
+A máquina limita passos dentro do item; prova revalida assinatura/índice, sem
+conceder autorização atual da origem. Origens, materialização/mídia e C4 da
+ativação continuam gates. [Plano 231](execucao/231-verificacao-derivada-por-dependencia.md),
+[ADR 0261](../../decisions/0261-campaign-resumable-derived-semantics.md) e
+[evidência](../../entregas/2026-10-29-writer-v2-verificacao-derivada-por-dependencia.md).

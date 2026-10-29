@@ -2391,3 +2391,11 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-indice-derivado-persistente.md).
      Verificador derivado retomável por dependência, origens, materialização/
      ativação/C4 e UI/ciclos continuam pendentes. Macro 8/35; somente commit local.
+
+231. [Verificação derivada por dependência](231-verificacao-derivada-por-dependencia.md):
+     máquina compartilhada, checkpoints de campo/parte/relação e hash canônico
+     sem deps crescente. 379 testes dirigidos (15 novos), uma jornada SDK/Rules
+     e cinco perfis de compatibilidade positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-verificacao-derivada-por-dependencia.md).
+     Origens persistidas, materialização/ativação/C4 e UI/ciclos continuam
+     pendentes. Macro 8/35; somente commit local.

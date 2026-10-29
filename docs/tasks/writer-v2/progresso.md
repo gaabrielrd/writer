@@ -845,3 +845,10 @@ certificado de produção continua somente de índice. 364 casos dirigidos disti
 (23 novos) e uma jornada SDK/Rules com 71 pares positivos. Verificador derivado
 retomável por dependência, origens, materialização/ativação/C4 e UI/ciclos ainda
 necessários. Macro 8/35 (22,9%), somente commit local.
+
+O [incremento 231](execucao/231-verificacao-derivada-por-dependencia.md) acrescenta
+semântica derivada retomável dentro de campo/parte/relação. Hash/contagens antigos
+foram preservados; checkpoint cifrado não acumula dependências. 379 testes
+dirigidos (15 novos), uma jornada SDK/Rules e cinco perfis de compatibilidade
+positivos. Origens persistidas, materialização/ativação/C4 e Estúdio/ciclos ainda
+necessários; macro 8/35 (22,9%), somente commit local.

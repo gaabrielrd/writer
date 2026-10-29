@@ -7,6 +7,7 @@ import { createCampaignRestoreCleanup } from './campaignRestoreCleanup.mjs';
 import { createCampaignRestoreFileReview } from './campaignRestoreFileReview.mjs';
 import { createCampaignRestoreOwnReview } from './campaignRestoreOwnReview.mjs';
 import { createCampaignRestoreDerivedReview } from './campaignRestoreDerivedReview.mjs';
+import { createCampaignRestoreDerivedSemantics } from './campaignRestoreDerivedSemantics.mjs';
 import { seal, open } from './campaignRestoreCrypto.mjs';
 import {
   RESTORE_DOMAIN,
@@ -358,6 +359,13 @@ export function createCampaignRestoreTransferService(options) {
       store,
       openSource: (uid, input) => service.openCampaignRestoreSource(uid, input),
       ownSemantics: (uid, input) => service.getCampaignRestoreOwnSemantics(uid, input),
+    }),
+  );
+  Object.assign(
+    service,
+    createCampaignRestoreDerivedSemantics({
+      store,
+      openIndex: (uid, input) => service.openCampaignRestoreDerivedIndex(uid, input),
     }),
   );
   return service;

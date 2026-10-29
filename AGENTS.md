@@ -1189,3 +1189,12 @@ unresolved v3. Checkpoint até 256 KiB, DTO até 4 MiB fora dele; não acumule t
 imagem. Colete até 25 pares antes de own/chunks e confirme posições órfãs ausentes.
 Certificado é apenas campaign-derived-index-only; verificador por dependência,
 origens e C4 dos temporários antecedem ativação (ADR 0260).
+
+Na semântica derivada retomável, use campaignBackupDerivedRowWalk no revisor
+completo e no persistente. Limite a 25 passos, inclusive dentro de campo/parte/
+relação; não repita prefixo nem acumule deps. Preserve bytes canônicos do hash
+por fragmentos e leitores autenticados. derivedCheck no job é cifrado por
+conta/encarnação/CAS, binding de arquivo/índice/contexto e codec hash-wasm 4.12.0.
+Progresso/recibo não expõem estado ou relações. Cancel limpa campo/chave antes
+da coleta existente; ausência mantém jobs antigos. Prova reconfere chave emissora
+e continua apenas semântica, sem origem/compra/ativação (ADR 0261).
