@@ -3470,3 +3470,14 @@ contradição corpo/controle recusa em vez de repetir um ciclo. Raiz, reserva
 terminal, job e recibo são compostos atomicamente. Leitura terminal exige raiz
 ausente e relógios nativos conjuntos. O motor interno chega a complete; transporte
 autenticado, cliente/UI/recuperação e validação integrada ainda faltam.
+
+## Cliente e recuperação da exclusão de aventuras
+
+A [ADR 0228](decisions/0228-adventure-deletion-client-recovery.md) cria
+adventure-deletions como folha de auth/shared, composta entre features somente
+por adventures. Contratos próprios validam sourceToken, identidade do job,
+recibos, catálogo e pisos, permitindo reabertura de fase. Coordenador executa
+uma unidade e revalida conta após awaits; diário metadata por UID/aventura usa
+Web Locks/CAS antes do envio. ACK perdido retoma pedido exato; conflito requer
+erro definitivo e consulta atual. Não guardar título/prosa/chave nem avançar ao
+recarregar. Adaptador Firebase está preparado, sem endpoint exportado ou UI.

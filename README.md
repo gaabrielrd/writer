@@ -44,9 +44,10 @@ A limpeza interna já retira vínculos de imagens e autoria em lotes, incluindo
 filhos sem pai, preservando cópias independentes da biblioteca. Também retira
 corpos derivados do chat e a retomada da aventura, preservando perguntas
 próprias e outros projetos. O motor interno já verifica o vazio final e remove
-a raiz atomicamente com reserva/job/recibo; o transporte e a interface pública
-ainda faltam. Veja a
-[evidência parcial da verificação terminal](docs/entregas/2026-10-28-writer-v2-verificacao-terminal-da-exclusao-de-aventuras.md).
+a raiz atomicamente com reserva/job/recibo. O contrato cliente e a recuperação
+de pedidos por metadata estão preparados localmente; transporte autenticado e
+interface pública ainda faltam. Veja a
+[evidência parcial do cliente](docs/entregas/2026-10-28-writer-v2-cliente-e-recuperacao-da-exclusao-de-aventuras.md).
 Consulte a
 [evidência parcial](docs/entregas/2026-10-28-writer-v2-reserva-e-fonte-da-exclusao-de-aventuras.md).
 A portabilidade completa continua aberta. Não houve implantação.

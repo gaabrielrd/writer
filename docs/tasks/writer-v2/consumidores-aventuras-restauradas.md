@@ -104,3 +104,11 @@ terminais no mesmo commit. 123 Node e seis SDK/Rules passaram;
 O double percorre aventura restaurada; os novos SDK usam criação pelo Estúdio.
 Roundtrip amplo, transporte/cliente/UI e validate integral ainda faltam. Plano 199
 permanece aberto; perguntas próprias preservadas e política final pendente.
+
+Núcleo cliente da exclusão preparado como feature própria: identidade/sourceToken/
+deletionToken, recibos e diário metadata por UID/aventura com Web Locks/CAS.
+49 Vitest e 21 testes arquiteturais passaram;
+[evidência parcial](../../entregas/2026-10-28-writer-v2-cliente-e-recuperacao-da-exclusao-de-aventuras.md).
+O ciclo cliente/serviço usa factories reais sobre double, não HTTP/SDK ou conta
+real. Transporte autenticado, tela, retomada no navegador e validate integral
+continuam necessários; não fecha plano 199.

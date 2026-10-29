@@ -31,6 +31,7 @@
 - Não adicione abstrações sem necessidade demonstrada.
 - Reutilize parser, revisão e prévia pela API pública de document-import; preserve os reexports legados de books.
 - Mantenha `campaign-deletions` folha, importando apenas auth/shared; componha-a em `campaigns` e use essa interface no Estúdio.
+- Mantenha `adventure-deletions` folha de auth/shared; componha-a somente em `adventures` e use essa interface no Estúdio.
 - Mantenha `campaign-sessions` folha de auth/shared; componha painel e closer somente em `campaigns` pelas interfaces públicas.
 - Mantenha `campaign-preparation` folha de auth/shared; componha editor estável, slot e closer em `campaigns`, fora de `materialEpoch`, conforme ADR 0040.
 - Limite `campaign-session-references` a auth/shared, projeções públicas puras C2 e tipos/verificador puro `verifyCampaignBaseFields` de campaign-bases; não use readers/loaders B fora do gate da sessão e componha slot, pendência e closer em campaigns.
@@ -997,3 +998,9 @@ reabre sua fase e trunca certificados; corpo/controle com escopos contraditório
 recusa. Remova raiz, atualize reserva e grave job/recibo atomicamente. Leitor
 terminal exige raiz ausente e updateTime de reserva/job igual ao nascimento do
 último recibo; enquanto deleting, reserva conserva o relógio inicial (ADR 0227).
+
+No cliente de exclusão de aventuras, preserve pedido exato e sourceToken/
+deletionToken antes de enviar. Use Web Locks/CAS por UID/aventura e guarde
+somente metadata, sem título/prosa/chaves. Confira conta após awaits e recibo
+antes de aposentar pendência. Conflito exige erro definitivo e consulta atual
+do mesmo job; permita reabertura de fase com pisos monotônicos (ADR 0228).

@@ -253,3 +253,29 @@ test('preparação própria permanece folha e é composta somente em campaigns',
       (root) => assert.notDeepEqual(checkArchitecture(root), []),
     );
 });
+
+for (const statement of [
+  "import type { Adventure } from '@/features/adventures';",
+  "export { close } from '@/features/campaign-deletions';",
+  "const source = import('@/features/adventure-portability');",
+]) {
+  test(`mantém exclusão de aventuras como folha: ${statement}`, () => {
+    withProject({ 'features/adventure-deletions/index.ts': statement }, (root) =>
+      assert.match(checkArchitecture(root).join('\n'), /adventure-deletions deve permanecer folha/),
+    );
+  });
+}
+test('compõe exclusão de aventuras pela interface pública de adventures', () => {
+  withProject(
+    {
+      'features/adventure-deletions/index.ts': "import { useAuth } from '@/features/auth';",
+      'features/adventures/index.ts': "export { Deletion } from '@/features/adventure-deletions';",
+      'features/studio/index.ts': "import { Deletion } from '@/features/adventures';",
+    },
+    (root) => assert.deepEqual(checkArchitecture(root), []),
+  );
+  withProject(
+    { 'features/studio/index.ts': "const dialog = import('@/features/adventure-deletions');" },
+    (root) => assert.match(checkArchitecture(root).join('\n'), /somente adventures/),
+  );
+});

@@ -379,3 +379,50 @@ e [ADR 0227](../../../decisions/0227-adventure-deletion-terminal-verification.md
 Motor interno chega a complete. Transporte autenticado, cliente/UI/recarga,
 política final de perguntas e validate integral continuam abertos; não conclui
 199/P2/P3/D/F2-09/V2. Macro 8/35 e gates preservados.
+
+## Próxima integração — contrato cliente e recuperação metadata
+
+Base 3628888 conferida limpa. Criar adventure-deletions como feature folha de
+auth/shared, sem importar implementações de campanhas ou portabilidade. Primeiro
+implementar tipos/verificadores, transporte de seis comandos e coordenador por
+conta/aventura, com diário metadata por Web Locks/localStorage. Não compor UI,
+nem exportar endpoints do servidor antes de concluir a recuperação integrada.
+
+Validar schemas fechados e orçamentos antes de adotar respostas: sourceToken,
+adventureToken, deletionToken, UID/aventura/job, recibo original e checkpoint.
+Progresso pode reabrir fase anterior, mas não retroceder checkpoint, contagem,
+datas ou conclusão. Catálogo tem envelope próprio do servidor, sem confundir
+a resposta de campanhas. Cursor continua opaco e limitado.
+
+Persistir pedido exato antes do primeiro envio. Início incerto repete o mesmo
+ID ou grava intenção de cancelamento antes de resolver no servidor. Confirmação
+não cancela job já existente. Etapa guarda identidade, piso conhecido e pedido
+original. ACK perdido, resposta inválida, falha local ou troca de conta preservam
+a pendência. Só substituir por progresso conhecido após recibo ou conflito
+definitivo com consulta atual do mesmo job. CAS do envelope inteiro em toda
+transição; outra aba ou entrada ilegível impedem sobreposição.
+
+Diário guarda somente IDs, hashes, revisão, checkpoint, contagem, fase e datas:
+sem título, manuscrito, perguntas/respostas, arquivo ou chave de recuperação.
+Releitura local não autoriza origem nem inicia avanço automaticamente. Leitura
+remota permanece disponível sem reserva de escrita no navegador.
+
+Arquivos: feature nova (model/services/tests/index), documentação e ADR. Testar
+schemas, retornos de todos os comandos, reload/ACK, concorrência/CAS, conta trocada,
+respostas tardias/forjadas, quota/lock indisponível e recuperação de conflito.
+Checks dirigidos/tipos; sem suite completa, CI, publicação ou UI nesta integração.
+
+## Resultado parcial — núcleo cliente e recuperação metadata
+
+Feature própria com contratos, adaptador de seis comandos, coordenador por
+conta/aventura e reserva Web Locks/CAS implementados. Pedido original é salvo
+antes do envio; recibo, identidade e pisos precedem adoção. ACK perdido retoma
+pelo mesmo ID/token/checkpoint e intenção de cancelamento não desfaz confirmado.
+Diário sem título/prosa/chave; conta, outras abas e falhas preservam pendência.
+
+49 Vitest e 21 testes arquiteturais positivos, incluindo ciclo com as factories
+reais sobre double até remoção terminal. Veja
+[evidência parcial](../../../entregas/2026-10-28-writer-v2-cliente-e-recuperacao-da-exclusao-de-aventuras.md)
+e [ADR 0228](../../../decisions/0228-adventure-deletion-client-recovery.md).
+Sem endpoint exportado ou hook/UI composto. Transporte autenticado, browser,
+política final das perguntas e validate integral ainda faltam; macro 8/35.

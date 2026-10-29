@@ -506,3 +506,12 @@ Raiz/reserva terminal/job/recibo são atômicos e conferidos por relógios nativ
 [evidência parcial](../../entregas/2026-10-28-writer-v2-verificacao-terminal-da-exclusao-de-aventuras.md).
 Motor chega a complete; transporte/cliente/UI/retomada, política final das perguntas
 e validate integral ainda faltam. Macro **8/35**, P2/P3/D/F2-09 e gates inalterados.
+
+O plano 199 ganhou núcleo cliente próprio: schemas/tokens/recibos conferidos,
+adaptador de seis comandos e recuperação metadata com Web Locks/CAS e guards
+após awaits. 49 Vitest e 21 testes arquiteturais passaram, incluindo ciclo
+com as factories reais do servidor sobre double e ACK perdido; veja
+[evidência parcial](../../entregas/2026-10-28-writer-v2-cliente-e-recuperacao-da-exclusao-de-aventuras.md).
+Sem endpoint novo ou composição na UI. Transporte autenticado, hook/tela/recarga
+real, política final de perguntas e validate integral continuam abertos.
+Macro **8/35**, P2/P3/D/F2-09 e gates inalterados.

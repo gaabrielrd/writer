@@ -1,0 +1,215 @@
+import type {
+  AdventureDeletionSource as Source,
+  AdventureDeletionPending as Pending,
+  AdventureDeletionProgress as Progress,
+  AdventureDeletionControl as Control,
+} from '../model/adventureDeletion';
+import {
+  assertScope,
+  canonical,
+  fail,
+  readSource,
+  readLookup,
+  readPage,
+  reason,
+} from '../model/adventureDeletionContracts';
+import * as recovery from './adventureDeletionRecovery';
+import {
+  adventureDeletionTransport,
+  type AdventureDeletionTransport,
+} from './adventureDeletionTransport';
+
+export interface AdventureDeletionClientOptions {
+  uid: string;
+  adventureId: string;
+  isActive: () => boolean;
+  transport?: AdventureDeletionTransport;
+}
+export function createAdventureDeletionClient(options: AdventureDeletionClientOptions) {
+  const { uid, adventureId } = options,
+    transport = options.transport ?? adventureDeletionTransport;
+  assertScope(uid, adventureId);
+  let busy = false,
+    conflict: string | null = null;
+  function check() {
+    if (!options.isActive()) fail('A conta ou a aventura mudou. O pedido foi preservado.');
+  }
+  async function run<T>(work: () => Promise<T>): Promise<T> {
+    check();
+    if (busy) fail('Já existe uma operação de exclusão em andamento nesta tela.');
+    busy = true;
+    try {
+      return await work();
+    } finally {
+      busy = false;
+    }
+  }
+  function local(): Control | null {
+    check();
+    return recovery.readDeletion(uid, adventureId);
+  }
+  async function perform(value: Pending) {
+    const op = structuredClone(value);
+    check();
+    recovery.assertCurrent(op);
+    let response: unknown;
+    try {
+      response =
+        op.kind === 'start'
+          ? op.phase === 'cancel-start'
+            ? await transport.resolveStart({ ...op.input, intent: 'cancel' })
+            : await transport.start(structuredClone(op.input))
+          : await transport.advance(structuredClone(op.input));
+    } catch (cause) {
+      check();
+      if (op.kind === 'step' && reason(cause) === 'checkpoint-conflict') conflict = canonical(op);
+      throw cause;
+    }
+    check();
+    recovery.assertCurrent(op);
+    const result = await recovery.settleDeletion(op, response, check);
+    check();
+    conflict = null;
+    return result;
+  }
+  return {
+    async getSource(): Promise<Source | null> {
+      check();
+      const value = await transport.getSource({ adventureId });
+      check();
+      return readSource(value, uid, adventureId);
+    },
+    async load(): Promise<{
+      control: Control | null;
+      progress: Progress | null;
+      readOnly: boolean;
+    }> {
+      check();
+      if (!recovery.recoveryAvailable()) {
+        const value = await transport.get({ adventureId });
+        check();
+        return {
+          control: null,
+          progress: readLookup(value, uid, adventureId).deletion,
+          readOnly: true,
+        };
+      }
+      const expected = local();
+      if (expected && expected.kind !== 'known')
+        return { control: expected, progress: null, readOnly: false };
+      const response = await transport.get({ adventureId });
+      check();
+      const lookup = readLookup(response, uid, adventureId, expected?.identity, expected?.floor);
+      if (!lookup.deletion) {
+        if (expected || canonical(local()) !== canonical(expected))
+          fail('O controle preservado ainda não pôde ser confirmado.');
+        return { control: null, progress: null, readOnly: false };
+      }
+      const control = await recovery.rememberDeletion(
+        uid,
+        adventureId,
+        expected,
+        lookup.deletion,
+        check,
+      );
+      check();
+      return { control, progress: lookup.deletion, readOnly: false };
+    },
+    async start(source: Source, operationId: string = crypto.randomUUID()) {
+      const snapshot = readSource(source, uid, adventureId);
+      if (!snapshot) fail('Confira a aventura antes de excluir.');
+      const op: Pending = {
+        schemaVersion: 1,
+        ownerId: uid,
+        kind: 'start',
+        phase: 'request',
+        input: {
+          adventureId,
+          adventureToken: snapshot.adventureToken,
+          sourceToken: snapshot.sourceToken,
+          expectedRevision: snapshot.revision,
+          operationId,
+        },
+      };
+      return run(async () => {
+        await recovery.reserveDeletion(op, check);
+        check();
+        return perform(op);
+      });
+    },
+    async recover() {
+      return run(async () => {
+        const op = local();
+        if (!op || op.kind === 'known') fail('Não há pedido pendente para recuperar.');
+        return perform(op);
+      });
+    },
+    async cancelStart() {
+      return run(async () => {
+        const old = local();
+        if (old?.kind !== 'start') fail('Não há início preservado para encerrar.');
+        const op = await recovery.cancelDeletionStart(old, check);
+        check();
+        return perform(op);
+      });
+    },
+    async advance(operationId: string = crypto.randomUUID()) {
+      return run(async () => {
+        const old = local();
+        if (old?.kind !== 'known' || old.floor.complete)
+          fail('Consulte uma exclusão ainda em andamento.');
+        const op: Pending = {
+          schemaVersion: 1,
+          ownerId: uid,
+          kind: 'step',
+          identity: old.identity,
+          floor: old.floor,
+          input: {
+            deletionId: old.identity.deletionId,
+            deletionToken: old.identity.deletionToken,
+            expectedCheckpoint: old.floor.checkpoint,
+            operationId,
+          },
+        };
+        await recovery.reserveDeletion(op, check);
+        check();
+        return perform(op);
+      });
+    },
+    async resolveConflict() {
+      return run(async () => {
+        const op = local();
+        if (op?.kind !== 'step' || conflict !== canonical(op))
+          fail('Confirme primeiro o conflito do pedido preservado.');
+        const response = await transport.get({ adventureId });
+        check();
+        recovery.assertCurrent(op);
+        const next = await recovery.settleDeletionConflict(op, response, check);
+        check();
+        conflict = null;
+        return next;
+      });
+    },
+    async list(input: { cursor?: string; limit?: number } = {}, visited = new Set<string>()) {
+      const snapshot = structuredClone(input),
+        seen = new Set(visited);
+      if (
+        !snapshot ||
+        typeof snapshot !== 'object' ||
+        Array.isArray(snapshot) ||
+        Object.keys(snapshot).some((k) => !['cursor', 'limit'].includes(k)) ||
+        (snapshot.limit !== undefined &&
+          (!Number.isInteger(snapshot.limit) || snapshot.limit < 1 || snapshot.limit > 50)) ||
+        (snapshot.cursor !== undefined &&
+          (typeof snapshot.cursor !== 'string' || !/^[A-Za-z0-9_-]{1,4096}$/.test(snapshot.cursor)))
+      )
+        fail('Página de exclusão inválida.');
+      if (snapshot.cursor) seen.add(snapshot.cursor);
+      check();
+      const response = await transport.list(snapshot);
+      check();
+      return readPage(response, uid, snapshot.limit ?? 25, seen);
+    },
+  };
+}
+export type AdventureDeletionClient = ReturnType<typeof createAdventureDeletionClient>;

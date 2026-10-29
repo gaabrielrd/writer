@@ -193,6 +193,27 @@ export function checkArchitecture(root = defaultRoot) {
       }
 
       if (
+        sourceFeature === 'adventure-deletions' &&
+        targetFeature &&
+        !['adventure-deletions', 'auth'].includes(targetFeature)
+      ) {
+        errors.push(
+          `${sourceRelative}: adventure-deletions deve permanecer folha; componha em adventures.`,
+        );
+        continue;
+      }
+      if (
+        targetFeature === 'adventure-deletions' &&
+        sourceFeature &&
+        !['adventure-deletions', 'adventures'].includes(sourceFeature)
+      ) {
+        errors.push(
+          `${sourceRelative}: somente adventures pode compor adventure-deletions entre features.`,
+        );
+        continue;
+      }
+
+      if (
         ['campaign-deletions', 'campaign-sessions', 'campaign-preparation'].includes(
           sourceFeature,
         ) &&
