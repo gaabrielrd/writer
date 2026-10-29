@@ -248,3 +248,21 @@ raízes, inclusive arquivos reencadeados. 29 testes novos e 81 regressões Node
 positivos. Integridade não autoriza origem atual ou restauração. Seguem
 consumidores de vínculos/nascimento, cleanup C4 v1–v4, persistência/retomada,
 restauração/UI/ciclo. P3/D/F2-09 abertos; macro 8/35, somente commit local.
+
+## Passos 3–4 e 6 — revisão atual das origens
+
+O [plano 214](214-revisao-autorizada-das-origens.md) verifica evidências do arquivo
+com índice autenticado e confere acesso atual sem depender de campanha/base
+antigas. Origem recriada, C4 e alterações observadas recusam a revisão ou marcam
+ausência. 35 testes novos e 60 regressões Node positivos. A prova não ativa
+restauração; faltam vínculos semânticos e consumidores ordinários de procedência,
+cleanup C4 v1–v4, persistência/retomada, materialização/ativação e UI/ciclo.
+P3/D/F2-09 abertos; macro 8/35, somente commit local, validate no grande bloco.
+
+### Próximo contrato obrigatório: universo organizacional
+
+A revisão 214 cobre origens derivadas. A raiz conserva universeId, que pode ser
+distinto do universo congelado ou existir sem base. Falta sua própria evidência
+de nascimento e a política de compatibilidade das versões sem essa prova.
+Implementar esse contrato antes da materialização; não religar apenas pelo ID
+ou substituir pelo universo da base.

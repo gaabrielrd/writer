@@ -711,3 +711,14 @@ Bytes reencadeados pelo atacante não passam na conferência do manifesto.
 Retorno prova somente integridade/emissão. Autorização atual/vínculos, cleanup/
 persistência/retomada, restauração/UI/ciclo P3/D/F2-09 permanecem pendentes;
 macro **8/35**. Sem endpoint/adaptador real/CI/push/deploy; validate no grande bloco.
+
+## 2026-10-29 — revisão atual das origens em P3
+
+O [plano 214](execucao/214-revisao-autorizada-das-origens.md) autentica evidências
+em índice MAC antes de consultar origens, conferindo nascimento/owner/C4 e clock
+em duas passagens. Bases antigas podem estar ausentes; origem recriada não recebe
+acesso. 35 testes novos e 60 regressões Node positivos;
+[evidência parcial](../../entregas/2026-10-29-writer-v2-revisao-das-origens-do-backup.md).
+Prova efêmera não ativa restauração. Vínculos semânticos, consumidores de
+procedência, cleanup/persistência/retomada e restauração/UI/ciclo P3/D/F2-09
+continuam pendentes; macro **8/35**. Somente commit local; validate no grande bloco.

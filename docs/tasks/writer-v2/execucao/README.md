@@ -2267,3 +2267,10 @@ macro 8/35 e gates humanos/comerciais continuam abertos. Somente commit local.
      [evidência parcial](../../../entregas/2026-10-29-writer-v2-arquivo-nativo-de-campanha.md).
      Autorização atual/vínculos, cleanup/persistência/retomada, restauração/UI/ciclo
      P3/D/F2-09 pendentes; macro 8/35, somente commit local.
+
+214. [Revisão autorizada das origens](214-revisao-autorizada-das-origens.md):
+     arquivo autenticado, índice MAC e duas passagens por origens atuais,
+     com nascimento/owner/C4 e clock. 35 testes novos e 60 regressões Node positivos;
+     [evidência parcial](../../../entregas/2026-10-29-writer-v2-revisao-das-origens-do-backup.md).
+     Vínculos/consumidores, cleanup/persistência/retomada e restauração/UI/ciclo
+     P3/D/F2-09 pendentes; macro 8/35, somente commit local.

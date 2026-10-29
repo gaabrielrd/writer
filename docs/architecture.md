@@ -3646,3 +3646,13 @@ Sink temporário confirma após reconferência/assinatura/footer; validador sepa
 confere bytes, ordinais, ambas as raízes e emissão antes de retornar integridade.
 Não há array do projeto, endpoint ou adaptador persistente novo. Autorização atual,
 consumidores de vínculos, cleanup/retomada, restauração e UI continuam pendentes.
+
+## Revisão atual das origens autenticadas
+
+A [ADR 0244](decisions/0244-campaign-backup-origin-review.md) indexa evidências
+provisórias com MAC efêmero, só iniciando consultas após integridade/assinatura
+completas. Páginas de 25 são autenticadas/desprendidas antes de I/O nativo.
+Gates mascarados conferem nascimento exato, owner, C4 e clock em duas passagens,
+sem prosa nem dependência das bases antigas. Atuação da chave é revalidada ao
+final. Índice/chave são descartados; prova de revisão é efêmera e não é grant.
+Adaptador persistente, vínculos do domínio, restauração/ativação e UI seguem pendentes.

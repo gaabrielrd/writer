@@ -1059,3 +1059,8 @@ No arquivo de campanha, publique bytes somente em destino temporário com
 pressão de consumo. Confirme após reconferência nativa, assinatura e footer.
 Confira cada unidade e ambas as raízes; cadeia refeita não substitui assinatura.
 campaign-file-integrity-only não concede acesso nem autoriza restauração (ADR 0243).
+
+Na revisão de origens do arquivo, autentique o arquivo antes de consultar origens.
+Valide MAC/ordinal de toda a página do índice temporário antes de await nativo.
+Exija nascimento exato, C4, clock e reconferência; zere a chave e descarte o índice.
+campaign-origin-review-only e callbacks provisórios não autorizam ativação (ADR 0244).

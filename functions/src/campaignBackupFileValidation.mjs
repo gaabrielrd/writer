@@ -23,11 +23,14 @@ const add = (v, n = 1) => {
 export async function validateCampaignBackupFile(
   uid,
   source,
-  { keys, now = Date.now, signal, onProgress } = {},
+  { keys, now = Date.now, signal, onProgress, onWitness } = {},
 ) {
   if (typeof uid !== 'string' || !uid) workFail('unauthenticated', 'Entre na sua conta.');
   workId(uid);
-  if (onProgress !== undefined && typeof onProgress !== 'function')
+  if (
+    (onProgress !== undefined && typeof onProgress !== 'function') ||
+    (onWitness !== undefined && typeof onWitness !== 'function')
+  )
     throw new TypeError('Progresso de validação inválido.');
   if (
     !source ||
@@ -83,6 +86,7 @@ export async function validateCampaignBackupFile(
         return Object.freeze({
           validation: 'campaign-file-integrity-only',
           manifest: m,
+          attestation: packet.attestation,
           seal: Object.freeze(step.seal),
         });
       }
@@ -142,6 +146,11 @@ export async function validateCampaignBackupFile(
           witness[3] === null ? 0 : Buffer.byteLength(JSON.stringify(witness[3])),
         );
         fold(provenance, witness);
+        // Provisional callback for temporary staging only; no origin lookup before final proof.
+        if (onWitness) {
+          await onWitness(Object.freeze({ index: witnesses - 1, record: Object.freeze(witness) }));
+          signal?.throwIfAborted();
+        }
       } else if (r.kind === 'attestation') {
         if (r.id !== 'manifest' || r.part !== 0) bad();
         packet = campaignFileJson(r.payload, (v) => {
