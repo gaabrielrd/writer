@@ -76,7 +76,9 @@ features e Functions são particionadas e a raiz cobre o restante. Não é filtr
 de diff: preserva arquivos novos e regras/ignores existentes. O pre-commit mantém
 ESLint direto nos arquivos preparados. Veja scripts/run-lint.mjs.
 
-O pre-push usa o SHA remoto recebido pelo Git para selecionar testes afetados,
+O pre-push mantém typecheck e reaproveita a validação completa local do frontend
+quando HEAD, entradas limpas e assinatura correspondem ao registro aprovado.
+Sem registro compatível, usa o SHA remoto recebido pelo Git para selecionar testes afetados,
 incluindo dependentes e mudanças locais. Primeira publicação, objetos ausentes,
 histórico divergente, múltiplos destinos ou envio de outro commit usam a suíte
 completa. Falhas continuam bloqueando o push. A seleção é uma checagem local

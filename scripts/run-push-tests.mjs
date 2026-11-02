@@ -3,6 +3,7 @@ import { readFileSync, realpathSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
+import { hasFrontendValidation } from './frontend-validation.mjs';
 
 const defaultRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const zero = /^0+$/;
@@ -27,6 +28,17 @@ export function runPushTests(root, input, { run = spawnSync } = {}) {
     console.log('Pre-push: somente exclusão de refs; nenhum código enviado.');
     return 0;
   }
+  if (
+    valid &&
+    active.length &&
+    active.every((parts) => parts[1] === head.stdout.trim()) &&
+    hasFrontendValidation(root)
+  ) {
+    console.log(
+      'Pre-push: frontend idêntico à validação local completa aprovada; reutilizando resultado.',
+    );
+    return 0;
+  }
   let base;
   if (valid && active.length) {
     const candidates = new Set(active.map((parts) => parts[3]));
@@ -40,7 +52,7 @@ export function runPushTests(root, input, { run = spawnSync } = {}) {
       base = candidate;
     }
   }
-  const args = ['run', '--maxWorkers=2'];
+  const args = ['run', '--maxWorkers=2', '--reporter=default'];
   if (base) args.push('--changed=' + base, '--passWithNoTests');
   console.log(base ? 'Pre-push: testes afetados desde ' + base : 'Pre-push: suíte completa.');
   const result = run(process.execPath, [join(root, 'node_modules/vitest/vitest.mjs'), ...args], {

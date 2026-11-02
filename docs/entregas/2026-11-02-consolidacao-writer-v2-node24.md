@@ -91,3 +91,22 @@ quando publicado. O plano registra as etapas e a ordem de implantação.
 2. Abrir o Estúdio, projetos, importações e operações nos três temas e em 320px.
 3. Conferir Functions ACTIVE/nodejs24, índices READY e a release das regras.
 4. Não excluir contas reais nem alterar saldos para validar o trigger ou a cobrança.
+
+## Ajuste do hook solicitado durante o rollout
+
+O pre-push anterior também terminou com 380 arquivos e 5.145 testes aprovados
+em 598,84 segundos e publicou 53e5985 na branch V2. Por nova orientação, o hook
+passa a reutilizar uma validação completa local do frontend com assinatura
+idêntica, HEAD atual e entradas limpas. npm run test:coverage gera o registro
+automaticamente, mantendo cobertura e relatórios; o typecheck e a CI permanecem.
+Mudanças relevantes, falhas e alterações durante os testes invalidam o registro.
+O fallback por destino remoto foi preservado.
+
+Este ajuste usa testes direcionados do registro, runner de push e contrato da CI;
+não exige repetir os testes de produto que acabaram de passar e cujo código
+permanece idêntico. O primeiro registro é inicializado a partir dessa validação
+real, após conferir o diff dos arquivos testados.
+
+Resultado do ajuste: 24 testes direcionados aprovados; lint dos cinco scripts
+e validação da documentação aprovados. A suíte completa anterior permanece
+como evidência do código de produto inalterado.

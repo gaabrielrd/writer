@@ -30,6 +30,12 @@ test('validate conserva cobertura, scripts, backend e limites mínimos', () => {
   assert.equal(packageJson.scripts.test, 'npm run test:coverage && npm run test:setup');
   assert.match(packageJson.scripts['test:setup'], /scripts\/\*\.test\.mjs/);
   assert.match(packageJson.scripts['test:setup'], /npm run test:book-generation/);
+  assert.match(packageJson.scripts['test:coverage'], /node scripts\/frontend-validation\.mjs/);
+  const coverageRunner = readFileSync(
+    new URL('./frontend-validation.mjs', import.meta.url),
+    'utf8',
+  );
+  assert.match(coverageRunner, /'--coverage'/);
   assert.match(vitest, /provider: 'v8'/);
   for (const [metric, minimum] of Object.entries({
     statements: 85,

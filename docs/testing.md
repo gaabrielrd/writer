@@ -3367,3 +3367,18 @@ A CI distribui Firestore em oito partes determinísticas (`npm run test:rules --
 arquivos, sem duplicatas nem filtros por nome. O comando sem argumento mantém
 a suíte inteira. O deploy de Hosting também divide seus cenários visuais em oito
 partes e aguarda a matriz completa antes da publicação.
+
+## Reaproveitamento local no pre-push
+
+npm run test:coverage mantém cobertura, limites e relatórios, e registra em
+.firebase/local-validation/frontend.json uma assinatura do frontend aprovado.
+A assinatura cobre código, testes, contratos de Functions, assets, dependências,
+configuração, checkout e ambiente Node. O registro é local e ignorado pelo Git.
+Falha ou alteração dos arquivos durante a execução impede seu uso.
+
+O pre-push mantém typecheck. Para enviar o HEAD atual com entradas limpas e
+assinatura idêntica, reaproveita a aprovação completa; mudanças de código,
+configuração ou dependências retomam os testes afetados pelo destino real, com
+fallback completo. Alterações apenas em documentação/comandos do hook não
+exigem repetir testes de frontend; valide os scripts alterados separadamente.
+A CI continua executando os portões completos.

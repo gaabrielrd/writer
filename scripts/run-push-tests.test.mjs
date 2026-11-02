@@ -51,7 +51,7 @@ function full(input) {
   const { result, calls } = execute(input);
   assert.equal(result, 0);
   assert.equal(calls.length, 1);
-  assert.deepEqual(calls[0].args.slice(1), ['run', '--maxWorkers=2']);
+  assert.deepEqual(calls[0].args.slice(1), ['run', '--maxWorkers=2', '--reporter=default']);
 }
 
 test('seleciona testes desde o commit real do destino quando ele é ancestral', () => {
@@ -60,6 +60,7 @@ test('seleciona testes desde o commit real do destino quando ele é ancestral', 
   assert.deepEqual(calls[0].args.slice(1), [
     'run',
     '--maxWorkers=2',
+    '--reporter=default',
     '--changed=' + base,
     '--passWithNoTests',
   ]);

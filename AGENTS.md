@@ -279,6 +279,8 @@
 - Confira a navegação e os nomes acessíveis atuais antes de corrigir seletores; preserve as asserções de comportamento e segurança.
 - Isole portas e logs dos emuladores; no Windows, encerre a árvore de processos criada pelo runner e confira a liberação da porta.
 - Preserve a divisão determinística dos testes de regras em oito partes na CI, sem excluir casos.
+- Reutilize no pre-push o registro local de frontend completo somente para HEAD atual, entradas limpas e assinatura idêntica; mantenha typecheck, fallback e CI completos.
+- Gere o registro automaticamente após test:coverage verde; falha ou alteração durante a execução invalida o reaproveitamento.
 - Confira a existência dos caminhos explícitos de arquivos nos lotes de teste dirigidos antes de executá-los.
 - Durante o desenvolvimento, ignore a CI remota: não acompanhe, dispare ou repita workflows; registre a validação local realizada.
 
