@@ -1,11 +1,15 @@
 import { Feather } from 'lucide-react';
-import { Link, Outlet } from 'react-router';
+import { Link, Outlet, useLocation } from 'react-router';
 import { AuthProvider, AuthButton, CreditsBadge, useAuth } from '@/features/auth';
 import { BookNavigation } from '@/features/books';
-import { ThemeProvider, ThemeToggle } from '@/shared/theme';
+import { ThemeProvider } from '@/shared/theme';
 import { AISettingsProvider, useAISettings } from '@/features/ai-assistant';
 import { WorkspaceLayoutProvider, useWorkspaceLayout } from '@/shared/ui';
 import styles from './App.module.css';
+import { StudioNavigation } from './components/StudioNavigation';
+import { AuthenticatedWorkspace } from './components/AuthenticatedWorkspace';
+
+import { CustomThemesProvider, CustomThemeSelector } from '@/features/custom-themes';
 
 const PROJECT_NAME = 'Writer Assistant';
 
@@ -24,11 +28,12 @@ function AppHeader() {
             </span>
             <span className={styles.brandText}>{PROJECT_NAME}</span>
           </Link>
+          <StudioNavigation presentation="menu" />
           <BookNavigation />
         </div>
         <div className={styles.userBar}>
           {user && <CreditsBadge credits={user.credits} tier={user.tier} />}
-          <ThemeToggle />
+          <CustomThemeSelector />
           <AuthButton onOpenAISettings={openAISettings} />
         </div>
       </div>
@@ -36,8 +41,24 @@ function AppHeader() {
   );
 }
 
+function ThemeWorkspace() {
+  const { user } = useAuth();
+  return (
+    <CustomThemesProvider uid={user?.uid ?? null}>
+      <AppWorkspace />
+    </CustomThemesProvider>
+  );
+}
+
 function AppWorkspace() {
   const { expanded } = useWorkspaceLayout();
+  const { user } = useAuth();
+  const { pathname } = useLocation();
+  const privateArea =
+    user && pathname !== '/' && pathname !== '/login' && !pathname.startsWith('/read/');
+  if (privateArea) {
+    return <AuthenticatedWorkspace key={user.uid} />;
+  }
   return (
     <div className={styles.appBackdrop}>
       <div className={styles.appWrapper} data-workspace-expanded={expanded}>
@@ -64,7 +85,7 @@ export function App() {
       <AuthProvider>
         <WorkspaceLayoutProvider>
           <AISettingsProvider>
-            <AppWorkspace />
+            <ThemeWorkspace />
           </AISettingsProvider>
         </WorkspaceLayoutProvider>
       </AuthProvider>

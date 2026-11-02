@@ -42,7 +42,7 @@ it('navega pelo contexto para a rota com lista e abre detalhes gráficos, devolv
     </MemoryRouter>,
   );
   await user.click(screen.getByRole('button', { name: 'Configurar IA' }));
-  expect(screen.getByRole('heading', { name: 'Inteligência artificial' })).toBeVisible();
+  expect(screen.getByRole('region', { name: 'Inteligência artificial' })).toBeVisible();
   expect(screen.getByRole('list', { name: 'Personas disponíveis' })).toBeVisible();
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   const row = screen.getByRole('button', { name: 'Ver detalhes de O Épico' });
@@ -76,9 +76,10 @@ it('abre diretamente a aba do provedor e salva as preferências na página', asy
   expect(screen.getByRole('tabpanel', { name: 'Provedor' })).toBeVisible();
   await chooseDropdown(
     user,
-    screen.getByLabelText('Provedor de IA'),
-    'OpenAI API (Chave Própria — BYOK)',
+    screen.getByLabelText('Como deseja usar a IA?'),
+    'Chave própria — BYOK',
   );
+  await chooseDropdown(user, screen.getByLabelText('Provedor BYOK'), 'OpenAI API');
   await user.type(screen.getByLabelText('Chave de API da OpenAI'), 'chave-ficticia');
   await user.click(screen.getByRole('button', { name: 'Salvar Preferências' }));
   expect(saveBYOKConfig).toHaveBeenCalledWith(

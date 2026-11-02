@@ -1,7 +1,9 @@
 # Fase 5 — Validar e lançar
 
 **Estado:** Planejada; tarefas não executadas.
-**Janela:** Meses 10–12. **Capacidade:** 240 h brutas como orçamento inicial, não estimativa validada.
+**Referência de esforço:** 176/296/496 h; hipótese de entrega 14 h/semana, 21,1 semanas ativas no cenário central.
+As antigas 240 h são orçamento histórico; calendário/esperas não estão comprometidos.
+Veja [timeline e hipóteses](../timeline.md).
 
 ## Objetivo
 

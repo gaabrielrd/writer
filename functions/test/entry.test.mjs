@@ -19,6 +19,13 @@ test('server entry loads all deployment exports without a provider secret or net
     'analyzeChapterLore',
     'prepareBYOKLore',
     'applyLoreAnalysis',
+    'bookLoreEdit',
+    'reserveBookLoreEditRecovery',
+    'getBookLoreEditRecovery',
+    'revokeBookLoreEditRecovery',
+    'getBookLoreEditRecoveryKey',
   ])
     assert.equal(typeof entry[name], 'function');
+  assert.ok(entry.getBookLoreEditRecoveryKey.__endpoint.httpsTrigger);
+  assert.equal(entry.getBookLoreEditRecoveryKey.__endpoint.callableTrigger, undefined);
 });

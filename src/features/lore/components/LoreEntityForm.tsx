@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { Alert, Button, Dialog, Input, Dropdown, Textarea, FormSection } from '@/shared/ui';
 import {
@@ -6,6 +6,7 @@ import {
   type CreateLoreEntityInput,
   type LoreCategory,
   type LoreEntity,
+  type LoreMentionEntity,
   type LoreRelation,
 } from '../model/loreEntity';
 import styles from './LoreEntityForm.module.css';
@@ -14,7 +15,12 @@ export interface LoreEntityFormProps {
   open: boolean;
   initialName?: string;
   entityToEdit?: LoreEntity | null;
-  allEntities: LoreEntity[];
+  allEntities: (LoreMentionEntity | LoreEntity)[];
+  adventure?: boolean;
+  operationControls?: ReactNode;
+  disabled?: boolean;
+  preserveDraft?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
   global?: boolean;
   privateOnly?: boolean;
   onClose: () => void;
@@ -29,8 +35,15 @@ function LoreEntityFormContent({
   initialName = '',
   global = false,
   privateOnly = false,
-}: Omit<LoreEntityFormProps, 'open'>) {
+  adventure = false,
+  disabled = false,
+  onDirtyChange,
+  operationControls,
+  open,
+}: LoreEntityFormProps) {
   const [relationsOpen, setRelationsOpen] = useState(false);
+  const [historySectionOpen, setHistorySectionOpen] = useState(false);
+  const [characteristicsOpen, setCharacteristicsOpen] = useState(false);
   const errorRef = useRef<HTMLDivElement>(null);
   const submitLock = useRef(false);
   const [creationId] = useState(() => crypto.randomUUID());
@@ -73,6 +86,36 @@ function LoreEntityFormContent({
     aliases.every((alias) => alias.length <= 200),
   );
   const relation = relations[relationIndex];
+  const relationUnavailable =
+    adventure &&
+    relation !== undefined &&
+    (relation.available === false ||
+      !available.some((item) => item.id === relation.targetEntityId));
+  const baseline = useRef(
+    JSON.stringify([
+      name,
+      category,
+      aliasesText,
+      summary,
+      details,
+      isPublic,
+      relations,
+      structuredDetails,
+    ]),
+  );
+  const fingerprint = JSON.stringify([
+    name,
+    category,
+    aliasesText,
+    summary,
+    details,
+    isPublic,
+    relations,
+    structuredDetails,
+  ]);
+  useEffect(() => {
+    onDirtyChange?.(fingerprint !== baseline.current);
+  }, [fingerprint, onDirtyChange]);
   const validRelations = relations.every((item) => item.targetEntityId && item.relationType.trim());
   function close() {
     if (!submitLock.current) onClose();
@@ -84,7 +127,7 @@ function LoreEntityFormContent({
   }
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (submitLock.current || isSubmitting) return;
+    if (submitLock.current || isSubmitting || disabled) return;
     if (!validIdentification) {
       setError('Preencha nome e resumo; use até 20 apelidos de até 200 caracteres.');
       return;
@@ -107,9 +150,15 @@ function LoreEntityFormContent({
         category,
         aliases,
         summary: summary.trim(),
-        details: details.trim(),
+        details: adventure ? details : details.trim(),
         structuredDetails,
-        relations,
+        relations: adventure
+          ? relations.map(({ targetEntityId, relationType, description }) => ({
+              targetEntityId,
+              relationType,
+              description: description ?? '',
+            }))
+          : relations,
         isPublic: privateOnly ? false : isPublic,
       });
       onClose();
@@ -129,10 +178,10 @@ function LoreEntityFormContent({
     : 'Cadastrar Nova Entidade no Compêndio';
   return (
     <Dialog
-      open
+      open={open}
       title={title}
       maxWidthClass="max-w-2xl"
-      description={`${globalScope ? 'Lore global · universo compartilhado' : 'Lore local · somente este livro'}. Nome e resumo são obrigatórios; complete o restante quando precisar.`}
+      description={`${globalScope ? 'Lore global · universo compartilhado' : adventure ? 'Lore local · somente esta aventura' : 'Lore local · somente este livro'}. Nome e resumo são obrigatórios; complete o restante quando precisar.`}
       onClose={close}
       footer={
         <div className={styles.footer}>
@@ -142,7 +191,7 @@ function LoreEntityFormContent({
           <Button
             type="submit"
             form="lore-entity-form"
-            disabled={isSubmitting || !validIdentification}
+            disabled={disabled || isSubmitting || !validIdentification}
           >
             {isSubmitting
               ? 'Salvando...'
@@ -159,6 +208,7 @@ function LoreEntityFormContent({
         aria-busy={isSubmitting}
         onSubmit={(event) => void submit(event)}
       >
+        {operationControls}
         {globalScope && (
           <p className={styles.scopeNotice}>
             Esta entidade pertence ao universo e é compartilhada com outros livros.
@@ -209,10 +259,12 @@ function LoreEntityFormContent({
           </>
         }
         <div className={styles.visibility}>
-          <p>
-            No leitor público: nome, apelidos, categoria e resumo. Detalhes, relações e notas ficam
-            privados.
-          </p>
+          {!adventure && (
+            <p>
+              No leitor público: nome, apelidos, categoria e resumo. Detalhes, relações e notas
+              ficam privados.
+            </p>
+          )}
           {entityToEdit?.isPublic && !isPublic && (
             <Alert variant="warning" title="A publicação será retirada">
               {globalScope
@@ -221,7 +273,9 @@ function LoreEntityFormContent({
             </Alert>
           )}
           {privateOnly ? (
-            <p>Esta ficha será criada como lore privado do livro.</p>
+            <p>
+              Esta ficha será criada como lore privado {adventure ? 'da aventura' : 'do livro'}.
+            </p>
           ) : (
             <label className={styles.checkboxLabel}>
               <input
@@ -237,6 +291,8 @@ function LoreEntityFormContent({
         </div>
         <FormSection
           title="Características"
+          open={characteristicsOpen}
+          onOpenChange={setCharacteristicsOpen}
           description="Aparência e personalidade · privado"
           disabled={isSubmitting}
         >
@@ -256,6 +312,8 @@ function LoreEntityFormContent({
         </FormSection>
         <FormSection
           title="História e notas"
+          open={historySectionOpen}
+          onOpenChange={setHistorySectionOpen}
           description="Ficha detalhada e anotações · privado"
           disabled={isSubmitting}
         >
@@ -357,14 +415,14 @@ function LoreEntityFormContent({
                         ? [{ value: relation.targetEntityId, label: 'Entidade não disponível' }]
                         : []),
                     ]}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || relationUnavailable}
                   />
                   <Input
                     label="Tipo de Relação"
                     value={relation.relationType}
                     onChange={(event) => updateRelation('relationType', event.target.value)}
                     maxLength={200}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || relationUnavailable}
                   />
                   <Textarea
                     label="Descrição da Relação"
@@ -372,8 +430,11 @@ function LoreEntityFormContent({
                     onChange={(event) => updateRelation('description', event.target.value)}
                     maxLength={4000}
                     rows={2}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || relationUnavailable}
                   />
+                  {relationUnavailable && (
+                    <p>Relação indisponível. Mantenha o descritor ou remova este vínculo.</p>
+                  )}
                   <Button
                     type="button"
                     variant="danger"
@@ -400,10 +461,15 @@ function LoreEntityFormContent({
   );
 }
 export function LoreEntityForm({ open, ...props }: LoreEntityFormProps) {
-  return open ? (
+  return open || props.preserveDraft ? (
     <LoreEntityFormContent
-      key={props.entityToEdit?.id ?? props.initialName ?? 'new-entity'}
+      key={
+        props.preserveDraft
+          ? 'preserved-draft'
+          : (props.entityToEdit?.id ?? props.initialName ?? 'new-entity')
+      }
       {...props}
+      open={open}
     />
   ) : null;
 }

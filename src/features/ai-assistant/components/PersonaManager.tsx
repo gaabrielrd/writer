@@ -168,7 +168,6 @@ export function PersonaManager({
       )}
       {!modal && ownerId && !loading && !error && personas.length === 6 && (
         <EmptyState
-          className={styles.libraryEmpty}
           title="Você ainda não criou personas"
           description="Explore um modelo abaixo e personalize para criar sua própria voz."
         />

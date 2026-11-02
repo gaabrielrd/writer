@@ -1,5 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { countVisibleWords } from './visibleWordCount.mjs';
+import { createWorkProgressLedger } from './workProgressLedger.mjs';
 import { GenerationError } from './generation.mjs';
+import { readBookChapterText } from './bookChapterText.mjs';
+import { prepareLegacyChapterTextWrite } from './workProgressLegacy.mjs';
+import { workScope } from './workProgressContracts.mjs';
 import {
   isChatReasoning,
   normalizeChatGenerationRequest,
@@ -105,7 +110,8 @@ export function createChapterChatService({
     ]);
     if (!book.exists || book.data().authorId !== uid)
       fail('permission-denied', 'Livro indisponível.');
-    if (book.data().deleting || !chapter.exists) fail('not-found', 'Capítulo indisponível.');
+    if (book.data().deleting || !chapter.exists || chapter.data().deleting)
+      fail('not-found', 'Capítulo indisponível.');
   }
   async function load(uid, data) {
     const query = db.collection(`${root(uid, data)}/conversations`).orderBy('updatedAt', 'desc');
@@ -360,6 +366,19 @@ export function createChapterChatService({
         tx.get(bookRef),
         tx.get(userRef),
       ]);
+      if (
+        !book.exists ||
+        book.data().authorId !== uid ||
+        book.data().deleting ||
+        !chapter.exists ||
+        chapter.data().deleting
+      )
+        fail('not-found', 'Capítulo indisponível.');
+      if (chapter.data().contentMode === 'scenes')
+        fail(
+          'failed-precondition',
+          'Este capítulo é composto por cenas. Abra uma cena para editar seu texto.',
+        );
       if (previous.exists) {
         if (previous.data().fingerprint !== fingerprint)
           fail('invalid-argument', 'Aceite usado com outro conteúdo.');
@@ -367,9 +386,13 @@ export function createChapterChatService({
       }
       if (!suggestion.exists || suggestion.data().state !== 'done' || !suggestion.data().suggestion)
         fail('failed-precondition', 'Sugestão indisponível.');
-      if (!book.exists || book.data().authorId !== uid || book.data().deleting || !chapter.exists)
-        fail('not-found', 'Capítulo indisponível.');
-      if (hash(chapter.data().content) !== expectedHash)
+      const currentContent = await readBookChapterText(tx, db, {
+        uid,
+        bookId: data.bookId,
+        chapterId: data.chapterId,
+        chapter: chapter.data(),
+      });
+      if (hash(currentContent) !== expectedHash)
         fail(
           'failed-precondition',
           'O capítulo mudou. Gere outra sugestão ou escolha outro destino.',
@@ -380,27 +403,32 @@ export function createChapterChatService({
       const credits = user.data()?.credits;
       if (!Number.isSafeInteger(credits) || credits < cost)
         fail('resource-exhausted', 'Saldo insuficiente para aplicar a sugestão.');
-      const wordCount = after
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&[^;]+;/g, ' ')
-        .trim()
-        .split(/\s+/)
-        .filter((word) => /[\p{L}\p{N}]/u.test(word)).length;
-      const updatedAt = Math.max(
-        now(),
-        (chapter.data().updatedAt ?? 0) + 1,
-        (book.data().updatedAt ?? 0) + 1,
-      );
-      const result = { credits: credits - cost, content: after, wordCount, updatedAt };
-      tx.update(chapterRef, { content: after, wordCount, updatedAt });
-      tx.update(bookRef, {
-        wordCount: Math.max(
-          0,
-          (book.data().wordCount ?? 0) + wordCount - (chapter.data().wordCount ?? 0),
-        ),
-        updatedAt,
-      });
-      if (cost) tx.update(userRef, { credits: result.credits, updatedAt });
+      const context = workScope(db, uid, { target: { kind: 'book', id: data.bookId } }, []),
+        write = await prepareLegacyChapterTextWrite(tx, {
+          db,
+          now,
+          countWords: countVisibleWords,
+          ledger: createWorkProgressLedger({ db }),
+          context,
+          root: book.data(),
+          id: data.chapterId,
+          stored: chapter.data(),
+          content: after,
+          verifiedContent: currentContent,
+          operationId: hash(
+            JSON.stringify({
+              kind: 'chapter-chat-apply',
+              uid,
+              bookId: data.bookId,
+              chapterId: data.chapterId,
+              conversationId: data.conversationId,
+              requestId: data.requestId,
+            }),
+          ),
+        }),
+        result = { credits: credits - cost, ...write.result };
+      write.commit();
+      if (cost) tx.update(userRef, { credits: result.credits, updatedAt: result.updatedAt });
       tx.update(message, { paid: true });
       tx.set(receipt, { fingerprint, result });
       return result;

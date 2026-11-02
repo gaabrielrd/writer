@@ -1,0 +1,98 @@
+{
+  "evidenceKind": "independent-control-birth-specification-not-product-tests",
+  "abiSha256": "edcfbc4edd274e39a5245295c68942cf79e1ad45b064684a6816a25978a4235d",
+  "vectors": [
+    {
+      "name": "context-nonce-4",
+      "value": {
+        "version": 1,
+        "kind": "context",
+        "ownerId": "author_01",
+        "contextId": "context_01",
+        "birthNonce": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectToken": "7777777777777777777777777777777777777777777777777777777777777777",
+        "resourceToken": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "canonical": "{\"birthNonce\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"contextId\":\"context_01\",\"kind\":\"context\",\"ownerId\":\"author_01\",\"projectToken\":\"7777777777777777777777777777777777777777777777777777777777777777\",\"resourceToken\":\"8888888888888888888888888888888888888888888888888888888888888888\",\"version\":1}",
+      "hash": "196ece5e4fa46eaf036da07caaf905e0e2b093f491dc6cfe6adc9b8afe074a4d"
+    },
+    {
+      "name": "context-nonce-5",
+      "value": {
+        "version": 1,
+        "kind": "context",
+        "ownerId": "author_01",
+        "contextId": "context_01",
+        "birthNonce": "5555555555555555555555555555555555555555555555555555555555555555",
+        "projectToken": "7777777777777777777777777777777777777777777777777777777777777777",
+        "resourceToken": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "canonical": "{\"birthNonce\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"contextId\":\"context_01\",\"kind\":\"context\",\"ownerId\":\"author_01\",\"projectToken\":\"7777777777777777777777777777777777777777777777777777777777777777\",\"resourceToken\":\"8888888888888888888888888888888888888888888888888888888888888888\",\"version\":1}",
+      "hash": "74d415fdf4a42ac0ac17f8b166ae23e32eb952523b43d8546c011fd0f0961d27"
+    },
+    {
+      "name": "conversation-nonce-4",
+      "value": {
+        "version": 1,
+        "kind": "conversation",
+        "ownerId": "author_01",
+        "conversationId": "conversation_01",
+        "birthNonce": "4444444444444444444444444444444444444444444444444444444444444444",
+        "projectToken": "7777777777777777777777777777777777777777777777777777777777777777",
+        "resourceToken": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "canonical": "{\"birthNonce\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"conversationId\":\"conversation_01\",\"kind\":\"conversation\",\"ownerId\":\"author_01\",\"projectToken\":\"7777777777777777777777777777777777777777777777777777777777777777\",\"resourceToken\":\"8888888888888888888888888888888888888888888888888888888888888888\",\"version\":1}",
+      "hash": "0d72d43be8648a24ea0d36929d8fb69cb263a7f05e0e214f47987ad5fc6b3dfb"
+    },
+    {
+      "name": "conversation-nonce-5",
+      "value": {
+        "version": 1,
+        "kind": "conversation",
+        "ownerId": "author_01",
+        "conversationId": "conversation_01",
+        "birthNonce": "5555555555555555555555555555555555555555555555555555555555555555",
+        "projectToken": "7777777777777777777777777777777777777777777777777777777777777777",
+        "resourceToken": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "canonical": "{\"birthNonce\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"conversationId\":\"conversation_01\",\"kind\":\"conversation\",\"ownerId\":\"author_01\",\"projectToken\":\"7777777777777777777777777777777777777777777777777777777777777777\",\"resourceToken\":\"8888888888888888888888888888888888888888888888888888888888888888\",\"version\":1}",
+      "hash": "923be107f125c31ca3999a6467dc58b1f85e00f7ef1ea55c738dc67b61dd257d"
+    },
+    {
+      "name": "cleanup-nonce-4",
+      "value": {
+        "version": 1,
+        "kind": "cleanup",
+        "ownerId": "author_01",
+        "cleanupId": "cleanup_01",
+        "birthNonce": "4444444444444444444444444444444444444444444444444444444444444444",
+        "subject": {
+          "kind": "conversation",
+          "id": "conversation_01",
+          "token": "6666666666666666666666666666666666666666666666666666666666666666"
+        }
+      },
+      "canonical": "{\"birthNonce\":\"4444444444444444444444444444444444444444444444444444444444444444\",\"cleanupId\":\"cleanup_01\",\"kind\":\"cleanup\",\"ownerId\":\"author_01\",\"subject\":{\"id\":\"conversation_01\",\"kind\":\"conversation\",\"token\":\"6666666666666666666666666666666666666666666666666666666666666666\"},\"version\":1}",
+      "hash": "b40661c1f7c4480525fb03b3e53b0694599d77312899dbea87e7d9537ad9c6ec"
+    },
+    {
+      "name": "cleanup-nonce-5",
+      "value": {
+        "version": 1,
+        "kind": "cleanup",
+        "ownerId": "author_01",
+        "cleanupId": "cleanup_01",
+        "birthNonce": "5555555555555555555555555555555555555555555555555555555555555555",
+        "subject": {
+          "kind": "conversation",
+          "id": "conversation_01",
+          "token": "6666666666666666666666666666666666666666666666666666666666666666"
+        }
+      },
+      "canonical": "{\"birthNonce\":\"5555555555555555555555555555555555555555555555555555555555555555\",\"cleanupId\":\"cleanup_01\",\"kind\":\"cleanup\",\"ownerId\":\"author_01\",\"subject\":{\"id\":\"conversation_01\",\"kind\":\"conversation\",\"token\":\"6666666666666666666666666666666666666666666666666666666666666666\"},\"version\":1}",
+      "hash": "5e4b6ec6e908e4a9dc8acda820982e9b75707142625e37eb38ed4b7243bfdcd7"
+    }
+  ],
+  "providerCalls": 0,
+  "originalSourceBirth": "unchanged-native-createTime"
+}

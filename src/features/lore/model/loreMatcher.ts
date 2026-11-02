@@ -1,13 +1,13 @@
 import { preferredLoreTerms } from './loreScope';
-import type { LoreEntity } from './loreEntity';
+import type { LoreEntity, LoreMentionEntity } from './loreEntity';
 
-export interface LoreMatch {
+export interface LoreMatch<T extends LoreMentionEntity = LoreEntity> {
   entityId: string;
   entityName: string;
   matchedText: string;
   startIndex: number;
   endIndex: number;
-  entity: LoreEntity;
+  entity: T;
 }
 
 function escapeRegExp(string: string): string {
@@ -18,7 +18,10 @@ function escapeRegExp(string: string): string {
  * Identifica e mapeia menções a entidades de lore e seus apelidos em um texto.
  * Garante correspondência por fronteira de palavra e prioriza termos mais longos para evitar sobreposições.
  */
-export function findLoreMatches(text: string, entities: LoreEntity[]): LoreMatch[] {
+export function findLoreMatches<T extends LoreMentionEntity>(
+  text: string,
+  entities: T[],
+): LoreMatch<T>[] {
   if (!text || entities.length === 0) {
     return [];
   }
@@ -32,7 +35,7 @@ export function findLoreMatches(text: string, entities: LoreEntity[]): LoreMatch
   // Ordena por tamanho decrescente do termo
   termMap.sort((a, b) => b.term.length - a.term.length);
 
-  const rawMatches: LoreMatch[] = [];
+  const rawMatches: LoreMatch<T>[] = [];
 
   for (const item of termMap) {
     const escaped = escapeRegExp(item.term);
@@ -96,7 +99,7 @@ export function findLoreMatches(text: string, entities: LoreEntity[]): LoreMatch
   }
 
   // Reconstrói a solução ótima
-  const result: LoreMatch[] = [];
+  const result: LoreMatch<T>[] = [];
   let curr = n;
   while (curr > 0) {
     const prevIdx = p[curr - 1];

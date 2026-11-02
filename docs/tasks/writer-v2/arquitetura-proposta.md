@@ -2,8 +2,10 @@
 
 ## Estado e origem
 
-Proposta para implementação futura, subordinada às decisões da fase 1.
-Não descreve módulos já implementados nem cria regra vigente por si.
+Módulos propostos para implementação futura, com contratos de domínio/acesso
+consolidados no [ADR 0025](../../decisions/0025-writer-v2-contracts.md).
+Não descreve módulos já implementados. Detalhes por incremento e integração
+comercial condicionada seguem a [matriz de condições](execucao/06-contratos-e-replanejamento.md).
 A arquitetura atual continua em [architecture.md](../../architecture.md).
 
 Inspeção desta rodada: grafo `E-Mega-dev-writer`, documentação e snippets de
@@ -48,8 +50,11 @@ Cada recurso relevante inclui dono/escopo, revisão, origem, datas do servidor e
 Vínculo com universo é opcional. Campanha tem estado próprio e não expõe diário ao criador da aventura.
 Uma variante prevalece no seu escopo e promoção de cânone é proposta explícita ao dono.
 
-Escolher em D-02 entre cópia autorizada, referências e sobreposição por campo.
-Estabelecer como origem removida, atualização de edição e reembolso afetam instâncias.
+D-02 usa lore vivo em originais autorizados, base congelada em campanhas e variante
+de entidade inteira, com comparação/aceite explícitos para update ou cânone.
+Procedência/revogação bloqueia derivados sem apagar notas próprias; compra/reversão
+segue o contrato de edição/acesso e não transfere autoria. Veja
+[domínio](execucao/02-modelo-de-dominio.md) e [acesso](execucao/03-permissoes-e-privacidade.md).
 Paginação e armazenamento em documentos/arquivos separados evitam exceder limites atuais.
 Contratos de migração incluem formato legado, idempotência, relatório de falha e recuperação.
 
@@ -63,7 +68,8 @@ Contratos de migração incluem formato legado, idempotência, relatório de fal
 6. Financeiro: servidor controla pedido, confirmação, direito, razão e repasse.
 7. Administrativo: papel atribuído no servidor com operações limitadas e auditáveis.
 
-A lista de audiências não equivale a um RBAC genérico decidido. W2-F1-03 fecha regras por operação.
+A lista de audiências não equivale a um RBAC genérico. W2-F1-03 define regras por operação;
+implementação/contas distintas e casos negativos continuam exigidos no incremento próprio.
 Aliases, busca, tooltips, IA e caches precisam do mesmo filtro de autorização.
 A identidade pública do criador é escolhida; e-mail/UID/conta comercial não compõem perfil público.
 

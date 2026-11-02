@@ -1,6 +1,8 @@
 # W2-F1-02 — Definir domínio, cânone e compatibilidade de dados
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Contrato revisado; validação local verde. Funcionalidades não implementadas.
+**Evidência:** [Contratos, simulação e medições](../execucao/02-modelo-de-dominio.md).
+**Validação:** [Registro local](../../../entregas/2026-10-13-writer-v2-dominio.md).
 **Dependências:** [W2-F1-01](../fase-01-direcao-e-fundamentos/01-jornadas-e-escopo.md)
 **Áreas propostas:** books, universes, lore; propostas adventures, campaigns e publications. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -21,10 +23,16 @@ Entradas: livros, lore e revisões existentes; exemplos das jornadas. Resultado:
 
 ## Passos de execução
 
-- [ ] Ler modelos e serviços atuais pelo grafo e confirmar o código correspondente.
-- [ ] Desenhar exemplos de um livro e duas campanhas no mesmo universo.
-- [ ] Especificar contratos e migrações reversíveis ou recuperação por backup.
-- [ ] Fechar D-01 e D-02 e registrar uma proposta de ADR.
+- [x] Ler modelos e serviços atuais pelo grafo e confirmar o código correspondente.
+- [x] Desenhar exemplos de um livro e duas campanhas no mesmo universo.
+- [x] Especificar contratos e migrações reversíveis ou recuperação por backup.
+- [x] Fechar D-01 e D-02 para contratos iniciais e registrar uma proposta de ADR.
+
+D-01 fecha orçamento inicial de documentos/paginação com corpus privado medido;
+limites de binários e desempenho integrado exigem ensaios nas features responsáveis.
+D-02 usa base congelada e substituição local inteira, com promoção explícita.
+Os critérios funcionais abaixo permanecem abertos até as implementações pertinentes;
+o contrato inclui sua simulação e os testes que deverão comprová-los.
 
 ## Critérios de aceite
 

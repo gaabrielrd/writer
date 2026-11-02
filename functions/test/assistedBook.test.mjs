@@ -201,6 +201,7 @@ test('commit creates one private draft and all local lore with resolved relation
   const f = fixture();
   const session = await f.ready();
   const [a, b] = await Promise.all([f.commit(), f.commit()]);
+  assert.equal([...f.records].find(([path]) => /^books\/[^/]+$/.test(path))[1].localLoreVersion, 0);
   assert.equal(a.book.id, b.book.id);
   assert.equal(b.credits, 18);
   assert.equal(a.book.status, 'draft');
@@ -389,4 +390,54 @@ test('proposal validation rejects duplicate names, malformed fields and self rel
   const c = proposal();
   c.entities[0].summary = 'x'.repeat(141);
   assert.throws(() => validateProposal(c));
+});
+
+test('assisted creation never overwrites an existing native-managed book or its inline lore', async () => {
+  const f = fixture();
+  await f.ready();
+  const id = f.session().id;
+  f.records.set('books/' + id, {
+    authorId: 'author',
+    hasLoreResources: true,
+    localLoreVersion: 7,
+    title: '\ufeff  Existing\r\n',
+    status: 'draft',
+  });
+  f.records.set('books/' + id + '/lore/' + f.session().proposal.entities[0].id, {
+    name: 'Original',
+    details: '\ufeff  Literal\r\n',
+    summary: 'Preserved',
+  });
+  const before = structuredClone([...f.records]);
+  await assert.rejects(f.commit(), { code: 'failed-precondition' });
+  assert.deepEqual([...f.records], before);
+  assert.equal(f.records.get('users/author').credits, 20);
+});
+
+test('criação assistida congela parâmetros e retry não troca o modelo nem debita', async () => {
+  const inputs = [];
+  const f = fixture({
+    generator: async (context) => {
+      inputs.push(context);
+      if (inputs.length === 1) throw new Error('offline');
+      return proposal();
+    },
+  });
+  const session = await f.start();
+  const data = {
+    action: 'generate',
+    sessionId: session.id,
+    revision: session.revision,
+    requestId: randomUUID(),
+    brief: 'Viagem.',
+    generation: { version: 1, provider: 'platform', model: 'gemini-4-argon', reasoning: 'high' },
+  };
+  await assert.rejects(f.call(data), { code: 'unavailable' });
+  await f.call(data);
+  assert.deepEqual(inputs[0].generation, inputs[1].generation);
+  assert.equal(inputs[1].generation.effective.model, 'gemini-4-argon');
+  assert.equal(f.records.get('users/author').credits, 20);
+  await assert.rejects(f.call({ ...data, generation: { ...data.generation, model: 'unknown' } }), {
+    code: 'invalid-argument',
+  });
 });

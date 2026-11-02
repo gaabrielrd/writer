@@ -1,4 +1,11 @@
-import { capture, expect, expectDialogWithinViewport, test } from './support';
+import {
+  expectWorkspaceButton,
+  openWorkspaceNavigation,
+  capture,
+  expect,
+  expectDialogWithinViewport,
+  test,
+} from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID, books, author } from './fixtures/data';
 
 test('editor discreto, configurações no usuário e revisão do compêndio por lote', async ({
@@ -15,12 +22,13 @@ test('editor discreto, configurações no usuário e revisão do compêndio por 
   const credits = page.getByRole('button', {
     name: `${author.credits} créditos de IA, plano free`,
   });
-  await expect(
-    page
-      .getByRole('banner')
-      .getByRole('button', { name: `${author.credits} créditos de IA, plano free` }),
-  ).toBeVisible();
+  await expect(credits).toBeVisible();
   await expect(credits).toHaveCount(1);
+  const drawer = page.getByRole('dialog', { name: 'Navegação do Writer' });
+  if (await drawer.isVisible()) {
+    await drawer.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await expect(drawer).toBeHidden();
+  }
   await expect(page.getByRole('group', { name: 'Modo do editor' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Preview', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Edição', exact: true })).toHaveCount(0);
@@ -38,9 +46,10 @@ test('editor discreto, configurações no usuário e revisão do compêndio por 
   await expect(
     page.getByRole('button', { name: 'Configurações de IA e Chaves de API', exact: true }),
   ).toHaveCount(0);
+  await openWorkspaceNavigation(page);
   await page.getByRole('button', { name: new RegExp(author.displayName!) }).click();
-  await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
-  await expect(page.getByRole('heading', { name: 'Inteligência artificial' })).toBeVisible();
+  await page.getByRole('menuitem', { name: 'Inteligência artificial', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Inteligência artificial' })).toBeVisible();
   await page.getByRole('link', { name: 'Voltar ao editor' }).click();
   await expect(editor).toBeVisible();
   await editor.fill('Nara encontra o Farol do Norte.');
@@ -85,5 +94,5 @@ test('BYOK aplica o lote sem consumir créditos da plataforma', async ({ page })
   await page.getByRole('button', { name: 'Aplicar 2 alterações' }).click();
   await expect(page.getByText('Lote aplicado. O compêndio foi atualizado.')).toBeVisible();
   await page.getByRole('button', { name: 'Concluir', exact: true }).click();
-  await expect(page.getByLabel(`${author.credits} créditos de IA, plano free`)).toBeVisible();
+  await expectWorkspaceButton(page, String(author.credits) + ' créditos de IA, plano free');
 });

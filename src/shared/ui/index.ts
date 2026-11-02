@@ -44,3 +44,6 @@ export { ResizeHandle, type ResizeHandleProps } from './ResizeHandle';
 export { WorkspaceLayoutProvider } from './WorkspaceLayoutProvider';
 export { useWorkspaceLayout } from '../hooks/useWorkspaceLayout';
 export { SidePanelHeader, type SidePanelHeaderProps } from './SidePanelHeader';
+
+export { FloatingPanel } from './FloatingPanel';
+export { AnchoredPanel } from './AnchoredPanel';

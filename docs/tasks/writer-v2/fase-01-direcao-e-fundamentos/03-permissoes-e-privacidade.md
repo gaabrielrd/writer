@@ -1,6 +1,8 @@
 # W2-F1-03 — Definir permissões, audiências e privacidade
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Contrato revisado; validação local verde. Regras não implementadas.
+**Evidência:** [Matriz, projeções e casos negativos](../execucao/03-permissoes-e-privacidade.md).
+**Validação:** [Registro local](../../../entregas/2026-10-13-writer-v2-permissoes.md).
 **Dependências:** [W2-F1-02](../fase-01-direcao-e-fundamentos/02-modelo-de-dominio.md)
 **Áreas propostas:** auth, lore, books; propostas access, campaigns e publications; functions e regras. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -21,10 +23,16 @@ Entradas: entidades e jornadas. Resultado: matriz de leitura/mutação, projeç�
 
 ## Passos de execução
 
-- [ ] Enumerar recursos, campos e operações por papel.
-- [ ] Desenhar projeções de jogador, leitor e comprador com listas de campos permitidos.
-- [ ] Escolher regras de convites, spoilers e dados locais (D-03, D-04 e parte de D-09).
-- [ ] Criar casos negativos para consultas, URLs, downloads, busca e contexto de IA.
+- [x] Enumerar recursos, campos e operações por papel.
+- [x] Desenhar projeções de jogador, leitor e comprador com listas de campos permitidos.
+- [x] Escolher regras de convites, spoilers e dados locais (D-03, D-04 e parte de D-09).
+- [x] Criar casos negativos para consultas, URLs, downloads, busca e contexto de IA.
+
+Convite manual dirigido a uid verificado, pendente por sete dias; participação aceita
+até revogação. Projeção por audiência e versão; arquivos secretos/pagos via endpoint
+autenticado, sem token permanente. Retenção/reversão comercial segue W2-F1-04.
+Critérios funcionais abaixo exigem implementação/testes nas fases responsáveis;
+a matriz de contrato não equivale a regras implantadas.
 
 ## Critérios de aceite
 

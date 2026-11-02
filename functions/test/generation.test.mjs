@@ -467,3 +467,63 @@ test('partial cover edits preserve book metadata and explicit empty fields clear
   assert.equal(cleared.genre, '');
   assert.equal(cleared.synopsis, '');
 });
+
+test('image-backed book creation initializes local lore baseline and updates preserve it', async () => {
+  const f = fixture();
+  const created = await f.library.saveBook('author', {
+    creationId: 'book-clock-00000001',
+    title: 'Atlas',
+  });
+  assert.equal(created.localLoreVersion, 0);
+  f.records.get('books/book-clock-00000001').localLoreVersion = 7;
+  const updated = await f.library.saveBook('author', {
+    bookId: 'book-clock-00000001',
+    title: 'Novo Atlas',
+  });
+  assert.equal(updated.localLoreVersion, 7);
+  assert.equal(f.records.get('books/book-clock-00000001').localLoreVersion, 7);
+  f.records.get('books/book-clock-00000001').localLoreVersion = null;
+  const before = structuredClone([...f.records]);
+  await assert.rejects(
+    f.library.saveBook('author', { bookId: 'book-clock-00000001', title: 'Outro' }),
+    { code: 'failed-precondition' },
+  );
+  assert.deepEqual([...f.records], before);
+});
+
+test('sinopse aplica preferência validada, preserva o recibo e recusa troca no mesmo pedido', async () => {
+  const inputs = [];
+  const f = fixture({
+    generator: async (context) => {
+      inputs.push(context);
+      return { text: 'Sinopse.' };
+    },
+  });
+  const generation = {
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-4-argon',
+    reasoning: 'high',
+  };
+  const request = { ...f.input(), generation };
+  const first = await f.service.generate('author', request);
+  assert.equal(inputs[0].generation.effective.model, generation.model);
+  assert.equal(inputs[0].generation.effective.reasoning, generation.reasoning);
+  assert.deepEqual(await f.service.generate('author', request), first);
+  assert.equal(inputs.length, 1);
+  await assert.rejects(
+    f.service.generate('author', {
+      ...request,
+      generation: { ...generation, model: 'gemini-3.8-flash' },
+    }),
+    { code: 'invalid-argument' },
+  );
+  await assert.rejects(
+    f.service.generate('author', {
+      ...f.input('request-invalid01'),
+      generation: { ...generation, model: 'custom' },
+    }),
+    { code: 'invalid-argument' },
+  );
+  assert.equal(f.records.get('users/author').credits, 20);
+});

@@ -53,16 +53,15 @@ describe('AuthButton', () => {
     };
     const first = renderWithAuth(auth, open);
     await userEvent.click(screen.getByRole('button', { name: /Autora/i }));
-    await userEvent.click(
-      screen.getByRole('menuitem', { name: 'Configurar inteligência artificial' }),
-    );
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Inteligência artificial' }));
     expect(open).toHaveBeenCalledOnce();
     first.unmount();
     renderWithAuth({ ...auth, pendingEditorOperation: true }, open);
     await userEvent.click(screen.getByRole('button', { name: /Autora/i }));
-    expect(
-      screen.getByRole('menuitem', { name: 'Configurar inteligência artificial' }),
-    ).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByRole('menuitem', { name: 'Inteligência artificial' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
   });
   it('exibe estado de carregamento quando loading e true', () => {
     renderWithAuth({ loading: true });

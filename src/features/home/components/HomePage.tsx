@@ -1,14 +1,13 @@
 import { ArrowUpRight, BookOpen, Feather, Sparkles } from 'lucide-react';
-import { Link } from 'react-router';
-import { buttonVariants } from '@/shared/ui';
+import { Link, Navigate } from 'react-router';
+import { LoadingState, buttonVariants } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
-import { BookList } from '@/features/books';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
   const { user, loading } = useAuth();
-  if (loading) return null;
-  if (user) return <BookList authorId={user.uid} />;
+  if (loading) return <LoadingState label="Carregando sua sessão..." />;
+  if (user) return <Navigate to="/studio" replace />;
 
   return (
     <div className={styles.landing}>

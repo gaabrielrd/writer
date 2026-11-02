@@ -1,11 +1,12 @@
-import { ChevronDown, LogIn, LogOut, User, Settings } from 'lucide-react';
-import { Link } from 'react-router';
+import { ChevronDown, LogIn, LogOut, User, Settings, SlidersHorizontal } from 'lucide-react';
+import { Link, useNavigate } from 'react-router';
 import { Button, Dropdown, DropdownItem, DropdownLabel } from '@/shared/ui';
 import { useAuth } from '../hooks/useAuth';
 import styles from './AuthButton.module.css';
 
 export function AuthButton({ onOpenAISettings }: { onOpenAISettings?: () => void }) {
   const { user, loading, signOut, pendingEditorOperation } = useAuth();
+  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -48,12 +49,23 @@ export function AuthButton({ onOpenAISettings }: { onOpenAISettings?: () => void
       }
     >
       <DropdownLabel>{user.email ?? displayName}</DropdownLabel>
-      {onOpenAISettings && (
-        <DropdownItem onSelect={onOpenAISettings} disabled={pendingEditorOperation}>
-          <Settings className="icon icon-sm" aria-hidden="true" />
-          Configurar inteligência artificial
-        </DropdownItem>
-      )}
+      <DropdownItem
+        onSelect={() => void navigate('/settings/preferences')}
+        disabled={pendingEditorOperation}
+      >
+        <SlidersHorizontal className="icon icon-sm" aria-hidden="true" />
+        Preferências
+      </DropdownItem>
+      <DropdownItem
+        onSelect={() => {
+          if (onOpenAISettings) onOpenAISettings();
+          else void navigate('/settings/ai');
+        }}
+        disabled={pendingEditorOperation}
+      >
+        <Settings className="icon icon-sm" aria-hidden="true" />
+        Inteligência artificial
+      </DropdownItem>
       <DropdownItem
         onSelect={() => {
           void Promise.resolve(signOut()).catch(() => {});

@@ -43,24 +43,25 @@ test('validate conserva cobertura, scripts, backend e limites mínimos', () => {
   assert.doesNotMatch(vitest, /isolate:\s*false/);
 });
 
-test('CI conserva validate completo em Node 22 e 24', () => {
+test('CI conserva validate completo em Node 24', () => {
   const validate = job('validate');
-  assert.match(validate, /node: \['22', '24'\]/);
+  assert.match(validate, /node: \['24'\]/);
   assert.match(validate, /run: npm run validate/);
   assert.match(validate, /npm ci --prefix functions/);
 });
 
-test('três shards executam a suíte visual inteira sem filtros ou fail-fast', () => {
+test('dezesseis shards executam a suíte visual inteira sem filtros ou fail-fast', () => {
   const visual = job('visual');
-  assert.match(visual, /shard: \[1, 2, 3\]/);
+  assert.match(visual, /shard: \[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16\]/);
   assert.match(visual, /fail-fast: false/);
   assert.match(
     visual,
-    /run: npx playwright test -c playwright\.visual\.config\.ts --shard=\$\{\{ matrix\.shard \}\}\/3\s*$/m,
+    /run: npx playwright test -c playwright\.visual\.config\.ts --shard=\$\{\{ matrix\.shard \}\}\/16\s*$/m,
   );
   assert.doesNotMatch(visual, /--grep|--project|selection-smoke/);
   assert.doesNotMatch(visual, /continue-on-error:\s*true/);
   assert.match(job('browser'), /run: npm run test:e2e/);
+  assert.match(visual, /timeout-minutes: 15/);
 });
 
 test('evidências dos shards não colidem e o relatório completo continua disponível', () => {

@@ -1,6 +1,11 @@
 # W2-F2-08 — Preparar sessões com pistas e missões
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** S1 concluído tecnicamente em `c95253a`; CI e regras verdes.
+S2A concluído tecnicamente em `d9b7988`, com CI e regras verdes; S2B concluído tecnicamente em `56cbb06`, com CI e regras verdes; [S3](../execucao/24-pistas-missoes-e-pendencias.md) validado localmente; CI de `a9b588a` falhou por timeouts visuais; correção visual `e924890` validada localmente e com CI geral/regras verdes; tarefa concluída tecnicamente. Ver [sessões privadas](../execucao/21-sessoes-privadas-da-campanha.md)
+e [entrega](../../../entregas/2026-10-18-writer-v2-sessoes-privadas.md).
+Referências de lore: [S2A](../execucao/22-referencias-de-lore-da-sessao.md) e
+[entrega](../../../entregas/2026-10-18-writer-v2-referencias-de-lore-da-sessao.md).
+Cenas/blocos: [S2B concluído tecnicamente](../execucao/23-cenas-completas-na-preparacao-da-sessao.md).
 **Dependências:** [W2-F2-07](../fase-02-criar-e-preparar/07-campanhas-e-variacoes.md), [W2-F2-03](../fase-02-criar-e-preparar/03-arcos-e-cronologia-basica.md)
 **Áreas propostas:** lore; proposta campaigns. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -21,17 +26,21 @@ Entradas: campanha, título/data opcional, cenas, NPCs, locais, missões e pista
 
 ## Passos de execução
 
-- [ ] Definir contratos e referências por sessão.
-- [ ] Implementar CRUD, ordem e estados privados.
-- [ ] Montar checklist e consulta rápida ao lore.
-- [ ] Testar mover itens, referência excluída e retomada de sessão.
+Execução vertical: S1 estrutura privada (CRUD, data, estado e ordem), S2 referências
+(S2A lore e S2B cenas/blocos) e consulta autorizada, S3 pistas/missões/pendências. S1 não conclui os critérios
+completos abaixo. Data civil sem horário é suposição inicial registrada no contrato.
+
+- [x] Definir contratos e referências de lore/cenas por sessão (S1/S2).
+- [x] Implementar CRUD, ordem e estados privados (S1 validado localmente).
+- [x] Checklist privado existente F2-04, consulta rápida ao lore S2 e itens S3.
+- [x] Testar mover itens, referência excluída e retomada de sessão.
 
 ## Critérios de aceite
 
-- [ ] Mestre prepara uma sessão com cena, NPC, pista e missão.
-- [ ] Concluir missão não publica pista nem altera universo.
-- [ ] Mover sessão preserva preparação e anotações.
-- [ ] Item indisponível é sinalizado sem impedir consulta aos demais.
+- [x] Mestre prepara uma sessão com cena, NPC, pista e missão (S1/S2/S3 locais).
+- [x] Concluir missão não publica pista nem altera universo.
+- [x] Mover sessão preserva preparação e anotações próprias (S1).
+- [x] Referência de lore/cena indisponível é sinalizada sem impedir as demais (S2); pistas e missões próprias S3 permanecem acessíveis.
 
 ## Validação
 
@@ -48,3 +57,7 @@ Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md
 ## Não escopo
 
 Agendamento externo, combate, turnos, tokens e compartilhamento automático ao marcar item pronto.
+
+Fechamento S3: [entrega](../../../entregas/2026-10-21-writer-v2-pistas-e-missoes.md),
+validate local verde, quatro famílias SDK e 18 combinações nativas verificadas.
+CI de `a9b588a` falhou por timeouts visuais; correção visual `e924890` validada localmente e com CI geral/regras verdes; F2-09 permanece separado.

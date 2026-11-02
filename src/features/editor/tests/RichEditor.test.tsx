@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RichEditor, type RichEditorProps } from '../components/RichEditor';
 import type { LoreEntity } from '@/features/lore';
@@ -490,4 +490,285 @@ describe('RichEditor WYSIWYG', () => {
       screen.queryByRole('button', { name: /configurações de ia e chaves de api/i }),
     ).not.toBeInTheDocument();
   });
+});
+
+it('aceita rótulo contextual de cena preservando prosa formatada sem gravar ao abrir', () => {
+  const onChange = vi.fn();
+  render(
+    <RichEditor
+      ariaLabel="Área de escrita da cena"
+      content="<p><strong>Lia</strong> observa o farol.</p>"
+      onChange={onChange}
+      entities={[]}
+      onSelectEntity={vi.fn()}
+      isSidebarOpen={false}
+      onToggleSidebar={vi.fn()}
+      aiUnavailableReason="A assistência de IA ainda não está disponível para cenas."
+    />,
+  );
+  const area = screen.getByRole('textbox', { name: 'Área de escrita da cena' });
+  expect(area.querySelector('strong')).toHaveTextContent('Lia');
+  expect(area).toHaveTextContent('observa o farol');
+  expect(onChange).not.toHaveBeenCalled();
+});
+
+it('restaura cursor e preserva digitação ao fechar lore antes do frame atrasado de foco', async () => {
+  const originalGlobalFrame = globalThis.requestAnimationFrame;
+  const originalWindowFrame = Object.getOwnPropertyDescriptor(window, 'requestAnimationFrame');
+  const originalGlobalCancel = globalThis.cancelAnimationFrame;
+  const originalWindowCancel = Object.getOwnPropertyDescriptor(window, 'cancelAnimationFrame');
+  const frames = new Map<number, FrameRequestCallback>();
+  let frameId = 0;
+  const queueFrame = (callback: FrameRequestCallback) => {
+    frames.set(++frameId, callback);
+    return frameId;
+  };
+  const cancelFrame = (id: number) => {
+    frames.delete(id);
+  };
+  const mobile = vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue('Mozilla/5.0 Android');
+  const changed = vi.fn();
+  const initial = '<p><strong>Arthur</strong> observa o cais.</p>';
+  function LoreWorkspace() {
+    const [sidebar, setSidebar] = useState(false);
+    const [content, setContent] = useState(initial);
+    return (
+      <>
+        <RichEditor
+          content={content}
+          onChange={(value) => {
+            changed(value);
+            setContent(value);
+          }}
+          entities={entities}
+          onSelectEntity={() => setSidebar(true)}
+          isSidebarOpen={sidebar}
+          onToggleSidebar={() => setSidebar((value) => !value)}
+          aiUnavailableReason="A assistência de IA ainda não está disponível para cenas."
+        />
+        {sidebar && (
+          <aside aria-label="Ficha de lore">
+            <p>Texto da ficha de Arthur</p>
+            <button onClick={() => setSidebar(false)}>Fechar lore</button>
+          </aside>
+        )}
+      </>
+    );
+  }
+  let mounted: ReturnType<typeof render> | undefined;
+  try {
+    mounted = render(<LoreWorkspace />);
+    const area = screen.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+    const user = userEvent.setup({ delay: null });
+    selectText(area, 3, 3);
+    await user.click(screen.getByRole('button', { name: 'Ver ficha de Rei Arthur' }));
+    // jsdom does not implement native ControlEnd. A DOM range represents the
+    // user's text selection in the lore panel, which is then removed on close.
+    const panelText = screen.getByText('Texto da ficha de Arthur');
+    const range = document.createRange();
+    range.selectNodeContents(panelText);
+    const selection = window.getSelection();
+    if (!selection) throw new Error('Seleção DOM indisponível');
+    selection.removeAllRanges();
+    selection.addRange(range);
+    globalThis.requestAnimationFrame = window.requestAnimationFrame = queueFrame;
+    globalThis.cancelAnimationFrame = window.cancelAnimationFrame = cancelFrame;
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar lore' }));
+    expect(screen.queryByRole('complementary', { name: 'Ficha de lore' })).not.toBeInTheDocument();
+    expect(area).toHaveFocus();
+    expect(area.contains(selection.anchorNode)).toBe(true);
+    expect(selection.isCollapsed).toBe(true);
+    expect(changed).not.toHaveBeenCalled();
+    // Simulate the native caret move before the browser delivers selectionchange.
+    // No ProseMirror transaction is dispatched: this is the pending-event window
+    // of the real gesture, not a claim that jsdom implements native ControlEnd.
+    const walker = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
+    let endNode: Text | null = null;
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      if (node instanceof Text && !node.parentElement?.closest('[contenteditable="false"]'))
+        endNode = node;
+    }
+    if (!endNode) throw new Error('Prosa final indisponível');
+    selection.collapse(endNode, endNode.length);
+    act(() => {
+      const pending = [...frames.values()];
+      frames.clear();
+      for (const callback of pending) callback(performance.now());
+    });
+    expect(selection.focusNode).toBe(endNode);
+    expect(selection.focusOffset).toBe(endNode.length);
+    fireEvent(document, new Event('selectionchange'));
+    await user.keyboard('LUZ');
+    await waitFor(() => expect(area).toHaveTextContent('Arthur observa o cais.LUZ'));
+    expect(area.querySelector('strong')).toHaveTextContent('Arthur');
+    expect(changed).toHaveBeenLastCalledWith('<p><strong>Arthur</strong> observa o cais.LUZ</p>');
+    await user.click(screen.getByRole('button', { name: 'Desfazer' }));
+    expect(area).toHaveTextContent('Arthur observa o cais.');
+    expect(area.querySelector('strong')).toHaveTextContent('Arthur');
+  } finally {
+    mounted?.unmount();
+    frames.clear();
+    globalThis.requestAnimationFrame = originalGlobalFrame;
+    if (originalWindowFrame)
+      Object.defineProperty(window, 'requestAnimationFrame', originalWindowFrame);
+    else Reflect.deleteProperty(window, 'requestAnimationFrame');
+    globalThis.cancelAnimationFrame = originalGlobalCancel;
+    if (originalWindowCancel)
+      Object.defineProperty(window, 'cancelAnimationFrame', originalWindowCancel);
+    else Reflect.deleteProperty(window, 'cancelAnimationFrame');
+    mobile.mockRestore();
+    window.getSelection()?.removeAllRanges();
+  }
+});
+
+it('mantém uma restauração externa como passo próprio de desfazer e a próxima edição como passo separado', async () => {
+  const user = userEvent.setup();
+  const { props, rerender, onChange, editor } = setup({ content: '<p>Antes da restauração</p>' });
+  rerender(<RichEditor {...props} content="<p>Versão restaurada</p>" externalContentVersion={1} />);
+  await waitFor(() => expect(editor).toHaveTextContent('Versão restaurada'));
+  expect(onChange).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: /^Desfazer$/ }));
+  expect(editor).toHaveTextContent('Antes da restauração');
+  expect(onChange).toHaveBeenLastCalledWith('<p>Antes da restauração</p>');
+  await user.click(screen.getByRole('button', { name: /^Refazer$/ }));
+  expect(editor).toHaveTextContent('Versão restaurada');
+  selectText(editor, editor.textContent.length, editor.textContent.length);
+  await user.keyboard('!');
+  await waitFor(() => expect(editor).toHaveTextContent('Versão restaurada!'));
+  await user.click(screen.getByRole('button', { name: /^Desfazer$/ }));
+  expect(editor).toHaveTextContent('Versão restaurada');
+});
+it('bloqueia prosa, formatação e desfazer enquanto uma operação externa aguarda confirmação', async () => {
+  const user = userEvent.setup();
+  const { props, rerender, onChange, editor } = setup({
+    content: '<p>Preservado</p>',
+    externalBusy: true,
+  });
+  expect(editor).toHaveAttribute('contenteditable', 'false');
+  expect(editor).toHaveAttribute('aria-readonly', 'true');
+  expect(screen.getByRole('button', { name: /^Negrito$/ })).toBeDisabled();
+  expect(screen.getByRole('button', { name: /^Desfazer$/ })).toBeDisabled();
+  await user.click(editor);
+  await user.keyboard('Não gravar');
+  expect(onChange).not.toHaveBeenCalled();
+  rerender(<RichEditor {...props} externalBusy={false} />);
+  expect(editor).toHaveAttribute('contenteditable', 'true');
+  expect(editor).toHaveTextContent('Preservado');
+});
+it('eco controlado do manuscrito após desfazer conserva a restauração disponível para refazer', async () => {
+  const user = userEvent.setup();
+  const changed = vi.fn();
+  function ControlledHistory() {
+    const [content, setContent] = useState('<h1>Texto atual confirmado</h1>');
+    const [version, setVersion] = useState(0);
+    return (
+      <>
+        <button
+          onClick={() => {
+            setContent('<h1>Versão restaurada</h1>');
+            setVersion((value) => value + 1);
+          }}
+        >
+          Restaurar versão
+        </button>
+        <RichEditor
+          content={content}
+          externalContentVersion={version}
+          onChange={(value) => {
+            changed(value);
+            setContent(value);
+          }}
+          entities={entities}
+          onSelectEntity={vi.fn()}
+          isSidebarOpen={false}
+          onToggleSidebar={vi.fn()}
+        />
+      </>
+    );
+  }
+  render(<ControlledHistory />);
+  const editor = screen.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+  await user.click(screen.getByRole('button', { name: 'Restaurar versão' }));
+  await waitFor(() => expect(editor).toHaveTextContent('Versão restaurada'));
+  await user.click(screen.getByRole('button', { name: /^Desfazer$/ }));
+  expect(editor).toHaveTextContent('Texto atual confirmado');
+  expect(changed).toHaveBeenLastCalledWith('<h1>Texto atual confirmado</h1>');
+  expect(screen.getByRole('button', { name: /^Refazer$/ })).toBeEnabled();
+  await user.click(screen.getByRole('button', { name: /^Refazer$/ }));
+  expect(editor).toHaveTextContent('Versão restaurada');
+  expect(changed).toHaveBeenLastCalledWith('<h1>Versão restaurada</h1>');
+  expect(richText.renderRichText).toHaveBeenCalledTimes(2);
+});
+
+it('revogação remove tooltip e callback antigo antes de aceitar seleção de lore', async () => {
+  let allowed = true;
+  const user = userEvent.setup();
+  const view = setup({ content: '<p>Arthur voltou.</p>', isLoreActive: () => allowed });
+  const term = await screen.findByRole('button', { name: 'Ver ficha de Rei Arthur' });
+  await user.hover(term);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Soberano da Bretanha');
+  allowed = false;
+  fireEvent.click(term);
+  expect(view.props.onSelectEntity).not.toHaveBeenCalled();
+  view.rerender(<RichEditor {...view.props} entities={[]} />);
+  expect(screen.queryByRole('tooltip')).toBeNull();
+  expect(view.editor).toHaveTextContent('Arthur voltou.');
+  expect(view.onChange).not.toHaveBeenCalled();
+});
+
+it('uses qualified local/global identities consistently for decorations, tooltip, pills and mention callbacks', async () => {
+  const local: LoreEntity = {
+    ...entities[0]!,
+    id: 'same',
+    name: 'Lia',
+    aliases: ['Vigia'],
+    summary: 'Ficha local',
+  };
+  const global: LoreEntity = {
+    ...entities[1]!,
+    bookId: undefined,
+    adventureId: undefined,
+    universeId: 'world',
+    id: 'same',
+    name: 'Torre',
+    aliases: ['Vigia'],
+    summary: 'Ficha global',
+  };
+  const onSelectEntity = vi.fn();
+  const { editor, onChange, props, rerender } = setup({
+    content: '<p>Lia, Torre e Vigia.</p>',
+    entities: [global, local],
+    loreMatcher: 'editor-chat-v1',
+    onSelectEntity,
+    aiCapabilities: { chat: false, autocomplete: false, legacyActions: false },
+  });
+  const decorations = Array.from(editor.querySelectorAll<HTMLElement>('[data-lore-id]'));
+  expect(decorations.map((element) => element.dataset.loreId)).toEqual([
+    '["book","b-1","same"]',
+    '["universe","world","same"]',
+    '["book","b-1","same"]',
+  ]);
+  fireEvent.mouseOver(decorations[1]!);
+  expect(await screen.findByRole('tooltip')).toHaveTextContent('Ficha global');
+  await userEvent.setup({ delay: null }).click(decorations[1]!);
+  expect(onSelectEntity).toHaveBeenLastCalledWith(global);
+  fireEvent.focus(decorations[0]!);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Ficha local');
+  fireEvent.click(screen.getByRole('button', { name: 'Lia (2)' }));
+  expect(onSelectEntity).toHaveBeenLastCalledWith(local);
+  fireEvent.click(screen.getByRole('button', { name: 'Torre' }));
+  expect(onSelectEntity).toHaveBeenLastCalledWith(global);
+  expect(onChange).not.toHaveBeenCalled();
+  rerender(<RichEditor {...props} content="<p>@Vigia</p>" />);
+  selectText(editor, 6, 6);
+  const mentionMenu = await screen.findByRole('listbox', {
+    name: 'Sugestões de menção do compêndio',
+  });
+  await waitFor(() => expect(within(mentionMenu).getAllByRole('option')).toHaveLength(1));
+  expect(within(mentionMenu).getByRole('option')).toHaveTextContent('Lia');
+  fireEvent.keyDown(editor, { key: 'Enter' });
+  await waitFor(() => expect(editor).toHaveTextContent('Lia'));
+  expect(onChange).toHaveBeenCalled();
+  expect(editor.innerHTML).not.toContain('data-lore-id="same"');
 });

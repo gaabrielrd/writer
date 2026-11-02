@@ -212,7 +212,6 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
                 page.conversation
                   ? normalizeChatReasoning(page.conversation.reasoning)
                   : readChatReasoningDefault(uid),
-                page.platformModel,
               ),
             };
       const identity = await ensureConversation(value);

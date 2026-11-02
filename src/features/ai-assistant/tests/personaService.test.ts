@@ -8,6 +8,7 @@ vi.mock('firebase/firestore', () => ({
   collection: vi.fn(() => 'collection'),
   doc: vi.fn(() => 'reference'),
   getDocs: vi.fn(),
+  getDoc: vi.fn(),
   onSnapshot: vi.fn(),
   runTransaction: vi.fn(),
 }));
@@ -29,12 +30,14 @@ it('isola leitura e assinatura pelo autor e valida dados recebidos', async () =>
   vi.mocked(onSnapshot).mockReturnValue(stop);
   const changed = vi.fn();
   const failed = vi.fn();
-  expect(subscribePersonas('author', changed, failed)).toBe(stop);
+  const unsubscribe = subscribePersonas('author', changed, failed);
   const callback = vi.mocked(onSnapshot).mock.calls[0]![1] as unknown as (value: unknown) => void;
   callback({ docs: [{ id: persona.id, data: () => persona }] });
   expect(changed).toHaveBeenCalledWith([persona]);
   callback({ docs: [{ id: persona.id, data: () => ({}) }] });
   expect(failed).toHaveBeenCalledWith(expect.any(Error));
+  unsubscribe();
+  expect(stop).toHaveBeenCalledOnce();
   await expect(listPersonas('')).rejects.toThrow('Entre na sua conta');
 });
 

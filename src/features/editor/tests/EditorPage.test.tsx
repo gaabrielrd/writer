@@ -1,6 +1,7 @@
+import { runChapterOperation } from '../services/chapterContentStorage';
 import { chooseDropdown } from '@/test/dropdown';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { EditorPage } from '../components/EditorPage';
@@ -8,7 +9,10 @@ import * as bookService from '@/features/books';
 import * as loreService from '@/features/lore';
 import type { Book, Chapter } from '@/features/books';
 import type { LoreEntity } from '@/features/lore';
+import type { User } from 'firebase/auth';
+import { Button, Dialog } from '@/shared/ui';
 import * as personaAPI from '@/features/ai-assistant';
+import { writeLocalDraft, readLocalDraft } from '../services/localDraftStorage';
 
 vi.mock('@/features/auth', async () => {
   const actual = await vi.importActual<typeof import('@/features/auth')>('@/features/auth');
@@ -68,6 +72,44 @@ describe('EditorPage', () => {
     },
   ];
 
+  it('espera a gravação pendente da sessão anterior antes de carregar a nova base CAS', async () => {
+    let release!: () => void;
+    let remote = 'Base anterior';
+    const pending = runChapterOperation(
+      'b-1',
+      'c-1',
+      () =>
+        new Promise<void>((resolve) => {
+          release = () => {
+            remote = 'Texto confirmado da sessão anterior';
+            resolve();
+          };
+        }),
+    );
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    const list = vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    const chapter = vi
+      .spyOn(bookService, 'getChapter')
+      .mockImplementation(() => Promise.resolve({ ...mockChapters[0]!, content: remote }));
+    vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue([]);
+    render(
+      <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+        <Routes>
+          <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(list).toHaveBeenCalled());
+    expect(chapter).not.toHaveBeenCalled();
+    await act(async () => {
+      release();
+      await pending;
+    });
+    expect(
+      await screen.findByRole('textbox', { name: 'Área de escrita do capítulo' }),
+    ).toHaveTextContent('Texto confirmado da sessão anterior');
+  });
+
   const mockEntities: LoreEntity[] = [
     {
       id: 'e-1',
@@ -86,10 +128,39 @@ describe('EditorPage', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(loreService, 'currentBookLoreActor').mockReturnValue({ uid: 'auth-1' } as User);
     vi.spyOn(bookService, 'subscribeWritingBindings').mockReturnValue(() => undefined);
     vi.spyOn(loreService, 'subscribeLoreEntities').mockReturnValue(() => undefined);
   });
 
+  it('rota composta oferece rascunho legado preservado e não inicia edição do corpo congelado', async () => {
+    writeLocalDraft('auth-1', 'b-1', 'c-1', '<p>Rascunho anterior</p>');
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    vi.spyOn(bookService, 'getChapter').mockResolvedValue({
+      ...mockChapters[0]!,
+      contentMode: 'scenes',
+      content: '<p>Composição atual</p>',
+    });
+    vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue([]);
+    const update = vi.spyOn(bookService, 'updateChapter').mockResolvedValue();
+    vi.spyOn(bookService, 'SceneChapterView').mockImplementation(({ legacyDraft }) => (
+      <section aria-label="Composição de cenas">{legacyDraft}</section>
+    ));
+    render(
+      <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+        <Routes>
+          <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(await screen.findByRole('region', { name: 'Composição de cenas' })).toHaveTextContent(
+      '<p>Rascunho anterior</p>',
+    );
+    expect(readLocalDraft('auth-1', 'b-1', 'c-1')?.content).toBe('<p>Rascunho anterior</p>');
+    expect(screen.queryByRole('textbox', { name: 'Área de escrita' })).not.toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+  });
   it('sincroniza personas sem substituir o texto e salva vínculos pelo editor, com retry de configuração', async () => {
     const user = userEvent.setup({ delay: null });
     vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
@@ -239,29 +310,47 @@ describe('EditorPage', () => {
     );
   });
 
-  it('permite abrir sidebar, criar entidade e navegar para proximo capitulo', async () => {
+  it('recarrega após confirmação nativa sem chamar writer local legado e preserva a navegação', async () => {
     const user = userEvent.setup({ delay: null });
     vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
     vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
     vi.spyOn(bookService, 'getChapter').mockImplementation((_bookId, chapterId) =>
-      Promise.resolve(mockChapters.find((chapter) => chapter.id === chapterId) ?? null),
+      Promise.resolve(mockChapters.find((c) => c.id === chapterId) ?? null),
     );
-    vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue(mockEntities);
-    vi.spyOn(loreService, 'createLoreEntity').mockResolvedValue({
-      id: 'e-2',
-      bookId: 'b-1',
-      name: 'Guinevere',
-      aliases: [],
-      category: 'character',
-      summary: 'Rainha',
-      details: '',
-      relations: [],
-      isPublic: true,
-      createdAt: 1000,
-      updatedAt: 1000,
-    });
-    vi.spyOn(loreService, 'updateLoreEntity').mockResolvedValue();
-
+    let remote = structuredClone(mockEntities);
+    const list = vi
+      .spyOn(loreService, 'listLoreEntities')
+      .mockImplementation(() => Promise.resolve(remote));
+    const create = vi.spyOn(loreService, 'createLoreEntity'),
+      update = vi.spyOn(loreService, 'updateLoreEntity');
+    const native = vi.spyOn(loreService, 'BookLoreAuthoring').mockImplementation((props) => (
+      <Dialog
+        open
+        title="Fluxo nativo"
+        onClose={() => props.onClose(props.target)}
+        footer={<Button onClick={() => props.onClose(props.target)}>Fechar fluxo</Button>}
+      >
+        <Button
+          onClick={() => {
+            if (props.target.kind === 'create')
+              remote = [
+                ...remote,
+                { ...mockEntities[0]!, id: 'e-2', name: 'Guinevere', summary: 'Rainha' },
+              ];
+            else if (props.target.kind === 'edit') {
+              const id = props.target.loreId;
+              remote = remote.map((e) =>
+                e.id === id ? { ...e, summary: 'Herdeiro do trono de Camelot' } : e,
+              );
+            }
+            props.onConfirmed?.();
+            props.onClose(props.target);
+          }}
+        >
+          Confirmar no serviço nativo
+        </Button>
+      </Dialog>
+    ));
     render(
       <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
         <Routes>
@@ -269,57 +358,27 @@ describe('EditorPage', () => {
         </Routes>
       </MemoryRouter>,
     );
-
     await screen.findByText('Capítulo 1: O Encontro');
-
-    // Abre sidebar
-    const toggleBtn = screen.getByRole('button', { name: /compêndio/i });
-    await user.click(toggleBtn);
-
+    await user.click(screen.getByRole('button', { name: /compêndio/i }));
     const sidebar = screen.getByRole('complementary', {
       name: 'Painel lateral do Compêndio de Lore',
     });
-    expect(within(sidebar).getByRole('heading', { name: 'Compêndio' })).toBeInTheDocument();
-
-    // Criar nova entidade via sidebar
-    await user.click(screen.getByRole('button', { name: /nova entidade/i }));
-    const createDialog = await screen.findByRole('dialog', {
-      name: 'Cadastrar Nova Entidade no Compêndio',
+    await user.click(within(sidebar).getByRole('button', { name: 'Nova Entidade' }));
+    expect(native.mock.calls.at(-1)![0]).toMatchObject({
+      bookId: 'b-1',
+      target: { kind: 'create' },
     });
-    await user.click(within(createDialog).getByLabelText(/nome da entidade/i));
-    await user.paste('Guinevere');
-    await user.click(within(createDialog).getByLabelText(/resumo curto/i));
-    await user.paste('Rainha');
-    await user.click(screen.getByRole('button', { name: 'Cadastrar Entidade' }));
-
-    await waitFor(() => expect(createDialog).not.toBeInTheDocument());
-    expect(await within(sidebar).findByText('Guinevere', { exact: true })).toBeInTheDocument();
-    expect(loreService.createLoreEntity).toHaveBeenCalledWith(
-      'b-1',
-      expect.objectContaining({ name: 'Guinevere' }),
-    );
-
-    // Editar entidade via sidebar
-    const editBtns = within(sidebar).getAllByRole('button', { name: 'Editar' });
-    expect(editBtns).toHaveLength(2);
-    await user.click(editBtns[0]!);
-    const editDialog = await screen.findByRole('dialog', { name: 'Editar Entidade: Arthur' });
-    await user.click(within(editDialog).getByLabelText(/resumo curto/i));
-    await user.keyboard('{End}');
-    await user.paste(' de Camelot');
-    await user.click(screen.getByRole('button', { name: 'Salvar Alterações' }));
-    await waitFor(() => expect(editDialog).not.toBeInTheDocument());
-    expect(await within(sidebar).findByText('Herdeiro do trono de Camelot')).toBeInTheDocument();
-    expect(loreService.updateLoreEntity).toHaveBeenCalledWith(
-      'b-1',
-      'e-1',
-      expect.objectContaining({ name: 'Arthur', summary: 'Herdeiro do trono de Camelot' }),
-    );
-
-    // Navegação entre capítulos
-    const nextBtn = screen.getByLabelText('Próximo capítulo');
-    await user.click(nextBtn);
-    expect(await screen.findByText('Capítulo 2: A Espada')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Confirmar no serviço nativo' }));
+    await within(sidebar).findByText('Guinevere', { exact: true });
+    expect(create).not.toHaveBeenCalled();
+    await user.click(within(sidebar).getAllByRole('button', { name: 'Editar' })[0]!);
+    expect(native.mock.calls.at(-1)![0]).toMatchObject({ target: { kind: 'edit', loreId: 'e-1' } });
+    await user.click(screen.getByRole('button', { name: 'Confirmar no serviço nativo' }));
+    await within(sidebar).findByText('Herdeiro do trono de Camelot');
+    expect(update).not.toHaveBeenCalled();
+    expect(list.mock.calls.filter((c) => c[0] === 'b-1')).toHaveLength(3);
+    await user.click(screen.getByLabelText('Próximo capítulo'));
+    await screen.findByText('Capítulo 2: A Espada');
     expect(screen.getByLabelText(/área de escrita do capítulo/i)).toHaveTextContent(
       'A espada brilhava na pedra.',
     );
@@ -329,6 +388,7 @@ describe('EditorPage', () => {
       ...mockEntities[0]!,
       id: 'universe:world:e-1',
       bookId: undefined,
+      adventureId: undefined,
       universeId: 'world',
       name: 'Sábia',
       summary: 'Uma sábia do universo',
@@ -392,6 +452,93 @@ describe('EditorPage', () => {
     view.unmount();
     expect(stop).toHaveBeenCalledTimes(2);
   });
+  it('manter versão salva descarta rascunho local sem escrever e conserva a base CAS para a próxima edição', async () => {
+    const user = userEvent.setup({ delay: null });
+    const saved = '<p>Versão salva A.</p>';
+    vi.spyOn(bookService, 'getBook').mockResolvedValue({ ...mockBook, hasProgressResources: true });
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue(mockChapters);
+    vi.spyOn(bookService, 'getChapter').mockResolvedValue({ ...mockChapters[0]!, content: saved });
+    const update = vi.spyOn(bookService, 'updateChapter').mockResolvedValue();
+    vi.spyOn(loreService, 'listLoreEntities').mockResolvedValue([]);
+    writeLocalDraft('auth-1', 'b-1', 'c-1', '<p>Rascunho local B.</p>');
+    const view = render(
+      <MemoryRouter initialEntries={['/books/b-1/editor/c-1']}>
+        <Routes>
+          <Route path="/books/:bookId/editor/:chapterId" element={<EditorPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await screen.findByRole('dialog', { name: 'Recuperar rascunho local?' });
+    const keep = screen.getByRole('button', { name: 'Manter versão salva' });
+    await waitFor(() => expect(getComputedStyle(keep).pointerEvents).not.toBe('none'));
+    await user.click(keep);
+    const editor = await screen.findByRole('textbox', { name: 'Área de escrita do capítulo' });
+    expect(editor).toHaveTextContent('Versão salva A.');
+    expect(readLocalDraft('auth-1', 'b-1', 'c-1')).toBeNull();
+    expect(update).not.toHaveBeenCalled();
+    // JSDOM não edita contenteditable nativamente; entregamos a alteração DOM
+    // e os eventos de entrada/seleção, com editor e autosave reais.
+    const descriptors = ['getBoundingClientRect', 'getClientRects'].map((name) => ({
+      name,
+      value: Object.getOwnPropertyDescriptor(Range.prototype, name),
+    }));
+    const rect = {
+      left: 0,
+      right: 100,
+      top: 0,
+      bottom: 20,
+      width: 100,
+      height: 20,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    };
+    Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => rect,
+    });
+    Object.defineProperty(Range.prototype, 'getClientRects', {
+      configurable: true,
+      value: () => Object.assign([rect], { item: () => rect }),
+    });
+    const scroll = vi.spyOn(window, 'scrollBy').mockImplementation(() => undefined);
+    try {
+      const text = editor.querySelector('p')?.lastChild;
+      if (!(text instanceof Text)) throw new Error('Prosa salva ausente');
+      const selection = window.getSelection();
+      if (!selection) throw new Error('Seleção nativa indisponível');
+      act(() => {
+        editor.focus();
+        selection.collapse(text, text.length);
+        fireEvent(document, new Event('selectionchange'));
+        fireEvent(
+          editor,
+          new InputEvent('beforeinput', { bubbles: true, inputType: 'insertText', data: ' C' }),
+        );
+        text.appendData(' C');
+        selection.collapse(text, text.length);
+        fireEvent.input(editor, { inputType: 'insertText', data: ' C' });
+        fireEvent(document, new Event('selectionchange'));
+      });
+      expect(editor).toHaveTextContent('Versão salva A. C');
+      await screen.findByText('Não salvo');
+      view.unmount();
+      await waitFor(() => expect(update).toHaveBeenCalledTimes(1));
+      const call = update.mock.calls[0];
+      if (!call) throw new Error('Gravação da edição C ausente');
+      expect(call.slice(0, 2)).toEqual(['b-1', 'c-1']);
+      expect(call[2]).toMatchObject({ expectedContent: saved, expectedOwnerId: 'auth-1' });
+      expect(call[2].content).toContain('C');
+    } finally {
+      view.unmount();
+      scroll.mockRestore();
+      for (const descriptor of descriptors) {
+        if (descriptor.value)
+          Object.defineProperty(Range.prototype, descriptor.name, descriptor.value);
+        else Reflect.deleteProperty(Range.prototype, descriptor.name);
+      }
+    }
+  });
   it.each(['Recuperar texto local', 'Manter versão salva'])(
     'exige escolha explicita para rascunho divergente: %s',
     async (choice) => {
@@ -429,3 +576,15 @@ describe('EditorPage', () => {
     },
   );
 });
+
+vi.mock('@/features/work-progress', async (original) => ({
+  ...(await original<object>()),
+  ProjectProgressPanel: ({ target }: { target: { kind: string; id: string } }) => (
+    <h2>
+      Progresso de {target.kind}/{target.id}
+    </h2>
+  ),
+  ContinueWorkPanel: () => <h2>Continuar meu trabalho</h2>,
+  useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
+  WorkActivityNotice: () => null,
+}));

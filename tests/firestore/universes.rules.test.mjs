@@ -1,3 +1,6 @@
+import { createRequire } from 'node:module';
+import assert from 'node:assert/strict';
+import { createUniverseLoreImportService } from '../../functions/src/universeLoreImport.mjs';
 import { readFile } from 'node:fs/promises';
 import { after, before, beforeEach, test } from 'node:test';
 import {
@@ -196,4 +199,115 @@ test('deleting a universe revokes snapshots without exposing its private documen
   );
   await assertFails(getDoc(doc(client(), 'publicBooks/book')));
   await assertFails(getDoc(doc(client(), `${revisionPath}/chapters/ch`)));
+});
+
+test('universe import bytes, suggestions, review, quota and receipts are server-only', async () => {
+  const paths = [
+    'users/author/universeLoreImports/import',
+    'users/author/universeLoreImports/import/importUploads/bytes-0-0',
+    'users/author/universeLoreImports/import/importCandidates/candidate',
+    'users/author/universeLoreImports/import/importReview/0',
+    'users/author/universeLoreImportLimits/current',
+    'users/author/universeLoreImportReceipts/operation',
+  ];
+  await environment.withSecurityRulesDisabled(async (context) => {
+    for (const path of paths)
+      await setDoc(doc(context.firestore(), path), { secret: 'PRIVATE SOURCE' });
+  });
+  for (const uid of ['author', 'other', null]) {
+    const db = client(uid);
+    for (const path of paths) {
+      await assertFails(getDoc(doc(db, path)));
+      await assertFails(setDoc(doc(db, path), { secret: 'changed' }));
+      await assertFails(deleteDoc(doc(db, path)));
+    }
+  }
+});
+
+test('native Firestore atomically creates, replays and updates reviewed universe lore', async () => {
+  const require = createRequire(new URL('../../functions/package.json', import.meta.url));
+  const { initializeApp, deleteApp } = require('firebase-admin/app');
+  const { getFirestore } = require('firebase-admin/firestore');
+  const app = initializeApp({ projectId: 'demo-writer-universes' }, 'universe-lore-import-native');
+  try {
+    const db = getFirestore(app);
+    await db.doc('users/import-author').set({ credits: 3 });
+    const entity = {
+      name: 'Arthur',
+      category: 'character',
+      aliases: [],
+      summary: 'O rei voltou.',
+      details: 'Arthur voltou ao reino.',
+      evidence: 'Arthur voltou ao reino.',
+    };
+    const api = createUniverseLoreImportService({
+      db,
+      generator: () => Promise.resolve(JSON.stringify({ entities: [entity] })),
+    });
+    async function prepare(session, universeId = null) {
+      await api.startUniverseLoreImport('import-author', {
+        id: session,
+        universeId,
+        files: [{ name: 'lore.txt', size: Buffer.byteLength(entity.evidence), parts: 1 }],
+      });
+      await api.appendUniverseLoreImport('import-author', {
+        id: session,
+        kind: 'bytes',
+        file: 0,
+        index: 0,
+        payload: Buffer.from(entity.evidence).toString('base64'),
+      });
+      await api.appendUniverseLoreImport('import-author', {
+        id: session,
+        kind: 'source',
+        file: 0,
+        index: 0,
+        payload: entity.evidence,
+        page: null,
+      });
+      await api.sealUniverseLoreImport('import-author', { id: session });
+      return api.advanceUniverseLoreImport('import-author', { id: session, cursor: 0 });
+    }
+    const review = await prepare('native-import');
+    const fields = {
+      name: entity.name,
+      category: entity.category,
+      aliases: entity.aliases,
+      summary: entity.summary,
+      details: entity.details,
+    };
+    const request = {
+      id: review.id,
+      operationId: 'native-confirm',
+      name: 'Atlas',
+      description: '',
+      changes: [{ candidateId: review.candidates[0].id, targetId: null, input: fields }],
+    };
+    await api.saveUniverseLoreImportReview('import-author', request);
+    const result = await api.applyUniverseLoreImport('import-author', request);
+    assert.deepEqual(await api.applyUniverseLoreImport('import-author', request), result);
+    const rows = await db.collection(`universes/${result.universeId}/lore`).get();
+    assert.equal(rows.size, 1);
+    assert.equal(rows.docs[0].data().isPublic, false);
+    const second = await prepare('native-update', result.universeId);
+    const update = {
+      ...request,
+      id: second.id,
+      operationId: 'native-update-confirm',
+      changes: [
+        {
+          candidateId: second.candidates[0].id,
+          targetId: rows.docs[0].id,
+          input: { ...fields, details: '' },
+        },
+      ],
+    };
+    await api.saveUniverseLoreImportReview('import-author', update);
+    await api.applyUniverseLoreImport('import-author', update);
+    assert.equal((await rows.docs[0].ref.get()).data().details, '');
+    assert.equal((await db.doc('users/import-author').get()).data().credits, 1);
+    assert.equal((await db.doc(`universes/${result.universeId}`).get()).data().loreVersion, 2);
+  } finally {
+    await deleteApp(app);
+  }
 });

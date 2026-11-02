@@ -7,6 +7,8 @@ import {
   moveChaptersToAct,
 } from '../services/chapterOrganizationService';
 import type { Chapter } from '../model/chapter';
+import { deleteSceneGroups } from '@/features/scenes';
+vi.mock('@/features/scenes', () => ({ deleteSceneGroups: vi.fn() }));
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
@@ -83,6 +85,35 @@ beforeEach(() => {
       ),
     }),
   );
+});
+
+it('seleção mista preserva marcação atômica no servidor com versões observadas', async () => {
+  const composed = { ...chapter, id: 'composed', contentMode: 'scenes' as const };
+  vi.mocked(deleteSceneGroups)
+    .mockResolvedValueOnce({ complete: false, processed: 50 })
+    .mockResolvedValueOnce({ complete: true, processed: 51 });
+  await deleteChapters('book', [chapter, composed]);
+  expect(deleteSceneGroups).toHaveBeenCalledWith(
+    expect.objectContaining({
+      target: { kind: 'book', id: 'book' },
+      groups: [
+        { id: 'one', expectedUpdatedAt: 10 },
+        { id: 'composed', expectedUpdatedAt: 10 },
+      ],
+    }),
+  );
+  expect(vi.mocked(deleteSceneGroups).mock.calls[1]?.[0]).toEqual(
+    vi.mocked(deleteSceneGroups).mock.calls[0]?.[0],
+  );
+  expect(mocks.remove).not.toHaveBeenCalled();
+});
+
+it('não exclui capítulos legados primeiro se a marcação da seleção mista conflitar', async () => {
+  vi.mocked(deleteSceneGroups).mockRejectedValueOnce(new Error('revisão mudou'));
+  await expect(
+    deleteChapters('book', [chapter, { ...chapter, id: 'composed', contentMode: 'scenes' }]),
+  ).rejects.toThrow(/mudou/);
+  expect(mocks.remove).not.toHaveBeenCalled();
 });
 describe('persistência de atos e ações em lote', () => {
   it('cria ato vazio ou nomeado e aloca posições pela transação do livro', async () => {

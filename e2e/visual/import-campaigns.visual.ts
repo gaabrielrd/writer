@@ -5,6 +5,7 @@ import {
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
   test,
+  openBookImport,
 } from './support';
 
 const titles = [
@@ -60,7 +61,7 @@ test('aventura em duas colunas conserva estrutura, caixas, atributos e revisão'
   const buffer = await source.pdf({ format: 'A5', printBackground: true });
   await source.close();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await openBookImport(page);
   await page
     .getByLabel('Arquivo do manuscrito')
     .setInputFiles({ name: 'campanha.pdf', mimeType: 'application/pdf', buffer });
@@ -114,7 +115,7 @@ test('arquivo real de Phandelver recupera sete seções e identifica os três ma
   );
   const buffer = await readFile(sourcePath!);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await openBookImport(page);
   await page
     .getByLabel('Arquivo do manuscrito')
     .setInputFiles({ name: 'Phandelver.pdf', mimeType: 'application/pdf', buffer });

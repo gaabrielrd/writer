@@ -51,14 +51,14 @@ export function ThemeToggle({
 }
 
 export function ThemeSelect({ className = '' }: { className?: string }) {
-  const { theme, setTheme } = useTheme();
+  const { theme, requestTheme } = useTheme();
 
   return (
     <div className="shrink-0">
       <Dropdown
         mode="select"
         value={theme}
-        onValueChange={(value) => setTheme(value as Theme)}
+        onValueChange={(value) => requestTheme(value as Theme)}
         className={className}
         aria-label="Selecionar tema visual"
         options={[

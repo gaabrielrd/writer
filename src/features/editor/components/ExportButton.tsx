@@ -18,7 +18,13 @@ export function ExportButton(props: ExportButtonProps) {
         <Download className="icon icon-sm" aria-hidden="true" />
         Exportar
       </Button>
-      {open && <ExportDialog {...props} onClose={() => setOpen(false)} />}
+      {open && (
+        <ExportDialog
+          key={props.book.authorId + ':' + props.book.id}
+          {...props}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   );
 }

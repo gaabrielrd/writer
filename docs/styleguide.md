@@ -88,11 +88,30 @@ npm run validate
 
 ## Direção visual: estúdio de escrita
 
-A referência de composição é o [Tripo Studio](https://studio.tripo3d.ai/pt):
-barra destacada em cápsula, vidro fumê, superfícies arredondadas e controles discretos.
-O Writer mantém identidade própria, com tons de papel e carvão quente, bronze/âmbar
-para ações e tipografia editorial na escrita. Nenhum logotipo, imagem ou conteúdo do
-Tripo integra o aplicativo.
+Na área logada, a referência de organização é a interface do ChatGPT fornecida
+pelo operador: navegação lateral, marca discreta e área de trabalho contínua.
+O Writer conserva suas cores semânticas, os três temas e a tipografia editorial
+do manuscrito. Landing page, login e leitor público mantêm sua composição.
+
+- **Área logada:** lateral de 240 px recolhível, barra contextual de 48 px e
+  conteúdo sem largura máxima. Margens de 12–16 px; rolagem principal dentro da
+  área de trabalho e lateral com rolagem própria se necessário.
+- **Navegação:** links diretos em Criar (Estúdio, Universos e Imagens), Explorar
+  (Publicações, Catálogo e Biblioteca) e Configurar (IA), com destino atual por
+  aria-current. A marca e o contexto da página ficam à esquerda e centralizados verticalmente
+  em suas barras.
+  O cabeçalho principal só mostra o botão de abrir quando a lateral está fechada.
+  Conta, créditos e tema ficam agrupados em um card no rodapé, sem divisor externo.
+  O tema usa três botões segmentados (Claro, Escuro e Sépia) com aria-pressed;
+  saldo e seletor compartilham fundo transparente, borda discreta, raio e altura. Até 760 px, a navegação abre em
+  gaveta modal com Escape, foco contido e retorno ao gatilho.
+- **Densidade:** controles em 14 px, títulos de página em 20 px, raios menores e
+  superfícies opacas, sem sombras decorativas. Tokens compactos são locais ao
+  shell autenticado; o manuscrito mantém sua fonte e entrelinha.
+- **Toque:** navegação e gatilhos têm pelo menos 44 px em ponteiros de toque.
+  Recolher a lateral amplia o conteúdo sem remontar o editor.
+- **Área pública:** conserva a barra em cápsula e o fundo ambiente descritos
+  abaixo. Não aplique a densidade do estúdio ao leitor público.
 
 - **Hierarquia:** fundo ambiente → shell translúcido → superfície de trabalho → controles.
 - **Vidro:** `.glass-surface` usa fallback opaco e aplica `backdrop-filter` somente
@@ -114,7 +133,9 @@ Tripo integra o aplicativo.
   abertura do painel contextual. Não há animação contínua atrás do editor.
 - **Criação de livro:** título/gênero diretamente acessíveis, sinopse/capa em seções opcionais, salvamento disponível pelos dados essenciais. Sugestões exigem aceite explícito com preço visível. Biblioteca e prévia de capa em 2:3 têm prioridade; URL é secundária. Criação manual disponível em falha da IA.
   Acima de 900 px, o modal manual tem até 960 px e prévia lateral com a mesma
-  capa, fonte editorial do título, badge de gênero e sinopse dos cards da biblioteca.
+  capa em 2:3, título editorial em destaque, badge de gênero e sinopse. O catálogo
+  Projetos usa cards compactos com a fonte da interface; a prévia conserva Georgia
+  em 24 px, peso 500 e entrelinha de 30 px.
   A prévia acompanha apenas os dados preenchidos/aceitos e fica oculta em telas menores.
 
 Os tokens ficam em `src/styles/globals.css`; os três temas e a preferência do
@@ -122,14 +143,12 @@ sistema continuam compartilhando um único provider. A suíte visual usa serviç
 fictícios em configuração exclusiva de teste, nunca um modo de demonstração no
 bundle de produção.
 
-O header usa navegação de bibliotecas à esquerda com breadcrumb do livro nas
-rotas privadas. Marca, separadores, menu e título ficam centralizados verticalmente,
-com intervalos horizontais uniformes de `--space-4` no desktop e `--space-2`
-até 900 px. Os dois separadores compartilham o mesmo estilo; o menu mantém
-altura de interação e não acrescenta padding horizontal ao intervalo.
-O saldo mostra somente ícone e número, com detalhes no tooltip.
-Nome/avatar abre email e saída em dropdown. Imagens da biblioteca têm miniaturas
-2:3, carregamento tardio e controles de gerenciamento com rótulos acessíveis.
+Na área logada, a barra contextual mostra o espaço e o breadcrumb do livro.
+O saldo conserva ícone/número e detalhes no tooltip, com o mesmo tratamento
+visual do seletor segmentado de tema; nome/avatar abre email,
+configuração de IA e saída em dropdown no rodapé da lateral. No celular, essas
+ações ficam dentro da gaveta. Imagens conservam miniaturas 2:3, carregamento
+tardio e rótulos acessíveis.
 
 Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
 
@@ -279,7 +298,7 @@ Os indicadores usam o fundo das tags correspondentes (`accent`, `success`,
 Marcas reservam 1 px de intervalo; ocorrências próximas são agrupadas, com
 categorias lado a lado para evitar sobreposição de cores.
 `--badge-success-background` acompanha o verde da variante `success` do Badge,
-incluindo sua preferência de esquema de cor do sistema. Um retângulo com borda
+seguindo a base clara/escura selecionada. Um retângulo com borda
 e fundo semântico indica o trecho visível. O controle
 mantém foco visível, rótulos de destino e tooltip pelo componente compartilhado.
 Em celular, a faixa acompanha a viewport durante a rolagem da página, sem
@@ -346,3 +365,98 @@ parâmetros solicitados/usados legíveis e quebra de linha. Conversas antigas
 identificam Auto e modelo não registrado. Não mostre chaves nem pensamentos
 internos. Retry conserva acesso após mudar preferências; regenerar indica
 que usa a configuração atual.
+
+## Organização do Estúdio
+
+Estúdio expõe Home, Projetos, Importar e restaurar e Em andamento como
+subitens da lateral. O item atual tem indicação visual e aria-current;
+o cabeçalho contextual identifica Estúdio e a seção. Home concentra
+retomadas recentes, Novo projeto e atalhos, com o mesmo tratamento para
+livros, aventuras e campanhas. Configurações pessoais ficam em Preferências.
+
+Projetos usa linhas compactas: miniatura, título, tipo, metadados e ações.
+Filtros por tipo ficam acima das listas; filtros editoriais e operacionais
+permanecem junto da lista correspondente. Títulos longos quebram sem
+sobrepor ações. No celular, metadados passam para a linha seguinte.
+A paginação continua independente para cada tipo de projeto.
+
+Importações e backups ficam em grupos distintos com ações explícitas.
+Em andamento agrupa painéis nativos em importações/restaurações, campanhas
+e exclusões. Estados vazios desses painéis usam apresentação compacta,
+sem eliminar suas mensagens ou ações. Grades passam para uma coluna em
+telas menores. Superfícies, foco e tipografia continuam usando os tokens
+semânticos dos três temas e os componentes compartilhados.
+
+### Largura dos painéis
+
+Preferências oferece Pequeno (960 px), Médio (1280 px, padrão) e Grande
+(1600 px). O limite se aplica ao conteúdo centralizado da área logada e
+sempre respeita o espaço disponível. A lateral e a barra contextual
+conservam sua largura. O modo expandido do editor usa toda a área disponível.
+Os subitens do Estúdio usam ícones Lucide, sem linha vertical decorativa.
+
+Os filtros editoriais e de publicação/condição em Meus projetos usam grupos
+de botões segmentados com rótulo visível, nome acessível e aria-pressed na
+opção ativa. Reutilizam o tratamento do filtro de tipo e quebram linhas
+conforme o espaço disponível, preservando as seleções na URL.
+
+Os filtros segmentados de projetos usam controles de 28 px em ponteiros
+precisos e 44 px para toque. Eles acompanham o título da seção quando há
+espaço e quebram linhas sem transbordar. Configurações de IA usam abas
+segmentadas compactas, PageHeader sem padding duplicado e EmptyState
+compartilhado para ausência de personas criadas; retorno é contextual.
+
+## Aba Provedor de IA
+
+Em /settings/ai?tab=provider, o primeiro Dropdown escolhe Firebase AI Logic
+ou BYOK. Firebase apresenta modelo e raciocínio Médio/Alto; BYOK apresenta
+provedor, chave em campo de senha e modelo personalizado. O formulário usa
+Input, Dropdown, Alert e Button compartilhados, com salvar explícito,
+mensagem de erro e restauração. Não apresentar temperatura ou tooltip sobre ela.
+
+Biblioteca de Imagens, Publicações, Catálogo e Biblioteca usam o título
+contextual da barra principal, sem repetir PageHeader explicativo no corpo.
+Estados vazios dessas páginas ocupam o centro horizontal e vertical da área
+disponível. Na biblioteca de imagens, falhas iniciais têm o mesmo alinhamento;
+erros com imagens já carregadas permanecem junto do conteúdo.
+
+Preferências e Inteligência artificial também usam somente o título da
+barra contextual. Seus títulos de grupos, formulários e abas permanecem no
+corpo; o retorno contextual da IA é preservado quando aberto de um projeto.
+
+## Criação de temas
+
+A navegação usa Claro, Escuro, Sépia e Personalizados: no rodapé da lateral
+na área logada e no cabeçalho público. A lista ancorada tem
+seleção e ações em controles separados; menus de editar/remover usam Dropdown.
+FloatingPanel é não modal, recolhível, movível por ponteiro/teclado e fica
+abaixo dos modais. Suas cores acompanham a prévia aplicada à plataforma.
+FormSection organiza o Modo avançado com as 24 cores. Prévia afeta a aplicação
+inteira sem persistir ajustes. Veja [temas personalizados](custom-themes.md).
+
+As variantes dark acompanham a classe de tema, não a preferência do sistema.
+Badge de sucesso e marcas do minimapa compartilham o mesmo token, incluindo
+as paletas personalizadas. Fontes, dimensões e espaçamentos permanecem comuns.
+
+No editor de temas, nome e base usam nome acessível sem label visual; Nome é o
+placeholder. Todas as cores oferecem Input type=color ao lado do hexadecimal.
+Slider de intensidade e picker de matiz compõem uma linha abaixo da base.
+A escala preserva a luminosidade e respeita Claro/Escuro na criação.
+
+O Slider aceita `hideLabels` para controles com indicadores visuais próprios.
+Essa opção oculta título, valor e escala visuais, preservando nome acessível,
+valor e descrição dos extremos no input. O padrão dos demais sliders não muda.
+
+Tema e saldo de créditos ficam à direita na barra contextual da área logada.
+Em telas estreitas, esses controles passam para uma segunda linha alinhada
+à direita. A lateral mantém apenas o perfil no rodapé. Seu menu oferece
+Preferências, Inteligência artificial e Sair, com ícones e os bloqueios
+existentes durante operações pendentes do editor.
+
+A troca de tema usa uma transição única de 240 ms com curva
+cubic-bezier(0.4, 0, 0.2, 1). View Transitions compõe a interface inteira,
+evitando que as transições de hover dos componentes atrasem botões ou texto.
+Sem essa API, cores usam duração, curva e delay comuns durante a troca.
+A primeira aplicação e movimento reduzido não animam a mudança. Novas
+seleções interrompem a transição anterior; tempos normais de interação
+são restaurados ao terminar.

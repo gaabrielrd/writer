@@ -1,0 +1,147 @@
+.shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 36px);
+  color: hsl(var(--foreground));
+}
+
+.header,
+.actions,
+.navigation,
+.scenario {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.header {
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.navigation {
+  padding: 12px;
+  margin-bottom: 28px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 24px;
+  background: hsl(var(--card));
+}
+
+.navigation button {
+  flex: 1 1 140px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.stack {
+  display: grid;
+  gap: 20px;
+}
+
+.card {
+  min-width: 0;
+  border-radius: 24px;
+}
+
+.card h2 {
+  margin: 10px 0;
+  font-size: 24px;
+  font-family: Georgia, serif;
+  line-height: 1.25;
+}
+
+.card p,
+.card li,
+.notice {
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.notice:empty {
+  min-height: 0;
+  margin: 0;
+}
+
+.meta {
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 12px;
+}
+
+.manuscript {
+  font-family: Georgia, serif;
+  font-size: 18px;
+  line-height: 1.85;
+}
+
+.scenario {
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 24px;
+  margin-top: 32px;
+}
+
+.scenario > span {
+  flex-basis: 100%;
+  color: hsl(var(--muted-foreground));
+  font-size: 14px;
+}
+
+.notice {
+  min-height: 24px;
+  margin: 16px 0;
+}
+
+.skip {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  transform: translateY(-150%);
+  z-index: 50;
+  padding: 12px;
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+}
+
+.skip:focus {
+  transform: none;
+}
+
+@media (max-width: 650px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .navigation {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .navigation button {
+    flex-basis: 110px;
+    font-size: 13px;
+    padding-inline: 8px;
+  }
+
+  .actions > button {
+    flex: 1 1 130px;
+    white-space: normal;
+    height: auto;
+    min-height: 44px;
+  }
+
+  .card h2 {
+    font-size: 22px;
+  }
+}

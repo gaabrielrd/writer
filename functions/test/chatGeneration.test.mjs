@@ -22,12 +22,15 @@ test('configuração aceita somente campos públicos e mantém limites fora do c
     assert.equal(normalizeChatGenerationRequest({ ...value, ...extra }), null);
   assert.equal(normalizeChatGenerationRequest(null), null);
   assert.equal(normalizeChatGenerationRequest({ ...value, provider: 'openai_byok' }), null);
+  assert.throws(
+    () => resolveChatGeneration({ ...value, model: 'modelo-do-cliente' }),
+    /indisponível/,
+  );
   const generation = resolveChatGeneration(
-    { ...value, model: 'modelo-do-cliente' },
+    { ...value, model: 'gemini-4-argon' },
     'gemini-3.7-flash',
   );
-  assert.equal(generation.requested.model, 'modelo-do-cliente');
-  assert.equal(generation.effective.model, 'gemini-3.7-flash');
+  assert.equal(generation.effective.model, 'gemini-4-argon');
   assert.equal(generation.effective.reasoning, 'high');
   assert.equal(generation.effective.maxOutputTokens, 4000);
 });
@@ -105,4 +108,37 @@ test('modelos desconhecidos, legados e nomes de outro provedor conservam Auto', 
   assert.equal(normalizeChatReasoning(undefined), 'auto');
   assert.equal(normalizeChatReasoning('invalid'), 'auto');
   assert.equal(normalizeChatReasoning('max'), 'max');
+});
+
+test('todos os modelos da plataforma aceitam Médio/Alto e mantêm limites e ausência de temperatura', async () => {
+  const { PLATFORM_TEXT_MODELS, resolvePlatformTextGeneration, geminiTextGenerationOptions } =
+    await import('../src/chatGeneration.mjs');
+  for (const { id } of PLATFORM_TEXT_MODELS)
+    for (const reasoning of ['medium', 'high']) {
+      const generation = resolvePlatformTextGeneration({
+        version: 1,
+        provider: 'platform',
+        model: id,
+        reasoning,
+      });
+      assert.equal(generation.effective.model, id);
+      assert.equal(generation.effective.reasoning, reasoning);
+      assert.deepEqual(geminiTextGenerationOptions(generation, 12000), {
+        maxOutputTokens: 12000,
+        thinkingConfig: { thinkingLevel: reasoning, includeThoughts: false },
+      });
+    }
+  for (const value of [
+    { version: 1, provider: 'platform', model: 'arbitrary', reasoning: 'medium' },
+    { version: 1, provider: 'platform', model: 'gemini-4-argon', reasoning: 'max' },
+    {
+      version: 1,
+      provider: 'platform',
+      model: 'gemini-4-argon',
+      reasoning: 'high',
+      apiKey: 'private',
+    },
+  ])
+    assert.throws(() => resolvePlatformTextGeneration(value));
+  assert.equal(resolvePlatformTextGeneration().effective.model, 'gemini-3.8-flash');
 });

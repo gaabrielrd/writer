@@ -1,4 +1,7 @@
+import { deleteSceneBook } from '@/features/scenes';
+vi.mock('@/features/scenes', () => ({ deleteSceneBook: vi.fn() }));
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as composition from '../services/chapterCompositionService';
 import {
   beginBookDeletion,
   deletePublicationRevisions,
@@ -16,6 +19,12 @@ const mocks = vi.hoisted(() => ({
   transaction: vi.fn(),
   commit: vi.fn(),
   batches: [] as { operation: string; path: string; data?: Record<string, unknown> }[][],
+  publicationSession: vi.fn(),
+  native: { capture: vi.fn(), verify: vi.fn(), guard: vi.fn(), stage: vi.fn(), finalize: vi.fn() },
+}));
+
+vi.mock('../services/bookLorePublicationClient', () => ({
+  bookPublicationSession: mocks.publicationSession,
 }));
 
 vi.mock('@/shared/lib', async () => ({
@@ -72,6 +81,11 @@ let lore: ReturnType<typeof snapshot>[];
 
 beforeEach(() => {
   vi.resetAllMocks();
+  mocks.publicationSession.mockReturnValue(mocks.native);
+  mocks.native.verify.mockResolvedValue(undefined);
+  mocks.native.stage.mockResolvedValue(undefined);
+  mocks.native.finalize.mockResolvedValue(undefined);
+  vi.mocked(deleteSceneBook).mockResolvedValue({ complete: true, processed: 0 });
   vi.spyOn(Date, 'now').mockReturnValue(1000);
   mocks.batches.length = 0;
   mocks.getBook.mockResolvedValue(snapshot(originalBook));
@@ -129,6 +143,60 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks());
 
 describe('publicationService', () => {
+  it('publica a prosa canônica das cenas e captura revisão sem plano ou fonte', async () => {
+    const book = { ...originalBook, hasSceneResources: true, sceneRevision: 7 };
+    mocks.getBook.mockResolvedValue(snapshot(book));
+    mocks.transactionGet.mockResolvedValue(snapshot(book));
+    chapters = [
+      snapshot(
+        {
+          title: 'Capítulo',
+          order: 1,
+          contentMode: 'scenes',
+          assemblyRevision: 4,
+          content: 'FONTE PRIVADA',
+          objective: 'PLANO PRIVADO',
+        },
+        'ch-1',
+      ),
+    ];
+    vi.spyOn(composition, 'resolveChapterContent').mockResolvedValueOnce({
+      id: 'ch-1',
+      bookId: 'book',
+      title: 'Capítulo',
+      order: 1,
+      content: '<p>Prosa atual</p>',
+      wordCount: 2,
+      createdAt: 1,
+      updatedAt: 100,
+      contentMode: 'scenes',
+      assemblyRevision: 4,
+    });
+    await publishBook('book', 'Autor');
+    const writes = mocks.batches.flat();
+    expect(writes.find((write) => write.path.endsWith('/chapters/ch-1'))?.data).toEqual({
+      title: 'Capítulo',
+      order: 1,
+      content: '<p>Prosa atual</p>',
+    });
+    expect(writes[0]?.data).toMatchObject({ sourceSceneRevision: 7 });
+    expect(mocks.transactionSet).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ sourceSceneRevision: 7 }),
+    );
+    expect(JSON.stringify(writes)).not.toMatch(/FONTE PRIVADA|PLANO PRIVADO|objective/);
+  });
+  it('não ativa a publicação se a revisão das cenas mudou durante o staging', async () => {
+    mocks.getBook.mockResolvedValue(
+      snapshot({ ...originalBook, hasSceneResources: true, sceneRevision: 7 }),
+    );
+    mocks.transactionGet.mockResolvedValue(
+      snapshot({ ...originalBook, hasSceneResources: true, sceneRevision: 8 }),
+    );
+    await expect(publishBook('book', 'Autor')).rejects.toThrow(/mudou durante/);
+    expect(mocks.transactionSet).not.toHaveBeenCalled();
+    expect(mocks.transactionUpdate).not.toHaveBeenCalled();
+  });
   it('publica cópia sanitizada, nome explícito e apenas campos públicos autorizados', async () => {
     await publishBook('book', '  Pseudônimo  ');
     const writes = mocks.batches.flat();
@@ -262,7 +330,30 @@ describe('publicationService', () => {
     expect(mocks.commit).toHaveBeenCalledTimes(1);
   });
 
-  it('marca exclusão irreversível e depois retém somente o ID apagado', async () => {
+  it('finaliza livros legados e atuais com o mesmo pedido em todas as páginas, sem inventário SDK', async () => {
+    mocks.getBook.mockRejectedValueOnce(new Error('SDK indisponível'));
+    vi.mocked(deleteSceneBook)
+      .mockResolvedValueOnce({ complete: false, processed: 50 })
+      .mockResolvedValueOnce({ complete: true, processed: 51 });
+    await finishBookDeletion('book');
+    expect(deleteSceneBook).toHaveBeenCalledTimes(2);
+    const request = vi.mocked(deleteSceneBook).mock.calls[0]![0];
+    expect(request.target).toEqual({ kind: 'book', id: 'book' });
+    expect(request.operationId).toMatch(/^[a-f0-9-]{36}$/);
+    expect(request.limit).toBe(50);
+    expect(vi.mocked(deleteSceneBook).mock.calls[1]![0]).toEqual(request);
+    expect(mocks.getBook).not.toHaveBeenCalled();
+    expect(mocks.getCollection).not.toHaveBeenCalled();
+    expect(mocks.batches).toEqual([]);
+  });
+  it('erro remoto interrompe a finalização sem tombstone ou delete SDK', async () => {
+    vi.mocked(deleteSceneBook).mockRejectedValueOnce(new Error('unavailable'));
+    await expect(finishBookDeletion('book')).rejects.toThrow('unavailable');
+    expect(deleteSceneBook).toHaveBeenCalledTimes(1);
+    expect(mocks.batches).toEqual([]);
+    expect(mocks.commit).not.toHaveBeenCalled();
+  });
+  it('revoga publicação e marca deleting antes da limpeza, sem finalizar a raiz no cliente', async () => {
     await beginBookDeletion('book');
     await finishBookDeletion('book');
     expect(mocks.batches).toEqual([
@@ -274,11 +365,10 @@ describe('publicationService', () => {
         },
         { operation: 'delete', path: 'publicBooks/book' },
       ],
-      [
-        { operation: 'set', path: 'deletedBooks/book', data: { deletedAt: 'SERVER_TIMESTAMP' } },
-        { operation: 'delete', path: 'books/book' },
-      ],
     ]);
+    expect(vi.mocked(mocks.commit).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deleteSceneBook).mock.invocationCallOrder[0]!,
+    );
   });
 
   it.each([{ deleting: true }, { publicationPrivacyVersion: -1 }])(
@@ -437,5 +527,163 @@ it('publica atos não vazios e vínculos na mesma ordem de leitura, sem metadado
 it('recusa publicação de capítulo com ato órfão antes de gravar a revisão', async () => {
   chapters = [snapshot({ title: 'X', order: 1, content: 'X', actId: 'missing' }, 'chapter')];
   await expect(publishBook('book', 'Autora')).rejects.toThrow('inexistente');
+  expect(mocks.batches).toHaveLength(0);
+});
+
+function nativeCapture(
+  entities: { id: string; data: Record<string, unknown> }[],
+  universeId: string | null = null,
+) {
+  return {
+    source: {
+      schemaVersion: 1,
+      bookId: 'book',
+      updatedAt: 100,
+      status: 'draft',
+      privacyVersion: 0,
+      hasScenes: false,
+      sceneRevision: 0,
+      universeId,
+      listToken: 'a'.repeat(64),
+    },
+    sourceToken: 'b'.repeat(64),
+    collection: {
+      bookId: 'book',
+      listToken: 'a'.repeat(64),
+      sources: entities.map((entity) => ({
+        bookId: 'book',
+        id: entity.id,
+        sourceToken: 'c'.repeat(64),
+        data: entity.data,
+      })),
+    },
+  };
+}
+function enableNative() {
+  const book = { ...originalBook, hasLoreResources: true };
+  mocks.getBook.mockResolvedValue(snapshot(book));
+  mocks.transactionGet.mockResolvedValue(snapshot(book));
+  lore = [
+    snapshot({ bookId: 'book', payloadStorage: { schemaVersion: 2 }, isPublic: true }, 'native'),
+  ];
+  const capture = nativeCapture([
+    {
+      id: 'native',
+      data: {
+        name: 'Luz',
+        aliases: ['Lua'],
+        category: 'character',
+        summary: 'Resumo',
+        isPublic: true,
+        details: 'NATIVE_PRIVATE_DETAILS',
+        structuredDetails: { notes: 'NATIVE_PRIVATE_NOTES' },
+      },
+    },
+  ]);
+  mocks.native.capture.mockResolvedValue(capture);
+  return capture;
+}
+it('native publication stages logical local lore and finalizes on the server without public copies of private fields', async () => {
+  const capture = enableNative();
+  await publishBook('book', 'Explicit Author');
+  expect(mocks.publicationSession).toHaveBeenCalledWith('book', 'private-uid');
+  expect(mocks.native.verify).toHaveBeenCalledTimes(2);
+  expect(mocks.native.stage).toHaveBeenCalledExactlyOnceWith(capture, 'revision-new', 'native', [
+    'Lua',
+  ]);
+  expect(mocks.native.finalize).toHaveBeenCalledExactlyOnceWith(
+    capture,
+    'revision-new',
+    'Explicit Author',
+  );
+  expect(mocks.transaction).not.toHaveBeenCalled();
+  const writes = mocks.batches.flat();
+  expect(writes.some((write) => write.path.endsWith('/lore/native'))).toBe(false);
+  expect(
+    writes.find((write) => write.path.endsWith('/revisions/revision-new'))?.data,
+  ).toMatchObject({
+    sourceLoreToken: 'a'.repeat(64),
+    sourcePublicationToken: 'b'.repeat(64),
+    loreCount: 1,
+  });
+  expect(JSON.stringify(writes)).not.toContain('NATIVE_PRIVATE');
+});
+it('native private names and aliases block global fallbacks before any projection', async () => {
+  withUniverse();
+  const book = { ...universeBook, hasLoreResources: true };
+  mocks.getBook.mockImplementation((ref: { path: string }) =>
+    Promise.resolve(snapshot(ref.path === 'universes/world' ? universeData : book)),
+  );
+  lore = [snapshot({ payloadStorage: { schemaVersion: 2 } }, 'private-native')];
+  mocks.native.capture.mockResolvedValue(
+    nativeCapture(
+      [
+        {
+          id: 'private-native',
+          data: { name: 'Segredo', aliases: ['Arthur'], category: 'other', isPublic: false },
+        },
+      ],
+      'world',
+    ),
+  );
+  await publishBook('book', 'Author');
+  expect(mocks.batches.flat().some((write) => write.path.includes('/lore/'))).toBe(false);
+  expect(mocks.native.stage).not.toHaveBeenCalled();
+  expect(mocks.native.finalize).toHaveBeenCalledOnce();
+});
+it('native verification failure before staging leaves no public writes or fallback', async () => {
+  enableNative();
+  mocks.native.verify.mockRejectedValueOnce(new Error('Original source unavailable'));
+  await expect(publishBook('book', 'Author')).rejects.toThrow('Original source unavailable');
+  expect(mocks.batches).toHaveLength(0);
+  expect(mocks.native.stage).not.toHaveBeenCalled();
+  expect(mocks.native.finalize).not.toHaveBeenCalled();
+  expect(mocks.transaction).not.toHaveBeenCalled();
+});
+it('late native conflict preserves invisible staging and cannot activate the pointer', async () => {
+  enableNative();
+  mocks.native.verify
+    .mockResolvedValueOnce(undefined)
+    .mockRejectedValueOnce(new Error('Clock changed'));
+  await expect(publishBook('book', 'Author')).rejects.toThrow('Clock changed');
+  expect(mocks.batches.flat().length).toBeGreaterThan(0);
+  expect(mocks.native.stage).toHaveBeenCalledOnce();
+  expect(mocks.native.finalize).not.toHaveBeenCalled();
+  expect(mocks.transactionSet).not.toHaveBeenCalled();
+});
+it('native account loss after a staging commit stops the next RPC and publication', async () => {
+  enableNative();
+  mocks.commit.mockImplementationOnce(() => {
+    mocks.native.guard.mockImplementation(() => {
+      throw new Error('Account changed');
+    });
+    return Promise.resolve();
+  });
+  await expect(publishBook('book', 'Author')).rejects.toThrow('Account changed');
+  expect(mocks.native.stage).not.toHaveBeenCalled();
+  expect(mocks.native.finalize).not.toHaveBeenCalled();
+});
+it('a present malformed native pointer cannot silently use the inline publication path', async () => {
+  lore = [snapshot({ payloadStorage: null }, 'broken')];
+  mocks.native.capture.mockRejectedValueOnce(new Error('Invalid native source'));
+  await expect(publishBook('book', 'Author')).rejects.toThrow('Invalid native source');
+  expect(mocks.batches).toHaveLength(0);
+  expect(mocks.transaction).not.toHaveBeenCalled();
+});
+it('a native capture of another source revision fails before staging', async () => {
+  const capture = enableNative();
+  capture.source.updatedAt = 101;
+  await expect(publishBook('book', 'Author')).rejects.toThrow('O livro mudou');
+  expect(mocks.batches).toHaveLength(0);
+});
+it('colliding local/global public identities fail before staging instead of selecting a fallback', async () => {
+  withUniverse();
+  lore = [
+    snapshot(
+      { name: 'Local', aliases: [], category: 'other', isPublic: false },
+      'universe:world:arthur',
+    ),
+  ];
+  await expect(publishBook('book', 'Author')).rejects.toThrow('colidem');
   expect(mocks.batches).toHaveLength(0);
 });

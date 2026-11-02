@@ -1,3 +1,4 @@
+import { LoreImportDialog } from './LoreImportDialog';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { useAuth } from '@/features/auth';
@@ -8,6 +9,7 @@ import type { Universe } from '../model/universe';
 import styles from './UniversePage.module.css';
 
 export function UniverseLorePage() {
+  const [importing, setImporting] = useState(false);
   const { user, loading } = useAuth();
   const { universeId } = useParams();
   const [attempt, setAttempt] = useState(0);
@@ -55,12 +57,27 @@ export function UniverseLorePage() {
         title={result.world.name}
         description={result.world.description}
         actions={
-          <Link to="/universes">
-            <Button variant="secondary">Voltar aos universos</Button>
-          </Link>
+          <>
+            <Button onClick={() => setImporting(true)}>Importar lore</Button>
+            <Link to="/universes">
+              <Button variant="secondary">Voltar aos universos</Button>
+            </Link>
+          </>
         }
       />
       <LoreCollection key={key} scope={scope} />
+      {importing && (
+        <LoreImportDialog
+          key={`${user.uid}:${universeId}`}
+          uid={user.uid}
+          universeId={universeId}
+          onClose={() => setImporting(false)}
+          onSuccess={() => {
+            setImporting(false);
+            setAttempt((value) => value + 1);
+          }}
+        />
+      )}
     </div>
   );
 }

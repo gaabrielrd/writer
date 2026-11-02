@@ -97,30 +97,32 @@ for (const theme of themes) {
     const primaryButton = page.getByRole('button', { name: 'Primary', exact: true });
     for (const hovered of [false, true]) {
       if (hovered) await primaryButton.hover();
-      const contrast = await primaryButton.evaluate((element) => {
-        const style = getComputedStyle(element);
-        const canvas = document.createElement('canvas');
-        canvas.width = canvas.height = 1;
-        const context = canvas.getContext('2d')!;
-        const luminance = (color: string) => {
-          context.fillStyle = color;
-          context.fillRect(0, 0, 1, 1);
-          const channels = context.getImageData(0, 0, 1, 1).data.slice(0, 3);
-          return Array.from(channels).reduce((total, channel, index) => {
-            const value = channel / 255;
-            const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
-            return total + linear * [0.2126, 0.7152, 0.0722][index];
-          }, 0);
-        };
-        const [low, high] = [luminance(style.color), luminance(style.backgroundColor)].sort(
-          (a, b) => a - b,
-        );
-        return (high + 0.05) / (low + 0.05);
-      });
-      expect(
-        contrast,
-        `${theme.id}: contraste da ação ${hovered ? 'hover' : 'normal'}`,
-      ).toBeGreaterThanOrEqual(4.5);
+      const readContrast = () =>
+        primaryButton.evaluate((element) => {
+          const style = getComputedStyle(element);
+          const canvas = document.createElement('canvas');
+          canvas.width = canvas.height = 1;
+          const context = canvas.getContext('2d')!;
+          const luminance = (color: string) => {
+            context.fillStyle = color;
+            context.fillRect(0, 0, 1, 1);
+            const channels = context.getImageData(0, 0, 1, 1).data.slice(0, 3);
+            return Array.from(channels).reduce((total, channel, index) => {
+              const value = channel / 255;
+              const linear = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+              return total + linear * [0.2126, 0.7152, 0.0722][index];
+            }, 0);
+          };
+          const [low, high] = [luminance(style.color), luminance(style.backgroundColor)].sort(
+            (a, b) => a - b,
+          );
+          return (high + 0.05) / (low + 0.05);
+        });
+      await expect
+        .poll(readContrast, {
+          message: `${theme.id}: contraste da ação ${hovered ? 'hover' : 'normal'}`,
+        })
+        .toBeGreaterThanOrEqual(4.5);
     }
     await page.mouse.move(0, 0);
     await expect(page.getByRole('button', { name: 'Disabled', exact: true })).toBeDisabled();

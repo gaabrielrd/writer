@@ -1,4 +1,3 @@
-# Barreira antes de publicar a branch. O `validate` completo roda no CI;
-# aqui ficam as checagens rápidas que evitam abrir um PR vermelho.
+# Typecheck completo; testes afetados pelo destino real, com fallback completo.
 npm run typecheck
-npm run test:unit
+node scripts/run-push-tests.mjs

@@ -1,64 +1,37 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter } from 'react-router';
 import { BookNavigation } from '../components/BookNavigation';
 import { watchBookTitle } from '../services/bookNavigationService';
+
 const auth: { user: { uid: string } | null } = vi.hoisted(() => ({ user: { uid: 'author' } }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
 vi.mock('../services/bookNavigationService', () => ({ watchBookTitle: vi.fn(() => vi.fn()) }));
-describe('book navigation', () => {
-  it('does not fetch a book title for the assisted creation route', () => {
-    vi.mocked(watchBookTitle).mockClear();
-    render(
-      <MemoryRouter initialEntries={['/books/new/assisted']}>
-        <BookNavigation />
-      </MemoryRouter>,
-    );
-    expect(watchBookTitle).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Meus Livros' })).toBeInTheDocument();
-  });
-  it('shows the selected library in the dropdown, with a separator before it', async () => {
-    render(
-      <MemoryRouter initialEntries={['/library']}>
-        <Routes>
-          <Route path="*" element={<BookNavigation />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-    const trigger = screen.getByRole('button', { name: 'Biblioteca de Imagens' });
-    const nav = screen.getByRole('navigation');
-    expect(nav.firstElementChild).toHaveTextContent('/');
-    expect(nav.firstElementChild).toHaveAttribute('aria-hidden', 'true');
-    expect(screen.getAllByText('Biblioteca de Imagens')).toHaveLength(1);
-    await userEvent.click(trigger);
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Meus Livros' }));
-    expect(screen.getByRole('button', { name: 'Meus Livros' })).toBeInTheDocument();
-    expect(screen.queryByText('Biblioteca de Imagens')).not.toBeInTheDocument();
-  });
-  it('opens library destinations by keyboard and restores focus on Escape', async () => {
-    render(
-      <MemoryRouter>
-        <BookNavigation />
-      </MemoryRouter>,
-    );
-    await userEvent.tab();
-    const trigger = screen.getByRole('button', { name: 'Meus Livros' });
-    expect(trigger).toHaveFocus();
-    await userEvent.keyboard('{Enter}');
-    expect(await screen.findByRole('menuitem', { name: 'Biblioteca de Imagens' })).toHaveAttribute(
-      'href',
-      '/library',
-    );
-    expect(screen.getByRole('menuitem', { name: 'Meus Livros' })).toHaveAttribute('href', '/');
-    await userEvent.keyboard('{Escape}');
-    expect(trigger).toHaveFocus();
-  });
-  it('updates the book crumb but immediately removes it on account change', () => {
-    let title!: (title: string) => void;
+
+beforeEach(() => {
+  auth.user = { uid: 'author' };
+  vi.clearAllMocks();
+});
+
+describe('contexto privado do livro', () => {
+  it.each(['/books/new/assisted', '/read/book-1', '/studio', '/library', '/universes/world/lore'])(
+    'não procura título privado em %s',
+    (path) => {
+      const { container } = render(
+        <MemoryRouter initialEntries={[path]}>
+          <BookNavigation />
+        </MemoryRouter>,
+      );
+      expect(watchBookTitle).not.toHaveBeenCalled();
+      expect(container).toBeEmptyDOMElement();
+    },
+  );
+
+  it('atualiza o título e o remove imediatamente ao trocar de conta', () => {
+    let deliverTitle!: (title: string) => void;
     const stop = vi.fn();
-    vi.mocked(watchBookTitle).mockImplementation((_bookId, _uid, callback) => {
-      title = callback;
+    vi.mocked(watchBookTitle).mockImplementation((_id, _uid, callback) => {
+      deliverTitle = callback;
       return stop;
     });
     const view = render(
@@ -66,10 +39,11 @@ describe('book navigation', () => {
         <BookNavigation />
       </MemoryRouter>,
     );
-    act(() => title('Um título bem longo'));
+    const oldDelivery = deliverTitle;
+    act(() => deliverTitle('Um título bem longo'));
     expect(screen.getByText('Um título bem longo')).toHaveAttribute('title', 'Um título bem longo');
-    act(() => title('Título atualizado'));
-    expect(screen.getByText('Título atualizado')).toBeInTheDocument();
+    act(() => deliverTitle('Título atualizado'));
+    expect(screen.getByText('Título atualizado')).toHaveAttribute('aria-current', 'page');
     auth.user = { uid: 'other' };
     view.rerender(
       <MemoryRouter initialEntries={['/books/book-1/lore']}>
@@ -78,39 +52,30 @@ describe('book navigation', () => {
     );
     expect(screen.queryByText('Título atualizado')).not.toBeInTheDocument();
     expect(stop).toHaveBeenCalled();
-    auth.user = { uid: 'author' };
+    act(() => deliverTitle('Livro da nova conta'));
+    act(() => oldDelivery('Resposta atrasada da conta anterior'));
+    expect(screen.queryByText('Resposta atrasada da conta anterior')).not.toBeInTheDocument();
+    expect(screen.getByText('Livro da nova conta')).toBeInTheDocument();
   });
-  it('never requests private titles on public reading routes and hides navigation on sign-out', () => {
-    vi.mocked(watchBookTitle).mockClear();
+
+  it('remove o contexto ao sair da conta', () => {
+    let deliverTitle!: (title: string) => void;
+    vi.mocked(watchBookTitle).mockImplementation((_id, _uid, callback) => {
+      deliverTitle = callback;
+      return vi.fn();
+    });
     const view = render(
-      <MemoryRouter initialEntries={['/read/book-1']}>
+      <MemoryRouter initialEntries={['/books/book-1']}>
         <BookNavigation />
       </MemoryRouter>,
     );
-    expect(watchBookTitle).not.toHaveBeenCalled();
+    act(() => deliverTitle('Livro particular'));
     auth.user = null;
     view.rerender(
-      <MemoryRouter>
+      <MemoryRouter initialEntries={['/books/book-1']}>
         <BookNavigation />
       </MemoryRouter>,
     );
-    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
-    auth.user = { uid: 'author' };
+    expect(screen.queryByText('Livro particular')).not.toBeInTheDocument();
   });
-});
-
-it('identifica lore compartilhado no header inclusive dentro de um universo', async () => {
-  auth.user = { uid: 'author' };
-  vi.clearAllMocks();
-  render(
-    <MemoryRouter initialEntries={['/universes/world/lore']}>
-      <BookNavigation />
-    </MemoryRouter>,
-  );
-  await userEvent.click(screen.getByRole('button', { name: 'Lore compartilhado' }));
-  expect(screen.getByRole('menuitem', { name: 'Lore compartilhado' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  expect(watchBookTitle).not.toHaveBeenCalled();
 });

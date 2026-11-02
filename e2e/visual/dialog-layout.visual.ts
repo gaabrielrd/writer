@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { chooseDropdown } from '../dropdown';
 import { author, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
-import { capture, expect, expectNoHorizontalOverflow, test } from './support';
+import { capture, expect, expectNoHorizontalOverflow, test, openBookImport } from './support';
 
 async function checkScroll(page: Page, dialog: Locator) {
   await expect(dialog).toBeVisible();
@@ -61,7 +61,7 @@ test('edição de livro mantém header e footer visíveis em viewport baixo', as
 
 test('importação extensa usa uma única área de rolagem', async ({ page }, testInfo) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await openBookImport(page);
   await page.getByLabel('Arquivo do manuscrito').setInputFiles({
     name: 'trinta-capitulos.md',
     mimeType: 'text/markdown',
@@ -89,9 +89,10 @@ test('preferências de IA na página com abas salvam em 320px', async ({ page },
   await page.getByRole('tab', { name: 'Provedor', exact: true }).click();
   await expect(page).toHaveURL(/settings\/ai\?tab=provider/);
   await chooseDropdown(
-    page.getByRole('combobox', { name: 'Provedor de IA' }),
-    'OpenAI API (Chave Própria — BYOK)',
+    page.getByRole('combobox', { name: 'Como deseja usar a IA?' }),
+    'Chave própria — BYOK',
   );
+  await chooseDropdown(page.getByRole('combobox', { name: 'Provedor BYOK' }), 'OpenAI API');
   await page.getByLabel('Chave de API da OpenAI').fill('chave-ficticia');
   const dialog = page.getByRole('tabpanel', { name: 'Provedor', exact: true });
   await expectNoHorizontalOverflow(page, 'configuração de IA');
@@ -103,7 +104,7 @@ test('preferências de IA na página com abas salvam em 320px', async ({ page },
     'aria-selected',
     'true',
   );
-  await expect(page.getByRole('combobox', { name: 'Provedor de IA' })).toContainText('OpenAI');
+  await expect(page.getByRole('combobox', { name: 'Provedor BYOK' })).toContainText('OpenAI');
   await expect(page.getByLabel('Chave de API da OpenAI')).toHaveValue('chave-ficticia');
   await capture(page, testInfo, 'pagina-ia-abas-provedor');
 });

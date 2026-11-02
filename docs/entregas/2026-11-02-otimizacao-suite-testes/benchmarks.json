@@ -1,0 +1,286 @@
+{
+  "date": "2026-11-02",
+  "environment": {
+    "os": "Windows",
+    "cpu": "AMD Ryzen 7 7700",
+    "logicalProcessors": 16,
+    "physicalMemoryGiB": 31.64,
+    "node": "24.21.0",
+    "npm": "10.6.0"
+  },
+  "baselineCommit": "7b13b71722afb03ae8fc243e5aacea83de8e182b",
+  "concurrentCommitPreserved": "9a0a7eea22532e37ebb8631204a98329892ee623",
+  "method": {
+    "trialsPerProfile": 1,
+    "concurrentTestSuites": false,
+    "cacheNote": "Executions are sequential; cache state is not reset. One trial is descriptive, not a statistical speedup guarantee. Controlled sample uses the same product source and test cases on 9a0a7ee.",
+    "memoryNote": "Sampled resident sums can double-count shared pages. Private bytes and sampled CPU are also reported. Initial sampler v1 memory/CPU values are discarded because PID reuse was not guarded.",
+    "scriptsNote": "Original command has 94 passing tests; final command has all original tests plus 7 push-hook tests. Final scripts concurrency is 2."
+  },
+  "originalFullCoverage": {
+    "files": 377,
+    "tests": 5134,
+    "passed": 5077,
+    "failed": 57,
+    "vitestSeconds": 925.08,
+    "processSeconds": 929.627,
+    "caseMultisetSha256": "c9cb757284de7e95543edd75cb93d73a07618098c4702b548c00928e1315aa3f",
+    "coveragePercent": {
+      "statements": 89.43,
+      "branches": 85.57,
+      "functions": 90.31,
+      "lines": 92.56
+    },
+    "memoryDiscarded": true
+  },
+  "controlledSample": [
+    {
+      "name": "sample-baseline-4",
+      "workers": 4,
+      "coverage": false,
+      "files": 8,
+      "tests": 164,
+      "passed": 164,
+      "failed": 0,
+      "elapsedSeconds": 26.4,
+      "peakResidentMiB": 1684.9,
+      "peakPrivateMiB": 1916.6,
+      "sampledCpuSeconds": 63.047,
+      "caseMultisetSha256": "b50befe16c1a1583164669b7c1735f8c6f05445e0f87c121f999f9009fe0181b",
+      "samplerVersion": 2
+    },
+    {
+      "name": "sample-optimized-4",
+      "workers": 4,
+      "coverage": false,
+      "files": 8,
+      "tests": 164,
+      "passed": 164,
+      "failed": 0,
+      "elapsedSeconds": 26.24,
+      "peakResidentMiB": 1634.6,
+      "peakPrivateMiB": 1884.0,
+      "sampledCpuSeconds": 62.125,
+      "caseMultisetSha256": "b50befe16c1a1583164669b7c1735f8c6f05445e0f87c121f999f9009fe0181b",
+      "samplerVersion": 2
+    },
+    {
+      "name": "sample-optimized-2",
+      "workers": 2,
+      "coverage": false,
+      "files": 8,
+      "tests": 164,
+      "passed": 164,
+      "failed": 0,
+      "elapsedSeconds": 40.968,
+      "peakResidentMiB": 1027.1,
+      "peakPrivateMiB": 1326.1,
+      "sampledCpuSeconds": 63.766,
+      "caseMultisetSha256": "b50befe16c1a1583164669b7c1735f8c6f05445e0f87c121f999f9009fe0181b",
+      "samplerVersion": 2
+    }
+  ],
+  "scripts": {
+    "original": {
+      "seconds": 31.782,
+      "tests": 94,
+      "passed": 94
+    },
+    "final": {
+      "seconds": 13.511,
+      "tests": 101,
+      "passed": 101,
+      "concurrency": 2,
+      "peakResidentMiB": 264.4,
+      "peakPrivateMiB": 106.5
+    }
+  },
+  "finalValidation": {
+    "status": "failed-frontend",
+    "exitCode": 1,
+    "checksPassed": ["skills", "architecture", "docs", "styleguide", "format", "full lint"],
+    "totalValidateSeconds": 1307.185,
+    "frontendVitestSeconds": 737.38,
+    "files": 377,
+    "tests": 5134,
+    "passed": 5087,
+    "failed": 47,
+    "caseMultisetSha256": "c9cb757284de7e95543edd75cb93d73a07618098c4702b548c00928e1315aa3f",
+    "addedCases": 0,
+    "removedCases": 0,
+    "coveragePercent": {
+      "statements": 89.41,
+      "branches": 85.55,
+      "functions": 90.27,
+      "lines": 92.54
+    },
+    "coverageThresholdsUnchanged": {
+      "statements": 85,
+      "lines": 85,
+      "branches": 75,
+      "functions": 90
+    },
+    "fullValidatePeakResidentMiB": 2424.3,
+    "fullValidatePeakPrivateMiB": 2538.9,
+    "samplerVersion": 2,
+    "newFailureIdsVsOriginal": [
+      [
+        "src/features/auth/tests/AuthButton.test.tsx",
+        "AuthButton opens AI settings from the user dropdown and respects pending operations",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLoreManualOperation.test.mjs",
+        "detects successful adoption whose reply was lost, preserves active bodies, then revokes recovery",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "saves map, literal draft and baseline before any RPC; exposes metadata only and requires explicit apply",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "replays an unobserved native reply exactly after reload: startBookLoreSourceInspection",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "replays an unobserved native reply exactly after reload: advanceBookLoreSourceInspection",
+        1
+      ]
+    ],
+    "resolvedFailureIdsVsOriginal": [
+      [
+        "src/features/book-portability/tests/bookRestoreNativeRoundtrip.test.mjs",
+        "indexed lore larger than eight MiB preserves literal fields dates aliases and relations through normal recapture",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLoreDiscard.test.mjs",
+        "purges bounded batches across reloads and isolates other users and neighboring operations",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLoreManualGate.test.mjs",
+        "gates metadata after encrypted write-ahead and before every native edit RPC",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLoreManualGate.test.mjs",
+        "cold flushLocal restores a pending adoption checkpoint without replay or new recovery reservation",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "replays an unobserved native reply exactly after reload: advanceBookLoreFieldSeal",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "replays an unobserved native reply exactly after reload: startBookLoreEditReservation",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "replays an unobserved native reply exactly after reload: initializeBookLoreEditGeneration",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "replays an unobserved native reply exactly after reload: reserveBookLoreEditUpload",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "replays an unobserved native reply exactly after reload: advanceBookLoreEditCompilation",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "replays an unobserved native reply exactly after reload: adoptBookLoreEditGeneration",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "cancels a lost successful adoption without key and preserves the native winner",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookLorePersistedOperation.test.mjs",
+        "handles cancellation racing an in-flight successful adoption through metadata winner detection",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookRestorePreparedLoreRoundtrip.test.mjs",
+        "prepared large lore recaptures through the real portable producer, validates a sealed file and restores into a second private job",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookRestorePreparedLoreRoundtrip.test.mjs",
+        "prepared small lore recapture preserves all logical fields {\"name\":\"N\",\"category\":\"other\",\"summary\":\"\",\"details\":\"\",\"aliases\":[\"\",\"same\",\"same\"],\"structuredDetails\":{\"notes\":\"\"},\"isPublic\":false,\"relations\":[],\"updatedAt\":0}",
+        1
+      ],
+      [
+        "src/features/lore/tests/bookRestorePreparedLoreRoundtrip.test.mjs",
+        "prepared small lore recapture preserves all logical fields {\"name\":\"N\",\"category\":\"other\",\"details\":\"﻿ literal 🌙 \\\"quote\\\"\",\"createdAt\":1,\"updatedAt\":2}",
+        1
+      ]
+    ],
+    "failureNote": "42 failing case IDs were already failing in the original run. Four other case IDs are 5-second timeouts in already unstable lore files; all four pass in the directed run without coverage. AuthButton expectation for the prior menu label also fails using original Vitest configuration on concurrent commit 9a0a7ee. Full validate remains red."
+  },
+  "controlledSampleFiles": [
+    "src/features/books/tests/act.test.ts",
+    "src/features/editor/tests/chapterMinimapModel.test.ts",
+    "src/features/ai-assistant/tests/editorChatModel.test.ts",
+    "src/features/custom-themes/tests/background.test.ts",
+    "src/features/books/tests/BookCreationWizard.test.tsx",
+    "src/features/lore/tests/LoreCollection.test.tsx",
+    "src/features/books/tests/ChapterList.test.tsx",
+    "src/features/editor/tests/RichEditor.test.tsx"
+  ],
+  "directedChecks": {
+    "changedTimeoutCases": {
+      "passed": 4,
+      "failed": 0,
+      "coverage": false,
+      "seconds": 7.39
+    },
+    "authOnConcurrentSourceWithOriginalConfig": {
+      "failed": 1,
+      "expectedOldLabel": "Configurar inteligência artificial",
+      "currentLabel": "Inteligência artificial",
+      "seconds": 3.52
+    },
+    "pushHookContractTests": {
+      "passed": 7,
+      "failed": 0
+    }
+  },
+  "backendAndBuild": {
+    "backendTests": 4891,
+    "backendPassed": 4891,
+    "backendFailed": 0,
+    "backendSeconds": 870.7400034,
+    "syntaxModules": 488,
+    "typecheckPassed": true,
+    "productionBuildPassed": true,
+    "bundleBuildSeconds": 3.97,
+    "bundleSmokePassed": true
+  },
+  "changedSelectionSmoke": {
+    "files": 1,
+    "tests": 13,
+    "passed": 13,
+    "failed": 0,
+    "coverage": false,
+    "workers": 2,
+    "totalProcessSeconds": 27.914,
+    "reportedTestSeconds": 0.254,
+    "peakResidentMiB": 628.7,
+    "peakPrivateMiB": 901.9,
+    "workingTreeRestored": true,
+    "verifiedOnCommit": "64b5b9a0cf87845207d29d7b71c7ff228c8375d7",
+    "note": "One test file changed by a temporary trailing newline. Total includes dependency selection; the short Vitest test duration alone does not reflect command wait time."
+  }
+}

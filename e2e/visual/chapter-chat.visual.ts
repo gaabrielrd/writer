@@ -21,8 +21,8 @@ test('geração registra parâmetros solicitados e usados e regeneração usa a 
     replies.first().getByText('Analisei a passagem atual.', { exact: true }),
   ).toBeVisible();
   await replies.first().getByText('Modelo e raciocínio', { exact: true }).click();
-  await expect(replies.first()).toContainText('Solicitado: gemini-3.7-flash · Alto');
-  await expect(replies.first()).toContainText('Usado: gemini-3.7-flash · Alto');
+  await expect(replies.first()).toContainText('Solicitado: gemini-3.8-flash · Alto');
+  await expect(replies.first()).toContainText('Usado: gemini-3.8-flash · Alto');
   const original = await page.evaluate(
     () =>
       JSON.parse(sessionStorage.getItem('writer_fixture_chat_generation')!) as {
@@ -41,19 +41,19 @@ test('geração registra parâmetros solicitados e usados e regeneração usa a 
     replies.last().getByText('Analisei a passagem atual.', { exact: true }),
   ).toBeVisible();
   await replies.last().getByText('Modelo e raciocínio', { exact: true }).click();
-  await expect(replies.last()).toContainText('Usado: gemini-3.7-flash · Baixo');
-  await expect(replies.first()).toContainText('Usado: gemini-3.7-flash · Alto');
+  await expect(replies.last()).toContainText('Usado: gemini-3.8-flash · Baixo');
+  await expect(replies.first()).toContainText('Usado: gemini-3.8-flash · Alto');
   await page.reload();
   await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
   await expect(reasoning).toHaveText('Baixo');
   await replies.first().getByText('Modelo e raciocínio', { exact: true }).click();
-  await expect(replies.first()).toContainText('Usado: gemini-3.7-flash · Alto');
+  await expect(replies.first()).toContainText('Usado: gemini-3.8-flash · Alto');
   await page.setViewportSize({ width: 320, height: 480 });
   await expectNoHorizontalOverflow(page, 'metadados da geração em 320px');
   await capture(page, testInfo, 'geracao-raciocinio-320');
 });
 
-test('raciocínio privado retoma por conversa e fornece o padrão das novas', async ({
+test('raciocínio privado retoma por conversa e novas conversas herdam o padrão global', async ({
   page,
 }, testInfo) => {
   await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
@@ -61,7 +61,7 @@ test('raciocínio privado retoma por conversa e fornece o padrão das novas', as
   await page.getByRole('button', { name: 'Abrir Assistente Criativo de IA' }).click();
   const chat = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });
   const reasoning = chat.getByRole('combobox', { name: 'Raciocínio do assistente' });
-  await expect(reasoning).toHaveText('Auto');
+  await expect(reasoning).toHaveText('Médio');
   await reasoning.click();
   await expect(page.getByRole('option', { name: 'Máximo', exact: true })).toHaveAttribute(
     'aria-disabled',
@@ -81,7 +81,7 @@ test('raciocínio privado retoma por conversa e fornece o padrão das novas', as
     'Rascunho com raciocínio alto',
   );
   await chat.getByRole('button', { name: 'Nova conversa', exact: true }).click();
-  await expect(reasoning).toHaveText('Alto');
+  await expect(reasoning).toHaveText('Médio');
   await reasoning.click();
   await page.getByRole('option', { name: 'Baixo', exact: true }).click();
   await expect(reasoning).toHaveText('Baixo');
@@ -92,7 +92,7 @@ test('raciocínio privado retoma por conversa e fornece o padrão das novas', as
     'Rascunho com raciocínio alto',
   );
   await chat.getByRole('button', { name: 'Nova conversa', exact: true }).click();
-  await expect(reasoning).toHaveText('Baixo');
+  await expect(reasoning).toHaveText('Médio');
   await page.setViewportSize({ width: 320, height: 480 });
   await reasoning.scrollIntoViewIfNeeded();
   const modelBox = (await chat

@@ -1,0 +1,63 @@
+{
+  "kind": "planning-fixtures-not-provider-pricing",
+  "currency": "BRL",
+  "unit": "centavos",
+  "assumptions": "Valores ficticios. Taxa de processamento nao devolvida nestes cenarios. Sem reserva. Cada cenario e independente.",
+  "cases": [
+    {
+      "name": "aprovado",
+      "paid": 3000,
+      "principalReturned": 0,
+      "commission": 300,
+      "commissionReturned": 0,
+      "processorCosts": 120,
+      "disputeCosts": 0,
+      "expectedBuyerNet": 3000,
+      "expectedWriterNet": 300,
+      "expectedCreatorNet": 2580
+    },
+    {
+      "name": "parcial",
+      "paid": 3000,
+      "principalReturned": 1200,
+      "commission": 300,
+      "commissionReturned": 120,
+      "processorCosts": 120,
+      "disputeCosts": 0,
+      "expectedBuyerNet": 1800,
+      "expectedWriterNet": 180,
+      "expectedCreatorNet": 1500
+    },
+    {
+      "name": "integral",
+      "paid": 3000,
+      "principalReturned": 3000,
+      "commission": 300,
+      "commissionReturned": 300,
+      "processorCosts": 120,
+      "disputeCosts": 0,
+      "expectedBuyerNet": 0,
+      "expectedWriterNet": 0,
+      "expectedCreatorNet": -120
+    },
+    {
+      "name": "disputa-perdida",
+      "paid": 3000,
+      "principalReturned": 3000,
+      "commission": 300,
+      "commissionReturned": 300,
+      "processorCosts": 120,
+      "disputeCosts": 1500,
+      "expectedBuyerNet": 0,
+      "expectedWriterNet": 0,
+      "expectedCreatorNet": -1620
+    }
+  ],
+  "rounding": {
+    "paid": 3000,
+    "commission": 301,
+    "refunds": [1000, 1000, 1000],
+    "expectedCommissionDeltas": [100, 101, 100]
+  },
+  "payout": { "creatorNet": 2580, "paidToBank": 2000, "expectedRemainingBalance": 580 }
+}

@@ -4,8 +4,16 @@ import { author, FIXTURE_SESSION_KEY } from './data';
 const subscribers = new Set<(user: UserProfile | null) => void>();
 
 function currentUser(): UserProfile | null {
-  return sessionStorage.getItem(FIXTURE_SESSION_KEY) === 'true' ? { ...author } : null;
+  if (sessionStorage.getItem(FIXTURE_SESSION_KEY) !== 'true') return null;
+  return sessionStorage.getItem('writer.visual.account') === 'second'
+    ? { ...author, uid: 'visual-second-author', displayName: 'Outro Autor de Exemplo' }
+    : { ...author };
 }
+
+// A test may switch the fictional identity through this fixture boundary.
+window.addEventListener('writer.visual.auth-change', () => {
+  subscribers.forEach((callback) => callback(currentUser()));
+});
 
 function signIn(): Promise<UserProfile> {
   sessionStorage.setItem(FIXTURE_SESSION_KEY, 'true');

@@ -1,3 +1,4 @@
+import { capturePlatformTextGeneration } from './byokStorage';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseApp } from '@/shared/lib';
 import type {
@@ -42,7 +43,11 @@ export const loadAssistedBook = () =>
   call<{ session: AssistedSession | null; costs: AssistedCosts; bookId?: string | null }>({
     action: 'load',
   });
-export const requestAssistedBook = (data: AssistedRequest) => call<AssistedSession>(data);
+export const requestAssistedBook = (data: AssistedRequest) => {
+  if (['interview', 'generate', 'entity'].includes(data.action))
+    data.generation ??= capturePlatformTextGeneration();
+  return call<AssistedSession>(data);
+};
 export interface AssistedCommit {
   expectedCost: number;
   sessionId: string;

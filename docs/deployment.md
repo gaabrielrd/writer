@@ -1,6 +1,20 @@
 # Deploy do Writer no Firebase
 
-## Estado desta entrega
+## Estado verificado em 2026-11-02
+
+Projeto e site confirmados por consulta: writer-44cd5, com Hosting em
+https://writer-44cd5.web.app. Os gates FIREBASE_HOSTING_DEPLOY_ENABLED e
+FIREBASE_FIRESTORE_DEPLOY_ENABLED estão true. O envio da principal dispara
+o Hosting; concluir o backend antes desse envio.
+
+A consolidação Writer V2 está em rollout autorizado: índices e regras publicados,
+66 índices READY e Functions existentes em Node 24. Novos serviços estão sendo
+publicados em lotes sequenciais; Hosting permanece na versão anterior até
+a conclusão do backend e das validações. Storage foi comparado e não requer
+publicação. Ver [plano da consolidação](tasks/consolidacao-release-writer-v2.md)
+e [ADR de runtime](decisions/0269-node24-and-function-runtime.md).
+
+## Histórico da preparação original
 
 Os workflows estão **preparados, desabilitados por padrão e sem acesso Google
 provisionado por esta entrega**. Não houve deploy, criação de identidade,
@@ -26,13 +40,13 @@ site explícito; não publica todos os sites por acidente.
 
 ## Como funciona o portão de qualidade
 
-Hosting executa `npm run validate` em Node 22 e 24, auditoria de dependências,
+Hosting executa `npm run validate` em Node 24.12+, auditoria de dependências,
 `npm run test:rules` no emulador, E2E Chromium e cenários visuais. O job de deploy
 aguarda **ambos** os jobs e toda a matriz. Isso repete os checks do CI existente
 intencionalmente: não depende de um workflow separado terminar antes do deploy.
 Todos os checkouts usam `github.sha`, sem credencial Git persistida.
 
-O bundle de produção do `validate` Node 22 recebe um marcador público do SHA,
+O bundle de produção do `validate` Node 24 recebe um marcador público do SHA,
 passa novamente pelo smoke e é guardado com inventário SHA-256. O deploy baixa
 esse artefato da **mesma execução**, valida SHA, conteúdo e lista de arquivos,
 sem rodar build novamente. Reexecutar todos os jobs substitui o artefato do mesmo
@@ -283,3 +297,20 @@ conferidas e Hosting publicado. Os 15 arquivos coincidem com o build local;
 a abertura anônima e a rota de login passaram no Chromium.
 A implantação não ativa os workflows acima. Consulte o
 [registro e os limites da verificação](entregas/2026-10-11-deploy-atos-servicos.md).
+
+## Corpos grandes de capítulo — implantação futura P1
+
+[ADR 0070](decisions/0070-book-chapter-body-cleanup.md) prepara o trigger
+collectUnusedBookChapterText (Firestore onDocumentUpdated), leitores e exclusão v2.
+Nenhuma dessas mudanças foi implantada nesta etapa.
+
+Antes de liberar os escritores que criam bookTextBodies: implantar leitores,
+deleteSceneBook v2 e coletor; confirmar a revisão ativa e drenar invocações antigas
+de exclusão. Depois, habilitar produtores e clientes compatíveis. Não combinar
+formato novo com handler antigo que ainda não conhece a fase text-bodies.
+Conversão/chat e demais integrações P1 ainda são gates antes dessa liberação.
+
+A prova SDK local cobre transações e o handler, não entrega Eventarc nem IAM
+produtivos. Conferir evento real/continuidade antes de declarar coleta operacional.
+Qualquer deploy continua exigindo instrução própria; desenvolvimento mantém
+commits locais e ignora CI remota.

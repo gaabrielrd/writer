@@ -1,0 +1,132 @@
+.navigator,
+.page,
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.navigator {
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background: hsl(var(--card));
+}
+.heading,
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.heading {
+  justify-content: space-between;
+}
+.heading h2 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+.actions button {
+  white-space: normal;
+}
+.hint {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.block {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+  min-width: 0;
+}
+.block > :first-child {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.block a {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.block a[aria-current='page'] {
+  color: hsl(var(--primary));
+}
+.block a:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
+}
+.block a[aria-disabled='true'] {
+  opacity: 0.6;
+}
+.paper {
+  min-width: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  background: hsl(var(--card));
+}
+.compare {
+  overflow-wrap: anywhere;
+  line-height: 1.85;
+}
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
+}
+.previewBlock {
+  min-width: 0;
+  border-bottom: 1px solid hsl(var(--border));
+  padding-bottom: var(--space-4);
+  overflow-wrap: anywhere;
+}
+.previewBlock h2 {
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+.previewProse {
+  font-family: Georgia, serif;
+  line-height: 1.85;
+  overflow-wrap: anywhere;
+}
+.previewProse p {
+  margin-block: var(--space-3);
+}
+.previewProse pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.previewProse ul,
+.previewProse ol {
+  padding-inline-start: var(--space-6);
+}
+.previewBlock figure {
+  margin: var(--space-4) 0;
+}
+.previewBlock img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+.previewBlock figcaption {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  margin-top: var(--space-2);
+}
+.preview button {
+  white-space: normal;
+}

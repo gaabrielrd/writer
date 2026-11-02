@@ -1,17 +1,19 @@
+import { digest } from './workProgressContracts.mjs';
+import { applicationPaths, applicationConflict } from './loreAnalysisApplicationContracts.mjs';
+import { loadApplication } from './loreAnalysisApplicationStore.mjs';
+import { applyPreparedAnalysisInTransaction } from './loreAnalysisApplicationApply.mjs';
+import { nextBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { createHash } from 'node:crypto';
-import { GenerationError, validateId } from './generation.mjs';
-import { universeDocumentId } from './universes.mjs';
+import { GenerationError, validateId, platformTextGeneration } from './generation.mjs';
+import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
+import { readLoreAnalysisContext } from './loreAnalysisContext.mjs';
+import { text, aliases, patch, categories } from './loreAnalysisFields.mjs';
+import { createLoreAnalysisApplicationService } from './loreAnalysisApplication.mjs';
 
 const fail = (code, message) => {
   throw new GenerationError(code, message);
 };
 const hash = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-const categories = ['character', 'location', 'concept', 'other'];
-function text(value, max, required = true) {
-  if (typeof value !== 'string' || value.length > max || (required && !value.trim()))
-    fail('invalid-argument', 'Texto ou ficha inválida.');
-  return value;
-}
 export function validateDetectedLore(items, source) {
   if (!Array.isArray(items) || items.length > 50)
     fail('invalid-argument', 'Analise no máximo 50 entidades por capítulo.');
@@ -36,79 +38,26 @@ export function validateDetectedLore(items, source) {
     };
   });
 }
-function aliases(value) {
-  if (!Array.isArray(value) || value.length > 20) fail('invalid-argument', 'Apelidos inválidos.');
-  return value.map((item) => text(item, 200));
-}
-function patch(input) {
-  if (
-    !input ||
-    typeof input !== 'object' ||
-    Array.isArray(input) ||
-    Object.keys(input).length === 0 ||
-    Object.keys(input).some(
-      (key) => !['name', 'category', 'summary', 'details', 'aliases'].includes(key),
-    )
-  )
-    fail('invalid-argument', 'Campos inválidos para atualização.');
-  const result = {};
-  for (const [key, value] of Object.entries(input)) {
-    if (key === 'category') {
-      if (!categories.includes(value)) fail('invalid-argument', 'Categoria inválida.');
-      result[key] = value;
-    } else if (key === 'aliases') result[key] = aliases(value);
-    else
-      result[key] = text(value, { name: 200, summary: 140, details: 8000 }[key], key !== 'details');
-  }
-  return result;
-}
-
 export function createLoreAnalysisService({ db, generator, now = Date.now }) {
   const ticketRef = (uid, id) => db.doc(`users/${uid}/loreAnalyses/${validateId(id)}`);
-  async function snapshot(tx, uid, bookId, chapterId) {
-    const bookRef = db.doc(`books/${universeDocumentId(bookId)}`);
-    const chapterRef = db.doc(`${bookRef.path}/chapters/${universeDocumentId(chapterId)}`);
-    const [bookDoc, chapter] = await Promise.all([tx.get(bookRef), tx.get(chapterRef)]);
-    const book = bookDoc.data();
-    if (!book || book.authorId !== uid || !chapter.exists)
-      fail('permission-denied', 'Livro ou capítulo indisponível.');
-    const worldRef = book.universeId
-      ? db.doc(`universes/${universeDocumentId(book.universeId)}`)
-      : null;
-    const world = worldRef ? (await tx.get(worldRef)).data() : null;
-    if (worldRef && (!world || world.authorId !== uid || world.deleting))
-      fail('failed-precondition', 'Universo indisponível.');
-    const local = await tx.get(db.collection(`${bookRef.path}/lore`));
-    const global = worldRef ? await tx.get(db.collection(`${worldRef.path}/lore`)) : { docs: [] };
-    const entities = [
-      ...local.docs.map((doc) => ({
-        id: doc.id,
-        scope: 'local',
-        path: doc.ref.path,
-        data: doc.data(),
-      })),
-      ...global.docs.map((doc) => ({
-        id: `universe:${book.universeId}:${doc.id}`,
-        scope: 'global',
-        path: doc.ref.path,
-        data: doc.data(),
-      })),
-    ].sort((a, b) => a.id.localeCompare(b.id));
-    if (entities.length > 500 || JSON.stringify(entities).length > 300000)
-      fail('resource-exhausted', 'Compêndio grande demais para esta análise.');
-    return {
-      book,
-      bookRef,
-      worldRef,
-      world,
-      entities,
-      revision: hash([book.universeId ?? null, world?.loreVersion ?? 0, entities]),
-      chapterHash: hash(chapter.data().content ?? ''),
-    };
+  const snapshot = (tx, uid, bookId, chapterId) =>
+    readLoreAnalysisContext(tx, db, uid, bookId, chapterId);
+  async function verifyAnalysisContext(tx, uid, record) {
+    const current = await snapshot(tx, uid, record.bookId, record.chapterId);
+    if (
+      current.revision !== record.revision ||
+      (current.chapterHash !== record.chapterHash && current.chapterHash !== record.contentHash)
+    )
+      fail(
+        'failed-precondition',
+        'O contexto mudou. Analise novamente antes de reutilizar a resposta.',
+      );
   }
   async function prepare(uid, data, provider) {
     if (!uid) fail('unauthenticated', 'Entre na sua conta.');
     if (!data) fail('invalid-argument', 'Solicitação inválida.');
+    const generation =
+      provider === 'platform' ? platformTextGeneration(data.generation, 12000) : null;
     const source = text(data.text, 120000);
     const content = text(data.content, 900000);
     const ref = ticketRef(uid, data.requestId);
@@ -120,13 +69,17 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       data.loreVersions,
       provider,
       provider === 'byok' ? data.entities : null,
+      ...(data.generation !== undefined && provider === 'platform' ? [generation.requested] : []),
     ]);
     const record = await db.runTransaction(async (tx) => {
       const previous = (await tx.get(ref)).data();
       if (previous) {
         if (previous.fingerprint !== fingerprint || previous.expiresAt <= now())
           fail('failed-precondition', 'Solicitação expirada ou reutilizada. Analise novamente.');
-        if (previous.state === 'ready' || previous.state === 'applied') return previous;
+        if (previous.state === 'ready' || previous.state === 'applied') {
+          await verifyAnalysisContext(tx, uid, previous);
+          return previous;
+        }
         fail('failed-precondition', 'Análise em andamento.');
       }
       const context = await snapshot(tx, uid, data.bookId, data.chapterId);
@@ -146,6 +99,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
         bookId: data.bookId,
         chapterId: data.chapterId,
         provider,
+        ...(generation ? { generation } : {}),
         fingerprint,
         textHash: hash(source),
         contentHash: hash(content),
@@ -179,6 +133,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
           let found;
           for (let attempt = 0; attempt < 2; attempt++) {
             const response = await generator({
+              generation: record.generation,
               text: part,
               lore: record.context,
               alreadyDetected: results,
@@ -189,6 +144,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
                   }
                 : {}),
             });
+            await db.runTransaction((tx) => verifyAnalysisContext(tx, uid, record));
             try {
               found = validateDetectedLore(JSON.parse(response)?.entities, source);
               break;
@@ -218,14 +174,23 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       if (JSON.stringify(results).length > 500000)
         fail('resource-exhausted', 'Resultado grande demais. Divida o capítulo.');
       await db.runTransaction(async (tx) => {
-        await tx.get(ref);
+        const current = (await tx.get(ref)).data();
+        if (
+          !current ||
+          current.state !== 'analyzing' ||
+          current.fingerprint !== record.fingerprint ||
+          current.expiresAt <= now()
+        )
+          fail('failed-precondition', 'A análise mudou ou expirou. Analise novamente.');
+        await verifyAnalysisContext(tx, uid, record);
         tx.update(ref, { state: 'ready', entities: results });
       });
       return { id: data.requestId, provider, entities: results };
     } catch (cause) {
       await db.runTransaction(async (tx) => {
-        await tx.get(ref);
-        tx.update(ref, { state: 'failed' });
+        const current = (await tx.get(ref)).data();
+        if (current?.state === 'analyzing' && current.fingerprint === record.fingerprint)
+          tx.update(ref, { state: 'failed' });
       });
       if (cause instanceof GenerationError) throw cause;
       fail(
@@ -235,6 +200,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
     }
   }
   return {
+    ...createLoreAnalysisApplicationService({ db, now }),
     analyzeChapterLore: (uid, data) => prepare(uid, data, 'platform'),
     prepareBYOKLore: (uid, data) => prepare(uid, data, 'byok'),
     async applyLoreAnalysis(uid, data) {
@@ -246,12 +212,20 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       const requestHash = hash([source, data.changes]);
       return db.runTransaction(async (tx) => {
         const record = (await tx.get(ref)).data();
-        if (!record) fail('not-found', 'Análise não encontrada.');
-        if (record.state === 'applied') {
+        // Legacy receipts remain confirmable even when a cancellation fence was created later.
+        if (record?.state === 'applied' && !Object.hasOwn(record, 'application')) {
           if (record.requestHash !== requestHash)
             fail('failed-precondition', 'Este lote já foi aplicado com outras alterações.');
           return record.result;
         }
+        const application = await loadApplication(tx, applicationPaths(db, uid, data.id), {
+          requestHash: digest([source, data.changes]),
+        });
+        if (application?.state.phase === 'applied') return application.success.record.result;
+        if (record && Object.hasOwn(record, 'application')) applicationConflict();
+        if (application)
+          return applyPreparedAnalysisInTransaction(tx, { db, now }, application, data);
+        if (!record) fail('not-found', 'Análise não encontrada.');
         if (
           record.state !== 'ready' ||
           record.expiresAt <= now() ||
@@ -269,6 +243,15 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
           context.chapterHash !== record.contentHash
         )
           fail('failed-precondition', 'O capítulo salvo mudou. Recarregue e analise novamente.');
+        if (
+          data.changes.some((change) => change?.scope === 'local') &&
+          Object.hasOwn(context.book, 'hasLoreResources') &&
+          context.book.hasLoreResources !== false
+        )
+          fail(
+            'failed-precondition',
+            'Este livro exige escrita preparada. Nenhuma alteração ou cobrança ocorreu.',
+          );
         const userRef = db.doc(`users/${uid}`);
         const user = (await tx.get(userRef)).data();
         const cost = record.provider === 'platform' ? 1 : 0;
@@ -290,12 +273,32 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
             : null;
           if (change.entityId && !existing)
             fail('invalid-argument', 'Entidade não pertence ao destino.');
+          if (existing && change.scope === 'local' && context.localPayloadIds.has(existing.id))
+            fail(
+              'failed-precondition',
+              'Esta ficha exige escrita preparada. Nenhuma alteração ou cobrança ocorreu.',
+            );
+
           const root = change.scope === 'global' ? context.worldRef : context.bookRef;
           const target = existing
             ? db.doc(existing.path)
             : db.doc(`${root.path}/lore/${data.id}-${index}`);
           if (seen.has(target.path)) fail('invalid-argument', 'Entidade repetida no lote.');
           seen.add(target.path);
+          if (
+            change.scope === 'local' &&
+            (
+              await Promise.all(
+                ['bookLoreTombstones', 'bookLoreReservations'].map((name) =>
+                  tx.get(db.doc(context.bookRef.path + '/' + name + '/' + target.id)),
+                ),
+              )
+            ).some((s) => s.exists)
+          )
+            fail(
+              'failed-precondition',
+              'Esta ficha foi retirada ou reservada. Use outro identificador.',
+            );
           if (!existing && (!input.name || !input.summary || !input.category))
             fail('invalid-argument', 'Preencha nome, categoria e resumo da entidade nova.');
           if (
@@ -337,6 +340,15 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
           writes.push({ target, value, existing, scope: change.scope, name: merged.name });
         }
         // All reads and validation finish before writes. Visibility and relations cannot change here.
+        const localVersion = writes.some((write) => write.scope === 'local')
+          ? nextBookLocalLoreVersion(context.book)
+          : null;
+        const authorization = writes.some((write) => write.scope === 'global')
+          ? await prepareCampaignAuthorization(tx, db, uid, { bump: true })
+          : null;
+        authorization?.commit();
+        if (localVersion !== null)
+          tx.update(context.bookRef, { localLoreVersion: localVersion, updatedAt: now() });
         for (const write of writes) {
           if (write.existing) tx.update(write.target, write.value);
           else tx.create(write.target, write.value);

@@ -328,10 +328,68 @@ describe('ImportBookModal', () => {
     await user.click(importBtn);
 
     expect(bookService.createChapter).toHaveBeenCalledWith('existing-book-1', {
+      creationId: expect.any(String) as string,
       title: 'Capítulo 1: O Início',
       content: mockChapters[0]?.content,
     });
 
     expect(onSuccess).toHaveBeenCalledWith('existing-book-1');
+  });
+
+  it('retoma criação com resposta perdida sem duplicar o capítulo nem trocar o pedido', async () => {
+    const user = userEvent.setup();
+    const onSuccess = vi.fn();
+    const existingBook: Book = {
+      id: 'retry-book',
+      authorId: 'user-1',
+      title: 'Livro',
+      status: 'draft',
+      wordCount: 0,
+      createdAt: 1000,
+      updatedAt: 1000,
+    };
+    vi.spyOn(documentParserService, 'parseDocumentFile').mockResolvedValueOnce({
+      title: 'Importação',
+      chapters: [mockChapters[0]!],
+      totalWords: 120,
+    });
+    const create = vi
+      .spyOn(bookService, 'createChapter')
+      .mockRejectedValueOnce(
+        Object.assign(new Error('Resposta perdida'), { code: 'functions/unavailable' }),
+      )
+      .mockResolvedValueOnce({
+        id: 'confirmed',
+        bookId: existingBook.id,
+        title: mockChapters[0]!.title,
+        content: mockChapters[0]!.content,
+        order: 1,
+        wordCount: 120,
+        createdAt: 1000,
+        updatedAt: 1000,
+      });
+    vi.spyOn(bookService, 'recalculateBookWordCount').mockResolvedValue(120);
+    render(
+      <ImportBookModal
+        open
+        targetBook={existingBook}
+        onClose={vi.fn()}
+        authorId="user-1"
+        onSuccess={onSuccess}
+      />,
+    );
+    fireEvent.change(screen.getByLabelText('Arquivo do manuscrito'), {
+      target: { files: [new File(['texto'], 'retry.md')] },
+    });
+    await user.click(await screen.findByRole('button', { name: /importar 1 capítulo/i }));
+    expect(await screen.findByText('Resposta perdida')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Título do capítulo 1' })).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Selecionar capítulo 1' })).toBeDisabled();
+    expect(onSuccess).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: /importar 1 capítulo/i }));
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[0]).toEqual(create.mock.calls[1]);
+    expect(create.mock.calls[0]![1].creationId).toEqual(expect.any(String));
+    expect(onSuccess).toHaveBeenCalledWith(existingBook.id);
   });
 });

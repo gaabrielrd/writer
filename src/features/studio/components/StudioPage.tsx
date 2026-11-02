@@ -1,0 +1,422 @@
+import { useEffect, useRef, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router';
+import {
+  Plus,
+  Upload,
+  ArchiveRestore,
+  BookOpen,
+  ScrollText,
+  FolderOpen,
+  ArrowRight,
+  Sparkles,
+  Map,
+} from 'lucide-react';
+import { BookRestoreDialog, BookRestorePreparations } from '@/features/book-portability';
+import {
+  AdventureRestoreDialog,
+  AdventureRestorePreparations,
+} from '@/features/adventure-portability';
+import { AdventureDeletionPreparations, getAdventure } from '@/features/adventures';
+import { ContinueWorkPanel } from '@/features/work-progress';
+import { useAuth } from '@/features/auth';
+import { AdventureImportDialog, AdventureImportPreparations } from '@/features/adventure-import';
+import { CampaignCapturePreparations } from '@/features/campaign-bases';
+import { CampaignDeletionPreparations } from '@/features/campaigns';
+import {
+  CampaignComparisonPreparations,
+  type ComparisonReadEnvelope,
+} from '@/features/campaign-comparisons';
+import {
+  CampaignAdoptionDialog,
+  CampaignAdoptionPreparations,
+} from '@/features/campaign-adoptions';
+import {
+  BookFormDialog,
+  ImportBookModal,
+  createBook,
+  getBook,
+  type CreateBookInput,
+} from '@/features/books';
+import {
+  Button,
+  Dropdown,
+  DropdownItem,
+  Card,
+  LoadingState,
+  PageHeader,
+  buttonVariants,
+} from '@/shared/ui';
+import { projectKinds, projectLabels, type StudioProjectKind } from '../model/project';
+import { ProjectCreationDialog } from './ProjectCreationDialog';
+import { StudioProjectSection } from './StudioProjectSection';
+import styles from './StudioPage.module.css';
+
+import {
+  studioDestination,
+  studioDestinations,
+  type StudioSection,
+} from '../model/studioNavigation';
+
+function StudioSession({ ownerId, section }: { ownerId: string; section: StudioSection }) {
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const selectedKind = params.get('kind');
+  const kind = projectKinds.find((value) => value === selectedKind) ?? 'all';
+  const [operationsLoaded, setOperationsLoaded] = useState(section === 'operations');
+  if (section === 'operations' && !operationsLoaded) setOperationsLoaded(true);
+  const destination = studioDestinations.find((item) => item.id === section)!;
+  const [form, setForm] = useState<StudioProjectKind | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [adventureImportOpen, setAdventureImportOpen] = useState(false);
+  const [restoreOpen, setRestoreOpen] = useState(false),
+    [restoreId, setRestoreId] = useState<string | undefined>(),
+    [restoreRevision, setRestoreRevision] = useState(0);
+  const [adventureRestoreOpen, setAdventureRestoreOpen] = useState(false),
+    [adventureRestoreId, setAdventureRestoreId] = useState<string | undefined>(),
+    [adventureRestoreRevision, setAdventureRestoreRevision] = useState(0);
+  const [adoption, setAdoption] = useState<ComparisonReadEnvelope | null>(null),
+    [adoptionOpen, setAdoptionOpen] = useState(false),
+    [adoptionAttempt, setAdoptionAttempt] = useState(0);
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+  async function submitBook(input: CreateBookInput) {
+    const book = await createBook(ownerId, input);
+    if (active.current) void navigate('/books/' + encodeURIComponent(book.id));
+  }
+  function created(type: 'adventure' | 'campaign', id: string) {
+    if (!active.current) return;
+    setForm(null);
+    void navigate(
+      '/' + (type === 'adventure' ? 'adventures' : 'campaigns') + '/' + encodeURIComponent(id),
+    );
+  }
+  return (
+    <div className={styles.page}>
+      <PageHeader
+        title={destination.title}
+        description={destination.description}
+        actions={
+          (section === 'home' || section === 'projects') && (
+            <Dropdown
+              mode="action"
+              label="Novo projeto"
+              trigger={
+                <Button>
+                  <Plus className="icon icon-sm" aria-hidden="true" />
+                  Novo projeto
+                </Button>
+              }
+            >
+              <DropdownItem className={styles.creationMenuItem} onSelect={() => setForm('book')}>
+                <BookOpen className="icon icon-sm" aria-hidden="true" />
+                Livro
+              </DropdownItem>
+              <DropdownItem
+                className={styles.creationMenuItem}
+                onSelect={() => void navigate('/books/new/assisted')}
+              >
+                <Sparkles className="icon icon-sm" aria-hidden="true" />
+                Livro com IA
+              </DropdownItem>
+              <DropdownItem
+                className={styles.creationMenuItem}
+                onSelect={() => setForm('adventure')}
+              >
+                <ScrollText className="icon icon-sm" aria-hidden="true" />
+                Aventura
+              </DropdownItem>
+              <DropdownItem
+                className={styles.creationMenuItem}
+                onSelect={() => setForm('campaign')}
+              >
+                <Map className="icon icon-sm" aria-hidden="true" />
+                Campanha
+              </DropdownItem>
+            </Dropdown>
+          )
+        }
+      />
+      {section === 'home' && (
+        <div className={styles.homeGrid}>
+          <ContinueWorkPanel compact />
+          <aside className={styles.homeAside} aria-label="Atalhos do Estúdio">
+            <Card className={styles.homeCard}>
+              <h2>Acesso rápido</h2>
+              <p className={styles.hint}>Seus projetos e ferramentas de criação, em um só lugar.</p>
+              <Link to="/studio/projects" className={styles.shortcut}>
+                <FolderOpen className="icon icon-sm" aria-hidden="true" />
+                <span>Ver meus projetos</span>
+                <ArrowRight className="icon icon-sm" aria-hidden="true" />
+              </Link>
+              <Link to="/studio/import" className={styles.shortcut}>
+                <Upload className="icon icon-sm" aria-hidden="true" />
+                <span>Importar ou restaurar</span>
+                <ArrowRight className="icon icon-sm" aria-hidden="true" />
+              </Link>
+            </Card>
+            <Card className={styles.homeCard}>
+              <h2>Precisa retomar uma operação?</h2>
+              <p className={styles.hint}>
+                Encontre importações, restaurações e pedidos que aguardam sua revisão ou
+                confirmação.
+              </p>
+              <Link to="/studio/operations" className={buttonVariants({ variant: 'secondary' })}>
+                Ver operações em andamento
+              </Link>
+            </Card>
+          </aside>
+        </div>
+      )}
+      <div hidden={section !== 'projects'} className={styles.sectionBody}>
+        {section === 'projects' && (
+          <>
+            <div className={styles.typeFilters} role="group" aria-label="Tipo de projeto">
+              {(['all', ...projectKinds] as const).map((type) => (
+                <Button
+                  key={type}
+                  variant="ghost"
+                  aria-pressed={kind === type}
+                  onClick={() => {
+                    const next = new URLSearchParams(params);
+                    if (type === 'all') next.delete('kind');
+                    else next.set('kind', type);
+                    setParams(next);
+                  }}
+                >
+                  {type === 'all' ? 'Todos' : projectLabels[type]}
+                </Button>
+              ))}
+            </div>
+            {projectKinds
+              .filter((type) => kind === 'all' || type === kind)
+              .map((type) => (
+                <StudioProjectSection key={type} kind={type} />
+              ))}
+          </>
+        )}
+      </div>
+      {section === 'import' && (
+        <>
+          <section className={styles.toolSection} aria-labelledby="studio-import-title">
+            <h2 id="studio-import-title">Importar documento</h2>
+            <div className={styles.toolGrid}>
+              <Card className={styles.toolCard}>
+                <BookOpen className="icon" aria-hidden="true" />
+                <h3>Livro</h3>
+                <p>Revise um documento e transforme seu conteúdo em capítulos.</p>
+                <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                  Importar livro
+                </Button>
+              </Card>
+              <Card className={styles.toolCard}>
+                <ScrollText className="icon" aria-hidden="true" />
+                <h3>Aventura</h3>
+                <p>Revise o material importado antes de criar uma aventura particular.</p>
+                <Button variant="secondary" onClick={() => setAdventureImportOpen(true)}>
+                  Importar aventura
+                </Button>
+              </Card>
+            </div>
+          </section>
+          <section className={styles.toolSection} aria-labelledby="studio-restore-title">
+            <h2 id="studio-restore-title">Restaurar backup</h2>
+            <div className={styles.toolGrid}>
+              <Card className={styles.toolCard}>
+                <ArchiveRestore className="icon" aria-hidden="true" />
+                <h3>Backup de livro</h3>
+                <p>Confira o arquivo e restaure uma nova cópia privada do livro.</p>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setRestoreId(undefined);
+                    setRestoreOpen(true);
+                  }}
+                >
+                  Restaurar backup de livro
+                </Button>
+              </Card>
+              <Card className={styles.toolCard}>
+                <ArchiveRestore className="icon" aria-hidden="true" />
+                <h3>Backup de aventura</h3>
+                <p>Recupere uma aventura em nova cópia, com revisão antes da finalização.</p>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setAdventureRestoreId(undefined);
+                    setAdventureRestoreOpen(true);
+                  }}
+                >
+                  Restaurar backup de aventura
+                </Button>
+              </Card>
+            </div>
+          </section>
+          <p className={styles.hint}>
+            Já começou um pedido?{' '}
+            <Link to="/studio/operations">Acompanhar operações em andamento</Link>
+          </p>
+        </>
+      )}
+      <div hidden={section !== 'operations'} className={styles.sectionBody}>
+        {operationsLoaded && (
+          <>
+            <section className={styles.toolSection} aria-label="Importações e restaurações">
+              <h2>Importações e restaurações</h2>
+              <div className={styles.operationPanels}>
+                <div>
+                  <BookRestorePreparations
+                    ownerId={ownerId}
+                    revision={restoreRevision}
+                    onResume={(id) => {
+                      setRestoreId(id);
+                      setRestoreOpen(true);
+                    }}
+                  />
+                </div>
+                <div>
+                  <AdventureRestorePreparations
+                    ownerId={ownerId}
+                    revision={adventureRestoreRevision}
+                    onResume={(id) => {
+                      setAdventureRestoreId(id);
+                      setAdventureRestoreOpen(true);
+                    }}
+                  />
+                </div>
+                <div>
+                  <AdventureImportPreparations
+                    onActivated={(id) => {
+                      if (active.current) void navigate('/adventures/' + encodeURIComponent(id));
+                    }}
+                  />
+                </div>
+              </div>
+            </section>
+            <section className={styles.toolSection} aria-label="Operações de campanhas">
+              <h2>Campanhas</h2>
+              <div className={styles.operationPanels}>
+                <div>
+                  <CampaignComparisonPreparations
+                    onReviewAdoption={(context) => {
+                      setAdoption({ ...context });
+                      setAdoptionAttempt((n) => n + 1);
+                      setAdoptionOpen(true);
+                    }}
+                  />
+                </div>
+                <div>
+                  <CampaignAdoptionPreparations />
+                </div>
+
+                <div>
+                  <CampaignCapturePreparations
+                    onActivated={(id) => void navigate('/campaigns/' + encodeURIComponent(id))}
+                  />
+                </div>
+              </div>
+            </section>
+            <section className={styles.toolSection} aria-label="Exclusões em andamento">
+              <h2>Exclusões</h2>
+              <div className={styles.operationPanels}>
+                <div>
+                  <AdventureDeletionPreparations />
+                </div>
+                <div>
+                  <CampaignDeletionPreparations />
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+      </div>
+      <BookRestoreDialog
+        ownerId={ownerId}
+        open={restoreOpen}
+        restoreId={restoreId}
+        onClose={() => {
+          setRestoreOpen(false);
+          setRestoreRevision((n) => n + 1);
+        }}
+        onOpenBook={async (id, guard) => {
+          const book = await getBook(id, { source: 'server' });
+          guard();
+          if (!active.current) return;
+          if (!book || book.authorId !== ownerId || book.deleting)
+            throw new Error('Este livro não está disponível para abrir.');
+          void navigate('/books/' + encodeURIComponent(id));
+        }}
+      />
+
+      <AdventureRestoreDialog
+        ownerId={ownerId}
+        open={adventureRestoreOpen}
+        restoreId={adventureRestoreId}
+        onClose={() => {
+          setAdventureRestoreOpen(false);
+          setAdventureRestoreRevision((n) => n + 1);
+        }}
+        onOpenAdventure={async (id, guard) => {
+          const adventure = await getAdventure(id);
+          guard();
+          if (!active.current) return;
+          if (!adventure || adventure.ownerId !== ownerId)
+            throw new Error('Esta aventura não está disponível para abrir.');
+          void navigate('/adventures/' + encodeURIComponent(id));
+        }}
+      />
+
+      <AdventureImportDialog
+        open={adventureImportOpen}
+        onClose={() => setAdventureImportOpen(false)}
+        onActivated={(id) => {
+          if (active.current) void navigate('/adventures/' + encodeURIComponent(id));
+        }}
+      />
+
+      {adoption && (
+        <CampaignAdoptionDialog
+          key={adoptionAttempt}
+          selection={{ campaignId: adoption.campaignId, context: adoption }}
+          open={adoptionOpen}
+          onClose={() => setAdoptionOpen(false)}
+        />
+      )}
+
+      <BookFormDialog open={form === 'book'} onClose={() => setForm(null)} onSubmit={submitBook} />
+      <ImportBookModal
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        authorId={ownerId}
+        onSuccess={(id) => {
+          if (active.current) void navigate('/books/' + encodeURIComponent(id));
+        }}
+      />
+      <ProjectCreationDialog
+        kind="adventure"
+        open={form === 'adventure'}
+        onClose={() => setForm(null)}
+        onCreated={(id) => created('adventure', id)}
+      />
+      <ProjectCreationDialog
+        kind="campaign"
+        open={form === 'campaign'}
+        onClose={() => setForm(null)}
+        onCreated={(id) => created('campaign', id)}
+      />
+    </div>
+  );
+}
+export function StudioPage() {
+  const { user, loading } = useAuth();
+  const { pathname } = useLocation();
+  const destination = studioDestination(pathname);
+  if (loading) return <LoadingState label="Carregando sessão..." />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!destination) return <Navigate to="/studio" replace />;
+  return <StudioSession key={user.uid} ownerId={user.uid} section={destination.id} />;
+}

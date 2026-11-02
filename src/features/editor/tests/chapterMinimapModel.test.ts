@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { getSchema } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';

@@ -1,15 +1,14 @@
 import { chooseDropdown } from '@/test/dropdown';
 import { act, renderWithProviders, screen, waitFor, within } from '@/test/render';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { LoreCollection, LoreTab } from '../components/LoreTab';
+import { LoreCollection } from '../components/LoreTab';
 import * as service from '../services/loreService';
-import type { LoreEntity } from '../model/loreEntity';
-import type { Book } from '@/features/books';
+import type { LoreEntity, LoreScope } from '../model/loreEntity';
 
 const entities: LoreEntity[] = [
   {
-    id: 'arthur',
-    bookId: 'book',
+    id: 'universe:world:arthur',
+    universeId: 'world',
     name: 'Arthur',
     category: 'character',
     summary: 'Rei de Camelot',
@@ -21,8 +20,8 @@ const entities: LoreEntity[] = [
     updatedAt: 0,
   },
   {
-    id: 'camelot',
-    bookId: 'book',
+    id: 'universe:world:camelot',
+    universeId: 'world',
     name: 'Camelot',
     category: 'location',
     summary: 'Capital',
@@ -34,28 +33,21 @@ const entities: LoreEntity[] = [
     updatedAt: 0,
   },
 ];
-const book: Book = {
-  id: 'book',
-  authorId: 'author',
-  title: 'Avalon',
-  genre: '',
-  synopsis: '',
-  coverUrl: null,
-  status: 'published',
-  wordCount: 0,
-  createdAt: 0,
-  updatedAt: 0,
-};
+const defaultScope: LoreScope = { kind: 'universe', id: 'world' };
 
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.spyOn(service, 'listLoreEntities').mockResolvedValue(structuredClone(entities));
+  vi.spyOn(service, 'subscribeLoreEntities').mockImplementation((_scope, changed) => {
+    changed(structuredClone(entities));
+    return vi.fn();
+  });
   vi.spyOn(service, 'updateLoreEntity').mockResolvedValue();
   vi.spyOn(service, 'deleteLoreEntity').mockResolvedValue();
 });
 
 async function showList(props: Partial<Parameters<typeof LoreCollection>[0]> = {}) {
-  const rendered = renderWithProviders(<LoreCollection scope="book" {...props} />);
+  const rendered = renderWithProviders(<LoreCollection scope={defaultScope} {...props} />);
   await screen.findByText('Arthur');
   await rendered.user.click(screen.getByRole('button', { name: 'Visualização em lista' }));
   return rendered;
@@ -127,7 +119,7 @@ describe('Compêndio em lista e ações em lote', () => {
     });
     await user.click(deleteButton);
     expect(screen.getByRole('dialog')).toHaveTextContent('Arthur');
-    expect(screen.getByRole('dialog')).toHaveTextContent('publicação atual');
+    expect(screen.getByRole('dialog')).toHaveTextContent('publicações dos livros');
     await user.click(screen.getByRole('button', { name: 'Cancelar' }));
     expect(deleteButton).toHaveFocus();
     await user.click(within(selectionBar()).getByRole('button', { name: 'Alterar visibilidade' }));
@@ -160,16 +152,20 @@ describe('Compêndio em lista e ações em lote', () => {
       );
       if (visibility === 'public')
         expect(screen.getByRole('dialog')).toHaveTextContent('não publica automaticamente');
-      else expect(screen.getByRole('dialog')).toHaveTextContent('publicação atual');
+      else expect(screen.getByRole('dialog')).toHaveTextContent('publicações dos livros');
       expect(service.updateLoreEntity).not.toHaveBeenCalled();
       await user.click(screen.getByRole('button', { name: 'Confirmar visibilidade' }));
       await screen.findByText('2 de 2 entidades atualizadas.');
-      expect(service.updateLoreEntity).toHaveBeenCalledWith('book', 'arthur', {
+      expect(service.updateLoreEntity).toHaveBeenCalledWith(defaultScope, 'universe:world:arthur', {
         isPublic: visibility === 'public',
       });
-      expect(service.updateLoreEntity).toHaveBeenCalledWith('book', 'camelot', {
-        isPublic: visibility === 'public',
-      });
+      expect(service.updateLoreEntity).toHaveBeenCalledWith(
+        defaultScope,
+        'universe:world:camelot',
+        {
+          isPublic: visibility === 'public',
+        },
+      );
       expect(screen.getAllByText(visibility === 'public' ? 'Público' : 'Privado')).toHaveLength(2);
       expect(changed).toHaveBeenCalledOnce();
       await waitFor(() =>
@@ -269,7 +265,8 @@ describe('Compêndio em lista e ações em lote', () => {
     const globalEntities = entities.map((entity) => ({
       ...entity,
       bookId: undefined,
-      id: `universe:world:${entity.id}`,
+      adventureId: undefined,
+      id: entity.id,
       universeId: 'world',
     }));
     let publish!: (next: LoreEntity[]) => void;
@@ -290,40 +287,5 @@ describe('Compêndio em lista e ações em lote', () => {
     await user.click(screen.getByRole('button', { name: 'Confirmar exclusão' }));
     await screen.findByText('1 de 1 entidade excluída.');
     expect(service.deleteLoreEntity).toHaveBeenCalledWith(scope, 'universe:world:arthur');
-  });
-
-  it('limpa seleção na troca de escopo/livro e mantém controles em portal opcional', async () => {
-    vi.spyOn(service, 'subscribeLoreEntities').mockImplementation((_scope, changed) => {
-      changed([]);
-      return vi.fn();
-    });
-    const slot = document.createElement('div');
-    document.body.append(slot);
-    const { user, rerender, unmount } = renderWithProviders(
-      <LoreTab book={{ ...book, universeId: 'world' }} actionsContainer={slot} />,
-    );
-    await screen.findByText('Arthur');
-    expect(within(slot).getByRole('button', { name: 'Nova Entidade' })).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Visualização em lista' }));
-    await user.click(screen.getByRole('checkbox', { name: 'Selecionar Arthur' }));
-    await chooseDropdown(
-      user,
-      screen.getByLabelText('Escopo do compêndio'),
-      'Lore global — universo compartilhado',
-    );
-    expect(screen.queryByRole('region', { name: 'Ações da seleção' })).not.toBeInTheDocument();
-    await chooseDropdown(
-      user,
-      screen.getByLabelText('Escopo do compêndio'),
-      'Lore local — somente este livro',
-    );
-    await screen.findByText('Arthur');
-    await user.click(screen.getByRole('button', { name: 'Visualização em lista' }));
-    await user.click(screen.getByRole('checkbox', { name: 'Selecionar Arthur' }));
-    rerender(<LoreTab book={{ ...book, id: 'other' }} actionsContainer={slot} />);
-    expect(screen.queryByRole('region', { name: 'Ações da seleção' })).not.toBeInTheDocument();
-    unmount();
-    expect(slot).toBeEmptyDOMElement();
-    slot.remove();
   });
 });

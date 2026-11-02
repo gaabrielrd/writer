@@ -94,3 +94,24 @@ describe('rich document', () => {
       expect(matches[index]!.startIndex).toBeGreaterThanOrEqual(matches[index - 1]!.endIndex);
   });
 });
+
+it('sugestão por alias mantém precedência local mesmo quando global chega primeiro', () => {
+  const local = {
+    ...entity,
+    id: 'adventure:adventure-local-long:entity-local-long',
+    bookId: undefined,
+    adventureId: 'adventure-local-long',
+    name: 'Vigia',
+    aliases: ['Serpente'],
+  };
+  const global = {
+    ...entity,
+    id: 'universe:world:global',
+    bookId: undefined,
+    universeId: 'world',
+    name: 'Guardião',
+    aliases: ['Serpente'],
+  };
+  expect(mentionCandidates([global, local], 'Serpente')).toEqual([local]);
+  expect(mentionCandidates([global, local], 'Guardião')).toEqual([global]);
+});

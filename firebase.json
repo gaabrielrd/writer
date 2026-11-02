@@ -4,13 +4,48 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/api/book-lore/recovery-key",
+        "function": {
+          "functionId": "getBookLoreEditRecoveryKey",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/adventure-restore/recovery-key",
+        "function": {
+          "functionId": "getAdventureRestoreRecoveryKey",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/book-restore/recovery-key",
+        "function": {
+          "functionId": "getBookRestoreRecoveryKey",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/adventure-import/recovery-key",
+        "function": {
+          "functionId": "getAdventureImportRecoveryKey",
+          "region": "us-central1"
+        }
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
     ]
   },
-  "functions": [{ "source": "functions", "codebase": "book-generation" }],
-  "storage": { "rules": "storage.rules" },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "book-generation"
+    }
+  ],
+  "storage": {
+    "rules": "storage.rules"
+  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"

@@ -12,6 +12,7 @@ export type { BookFormDialogProps } from './components/BookFormDialog';
 export { ChapterList } from './components/ChapterList';
 export type { ChapterListProps } from './components/ChapterList';
 export { BookPage } from './components/BookPage';
+export { SceneChapterView } from './components/SceneChapterView';
 export { ImportBookModal } from './components/ImportBookModal';
 export type { ImportBookModalProps } from './components/ImportBookModal';
 
@@ -21,3 +22,5 @@ export { ReaderLoreTooltip } from './components/ReaderLoreTooltip';
 
 export { BookNavigation } from './components/BookNavigation';
 export { AssistedBookPage } from './components/AssistedBookPage';
+
+export * from './services/studioBookService';

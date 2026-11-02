@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { bookDraftBackupRecords } from '@/features/book-portability';
 import * as firestoreModule from 'firebase/firestore';
+import { deleteSceneGroup } from '@/features/scenes';
 import {
   beginBookDeletion,
   finishBookDeletion,
@@ -8,6 +10,7 @@ import {
 } from '../services/publicationService';
 
 vi.mock('@/shared/lib', () => ({ firestore: {} }));
+vi.mock('@/features/scenes', () => ({ deleteSceneGroup: vi.fn() }));
 
 vi.mock('../services/publicationService', () => ({
   unpublishBook: vi.fn(),
@@ -31,7 +34,17 @@ import {
   subscribeWritingBindings,
 } from '../services/bookService';
 import * as generatedService from '../services/generatedBookService';
+import { prepareServerBookWordCount } from '../services/legacyChapterService';
+vi.mock('../services/legacyChapterService', () => ({
+  createServerLegacyChapter: vi.fn(),
+  saveServerLegacyChapter: vi.fn(),
+  deleteServerLegacyChapters: vi.fn(),
+  prepareServerBookWordCount: vi.fn(),
+}));
 import type { Book } from '../model/book';
+import { readServerLegacyChapterText } from '../services/chapterTextReadService';
+import * as compositionService from '../services/chapterCompositionService';
+vi.mock('../services/chapterTextReadService', () => ({ readServerLegacyChapterText: vi.fn() }));
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn((_db: unknown, ...pathSegments: string[]) => ({ pathSegments })),
@@ -145,7 +158,275 @@ describe('bookService', () => {
     );
   });
 
+  it('adota o contador do servidor se a preparação for ativada durante a leitura para recalcular', async () => {
+    vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+      docs: [
+        {
+          id: 'chapter',
+          data: () => ({ title: 'Capítulo', order: 1, wordCount: 2, createdAt: 1, updatedAt: 100 }),
+        },
+      ],
+    } as unknown as firestoreModule.QuerySnapshot);
+    vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+      callback({
+        get: () =>
+          Promise.resolve({
+            exists: () => true,
+            data: () => ({ updatedAt: 100, wordCount: 0, hasProgressResources: true }),
+          }),
+        update: firestoreModule.updateDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
+    vi.mocked(prepareServerBookWordCount).mockResolvedValueOnce(88);
+    await expect(recalculateBookWordCount('activated-during-read')).resolves.toBe(88);
+    expect(prepareServerBookWordCount).toHaveBeenCalledWith('activated-during-read');
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {},
+    { hasLoreResources: false },
+    { hasSceneResources: true },
+    { hasNarrativeResources: true },
+    { hasProgressResources: true },
+    { hasLoreResources: true },
+  ])(
+    'todo livro %j revoga acesso e finaliza no servidor sem depender de flags',
+    async (resources) => {
+      vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ ...resources, deleting: true }),
+      } as unknown as firestoreModule.DocumentSnapshot);
+      await deleteBook('book-any');
+      expect(beginBookDeletion).toHaveBeenCalledWith('book-any');
+      expect(finishBookDeletion).toHaveBeenCalledWith('book-any');
+      expect(vi.mocked(beginBookDeletion).mock.invocationCallOrder[0]).toBeLessThan(
+        vi.mocked(finishBookDeletion).mock.invocationCallOrder[0]!,
+      );
+      expect(firestoreModule.getDocFromServer).not.toHaveBeenCalled();
+      expect(firestoreModule.getDocs).not.toHaveBeenCalled();
+      expect(deletePublicationRevisions).not.toHaveBeenCalled();
+      expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+    },
+  );
+  it('falha da limpeza no servidor não executa fallback SDK', async () => {
+    vi.mocked(finishBookDeletion).mockRejectedValueOnce(new Error('Retome a limpeza'));
+    await expect(deleteBook('book-any')).rejects.toThrow(/Retome/);
+    expect(beginBookDeletion).toHaveBeenCalledWith('book-any');
+    expect(deletePublicationRevisions).not.toHaveBeenCalled();
+    expect(firestoreModule.getDocs).not.toHaveBeenCalled();
+    expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+  });
+  it('excluir agrupador composto desvincula por servidor sem apagar suas cenas', async () => {
+    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
+      exists: () => true,
+      data: () => ({ contentMode: 'scenes', updatedAt: 42 }),
+    } as unknown as firestoreModule.DocumentSnapshot);
+    vi.mocked(deleteSceneGroup)
+      .mockResolvedValueOnce({ complete: false, processed: 50 })
+      .mockResolvedValueOnce({ complete: true, processed: 52 });
+    await deleteChapter('book', 'chapter', 42);
+    expect(deleteSceneGroup).toHaveBeenCalledWith(
+      expect.objectContaining({ parentId: 'chapter', expectedUpdatedAt: 42 }),
+    );
+    expect(vi.mocked(deleteSceneGroup).mock.calls[1]?.[0]).toEqual(
+      vi.mocked(deleteSceneGroup).mock.calls[0]?.[0],
+    );
+    expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+  });
+  it('lista de planejamento não carrega prosa congelada de capítulos compostos', async () => {
+    vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+      docs: [
+        {
+          id: 'chapter',
+          data: () => ({
+            title: 'Capítulo',
+            order: 1,
+            contentMode: 'scenes',
+            assemblyRevision: 3,
+            content: 'Fonte privada',
+            createdAt: 1,
+            updatedAt: 2,
+          }),
+        },
+      ],
+    } as unknown as firestoreModule.QuerySnapshot);
+    const result = await listChapters('book', { includeContent: false });
+    expect(result[0]).toMatchObject({ contentMode: 'scenes', assemblyRevision: 3, content: '' });
+  });
+  it.each([undefined, 41])(
+    'remoção de capítulo composto exige a versão observada, sem adotar a atual (%s)',
+    async (expectedUpdatedAt) => {
+      vi.mocked(firestoreModule.getDocFromServer).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ contentMode: 'scenes', updatedAt: 42 }),
+      } as unknown as firestoreModule.DocumentSnapshot);
+      await expect(deleteChapter('book', 'chapter', expectedUpdatedAt)).rejects.toThrow(
+        /confirm.*novamente/,
+      );
+      expect(deleteSceneGroup).not.toHaveBeenCalled();
+      expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
+    },
+  );
+  it('remoção legada aplica delta à contagem atual, preservando edição concorrente de cena', async () => {
+    vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+      callback({
+        get: (ref: { pathSegments: string[] }) =>
+          Promise.resolve({
+            exists: () => true,
+            data: () =>
+              ref.pathSegments.includes('chapters')
+                ? { wordCount: 4, updatedAt: 42 }
+                : { wordCount: 20, sceneRevision: 9, updatedAt: 50 },
+          }),
+        delete: firestoreModule.deleteDoc,
+        update: firestoreModule.updateDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
+    await deleteChapter('book', 'legacy', 42);
+    expect(firestoreModule.updateDoc).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ wordCount: 16 }),
+    );
+    expect(firestoreModule.getDocs).not.toHaveBeenCalled();
+  });
+  it('recálculo recusa captura antiga sem sobrescrever a contagem das cenas', async () => {
+    vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+      docs: [],
+    } as unknown as firestoreModule.QuerySnapshot);
+    vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+      callback({
+        get: () =>
+          Promise.resolve({
+            exists: () => true,
+            data: () => ({ updatedAt: 101, sceneRevision: 1, wordCount: 20 }),
+          }),
+        update: firestoreModule.updateDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
+    await expect(recalculateBookWordCount('book')).rejects.toThrow(/mudou durante/);
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+  });
+  it('versão ausente no capítulo legado é estável e não cria gravação durante a leitura', async () => {
+    vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+      id: 'chapter',
+      exists: () => true,
+      data: () => ({ title: 'Legado', content: 'Prosa', order: 1 }),
+    } as unknown as firestoreModule.DocumentSnapshot);
+    expect((await getChapter('book', 'chapter'))?.updatedAt).toBe(0);
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+    expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+  });
+  it('escritor legado não salva prosa em capítulo convertido mesmo após corrida de leitura', async () => {
+    vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+      callback({
+        get: (ref: { pathSegments: string[] }) =>
+          Promise.resolve({
+            exists: () => true,
+            data: () =>
+              ref.pathSegments.includes('chapters')
+                ? { contentMode: 'scenes', updatedAt: 2 }
+                : { updatedAt: 2 },
+          }),
+        update: firestoreModule.updateDoc,
+      } as unknown as firestoreModule.Transaction),
+    );
+    await expect(
+      updateChapter('book', 'chapter', { content: 'Sobrescrita legada' }),
+    ).rejects.toThrow(/reúne cenas/);
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+  });
+
   describe('Books CRUD', () => {
+    it.each([undefined, 0, 7, Number.MAX_SAFE_INTEGER])(
+      'preserves a valid or absent local clock during reads and stable creation replay (%s)',
+      async (value) => {
+        const stored = {
+          id: 'book-0000000000001',
+          authorId: 'author',
+          title: 'Existing',
+          ...(value === undefined ? {} : { localLoreVersion: value }),
+        };
+        const snapshot = { id: stored.id, exists: () => true, data: () => stored };
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce(
+          snapshot as unknown as firestoreModule.DocumentSnapshot,
+        );
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [snapshot],
+        } as unknown as firestoreModule.QuerySnapshot);
+        vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+          callback({
+            get: () => Promise.resolve(snapshot),
+          } as unknown as firestoreModule.Transaction),
+        );
+        const read = await getBook(stored.id);
+        const listed = await listBooksByAuthor('author');
+        const replay = await createBook('author', {
+          title: 'Ignored retry title',
+          creationId: stored.id,
+        });
+        expect(read?.localLoreVersion).toBe(value);
+        expect(listed[0]?.localLoreVersion).toBe(value);
+        expect(replay).toEqual(stored);
+        if (value === undefined) {
+          expect(read).not.toHaveProperty('localLoreVersion');
+          expect(listed[0]).not.toHaveProperty('localLoreVersion');
+        }
+        expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+        expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([undefined, null, -1, 0.5, '0', NaN, Infinity, Number.MAX_SAFE_INTEGER + 1])(
+      'rejects a present invalid local clock on reads and creation replay (%s)',
+      async (value) => {
+        const snapshot = {
+          id: 'book-0000000000001',
+          exists: () => true,
+          data: () => ({ authorId: 'author', title: 'Corrupt', localLoreVersion: value }),
+        };
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce(
+          snapshot as unknown as firestoreModule.DocumentSnapshot,
+        );
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [snapshot],
+        } as unknown as firestoreModule.QuerySnapshot);
+        vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
+          callback({
+            get: () => Promise.resolve(snapshot),
+          } as unknown as firestoreModule.Transaction),
+        );
+        await expect(getBook(snapshot.id)).rejects.toThrow('versão do lore');
+        await expect(listBooksByAuthor('author')).rejects.toThrow('versão do lore');
+        await expect(
+          createBook('author', { title: 'Retry', creationId: snapshot.id }),
+        ).rejects.toThrow('versão do lore');
+        expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+        expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+      },
+    );
+
+    it('updates book metadata without initializing or replacing its local lore clock', async () => {
+      await updateBook('book', { title: 'Renamed', synopsis: 'Edited' });
+      const patch = vi.mocked(firestoreModule.updateDoc).mock.calls[0]?.[1];
+      expect(patch).toMatchObject({ title: 'Renamed', synopsis: 'Edited' });
+      expect(patch).not.toHaveProperty('localLoreVersion');
+    });
+
+    it.each([undefined, 0, 7])(
+      'rejects attempts to reset the local clock through metadata updates (%s)',
+      async (value) => {
+        await expect(
+          updateBook('book', {
+            status: 'draft',
+            localLoreVersion: value,
+          } as unknown as Parameters<typeof updateBook>[1]),
+        ).rejects.toThrow('versão do lore');
+        expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+        expect(unpublishBook).not.toHaveBeenCalled();
+      },
+    );
+
     it('reuses a stable ID after a manual creation was already saved', async () => {
       const stored = { id: 'book-0000000000001', authorId: 'author-123', title: 'Atlas' };
       vi.mocked(firestoreModule.runTransaction).mockImplementationOnce(async (_db, callback) =>
@@ -172,7 +453,7 @@ describe('bookService', () => {
       });
       expect(set).toHaveBeenCalledWith(
         expect.anything(),
-        expect.objectContaining({ id: book.id, status: 'draft' }),
+        expect.objectContaining({ id: book.id, status: 'draft', localLoreVersion: 0 }),
       );
     });
     it('routes generated covers to the backend rather than writing unverified URLs', async () => {
@@ -241,6 +522,33 @@ describe('bookService', () => {
       expect(book).toBeNull();
     });
 
+    it('preserva marcadores e revisão narrativa na leitura e listagem de livros', async () => {
+      const stored = {
+        authorId: 'author',
+        title: 'Com narrativa',
+        wordCount: 0,
+        hasNarrativeResources: true,
+        narrativeRevision: 7,
+        createdAt: 100,
+        updatedAt: 200,
+      };
+      const snapshot = { id: 'book-narrative', exists: () => true, data: () => stored };
+      vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce(
+        snapshot as unknown as firestoreModule.DocumentSnapshot,
+      );
+      vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+        docs: [snapshot],
+      } as unknown as firestoreModule.QuerySnapshot);
+      expect(await getBook('book-narrative')).toMatchObject({
+        hasNarrativeResources: true,
+        narrativeRevision: 7,
+      });
+      expect(await listBooksByAuthor('author')).toEqual([
+        expect.objectContaining({ hasNarrativeResources: true, narrativeRevision: 7 }),
+      ]);
+      expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+    });
+
     it('cria novo livro no Firestore com status draft e wordCount zero', async () => {
       const newBook = await createBook('author-123', {
         title: 'O Nome do Vento',
@@ -252,6 +560,7 @@ describe('bookService', () => {
       expect(newBook.title).toBe('O Nome do Vento');
       expect(newBook.status).toBe('draft');
       expect(newBook.wordCount).toBe(0);
+      expect(newBook.localLoreVersion).toBe(0);
       expect(firestoreModule.setDoc).toHaveBeenCalledTimes(1);
     });
 
@@ -285,28 +594,13 @@ describe('bookService', () => {
       expect(deletePublicationRevisions).not.toHaveBeenCalled();
     });
 
-    it('exclui livro, lore e todos os seus capitulos associados', async () => {
-      vi.mocked(firestoreModule.getDocs).mockResolvedValue({
-        docs: [
-          {
-            id: 'ch-1',
-            data: () => ({ title: 'Cap 1', order: 1, wordCount: 100 }),
-          },
-        ],
-      } as unknown as firestoreModule.QuerySnapshot);
-
-      vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
-        docs: [],
-      } as unknown as firestoreModule.QuerySnapshot);
+    it('confia a exclusão dos filhos e da raiz ao protocolo servidor', async () => {
       await deleteBook('book-1');
-
       expect(beginBookDeletion).toHaveBeenCalledWith('book-1');
-      expect(deletePublicationRevisions).toHaveBeenCalledWith('book-1');
-      expect(firestoreModule.deleteDoc).toHaveBeenCalledTimes(2); // capítulo e lore
       expect(finishBookDeletion).toHaveBeenCalledWith('book-1');
-      expect(vi.mocked(beginBookDeletion).mock.invocationCallOrder[0]).toBeLessThan(
-        vi.mocked(firestoreModule.deleteDoc).mock.invocationCallOrder[0]!,
-      );
+      expect(deletePublicationRevisions).not.toHaveBeenCalled();
+      expect(firestoreModule.getDocs).not.toHaveBeenCalled();
+      expect(firestoreModule.deleteDoc).not.toHaveBeenCalled();
     });
   });
 
@@ -492,4 +786,255 @@ it('recusa a persona complementar inválida antes de criar um capítulo', async 
     }),
   ).rejects.toThrow();
   expect(firestoreModule.getDocFromServer).not.toHaveBeenCalled();
+});
+
+describe('capítulos com corpo externo', () => {
+  const descriptor = {
+      schemaVersion: 1,
+      bodyId: 'a'.repeat(64),
+      contentHash: 'b'.repeat(64),
+      byteLength: 600000,
+      chunkCount: 10,
+    },
+    stored = {
+      title: 'Grande',
+      order: 1,
+      content: null,
+      contentStorage: descriptor,
+      createdAt: 1,
+      updatedAt: 2,
+    };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(firestoreModule.getDoc).mockResolvedValue({
+      id: 'chapter',
+      exists: () => true,
+      data: () => stored,
+    } as unknown as firestoreModule.DocumentSnapshot);
+    vi.mocked(firestoreModule.getDocs).mockResolvedValue({
+      docs: [{ id: 'chapter', data: () => stored }],
+    } as unknown as firestoreModule.QuerySnapshot);
+    vi.mocked(firestoreModule.getDocsFromServer).mockResolvedValue({
+      docs: [],
+    } as unknown as firestoreModule.QuerySnapshot);
+  });
+  it('entrega o texto resolvido ao editor e aos consumidores de lista completa', async () => {
+    vi.mocked(readServerLegacyChapterText).mockResolvedValue('Texto completo 🌙');
+    expect((await getChapter('book', 'chapter'))?.content).toBe('Texto completo 🌙');
+    expect((await listChapters('book'))[0]?.content).toBe('Texto completo 🌙');
+    expect(readServerLegacyChapterText).toHaveBeenCalledWith('book', 'chapter', descriptor);
+  });
+  it('propaga leitura indisponível em vez de devolver capítulo vazio', async () => {
+    vi.mocked(readServerLegacyChapterText).mockRejectedValue(new Error('corpo indisponível'));
+    await expect(getChapter('book', 'chapter')).rejects.toThrow('corpo indisponível');
+    await expect(listChapters('book')).rejects.toThrow('corpo indisponível');
+  });
+  it('não baixa corpos quando apenas metadados foram solicitados', async () => {
+    const list = await listChapters('book', { includeContent: false });
+    expect(list[0]).toMatchObject({ id: 'chapter', title: 'Grande', content: '' });
+    expect(readServerLegacyChapterText).not.toHaveBeenCalled();
+  });
+  it('recusa null sem descriptor e representação dupla', async () => {
+    for (const data of [
+      { ...stored, contentStorage: undefined },
+      { ...stored, content: 'fallback' },
+    ]) {
+      vi.mocked(firestoreModule.getDoc).mockResolvedValue({
+        id: 'chapter',
+        exists: () => true,
+        data: () => data,
+      } as unknown as firestoreModule.DocumentSnapshot);
+      await expect(getChapter('book', 'chapter')).rejects.toThrow();
+    }
+    expect(readServerLegacyChapterText).not.toHaveBeenCalled();
+  });
+});
+
+it('resolve capítulo composto pelas cenas sem usar o corpo legado congelado como fallback', async () => {
+  vi.mocked(readServerLegacyChapterText).mockClear();
+  const compose = vi
+    .spyOn(compositionService, 'resolveChapterContent')
+    .mockImplementation((_book, chapter) =>
+      Promise.resolve({ ...chapter, content: 'Actual scene prose' }),
+    );
+  vi.mocked(firestoreModule.getDoc).mockResolvedValue({
+    id: 'chapter',
+    exists: () => true,
+    data: () => ({
+      title: 'Composto',
+      contentMode: 'scenes',
+      content: null,
+      contentStorage: {
+        schemaVersion: 1,
+        bodyId: 'a'.repeat(64),
+        contentHash: 'b'.repeat(64),
+        byteLength: 600000,
+        chunkCount: 10,
+      },
+      assemblyRevision: 3,
+    }),
+  } as unknown as firestoreModule.DocumentSnapshot);
+  try {
+    expect((await getChapter('book', 'chapter'))?.content).toBe('Actual scene prose');
+    expect(compose).toHaveBeenCalledWith(
+      'book',
+      expect.objectContaining({ content: '', contentMode: 'scenes' }),
+    );
+    expect(readServerLegacyChapterText).not.toHaveBeenCalled();
+  } finally {
+    compose.mockRestore();
+  }
+});
+
+describe('metadata portátil de persona nos leitores reais', () => {
+  const marker = {
+    schemaVersion: 1 as const,
+    personaId: 'custom-neutral',
+    reason: 'profile-not-recorded' as const,
+  };
+  beforeEach(() => {
+    vi.resetAllMocks();
+    vi.mocked(firestoreModule.getDocsFromServer).mockResolvedValue({
+      docs: [],
+    } as unknown as firestoreModule.QuerySnapshot);
+  });
+  function stored(data: Record<string, unknown>, id = 'chapter') {
+    const snapshot = { id, exists: () => true, data: () => data };
+    vi.mocked(firestoreModule.getDoc).mockResolvedValue(
+      snapshot as unknown as firestoreModule.DocumentSnapshot,
+    );
+    vi.mocked(firestoreModule.getDocFromServer).mockResolvedValue(
+      snapshot as unknown as firestoreModule.DocumentSnapshot,
+    );
+    vi.mocked(firestoreModule.getDocs).mockResolvedValue({
+      docs: [snapshot],
+    } as unknown as firestoreModule.QuerySnapshot);
+    return snapshot;
+  }
+  function chapter() {
+    return {
+      title: 'Own text',
+      order: 1,
+      content: 'Saved own 🌙',
+      wordCount: 3,
+      createdAt: 12,
+      updatedAt: 17,
+      personaComplement: {
+        personaId: marker.personaId,
+        overrides: [{ traitId: 'old-only', value: 77 }],
+      },
+      personaAvailability: structuredClone(marker),
+    };
+  }
+  it('preserva ausência explícita do livro em get/list sem projetar campos extras nem escrever', async () => {
+    const data = {
+      title: 'Own book',
+      authorId: 'author',
+      personaId: marker.personaId,
+      personaAvailability: structuredClone(marker),
+      privateExtra: 'DO NOT COPY',
+      createdAt: 12,
+      updatedAt: 17,
+    };
+    stored(data, 'book');
+    const read = await getBook('book', { source: 'server' }),
+      listed = await listBooksByAuthor('author');
+    expect(read?.personaAvailability).toEqual(marker);
+    expect(listed[0]?.personaAvailability).toEqual(marker);
+    expect(read?.personaAvailability).not.toBe(data.personaAvailability);
+    expect(read).not.toHaveProperty('privateExtra');
+    expect(firestoreModule.setDoc).not.toHaveBeenCalled();
+    expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+  });
+  for (const reason of ['profile-not-recorded', 'legacy-overrides'] as const)
+    it('preserva marca/complemento/texto literal em get/list de capítulo: ' + reason, async () => {
+      const data = { ...chapter(), personaAvailability: { ...marker, reason } };
+      stored(data);
+      const read = await getChapter('book', 'chapter'),
+        listed = await listChapters('book');
+      for (const value of [read, listed[0]]) {
+        expect(value?.personaAvailability).toEqual(data.personaAvailability);
+        expect(value?.personaComplement).toEqual(data.personaComplement);
+        expect(value?.content).toBe(data.content);
+        expect(value?.createdAt).toBe(12);
+        expect(value?.updatedAt).toBe(17);
+      }
+      expect(data.personaAvailability).toEqual({ ...marker, reason });
+      expect(firestoreModule.updateDoc).not.toHaveBeenCalled();
+    });
+  it('omite marca de vínculo antigo e mantém o vínculo novo sem adotar biblioteca', async () => {
+    const data = { ...chapter(), personaComplement: { personaId: 'custom-new', overrides: [] } };
+    stored(data);
+    expect(await getChapter('book', 'chapter')).not.toHaveProperty('personaAvailability');
+    expect((await listChapters('book'))[0]).not.toHaveProperty('personaAvailability');
+    expect((await getChapter('book', 'chapter'))?.personaComplement?.personaId).toBe('custom-new');
+    stored(
+      { title: 'Book', authorId: 'author', personaId: 'custom-new', personaAvailability: marker },
+      'book',
+    );
+    expect(await getBook('book')).not.toHaveProperty('personaAvailability');
+    expect((await listBooksByAuthor('author'))[0]).not.toHaveProperty('personaAvailability');
+  });
+  it('recusa marca malformada no livro ou capítulo em vez de ocultá-la no DTO', async () => {
+    stored({ ...chapter(), personaAvailability: { ...marker, key: 'DO NOT COPY' } });
+    await expect(getChapter('book', 'chapter')).rejects.toThrow();
+    await expect(listChapters('book')).rejects.toThrow();
+    stored(
+      {
+        title: 'Book',
+        authorId: 'author',
+        personaId: marker.personaId,
+        personaAvailability: { ...marker, reason: 'available' },
+      },
+      'book',
+    );
+    await expect(getBook('book')).rejects.toThrow();
+    await expect(listBooksByAuthor('author')).rejects.toThrow();
+  });
+  it('recusa motivo reservado aos complementos no escopo do livro', async () => {
+    stored(
+      {
+        title: 'Book',
+        authorId: 'author',
+        personaId: marker.personaId,
+        personaAvailability: { ...marker, reason: 'legacy-overrides' },
+      },
+      'book',
+    );
+    await expect(getBook('book')).rejects.toThrow('Disponibilidade de persona do livro');
+    await expect(listBooksByAuthor('author')).rejects.toThrow(
+      'Disponibilidade de persona do livro',
+    );
+  });
+  it('DTO real do editor chega ao rascunho vazio com ausência preservada e sem consulta de perfil', async () => {
+    stored(chapter());
+    const current = (await getChapter('book', 'chapter'))!,
+      persona = vi.fn(),
+      getSource = vi.fn(() =>
+        Promise.resolve({ schemaVersion: 1 as const, bookId: 'book', sourceToken: 'a'.repeat(64) }),
+      );
+    const parts: Uint8Array[] = [],
+      text: Uint8Array[] = [];
+    for await (const record of bookDraftBackupRecords(
+      'book',
+      { chapter: current, content: '' },
+      { api: { getSource, persona } },
+    )) {
+      if (record.kind === 'book-draft') parts.push(record.payload);
+      if (record.kind === 'book-draft-text') text.push(record.payload);
+    }
+    const metadata = JSON.parse(new TextDecoder().decode(Buffer.concat(parts))) as {
+      chapter: { personaAvailability: unknown; personaComplement: unknown };
+      persona: unknown;
+      byteLength: number;
+      chunkCount: number;
+    };
+    expect(metadata.chapter.personaAvailability).toEqual(marker);
+    expect(metadata.chapter.personaComplement).toEqual(current.personaComplement);
+    expect(metadata.persona).toBeNull();
+    expect(metadata.byteLength).toBe(0);
+    expect(metadata.chunkCount).toBe(1);
+    expect(text).toEqual([new Uint8Array()]);
+    expect(persona).not.toHaveBeenCalled();
+  });
 });

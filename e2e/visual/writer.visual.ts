@@ -11,6 +11,9 @@ import {
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
+  openBookCreation,
+  navigateWorkspace,
+  openWorkspaceNavigation,
   test,
 } from './support';
 import type { Page } from '@playwright/test';
@@ -21,7 +24,7 @@ const secondChapterTitle = chapters[1].title;
 const bookPath = `/books/${FIXTURE_BOOK_ID}`;
 const editorPath = `${bookPath}/editor/${FIXTURE_CHAPTER_ID}`;
 
-async function expectPortraitBooks(page: Page, count: number) {
+async function expectCompactBooks(page: Page, count: number) {
   const cards = page
     .locator('a[href^="/books/"]')
     .filter({ has: page.getByRole('heading', { level: 3 }) });
@@ -30,11 +33,10 @@ async function expectPortraitBooks(page: Page, count: number) {
     const bounds = await card.boundingBox();
     expect(bounds).not.toBeNull();
     if (!bounds) throw new Error('O livro deve ter dimensões visíveis.');
-    expect(bounds.width).toBeLessThanOrEqual(300);
-    expect(bounds.height).toBeGreaterThan(bounds.width);
+    expect(bounds.width).toBeLessThanOrEqual(page.viewportSize()!.width);
     const cover = (await card.locator('img').count())
       ? card.locator('img')
-      : card.getByText('Sem capa', { exact: true }).locator('..').locator('..');
+      : card.locator(':scope > span').first();
     const coverBounds = await cover.boundingBox();
     expect(coverBounds).not.toBeNull();
     if (!coverBounds) throw new Error('A capa deve ter dimensões visíveis.');
@@ -74,15 +76,16 @@ test.describe('Páginas públicas', () => {
 });
 
 test('biblioteca populada, modal por teclado e devolução de foco', async ({ page }, testInfo) => {
-  await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+  await page.goto('/studio/projects');
+  await expect(page.getByRole('heading', { name: 'Meus projetos', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: books[1].title, exact: true })).toBeVisible();
-  await expectPortraitBooks(page, 3);
+  await expectCompactBooks(page, 3);
   await capture(page, testInfo, '04-biblioteca-populada');
 
-  const trigger = page.getByRole('button', { name: 'Novo Livro', exact: true });
+  const trigger = page.getByRole('button', { name: 'Novo projeto', exact: true });
   await trigger.focus();
   await page.keyboard.press('Enter');
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Criar Novo Livro' });
   await expect(dialog).toBeVisible();
   await page.getByLabel('Título da Obra').fill(books[1].title);
@@ -102,11 +105,14 @@ test('biblioteca populada, modal por teclado e devolução de foco', async ({ pa
   await expect(trigger).toBeFocused();
 
   await page.keyboard.press('Enter');
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
-  await expect(page.getByRole('heading', { level: 3 })).toHaveCount(3);
+  await expect(page.locator('a[href^="/books/"]').getByRole('heading', { level: 3 })).toHaveCount(
+    3,
+  );
 });
 
 test('obra, capítulos longos, compêndio e edição', async ({ page }, testInfo) => {
@@ -208,11 +214,12 @@ test('editor, painel de lore e configurações de IA', async ({ page }, testInfo
   await expect(sidebar.getByText('Lia', { exact: true })).toBeVisible();
   await sidebar.getByLabel('Buscar no compêndio').fill('');
 
+  await openWorkspaceNavigation(page);
   const settings = page.getByRole('button', { name: new RegExp(author.displayName!) });
   await settings.click();
-  await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
+  await page.getByRole('menuitem', { name: 'Inteligência artificial', exact: true }).click();
   await expect(page).toHaveURL(/settings\/ai$/);
-  await expect(page.getByRole('heading', { name: 'Inteligência artificial' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Inteligência artificial' })).toBeVisible();
   await capture(page, testInfo, '11-configuracoes-ia');
   await page.getByRole('link', { name: 'Voltar ao editor' }).click();
   await expect(page).toHaveURL(new RegExp(`${editorPath}$`));
@@ -221,10 +228,13 @@ test('editor, painel de lore e configurações de IA', async ({ page }, testInfo
 test('navegação repetida entre biblioteca, obra e capítulos com voltar e avançar', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/studio/projects');
   for (let cycle = 0; cycle < 2; cycle += 1) {
     await page.locator(`a[href="${bookPath}"]`).click();
-    await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${bookPath}$`));
+    await expect(
+      page.getByRole('heading', { name: bookTitle, level: 1, exact: true }),
+    ).toBeVisible();
     await page.getByRole('button', { name: `Escrever ${chapterTitle}`, exact: true }).click();
     await expect(page).toHaveURL(new RegExp(`${editorPath}$`));
     await expect(
@@ -251,10 +261,12 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
       page.getByRole('heading', { name: chapterTitle, exact: true }).first(),
     ).toBeVisible();
     await page.getByRole('link', { name: 'Voltar para o livro', exact: true }).click();
-    await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Meus Livros', exact: true }).click();
-    await page.getByRole('menuitem', { name: 'Meus Livros', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`${bookPath}$`));
+    await expect(
+      page.getByRole('heading', { name: bookTitle, level: 1, exact: true }),
+    ).toBeVisible();
+    await navigateWorkspace(page, 'Projetos');
+    await expect(page.getByRole('heading', { name: 'Meus projetos', exact: true })).toBeVisible();
   }
 });
 
@@ -264,8 +276,8 @@ test.describe('Biblioteca vazia', () => {
   test('wizard gera sinopse e capa, confirma créditos e cria a obra', async ({
     page,
   }, testInfo) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Criar Primeiro Livro' }).click();
+    await page.goto('/studio/projects');
+    await openBookCreation(page);
     await page.getByLabel('Título da Obra').fill('Atlas de Outono');
     await page.getByLabel('Gênero Literário').fill('Fantasia');
     await capture(page, testInfo, '18-criacao-livro');
@@ -292,34 +304,41 @@ test.describe('Biblioteca vazia', () => {
     await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Atlas de Outono', exact: true })).toBeVisible();
-    await expectPortraitBooks(page, 1);
+    await expect(page).toHaveURL(/\/books\/visual-created-book-/);
+    await navigateWorkspace(page, 'Projetos');
+    await expectCompactBooks(page, 1);
   });
 
   test('estado vazio mantém ações para começar ou importar', async ({ page }, testInfo) => {
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Nenhum livro cadastrado' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Criar Primeiro Livro' })).toBeEnabled();
+    await page.goto('/studio/projects');
     await expect(
-      page.getByRole('button', { name: 'Importar Documento', exact: true }),
-    ).toBeEnabled();
+      page
+        .getByRole('region', { name: 'Livros', exact: true })
+        .getByRole('heading', { name: 'Nenhum projeto nesta lista' }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Novo projeto', exact: true })).toBeEnabled();
+    await navigateWorkspace(page, 'Importar e restaurar');
+    await expect(page.getByRole('button', { name: 'Importar livro', exact: true })).toBeEnabled();
     await capture(page, testInfo, '12-biblioteca-vazia');
   });
 
-  test('um único livro mantém capa vertical sem ocupar toda a linha', async ({
+  test('um único livro conserva miniatura vertical na lista compacta', async ({
     page,
   }, testInfo) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Criar Primeiro Livro' }).click();
+    await page.goto('/studio/projects');
+    await openBookCreation(page);
     await page.getByLabel('Título da Obra').fill('Livro vertical');
     await page.getByLabel('Gênero Literário').fill('Fantasia');
 
     await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Livro vertical', exact: true })).toBeVisible();
-    await expectPortraitBooks(page, 1);
+    await expect(page).toHaveURL(/\/books\/visual-created-book-/);
+    await navigateWorkspace(page, 'Projetos');
+    await expectCompactBooks(page, 1);
     await capture(page, testInfo, '17-biblioteca-um-livro');
     await page.setViewportSize({ width: 320, height: 740 });
-    await expectPortraitBooks(page, 1);
+    await expectCompactBooks(page, 1);
     await expectNoHorizontalOverflow(page, 'um-livro-320px');
   });
 });
@@ -328,9 +347,9 @@ test.describe('Falha de serviço simulada', () => {
   test.use({ libraryState: 'error' });
 
   test('mostra erro e recupera os livros ao tentar novamente', async ({ page }, testInfo) => {
-    await page.goto('/');
+    await page.goto('/studio/projects');
     await expect(
-      page.getByRole('heading', { name: 'Não foi possível carregar os livros' }),
+      page.getByRole('heading', { name: 'Não foi possível carregar livros' }),
     ).toBeVisible();
     await expect(page.getByText('Falha simulada de conexão. Tente novamente.')).toBeVisible();
     await capture(page, testInfo, '13-biblioteca-erro');
@@ -340,7 +359,7 @@ test.describe('Falha de serviço simulada', () => {
       FIXTURE_LIBRARY_STATE_KEY,
     );
     await page.getByRole('button', { name: 'Tentar novamente', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Meus projetos', exact: true })).toBeVisible();
     await expect(page.getByRole('heading', { name: bookTitle, exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Tentar novamente', exact: true })).toHaveCount(
       0,
@@ -360,10 +379,10 @@ test('preferência por menos transparência usa superfícies opacas e sem desfoq
         { name: 'prefers-reduced-motion', value: 'reduce' },
       ],
     });
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Minhas Obras' })).toBeVisible();
+    await page.goto('/studio/projects');
+    await expect(page.getByRole('heading', { name: 'Meus projetos', exact: true })).toBeVisible();
     const computed = await page
-      .locator('.glass-surface')
+      .locator('[data-writer-workspace]')
       .first()
       .evaluate((element) => {
         const style = getComputedStyle(element);
@@ -406,7 +425,7 @@ test('largura mínima de 320px mantém biblioteca, obra e editor sem transbordam
     body: JSON.stringify({ width: 320, height: 740 }),
     contentType: 'application/json',
   });
-  await page.goto('/');
+  await page.goto('/studio/projects');
   await expect(page.getByRole('heading', { name: books[1].title, exact: true })).toBeVisible();
   await capture(page, testInfo, '15-biblioteca-320px');
   await page.locator(`a[href="${bookPath}"]`).click();
@@ -422,8 +441,9 @@ test('largura mínima de 320px mantém biblioteca, obra e editor sem transbordam
     page.getByRole('complementary', { name: 'Painel lateral do Compêndio de Lore' }),
   ).toBeVisible();
   await capture(page, testInfo, '16-editor-lore-320px');
+  await openWorkspaceNavigation(page);
   await page.getByRole('button', { name: new RegExp(author.displayName!) }).click();
-  await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
+  await page.getByRole('menuitem', { name: 'Inteligência artificial', exact: true }).click();
   await expect(page.getByRole('tablist')).toBeVisible();
   await expect(page.getByRole('list', { name: 'Personas disponíveis' })).toBeVisible();
   await expectNoHorizontalOverflow(page, 'configuracoes-320px');
@@ -501,10 +521,10 @@ test('menções @ permitem criação cancelável e seleção sem trocar de capí
   await manuscript.fill('@Avalon');
   await expect(page.getByRole('option', { name: /Criar “Avalon”/ })).toBeVisible();
   await manuscript.press('Enter');
-  const dialog = page.getByRole('dialog', { name: 'Cadastrar Nova Entidade no Compêndio' });
+  const dialog = page.getByRole('dialog', { name: 'Nova ficha de lore' });
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByLabel('Nome da Entidade')).toHaveValue('Avalon');
-  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(dialog.getByLabel('Nome', { exact: true })).toHaveValue('Avalon');
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).first().click();
   await expect(dialog).toHaveCount(0);
   await expect(manuscript).toHaveText('@Avalon');
   await manuscript.fill('@Li');

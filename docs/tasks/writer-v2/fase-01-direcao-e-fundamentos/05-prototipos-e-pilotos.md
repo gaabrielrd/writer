@@ -1,6 +1,7 @@
 # W2-F1-05 — Prototipar jornadas e preparar pilotos
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Em execução; protótipo e roteiro criados. Percursos técnicos passaram; revisão/gate e aprovação da navegação são registrados na execução. Piloto humano pendente.
+**Evidência:** [Protótipo e validação](../execucao/05-prototipos-e-pilotos.md), [roteiro e registros vazios](../execucao/05-roteiro-de-pilotos.md).
 **Dependências:** [W2-F1-01](../fase-01-direcao-e-fundamentos/01-jornadas-e-escopo.md), [W2-F1-03](../fase-01-direcao-e-fundamentos/03-permissoes-e-privacidade.md)
 **Áreas propostas:** design, shared/ui e roteiro de pesquisa. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -21,7 +22,7 @@ Entradas: jornadas e matriz de acessos. Resultado: protótipos navegáveis, corp
 
 ## Passos de execução
 
-- [ ] Criar wireframes das duas jornadas e do consumo.
+- [x] Criar wireframes das duas jornadas e do consumo.
 - [ ] Testar entendimento de aventura versus campanha e privado versus compartilhado.
 - [ ] Registrar problemas, tempos observados e decisão de navegação.
 - [ ] Fechar D-11 e D-12 e preparar referências para fases 2, 3 e 5.

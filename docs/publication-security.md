@@ -45,6 +45,14 @@ seguro, que não confia em HTML armazenado. Texto que o próprio autor escreveu 
 manuscrito ou no resumo público continua sendo conteúdo que ele escolheu
 publicar; a projeção não é um detector automático de segredos.
 
+Capítulos convertidos para cenas publicam somente sua composição ativa ordenada.
+Fonte anterior, objetivos, conflitos, ponto de vista e referências ficam privados.
+Livros com `hasSceneResources` exigem `sourceSceneRevision` nos metadados da revisão
+e do apontador; regras e transação final conferem a revisão capturada. Clientes
+antigos que omitem esse controle não publicam o corpo congelado pelo fluxo legado.
+Uma composição acima do orçamento pede divisão sem ativar uma publicação parcial.
+Veja [ADR 0026](decisions/0026-scenes-and-manuscript-assembly.md).
+
 ## Preparação, troca e revogação
 
 1. O serviço lê os dados originais do servidor e valida todos os campos antes

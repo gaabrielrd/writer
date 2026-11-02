@@ -13,12 +13,24 @@ function fixture() {
   });
   const db = {
     doc: (path) => ({ path }),
+    collection: (path) => ({ limit: (count) => ({ collectionPath: path, count }) }),
     runTransaction(operation) {
       const run = queue.then(async () => {
         const writes = [];
         const tx = {
           get: async (ref) => {
             assert.equal(writes.length, 0, 'Reads must precede writes');
+            if (ref.collectionPath)
+              return {
+                docs: [...records.keys()]
+                  .filter(
+                    (path) =>
+                      path.startsWith(ref.collectionPath + '/') &&
+                      !path.slice(ref.collectionPath.length + 1).includes('/'),
+                  )
+                  .slice(0, ref.count)
+                  .map((path) => snapshot({ path })),
+              };
             return snapshot(ref);
           },
           set: (ref, value) => writes.push(() => records.set(ref.path, structuredClone(value))),

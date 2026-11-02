@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { findLoreMatches } from '../model/loreMatcher';
 import type { LoreEntity } from '../model/loreEntity';

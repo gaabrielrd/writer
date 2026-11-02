@@ -1,6 +1,6 @@
 # Universos e lore compartilhado
 
-O dropdown do header oferece **Lore compartilhado** (`/universes`). Cada autor
+O dropdown do header oferece **Universos** (`/universes`). Cada autor
 pode criar universos com nome e descrição e gerenciar suas entidades em
 `/universes/:universeId/lore`. Os dados originais são privados do autor.
 
@@ -52,10 +52,13 @@ A visibilidade informa quais campos podem aparecer no leitor; alterações de p�
 
 ## Persistência e operações
 
-- `universes/{universeId}`: autor, nome, descrição, contagem de livros, versões
+- `universes/{universeId}`: autor, nome, descrição, contagens por tipo de projeto, versões
   de lore e privacidade, datas e bloqueio de exclusão.
 - `universes/{universeId}/lore/{entityId}`: fichas globais privadas.
 - `universes/{universeId}/books/{bookId}`: vínculos mantidos exclusivamente no servidor.
+- `universes/{universeId}/adventures/{adventureId}` e `/campaigns/{campaignId}`:
+  vínculos de projetos privados do Estúdio, mantidos no servidor com contadores
+  próprios. Contadores ausentes em universos legados equivalem a zero.
 - `books/{bookId}.universeId`: vínculo opcional; ausência mantém livros legados.
 - `books/{bookId}/lore/{entityId}`: fichas locais existentes, preservadas.
 - `publicUniversePrivacy/{universeId}`: somente versão e estado ativo, para revogação.
@@ -72,10 +75,15 @@ transacional de livros que mantém referências de capas, inclusive sem capa.
 Trocar vínculo ajusta contagens e revoga a publicação na mesma transação.
 
 Excluir um livro libera seu vínculo por trigger; a contagem pode levar alguns
-instantes para atualizar. Excluir um universo exige zero livros vinculados.
+instantes para atualizar. Excluir um universo exige zero livros, aventuras e
+campanhas vinculados, conferindo também referências com consultas limitadas.
 A operação bloqueia novos vínculos antes da limpeza recursiva e mantém um
 marcador de revogação. Falhas de limpeza podem ser retomadas; IDs removidos
 não podem ser recriados para reativar publicações antigas.
+
+No Estúdio, criação de aventura/campanha, recibo, referência e contador são
+atômicos. O universo é opcional; o vínculo de campanha organiza seus metadados,
+sem copiar ou herdar lore vivo. Estrutura narrativa e sessões têm tarefas próprias.
 
 ## Publicação e backups
 
@@ -102,7 +110,7 @@ universo mantêm a projeção e os backups de versão 1.
 
 O backup JSON privado de versão 2 guarda separadamente o lore local e uma cópia
 do universo e seu lore global. Falhas de leitura do universo interrompem o backup
-para evitar uma cópia incompleta. Não há restauração/importação de universos.
+para evitar uma cópia incompleta. O backup não é restaurado por esse formato. Importar documentos para lore usa o fluxo próprio descrito abaixo.
 
 ## Validação e implantação
 
@@ -127,3 +135,8 @@ Veja [ADR 0018](decisions/0018-shared-universes-and-lore.md) e
 O editor permite [atualizar o compêndio com base no texto](lore-analysis.md),
 com revisão e escolha explícita do destino local/global. Novas fichas são
 privadas; visibilidade, relações e notas estruturadas não são alteradas pelo lote.
+
+## Importar arquivos
+
+[Importação de universos e lore](universe-lore-import.md) permite criar universos
+ou acrescentar/atualizar fichas com revisão, diff e confirmação transacional.
