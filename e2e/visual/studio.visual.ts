@@ -1,24 +1,21 @@
 import type { Page } from '@playwright/test';
 import { chooseDropdown } from '../dropdown';
 import { books } from './fixtures/data';
-import {
-  capture,
-  navigateWorkspace,
-  expect,
-  expectDialogWithinViewport,
-  expectNoHorizontalOverflow,
-  test,
-} from './support';
+import { capture, navigateWorkspace, expect, expectNoHorizontalOverflow, test } from './support';
 
-async function newProject(page: Page, kind: 'Aventura' | 'Campanha') {
+async function newProject(page: Page, kind: 'Aventura' | 'Campanha', universe?: string) {
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
-  await page.getByRole('menuitem', { name: kind, exact: true }).click();
-  const dialog = page.getByRole('dialog', {
-    name: `Criar ${kind.toLocaleLowerCase('pt-BR')}`,
-    exact: true,
-  });
-  await expect(dialog).toBeVisible();
-  return dialog;
+  await page.getByRole('button', { name: /^Manualmente/ }).click();
+  await page.getByRole('button', { name: new RegExp('^' + kind) }).click();
+  await page.getByLabel('Ideia ou título inicial').fill('Novo projeto');
+  if (universe) {
+    await page.getByRole('button', { name: /^Universo e persona/ }).click();
+    await chooseDropdown(page.getByLabel('Universo compartilhado'), universe);
+  }
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByLabel('Título do projeto').fill('');
+  await page.getByRole('button', { name: /^Premissa e detalhes/ }).click();
+  return page.locator('#main-content');
 }
 
 test('Estúdio retoma livros e abre os cinco espaços com teclado em 320px', async ({
@@ -59,12 +56,11 @@ test('campanha independente persiste descrição e não cria um livro auxiliar',
   await page.goto('/studio');
   const dialog = await newProject(page, 'Campanha');
   await expect(dialog.getByRole('button', { name: 'Criar campanha', exact: true })).toBeDisabled();
-  await dialog.getByLabel('Título da campanha').fill('Jornada particular das lanternas');
+  await dialog.getByLabel('Título do projeto').fill('Jornada particular das lanternas');
   await dialog
-    .getByLabel('Descrição da campanha')
+    .getByLabel('Conceito da campanha')
     .fill('Guardar as consequências da jornada em minhas notas.');
-  await expect(dialog.getByLabel('Universo compartilhado')).toContainText('Sem universo');
-  await expectDialogWithinViewport(page);
+  await expectNoHorizontalOverflow(page, 'novo-projeto');
   await capture(page, testInfo, 'campanha-independente-formulario');
   await dialog.getByRole('button', { name: 'Criar campanha', exact: true }).click();
   await expect(page).toHaveURL(/\/campaigns\/visual-created-campaign-/);
@@ -79,6 +75,7 @@ test('campanha independente persiste descrição e não cria um livro auxiliar',
   ).toBeVisible();
   await expect(page.getByText('Em preparação', { exact: true })).toBeVisible();
   await capture(page, testInfo, 'campanha-independente-detalhes');
+  await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
   await page.getByRole('link', { name: 'Voltar aos projetos', exact: true }).click();
   await navigateWorkspace(page, 'Projetos');
   await expect(
@@ -100,10 +97,11 @@ test('aventura vinculada a um universo mantém sinopse e acesso ao contexto', as
   await page.getByLabel('Descrição do universo').fill('Um mundo para livros e aventuras.');
   await page.getByRole('button', { name: 'Salvar universo' }).click();
   await navigateWorkspace(page, 'Estúdio');
-  const dialog = await newProject(page, 'Aventura');
-  await dialog.getByLabel('Título da aventura').fill('O mapa das lanternas perdidas');
-  await dialog.getByLabel('Sinopse da aventura').fill('Uma expedição em busca da cidade submersa.');
-  await chooseDropdown(dialog.getByLabel('Universo compartilhado'), 'Ilhas das lanternas');
+  const dialog = await newProject(page, 'Aventura', 'Ilhas das lanternas');
+  await dialog.getByLabel('Título do projeto').fill('O mapa das lanternas perdidas');
+  await dialog
+    .getByLabel('Premissa', { exact: true })
+    .fill('Uma expedição em busca da cidade submersa.');
   await capture(page, testInfo, 'aventura-universo-formulario');
   await dialog.getByRole('button', { name: 'Criar aventura', exact: true }).click();
   await expect(page).toHaveURL(/\/adventures\/visual-created-adventure-/);
@@ -115,80 +113,50 @@ test('aventura vinculada a um universo mantém sinopse e acesso ao contexto', as
   ).toBeVisible();
   await expect(page.getByText('Rascunho', { exact: true })).toBeVisible();
   await capture(page, testInfo, 'aventura-universo-detalhes');
+  await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
   await page.getByRole('link', { name: 'Abrir universo vinculado' }).click();
   await expect(page).toHaveURL(/\/universes\/[^/]+\/lore$/);
 });
 
-test('falha depois da gravação preserva formulário e verifica a mesma criação', async ({
+test('falha depois da gravação recupera a identidade confirmada após recarregar', async ({
   page,
 }, testInfo) => {
   await page.goto('/studio');
   await page.evaluate(() =>
     sessionStorage.setItem('writer.visual.studio-lost-response', 'campaign'),
   );
-  let dialog = await newProject(page, 'Campanha');
-  await dialog.getByLabel('Título da campanha').fill('Campanha com resposta perdida');
-  await dialog.getByLabel('Descrição da campanha').fill('Minhas notas não desaparecem no retry.');
-  await dialog.getByRole('button', { name: 'Criar campanha', exact: true }).click();
-  const failure = dialog.getByRole('alert').filter({ hasText: 'A resposta se perdeu.' });
-  await expect(failure).toBeFocused();
-  await expect(dialog.getByLabel('Título da campanha')).toHaveValue(
-    'Campanha com resposta perdida',
-  );
-  await expect(dialog.getByLabel('Descrição da campanha')).toHaveValue(
-    'Minhas notas não desaparecem no retry.',
-  );
-  await expect(dialog.getByLabel('Título da campanha')).toBeDisabled();
-  await expect(page).toHaveURL(/\/studio$/);
+  const form = await newProject(page, 'Campanha');
+  await form.getByLabel('Título do projeto').fill('Campanha com resposta perdida');
+  await form.getByLabel('Conceito da campanha').fill('Minhas notas não desaparecem no retry.');
+  await form.getByRole('button', { name: 'Criar campanha', exact: true }).click();
+  await expect(form.getByRole('alert').filter({ hasText: 'A resposta se perdeu.' })).toBeFocused();
+  await expect(form.getByLabel('Título do projeto')).toBeDisabled();
   await capture(page, testInfo, 'criacao-resposta-perdida');
-  await dialog.getByRole('button', { name: 'Fechar', exact: true }).click();
-  dialog = await newProject(page, 'Campanha');
-  await expect(dialog.getByLabel('Título da campanha')).toHaveValue(
-    'Campanha com resposta perdida',
-  );
-  await dialog.getByRole('button', { name: 'Verificar criação', exact: true }).click();
+  await page.reload();
+  await page.getByRole('link', { name: 'Abrir projeto confirmado' }).click();
   await expect(
     page.getByRole('heading', { name: 'Campanha com resposta perdida', exact: true }),
   ).toBeVisible();
-  await page.getByRole('link', { name: 'Voltar aos projetos', exact: true }).click();
   await navigateWorkspace(page, 'Projetos');
   await expect(page.getByRole('link', { name: /Campanha com resposta perdida/ })).toHaveCount(1);
 });
-
 test('troca de conta durante criação pendente descarta formulário e resposta antiga', async ({
   page,
 }, testInfo) => {
   await page.goto('/studio');
   await page.evaluate(() => sessionStorage.setItem('writer.visual.studio-hold-create', 'campaign'));
-  const dialog = await newProject(page, 'Campanha');
-  await dialog.getByLabel('Título da campanha').fill('Anotações particulares da primeira conta');
-  await dialog.getByRole('button', { name: 'Criar campanha', exact: true }).click();
-  await expect(dialog.getByRole('button', { name: 'Criando...', exact: true })).toBeDisabled();
-  await expect(dialog.getByLabel('Título da campanha')).toBeDisabled();
+  const form = await newProject(page, 'Campanha');
+  await form.getByLabel('Título do projeto').fill('Anotações particulares da primeira conta');
+  await form.getByRole('button', { name: 'Criar campanha', exact: true }).click();
+  await expect(form.getByLabel('Título do projeto')).toBeDisabled();
   await page.evaluate(() => {
     sessionStorage.setItem('writer.visual.account', 'second');
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
-  await expect(page.getByRole('dialog')).toHaveCount(0);
-  if (page.viewportSize()!.width <= 760) {
-    await page.getByRole('button', { name: 'Abrir navegação' }).click();
-  }
-  await expect(page.getByRole('button', { name: /Outro Autor de Exemplo/ })).toBeVisible();
-  if (page.viewportSize()!.width <= 760) {
-    const navigation = page.getByRole('dialog', { name: 'Navegação do Writer' });
-    await navigation.getByRole('button', { name: 'Fechar', exact: true }).click();
-    await expect(navigation).toBeHidden();
-  }
+  await expect(page.getByRole('heading', { name: 'Como deseja começar?' })).toBeVisible();
   await page.evaluate(() => window.dispatchEvent(new Event('writer.visual.release-create')));
-  await expect(page).toHaveURL(/\/studio$/);
-  await expect(
-    page.getByRole('heading', { name: 'Anotações particulares da primeira conta', exact: true }),
-  ).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: books[0].title, exact: true })).toHaveCount(0);
-  const fresh = await newProject(page, 'Campanha');
-  await expect(fresh.getByLabel('Título da campanha')).toHaveValue('');
-  await expect(fresh.getByLabel('Descrição da campanha')).toHaveValue('');
-  await fresh.getByRole('button', { name: 'Fechar', exact: true }).click();
+  await expect(page).toHaveURL(/\/studio\/new$/);
+  await expect(page.getByLabel('Título do projeto')).toHaveCount(0);
   await page.goto('/campaigns/visual-campaign-1');
   await expect(
     page.getByRole('heading', { name: 'Campanha indisponível', exact: true }),

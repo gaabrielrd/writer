@@ -67,3 +67,5 @@ export { AdventurePersonaDialog } from './components/AdventurePersonaDialog';
 export type { AdventurePersonaDialogProps } from './components/AdventurePersonaDialog';
 
 export type { ChatGenerationRequest } from './model/chatGeneration';
+
+export { PersonaManager } from './components/PersonaManager';

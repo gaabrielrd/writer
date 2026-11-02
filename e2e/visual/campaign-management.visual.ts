@@ -50,13 +50,14 @@ test('criação legada e edição por teclado em 320px preservam identidade e co
   await page.setViewportSize({ width: 320, height: 740 });
   await page.goto('/studio');
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Campanha', exact: true }).click();
-  const create = page.getByRole('dialog', { name: 'Criar campanha', exact: true });
-  await create.getByLabel('Título da campanha', { exact: true }).fill('Campanha da expedição');
-  await create
-    .getByLabel('Descrição da campanha', { exact: true })
-    .fill('Notas particulares da expedição.');
-  await create.getByRole('button', { name: 'Criar campanha', exact: true }).click();
+  await page.getByRole('button', { name: /^Manualmente/ }).click();
+  await page.getByRole('button', { name: /^Campanha/ }).click();
+  await page.getByLabel('Ideia ou título inicial').fill('Campanha da expedição');
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^Premissa e detalhes/ }).click();
+  await page.getByLabel('Conceito da campanha').fill('Notas particulares da expedição.');
+  await page.getByRole('button', { name: 'Criar campanha', exact: true }).click();
+  await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
   await expect(page).toHaveURL(/\/campaigns\/visual-created-campaign-/);
   await expect(
     page.getByRole('heading', { name: 'Campanha da expedição', exact: true, level: 1 }),

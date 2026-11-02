@@ -12,6 +12,7 @@ import { LorePage } from '@/features/lore';
 import { EditorPage } from '@/features/editor';
 import { AISettingsPage } from '@/features/ai-assistant';
 import { WorkPreferencesPage } from '@/features/work-progress';
+import { NewProjectPage } from '@/features/project-creation';
 import { StudioPage } from '@/features/studio';
 import { AdventurePage } from '@/features/adventures';
 import { AdventureBlockEditorPage } from '@/features/adventure-blocks';
@@ -38,6 +39,14 @@ export const routes: RouteObject[] = [
       {
         path: 'login',
         element: <LoginPage />,
+      },
+      {
+        path: 'studio/new',
+        element: (
+          <SignedInRoute>
+            <NewProjectPage />
+          </SignedInRoute>
+        ),
       },
       {
         path: 'studio/*',

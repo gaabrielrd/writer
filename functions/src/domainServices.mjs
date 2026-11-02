@@ -1,3 +1,4 @@
+import { createPageAssistantService } from './pageAssistant.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createStudioService } from './studio.mjs';
 import { createAdventureImportService } from './adventureImport.mjs';
@@ -70,7 +71,7 @@ export const DOMAIN_SERVICES = {
     'campaignCapture',
     'campaignVariantRemoteRecovery',
   ],
-  generationApi: ['assisted', 'generation'],
+  generationApi: ['assisted', 'pageAssistant', 'generation'],
   mediaApi: ['generation', 'imageLibrary'],
   loreAnalysisApi: ['loreAnalysis'],
 };
@@ -120,6 +121,7 @@ export function createSectorServices({
     scenes: () => createScenesService({ db }),
     narrative: () => createNarrativePlanningService({ db }),
     loreAnalysis: () => createLoreAnalysisService({ db, generator: loreGenerator }),
+    pageAssistant: () => createPageAssistantService({ db, generator: assistedGenerator }),
     assisted: () =>
       createAssistedBookService({
         db,

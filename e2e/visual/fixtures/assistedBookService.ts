@@ -6,6 +6,7 @@ import type {
 } from '../../../src/features/ai-assistant/model/assistedBook';
 import { seedAssistedBook } from './bookService';
 import { seedAssistedLore } from './loreService';
+import { fixtureCreate, fixtureCreatedOperation, fixtureOwner } from './studioStore';
 import { author } from './data';
 
 export class AssistedBookError extends Error {
@@ -21,7 +22,17 @@ function save() {
   return Promise.resolve(structuredClone(session!));
 }
 export function loadAssistedBook() {
-  return Promise.resolve({ session, costs });
+  if (sessionStorage.getItem('writer.visual.assisted-owner') !== fixtureOwner())
+    return Promise.resolve({ session: null, costs });
+  return Promise.resolve({
+    project: JSON.parse(sessionStorage.getItem('writer.visual.assisted-project') ?? 'null') as {
+      kind: 'book' | 'adventure' | 'campaign';
+      id: string;
+    } | null,
+    session:
+      sessionStorage.getItem('writer.visual.assisted-committed') === session?.id ? null : session,
+    costs,
+  });
 }
 function proposal(): AssistedProposal {
   return {
@@ -50,7 +61,18 @@ function proposal(): AssistedProposal {
 }
 export function requestAssistedBook(input: AssistedRequest) {
   if (input.action === 'start')
+    sessionStorage.setItem('writer.visual.assisted-owner', fixtureOwner());
+  if (input.action === 'start')
     session = {
+      ...(input.flowVersion === 2
+        ? {
+            flowVersion: 2,
+            kind: input.kind,
+            method: input.method,
+            universeId: input.universeId,
+            personaId: input.personaId,
+          }
+        : {}),
       id: input.sessionId,
       idea: input.idea!,
       messages: [{ role: 'user', text: input.idea! }],
@@ -64,7 +86,27 @@ export function requestAssistedBook(input: AssistedRequest) {
       costs,
     };
   if (!session) throw new Error('Sessão ausente.');
+  if (input.action !== 'interview') {
+    session.suggestedAction = null;
+    session.suggestedActionRequestId = null;
+  }
   if (input.action === 'interview') {
+    const match = /gere.*proposta/i.test(input.message ?? '')
+      ? 'Revisar proposta inicial'
+      : /abra.*detalhes/i.test(input.message ?? '')
+        ? 'Premissa e detalhes'
+        : /gênero|genero/i.test(input.message ?? '')
+          ? 'Gênero ou estilo'
+          : null;
+    const capability = input.capabilities?.find((c) => match && c.label.startsWith(match));
+    session.suggestedAction = capability
+      ? {
+          id: capability.id,
+          ...(capability.kind === 'field' ? { value: 'Fantasia marítima' } : {}),
+        }
+      : null;
+    session.suggestedActionRequestId = input.requestId;
+
     session.messages.push(
       ...(input.message ? [{ role: 'user' as const, text: input.message }] : []),
       { role: 'assistant', text: 'Que conflito move a protagonista?' },
@@ -73,7 +115,7 @@ export function requestAssistedBook(input: AssistedRequest) {
       'Uma aventura entre ilhas, com uma navegadora em busca do último mar. Decisões restantes são sugestões.';
   }
   if (input.action === 'generate') {
-    session.proposal = proposal();
+    session.proposal = session.flowVersion === 2 ? { ...proposal(), entities: [] } : proposal();
     session.brief = input.brief!;
     session.proposalExpiresAt = Date.now() + 3600000;
   }
@@ -99,7 +141,41 @@ export function requestAssistedBook(input: AssistedRequest) {
   session.revision++;
   return save();
 }
-export function commitAssistedBook(input: AssistedCommit) {
+export async function commitAssistedBook(input: AssistedCommit) {
+  if (session?.flowVersion === 2 && session.kind && session.kind !== 'book') {
+    const common = {
+      operationId: input.sessionId,
+      title: input.proposal.title,
+      universeId: session.universeId ?? null,
+    };
+    const project = await (async () => {
+      try {
+        return session.kind === 'campaign'
+          ? await fixtureCreate('campaign', { ...common, description: input.proposal.synopsis })
+          : await fixtureCreate('adventure', { ...common, synopsis: input.proposal.synopsis });
+      } catch (error) {
+        const result = fixtureCreatedOperation(input.sessionId);
+        if (result) {
+          sessionStorage.setItem(
+            'writer.visual.assisted-project',
+            JSON.stringify({ kind: session.kind, id: result.id }),
+          );
+          sessionStorage.setItem('writer.visual.assisted-committed', session.id);
+        }
+        throw error;
+      }
+    })();
+    sessionStorage.setItem(
+      'writer.visual.assisted-project',
+      JSON.stringify({ kind: session.kind, id: project.id }),
+    );
+    sessionStorage.setItem('writer.visual.assisted-committed', session.id);
+    return {
+      book: { id: project.id },
+      project: { kind: session.kind, id: project.id },
+      credits: author.credits - input.expectedCost,
+    };
+  }
   seedAssistedBook({
     id: input.sessionId,
     authorId: author.uid,
@@ -113,6 +189,11 @@ export function commitAssistedBook(input: AssistedCommit) {
     updatedAt: Date.now(),
   });
   seedAssistedLore(input.sessionId, input.proposal.entities);
+  sessionStorage.setItem('writer.visual.assisted-committed', input.sessionId);
+  sessionStorage.setItem(
+    'writer.visual.assisted-project',
+    JSON.stringify({ kind: 'book', id: input.sessionId }),
+  );
   return Promise.resolve({
     book: { id: input.sessionId },
     credits: author.credits - input.expectedCost,

@@ -86,8 +86,12 @@ export { expect };
 
 export async function openBookCreation(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Criar Novo Livro' })).toBeVisible();
+  await page.getByRole('button', { name: /^Manualmente/ }).click();
+  await page.getByRole('button', { name: /^Livro/ }).click();
+  await page.getByLabel('Ideia ou título inicial').fill('Novo livro');
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await expect(page.getByLabel('Título do projeto')).toBeVisible();
+  await page.getByRole('button', { name: /^Premissa e detalhes/ }).click();
 }
 
 export async function capture(page: Page, testInfo: TestInfo, name: string): Promise<void> {

@@ -82,34 +82,13 @@ test('biblioteca populada, modal por teclado e devolução de foco', async ({ pa
   await expectCompactBooks(page, 3);
   await capture(page, testInfo, '04-biblioteca-populada');
 
-  const trigger = page.getByRole('button', { name: 'Novo projeto', exact: true });
-  await trigger.focus();
-  await page.keyboard.press('Enter');
-  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
-  const dialog = page.getByRole('dialog', { name: 'Criar Novo Livro' });
-  await expect(dialog).toBeVisible();
-  await page.getByLabel('Título da Obra').fill(books[1].title);
-  await page.getByLabel('Gênero Literário').fill('Fantasia');
-  await page.getByRole('button', { name: /^Sinopse/ }).click();
-  await page.getByLabel('Sinopse / Premissa').fill(books[0].synopsis ?? '');
-  await capture(page, testInfo, '05-modal-novo-livro');
-  await expectDialogWithinViewport(page);
-  for (let tab = 0; tab < 10; tab += 1) {
-    await page.keyboard.press('Tab');
-    await expect
-      .poll(() => dialog.evaluate((element) => element.contains(document.activeElement)))
-      .toBe(true);
-  }
-  await page.keyboard.press('Escape');
-  await expect(dialog).toHaveCount(0);
-  await expect(trigger).toBeFocused();
-
-  await page.keyboard.press('Enter');
-  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
-  await expect(trigger).toBeFocused();
+  await openBookCreation(page);
+  await page.getByLabel('Título do projeto').fill(books[1].title);
+  await page.getByLabel('Gênero ou estilo').fill('Fantasia');
+  await page.getByLabel('Premissa', { exact: true }).fill(books[0].synopsis ?? '');
+  await capture(page, testInfo, '05-novo-livro-progressivo');
+  await page.getByRole('link', { name: 'Voltar ao Estúdio', exact: true }).click();
+  await navigateWorkspace(page, 'Projetos');
   await expect(page.locator('a[href^="/books/"]').getByRole('heading', { level: 3 })).toHaveCount(
     3,
   );
@@ -273,38 +252,24 @@ test('navegação repetida entre biblioteca, obra e capítulos com voltar e avan
 test.describe('Biblioteca vazia', () => {
   test.use({ libraryState: 'empty' });
 
-  test('wizard gera sinopse e capa, confirma créditos e cria a obra', async ({
+  test('criação assistida revisa texto e capa e confirma o preço total', async ({
     page,
   }, testInfo) => {
     await page.goto('/studio/projects');
-    await openBookCreation(page);
-    await page.getByLabel('Título da Obra').fill('Atlas de Outono');
-    await page.getByLabel('Gênero Literário').fill('Fantasia');
-    await capture(page, testInfo, '18-criacao-livro');
-    await page.getByRole('button', { name: /^Sinopse/ }).click();
-    await page.getByRole('button', { name: 'Gerar sinopse com IA' }).click();
-    await expect(page.getByLabel('Sinopse / Premissa')).toHaveValue('');
-    await page.getByRole('button', { name: /Usar sinopse/ }).click();
-    await expect(page.getByLabel('Sinopse / Premissa')).toHaveValue(/Atlas de Outono/);
-    await capture(page, testInfo, '19-criacao-sinopse');
-    await page.getByRole('button', { name: /^Capa/ }).click();
-    await page.getByRole('button', { name: 'Gerar capa com IA' }).click();
-    const image = page.getByAltText('Sugestão de capa de Atlas de Outono');
-    await expect(image).toBeVisible();
-    await expect
-      .poll(() =>
-        image.evaluate((element: HTMLImageElement) => element.complete && element.naturalWidth > 0),
-      )
-      .toBe(true);
-    await page.getByRole('button', { name: /Usar capa/ }).click();
-    await expect(page.getByAltText('Capa selecionada de Atlas de Outono')).toBeVisible();
+    await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
+    await page.getByRole('button', { name: /^Com ajuda da IA/ }).click();
+    await page.getByRole('button', { name: /^Livro/ }).click();
+    await page.getByLabel('Sua ideia').fill('Atlas de Outono');
+    await page.getByRole('button', { name: 'Começar conversa' }).click();
+    await page.getByRole('button', { name: 'Revisar proposta inicial' }).click();
+    await page.getByLabel('Título do projeto').fill('Atlas de Outono');
+    await page.getByRole('button', { name: /^Capa opcional/ }).click();
+    await page.getByRole('button', { name: /^Gerar capa/ }).click();
+    await expect(page.getByAltText('Capa proposta de Atlas de Outono')).toBeVisible();
     await capture(page, testInfo, '20-criacao-capa');
-    await expectDialogWithinViewport(page);
-    await expect(page.getByText('78', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Criar livro · 7 créditos' }).click();
     await expect(page.getByRole('heading', { name: 'Atlas de Outono', exact: true })).toBeVisible();
-    await expect(page).toHaveURL(/\/books\/visual-created-book-/);
+    await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
     await navigateWorkspace(page, 'Projetos');
     await expectCompactBooks(page, 1);
   });
@@ -327,13 +292,14 @@ test.describe('Biblioteca vazia', () => {
   }, testInfo) => {
     await page.goto('/studio/projects');
     await openBookCreation(page);
-    await page.getByLabel('Título da Obra').fill('Livro vertical');
-    await page.getByLabel('Gênero Literário').fill('Fantasia');
+    await page.getByLabel('Título do projeto').fill('Livro vertical');
+    await page.getByLabel('Gênero ou estilo').fill('Fantasia');
 
-    await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
+    await page.getByRole('button', { name: 'Criar livro', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Livro vertical', exact: true })).toBeVisible();
-    await expect(page).toHaveURL(/\/books\/visual-created-book-/);
+    await expect(page).toHaveURL(/\/books\/[^/]+$/);
+    await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
     await navigateWorkspace(page, 'Projetos');
     await expectCompactBooks(page, 1);
     await capture(page, testInfo, '17-biblioteca-um-livro');

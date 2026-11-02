@@ -73,3 +73,17 @@ it('retry envia o snapshot público original mesmo após mudar preferências loc
   expect(first.generation).toMatchObject({ model: 'gemini-4-argon', reasoning: 'high' });
   expect(JSON.stringify(first)).not.toContain('private-test');
 });
+
+it('preserves a native context-revocation reason separately from other definitive failures', async () => {
+  mocks.call.mockRejectedValueOnce({
+    code: 'functions/failed-precondition',
+    details: { reason: 'creation-context-changed' },
+  });
+  await expect(loadAssistedBook()).rejects.toMatchObject({
+    uncertain: false,
+    contextUnavailable: true,
+  });
+  expect(
+    new AssistedBookError('Preço mudou', 'functions/failed-precondition').contextUnavailable,
+  ).toBe(false);
+});

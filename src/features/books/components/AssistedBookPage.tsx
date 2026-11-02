@@ -83,6 +83,10 @@ function AssistedCreation() {
     try {
       const result = await loadAssistedBook();
       if (!mounted.current) return;
+      if (result.session?.flowVersion === 2) {
+        void navigate('/studio/new', { replace: true });
+        return;
+      }
       setCosts(result.costs);
       setCreatedBookId(result.bookId ?? null);
       if (result.session) {
@@ -95,7 +99,7 @@ function AssistedCreation() {
     } finally {
       if (mounted.current) setLoading(false);
     }
-  }, [accept]);
+  }, [accept, navigate]);
   useEffect(() => {
     mounted.current = true;
     void Promise.resolve().then(load);

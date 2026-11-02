@@ -7,6 +7,10 @@ Estúdio de escrita em React/Vite/Firebase, com lore contextual, assistência de
 Centralizar o planejamento de universo narrativo (personagens, locais, conceitos e relações) e a escrita em um editor de texto rico com detecção automática de termos. O projeto oferece assistência de IA contextualizada com controle de créditos, exportação em múltiplos formatos (PDF, DOCX, Markdown) e publicação online para leitores em uma interface interativa.
 
 A evolução aprovada é o **Writer V2**, com autores e mestres igualmente prioritários.
+Novo projeto (`/studio/new`) começa por IA ou manual e permite Livro, Aventura
+ou Campanha, com universo/persona opcionais antes da conversa. O assistente
+contextual propõe ações da página com confirmação; veja [criação assistida](docs/assisted-book-creation.md).
+
 O Estúdio (`/studio`) reúne livros existentes e a criação privada de aventuras e
 campanhas independentes, com universo opcional, filtros e paginação. A navegação
 oferece Universos, Estúdio, Publicações, Catálogo e Biblioteca; os três últimos

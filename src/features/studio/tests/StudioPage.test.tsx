@@ -13,12 +13,7 @@ import {
   type StudioBookSummary,
 } from '@/features/books';
 import { listAdventures, getAdventure, type Adventure } from '@/features/adventures';
-import {
-  createCampaign,
-  listCampaigns,
-  type Campaign,
-  type CampaignSummary,
-} from '@/features/campaigns';
+import { createCampaign, listCampaigns, type CampaignSummary } from '@/features/campaigns';
 
 const auth = vi.hoisted((): { user: { uid: string } | null; loading: boolean } => ({
   user: { uid: 'owner' },
@@ -327,6 +322,7 @@ function tree(section = 'projects') {
         <Link to="/studio/operations">Operações do host</Link>
       </nav>
       <Routes>
+        <Route path="/studio/new" element={<h1>Escolher forma de criação</h1>} />
         <Route path="/studio/*" element={<StudioPage />} />
         <Route path="/books/new/assisted" element={<h1>Criação assistida preservada</h1>} />
         <Route path="/books/:bookId" element={<h1>Livro aberto</h1>} />
@@ -531,77 +527,27 @@ it('mantém carregamento nas janelas editoriais vazias e explica apenas o vazio 
     await within(adventures).findByText('Não há projetos neste estado. Experimente outro filtro.'),
   ).toBeVisible();
 });
-it('reutiliza criação manual de livro e só abre o recurso devolvido após persistir', async () => {
-  let finish!: (value: Awaited<ReturnType<typeof createBook>>) => void;
-  vi.mocked(createBook).mockImplementation(
-    () =>
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-  );
+it('abre a entrada única antes de escolher tipo ou método e preserva importação', async () => {
   render(tree());
   await userEvent.click(screen.getByRole('button', { name: 'Novo projeto' }));
-  await userEvent.click(screen.getByRole('menuitem', { name: 'Livro' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar livro manual' }));
-  expect(createBook).toHaveBeenCalledWith('owner', { title: 'Manual', creationId: 'stable-book' });
-  expect(screen.queryByText('Livro aberto')).not.toBeInTheDocument();
-  await act(async () => {
-    finish({ ...book, authorId: 'owner' });
-    await Promise.resolve();
-  });
-  expect(await screen.findByRole('heading', { name: 'Livro aberto' })).toBeInTheDocument();
+  expect(await screen.findByRole('heading', { name: 'Escolher forma de criação' })).toBeVisible();
+  expect(createBook).not.toHaveBeenCalled();
+  expect(createCampaign).not.toHaveBeenCalled();
+  await userEvent.click(screen.getByRole('link', { name: 'Importar do host' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Importar livro' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Concluir importação' }));
+  expect(await screen.findByRole('heading', { name: 'Livro aberto' })).toBeVisible();
 });
-it.each(['import', 'assisted'])(
-  'preserva entrada de importação ou criação assistida (%s)',
-  async (action) => {
-    render(tree(action === 'import' ? 'import' : 'projects'));
-    if (action === 'import') {
-      await userEvent.click(screen.getByRole('button', { name: 'Importar livro' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Concluir importação' }));
-      expect(await screen.findByRole('heading', { name: 'Livro aberto' })).toBeInTheDocument();
-    } else {
-      await userEvent.click(screen.getByRole('button', { name: 'Novo projeto' }));
-      await userEvent.click(screen.getByRole('menuitem', { name: 'Livro com IA' }));
-      expect(
-        await screen.findByRole('heading', { name: 'Criação assistida preservada' }),
-      ).toBeInTheDocument();
-    }
-  },
-);
-it('troca de conta não reapresenta resultados nem formulário privados pendentes', async () => {
-  let finish!: (project: Campaign) => void;
-  vi.mocked(createCampaign).mockImplementationOnce(
-    () =>
-      new Promise((resolve) => {
-        finish = resolve;
-      }),
-  );
+it('troca de conta não reapresenta resultados privados do Estúdio', async () => {
   const view = render(tree());
   await screen.findByRole('link', { name: /Mesa existente/ });
-  await userEvent.click(screen.getByRole('button', { name: 'Novo projeto' }));
-  await userEvent.click(screen.getByRole('menuitem', { name: 'Campanha' }));
-  await userEvent.type(screen.getByLabelText('Título da campanha'), 'Segredo da conta anterior');
-  await userEvent.click(screen.getByRole('button', { name: 'Criar campanha' }));
   auth.user = { uid: 'new-owner' };
   vi.mocked(listStudioBooks).mockResolvedValue({ items: [], nextCursor: null });
   vi.mocked(listCampaigns).mockResolvedValue({ items: [], nextCursor: null });
   view.rerender(tree());
   expect(screen.queryByText('Mesa existente')).not.toBeInTheDocument();
-  expect(screen.queryByLabelText('Título da campanha')).not.toBeInTheDocument();
-  await act(async () => {
-    finish({
-      ...campaign,
-      ownerId: 'owner',
-      schemaVersion: 1,
-      description: 'privada',
-      provenance: { kind: 'independent' },
-    });
-    await Promise.resolve();
-  });
-  expect(screen.queryByText('Campanha aberta')).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Novo projeto' }));
-  await userEvent.click(screen.getByRole('menuitem', { name: 'Campanha' }));
-  expect(screen.getByLabelText('Título da campanha')).toHaveValue('');
+  expect(await screen.findByRole('heading', { name: 'Escolher forma de criação' })).toBeVisible();
 });
 it('aguarda sessão e direciona visitante ao login sem consultar projetos', async () => {
   auth.loading = true;
@@ -613,25 +559,16 @@ it('aguarda sessão e direciona visitante ao login sem consultar projetos', asyn
   view.rerender(tree());
   expect(await screen.findByRole('heading', { name: 'Entrar na conta' })).toBeInTheDocument();
 });
-it('permite fechar formulários e mostra erro parcial de aventuras sem apagar livros', async () => {
+it('erro parcial de aventuras preserva livros, importação e atualização', async () => {
   vi.mocked(listAdventures).mockRejectedValue(new Error('Aventuras offline'));
   render(tree());
   expect(await screen.findByText('Aventuras offline')).toBeInTheDocument();
   expect(await screen.findByRole('link', { name: /Livro existente/ })).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('button', { name: 'Novo projeto' }));
-  await userEvent.click(screen.getByRole('menuitem', { name: 'Aventura' }));
-  expect(screen.getByLabelText('Título da aventura')).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('button', { name: 'Fechar formulário' }));
-  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('link', { name: 'Importar do host' }));
   await userEvent.click(screen.getByRole('button', { name: 'Importar livro' }));
   await userEvent.click(screen.getByRole('button', { name: 'Cancelar importação' }));
   expect(screen.queryByRole('button', { name: 'Concluir importação' })).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('link', { name: 'Projetos do host' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Novo projeto' }));
-  await userEvent.click(screen.getByRole('menuitem', { name: 'Livro' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Cancelar livro' }));
-  expect(screen.queryByRole('button', { name: 'Confirmar livro manual' })).not.toBeInTheDocument();
   const previousCalls = vi.mocked(prepareStudioBooks).mock.calls.length;
   await userEvent.click(
     within(screen.getByRole('region', { name: 'Livros' })).getByRole('button', {

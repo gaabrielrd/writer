@@ -1,3 +1,4 @@
+import { PageAssistant } from '@/features/page-assistant';
 import { useEffect, useRef, useState } from 'react';
 import { Feather, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router';
@@ -140,6 +141,7 @@ export function AuthenticatedWorkspace() {
           <Outlet />
         </main>
       </div>
+      <PageAssistant />
       <Dialog
         open={drawerPath === pathname}
         onClose={closeDrawer}

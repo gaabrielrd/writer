@@ -15,30 +15,29 @@ test('livro cria pelos dados essenciais e mantém detalhes opcionais ao recolher
 }, testInfo) => {
   await page.goto('/');
   await openBookCreation(page);
-  const dialog = page.getByRole('dialog', { name: 'Criar Novo Livro' });
-  await expect(dialog.getByRole('button', { name: 'Criar Livro', exact: true })).toBeDisabled();
-  await dialog
-    .getByLabel('Título da Obra')
+  const form = page.locator('#main-content');
+  await form.getByLabel('Título do projeto').fill('');
+  await expect(form.getByRole('button', { name: 'Criar livro', exact: true })).toBeDisabled();
+  await form
+    .getByLabel('Título do projeto')
     .fill('As histórias que atravessam as estações e voltam para casa');
-  await dialog.getByLabel('Gênero Literário').fill('Fantasia');
-  await expect(dialog.getByLabel('Sinopse / Premissa')).not.toBeVisible();
-  await expect(dialog.getByRole('button', { name: 'Continuar', exact: true })).toHaveCount(0);
-  await expectDialogWithinViewport(page);
-  await capture(page, testInfo, 'livro-essenciais');
-  const synopsis = dialog.getByRole('button', { name: /^Sinopse/ });
-  await synopsis.focus();
+  await form.getByLabel('Gênero ou estilo').fill('Fantasia');
+  const details = form.getByRole('button', { name: /^Premissa e detalhes/ });
+  await details.click();
+  await expect(form.getByLabel('Premissa', { exact: true })).not.toBeVisible();
+  await details.focus();
   await page.keyboard.press('Enter');
-  await dialog
-    .getByLabel('Sinopse / Premissa')
+  await form
+    .getByLabel('Premissa', { exact: true })
     .fill('Uma história que permanece durante todas as estações.');
-  await synopsis.click();
-  await expect(synopsis).toHaveAttribute('aria-expanded', 'false');
-  await expect(dialog.getByLabel('Sinopse / Premissa')).toHaveValue(
+  await details.click();
+  await expect(details).toHaveAttribute('aria-expanded', 'false');
+  await expect(form.getByLabel('Premissa', { exact: true })).toHaveValue(
     'Uma história que permanece durante todas as estações.',
   );
-  await dialog.getByRole('button', { name: 'Criar Livro', exact: true }).click();
-  await expect(dialog).toHaveCount(0);
-  await expect(page).toHaveURL(/\/books\/visual-created-book-/);
+  await capture(page, testInfo, 'livro-essenciais');
+  await form.getByRole('button', { name: 'Criar livro', exact: true }).click();
+  await expect(page).toHaveURL(/\/books\/[^/]+$/);
   await expect(
     page.getByRole('heading', {
       name: 'As histórias que atravessam as estações e voltam para casa',

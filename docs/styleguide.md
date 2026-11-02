@@ -460,3 +460,11 @@ Sem essa API, cores usam duração, curva e delay comuns durante a troca.
 A primeira aplicação e movimento reduzido não animam a mudança. Novas
 seleções interrompem a transição anterior; tempos normais de interação
 são restaurados ao terminar.
+
+## Novo projeto e assistente contextual
+
+A entrada revela método, tipo, ponto de partida e conversa/revisão em sequência.
+Universo/persona, premissa e capa usam FormSection; não obrigue todas as seções
+abertas. Ações do assistente mostram rótulo e texto proposto antes de executar.
+O painel acompanha o diálogo ativo sem retirar seu foco contido ou a confirmação
+de salvamento. Temas usam os mesmos tokens semânticos e os controles compartilhados.

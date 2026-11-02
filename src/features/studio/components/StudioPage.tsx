@@ -8,8 +8,6 @@ import {
   ScrollText,
   FolderOpen,
   ArrowRight,
-  Sparkles,
-  Map,
 } from 'lucide-react';
 import { BookRestoreDialog, BookRestorePreparations } from '@/features/book-portability';
 import {
@@ -30,24 +28,9 @@ import {
   CampaignAdoptionDialog,
   CampaignAdoptionPreparations,
 } from '@/features/campaign-adoptions';
-import {
-  BookFormDialog,
-  ImportBookModal,
-  createBook,
-  getBook,
-  type CreateBookInput,
-} from '@/features/books';
-import {
-  Button,
-  Dropdown,
-  DropdownItem,
-  Card,
-  LoadingState,
-  PageHeader,
-  buttonVariants,
-} from '@/shared/ui';
-import { projectKinds, projectLabels, type StudioProjectKind } from '../model/project';
-import { ProjectCreationDialog } from './ProjectCreationDialog';
+import { ImportBookModal, getBook } from '@/features/books';
+import { Button, Card, LoadingState, PageHeader, buttonVariants } from '@/shared/ui';
+import { projectKinds, projectLabels } from '../model/project';
 import { StudioProjectSection } from './StudioProjectSection';
 import styles from './StudioPage.module.css';
 
@@ -65,7 +48,6 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
   const [operationsLoaded, setOperationsLoaded] = useState(section === 'operations');
   if (section === 'operations' && !operationsLoaded) setOperationsLoaded(true);
   const destination = studioDestinations.find((item) => item.id === section)!;
-  const [form, setForm] = useState<StudioProjectKind | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [adventureImportOpen, setAdventureImportOpen] = useState(false);
   const [restoreOpen, setRestoreOpen] = useState(false),
@@ -84,17 +66,6 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
       active.current = false;
     };
   }, []);
-  async function submitBook(input: CreateBookInput) {
-    const book = await createBook(ownerId, input);
-    if (active.current) void navigate('/books/' + encodeURIComponent(book.id));
-  }
-  function created(type: 'adventure' | 'campaign', id: string) {
-    if (!active.current) return;
-    setForm(null);
-    void navigate(
-      '/' + (type === 'adventure' ? 'adventures' : 'campaigns') + '/' + encodeURIComponent(id),
-    );
-  }
   return (
     <div className={styles.page}>
       <PageHeader
@@ -102,42 +73,10 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
         description={destination.description}
         actions={
           (section === 'home' || section === 'projects') && (
-            <Dropdown
-              mode="action"
-              label="Novo projeto"
-              trigger={
-                <Button>
-                  <Plus className="icon icon-sm" aria-hidden="true" />
-                  Novo projeto
-                </Button>
-              }
-            >
-              <DropdownItem className={styles.creationMenuItem} onSelect={() => setForm('book')}>
-                <BookOpen className="icon icon-sm" aria-hidden="true" />
-                Livro
-              </DropdownItem>
-              <DropdownItem
-                className={styles.creationMenuItem}
-                onSelect={() => void navigate('/books/new/assisted')}
-              >
-                <Sparkles className="icon icon-sm" aria-hidden="true" />
-                Livro com IA
-              </DropdownItem>
-              <DropdownItem
-                className={styles.creationMenuItem}
-                onSelect={() => setForm('adventure')}
-              >
-                <ScrollText className="icon icon-sm" aria-hidden="true" />
-                Aventura
-              </DropdownItem>
-              <DropdownItem
-                className={styles.creationMenuItem}
-                onSelect={() => setForm('campaign')}
-              >
-                <Map className="icon icon-sm" aria-hidden="true" />
-                Campanha
-              </DropdownItem>
-            </Dropdown>
+            <Button onClick={() => void navigate('/studio/new')}>
+              <Plus className="icon icon-sm" aria-hidden="true" />
+              Novo projeto
+            </Button>
           )
         }
       />
@@ -387,7 +326,6 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
         />
       )}
 
-      <BookFormDialog open={form === 'book'} onClose={() => setForm(null)} onSubmit={submitBook} />
       <ImportBookModal
         open={importOpen}
         onClose={() => setImportOpen(false)}
@@ -395,18 +333,6 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
         onSuccess={(id) => {
           if (active.current) void navigate('/books/' + encodeURIComponent(id));
         }}
-      />
-      <ProjectCreationDialog
-        kind="adventure"
-        open={form === 'adventure'}
-        onClose={() => setForm(null)}
-        onCreated={(id) => created('adventure', id)}
-      />
-      <ProjectCreationDialog
-        kind="campaign"
-        open={form === 'campaign'}
-        onClose={() => setForm(null)}
-        onCreated={(id) => created('campaign', id)}
       />
     </div>
   );

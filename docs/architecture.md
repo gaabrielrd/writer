@@ -2,6 +2,14 @@
 
 Este documento descreve como o código do `Writer Assistant` é organizado e as regras que mantêm o projeto simples e sustentável.
 
+## Criação e assistência contextual
+
+`project-creation` compõe a entrada IA/manual dos três tipos em `/studio/new`.
+`page-assistant` oferece propostas sobre capacidades transitórias da página,
+acionando somente handlers existentes após confirmação. A aplicação compõe as
+duas features por suas interfaces públicas. Sessões v2 e a ação `pageAssistant`
+usam `generationApi`; veja a [ADR 0271](decisions/0271-project-creation-and-contextual-assistant.md).
+
 ## Princípios
 
 As Functions são expostas por setor, com ações explícitas e serviços internos

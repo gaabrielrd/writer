@@ -503,3 +503,7 @@ export function fixtureFinishAdventureDeletion(uid: string, id: string, deletion
   values[key] = { ...old, state: 'deleted' };
   localStorage.setItem(adventureReservationsKey, JSON.stringify(values));
 }
+
+export function fixtureCreatedOperation(operationId: string) {
+  return structuredClone(receipts.get(`${fixtureOwner()}:${operationId}`)?.project ?? null);
+}

@@ -331,6 +331,7 @@ export const FUNCTION_DOMAINS = {
     sourceFactory: 'callable',
     actions: {
       assistedBook: 'assistedBook',
+      pageAssistant: 'pageAssistant',
       generateBookAsset: 'generate',
     },
   },

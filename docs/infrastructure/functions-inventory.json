@@ -107,7 +107,7 @@
     },
     {
       "endpoint": "generationApi",
-      "actionCount": 2,
+      "actionCount": 3,
       "region": "us-central1",
       "enforceAppCheck": true,
       "timeoutSeconds": 120,
@@ -1057,7 +1057,10 @@
       "endpoint": "generationApi",
       "method": "assistedBook",
       "serviceCandidates": ["functions/src/assistedBook.mjs"],
-      "consumers": ["src/features/ai-assistant/services/assistedBookService.ts"],
+      "consumers": [
+        "src/features/ai-assistant/services/assistedBookService.ts",
+        "src/features/page-assistant/services/pageAssistantService.ts"
+      ],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -2474,6 +2477,14 @@
       "method": "moveScene",
       "serviceCandidates": ["functions/src/scenes.mjs"],
       "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "pageAssistant",
+      "endpoint": "generationApi",
+      "method": "pageAssistant",
+      "serviceCandidates": ["functions/src/domainServices.mjs", "functions/src/pageAssistant.mjs"],
+      "consumers": ["src/features/page-assistant/services/pageAssistantService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {

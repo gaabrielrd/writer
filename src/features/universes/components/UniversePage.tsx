@@ -25,7 +25,7 @@ import {
 import type { Universe } from '../model/universe';
 import styles from './UniversePage.module.css';
 
-function UniverseForm({
+export function UniverseForm({
   world,
   onClose,
   onSaved,

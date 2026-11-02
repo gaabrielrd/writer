@@ -1,3 +1,7 @@
+import type {
+  PageCapability,
+  PageAction,
+} from '../../../../functions/src/pageAssistantCapabilities.mjs';
 import type { ChatGenerationRequest } from './chatGeneration';
 import type { LoreCategory, LoreDetails, LoreRelation } from '@/features/lore';
 
@@ -22,7 +26,16 @@ export interface AssistedCosts {
   text: number;
   cover: number;
 }
+export type CreationKind = 'book' | 'adventure' | 'campaign';
 export interface AssistedSession {
+  suggestedAction?: PageAction | null;
+  suggestedActionRequestId?: string | null;
+  flowVersion?: 2;
+  kind?: CreationKind;
+  method?: 'manual' | 'assisted';
+  universeId?: string | null;
+  personaId?: string | null;
+  contextUnavailable?: boolean;
   id: string;
   idea: string;
   messages: { role: 'user' | 'assistant'; text: string }[];
@@ -44,6 +57,12 @@ export interface AssistedSession {
 export type AssistedAction =
   'start' | 'interview' | 'brief' | 'generate' | 'entity' | 'cover' | 'save';
 export interface AssistedRequest {
+  capabilities?: PageCapability[];
+  flowVersion?: 2;
+  kind?: CreationKind;
+  method?: 'manual' | 'assisted';
+  universeId?: string | null;
+  personaId?: string | null;
   action: AssistedAction;
   sessionId: string;
   requestId: string;

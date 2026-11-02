@@ -1,4 +1,32 @@
-# Criação de livro assistida por IA
+# Criação assistida por IA
+
+## Entrada atual do Estúdio
+
+Novo projeto abre `/studio/new`: escolha IA ou manual, depois Livro, Aventura ou
+Campanha. Universo e persona podem ser selecionados antes da conversa; os seus
+gerenciadores abrem sem sair do fluxo. A proposta inicial é curta e revisável.
+Salvar rascunho preserva a revisão. Ao confirmar, raiz, vínculo e débito são
+atômicos. O pacote textual custa 2 créditos nos três tipos; criação manual não
+debita esse pacote. Livros também podem usar imagem da biblioteca ou gerar capa
+por mais 5 créditos. A confirmação mostra o total.
+
+A própria conversa de criação pode propor ações da tela, como gerar a proposta,
+abrir detalhes ou ajustar campos, sempre com prévia e confirmação. Os ajustes
+autorais não salvos permanecem intactos ao conversar. A sessão nova comporta
+até 64 mensagens; a confirmação permite continuar dentro do projeto.
+
+O assistente da página abre no projeto confirmado e relê a concepção por ID,
+quando ainda disponível e autorizada. Pode sugerir ações dos controles atuais,
+com confirmação individual. A escrita de texto rico usa o assistente nativo do
+editor. Veja o [plano e limites](tasks/criacao-de-projetos-e-assistente-contextual.md)
+e a [ADR 0271](decisions/0271-project-creation-and-contextual-assistant.md).
+
+## Fluxo legado de livro
+
+A rota `/books/new/assisted` preserva a entrevista e revisão detalhada de lore
+abaixo; não é a entrada padrão de Novo projeto. Se a sessão atual pertence ao
+fluxo novo, essa rota encaminha para `/studio/new` sem reinterpretar uma aventura
+ou campanha como livro.
 
 Na biblioteca, **Criar com IA** abre `/books/new/assisted`. A criação manual
 continua disponível. O fluxo exige login e backend implantado.

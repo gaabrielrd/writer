@@ -1,9 +1,7 @@
 import { capture, expect, expectDialogWithinViewport, test } from './support';
 
 test('ideia, entrevista, revisão privada, capa e compêndio criado', async ({ page }, testInfo) => {
-  await page.goto('/');
-  await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Livro com IA', exact: true }).click();
+  await page.goto('/books/new/assisted');
   await page
     .getByLabel('Sua ideia')
     .fill('Uma navegadora descobre que o oceano está desaparecendo.');

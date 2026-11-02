@@ -1,11 +1,16 @@
 import { author } from './data';
+import { fixtureOwner } from './studioStore';
 import { validatePersona, type AIPersona } from '../../../src/features/ai-assistant/model/persona';
 
 const listeners = new Set<(items: AIPersona[]) => void>();
+const storageKey = () =>
+  fixtureOwner() === author.uid
+    ? 'writer_fixture_personas'
+    : 'writer_fixture_personas_' + fixtureOwner();
 const read = (): AIPersona[] =>
-  JSON.parse(sessionStorage.getItem('writer_fixture_personas') ?? '[]') as AIPersona[];
+  JSON.parse(sessionStorage.getItem(storageKey()) ?? '[]') as AIPersona[];
 function checkOwner(ownerId: string) {
-  if (ownerId !== author.uid) throw new Error('A prévia permite somente a conta fictícia.');
+  if (ownerId !== fixtureOwner()) throw new Error('A prévia permite somente a conta fictícia.');
 }
 export function subscribePersonas(
   ownerId: string,
@@ -44,7 +49,7 @@ export function savePersona(
     updatedAt: Date.now(),
   });
   const next = [...items.filter((item) => item.id !== input.id), saved];
-  sessionStorage.setItem('writer_fixture_personas', JSON.stringify(next));
+  sessionStorage.setItem(storageKey(), JSON.stringify(next));
   listeners.forEach((callback) => callback(structuredClone(next)));
   return Promise.resolve(saved);
 }

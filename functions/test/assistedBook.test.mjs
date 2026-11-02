@@ -30,9 +30,24 @@ function fixture(overrides = {}) {
     queue = Promise.resolve();
   const snap = (path) => ({
     exists: records.has(path),
+    id: path.split('/').at(-1),
+    createTime: { seconds: 1, nanoseconds: 0 },
     data: () => structuredClone(records.get(path)),
   });
   const db = {
+    collection: (path) => ({
+      path,
+      isCollection: true,
+      orderBy() {
+        return this;
+      },
+      limit() {
+        return this;
+      },
+      select() {
+        return this;
+      },
+    }),
     doc: (path) => ({
       path,
       get: async () => snap(path),
@@ -47,7 +62,15 @@ function fixture(overrides = {}) {
         const tx = {
           get: async (ref) => {
             assert.equal(writing, false, 'Firestore reads must precede writes');
-            return snap(ref.path);
+            return ref.isCollection
+              ? {
+                  docs: [...records.keys()]
+                    .filter((path) => path.startsWith(ref.path + '/'))
+                    .sort()
+                    .slice(0, 12)
+                    .map(snap),
+                }
+              : snap(ref.path);
           },
           set: (ref, value) => {
             writing = true;
@@ -104,11 +127,12 @@ function fixture(overrides = {}) {
   });
   const call = (data, uid = 'author') => service.assistedBook(uid, data);
   let session;
-  const start = async () =>
+  const start = async (setup = {}) =>
     (session = await call({
       action: 'start',
       sessionId: randomUUID(),
       idea: 'Uma viajante entre ilhas.',
+      ...setup,
     }));
   const op = async (action, extra = {}, requestId = randomUUID()) =>
     (session = await call({
@@ -439,5 +463,173 @@ test('criação assistida congela parâmetros e retry não troca o modelo nem de
   assert.equal(f.records.get('users/author').credits, 20);
   await assert.rejects(f.call({ ...data, generation: { ...data.generation, model: 'unknown' } }), {
     code: 'invalid-argument',
+  });
+});
+
+for (const kind of ['book', 'adventure', 'campaign']) {
+  for (const method of ['manual', 'assisted']) {
+    test(`new creation ${kind}/${method} activates once with the selected persona and correct debit`, async () => {
+      const f = fixture({ generator: async () => ({ ...proposal(), entities: [] }) });
+      let session = await f.start({ flowVersion: 2, kind, method, personaId: 'preset-epic' });
+      if (method === 'assisted')
+        session = await f.op('generate', { brief: 'Uma premissa revisada.' });
+      const input = {
+        action: 'commit',
+        flowVersion: 2,
+        sessionId: session.id,
+        revision: session.revision,
+        proposal: { ...proposal(), entities: [] },
+        expectedCost: method === 'manual' ? 0 : 2,
+      };
+      const result = await f.call(input);
+      f.records.delete(`users/author/assistedSessions/${session.id}`);
+      const replay = await f.call(input);
+      assert.equal(result.project.kind, kind);
+      assert.equal(replay.project.id, result.project.id);
+      assert.equal(result.book.personaId, 'preset-epic');
+      assert.equal(f.records.get('users/author').credits, method === 'manual' ? 20 : 18);
+      const collection = { book: 'books', adventure: 'adventures', campaign: 'campaigns' }[kind];
+      assert.equal(f.records.get(`${collection}/${session.id}`).title, 'Atlas');
+      if (kind === 'campaign') assert.deepEqual(result.book.provenance, { kind: 'independent' });
+    });
+  }
+}
+test('manual sessions cannot generate AI text and avoid its debit', async () => {
+  const f = fixture();
+  await f.start({ flowVersion: 2, kind: 'book', method: 'manual' });
+  await assert.rejects(f.op('generate', { brief: 'Bypass' }), { code: 'failed-precondition' });
+  assert.equal(f.calls(), 0);
+});
+test('new creation binds universe usage atomically and rejects a revoked source before commit', async () => {
+  const f = fixture({ generator: async () => ({ ...proposal(), entities: [] }) });
+  f.records.set('universes/world', {
+    authorId: 'author',
+    name: 'Ilhas',
+    description: 'O mar desaparece.',
+    loreVersion: 0,
+    privacyVersion: 0,
+    campaignCount: 0,
+  });
+  const session = await f.start({
+    flowVersion: 2,
+    kind: 'campaign',
+    method: 'manual',
+    universeId: 'world',
+  });
+  f.records.get('universes/world').deleting = true;
+  await assert.rejects(
+    f.call({
+      action: 'commit',
+      flowVersion: 2,
+      sessionId: session.id,
+      revision: 0,
+      proposal: { ...proposal(), entities: [] },
+      expectedCost: 0,
+    }),
+    { code: 'failed-precondition' },
+  );
+  assert.equal(f.records.has(`campaigns/${session.id}`), false);
+  f.records.get('universes/world').deleting = false;
+  await f.call({
+    action: 'commit',
+    flowVersion: 2,
+    sessionId: session.id,
+    revision: 0,
+    proposal: { ...proposal(), entities: [] },
+    expectedCost: 0,
+  });
+  assert.equal(f.records.get('universes/world').campaignCount, 1);
+  assert.deepEqual(f.records.get(`universes/world/campaigns/${session.id}`), {
+    campaignId: session.id,
+  });
+});
+test('provider output is rejected when the selected universe changes during generation', async () => {
+  const f = fixture({
+    generator: async () => {
+      records.get('universes/world').loreVersion++;
+      return { ...proposal(), entities: [] };
+    },
+  });
+  const records = f.records;
+  records.set('universes/world', { authorId: 'author', name: 'Ilhas', loreVersion: 0 });
+  await f.start({ flowVersion: 2, kind: 'adventure', method: 'assisted', universeId: 'world' });
+  await assert.rejects(f.op('generate', { brief: 'Uma abertura.' }), {
+    code: 'failed-precondition',
+  });
+  const loaded = await f.call({ action: 'load' });
+  assert.equal(loaded.session.contextUnavailable, true);
+  assert.equal(loaded.session.proposal, null);
+  assert.equal(loaded.session.messages[0].role, 'user');
+});
+
+test('new proposal cannot hide unreviewed lore behind initial metadata', async () => {
+  const f = fixture();
+  await f.start({ flowVersion: 2, kind: 'book', method: 'assisted' });
+  await assert.rejects(f.op('generate', { brief: 'Somente a premissa.' }), { code: 'unavailable' });
+  assert.equal(f.records.get('users/author').credits, 20);
+});
+
+test('manual creation and draft saves do not consume or depend on AI quotas', async () => {
+  const f = fixture();
+  f.records.set('users/author/assistedLimits/starts', { windowStart: 0, count: 10 });
+  f.records.set('users/author/assistedLimits/current', { windowStart: 0, count: 60 });
+  await f.start({ flowVersion: 2, kind: 'book', method: 'manual' });
+  await f.op('save', { proposal: { ...proposal(), entities: [] } });
+  assert.equal(f.records.get('users/author/assistedLimits/current').count, 60);
+  assert.equal(f.records.get('users/author/assistedLimits/starts').count, 10);
+});
+
+test('conception chat proposes a bound UI action without executing it or replacing the reviewed proposal', async () => {
+  let captured;
+  const f = fixture({
+    generator: async (context) => {
+      if (context.mode === 'project-interview') {
+        captured = context;
+        return {
+          question: 'Confira o ajuste sugerido.',
+          brief: 'Uma viagem entre ilhas.',
+          ready: true,
+          action: { id: 'control-title', value: 'Novo título' },
+        };
+      }
+      return { ...proposal(), entities: [] };
+    },
+  });
+  await f.start({ flowVersion: 2, kind: 'book', method: 'assisted' });
+  const generated = await f.op('generate', { brief: 'Uma viagem entre ilhas.' });
+  const original = structuredClone(generated.proposal);
+  const requestId = randomUUID();
+  const result = await f.op(
+    'interview',
+    {
+      message: 'Ajuste o título',
+      proposal: { ...original, title: 'Rascunho próprio' },
+      capabilities: [{ id: 'control-title', label: 'Título do projeto', kind: 'field' }],
+    },
+    requestId,
+  );
+  assert.deepEqual(result.suggestedAction, { id: 'control-title', value: 'Novo título' });
+  assert.equal(result.suggestedActionRequestId, requestId);
+  assert.deepEqual(result.proposal, original);
+  assert.equal(captured.currentProposal.title, 'Rascunho próprio');
+  assert.equal(f.records.has(`books/${result.id}`), false);
+  assert.equal(f.records.get('users/author').credits, 20);
+});
+test('conception chat rejects invented action IDs and supports actions beyond eight interview turns', async () => {
+  let invalid = false;
+  const f = fixture({
+    generator: async () => ({
+      question: 'Qual é sua próxima decisão?',
+      brief: 'Concepção.',
+      ready: true,
+      action: invalid ? { id: 'unregistered' } : null,
+    }),
+  });
+  await f.start({ flowVersion: 2, kind: 'campaign', method: 'assisted' });
+  for (let i = 0; i < 10; i++)
+    await f.op('interview', { message: 'Decisão ' + i, capabilities: [] });
+  invalid = true;
+  await assert.rejects(f.op('interview', { message: 'Continue', capabilities: [] }), {
+    code: 'failed-precondition',
   });
 });
