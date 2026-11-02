@@ -3343,3 +3343,15 @@ integridade, editar/remover e operar em 320 px. Veja [contrato](custom-themes.md
 A execução com cobertura também salva o resultado de cada caso em `coverage/results.json`, incluído no artefato de cobertura existente da CI. Não é um relatório de execução parcial.
 
 Veja as [medições e limitações da otimização local](entregas/2026-11-02-otimizacao-suite-testes.md).
+
+## Orçamento dos testes de protocolo de lore
+
+`bookLoreManualOperation.test.mjs` e `bookLorePersistedOperation.test.mjs`
+atravessam os protocolos completos de captura, criptografia, journal e persistência.
+Os 81 casos preservam os mesmos volumes e asserções, com até 60 segundos por caso
+sob cobertura; `afterAll` restaura a configuração padrão. Isso evita interromper
+operações ainda em andamento no limite de cinco segundos e contaminar o caso
+seguinte. Os limites globais de cobertura permanecem inalterados.
+
+Na validação local, `VITEST_MAX_WORKERS=2` limita concorrência sem mudar o inventário
+de testes, a instrumentação ou os critérios de aprovação.

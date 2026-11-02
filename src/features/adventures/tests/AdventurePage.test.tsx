@@ -125,7 +125,7 @@ function tree(search = '') {
       <Routes>
         <Route path="/adventures/:adventureId" element={<AdventurePage />} />
         <Route path="/login" element={<p>Entrar na conta</p>} />
-        <Route path="/studio" element={<h1>Estúdio</h1>} />
+        <Route path="/studio/*" element={<h1>Estúdio</h1>} />
         <Route path="/campaigns/:campaignId" element={<h1>Campanha criada</h1>} />
       </Routes>
     </MemoryRouter>
@@ -176,7 +176,7 @@ it('abre metadados persistidos, mantém privacidade e permite retornar ao Estúd
   expect(screen.getByText('Privada')).toBeInTheDocument();
   expect(screen.getByText('Projeto independente, sem universo vinculado.')).toBeInTheDocument();
   expect(getAdventure).toHaveBeenCalledWith('project');
-  await userEvent.click(screen.getByRole('link', { name: 'Voltar ao Estúdio' }));
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar aos projetos' }));
   expect(screen.getByRole('heading', { name: 'Estúdio' })).toBeInTheDocument();
 });
 it('mostra universo vinculado e campo vazio sem inventar sessão ou narrativa', async () => {
@@ -291,7 +291,7 @@ it('compartilha o único guard de navegação e Auth com a pendência de persona
   const router = createMemoryRouter(
     [
       { path: '/adventures/:adventureId', element: <AdventurePage /> },
-      { path: '/studio', element: <h1>Estúdio</h1> },
+      { path: '/studio/*', element: <h1>Estúdio</h1> },
     ],
     { initialEntries: ['/adventures/project'] },
   );
@@ -299,7 +299,7 @@ it('compartilha o único guard de navegação e Auth com a pendência de persona
   await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
   await userEvent.click(screen.getByRole('button', { name: 'Pedido incerto' }));
   expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
-  await userEvent.click(screen.getByRole('link', { name: 'Voltar ao Estúdio' }));
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar aos projetos' }));
   expect(screen.getByRole('heading', { name: 'Meu projeto' })).toBeVisible();
   expect(router.state.location.pathname).toBe('/adventures/project');
   const unload = new Event('beforeunload', { cancelable: true });
@@ -307,7 +307,7 @@ it('compartilha o único guard de navegação e Auth com a pendência de persona
   expect(unload.defaultPrevented).toBe(true);
   await userEvent.click(screen.getByRole('button', { name: 'Resolver pedido' }));
   expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(false);
-  await userEvent.click(screen.getByRole('link', { name: 'Voltar ao Estúdio' }));
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar aos projetos' }));
   expect(await screen.findByRole('heading', { name: 'Estúdio' })).toBeVisible();
 });
 

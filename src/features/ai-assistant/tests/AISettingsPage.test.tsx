@@ -42,7 +42,7 @@ it('navega pelo contexto para a rota com lista e abre detalhes gráficos, devolv
     </MemoryRouter>,
   );
   await user.click(screen.getByRole('button', { name: 'Configurar IA' }));
-  expect(screen.getByRole('heading', { name: 'Inteligência artificial' })).toBeVisible();
+  expect(screen.getByRole('region', { name: 'Inteligência artificial' })).toBeVisible();
   expect(screen.getByRole('list', { name: 'Personas disponíveis' })).toBeVisible();
   expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   const row = screen.getByRole('button', { name: 'Ver detalhes de O Épico' });

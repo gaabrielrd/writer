@@ -217,7 +217,7 @@ function tree() {
       <Routes>
         <Route path="/campaigns/:campaignId" element={<CampaignPage />} />
         <Route path="/login" element={<p>Entrar na conta</p>} />
-        <Route path="/studio" element={<h1>Estúdio</h1>} />
+        <Route path="/studio/*" element={<h1>Estúdio</h1>} />
       </Routes>
     </MemoryRouter>
   );
@@ -232,7 +232,7 @@ it('abre metadados persistidos, mantém privacidade e permite retornar ao Estúd
   expect(screen.getByText('Privada')).toBeInTheDocument();
   expect(screen.getByText('Projeto independente, sem universo vinculado.')).toBeInTheDocument();
   expect(getCampaign).toHaveBeenCalledWith('project');
-  await userEvent.click(screen.getByRole('link', { name: 'Voltar ao Estúdio' }));
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar aos projetos' }));
   expect(screen.getByRole('heading', { name: 'Estúdio' })).toBeInTheDocument();
 });
 it('mostra universo vinculado e campo vazio sem inventar sessão ou narrativa', async () => {

@@ -28,7 +28,7 @@ describe('espaços em preparação', () => {
         <FutureSpacePage space="library" />
       </MemoryRouter>,
     );
-    expect(screen.getByRole('heading', { name: 'Biblioteca' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Biblioteca' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Abrir Biblioteca de Imagens' })).toHaveAttribute(
       'href',
       '/library',

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { beforeEach, afterEach, afterAll, it, expect, vi } from 'vitest';
 import { createBookLoreManualOperation as create } from '../services/bookLoreManualOperation.ts';
 import { createBookLoreJournal, openBookLoreJournal } from '../services/bookLoreJournal.ts';
 import {
@@ -15,6 +15,9 @@ import { createBookLoreWriteRecoveryService } from '../../../../functions/src/bo
 import { adventureImportDb } from '../../../../functions/test/helpers/adventureImportDb.mjs';
 import { loreLogicalFixture } from '../../../../functions/test/helpers/bookLoreLogicalFixture.mjs';
 import { installLoreJournalHarness } from './bookLoreJournalHarness.mjs';
+// Full encrypted persistence protocols retain their complete data and assertions under coverage.
+vi.setConfig({ testTimeout: 60000 });
+afterAll(() => vi.resetConfig());
 let h;
 beforeEach(() => {
   h = installLoreJournalHarness();
