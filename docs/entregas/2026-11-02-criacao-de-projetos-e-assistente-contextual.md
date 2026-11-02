@@ -4,7 +4,7 @@
 - **Branch**: `codex/criacao-projetos-chat`
 - **Base**: `origin/master` em `a89fc385701d07b62d45883270ffc963c53a5c92`, capturada no início da implementação.
 - **Plano**: [Criação de projetos e assistente contextual](../tasks/criacao-de-projetos-e-assistente-contextual.md).
-- **Estado**: implementação revisada no commit `8e9efa6`; integração e envio autorizados posteriormente pelo operador. O gate global da integração está em validação.
+- **Estado**: implementação revisada no commit `8e9efa6`; integração e envio autorizados posteriormente pelo operador. O gate global continua pendente pelos timeouts registrados.
 
 ## Objetivo
 
@@ -143,6 +143,21 @@ Test Files  3 passed (3)
 26 passed (1.5m)
 ```
 
-O typecheck da árvore integrada também passou, assim como os 37 lotes de lint. A geração de personas e o entrypoint tiveram mais 12 testes aprovados, somando 57 testes dirigidos de servidor após a integração. A validação completa está sendo repetida antes do fechamento do merge. Hooks foram gerados nesta worktree; o commit da feature foi conferido por lint-staged e pela validação de mensagem, sem alterações adicionais.
+O typecheck da árvore integrada também passou, assim como os 37 lotes de lint. A geração de personas e o entrypoint tiveram mais 12 testes aprovados, somando 57 testes dirigidos de servidor após a integração. A validação completa foi repetida antes do fechamento do merge e voltou a apresentar timeouts de lore, conforme o registro abaixo. Hooks foram gerados nesta worktree; o commit da feature foi conferido por lint-staged e pela validação de mensagem, sem alterações adicionais.
 
 O operador confirmou que o envio pode acionar a publicação automática do frontend. A variável remota `FIREBASE_HOSTING_DEPLOY_ENABLED` estava `true`; o workflow de Hosting depende de seus gates de validação e integração. Isso não comprova publicação nem aprovação da CI. O workflow de Hosting não implanta Functions; os novos contratos em `generationApi` exigem rollout de servidor separado para uso em produção. Não houve autorização nem execução de implantação manual de Functions neste envio.
+
+### Fechamento local antes do push
+
+A principal local avançou por fast-forward para o merge `317abc6`, contendo tanto `8e9efa6` quanto a antiga ponta `1d78ff7`. Os hooks do merge passaram e a árvore ficou limpa.
+
+A repetição integrada de `npm run validate` passou por arquitetura, documentação, styleguide, formatação e os 37 lotes de lint. Na cobertura, foram observados três timeouts em `bookLoreVisibilitySelection.test.mjs` (um de 180 segundos e dois de 5 segundos) e um de 5 segundos em `bookLoreVisibilitySelectionSession.test.mjs`. A execução foi interrompida após confirmar essas falhas; não houve aprovação global nem certificação de cobertura.
+
+O artefato integrado foi conferido separadamente:
+
+```text
+✓ built in 3.72s
+Smoke test do bundle OK.
+```
+
+Os hooks do Git permanecem habilitados no envio solicitado. Este registro não antecipa resultado do push, da CI ou da publicação automática de Hosting.

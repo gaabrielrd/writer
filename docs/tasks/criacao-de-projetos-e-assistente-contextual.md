@@ -63,3 +63,9 @@ locais da principal, com Hosting automático habilitado; Functions têm rollout 
 Testes dirigidos, suíte de Functions e build passaram. O gate `npm run validate`
 permanece pendente por timeouts em testes existentes de lore/backup, sem alterações
 nesses arquivos. Evidência e limitações no [relatório de validação parcial](../entregas/2026-11-02-criacao-de-projetos-e-assistente-contextual.md).
+
+A principal local foi integrada por fast-forward ao merge `317abc6`. A árvore
+integrada passou em 57 testes dirigidos de servidor, 46 testes de componentes,
+26 jornadas Chromium, typecheck, lint e build/smoke. O gate integral voltou a
+apresentar timeouts de lore e segue registrado como pendente; o envio mantém os
+hooks normais do Git.
