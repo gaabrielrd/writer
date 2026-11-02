@@ -1,3 +1,4 @@
+import { FUNCTION_DOMAINS, FUNCTION_ROUTES } from '../src/functionDomains.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
@@ -26,19 +27,16 @@ const expected = [
   'verifyAdventureBackupImage',
   'getAdventureBackupUniverse',
 ];
-test('17 literal immutable read methods match the index exports and exclude private ports', async () => {
+test('17 literal immutable read methods match the sector registry and exclude private ports', async () => {
   assert.deepEqual(methods, expected);
   assert.ok(Object.isFrozen(methods));
   assert.equal(new Set(methods).size, 17);
   const source = await readFile(new URL('../src/index.mjs', import.meta.url), 'utf8');
   for (const method of methods)
-    assert.match(
-      source,
-      new RegExp('export const ' + method + " = callable\\('" + method + "'\\)"),
-    );
+    assert.equal(FUNCTION_DOMAINS[FUNCTION_ROUTES[method]].actions[method], method);
   assert.ok(
     source.indexOf('if (ADVENTURE_BACKUP_METHODS.includes(method))') <
-      source.indexOf('const universeService ='),
+      source.indexOf('for (const handler of sectorServices(domain))'),
   );
   assert.match(source, /createAdventureBackupService\(\{ db, assets: backupStorage \}\)/);
 });

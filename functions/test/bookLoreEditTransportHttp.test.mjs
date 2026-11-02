@@ -1,3 +1,4 @@
+import { domainSdkFixture } from './helpers/domainSdkFixture.mjs';
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -12,7 +13,7 @@ import { adventureImportDb } from './helpers/adventureImportDb.mjs';
 
 const previousProject = process.env.GCLOUD_PROJECT;
 process.env.GCLOUD_PROJECT = 'demo-writer-lore-edit-callable';
-const { bookLoreEdit } = await import('../src/index.mjs');
+const { bookLoreEdit } = domainSdkFixture(await import('../src/index.mjs'));
 let server, address, service;
 before(async () => {
   service = createBookLoreEditTransportService({
@@ -92,10 +93,13 @@ test('exported handler requires authenticated UID and sets private headers befor
         return true;
       },
     );
-    assert.deepEqual(headers, [
-      ['Cache-Control', 'private, no-store'],
-      ['Vary', 'Authorization'],
-    ]);
+    assert.deepEqual(
+      [...new Map(headers)],
+      [
+        ['Cache-Control', 'private, no-store'],
+        ['Vary', auth ? 'Authorization' : 'Authorization, X-Firebase-AppCheck'],
+      ],
+    );
   }
 });
 test('real callable HTTP fixture preserves private cache headers and literal metadata across cancel/retry/get', async () => {

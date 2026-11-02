@@ -28,7 +28,7 @@ export async function callAdventureRestore(
   guard();
   check(recoveryOwner(ownerId) && methods.includes(name));
   const [{ getFunctions, httpsCallable }, { getFirebaseApp, auth }] = await Promise.all([
-    import('firebase/functions'),
+    import('@/shared/api/domainCallable'),
     import('@/shared/lib'),
   ]);
   const active = () => {

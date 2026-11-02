@@ -29,6 +29,8 @@
 - Mantenha `shared` neutro em relação ao domínio.
 - Centralize capacidades de raciocínio no contrato puro `functions/src/chatGeneration.mjs`, sem I/O ou credenciais.
 - Não adicione abstrações sem necessidade demonstrada.
+- Exponha callables por setor pelo registro explícito `functions/src/functionDomains.mjs`; não crie uma Function por ação.
+- Configure o transporte por setor no boot de `app` e use `shared/api/domainCallable` nos clientes; preserve streaming, autorização por ação e pedidos incertos sem fallback automático.
 - Reutilize parser, revisão e prévia pela API pública de document-import; preserve os reexports legados de books.
 - Mantenha `campaign-deletions` folha, importando apenas auth/shared; componha-a em `campaigns` e use essa interface no Estúdio.
 - Mantenha `adventure-deletions` folha de auth/shared; componha-a somente em `adventures` e use essa interface no Estúdio.
