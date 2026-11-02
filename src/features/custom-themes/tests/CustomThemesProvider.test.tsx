@@ -65,18 +65,23 @@ function setup(uid: string | null = 'a') {
 async function create() {
   await userEvent.click(screen.getByRole('button', { name: 'Temas personalizados' }));
   await userEvent.click(screen.getByRole('button', { name: 'Criar novo' }));
-  await userEvent.type(screen.getByLabelText('Nome do tema'), 'Meu tema');
+  fireEvent.change(screen.getByLabelText('Nome do tema'), { target: { value: 'Meu tema' } });
 }
-it('gera prévia, compara, preserva ajustes, recolhe e salva', async () => {
+it('gera sugestões e permite comparar com o tema anterior', async () => {
   setup();
   await create();
   expect(document.documentElement).toHaveAttribute('data-custom-theme');
-  const original = document.documentElement.style.getPropertyValue('--background');
+  const original = document.documentElement.style.getPropertyValue('--card');
   await userEvent.click(screen.getByRole('button', { name: /Tonal/ }));
-  expect(document.documentElement.style.getPropertyValue('--background')).not.toBe(original);
+  expect(document.documentElement.style.getPropertyValue('--card')).not.toBe(original);
   await userEvent.click(screen.getByRole('button', { name: 'Comparar com o tema anterior' }));
   expect(document.documentElement).toHaveAttribute('data-theme', 'sepia');
   await userEvent.click(screen.getByRole('button', { name: 'Voltar à prévia' }));
+  expect(document.documentElement).toHaveAttribute('data-theme', 'light');
+});
+it('preserva ajustes, recolhe e salva o tema', async () => {
+  setup();
+  await create();
   await userEvent.click(screen.getByRole('button', { name: /Modo avançado/ }));
   fireEvent.change(screen.getByLabelText('Fundo da página'), { target: { value: '#f0f0f0' } });
   await userEvent.click(screen.getByRole('button', { name: /Expressiva/ }));
@@ -192,4 +197,46 @@ it('reabre os ajustes avançados e foca a cor inválida ao tentar salvar', async
   await waitFor(() => expect(screen.getByLabelText('Fundo da página')).toHaveFocus());
   expect(screen.getByLabelText('Fundo da página')).toBeVisible();
   expect(saveCustomTheme).not.toHaveBeenCalled();
+});
+
+it('herda a base atual, oferece pickers e mantém nome e base acessíveis sem labels visuais', async () => {
+  setup();
+  await userEvent.click(screen.getByRole('button', { name: 'Tema Escuro' }));
+  await create();
+  expect(screen.getByRole('combobox', { name: 'Base do tema' })).toHaveTextContent('Escuro');
+  expect(screen.getByPlaceholderText('Nome')).toHaveAccessibleName('Nome do tema');
+  expect(screen.queryByText('Base do tema')).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText('Escolher cor: Cor de destaque'), {
+    target: { value: '#336699' },
+  });
+  expect(screen.getByLabelText('Cor de destaque')).toHaveValue('#336699');
+  fireEvent.change(screen.getByRole('slider', { name: 'Intensidade' }), { target: { value: '0' } });
+  expect(document.documentElement.style.getPropertyValue('--background')).toBe('0.00 0.00% 0.00%');
+  fireEvent.change(screen.getByRole('slider', { name: 'Intensidade' }), {
+    target: { value: '85' },
+  });
+  fireEvent.change(screen.getByLabelText('Matiz do fundo'), { target: { value: '#336699' } });
+  await userEvent.click(screen.getByRole('button', { name: /Modo avançado/ }));
+  fireEvent.change(screen.getByLabelText('Escolher cor: Fundo da página'), {
+    target: { value: '#112233' },
+  });
+  expect(screen.getByLabelText('Fundo da página')).toHaveValue('#112233');
+  expect(document.querySelectorAll('input[type="color"]')).toHaveLength(26);
+  fireEvent.change(screen.getByRole('slider', { name: 'Intensidade' }), {
+    target: { value: '75' },
+  });
+  expect(screen.getByLabelText('Fundo da página')).not.toHaveValue('#112233');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar tema' }));
+  await waitFor(() =>
+    expect(saveCustomTheme).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({
+        base: 'dark',
+        backgroundIntensity: 75,
+        backgroundHue: '#336699',
+        generatorVersion: 2,
+      }),
+      null,
+    ),
+  );
 });

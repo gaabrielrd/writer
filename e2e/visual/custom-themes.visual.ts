@@ -126,3 +126,58 @@ test('base escura acompanha os portais e salvar pela confirmação preserva o fl
   await expect(confirmation).not.toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-custom-theme', /custom-/);
 });
+
+test('pickers e controles de fundo respeitam a base atual e persistem os ajustes', async ({
+  page,
+  visualTheme,
+}, testInfo) => {
+  await page.goto('/styleguide');
+  await page.getByRole('button', { name: 'Temas personalizados', exact: true }).click();
+  await page.getByRole('button', { name: 'Criar novo', exact: true }).click();
+  const panel = page.getByRole('region', { name: /Criar tema/ });
+  const dark = visualTheme === 'dark';
+  await expect(panel.getByRole('combobox', { name: 'Base do tema' })).toContainText(
+    dark ? 'Escuro' : 'Claro',
+  );
+  await expect(panel.getByText('Base do tema', { exact: true })).toHaveCount(0);
+  await panel.getByPlaceholder('Nome', { exact: true }).fill('Controles do fundo');
+  const intensity = panel.getByRole('slider', { name: 'Intensidade', exact: true });
+  await intensity.focus();
+  await page.keyboard.press('Home');
+  await expect(page.locator('html')).toHaveCSS(
+    '--background',
+    dark ? '0.00 0.00% 0.00%' : '0.00 0.00% 100.00%',
+  );
+  await page.keyboard.press('End');
+  const original = await page
+    .locator('html')
+    .evaluate((el) => el.style.getPropertyValue('--background'));
+  await panel.getByLabel('Matiz do fundo', { exact: true }).fill('#336699');
+  await expect(intensity).toHaveValue('100');
+  await expect
+    .poll(() => page.locator('html').evaluate((el) => el.style.getPropertyValue('--background')))
+    .not.toBe(original);
+  const sliderBounds = await intensity.boundingBox(),
+    hueBounds = await panel.getByLabel('Matiz do fundo', { exact: true }).boundingBox();
+  expect(hueBounds!.x).toBeGreaterThan(sliderBounds!.x + sliderBounds!.width);
+  await panel.getByLabel('Escolher cor: Cor de destaque', { exact: true }).fill('#28795a');
+  await expect(panel.getByLabel('Cor de destaque', { exact: true })).toHaveValue('#28795a');
+  await panel.getByRole('button', { name: /Modo avançado/ }).click();
+  await panel.getByLabel('Escolher cor: Fundo da página', { exact: true }).fill('#112233');
+  await expect(panel.getByLabel('Fundo da página', { exact: true })).toHaveValue('#112233');
+  await expect(panel.locator('input[type="color"]')).toHaveCount(26);
+  await intensity.focus();
+  await page.keyboard.press('ArrowLeft');
+  await expect(panel.getByLabel('Fundo da página', { exact: true })).not.toHaveValue('#112233');
+  await panel.getByRole('button', { name: /Modo avançado/ }).click();
+  await panel.getByPlaceholder('Nome', { exact: true }).scrollIntoViewIfNeeded();
+  await panel.screenshot({ path: testInfo.outputPath('controles-do-painel.png') });
+  await capture(page, testInfo, 'pickers-e-controles-de-fundo');
+  await panel.getByRole('button', { name: 'Salvar tema', exact: true }).click();
+  await expect(panel).not.toBeVisible();
+  await page.getByRole('button', { name: 'Temas personalizados', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções do tema Controles do fundo' }).click();
+  await page.getByRole('menuitem', { name: 'Editar', exact: true }).click();
+  await expect(page.getByRole('slider', { name: 'Intensidade', exact: true })).toHaveValue('99');
+  await expect(page.getByLabel('Matiz do fundo', { exact: true })).toHaveValue('#336699');
+});

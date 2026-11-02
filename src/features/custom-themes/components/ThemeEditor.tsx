@@ -1,9 +1,10 @@
 import { useId, useState } from 'react';
 import { Check, RotateCcw } from 'lucide-react';
-import { Button, Input, FormSection, Alert, Dropdown } from '@/shared/ui';
+import { Button, Input, FormSection, Alert, Dropdown, Slider } from '@/shared/ui';
 import { type ColorToken, type ThemePalette } from '@/shared/theme';
 import {
   generatePalette,
+  backgroundSettings,
   isHex,
   paletteIssues,
   repairPalette,
@@ -40,19 +41,33 @@ function ColorField({
   }
   return (
     <div className={styles.colorField}>
-      <Input
-        label={label}
-        value={text}
-        required
-        pattern="#[a-fA-F0-9]{6}"
-        maxLength={7}
-        error={!isHex(text) ? 'Use # e seis dígitos hexadecimais.' : undefined}
-        onChange={(event) => {
-          setText(event.target.value);
-          if (isHex(event.target.value)) onChange(event.target.value.toLowerCase());
-        }}
-        leftIcon={<span className={styles.swatch} style={{ backgroundColor: value }} />}
-      />
+      <div className={styles.colorControls}>
+        <div className={styles.colorPicker}>
+          <Input
+            type="color"
+            aria-label={'Escolher cor: ' + label}
+            title={'Escolher cor: ' + label}
+            value={value}
+            onChange={(event) => {
+              const color = event.target.value.toLowerCase();
+              setText(color);
+              onChange(color);
+            }}
+          />
+        </div>
+        <Input
+          label={label}
+          value={text}
+          required
+          pattern="#[a-fA-F0-9]{6}"
+          maxLength={7}
+          error={!isHex(text) ? 'Use # e seis dígitos hexadecimais.' : undefined}
+          onChange={(event) => {
+            setText(event.target.value);
+            if (isHex(event.target.value)) onChange(event.target.value.toLowerCase());
+          }}
+        />
+      </div>
       {onRestore && (
         <Button
           type="button"
@@ -88,8 +103,16 @@ export function ThemeEditor({
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const issues = paletteIssues(draft.palette);
   const update = (patch: Partial<CustomTheme>) => {
-    const next = { ...draft, ...patch };
-    next.palette = { ...generatePalette(next.base, next.highlight, next.style), ...next.overrides };
+    const next: CustomTheme = {
+      ...draft,
+      ...backgroundSettings(draft),
+      generatorVersion: 2,
+      ...patch,
+    };
+    next.palette = {
+      ...generatePalette(next.base, next.highlight, next.style, backgroundSettings(next)),
+      ...next.overrides,
+    };
     onChange(next);
   };
   const override = (token: ColorToken, value: string) =>
@@ -122,7 +145,8 @@ export function ThemeEditor({
         Navegue pelo Writer para experimentar sua paleta. A prévia só é salva ao confirmar.
       </p>
       <Input
-        label="Nome do tema"
+        aria-label="Nome do tema"
+        placeholder="Nome"
         maxLength={40}
         required
         value={draft.name}
@@ -130,7 +154,7 @@ export function ThemeEditor({
       />
       <Dropdown
         mode="select"
-        label="Base do tema"
+        aria-label="Base do tema"
         value={draft.base}
         onValueChange={(value) => update({ base: value as CustomTheme['base'] })}
         options={[
@@ -138,6 +162,32 @@ export function ThemeEditor({
           { value: 'dark', label: 'Escuro' },
         ]}
       />
+      <div className={styles.backgroundControls}>
+        <Slider
+          label="Intensidade"
+          value={backgroundSettings(draft).backgroundIntensity}
+          low={draft.base === 'dark' ? 'Preto' : 'Branco'}
+          high={draft.base === 'dark' ? 'Cinza-escuro' : 'Cinza-claro'}
+          onValueChange={(backgroundIntensity) => {
+            const overrides = { ...draft.overrides };
+            delete overrides.background;
+            update({ backgroundIntensity, overrides });
+          }}
+        />
+        <div className={styles.backgroundHue}>
+          <Input
+            type="color"
+            aria-label="Matiz do fundo"
+            title="Escolher matiz do fundo"
+            value={backgroundSettings(draft).backgroundHue}
+            onChange={(event) => {
+              const overrides = { ...draft.overrides };
+              delete overrides.background;
+              update({ backgroundHue: event.target.value.toLowerCase(), overrides });
+            }}
+          />
+        </div>
+      </div>
       <ColorField
         label="Cor de destaque"
         value={draft.highlight}
@@ -161,7 +211,7 @@ export function ThemeEditor({
         <legend>Compare as sugestões</legend>
         {STYLES.map((style) => {
           const palette = {
-            ...generatePalette(draft.base, draft.highlight, style),
+            ...generatePalette(draft.base, draft.highlight, style, backgroundSettings(draft)),
             ...draft.overrides,
           };
           return (

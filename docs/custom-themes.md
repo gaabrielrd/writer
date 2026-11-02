@@ -10,6 +10,9 @@ e é isolada pelo UID. A preferência nativa legada `writer_theme` continua vál
 Temas personalizados abre uma lista ancorada, preferencialmente acima do seletor.
 Criar novo abre um painel flutuante não modal. Nome, base Claro/Escuro e destaque
 hexadecimal produzem três sugestões determinísticas: Neutra, Tonal e Expressiva.
+A base inicial acompanha a aparência atual (escura → Escuro; clara/sépia → Claro).
+Nome aparece como placeholder; nome e base conservam os nomes acessíveis.
+Todo campo de cor oferece picker nativo e edição hexadecimal.
 Selecionar uma sugestão aplica a prévia sem gravar no servidor. Comparar com o tema
 anterior suspende a prévia; voltar retoma o mesmo rascunho.
 
@@ -17,6 +20,18 @@ O painel permanece montado durante a navegação interna. O cabeçalho oferece
 arraste, movimento pelas setas no controle Mover, reposicionamento, recolhimento
 e fechamento. Em celular, o painel fica na borda inferior, com corpo rolável e
 ações acessíveis. Modais da aplicação suspendem a interação do painel.
+
+## Fundo
+
+Abaixo da base, Intensidade e o botão de matiz ficam na mesma linha. A escala
+0–100 vai de branco absoluto a cinza-claro (#e0e0e0) em Claro e de preto absoluto
+a cinza-escuro (#303030) em Escuro, quando a matiz é neutra. O picker do fundo
+seleciona uma matiz com saturação suave e preserva a luminosidade da escala;
+escolher cinza devolve o fundo neutro. Superfícies acompanham o fundo e a sugestão.
+
+Intensidade e matiz independem do destaque. Alterá-las substitui somente um
+override avançado de background, preservando os demais ajustes. Trocar destaque,
+base ou sugestão continua preservando todos os overrides.
 
 ## Ajustes e confirmação
 
@@ -47,7 +62,10 @@ incluindo portais, e limpa os overrides ao retornar aos temas nativos.
 A composição em app fornece o UID; shared não depende da feature.
 
 Cada tema guarda ID, nome, base, destaque, sugestão, overrides, paleta efetiva,
-versão do gerador, revisão e datas. A paleta efetiva preserva o resultado salvo
+versão do gerador, revisão e datas. O gerador v2 acrescenta backgroundIntensity
+(inteiro 0–100) e backgroundHue (hexadecimal). Registros v1 continuam válidos,
+conservam sua paleta e recebem controles derivados do fundo ao abrir a edição.
+Uma mudança de cores promove o rascunho para v2; renomear sozinho conserva v1. A paleta efetiva preserva o resultado salvo
 quando o algoritmo evoluir.
 
 O documento privado `users/{uid}/preferences/themes` contém schemaVersion,

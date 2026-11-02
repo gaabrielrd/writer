@@ -1,4 +1,10 @@
-import { COLOR_TOKENS, type ColorToken, type ThemeBase, type ThemePalette } from '@/shared/theme';
+import {
+  COLOR_TOKENS,
+  hexToChannels,
+  type ColorToken,
+  type ThemeBase,
+  type ThemePalette,
+} from '@/shared/theme';
 export const MAX_THEMES = 5;
 export const STYLES = ['neutral', 'tonal', 'expressive'] as const;
 export type PaletteStyle = (typeof STYLES)[number];
@@ -10,7 +16,9 @@ export interface CustomTheme {
   style: PaletteStyle;
   overrides: Partial<ThemePalette>;
   palette: ThemePalette;
-  generatorVersion: 1;
+  generatorVersion: 1 | 2;
+  backgroundIntensity?: number;
+  backgroundHue?: string;
   revision: number;
   createdAt: number;
   updatedAt: number;
@@ -57,25 +65,108 @@ export function ensureContrast(color: string, bg: string, target = 4.5): string 
   }
   return destination;
 }
+export interface BackgroundSettings {
+  backgroundIntensity: number;
+  backgroundHue: string;
+}
+export const DEFAULT_BACKGROUND: BackgroundSettings = {
+  backgroundIntensity: 40,
+  backgroundHue: '#808080',
+};
+function hsl(hex: string) {
+  const channels = hexToChannels(hex).split(' ');
+  return {
+    h: parseFloat(channels[0]!),
+    s: parseFloat(channels[1]!) / 100,
+    l: parseFloat(channels[2]!) / 100,
+  };
+}
+function fromHsl(hue: number, saturation: number, light: number): string {
+  const a = saturation * Math.min(light, 1 - light);
+  const channel = (n: number) => {
+    const k = (n + hue / 30) % 12;
+    return Math.round(255 * (light - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))))
+      .toString(16)
+      .padStart(2, '0');
+  };
+  return '#' + channel(0) + channel(8) + channel(4);
+}
+export function backgroundSettings(theme: CustomTheme): BackgroundSettings {
+  if (theme.generatorVersion === 2)
+    return { backgroundIntensity: theme.backgroundIntensity!, backgroundHue: theme.backgroundHue! };
+  const light = hsl(theme.palette.background).l;
+  return {
+    backgroundIntensity: Math.max(
+      0,
+      Math.min(100, Math.round((theme.base === 'dark' ? light / 0.19 : (1 - light) / 0.12) * 100)),
+    ),
+    backgroundHue: theme.palette.background,
+  };
+}
+export function backgroundColor(base: ThemeBase, settings: BackgroundSettings): string {
+  const { h, s } = hsl(settings.backgroundHue);
+  const light =
+    base === 'dark'
+      ? settings.backgroundIntensity * 0.0019
+      : 1 - settings.backgroundIntensity * 0.0012;
+  return fromHsl(h, Math.min(s, 0.16), light);
+}
 export function generatePalette(
   base: ThemeBase,
   highlight: string,
   style: PaletteStyle,
+  settings?: BackgroundSettings,
 ): ThemePalette {
   if (!isHex(highlight)) throw new Error('Use uma cor hexadecimal com seis dígitos.');
   const dark = base === 'dark',
     tint = style === 'neutral' ? 0 : style === 'tonal' ? 0.035 : 0.09;
-  const background = mix(dark ? '#151515' : '#fafafa', highlight, tint);
-  const card = mix(dark ? '#222222' : '#ffffff', highlight, tint);
-  const secondary = mix(dark ? '#303030' : '#ededed', highlight, tint * 2);
-  const muted = mix(dark ? '#292929' : '#f1f1f1', highlight, tint);
+  if (
+    settings &&
+    (!Number.isInteger(settings.backgroundIntensity) ||
+      settings.backgroundIntensity < 0 ||
+      settings.backgroundIntensity > 100 ||
+      !isHex(settings.backgroundHue))
+  )
+    throw new Error('Configuração de fundo inválida.');
+  const background = settings
+    ? backgroundColor(base, settings)
+    : mix(dark ? '#151515' : '#fafafa', highlight, tint);
+  const card = mix(
+    settings ? mix(background, '#ffffff', dark ? 0.05 : 0.2) : dark ? '#222222' : '#ffffff',
+    highlight,
+    tint,
+  );
+  const secondary = mix(
+    settings
+      ? mix(background, dark ? '#ffffff' : '#000000', dark ? 0.09 : 0.045)
+      : dark
+        ? '#303030'
+        : '#ededed',
+    highlight,
+    tint * 2,
+  );
+  const muted = mix(
+    settings
+      ? mix(background, dark ? '#ffffff' : '#000000', dark ? 0.06 : 0.03)
+      : dark
+        ? '#292929'
+        : '#f1f1f1',
+    highlight,
+    tint,
+  );
   const accent = mix(
-    dark ? '#383838' : '#e6e6e6',
+    settings
+      ? mix(background, dark ? '#ffffff' : '#000000', dark ? 0.13 : 0.07)
+      : dark
+        ? '#383838'
+        : '#e6e6e6',
     highlight,
     style === 'expressive' ? 0.25 : tint * 2,
   );
   const foreground = dark ? '#f5f5f5' : '#202020';
-  const primary = ensureContrast(highlight, background, 4.6),
+  const primary = settings
+      ? ensureContrast(ensureContrast(highlight, background, 4.6), card, 4.6)
+      : ensureContrast(highlight, background, 4.6),
     primaryText = readableText(primary);
   const success = ensureContrast('#228b52', background, 3),
     warning = ensureContrast('#ac7200', background, 3),
@@ -99,7 +190,9 @@ export function generatePalette(
     destructive,
     'destructive-foreground': readableText(destructive),
     border: mix(background, foreground, 0.25),
-    input: ensureContrast(mix(background, foreground, 0.4), background, 3.1),
+    input: settings
+      ? ensureContrast(ensureContrast(mix(background, foreground, 0.4), background, 3.1), card, 3.1)
+      : ensureContrast(mix(background, foreground, 0.4), background, 3.1),
     ring: ensureContrast(primary, card, 3.1),
     success,
     'success-foreground': readableText(success),
@@ -197,7 +290,14 @@ export function validateTheme(v: unknown): CustomTheme {
   if (!v || typeof v !== 'object') throw new Error('Tema inválido.');
   const t = v as CustomTheme;
   if (
-    Object.keys(t).length !== 11 ||
+    !(t.generatorVersion === 1
+      ? Object.keys(t).length === 11
+      : t.generatorVersion === 2 &&
+        Object.keys(t).length === 13 &&
+        Number.isInteger(t.backgroundIntensity) &&
+        t.backgroundIntensity! >= 0 &&
+        t.backgroundIntensity! <= 100 &&
+        isHex(t.backgroundHue)) ||
     !/^custom-[a-zA-Z0-9-]{1,64}$/.test(t.id) ||
     typeof t.name !== 'string' ||
     !t.name.trim() ||
@@ -205,7 +305,6 @@ export function validateTheme(v: unknown): CustomTheme {
     !['light', 'dark'].includes(t.base) ||
     !STYLES.includes(t.style) ||
     !isHex(t.highlight) ||
-    t.generatorVersion !== 1 ||
     !Number.isInteger(t.revision) ||
     t.revision < 0 ||
     !Number.isSafeInteger(t.createdAt) ||
@@ -243,16 +342,17 @@ export function validateCatalog(v: unknown): ThemeCatalog {
     throw new Error('Existem temas duplicados.');
   return { ...c, themes };
 }
-export function newTheme(): CustomTheme {
+export function newTheme(base: ThemeBase = 'light'): CustomTheme {
   return {
     id: `custom-${crypto.randomUUID()}`,
     name: '',
-    base: 'light',
+    base,
     highlight: '#8a5830',
     style: 'neutral',
     overrides: {},
-    palette: generatePalette('light', '#8a5830', 'neutral'),
-    generatorVersion: 1,
+    palette: generatePalette(base, '#8a5830', 'neutral', DEFAULT_BACKGROUND),
+    generatorVersion: 2,
+    ...DEFAULT_BACKGROUND,
     revision: 0,
     createdAt: 0,
     updatedAt: 0,
@@ -267,6 +367,8 @@ export function sameThemeContent(a: CustomTheme, b: CustomTheme): boolean {
     a.highlight === b.highlight &&
     a.style === b.style &&
     a.generatorVersion === b.generatorVersion &&
+    a.backgroundIntensity === b.backgroundIntensity &&
+    a.backgroundHue === b.backgroundHue &&
     COLOR_TOKENS.every(
       (key) => a.palette[key] === b.palette[key] && a.overrides[key] === b.overrides[key],
     )

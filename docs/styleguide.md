@@ -359,3 +359,8 @@ inteira sem persistir ajustes. Veja [temas personalizados](custom-themes.md).
 As variantes dark acompanham a classe de tema, não a preferência do sistema.
 Badge de sucesso e marcas do minimapa compartilham o mesmo token, incluindo
 as paletas personalizadas. Fontes, dimensões e espaçamentos permanecem comuns.
+
+No editor de temas, nome e base usam nome acessível sem label visual; Nome é o
+placeholder. Todas as cores oferecem Input type=color ao lado do hexadecimal.
+Slider de intensidade e picker de matiz compõem uma linha abaixo da base.
+A escala preserva a luminosidade e respeita Claro/Escuro na criação.

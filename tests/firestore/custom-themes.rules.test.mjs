@@ -138,3 +138,36 @@ it('duas transações concorrentes não criam seis temas', async () => {
   assert.equal(results.filter((r) => r.status === 'fulfilled').length, 1);
   assert.equal(Object.keys((await getDoc(ref('author'))).data().themes).length, 5);
 });
+
+it('aceita o gerador v2 e rejeita intensidade ou matiz fora do contrato', async () => {
+  const next = {
+    ...theme(0),
+    generatorVersion: 2,
+    backgroundIntensity: 40,
+    backgroundHue: '#336699',
+  };
+  const document = {
+    schemaVersion: 1,
+    revision: 1,
+    changedId: 'custom-0',
+    themes: { 'custom-0': next },
+  };
+  for (const patch of [
+    { backgroundIntensity: -1 },
+    { backgroundIntensity: 101 },
+    { backgroundIntensity: 0.5 },
+    { backgroundHue: 'url(test)' },
+    { generatorVersion: 1 },
+  ])
+    await assertFails(
+      setDoc(ref('author'), { ...document, themes: { 'custom-0': { ...next, ...patch } } }),
+    );
+  await assertSucceeds(setDoc(ref('author'), document));
+  await assertSucceeds(
+    setDoc(ref('author'), {
+      ...document,
+      revision: 2,
+      themes: { 'custom-0': { ...next, backgroundIntensity: 100, revision: 2, updatedAt: 2 } },
+    }),
+  );
+});

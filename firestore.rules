@@ -244,12 +244,14 @@ service cloud.firestore {
         && p.values().join('|').matches('^#[0-9a-fA-F]{6}(\\|#[0-9a-fA-F]{6}){23}$');
     }
     function validCustomTheme(t) {
-      return t is map && t.size() == 11
-        && t.keys().hasOnly(['id','name','base','highlight','style','overrides','palette','generatorVersion','revision','createdAt','updatedAt'])
+      return t is map && (t.generatorVersion == 1 ? t.size() == 11 : t.generatorVersion == 2 && t.size() == 13
+          && t.backgroundIntensity is int && t.backgroundIntensity >= 0 && t.backgroundIntensity <= 100
+          && t.backgroundHue is string && t.backgroundHue.matches('^#[0-9a-fA-F]{6}$'))
+        && t.keys().hasOnly(['id','name','base','highlight','style','overrides','palette','generatorVersion','revision','createdAt','updatedAt','backgroundIntensity','backgroundHue'])
         && t.id is string && t.id.matches('^custom-[a-zA-Z0-9-]{1,64}$')
         && nonemptyString(t.name, 40) && t.base in ['light','dark']
         && t.highlight is string && t.highlight.matches('^#[0-9a-fA-F]{6}$')
-        && t.style in ['neutral','tonal','expressive'] && t.generatorVersion == 1
+        && t.style in ['neutral','tonal','expressive'] && t.generatorVersion in [1,2]
         && t.revision is int && t.revision >= 1
         && t.createdAt is int && t.createdAt >= 0 && t.updatedAt is int && t.updatedAt >= t.createdAt
         && validThemePalette(t.palette) && t.overrides is map

@@ -57,6 +57,7 @@ export function CustomThemesProvider({
 function ThemeSession({ uid, children }: { uid: string | null; children: ReactNode }) {
   const {
     theme,
+    resolvedTheme,
     customTheme,
     setTheme,
     requestTheme,
@@ -293,7 +294,7 @@ function ThemeSession({ uid, children }: { uid: string | null; children: ReactNo
           <Button
             variant="ghost"
             disabled={loading || !!error || catalog.themes.length >= MAX_THEMES}
-            onClick={() => edit(newTheme())}
+            onClick={() => edit(newTheme(resolvedTheme === 'dark' ? 'dark' : 'light'))}
           >
             <Plus className="icon icon-sm" aria-hidden="true" />
             Criar novo

@@ -130,3 +130,40 @@ Compartilhamento, importação/exportação de temas, IA e ajustes de fontes/lay
 
 Para uma prévia isolada, executar o servidor da configuração visual e os cenários
 descritos em [temas personalizados](../custom-themes.md), usando somente fixtures.
+
+## Incremento — 2026-11-02: pickers e controles de fundo
+
+- [x] Todos os campos de cor oferecem picker nativo e edição hexadecimal.
+- [x] Novos temas herdam Claro/Escuro do tema atual.
+- [x] Nome usa placeholder; nome e base preservam nomes acessíveis sem labels visuais.
+- [x] Intensidade e picker de matiz ficam na mesma linha abaixo da base.
+      No Claro, o intervalo neutro vai do branco absoluto ao cinza-claro;
+      no Escuro, do preto absoluto ao cinza-escuro.
+- [x] Configurações persistem no salvamento; temas anteriores continuam legíveis.
+- [x] Alterar intensidade ou matiz substitui somente o ajuste avançado do fundo.
+
+Arquivos alterados: editor, provider, estilos e modelo de custom-themes,
+regras Firestore, testes unitários/de regras/visuais e documentação de temas/styleguide.
+
+| Verificação                            | Resultado real                                     |
+| -------------------------------------- | -------------------------------------------------- |
+| npm run validate                       | Verde                                              |
+| Vitest com cobertura                   | 121 arquivos, 981 testes aprovados                 |
+| Scripts / backend                      | 77 / 87 testes aprovados                           |
+| npm run test:rules                     | 52 testes aprovados                                |
+| Chromium, três temas × desktop/celular | 24 cenários aprovados                              |
+| Capturas adicionais focadas            | 2 cenários aprovados; painel conferido visualmente |
+| git diff --cached --check              | Sem erros                                          |
+
+Saída real: cobertura global 92.56 / 86.39 / 90.94 / 94.57;
+Smoke test do bundle OK.
+
+A primeira validação encontrou timeout em um teste que reunia comparação e
+salvamento. O teste foi separado por comportamento e o preenchimento
+preparatório simplificado, sem ampliar timeout nem reduzir cobertura.
+A execução completa posterior passou.
+
+Nenhuma dependência adicionada. Permanecem os avisos preexistentes de tamanho
+de bundle e importação dinâmica DOCX. Push, PR, CI remoto e deploy não
+executados. Publicar as regras atualizadas antes do frontend em produção;
+a prévia com fixtures não depende desse deploy.
