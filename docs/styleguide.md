@@ -267,8 +267,9 @@ opacas, controles compactos e estados ativos discretos. O manuscrito conserva
 Georgia, 18 px e entrelinha 1,85 em escrita e leitura.
 
 Na edição de capítulo, o cabeçalho e as ferramentas ocupam toda a largura útil
-do workspace. Somente a coluna da prosa tem limite de 720 px, centralizada em
-sua área de escrita, inclusive em tela cheia. O minimapa fica na extremidade
+do workspace. A coluna da prosa usa o limite escolhido em Preferências:
+960/1280/1600 px, centralizada em sua área de escrita e limitada pelo espaço
+disponível, inclusive em tela cheia. O minimapa fica na extremidade
 esquerda, perto da navegação. A partir de 1100 px de viewport, os itens de lore
 mencionados aparecem em um painel de 280 px à direita, com rolagem própria.
 Abrir Compêndio ou Assistente substitui essa lista pelo painel ativo; ao fechar,
@@ -278,6 +279,8 @@ horizontal rolável acima do texto. Os demais editores conservam seu layout.
 A área de escrita não exibe outline, inclusive em foco por teclado. Os demais
 controles preservam foco visível. Selecionar um trecho mostra uma
 barra de ações de IA acima da seleção; quando falta espaço, ela aparece abaixo.
+Esse menu usa fundo primário, texto em contraste, contorno e sombra destacados;
+hover e foco continuam explícitos nos três temas.
 A barra acompanha rolagem/redimensionamento e desaparece ao limpar a seleção,
 clicar fora ou pressionar Escape. Alt+Enter leva o foco às
 ações; as setas laterais navegam e Escape devolve o foco ao manuscrito.
@@ -424,7 +427,10 @@ semânticos dos três temas e os componentes compartilhados.
 Preferências oferece Pequeno (960 px), Médio (1280 px, padrão) e Grande
 (1600 px). O limite se aplica ao conteúdo centralizado da área logada e
 sempre respeita o espaço disponível. A lateral e a barra contextual
-conservam sua largura. O modo expandido do editor usa toda a área disponível.
+conservam sua largura. O modo expandido do editor libera as ferramentas para toda
+a área, preservando o limite escolhido para a prosa. Cabeçalho e formatação têm
+espaçamentos compactos e controles de 32 px em ponteiro preciso, mantendo 44 px
+para toque. A área da prosa usa padding de 12 × 16 px no desktop e 12 × 8 px no mobile.
 Os subitens do Estúdio usam ícones Lucide, sem linha vertical decorativa.
 
 Os filtros editoriais e de publicação/condição em Meus projetos usam grupos

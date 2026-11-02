@@ -15,11 +15,11 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-1) var(--space-2);
   background-color: hsl(var(--card));
   border-bottom: 1px solid var(--line);
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 
 .toolGroup {
@@ -41,7 +41,7 @@
 }
 
 .panelTools > button {
-  min-height: 36px;
+  min-height: 32px;
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-sm);
   font-size: var(--text-xs);
@@ -63,8 +63,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   background: transparent;
   border: 1px solid transparent;
@@ -81,6 +81,14 @@
 
 .toolBtn:active {
   transform: translateY(1px);
+}
+
+@media (pointer: coarse) {
+  .toolBtn,
+  .panelTools > button {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 .loreSummaryBar {
@@ -151,10 +159,8 @@
   min-width: 0;
   position: relative;
   overflow-y: auto;
-  padding: var(--space-8) clamp(1.25rem, 5vw, 4.5rem);
-  max-width: 860px;
+  padding: var(--space-3) var(--space-4);
   width: 100%;
-  margin: 0 auto;
 }
 
 .writeContainer {
@@ -163,11 +169,8 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-}
-
-.container[data-workspace-expanded='true'] .editorBody {
-  max-width: none;
-  margin: 0;
+  max-width: var(--workspace-preferred-content-max, 1280px);
+  margin-inline: auto;
 }
 
 .container[data-chapter-layout='true'] .editorBody {
@@ -176,11 +179,6 @@
   max-width: none;
   width: 100%;
   margin: 0;
-}
-
-.container[data-chapter-layout='true'] .writeContainer {
-  max-width: 720px;
-  margin-inline: auto;
 }
 
 @media (min-width: 1100px) {
@@ -317,7 +315,7 @@
     gap: var(--space-1);
   }
   .editorBody {
-    padding: var(--space-6) var(--space-4);
+    padding: var(--space-3) var(--space-2);
     overflow-y: visible;
   }
   .richText {

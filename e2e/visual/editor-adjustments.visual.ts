@@ -101,6 +101,23 @@ test('seleção abre ações acima do trecho e aplica somente após aceite', asy
   await selectManuscript(editor);
   const toolbar = page.getByRole('toolbar', { name: selectionToolbarName });
   await expect(toolbar).toBeVisible();
+  const contrast = await toolbar.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const luminance = (color: string) => {
+      const rgb = color
+        .match(/[\d.]+/g)!
+        .slice(0, 3)
+        .map((part) => Number(part) / 255)
+        .map((part) => (part <= 0.04045 ? part / 12.92 : ((part + 0.055) / 1.055) ** 2.4));
+      const [red = 0, green = 0, blue = 0] = rgb;
+      return red * 0.2126 + green * 0.7152 + blue * 0.0722;
+    };
+    const background = luminance(style.backgroundColor),
+      foreground = luminance(style.color);
+    return (Math.max(background, foreground) + 0.05) / (Math.min(background, foreground) + 0.05);
+  });
+  expect(contrast).toBeGreaterThanOrEqual(4.5);
+  await expect(toolbar).not.toHaveCSS('box-shadow', 'none');
   const position = await page.evaluate(() => {
     const bar = document.querySelector('[data-editor-selection-actions]')!.getBoundingClientRect();
     const selection = window.getSelection()!.getRangeAt(0).getBoundingClientRect();

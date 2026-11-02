@@ -1,5 +1,33 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
+import { chooseDropdown } from '../dropdown';
+
+test('preferência limita a prosa sem limitar ferramentas e permanece em tela cheia', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 3200, height: 1000 });
+  for (const [label, width] of [
+    ['Pequeno', 960],
+    ['Médio', 1280],
+    ['Grande', 1600],
+  ] as const) {
+    await page.goto('/settings/preferences');
+    await chooseDropdown(page.getByRole('combobox', { name: 'Largura do conteúdo' }), label);
+    await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+    const editor = page.getByLabel('Área de escrita do capítulo');
+    await expect(editor).toBeVisible();
+    const paragraph = editor.locator('p').first();
+    await expect.poll(async () => Math.round((await paragraph.boundingBox())!.width)).toBe(width);
+    expect(
+      (await page.getByRole('toolbar', { name: 'Ferramentas de escrita' }).boundingBox())!.width,
+    ).toBeGreaterThan(2000);
+    await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
+    await expect.poll(async () => Math.round((await paragraph.boundingBox())!.width)).toBe(width);
+    await page.getByRole('button', { name: 'Sair da tela cheia' }).click();
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalOverflow(page, 'Largura preferida em tela estreita');
+});
 
 test('capítulo separa largura da prosa e alterna o painel direito', async ({ page }, testInfo) => {
   await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
@@ -13,7 +41,7 @@ test('capítulo separa largura da prosa e alterna o painel direito', async ({ pa
     await page.setViewportSize({ width: 2400, height: 1000 });
     const workspace = page.locator('[data-editor-page]');
     expect((await workspace.boundingBox())!.width).toBeGreaterThan(1800);
-    expect((await editor.boundingBox())!.width).toBeLessThanOrEqual(720);
+    expect((await editor.boundingBox())!.width).toBeLessThanOrEqual(1280);
     expect((await lore.boundingBox())!.x).toBeGreaterThan(
       (await editor.boundingBox())!.x + (await editor.boundingBox())!.width,
     );
@@ -21,6 +49,10 @@ test('capítulo separa largura da prosa e alterna o painel direito', async ({ pa
     const prosa = await editor.boundingBox();
     const area = await scrollArea.boundingBox();
     expect(Math.abs(prosa!.x + prosa!.width / 2 - area!.x - area!.width / 2)).toBeLessThan(2);
+    const toolbar = page.getByRole('toolbar', { name: 'Ferramentas de escrita' });
+    expect((await toolbar.boundingBox())!.height).toBeLessThanOrEqual(44);
+    const chapterHeader = page.locator('[data-editor-page] > header');
+    expect((await chapterHeader.boundingBox())!.height).toBeLessThanOrEqual(44);
     await capture(page, testInfo, 'capitulo-desktop-lore');
   } else {
     expect((await lore.boundingBox())!.y).toBeLessThan((await editor.boundingBox())!.y);
