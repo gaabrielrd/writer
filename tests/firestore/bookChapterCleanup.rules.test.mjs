@@ -99,7 +99,7 @@ test('native book deletion upgrades legacy finish checkpoint and drains pinned b
   assert.equal((await job.get()).data().phase, 'text-bodies');
   await job.update({ cleanupVersion: 1, phase: 'finish' });
   assert.equal((await scenes.deleteSceneBook('author', request)).complete, false);
-  assert.equal((await job.get()).data().cleanupVersion, 2);
+  assert.equal((await job.get()).data().cleanupVersion, 3);
   assert.equal((await admin.doc('books/book').get()).exists, true);
   assert.equal((await admin.doc('deletedBooks/book').get()).exists, false);
   await admin.doc(a).update({ ownerId: 'other' });

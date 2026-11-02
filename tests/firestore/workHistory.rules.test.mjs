@@ -191,9 +191,21 @@ test('SDK large legacy Unicode and quoted HTML fit real body documents and resto
     expectedSourceToken: (await source()).sourceToken,
   });
   assert.equal(restored.source.content, text);
+  const stored = (await admin.doc('books/book/chapters/chapter').get()).data();
+  const manifest = stored.contentStorage, parts = [];
+  let sourceToken = null;
+  for (let index = 0; index < manifest.chunkCount; index++) {
+    const part = await progress.readLegacyChapterText('author', {
+      bookId: 'book', chapterId: 'chapter', bodyId: manifest.bodyId, index, sourceToken,
+    });
+    sourceToken = part.sourceToken;
+    parts.push(Buffer.from(part.chunkBase64, 'base64'));
+  }
+  assert.equal(Buffer.concat(parts).toString('utf8'), text);
   assert.equal(restored.source.contentHash, digest(text));
   assert.equal(await read(restored.previousVersion.id), 'Texto curto');
-  assert.equal((await admin.doc('books/book/chapters/chapter').get()).data().content, text);
+  assert.equal(stored.content, null);
+  assert.deepEqual(stored.contentStorage, manifest);
   assert.equal((await admin.doc('users/author').get()).data().credits, 7);
 });
 

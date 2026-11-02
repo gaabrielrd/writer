@@ -11,6 +11,8 @@ import {
   loreRestoreFixture,
   finishRestoreLore,
 } from '../../functions/test/helpers/bookRestoreLoreFixture.mjs';
+import { finishRestoreResources } from '../../functions/test/helpers/bookRestoreResourcesFixture.mjs';
+import { finishRestoreCounts } from '../../functions/test/helpers/bookRestoreCountsFixture.mjs';
 import { uploadArchiveRestore } from '../../functions/test/helpers/bookRestoreContentFixture.mjs';
 import { bookLegacyFixture } from '../../functions/test/helpers/bookLegacyFixture.mjs';
 import {
@@ -115,36 +117,42 @@ test('SDK restores interleaved lore in proven pages with atomic journals, privat
   assert.deepEqual(replay.receipt, first.receipt);
   assert.equal(replay.progress.state, 'cancelled');
 });
-test('SDK oversized lore fails atomically with intact source/checkpoint and no narrowed logical format', async () => {
+test('SDK oversized lore restores in private bounded pages with intact source and exact Unicode', async () => {
   const legacy = bookLegacyFixture(1);
   legacy.lore[0].details = '\ufeff' + 'Own 🌙'.repeat(150000);
   const { progress } = await uploadLegacyRestore(api, uid, id, legacy),
     validated = await finishLegacyRestore(factory, uid, id, progress),
     initial = await finishRestoreStructure(factory, uid, id, validated),
-    before = await admin.doc(root).get(),
-    request = mutation(id, initial, 'lore-sdk-oversize01');
-  await assert.rejects(
-    () => api.advanceBookRestoreLore(uid, request),
-    (error) =>
-      error.code === 3 && /longer than|exceeds.*maximum|maximum.*size/i.test(error.message),
-  );
-  const after = await admin.doc(root).get();
-  assert.deepEqual(after.data(), before.data());
-  assert.ok(after.updateTime.isEqual(before.updateTime));
-  assert.equal((await admin.collection('books/' + initial.bookId + '/lore').get()).empty, true);
-  assert.equal(
-    (await admin.doc('users/' + uid + '/bookRestoreOperations/' + request.operationId).get())
-      .exists,
-    false,
-  );
-  const reader = await api.openVerifiedBookRestoreContent(uid, {
-      restoreId: id,
-      jobToken: initial.jobToken,
-    }),
-    item = await reader.readMappedItem(initial.preparation.itemIndex);
+    request = mutation(id, initial, 'lore-sdk-oversize01'),
+    first = await api.advanceBookRestoreLore(uid, request);
+  assert.deepEqual((await api.advanceBookRestoreLore(uid, request)).receipt, first.receipt);
+  assert.equal((await admin.doc('users/' + uid + '/bookRestoreOperations/' + request.operationId).get()).exists, true);
+  let done = await finishRestoreLore(factory, uid, id, first.progress);
+  done = await finishRestoreResources(factory, uid, id, done);
+  done = await finishRestoreCounts(factory, uid, id, done);
+  const reader = await api.openPreparedBookRestoreLore(uid, { restoreId: id, jobToken: done.jobToken }),
+    listed = await reader.listBookLoreRead(uid, { bookId: done.bookId }),
+    entry = await reader.getBookLoreRead(uid, { bookId: done.bookId, id: listed.items[0].id }),
+    parts = [];
+  assert.equal(entry.mode, 'payload');
+  for (let index = 0; index < entry.base.chunkCount; index++) {
+    const part = await reader.readBookLorePart(uid, { bookId: done.bookId, id: entry.id, readToken: entry.readToken, section: 'base', page: 0, index });
+    const bytes = Buffer.from(part.chunkBase64, 'base64');
+    assert.ok(bytes.length <= 65536);
+    parts.push(bytes);
+  }
+  assert.equal(JSON.parse(Buffer.concat(parts).toString('utf8')).details, legacy.lore[0].details);
+  assert.equal((await admin.doc('books/' + done.bookId).get()).exists, false);
+  for (const actor of [env.authenticatedContext(uid), env.authenticatedContext('other'), env.unauthenticatedContext()]) {
+    await assertFails(getDoc(doc(actor.firestore(), 'books/' + done.bookId + '/lore/' + entry.id)));
+  }
+  const source = await api.openVerifiedBookRestoreContent(uid, { restoreId: id, jobToken: done.jobToken }),
+    item = await source.readMappedItem(initial.preparation.itemIndex);
   assert.equal(item.value.data.details, legacy.lore[0].details);
-  await cleanupLegacyRestore(api, uid, id, initial);
+  await cleanupLegacyRestore(api, uid, id, done);
+  assert.equal((await admin.collection('books/' + done.bookId + '/lore').get()).empty, true);
 });
+
 test('SDK recreated prepared lore blocks both append and paired cleanup', async () => {
   const initial = await ready(),
     first = (await api.advanceBookRestoreLore(uid, mutation(id, initial, 'lore-sdk-rebirth01')))
