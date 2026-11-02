@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { beforeEach, it, expect, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   invoke: vi.fn(() => Promise.resolve({ data: { sentinel: true } })),

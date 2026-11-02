@@ -178,12 +178,12 @@ Esse comando executa, em sequência: verificação de skills, conformidade arqui
 
 ## Verificação automática
 
-| Onde                | O que roda                              |
-| ------------------- | --------------------------------------- |
-| `pre-commit`        | `lint-staged` nos arquivos alterados    |
-| `commit-msg`        | Convenção da mensagem de commit         |
-| `pre-push`          | `typecheck` e `test:unit`               |
-| CI (GitHub Actions) | `validate`, auditoria e E2E no Chromium |
+| Onde                | O que roda                                                     |
+| ------------------- | -------------------------------------------------------------- |
+| `pre-commit`        | `lint-staged` nos arquivos alterados                           |
+| `commit-msg`        | Convenção da mensagem de commit                                |
+| `pre-push`          | `typecheck` e testes afetados pelo destino (fallback completo) |
+| CI (GitHub Actions) | `validate`, auditoria e E2E no Chromium                        |
 
 O CI está configurado em `.github/workflows/ci.yml`. Durante o desenvolvimento,
 mantenha commits locais e ignore a CI remota, conforme
@@ -727,3 +727,13 @@ separada das cenas, e permite localizar/conferir cenas sem parte disponível.
 A recuperação explícita move para Sem parte e preserva texto, blocos, histórico
 e referência anterior. Veja a [matriz local](docs/tasks/writer-v2/consumidores-aventuras-restauradas.md).
 Exclusão completa de aventura continua pendente; endpoints novos sem implantação.
+
+## Testes durante o desenvolvimento
+
+Use `npm run test:changed` para testar alterações locais e seus dependentes,
+sem cobertura e com até dois workers. Em árvore limpa, nenhum teste é executado.
+Para incluir commits, use `npm run test:changed -- --changed=HEAD~1`.
+Use `npm run test:light` para todo o frontend sem cobertura com dois workers,
+ou `npm run test:unit -- caminho/do/arquivo.test.ts` para um arquivo conhecido.
+Esses comandos não substituem `npm run validate` no fechamento do bloco.
+Veja [testes](docs/testing.md) para ambientes, hook e medições.

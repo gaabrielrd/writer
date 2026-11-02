@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { it, expect } from 'vitest';
 import { streamCampaignBaseField as stream, CampaignBaseCaptureError } from '../index';
 import {

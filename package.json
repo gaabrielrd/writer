@@ -21,8 +21,8 @@
     "typecheck": "tsc -b",
     "test": "npm run test:coverage && npm run test:setup",
     "test:unit": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:setup": "node --test scripts/*.test.mjs && npm run test:book-generation",
+    "test:coverage": "vitest run --coverage --reporter=default --reporter=json --outputFile.json=coverage/results.json",
+    "test:setup": "node --test --test-concurrency=2 scripts/*.test.mjs && npm run test:book-generation",
     "test:book-generation": "npm --prefix functions test && npm --prefix functions run check",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots",
@@ -37,7 +37,9 @@
     "validate": "npm run check:skills && npm run check:architecture && npm run check:docs && npm run check:styleguide && npm run format:check && npm run lint && npm run test && npm run build",
     "prepare": "husky && npm run sync:skills",
     "test:rules": "node scripts/run-firestore-rules.mjs",
-    "test:media": "node scripts/run-book-backup-media.mjs"
+    "test:media": "node scripts/run-book-backup-media.mjs",
+    "test:light": "vitest run --maxWorkers=2",
+    "test:changed": "vitest run --changed --passWithNoTests --maxWorkers=2"
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",

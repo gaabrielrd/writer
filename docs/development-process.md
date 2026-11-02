@@ -36,12 +36,12 @@ A convenção é verificada pelo hook `commit-msg` (`scripts/check-commit-messag
 
 ## Verificação automática
 
-| Momento      | O que roda                                            |
-| ------------ | ----------------------------------------------------- |
-| `pre-commit` | `lint-staged` nos arquivos alterados                  |
-| `commit-msg` | Convenção da mensagem                                 |
-| `pre-push`   | `typecheck` e `test:unit` (Vitest sem cobertura)      |
-| Pull Request | `validate` em Node 22/24, auditoria e E2E no Chromium |
+| Momento      | O que roda                                                     |
+| ------------ | -------------------------------------------------------------- |
+| `pre-commit` | `lint-staged` nos arquivos alterados                           |
+| `commit-msg` | Convenção da mensagem                                          |
+| `pre-push`   | `typecheck` e testes afetados pelo destino (fallback completo) |
+| Pull Request | `validate` em Node 22/24, auditoria e E2E no Chromium          |
 
 Os hooks são atalhos para pegar o problema cedo; corrija a causa quando um deles
 falhar. Na integração remota, o CI executa os portões completos; durante o
@@ -75,3 +75,9 @@ O comando npm run lint verifica todo o projeto em subprocessos sequenciais;
 features e Functions são particionadas e a raiz cobre o restante. Não é filtro
 de diff: preserva arquivos novos e regras/ignores existentes. O pre-commit mantém
 ESLint direto nos arquivos preparados. Veja scripts/run-lint.mjs.
+
+O pre-push usa o SHA remoto recebido pelo Git para selecionar testes afetados,
+incluindo dependentes e mudanças locais. Primeira publicação, objetos ausentes,
+histórico divergente, múltiplos destinos ou envio de outro commit usam a suíte
+completa. Falhas continuam bloqueando o push. A seleção é uma checagem local
+antecipada; os portões completos da CI permanecem.

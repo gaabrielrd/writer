@@ -22,6 +22,12 @@ export default defineConfig((context) =>
           'functions/**',
         ],
         css: true,
+        forceRerunTriggers: [
+          ...configDefaults.forceRerunTriggers,
+          '**/package-lock.json',
+          '**/tsconfig*.json',
+          '**/src/test/**',
+        ],
         typecheck: {
           tsconfig: './tsconfig.app.json',
         },

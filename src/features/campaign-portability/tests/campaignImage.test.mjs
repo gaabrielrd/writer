@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
 import { streamCampaignImage as stream, CampaignImageCaptureError } from '../index';

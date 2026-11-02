@@ -38,7 +38,9 @@ features/minha-feature/
 
 ```bash
 npm run test          # roda os testes uma vez, com limites de cobertura
-npm run test:unit     # roda apenas Vitest, sem cobertura (mais rápido)
+npm run test:unit     # todo o frontend sem cobertura, até quatro workers
+npm run test:light    # todo o frontend sem cobertura, até dois workers
+npm run test:changed  # alterações locais e dependentes, sem cobertura, até dois workers
 npm run test:coverage # roda Vitest aplicando os limites de cobertura
 npm run test:book-generation # backend de geração e normalização real de capas
 npm run test:setup    # testa setup e regras arquiteturais em projetos temporários
@@ -58,13 +60,62 @@ O E2E escolhe uma porta efêmera, gera o bundle e serve a aplicação localmente
 
 ## Tempo de execução e CI
 
-Vitest usa até quatro workers, limitados pelos CPUs disponíveis. O isolamento
-por arquivo, o `jsdom`, a instrumentação V8 e os limites de cobertura continuam
-ativos. Para limitar recursos durante outra tarefa, use a opção do Vitest:
+Vitest mantém até quatro workers, limitados pelos CPUs disponíveis, em um único
+projeto. O ambiente padrão continua `jsdom`; testes de lógica/contratos usam a
+diretiva `// @vitest-environment node`. O setup importa React, matchers DOM,
+matchMedia e limpeza de armazenamento somente quando existe `window`.
+Os 124 arquivos Node não carregam esse setup de navegador; 253 arquivos mantêm
+DOM, incluindo sanitização HTML, contagem renderizada e extração de capítulos.
+O isolamento por arquivo permanece ativo. Novos testes puros podem usar a mesma
+diretiva existente, sem manter listas de caminhos na configuração.
+
+`npm run test:changed` considera arquivos alterados, preparados e novos, junto
+dos dependentes conhecidos pelo grafo de imports do Vitest. Em checkout limpo,
+a saída sem testes é esperada. Para incluir commits já registrados:
+
+```bash
+npm run test:changed -- --changed=HEAD~1
+```
+
+A seleção não prova a suíte completa, nem substitui revisão de dependências
+dinâmicas e contratos externos. Mudanças na configuração, lockfile, TypeScript
+ou setup disparam a suíte completa. O pre-push compara com o commit real da ref
+remota; sem base ancestral confiável, executa todos os testes de frontend.
+
+O perfil econômico não coleta cobertura:
+
+```bash
+npm run test:light
+```
+
+Para medir toda a suíte com a mesma instrumentação e menos processos:
 
 ```bash
 npm run test:coverage -- --maxWorkers=2
 ```
+
+Menos workers podem reduzir memória e aumentar a duração. Compare ambos os
+valores. `npm run test:setup` limita os arquivos de scripts a dois processos.
+As fixtures da CLI copiam somente os arquivos de entrada da operação,
+conservando a CLI real, repetição, dry-run, preservação de features e rollback.
+Backend mantém dois arquivos simultâneos, sem redução de casos, volumes ou asserções.
+
+### Medição no Windows
+
+O script PowerShell 7 `scripts/measure-tests.ps1` executa uma etapa de cada vez,
+salva stdout/stderr, resultado JSON do Vitest e métricas amostradas da árvore
+de processos Node/esbuild/cmd. Requer acesso à consulta CIM do Windows.
+Use a mesma versão de Node, dependências, testes, cobertura e quantidade de
+workers; não execute outra suíte durante a medição.
+
+```powershell
+pwsh -NoProfile -File scripts/measure-tests.ps1 -Root . -Output "$env:TEMP/writer-benchmark" -Label coverage-4 -Stage coverage -Workers 4
+```
+
+O pico é a soma amostrada de working sets, que pode contar páginas compartilhadas
+mais de uma vez; não representa memória física exclusiva. Memória privada também
+é registrada. Amostragem não captura todos os picos ou processos curtos; o tempo
+de CPU registrado é aproximado. Uma execução isolada não comprova ganho estatístico.
 
 A CI mantém o `validate` completo nos dois ambientes Node 22 e 24. O navegador
 de produção e a suíte visual executam em jobs separados. A suíte visual inteira
@@ -3288,3 +3339,7 @@ rejeição de CSS/tipos inválidos, diff e criação concorrente da quinta vaga.
 A suíte e2e/visual/custom-themes.visual.ts usa serviços fictícios, nos três temas
 e em desktop/celular, para navegar com prévia até o manuscrito, verificar sua
 integridade, editar/remover e operar em 320 px. Veja [contrato](custom-themes.md).
+
+A execução com cobertura também salva o resultado de cada caso em `coverage/results.json`, incluído no artefato de cobertura existente da CI. Não é um relatório de execução parcial.
+
+Veja as [medições e limitações da otimização local](entregas/2026-11-02-otimizacao-suite-testes.md).

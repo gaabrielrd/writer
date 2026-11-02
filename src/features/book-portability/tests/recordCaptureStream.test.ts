@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, it, vi } from 'vitest';
 import { recordCaptureStream } from '../services/recordCaptureStream';
 const record = { kind: 'chapter', id: 'chapter', part: 0, payload: new Uint8Array([1]) };

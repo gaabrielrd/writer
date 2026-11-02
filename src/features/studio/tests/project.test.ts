@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { expect, it } from 'vitest';
 import { formatProjectDate, isDefinitiveCreationFailure, projectPath } from '../model/project';
 it('preserva IDs antigos nas rotas e codifica segmentos novos', () => {

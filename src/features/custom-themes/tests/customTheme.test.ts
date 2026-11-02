@@ -1,3 +1,4 @@
+// @vitest-environment node
 import { describe, expect, it } from 'vitest';
 import { COLOR_TOKENS, hexToChannels } from '@/shared/theme';
 import {
