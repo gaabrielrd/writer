@@ -274,8 +274,14 @@
       "collectionGroup": "adventureDeletions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "createdAt", "order": "DESCENDING" },
-        { "fieldPath": "__name__", "order": "ASCENDING" }
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
@@ -1580,9 +1586,18 @@
       "collectionGroup": "loreVariantBodies",
       "fieldPath": "campaignToken",
       "indexes": [
-        { "order": "ASCENDING", "queryScope": "COLLECTION" },
-        { "order": "DESCENDING", "queryScope": "COLLECTION" },
-        { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
       ]
     },
     {
@@ -1709,6 +1724,41 @@
       "collectionGroup": "loreBodies",
       "fieldPath": "relations",
       "indexes": []
+    },
+    {
+      "collectionGroup": "universeLoreImports",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "importUploads",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "importSources",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "importCandidates",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "importReview",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "universeLoreImports",
+      "fieldPath": "expiresAt",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        }
+      ]
     }
   ]
 }

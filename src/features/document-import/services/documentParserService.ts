@@ -5,7 +5,8 @@ import {
   type DocumentParseResult,
   type ParseOptions,
 } from '../model/documentImport';
-import { parsePdfLayout, throwIfAborted } from './pdfDocumentService';
+import { parsePdfLayout, throwIfAborted, readPdfSourcePages } from './pdfDocumentService';
+import { extractPdfLorePages } from './pdfLayoutExtraction';
 export type { ParsedChapter, DocumentParseResult } from '../model/documentImport';
 export { parsePdfFile } from './pdfDocumentService';
 
@@ -280,4 +281,20 @@ export async function parseDocumentFile(
     chapters,
     totalWords: chapters.reduce((sum, chapter) => sum + chapter.wordCount, 0),
   };
+}
+
+/** Complete source extraction for lore, without manuscript chapter/TOC filtering. */
+export async function extractLoreDocument(file: File, options: ParseOptions = {}) {
+  throwIfAborted(options.signal);
+  if (file.name.toLowerCase().endsWith('.pdf')) {
+    const pages = await readPdfSourcePages(file, options);
+    const result = extractPdfLorePages(pages);
+    if (!result.some((page) => page.text.trim()))
+      throw new Error('O PDF não contém texto extraível. Execute OCR antes de importar.');
+    return result;
+  }
+  const text = decodeText(await file.arrayBuffer());
+  throwIfAborted(options.signal);
+  if (!text.trim()) throw new Error('O arquivo não contém texto para importar.');
+  return [{ page: null, text }];
 }

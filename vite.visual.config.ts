@@ -85,6 +85,7 @@ const replacements = new Map(
     ['src/features/lore/services/adventureLoreContext.ts', 'adventureLoreFixture.ts'],
     ['src/features/lore/services/loreAnalysisService.ts', 'loreAnalysisService.ts'],
     ['src/features/universes/services/universeService.ts', 'universeService.ts'],
+    ['src/features/universes/services/loreImportService.ts', 'loreImportService.ts'],
     ['src/features/ai-assistant/services/personaService.ts', 'personaService.ts'],
     ['src/features/ai-assistant/services/aiClient.ts', 'aiService.ts'],
     ['src/features/ai-assistant/services/creditsService.ts', 'aiService.ts'],

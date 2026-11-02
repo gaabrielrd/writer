@@ -4004,3 +4004,11 @@ conserva tema ativo e prévia separados e aplica os tokens na raiz, incluindo
 portais. Serviços transacionais e regras validam uma entrada por gravação e
 limitam o catálogo privado a cinco. A seleção local é isolada por UID.
 Veja [temas personalizados](custom-themes.md).
+
+## Importação de lore de universos
+
+A feature `universes` compõe a extração pública de `document-import` com revisão
+e diff. Sessões e arquivos temporários são server-only, em partes limitadas de
+Firestore; a confirmação atualiza fichas, universo, clock de autorização, crédito
+e recibo atomicamente. Alterações concorrentes invalidam a revisão. Veja
+[contrato da importação](universe-lore-import.md).

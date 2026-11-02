@@ -1,3 +1,4 @@
+import { createUniverseLoreImportService } from './universeLoreImport.mjs';
 import {
   ADVENTURE_RESTORE_METHODS,
   invokeAdventureRestoreCallable,
@@ -1012,3 +1013,82 @@ export const getAdventureBackupImage = callable('getAdventureBackupImage');
 export const readAdventureBackupImageChunk = callable('readAdventureBackupImageChunk');
 export const verifyAdventureBackupImage = callable('verifyAdventureBackupImage');
 export const getAdventureBackupUniverse = callable('getAdventureBackupUniverse');
+
+// Literal, authenticated entry points for private universe document import.
+function universeLoreImportCallable(method, secrets = []) {
+  return onCall(
+    {
+      region: 'us-central1',
+      enforceAppCheck: true,
+      timeoutSeconds: 120,
+      memory: '512MiB',
+      maxInstances: 5,
+      secrets,
+    },
+    async (request) => {
+      request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
+      request.rawRequest?.res?.setHeader('Vary', 'Authorization');
+      if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Entre na sua conta.');
+      try {
+        const service = createUniverseLoreImportService({ db, generator: loreGenerator });
+        return await service[method](request.auth.uid, request.data);
+      } catch (error) {
+        if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
+        throw new HttpsError(
+          'unavailable',
+          'Não foi possível concluir a importação. Tente novamente.',
+        );
+      }
+    },
+  );
+}
+export const startUniverseLoreImport = universeLoreImportCallable('startUniverseLoreImport');
+export const appendUniverseLoreImport = universeLoreImportCallable('appendUniverseLoreImport');
+export const sealUniverseLoreImport = universeLoreImportCallable('sealUniverseLoreImport');
+export const advanceUniverseLoreImport = universeLoreImportCallable('advanceUniverseLoreImport', [
+  key,
+]);
+export const getUniverseLoreImport = universeLoreImportCallable('getUniverseLoreImport');
+export const getUniverseLoreImportTarget = universeLoreImportCallable(
+  'getUniverseLoreImportTarget',
+);
+export const saveUniverseLoreImportReview = universeLoreImportCallable(
+  'saveUniverseLoreImportReview',
+);
+export const applyUniverseLoreImport = universeLoreImportCallable('applyUniverseLoreImport');
+export const cancelUniverseLoreImport = universeLoreImportCallable('cancelUniverseLoreImport');
+export const cleanupUniverseLoreImports = onSchedule(
+  { schedule: 'every 60 minutes', region: 'us-central1', maxInstances: 1 },
+  async () => {
+    const expired = await db
+      .collectionGroup('universeLoreImports')
+      .where('expiresAt', '<=', Date.now())
+      .limit(25)
+      .get();
+    for (const document of expired.docs) {
+      // Fence first. Retain the permanent session ID and receipts after removing private bodies.
+      await db.runTransaction(async (tx) => {
+        const current = (await tx.get(document.ref)).data();
+        if (!current || current.expiresAt > Date.now()) return;
+        tx.update(document.ref, {
+          state: current.state === 'applied' ? 'applied' : 'cancelled',
+          expiresAt: 0,
+        });
+      });
+      for (const family of ['importUploads', 'importSources', 'importCandidates', 'importReview'])
+        await db.recursiveDelete(document.ref.collection(family));
+      await db.runTransaction(async (tx) => {
+        const current = (await tx.get(document.ref)).data();
+        if (!current || current.expiresAt !== 0) return;
+        tx.set(document.ref, {
+          state: current.state,
+          fingerprint: current.fingerprint,
+          ...(current.result ? { result: current.result } : {}),
+          expiresAt: Number.MAX_SAFE_INTEGER,
+          cursor: current.cursor ?? 0,
+          total: current.total ?? 0,
+        });
+      });
+    }
+  },
+);

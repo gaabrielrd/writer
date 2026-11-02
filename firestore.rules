@@ -389,6 +389,9 @@ service cloud.firestore {
           && validThemeCatalog(request.resource.data, request.method == 'create' ? {} : resource.data);
         allow delete: if false;
       }
+      match /universeLoreImports/{document=**} { allow read, write: if false; }
+      match /universeLoreImportReceipts/{id} { allow read, write: if false; }
+      match /universeLoreImportLimits/{id} { allow read, write: if false; }
       match /adventureImports/{document=**} { allow read, write: if false; }
       match /bookRestores/{document=**} { allow read, write: if false; }
       match /adventureRestores/{document=**} { allow read, write: if false; }

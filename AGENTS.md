@@ -1273,3 +1273,9 @@ alterada retorna variant-authorization-restart-required e mantém cancel/coleta.
 bindingOptionalFields é fechado e vazio por padrão no journal compartilhado;
 âncoras precisam selecionar o codec ao conferir variantWrites. Preserve wire
 own/base/anchor e recuse codecs desconhecidos/mistura de modos (ADR 0267).
+
+## Importação de lore de universos
+
+- Importe arquivos pelo fluxo privado universeLoreImport; valide bytes agregados no servidor antes da análise e confirme universo/fichas/crédito/recibo atomicamente.
+- Atualizações exigem destino explícito e diff; preserve visibilidade, relações e structuredDetails. Ausência no arquivo não exclui ficha.
+- Reconheça a revisão salva antes do aceite; retry usa o mesmo operationId/payload. Limpeza conserva fences permanentes e recibos, sem recriar universos removidos.

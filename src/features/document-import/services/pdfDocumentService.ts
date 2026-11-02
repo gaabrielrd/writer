@@ -31,7 +31,10 @@ export function throwIfAborted(signal?: AbortSignal): void {
   signal?.throwIfAborted();
 }
 
-async function readPages(file: File, options: ParseOptions = {}): Promise<LayoutPage[]> {
+export async function readPdfSourcePages(
+  file: File,
+  options: ParseOptions = {},
+): Promise<LayoutPage[]> {
   const pdfjs = await import('pdfjs-dist');
   pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerUrl;
   throwIfAborted(options.signal);
@@ -159,14 +162,14 @@ async function readPages(file: File, options: ParseOptions = {}): Promise<Layout
 }
 
 export async function parsePdfLayout(file: File, options?: ParseOptions) {
-  const pages = await readPages(file, options);
+  const pages = await readPdfSourcePages(file, options);
   const result = extractPdfLayout(pages);
   return { ...result, pageCount: pages.length };
 }
 
 /** Kept for callers that explicitly need the legacy plain-text representation. */
 export async function parsePdfFile(file: File): Promise<string> {
-  return extractPdfText(await readPages(file));
+  return extractPdfText(await readPdfSourcePages(file));
 }
 
 export async function openPdfPreview(file: File) {

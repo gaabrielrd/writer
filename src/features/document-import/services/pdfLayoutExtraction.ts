@@ -550,3 +550,12 @@ export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
   }
   return { sections, warnings: [...combined.values()] };
 }
+
+/** Ordered source for lore: retain headings, front matter and appendices. */
+export function extractPdfLorePages(pages: LayoutPage[]) {
+  return pages.map((page) => {
+    const layout = pageLines(page);
+    const lines = mergeHeadingLines(layout.lines, layout.bodyHeight);
+    return { page: page.number, text: lines.map((line) => line.text).join('\n') };
+  });
+}

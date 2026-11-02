@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router';
+import { LoreImportDialog } from './LoreImportDialog';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router';
 import { Globe, Plus } from 'lucide-react';
@@ -96,6 +98,8 @@ function UniverseForm({
 }
 
 export function UniversePage() {
+  const navigate = useNavigate();
+  const [importing, setImporting] = useState(false);
   const { user, loading: authLoading } = useAuth();
   const [attempt, setAttempt] = useState(0);
   const key = `${user?.uid ?? ''}:${attempt}`;
@@ -146,10 +150,15 @@ export function UniversePage() {
         title="Lore compartilhado"
         description="Organize universos e acompanhe seus livros, aventuras e campanhas vinculados."
         actions={
-          <Button onClick={() => setForm({ key })}>
-            <Plus className="icon icon-sm" aria-hidden="true" />
-            Novo universo
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setImporting(true)}>
+              Importar universo
+            </Button>
+            <Button onClick={() => setForm({ key })}>
+              <Plus className="icon icon-sm" aria-hidden="true" />
+              Novo universo
+            </Button>
+          </>
         }
       />
       {result?.key !== key ? (
@@ -219,6 +228,17 @@ export function UniversePage() {
             </article>
           ))}
         </div>
+      )}
+      {importing && (
+        <LoreImportDialog
+          key={user.uid}
+          uid={user.uid}
+          onClose={() => setImporting(false)}
+          onSuccess={(id) => {
+            setImporting(false);
+            void navigate(`/universes/${encodeURIComponent(id)}/lore`);
+          }}
+        />
       )}
       {form?.key === key && (
         <UniverseForm world={form.world} onClose={() => setForm(undefined)} onSaved={refresh} />

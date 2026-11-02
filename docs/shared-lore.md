@@ -110,7 +110,7 @@ universo mantêm a projeção e os backups de versão 1.
 
 O backup JSON privado de versão 2 guarda separadamente o lore local e uma cópia
 do universo e seu lore global. Falhas de leitura do universo interrompem o backup
-para evitar uma cópia incompleta. Não há restauração/importação de universos.
+para evitar uma cópia incompleta. O backup não é restaurado por esse formato. Importar documentos para lore usa o fluxo próprio descrito abaixo.
 
 ## Validação e implantação
 
@@ -135,3 +135,8 @@ Veja [ADR 0018](decisions/0018-shared-universes-and-lore.md) e
 O editor permite [atualizar o compêndio com base no texto](lore-analysis.md),
 com revisão e escolha explícita do destino local/global. Novas fichas são
 privadas; visibilidade, relações e notas estruturadas não são alteradas pelo lote.
+
+## Importar arquivos
+
+[Importação de universos e lore](universe-lore-import.md) permite criar universos
+ou acrescentar/atualizar fichas com revisão, diff e confirmação transacional.
