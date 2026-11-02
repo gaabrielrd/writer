@@ -1,4 +1,5 @@
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { auth, getFirebaseApp } from '@/shared/lib';
 import { hydrateSceneSource, type ExternalSceneSource } from './sceneSourceText';
 import type {

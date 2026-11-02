@@ -1,3 +1,4 @@
+import { domainSdkFixture } from './helpers/domainSdkFixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -11,8 +12,8 @@ process.env.FIREBASE_CONFIG = JSON.stringify({
 });
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:9';
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9';
-const endpoints = await import('../src/index.mjs');
-test('all 17 actual SDK exports preserve endpoint limits and private headers while rejecting unauthenticated run', async () => {
+const endpoints = domainSdkFixture(await import('../src/index.mjs'));
+test('all 17 actual SDK sector actions preserve endpoint limits and private headers while rejecting unauthenticated run', async () => {
   for (const name of ADVENTURE_BACKUP_METHODS) {
     const endpoint = endpoints[name];
     assert.equal(typeof endpoint, 'function');
@@ -29,7 +30,7 @@ test('all 17 actual SDK exports preserve endpoint limits and private headers whi
       { code: 'unauthenticated' },
     );
     assert.equal(headers.get('Cache-Control'), 'private, no-store');
-    assert.equal(headers.get('Vary'), 'Authorization');
+    assert.equal(headers.get('Vary'), 'Authorization, X-Firebase-AppCheck');
   }
 });
 test('actual SDK HTTP middleware rejects calls without Auth/App Check before any source or Storage read', async () => {

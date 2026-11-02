@@ -1,0 +1,3368 @@
+{
+  "baselineCommit": "a80dac5112d2ea88b897baedd9352c658cdc2606",
+  "before": {
+    "total": 320,
+    "callable": 308,
+    "http": 4,
+    "events": 5,
+    "schedules": 3
+  },
+  "after": {
+    "total": 30,
+    "sectorCallable": 16,
+    "streamingCallable": 2,
+    "http": 4,
+    "events": 5,
+    "schedules": 3
+  },
+  "compatibility": "No legacy endpoints: prototype without active users, explicitly authorized 2026-11-02.",
+  "domains": [
+    {
+      "endpoint": "adventurePortabilityApi",
+      "actionCount": 53,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "adventureRestoreValidationApi",
+      "actionCount": 1,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 540,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "adventuresApi",
+      "actionCount": 27,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "bookPortabilityApi",
+      "actionCount": 43,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "bookRestoreValidationApi",
+      "actionCount": 1,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 540,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "booksApi",
+      "actionCount": 11,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "campaignSyncApi",
+      "actionCount": 33,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "campaignsApi",
+      "actionCount": 46,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "generationApi",
+      "actionCount": 2,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": ["BOOK_GENERATION_GEMINI_KEY"]
+    },
+    {
+      "endpoint": "loreAnalysisApi",
+      "actionCount": 1,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 540,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": ["BOOK_GENERATION_GEMINI_KEY"]
+    },
+    {
+      "endpoint": "loreApi",
+      "actionCount": 16,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "mediaApi",
+      "actionCount": 7,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "planningApi",
+      "actionCount": 37,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "universeImportAnalysisApi",
+      "actionCount": 1,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": ["BOOK_GENERATION_GEMINI_KEY"]
+    },
+    {
+      "endpoint": "universeImportApi",
+      "actionCount": 8,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    },
+    {
+      "endpoint": "workApi",
+      "actionCount": 19,
+      "region": "us-central1",
+      "enforceAppCheck": true,
+      "timeoutSeconds": 120,
+      "memory": "512MiB",
+      "maxInstances": 5,
+      "serviceAccount": "platform default; no IAM change",
+      "secrets": []
+    }
+  ],
+  "retained": [
+    {
+      "name": "chapterChat",
+      "region": ["us-central1"],
+      "memoryMb": 512,
+      "timeoutSeconds": 120,
+      "maxInstances": 5,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": ["BOOK_GENERATION_GEMINI_KEY"],
+      "trigger": "callableTrigger"
+    },
+    {
+      "name": "cleanupAssistedSessions",
+      "region": ["us-central1"],
+      "memoryMb": null,
+      "timeoutSeconds": null,
+      "maxInstances": 1,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "scheduleTrigger"
+    },
+    {
+      "name": "cleanupBookAssets",
+      "region": ["us-central1"],
+      "memoryMb": null,
+      "timeoutSeconds": null,
+      "maxInstances": 1,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "scheduleTrigger"
+    },
+    {
+      "name": "cleanupDeletedAccountChatV2",
+      "region": ["us-central1"],
+      "memoryMb": 512,
+      "timeoutSeconds": 540,
+      "maxInstances": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "eventTrigger"
+    },
+    {
+      "name": "cleanupDeletedBookCover",
+      "region": ["us-central1"],
+      "memoryMb": null,
+      "timeoutSeconds": null,
+      "maxInstances": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "eventTrigger"
+    },
+    {
+      "name": "cleanupDeletedChapterChat",
+      "region": ["us-central1"],
+      "memoryMb": null,
+      "timeoutSeconds": null,
+      "maxInstances": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "eventTrigger"
+    },
+    {
+      "name": "cleanupDeletedUserChat",
+      "region": ["us-central1"],
+      "memoryMb": null,
+      "timeoutSeconds": null,
+      "maxInstances": null,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "eventTrigger"
+    },
+    {
+      "name": "cleanupUniverseLoreImports",
+      "region": ["us-central1"],
+      "memoryMb": null,
+      "timeoutSeconds": null,
+      "maxInstances": 1,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "scheduleTrigger"
+    },
+    {
+      "name": "collectUnusedBookChapterText",
+      "region": ["us-central1"],
+      "memoryMb": 256,
+      "timeoutSeconds": null,
+      "maxInstances": 3,
+      "concurrency": 1,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "eventTrigger"
+    },
+    {
+      "name": "editorChat",
+      "region": ["us-central1"],
+      "memoryMb": 512,
+      "timeoutSeconds": 120,
+      "maxInstances": 5,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": ["BOOK_GENERATION_GEMINI_KEY"],
+      "trigger": "callableTrigger"
+    },
+    {
+      "name": "getAdventureImportRecoveryKey",
+      "region": ["us-central1"],
+      "memoryMb": 512,
+      "timeoutSeconds": 120,
+      "maxInstances": 5,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "httpsTrigger"
+    },
+    {
+      "name": "getAdventureRestoreRecoveryKey",
+      "region": ["us-central1"],
+      "memoryMb": 512,
+      "timeoutSeconds": 120,
+      "maxInstances": 5,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "httpsTrigger"
+    },
+    {
+      "name": "getBookLoreEditRecoveryKey",
+      "region": ["us-central1"],
+      "memoryMb": 512,
+      "timeoutSeconds": 120,
+      "maxInstances": 5,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "httpsTrigger"
+    },
+    {
+      "name": "getBookRestoreRecoveryKey",
+      "region": ["us-central1"],
+      "memoryMb": 512,
+      "timeoutSeconds": 120,
+      "maxInstances": 5,
+      "concurrency": null,
+      "serviceAccountEmail": null,
+      "secrets": [],
+      "trigger": "httpsTrigger"
+    }
+  ],
+  "actions": [
+    {
+      "action": "acceptBookAsset",
+      "endpoint": "mediaApi",
+      "method": "accept",
+      "serviceCandidates": [
+        "functions/src/generation.mjs",
+        "functions/src/restoredImageStorage.mjs"
+      ],
+      "consumers": ["src/features/ai-assistant/services/bookGenerationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "activateAdventureImport",
+      "endpoint": "adventurePortabilityApi",
+      "method": "activateAdventureImport",
+      "serviceCandidates": ["functions/src/adventureImport.mjs"],
+      "consumers": [
+        "src/features/adventure-import/model/adventureImport.ts",
+        "src/features/adventure-import/services/adventureImportCallables.ts",
+        "src/features/adventure-import/services/adventureImportContracts.ts",
+        "src/features/adventure-import/services/adventureImportService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "activateAdventureRestore",
+      "endpoint": "adventurePortabilityApi",
+      "method": "activateAdventureRestore",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreActivation.mjs",
+        "functions/src/adventureRestoreContracts.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectContracts.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "activateBookRestore",
+      "endpoint": "bookPortabilityApi",
+      "method": "activateBookRestore",
+      "serviceCandidates": [
+        "functions/src/bookRestoreActivation.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestoreEffects.ts",
+        "src/features/book-portability/services/bookRestoreEffectContracts.ts",
+        "src/features/book-portability/services/bookRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "activateCampaignAdoption",
+      "endpoint": "campaignSyncApi",
+      "method": "activateCampaignAdoption",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "activateCampaignCapture",
+      "endpoint": "campaignSyncApi",
+      "method": "activateCampaignCapture",
+      "serviceCandidates": ["functions/src/campaignCapture.mjs"],
+      "consumers": [
+        "src/features/campaign-bases/components/CampaignCaptureDialog.tsx",
+        "src/features/campaign-bases/hooks/useCampaignCaptureOperation.ts",
+        "src/features/campaign-bases/model/campaignBase.ts",
+        "src/features/campaign-bases/services/campaignBaseCallables.ts",
+        "src/features/campaign-bases/services/campaignCaptureRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "addCampaignSessionPreparationLink",
+      "endpoint": "campaignsApi",
+      "method": "addCampaignSessionPreparationLink",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "addCampaignSessionReference",
+      "endpoint": "campaignsApi",
+      "method": "addCampaignSessionReference",
+      "serviceCandidates": ["functions/src/campaignSessionReferences.mjs"],
+      "consumers": [
+        "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureDeletion",
+      "endpoint": "adventuresApi",
+      "method": "advanceAdventureDeletion",
+      "serviceCandidates": ["functions/src/adventureDeletion.mjs"],
+      "consumers": ["src/features/adventure-deletions/services/adventureDeletionTransport.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureImport",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureImport",
+      "serviceCandidates": ["functions/src/adventureImport.mjs"],
+      "consumers": [
+        "src/features/adventure-import/model/adventureImport.ts",
+        "src/features/adventure-import/services/adventureImportCallables.ts",
+        "src/features/adventure-import/services/adventureImportContracts.ts",
+        "src/features/adventure-import/services/adventureImportService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreArchiveCleanup",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreArchiveCleanup",
+      "serviceCandidates": ["functions/src/adventureRestoreArchive.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectContracts.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreAudit",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreAudit",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreAudit.mjs",
+        "functions/src/adventureRestoreContracts.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreCleanup",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreCleanup",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreTransfer.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectContracts.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreCounts",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreCounts",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreCounts.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreHistory",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreHistory",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreHistory.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreImageLibrary",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreImageLibrary",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreImageLibrary.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreImageStorage",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreImageStorage",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreTransfer.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreImages",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreImages",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreImages.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreIntegrity",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreIntegrity",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreIntegrity.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationCallables.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationDriver.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreMedia",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreMedia",
+      "serviceCandidates": ["functions/src/adventureRestoreMedia.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectContracts.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestorePersonaLibrary",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestorePersonaLibrary",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestorePersonaLibrary.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreProfiles",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreProfiles",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreProfiles.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreResources",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreResources",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreResources.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreStructure",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreStructure",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreStructure.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreUniverse",
+      "endpoint": "adventurePortabilityApi",
+      "method": "advanceAdventureRestoreUniverse",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreUniverse.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceAdventureRestoreValidation",
+      "endpoint": "adventureRestoreValidationApi",
+      "method": "advanceAdventureRestoreValidation",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreValidation.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreArchiveCleanup",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreArchiveCleanup",
+      "serviceCandidates": ["functions/src/bookRestoreArchive.mjs"],
+      "consumers": [
+        "src/features/book-portability/model/bookRestoreEffects.ts",
+        "src/features/book-portability/services/bookRestoreEffectContracts.ts",
+        "src/features/book-portability/services/bookRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreAudit",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreAudit",
+      "serviceCandidates": [
+        "functions/src/bookRestoreAudit.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreCleanup",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreCleanup",
+      "serviceCandidates": ["functions/src/bookRestoreUpload.mjs"],
+      "consumers": [
+        "src/features/book-portability/model/bookRestoreEffects.ts",
+        "src/features/book-portability/services/bookRestoreEffectContracts.ts",
+        "src/features/book-portability/services/bookRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreCounts",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreCounts",
+      "serviceCandidates": [
+        "functions/src/bookRestoreCounts.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreCover",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreCover",
+      "serviceCandidates": [
+        "functions/src/bookRestoreCover.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreDraft",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreDraft",
+      "serviceCandidates": [
+        "functions/src/bookRestoreDraft.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreHistory",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreHistory",
+      "serviceCandidates": [
+        "functions/src/bookRestoreHistory.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreIntegrity",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreIntegrity",
+      "serviceCandidates": [
+        "functions/src/bookRestoreIntegrity.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts",
+        "src/features/book-portability/services/bookRestorePreparationDriver.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreLore",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreLore",
+      "serviceCandidates": [
+        "functions/src/bookRestoreLore.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestorePersonaLibrary",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestorePersonaLibrary",
+      "serviceCandidates": [
+        "functions/src/bookRestorePersonaLibrary.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestorePersonas",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestorePersonas",
+      "serviceCandidates": [
+        "functions/src/bookRestorePersonas.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreResources",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreResources",
+      "serviceCandidates": [
+        "functions/src/bookRestoreResources.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreSourceIndexes",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreSourceIndexes",
+      "serviceCandidates": [
+        "functions/src/bookRestoreSourceIndexes.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreStructure",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreStructure",
+      "serviceCandidates": [
+        "functions/src/bookRestoreStructure.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreUniverse",
+      "endpoint": "bookPortabilityApi",
+      "method": "advanceBookRestoreUniverse",
+      "serviceCandidates": [
+        "functions/src/bookRestoreUniverse.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceBookRestoreValidation",
+      "endpoint": "bookRestoreValidationApi",
+      "method": "advanceBookRestoreValidation",
+      "serviceCandidates": [
+        "functions/src/bookRestoreUpload.mjs",
+        "functions/src/bookRestoreValidation.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceCampaignAdoption",
+      "endpoint": "campaignSyncApi",
+      "method": "advanceCampaignAdoption",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceCampaignCapture",
+      "endpoint": "campaignSyncApi",
+      "method": "advanceCampaignCapture",
+      "serviceCandidates": ["functions/src/campaignCapture.mjs"],
+      "consumers": [
+        "src/features/campaign-bases/components/CampaignCaptureDialog.tsx",
+        "src/features/campaign-bases/hooks/useCampaignCaptureOperation.ts",
+        "src/features/campaign-bases/model/campaignBase.ts",
+        "src/features/campaign-bases/services/campaignBaseCallables.ts",
+        "src/features/campaign-bases/services/campaignCaptureRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceCampaignComparison",
+      "endpoint": "campaignSyncApi",
+      "method": "advanceCampaignComparison",
+      "serviceCandidates": ["functions/src/campaignComparison.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceCampaignDeletion",
+      "endpoint": "campaignsApi",
+      "method": "advanceCampaignDeletion",
+      "serviceCandidates": ["functions/src/campaignDeletion.mjs"],
+      "consumers": ["src/features/campaign-deletions/services/campaignDeletionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceUniverseLoreImport",
+      "endpoint": "universeImportAnalysisApi",
+      "method": "advanceUniverseLoreImport",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "analyzeChapterLore",
+      "endpoint": "loreAnalysisApi",
+      "method": "analyzeChapterLore",
+      "serviceCandidates": ["functions/src/loreAnalysis.mjs"],
+      "consumers": ["src/features/lore/services/loreAnalysisService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "appendAdventureImportSection",
+      "endpoint": "adventurePortabilityApi",
+      "method": "appendAdventureImportSection",
+      "serviceCandidates": ["functions/src/adventureImport.mjs"],
+      "consumers": [
+        "src/features/adventure-import/model/adventureImport.ts",
+        "src/features/adventure-import/services/adventureImportCallables.ts",
+        "src/features/adventure-import/services/adventureImportContracts.ts",
+        "src/features/adventure-import/services/adventureImportService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "appendAdventureRestoreChunk",
+      "endpoint": "adventurePortabilityApi",
+      "method": "appendAdventureRestoreChunk",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreTransfer.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreTransferCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreUploadDriver.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "appendBookRestoreChunk",
+      "endpoint": "bookPortabilityApi",
+      "method": "appendBookRestoreChunk",
+      "serviceCandidates": ["functions/src/bookRestoreUpload.mjs"],
+      "consumers": [
+        "src/features/book-portability/services/bookRestoreTransferCallables.ts",
+        "src/features/book-portability/services/bookRestoreUploadDriver.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "appendUniverseLoreImport",
+      "endpoint": "universeImportApi",
+      "method": "appendUniverseLoreImport",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "applyLoreAnalysis",
+      "endpoint": "loreApi",
+      "method": "applyLoreAnalysis",
+      "serviceCandidates": ["functions/src/loreAnalysis.mjs"],
+      "consumers": ["src/features/lore/services/loreAnalysisService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "applyUniverseLoreImport",
+      "endpoint": "universeImportApi",
+      "method": "applyUniverseLoreImport",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "archiveAdventureBlock",
+      "endpoint": "adventuresApi",
+      "method": "archiveAdventureBlock",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": [
+        "src/features/adventure-blocks/components/AdventureBlockNavigator.tsx",
+        "src/features/adventure-blocks/hooks/useAdventureBlockMutation.ts",
+        "src/features/adventure-blocks/model/adventureBlock.ts",
+        "src/features/adventure-blocks/services/adventureBlockCallables.ts",
+        "src/features/adventure-blocks/services/adventureBlockRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "archiveScene",
+      "endpoint": "planningApi",
+      "method": "archiveScene",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "assistedBook",
+      "endpoint": "generationApi",
+      "method": "assistedBook",
+      "serviceCandidates": ["functions/src/assistedBook.mjs"],
+      "consumers": ["src/features/ai-assistant/services/assistedBookService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "bookGenerationQuote",
+      "endpoint": "booksApi",
+      "method": "quote",
+      "serviceCandidates": [
+        "functions/src/generation.mjs",
+        "functions/src/loreAnalysis.mjs",
+        "functions/src/visibleWordCount.mjs"
+      ],
+      "consumers": ["src/features/ai-assistant/services/bookGenerationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "bookLoreEdit",
+      "endpoint": "loreApi",
+      "method": "bookLoreEdit",
+      "serviceCandidates": ["functions/src/bookLoreEditTransport.mjs"],
+      "consumers": ["src/features/books/services/bookLorePublicationClient.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "bookLoreEditOutcome",
+      "endpoint": "loreApi",
+      "method": "bookLoreEditOutcome",
+      "serviceCandidates": ["functions/src/bookLoreEditOutcome.mjs"],
+      "consumers": ["src/features/lore/services/bookLoreEditOutcome.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "bookLoreRemoval",
+      "endpoint": "loreApi",
+      "method": "bookLoreRemoval",
+      "serviceCandidates": ["functions/src/bookLoreRemovalTransport.mjs"],
+      "consumers": [],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelAdventureImport",
+      "endpoint": "adventurePortabilityApi",
+      "method": "cancelAdventureImport",
+      "serviceCandidates": ["functions/src/adventureImport.mjs"],
+      "consumers": [
+        "src/features/adventure-import/model/adventureImport.ts",
+        "src/features/adventure-import/services/adventureImportCallables.ts",
+        "src/features/adventure-import/services/adventureImportContracts.ts",
+        "src/features/adventure-import/services/adventureImportService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelAdventureRestore",
+      "endpoint": "adventurePortabilityApi",
+      "method": "cancelAdventureRestore",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreTransfer.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectContracts.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelBookRestore",
+      "endpoint": "bookPortabilityApi",
+      "method": "cancelBookRestore",
+      "serviceCandidates": ["functions/src/bookRestoreUpload.mjs"],
+      "consumers": [
+        "src/features/book-portability/model/bookRestoreEffects.ts",
+        "src/features/book-portability/services/bookRestoreEffectContracts.ts",
+        "src/features/book-portability/services/bookRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelCampaignAdoption",
+      "endpoint": "campaignSyncApi",
+      "method": "cancelCampaignAdoption",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelCampaignCapture",
+      "endpoint": "campaignSyncApi",
+      "method": "cancelCampaignCapture",
+      "serviceCandidates": ["functions/src/campaignCapture.mjs"],
+      "consumers": [
+        "src/features/campaign-bases/components/CampaignCaptureDialog.tsx",
+        "src/features/campaign-bases/hooks/useCampaignCaptureOperation.ts",
+        "src/features/campaign-bases/model/campaignBase.ts",
+        "src/features/campaign-bases/services/campaignBaseCallables.ts",
+        "src/features/campaign-bases/services/campaignCaptureRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelCampaignComparison",
+      "endpoint": "campaignSyncApi",
+      "method": "cancelCampaignComparison",
+      "serviceCandidates": ["functions/src/campaignComparison.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelUniverseLoreImport",
+      "endpoint": "universeImportApi",
+      "method": "cancelUniverseLoreImport",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "convertChapterToScenes",
+      "endpoint": "planningApi",
+      "method": "convertChapterToScenes",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createAdventure",
+      "endpoint": "adventuresApi",
+      "method": "createAdventure",
+      "serviceCandidates": ["functions/src/studio.mjs"],
+      "consumers": ["src/features/adventures/services/adventureService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createAdventureBlock",
+      "endpoint": "adventuresApi",
+      "method": "createAdventureBlock",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": [
+        "src/features/adventure-blocks/components/AdventureBlockNavigator.tsx",
+        "src/features/adventure-blocks/hooks/useAdventureBlockMutation.ts",
+        "src/features/adventure-blocks/model/adventureBlock.ts",
+        "src/features/adventure-blocks/services/adventureBlockCallables.ts",
+        "src/features/adventure-blocks/services/adventureBlockRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createBookWithCover",
+      "endpoint": "booksApi",
+      "method": "createWithCover",
+      "serviceCandidates": ["functions/src/generation.mjs"],
+      "consumers": ["src/features/books/services/generatedBookService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createCampaign",
+      "endpoint": "campaignsApi",
+      "method": "createCampaign",
+      "serviceCandidates": ["functions/src/studio.mjs"],
+      "consumers": ["src/features/campaigns/services/campaignService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createLegacyChapter",
+      "endpoint": "booksApi",
+      "method": "createLegacyChapter",
+      "serviceCandidates": ["functions/src/workProgressLegacy.mjs"],
+      "consumers": ["src/features/books/services/legacyChapterService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createNarrativeItem",
+      "endpoint": "planningApi",
+      "method": "createNarrativeItem",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createScene",
+      "endpoint": "planningApi",
+      "method": "createScene",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createSceneGroup",
+      "endpoint": "planningApi",
+      "method": "createSceneGroup",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createUniverse",
+      "endpoint": "loreApi",
+      "method": "createUniverse",
+      "serviceCandidates": ["functions/src/universes.mjs"],
+      "consumers": ["src/features/universes/services/universeService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createWorkChecklistItem",
+      "endpoint": "workApi",
+      "method": "createWorkChecklistItem",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "createWorkVersion",
+      "endpoint": "workApi",
+      "method": "createWorkVersion",
+      "serviceCandidates": ["functions/src/workHistory.mjs"],
+      "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "decideCampaignAdoption",
+      "endpoint": "campaignSyncApi",
+      "method": "decideCampaignAdoption",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteAdventureBlock",
+      "endpoint": "adventuresApi",
+      "method": "deleteAdventureBlock",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": [
+        "src/features/adventure-blocks/components/AdventureBlockNavigator.tsx",
+        "src/features/adventure-blocks/hooks/useAdventureBlockDraft.ts",
+        "src/features/adventure-blocks/hooks/useAdventureBlockMutation.ts",
+        "src/features/adventure-blocks/model/adventureBlock.ts",
+        "src/features/adventure-blocks/services/adventureBlockCallables.ts",
+        "src/features/adventure-blocks/services/adventureBlockRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteAdventureLore",
+      "endpoint": "adventuresApi",
+      "method": "deleteAdventureLore",
+      "serviceCandidates": ["functions/src/adventureLore.mjs"],
+      "consumers": ["src/features/lore/services/adventureLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteCampaignNote",
+      "endpoint": "campaignsApi",
+      "method": "deleteCampaignNote",
+      "serviceCandidates": ["functions/src/campaignNotes.mjs"],
+      "consumers": [
+        "src/features/campaign-notes/components/CampaignNotesPanel.tsx",
+        "src/features/campaign-notes/model/campaignNote.ts",
+        "src/features/campaign-notes/services/campaignNotesCallables.ts",
+        "src/features/campaign-notes/services/campaignNotesRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteCampaignPreparationItem",
+      "endpoint": "campaignsApi",
+      "method": "deleteCampaignPreparationItem",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteCampaignSession",
+      "endpoint": "campaignsApi",
+      "method": "deleteCampaignSession",
+      "serviceCandidates": ["functions/src/campaignSessions.mjs"],
+      "consumers": [
+        "src/features/campaign-sessions/components/CampaignSessionsPanel.tsx",
+        "src/features/campaign-sessions/model/campaignSession.ts",
+        "src/features/campaign-sessions/services/campaignSessionCallables.ts",
+        "src/features/campaign-sessions/services/campaignSessionService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteLegacyChapters",
+      "endpoint": "booksApi",
+      "method": "deleteLegacyChapters",
+      "serviceCandidates": ["functions/src/workProgressLegacy.mjs"],
+      "consumers": ["src/features/books/services/legacyChapterService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteLibraryImage",
+      "endpoint": "mediaApi",
+      "method": "remove",
+      "serviceCandidates": [
+        "functions/src/adventureDeletionControls.mjs",
+        "functions/src/adventureRestoreArchive.mjs",
+        "functions/src/adventureRestoreArchiveUnits.mjs",
+        "functions/src/bookChapterCleanup.mjs",
+        "functions/src/bookLoreCleanup.mjs",
+        "functions/src/bookLoreDeletion.mjs",
+        "functions/src/bookLoreDeletionPayload.mjs",
+        "functions/src/bookLoreRecoveryDeletion.mjs",
+        "functions/src/bookLoreRemoval.mjs",
+        "functions/src/bookLoreResourceInventoryCleanup.mjs",
+        "functions/src/bookRestoreArchive.mjs",
+        "functions/src/bookRestoreArchiveUnits.mjs",
+        "functions/src/bookRestoreArtifacts.mjs",
+        "functions/src/bookRestoreCounts.mjs",
+        "functions/src/bookRestoreIntegrity.mjs",
+        "functions/src/bookRestoreLoreStaging.mjs",
+        "functions/src/bookRestoreValidationCleanup.mjs",
+        "functions/src/campaignLore.mjs",
+        "functions/src/imageLibrary.mjs",
+        "functions/src/narrativePlanning.mjs"
+      ],
+      "consumers": ["src/features/image-library/services/imageLibraryService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteNarrativeItem",
+      "endpoint": "planningApi",
+      "method": "deleteNarrativeItem",
+      "serviceCandidates": ["functions/src/narrativeJobs.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteSceneBook",
+      "endpoint": "planningApi",
+      "method": "deleteSceneBook",
+      "serviceCandidates": ["functions/src/sceneJobs.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteSceneGroup",
+      "endpoint": "planningApi",
+      "method": "deleteSceneGroup",
+      "serviceCandidates": ["functions/src/sceneJobs.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteSceneGroups",
+      "endpoint": "planningApi",
+      "method": "deleteSceneGroups",
+      "serviceCandidates": ["functions/src/sceneJobs.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteUniverse",
+      "endpoint": "loreApi",
+      "method": "deleteUniverse",
+      "serviceCandidates": ["functions/src/universes.mjs"],
+      "consumers": ["src/features/universes/services/universeService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteUniverseLore",
+      "endpoint": "loreApi",
+      "method": "deleteUniverseLore",
+      "serviceCandidates": ["functions/src/universes.mjs"],
+      "consumers": ["src/features/lore/services/loreService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteWorkChecklistItem",
+      "endpoint": "workApi",
+      "method": "deleteWorkChecklistItem",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "deleteWorkVersion",
+      "endpoint": "workApi",
+      "method": "deleteWorkVersion",
+      "serviceCandidates": ["functions/src/workHistory.mjs"],
+      "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "discardBookAsset",
+      "endpoint": "mediaApi",
+      "method": "discard",
+      "serviceCandidates": ["functions/src/campaignLore.mjs", "functions/src/generation.mjs"],
+      "consumers": ["src/features/ai-assistant/services/bookGenerationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "discardCampaignLoreVariant",
+      "endpoint": "campaignsApi",
+      "method": "discardCampaignLoreVariant",
+      "serviceCandidates": ["functions/src/campaignLore.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "duplicateAdventureBlock",
+      "endpoint": "adventuresApi",
+      "method": "duplicateAdventureBlock",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": [
+        "src/features/adventure-blocks/components/AdventureBlockNavigator.tsx",
+        "src/features/adventure-blocks/hooks/useAdventureBlockMutation.ts",
+        "src/features/adventure-blocks/model/adventureBlock.ts",
+        "src/features/adventure-blocks/services/adventureBlockCallables.ts",
+        "src/features/adventure-blocks/services/adventureBlockRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "finalizeAdventureRestoreDraft",
+      "endpoint": "adventurePortabilityApi",
+      "method": "finalizeAdventureRestoreDraft",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreDraftFinalize.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestorePreparationContracts.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationProgress.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "finalizeBookPublication",
+      "endpoint": "booksApi",
+      "method": "finalizeBookPublication",
+      "serviceCandidates": ["functions/src/bookLorePublication.mjs"],
+      "consumers": ["src/features/books/services/bookLorePublicationClient.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "finalizeBookRestoreDraft",
+      "endpoint": "bookPortabilityApi",
+      "method": "finalizeBookRestoreDraft",
+      "serviceCandidates": [
+        "functions/src/bookRestoreDraftFinalize.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "finalizeBookRestoreMedia",
+      "endpoint": "bookPortabilityApi",
+      "method": "finalizeBookRestoreMedia",
+      "serviceCandidates": ["functions/src/bookRestoreMedia.mjs"],
+      "consumers": [
+        "src/features/book-portability/model/bookRestoreEffects.ts",
+        "src/features/book-portability/services/bookRestoreEffectContracts.ts",
+        "src/features/book-portability/services/bookRestoreEffectSession.ts",
+        "src/features/book-portability/services/bookRestoreFinalizationViews.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "generateBookAsset",
+      "endpoint": "generationApi",
+      "method": "generate",
+      "serviceCandidates": ["functions/src/generation.mjs"],
+      "consumers": ["src/features/ai-assistant/services/bookGenerationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventure",
+      "endpoint": "adventuresApi",
+      "method": "getAdventure",
+      "serviceCandidates": ["functions/src/studio.mjs"],
+      "consumers": ["src/features/adventures/services/adventureService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureBackupImage",
+      "endpoint": "adventurePortabilityApi",
+      "method": "getAdventureBackupImage",
+      "serviceCandidates": ["functions/src/adventureBackupImageRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureImageContracts.ts",
+        "src/features/adventure-portability/services/adventureImageData.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureBackupSource",
+      "endpoint": "adventurePortabilityApi",
+      "method": "getAdventureBackupSource",
+      "serviceCandidates": ["functions/src/adventureBackupSource.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureCoreData.ts",
+        "src/features/adventure-portability/services/adventureDraftData.ts",
+        "src/features/adventure-portability/services/adventureHistoryContracts.ts",
+        "src/features/adventure-portability/services/adventureHistoryData.ts",
+        "src/features/adventure-portability/services/adventureImageContracts.ts",
+        "src/features/adventure-portability/services/adventureImageData.ts",
+        "src/features/adventure-portability/services/adventureInventory.ts",
+        "src/features/adventure-portability/services/adventureInventoryContracts.ts",
+        "src/features/adventure-portability/services/streamAdventureArchive.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureBackupUniverse",
+      "endpoint": "adventurePortabilityApi",
+      "method": "getAdventureBackupUniverse",
+      "serviceCandidates": ["functions/src/adventureBackupUniverseRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureInventory.ts",
+        "src/features/adventure-portability/services/adventureInventoryContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureBlock",
+      "endpoint": "adventuresApi",
+      "method": "getAdventureBlock",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": ["src/features/adventure-blocks/services/adventureBlockCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureBlockCountStatus",
+      "endpoint": "adventuresApi",
+      "method": "getAdventureBlockCountStatus",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": ["src/features/adventure-blocks/services/adventureBlockCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureBlockImage",
+      "endpoint": "adventuresApi",
+      "method": "getAdventureBlockImage",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": ["src/features/adventure-blocks/services/adventurePreviewCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureDeletion",
+      "endpoint": "adventuresApi",
+      "method": "getAdventureDeletion",
+      "serviceCandidates": ["functions/src/adventureDeletion.mjs"],
+      "consumers": ["src/features/adventure-deletions/services/adventureDeletionTransport.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureDeletionSource",
+      "endpoint": "adventuresApi",
+      "method": "getAdventureDeletionSource",
+      "serviceCandidates": [
+        "functions/src/adventureDeletion.mjs",
+        "functions/src/adventureDeletionSource.mjs"
+      ],
+      "consumers": ["src/features/adventure-deletions/services/adventureDeletionTransport.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureImport",
+      "endpoint": "adventurePortabilityApi",
+      "method": "getAdventureImport",
+      "serviceCandidates": ["functions/src/adventureImport.mjs"],
+      "consumers": ["src/features/adventure-import/services/adventureImportCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureLore",
+      "endpoint": "adventuresApi",
+      "method": "getAdventureLore",
+      "serviceCandidates": ["functions/src/adventureLore.mjs"],
+      "consumers": ["src/features/lore/services/adventureLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureRestore",
+      "endpoint": "adventurePortabilityApi",
+      "method": "getAdventureRestore",
+      "serviceCandidates": ["functions/src/adventureRestoreTransfer.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestorePreparationCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreTransferCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureRestoreActivationReview",
+      "endpoint": "adventurePortabilityApi",
+      "method": "getAdventureRestoreActivationReview",
+      "serviceCandidates": ["functions/src/adventureRestoreActivationReview.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureRestoreArchiveCleanup",
+      "endpoint": "adventurePortabilityApi",
+      "method": "getAdventureRestoreArchiveCleanup",
+      "serviceCandidates": ["functions/src/adventureRestoreArchive.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getAdventureRestoreMediaState",
+      "endpoint": "adventurePortabilityApi",
+      "method": "getAdventureRestoreMediaState",
+      "serviceCandidates": ["functions/src/adventureRestoreMedia.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookBackupCover",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookBackupCover",
+      "serviceCandidates": ["functions/src/bookBackupCoverRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookCoverCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookBackupDraftPersona",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookBackupDraftPersona",
+      "serviceCandidates": ["functions/src/bookBackupDraftRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookDraftCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookBackupSource",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookBackupSource",
+      "serviceCandidates": ["functions/src/bookBackupRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookStructureCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookBackupUniverse",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookBackupUniverse",
+      "serviceCandidates": ["functions/src/bookBackupUniverseRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookUniverseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookLoreEditRecovery",
+      "endpoint": "loreApi",
+      "method": "getBookLoreEditRecovery",
+      "serviceCandidates": ["functions/src/bookLoreWriteRecovery.mjs"],
+      "consumers": [],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookLoreRead",
+      "endpoint": "loreApi",
+      "method": "getBookLoreRead",
+      "serviceCandidates": ["functions/src/bookLoreRead.mjs"],
+      "consumers": [
+        "src/features/lore/services/bookLorePortableClient.ts",
+        "src/features/lore/services/bookLoreReadClient.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookPublicationSource",
+      "endpoint": "booksApi",
+      "method": "getBookPublicationSource",
+      "serviceCandidates": ["functions/src/bookLorePublication.mjs"],
+      "consumers": ["src/features/books/services/bookLorePublicationClient.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookRestore",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookRestore",
+      "serviceCandidates": ["functions/src/bookRestoreUpload.mjs"],
+      "consumers": [
+        "src/features/book-portability/services/bookRestorePreparationCallables.ts",
+        "src/features/book-portability/services/bookRestoreTransferCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookRestoreActivationReview",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookRestoreActivationReview",
+      "serviceCandidates": ["functions/src/bookRestoreActivationReview.mjs"],
+      "consumers": ["src/features/book-portability/services/bookRestoreEffectCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookRestoreArchiveCleanup",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookRestoreArchiveCleanup",
+      "serviceCandidates": ["functions/src/bookRestoreArchive.mjs"],
+      "consumers": ["src/features/book-portability/services/bookRestoreEffectCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookRestoreMediaState",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookRestoreMediaState",
+      "serviceCandidates": ["functions/src/bookRestoreMedia.mjs"],
+      "consumers": ["src/features/book-portability/services/bookRestoreEffectCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaign",
+      "endpoint": "campaignsApi",
+      "method": "getCampaign",
+      "serviceCandidates": ["functions/src/studio.mjs"],
+      "consumers": ["src/features/campaigns/services/campaignService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignAdoption",
+      "endpoint": "campaignSyncApi",
+      "method": "getCampaignAdoption",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignBase",
+      "endpoint": "campaignSyncApi",
+      "method": "getCampaignBase",
+      "serviceCandidates": ["functions/src/campaignBaseRead.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignCapture",
+      "endpoint": "campaignSyncApi",
+      "method": "getCampaignCapture",
+      "serviceCandidates": ["functions/src/campaignCapture.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignCaptureSource",
+      "endpoint": "campaignSyncApi",
+      "method": "getCampaignCaptureSource",
+      "serviceCandidates": ["functions/src/campaignCapture.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignComparison",
+      "endpoint": "campaignSyncApi",
+      "method": "getCampaignComparison",
+      "serviceCandidates": ["functions/src/campaignComparison.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignComparisonSource",
+      "endpoint": "campaignSyncApi",
+      "method": "getCampaignComparisonSource",
+      "serviceCandidates": ["functions/src/campaignComparison.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignDeletion",
+      "endpoint": "campaignsApi",
+      "method": "getCampaignDeletion",
+      "serviceCandidates": ["functions/src/campaignDeletion.mjs"],
+      "consumers": ["src/features/campaign-deletions/services/campaignDeletionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignDeletionSource",
+      "endpoint": "campaignsApi",
+      "method": "getCampaignDeletionSource",
+      "serviceCandidates": ["functions/src/campaignDeletion.mjs"],
+      "consumers": ["src/features/campaign-deletions/services/campaignDeletionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignLore",
+      "endpoint": "campaignsApi",
+      "method": "getCampaignLore",
+      "serviceCandidates": ["functions/src/campaignLore.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignNote",
+      "endpoint": "campaignsApi",
+      "method": "getCampaignNote",
+      "serviceCandidates": ["functions/src/campaignNotes.mjs"],
+      "consumers": ["src/features/campaign-notes/services/campaignNotesCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignPreparationItem",
+      "endpoint": "campaignsApi",
+      "method": "getCampaignPreparationItem",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getCampaignSession",
+      "endpoint": "campaignsApi",
+      "method": "getCampaignSession",
+      "serviceCandidates": ["functions/src/campaignSessions.mjs"],
+      "consumers": ["src/features/campaign-sessions/services/campaignSessionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getNarrativeContext",
+      "endpoint": "planningApi",
+      "method": "getNarrativeContext",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getNarrativeItem",
+      "endpoint": "planningApi",
+      "method": "getNarrativeItem",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getNarrativeJob",
+      "endpoint": "planningApi",
+      "method": "getNarrativeJob",
+      "serviceCandidates": ["functions/src/narrativeJobs.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getScene",
+      "endpoint": "planningApi",
+      "method": "getScene",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getSceneGroup",
+      "endpoint": "planningApi",
+      "method": "getSceneGroup",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getSceneJob",
+      "endpoint": "planningApi",
+      "method": "getSceneJob",
+      "serviceCandidates": ["functions/src/sceneJobs.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getUniverseLoreImport",
+      "endpoint": "universeImportApi",
+      "method": "getUniverseLoreImport",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getUniverseLoreImportTarget",
+      "endpoint": "universeImportApi",
+      "method": "getUniverseLoreImportTarget",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getWorkHistoryBackupSource",
+      "endpoint": "workApi",
+      "method": "getWorkHistoryBackupSource",
+      "serviceCandidates": ["functions/src/workHistory.mjs"],
+      "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getWorkPreferences",
+      "endpoint": "workApi",
+      "method": "getWorkPreferences",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getWorkProgress",
+      "endpoint": "workApi",
+      "method": "getWorkProgress",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getWorkVersionSource",
+      "endpoint": "workApi",
+      "method": "getWorkVersionSource",
+      "serviceCandidates": ["functions/src/workHistory.mjs"],
+      "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureBackupHistory",
+      "endpoint": "adventurePortabilityApi",
+      "method": "listAdventureBackupHistory",
+      "serviceCandidates": ["functions/src/adventureBackupHistoryRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureHistoryContracts.ts",
+        "src/features/adventure-portability/services/adventureHistoryData.ts",
+        "src/features/adventure-portability/services/adventureInventory.ts",
+        "src/features/adventure-portability/services/adventureInventoryContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureBackupImageBindings",
+      "endpoint": "adventurePortabilityApi",
+      "method": "listAdventureBackupImageBindings",
+      "serviceCandidates": ["functions/src/adventureBackupImageRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureImageContracts.ts",
+        "src/features/adventure-portability/services/adventureImageData.ts",
+        "src/features/adventure-portability/services/adventureInventory.ts",
+        "src/features/adventure-portability/services/adventureInventoryContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureBackupLore",
+      "endpoint": "adventurePortabilityApi",
+      "method": "listAdventureBackupLore",
+      "serviceCandidates": ["functions/src/adventureBackupLoreRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureInventory.ts",
+        "src/features/adventure-portability/services/adventureInventoryContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureBackupPersonaBindings",
+      "endpoint": "adventurePortabilityApi",
+      "method": "listAdventureBackupPersonaBindings",
+      "serviceCandidates": ["functions/src/adventureBackupPersonaRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureInventory.ts",
+        "src/features/adventure-portability/services/adventureInventoryContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureBackupResources",
+      "endpoint": "adventurePortabilityApi",
+      "method": "listAdventureBackupResources",
+      "serviceCandidates": ["functions/src/adventureBackupResourceRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureInventory.ts",
+        "src/features/adventure-portability/services/adventureInventoryContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureBackupStructure",
+      "endpoint": "adventurePortabilityApi",
+      "method": "listAdventureBackupStructure",
+      "serviceCandidates": ["functions/src/adventureBackupRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureInventory.ts",
+        "src/features/adventure-portability/services/adventureInventoryContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureBlocks",
+      "endpoint": "adventuresApi",
+      "method": "listAdventureBlocks",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": ["src/features/adventure-blocks/services/adventureBlockCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureDeletions",
+      "endpoint": "adventuresApi",
+      "method": "listAdventureDeletions",
+      "serviceCandidates": ["functions/src/adventureDeletion.mjs"],
+      "consumers": ["src/features/adventure-deletions/services/adventureDeletionTransport.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureImports",
+      "endpoint": "adventurePortabilityApi",
+      "method": "listAdventureImports",
+      "serviceCandidates": ["functions/src/adventureImport.mjs"],
+      "consumers": ["src/features/adventure-import/services/adventureImportCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureLore",
+      "endpoint": "adventuresApi",
+      "method": "listAdventureLore",
+      "serviceCandidates": ["functions/src/adventureLore.mjs"],
+      "consumers": ["src/features/lore/services/adventureLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listAdventureRestores",
+      "endpoint": "adventurePortabilityApi",
+      "method": "listAdventureRestores",
+      "serviceCandidates": ["functions/src/adventureRestoreTransfer.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreTransferCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listBookBackupPersonaBindings",
+      "endpoint": "bookPortabilityApi",
+      "method": "listBookBackupPersonaBindings",
+      "serviceCandidates": ["functions/src/bookBackupPersonaRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookPersonaCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listBookBackupResources",
+      "endpoint": "bookPortabilityApi",
+      "method": "listBookBackupResources",
+      "serviceCandidates": ["functions/src/bookBackupResourceRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookResourceCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listBookBackupStructure",
+      "endpoint": "bookPortabilityApi",
+      "method": "listBookBackupStructure",
+      "serviceCandidates": ["functions/src/bookBackupRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookStructureCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listBookLoreRead",
+      "endpoint": "loreApi",
+      "method": "listBookLoreRead",
+      "serviceCandidates": ["functions/src/bookLoreRead.mjs"],
+      "consumers": ["src/features/lore/services/bookLoreReadClient.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listBookRestores",
+      "endpoint": "bookPortabilityApi",
+      "method": "listBookRestores",
+      "serviceCandidates": ["functions/src/bookRestoreUpload.mjs"],
+      "consumers": ["src/features/book-portability/services/bookRestoreTransferCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignAdoptionDecisions",
+      "endpoint": "campaignSyncApi",
+      "method": "listCampaignAdoptionDecisions",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignAdoptions",
+      "endpoint": "campaignSyncApi",
+      "method": "listCampaignAdoptions",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignBaseItems",
+      "endpoint": "campaignSyncApi",
+      "method": "listCampaignBaseItems",
+      "serviceCandidates": ["functions/src/campaignBaseRead.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignBaseReferences",
+      "endpoint": "campaignSyncApi",
+      "method": "listCampaignBaseReferences",
+      "serviceCandidates": ["functions/src/campaignBaseRead.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignCaptures",
+      "endpoint": "campaignSyncApi",
+      "method": "listCampaignCaptures",
+      "serviceCandidates": ["functions/src/campaignCapture.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignComparisonChanges",
+      "endpoint": "campaignSyncApi",
+      "method": "listCampaignComparisonChanges",
+      "serviceCandidates": ["functions/src/campaignComparisonRead.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignComparisons",
+      "endpoint": "campaignSyncApi",
+      "method": "listCampaignComparisons",
+      "serviceCandidates": ["functions/src/campaignComparison.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignDeletions",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignDeletions",
+      "serviceCandidates": ["functions/src/campaignDeletion.mjs"],
+      "consumers": ["src/features/campaign-deletions/services/campaignDeletionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignLore",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignLore",
+      "serviceCandidates": ["functions/src/campaignLore.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignLoreOperations",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignLoreOperations",
+      "serviceCandidates": ["functions/src/campaignVariantRemoteRecovery.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreRemoteCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignNotes",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignNotes",
+      "serviceCandidates": ["functions/src/campaignNotes.mjs"],
+      "consumers": ["src/features/campaign-notes/services/campaignNotesCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignPreparationItems",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignPreparationItems",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignSessionPreparationLinks",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignSessionPreparationLinks",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignSessionReferences",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignSessionReferences",
+      "serviceCandidates": ["functions/src/campaignSessionReferences.mjs"],
+      "consumers": [
+        "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignSessionSceneBlocks",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignSessionSceneBlocks",
+      "serviceCandidates": ["functions/src/campaignSessionScenes.mjs"],
+      "consumers": [
+        "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listCampaignSessions",
+      "endpoint": "campaignsApi",
+      "method": "listCampaignSessions",
+      "serviceCandidates": ["functions/src/campaignSessions.mjs"],
+      "consumers": ["src/features/campaign-sessions/services/campaignSessionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listEntityNarrativeItems",
+      "endpoint": "planningApi",
+      "method": "listEntityNarrativeItems",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listEntityScenes",
+      "endpoint": "planningApi",
+      "method": "listEntityScenes",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLibraryImages",
+      "endpoint": "mediaApi",
+      "method": "list",
+      "serviceCandidates": [
+        "functions/src/adventureImport.mjs",
+        "functions/src/adventureRestoreTransfer.mjs",
+        "functions/src/bookRestoreUpload.mjs",
+        "functions/src/campaignBackupAttestation.mjs",
+        "functions/src/campaignBackupAudit.mjs",
+        "functions/src/chapterChat.mjs",
+        "functions/src/editorChatContracts.mjs",
+        "functions/src/imageLibrary.mjs",
+        "functions/src/visibleWordCount.mjs"
+      ],
+      "consumers": ["src/features/image-library/services/imageLibraryService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listNarrativeItems",
+      "endpoint": "planningApi",
+      "method": "listNarrativeItems",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listNarrativeLoreOptions",
+      "endpoint": "planningApi",
+      "method": "listNarrativeLoreOptions",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listNarrativeReferences",
+      "endpoint": "planningApi",
+      "method": "listNarrativeReferences",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listOrphanScenes",
+      "endpoint": "planningApi",
+      "method": "listOrphanScenes",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listSceneGroups",
+      "endpoint": "planningApi",
+      "method": "listSceneGroups",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listSceneReferences",
+      "endpoint": "planningApi",
+      "method": "listSceneReferences",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listSceneSources",
+      "endpoint": "planningApi",
+      "method": "listSceneSources",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listScenes",
+      "endpoint": "planningApi",
+      "method": "listScenes",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listStudioProjects",
+      "endpoint": "booksApi",
+      "method": "listStudioProjects",
+      "serviceCandidates": ["functions/src/studio.mjs"],
+      "consumers": [
+        "src/features/adventures/services/adventureService.ts",
+        "src/features/books/services/studioBookService.ts",
+        "src/features/campaigns/services/campaignService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listWorkChecklist",
+      "endpoint": "workApi",
+      "method": "listWorkChecklist",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listWorkResume",
+      "endpoint": "workApi",
+      "method": "listWorkResume",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listWorkVersions",
+      "endpoint": "workApi",
+      "method": "listWorkVersions",
+      "serviceCandidates": ["functions/src/workHistory.mjs"],
+      "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "materializeBookRestoreCover",
+      "endpoint": "bookPortabilityApi",
+      "method": "materializeBookRestoreCover",
+      "serviceCandidates": [
+        "functions/src/bookRestoreCoverMaterialization.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "migrateImageLibrary",
+      "endpoint": "mediaApi",
+      "method": "migrate",
+      "serviceCandidates": ["functions/src/imageLibrary.mjs"],
+      "consumers": [],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "moveAdventureBlock",
+      "endpoint": "adventuresApi",
+      "method": "moveAdventureBlock",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": [
+        "src/features/adventure-blocks/components/AdventureBlockNavigator.tsx",
+        "src/features/adventure-blocks/hooks/useAdventureBlockMutation.ts",
+        "src/features/adventure-blocks/model/adventureBlock.ts",
+        "src/features/adventure-blocks/services/adventureBlockCallables.ts",
+        "src/features/adventure-blocks/services/adventureBlockRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "moveCampaignPreparationItem",
+      "endpoint": "campaignsApi",
+      "method": "moveCampaignPreparationItem",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "moveCampaignSession",
+      "endpoint": "campaignsApi",
+      "method": "moveCampaignSession",
+      "serviceCandidates": ["functions/src/campaignSessions.mjs"],
+      "consumers": [
+        "src/features/campaign-sessions/components/CampaignSessionsPanel.tsx",
+        "src/features/campaign-sessions/hooks/useCampaignSessionOperation.ts",
+        "src/features/campaign-sessions/model/campaignSession.ts",
+        "src/features/campaign-sessions/services/campaignSessionCallables.ts",
+        "src/features/campaign-sessions/services/campaignSessionService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "moveCampaignSessionPreparationLink",
+      "endpoint": "campaignsApi",
+      "method": "moveCampaignSessionPreparationLink",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "moveNarrativeItem",
+      "endpoint": "planningApi",
+      "method": "moveNarrativeItem",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "moveScene",
+      "endpoint": "planningApi",
+      "method": "moveScene",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "prepareBYOKLore",
+      "endpoint": "loreApi",
+      "method": "prepareBYOKLore",
+      "serviceCandidates": ["functions/src/loreAnalysis.mjs"],
+      "consumers": ["src/features/lore/services/loreAnalysisService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "prepareCampaignAdoption",
+      "endpoint": "campaignSyncApi",
+      "method": "prepareCampaignAdoption",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "prepareCampaignLoreVariant",
+      "endpoint": "campaignsApi",
+      "method": "prepareCampaignLoreVariant",
+      "serviceCandidates": ["functions/src/campaignVariantRecovery.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "prepareEntitySceneIndex",
+      "endpoint": "planningApi",
+      "method": "prepareEntitySceneIndex",
+      "serviceCandidates": ["functions/src/narrativeJobs.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "prepareStudioBooks",
+      "endpoint": "booksApi",
+      "method": "prepareStudioBooks",
+      "serviceCandidates": ["functions/src/studio.mjs"],
+      "consumers": ["src/features/books/services/studioBookService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "prepareWorkWordCount",
+      "endpoint": "workApi",
+      "method": "prepareWorkWordCount",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": [
+        "src/features/books/services/legacyChapterService.ts",
+        "src/features/work-progress/services/workProgressService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventureBackupHistory",
+      "endpoint": "adventurePortabilityApi",
+      "method": "readAdventureBackupHistory",
+      "serviceCandidates": ["functions/src/adventureBackupHistoryRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureHistoryContracts.ts",
+        "src/features/adventure-portability/services/adventureHistoryData.ts",
+        "src/features/adventure-portability/services/adventureUnitContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventureBackupHistoryText",
+      "endpoint": "adventurePortabilityApi",
+      "method": "readAdventureBackupHistoryText",
+      "serviceCandidates": ["functions/src/adventureBackupHistoryRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureHistoryContracts.ts",
+        "src/features/adventure-portability/services/adventureHistoryData.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventureBackupImageChunk",
+      "endpoint": "adventurePortabilityApi",
+      "method": "readAdventureBackupImageChunk",
+      "serviceCandidates": ["functions/src/adventureBackupImageRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureImageContracts.ts",
+        "src/features/adventure-portability/services/adventureImageData.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventureBackupLore",
+      "endpoint": "adventurePortabilityApi",
+      "method": "readAdventureBackupLore",
+      "serviceCandidates": ["functions/src/adventureBackupLoreRead.mjs"],
+      "consumers": ["src/features/adventure-portability/services/adventureUnitContracts.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventureBackupPersona",
+      "endpoint": "adventurePortabilityApi",
+      "method": "readAdventureBackupPersona",
+      "serviceCandidates": ["functions/src/adventureBackupPersonaRead.mjs"],
+      "consumers": ["src/features/adventure-portability/services/adventureUnitContracts.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventureBackupResource",
+      "endpoint": "adventurePortabilityApi",
+      "method": "readAdventureBackupResource",
+      "serviceCandidates": ["functions/src/adventureBackupResourceRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureDraftData.ts",
+        "src/features/adventure-portability/services/adventureUnitContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventureBackupStructure",
+      "endpoint": "adventurePortabilityApi",
+      "method": "readAdventureBackupStructure",
+      "serviceCandidates": ["functions/src/adventureBackupRead.mjs"],
+      "consumers": ["src/features/adventure-portability/services/adventureUnitContracts.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventurePreviewImage",
+      "endpoint": "adventuresApi",
+      "method": "readAdventurePreviewImage",
+      "serviceCandidates": ["functions/src/adventurePreview.mjs"],
+      "consumers": ["src/features/adventure-blocks/services/adventurePreviewCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readAdventureScenePreview",
+      "endpoint": "adventuresApi",
+      "method": "readAdventureScenePreview",
+      "serviceCandidates": ["functions/src/adventurePreview.mjs"],
+      "consumers": ["src/features/adventure-blocks/services/adventurePreviewCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readBookBackupCoverChunk",
+      "endpoint": "bookPortabilityApi",
+      "method": "readBookBackupCoverChunk",
+      "serviceCandidates": ["functions/src/bookBackupCoverRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookCoverCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readBookBackupPersona",
+      "endpoint": "bookPortabilityApi",
+      "method": "readBookBackupPersona",
+      "serviceCandidates": ["functions/src/bookBackupPersonaRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookPersonaCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readBookBackupResource",
+      "endpoint": "bookPortabilityApi",
+      "method": "readBookBackupResource",
+      "serviceCandidates": ["functions/src/bookBackupResourceRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookResourceCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readBookBackupStructure",
+      "endpoint": "bookPortabilityApi",
+      "method": "readBookBackupStructure",
+      "serviceCandidates": ["functions/src/bookBackupRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookStructureCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readBookLorePart",
+      "endpoint": "loreApi",
+      "method": "readBookLorePart",
+      "serviceCandidates": ["functions/src/bookLoreRead.mjs"],
+      "consumers": ["src/features/lore/services/bookLoreReadUnits.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readCampaignBaseImage",
+      "endpoint": "campaignSyncApi",
+      "method": "readCampaignBaseImage",
+      "serviceCandidates": ["functions/src/campaignBaseRead.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readCampaignBaseItem",
+      "endpoint": "campaignSyncApi",
+      "method": "readCampaignBaseItem",
+      "serviceCandidates": ["functions/src/campaignBaseRead.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readCampaignComparisonImage",
+      "endpoint": "campaignSyncApi",
+      "method": "readCampaignComparisonImage",
+      "serviceCandidates": ["functions/src/campaignComparisonRead.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readCampaignComparisonItem",
+      "endpoint": "campaignSyncApi",
+      "method": "readCampaignComparisonItem",
+      "serviceCandidates": ["functions/src/campaignComparisonRead.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readCampaignSessionLoreReference",
+      "endpoint": "campaignsApi",
+      "method": "readCampaignSessionLoreReference",
+      "serviceCandidates": ["functions/src/campaignSessionReferences.mjs"],
+      "consumers": [
+        "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readCampaignSessionSceneImage",
+      "endpoint": "campaignsApi",
+      "method": "readCampaignSessionSceneImage",
+      "serviceCandidates": ["functions/src/campaignSessionScenes.mjs"],
+      "consumers": [
+        "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readCampaignSessionSceneReference",
+      "endpoint": "campaignsApi",
+      "method": "readCampaignSessionSceneReference",
+      "serviceCandidates": ["functions/src/campaignSessionScenes.mjs"],
+      "consumers": [
+        "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readLegacyChapterText",
+      "endpoint": "booksApi",
+      "method": "readLegacyChapterText",
+      "serviceCandidates": ["functions/src/bookChapterRead.mjs"],
+      "consumers": ["src/features/books/services/chapterTextReadService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readSceneAssembly",
+      "endpoint": "planningApi",
+      "method": "readSceneAssembly",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readSceneSourceText",
+      "endpoint": "planningApi",
+      "method": "readSceneSourceText",
+      "serviceCandidates": ["functions/src/bookSceneSourceRead.mjs"],
+      "consumers": ["src/features/scenes/services/sceneSourceText.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readWorkVersion",
+      "endpoint": "workApi",
+      "method": "readWorkVersion",
+      "serviceCandidates": ["functions/src/workHistory.mjs"],
+      "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "rebalanceNarrativeRanks",
+      "endpoint": "planningApi",
+      "method": "rebalanceNarrativeRanks",
+      "serviceCandidates": ["functions/src/narrativeJobs.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "rebalanceSceneRanks",
+      "endpoint": "planningApi",
+      "method": "rebalanceSceneRanks",
+      "serviceCandidates": ["functions/src/sceneJobs.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "recordWorkActivity",
+      "endpoint": "workApi",
+      "method": "recordWorkActivity",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "recoverOrphanScene",
+      "endpoint": "planningApi",
+      "method": "recoverOrphanScene",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "removeCampaignLore",
+      "endpoint": "campaignsApi",
+      "method": "removeCampaignLore",
+      "serviceCandidates": ["functions/src/campaignLore.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "removeCampaignSessionPreparationLink",
+      "endpoint": "campaignsApi",
+      "method": "removeCampaignSessionPreparationLink",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "removeCampaignSessionReference",
+      "endpoint": "campaignsApi",
+      "method": "removeCampaignSessionReference",
+      "serviceCandidates": ["functions/src/campaignSessionReferences.mjs"],
+      "consumers": [
+        "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "renameLibraryImage",
+      "endpoint": "mediaApi",
+      "method": "rename",
+      "serviceCandidates": ["functions/src/imageLibrary.mjs"],
+      "consumers": ["src/features/image-library/services/imageLibraryService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "reserveBookLoreEditRecovery",
+      "endpoint": "loreApi",
+      "method": "reserveBookLoreEditRecovery",
+      "serviceCandidates": ["functions/src/bookLoreWriteRecovery.mjs"],
+      "consumers": [
+        "src/features/lore/services/bookLoreCreationPreparation.ts",
+        "src/features/lore/services/bookLoreEditService.ts",
+        "src/features/lore/services/bookLoreManualOperation.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "reserveBookRestoreCover",
+      "endpoint": "bookPortabilityApi",
+      "method": "reserveBookRestoreCover",
+      "serviceCandidates": [
+        "functions/src/bookRestoreCoverMaterialization.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/model/bookRestorePreparation.ts",
+        "src/features/book-portability/services/bookRestorePreparationContracts.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveAdventureDeletionStart",
+      "endpoint": "adventuresApi",
+      "method": "resolveAdventureDeletionStart",
+      "serviceCandidates": ["functions/src/adventureDeletion.mjs"],
+      "consumers": ["src/features/adventure-deletions/services/adventureDeletionTransport.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveAdventureImportStart",
+      "endpoint": "adventurePortabilityApi",
+      "method": "resolveAdventureImportStart",
+      "serviceCandidates": ["functions/src/adventureImport.mjs"],
+      "consumers": ["src/features/adventure-import/services/adventureImportCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveAdventureLoreOperation",
+      "endpoint": "adventuresApi",
+      "method": "resolveAdventureLoreOperation",
+      "serviceCandidates": ["functions/src/adventureLore.mjs"],
+      "consumers": ["src/features/lore/services/adventureLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveAdventureRestoreOperation",
+      "endpoint": "adventurePortabilityApi",
+      "method": "resolveAdventureRestoreOperation",
+      "serviceCandidates": ["functions/src/adventureRestoreTransfer.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveAdventureRestoreStart",
+      "endpoint": "adventurePortabilityApi",
+      "method": "resolveAdventureRestoreStart",
+      "serviceCandidates": ["functions/src/adventureRestoreTransfer.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreTransferCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveBookRestoreOperation",
+      "endpoint": "bookPortabilityApi",
+      "method": "resolveBookRestoreOperation",
+      "serviceCandidates": ["functions/src/bookRestoreUpload.mjs"],
+      "consumers": ["src/features/book-portability/services/bookRestoreEffectCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveBookRestoreStart",
+      "endpoint": "bookPortabilityApi",
+      "method": "resolveBookRestoreStart",
+      "serviceCandidates": ["functions/src/bookRestoreUpload.mjs"],
+      "consumers": ["src/features/book-portability/services/bookRestoreTransferCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveCampaignAdoptionStart",
+      "endpoint": "campaignSyncApi",
+      "method": "resolveCampaignAdoptionStart",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveCampaignCaptureActivation",
+      "endpoint": "campaignSyncApi",
+      "method": "resolveCampaignCaptureActivation",
+      "serviceCandidates": ["functions/src/campaignCapture.mjs"],
+      "consumers": ["src/features/campaign-bases/services/campaignBaseCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveCampaignComparisonStart",
+      "endpoint": "campaignSyncApi",
+      "method": "resolveCampaignComparisonStart",
+      "serviceCandidates": ["functions/src/campaignComparison.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveCampaignDeletionStart",
+      "endpoint": "campaignsApi",
+      "method": "resolveCampaignDeletionStart",
+      "serviceCandidates": ["functions/src/campaignDeletion.mjs"],
+      "consumers": ["src/features/campaign-deletions/services/campaignDeletionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveCampaignLoreOperation",
+      "endpoint": "campaignsApi",
+      "method": "resolveCampaignLoreOperation",
+      "serviceCandidates": ["functions/src/campaignVariantRecovery.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveCampaignLoreRemoteOperation",
+      "endpoint": "campaignsApi",
+      "method": "resolveCampaignLoreRemoteOperation",
+      "serviceCandidates": ["functions/src/campaignVariantRemoteRecovery.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreRemoteCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveCampaignPreparationOperation",
+      "endpoint": "campaignsApi",
+      "method": "resolveCampaignPreparationOperation",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveCampaignSessionReferenceOperation",
+      "endpoint": "campaignsApi",
+      "method": "resolveCampaignSessionReferenceOperation",
+      "serviceCandidates": ["functions/src/campaignSessionReferences.mjs"],
+      "consumers": [
+        "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resolveWorkResume",
+      "endpoint": "workApi",
+      "method": "resolveWorkResume",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "restoreCampaignLore",
+      "endpoint": "campaignsApi",
+      "method": "restoreCampaignLore",
+      "serviceCandidates": ["functions/src/campaignLore.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "restoreWorkVersion",
+      "endpoint": "workApi",
+      "method": "restoreWorkVersion",
+      "serviceCandidates": ["functions/src/workHistory.mjs"],
+      "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "retireAdventureRestoreActivation",
+      "endpoint": "adventurePortabilityApi",
+      "method": "retireAdventureRestoreActivation",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreActivation.mjs",
+        "functions/src/adventureRestoreContracts.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "retireBookRestoreActivation",
+      "endpoint": "bookPortabilityApi",
+      "method": "retireBookRestoreActivation",
+      "serviceCandidates": [
+        "functions/src/bookRestoreActivation.mjs",
+        "functions/src/bookRestoreUpload.mjs"
+      ],
+      "consumers": [
+        "src/features/book-portability/services/bookRestoreEffectCallables.ts",
+        "src/features/book-portability/services/bookRestoreEffectSession.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "revokeBookLoreEditRecovery",
+      "endpoint": "loreApi",
+      "method": "revokeBookLoreEditRecovery",
+      "serviceCandidates": ["functions/src/bookLoreWriteRecovery.mjs"],
+      "consumers": [
+        "src/features/lore/services/bookLoreCreationPreparation.ts",
+        "src/features/lore/services/bookLoreEditService.ts",
+        "src/features/lore/services/bookLoreManualOperation.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveAdventureLore",
+      "endpoint": "adventuresApi",
+      "method": "saveAdventureLore",
+      "serviceCandidates": ["functions/src/adventureLore.mjs"],
+      "consumers": ["src/features/lore/services/adventureLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveBookImage",
+      "endpoint": "mediaApi",
+      "method": "saveBook",
+      "serviceCandidates": ["functions/src/imageLibrary.mjs"],
+      "consumers": ["src/features/books/services/generatedBookService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveCampaignLoreVariant",
+      "endpoint": "campaignsApi",
+      "method": "saveCampaignLoreVariant",
+      "serviceCandidates": ["functions/src/campaignLore.mjs"],
+      "consumers": ["src/features/campaign-lore/services/campaignLoreCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveCampaignNote",
+      "endpoint": "campaignsApi",
+      "method": "saveCampaignNote",
+      "serviceCandidates": ["functions/src/campaignNotes.mjs"],
+      "consumers": [
+        "src/features/campaign-notes/components/CampaignNotesPanel.tsx",
+        "src/features/campaign-notes/hooks/useCampaignNoteMutation.ts",
+        "src/features/campaign-notes/model/campaignNote.ts",
+        "src/features/campaign-notes/services/campaignNotesCallables.ts",
+        "src/features/campaign-notes/services/campaignNotesRecovery.ts",
+        "src/features/campaign-notes/services/campaignNotesService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveCampaignPreparationItem",
+      "endpoint": "campaignsApi",
+      "method": "saveCampaignPreparationItem",
+      "serviceCandidates": ["functions/src/campaignPreparation.mjs"],
+      "consumers": ["src/features/campaign-preparation/services/campaignPreparationCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveCampaignSession",
+      "endpoint": "campaignsApi",
+      "method": "saveCampaignSession",
+      "serviceCandidates": ["functions/src/campaignSessions.mjs"],
+      "consumers": [
+        "src/features/campaign-sessions/components/CampaignSessionsPanel.tsx",
+        "src/features/campaign-sessions/hooks/useCampaignSessionOperation.ts",
+        "src/features/campaign-sessions/model/campaignSession.ts",
+        "src/features/campaign-sessions/services/campaignSessionCallables.ts",
+        "src/features/campaign-sessions/services/campaignSessionService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveLegacyChapter",
+      "endpoint": "booksApi",
+      "method": "saveLegacyChapter",
+      "serviceCandidates": ["functions/src/workProgressLegacy.mjs"],
+      "consumers": ["src/features/books/services/legacyChapterService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveUniverseLore",
+      "endpoint": "loreApi",
+      "method": "saveUniverseLore",
+      "serviceCandidates": ["functions/src/universes.mjs"],
+      "consumers": ["src/features/lore/services/loreService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveUniverseLoreImportReview",
+      "endpoint": "universeImportApi",
+      "method": "saveUniverseLoreImportReview",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveWorkPreferences",
+      "endpoint": "workApi",
+      "method": "saveWorkPreferences",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "sealUniverseLoreImport",
+      "endpoint": "universeImportApi",
+      "method": "sealUniverseLoreImport",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "setAdventureBlockImage",
+      "endpoint": "adventuresApi",
+      "method": "setAdventureBlockImage",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": [
+        "src/features/adventure-blocks/components/AdventureBlockImageEditor.tsx",
+        "src/features/adventure-blocks/hooks/useAdventureBlockMutation.ts",
+        "src/features/adventure-blocks/model/adventureBlock.ts",
+        "src/features/adventure-blocks/services/adventureBlockRecovery.ts",
+        "src/features/adventure-blocks/services/adventurePreviewCallables.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "setNarrativeReference",
+      "endpoint": "planningApi",
+      "method": "setNarrativeReference",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "setSceneReference",
+      "endpoint": "planningApi",
+      "method": "setSceneReference",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "stageBookPublicationLore",
+      "endpoint": "booksApi",
+      "method": "stageBookPublicationLore",
+      "serviceCandidates": ["functions/src/bookLorePublication.mjs"],
+      "consumers": ["src/features/books/services/bookLorePublicationClient.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startAdventureDeletion",
+      "endpoint": "adventuresApi",
+      "method": "startAdventureDeletion",
+      "serviceCandidates": ["functions/src/adventureDeletion.mjs"],
+      "consumers": ["src/features/adventure-deletions/services/adventureDeletionTransport.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startAdventureImport",
+      "endpoint": "adventurePortabilityApi",
+      "method": "startAdventureImport",
+      "serviceCandidates": ["functions/src/adventureImport.mjs"],
+      "consumers": [
+        "src/features/adventure-import/model/adventureImport.ts",
+        "src/features/adventure-import/services/adventureImportCallables.ts",
+        "src/features/adventure-import/services/adventureImportContracts.ts",
+        "src/features/adventure-import/services/adventureImportRecovery.ts",
+        "src/features/adventure-import/services/adventureImportService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startAdventureRestore",
+      "endpoint": "adventurePortabilityApi",
+      "method": "startAdventureRestore",
+      "serviceCandidates": [
+        "functions/src/adventureRestoreContracts.mjs",
+        "functions/src/adventureRestoreTransfer.mjs"
+      ],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureRestoreCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreTransferCallables.ts",
+        "src/features/adventure-portability/services/adventureRestoreTransferContracts.ts",
+        "src/features/adventure-portability/services/adventureRestoreTransferJob.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startBookRestore",
+      "endpoint": "bookPortabilityApi",
+      "method": "startBookRestore",
+      "serviceCandidates": ["functions/src/bookRestoreUpload.mjs"],
+      "consumers": [
+        "src/features/book-portability/services/bookRestoreTransferCallables.ts",
+        "src/features/book-portability/services/bookRestoreTransferContracts.ts",
+        "src/features/book-portability/services/bookRestoreTransferJob.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startCampaignAdoption",
+      "endpoint": "campaignSyncApi",
+      "method": "startCampaignAdoption",
+      "serviceCandidates": ["functions/src/campaignAdoption.mjs"],
+      "consumers": ["src/features/campaign-adoptions/services/campaignAdoptionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startCampaignCapture",
+      "endpoint": "campaignSyncApi",
+      "method": "startCampaignCapture",
+      "serviceCandidates": ["functions/src/campaignCapture.mjs"],
+      "consumers": [
+        "src/features/campaign-bases/components/CampaignCaptureDialog.tsx",
+        "src/features/campaign-bases/hooks/useCampaignCaptureOperation.ts",
+        "src/features/campaign-bases/model/campaignBase.ts",
+        "src/features/campaign-bases/services/campaignBaseCallables.ts",
+        "src/features/campaign-bases/services/campaignCaptureRecovery.ts",
+        "src/features/campaigns/services/campaignRecoveryClosure.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startCampaignComparison",
+      "endpoint": "campaignSyncApi",
+      "method": "startCampaignComparison",
+      "serviceCandidates": ["functions/src/campaignComparison.mjs"],
+      "consumers": ["src/features/campaign-comparisons/services/campaignComparisonCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startCampaignDeletion",
+      "endpoint": "campaignsApi",
+      "method": "startCampaignDeletion",
+      "serviceCandidates": ["functions/src/campaignDeletion.mjs"],
+      "consumers": ["src/features/campaign-deletions/services/campaignDeletionCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startUniverseLoreImport",
+      "endpoint": "universeImportApi",
+      "method": "startUniverseLoreImport",
+      "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
+      "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "updateAdventureBlock",
+      "endpoint": "adventuresApi",
+      "method": "updateAdventureBlock",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": [
+        "src/features/adventure-blocks/components/AdventureBlockNavigator.tsx",
+        "src/features/adventure-blocks/hooks/useAdventureBlockDraft.ts",
+        "src/features/adventure-blocks/hooks/useAdventureBlockMutation.ts",
+        "src/features/adventure-blocks/model/adventureBlock.ts",
+        "src/features/adventure-blocks/services/adventureBlockCallables.ts",
+        "src/features/adventure-blocks/services/adventureBlockRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "updateCampaign",
+      "endpoint": "campaignsApi",
+      "method": "updateCampaign",
+      "serviceCandidates": ["functions/src/campaigns.mjs"],
+      "consumers": ["src/features/campaigns/services/campaignManagementCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "updateNarrativeItem",
+      "endpoint": "planningApi",
+      "method": "updateNarrativeItem",
+      "serviceCandidates": ["functions/src/narrativePlanning.mjs"],
+      "consumers": ["src/features/narrative-planning/services/narrativePlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "updateScene",
+      "endpoint": "planningApi",
+      "method": "updateScene",
+      "serviceCandidates": ["functions/src/scenes.mjs"],
+      "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "updateUniverse",
+      "endpoint": "loreApi",
+      "method": "updateUniverse",
+      "serviceCandidates": ["functions/src/universes.mjs"],
+      "consumers": ["src/features/universes/services/universeService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "updateWorkChecklistItem",
+      "endpoint": "workApi",
+      "method": "updateWorkChecklistItem",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "updateWorkProgress",
+      "endpoint": "workApi",
+      "method": "updateWorkProgress",
+      "serviceCandidates": ["functions/src/workProgress.mjs"],
+      "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "verifyAdventureBackupImage",
+      "endpoint": "adventurePortabilityApi",
+      "method": "verifyAdventureBackupImage",
+      "serviceCandidates": ["functions/src/adventureBackupImageRead.mjs"],
+      "consumers": [
+        "src/features/adventure-portability/services/adventureImageContracts.ts",
+        "src/features/adventure-portability/services/adventureImageData.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "verifyAdventureBlockCount",
+      "endpoint": "adventuresApi",
+      "method": "verifyAdventureBlockCount",
+      "serviceCandidates": ["functions/src/adventureBlocks.mjs"],
+      "consumers": [
+        "src/features/adventure-blocks/components/AdventureBlockCountRecovery.tsx",
+        "src/features/adventure-blocks/components/AdventureBlockNavigator.tsx",
+        "src/features/adventure-blocks/hooks/useAdventureBlockMutation.ts",
+        "src/features/adventure-blocks/model/adventureBlock.ts",
+        "src/features/adventure-blocks/services/adventureBlockCallables.ts",
+        "src/features/adventure-blocks/services/adventureBlockRecovery.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "verifyBookBackupCover",
+      "endpoint": "bookPortabilityApi",
+      "method": "verifyBookBackupCover",
+      "serviceCandidates": ["functions/src/bookBackupCoverRead.mjs"],
+      "consumers": ["src/features/book-portability/services/bookCoverCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    }
+  ]
+}

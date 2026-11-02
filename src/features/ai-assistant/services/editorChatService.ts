@@ -1,5 +1,6 @@
 import { onAuthStateChanged } from 'firebase/auth';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { auth, getFirebaseApp } from '@/shared/lib';
 import { CHAT_GENERATION_LIMITS } from '../model/chatGeneration';
 import {

@@ -3,7 +3,7 @@ import type { BookStructureApi } from '../../../../functions/src/bookBackupStruc
 export async function callBookBackup<T>(name: string, input: unknown): Promise<T> {
   // Injected/local readers must not initialize Auth or App Check on import.
   const [{ getFunctions, httpsCallable }, { getFirebaseApp }] = await Promise.all([
-    import('firebase/functions'),
+    import('@/shared/api/domainCallable'),
     import('@/shared/lib'),
   ]);
   return (

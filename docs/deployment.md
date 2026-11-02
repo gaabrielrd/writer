@@ -1,5 +1,18 @@
 # Deploy do Writer no Firebase
 
+## Functions por setor
+
+A composição atual reúne 306 ações em 16 endpoints, preservando dois chats com
+streaming e 12 recursos HTTP/eventos/agendamentos: 30 Functions no estado final.
+Consulte a [ADR 0270](decisions/0270-functions-by-sector.md). O mantenedor
+dispensou compatibilidade por ser um protótipo sem usuários ativos.
+
+Publique primeiro os setores novos e confira ACTIVE/Node 24; publique o frontend
+com a mesma matriz e retire depois os endpoints individuais explicitamente.
+Preserve as rotas HTTP de recuperação e os gatilhos. A remoção deve usar somente
+os 306 nomes do inventário, com tratamento de quota/retry e conferência remota.
+Regere o inventário com `node scripts/inventory-functions.mjs`.
+
 ## Estado verificado em 2026-11-02
 
 Projeto e site confirmados por consulta: writer-44cd5, com Hosting em

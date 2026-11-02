@@ -1,3 +1,4 @@
+import { domainSdkFixture } from './helpers/domainSdkFixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -47,13 +48,13 @@ test.after(() => {
     if (descriptor) Object.defineProperty(Firestore.prototype, method, descriptor);
     else delete Firestore.prototype[method];
 });
-const endpoints = await import('../src/index.mjs');
+const endpoints = domainSdkFixture(await import('../src/index.mjs'));
 const context = (data) => ({
   auth: { uid: 'author' },
   app: { appId: 'synthetic-verified-context' },
   data,
 });
-test('all six actual SDK exports retain bounded options, private headers and pre-storage guards', async () => {
+test('all six actual SDK sector actions retain bounded options, private headers and pre-storage guards', async () => {
   for (const name of methods) {
     const endpoint = endpoints[name];
     assert.equal(typeof endpoint, 'function');
