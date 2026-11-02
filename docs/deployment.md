@@ -22,7 +22,9 @@ o Hosting; concluir o backend antes desse envio.
 
 A consolidação Writer V2 foi publicada. A simplificação posterior confirmou 30
 Functions ACTIVE em Node 24, com os 306 endpoints individuais removidos. Hosting
-usa as novas rotas; o marcador publicado é `8f104f554e31f196fd05ac1d3eb53e575c01d887`.
+usa as novas rotas. O artefato inicial da simplificação foi confirmado pelo
+marcador `8f104f554e31f196fd05ac1d3eb53e575c01d887`; uma publicação paralela posterior
+da interface foi preservada após conferir sua matriz de setores.
 As regras e os 66 índices READY do Firestore foram preservados; Storage não
 precisou de republicação. Ver a [evidência da simplificação](entregas/2026-11-02-functions-por-setor.md)
 e a [ADR de runtime](decisions/0269-node24-and-function-runtime.md).
