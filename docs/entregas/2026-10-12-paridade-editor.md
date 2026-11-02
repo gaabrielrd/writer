@@ -391,3 +391,51 @@ tarefa-12-linux-e2e-final.log. Publicação para revisão ocorre apenas na branc
 `codex/editor-paridade-workspace`; o resultado do CI fica associado ao PR.
 O checkout paralelo foi preservado. Esta fase não inclui merge na principal,
 deploy, geração externa ou edição/débito de dados de produção.
+
+## Publicação em produção — 2026-10-13
+
+O usuário autorizou o merge do PR #19 com o Hosting automático e, em seguida,
+o deploy local dos demais componentes afetados. Merge confirmado na master:
+`6cb2767553d29a8a125c113fd3b894024c28605a`. O worktree isolado tinha a mesma
+árvore de código do merge; o checkout paralelo permaneceu intacto.
+
+- Callable `chapterChat`: atualização seletiva concluída em `writer-44cd5`,
+  Node 22, GEN_2, us-central1, estado ACTIVE, timeout de 120 s e máximo de cinco
+  instâncias. Hash passou de `bdc4f2b7fabc527d60498f840f8676154515e55e` para
+  `a6b3d3a383bcedc5afc0eac207bb70a7ec6c5382`. Somente essa função mudou de hash.
+- Os cinco parâmetros públicos e o vínculo do segredo foram preservados. A
+  primeira tentativa parou antes da atualização por falta de parâmetros locais;
+  eles foram obtidos do estado live e usados em arquivo ignorado temporário,
+  removido após o deploy. Nenhuma chave foi exposta ou versionada.
+- Regras, índices e Storage não mudaram no diff desta fase e não precisaram de
+  nova implantação.
+- Hosting: [workflow 38370158522](https://github.com/gaabrielrd/writer/actions/runs/38370158522)
+  aprovado e publicado, com validação Node 22/24, regras, auditoria, sete E2E e
+  456 cenários visuais: 445 aprovações diretas, dois casos aprovados no retry e
+  nove ignorados pelos projetos aplicáveis. A suíte visual levou 27,7 minutos.
+  O workflow verificou integridade do artefato e SHA servido. Conferência local
+  do marcador confirmou o merge acima; home e styleguide retornaram HTTP 200.
+- Segurança: chamada sem autenticação para `chapterChat` retornou HTTP 401.
+  Na sessão autenticada do navegador, o chat carregou e habilitou o composer.
+- Interface de produção: tela cheia com texto de 917 px e `max-width: none`,
+  divisor 40 → 38 → 40 por teclado e seletor Auto/Baixo/Médio/Alto disponíveis;
+  Nenhum/Muito alto/Máximo desabilitados para o modelo da plataforma. Escape
+  fechou o seletor antes de sair da tela cheia; o shell original foi restaurado.
+- Integridade: hash do texto visível antes/depois igual a
+  `1b0c728aa2390202728ea1d980eda3c21ada5cd7b8465ec11d31b4cc9df355f6`;
+  saldo permaneceu em 92 créditos. Não houve geração, aceite ou edição de dados
+  para esta verificação de publicação. BYOK permanece coberto pelos testes locais.
+
+O CI separado da master teve seu job Chromium cancelado pelo limite de 25
+minutos, enquanto os outros jobs passaram. Sua repetição foi iniciada; o estado
+fica no [workflow 38370158471](https://github.com/gaabrielrd/writer/actions/runs/38370158471).
+Isso não substitui nem invalida os gates completos aprovados no workflow de
+Hosting, que possui limite de 30 minutos para a integração.
+
+Evidências em
+`C:/Users/gaabr/.codex/visualizations/2026/10/12/01a13056-30ca-77b3-aabe-9bdfa885c189/paridade-editor`:
+`deploy-chapterChat-final-2026-10-13.log`, `functions-before.json`,
+`functions-after.json`, `callable-smoke.json`, `hosting-smoke.json`,
+`deploy-paridade-backend.json` e `paridade-producao-2026-10-13.png`.
+Este incremento de documentação é registrado localmente em branch própria,
+sem disparar uma segunda publicação nem incluir as mudanças paralelas.
