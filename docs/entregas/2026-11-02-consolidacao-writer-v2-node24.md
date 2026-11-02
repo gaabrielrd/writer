@@ -118,3 +118,9 @@ suíte completa; variáveis Vite e opções do Node invalidam o registro.
 A assinatura considera todo package.json, exceto scripts e lint-staged;
 dependências e resolução de módulos invalidam o registro. Os dois casos
 afetados por essa conferência passaram isoladamente.
+
+O diagnóstico dos jobs antigos revelou falta de npm ci --prefix functions nos
+jobs browser/visual: hash-wasm era importado por um contrato compartilhado e
+o build não iniciava. Os dois jobs agora instalam essas dependências, como
+a validação principal já fazia. Somente o caso alterado do contrato da CI
+foi repetido; passou. Não foi adicionada dependência nem alterado o produto.

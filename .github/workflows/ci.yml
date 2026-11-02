@@ -116,6 +116,9 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Instalar dependências dos contratos compartilhados
+        run: npm ci --prefix functions
+
       - name: Instalar Chromium
         run: npx playwright install --with-deps chromium
 
@@ -158,6 +161,9 @@ jobs:
 
       - name: Instalar dependências
         run: npm ci
+
+      - name: Instalar dependências dos contratos compartilhados
+        run: npm ci --prefix functions
 
       - name: Instalar Chromium
         run: npx playwright install --with-deps chromium

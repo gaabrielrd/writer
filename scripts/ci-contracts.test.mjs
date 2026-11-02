@@ -53,7 +53,13 @@ test('CI conserva validate completo em Node 24', () => {
   const validate = job('validate');
   assert.match(validate, /node: \['24'\]/);
   assert.match(validate, /run: npm run validate/);
-  assert.match(validate, /npm ci --prefix functions/);
+  for (const name of ['validate', 'browser', 'visual']) {
+    assert.match(
+      job(name),
+      /npm ci --prefix functions/,
+      `${name} instala os contratos compartilhados`,
+    );
+  }
 });
 
 test('dezesseis shards executam a suíte visual inteira sem filtros ou fail-fast', () => {

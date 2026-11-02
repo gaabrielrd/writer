@@ -270,7 +270,7 @@
 - Toda mudança de comportamento deve considerar testes.
 - Teste o resultado observável.
 - `npm run test` aplica limites de cobertura; não os reduza para fazer passar.
-- Instale as dependências de `functions` com `npm ci --prefix functions` antes de validar.
+- Instale as dependências de `functions` com `npm ci --prefix functions` antes de validar, compilar ou executar testes de navegador; o frontend reutiliza contratos dessa pasta.
 - Use `WRITER_VISUAL_PORT` distinto por checkout nas execuções visuais paralelas.
 - Mantenha protótipos demonstrativos em `e2e/visual`; não registre fixtures como evidência de autorização, pagamento ou piloto reais.
 - Após corrigir um teste, execute somente o caso alterado, por nome ou arquivo e linha; não repita o pacote completo nem os lotes já aprovados.
