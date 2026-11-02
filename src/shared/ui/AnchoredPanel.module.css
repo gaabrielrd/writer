@@ -1,0 +1,13 @@
+.panel {
+  position: fixed;
+  z-index: 45;
+  width: min(300px, calc(100vw - 24px));
+  max-height: min(420px, calc(100dvh - 24px));
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: var(--border-width) solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  box-shadow: var(--shadow-panel);
+}

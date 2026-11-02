@@ -2,10 +2,12 @@ import { Feather } from 'lucide-react';
 import { Link, Outlet } from 'react-router';
 import { AuthProvider, AuthButton, CreditsBadge, useAuth } from '@/features/auth';
 import { BookNavigation } from '@/features/books';
-import { ThemeProvider, ThemeToggle } from '@/shared/theme';
+import { ThemeProvider } from '@/shared/theme';
 import { AISettingsProvider, useAISettings } from '@/features/ai-assistant';
 import { WorkspaceLayoutProvider, useWorkspaceLayout } from '@/shared/ui';
 import styles from './App.module.css';
+
+import { CustomThemesProvider, CustomThemeSelector } from '@/features/custom-themes';
 
 const PROJECT_NAME = 'Writer Assistant';
 
@@ -28,11 +30,20 @@ function AppHeader() {
         </div>
         <div className={styles.userBar}>
           {user && <CreditsBadge credits={user.credits} tier={user.tier} />}
-          <ThemeToggle />
+          <CustomThemeSelector />
           <AuthButton onOpenAISettings={openAISettings} />
         </div>
       </div>
     </header>
+  );
+}
+
+function ThemeWorkspace() {
+  const { user } = useAuth();
+  return (
+    <CustomThemesProvider uid={user?.uid ?? null}>
+      <AppWorkspace />
+    </CustomThemesProvider>
   );
 }
 
@@ -64,7 +75,7 @@ export function App() {
       <AuthProvider>
         <WorkspaceLayoutProvider>
           <AISettingsProvider>
-            <AppWorkspace />
+            <ThemeWorkspace />
           </AISettingsProvider>
         </WorkspaceLayoutProvider>
       </AuthProvider>

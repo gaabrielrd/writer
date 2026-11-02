@@ -239,7 +239,48 @@ service cloud.firestore {
         && validPersonaOverrideAt(data.overrides, 14)
         && validPersonaOverrideAt(data.overrides, 15));
     }
+    function validThemePalette(p) {
+      return p is map && p.size() == 24 && p.keys().hasOnly(['background', 'foreground', 'card', 'card-foreground', 'popover', 'popover-foreground', 'primary', 'primary-hover', 'primary-foreground', 'secondary', 'secondary-foreground', 'muted', 'muted-foreground', 'accent', 'accent-foreground', 'destructive', 'destructive-foreground', 'border', 'input', 'ring', 'success', 'success-foreground', 'warning', 'warning-foreground'])
+        && p.values().join('|').matches('^#[0-9a-fA-F]{6}(\\|#[0-9a-fA-F]{6}){23}$');
+    }
+    function validCustomTheme(t) {
+      return t is map && t.size() == 11
+        && t.keys().hasOnly(['id','name','base','highlight','style','overrides','palette','generatorVersion','revision','createdAt','updatedAt'])
+        && t.id is string && t.id.matches('^custom-[a-zA-Z0-9-]{1,64}$')
+        && nonemptyString(t.name, 40) && t.base in ['light','dark']
+        && t.highlight is string && t.highlight.matches('^#[0-9a-fA-F]{6}$')
+        && t.style in ['neutral','tonal','expressive'] && t.generatorVersion == 1
+        && t.revision is int && t.revision >= 1
+        && t.createdAt is int && t.createdAt >= 0 && t.updatedAt is int && t.updatedAt >= t.createdAt
+        && validThemePalette(t.palette) && t.overrides is map
+        && t.overrides.diff(t.palette).addedKeys().size() == 0
+        && t.overrides.diff(t.palette).changedKeys().size() == 0;
+    }
+    function validModifiedTheme(t, previous) {
+      return validCustomTheme(t) && t.revision == previous.get('revision',0) + 1
+        && t.createdAt == previous.get('createdAt',t.createdAt)
+        && t.updatedAt >= previous.get('updatedAt',0);
+    }
+    // Validate only the changed entry. Revalidating five full palettes exceeds
+    // Firestore's expression budget; the diff freezes every other theme.
+    function validThemeCatalog(c, previous) {
+      let oldThemes = previous.get('themes', {});
+      return c.keys().hasOnly(['schemaVersion','revision','themes','changedId']) && c.size() == 4
+        && c.schemaVersion == 1 && c.revision is int && c.revision == previous.get('revision',0) + 1
+        && c.changedId is string && c.changedId.matches('^custom-[a-zA-Z0-9-]{1,64}$')
+        && c.themes is map && c.themes.size() <= 5
+        && c.themes.diff(oldThemes).affectedKeys().hasOnly([c.changedId])
+        && (!(c.changedId in c.themes) || (validModifiedTheme(c.themes[c.changedId],oldThemes.get(c.changedId,{}))
+          && c.themes[c.changedId].id == c.changedId));
+    }
+
     match /users/{userId} {
+      match /preferences/{preferenceId} {
+        allow read: if isOwner(userId) && preferenceId == 'themes';
+        allow create, update: if isOwner(userId) && preferenceId == 'themes'
+          && validThemeCatalog(request.resource.data, request.method == 'create' ? {} : resource.data);
+        allow delete: if false;
+      }
       // Conversations, provider origin and debit receipts are server controlled.
       match /chapterChats/{document=**} { allow read, write: if false; }
       match /chapterChatLimits/{id} { allow read, write: if false; }

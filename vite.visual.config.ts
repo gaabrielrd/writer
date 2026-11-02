@@ -7,6 +7,7 @@ const root = import.meta.dirname;
 const replacements = new Map(
   [
     ['src/features/auth/services/authService.ts', 'authService.ts'],
+    ['src/features/custom-themes/services/customThemeService.ts', 'customThemeService.ts'],
     ['src/features/image-library/services/imageLibraryService.ts', 'imageLibraryService.ts'],
     ['src/features/books/services/bookNavigationService.ts', 'bookNavigationService.ts'],
     ['src/features/books/services/bookService.ts', 'bookService.ts'],

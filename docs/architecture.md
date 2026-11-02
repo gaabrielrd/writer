@@ -313,3 +313,12 @@ o modelo da plataforma e registra a configuração efetiva; reutiliza snapshots
 de parâmetros/histórico em retries. `chapterChatProvider.mjs` contém o transporte
 Gemini do servidor, e `chapterChatService.ts` mantém BYOK no navegador. Credenciais
 entram somente nos headers do provedor, fora do histórico e da callable.
+
+## Temas personalizados
+
+A feature custom-themes controla até cinco temas privados por conta, geração
+determinística, overrides e edição não modal. O ThemeProvider compartilhado
+conserva tema ativo e prévia separados e aplica os tokens na raiz, incluindo
+portais. Serviços transacionais e regras validam uma entrada por gravação e
+limitam o catálogo privado a cinco. A seleção local é isolada por UID.
+Veja [temas personalizados](custom-themes.md).

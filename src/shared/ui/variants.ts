@@ -49,7 +49,7 @@ export const badgeVariants = cva(
         outline: 'text-[hsl(var(--foreground))] border border-[hsl(var(--border))]',
         destructive: 'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]',
         danger: 'bg-[hsl(var(--destructive))] text-[hsl(var(--destructive-foreground))]',
-        success: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-black',
+        success: 'bg-[var(--badge-success-background)] text-[var(--badge-success-foreground)]',
         accent:
           'bg-[hsl(var(--accent))] text-[hsl(var(--accent-foreground))] border border-[hsl(var(--border))]',
       },

@@ -452,3 +452,15 @@ tap e drag sem mudança conservam a preferência de largura.
 Relatórios e resultados gerados pelo Playwright são ignorados pelo ESLint para
 evitar leitura de arquivos temporários durante execuções paralelas. As regras
 de lint do código-fonte e os limites de cobertura permanecem os mesmos.
+
+## Temas personalizados
+
+O modelo cobre sugestões determinísticas nas bases clara/escura, cores extremas,
+contraste, restauração e validação. Serviços cobrem isolamento, quota, revisão,
+retentativa e falhas; a interface cobre comparar, preservar overrides, recolher,
+salvar, cancelar e gerenciar temas. As regras no emulador exercitam privacidade,
+rejeição de CSS/tipos inválidos, diff e criação concorrente da quinta vaga.
+
+A suíte e2e/visual/custom-themes.visual.ts usa serviços fictícios, nos três temas
+e em desktop/celular, para navegar com prévia até o manuscrito, verificar sua
+integridade, editar/remover e operar em 320 px. Veja [contrato](custom-themes.md).

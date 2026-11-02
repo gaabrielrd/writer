@@ -1,0 +1,155 @@
+.selector {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: var(--border-width) solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+  background: hsl(var(--card));
+}
+.selector button {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+}
+.selector button[aria-pressed='true'] {
+  background: hsl(var(--accent));
+  color: hsl(var(--primary));
+  box-shadow: inset 0 0 0 1px hsl(var(--border));
+}
+.listTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  font-size: var(--text-sm);
+}
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.listRow > button:first-child {
+  flex: 1;
+  justify-content: flex-start;
+  min-width: 0;
+}
+.listRow > button:first-child > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.swatch {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-full);
+  border: var(--border-width) solid hsl(var(--border));
+  flex-shrink: 0;
+}
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+.description,
+.tokenName,
+.override {
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+.colorField {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-1);
+}
+.colorField > div:first-child {
+  flex: 1;
+  min-width: 140px;
+}
+.override {
+  width: 100%;
+}
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+.suggestions,
+.tokenGroup {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.suggestions legend,
+.tokenGroup legend {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+}
+.suggestion {
+  display: flex;
+  width: 100%;
+  white-space: normal;
+  height: auto;
+  padding: var(--space-2);
+  text-align: left;
+  border: var(--border-width) solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+}
+.suggestion[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 2px hsl(var(--primary));
+}
+.suggestion > span:last-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+.mini {
+  flex-shrink: 0;
+  width: 100px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+.mini > span {
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+.mini > span:nth-child(2) {
+  border: 1px solid;
+}
+@media (max-width: 600px) {
+  .selector button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.editorFields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.notice {
+  position: fixed;
+  bottom: var(--space-4);
+  left: var(--space-4);
+  z-index: 45;
+  max-width: calc(100vw - 32px);
+  padding: var(--space-3);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-sm);
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+}

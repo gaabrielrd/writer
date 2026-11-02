@@ -36,6 +36,8 @@
 - Use finais de linha LF, definidos por `.gitattributes` e `.editorconfig`.
 - Cores, superfícies e estados visuais vêm das variáveis de tema semânticas em `src/styles/globals.css` (`--background`, `--foreground`, `--primary`, `--secondary`, `--card`, `--border`, etc.).
 - Suporte a temas dinâmicos via `src/shared/theme` (`ThemeProvider`, `useTheme`, `ThemeToggle`): Claro (`light`), Escuro (`dark`) e Sépia (`sepia`).
+- Mantenha prévias de tema reversíveis no motor único de `shared/theme`; persista somente após salvar.
+- Aplique variantes escuras pela base selecionada, inclusive nos temas personalizados.
 - Ícones somente de `lucide-react`, com a classe `icon`; acrescente `icon-sm` para o tamanho menor.
 - Monte as telas com os componentes modulares de `@/shared/ui` (`Button`, `Input`, `Textarea`, `Dropdown`, `Slider`, `Badge`, `Card`, `Dialog`, `Alert`, `LoadingState`, `EmptyState`, `ErrorState`, `PageHeader`, `Table`).
 - Campo de formulário sempre pelo `Input`/`Textarea`/`Dropdown mode="select"` de `@/shared/ui`; use `Slider` para atributos de 0 a 100.
@@ -69,6 +71,7 @@
 - Mantenha vínculos e exclusão de imagens da biblioteca no servidor; todo seletor de imagem deve oferecer `ImageLibraryPicker` pela interface pública da feature.
 - Mantenha universos, vínculos de livros e mutações de lore global em `functions`.
 - Preserve a revogação do lore global por versão nas regras e no leitor público.
+- Mantenha até cinco temas privados por conta; grave uma entrada por transação e preserve as demais por diff nas regras do Firestore.
 
 ## Rotas
 
