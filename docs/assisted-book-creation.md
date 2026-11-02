@@ -5,10 +5,22 @@ continua disponível. O fluxo exige login e backend implantado.
 
 ## Fluxo
 
+O fluxo começa com uma mensagem de boas-vindas do agente e segue em uma coluna
+de conversa. Na ideia e na entrevista, o campo fica no rodapé da área útil;
+mensagens curtas ficam centralizadas no espaço acima e conversas longas rolam
+nessa área, mantendo a resposta disponível. O progresso em cinco etapas complementa a entrevista. O campo de
+mensagem tem nome acessível, sem label visual; Enter envia e Shift+Enter quebra
+a linha, preservando composição por IME. O foco retorna ao campo depois da
+resposta. “Ideias que reunimos” permite consultar decisões e reiniciar mediante
+confirmação, sem ocupar uma coluna permanente. “Créditos e privacidade” expõe os
+valores do servidor e a retenção; o total continua visível na confirmação final.
+Boas-vindas e transições são apresentação local. As perguntas adaptativas e os
+contratos de sessão, recuperação e criação continuam no servidor.
+
 1. Descreva uma ideia de até 4000 caracteres. A primeira pergunta vem da IA.
 2. Responda à entrevista: uma pergunta por vez, até oito perguntas, aproveitando
    as respostas anteriores. **Sugira para mim** delega uma decisão ao assistente.
-   É possível encerrar a entrevista antes e revisar o briefing.
+   **Revisar ideia** encerra a entrevista e abre a revisão do briefing.
 3. Confira o briefing de até 6000 caracteres, inclusive as sugestões e limites
    criativos. **Salvar briefing** preserva a revisão; **Gerar proposta do livro**
    produz título, gênero, sinopse e 12–20 fichas com atributos e relações.

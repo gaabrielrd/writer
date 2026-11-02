@@ -4021,7 +4021,7 @@ e recibo atomicamente. Alterações concorrentes invalidam a revisão. Veja
 ## Geração contextual de personas
 
 A feature ai-assistant compõe seleção de universo/lore pelas APIs públicas e
-reutiliza o formulário de personas para revisão. personaGeneration em generationApi/Functions
+reutiliza o formulário de personas para revisão. A ação personaGeneration em generationApi
 captura fontes autorizadas, limita contexto/quota e reconfere identidade/conteúdo
 antes de expor a proposta. O aceite grava nova persona e recibo atomicamente,
 sem débito, vínculos automáticos ou alteração nos contratos de perfis restaurados.

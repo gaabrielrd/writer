@@ -461,6 +461,8 @@ test('retomada pagina sem duplicar projetos e filtra apenas o tipo solicitado', 
 }) => {
   await flags(page, { 'writer.visual.work-resume-pages': 'true' });
   await page.goto('/studio');
+  await page.getByRole('link', { name: 'Ver todos os projetos', exact: true }).click();
+  await expect(page).toHaveURL(/\/studio\/projects$/);
   const region = page.getByRole('region', { name: 'Continuar meu trabalho', exact: true });
   await expect(region.getByRole('heading', { level: 3 })).toHaveCount(25);
   await region

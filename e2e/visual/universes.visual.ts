@@ -1,5 +1,12 @@
 import { chooseDropdown } from '../dropdown';
-import { capture, expect, expectDialogWithinViewport, openBookCreation, test } from './support';
+import {
+  navigateWorkspace,
+  capture,
+  expect,
+  expectDialogWithinViewport,
+  openBookCreation,
+  test,
+} from './support';
 import { books, chapters } from './fixtures/data';
 
 test('universo, lore por seções e vínculo compartilhado entre livros', async ({
@@ -37,8 +44,7 @@ test('universo, lore por seções e vínculo compartilhado entre livros', async 
   await capture(page, testInfo, 'universo-lore-relacoes');
   await page.getByRole('button', { name: 'Cadastrar Entidade' }).click();
   await expect(page.getByRole('heading', { name: 'Guardião das Marés' })).toHaveCount(1);
-  await page.getByRole('button', { name: 'Universos', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
+  await navigateWorkspace(page, 'Estúdio');
   await openBookCreation(page);
   await chooseDropdown(page.getByLabel('Universo compartilhado'), 'Universo das Marés');
   await page.getByLabel('Título da Obra').fill('Histórias do Guardião');
@@ -59,8 +65,7 @@ test('universo, lore por seções e vínculo compartilhado entre livros', async 
   await capture(page, testInfo, 'universo-compendio-global');
   await chooseDropdown(page.getByLabel('Escopo do compêndio'), 'Lore local — somente este livro');
   await expect(page.getByRole('heading', { name: 'Guardião das Marés' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Estúdio', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
+  await navigateWorkspace(page, 'Estúdio');
   await page.getByRole('link', { name: new RegExp(books[0].title) }).click();
   const bookOptions = page.getByRole('button', { name: 'Opções do livro', exact: true });
   await expect(bookOptions).toBeVisible();

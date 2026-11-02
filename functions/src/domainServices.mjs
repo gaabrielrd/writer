@@ -71,7 +71,7 @@ export const DOMAIN_SERVICES = {
     'campaignCapture',
     'campaignVariantRemoteRecovery',
   ],
-  generationApi: ['assisted', 'generation', 'personas'],
+  generationApi: ['personas', 'assisted', 'generation'],
   mediaApi: ['generation', 'imageLibrary'],
   loreAnalysisApi: ['loreAnalysis'],
 };

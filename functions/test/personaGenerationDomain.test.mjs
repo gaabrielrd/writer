@@ -24,8 +24,16 @@ test('generationApi carries private persona context, generation and idempotent a
     backupStorage: {},
     loreGenerator: () => {},
     assistedGenerator: () => {},
-    assistedCost: { value: () => 2 },
-    coverCost: { value: () => 5 },
+    assistedCost: {
+      value: () => {
+        throw new Error('Persona must not read book billing configuration');
+      },
+    },
+    coverCost: {
+      value: () => {
+        throw new Error('Persona must not read cover billing configuration');
+      },
+    },
     generationFactory: () => ({}),
     personaGenerator: async () => {
       calls++;

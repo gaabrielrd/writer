@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { BookOpen, Map, ScrollText } from 'lucide-react';
+import { ArrowRight, BookOpen, Map, ScrollText } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import {
   Alert,
@@ -92,9 +92,6 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
     <section className={styles.panel} aria-label="Continuar meu trabalho">
       <header>
         <h2>Continuar meu trabalho</h2>
-        <p className={styles.hint}>
-          Retome sua escrita ou preparação mais recente em cada projeto.
-        </p>
       </header>
       {!compact && (
         <Dropdown
@@ -121,18 +118,35 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
       )}
       <div className={styles.resumeGrid}>
         {(compact ? page.items.slice(0, 4) : page.items).map((item) => (
-          <Card className={styles.card} key={item.target.kind + ':' + item.target.id}>
-            <Badge variant="secondary">{labels[item.target.kind]}</Badge>
-            {item.target.kind === 'book' ? (
-              <BookOpen className="icon" aria-hidden="true" />
-            ) : item.target.kind === 'adventure' ? (
-              <ScrollText className="icon" aria-hidden="true" />
-            ) : (
-              <Map className="icon" aria-hidden="true" />
-            )}
-            <h3>{item.title}</h3>
-            <p className={styles.hint}>Último acesso: {formatWorkDate(item.accessedAt, zone)}</p>
-            <Button disabled={Boolean(busy)} onClick={() => void resume(item)}>
+          <Card
+            role="article"
+            aria-label={item.title}
+            className={styles.resumeCard}
+            key={item.target.kind + ':' + item.target.id}
+          >
+            <span className={styles.resumeArtwork} data-kind={item.target.kind} aria-hidden="true">
+              {item.target.kind === 'book' ? (
+                <BookOpen className="icon" aria-hidden="true" />
+              ) : item.target.kind === 'adventure' ? (
+                <ScrollText className="icon" aria-hidden="true" />
+              ) : (
+                <Map className="icon" aria-hidden="true" />
+              )}
+            </span>
+            <div className={styles.resumeCopy}>
+              <Badge variant="secondary">{labels[item.target.kind]}</Badge>
+              <h3>{item.title}</h3>
+              <p className={styles.hint}>
+                <span className="sr-only">Último acesso: </span>
+                {formatWorkDate(item.accessedAt, zone)}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className={styles.resumeButton}
+              disabled={Boolean(busy)}
+              onClick={() => void resume(item)}
+            >
               {busy === item.target.kind + ':' + item.target.id
                 ? 'Verificando acesso…'
                 : item.resource.kind === 'chapter'
@@ -142,6 +156,7 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
                     : item.target.kind === 'campaign'
                       ? 'Continuar preparação'
                       : 'Continuar projeto'}
+              <ArrowRight className="icon icon-sm" aria-hidden="true" />
             </Button>
           </Card>
         ))}

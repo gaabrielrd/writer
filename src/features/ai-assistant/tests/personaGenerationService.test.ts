@@ -22,7 +22,8 @@ beforeEach(() => {
 });
 it('usa callable autenticada com IDs e snapshot público, sem enviar corpo de lore ou credenciais', async () => {
   const payloadCall = vi.fn();
-  const callable = vi.fn((input: { version: number; action: string; payload: unknown }) => {
+  const callable = vi.fn((raw: unknown) => {
+    const input = raw as { version: number; action: string; payload: unknown };
     expect(input.version).toBe(1);
     expect(input.action).toBe('personaGeneration');
     payloadCall(input.payload);

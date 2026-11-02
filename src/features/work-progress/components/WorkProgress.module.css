@@ -83,8 +83,85 @@
 }
 .resumeGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   gap: var(--space-3);
+}
+.panel > header h2 {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.resumeCard {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: start;
+  column-gap: var(--space-3);
+  row-gap: var(--space-2);
+  padding: var(--space-3);
+  min-width: 0;
+}
+.resumeArtwork {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  position: relative;
+  width: 76px;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border: 1px solid hsl(var(--primary) / 0.3);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(145deg, hsl(var(--primary) / 0.3), hsl(var(--card)));
+  color: hsl(var(--primary));
+}
+.resumeArtwork::before {
+  content: '';
+  position: absolute;
+  inset: 9px 7px 9px 11px;
+  border: 1px solid currentColor;
+  border-radius: 50% 50% 0 0;
+  opacity: 0.35;
+}
+.resumeArtwork::after {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 4px;
+  border-left: 1px solid currentColor;
+  opacity: 0.25;
+}
+.resumeArtwork[data-kind='adventure'] {
+  background: linear-gradient(145deg, hsl(var(--accent) / 0.7), hsl(var(--card)));
+  color: hsl(var(--foreground));
+}
+.resumeArtwork[data-kind='campaign'] {
+  background: linear-gradient(145deg, hsl(var(--secondary)), hsl(var(--primary) / 0.15));
+}
+.resumeCopy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.resumeCopy h3 {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+.resumeCopy .hint {
+  font-size: var(--text-xs);
+  margin: 0;
+}
+.resumeButton {
+  justify-self: start;
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+@media (pointer: coarse) {
+  .resumeButton {
+    min-height: 44px;
+  }
 }
 .heading {
   display: flex;

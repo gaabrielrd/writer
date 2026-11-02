@@ -142,7 +142,7 @@ mudanças do universo. Não houve dependência nova ou migração de biblioteca.
 - Testes usam provedores/contas fictícios. Qualidade literária e acesso real ao modelo precisam de avaliação manual; a revisão explícita do autor é obrigatória.
 - Seleção e ponteiro de recuperação ficam em memória, sem retomada após reload. Pedidos expiram em uma hora e a coleta remove até 100 por execução.
 - Personas salvas são independentes da origem. Para gerar novamente após mudanças de contexto, é necessário conferir a prévia e criar outro pedido.
-- Implantação não executada. A liberação requer frontend, personaGeneration, cleanupBookAssets, regras e índice, com o segredo de geração existente.
+- Implantação não executada. A liberação requer frontend, generationApi, cleanupBookAssets, regras e índice, com o segredo de geração existente.
 - Trabalho local: sem push, PR ou execução/acompanhamento de CI remota.
 
 ## Como verificar manualmente
@@ -153,3 +153,36 @@ mudanças do universo. Não houve dependência nova ou migração de biblioteca.
 4. Edite e salve; confirme que a biblioteca recebeu uma persona sem alterar os vínculos de projetos.
 5. Escolha o perfil pelos vínculos existentes de livro/capítulo ou aventura/cena e consulte sua composição.
 6. Confira erros/retry e a necessidade de nova prévia quando o contexto mudar; nenhuma falha deve gravar persona ou debitar créditos.
+
+## Integração com a principal atualizada
+
+Durante a entrega, master recebeu a migração por setores e alterações visuais.
+O primeiro commit da feature é 00479c8; a integração de domínio preserva os
+commits da principal até e14dede. A ação personaGeneration agora pertence a
+generationApi pelo transporte compartilhado; não há endpoint individual.
+A coleta usa cleanupBookAssets existente. O inventário permanece com 30
+Functions e passa de 306 para 307 ações registradas.
+
+A persona é o primeiro serviço consultado nesse setor, evitando dependência das
+configurações de cobrança de livros/capas. O teste de integração usa parâmetros
+de cobrança que lançam erro caso sejam lidos e verifica captura, geração e aceite
+idempotente pelo handler e serviço reais do setor, sem débito.
+
+Os totais 5.152/116/4.913 acima correspondem à validação integral da feature antes
+da atualização da principal. Após incorporar a infraestrutura e a interface
+atuais, foram verificadas novamente as áreas afetadas:
+
+```text
+Backend, domínio, SDK e entrada: tests 22 / pass 22 / fail 0
+Cliente, interface e transporte: Test Files 4 passed / Tests 17 passed
+Porta gratuita independente de cobrança + registro/entrada: tests 3 / pass 3 / fail 0
+Jornadas visuais da árvore combinada: 12 passed (2.4m)
+Build da árvore combinada: built in 7.71s
+Smoke test do bundle OK.
+```
+
+Arquitetura, documentação, styleguide, lint dos arquivos da integração,
+typecheck e diff-check passaram. Não foram repetidos os testes de negócios
+inalterados após a migração de transporte; a validação posterior cobre o
+registro completo de 307 ações, o envelope real do cliente, SDK/portas de setor,
+autorização, não repetição de pedidos e as interfaces afetadas. Não houve deploy.

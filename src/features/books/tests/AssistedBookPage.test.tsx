@@ -153,6 +153,35 @@ describe('AssistedBookPage', () => {
     });
     vi.mocked(commitAssistedBook).mockResolvedValue({ book: { id: 'created' }, credits: 18 });
   });
+  it('starts with an agent message and sends by Enter while preserving multiline and composition', async () => {
+    mount();
+    const user = userEvent.setup();
+    const idea = await screen.findByRole('textbox', { name: 'Sua ideia' });
+    expect(screen.getByText('Vamos dar vida ao seu próximo livro.')).toBeVisible();
+    expect(screen.queryByText('Sua ideia')).not.toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Etapas da criação' })).toBeVisible();
+    expect(requestAssistedBook).not.toHaveBeenCalled();
+    await user.type(idea, 'Uma ilha');
+    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    expect(idea).toHaveValue('Uma ilha\n');
+    fireEvent.keyDown(idea, { key: 'Enter', isComposing: true });
+    expect(requestAssistedBook).not.toHaveBeenCalled();
+    await user.keyboard('{Enter}');
+    const response = await screen.findByRole('textbox', { name: 'Sua resposta' });
+    await waitFor(() => expect(response).toHaveFocus());
+    await user.type(response, 'Uma viajante precisa salvá-la.{Enter}');
+    await waitFor(() => expect(response).toHaveValue(''));
+    expect(requestAssistedBook).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        action: 'interview',
+        message: 'Uma viajante precisa salvá-la.',
+      }),
+    );
+    expect(commitAssistedBook).not.toHaveBeenCalled();
+    await user.click(screen.getByText('Créditos e privacidade'));
+    expect(screen.getByText(/Pacote textual: 2 créditos/)).toBeVisible();
+  });
+
   it('takes an idea through adaptive chat, editable briefing, proposal, cover and explicit creation', async () => {
     mount();
     const user = userEvent.setup();
@@ -163,13 +192,9 @@ describe('AssistedBookPage', () => {
     await waitFor(() => expect(screen.getByLabelText('Sua resposta')).toHaveValue(''));
     await user.click(screen.getByRole('button', { name: 'Sugira para mim' }));
     await waitFor(() =>
-      expect(
-        screen.getByRole('button', { name: 'Revisar briefing e encerrar entrevista' }),
-      ).toBeEnabled(),
+      expect(screen.getByRole('button', { name: 'Revisar ideia' })).toBeEnabled(),
     );
-    await user.click(
-      screen.getByRole('button', { name: 'Revisar briefing e encerrar entrevista' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Revisar ideia' }));
     fireEvent.change(screen.getByLabelText('Briefing do livro'), {
       target: { value: 'Sem magia; aventura no mar.' },
     });
@@ -275,13 +300,13 @@ describe('AssistedBookPage', () => {
     auth.user = { uid: 'author', credits: 0 };
     vi.mocked(loadAssistedBook).mockResolvedValue({ session, costs: session.costs });
     const view = mount();
+    await userEvent.click(await screen.findByText('Ideias que reunimos'));
     await userEvent.click(await screen.findByRole('button', { name: 'Começar outra ideia' }));
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
-    await userEvent.click(
-      screen.getByRole('button', { name: 'Revisar briefing e encerrar entrevista' }),
-    );
+    await userEvent.click(screen.getByRole('button', { name: 'Revisar ideia' }));
     expect(screen.getByRole('button', { name: 'Gerar proposta do livro' })).toBeDisabled();
     await userEvent.click(screen.getByRole('button', { name: 'Voltar à conversa' }));
+    await userEvent.click(screen.getByText('Ideias que reunimos'));
     await userEvent.click(screen.getByRole('button', { name: 'Começar outra ideia' }));
     await userEvent.click(screen.getAllByRole('button', { name: 'Começar outra ideia' }).at(-1)!);
     await screen.findByLabelText('Sua ideia');
