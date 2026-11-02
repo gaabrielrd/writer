@@ -7,9 +7,9 @@ test('preferência limita a prosa sem limitar ferramentas e permanece em tela ch
 }) => {
   await page.setViewportSize({ width: 3200, height: 1000 });
   for (const [label, width] of [
-    ['Pequeno', 960],
-    ['Médio', 1280],
-    ['Grande', 1600],
+    ['Pequeno', 640],
+    ['Médio', 760],
+    ['Grande', 880],
   ] as const) {
     await page.goto('/settings/preferences');
     await chooseDropdown(page.getByRole('combobox', { name: 'Largura do conteúdo' }), label);
@@ -18,6 +18,9 @@ test('preferência limita a prosa sem limitar ferramentas e permanece em tela ch
     await expect(editor).toBeVisible();
     const paragraph = editor.locator('p').first();
     await expect.poll(async () => Math.round((await paragraph.boundingBox())!.width)).toBe(width);
+    const area = await page.locator('[data-editor-scroll-area]').boundingBox();
+    const prose = await paragraph.boundingBox();
+    expect(Math.abs(prose!.x + prose!.width / 2 - area!.x - area!.width / 2)).toBeLessThan(2);
     expect(
       (await page.getByRole('toolbar', { name: 'Ferramentas de escrita' }).boundingBox())!.width,
     ).toBeGreaterThan(2000);
@@ -41,7 +44,7 @@ test('capítulo separa largura da prosa e alterna o painel direito', async ({ pa
     await page.setViewportSize({ width: 2400, height: 1000 });
     const workspace = page.locator('[data-editor-page]');
     expect((await workspace.boundingBox())!.width).toBeGreaterThan(1800);
-    expect((await editor.boundingBox())!.width).toBeLessThanOrEqual(1280);
+    expect(Math.round((await editor.boundingBox())!.width)).toBe(760);
     expect((await lore.boundingBox())!.x).toBeGreaterThan(
       (await editor.boundingBox())!.x + (await editor.boundingBox())!.width,
     );

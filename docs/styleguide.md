@@ -268,7 +268,7 @@ Georgia, 18 px e entrelinha 1,85 em escrita e leitura.
 
 Na edição de capítulo, o cabeçalho e as ferramentas ocupam toda a largura útil
 do workspace. A coluna da prosa usa o limite escolhido em Preferências:
-960/1280/1600 px, centralizada em sua área de escrita e limitada pelo espaço
+640/760/880 px (Pequeno/Médio/Grande), centralizada em sua área de escrita e limitada pelo espaço
 disponível, inclusive em tela cheia. O minimapa fica na extremidade
 esquerda, perto da navegação. A partir de 1100 px de viewport, os itens de lore
 mencionados aparecem em um painel de 280 px à direita, com rolagem própria.
@@ -425,7 +425,8 @@ semânticos dos três temas e os componentes compartilhados.
 ### Largura dos painéis
 
 Preferências oferece Pequeno (960 px), Médio (1280 px, padrão) e Grande
-(1600 px). O limite se aplica ao conteúdo centralizado da área logada e
+(1600 px) para as páginas. A coluna de escrita usa limites próprios de
+640/760/880 px, respectivamente. O limite se aplica ao conteúdo centralizado da área logada e
 sempre respeita o espaço disponível. A lateral e a barra contextual
 conservam sua largura. O modo expandido do editor libera as ferramentas para toda
 a área, preservando o limite escolhido para a prosa. Cabeçalho e formatação têm

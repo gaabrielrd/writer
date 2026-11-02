@@ -1,5 +1,6 @@
 .shell {
   --workspace-preferred-content-max: 1280px;
+  --workspace-prose-max: 760px;
   --workspace-content-max: var(--workspace-preferred-content-max);
   --layout-max: var(--workspace-content-max);
   --text-base: 0.875rem;
@@ -272,9 +273,11 @@
 
 .shell[data-content-width='small'] {
   --workspace-preferred-content-max: 960px;
+  --workspace-prose-max: 640px;
 }
 .shell[data-content-width='large'] {
   --workspace-preferred-content-max: 1600px;
+  --workspace-prose-max: 880px;
 }
 .shell[data-workspace-expanded='true'] {
   --workspace-content-max: 100%;
