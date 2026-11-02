@@ -8,7 +8,7 @@ Este documento descreve como o código do `Writer Assistant` é organizado e as 
 `page-assistant` oferece propostas sobre capacidades transitórias da página,
 acionando somente handlers existentes após confirmação. A aplicação compõe as
 duas features por suas interfaces públicas. Sessões v2 e a ação `pageAssistant`
-usam `generationApi`; veja a [ADR 0271](decisions/0271-project-creation-and-contextual-assistant.md).
+usam `generationApi`; veja a [ADR 0272](decisions/0272-project-creation-and-contextual-assistant.md).
 
 ## Princípios
 
@@ -4025,3 +4025,14 @@ e diff. Sessões e arquivos temporários são server-only, em partes limitadas d
 Firestore; a confirmação atualiza fichas, universo, clock de autorização, crédito
 e recibo atomicamente. Alterações concorrentes invalidam a revisão. Veja
 [contrato da importação](universe-lore-import.md).
+
+## Geração contextual de personas
+
+A feature ai-assistant compõe seleção de universo/lore pelas APIs públicas e
+reutiliza o formulário de personas para revisão. A ação personaGeneration em generationApi
+captura fontes autorizadas, limita contexto/quota e reconfere identidade/conteúdo
+antes de expor a proposta. O aceite grava nova persona e recibo atomicamente,
+sem débito, vínculos automáticos ou alteração nos contratos de perfis restaurados.
+O compilador puro personaProfile valida perfis; o transporte existente recebe
+snapshot público de geração. Pedidos são privados e temporários; o scheduler
+coleta expirados por lotes. Veja [ADR 0271](decisions/0271-contextual-persona-generation.md).

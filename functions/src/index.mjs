@@ -1,3 +1,4 @@
+import { cleanupExpiredPersonaGenerations } from './personaGeneration.mjs';
 import { createSectorServices } from './domainServices.mjs';
 import { logger } from 'firebase-functions';
 import { FUNCTION_DOMAINS } from './functionDomains.mjs';
@@ -514,6 +515,7 @@ export const cleanupBookAssets = onSchedule(
         await document.ref.delete();
       }
     }
+    await cleanupExpiredPersonaGenerations(db);
   },
 );
 export const getAdventureImportRecoveryKey = onRequest(
@@ -606,6 +608,7 @@ const sectorServices = createSectorServices({
   assistedCost,
   coverCost,
   generationFactory: service,
+  personaGenerator: (input) => generatePlatformChat(input, () => {}, { apiKey: key.value() }),
 });
 
 function domainCallable(name) {

@@ -14,9 +14,9 @@ const request = (action, payload = {}, uid = 'author') => ({
   data: { version: 1, action, payload },
 });
 
-test('307 actions have exactly one destination and retain every private payload/context', async () => {
+test('308 actions have exactly one destination and retain every private payload/context', async () => {
   assert.equal(Object.keys(FUNCTION_DOMAINS).length, 16);
-  assert.equal(Object.keys(FUNCTION_ROUTES).length, 307);
+  assert.equal(Object.keys(FUNCTION_ROUTES).length, 308);
   const seen = new Set();
   for (const [name, domain] of Object.entries(FUNCTION_DOMAINS)) {
     for (const [action, method] of Object.entries(domain.actions)) {

@@ -54,10 +54,12 @@ before(async () => {
   // Compile the current client in memory. No external artifact, server credentials or bundle fixture.
   const bundled = await build({
     configFile: false,
+    resolve: { alias: { '@': fileURLToPath(new URL('../../src', import.meta.url)) } },
     root: fileURLToPath(new URL('../../', import.meta.url)),
     logLevel: 'silent',
     build: {
       write: false,
+      rolldownOptions: { output: { codeSplitting: false } },
       lib: {
         entry: fileURLToPath(
           new URL('../../src/features/lore/services/bookLoreReadClient.ts', import.meta.url),
@@ -75,6 +77,7 @@ before(async () => {
   ));
   const archiveBundle = await build({
     configFile: false,
+    resolve: { alias: { '@': fileURLToPath(new URL('../../src', import.meta.url)) } },
     root: fileURLToPath(new URL('../../', import.meta.url)),
     logLevel: 'silent',
     build: {
@@ -88,7 +91,11 @@ before(async () => {
         ),
         formats: ['es'],
       },
-      rolldownOptions: { external: (id) => id.startsWith('@/') || id.startsWith('firebase/') },
+      rolldownOptions: {
+        output: { codeSplitting: false },
+        external: (id) =>
+          (id.startsWith('@/') && id !== '@/shared/streams') || id.startsWith('firebase/'),
+      },
     },
   });
   const archiveCode = (Array.isArray(archiveBundle) ? archiveBundle : [archiveBundle])

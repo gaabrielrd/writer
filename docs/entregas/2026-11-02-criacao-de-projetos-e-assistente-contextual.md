@@ -4,7 +4,7 @@
 - **Branch**: `codex/criacao-projetos-chat`
 - **Base**: `origin/master` em `a89fc385701d07b62d45883270ffc963c53a5c92`, capturada no início da implementação.
 - **Plano**: [Criação de projetos e assistente contextual](../tasks/criacao-de-projetos-e-assistente-contextual.md).
-- **Estado**: implementação local revisada; fechamento pendente da validação global. Sem commit, push, merge ou deploy.
+- **Estado**: implementação revisada no commit `8e9efa6`; integração e envio autorizados posteriormente pelo operador. O gate global da integração está em validação.
 
 ## Objetivo
 
@@ -47,7 +47,7 @@ Unificar a criação de livros, aventuras e campanhas, começando pela escolha e
 | Estúdio, rotas, universos e ai-assistant                            | Composição pelas APIs públicas existentes.                     |
 | `e2e/visual`                                                        | Fixtures isoladas e jornadas adaptadas ao novo fluxo.          |
 
-Decisões: [ADR 0271](../decisions/0271-project-creation-and-contextual-assistant.md).
+Decisões: [ADR 0272](../decisions/0272-project-creation-and-contextual-assistant.md).
 Não foram adicionadas dependências nem alteradas regras do Firestore ou configuração de testes/cobertura.
 
 ## Testes e validações aprovados
@@ -100,7 +100,7 @@ Test Files  1 failed (1)
 
 O caso restante foi `lost local outcome ACK is flushed without producing the next member or replaying adoption`. A cobertura global atual não foi certificada. A cobertura parcial de uma execução dirigida não substitui esse gate.
 
-Os testes e os limites não foram alterados para encobrir a falha. A correção desses protocolos foi mantida fora do escopo. O commit e o fechamento da entrega ficam pendentes, preservando a implementação revisável na worktree.
+Os testes e os limites não foram alterados para encobrir a falha. A correção desses protocolos foi mantida fora do escopo. Este foi o estado ao encerrar a implementação inicial. A autorização posterior de commit e envio está registrada abaixo; ela não transforma os timeouts em validação aprovada.
 
 ## Limitações
 
@@ -109,7 +109,7 @@ Os testes e os limites não foram alterados para encobrir a falha. A correção 
 - Arquivos e diálogos do sistema operacional exigem seleção humana. Não há execução de código ou RPC arbitrária.
 - Conversa contextual fica em RAM; concepção usa a retenção existente de sete dias. Ações antigas não são reexecutadas ao retomar.
 - As jornadas de navegador usam fixtures. Qualidade das respostas do provedor real e disponibilidade em produção não foram validadas.
-- Sem push, merge ou deploy; o checkout original não recebeu alterações desta implementação.
+- A implementação inicial ocorreu sem push, merge ou deploy e preservou o checkout original. O envio posterior tem o escopo descrito abaixo.
 
 ## Como verificar
 
@@ -119,3 +119,30 @@ Os testes e os limites não foram alterados para encobrir a falha. A correção 
 4. Pedir uma ação como gerar proposta ou ajustar gênero; conferir a prévia e executar explicitamente.
 5. Criar o projeto, continuar pelo assistente contextual e usar os controles nativos para começar o conteúdo.
 6. Alterar um campo depois de capturar uma sugestão e conferir que a proposta antiga não o sobrescreve.
+
+## Integração e envio autorizados em 2026-11-02
+
+O operador solicitou o commit e o envio à principal, mesmo após receber o registro da validação parcial. O commit da feature é `8e9efa6da339a976152babbb945497a340c8831e`.
+
+Após fetch, `origin/master` permanecia na base original; a `master` local estava em `1d78ff7`, com 16 commits adicionais de outros trabalhos. O operador confirmou explicitamente a integração e a publicação desses 16 commits junto à feature.
+
+Os conflitos preservam a home atual e a geração contextual de personas. A entrada da home foi conectada ao fluxo progressivo. `generationApi` reúne as ações de personas e assistente, com 308 ações totais no registro e 30 Functions. A ADR desta feature passou a 0272 para preservar a ADR 0271 de personas. Quatro testes herdados de Firestore receberam somente normalização pelo Prettier.
+
+Checks dirigidos após resolver os conflitos:
+
+```text
+Verificação arquitetural OK.
+Validação da documentação OK.
+ℹ tests 45
+ℹ pass 45
+ℹ fail 0
+
+Test Files  3 passed (3)
+     Tests  46 passed (46)
+
+26 passed (1.5m)
+```
+
+O typecheck da árvore integrada também passou, assim como os 37 lotes de lint. A geração de personas e o entrypoint tiveram mais 12 testes aprovados, somando 57 testes dirigidos de servidor após a integração. A validação completa está sendo repetida antes do fechamento do merge. Hooks foram gerados nesta worktree; o commit da feature foi conferido por lint-staged e pela validação de mensagem, sem alterações adicionais.
+
+O operador confirmou que o envio pode acionar a publicação automática do frontend. A variável remota `FIREBASE_HOSTING_DEPLOY_ENABLED` estava `true`; o workflow de Hosting depende de seus gates de validação e integração. Isso não comprova publicação nem aprovação da CI. O workflow de Hosting não implanta Functions; os novos contratos em `generationApi` exigem rollout de servidor separado para uso em produção. Não houve autorização nem execução de implantação manual de Functions neste envio.

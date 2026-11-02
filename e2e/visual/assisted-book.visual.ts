@@ -1,17 +1,55 @@
 import { capture, expect, expectDialogWithinViewport, test } from './support';
 
+test('mensagens ficam no centro e a caixa de resposta permanece no rodapé', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/books/new/assisted');
+  const idea = page.getByLabel('Sua ideia');
+  await expect(idea).toBeVisible();
+  const viewport = page.viewportSize()!;
+  const transcript = page.locator('[data-assisted-transcript]');
+  const area = (await transcript.boundingBox())!;
+  const stack = (await transcript.locator(':scope > div').boundingBox())!;
+  expect(Math.abs(stack.y + stack.height / 2 - area.y - area.height / 2)).toBeLessThan(3);
+  const input = (await idea.boundingBox())!;
+  expect(viewport.height - input.y - input.height).toBeLessThan(150);
+  expect(input.y).toBeGreaterThan(area.y + area.height - 1);
+  await capture(page, testInfo, 'criacao-assistida-chat-centralizado');
+  await idea.fill('Uma viagem entre ilhas. '.repeat(150));
+  await idea.press('Enter');
+  const response = page.getByLabel('Sua resposta');
+  await expect(response).toBeEnabled();
+  await response.fill('O oceano começou a desaparecer. '.repeat(100));
+  await response.press('Enter');
+  await expect(response).toHaveValue('');
+  await expect(response).toBeFocused();
+  const after = (await response.boundingBox())!;
+  expect(after.y).toBeGreaterThan(viewport.height / 2);
+  expect(after.y + after.height).toBeLessThan(viewport.height);
+  expect(await transcript.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
+    true,
+  );
+  await transcript.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expect(response).toBeInViewport();
+  const afterScroll = (await response.boundingBox())!;
+  expect(Math.abs(afterScroll.y - after.y)).toBeLessThan(1);
+  await capture(page, testInfo, 'criacao-assistida-conversa-com-rolagem');
+});
+
 test('ideia, entrevista, revisão privada, capa e compêndio criado', async ({ page }, testInfo) => {
   await page.goto('/books/new/assisted');
   await page
     .getByLabel('Sua ideia')
     .fill('Uma navegadora descobre que o oceano está desaparecendo.');
-  await page.getByRole('button', { name: 'Começar conversa' }).click();
+  await page.getByLabel('Sua ideia').press('Enter');
   await expect(page.getByText('Que conflito move a protagonista?')).toBeVisible();
   await page.getByLabel('Sua resposta').fill('Ela precisa encontrar água para sua ilha.');
-  await page.getByRole('button', { name: 'Enviar resposta' }).click();
+  await page.getByLabel('Sua resposta').press('Enter');
   await expect(page.getByLabel('Sua resposta')).toHaveValue('');
   await capture(page, testInfo, 'criacao-assistida-conversa');
-  await page.getByRole('button', { name: 'Revisar briefing e encerrar entrevista' }).click();
+  await page.getByRole('button', { name: 'Revisar ideia' }).click();
   await page
     .getByLabel('Briefing do livro')
     .fill('Aventura marítima sem magia, para jovens adultos.');

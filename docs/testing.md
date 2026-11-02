@@ -3392,3 +3392,24 @@ A CI continua executando os portões completos.
 Filtros enviados após -- continuam sendo encaminhados ao Vitest. Execuções
 filtradas não geram registro de aprovação completa. Mudanças em NODE_OPTIONS
 ou variáveis VITE_/WRITER_ também invalidam o reaproveitamento.
+
+## Geração de personas por universo
+
+`functions/test/personaGeneration.test.mjs` cobre autorização, captura explícita,
+limites, origem recriada, mudanças concorrentes, JSON inválido, falha do provedor,
+recuperação, descarte e aceite idempotente sem crédito. O teste de regras
+`tests/firestore/persona-generation.rules.test.mjs` bloqueia acesso direto aos
+pedidos e quota e verifica aceite concorrente em transações reais no emulador.
+
+`PersonaGenerationDialog.test.tsx` cobre seleção/prévia, revisão sem gravação,
+edição, resultado incerto, retorno tardio, vazio, erro, retry e troca de conta.
+`personaGenerationService.test.ts` verifica que o cliente envia IDs e snapshot
+público, sem corpo do lore ou chaves. A jornada visual reutiliza serviços fictícios
+isolados, cobre os três temas e desktop/celular, 320 px, zero, persistência e foco.
+
+```bash
+npx playwright test --config playwright.visual.config.ts e2e/visual/persona-generation.visual.ts
+```
+
+Não há chamadas reais à IA nesses testes; qualidade literária exige revisão
+manual da proposta. Use WRITER_VISUAL_PORT exclusivo por checkout.

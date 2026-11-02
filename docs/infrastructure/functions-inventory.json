@@ -107,7 +107,7 @@
     },
     {
       "endpoint": "generationApi",
-      "actionCount": 3,
+      "actionCount": 4,
       "region": "us-central1",
       "enforceAppCheck": true,
       "timeoutSeconds": 120,
@@ -2485,6 +2485,14 @@
       "method": "pageAssistant",
       "serviceCandidates": ["functions/src/domainServices.mjs", "functions/src/pageAssistant.mjs"],
       "consumers": ["src/features/page-assistant/services/pageAssistantService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "personaGeneration",
+      "endpoint": "generationApi",
+      "method": "personaGeneration",
+      "serviceCandidates": ["functions/src/domainServices.mjs"],
+      "consumers": ["src/features/ai-assistant/services/personaGenerationService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {

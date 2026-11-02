@@ -4,6 +4,7 @@ import {
   capture,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
+  openWorkspaceNavigation,
 } from './support';
 import { chooseDropdown } from '../dropdown';
 import { author, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
@@ -12,8 +13,10 @@ test('personaliza uma persona com slider próprio e preserva formulário e açõ
   page,
 }, testInfo) => {
   await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Home', exact: true })).toBeVisible();
+  await openWorkspaceNavigation(page);
   await page.getByRole('button', { name: new RegExp(author.displayName!) }).click();
-  await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
+  await page.getByRole('menuitem', { name: 'Inteligência artificial', exact: true }).click();
   await expect(page).toHaveURL(/\/settings\/ai$/);
   await expect(page.getByRole('tab', { name: 'Personas', exact: true })).toHaveAttribute(
     'aria-selected',

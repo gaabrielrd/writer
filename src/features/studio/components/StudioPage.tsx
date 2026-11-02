@@ -8,6 +8,9 @@ import {
   ScrollText,
   FolderOpen,
   ArrowRight,
+  Sparkles,
+  Feather,
+  Activity,
 } from 'lucide-react';
 import { BookRestoreDialog, BookRestorePreparations } from '@/features/book-portability';
 import {
@@ -29,7 +32,7 @@ import {
   CampaignAdoptionPreparations,
 } from '@/features/campaign-adoptions';
 import { ImportBookModal, getBook } from '@/features/books';
-import { Button, Card, LoadingState, PageHeader, buttonVariants } from '@/shared/ui';
+import { Button, Card, LoadingState, PageHeader } from '@/shared/ui';
 import { projectKinds, projectLabels } from '../model/project';
 import { StudioProjectSection } from './StudioProjectSection';
 import styles from './StudioPage.module.css';
@@ -70,7 +73,7 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
     <div className={styles.page}>
       <PageHeader
         title={destination.title}
-        description={destination.description}
+        description={section === 'home' ? undefined : destination.description}
         actions={
           (section === 'home' || section === 'projects') && (
             <Button onClick={() => void navigate('/studio/new')}>
@@ -81,35 +84,45 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
         }
       />
       {section === 'home' && (
-        <div className={styles.homeGrid}>
-          <ContinueWorkPanel compact />
-          <aside className={styles.homeAside} aria-label="Atalhos do Estúdio">
-            <Card className={styles.homeCard}>
-              <h2>Acesso rápido</h2>
-              <p className={styles.hint}>Seus projetos e ferramentas de criação, em um só lugar.</p>
-              <Link to="/studio/projects" className={styles.shortcut}>
-                <FolderOpen className="icon icon-sm" aria-hidden="true" />
-                <span>Ver meus projetos</span>
+        <>
+          <div className={styles.homeHero}>
+            <div>
+              <span className={styles.eyebrow}>Seu espaço de criação</span>
+              <h2>Uma nova página começa aqui.</h2>
+              <Link to="/studio/new" className={styles.heroLink}>
+                <Sparkles className="icon icon-sm" aria-hidden="true" />
+                Criar com IA
                 <ArrowRight className="icon icon-sm" aria-hidden="true" />
               </Link>
-              <Link to="/studio/import" className={styles.shortcut}>
-                <Upload className="icon icon-sm" aria-hidden="true" />
-                <span>Importar ou restaurar</span>
-                <ArrowRight className="icon icon-sm" aria-hidden="true" />
-              </Link>
-            </Card>
-            <Card className={styles.homeCard}>
-              <h2>Precisa retomar uma operação?</h2>
-              <p className={styles.hint}>
-                Encontre importações, restaurações e pedidos que aguardam sua revisão ou
-                confirmação.
-              </p>
-              <Link to="/studio/operations" className={buttonVariants({ variant: 'secondary' })}>
-                Ver operações em andamento
-              </Link>
-            </Card>
-          </aside>
-        </div>
+            </div>
+            <div className={styles.heroArtwork} aria-hidden="true">
+              <Feather className="icon" />
+            </div>
+          </div>
+          <div className={styles.homeGrid}>
+            <ContinueWorkPanel compact />
+            <aside className={styles.homeAside} aria-label="Atalhos do Estúdio">
+              <Card className={styles.homeCard}>
+                <h2>Acesso rápido</h2>
+                <Link to="/studio/projects" className={styles.shortcut}>
+                  <FolderOpen className="icon icon-sm" aria-hidden="true" />
+                  <span>Ver meus projetos</span>
+                  <ArrowRight className="icon icon-sm" aria-hidden="true" />
+                </Link>
+                <Link to="/studio/import" className={styles.shortcut}>
+                  <Upload className="icon icon-sm" aria-hidden="true" />
+                  <span>Importar ou restaurar</span>
+                  <ArrowRight className="icon icon-sm" aria-hidden="true" />
+                </Link>
+                <Link to="/studio/operations" className={styles.shortcut}>
+                  <Activity className="icon icon-sm" aria-hidden="true" />
+                  <span>Ver operações em andamento</span>
+                  <ArrowRight className="icon icon-sm" aria-hidden="true" />
+                </Link>
+              </Card>
+            </aside>
+          </div>
+        </>
       )}
       <div hidden={section !== 'projects'} className={styles.sectionBody}>
         {section === 'projects' && (

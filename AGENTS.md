@@ -78,6 +78,7 @@
 - Acesso a localStorage em adaptadores/repositórios.
 - Leitura de `import.meta.env` só em `shared/config/env.ts`.
 - Mantenha geração de livros e débitos de créditos em `functions`; configure segredos somente no servidor.
+- Mantenha geração contextual de personas e primeiro aceite em `functions`, com fontes reautorizadas e recibo idempotente; preserve a biblioteca e os vínculos existentes.
 - Mantenha conversas de capítulo privadas e sem débito; aplique sugestões com manuscrito, crédito e recibo atômicos em `functions`.
 - Congele provedor, modelo e raciocínio dos pedidos de chat; nunca inclua chaves em snapshots, histórico ou recuperação.
 - Resolva lore/persona de cenas e blocos no servidor e reautorize a origem nativa antes de cada derivado; siga `docs/tasks/writer-v2/execucao/30-contratos-do-chat-de-cenas.md`.

@@ -1,4 +1,4 @@
-# ADR 0271 — Criação unificada e ações contextuais da página
+# ADR 0272 — Criação unificada e ações contextuais da página
 
 Data: 2026-11-02. Estado: implementação local.
 

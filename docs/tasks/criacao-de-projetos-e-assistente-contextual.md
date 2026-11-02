@@ -57,7 +57,9 @@ do provedor real, implantação nem disponibilidade em produção.
 
 ## Estado da implementação local
 
-Implementação revisada em worktree própria, sem commit, push, merge ou deploy.
+Implementação revisada em worktree própria e registrada no commit `8e9efa6`.
+O operador autorizou posteriormente integrar e publicar também os 16 commits
+locais da principal, com Hosting automático habilitado; Functions têm rollout separado.
 Testes dirigidos, suíte de Functions e build passaram. O gate `npm run validate`
 permanece pendente por timeouts em testes existentes de lore/backup, sem alterações
 nesses arquivos. Evidência e limitações no [relatório de validação parcial](../entregas/2026-11-02-criacao-de-projetos-e-assistente-contextual.md).

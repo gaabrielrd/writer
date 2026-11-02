@@ -1,4 +1,5 @@
 import { createPageAssistantService } from './pageAssistant.mjs';
+import { createPersonaGenerationService } from './personaGeneration.mjs';
 import { createUniverseService } from './universes.mjs';
 import { createStudioService } from './studio.mjs';
 import { createAdventureImportService } from './adventureImport.mjs';
@@ -71,7 +72,7 @@ export const DOMAIN_SERVICES = {
     'campaignCapture',
     'campaignVariantRemoteRecovery',
   ],
-  generationApi: ['assisted', 'pageAssistant', 'generation'],
+  generationApi: ['personas', 'assisted', 'pageAssistant', 'generation'],
   mediaApi: ['generation', 'imageLibrary'],
   loreAnalysisApi: ['loreAnalysis'],
 };
@@ -86,6 +87,7 @@ export function createSectorServices({
   assistedCost,
   coverCost,
   generationFactory,
+  personaGenerator,
 }) {
   const SERVICE_FACTORIES = {
     universeService: () => createUniverseService({ db }),
@@ -130,6 +132,10 @@ export function createSectorServices({
         costs: { text: assistedCost.value(), cover: coverCost.value() },
       }),
     generation: () => generationFactory(),
+    personas: () => ({
+      personaGeneration: (uid, data) =>
+        createPersonaGenerationService({ db, generator: personaGenerator }).dispatch(uid, data),
+    }),
     imageLibrary: () => createImageLibraryService({ db, assets }),
   };
   return function* services(domain) {

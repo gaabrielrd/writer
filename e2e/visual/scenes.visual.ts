@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { chooseDropdown } from '../dropdown';
 import { chapters, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 import {
+  navigateWorkspace,
   capture,
   expectWorkspaceButton,
   expect,
@@ -286,8 +287,7 @@ test('aventura reúne partes e cenas sem criar livro auxiliar', async ({ page },
   await expect(
     planner.getByRole('article', { name: 'Cena Uma porta entre as marés', exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Estúdio', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
+  await navigateWorkspace(page, 'Estúdio');
   await expect(
     page.getByRole('region', { name: 'Livros', exact: true }).getByRole('heading', { level: 3 }),
   ).toHaveCount(3);
@@ -649,8 +649,7 @@ test('referência indisponível conserva identidade sem mostrar o nome antigo', 
   await page.getByLabel('Nome da Entidade').fill('Guardião das referências');
   await page.getByLabel(/Resumo Curto/).fill('Guarda a identidade compartilhada.');
   await page.getByRole('button', { name: 'Cadastrar Entidade' }).click();
-  await page.getByRole('button', { name: 'Universos', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
+  await navigateWorkspace(page, 'Estúdio');
   await page.getByRole('link', { name: /O Atlas das Marés Esquecidas/ }).click();
   await page.getByRole('button', { name: 'Opções do livro', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Editar', exact: true }).click();

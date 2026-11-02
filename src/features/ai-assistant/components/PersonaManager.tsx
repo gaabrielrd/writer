@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode, type ComponentProps } from 'react';
 import { Plus, Copy, Pencil, Archive, ChevronRight } from 'lucide-react';
 import {
   Alert,
@@ -31,9 +31,15 @@ import { savePersona } from '../services/personaService';
 import { PersonaTraitIcon, PersonaTraits } from './PersonaTraits';
 import { PersonaAvatar } from './PersonaAvatar';
 import { PersonaComposition } from './PersonaComposition';
+import { PersonaGenerationDialog } from './PersonaGenerationDialog';
+import {
+  acceptPersonaGeneration,
+  discardPersonaGeneration,
+} from '../services/personaGenerationService';
+import type { PersonaGenerationEditable } from '../model/personaGeneration';
 import styles from './Personas.module.css';
 
-export function PersonaManager({
+function PersonaManagerSession({
   ownerId,
   modal = false,
   onClose,
@@ -50,6 +56,10 @@ export function PersonaManager({
     instruction: string;
   };
 }) {
+  const [generationOpen, setGenerationOpen] = useState(false);
+  const [generationStarted, setGenerationStarted] = useState(false);
+  const [generated, setGenerated] = useState<{ requestId: string; rationale: string } | null>(null);
+  const [accepting, setAccepting] = useState<PersonaGenerationEditable | null>(null);
   const [selected, setSelected] = useState<AIPersona | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const { personas, loading, error, retry } = usePersonaLibrary(ownerId);
@@ -62,6 +72,8 @@ export function PersonaManager({
   const [showArchived, setShowArchived] = useState(false);
   const begin = (source?: AIPersona, duplicate = false) => {
     setFailure(null);
+    setGenerated(null);
+    setAccepting(null);
     setShowCustom(false);
     setCustom({ name: '', description: '', low: '', high: '' });
     setExpectedRevision(source && !duplicate ? source.revision : null);
@@ -95,7 +107,19 @@ export function PersonaManager({
     setBusy(true);
     setFailure(null);
     try {
-      await savePersona(ownerId, validatePersona(value), revision);
+      const persona = validatePersona(value);
+      if (generated) {
+        const edited = accepting ?? {
+          name: persona.name,
+          description: persona.description,
+          instructions: persona.instructions,
+          traits: persona.traits,
+        };
+        setAccepting(edited);
+        await acceptPersonaGeneration(generated.requestId, edited);
+      } else await savePersona(ownerId, persona, revision);
+      setGenerated(null);
+      setAccepting(null);
       setDraft(null);
       setSelected(null);
     } catch (cause) {
@@ -151,6 +175,20 @@ export function PersonaManager({
           Nova persona
         </Button>
       </div>
+      <Button
+        type="button"
+        variant="secondary"
+        disabled={!ownerId || busy || loading || Boolean(error)}
+        onClick={(event) => {
+          trigger.current = event.currentTarget;
+          setGenerated(null);
+          setAccepting(null);
+          setGenerationStarted(true);
+          setGenerationOpen(true);
+        }}
+      >
+        Criar com IA
+      </Button>
       {activeProfile && <PersonaComposition profile={activeProfile} compact />}
       {profileError && <Alert variant="danger">{profileError}</Alert>}
       {!ownerId && (
@@ -284,13 +322,33 @@ export function PersonaManager({
   return (
     <>
       {!modal && libraryContent}
+      {ownerId && generationStarted && (
+        <PersonaGenerationDialog
+          key={ownerId}
+          ownerId={ownerId}
+          open={generationOpen}
+          onClose={() => setGenerationOpen(false)}
+          onReview={(result) => {
+            setExpectedRevision(null);
+            setDraft(result.persona!);
+            setGenerated({ requestId: result.requestId, rationale: result.rationale! });
+            setAccepting(null);
+            setFailure(null);
+            setGenerationOpen(false);
+          }}
+        />
+      )}
       <Dialog
-        open={modal || Boolean(draft || selected)}
+        open={(modal || Boolean(draft || selected)) && !generationOpen}
         title={draft ? 'Editar persona de IA' : (selected?.name ?? 'Persona')}
         maxWidthClass="max-w-3xl min-[901px]:max-w-[960px]"
         onClose={() => {
           if (!busy) {
             if (!draft && !selected) onClose?.();
+            if (generated)
+              void discardPersonaGeneration(generated.requestId).catch(() => undefined);
+            setGenerated(null);
+            setAccepting(null);
             setDraft(null);
             setSelected(null);
             setFailure(null);
@@ -308,12 +366,31 @@ export function PersonaManager({
                 variant="secondary"
                 disabled={busy}
                 onClick={() => {
+                  if (generated)
+                    void discardPersonaGeneration(generated.requestId).catch(() => undefined);
+                  setGenerated(null);
+                  setAccepting(null);
                   setDraft(null);
                   setFailure(null);
                 }}
               >
                 Cancelar edição
               </Button>
+              {generated && !accepting && (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={busy}
+                  onClick={() => {
+                    void discardPersonaGeneration(generated.requestId).catch(() => undefined);
+                    setGenerated(null);
+                    setDraft(null);
+                    setGenerationOpen(true);
+                  }}
+                >
+                  Gerar outra proposta
+                </Button>
+              )}
               <Button form="persona-edit-form" type="submit" disabled={busy || !ownerId}>
                 {busy ? 'Salvando...' : 'Salvar persona'}
               </Button>
@@ -384,172 +461,190 @@ export function PersonaManager({
               void save(draft, expectedRevision);
             }}
           >
-            {expectedRevision !== null && (
+            {generated && (
               <Alert variant="info">
-                Alterações afetam as próximas chamadas de todos os livros e capítulos que usam esta
-                persona. Duplique para criar uma variação independente.
+                {generated.rationale} Revise todos os campos. Salvar cria uma persona privada, sem
+                vinculá-la automaticamente.
               </Alert>
             )}
-            <Input
-              label="Nome da persona"
-              value={draft.name}
-              required
-              maxLength={80}
-              disabled={busy}
-              onChange={(event) => change({ name: event.target.value })}
-            />
-            <Textarea
-              label="Descrição da persona"
-              value={draft.description}
-              maxLength={500}
-              disabled={busy}
-              onChange={(event) => change({ description: event.target.value })}
-            />
-            <Textarea
-              label="Instruções permanentes"
-              value={draft.instructions}
-              required
-              maxLength={6000}
-              disabled={busy}
-              onChange={(event) => change({ instructions: event.target.value })}
-            />
-            <p>
-              Estas instruções acompanharão as chamadas de escrita. O pedido da ação pode solicitar
-              uma exceção de estilo; os fatos do lore e o formato da resposta continuam preservados.
-            </p>
-            <div className={styles.traitGrid}>
-              {draft.traits.map((trait) => (
-                <Card key={trait.id} className={styles.trait}>
-                  <div className={styles.traitEyebrow}>
-                    <PersonaTraitIcon id={trait.id} />
-                    <span>Expressão narrativa</span>
-                  </div>
-                  <Slider
-                    label={trait.name}
-                    description={trait.description}
-                    low={trait.low}
-                    high={trait.high}
-                    value={trait.value}
-                    disabled={busy}
-                    onValueChange={(value) =>
-                      change({
-                        traits: draft.traits.map((item) =>
-                          item.id === trait.id ? { ...item, value } : item,
-                        ),
-                      })
-                    }
-                  />
-                  {trait.id.startsWith('custom-') && (
-                    <details>
-                      <summary>Editar definição de {trait.name}</summary>
-                      {(['name', 'description', 'low', 'high'] as const).map((field) => (
-                        <Input
-                          key={field}
-                          label={`${{ name: 'Nome', description: 'Significado', low: 'Valor 0', high: 'Valor 100' }[field]} de ${trait.name}`}
-                          value={trait[field]}
-                          required
-                          maxLength={field === 'name' ? 80 : field === 'description' ? 300 : 200}
-                          disabled={busy}
-                          onChange={(event) =>
-                            change({
-                              traits: draft.traits.map((item) =>
-                                item.id === trait.id
-                                  ? { ...item, [field]: event.target.value }
-                                  : item,
-                              ),
-                            })
-                          }
-                        />
-                      ))}
-                    </details>
-                  )}
-                  {trait.id.startsWith('custom-') && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={busy}
-                      onClick={() =>
-                        change({ traits: draft.traits.filter((item) => item.id !== trait.id) })
-                      }
-                    >
-                      Remover atributo {trait.name}
-                    </Button>
-                  )}
-                </Card>
-              ))}
-            </div>
-            {showCustom ? (
-              <Card className={`${styles.stack} ${styles.card}`}>
-                <Input
-                  label="Nome do atributo"
-                  value={custom.name}
-                  maxLength={80}
-                  disabled={busy}
-                  onChange={(event) => setCustom({ ...custom, name: event.target.value })}
-                />
-                <Textarea
-                  label="Significado do atributo"
-                  value={custom.description}
-                  maxLength={300}
-                  disabled={busy}
-                  onChange={(event) => setCustom({ ...custom, description: event.target.value })}
-                />
-                <Input
-                  label="Significado de 0"
-                  value={custom.low}
-                  maxLength={200}
-                  disabled={busy}
-                  onChange={(event) => setCustom({ ...custom, low: event.target.value })}
-                />
-                <Input
-                  label="Significado de 100"
-                  value={custom.high}
-                  maxLength={200}
-                  disabled={busy}
-                  onChange={(event) => setCustom({ ...custom, high: event.target.value })}
-                />
-                <Button
-                  type="button"
-                  disabled={
-                    busy ||
-                    !custom.name.trim() ||
-                    !custom.description.trim() ||
-                    !custom.low.trim() ||
-                    !custom.high.trim()
-                  }
-                  onClick={addTrait}
-                >
-                  Adicionar atributo
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  disabled={busy}
-                  onClick={() => setShowCustom(false)}
-                >
-                  Cancelar atributo
-                </Button>
-              </Card>
-            ) : (
-              <Button
-                type="button"
-                variant="secondary"
-                disabled={busy || draft.traits.length >= 16}
-                onClick={() => setShowCustom(true)}
-              >
-                <Plus className="icon icon-sm" aria-hidden="true" />
-                Criar slider personalizado ({draft.traits.length - 8}/8)
-              </Button>
+            {accepting && (
+              <Alert variant="info">
+                Salvamento pendente de confirmação. Tentar salvar novamente recupera exatamente a
+                mesma revisão.
+              </Alert>
             )}
-            <details className={styles.summary}>
-              <summary>Resumo das orientações</summary>
-              <p>{draft.instructions}</p>
-              {draft.traits.map((trait) => (
-                <p key={trait.id}>
-                  {trait.name}: {trait.value}/100 · 0: {trait.low} · 100: {trait.high}
-                </p>
-              ))}
-            </details>
+            <fieldset
+              className={`${styles.stack} ${styles.editingFields}`}
+              disabled={busy || Boolean(accepting)}
+            >
+              {expectedRevision !== null && (
+                <Alert variant="info">
+                  Alterações afetam as próximas chamadas de todos os livros e capítulos que usam
+                  esta persona. Duplique para criar uma variação independente.
+                </Alert>
+              )}
+              <Input
+                label="Nome da persona"
+                value={draft.name}
+                required
+                maxLength={80}
+                disabled={busy}
+                onChange={(event) => change({ name: event.target.value })}
+              />
+              <Textarea
+                label="Descrição da persona"
+                value={draft.description}
+                maxLength={500}
+                disabled={busy}
+                onChange={(event) => change({ description: event.target.value })}
+              />
+              <Textarea
+                label="Instruções permanentes"
+                value={draft.instructions}
+                required
+                maxLength={6000}
+                disabled={busy}
+                onChange={(event) => change({ instructions: event.target.value })}
+              />
+              <p>
+                Estas instruções acompanharão as chamadas de escrita. O pedido da ação pode
+                solicitar uma exceção de estilo; os fatos do lore e o formato da resposta continuam
+                preservados.
+              </p>
+              <div className={styles.traitGrid}>
+                {draft.traits.map((trait) => (
+                  <Card key={trait.id} className={styles.trait}>
+                    <div className={styles.traitEyebrow}>
+                      <PersonaTraitIcon id={trait.id} />
+                      <span>Expressão narrativa</span>
+                    </div>
+                    <Slider
+                      label={trait.name}
+                      description={trait.description}
+                      low={trait.low}
+                      high={trait.high}
+                      value={trait.value}
+                      disabled={busy}
+                      onValueChange={(value) =>
+                        change({
+                          traits: draft.traits.map((item) =>
+                            item.id === trait.id ? { ...item, value } : item,
+                          ),
+                        })
+                      }
+                    />
+                    {trait.id.startsWith('custom-') && (
+                      <details>
+                        <summary>Editar definição de {trait.name}</summary>
+                        {(['name', 'description', 'low', 'high'] as const).map((field) => (
+                          <Input
+                            key={field}
+                            label={`${{ name: 'Nome', description: 'Significado', low: 'Valor 0', high: 'Valor 100' }[field]} de ${trait.name}`}
+                            value={trait[field]}
+                            required
+                            maxLength={field === 'name' ? 80 : field === 'description' ? 300 : 200}
+                            disabled={busy}
+                            onChange={(event) =>
+                              change({
+                                traits: draft.traits.map((item) =>
+                                  item.id === trait.id
+                                    ? { ...item, [field]: event.target.value }
+                                    : item,
+                                ),
+                              })
+                            }
+                          />
+                        ))}
+                      </details>
+                    )}
+                    {trait.id.startsWith('custom-') && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        disabled={busy}
+                        onClick={() =>
+                          change({ traits: draft.traits.filter((item) => item.id !== trait.id) })
+                        }
+                      >
+                        Remover atributo {trait.name}
+                      </Button>
+                    )}
+                  </Card>
+                ))}
+              </div>
+              {showCustom ? (
+                <Card className={`${styles.stack} ${styles.card}`}>
+                  <Input
+                    label="Nome do atributo"
+                    value={custom.name}
+                    maxLength={80}
+                    disabled={busy}
+                    onChange={(event) => setCustom({ ...custom, name: event.target.value })}
+                  />
+                  <Textarea
+                    label="Significado do atributo"
+                    value={custom.description}
+                    maxLength={300}
+                    disabled={busy}
+                    onChange={(event) => setCustom({ ...custom, description: event.target.value })}
+                  />
+                  <Input
+                    label="Significado de 0"
+                    value={custom.low}
+                    maxLength={200}
+                    disabled={busy}
+                    onChange={(event) => setCustom({ ...custom, low: event.target.value })}
+                  />
+                  <Input
+                    label="Significado de 100"
+                    value={custom.high}
+                    maxLength={200}
+                    disabled={busy}
+                    onChange={(event) => setCustom({ ...custom, high: event.target.value })}
+                  />
+                  <Button
+                    type="button"
+                    disabled={
+                      busy ||
+                      !custom.name.trim() ||
+                      !custom.description.trim() ||
+                      !custom.low.trim() ||
+                      !custom.high.trim()
+                    }
+                    onClick={addTrait}
+                  >
+                    Adicionar atributo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    disabled={busy}
+                    onClick={() => setShowCustom(false)}
+                  >
+                    Cancelar atributo
+                  </Button>
+                </Card>
+              ) : (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={busy || draft.traits.length >= 16}
+                  onClick={() => setShowCustom(true)}
+                >
+                  <Plus className="icon icon-sm" aria-hidden="true" />
+                  Criar slider personalizado ({draft.traits.length - 8}/8)
+                </Button>
+              )}
+              <details className={styles.summary}>
+                <summary>Resumo das orientações</summary>
+                <p>{draft.instructions}</p>
+                {draft.traits.map((trait) => (
+                  <p key={trait.id}>
+                    {trait.name}: {trait.value}/100 · 0: {trait.low} · 100: {trait.high}
+                  </p>
+                ))}
+              </details>
+            </fieldset>
           </form>
         ) : selected ? (
           <div className={styles.stack}>
@@ -584,4 +679,8 @@ export function PersonaManager({
       </Dialog>
     </>
   );
+}
+
+export function PersonaManager(props: ComponentProps<typeof PersonaManagerSession>) {
+  return <PersonaManagerSession key={props.ownerId ?? 'anonymous'} {...props} />;
 }

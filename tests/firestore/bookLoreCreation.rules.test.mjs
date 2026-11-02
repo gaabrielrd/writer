@@ -21,6 +21,10 @@ import {
   markBookDeleting,
   finishBookLoreDeletion,
 } from '../../functions/test/helpers/bookLoreDeletionFixture.mjs';
+import {
+  creationAdoptionFixture,
+  adoptCreation,
+} from '../../functions/test/helpers/bookLoreCreationAdoptionFixture.mjs';
 import { createBookLoreReadService } from '../../functions/src/bookLoreRead.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
   { Firestore } = requireFunctions('firebase-admin/firestore'),
@@ -95,7 +99,12 @@ test('SDK concurrent native reservations preserve publication and clocks, block 
     head = { bookId: 'book', name: 'Other', category: 'other', isPublic: false };
   positive.update(doc(client, 'books/book'), { localLoreVersion: 1 });
   positive.set(doc(client, 'books/book/lore/other'), head);
-  await assertSucceeds(positive.commit());
+  await assertFails(positive.commit());
+  const unrelated = await creationAdoptionFixture(admin, {
+    creationId: 'unrelated-creation-native-0001',
+    editId: 'unrelated-edit-native-0001',
+  });
+  await adoptCreation(unrelated);
   const rejected = writeBatch(client);
   rejected.update(doc(client, 'books/book'), { localLoreVersion: 2 });
   rejected.set(doc(client, 'books/book/lore/' + p.loreId), head);
@@ -111,7 +120,7 @@ test('SDK concurrent native reservations preserve publication and clocks, block 
   assert.equal(done.phase, 'cancelled');
   assert.deepEqual(await f.start(), done);
   assert.equal((await admin.doc(f.c.reservationPath).get()).exists, true);
-  assert.equal((await admin.doc('books/book/lore/other').get()).exists, true);
+  assert.equal((await admin.doc(unrelated.headPath).get()).exists, true);
 });
 
 test('SDK a prestart fence stays private and a recreated marker cannot authorize a premature head or the original reservation', async () => {

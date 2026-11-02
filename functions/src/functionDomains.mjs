@@ -333,6 +333,7 @@ export const FUNCTION_DOMAINS = {
       assistedBook: 'assistedBook',
       pageAssistant: 'pageAssistant',
       generateBookAsset: 'generate',
+      personaGeneration: 'personaGeneration',
     },
   },
   loreAnalysisApi: {
