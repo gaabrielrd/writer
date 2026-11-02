@@ -1,5 +1,16 @@
 # Deploy do Writer no Firebase
 
+## Hosting visual publicado em 2026-11-02
+
+O frontend com Home visual, densidade do Estúdio, editor e criação assistida foi
+publicado em `writer-44cd5.web.app` por configuração exclusiva de Hosting. Os
+16 arquivos remotos foram comparados por SHA-256 com o artefato congelado; seis
+rotas SPA e o carregamento anônimo no Chromium passaram. Os 16 setores e dois
+chats foram conferidos ACTIVE/Node 24 antes do frontend. Não houve publicação de
+Functions, Rules ou índices nesta operação, nem commit/push.
+Veja a [evidência desta publicação](entregas/2026-11-02-home-visual-e-hosting.md).
+Os registros de rollout abaixo preservam seus respectivos momentos de verificação.
+
 ## Functions por setor
 
 A composição atual reúne 306 ações em 16 endpoints, preservando dois chats com

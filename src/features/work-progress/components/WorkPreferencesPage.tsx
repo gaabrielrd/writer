@@ -14,8 +14,8 @@ export function WorkPreferencesPage() {
       <Card className={styles.preferencesCard}>
         <h2>Área de trabalho</h2>
         <p className={styles.hint}>
-          Limite a largura do conteúdo dos painéis. A escolha é salva neste navegador e se adapta ao
-          espaço disponível na tela.
+          Limite a largura das páginas e da coluna de texto do editor. A escolha é salva neste
+          navegador e se adapta ao espaço disponível na tela.
         </p>
         <Dropdown
           mode="select"

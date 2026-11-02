@@ -63,6 +63,7 @@ export interface RichEditorAICapabilities {
 export interface RichEditorProps<T extends LoreMentionEntity = LoreEntity> {
   ariaLabel?: string;
   workspaceExpanded?: boolean;
+  chapterLayout?: boolean;
   chatOpen?: boolean;
   onOpenChat?: (action?: AIActionType) => void;
   onChatBridge?: (bridge: ChatEditorBridge | null) => void;
@@ -113,6 +114,7 @@ interface SelectionTarget {
 export function RichEditor<T extends LoreMentionEntity>({
   ariaLabel = 'Área de escrita do capítulo',
   workspaceExpanded = false,
+  chapterLayout = false,
   chatOpen = false,
   onOpenChat,
   onChatBridge,
@@ -625,8 +627,42 @@ export function RichEditor<T extends LoreMentionEntity>({
     }
   }, [editor, mention, menuId, optionCount, activeIndex]);
 
+  const loreSummary = (chapterLayout || mentionedEntities.length > 0) && (
+    <div
+      className={styles.loreSummaryBar}
+      aria-label="Entidades mencionadas neste capítulo"
+      data-editor-mentioned-lore
+    >
+      <span className={styles.loreSummaryLabel}>Lore no texto:</span>
+      {mentionedEntities.length === 0 && <p>Nenhum item de lore mencionado neste capítulo.</p>}
+      <div className={styles.lorePillsList}>
+        {mentionedEntities.map(({ entity, count }) => (
+          <button
+            key={entityKey(entity)}
+            type="button"
+            className={styles.lorePill}
+            onClick={() => {
+              if (currentLoreGuard.current()) onSelectEntity(entity);
+            }}
+            title={`Clique para abrir a ficha de ${entity.name}`}
+          >
+            <Badge variant={CATEGORY_BADGES[entity.category]}>
+              {entity.name}
+              {count > 1 ? ` (${count})` : ''}
+            </Badge>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
-    <div className={styles.container} data-workspace-expanded={workspaceExpanded}>
+    <div
+      className={styles.container}
+      data-workspace-expanded={workspaceExpanded}
+      data-chapter-layout={chapterLayout}
+      data-panel-active={chatOpen || isSidebarOpen}
+    >
       <div className={styles.toolbar} role="toolbar" aria-label="Ferramentas de escrita">
         <div className={styles.toolGroup} role="group" aria-label="Formatação">
           <Button
@@ -859,29 +895,7 @@ export function RichEditor<T extends LoreMentionEntity>({
           </Button>
         </div>
       </div>
-      {mentionedEntities.length > 0 && (
-        <div className={styles.loreSummaryBar} aria-label="Entidades mencionadas neste capítulo">
-          <span className={styles.loreSummaryLabel}>Lore no texto:</span>
-          <div className={styles.lorePillsList}>
-            {mentionedEntities.map(({ entity, count }) => (
-              <button
-                key={entityKey(entity)}
-                type="button"
-                className={styles.lorePill}
-                onClick={() => {
-                  if (currentLoreGuard.current()) onSelectEntity(entity);
-                }}
-                title={`Clique para abrir a ficha de ${entity.name}`}
-              >
-                <Badge variant={CATEGORY_BADGES[entity.category]}>
-                  {entity.name}
-                  {count > 1 ? ` (${count})` : ''}
-                </Badge>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+      {!chapterLayout && loreSummary}
       <div className={styles.bodyLayout}>
         <ChapterMinimap
           destinations={minimap.destinations}
@@ -936,6 +950,7 @@ export function RichEditor<T extends LoreMentionEntity>({
               )}
           </div>
         </div>
+        {chapterLayout && loreSummary}
       </div>
       {hover &&
         visibleHover &&

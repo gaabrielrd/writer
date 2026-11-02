@@ -124,3 +124,31 @@ jobs browser/visual: hash-wasm era importado por um contrato compartilhado e
 o build não iniciava. Os dois jobs agora instalam essas dependências, como
 a validação principal já fazia. Somente o caso alterado do contrato da CI
 foi repetido; passou. Não foi adicionada dependência nem alterado o produto.
+
+## Publicação concluída e validação manual autorizada
+
+Em 2026-11-02, o mantenedor solicitou publicação imediata, sem aguardar novas
+rodadas de CI/correções, assumindo a validação funcional manual. Essa orientação
+substituiu a espera pelos gates verdes para este release; não altera os hooks.
+
+- PR 21 integrado por merge, preservando o histórico. Master e artefato publicado:
+  `a80dac5112d2ea88b897baedd9352c658cdc2606`.
+- Os PRs 24, 25, 26, 27, 29 e 30 foram encerrados, com suas atualizações
+  incorporadas pela consolidação.
+- 320 Functions ativas em Node 24; trigger Auth V2 ativo e o antigo removido
+  após a substituição. Firestore Rules publicadas e 66 índices READY.
+- Storage Rules equivalentes às remotas; nenhuma republicação necessária.
+- Build de produção, typecheck e smoke do bundle aprovados.
+- Firebase Hosting publicado com sucesso em https://writer-44cd5.web.app.
+- Marcador remoto `writer-release.txt` confirmou o SHA acima. `/` e `/studio`
+  responderam 200; as rotas HTTP de recuperação consultadas por GET responderam
+  405, conforme a restrição de método.
+
+A CI do último head da PR não está verde: há falhas em quatro testes frontend,
+Rules e cenários visuais. As correções dirigidas iniciadas após esse diagnóstico
+permanecem como alterações locais não commitadas e não fazem parte do release.
+Não foram iniciadas novas rodadas após a orientação de publicar imediatamente.
+A suíte completa local anterior passou, mas não equivale à aprovação dessa CI.
+A validação funcional de produção será feita pelo mantenedor.
+
+Plano posterior solicitado: [simplificação das Functions por domínio](../tasks/simplificacao-functions-por-dominio.md).
