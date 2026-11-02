@@ -114,3 +114,7 @@ como evidência do código de produto inalterado.
 A conferência de filtros e ambiente repetiu somente seis casos afetados, todos
 aprovados. Filtros de arquivo/nome são preservados e não geram aprovação de
 suíte completa; variáveis Vite e opções do Node invalidam o registro.
+
+A assinatura considera todo package.json, exceto scripts e lint-staged;
+dependências e resolução de módulos invalidam o registro. Os dois casos
+afetados por essa conferência passaram isoladamente.

@@ -182,3 +182,14 @@ test('Vite environment changes invalidate approval', (t) => {
   process.env.VITE_WRITER_CACHE_TEST = 'changed';
   assert.equal(hasFrontendValidation(root), false);
 });
+
+test('package resolution configuration invalidates approval', (t) => {
+  const { root, git } = fixture(t);
+  approved(root);
+  const pkg = JSON.parse(readFileSync(join(root, 'package.json')));
+  pkg.imports = { '#value': './src/value.ts' };
+  writeFileSync(join(root, 'package.json'), JSON.stringify(pkg));
+  git('add', '-A');
+  git('commit', '-m', 'resolution');
+  assert.equal(hasFrontendValidation(root), false);
+});

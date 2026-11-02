@@ -58,22 +58,9 @@ export function frontendFingerprint(root) {
     if (name === 'package.json') {
       const pkg = JSON.parse(bytes);
       // Hook/documentation commands do not change the frontend tested by Vitest.
-      bytes = Buffer.from(
-        JSON.stringify(
-          Object.fromEntries(
-            [
-              'type',
-              'packageManager',
-              'engines',
-              'dependencies',
-              'devDependencies',
-              'peerDependencies',
-              'optionalDependencies',
-              'overrides',
-            ].map((key) => [key, pkg[key]]),
-          ),
-        ),
-      );
+      delete pkg.scripts;
+      delete pkg['lint-staged'];
+      bytes = Buffer.from(JSON.stringify(pkg));
     }
     hash.update(String(bytes.length) + ':');
     hash.update(bytes);
