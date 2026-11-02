@@ -15,7 +15,7 @@
 3. Apresente um plano para mudanças que afetam vários arquivos.
 4. Mantenha as alterações dentro do escopo solicitado.
 5. Adicione ou atualize testes para mudanças de comportamento.
-6. Execute `npm run validate`.
+6. Execute `npm run validate` somente antes de um commit ou merge, ou quando solicitado.
 7. Revise o diff final.
 8. Atualize a documentação afetada.
 9. Registre a evidência da entrega em `docs/entregas`.
@@ -83,6 +83,7 @@
 
 ## Testes
 
+- Somente executar testes antes de um commit ou merge, ou quando solicitado.
 - Toda mudança de comportamento deve considerar testes.
 - Teste o resultado observável.
 - `npm run test` aplica limites de cobertura; não os reduza para fazer passar.
