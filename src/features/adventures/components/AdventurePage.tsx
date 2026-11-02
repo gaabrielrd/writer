@@ -6,7 +6,7 @@ import {
   useSyncExternalStore,
   type KeyboardEvent,
 } from 'react';
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router';
+import { Link, Navigate, useNavigate, useParams, useSearchParams, useLocation } from 'react-router';
 import { BookOpen, Globe, History, UserRound } from 'lucide-react';
 import {
   AdventurePersonaDialog,
@@ -48,6 +48,12 @@ import { getAdventure } from '../services/adventureService';
 import styles from './AdventurePage.module.css';
 
 function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
+  const studioReturnState = useLocation().state as { studioReturnTo?: unknown } | null;
+  const studioReturnTo =
+    typeof studioReturnState?.studioReturnTo === 'string' &&
+    /^\/studio\/projects(?:\?|$)/.test(studioReturnState.studioReturnTo)
+      ? studioReturnState.studioReturnTo
+      : '/studio/projects';
   const { setPendingEditorOperation } = useAuth();
   const navigate = useNavigate();
   const [captureOpen, setCaptureOpen] = useState(false);
@@ -88,11 +94,14 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const activeTab = tabs.find((tab) => tab === requestedTab) ?? 'scenes';
   const narrativeOpen = activeTab === 'narrative';
   const selectTab = (tab: 'scenes' | 'narrative' | 'progress' | 'lore') =>
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      next.set('tab', tab);
-      return next;
-    });
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set('tab', tab);
+        return next;
+      },
+      { state: studioReturnState },
+    );
   const handleTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     event.preventDefault();
@@ -148,8 +157,8 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
     enabled: Boolean(!revoked && result?.adventure && result.adventure.ownerId === ownerId),
   });
   const back = (
-    <Link to="/studio" className={buttonVariants({ variant: 'secondary' })}>
-      Voltar ao Estúdio
+    <Link to={studioReturnTo} className={buttonVariants({ variant: 'secondary' })}>
+      Voltar aos projetos
     </Link>
   );
   const recovery =

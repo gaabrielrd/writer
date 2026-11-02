@@ -1,6 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router';
-import { Plus, Upload, ArchiveRestore } from 'lucide-react';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router';
+import {
+  Plus,
+  Upload,
+  ArchiveRestore,
+  BookOpen,
+  ScrollText,
+  FolderOpen,
+  ArrowRight,
+} from 'lucide-react';
 import { BookRestoreDialog, BookRestorePreparations } from '@/features/book-portability';
 import {
   AdventureRestoreDialog,
@@ -27,15 +35,34 @@ import {
   getBook,
   type CreateBookInput,
 } from '@/features/books';
-import { Button, Dropdown, DropdownItem, LoadingState, PageHeader } from '@/shared/ui';
+import {
+  Button,
+  Dropdown,
+  DropdownItem,
+  Card,
+  LoadingState,
+  PageHeader,
+  buttonVariants,
+} from '@/shared/ui';
 import { projectKinds, projectLabels, type StudioProjectKind } from '../model/project';
 import { ProjectCreationDialog } from './ProjectCreationDialog';
 import { StudioProjectSection } from './StudioProjectSection';
 import styles from './StudioPage.module.css';
 
-function StudioSession({ ownerId }: { ownerId: string }) {
+import {
+  studioDestination,
+  studioDestinations,
+  type StudioSection,
+} from '../model/studioNavigation';
+
+function StudioSession({ ownerId, section }: { ownerId: string; section: StudioSection }) {
   const navigate = useNavigate();
-  const [kind, setKind] = useState<'all' | StudioProjectKind>('all');
+  const [params, setParams] = useSearchParams();
+  const selectedKind = params.get('kind');
+  const kind = projectKinds.find((value) => value === selectedKind) ?? 'all';
+  const [operationsLoaded, setOperationsLoaded] = useState(section === 'operations');
+  if (section === 'operations' && !operationsLoaded) setOperationsLoaded(true);
+  const destination = studioDestinations.find((item) => item.id === section)!;
   const [form, setForm] = useState<StudioProjectKind | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [adventureImportOpen, setAdventureImportOpen] = useState(false);
@@ -69,10 +96,10 @@ function StudioSession({ ownerId }: { ownerId: string }) {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Estúdio"
-        description="Escreva livros, crie aventuras e prepare suas campanhas."
+        title={destination.title}
+        description={destination.description}
         actions={
-          <div className={styles.actions}>
+          (section === 'home' || section === 'projects') && (
             <Dropdown
               mode="action"
               label="Novo projeto"
@@ -84,59 +111,208 @@ function StudioSession({ ownerId }: { ownerId: string }) {
               }
             >
               <DropdownItem onSelect={() => setForm('book')}>Livro</DropdownItem>
+              <DropdownItem onSelect={() => void navigate('/books/new/assisted')}>
+                Livro com IA
+              </DropdownItem>
               <DropdownItem onSelect={() => setForm('adventure')}>Aventura</DropdownItem>
               <DropdownItem onSelect={() => setForm('campaign')}>Campanha</DropdownItem>
             </Dropdown>
-            <Dropdown
-              mode="action"
-              label="Importar Documento"
-              trigger={
-                <Button variant="secondary">
-                  <Upload className="icon icon-sm" aria-hidden="true" />
-                  Importar Documento
-                </Button>
-              }
-            >
-              <DropdownItem onSelect={() => setImportOpen(true)}>Livro</DropdownItem>
-              <DropdownItem onSelect={() => setAdventureImportOpen(true)}>
-                Nova aventura
-              </DropdownItem>
-            </Dropdown>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setRestoreId(undefined);
-                setRestoreOpen(true);
-              }}
-            >
-              <ArchiveRestore className="icon icon-sm" aria-hidden="true" />
-              Restaurar backup de livro
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setAdventureRestoreId(undefined);
-                setAdventureRestoreOpen(true);
-              }}
-            >
-              <ArchiveRestore className="icon icon-sm" aria-hidden="true" />
-              Restaurar backup de aventura
-            </Button>
-            <Button variant="secondary" onClick={() => void navigate('/books/new/assisted')}>
-              Criar com IA
-            </Button>
-          </div>
+          )
         }
       />
-      <ContinueWorkPanel />
-      <BookRestorePreparations
-        ownerId={ownerId}
-        revision={restoreRevision}
-        onResume={(id) => {
-          setRestoreId(id);
-          setRestoreOpen(true);
-        }}
-      />
+      {section === 'home' && (
+        <div className={styles.homeGrid}>
+          <ContinueWorkPanel compact />
+          <aside className={styles.homeAside} aria-label="Atalhos do Estúdio">
+            <Card className={styles.homeCard}>
+              <h2>Acesso rápido</h2>
+              <p className={styles.hint}>Seus projetos e ferramentas de criação, em um só lugar.</p>
+              <Link to="/studio/projects" className={styles.shortcut}>
+                <FolderOpen className="icon icon-sm" aria-hidden="true" />
+                <span>Ver meus projetos</span>
+                <ArrowRight className="icon icon-sm" aria-hidden="true" />
+              </Link>
+              <Link to="/studio/import" className={styles.shortcut}>
+                <Upload className="icon icon-sm" aria-hidden="true" />
+                <span>Importar ou restaurar</span>
+                <ArrowRight className="icon icon-sm" aria-hidden="true" />
+              </Link>
+            </Card>
+            <Card className={styles.homeCard}>
+              <h2>Precisa retomar uma operação?</h2>
+              <p className={styles.hint}>
+                Encontre importações, restaurações e pedidos que aguardam sua revisão ou
+                confirmação.
+              </p>
+              <Link to="/studio/operations" className={buttonVariants({ variant: 'secondary' })}>
+                Ver operações em andamento
+              </Link>
+            </Card>
+          </aside>
+        </div>
+      )}
+      <div hidden={section !== 'projects'} className={styles.sectionBody}>
+        {section === 'projects' && (
+          <>
+            <div className={styles.typeFilters} role="group" aria-label="Tipo de projeto">
+              {(['all', ...projectKinds] as const).map((type) => (
+                <Button
+                  key={type}
+                  variant="ghost"
+                  aria-pressed={kind === type}
+                  onClick={() => {
+                    const next = new URLSearchParams(params);
+                    if (type === 'all') next.delete('kind');
+                    else next.set('kind', type);
+                    setParams(next);
+                  }}
+                >
+                  {type === 'all' ? 'Todos' : projectLabels[type]}
+                </Button>
+              ))}
+            </div>
+            {projectKinds
+              .filter((type) => kind === 'all' || type === kind)
+              .map((type) => (
+                <StudioProjectSection key={type} kind={type} />
+              ))}
+          </>
+        )}
+      </div>
+      {section === 'import' && (
+        <>
+          <section className={styles.toolSection} aria-labelledby="studio-import-title">
+            <h2 id="studio-import-title">Importar documento</h2>
+            <div className={styles.toolGrid}>
+              <Card className={styles.toolCard}>
+                <BookOpen className="icon" aria-hidden="true" />
+                <h3>Livro</h3>
+                <p>Revise um documento e transforme seu conteúdo em capítulos.</p>
+                <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                  Importar livro
+                </Button>
+              </Card>
+              <Card className={styles.toolCard}>
+                <ScrollText className="icon" aria-hidden="true" />
+                <h3>Aventura</h3>
+                <p>Revise o material importado antes de criar uma aventura particular.</p>
+                <Button variant="secondary" onClick={() => setAdventureImportOpen(true)}>
+                  Importar aventura
+                </Button>
+              </Card>
+            </div>
+          </section>
+          <section className={styles.toolSection} aria-labelledby="studio-restore-title">
+            <h2 id="studio-restore-title">Restaurar backup</h2>
+            <div className={styles.toolGrid}>
+              <Card className={styles.toolCard}>
+                <ArchiveRestore className="icon" aria-hidden="true" />
+                <h3>Backup de livro</h3>
+                <p>Confira o arquivo e restaure uma nova cópia privada do livro.</p>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setRestoreId(undefined);
+                    setRestoreOpen(true);
+                  }}
+                >
+                  Restaurar backup de livro
+                </Button>
+              </Card>
+              <Card className={styles.toolCard}>
+                <ArchiveRestore className="icon" aria-hidden="true" />
+                <h3>Backup de aventura</h3>
+                <p>Recupere uma aventura em nova cópia, com revisão antes da finalização.</p>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setAdventureRestoreId(undefined);
+                    setAdventureRestoreOpen(true);
+                  }}
+                >
+                  Restaurar backup de aventura
+                </Button>
+              </Card>
+            </div>
+          </section>
+          <p className={styles.hint}>
+            Já começou um pedido?{' '}
+            <Link to="/studio/operations">Acompanhar operações em andamento</Link>
+          </p>
+        </>
+      )}
+      <div hidden={section !== 'operations'} className={styles.sectionBody}>
+        {operationsLoaded && (
+          <>
+            <section className={styles.toolSection} aria-label="Importações e restaurações">
+              <h2>Importações e restaurações</h2>
+              <div className={styles.operationPanels}>
+                <div>
+                  <BookRestorePreparations
+                    ownerId={ownerId}
+                    revision={restoreRevision}
+                    onResume={(id) => {
+                      setRestoreId(id);
+                      setRestoreOpen(true);
+                    }}
+                  />
+                </div>
+                <div>
+                  <AdventureRestorePreparations
+                    ownerId={ownerId}
+                    revision={adventureRestoreRevision}
+                    onResume={(id) => {
+                      setAdventureRestoreId(id);
+                      setAdventureRestoreOpen(true);
+                    }}
+                  />
+                </div>
+                <div>
+                  <AdventureImportPreparations
+                    onActivated={(id) => {
+                      if (active.current) void navigate('/adventures/' + encodeURIComponent(id));
+                    }}
+                  />
+                </div>
+              </div>
+            </section>
+            <section className={styles.toolSection} aria-label="Operações de campanhas">
+              <h2>Campanhas</h2>
+              <div className={styles.operationPanels}>
+                <div>
+                  <CampaignComparisonPreparations
+                    onReviewAdoption={(context) => {
+                      setAdoption({ ...context });
+                      setAdoptionAttempt((n) => n + 1);
+                      setAdoptionOpen(true);
+                    }}
+                  />
+                </div>
+                <div>
+                  <CampaignAdoptionPreparations />
+                </div>
+
+                <div>
+                  <CampaignCapturePreparations
+                    onActivated={(id) => void navigate('/campaigns/' + encodeURIComponent(id))}
+                  />
+                </div>
+              </div>
+            </section>
+            <section className={styles.toolSection} aria-label="Exclusões em andamento">
+              <h2>Exclusões</h2>
+              <div className={styles.operationPanels}>
+                <div>
+                  <AdventureDeletionPreparations />
+                </div>
+                <div>
+                  <CampaignDeletionPreparations />
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+      </div>
       <BookRestoreDialog
         ownerId={ownerId}
         open={restoreOpen}
@@ -154,14 +330,7 @@ function StudioSession({ ownerId }: { ownerId: string }) {
           void navigate('/books/' + encodeURIComponent(id));
         }}
       />
-      <AdventureRestorePreparations
-        ownerId={ownerId}
-        revision={adventureRestoreRevision}
-        onResume={(id) => {
-          setAdventureRestoreId(id);
-          setAdventureRestoreOpen(true);
-        }}
-      />
+
       <AdventureRestoreDialog
         ownerId={ownerId}
         open={adventureRestoreOpen}
@@ -179,11 +348,7 @@ function StudioSession({ ownerId }: { ownerId: string }) {
           void navigate('/adventures/' + encodeURIComponent(id));
         }}
       />
-      <AdventureImportPreparations
-        onActivated={(id) => {
-          if (active.current) void navigate('/adventures/' + encodeURIComponent(id));
-        }}
-      />
+
       <AdventureImportDialog
         open={adventureImportOpen}
         onClose={() => setAdventureImportOpen(false)}
@@ -192,16 +357,6 @@ function StudioSession({ ownerId }: { ownerId: string }) {
         }}
       />
 
-      <AdventureDeletionPreparations />
-      <CampaignDeletionPreparations />
-      <CampaignComparisonPreparations
-        onReviewAdoption={(context) => {
-          setAdoption({ ...context });
-          setAdoptionAttempt((n) => n + 1);
-          setAdoptionOpen(true);
-        }}
-      />
-      <CampaignAdoptionPreparations />
       {adoption && (
         <CampaignAdoptionDialog
           key={adoptionAttempt}
@@ -210,26 +365,7 @@ function StudioSession({ ownerId }: { ownerId: string }) {
           onClose={() => setAdoptionOpen(false)}
         />
       )}
-      <CampaignCapturePreparations
-        onActivated={(id) => void navigate('/campaigns/' + encodeURIComponent(id))}
-      />
-      <div className={styles.filters}>
-        <Dropdown
-          mode="select"
-          label="Tipo de projeto"
-          value={kind}
-          onValueChange={(value) => setKind(value as 'all' | StudioProjectKind)}
-          options={[
-            { value: 'all', label: 'Todos' },
-            ...projectKinds.map((value) => ({ value, label: projectLabels[value] })),
-          ]}
-        />
-      </div>
-      {projectKinds
-        .filter((type) => kind === 'all' || type === kind)
-        .map((type) => (
-          <StudioProjectSection key={type} kind={type} />
-        ))}
+
       <BookFormDialog open={form === 'book'} onClose={() => setForm(null)} onSubmit={submitBook} />
       <ImportBookModal
         open={importOpen}
@@ -256,7 +392,10 @@ function StudioSession({ ownerId }: { ownerId: string }) {
 }
 export function StudioPage() {
   const { user, loading } = useAuth();
+  const { pathname } = useLocation();
+  const destination = studioDestination(pathname);
   if (loading) return <LoadingState label="Carregando sessão..." />;
   if (!user) return <Navigate to="/login" replace />;
-  return <StudioSession key={user.uid} ownerId={user.uid} />;
+  if (!destination) return <Navigate to="/studio" replace />;
+  return <StudioSession key={user.uid} ownerId={user.uid} section={destination.id} />;
 }

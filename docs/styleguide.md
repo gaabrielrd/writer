@@ -88,11 +88,30 @@ npm run validate
 
 ## Direção visual: estúdio de escrita
 
-A referência de composição é o [Tripo Studio](https://studio.tripo3d.ai/pt):
-barra destacada em cápsula, vidro fumê, superfícies arredondadas e controles discretos.
-O Writer mantém identidade própria, com tons de papel e carvão quente, bronze/âmbar
-para ações e tipografia editorial na escrita. Nenhum logotipo, imagem ou conteúdo do
-Tripo integra o aplicativo.
+Na área logada, a referência de organização é a interface do ChatGPT fornecida
+pelo operador: navegação lateral, marca discreta e área de trabalho contínua.
+O Writer conserva suas cores semânticas, os três temas e a tipografia editorial
+do manuscrito. Landing page, login e leitor público mantêm sua composição.
+
+- **Área logada:** lateral de 240 px recolhível, barra contextual de 48 px e
+  conteúdo sem largura máxima. Margens de 12–16 px; rolagem principal dentro da
+  área de trabalho e lateral com rolagem própria se necessário.
+- **Navegação:** links diretos em Criar (Estúdio, Universos e Imagens), Explorar
+  (Publicações, Catálogo e Biblioteca) e Configurar (IA), com destino atual por
+  aria-current. A marca e o contexto da página ficam à esquerda e centralizados verticalmente
+  em suas barras.
+  O cabeçalho principal só mostra o botão de abrir quando a lateral está fechada.
+  Conta, créditos e tema ficam agrupados em um card no rodapé, sem divisor externo.
+  O tema usa três botões segmentados (Claro, Escuro e Sépia) com aria-pressed;
+  saldo e seletor compartilham fundo transparente, borda discreta, raio e altura. Até 760 px, a navegação abre em
+  gaveta modal com Escape, foco contido e retorno ao gatilho.
+- **Densidade:** controles em 14 px, títulos de página em 20 px, raios menores e
+  superfícies opacas, sem sombras decorativas. Tokens compactos são locais ao
+  shell autenticado; o manuscrito mantém sua fonte e entrelinha.
+- **Toque:** navegação e gatilhos têm pelo menos 44 px em ponteiros de toque.
+  Recolher a lateral amplia o conteúdo sem remontar o editor.
+- **Área pública:** conserva a barra em cápsula e o fundo ambiente descritos
+  abaixo. Não aplique a densidade do estúdio ao leitor público.
 
 - **Hierarquia:** fundo ambiente → shell translúcido → superfície de trabalho → controles.
 - **Vidro:** `.glass-surface` usa fallback opaco e aplica `backdrop-filter` somente
@@ -122,14 +141,12 @@ sistema continuam compartilhando um único provider. A suíte visual usa serviç
 fictícios em configuração exclusiva de teste, nunca um modo de demonstração no
 bundle de produção.
 
-O header usa navegação de bibliotecas à esquerda com breadcrumb do livro nas
-rotas privadas. Marca, separadores, menu e título ficam centralizados verticalmente,
-com intervalos horizontais uniformes de `--space-4` no desktop e `--space-2`
-até 900 px. Os dois separadores compartilham o mesmo estilo; o menu mantém
-altura de interação e não acrescenta padding horizontal ao intervalo.
-O saldo mostra somente ícone e número, com detalhes no tooltip.
-Nome/avatar abre email e saída em dropdown. Imagens da biblioteca têm miniaturas
-2:3, carregamento tardio e controles de gerenciamento com rótulos acessíveis.
+Na área logada, a barra contextual mostra o espaço e o breadcrumb do livro.
+O saldo conserva ícone/número e detalhes no tooltip, com o mesmo tratamento
+visual do seletor segmentado de tema; nome/avatar abre email,
+configuração de IA e saída em dropdown no rodapé da lateral. No celular, essas
+ações ficam dentro da gaveta. Imagens conservam miniaturas 2:3, carregamento
+tardio e rótulos acessíveis.
 
 Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
 
@@ -346,3 +363,43 @@ parâmetros solicitados/usados legíveis e quebra de linha. Conversas antigas
 identificam Auto e modelo não registrado. Não mostre chaves nem pensamentos
 internos. Retry conserva acesso após mudar preferências; regenerar indica
 que usa a configuração atual.
+
+## Organização do Estúdio
+
+Estúdio expõe Home, Projetos, Importar e restaurar e Em andamento como
+subitens da lateral. O item atual tem indicação visual e aria-current;
+o cabeçalho contextual identifica Estúdio e a seção. Home concentra
+retomadas recentes, Novo projeto e atalhos, com o mesmo tratamento para
+livros, aventuras e campanhas. Configurações pessoais ficam em Preferências.
+
+Projetos usa linhas compactas: miniatura, título, tipo, metadados e ações.
+Filtros por tipo ficam acima das listas; filtros editoriais e operacionais
+permanecem junto da lista correspondente. Títulos longos quebram sem
+sobrepor ações. No celular, metadados passam para a linha seguinte.
+A paginação continua independente para cada tipo de projeto.
+
+Importações e backups ficam em grupos distintos com ações explícitas.
+Em andamento agrupa painéis nativos em importações/restaurações, campanhas
+e exclusões. Estados vazios desses painéis usam apresentação compacta,
+sem eliminar suas mensagens ou ações. Grades passam para uma coluna em
+telas menores. Superfícies, foco e tipografia continuam usando os tokens
+semânticos dos três temas e os componentes compartilhados.
+
+### Largura dos painéis
+
+Preferências oferece Pequeno (960 px), Médio (1280 px, padrão) e Grande
+(1600 px). O limite se aplica ao conteúdo centralizado da área logada e
+sempre respeita o espaço disponível. A lateral e a barra contextual
+conservam sua largura. O modo expandido do editor usa toda a área disponível.
+Os subitens do Estúdio usam ícones Lucide, sem linha vertical decorativa.
+
+Os filtros editoriais e de publicação/condição em Meus projetos usam grupos
+de botões segmentados com rótulo visível, nome acessível e aria-pressed na
+opção ativa. Reutilizam o tratamento do filtro de tipo e quebram linhas
+conforme o espaço disponível, preservando as seleções na URL.
+
+Os filtros segmentados de projetos usam controles de 28 px em ponteiros
+precisos e 44 px para toque. Eles acompanham o título da seção quando há
+espaço e quebram linhas sem transbordar. Configurações de IA usam abas
+segmentadas compactas, PageHeader sem padding duplicado e EmptyState
+compartilhado para ausência de personas criadas; retorno é contextual.

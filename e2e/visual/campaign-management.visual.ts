@@ -3,6 +3,7 @@ import type { Campaign } from '../../src/features/campaigns/model/campaign';
 import { chooseDropdown } from '../dropdown';
 import {
   capture,
+  expectWorkspaceButton,
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
@@ -321,7 +322,7 @@ test('troca de UID descarta resposta tardia e conserva pedido somente na conta o
   ).toBeVisible();
   await expect(dialog).toHaveCount(0);
   await page.evaluate(() => window.dispatchEvent(new Event('writer.visual.release-campaign')));
-  await expect(page.getByRole('button', { name: /Outro Autor de Exemplo/ })).toBeVisible();
+  await expectWorkspaceButton(page, /Outro Autor de Exemplo/);
   await expect(page.getByText('TÍTULO PRIVADO DA PRIMEIRA CONTA', { exact: true })).toHaveCount(0);
   await expect(page.getByText('NOTA PRIVADA DA PRIMEIRA CONTA', { exact: true })).toHaveCount(0);
   expect(await page.evaluate((key) => localStorage.getItem(key), pendingKey)).toBe(preserved);

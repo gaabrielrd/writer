@@ -237,7 +237,7 @@ test.describe('salvamento durante o gesto', () => {
     await editor.evaluate((element) => {
       const area = element.closest('[data-editor-scroll-area]');
       if (area) area.scrollTop = 0;
-      window.scrollTo(0, 0);
+      document.getElementById('main-content')?.scrollTo(0, 0);
     });
     await page.clock.runFor(32);
     const points = await editor.evaluate((element) => {
@@ -280,7 +280,9 @@ test.describe('salvamento durante o gesto', () => {
     await capture(page, testInfo, 'selecao-apos-autosave');
     const scrollArea = page.locator('[data-editor-scroll-area]');
     if (testInfo.project.name.startsWith('mobile')) {
-      await page.evaluate((distance) => window.scrollBy(0, distance), points.end.y + 100);
+      await page.locator('#main-content').evaluate((element, distance) => {
+        element.scrollBy(0, distance);
+      }, points.end.y + 100);
     } else {
       await scrollArea.evaluate((element) => {
         element.scrollTop = 300;
@@ -288,7 +290,7 @@ test.describe('salvamento durante o gesto', () => {
     }
     await expect(toolbar).toHaveCount(0);
     if (testInfo.project.name.startsWith('mobile')) {
-      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.locator('#main-content').evaluate((element) => element.scrollTo(0, 0));
     } else {
       await scrollArea.evaluate((element) => {
         element.scrollTop = 0;

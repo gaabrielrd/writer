@@ -4,6 +4,7 @@ import { chooseDropdown } from '../dropdown';
 import { FIXTURE_BOOK_ID } from './fixtures/data';
 import {
   capture,
+  expectWorkspaceButton,
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
@@ -521,7 +522,7 @@ test('troca de conta descarta resposta tardia e oculta planejamento da conta ant
     sessionStorage.setItem('writer.visual.account', 'second');
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
-  await expect(page.getByRole('button', { name: /Outro Autor de Exemplo/ })).toBeVisible();
+  await expectWorkspaceButton(page, /Outro Autor de Exemplo/);
   await expect(page.getByText('PLANO PRIVADO DA PRIMEIRA CONTA', { exact: true })).toHaveCount(0);
   await expect(page.getByRole('dialog', { name: 'Novo arco', exact: true })).toHaveCount(0);
   await page.evaluate(() => {
@@ -529,7 +530,7 @@ test('troca de conta descarta resposta tardia e oculta planejamento da conta ant
     sessionStorage.removeItem('writer.visual.narrative-delay-create');
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
-  await expect(page.getByRole('button', { name: /Marina de Exemplo/ })).toBeVisible();
+  await expectWorkspaceButton(page, /Marina de Exemplo/);
   await page.getByRole('link', { name: /O Atlas das Marés Esquecidas/ }).click();
   await page.getByRole('tab', { name: 'Arcos e cronologia', exact: true }).click();
   await expect(planner).toBeVisible();

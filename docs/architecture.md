@@ -3937,3 +3937,51 @@ selecionam o codec de variantWrites ao validar sua procedência nativa.
 Wire antigo continua legível/coletável. Legado parcial cuja prova mudou exige
 nova preparação explícita, preservando dados. Fixture fictícia anterior à
 mudança comprova a leitura sem depender do histórico Git.
+
+## Composição da área logada
+
+App mantém os providers únicos e escolhe AuthenticatedWorkspace para a sessão
+autenticada nas rotas de trabalho. Home, login e /read permanecem na composição
+pública. A composição em src/app mantém navegação, barra contextual e Outlet,
+sem carregar dados de domínio diretamente. BookNavigation conserva seu serviço
+público para o título; conta, créditos e IA usam as interfaces das features.
+
+A lateral recolhe sem desmontar o conteúdo. O estado de abertura é transitório
+e isolado por conta; no celular, Dialog fornece contenção e retorno de foco.
+A rota muda e fecha a gaveta, inclusive por histórico do navegador. Os tokens
+de densidade são herdados somente dentro da área logada; cores e temas seguem
+o provider existente. Nenhuma API, regra de acesso ou armazenamento foi alterado.
+
+## Seções do Estúdio
+
+A rota /studio/* mantém StudioSession por conta, com Home em /studio,
+Projetos em /studio/projects, Importar e restaurar em /studio/import e
+Em andamento em /studio/operations. Os destinos públicos da feature studio
+alimentam os subitens laterais e o contexto da barra principal.
+
+Home consulta até quatro retomadas pelo serviço existente, sem consultar
+as oito listas de operações nem produzir contadores fictícios. Projetos
+monta suas consultas apenas enquanto a seção está visível, com paginação
+independente por tipo. Tipo, estado editorial e condição/publicação são
+parâmetros da URL. Links de projeto transportam o retorno à listagem no
+estado da navegação, preservado ao trocar abas de livro ou aventura.
+
+As preparações nativas são montadas na primeira visita a Em andamento e
+permanecem montadas, ocultas, nas demais seções do Estúdio. Os diálogos de
+importação, restauração e criação pertencem à sessão, fora dessas regiões.
+A saída do Estúdio continua seguindo os guards e protocolos nativos; esta
+organização não acrescenta persistência de operações.
+
+Preferências de fuso são editadas em /settings/preferences pela interface
+pública de work-progress. A retomada apenas lê a preferência e mantém o
+fuso do dispositivo como fallback. Não há alteração de backend ou cobrança.
+
+### Preferência local de largura
+
+WorkspaceLayoutProvider mantém contentWidth junto do estado de expansão.
+O adaptador workspacePreferencesStorage lê/grava somente a escolha de largura
+no navegador, com fallback médio para ausência, valor inválido ou bloqueio.
+A preferência tem o mesmo escopo local do tema, sem sincronização de conta.
+WorkPreferencesPage usa o contrato público de shared/ui; o shell aplica os
+limites por variável CSS, com largura fluida abaixo do limite e exceção para
+o modo expandido. Nenhuma chamada de backend foi acrescentada.

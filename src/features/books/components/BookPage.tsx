@@ -1,5 +1,5 @@
 import { useState, useEffect, useId, useRef } from 'react';
-import { useParams, Link, useNavigate, useSearchParams } from 'react-router';
+import { useParams, Link, useNavigate, useSearchParams, useLocation } from 'react-router';
 import {
   ArrowLeft,
   Book as BookIcon,
@@ -68,6 +68,12 @@ const TABS: TabDef[] = [
 ];
 
 function BookDetail() {
+  const studioReturnState = useLocation().state as { studioReturnTo?: unknown } | null;
+  const studioReturnTo =
+    typeof studioReturnState?.studioReturnTo === 'string' &&
+    /^\/studio\/projects(?:\?|$)/.test(studioReturnState.studioReturnTo)
+      ? studioReturnState.studioReturnTo
+      : '/studio/projects';
   const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -79,11 +85,14 @@ function BookDetail() {
   const requestedTab = searchParams.get('tab');
   const activeTab = TABS.find((tab) => tab.id === requestedTab)?.id ?? 'chapters';
   const setActiveTab = (tab: TabId) =>
-    setSearchParams((current) => {
-      const next = new URLSearchParams(current);
-      next.set('tab', tab);
-      return next;
-    });
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.set('tab', tab);
+        return next;
+      },
+      { state: studioReturnState },
+    );
   const [isPersonaOpen, setIsPersonaOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -239,9 +248,9 @@ function BookDetail() {
         </Alert>
       )}
       <div className={styles.backRow}>
-        <Link to="/" className={styles.backLink}>
+        <Link to={studioReturnTo} className={styles.backLink}>
           <ArrowLeft className="icon icon-sm" aria-hidden="true" />
-          Minhas Obras
+          Voltar aos projetos
         </Link>
       </div>
 

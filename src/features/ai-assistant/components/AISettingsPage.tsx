@@ -1,7 +1,7 @@
 import { Link, useSearchParams, useLocation } from 'react-router';
 import { ArrowLeft, Users, Settings2 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
-import { Card, PageHeader } from '@/shared/ui';
+import { Button, Card, PageHeader } from '@/shared/ui';
 import { PersonaManager } from './PersonaManager';
 import { BYOKSettingsDialog } from './BYOKSettingsDialog';
 import styles from './Personas.module.css';
@@ -27,17 +27,21 @@ export function AISettingsPage() {
   };
   return (
     <div className={styles.settingsPage}>
-      <Link to={returnTo} className={styles.backLink}>
-        <ArrowLeft className="icon icon-sm" aria-hidden="true" />
-        {returnTo.includes('/editor/')
-          ? 'Voltar ao editor'
-          : returnTo.startsWith('/books/')
-            ? 'Voltar ao livro'
-            : 'Voltar à biblioteca'}
-      </Link>
       <PageHeader
         title="Inteligência artificial"
         description="Configure a conexão e as vozes que acompanham sua escrita."
+        breadcrumbs={
+          state?.returnTo && (
+            <Link to={returnTo} className={styles.backLink}>
+              <ArrowLeft className="icon icon-sm" aria-hidden="true" />
+              {returnTo.includes('/editor/')
+                ? 'Voltar ao editor'
+                : returnTo.startsWith('/books/')
+                  ? 'Voltar ao livro'
+                  : 'Voltar'}
+            </Link>
+          )
+        }
       />
       <div
         className={styles.tabBar}
@@ -45,7 +49,8 @@ export function AISettingsPage() {
         aria-label="Configurações de inteligência artificial"
       >
         {tabs.map(({ id, label, icon: Icon }, index) => (
-          <button
+          <Button
+            variant="ghost"
             type="button"
             key={id}
             id={`ai-tab-${id}`}
@@ -72,7 +77,7 @@ export function AISettingsPage() {
           >
             <Icon className="icon icon-sm" aria-hidden="true" />
             {label}
-          </button>
+          </Button>
         ))}
       </div>
       <section role="tabpanel" id={`ai-panel-${active}`} aria-labelledby={`ai-tab-${active}`}>

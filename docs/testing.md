@@ -3236,3 +3236,33 @@ passou com 4.890 frontend, 94 scripts e 3.989 Functions, além de tipos/build/sm
 Não houve mudança de produção nem nova rodada de browser/Rules; as 36 jornadas
 do binding/rotas em 38c6673 permanecem evidência anterior, distinguida no registro.
 Política de perguntas e aceites humanos/comerciais não são aprovados pelos testes.
+
+## Navegação lateral e área de trabalho
+
+AuthenticatedWorkspace.test.tsx verifica recolhimento e continuidade do foco;
+StudioNavigation.test.tsx cobre links diretos, destino atual e teclado.
+authenticated-workspace.visual.ts mede o preenchimento da tela, lateral de
+240 px, ampliação do editor sem perda de texto, gaveta/Escape/retorno de foco
+e navegação entre Estúdio, Universos, Imagens e IA em 320 px.
+A configuração visual executa desktop/celular nos três temas com serviços
+fictícios e rede externa bloqueada. Os cenários de Estúdio, Imagens e progresso
+usam os mesmos links laterais e abrem a gaveta quando necessário.
+
+Use WRITER_VISUAL_PORT exclusivo e execute:
+
+    npx playwright test --config playwright.visual.config.ts e2e/visual/authenticated-workspace.visual.ts e2e/visual/studio.visual.ts e2e/visual/image-library.visual.ts
+
+## Reorganização do Estúdio: verificação pendente
+
+O incremento de 2026-11-02 separa /studio em quatro destinos e move o fuso
+para /settings/preferences. Não foram executados testes, validate, build,
+checagem de tipos ou jornadas de navegador neste incremento, por orientação
+do usuário. Resultados anteriores não validam esta reorganização.
+
+Quando houver autorização, adaptar e executar os cenários que ainda
+esperam listas e preparações na Home. Cobrir os quatro destinos e os
+subitens atuais, montagem tardia e retenção dos painéis de operações,
+criação/importação/restauração pelos diálogos existentes, filtros na URL,
+paginação independente e retorno filtrado após trocar abas do projeto.
+Conferir preferências de fuso, estados de dados e responsividade nos três
+temas. A documentação desses cenários não representa execução ou aprovação.

@@ -18,6 +18,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div
+      data-slot="page-header"
       className={cn(
         'flex flex-col gap-4 border-b border-[hsl(var(--border))] pb-5 mb-6',
         className,

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
-import { Link, Navigate, useParams } from 'react-router';
+import { Link, Navigate, useParams, useLocation } from 'react-router';
 import { Globe, Map } from 'lucide-react';
 import {
   ProjectProgressPanel,
@@ -247,6 +247,13 @@ function CampaignContent({
   onMaterialProjection: (projection: string | null) => void;
   onMaterialInvalidated: () => void;
 }) {
+  const studioReturnState = useLocation().state as { studioReturnTo?: unknown } | null;
+  const studioReturnTo =
+    typeof studioReturnState?.studioReturnTo === 'string' &&
+    /^\/studio\/projects(?:\?|$)/.test(studioReturnState.studioReturnTo)
+      ? studioReturnState.studioReturnTo
+      : '/studio/projects';
+
   const [editing, setEditing] = useState(false),
     [pending, setPending] = useState(false),
     [adoption, setAdoption] = useState<ComparisonReadEnvelope | null>(null),
@@ -303,8 +310,8 @@ function CampaignContent({
     enabled: Boolean(result?.campaign && result.campaign.ownerId === ownerId),
   });
   const back = (
-    <Link to="/studio" className={buttonVariants({ variant: 'secondary' })}>
-      Voltar ao Estúdio
+    <Link to={studioReturnTo} className={buttonVariants({ variant: 'secondary' })}>
+      Voltar aos projetos
     </Link>
   );
   if (result?.attempt !== attempt) return <LoadingState label="Carregando campanha..." />;

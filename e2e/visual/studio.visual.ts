@@ -3,6 +3,7 @@ import { chooseDropdown } from '../dropdown';
 import { books } from './fixtures/data';
 import {
   capture,
+  navigateWorkspace,
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
@@ -33,15 +34,8 @@ test('Estúdio retoma livros e abre os cinco espaços com teclado em 320px', asy
   await page.getByRole('link', { name: new RegExp(books[0].title) }).click();
   await expect(page).toHaveURL(/\/books\/visual-atlas$/);
   await expect(page.getByRole('heading', { name: books[0].title, exact: true })).toBeVisible();
-  const navigation = page.getByRole('navigation', { name: 'Navegação principal' });
   await expect(page.getByLabel('Livro atual', { exact: true })).toContainText(books[0].title);
-  await navigation.getByRole('button', { name: 'Estúdio', exact: true }).focus();
-  await page.keyboard.press('Enter');
-  for (const name of ['Universos', 'Estúdio', 'Publicações', 'Catálogo', 'Biblioteca']) {
-    await expect(page.getByRole('menuitem', { name, exact: true })).toBeVisible();
-  }
-  await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).focus();
-  await page.keyboard.press('Enter');
+  await navigateWorkspace(page, 'Estúdio');
   await expect(page).toHaveURL(/\/studio$/);
   await capture(page, testInfo, 'estudio-320');
   for (const [name, route] of [
@@ -49,9 +43,7 @@ test('Estúdio retoma livros e abre os cinco espaços com teclado em 320px', asy
     ['Catálogo', '/catalog'],
     ['Biblioteca', '/biblioteca'],
   ]) {
-    await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('button').click();
-    await page.getByRole('menuitem', { name, exact: true }).focus();
-    await page.keyboard.press('Enter');
+    await navigateWorkspace(page, name);
     await expect(page).toHaveURL(new RegExp(route + '$'));
     await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: /Comprar|Pagar|Publicar agora/ })).toHaveCount(0);
@@ -105,8 +97,7 @@ test('aventura vinculada a um universo mantém sinopse e acesso ao contexto', as
   await page.getByLabel('Nome do universo').fill('Ilhas das lanternas');
   await page.getByLabel('Descrição do universo').fill('Um mundo para livros e aventuras.');
   await page.getByRole('button', { name: 'Salvar universo' }).click();
-  await page.getByRole('button', { name: 'Universos', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
+  await navigateWorkspace(page, 'Estúdio');
   const dialog = await newProject(page, 'Aventura');
   await dialog.getByLabel('Título da aventura').fill('O mapa das lanternas perdidas');
   await dialog.getByLabel('Sinopse da aventura').fill('Uma expedição em busca da cidade submersa.');
@@ -176,7 +167,15 @@ test('troca de conta durante criação pendente descarta formulário e resposta 
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
   await expect(page.getByRole('dialog')).toHaveCount(0);
+  if (page.viewportSize()!.width <= 760) {
+    await page.getByRole('button', { name: 'Abrir navegação' }).click();
+  }
   await expect(page.getByRole('button', { name: /Outro Autor de Exemplo/ })).toBeVisible();
+  if (page.viewportSize()!.width <= 760) {
+    const navigation = page.getByRole('dialog', { name: 'Navegação do Writer' });
+    await navigation.getByRole('button', { name: 'Fechar', exact: true }).click();
+    await expect(navigation).toBeHidden();
+  }
   await page.evaluate(() => window.dispatchEvent(new Event('writer.visual.release-create')));
   await expect(page).toHaveURL(/\/studio$/);
   await expect(

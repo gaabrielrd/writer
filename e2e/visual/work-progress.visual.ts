@@ -5,6 +5,8 @@ import { chooseDropdown } from '../dropdown';
 import { books, chapters, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 import {
   capture,
+  expectWorkspaceButton,
+  navigateWorkspace,
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
@@ -48,8 +50,7 @@ async function saveGoal(panel: Locator, value: string) {
   await expect(panel.getByText('Progresso salvo.', { exact: true })).toBeVisible();
 }
 async function studio(page: Page) {
-  await page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('button').click();
-  await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
+  await navigateWorkspace(page, 'Estúdio');
   const region = page.getByRole('region', { name: 'Continuar meu trabalho', exact: true });
   await expect(region).toBeVisible();
   return region;
@@ -415,7 +416,7 @@ test('troca de conta ignora resultado tardio e mantém progresso privado por UID
     sessionStorage.setItem('writer.visual.account', 'second');
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
-  await expect(page.getByRole('button', { name: /Outro Autor de Exemplo/ })).toBeVisible();
+  await expectWorkspaceButton(page, /Outro Autor de Exemplo/);
   await page.evaluate(() => {
     sessionStorage.removeItem('writer.visual.work-delay');
     window.dispatchEvent(new Event('writer.visual.work-release'));
@@ -428,7 +429,7 @@ test('troca de conta ignora resultado tardio e mantém progresso privado por UID
     sessionStorage.removeItem('writer.visual.account');
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
-  await expect(page.getByRole('button', { name: /Marina de Exemplo/ })).toBeVisible();
+  await expectWorkspaceButton(page, /Marina de Exemplo/);
   await progress(page);
   await expect(page.getByLabel('Meta total de palavras')).toHaveValue('987');
 });

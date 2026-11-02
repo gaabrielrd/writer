@@ -143,3 +143,44 @@ export async function expectDialogWithinViewport(page: Page): Promise<void> {
   expect.soft(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width + 1);
   expect.soft(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height + 1);
 }
+
+/** Opens the drawer only when the direct workspace links are not visible. */
+export async function navigateWorkspace(page: Page, name: string): Promise<void> {
+  let link = page
+    .getByRole('navigation', { name: 'Navegação principal' })
+    .getByRole('link', { name, exact: true });
+  if (!(await link.isVisible())) {
+    await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+    link = page
+      .getByRole('dialog', { name: 'Navegação do Writer' })
+      .getByRole('link', { name, exact: true });
+  }
+  await link.focus();
+  await page.keyboard.press('Enter');
+}
+
+/** Reveal a workspace control without leaving navigation open over the next action. */
+export async function expectWorkspaceButton(page: Page, name: string | RegExp): Promise<void> {
+  const button = page.getByRole('button', { name, exact: true });
+  const reveal = !(await button.isVisible());
+  if (reveal) await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+  await expect(button).toBeVisible();
+  if (reveal) {
+    const drawer = page.getByRole('dialog', { name: 'Navegação do Writer' });
+    if (await drawer.isVisible()) {
+      await drawer.getByRole('button', { name: 'Fechar', exact: true }).click();
+      await expect(drawer).toBeHidden();
+    } else {
+      await page
+        .getByRole('complementary', { name: 'Barra lateral do Writer' })
+        .getByRole('button', { name: 'Recolher navegação' })
+        .click();
+    }
+  }
+}
+
+export async function openWorkspaceNavigation(page: Page): Promise<void> {
+  if (!(await page.getByRole('navigation', { name: 'Navegação principal' }).isVisible())) {
+    await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+  }
+}

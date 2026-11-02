@@ -6,3 +6,4 @@ export { ContinueWorkPanel } from './components/ContinueWorkPanel';
 export { useWorkActivity } from './hooks/useWorkActivity';
 export type { WorkActivityFeedback } from './hooks/useWorkActivity';
 export { WorkActivityNotice } from './components/WorkActivityNotice';
+export { WorkPreferencesPage } from './components/WorkPreferencesPage';

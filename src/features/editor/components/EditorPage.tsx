@@ -747,7 +747,7 @@ function EditorSession() {
     currentIndex !== -1 && currentIndex < chapters.length - 1 ? chapters[currentIndex + 1] : null;
 
   return (
-    <div className={styles.pageLayout} data-workspace-expanded={expanded}>
+    <div className={styles.pageLayout} data-editor-page data-workspace-expanded={expanded}>
       <BusyNavigationGuard busy={operationBusy} />
       <WorkHistoryDialog
         open={historyOpen}

@@ -30,6 +30,7 @@ export function ErrorState({
 
   return (
     <div
+      data-slot="error-state"
       role="alert"
       className={cn(
         'flex flex-col items-center justify-center p-8 text-center rounded-lg border border-[hsl(var(--destructive))]/30 bg-[hsl(var(--destructive))]/5 max-w-lg mx-auto my-6 gap-3',

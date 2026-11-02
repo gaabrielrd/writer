@@ -2,6 +2,7 @@ import type { Page, Locator } from '@playwright/test';
 import { chooseDropdown } from '../dropdown';
 import {
   capture,
+  expectWorkspaceButton,
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
@@ -426,7 +427,7 @@ test('teclado em 320px e troca de UID descartam resposta tardia e preservam recu
   await page.evaluate(() => window.dispatchEvent(new Event('writer.visual.capture-release')));
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByText('Mesa privada da primeira conta', { exact: true })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /Outro Autor de Exemplo/ })).toBeVisible();
+  await expectWorkspaceButton(page, /Outro Autor de Exemplo/);
   const secondRecords = await page.evaluate(() => {
     const rows = JSON.parse(sessionStorage.getItem('writer.visual.campaign-bases') ?? '[]') as [
       string,

@@ -11,6 +11,7 @@ import { AssistedBookPage, BookPage, ReaderView } from '@/features/books';
 import { LorePage } from '@/features/lore';
 import { EditorPage } from '@/features/editor';
 import { AISettingsPage } from '@/features/ai-assistant';
+import { WorkPreferencesPage } from '@/features/work-progress';
 import { StudioPage } from '@/features/studio';
 import { AdventurePage } from '@/features/adventures';
 import { AdventureBlockEditorPage } from '@/features/adventure-blocks';
@@ -39,7 +40,7 @@ export const routes: RouteObject[] = [
         element: <LoginPage />,
       },
       {
-        path: 'studio',
+        path: 'studio/*',
         element: (
           <SignedInRoute>
             <StudioPage />
@@ -129,6 +130,14 @@ export const routes: RouteObject[] = [
       },
       { path: 'library', element: <ImageLibraryPage /> },
       { path: 'settings/ai', element: <AISettingsPage /> },
+      {
+        path: 'settings/preferences',
+        element: (
+          <SignedInRoute>
+            <WorkPreferencesPage />
+          </SignedInRoute>
+        ),
+      },
       { path: 'books/new/assisted', element: <AssistedBookPage /> },
       { path: 'universes', element: <UniversePage /> },
       { path: 'universes/:universeId/lore', element: <UniverseLorePage /> },

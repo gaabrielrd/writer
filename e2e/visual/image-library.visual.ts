@@ -1,10 +1,20 @@
-import { test, expect, capture, expectNoHorizontalOverflow, openBookCreation } from './support';
+import {
+  test,
+  expect,
+  capture,
+  expectNoHorizontalOverflow,
+  openBookCreation,
+  navigateWorkspace,
+} from './support';
 import { books, FIXTURE_BOOK_ID } from './fixtures/data';
 
 test('header compacto, menus por teclado e gerenciamento da biblioteca', async ({
   page,
 }, testInfo) => {
-  await page.goto('/');
+  await page.goto('/studio');
+  if (page.viewportSize()!.width <= 760) {
+    await page.getByRole('button', { name: 'Abrir navegação' }).click();
+  }
   const credits = page.getByRole('button', { name: '84 créditos de IA, plano free' });
   await expect(credits).toHaveText('84');
   await credits.focus();
@@ -17,16 +27,8 @@ test('header compacto, menus por teclado e gerenciamento da biblioteca', async (
   await expect(page.getByRole('menuitem', { name: 'Sair' })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(account).toBeFocused();
-  const nav = page.getByRole('button', { name: 'Estúdio', exact: true });
-  await nav.focus();
-  await page.keyboard.press('Enter');
-  await page.getByRole('menuitem', { name: 'Biblioteca de Imagens' }).click();
+  await navigateWorkspace(page, 'Biblioteca de Imagens');
   await expect(page).toHaveURL(/\/library$/);
-  await expect(page.getByRole('button', { name: 'Biblioteca de Imagens' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Estúdio', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('navigation', { name: 'Navegação principal' })).toHaveText(
-    '/Biblioteca de Imagens',
-  );
   await expect(page.getByRole('heading', { name: 'Biblioteca de Imagens' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Excluir Capa em uso' })).toBeDisabled();
   await capture(page, testInfo, 'biblioteca-de-imagens');
@@ -56,5 +58,8 @@ test('wizard seleciona capa da biblioteca sem consumir créditos', async ({ page
   await expect(page.getByAltText('Capa selecionada de Minha obra')).toBeVisible();
   await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Minha obra' })).toBeVisible();
+  if (page.viewportSize()!.width <= 760) {
+    await page.getByRole('button', { name: 'Abrir navegação' }).click();
+  }
   await expect(page.getByRole('button', { name: '84 créditos de IA, plano free' })).toBeVisible();
 });

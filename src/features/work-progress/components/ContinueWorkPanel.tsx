@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { BookOpen, Map, ScrollText } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import {
@@ -14,17 +14,20 @@ import {
 } from '@/shared/ui';
 import type { ResumePage, ResumeSummary, WorkTarget } from '../model/workProgress';
 import { workErrorMessage, workResumePath, workProjectPath } from '../model/workProgress';
-import { listWorkResume, resolveWorkResume } from '../services/workProgressService';
+import {
+  getWorkPreferences,
+  listWorkResume,
+  resolveWorkResume,
+} from '../services/workProgressService';
 import { deviceTimeZone, formatWorkDate } from '../services/workTimeZone';
 import { useWorkPage } from '../hooks/useWorkPage';
-import { WorkPreferencesPanel } from './WorkPreferencesPanel';
 import styles from './WorkProgress.module.css';
-export function ContinueWorkPanel() {
+export function ContinueWorkPanel({ compact = false }: { compact?: boolean }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingState label="Carregando retomada…" />;
-  return user ? <ResumeSession key={user.uid} uid={user.uid} /> : null;
+  return user ? <ResumeSession key={user.uid} uid={user.uid} compact={compact} /> : null;
 }
-function ResumeSession({ uid }: { uid: string }) {
+function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
   const navigate = useNavigate();
   const [kind, setKind] = useState<'all' | WorkTarget['kind']>('all');
   const [zone, setZone] = useState(deviceTimeZone);
@@ -38,9 +41,22 @@ function ResumeSession({ uid }: { uid: string }) {
       active.current = false;
     };
   }, []);
+  useEffect(() => {
+    let current = true;
+    void getWorkPreferences().then(
+      (preferences) => {
+        if (current && preferences.timeZone) setZone(preferences.timeZone);
+      },
+      () => {},
+    );
+    return () => {
+      current = false;
+    };
+  }, [uid]);
   const page = useWorkPage<ResumeSummary, ResumePage>(
-    uid + ':' + kind,
-    (cursor) => listWorkResume({ ...(kind === 'all' ? {} : { kind }), cursor, limit: 25 }),
+    uid + ':' + kind + ':' + String(compact),
+    (cursor) =>
+      listWorkResume({ ...(kind === 'all' ? {} : { kind }), cursor, limit: compact ? 4 : 25 }),
     (item) => item.target.kind + ':' + item.target.id,
   );
   async function resume(item: ResumeSummary) {
@@ -80,18 +96,20 @@ function ResumeSession({ uid }: { uid: string }) {
           Retome sua escrita ou preparação mais recente em cada projeto.
         </p>
       </header>
-      <Dropdown
-        mode="select"
-        label="Retomar tipo de projeto"
-        value={kind}
-        options={[
-          { value: 'all', label: 'Todos' },
-          { value: 'book', label: 'Livros' },
-          { value: 'adventure', label: 'Aventuras' },
-          { value: 'campaign', label: 'Campanhas' },
-        ]}
-        onValueChange={(value) => setKind(value as typeof kind)}
-      />
+      {!compact && (
+        <Dropdown
+          mode="select"
+          label="Retomar tipo de projeto"
+          value={kind}
+          options={[
+            { value: 'all', label: 'Todos' },
+            { value: 'book', label: 'Livros' },
+            { value: 'adventure', label: 'Aventuras' },
+            { value: 'campaign', label: 'Campanhas' },
+          ]}
+          onValueChange={(value) => setKind(value as typeof kind)}
+        />
+      )}
       {error && <Alert variant="warning">{error}</Alert>}
       {page.loading && !page.page && <LoadingState label="Carregando seus projetos recentes…" />}
       {page.error && !page.page && <ErrorState error={page.error} onRetry={page.retry} />}{' '}
@@ -102,7 +120,7 @@ function ResumeSession({ uid }: { uid: string }) {
         />
       )}
       <div className={styles.resumeGrid}>
-        {page.items.map((item) => (
+        {(compact ? page.items.slice(0, 4) : page.items).map((item) => (
           <Card className={styles.card} key={item.target.kind + ':' + item.target.id}>
             <Badge variant="secondary">{labels[item.target.kind]}</Badge>
             {item.target.kind === 'book' ? (
@@ -136,12 +154,12 @@ function ResumeSession({ uid }: { uid: string }) {
           </Button>
         </Alert>
       )}
-      {page.page?.nextCursor && (
+      {!compact && page.page?.nextCursor && (
         <Button variant="secondary" disabled={page.loading} onClick={() => void page.more()}>
           {page.loading ? 'Carregando…' : 'Carregar mais projetos recentes'}
         </Button>
       )}
-      <WorkPreferencesPanel onTimeZone={setZone} />
+      {compact && <Link to="/studio/projects">Ver todos os projetos</Link>}
     </section>
   );
 }

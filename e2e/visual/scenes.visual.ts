@@ -4,6 +4,7 @@ import { chooseDropdown } from '../dropdown';
 import { chapters, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 import {
   capture,
+  expectWorkspaceButton,
   expect,
   expectDialogWithinViewport,
   expectNoHorizontalOverflow,
@@ -165,7 +166,7 @@ test('cena autoral tem escrita manual, undo e autosave próprios em 320px', asyn
   await page.getByRole('button', { name: 'Refazer', exact: true }).click();
   await expect(editor.locator('strong')).toHaveText('Lia');
   await expect(page.getByRole('status').filter({ hasText: /^Salvo$/ })).toBeVisible();
-  await expect(page.getByRole('button', { name: '84 créditos de IA, plano free' })).toBeVisible();
+  await expectWorkspaceButton(page, '84 créditos de IA, plano free');
   const layout = await editor.evaluate((element) => {
     const paper = element.closest('[class*="paper"]');
     if (!paper) throw new Error('A folha da cena deve estar montada.');
@@ -247,7 +248,7 @@ test('rascunho legado anterior à conversão permanece privado e recuperável po
   ).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toContain(localText);
   expect(await page.evaluate((key) => localStorage.getItem(key), draftKey)).toBe(draft);
-  await expect(page.getByRole('button', { name: '84 créditos de IA, plano free' })).toBeVisible();
+  await expectWorkspaceButton(page, '84 créditos de IA, plano free');
   await capture(page, testInfo, 'rascunho-legado-preservado');
   await page.goto(bookPath);
   expect(await downloadBook(page)).not.toContain(localText);
@@ -616,7 +617,7 @@ test('troca de conta oculta prosa e rascunho da sessão anterior', async ({ page
     sessionStorage.setItem('writer.visual.account', 'second');
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
-  await expect(page.getByRole('button', { name: /Outro Autor de Exemplo/ })).toBeVisible();
+  await expectWorkspaceButton(page, /Outro Autor de Exemplo/);
   await expect(page.getByRole('textbox', { name: 'Área de escrita da cena' })).toHaveCount(0);
   await expect(
     page.getByText('RASCUNHO PARTICULAR da conta original.', { exact: true }),
@@ -629,7 +630,7 @@ test('troca de conta oculta prosa e rascunho da sessão anterior', async ({ page
     sessionStorage.removeItem('writer.visual.account');
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
-  await expect(page.getByRole('button', { name: /Marina de Exemplo/ })).toBeVisible();
+  await expectWorkspaceButton(page, /Marina de Exemplo/);
   await page.goto(scenePath);
   await expect(page.getByRole('button', { name: 'Recuperar rascunho', exact: true })).toBeVisible();
   await expect(page.getByRole('textbox', { name: 'Área de escrita da cena' })).toHaveCount(0);
