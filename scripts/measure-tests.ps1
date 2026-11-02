@@ -126,4 +126,3 @@ $result | ConvertTo-Json -Depth 4 | Set-Content "$Output/$Label-metrics.json" -E
 $result | ConvertTo-Json -Depth 4
 $process.Dispose()
 exit $exitCode
-

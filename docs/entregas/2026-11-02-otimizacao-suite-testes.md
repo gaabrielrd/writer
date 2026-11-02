@@ -144,6 +144,18 @@ Smoke test do bundle OK.
 CI remota e testes visuais não foram executados nesta entrega de infraestrutura,
 conforme o fluxo local autorizado. Os workflows e a matriz visual não mudaram.
 
+## Seleção real após o commit
+
+No commit `64b5b9a`, alteramos temporariamente uma quebra de linha somente em
+`act.test.ts`. O modo `--changed` selecionou um arquivo e aprovou seus 13 casos;
+o conteúdo original foi restaurado byte a byte. O comando completo levou
+27,914 s e amostrou 628,7 MiB residentes. A seleção de dependências faz parte
+desse tempo; os 254 ms reportados para os testes não representam a espera total.
+
+Para um arquivo já conhecido, o filtro direto evita esse custo de descoberta.
+O fluxo automático conserva dependentes e continua útil quando o alcance da
+mudança é maior. Nenhum desses resultados substitui a validação completa.
+
 ## Fora do escopo
 
 Correção de comportamento de produto, redução de volumes, exclusão de testes,

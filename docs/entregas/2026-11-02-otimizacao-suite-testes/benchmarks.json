@@ -267,5 +267,20 @@
     "productionBuildPassed": true,
     "bundleBuildSeconds": 3.97,
     "bundleSmokePassed": true
+  },
+  "changedSelectionSmoke": {
+    "files": 1,
+    "tests": 13,
+    "passed": 13,
+    "failed": 0,
+    "coverage": false,
+    "workers": 2,
+    "totalProcessSeconds": 27.914,
+    "reportedTestSeconds": 0.254,
+    "peakResidentMiB": 628.7,
+    "peakPrivateMiB": 901.9,
+    "workingTreeRestored": true,
+    "verifiedOnCommit": "64b5b9a0cf87845207d29d7b71c7ff228c8375d7",
+    "note": "One test file changed by a temporary trailing newline. Total includes dependency selection; the short Vitest test duration alone does not reflect command wait time."
   }
 }
