@@ -10,6 +10,10 @@ ficam substituídas por essa orientação. A matriz final contém 16 setores cal
 dois chats streaming e 12 recursos HTTP/eventos/agendamentos, totalizando 30.
 Consulte a [ADR 0270](../decisions/0270-functions-by-sector.md).
 
+Execução concluída em produção: 16 setores novos, 42 clientes migrados e 306
+endpoints individuais removidos. O inventário remoto confirmou 30 Functions
+ativas em Node 24. Veja a [evidência da entrega](../entregas/2026-11-02-functions-por-setor.md).
+
 ## Objetivo e diagnóstico
 
 Reduzir os recursos implantados e o custo operacional de deploy, mantendo os

@@ -20,12 +20,12 @@ https://writer-44cd5.web.app. Os gates FIREBASE_HOSTING_DEPLOY_ENABLED e
 FIREBASE_FIRESTORE_DEPLOY_ENABLED estão true. O envio da principal dispara
 o Hosting; concluir o backend antes desse envio.
 
-A consolidação Writer V2 está em rollout autorizado: índices e regras publicados,
-66 índices READY e Functions existentes em Node 24. Novos serviços estão sendo
-publicados em lotes sequenciais; Hosting permanece na versão anterior até
-a conclusão do backend e das validações. Storage foi comparado e não requer
-publicação. Ver [plano da consolidação](tasks/consolidacao-release-writer-v2.md)
-e [ADR de runtime](decisions/0269-node24-and-function-runtime.md).
+A consolidação Writer V2 foi publicada. A simplificação posterior confirmou 30
+Functions ACTIVE em Node 24, com os 306 endpoints individuais removidos. Hosting
+usa as novas rotas; o marcador publicado é `8f104f554e31f196fd05ac1d3eb53e575c01d887`.
+As regras e os 66 índices READY do Firestore foram preservados; Storage não
+precisou de republicação. Ver a [evidência da simplificação](entregas/2026-11-02-functions-por-setor.md)
+e a [ADR de runtime](decisions/0269-node24-and-function-runtime.md).
 
 ## Histórico da preparação original
 
