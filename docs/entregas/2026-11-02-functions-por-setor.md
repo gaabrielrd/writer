@@ -63,3 +63,17 @@ destinos, retirada dos endpoints e rollback.
 O build isolado, typecheck, lint e links da documentação passaram. O inventário
 e os contratos verificam os 306 destinos e seus serviços reais. Não há medição
 de economia financeira ou de latência sob tráfego real neste protótipo.
+
+## Publicação paralela preservada
+
+Após integrar o PR 31 na master (`0c8795f8f87779c6063ee3cdc58215222d8fcc8e`),
+a conferência final encontrou uma publicação paralela do editor sem o marcador
+de release. Ela foi preservada. O bundle servido `/assets/index-saNTtm0x.js`
+continha os 16 setores e as 306 ações; a matriz do checkout paralelo foi comparada
+com a implantada e era idêntica. SHA-256 do bundle conferido:
+`e3c5f98de76a87e8996902c9cd536df8732e319722106ec12fab97d57c7ab76a`.
+
+A nova consulta da API confirmou novamente 30 Functions ACTIVE em Node 24.
+O código de runtime integrado na master corresponde ao commit de implementação;
+as diferenças posteriores deste trabalho são apenas documentais. A publicação
+paralela não foi substituída para restaurar o marcador antigo.
