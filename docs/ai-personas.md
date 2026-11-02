@@ -172,7 +172,7 @@ recarregar a página: a seleção e o ponteiro de recuperação ficam em memóri
 Fechar um pedido pendente tenta descartá-lo; expiração cobre falhas de descarte.
 Personas salvas permanecem na biblioteca depois da coleta do pedido.
 
-A liberação exige frontend, callable `personaGeneration`, scheduler
-`cleanupPersonaGenerations`, regras e índice de collection-group para `expiresAt`.
+A liberação exige frontend, ação `personaGeneration` de `generationApi`, scheduler
+`cleanupBookAssets`, regras e índice de collection-group para `expiresAt`.
 Reutiliza o segredo servidor de geração existente. Nenhuma implantação é
 executada automaticamente. Veja [decisão de geração contextual](decisions/0271-contextual-persona-generation.md).

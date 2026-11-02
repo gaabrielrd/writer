@@ -15,7 +15,8 @@ import { listCreationTickets, getCreationTicket } from './bookLoreCreationTicket
 import { readJournalPreparation, listJournalPreparations } from './bookLoreJournalDb';
 import { createPersistedBookLoreEditOperation } from './bookLorePersistedOperation';
 import { freezeLoreEditValue } from './bookLoreWritePlan';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { auth, getFirebaseApp } from '@/shared/lib';
 import { BOOK_LORE_EDIT_CALLABLE } from '../../../../functions/src/bookLoreEditTransportMethods.mjs';
 import {

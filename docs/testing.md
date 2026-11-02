@@ -60,6 +60,12 @@ O E2E escolhe uma porta efêmera, gera o bundle e serve a aplicação localmente
 
 ## Tempo de execução e CI
 
+Em worktrees Windows, uma junction de `node_modules` pode fazer o Vitest recusar
+um worker `?url` resolvido fora da raiz, com `Denied ID`. Nesse caso, instale as
+dependências do frontend fisicamente no checkout (`npm ci --prefer-offline`),
+preservando os hooks. Repita primeiro somente o arquivo afetado; não altere o
+produto ou suas asserções para contornar a restrição do ambiente.
+
 Vitest mantém até quatro workers, limitados pelos CPUs disponíveis, em um único
 projeto. O ambiente padrão continua `jsdom`; testes de lógica/contratos usam a
 diretiva `// @vitest-environment node`. O setup importa React, matchers DOM,

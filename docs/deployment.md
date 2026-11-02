@@ -1,5 +1,18 @@
 # Deploy do Writer no Firebase
 
+## Functions por setor
+
+A composição atual reúne 306 ações em 16 endpoints, preservando dois chats com
+streaming e 12 recursos HTTP/eventos/agendamentos: 30 Functions no estado final.
+Consulte a [ADR 0270](decisions/0270-functions-by-sector.md). O mantenedor
+dispensou compatibilidade por ser um protótipo sem usuários ativos.
+
+Publique primeiro os setores novos e confira ACTIVE/Node 24; publique o frontend
+com a mesma matriz e retire depois os endpoints individuais explicitamente.
+Preserve as rotas HTTP de recuperação e os gatilhos. A remoção deve usar somente
+os 306 nomes do inventário, com tratamento de quota/retry e conferência remota.
+Regere o inventário com `node scripts/inventory-functions.mjs`.
+
 ## Estado verificado em 2026-11-02
 
 Projeto e site confirmados por consulta: writer-44cd5, com Hosting em
@@ -7,12 +20,14 @@ https://writer-44cd5.web.app. Os gates FIREBASE_HOSTING_DEPLOY_ENABLED e
 FIREBASE_FIRESTORE_DEPLOY_ENABLED estão true. O envio da principal dispara
 o Hosting; concluir o backend antes desse envio.
 
-A consolidação Writer V2 está em rollout autorizado: índices e regras publicados,
-66 índices READY e Functions existentes em Node 24. Novos serviços estão sendo
-publicados em lotes sequenciais; Hosting permanece na versão anterior até
-a conclusão do backend e das validações. Storage foi comparado e não requer
-publicação. Ver [plano da consolidação](tasks/consolidacao-release-writer-v2.md)
-e [ADR de runtime](decisions/0269-node24-and-function-runtime.md).
+A consolidação Writer V2 foi publicada. A simplificação posterior confirmou 30
+Functions ACTIVE em Node 24, com os 306 endpoints individuais removidos. Hosting
+usa as novas rotas. O artefato inicial da simplificação foi confirmado pelo
+marcador `8f104f554e31f196fd05ac1d3eb53e575c01d887`; uma publicação paralela posterior
+da interface foi preservada após conferir sua matriz de setores.
+As regras e os 66 índices READY do Firestore foram preservados; Storage não
+precisou de republicação. Ver a [evidência da simplificação](entregas/2026-11-02-functions-por-setor.md)
+e a [ADR de runtime](decisions/0269-node24-and-function-runtime.md).
 
 ## Histórico da preparação original
 

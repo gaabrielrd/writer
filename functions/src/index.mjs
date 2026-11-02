@@ -1,7 +1,8 @@
-import {
-  createPersonaGenerationService,
-  cleanupExpiredPersonaGenerations,
-} from './personaGeneration.mjs';
+import { cleanupExpiredPersonaGenerations } from './personaGeneration.mjs';
+import { createSectorServices } from './domainServices.mjs';
+import { logger } from 'firebase-functions';
+import { FUNCTION_DOMAINS } from './functionDomains.mjs';
+import { createDomainHandler } from './domainCallable.mjs';
 import { createUniverseLoreImportService } from './universeLoreImport.mjs';
 import {
   ADVENTURE_RESTORE_METHODS,
@@ -15,7 +16,6 @@ import {
 } from './adventureBackupCallable.mjs';
 import {
   ADVENTURE_DELETION_METHODS,
-  ADVENTURE_DELETION_CALLABLE_OPTIONS,
   invokeAdventureDeletionCallable,
   setAdventureDeletionHeaders,
 } from './adventureDeletionCallable.mjs';
@@ -38,7 +38,6 @@ import { createAdventureRestoreRecoveryHandler } from './adventureRestoreRecover
 import { createAdventureImportRecoveryHandler } from './adventureImportRecovery.mjs';
 import { getAuth } from 'firebase-admin/auth';
 import { getAppCheck } from 'firebase-admin/app-check';
-import { createAdventureLoreService } from './adventureLore.mjs';
 import { randomUUID } from 'node:crypto';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
@@ -51,40 +50,12 @@ import { createAccountChatCleanupTrigger } from './accountChatCleanup.mjs';
 import { defineSecret, defineString, defineInt } from 'firebase-functions/params';
 import { createImageLibraryService } from './imageLibrary.mjs';
 import { createUniverseService } from './universes.mjs';
-import { createStudioService } from './studio.mjs';
-import { createCampaignsService } from './campaigns.mjs';
-import { createCampaignCaptureService } from './campaignCapture.mjs';
-import { createCampaignNotesService } from './campaignNotes.mjs';
-import { createCampaignPreparationService } from './campaignPreparation.mjs';
-import { createCampaignSessionsService } from './campaignSessions.mjs';
-import { createCampaignSessionReferencesService } from './campaignSessionReferences.mjs';
-import { createCampaignSessionScenesService } from './campaignSessionScenes.mjs';
-import { createCampaignLoreService } from './campaignLore.mjs';
-import { createCampaignComparisonService } from './campaignComparison.mjs';
-import { createCampaignComparisonReadService } from './campaignComparisonRead.mjs';
-import { createCampaignAdoptionService } from './campaignAdoption.mjs';
-import { createCampaignDeletionService } from './campaignDeletion.mjs';
-import { createCampaignVariantRemoteRecoveryService } from './campaignVariantRemoteRecovery.mjs';
-import { createCampaignVariantRecoveryService } from './campaignVariantRecovery.mjs';
 import { setCampaignVariantRecoveryHeaders } from './campaignVariantRecoveryHttp.mjs';
 import { setCampaignMediaHeaders } from './campaignCaptureHttp.mjs';
-import { createCampaignBaseReadService } from './campaignBaseRead.mjs';
-import { createWorkProgressService } from './workProgress.mjs';
-import { createWorkHistoryService } from './workHistory.mjs';
-import { createBookBackupReadService } from './bookBackupRead.mjs';
-import { createBookBackupResourceService } from './bookBackupResourceRead.mjs';
-import { createBookBackupPersonaService } from './bookBackupPersonaRead.mjs';
-import { createBookBackupUniverseService } from './bookBackupUniverseRead.mjs';
-import { createBookBackupDraftService } from './bookBackupDraftRead.mjs';
-import { createBookBackupCoverService, setBookBackupCoverHeaders } from './bookBackupCoverRead.mjs';
+import { setBookBackupCoverHeaders } from './bookBackupCoverRead.mjs';
 import { createBookBackupAssetStorage } from './bookBackupAssetStorage.mjs';
 import { createBookRestoreCoverStorage } from './bookRestoreCoverStorage.mjs';
-import { createAdventureBlocksService } from './adventureBlocks.mjs';
-import { createAdventurePreviewService } from './adventurePreview.mjs';
-import { createScenesService } from './scenes.mjs';
-import { createNarrativePlanningService } from './narrativePlanning.mjs';
-import { createLoreAnalysisService } from './loreAnalysis.mjs';
-import { createBookLoreReadService, setBookLoreReadHeaders } from './bookLoreRead.mjs';
+import { setBookLoreReadHeaders } from './bookLoreRead.mjs';
 import {
   createBookPublicationService,
   setBookPublicationHeaders,
@@ -108,7 +79,7 @@ import {
   createBookLoreEditOutcomeService,
   setBookLoreEditOutcomeHeaders,
 } from './bookLoreEditOutcome.mjs';
-import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
+import { assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createChapterChatService } from './chapterChat.mjs';
 import { geminiTextGenerationOptions } from './chatGeneration.mjs';
@@ -379,384 +350,93 @@ function service() {
     costs: { synopsis: synopsisCost.value(), cover: coverCost.value() },
   });
 }
-const callable = (method, secrets = []) =>
-  onCall(
-    {
-      region: 'us-central1',
-      enforceAppCheck: true,
-      timeoutSeconds: [
-        'analyzeChapterLore',
-        'advanceBookRestoreValidation',
-        'advanceAdventureRestoreValidation',
-      ].includes(method)
-        ? 540
-        : 120,
-      memory: '512MiB',
-      maxInstances: 5,
-      ...(ADVENTURE_DELETION_METHODS.includes(method) ? ADVENTURE_DELETION_CALLABLE_OPTIONS : {}),
-      secrets,
-    },
-    async (request) => {
-      setCampaignMediaHeaders(method, request);
-      setBookBackupCoverHeaders(method, request);
-      setBookRestoreHeaders(method, request);
-      setAdventureRestoreHeaders(method, request);
-      setAdventureBackupHeaders(method, request);
-      setAdventureDeletionHeaders(method, request);
-      setBookLoreReadHeaders(method, request);
-      setBookPublicationHeaders(method, request);
-      setBookLoreEditHeaders(method, request);
-      setBookLoreEditOutcomeHeaders(method, request);
-      setBookLoreRemovalHeaders(method, request);
-      setBookLoreWriteRecoveryHeaders(method, request);
-      if (['readLegacyChapterText', 'listOrphanScenes', 'recoverOrphanScene'].includes(method)) {
-        request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
-        request.rawRequest?.res?.setHeader('Vary', 'Authorization');
-      }
-      setCampaignVariantRecoveryHeaders(method, request);
-      try {
-        if (ADVENTURE_DELETION_METHODS.includes(method))
-          return await invokeAdventureDeletionCallable(
-            () =>
-              createAdventureDeletionService({ db, assets: createRestoredImageStorage(bucket) }),
-            method,
-            request,
-          );
-        if (ADVENTURE_BACKUP_METHODS.includes(method))
-          return await invokeAdventureBackupCallable(
-            createAdventureBackupService({ db, assets: backupStorage }),
-            method,
-            request.auth?.uid,
-            request.data,
-          );
-        if (ADVENTURE_RESTORE_METHODS.includes(method))
-          return await invokeAdventureRestoreCallable(
-            createAdventureRestoreTransferService({
-              db,
-              assets: createRestoredImageStorage(bucket),
-            }),
-            method,
-            request.auth?.uid,
-            request.data,
-          );
-        if (BOOK_RESTORE_METHODS.includes(method))
-          return await invokeBookRestoreCallable(
-            createBookRestoreUploadService({
-              ...BOOK_RESTORE_RUNTIME,
-              db,
-              restoreAssets: createBookRestoreCoverStorage(bucket),
-            }),
-            method,
-            request.auth?.uid,
-            request.data,
-          );
-        if (BOOK_PUBLICATION_METHODS.includes(method))
-          return await createBookPublicationService({ db })[method](
-            request.auth?.uid,
-            request.data,
-          );
-        if (BOOK_LORE_RECOVERY_METHODS.includes(method))
-          return await createBookLoreWriteRecoveryService({ db })[method](
-            request.auth?.uid,
-            request.data,
-          );
-        if (method === 'bookLoreEdit')
-          return await createBookLoreEditTransportService({ db }).bookLoreEdit(
-            request.auth?.uid,
-            request.data,
-          );
-        if (method === 'bookLoreEditOutcome')
-          return await createBookLoreEditOutcomeService({ db }).bookLoreEditOutcome(
-            request.auth?.uid,
-            request.data,
-          );
-        if (method === 'bookLoreRemoval')
-          return await createBookLoreRemovalTransportService({ db }).bookLoreRemoval(
-            request.auth?.uid,
-            request.data,
-          );
-        const universeService = createUniverseService({ db });
-        const studio = createStudioService({ db });
-        const adventureImport = createAdventureImportService({ db });
-        const adventureLore = createAdventureLoreService({ db });
-        const campaigns = createCampaignsService({ db });
-        const campaignNotes = createCampaignNotesService({ db });
-        const campaignPreparation = createCampaignPreparationService({ db });
-        const campaignSessions = createCampaignSessionsService({ db });
-        const campaignSessionReferences = createCampaignSessionReferencesService({ db });
-        const campaignSessionScenes = createCampaignSessionScenesService({ db, assets });
-        const campaignLore = createCampaignLoreService({ db });
-        const campaignComparison = createCampaignComparisonService({ db, assets });
-        const campaignComparisonRead = createCampaignComparisonReadService({ db, assets });
-        const campaignAdoption = createCampaignAdoptionService({ db });
-        const campaignDeletion = createCampaignDeletionService({ db });
-        const campaignVariantRemoteRecovery = createCampaignVariantRemoteRecoveryService({ db });
-        const campaignVariantRecovery = createCampaignVariantRecoveryService({ db });
-        const campaignCapture = createCampaignCaptureService({ db, assets });
-        const campaignBaseRead = createCampaignBaseReadService({ db, assets });
-        const workProgress = createWorkProgressService({ db });
-        const workHistory = createWorkHistoryService({ db });
-        const bookBackupRead = createBookBackupReadService({ db });
-        const bookLoreRead = createBookLoreReadService({ db });
-        const bookBackupResources = createBookBackupResourceService({ db });
-        const bookBackupPersonas = createBookBackupPersonaService({ db });
-        const bookBackupUniverse = createBookBackupUniverseService({ db });
-        const bookBackupDraft = createBookBackupDraftService({ db });
-        const bookBackupCover = createBookBackupCoverService({ db, assets: backupStorage });
-        const adventureBlocks = createAdventureBlocksService({ db });
-        const adventurePreview = createAdventurePreviewService({ db, assets });
-        const scenes = createScenesService({ db });
-        const narrative = createNarrativePlanningService({ db });
-        const loreAnalysis = createLoreAnalysisService({ db, generator: loreGenerator });
-        const assisted = createAssistedBookService({
+async function invokeCallable(method, request, domain) {
+  setCampaignMediaHeaders(method, request);
+  setBookBackupCoverHeaders(method, request);
+  setBookRestoreHeaders(method, request);
+  setAdventureRestoreHeaders(method, request);
+  setAdventureBackupHeaders(method, request);
+  setAdventureDeletionHeaders(method, request);
+  setBookLoreReadHeaders(method, request);
+  setBookPublicationHeaders(method, request);
+  setBookLoreEditHeaders(method, request);
+  setBookLoreEditOutcomeHeaders(method, request);
+  setBookLoreRemovalHeaders(method, request);
+  setBookLoreWriteRecoveryHeaders(method, request);
+  if (['readLegacyChapterText', 'listOrphanScenes', 'recoverOrphanScene'].includes(method)) {
+    request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
+    request.rawRequest?.res?.setHeader('Vary', 'Authorization');
+  }
+  setCampaignVariantRecoveryHeaders(method, request);
+  try {
+    if (ADVENTURE_DELETION_METHODS.includes(method))
+      return await invokeAdventureDeletionCallable(
+        () => createAdventureDeletionService({ db, assets: createRestoredImageStorage(bucket) }),
+        method,
+        request,
+      );
+    if (ADVENTURE_BACKUP_METHODS.includes(method))
+      return await invokeAdventureBackupCallable(
+        createAdventureBackupService({ db, assets: backupStorage }),
+        method,
+        request.auth?.uid,
+        request.data,
+      );
+    if (ADVENTURE_RESTORE_METHODS.includes(method))
+      return await invokeAdventureRestoreCallable(
+        createAdventureRestoreTransferService({
           db,
-          assets,
-          generator: assistedGenerator,
-          costs: { text: assistedCost.value(), cover: coverCost.value() },
-        });
-        const comparisonHandler = campaignComparison[method]
-          ? campaignComparison
-          : campaignComparisonRead[method]
-            ? campaignComparisonRead
-            : null;
-        const handler =
-          (bookLoreRead[method] ? bookLoreRead : null) ??
-          (bookBackupCover[method] ? bookBackupCover : null) ??
-          (bookBackupDraft[method] ? bookBackupDraft : null) ??
-          (bookBackupUniverse[method] ? bookBackupUniverse : null) ??
-          (bookBackupPersonas[method] ? bookBackupPersonas : null) ??
-          (bookBackupResources[method] ? bookBackupResources : null) ??
-          (bookBackupRead[method] ? bookBackupRead : null) ??
-          (adventureImport[method] ? adventureImport : null) ??
-          (adventureLore[method] ? adventureLore : null) ??
-          (campaignPreparation[method] ? campaignPreparation : null) ??
-          (campaignSessionScenes[method] ? campaignSessionScenes : null) ??
-          (campaignSessionReferences[method] ? campaignSessionReferences : null) ??
-          (campaignSessions[method] ? campaignSessions : null) ??
-          (campaignDeletion[method] ? campaignDeletion : null) ??
-          (campaignAdoption[method]
-            ? campaignAdoption
-            : campaignVariantRemoteRecovery[method]
-              ? campaignVariantRemoteRecovery
-              : null) ??
-          comparisonHandler ??
-          (campaignLore[method]
-            ? campaignLore
-            : campaignVariantRecovery[method]
-              ? campaignVariantRecovery
-              : campaignNotes[method]
-                ? campaignNotes
-                : campaignBaseRead[method]
-                  ? campaignBaseRead
-                  : campaignCapture[method]
-                    ? campaignCapture
-                    : campaigns[method]
-                      ? campaigns
-                      : adventurePreview[method]
-                        ? adventurePreview
-                        : adventureBlocks[method]
-                          ? adventureBlocks
-                          : workHistory[method]
-                            ? workHistory
-                            : workProgress[method]
-                              ? workProgress
-                              : narrative[method]
-                                ? narrative
-                                : scenes[method]
-                                  ? scenes
-                                  : studio[method]
-                                    ? studio
-                                    : assisted[method]
-                                      ? assisted
-                                      : loreAnalysis[method]
-                                        ? loreAnalysis
-                                        : universeService[method]
-                                          ? universeService
-                                          : service()[method]
-                                            ? service()
-                                            : createImageLibraryService({ db, assets }));
+          assets: createRestoredImageStorage(bucket),
+        }),
+        method,
+        request.auth?.uid,
+        request.data,
+      );
+    if (BOOK_RESTORE_METHODS.includes(method))
+      return await invokeBookRestoreCallable(
+        createBookRestoreUploadService({
+          ...BOOK_RESTORE_RUNTIME,
+          db,
+          restoreAssets: createBookRestoreCoverStorage(bucket),
+        }),
+        method,
+        request.auth?.uid,
+        request.data,
+      );
+    if (BOOK_PUBLICATION_METHODS.includes(method))
+      return await createBookPublicationService({ db })[method](request.auth?.uid, request.data);
+    if (BOOK_LORE_RECOVERY_METHODS.includes(method))
+      return await createBookLoreWriteRecoveryService({ db })[method](
+        request.auth?.uid,
+        request.data,
+      );
+    if (method === 'bookLoreEdit')
+      return await createBookLoreEditTransportService({ db }).bookLoreEdit(
+        request.auth?.uid,
+        request.data,
+      );
+    if (method === 'bookLoreEditOutcome')
+      return await createBookLoreEditOutcomeService({ db }).bookLoreEditOutcome(
+        request.auth?.uid,
+        request.data,
+      );
+    if (method === 'bookLoreRemoval')
+      return await createBookLoreRemovalTransportService({ db }).bookLoreRemoval(
+        request.auth?.uid,
+        request.data,
+      );
+    for (const handler of sectorServices(domain)) {
+      if (Object.hasOwn(handler, method) && typeof handler[method] === 'function')
         return await handler[method](request.auth?.uid, request.data);
-      } catch (error) {
-        if (error instanceof GenerationError)
-          throw new HttpsError(error.code, error.message, error.details);
-        throw new HttpsError(
-          'unavailable',
-          'Serviço temporariamente indisponível. Tente novamente.',
-        );
-      }
-    },
-  );
-export const bookGenerationQuote = callable('quote');
-export const generateBookAsset = callable('generate', [key]);
-export const acceptBookAsset = callable('accept');
-export const discardBookAsset = callable('discard');
-export const createBookWithCover = callable('createWithCover');
-export const listLibraryImages = callable('list');
-export const renameLibraryImage = callable('rename');
-export const deleteLibraryImage = callable('remove');
-export const saveBookImage = callable('saveBook');
-export const migrateImageLibrary = callable('migrate');
-export const createUniverse = callable('createUniverse');
-export const updateUniverse = callable('updateUniverse');
-export const deleteUniverse = callable('deleteUniverse');
-export const createAdventure = callable('createAdventure');
-export const createCampaign = callable('createCampaign');
-export const updateCampaign = callable('updateCampaign');
-export const listCampaignNotes = callable('listCampaignNotes');
-export const getCampaignNote = callable('getCampaignNote');
-export const saveCampaignNote = callable('saveCampaignNote');
-export const deleteCampaignNote = callable('deleteCampaignNote');
-export const listCampaignSessionSceneBlocks = callable('listCampaignSessionSceneBlocks');
-export const readCampaignSessionSceneReference = callable('readCampaignSessionSceneReference');
-export const readCampaignSessionSceneImage = callable('readCampaignSessionSceneImage');
-export const listCampaignSessionReferences = callable('listCampaignSessionReferences');
-export const addCampaignSessionReference = callable('addCampaignSessionReference');
-export const removeCampaignSessionReference = callable('removeCampaignSessionReference');
-export const readCampaignSessionLoreReference = callable('readCampaignSessionLoreReference');
-export const resolveCampaignSessionReferenceOperation = callable(
-  'resolveCampaignSessionReferenceOperation',
-);
-export const listCampaignSessions = callable('listCampaignSessions');
-export const getCampaignSession = callable('getCampaignSession');
-export const saveCampaignSession = callable('saveCampaignSession');
-export const moveCampaignSession = callable('moveCampaignSession');
-export const deleteCampaignSession = callable('deleteCampaignSession');
-export const listCampaignLore = callable('listCampaignLore');
-export const getCampaignLore = callable('getCampaignLore');
-export const prepareCampaignLoreVariant = callable('prepareCampaignLoreVariant');
-export const saveCampaignLoreVariant = callable('saveCampaignLoreVariant');
-export const removeCampaignLore = callable('removeCampaignLore');
-export const restoreCampaignLore = callable('restoreCampaignLore');
-export const discardCampaignLoreVariant = callable('discardCampaignLoreVariant');
-export const resolveCampaignLoreOperation = callable('resolveCampaignLoreOperation');
-export const listCampaignLoreOperations = callable('listCampaignLoreOperations');
-export const getAdventureDeletionSource = callable('getAdventureDeletionSource');
-export const startAdventureDeletion = callable('startAdventureDeletion');
-export const resolveAdventureDeletionStart = callable('resolveAdventureDeletionStart');
-export const getAdventureDeletion = callable('getAdventureDeletion');
-export const listAdventureDeletions = callable('listAdventureDeletions');
-export const advanceAdventureDeletion = callable('advanceAdventureDeletion');
-export const getCampaignDeletionSource = callable('getCampaignDeletionSource');
-export const startCampaignDeletion = callable('startCampaignDeletion');
-export const resolveCampaignDeletionStart = callable('resolveCampaignDeletionStart');
-export const getCampaignDeletion = callable('getCampaignDeletion');
-export const listCampaignDeletions = callable('listCampaignDeletions');
-export const advanceCampaignDeletion = callable('advanceCampaignDeletion');
-export const resolveCampaignLoreRemoteOperation = callable('resolveCampaignLoreRemoteOperation');
-export const startCampaignAdoption = callable('startCampaignAdoption');
-export const resolveCampaignAdoptionStart = callable('resolveCampaignAdoptionStart');
-export const getCampaignAdoption = callable('getCampaignAdoption');
-export const listCampaignAdoptions = callable('listCampaignAdoptions');
-export const listCampaignAdoptionDecisions = callable('listCampaignAdoptionDecisions');
-export const decideCampaignAdoption = callable('decideCampaignAdoption');
-export const prepareCampaignAdoption = callable('prepareCampaignAdoption');
-export const advanceCampaignAdoption = callable('advanceCampaignAdoption');
-export const activateCampaignAdoption = callable('activateCampaignAdoption');
-export const cancelCampaignAdoption = callable('cancelCampaignAdoption');
-export const getCampaignComparisonSource = callable('getCampaignComparisonSource');
-export const startCampaignComparison = callable('startCampaignComparison');
-export const resolveCampaignComparisonStart = callable('resolveCampaignComparisonStart');
-export const getCampaignComparison = callable('getCampaignComparison');
-export const listCampaignComparisons = callable('listCampaignComparisons');
-export const advanceCampaignComparison = callable('advanceCampaignComparison');
-export const cancelCampaignComparison = callable('cancelCampaignComparison');
-export const listCampaignComparisonChanges = callable('listCampaignComparisonChanges');
-export const readCampaignComparisonItem = callable('readCampaignComparisonItem');
-export const readCampaignComparisonImage = callable('readCampaignComparisonImage');
-export const getCampaignCaptureSource = callable('getCampaignCaptureSource');
-export const startCampaignCapture = callable('startCampaignCapture');
-export const getCampaignCapture = callable('getCampaignCapture');
-export const listCampaignCaptures = callable('listCampaignCaptures');
-export const advanceCampaignCapture = callable('advanceCampaignCapture');
-export const activateCampaignCapture = callable('activateCampaignCapture');
-export const resolveCampaignCaptureActivation = callable('resolveCampaignCaptureActivation');
-export const cancelCampaignCapture = callable('cancelCampaignCapture');
-export const getCampaignBase = callable('getCampaignBase');
-export const listCampaignBaseItems = callable('listCampaignBaseItems');
-export const readCampaignBaseItem = callable('readCampaignBaseItem');
-export const listCampaignBaseReferences = callable('listCampaignBaseReferences');
-export const readCampaignBaseImage = callable('readCampaignBaseImage');
-export const getAdventure = callable('getAdventure');
-export const getCampaign = callable('getCampaign');
-export const prepareStudioBooks = callable('prepareStudioBooks');
-export const listStudioProjects = callable('listStudioProjects');
-export const getWorkProgress = callable('getWorkProgress');
-export const getWorkHistoryBackupSource = callable('getWorkHistoryBackupSource');
-export const getBookBackupSource = callable('getBookBackupSource');
-export const listBookBackupStructure = callable('listBookBackupStructure');
-export const readBookBackupStructure = callable('readBookBackupStructure');
-export const listBookBackupResources = callable('listBookBackupResources');
-export const readBookBackupResource = callable('readBookBackupResource');
-export const listBookBackupPersonaBindings = callable('listBookBackupPersonaBindings');
-export const readBookBackupPersona = callable('readBookBackupPersona');
-export const getBookBackupUniverse = callable('getBookBackupUniverse');
-export const getBookBackupDraftPersona = callable('getBookBackupDraftPersona');
-export const getBookBackupCover = callable('getBookBackupCover');
-export const readBookBackupCoverChunk = callable('readBookBackupCoverChunk');
-export const verifyBookBackupCover = callable('verifyBookBackupCover');
-export const getWorkVersionSource = callable('getWorkVersionSource');
-export const listAdventureBlocks = callable('listAdventureBlocks');
-export const getAdventureBlock = callable('getAdventureBlock');
-export const getAdventureBlockImage = callable('getAdventureBlockImage');
-export const setAdventureBlockImage = callable('setAdventureBlockImage');
-export const readAdventureScenePreview = callable('readAdventureScenePreview');
-export const readAdventurePreviewImage = callable('readAdventurePreviewImage');
-export const getAdventureBlockCountStatus = callable('getAdventureBlockCountStatus');
-export const createAdventureBlock = callable('createAdventureBlock');
-export const updateAdventureBlock = callable('updateAdventureBlock');
-export const duplicateAdventureBlock = callable('duplicateAdventureBlock');
-export const moveAdventureBlock = callable('moveAdventureBlock');
-export const archiveAdventureBlock = callable('archiveAdventureBlock');
-export const deleteAdventureBlock = callable('deleteAdventureBlock');
-export const verifyAdventureBlockCount = callable('verifyAdventureBlockCount');
-export const createWorkVersion = callable('createWorkVersion');
-export const listWorkVersions = callable('listWorkVersions');
-export const readWorkVersion = callable('readWorkVersion');
-export const restoreWorkVersion = callable('restoreWorkVersion');
-export const deleteWorkVersion = callable('deleteWorkVersion');
-export const updateWorkProgress = callable('updateWorkProgress');
-export const prepareWorkWordCount = callable('prepareWorkWordCount');
-export const listWorkChecklist = callable('listWorkChecklist');
-export const createWorkChecklistItem = callable('createWorkChecklistItem');
-export const updateWorkChecklistItem = callable('updateWorkChecklistItem');
-export const deleteWorkChecklistItem = callable('deleteWorkChecklistItem');
-export const getWorkPreferences = callable('getWorkPreferences');
-export const saveWorkPreferences = callable('saveWorkPreferences');
-export const recordWorkActivity = callable('recordWorkActivity');
-export const listWorkResume = callable('listWorkResume');
-export const resolveWorkResume = callable('resolveWorkResume');
-export const createLegacyChapter = callable('createLegacyChapter');
-export const readLegacyChapterText = callable('readLegacyChapterText');
-export const saveLegacyChapter = callable('saveLegacyChapter');
-export const deleteLegacyChapters = callable('deleteLegacyChapters');
-export const createScene = callable('createScene');
-export const updateScene = callable('updateScene');
-export const moveScene = callable('moveScene');
-export const archiveScene = callable('archiveScene');
-export const getScene = callable('getScene');
-export const listScenes = callable('listScenes');
-export const listOrphanScenes = callable('listOrphanScenes');
-export const recoverOrphanScene = callable('recoverOrphanScene');
-export const listSceneGroups = callable('listSceneGroups');
-export const getSceneGroup = callable('getSceneGroup');
-export const createSceneGroup = callable('createSceneGroup');
-export const convertChapterToScenes = callable('convertChapterToScenes');
-export const setSceneReference = callable('setSceneReference');
-export const listSceneReferences = callable('listSceneReferences');
-export const listSceneSources = callable('listSceneSources');
-export const readSceneSourceText = callable('readSceneSourceText');
-export const getBookPublicationSource = callable('getBookPublicationSource');
-export const stageBookPublicationLore = callable('stageBookPublicationLore');
-export const finalizeBookPublication = callable('finalizeBookPublication');
-export const listBookLoreRead = callable('listBookLoreRead');
-export const getBookLoreRead = callable('getBookLoreRead');
-export const readBookLorePart = callable('readBookLorePart');
-export const bookLoreEdit = callable('bookLoreEdit');
-export const bookLoreEditOutcome = callable('bookLoreEditOutcome');
-export const bookLoreRemoval = callable('bookLoreRemoval');
-export const reserveBookLoreEditRecovery = callable('reserveBookLoreEditRecovery');
-export const getBookLoreEditRecovery = callable('getBookLoreEditRecovery');
-export const revokeBookLoreEditRecovery = callable('revokeBookLoreEditRecovery');
+    }
+    throw new GenerationError('invalid-argument', 'Ação indisponível neste setor.');
+  } catch (error) {
+    if (error instanceof GenerationError)
+      throw new HttpsError(error.code, error.message, error.details);
+    throw new HttpsError('unavailable', 'Serviço temporariamente indisponível. Tente novamente.');
+  }
+}
+
 export const getBookLoreEditRecoveryKey = onRequest(
   { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
   createBookLoreWriteRecoveryHandler({
@@ -765,33 +445,6 @@ export const getBookLoreEditRecoveryKey = onRequest(
     verifyAppCheck: (token) => getAppCheck().verifyToken(token),
   }),
 );
-export const readSceneAssembly = callable('readSceneAssembly');
-export const rebalanceSceneRanks = callable('rebalanceSceneRanks');
-export const deleteSceneGroup = callable('deleteSceneGroup');
-export const deleteSceneGroups = callable('deleteSceneGroups');
-export const deleteSceneBook = callable('deleteSceneBook');
-export const getSceneJob = callable('getSceneJob');
-export const getNarrativeContext = callable('getNarrativeContext');
-export const createNarrativeItem = callable('createNarrativeItem');
-export const updateNarrativeItem = callable('updateNarrativeItem');
-export const getNarrativeItem = callable('getNarrativeItem');
-export const listNarrativeItems = callable('listNarrativeItems');
-export const moveNarrativeItem = callable('moveNarrativeItem');
-export const deleteNarrativeItem = callable('deleteNarrativeItem');
-export const setNarrativeReference = callable('setNarrativeReference');
-export const listNarrativeReferences = callable('listNarrativeReferences');
-export const listNarrativeLoreOptions = callable('listNarrativeLoreOptions');
-export const listEntityScenes = callable('listEntityScenes');
-export const listEntityNarrativeItems = callable('listEntityNarrativeItems');
-export const prepareEntitySceneIndex = callable('prepareEntitySceneIndex');
-export const rebalanceNarrativeRanks = callable('rebalanceNarrativeRanks');
-export const getNarrativeJob = callable('getNarrativeJob');
-export const saveUniverseLore = callable('saveUniverseLore');
-export const deleteUniverseLore = callable('deleteUniverseLore');
-export const analyzeChapterLore = callable('analyzeChapterLore', [key]);
-export const prepareBYOKLore = callable('prepareBYOKLore');
-export const applyLoreAnalysis = callable('applyLoreAnalysis');
-export const assistedBook = callable('assistedBook', [key]);
 export const cleanupAssistedSessions = onSchedule(
   { schedule: 'every 60 minutes', region: 'us-central1', maxInstances: 1 },
   async () => {
@@ -862,36 +515,9 @@ export const cleanupBookAssets = onSchedule(
         await document.ref.delete();
       }
     }
+    await cleanupExpiredPersonaGenerations(db);
   },
 );
-
-export const listCampaignPreparationItems = callable('listCampaignPreparationItems');
-export const getCampaignPreparationItem = callable('getCampaignPreparationItem');
-export const saveCampaignPreparationItem = callable('saveCampaignPreparationItem');
-export const deleteCampaignPreparationItem = callable('deleteCampaignPreparationItem');
-export const moveCampaignPreparationItem = callable('moveCampaignPreparationItem');
-export const listCampaignSessionPreparationLinks = callable('listCampaignSessionPreparationLinks');
-export const addCampaignSessionPreparationLink = callable('addCampaignSessionPreparationLink');
-export const removeCampaignSessionPreparationLink = callable(
-  'removeCampaignSessionPreparationLink',
-);
-export const moveCampaignSessionPreparationLink = callable('moveCampaignSessionPreparationLink');
-export const resolveCampaignPreparationOperation = callable('resolveCampaignPreparationOperation');
-
-export const listAdventureLore = callable('listAdventureLore');
-export const getAdventureLore = callable('getAdventureLore');
-export const saveAdventureLore = callable('saveAdventureLore');
-export const deleteAdventureLore = callable('deleteAdventureLore');
-export const resolveAdventureLoreOperation = callable('resolveAdventureLoreOperation');
-
-export const startAdventureImport = callable('startAdventureImport');
-export const resolveAdventureImportStart = callable('resolveAdventureImportStart');
-export const listAdventureImports = callable('listAdventureImports');
-export const getAdventureImport = callable('getAdventureImport');
-export const appendAdventureImportSection = callable('appendAdventureImportSection');
-export const advanceAdventureImport = callable('advanceAdventureImport');
-export const activateAdventureImport = callable('activateAdventureImport');
-export const cancelAdventureImport = callable('cancelAdventureImport');
 export const getAdventureImportRecoveryKey = onRequest(
   { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
   createAdventureImportRecoveryHandler({
@@ -900,15 +526,6 @@ export const getAdventureImportRecoveryKey = onRequest(
     verifyAppCheck: (token) => getAppCheck().verifyToken(token),
   }),
 );
-
-export const startBookRestore = callable('startBookRestore');
-export const resolveBookRestoreStart = callable('resolveBookRestoreStart');
-export const getBookRestore = callable('getBookRestore');
-export const listBookRestores = callable('listBookRestores');
-export const appendBookRestoreChunk = callable('appendBookRestoreChunk');
-export const resolveBookRestoreOperation = callable('resolveBookRestoreOperation');
-export const cancelBookRestore = callable('cancelBookRestore');
-export const advanceBookRestoreCleanup = callable('advanceBookRestoreCleanup');
 export const getBookRestoreRecoveryKey = onRequest(
   { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
   createBookRestoreRecoveryHandler({
@@ -922,33 +539,6 @@ export const getBookRestoreRecoveryKey = onRequest(
   }),
 );
 
-export const advanceBookRestoreIntegrity = callable('advanceBookRestoreIntegrity');
-
-export const advanceBookRestoreValidation = callable('advanceBookRestoreValidation');
-
-export const advanceBookRestoreStructure = callable('advanceBookRestoreStructure');
-export const advanceBookRestoreLore = callable('advanceBookRestoreLore');
-export const advanceBookRestoreResources = callable('advanceBookRestoreResources');
-export const advanceBookRestoreCounts = callable('advanceBookRestoreCounts');
-export const advanceBookRestorePersonas = callable('advanceBookRestorePersonas');
-export const advanceBookRestoreUniverse = callable('advanceBookRestoreUniverse');
-export const advanceBookRestoreHistory = callable('advanceBookRestoreHistory');
-export const advanceBookRestoreDraft = callable('advanceBookRestoreDraft');
-export const finalizeBookRestoreDraft = callable('finalizeBookRestoreDraft');
-export const advanceBookRestoreCover = callable('advanceBookRestoreCover');
-export const reserveBookRestoreCover = callable('reserveBookRestoreCover');
-export const materializeBookRestoreCover = callable('materializeBookRestoreCover');
-export const advanceBookRestorePersonaLibrary = callable('advanceBookRestorePersonaLibrary');
-export const advanceBookRestoreSourceIndexes = callable('advanceBookRestoreSourceIndexes');
-export const advanceBookRestoreAudit = callable('advanceBookRestoreAudit');
-export const getBookRestoreActivationReview = callable('getBookRestoreActivationReview');
-export const activateBookRestore = callable('activateBookRestore');
-export const retireBookRestoreActivation = callable('retireBookRestoreActivation');
-export const getBookRestoreMediaState = callable('getBookRestoreMediaState');
-export const finalizeBookRestoreMedia = callable('finalizeBookRestoreMedia');
-export const getBookRestoreArchiveCleanup = callable('getBookRestoreArchiveCleanup');
-export const advanceBookRestoreArchiveCleanup = callable('advanceBookRestoreArchiveCleanup');
-
 export const getAdventureRestoreRecoveryKey = onRequest(
   { region: 'us-central1', cors: false, memory: '512MiB', maxInstances: 5, timeoutSeconds: 120 },
   createAdventureRestoreRecoveryHandler({
@@ -960,101 +550,19 @@ export const getAdventureRestoreRecoveryKey = onRequest(
     verifyAppCheck: (token) => getAppCheck().verifyToken(token),
   }),
 );
-export const startAdventureRestore = callable('startAdventureRestore');
-export const resolveAdventureRestoreStart = callable('resolveAdventureRestoreStart');
-export const getAdventureRestore = callable('getAdventureRestore');
-export const listAdventureRestores = callable('listAdventureRestores');
-export const appendAdventureRestoreChunk = callable('appendAdventureRestoreChunk');
-export const resolveAdventureRestoreOperation = callable('resolveAdventureRestoreOperation');
-export const cancelAdventureRestore = callable('cancelAdventureRestore');
-export const advanceAdventureRestoreCleanup = callable('advanceAdventureRestoreCleanup');
-export const advanceAdventureRestoreIntegrity = callable('advanceAdventureRestoreIntegrity');
-export const advanceAdventureRestoreValidation = callable('advanceAdventureRestoreValidation');
-export const advanceAdventureRestoreStructure = callable('advanceAdventureRestoreStructure');
-export const advanceAdventureRestoreResources = callable('advanceAdventureRestoreResources');
-export const advanceAdventureRestoreProfiles = callable('advanceAdventureRestoreProfiles');
-export const advanceAdventureRestoreHistory = callable('advanceAdventureRestoreHistory');
-export const finalizeAdventureRestoreDraft = callable('finalizeAdventureRestoreDraft');
-export const advanceAdventureRestoreUniverse = callable('advanceAdventureRestoreUniverse');
-export const advanceAdventureRestorePersonaLibrary = callable(
-  'advanceAdventureRestorePersonaLibrary',
-);
-export const advanceAdventureRestoreImages = callable('advanceAdventureRestoreImages');
-export const advanceAdventureRestoreImageStorage = callable('advanceAdventureRestoreImageStorage');
-export const advanceAdventureRestoreCounts = callable('advanceAdventureRestoreCounts');
-export const advanceAdventureRestoreAudit = callable('advanceAdventureRestoreAudit');
-export const advanceAdventureRestoreImageLibrary = callable('advanceAdventureRestoreImageLibrary');
-export const getAdventureRestoreActivationReview = callable('getAdventureRestoreActivationReview');
-export const activateAdventureRestore = callable('activateAdventureRestore');
-export const retireAdventureRestoreActivation = callable('retireAdventureRestoreActivation');
-export const getAdventureRestoreMediaState = callable('getAdventureRestoreMediaState');
-export const advanceAdventureRestoreMedia = callable('advanceAdventureRestoreMedia');
-export const getAdventureRestoreArchiveCleanup = callable('getAdventureRestoreArchiveCleanup');
-export const advanceAdventureRestoreArchiveCleanup = callable(
-  'advanceAdventureRestoreArchiveCleanup',
-);
-
-export const getAdventureBackupSource = callable('getAdventureBackupSource');
-export const listAdventureBackupStructure = callable('listAdventureBackupStructure');
-export const readAdventureBackupStructure = callable('readAdventureBackupStructure');
-export const listAdventureBackupResources = callable('listAdventureBackupResources');
-export const readAdventureBackupResource = callable('readAdventureBackupResource');
-export const listAdventureBackupLore = callable('listAdventureBackupLore');
-export const readAdventureBackupLore = callable('readAdventureBackupLore');
-export const listAdventureBackupPersonaBindings = callable('listAdventureBackupPersonaBindings');
-export const readAdventureBackupPersona = callable('readAdventureBackupPersona');
-export const listAdventureBackupHistory = callable('listAdventureBackupHistory');
-export const readAdventureBackupHistory = callable('readAdventureBackupHistory');
-export const readAdventureBackupHistoryText = callable('readAdventureBackupHistoryText');
-export const listAdventureBackupImageBindings = callable('listAdventureBackupImageBindings');
-export const getAdventureBackupImage = callable('getAdventureBackupImage');
-export const readAdventureBackupImageChunk = callable('readAdventureBackupImageChunk');
-export const verifyAdventureBackupImage = callable('verifyAdventureBackupImage');
-export const getAdventureBackupUniverse = callable('getAdventureBackupUniverse');
-
-// Literal, authenticated entry points for private universe document import.
-function universeLoreImportCallable(method, secrets = []) {
-  return onCall(
-    {
-      region: 'us-central1',
-      enforceAppCheck: true,
-      timeoutSeconds: 120,
-      memory: '512MiB',
-      maxInstances: 5,
-      secrets,
-    },
-    async (request) => {
-      request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
-      request.rawRequest?.res?.setHeader('Vary', 'Authorization');
-      if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Entre na sua conta.');
-      try {
-        const service = createUniverseLoreImportService({ db, generator: loreGenerator });
-        return await service[method](request.auth.uid, request.data);
-      } catch (error) {
-        if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
-        throw new HttpsError(
-          'unavailable',
-          'Não foi possível concluir a importação. Tente novamente.',
-        );
-      }
-    },
-  );
+async function invokeUniverseImport(method, request) {
+  request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
+  request.rawRequest?.res?.setHeader('Vary', 'Authorization');
+  if (!request.auth?.uid) throw new HttpsError('unauthenticated', 'Entre na sua conta.');
+  try {
+    const service = createUniverseLoreImportService({ db, generator: loreGenerator });
+    return await service[method](request.auth.uid, request.data);
+  } catch (error) {
+    if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
+    throw new HttpsError('unavailable', 'Não foi possível concluir a importação. Tente novamente.');
+  }
 }
-export const startUniverseLoreImport = universeLoreImportCallable('startUniverseLoreImport');
-export const appendUniverseLoreImport = universeLoreImportCallable('appendUniverseLoreImport');
-export const sealUniverseLoreImport = universeLoreImportCallable('sealUniverseLoreImport');
-export const advanceUniverseLoreImport = universeLoreImportCallable('advanceUniverseLoreImport', [
-  key,
-]);
-export const getUniverseLoreImport = universeLoreImportCallable('getUniverseLoreImport');
-export const getUniverseLoreImportTarget = universeLoreImportCallable(
-  'getUniverseLoreImportTarget',
-);
-export const saveUniverseLoreImportReview = universeLoreImportCallable(
-  'saveUniverseLoreImportReview',
-);
-export const applyUniverseLoreImport = universeLoreImportCallable('applyUniverseLoreImport');
-export const cancelUniverseLoreImport = universeLoreImportCallable('cancelUniverseLoreImport');
+
 export const cleanupUniverseLoreImports = onSchedule(
   { schedule: 'every 60 minutes', region: 'us-central1', maxInstances: 1 },
   async () => {
@@ -1091,31 +599,61 @@ export const cleanupUniverseLoreImports = onSchedule(
   },
 );
 
-export const personaGeneration = onCall(
-  {
-    region: 'us-central1',
-    enforceAppCheck: true,
-    timeoutSeconds: 120,
-    maxInstances: 5,
-    memory: '512MiB',
-    secrets: [key],
-  },
-  async (request) => {
-    try {
-      return await createPersonaGenerationService({
-        db,
-        generator: (input) => generatePlatformChat(input, () => {}, { apiKey: key.value() }),
-      }).dispatch(request.auth?.uid, request.data);
-    } catch (error) {
-      if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
-      throw new HttpsError(
-        'unavailable',
-        'Não foi possível concluir a criação da persona. Tente novamente.',
-      );
-    }
-  },
-);
-export const cleanupPersonaGenerations = onSchedule(
-  { schedule: 'every 60 minutes', region: 'us-central1', maxInstances: 1 },
-  () => cleanupExpiredPersonaGenerations(db),
-);
+const sectorServices = createSectorServices({
+  db,
+  assets,
+  backupStorage,
+  loreGenerator,
+  assistedGenerator,
+  assistedCost,
+  coverCost,
+  generationFactory: service,
+  personaGenerator: (input) => generatePlatformChat(input, () => {}, { apiKey: key.value() }),
+});
+
+function domainCallable(name) {
+  const domain = FUNCTION_DOMAINS[name];
+  const dispatch = createDomainHandler({
+    domain,
+    name,
+    invoke: (method, request) =>
+      domain.sourceFactory === 'universeLoreImportCallable'
+        ? invokeUniverseImport(method, request)
+        : invokeCallable(method, request, name),
+    observe: (entry) => logger.info('domain-call', entry),
+  });
+  return onCall(
+    { ...domain.options, secrets: domain.requiresGenerationKey ? [key] : [] },
+    async (request) => {
+      request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
+      request.rawRequest?.res?.setHeader('Vary', 'Authorization, X-Firebase-AppCheck');
+      try {
+        return await dispatch(request);
+      } catch (error) {
+        if (error instanceof HttpsError) throw error;
+        if (error instanceof GenerationError)
+          throw new HttpsError(error.code, error.message, error.details);
+        throw new HttpsError(
+          'unavailable',
+          'Serviço temporariamente indisponível. Tente novamente.',
+        );
+      }
+    },
+  );
+}
+export const adventurePortabilityApi = domainCallable('adventurePortabilityApi');
+export const adventureRestoreValidationApi = domainCallable('adventureRestoreValidationApi');
+export const adventuresApi = domainCallable('adventuresApi');
+export const bookPortabilityApi = domainCallable('bookPortabilityApi');
+export const bookRestoreValidationApi = domainCallable('bookRestoreValidationApi');
+export const booksApi = domainCallable('booksApi');
+export const campaignSyncApi = domainCallable('campaignSyncApi');
+export const campaignsApi = domainCallable('campaignsApi');
+export const generationApi = domainCallable('generationApi');
+export const loreAnalysisApi = domainCallable('loreAnalysisApi');
+export const loreApi = domainCallable('loreApi');
+export const mediaApi = domainCallable('mediaApi');
+export const planningApi = domainCallable('planningApi');
+export const universeImportAnalysisApi = domainCallable('universeImportAnalysisApi');
+export const universeImportApi = domainCallable('universeImportApi');
+export const workApi = domainCallable('workApi');

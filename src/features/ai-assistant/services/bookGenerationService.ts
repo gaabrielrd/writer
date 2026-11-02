@@ -1,4 +1,5 @@
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { capturePlatformTextGeneration } from './byokStorage';
 import type { ChatGenerationRequest } from '../model/chatGeneration';
 import { getFirebaseApp } from '@/shared/lib';

@@ -1,3 +1,4 @@
+import { domainSdkFixture } from './helpers/domainSdkFixture.mjs';
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -7,7 +8,7 @@ import { getAppCheck } from 'firebase-admin/app-check';
 import { BOOK_RESTORE_METHODS } from '../src/bookRestoreUploadContracts.mjs';
 const previousProject = process.env.GCLOUD_PROJECT;
 process.env.GCLOUD_PROJECT = 'demo-writer-restore-host';
-const host = await import('../src/index.mjs');
+const host = domainSdkFixture(await import('../src/index.mjs'));
 let server,
   address,
   auth,
@@ -79,10 +80,10 @@ for (const method of BOOK_RESTORE_METHODS)
             data: { privateText: 'PRIVATE_TEST_LITERAL' },
             rawRequest: { res: { setHeader: (k, v) => headers.set(k, v) } },
           }),
-        (error) => error.code === 'unauthenticated' && error.details?.reason === 'auth-required',
+        (error) => error.code === 'unauthenticated',
       );
       assert.equal(headers.get('Cache-Control'), 'private, no-store');
-      assert.equal(headers.get('Vary'), 'Authorization');
+      assert.equal(headers.get('Vary'), 'Authorization, X-Firebase-AppCheck');
     },
   );
 for (const method of [

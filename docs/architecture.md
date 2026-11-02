@@ -4,6 +4,11 @@ Este documento descreve como o código do `Writer Assistant` é organizado e as 
 
 ## Princípios
 
+As Functions são expostas por setor, com ações explícitas e serviços internos
+separados. O transporte é configurado pela aplicação; consulte a
+[ADR 0270](decisions/0270-functions-by-sector.md) e o
+[inventário de recursos](infrastructure/functions-inventory.json).
+
 - Organização por funcionalidades (features), não por camadas técnicas.
 - Cada parte tem uma responsabilidade clara.
 - Simplicidade primeiro: só adicione abstração quando houver necessidade real.
@@ -4016,7 +4021,7 @@ e recibo atomicamente. Alterações concorrentes invalidam a revisão. Veja
 ## Geração contextual de personas
 
 A feature ai-assistant compõe seleção de universo/lore pelas APIs públicas e
-reutiliza o formulário de personas para revisão. personaGeneration em Functions
+reutiliza o formulário de personas para revisão. personaGeneration em generationApi/Functions
 captura fontes autorizadas, limita contexto/quota e reconfere identidade/conteúdo
 antes de expor a proposta. O aceite grava nova persona e recibo atomicamente,
 sem débito, vínculos automáticos ou alteração nos contratos de perfis restaurados.

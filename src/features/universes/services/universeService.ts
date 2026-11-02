@@ -1,5 +1,6 @@
 import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { firestore, getFirebaseApp } from '@/shared/lib';
 import type { Universe, UniverseInput } from '../model/universe';
 

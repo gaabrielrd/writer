@@ -11,7 +11,7 @@ criar outro modelo de persona ou alterar automaticamente projetos existentes.
 
 ## Decisão
 
-Manter criação e revisão na feature ai-assistant. A callable personaGeneration
+Manter criação e revisão na feature ai-assistant. A ação personaGeneration de generationApi
 captura somente universo próprio e até 25 fichas globais escolhidas, com teto de
 64 KiB. A prévia e os pedidos usam um hash do conteúdo, relógios e identidades
 nativas; o servidor relê a origem na geração, conclusão e primeiro aceite.
@@ -43,3 +43,11 @@ compatíveis. Não há migração de personas ou alteração nos formatos de bac
 São necessários implantação coordenada de Functions/frontend/regras/índice e
 acesso ao modelo configurado. A qualidade literária e a ausência de fatos privados
 na proposta dependem da revisão do autor; testes verificam contratos e fluxo.
+
+## Integração com a principal atualizada
+
+A principal recebeu a ADR 0270 durante a validação da feature. O transporte usa
+shared/api/domainCallable e registra a ação personaGeneration em generationApi.
+O serviço do setor delega ao mesmo contrato privado de captura/geração/aceite.
+A coleta é composta no scheduler cleanupBookAssets existente, preservando 30
+recursos implantáveis e sem reintroduzir endpoints individuais.

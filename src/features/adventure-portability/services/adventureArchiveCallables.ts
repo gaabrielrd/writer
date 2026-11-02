@@ -69,7 +69,7 @@ export function createAdventureArchiveApi(
       guard();
       const body = request(method, input, adventureId);
       const [{ getFunctions, httpsCallable }, { auth, getFirebaseApp }] = await Promise.all([
-        import('firebase/functions'),
+        import('@/shared/api/domainCallable'),
         import('@/shared/lib'),
       ]);
       const active = () => {

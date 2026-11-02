@@ -142,7 +142,7 @@ mudanças do universo. Não houve dependência nova ou migração de biblioteca.
 - Testes usam provedores/contas fictícios. Qualidade literária e acesso real ao modelo precisam de avaliação manual; a revisão explícita do autor é obrigatória.
 - Seleção e ponteiro de recuperação ficam em memória, sem retomada após reload. Pedidos expiram em uma hora e a coleta remove até 100 por execução.
 - Personas salvas são independentes da origem. Para gerar novamente após mudanças de contexto, é necessário conferir a prévia e criar outro pedido.
-- Implantação não executada. A liberação requer frontend, personaGeneration, cleanupPersonaGenerations, regras e índice, com o segredo de geração existente.
+- Implantação não executada. A liberação requer frontend, personaGeneration, cleanupBookAssets, regras e índice, com o segredo de geração existente.
 - Trabalho local: sem push, PR ou execução/acompanhamento de CI remota.
 
 ## Como verificar manualmente
