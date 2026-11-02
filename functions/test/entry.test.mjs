@@ -4,6 +4,8 @@ test('server entry loads all deployment exports without a provider secret or net
   process.env.GCLOUD_PROJECT = 'demo-writer-generation-bootstrap';
   const entry = await import('../src/index.mjs');
   for (const name of [
+    'personaGeneration',
+    'cleanupPersonaGenerations',
     'bookGenerationQuote',
     'generateBookAsset',
     'acceptBookAsset',

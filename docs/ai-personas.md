@@ -118,8 +118,9 @@ para reconstruir a configuração. Sem personas, versões 1 e 2 são preservadas
 O aplicativo continua sem um restaurador completo de manuscritos JSON.
 
 É necessário implantar `firestore.rules` junto da versão da aplicação antes de
-utilizar a persistência em produção. Esta entrega não altera cobrança nem exige
-novos segredos, dependências ou Cloud Functions.
+utilizar a persistência em produção. O gerenciamento manual não altera cobrança nem exige
+novos segredos, dependências ou Cloud Functions. A geração contextual descrita
+adiante exige sua callable e coleta de pedidos.
 
 ## Verificação
 
@@ -133,3 +134,45 @@ A suíte visual usa contas e serviços fictícios com rede externa bloqueada,
 nos três temas, desktop e celular, incluindo 320 px. Testa teclado, corpo
 rolável, ações visíveis, persistência, arquivamento, vínculos, composição e
 manutenção do texto até o aceite. Veja [testes](testing.md).
+
+## Criação com IA a partir do universo
+
+Na aba Personas, **Criar com IA** abre a seleção de um universo próprio e de até
+25 fichas globais. Sem fichas selecionadas, o contexto usa somente nome e descrição
+do universo. A intenção opcional tem até 2.000 caracteres. **Conferir contexto**
+mostra todo o conteúdo autorizado que será enviado; o limite é 65.536 bytes UTF-8,
+sem truncamento silencioso. A escolha de outras fichas exige conferir novamente.
+
+**Gerar persona** usa a IA da plataforma e as preferências de modelo/raciocínio
+congeladas naquele pedido. Esta operação não usa BYOK e não debita créditos do
+Writer; consome cota do provedor. Há limite de dez gerações por hora por conta.
+A proposta contém os oito atributos padrão, até oito próprios, nome, descrição,
+instruções e uma explicação da interpretação estilística. O formulário existente
+permite ajustar tudo antes de **Salvar persona**. Gerar outra proposta é explícito.
+
+A finalidade é extrair voz e estilo, sem incorporar fatos privados ao perfil
+permanente. A saída é validada estruturalmente; o autor deve revisar também o
+conteúdo literário e as instruções antes de salvar. A persona salva é privada,
+independente da fonte e não ganha vínculos automaticamente. Alterar o universo
+não modifica essa voz. Seleção, composição, arquivamento e backups continuam
+usando o contrato atual de personas.
+
+O servidor lê as fontes e confere autoria, identidade nativa e conteúdo antes e
+depois da geração e no primeiro aceite. Alterações ou remoções exigem atualizar
+contexto e gerar outra proposta. A revisão não escreve no universo ou manuscrito.
+Resposta incerta permite **Consultar resultado**, sem nova chamada ao modelo.
+O salvamento congela a revisão enviada; repetir o aceite recupera o mesmo recibo,
+sem criar duplicata ou sobrescrever uma persona da biblioteca. O resultado já
+aceito continua confirmado mesmo após mudanças na fonte.
+
+Pedidos ficam privados em `users/{uid}/personaGenerations/{requestId}`, sem
+chave, intenção ou cópia do lore. Propostas e recibos expiram em uma hora; o
+cleanup horário remove até 100 por execução. Não há retomada da revisão após
+recarregar a página: a seleção e o ponteiro de recuperação ficam em memória.
+Fechar um pedido pendente tenta descartá-lo; expiração cobre falhas de descarte.
+Personas salvas permanecem na biblioteca depois da coleta do pedido.
+
+A liberação exige frontend, callable `personaGeneration`, scheduler
+`cleanupPersonaGenerations`, regras e índice de collection-group para `expiresAt`.
+Reutiliza o segredo servidor de geração existente. Nenhuma implantação é
+executada automaticamente. Veja [decisão de geração contextual](decisions/0271-contextual-persona-generation.md).

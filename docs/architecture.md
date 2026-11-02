@@ -4012,3 +4012,14 @@ e diff. Sessões e arquivos temporários são server-only, em partes limitadas d
 Firestore; a confirmação atualiza fichas, universo, clock de autorização, crédito
 e recibo atomicamente. Alterações concorrentes invalidam a revisão. Veja
 [contrato da importação](universe-lore-import.md).
+
+## Geração contextual de personas
+
+A feature ai-assistant compõe seleção de universo/lore pelas APIs públicas e
+reutiliza o formulário de personas para revisão. personaGeneration em Functions
+captura fontes autorizadas, limita contexto/quota e reconfere identidade/conteúdo
+antes de expor a proposta. O aceite grava nova persona e recibo atomicamente,
+sem débito, vínculos automáticos ou alteração nos contratos de perfis restaurados.
+O compilador puro personaProfile valida perfis; o transporte existente recebe
+snapshot público de geração. Pedidos são privados e temporários; o scheduler
+coleta expirados por lotes. Veja [ADR 0271](decisions/0271-contextual-persona-generation.md).
