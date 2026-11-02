@@ -39,7 +39,6 @@
   display: none;
 }
 .sidebarHeader,
-.preferences,
 .toolbar {
   display: flex;
   align-items: center;
@@ -74,24 +73,21 @@
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-md);
 }
-.preferences {
-  justify-content: space-between;
-  flex-wrap: wrap;
+.headerControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   gap: var(--space-2);
-  width: 100%;
+  margin-left: auto;
+  flex-shrink: 0;
 }
-.preferences .footerControl {
+.headerControls .headerControl {
   min-height: 40px;
-  border: 1px solid hsl(var(--border) / 0.55);
+  padding: var(--space-1) var(--space-2);
+  border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
   color: hsl(var(--foreground));
-}
-.preferences > button.footerControl {
-  justify-content: center;
-  padding: var(--space-1) var(--space-2);
-  min-width: 58px;
-  align-self: stretch;
 }
 .account {
   min-width: 0;
@@ -117,7 +113,7 @@
   gap: var(--space-2);
   min-height: 48px;
   flex-shrink: 0;
-  padding: var(--space-1) var(--space-3);
+  padding: var(--space-1) var(--space-3) var(--space-1) var(--space-4);
   border-bottom: 1px solid hsl(var(--border));
 }
 .context {
@@ -131,7 +127,10 @@
   font-weight: 500;
 }
 .context > span:first-child {
-  flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .main {
   flex: 1;
@@ -236,6 +235,9 @@
   .main {
     padding: var(--space-3);
   }
+  .toolbar {
+    padding-left: var(--space-3);
+  }
 }
 @media (pointer: coarse) {
   .toolbar button,
@@ -261,4 +263,17 @@
 }
 .shell[data-workspace-expanded='true'] {
   --workspace-content-max: 100%;
+}
+
+@media (max-width: 520px) {
+  .toolbar {
+    flex-wrap: wrap;
+  }
+  .context {
+    flex-basis: calc(100% - 52px);
+  }
+  .headerControls {
+    width: 100%;
+    padding-bottom: var(--space-1);
+  }
 }

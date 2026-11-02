@@ -42,16 +42,6 @@ export function AuthenticatedWorkspace() {
     <>
       <StudioNavigation onNavigate={closeDrawer} />
       <Card tone="flat" className={styles.sidebarFooter}>
-        <div className={styles.preferences}>
-          {user && (
-            <CreditsBadge
-              credits={user.credits}
-              tier={user.tier}
-              className={styles.footerControl}
-            />
-          )}
-          <CustomThemeSelector onOpenCustom={closeDrawer} />
-        </div>
         <div className={styles.account}>
           <AuthButton
             onOpenAISettings={() => {
@@ -134,6 +124,16 @@ export function AuthenticatedWorkspace() {
               <span className={styles.contextSection}>/ {workspaceSectionLabel(pathname)}</span>
             )}
             <BookNavigation />
+          </div>
+          <div className={styles.headerControls}>
+            {user && (
+              <CreditsBadge
+                credits={user.credits}
+                tier={user.tier}
+                className={styles.headerControl}
+              />
+            )}
+            <CustomThemeSelector />
           </div>
         </header>
         <main id="main-content" tabIndex={-1} className={styles.main}>

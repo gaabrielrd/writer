@@ -304,3 +304,33 @@
 html[data-theme='sepia'] {
   filter: none;
 }
+
+/* During a theme swap, component hover transitions must not compete. */
+html[data-theme-transition='snapshot'],
+html[data-theme-transition='snapshot'] *,
+html[data-theme-transition='snapshot'] *::before,
+html[data-theme-transition='snapshot'] *::after {
+  transition: none !important;
+}
+html[data-theme-transition='snapshot']::view-transition-group(root) {
+  animation-duration: 240ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+html[data-theme-transition='snapshot']::view-transition-old(root),
+html[data-theme-transition='snapshot']::view-transition-new(root) {
+  animation-duration: 240ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-theme-transition='colors'],
+  html[data-theme-transition='colors'] *,
+  html[data-theme-transition='colors'] *::before,
+  html[data-theme-transition='colors'] *::after {
+    transition-property:
+      background-color, color, border-color, outline-color, text-decoration-color, box-shadow, fill,
+      stroke !important;
+    transition-duration: 240ms !important;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transition-delay: 0s !important;
+  }
+}

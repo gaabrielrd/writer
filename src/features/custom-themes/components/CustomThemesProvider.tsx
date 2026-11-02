@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Sun, Moon, BookOpen, UserRoundPen, Plus, MoreHorizontal, Check } from 'lucide-react';
+import { Moon, BookOpen, UserRoundPen, Plus, MoreHorizontal, Check } from 'lucide-react';
 import { useTheme, type Theme, type ThemeAppearance } from '@/shared/theme';
 import {
   Button,
@@ -252,9 +252,8 @@ function ThemeSession({ uid, children }: { uid: string | null; children: ReactNo
       <div role="group" aria-label="Tema visual" className={styles.selector}>
         {(
           [
-            { id: 'light', label: 'Claro', Icon: Sun },
-            { id: 'dark', label: 'Escuro', Icon: Moon },
             { id: 'sepia', label: 'Sépia', Icon: BookOpen },
+            { id: 'dark', label: 'Escuro', Icon: Moon },
           ] as const
         ).map(({ id, label, Icon }) => (
           <Button

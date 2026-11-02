@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef, type ReactNode } from 'react'
 import { type Theme } from './themeConfig';
 import { COLOR_TOKENS, hexToChannels, type ThemeAppearance } from './themeTokens';
 import { ThemeContext } from './ThemeContext';
+import { transitionTheme } from '../services/themeTransition';
 import { getStoredTheme, saveStoredTheme } from '../services/themeStorage';
 function getSystemTheme(): 'light' | 'dark' {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -19,6 +20,7 @@ export function ThemeProvider({
   const [systemTheme, setSystemTheme] = useState(getSystemTheme);
   const [customTheme, setCustomTheme] = useState<ThemeAppearance | null>(null);
   const [preview, previewTheme] = useState<ThemeAppearance | null>(null);
+  const initializedAppearance = useRef(false);
   const appearance = preview ?? customTheme;
   const resolvedTheme = appearance?.base ?? (theme === 'system' ? systemTheme : theme);
   const setTheme = useCallback((next: Theme) => {
@@ -50,33 +52,41 @@ export function ThemeProvider({
     return () => query.removeEventListener('change', change);
   }, []);
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark', 'sepia');
-    root.classList.add(resolvedTheme);
-    root.setAttribute('data-theme', resolvedTheme);
-    root.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light';
-    for (const token of COLOR_TOKENS) {
-      if (appearance)
-        root.style.setProperty('--' + token, hexToChannels(appearance.palette[token]));
-      else root.style.removeProperty('--' + token);
-    }
-    if (appearance) {
-      root.setAttribute('data-custom-theme', appearance.id);
-      root.style.setProperty('--badge-success-background', 'hsl(var(--success))');
-      root.style.setProperty('--badge-success-foreground', 'hsl(var(--success-foreground))');
-    } else {
-      root.removeAttribute('data-custom-theme');
-      root.style.removeProperty('--badge-success-background');
-      root.style.removeProperty('--badge-success-foreground');
-    }
-    return () => {
+    const animate = initializedAppearance.current;
+    initializedAppearance.current = true;
+    return transitionTheme(() => {
+      const root = document.documentElement;
+      root.classList.remove('light', 'dark', 'sepia');
+      root.classList.add(resolvedTheme);
+      root.setAttribute('data-theme', resolvedTheme);
+      root.style.colorScheme = resolvedTheme === 'dark' ? 'dark' : 'light';
+      for (const token of COLOR_TOKENS) {
+        if (appearance)
+          root.style.setProperty('--' + token, hexToChannels(appearance.palette[token]));
+        else root.style.removeProperty('--' + token);
+      }
+      if (appearance) {
+        root.setAttribute('data-custom-theme', appearance.id);
+        root.style.setProperty('--badge-success-background', 'hsl(var(--success))');
+        root.style.setProperty('--badge-success-foreground', 'hsl(var(--success-foreground))');
+      } else {
+        root.removeAttribute('data-custom-theme');
+        root.style.removeProperty('--badge-success-background');
+        root.style.removeProperty('--badge-success-foreground');
+      }
+    }, animate);
+  }, [resolvedTheme, appearance]);
+  useEffect(
+    () => () => {
+      const root = document.documentElement;
       for (const token of COLOR_TOKENS) root.style.removeProperty('--' + token);
       root.style.removeProperty('--badge-success-background');
       root.style.removeProperty('--badge-success-foreground');
       root.style.removeProperty('color-scheme');
       root.removeAttribute('data-custom-theme');
-    };
-  }, [resolvedTheme, appearance]);
+    },
+    [],
+  );
   return (
     <ThemeContext.Provider
       value={{

@@ -444,3 +444,17 @@ A escala preserva a luminosidade e respeita Claro/Escuro na criação.
 O Slider aceita `hideLabels` para controles com indicadores visuais próprios.
 Essa opção oculta título, valor e escala visuais, preservando nome acessível,
 valor e descrição dos extremos no input. O padrão dos demais sliders não muda.
+
+Tema e saldo de créditos ficam à direita na barra contextual da área logada.
+Em telas estreitas, esses controles passam para uma segunda linha alinhada
+à direita. A lateral mantém apenas o perfil no rodapé. Seu menu oferece
+Preferências, Inteligência artificial e Sair, com ícones e os bloqueios
+existentes durante operações pendentes do editor.
+
+A troca de tema usa uma transição única de 240 ms com curva
+cubic-bezier(0.4, 0, 0.2, 1). View Transitions compõe a interface inteira,
+evitando que as transições de hover dos componentes atrasem botões ou texto.
+Sem essa API, cores usam duração, curva e delay comuns durante a troca.
+A primeira aplicação e movimento reduzido não animam a mudança. Novas
+seleções interrompem a transição anterior; tempos normais de interação
+são restaurados ao terminar.
