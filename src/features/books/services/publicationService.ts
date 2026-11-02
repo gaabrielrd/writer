@@ -1,10 +1,10 @@
+import { deleteSceneBook } from '@/features/scenes';
 import {
   collection,
   doc,
   getDocFromServer,
   getDocsFromServer,
   runTransaction,
-  serverTimestamp,
   writeBatch,
   type DocumentData,
   type DocumentReference,
@@ -12,7 +12,10 @@ import {
 import { firestore, renderRichText } from '@/shared/lib';
 import { actName, groupChapters } from '../model/act';
 import { listActs } from './chapterOrganizationService';
-import { preferredLoreTerms, universeEntityId } from '@/features/lore';
+import { preferredLoreTerms, universeEntityId, hasBookLorePayload } from '@/features/lore';
+import { bookPublicationSession } from './bookLorePublicationClient';
+import { resolveChapterContent } from './chapterCompositionService';
+import type { Chapter } from '../model/chapter';
 
 const MAX_DOCUMENT_BYTES = 900_000;
 const WRITE_BATCH_SIZE = 400;
@@ -43,6 +46,9 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   const bookSnapshot = await getDocFromServer(bookRef);
   if (!bookSnapshot.exists()) throw new Error('Livro não encontrado.');
   const book = bookSnapshot.data();
+  const sceneMetadata = book.hasSceneResources
+    ? { sourceSceneRevision: (book.sceneRevision ?? 0) as number }
+    : {};
   const title = requiredText(book.title, 'O título do livro', 300);
   if (book.deleting === true) throw new Error('A exclusão deste livro já foi iniciada.');
   const privacyVersion: unknown = book.publicationPrivacyVersion ?? 0;
@@ -58,6 +64,27 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     getDocsFromServer(collection(firestore, 'books', bookId, 'chapters')),
     getDocsFromServer(collection(firestore, 'books', bookId, 'lore')),
   ]);
+  const nativePublication =
+    book.hasLoreResources === true ||
+    loreSnapshot.docs.some((entity) => hasBookLorePayload(entity.data()));
+  const publication = nativePublication ? bookPublicationSession(bookId, book.authorId) : null;
+  const capture = publication ? await publication.capture() : null;
+  if (
+    capture &&
+    (capture.source.updatedAt !== (book.updatedAt ?? 0) ||
+      capture.source.status !== book.status ||
+      capture.source.privacyVersion !== privacyVersion ||
+      capture.source.sceneRevision !== (book.sceneRevision ?? 0) ||
+      capture.source.hasScenes !== (book.hasSceneResources === true) ||
+      capture.source.universeId !== (book.universeId ?? null))
+  )
+    throw new Error('O livro mudou durante a captura. Atualize e tente novamente.');
+  const localLore = capture
+    ? capture.collection.sources.map((entity) => ({
+        id: entity.id,
+        data: entity.data,
+      }))
+    : loreSnapshot.docs.map((entity) => ({ id: entity.id, data: entity.data() }));
   const acts = await listActs(bookId);
   const universeId = book.universeId as string | undefined;
   const universeRef = universeId ? doc(firestore, 'universes', universeId) : null;
@@ -79,11 +106,11 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       ? { universeId, universePrivacyVersion: universe.privacyVersion as number }
       : {};
   const sources = [
-    ...loreSnapshot.docs.map((entity) => ({
+    ...localLore.map((entity) => ({
       id: entity.id,
       sourceEntityId: undefined as string | undefined,
       universeId: undefined as string | undefined,
-      data: entity.data(),
+      data: entity.data,
     })),
     ...(globalLore?.docs ?? []).map((entity) => ({
       id: universeEntityId(universeId!, entity.id),
@@ -91,7 +118,9 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       universeId,
       data: entity.data(),
     })),
-  ];
+  ].filter((entity) => !entity.data.deleted && !entity.data.deleting);
+  if (new Set(sources.map((entity) => entity.id)).size !== sources.length)
+    throw new Error('Há identidades de lore que colidem na publicação. Revise as referências.');
   const winners = preferredLoreTerms(
     sources.map((source) => ({
       ...source,
@@ -104,6 +133,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   const rootRef = doc(firestore, 'publicBooks', bookId);
   const revisionRef = doc(collection(rootRef, 'revisions'));
   const writes: { ref: DocumentReference; data: DocumentData }[] = [];
+  const nativeLore: { id: string; aliases: string[] }[] = [];
 
   const sourceChapters = chapterSnapshot.docs.map((snapshot) => ({
     id: snapshot.id,
@@ -129,16 +159,33 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   for (const chapterEntry of publicGroups.flatMap((group) => group.chapters)) {
     const chapter = chapterEntry.snapshot;
     const data = chapter.data();
-    if (typeof data.content !== 'string' || !Number.isInteger(data.order) || data.order < 0) {
+    if (
+      data.deleting ||
+      typeof data.content !== 'string' ||
+      !Number.isInteger(data.order) ||
+      data.order < 0
+    ) {
       throw new Error(
         'Há um capítulo inválido. Revise seu conteúdo e sua ordem antes de publicar.',
       );
     }
+    const canonical = await resolveChapterContent(bookId, {
+      ...data,
+      id: chapter.id,
+      bookId,
+    } as Chapter);
+    if (
+      data.contentMode === 'scenes' &&
+      new TextEncoder().encode(canonical.content).length > 800_000
+    )
+      throw new Error(
+        'Um capítulo reúne texto demais para publicar. Divida as cenas em capítulos menores.',
+      );
     const projection = {
       title: requiredText(data.title, 'O título do capítulo', 300),
       order: ++readingOrder,
       ...(data.actId ? { actId: data.actId as string } : {}),
-      content: renderRichText(data.content),
+      content: renderRichText(canonical.content),
     };
     assertDocumentSize(projection);
     writes.push({ ref: doc(collection(revisionRef, 'chapters'), chapter.id), data: projection });
@@ -171,11 +218,14 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       summary: data.summary,
       ...(entity.sourceEntityId ? { sourceEntityId: entity.sourceEntityId } : {}),
     };
-    writes.push({ ref: doc(collection(revisionRef, 'lore'), entity.id), data: projection });
+    if (publication && !entity.sourceEntityId)
+      nativeLore.push({ id: entity.id, aliases: projection.aliases });
+    else writes.push({ ref: doc(collection(revisionRef, 'lore'), entity.id), data: projection });
     publicLoreCount += 1;
   }
 
-  const publishedAt = Date.now();
+  const publishedAt = capture ? Math.max(Date.now(), capture.source.updatedAt + 1) : Date.now();
+  if (!Number.isSafeInteger(publishedAt)) throw new Error('Data de publicação inválida.');
   writes.unshift({
     ref: revisionRef,
     data: {
@@ -184,16 +234,30 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       ...(publicActs.length ? { actCount: publicActs.length } : {}),
       loreCount: publicLoreCount,
       privacyVersion,
+      ...(capture
+        ? { sourceLoreToken: capture.source.listToken, sourcePublicationToken: capture.sourceToken }
+        : {}),
+      ...sceneMetadata,
       ...universeMetadata,
     },
   });
+  if (publication && capture) await publication.verify(capture);
   // Separate chapter/lore documents avoid the 1 MiB whole-book document limit.
   for (let offset = 0; offset < writes.length; offset += STAGING_BATCH_SIZE) {
     const batch = writeBatch(firestore);
     for (const write of writes.slice(offset, offset + STAGING_BATCH_SIZE)) {
       batch.set(write.ref, write.data);
     }
+    publication?.guard();
     await batch.commit();
+    publication?.guard();
+  }
+  if (publication && capture) {
+    for (const entity of nativeLore)
+      await publication.stage(capture, revisionRef.id, entity.id, entity.aliases);
+    await publication.verify(capture);
+    await publication.finalize(capture, revisionRef.id, byline);
+    return;
   }
 
   await runTransaction(firestore, async (transaction) => {
@@ -203,6 +267,9 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
     // Do not undo a concurrent unpublish or publish a stale manuscript.
     if (
       latestBook.data().updatedAt !== book.updatedAt ||
+      (latestBook.data().localLoreVersion ?? 0) !== (book.localLoreVersion ?? 0) ||
+      latestBook.data().authorId !== book.authorId ||
+      (latestBook.data().sceneRevision ?? 0) !== (book.sceneRevision ?? 0) ||
       (latestBook.data().universeId ?? null) !== (universeId ?? null) ||
       (universe &&
         (!latestUniverse ||
@@ -223,6 +290,7 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
       revisionId: revisionRef.id,
       publishedAt,
       ...universeMetadata,
+      ...sceneMetadata,
     });
     transaction.update(bookRef, { status: 'published', updatedAt: publishedAt });
   });
@@ -247,12 +315,16 @@ export async function beginBookDeletion(bookId: string): Promise<void> {
   await batch.commit();
 }
 
-/** Retain a private ID tombstone so orphaned revisions can never be reattached. */
+/** Only the server can certify cleanup and retain the permanent deleted ID. */
 export async function finishBookDeletion(bookId: string): Promise<void> {
-  const batch = writeBatch(firestore);
-  batch.set(doc(firestore, 'deletedBooks', bookId), { deletedAt: serverTimestamp() });
-  batch.delete(doc(firestore, 'books', bookId));
-  await batch.commit();
+  const request = {
+    target: { kind: 'book' as const, id: bookId },
+    operationId: crypto.randomUUID(),
+    limit: 50,
+  };
+  while (!(await deleteSceneBook(request)).complete) {
+    /* The server checkpoint resumes after interruption, including legacy books. */
+  }
 }
 
 /** Called before deleting the private parent so ownership can still be checked. */

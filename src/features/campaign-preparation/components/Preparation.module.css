@@ -1,0 +1,50 @@
+.panel,
+.content,
+.editor {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.filters {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+.list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+  margin: 0;
+}
+.row {
+  padding: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  background: hsl(var(--card));
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.heading {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.editor {
+  border-top: 1px solid hsl(var(--border));
+  padding-top: 1rem;
+}
+.dialog {
+  max-width: 56rem;
+}
+.text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

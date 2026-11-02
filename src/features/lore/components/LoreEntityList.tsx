@@ -10,22 +10,22 @@ import {
   TableHeader,
   TableRow,
 } from '@/shared/ui';
-import { LORE_CATEGORIES, type LoreEntity } from '../model/loreEntity';
+import { LORE_CATEGORIES, type LoreEntity, type LoreMentionEntity } from '../model/loreEntity';
 import styles from './LorePage.module.css';
 
-interface LoreEntityListProps {
-  entities: LoreEntity[];
+interface LoreEntityListProps<T extends LoreMentionEntity & { isPublic: boolean } = LoreEntity> {
+  entities: T[];
   selectedIds: Set<string>;
   disabled: boolean;
   selectAllRef: (element: HTMLInputElement | null) => void;
   onSelect: (id: string) => void;
   onSelectAll: () => void;
-  onView: (entity: LoreEntity) => void;
-  onEdit: (entity: LoreEntity) => void;
+  onView: (entity: T) => void;
+  onEdit: (entity: T) => void;
   onDelete: (id: string) => void;
 }
 
-export function LoreEntityList({
+export function LoreEntityList<T extends LoreMentionEntity & { isPublic: boolean }>({
   entities,
   selectedIds,
   disabled,
@@ -35,7 +35,7 @@ export function LoreEntityList({
   onView,
   onEdit,
   onDelete,
-}: LoreEntityListProps) {
+}: LoreEntityListProps<T>) {
   const selectedCount = entities.filter((entity) => selectedIds.has(entity.id)).length;
   return (
     <Table aria-label="Entidades do compêndio" className={styles.entityTable}>

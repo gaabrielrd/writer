@@ -1,6 +1,11 @@
 import { useId, useState, type FormEvent } from 'react';
 import { Sparkles, CheckCircle2, Trash2 } from 'lucide-react';
 import { Alert, Button, Dialog, Input, Dropdown } from '@/shared/ui';
+import {
+  PLATFORM_TEXT_MODELS,
+  DEFAULT_PLATFORM_MODEL,
+  DEFAULT_PLATFORM_REASONING,
+} from '../model/chatGeneration';
 import type { AIProvider, BYOKConfig } from '../model/byokConfig';
 import { validateBYOKConfig } from '../model/byokConfig';
 import { getBYOKConfig, saveBYOKConfig, clearBYOKConfig } from '../services/byokStorage';
@@ -28,6 +33,16 @@ export function BYOKSettingsDialog({
     setConfig((prev) => ({
       ...prev,
       provider: newProvider,
+      ...(prev.provider === 'gemini_byok' ? { geminiModel: prev.customModel } : {}),
+      ...(prev.provider === 'openai_byok' ? { openaiModel: prev.customModel } : {}),
+      customModel:
+        newProvider === prev.provider
+          ? prev.customModel
+          : newProvider === 'gemini_byok'
+            ? prev.geminiModel
+            : newProvider === 'openai_byok'
+              ? prev.openaiModel
+              : undefined,
     }));
     setError(null);
     setSuccess(false);
@@ -68,10 +83,15 @@ export function BYOKSettingsDialog({
   };
 
   const content = (
-    <form id={formId} onSubmit={handleSubmit} className={styles.form}>
+    <form
+      id={formId}
+      onChange={() => setSuccess(false)}
+      onSubmit={handleSubmit}
+      className={styles.form}
+    >
       <p className={styles.description}>
-        Escolha se deseja usar a cota padrão da plataforma com Gemini 3.7 Flash ou conectar sua
-        própria chave de API (BYOK), sujeita aos limites e cobranças do provedor.
+        Use os modelos da plataforma ou conecte sua própria chave de API. As preferências são salvas
+        neste navegador. Salvar não gera conteúdo nem consome créditos.
       </p>
 
       {error && <Alert variant="danger">{error}</Alert>}
@@ -84,24 +104,77 @@ export function BYOKSettingsDialog({
 
       <Dropdown
         mode="select"
-        label="Provedor de IA"
-        value={config.provider}
-        onValueChange={(nextValue) => handleProviderChange(nextValue as AIProvider)}
+        label="Como deseja usar a IA?"
+        value={config.provider === 'firebase_ai' ? 'firebase_ai' : 'byok'}
+        onValueChange={(value) =>
+          handleProviderChange(
+            value === 'firebase_ai'
+              ? 'firebase_ai'
+              : config.geminiApiKey
+                ? 'gemini_byok'
+                : config.openaiApiKey
+                  ? 'openai_byok'
+                  : 'gemini_byok',
+          )
+        }
         options={[
-          {
-            value: 'firebase_ai',
-            label: 'Firebase AI Logic (Gemini 3.7 Flash — Consome Créditos)',
-          },
-          {
-            value: 'gemini_byok',
-            label: 'Google Gemini API (Chave Própria — BYOK)',
-          },
-          {
-            value: 'openai_byok',
-            label: 'OpenAI API (Chave Própria — BYOK)',
-          },
+          { value: 'firebase_ai', label: 'Firebase AI Logic' },
+          { value: 'byok', label: 'Chave própria — BYOK' },
         ]}
       />
+      {config.provider === 'firebase_ai' ? (
+        <div className={styles.byokFields}>
+          <Dropdown
+            mode="select"
+            label="Modelo da plataforma"
+            value={config.platformModel ?? DEFAULT_PLATFORM_MODEL}
+            onValueChange={(platformModel) => {
+              setConfig((prev) => ({ ...prev, platformModel }));
+              setSuccess(false);
+              setError(null);
+            }}
+            options={PLATFORM_TEXT_MODELS.map((model) => ({ value: model.id, label: model.label }))}
+          />
+          <p className={styles.description}>
+            {
+              PLATFORM_TEXT_MODELS.find(
+                (model) => model.id === (config.platformModel ?? DEFAULT_PLATFORM_MODEL),
+              )?.description
+            }
+            . O uso da plataforma segue as regras de créditos do Writer.
+          </p>
+          <Dropdown
+            mode="select"
+            label="Raciocínio padrão"
+            value={config.platformReasoning ?? DEFAULT_PLATFORM_REASONING}
+            onValueChange={(value) => {
+              setConfig((prev) => ({ ...prev, platformReasoning: value as 'medium' | 'high' }));
+              setSuccess(false);
+              setError(null);
+            }}
+            options={[
+              { value: 'medium', label: 'Médio' },
+              { value: 'high', label: 'Alto' },
+            ]}
+          />
+          <p className={styles.description}>
+            Alto permite mais raciocínio antes da resposta e pode aumentar o tempo de espera e o
+            custo do provedor. Conversas com uma escolha própria de raciocínio preservam essa
+            escolha.
+          </p>
+        </div>
+      ) : (
+        <Dropdown
+          mode="select"
+          label="Provedor BYOK"
+          value={config.provider}
+          onValueChange={(value) => handleProviderChange(value as AIProvider)}
+          options={[
+            { value: 'gemini_byok', label: 'Google Gemini API' },
+            { value: 'openai_byok', label: 'OpenAI API' },
+          ]}
+        />
+      )}
 
       {config.provider === 'gemini_byok' && (
         <div className={styles.byokFields}>
@@ -164,12 +237,10 @@ export function BYOKSettingsDialog({
   );
   const actions = (
     <div className={styles.actions}>
-      {config.provider !== 'firebase_ai' && (
-        <Button type="button" variant="secondary" onClick={handleResetToDefault}>
-          <Trash2 className="icon icon-sm" aria-hidden="true" />
-          Restaurar Padrão
-        </Button>
-      )}
+      <Button type="button" variant="secondary" onClick={handleResetToDefault}>
+        <Trash2 className="icon icon-sm" aria-hidden="true" />
+        Restaurar Padrão
+      </Button>
       <div className={styles.rightActions}>
         {!embedded && (
           <Button type="button" variant="secondary" onClick={onClose}>

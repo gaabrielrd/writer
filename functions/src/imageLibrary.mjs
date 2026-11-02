@@ -1,3 +1,10 @@
+import {
+  restoredImageRemovalPlan,
+  restoredImageRemovalClaim,
+  verifyRestoredImageRemovalClaim,
+} from './restoredImageRemoval.mjs';
+import { bookRestoreStorageProof } from './bookRestoreCoverStorageContracts.mjs';
+import { readBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { GenerationError, validateId } from './generation.mjs';
 import { prepareUniverseLink } from './universes.mjs';
 
@@ -23,6 +30,66 @@ function authorize(uid) {
 function active(record) {
   if (!record || record.state !== 'active') fail('not-found', 'Imagem indisponível.');
 }
+export function imageUseCount(record) {
+  if (!record || !Number.isSafeInteger(record.useCount) || record.useCount < 0)
+    fail('failed-precondition', 'O contador de usos da imagem está inconsistente.');
+  return record.useCount;
+}
+export async function readActiveLibraryImage(tx, db, uid, id) {
+  const ref = imageRef(db, uid, id),
+    snapshot = await tx.get(ref),
+    value = snapshot.data();
+  active(value);
+  imageUseCount(value);
+  if (typeof value.path !== 'string' || !value.path)
+    fail('failed-precondition', 'Arquivo da imagem indisponível.');
+  return { ref, snapshot, value };
+}
+// Typed uses cannot collide with legacy book IDs (which do not allow colons).
+export async function prepareLibraryImageUse(tx, db, uid, { key, usage, previousId, nextId }) {
+  const ids = [...new Set([previousId, nextId].filter(Boolean))],
+    records = new Map();
+  for (const id of ids) {
+    const ref = imageRef(db, uid, id),
+      useRef = db.doc(ref.path + '/uses/' + key);
+    records.set(id, { ref, useRef, image: (await tx.get(ref)).data(), use: await tx.get(useRef) });
+  }
+  if (nextId) {
+    const next = records.get(nextId);
+    active(next.image);
+    imageUseCount(next.image);
+    if (typeof next.image.path !== 'string' || !next.image.path)
+      fail('failed-precondition', 'Arquivo da imagem indisponível.');
+  }
+  if (previousId) {
+    const previous = records.get(previousId);
+    if (imageUseCount(previous.image) < 1 || !previous.use.exists)
+      fail('failed-precondition', 'O vínculo da imagem está inconsistente.');
+  }
+  if (nextId && nextId !== previousId && records.get(nextId).use.exists)
+    fail('failed-precondition', 'O vínculo da imagem está inconsistente.');
+  if (
+    nextId &&
+    nextId !== previousId &&
+    !Number.isSafeInteger(records.get(nextId).image.useCount + 1)
+  )
+    fail('failed-precondition', 'O contador de usos da imagem está inconsistente.');
+  return {
+    commit() {
+      if (previousId === nextId) return;
+      if (previousId) {
+        const previous = records.get(previousId);
+        tx.delete(previous.useRef);
+        tx.update(previous.ref, { useCount: previous.image.useCount - 1 });
+      }
+      if (nextId) {
+        const next = records.get(nextId);
+        tx.create(next.useRef, usage);
+        tx.update(next.ref, { useCount: next.image.useCount + 1 });
+      }
+    },
+  };
+}
 
 export function createImageLibraryService({ db, assets, now = Date.now }) {
   const useRef = (uid, id, bookId) => db.doc(`${imageRef(db, uid, id).path}/uses/${bookId}`);
@@ -41,19 +108,55 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
     async remove(uid, data) {
       authorize(uid);
       const ref = imageRef(db, uid, data.id);
-      const path = await db.runTransaction(async (tx) => {
-        const record = (await tx.get(ref)).data();
-        if (!record || record.state === 'deleted') return null;
-        if (record.useCount > 0)
+      const removal = await db.runTransaction(async (tx) => {
+        const snapshot = await tx.get(ref),
+          record = snapshot.data();
+        if (!record) return null;
+        const restored = restoredImageRemovalPlan(uid, ref.id, record);
+        if (record.state === 'deleted' && !restored) return null;
+        if (imageUseCount(record) > 0)
           fail(
             'failed-precondition',
-            'A imagem está em uso. Remova-a dos livros antes de excluir.',
+            'A imagem está em uso. Remova seus vínculos antes de excluir.',
           );
+        if (restored) {
+          if (
+            (
+              await tx.get(
+                db
+                  .collection(ref.path + '/uses')
+                  .select()
+                  .limit(1),
+              )
+            ).docs.length
+          )
+            fail('failed-precondition', 'O contador de usos da imagem está inconsistente.');
+          if (typeof assets?.retireRestoreImage !== 'function')
+            fail('failed-precondition', 'A retirada da imagem está indisponível.');
+          const claimed = ['deleting', 'deleted'].includes(record.state)
+            ? record
+            : { ...record, state: 'deleting', updatedAt: now() };
+          const claim = restoredImageRemovalClaim(snapshot, claimed);
+          if (claimed !== record)
+            tx.update(ref, { state: claimed.state, updatedAt: claimed.updatedAt });
+          return { restored, claim };
+        }
         tx.update(ref, { state: 'deleting', updatedAt: now() });
-        return record.path;
+        return { path: record.path };
       });
-      if (path) {
-        await assets.remove(path);
+      if (removal?.restored) {
+        const r = removal.restored,
+          marker = bookRestoreStorageProof(
+            await assets.retireRestoreImage(r.context, r.proof, r.publishedProof),
+          );
+        if (marker.generation === r.proof.generation)
+          fail('failed-precondition', 'A retirada da imagem não foi confirmada.');
+        await db.runTransaction(async (tx) => {
+          const current = verifyRestoredImageRemovalClaim(await tx.get(ref), removal.claim);
+          if (current.state !== 'deleted') tx.update(ref, { state: 'deleted', updatedAt: now() });
+        });
+      } else if (removal?.path) {
+        await assets.remove(removal.path);
         await ref.update({ state: 'deleted', updatedAt: now() });
       }
       return { deleted: true };
@@ -100,6 +203,7 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
         if (deleted.exists || book?.deleting)
           fail('failed-precondition', 'Livro removido ou em exclusão.');
         if (book && book.authorId !== uid) fail('permission-denied', 'Livro indisponível.');
+        if (book) readBookLocalLoreVersion(book);
         if (data.bookId && !book) fail('not-found', 'Livro indisponível.');
         if (!data.bookId && book) {
           if (book.coverImageId !== id || (book.universeId ?? null) !== universeId)
@@ -138,6 +242,7 @@ export function createImageLibraryService({ db, assets, now = Date.now }) {
             id: bookId,
             authorId: uid,
             status: 'draft',
+            localLoreVersion: 0,
             wordCount: 0,
             createdAt: now(),
           }),

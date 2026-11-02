@@ -18,6 +18,7 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div
+      data-slot="page-header"
       className={cn(
         'flex flex-col gap-4 border-b border-[hsl(var(--border))] pb-5 mb-6',
         className,
@@ -27,12 +28,14 @@ export function PageHeader({
         <div className="text-xs text-[hsl(var(--muted-foreground))]">{breadcrumbs}</div>
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-2xl font-bold tracking-tight text-[hsl(var(--foreground))]">
+        <div className="flex min-w-0 flex-col gap-1">
+          <h1 className="text-2xl font-bold tracking-tight [overflow-wrap:anywhere] text-[hsl(var(--foreground))]">
             {title}
           </h1>
           {description && (
-            <p className="text-sm text-[hsl(var(--muted-foreground))]">{description}</p>
+            <p className="text-sm [overflow-wrap:anywhere] text-[hsl(var(--muted-foreground))]">
+              {description}
+            </p>
           )}
         </div>
         {actions && <div className="flex items-center gap-3 shrink-0">{actions}</div>}

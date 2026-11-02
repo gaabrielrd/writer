@@ -104,5 +104,5 @@ Decisões confirmadas e hipóteses comerciais são separadas em [decisões e ris
 ## Auditoria do planejamento
 
 Conferir unicidade dos IDs, dependências existentes/sem ciclo, presença de escopo/passos/aceite/validação,
-links, LF e cobertura de todas as fases. As tarefas continuam planejadas; nenhum checkbox funcional
-foi marcado por existir um documento.
+links, LF e cobertura de todas as fases. Os estados atuais ficam no
+[registro de execução](execucao/README.md); checkbox documental não comprova funcionalidade.

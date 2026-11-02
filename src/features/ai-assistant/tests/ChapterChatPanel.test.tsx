@@ -67,10 +67,10 @@ beforeEach(() => {
   );
   vi.mocked(service.createChapterChat).mockResolvedValue({ id: 'new-chat' });
   vi.mocked(service.chapterChatCall).mockResolvedValue({});
-  vi.mocked(service.captureChatGeneration).mockImplementation((reasoning = 'auto', model) => ({
+  vi.mocked(service.captureChatGeneration).mockImplementation((reasoning = 'auto') => ({
     version: 1,
     provider: 'platform',
-    model: model ?? null,
+    model: 'gemini-3.8-flash',
     reasoning,
   }));
   vi.mocked(service.sendChapterChat).mockImplementation((_identity, request, chunk) => {
@@ -216,25 +216,45 @@ describe('chat do capítulo', () => {
       reasoning: 'high',
     });
   });
-  it('novas conversas usam o padrão do autor e escolhas incompatíveis preservam preferência com Auto efetivo', async () => {
+  it('novas conversas BYOK preservam preferência incompatível e explicam fallback', async () => {
+    localStorage.setItem(
+      'writer_byok_config',
+      JSON.stringify({ provider: 'gemini_byok', geminiApiKey: 'test' }),
+    );
     localStorage.setItem(
       'writer:chat-reasoning:author',
       JSON.stringify({ version: 1, reasoning: 'max' }),
     );
     page.conversation = null;
     page.conversations = [];
-    const ui = await setup();
+    await setup();
     expect(screen.getByRole('combobox', { name: 'Raciocínio do assistente' })).toHaveTextContent(
       'Máximo',
     );
     expect(screen.getByText(/Máximo não é suportado/)).toBeVisible();
+  });
+  it('novas conversas herdam raciocínio Firebase da aba Provedor', async () => {
+    localStorage.setItem(
+      'writer_byok_config',
+      JSON.stringify({
+        provider: 'firebase_ai',
+        platformModel: 'gemini-4-argon',
+        platformReasoning: 'high',
+      }),
+    );
+    page.conversation = null;
+    page.conversations = [];
+    const ui = await setup();
+    expect(screen.getByRole('combobox', { name: 'Raciocínio do assistente' })).toHaveTextContent(
+      'Alto',
+    );
     fireEvent.change(ui.input, { target: { value: 'Pedido para nova conversa' } });
     fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
     await waitFor(() =>
       expect(service.createChapterChat).toHaveBeenCalledWith(
         { bookId: 'book', chapterId: 'chapter' },
         'Pedido para nova conversa',
-        'max',
+        'high',
       ),
     );
   });
@@ -620,4 +640,34 @@ describe('chat do capítulo', () => {
     expect(screen.queryByText(/Texto tardio/)).toBeNull();
     expect(screen.queryByText('Novo trecho.')).toBeNull();
   });
+});
+
+it('trocar preferências não cancela a resposta que já capturou sua configuração', async () => {
+  let finish: (message: ChatMessage) => void = () => undefined;
+  vi.mocked(service.sendChapterChat).mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const ui = await setup();
+  fireEvent.change(ui.input, { target: { value: 'Pedido em andamento' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
+  await waitFor(() => expect(service.sendChapterChat).toHaveBeenCalledTimes(1));
+  vi.spyOn(configAPI, 'useAIConfig').mockReturnValue({
+    provider: 'firebase_ai',
+    platformModel: 'gemini-4-argon',
+    platformReasoning: 'high',
+  });
+  ui.rerender(<ChapterChatPanel {...ui.props} />);
+  expect(service.chapterChatCall).not.toHaveBeenCalledWith(
+    expect.anything(),
+    expect.objectContaining({ action: 'stop' }),
+  );
+  page.messages = [assistantMessage];
+  await act(async () => {
+    finish(assistantMessage);
+    await Promise.resolve();
+  });
+  await screen.findByText(assistantMessage.text);
 });

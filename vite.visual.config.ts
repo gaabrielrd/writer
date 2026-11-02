@@ -7,21 +7,92 @@ const root = import.meta.dirname;
 const replacements = new Map(
   [
     ['src/features/auth/services/authService.ts', 'authService.ts'],
+    ['src/features/custom-themes/services/customThemeService.ts', 'customThemeService.ts'],
     ['src/features/image-library/services/imageLibraryService.ts', 'imageLibraryService.ts'],
     ['src/features/books/services/bookNavigationService.ts', 'bookNavigationService.ts'],
     ['src/features/books/services/bookService.ts', 'bookService.ts'],
+    ['src/features/books/services/studioBookService.ts', 'studioBookService.ts'],
+    ['src/features/adventures/services/adventureService.ts', 'adventureService.ts'],
+    [
+      'src/features/adventure-import/services/adventureImportCallables.ts',
+      'adventureImportFixture.ts',
+    ],
+    [
+      'src/features/adventure-import/services/adventureImportKeyClient.ts',
+      'adventureImportFixture.ts',
+    ],
+    ['src/features/campaigns/services/campaignService.ts', 'campaignService.ts'],
+    ['src/features/campaign-bases/services/campaignBaseCallables.ts', 'campaignBaseFixture.ts'],
+    ['src/features/campaign-notes/services/campaignNotesCallables.ts', 'campaignNotesFixture.ts'],
+    [
+      'src/features/campaign-preparation/services/campaignPreparationCallables.ts',
+      'campaignPreparationFixture.ts',
+    ],
+    [
+      'src/features/campaign-sessions/services/campaignSessionCallables.ts',
+      'campaignSessionFixture.ts',
+    ],
+    [
+      'src/features/campaign-session-references/services/sessionReferenceCallables.ts',
+      'campaignSessionReferenceFixture.ts',
+    ],
+    [
+      'src/features/campaign-deletions/services/campaignDeletionCallables.ts',
+      'campaignDeletionFixture.ts',
+    ],
+    ['src/features/campaign-lore/services/campaignLoreCallables.ts', 'campaignLoreFixture.ts'],
+    [
+      'src/features/adventure-deletions/services/adventureDeletionTransport.ts',
+      'adventureDeletionDialogFixture.ts',
+    ],
+    [
+      'src/features/campaign-adoptions/services/campaignAdoptionCallables.ts',
+      'campaignAdoptionFixture.ts',
+    ],
+    [
+      'src/features/campaign-lore/services/campaignLoreRemoteCallables.ts',
+      'campaignAdoptionFixture.ts',
+    ],
+    [
+      'src/features/campaign-comparisons/services/campaignComparisonCallables.ts',
+      'campaignComparisonFixture.ts',
+    ],
+    [
+      'src/features/campaigns/services/campaignManagementCallables.ts',
+      'campaignManagementFixture.ts',
+    ],
+    ['src/features/scenes/services/sceneService.ts', 'sceneService.ts'],
+    ['src/features/work-progress/services/workProgressService.ts', 'workProgressFixture.ts'],
+    ['src/features/manuscript-history/services/workHistoryCallables.ts', 'workHistoryFixture.ts'],
+    [
+      'src/features/adventure-blocks/services/adventureBlockCallables.ts',
+      'adventureBlocksFixture.ts',
+    ],
+    [
+      'src/features/adventure-blocks/services/adventurePreviewCallables.ts',
+      'adventurePreviewFixture.ts',
+    ],
+    [
+      'src/features/narrative-planning/services/narrativePlanningService.ts',
+      'narrativePlanningService.ts',
+    ],
     ['src/features/books/services/chapterOrganizationService.ts', 'bookService.ts'],
     ['src/features/books/services/publicBookService.ts', 'publicBookService.ts'],
     ['src/features/books/services/publicationService.ts', 'publicationService.ts'],
     ['src/features/lore/services/loreService.ts', 'loreService.ts'],
+    ['src/features/lore/services/bookLoreReadService.ts', 'bookLoreReadFixture.ts'],
+    ['src/features/lore/services/adventureLoreCallables.ts', 'adventureLoreFixture.ts'],
+    ['src/features/lore/services/adventureLoreContext.ts', 'adventureLoreFixture.ts'],
     ['src/features/lore/services/loreAnalysisService.ts', 'loreAnalysisService.ts'],
     ['src/features/universes/services/universeService.ts', 'universeService.ts'],
+    ['src/features/universes/services/loreImportService.ts', 'loreImportService.ts'],
     ['src/features/ai-assistant/services/personaService.ts', 'personaService.ts'],
     ['src/features/ai-assistant/services/aiClient.ts', 'aiService.ts'],
     ['src/features/ai-assistant/services/creditsService.ts', 'aiService.ts'],
     ['src/features/ai-assistant/services/bookGenerationService.ts', 'bookGenerationService.ts'],
     ['src/features/ai-assistant/services/assistedBookService.ts', 'assistedBookService.ts'],
     ['src/features/ai-assistant/services/chapterChatService.ts', 'chapterChatService.ts'],
+    ['src/features/ai-assistant/services/editorChatService.ts', 'editorChatService.ts'],
     ['src/shared/lib/firebase.ts', 'firebase.ts'],
   ].map(([source, fixture]) => [
     normalizePath(resolve(root, source)),

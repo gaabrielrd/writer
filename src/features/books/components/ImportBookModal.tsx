@@ -47,6 +47,7 @@ export function ImportBookModal({
   const importRunning = useRef(false);
   const importedBookId = useRef<string | null>(null);
   const savedChapterIds = useRef(new Set<string>());
+  const chapterCreationIds = useRef(new Map<string, string>());
   useEffect(() => () => parseController.current?.abort(), [open]);
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -77,6 +78,7 @@ export function ImportBookModal({
     parseController.current = null;
     importedBookId.current = null;
     savedChapterIds.current.clear();
+    chapterCreationIds.current.clear();
     setSelectedFile(null);
     setParseError(null);
     setIsParsing(false);
@@ -213,7 +215,10 @@ export function ImportBookModal({
       // Cria cada capítulo selecionado sequencialmente para manter a ordem
       for (const ch of selectedChapters) {
         if (savedChapterIds.current.has(ch.id)) continue;
+        const creationId = chapterCreationIds.current.get(ch.id) ?? crypto.randomUUID();
+        chapterCreationIds.current.set(ch.id, creationId);
         await bookService.createChapter(activeBookId, {
+          creationId,
           title: ch.title.trim() || 'Capítulo',
           content: ch.content,
         });
@@ -285,10 +290,10 @@ export function ImportBookModal({
             {parseError}
           </Alert>
         )}
-        {savedCount > 0 && (
+        {importStarted && !isImporting && (
           <Alert variant="info" title="Capítulos já gravados">
-            {savedCount} capítulo(s) salvo(s). Uma nova tentativa continua pelos capítulos
-            pendentes.
+            {savedCount} capítulo(s) confirmado(s). Uma nova tentativa confirma os pedidos pendentes
+            e continua pelos capítulos pendentes.
           </Alert>
         )}
 
@@ -400,14 +405,14 @@ export function ImportBookModal({
                 <FormSection
                   title="Sobre a obra"
                   description="Gênero e sinopse · opcionais"
-                  disabled={isImporting}
+                  disabled={isImporting || importStarted}
                 >
                   <Input
                     label="Gênero Literário (opcional)"
                     placeholder="Ex: Fantasia Épica, Ficção Científica"
                     value={bookGenre}
                     onChange={(e) => setBookGenre(e.target.value)}
-                    disabled={isImporting}
+                    disabled={isImporting || importStarted}
                   />
                   <Textarea
                     label="Sinopse (opcional)"
@@ -415,7 +420,7 @@ export function ImportBookModal({
                     value={bookSynopsis}
                     onChange={(e) => setBookSynopsis(e.target.value)}
                     rows={2}
-                    disabled={isImporting}
+                    disabled={isImporting || importStarted}
                   />
                 </FormSection>
               </div>
@@ -430,7 +435,7 @@ export function ImportBookModal({
                 variant="secondary"
                 size="sm"
                 onClick={handleToggleAll}
-                disabled={isImporting || savedCount > 0}
+                disabled={isImporting || importStarted}
               >
                 {allSelected ? (
                   <>
@@ -460,7 +465,7 @@ export function ImportBookModal({
                           aria-label={`Selecionar capítulo ${idx + 1}`}
                           checked={ch.selected}
                           onChange={() => handleToggleChapter(ch.id)}
-                          disabled={isImporting || savedCount > 0}
+                          disabled={isImporting || importStarted}
                           className={styles.checkbox}
                         />
                         <span className="font-semibold text-sm text-[hsl(var(--muted-foreground))]">
@@ -472,7 +477,7 @@ export function ImportBookModal({
                           value={ch.title}
                           aria-label={`Título do capítulo ${idx + 1}`}
                           onChange={(e) => handleChapterTitleChange(ch.id, e.target.value)}
-                          disabled={!ch.selected || isImporting || savedCount > 0}
+                          disabled={!ch.selected || isImporting || importStarted}
                           placeholder="Título do capítulo"
                         />
                       </div>
@@ -509,7 +514,7 @@ export function ImportBookModal({
                         file={selectedFile}
                         pageCount={pageCount}
                         initialPage={reviewPage}
-                        disabled={isImporting || savedCount > 0}
+                        disabled={isImporting || importStarted}
                         canMerge={idx < chapters.length - 1}
                         onSplit={(at) => {
                           setChapters((current) =>

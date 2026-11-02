@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from 'node:crypto';
-import { GenerationError, validateId } from './generation.mjs';
+import { GenerationError, validateId, platformTextGeneration } from './generation.mjs';
 import { imageRef, libraryImage } from './imageLibrary.mjs';
 
 const HOUR = 3600000;
@@ -138,6 +138,9 @@ export function createAssistedBookService({
     const ref = sessionRef(uid, data.sessionId);
     const requestId = validateId(data.requestId);
     const opRef = db.doc(`${ref.path}/operations/${requestId}`);
+    const generation = ['interview', 'generate', 'entity'].includes(mode)
+      ? platformTextGeneration(data.generation, mode === 'generate' ? 24000 : 8000)
+      : null;
     const fingerprint = hash({ ...data, requestId: undefined });
     const claimed = await db.runTransaction(async (tx) => {
       const [snapshot, previous, quota] = await Promise.all([
@@ -172,13 +175,18 @@ export function createAssistedBookService({
       )
         fail('failed-precondition', 'Entrevista concluída. Revise o briefing.');
       tx.set(db.doc(`users/${uid}/assistedLimits/current`), { windowStart, count: count + 1 });
-      tx.set(opRef, { hash: fingerprint, state: 'running', until: now() + 150000 });
+      tx.set(opRef, {
+        hash: fingerprint,
+        state: 'running',
+        until: now() + 150000,
+        ...(generation ? { generation: op?.generation ?? generation } : {}),
+      });
       tx.update(ref, { busy: { id: requestId, until: now() + 150000 } });
-      return { session, done: false };
+      return { session, generation: op?.generation ?? generation, done: false };
     });
     if (claimed.done) return view(claimed.session);
     try {
-      const patch = await work(claimed.session);
+      const patch = await work(claimed.session, claimed.generation);
       const saved = await db.runTransaction(async (tx) => {
         const session = (await tx.get(ref)).data();
         usable(session);
@@ -354,6 +362,7 @@ export function createAssistedBookService({
             coverUrl: selected?.url ?? null,
             coverImageId: selectedRef ? (data.coverId ?? data.imageId) : null,
             status: 'draft',
+            localLoreVersion: 0,
             wordCount: 0,
             createdAt: now(),
             updatedAt: now(),
@@ -396,7 +405,7 @@ export function createAssistedBookService({
       }
       if (!['interview', 'brief', 'generate', 'entity', 'cover', 'save'].includes(action))
         fail('invalid-argument', 'Ação inválida.');
-      return operation(uid, data, action, async (session) => {
+      return operation(uid, data, action, async (session, generation) => {
         if (action === 'save') return { proposal: validateProposal(data.proposal) };
         if (action === 'brief')
           return {
@@ -413,7 +422,12 @@ export function createAssistedBookService({
             ...session.messages,
             ...(message ? [{ role: 'user', text: message }] : []),
           ];
-          const result = await generator({ mode: 'interview', brief: session.brief, messages });
+          const result = await generator({
+            mode: 'interview',
+            brief: session.brief,
+            messages,
+            generation,
+          });
           const done = messages.filter((item) => item.role === 'assistant').length >= 8;
           const question = done ? '' : text(result.question, 1000, true);
           return {
@@ -427,7 +441,9 @@ export function createAssistedBookService({
         }
         if (action === 'generate') {
           const brief = text(data.brief, 6000, true);
-          const proposal = generatedProposal(await generator({ mode: 'proposal', brief }));
+          const proposal = generatedProposal(
+            await generator({ mode: 'proposal', brief, generation }),
+          );
           return {
             brief,
             proposal,
@@ -447,6 +463,7 @@ export function createAssistedBookService({
           if (!entity || !original) fail('invalid-argument', 'Ficha indisponível.');
           const replacement = await generator({
             mode: 'entity',
+            generation,
             brief: session.brief,
             proposal,
             entity,

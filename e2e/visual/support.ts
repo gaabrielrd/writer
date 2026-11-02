@@ -13,9 +13,10 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
   visualTheme: ['dark', { option: true }],
   authenticated: [true, { option: true }],
   libraryState: ['populated', { option: true }],
+  controlledClock: [false, { option: true }],
   visualEnvironment: [
     async (
-      { context, page, baseURL, visualTheme, authenticated, libraryState },
+      { context, page, baseURL, visualTheme, authenticated, libraryState, controlledClock },
       runTest,
       testInfo,
     ) => {
@@ -46,16 +47,18 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
           dataStateKey: FIXTURE_LIBRARY_STATE_KEY,
         },
       );
-      // Date must keep advancing: editor focus/composition guards compare elapsed time.
-      await page.clock.setSystemTime(new Date(FIXTURE_TIME));
+      // Advance naturally by default; controlled scenarios explicitly tick/resume timers.
+      if (controlledClock) await page.clock.install({ time: new Date(FIXTURE_TIME) });
+      else await page.clock.setSystemTime(new Date(FIXTURE_TIME));
       await testInfo.attach('contexto-da-previa', {
         body: JSON.stringify(
           {
             label: FIXTURE_LABEL,
             source:
-              'Componentes e rotas reais; autenticação, livros, capítulos, lore e IA fictícios.',
+              'Componentes e rotas reais; autenticação, livros, aventuras, campanhas, universos, capítulos, cenas, lore e IA fictícios.',
             theme: visualTheme,
             libraryState,
+            clockMode: controlledClock ? 'controlado pelo cenário' : 'avança naturalmente',
             viewport: testInfo.project.use.viewport,
             productionBackend: 'desativado; rede externa bloqueada',
           },
@@ -80,6 +83,12 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
   ],
 });
 export { expect };
+
+export async function openBookCreation(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Livro', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Criar Novo Livro' })).toBeVisible();
+}
 
 export async function capture(page: Page, testInfo: TestInfo, name: string): Promise<void> {
   await page.evaluate(async (label) => {
@@ -133,4 +142,64 @@ export async function expectDialogWithinViewport(page: Page): Promise<void> {
   expect.soft(bounds.y).toBeGreaterThanOrEqual(0);
   expect.soft(bounds.x + bounds.width).toBeLessThanOrEqual(viewport.width + 1);
   expect.soft(bounds.y + bounds.height).toBeLessThanOrEqual(viewport.height + 1);
+}
+
+/** Opens the drawer only when the direct workspace links are not visible. */
+export async function navigateWorkspace(page: Page, name: string): Promise<void> {
+  await expect(page.locator('[data-writer-workspace]')).toBeVisible();
+  if (
+    ['Home', 'Projetos', 'Importar e restaurar', 'Em andamento'].includes(name) &&
+    !new URL(page.url()).pathname.startsWith('/studio')
+  ) {
+    await navigateWorkspace(page, 'Estúdio');
+  }
+  let link = page
+    .getByRole('navigation', { name: 'Navegação principal' })
+    .getByRole('link', { name, exact: true });
+  const toggle = page.getByRole('button', { name: 'Abrir navegação', exact: true });
+  await expect.poll(async () => (await link.isVisible()) || (await toggle.isVisible())).toBe(true);
+  if (!(await link.isVisible())) {
+    await toggle.click();
+    link = page
+      .getByRole('dialog', { name: 'Navegação do Writer' })
+      .getByRole('link', { name, exact: true });
+  }
+  await link.focus();
+  await page.keyboard.press('Enter');
+}
+
+/** Reveal a workspace control without leaving navigation open over the next action. */
+export async function expectWorkspaceButton(page: Page, name: string | RegExp): Promise<void> {
+  const button = page.getByRole('button', { name, exact: true });
+  const reveal = !(await button.isVisible());
+  if (reveal) await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+  await expect(button).toBeVisible();
+  if (reveal) {
+    const drawer = page.getByRole('dialog', { name: 'Navegação do Writer' });
+    if (await drawer.isVisible()) {
+      await drawer.getByRole('button', { name: 'Fechar', exact: true }).click();
+      await expect(drawer).toBeHidden();
+    } else {
+      await page
+        .getByRole('complementary', { name: 'Barra lateral do Writer' })
+        .getByRole('button', { name: 'Recolher navegação' })
+        .click();
+    }
+  }
+}
+
+export async function openWorkspaceNavigation(page: Page): Promise<void> {
+  if (!(await page.getByRole('navigation', { name: 'Navegação principal' }).isVisible())) {
+    await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+  }
+}
+
+export async function openBookImport(page: Page): Promise<void> {
+  await navigateWorkspace(page, 'Importar e restaurar');
+  await page.getByRole('button', { name: 'Importar livro', exact: true }).click();
+}
+
+export async function openAdventureImport(page: Page): Promise<void> {
+  await navigateWorkspace(page, 'Importar e restaurar');
+  await page.getByRole('button', { name: 'Importar aventura', exact: true }).click();
 }

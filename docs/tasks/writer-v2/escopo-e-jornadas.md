@@ -80,5 +80,11 @@ Preparar arquivos para uma loja não equivale a publicar nela automaticamente.
 Importar um PDF para estudo privado não concede direito de revendê-lo.
 O pacote comercial nunca reutiliza o backup privado como arquivo para compradores.
 Compra de aventura autoriza uso conforme licença aprovada, não edição do original nem revenda.
+Em 2026-10-13, o usuário escolheu compra avulsa em BRL no Brasil, download e uso em
+campanhas próprias, conservando a edição adquirida, com atualizações opcionais.
+Retirada suspende novas vendas. A restrição de revenda alcança conteúdo autoral exclusivo;
+componentes de terceiros preservam as permissões de suas licenças.
+Criador é vendedor; Writer cobra comissão configurável por contrato e centraliza atendimento.
+Stripe é o provedor escolhido, sujeito à verificação de capacidade de repasses.
 Segredos do mestre são diferentes de lore anônimo e conteúdo pago.
 A política comercial deve tratar retirada de obra, revogação de lore e cópias já baixadas.

@@ -1,0 +1,33 @@
+.group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  border: 1px solid hsl(var(--border) / 0.55);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+}
+.group .option {
+  width: 28px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  color: hsl(var(--muted-foreground));
+}
+.group .option[aria-pressed='true'] {
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+}
+.group .option:hover {
+  color: hsl(var(--foreground));
+}
+@media (pointer: coarse) {
+  .group .option {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}

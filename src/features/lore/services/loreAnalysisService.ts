@@ -1,3 +1,4 @@
+import { capturePlatformTextGeneration } from '@/features/ai-assistant';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirebaseApp } from '@/shared/lib';
 import type {
@@ -23,8 +24,10 @@ async function call<T>(name: string, data: unknown): Promise<T> {
     );
   }
 }
-export const analyzeChapterLore = (request: LoreAnalysisRequest) =>
-  call<LoreAnalysis>('analyzeChapterLore', request);
+export const analyzeChapterLore = (request: LoreAnalysisRequest) => {
+  request.generation ??= capturePlatformTextGeneration();
+  return call<LoreAnalysis>('analyzeChapterLore', request);
+};
 export const prepareBYOKLore = (request: LoreAnalysisRequest, entities: DetectedLoreEntity[]) =>
   call<LoreAnalysis>('prepareBYOKLore', { ...request, entities });
 export const applyLoreAnalysis = (id: string, text: string, changes: LoreChange[]) =>

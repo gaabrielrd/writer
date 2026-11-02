@@ -1,7 +1,13 @@
 # Fase 1 — Direção e fundamentos
 
-**Estado:** Planejada; tarefas não executadas.
-**Janela:** Mês 1. **Capacidade:** 80 h brutas como orçamento inicial, não estimativa validada.
+**Estado:** Em execução; W2-F1-01/02/03 têm entregas documentais revisadas e gate local verde.
+Regras e funcionalidades futuras ainda precisam de implementação nas fases pertinentes.
+W2-F1-04 tem contrato/pesquisa com capacidade comercial pendente; W2-F1-05 tem
+protótipo técnico validado e navegação aprovada, sem piloto humano realizado.
+O [registro de execução](../execucao/README.md) contém estados e limites de evidência.
+**Capacidade:** 20 h brutas/semana; referência total 72/112/184 h, sem horas humanas realizadas.
+Os antigos 80 h são orçamento histórico. Artefatos já entregues não são somados
+novamente como trabalho restante. Veja [timeline revisada](../timeline.md).
 
 ## Objetivo
 
@@ -36,16 +42,26 @@ Não é necessário executar tarefas em paralelo para cumprir o plano.
 
 ## Portão de saída
 
-- [ ] D-01 a D-12 têm escolhas ou fechamento parcial suficiente para o próximo incremento; nenhuma pendência obrigatória da fase 2.
+- [ ] D-01 a D-12 têm fechamento pertinente ao avanço; decisões obrigatórias de cada incremento da fase 2 estão registradas antes de implementá-lo.
+- [x] Direção técnica/navegação suficiente para preparar o plano F2-01; isso não é aceite integral da fase.
 - [ ] Os estudos comerciais necessários para arquitetura já foram feitos, sem esperar o mês 7.
-- [ ] Protótipos mostram ambas as jornadas e aprovação foi registrada.
-- [ ] PRD/arquitetura/AGENTS afetados foram alinhados conforme W2-F1-06.
+- [x] Protótipos mostram ambas as jornadas e aprovação foi registrada.
+- [x] PRD/arquitetura/AGENTS afetados foram alinhados conforme W2-F1-06, com revisão e gate local.
 
 Para tarefas implementadas, aplicar [validação transversal](../validacao-e-aceite.md) e a definição de concluído.
 O planejamento desta fase não é evidência de entrega do produto.
 Usar [decisões e riscos](../decisoes-e-riscos.md) para hipóteses e
 [timeline](../timeline.md) para reestimativa.
-A fase seguinte de implementação só avança após o portão; estudo preparatório não equivale a aceite.
+Estudo preparatório não equivale a aceite. Em 2026-10-13, o operador autorizou
+implementar F2-01 com os contratos técnicos aprovados, mantendo pendentes as
+condições humanas e comerciais. O [registro da mudança de sequência](../execucao/06-contratos-e-replanejamento.md)
+substitui o bloqueio integral desse incremento sem declarar concluídos os critérios acima.
+
+A [matriz de condições](../execucao/06-contratos-e-replanejamento.md) especifica
+qual incremento depende de cada pendência. Histórico F2-05, portabilidade F2-09,
+capacidade comercial e participantes não se tornam critérios concluídos por
+aprovar a navegação. O aceite integral da fase 1 não está declarado. Revisão/CI
+passaram em `079d4e9`; os critérios comerciais/humanos pertinentes continuam visíveis.
 
 ## Demonstração e evidência
 

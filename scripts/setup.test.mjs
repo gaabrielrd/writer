@@ -18,16 +18,18 @@ const projectRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
 function copyFixture() {
   const root = mkdtempSync(join(tmpdir(), 'web-setup-'));
+  // A CLI real opera nestes arquivos; não copie as centenas de features e ADRs.
   for (const path of [
     '.template-state.json',
     'package.json',
     'index.html',
     'README.md',
     'tasks.md',
+    'docs/architecture.md',
+    'src/app/App.tsx',
+    'scripts/setup.mjs',
+    'scripts/lib',
   ]) {
-    cpSync(join(projectRoot, path), join(root, path));
-  }
-  for (const path of ['docs', 'src', 'scripts/setup.mjs', 'scripts/lib']) {
     const destination = join(root, path);
     mkdirSync(dirname(destination), { recursive: true });
     cpSync(join(projectRoot, path), destination, { recursive: true });

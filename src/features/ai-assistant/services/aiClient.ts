@@ -1,6 +1,12 @@
 import { getGenerativeModel } from 'firebase/ai';
 import { getFirebaseAI } from '@/shared/lib';
 import { validateBYOKConfig, type BYOKConfig } from '../model/byokConfig';
+import {
+  DEFAULT_PLATFORM_MODEL,
+  DEFAULT_PLATFORM_REASONING,
+  resolvePlatformTextGeneration,
+  geminiTextGenerationOptions,
+} from '../model/chatGeneration';
 import { getBYOKConfig } from './byokStorage';
 
 export interface GenerateAIOptions {
@@ -113,14 +119,20 @@ export async function generateAIResponse({
     return textPart;
   }
 
-  // 3. Provedor Padrão: Firebase AI Logic (Gemini 3.7 Flash)
+  // 3. Platform parameters are captured from the supplied configuration before awaiting I/O.
+  const generation = resolvePlatformTextGeneration({
+    version: 1,
+    provider: 'platform',
+    model: byokConfig.platformModel ?? DEFAULT_PLATFORM_MODEL,
+    reasoning: byokConfig.platformReasoning ?? DEFAULT_PLATFORM_REASONING,
+  });
+  // Firebase AI Logic
   const aiInstance = getFirebaseAI();
   const generativeModel = getGenerativeModel(aiInstance, {
-    model: byokConfig.customModel || 'gemini-3.7-flash',
+    model: generation.effective.model,
     systemInstruction,
     generationConfig: {
-      temperature: 0.7,
-      maxOutputTokens: maxOutputTokens ?? 600,
+      ...geminiTextGenerationOptions(generation, maxOutputTokens ?? 600),
     },
   });
 

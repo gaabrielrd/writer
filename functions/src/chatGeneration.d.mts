@@ -54,3 +54,20 @@ export function chatProviderGenerationOptions(generation: ChatGeneration): {
   maxOutputTokens?: number;
   thinkingConfig?: { thinkingLevel: ChatReasoningLevel; includeThoughts: false };
 };
+
+export const PLATFORM_TEXT_MODELS: readonly Readonly<{
+  id: string;
+  label: string;
+  description: string;
+}>[];
+export const DEFAULT_PLATFORM_MODEL: string;
+export const DEFAULT_PLATFORM_REASONING: 'medium';
+export function isPlatformTextModel(model: unknown): model is string;
+export function resolvePlatformTextGeneration(value?: unknown): ChatGeneration;
+export function geminiTextGenerationOptions(
+  generation: ChatGeneration,
+  maxOutputTokens: number,
+): {
+  maxOutputTokens: number;
+  thinkingConfig?: { thinkingLevel: ChatReasoningLevel; includeThoughts: false };
+};

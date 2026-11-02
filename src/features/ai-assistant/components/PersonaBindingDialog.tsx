@@ -30,6 +30,7 @@ export function PersonaBindingDialog({
   onClose,
   navigation,
   title,
+  scope = 'book',
 }: {
   ownerId: string;
   bookPersonaId?: string | null;
@@ -39,6 +40,7 @@ export function PersonaBindingDialog({
   onClose: () => void;
   navigation?: ReactNode;
   title?: string;
+  scope?: 'book' | 'adventure';
 }) {
   const { personas, loading, error, retry } = usePersonaLibrary(ownerId);
   const [selected, setSelected] = useState(
@@ -63,6 +65,7 @@ export function PersonaBindingDialog({
       personas,
       mode === 'book' ? (selected === 'none' ? null : selected) : bookPersonaId,
       resolvedComplement,
+      scope,
     ).instruction;
   } catch (cause) {
     invalid = cause instanceof Error ? cause.message : 'Persona indisponível.';
@@ -70,7 +73,16 @@ export function PersonaBindingDialog({
   return (
     <Dialog
       open
-      title={title ?? (mode === 'book' ? 'Persona do livro' : 'Persona complementar do capítulo')}
+      title={
+        title ??
+        (scope === 'adventure'
+          ? mode === 'book'
+            ? 'Persona da aventura'
+            : 'Persona complementar da cena'
+          : mode === 'book'
+            ? 'Persona do livro'
+            : 'Persona complementar do capítulo')
+      }
       maxWidthClass={
         navigation ? 'max-w-3xl min-[901px]:max-w-[960px]' : 'max-w-lg min-[901px]:max-w-[960px]'
       }
@@ -137,7 +149,12 @@ export function PersonaBindingDialog({
               options={[
                 {
                   value: 'none',
-                  label: mode === 'book' ? 'Sem persona' : 'Somente a persona do livro',
+                  label:
+                    mode === 'book'
+                      ? 'Sem persona'
+                      : scope === 'adventure'
+                        ? 'Somente a persona da aventura'
+                        : 'Somente a persona do livro',
                 },
                 ...personas
                   .filter((item) => !item.archived || item.id === selected)
@@ -149,15 +166,27 @@ export function PersonaBindingDialog({
             />
             {profile && (
               <>
-                <PersonaComposition profile={profile} showChapter={mode === 'chapter'} />
+                <PersonaComposition
+                  profile={profile}
+                  showChapter={mode === 'chapter'}
+                  scope={scope}
+                />
                 <p className={styles.bindingHelp}>
-                  {mode === 'book'
-                    ? 'A base orienta a escrita de todos os capítulos. Complementos podem ajustar o estilo de cada capítulo.'
-                    : profile.chapter
-                      ? 'O complemento prevalece em conflitos de estilo. Os valores abaixo mostram o que a IA usará; você pode definir ajustes para este capítulo.'
-                      : profile.base
-                        ? 'Este capítulo herda a voz e os atributos do livro. Escolha um complemento para ajustar seu estilo.'
-                        : 'Escolha uma base na aba Livro ou uma persona complementar para este capítulo.'}
+                  {scope === 'adventure'
+                    ? mode === 'book'
+                      ? 'A base orienta a escrita de todas as cenas. Complementos podem ajustar o estilo de cada cena; os blocos herdam essa composição.'
+                      : profile.chapter
+                        ? 'O complemento prevalece em conflitos de estilo. Os ajustes abaixo valem para esta cena e seus blocos.'
+                        : profile.base
+                          ? 'Esta cena herda a voz e os atributos da aventura. Escolha um complemento para ajustar seu estilo.'
+                          : 'Escolha uma base na aventura ou uma persona complementar para esta cena.'
+                    : mode === 'book'
+                      ? 'A base orienta a escrita de todos os capítulos. Complementos podem ajustar o estilo de cada capítulo.'
+                      : profile.chapter
+                        ? 'O complemento prevalece em conflitos de estilo. Os valores abaixo mostram o que a IA usará; você pode definir ajustes para este capítulo.'
+                        : profile.base
+                          ? 'Este capítulo herda a voz e os atributos do livro. Escolha um complemento para ajustar seu estilo.'
+                          : 'Escolha uma base na aba Livro ou uma persona complementar para este capítulo.'}
                 </p>
                 {profile.traits.length > 0 && (
                   <section className={styles.stack} aria-label="Perfil de escrita efetivo">
@@ -166,7 +195,7 @@ export function PersonaBindingDialog({
                       <span>
                         {profile.traits.length} atributos
                         {mode === 'chapter' &&
-                          ` · ${overrides.length} ${overrides.length === 1 ? 'ajuste' : 'ajustes'} do capítulo`}
+                          ` · ${overrides.length} ${overrides.length === 1 ? 'ajuste' : 'ajustes'} ${scope === 'adventure' ? 'da cena' : 'do capítulo'}`}
                       </span>
                     </div>
                     <PersonaTraits
@@ -174,7 +203,15 @@ export function PersonaBindingDialog({
                       sources={Object.fromEntries(
                         Object.entries(profile.sources).map(([id, source]) => [
                           id,
-                          PERSONA_SOURCE_LABELS[source],
+                          scope === 'adventure'
+                            ? (
+                                {
+                                  book: 'Aventura',
+                                  chapter: 'Complemento',
+                                  override: 'Ajuste da cena',
+                                } as const
+                              )[source]
+                            : PERSONA_SOURCE_LABELS[source],
                         ]),
                       )}
                       controls={
@@ -199,10 +236,18 @@ export function PersonaBindingDialog({
                                         label: profile.base?.traits.some(
                                           (item) => item.id === trait.id,
                                         )
-                                          ? 'Herdar do livro'
+                                          ? scope === 'adventure'
+                                            ? 'Herdar da aventura'
+                                            : 'Herdar do livro'
                                           : 'Usar valor da persona',
                                       },
-                                      { value: 'override', label: 'Definir no capítulo' },
+                                      {
+                                        value: 'override',
+                                        label:
+                                          scope === 'adventure'
+                                            ? 'Definir na cena'
+                                            : 'Definir no capítulo',
+                                      },
                                     ]}
                                     onValueChange={(value) =>
                                       setOverrides((previous) =>

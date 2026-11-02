@@ -1,0 +1,209 @@
+# P1 / M38c6 — Visibilidade durável da seleção de lore
+
+## Objetivo e requisitos
+
+Preservar a ação existente de tornar a seleção pública ou privada quando o
+compêndio de livros adotar o lore nativo. Seleção inteira, origens fixas,
+confirmação explícita, progresso parcial, cancelamento e retomada protegida.
+Não reduzir a seleção a 50 fichas nem representar visibilidade como retirada.
+
+- Manifesto metadata por conta/livro/seleção, bool desejado e IDs de filhos
+  determinísticos antes de produção. Páginas de até 50 são unidades de I/O.
+- Captura C1 completa/token v2 original para preparar o campo isPublic;
+  não usar stubs, recaptura divergente, promoção de token ou fonte fictícia.
+- Reaproveitar a edição manual cifrada; fonte/draft/checkpoint preservados.
+  Gate metadata antes da RPC registra controles de uploads/edição; sem
+  texto no manifesto, ledger ou callback.
+- Guard síncrono e gate assíncrono rechecados antes da RPC. Cancel não
+  espera produtor/lock de rede e bloqueia unidades novas.
+- Salvar dívida local sem avançar outra unidade. Abrir/verificar/preparar
+  não aplicam uma alteração, inclusive quando checkpoint contém apply pendente.
+- Antes de aplicar, persistir referência/hash/token e intenção de apply.
+  Resposta perdida consulta bookLoreEditOutcome; reenvio só explícito.
+  Pin de jobToken/outcomeToken após observação. Não inferir aceite por valor
+  atual, fase local ou worker salvo.
+- Estado desejado já presente vira resultado distinto de nenhuma alteração,
+  com origem conferida e IDs fechados. Não criar edição fictícia nem
+  afirmar que a visibilidade atual está congelada depois da seleção.
+- Cancel visita todos os IDs, preserva aceites e fecha produção antes da
+  limpeza. Perda do journal não elimina referências metadata de pedidos.
+- Revisão/confirmar/reenvio separados, nomes autorizados somente em RAM,
+  descoberta paginada metadata, actor exato, temas/foco/mobile/teclado.
+- Callback somente por resultados nativos conferidos, uma vez por seleção;
+  não certificar atomicidade de grupo nem limpeza de corpos.
+
+## Sequência e arquivos previstos
+
+1. ManualOperation/PersistedOperation/EditService: gate de unidade metadata
+   e flush local sem RPC de edição; regressões de dívida/cancel/actor.
+2. VisibilitySelectionContracts/Db: manifesto e progresso fechado, IDB CAS
+   oncomplete/Web Locks curtos, referências originais e resultados por membro.
+3. VisibilitySelectionOperation/Service: preparar fonte real, compor filhos,
+   consultar aceite, retry explícito, fechamento independente e reconciliação.
+4. VisibilitySelectionReview e diálogo/retomadas: kit e acessibilidade;
+   exportar antes da montagem coordenada do compêndio.
+5. Composição do compêndio com leitura nativa e todas as ações existentes,
+   mantendo universos/aventuras em seus contratos próprios.
+6. Testes dirigidos por marco; Chromium real IDB/locks e UI quando existir.
+   Documentar resultado real e commit local por incremento coerente.
+
+## Critérios de aceite e riscos
+
+Mais de 50 fichas, mixed/no-op, troca de origem, resposta perdida, dívida antes/
+depois de RPC, duas abas, cancel com produtor retido, ACK tardio, reinício,
+journal filho perdido, conta/contexto e descoberta sem prosa. Nenhum método
+novo nos conjuntos fechados 18/22/7 ou mudança no formato cifrado existente.
+
+Esta tarefa só termina com coordenação/retomada e interface completas;
+o primeiro marco de gate/flush é infraestrutura necessária, não entrega
+final de visibilidade em lote. Não antecipar mudança em Rules/deploy.
+
+Validate completo no fechamento de P1. Lifecycle/consumidores/backup/rollout,
+demais fases/gates humanos/comerciais da V2 permanecem no objetivo.
+Somente commits locais, sem CI/push/PR/merge/deploy.
+
+## Marco A — pontos de controle implementados
+
+Gate metadata capturado após write-ahead e antes de RPC, revalidação tardia
+de contexto/ticket/cancel e flushLocal sem dirigir produção. 155 casos distintos
+positivos, dez novos; lint/tipos/build/smoke positivos. Nenhum schema/backend/UI
+alterado. [ADR 0140](../../../decisions/0140-lore-manual-unit-gate-and-local-flush.md)
+e [evidência](../../../entregas/2026-10-25-writer-v2-controle-de-unidades-da-visibilidade.md).
+
+Marco A não conclui esta tarefa. Prosseguir com manifesto/ledger, executor e
+resultados no-op, cancel/retomada/revisão/UI e composição do compêndio, além de
+todos os demais pendentes de P1 e fases/gates. Sem CI/envio remoto/deploy.
+
+## Marco B — manifesto, ledger, executor e sessão implementados
+
+writer.book-lore-visibility-selections v1 com plano completo e estados metadata,
+páginas de até 50 sem cap total, CAS/oncomplete e refs/tokens monotônicos.
+Executor compõe C1/v2 e filhos cifrados, prova original, retry explícito, dívida
+local isolada e cancel sem chave, preservando aceites. Unchanged distinto e
+conflitos antes/depois de ready. Formatos antigos preservados.
+
+98 casos distintos e nove jornadas Chromium positivos; lint/tipos/build/smoke
+positivos. A corrida de observação de limpeza retida atualizando o membro ativo
+seguinte foi reproduzida e corrigida com geração/membro fixos.
+[ADR 0141](../../../decisions/0141-durable-book-lore-visibility-selection.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-executor-da-selecao-de-visibilidade.md).
+
+Etapas 2 e 3 implementadas; etapas 4 e 5 continuam necessárias. A revisão/UI/lista
+da seleção devem retomar filhos somente pela seleção, sem oferecer apply isolado
+na lista manual, e recarregar valores atuais no callback. Não declarar valor
+atual pelo efeito histórico. Demais pendências de P1 e fases/gates preservadas.
+Nenhuma montagem no compêndio nem envio remoto/deploy; somente commit local.
+
+## Marco C — revisão e interface exportadas
+
+Revisão autorizada C1/v2 com nomes/consentimento em RAM, confirmação separada,
+bool fixo e retomada pelo manifesto. UI compõe consulta, dívida, retry de uma
+ficha e cancel fresco, com resultados frios neutros e callback por provas.
+Filhos de visibilidade não aparecem como edição isolada; cópias preservadas.
+[ADR 0142](../../../decisions/0142-book-lore-visibility-selection-ui.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-interface-da-selecao-de-visibilidade.md).
+
+Etapa 4 implementada; etapa 5, montagem coordenada do compêndio com todas as
+ações, continua necessária. Demais lifecycle/consumidores/backup/rollout/validate
+de P1 e fases/gates humanos/comerciais preservados. Sem integração remota.
+
+## Marco D — plano de composição coordenada
+
+Escopo da etapa 5: todo escopo book (string ou objeto) de LoreCollection e
+LoreTab usa o compêndio nativo. Universe e adventure mantêm seus próprios fluxos.
+Nenhum fallback de escrita inline, seleção limitada a 50 ou edição isolada
+dos filhos da seleção.
+
+1. Expor captura C1 da coleção com tokens originais e revalidação integral,
+   preservando a API list existente. Hook por actor/livro com estados de
+   carregando/vazio/erro, invalidação de respostas tardias e refresh explícito.
+2. Projetar dados completos somente para apresentação, com ausência de
+   consentimento privada; nunca usar defaults visuais como fonte de writer.
+   Reautorizar o token original ao abrir a ficha.
+3. Compor criação/edição/retirada singular e seleções de retirada/visibilidade
+   com confirmação e as cinco listas de recuperação. Manter filtro/categorias,
+   grid/lista, seleção filtrada, portal de ações e relações locais/globais.
+4. Congelar seleção/valor antes de abrir o diálogo. Após prova, remover somente
+   IDs concluídos da seleção e reler a coleção; não projetar valor histórico.
+   Invalidar a UI antiga em mudança de actor/livro/escopo.
+5. Testes de captura/hook/projeção/composição, regressões de universo e aventuras,
+   Chromium real com IDB/AES e serviços nativos; temas/mobile/teclado.
+   Documentar checks reais e commit local, sem concluir P1/V2 antecipadamente.
+
+Arquivos previstos: bookLoreReadClient, useBookLoreCollection, projeção de
+apresentação, BookLoreCollection e seus diálogos/listas compostos, LoreTab e
+tipagem do LoreDrawer, testes desses fluxos e fixtures visuais afetadas,
+ADR/AGENTS/arquitetura/testes/evidência. Sem backend/Rules/env/deps.
+
+## Marco D — BookPage/LorePage compostos; demais entradas pendentes
+
+BookLoreCollection encaminha os dois formatos de escopo book para leitura C1/v2,
+apresentação literal, ficha reautorizada, busca/categorias/grid/lista e seleção.
+Hosts de criação/edição/retirada e seleções e cinco retomadas montados.
+Callback relê valores atuais, sem projetar efeito histórico; actor/livro/epoch
+invalidam respostas antigas. Universos e aventuras mantêm contratos próprios.
+[ADR 0143](../../../decisions/0143-native-book-compendium-composition.md) e
+[evidência](../../../entregas/2026-10-25-writer-v2-compendio-nativo-dos-livros.md).
+
+Etapa 5 ainda não é integral: EditorLoreSidebar tem formulário próprio, incluindo
+nome inicial e retornos por menções; revisão assistida também deve ser migrada.
+Inventariar essas entradas, preservar escopo global/local e rascunhos e usar as
+mesmas operações nativas, sem enfraquecer a barreira hasLoreResources. Não
+declarar o plano 125 concluído nem habilitar rollout com writers antigos.
+
+Lifecycle de chaves/exclusão, demais escritores e consumidores, backup/
+restauração, rollout/drain/validate de P1 e fases/gates humanos/comerciais
+continuam necessários. Somente commit local; sem CI/envio remoto/deploy.
+
+## Marco E — plano da lateral do editor e menções
+
+1. Criação protegida aceita nome inicial literal, fixo na tentativa e ignorado
+   na retomada, sem substituir rascunho por mudanças de props.
+2. Compartilhar leitura C1/v2 reautorizada e conteúdo visual entre ficha modal
+   e detalhes inline; expor host público para ações/retomadas da lateral.
+3. EditorLoreSidebar encaminha local para hosts nativos, com cinco retomadas;
+   preserva filtros, destaque, detalhes inline, nome de menção e escopo global.
+   EditorPage recebe confirmação somente para reler; handlers antigos recusam
+   escrita local. Respostas antigas não atualizam outra sessão.
+4. Coordenar proteção de navegação do capítulo e formulário nativo, incluindo
+   busy do capítulo e retomadas; não permitir que um bloqueio inativo tome
+   precedência sobre uma operação ativa.
+5. Testes de nome inicial, leitura/contexto, composição da lateral/parent,
+   navegação e serviços afetados; Chromium nativo e ajustes de fixtures visuais.
+   Documentar e commit local, sem CI/remoto/deploy; validate no fim de P1.
+
+Arquivos previstos: criação/Reader/hook/conteúdo de lore e host público/index,
+EditorLoreSidebar/EditorPage/BusyNavigationGuard, apresentação de consentimento
+local, testes correspondentes e prévia visual, ADR/AGENTS/docs/evidência.
+
+Inspeção corrigiu a suposição sobre AssistedBookPage: seu LoreEntityForm altera
+somente proposal.entities em memória antes da criação atômica do livro. Não
+convertê-lo em writer de ficha existente nem exigir raiz que ainda não existe.
+LoreAnalysisDialog envia a proposta pelo serviço próprio de análise; preserve
+esse contrato. Demais writers/consumidores e rollout continuam com seus gates.
+
+## Marco E — lateral e menções compostas localmente
+
+EditorLoreSidebar encaminha criação, edição, leitura e cinco retomadas locais
+para BookLoreAuthoring. Nome/alvo originais fixos, rascunho protegido, foco de
+retorno e bloqueio de navegação preservados. EditorPage recusa callbacks de
+escrita local e apenas relê após prova; consentimento ausente continua privado.
+Modal e detalhe inline compartilham C1/v2, sem repetir o resumo do card.
+A transição Ver Ficha → Editar Ficha mantém o mesmo host aberto.
+[ADR 0144](../../../decisions/0144-native-editor-book-lore-authoring.md).
+
+O inventário das entradas manuais atualiza a pendência do marco D:
+LoreCollection/LoreTab, LorePage/BookPage, lateral e menções usam os hosts nativos
+nos escopos de livro. Universos e aventuras mantêm seus contratos. O formulário
+assistido altera somente a proposta em RAM, antes da criação atômica; não é
+writer manual de ficha existente. Análise segue seu serviço próprio.
+
+A composição manual prevista na etapa 5 está implementada localmente. O plano
+não autoriza rollout nem conclui o inventário/drain dos demais produtores e
+consumidores. Preserve a barreira hasLoreResources e as pendências de lifecycle,
+chaves/exclusão, backup/restauração, rollout/validate de P1 e fases 3–5/gates
+humanos/comerciais. Somente commit local, sem CI/push/PR/merge/deploy.
+
+[Evidência do marco E](../../../entregas/2026-10-25-writer-v2-lore-nativo-na-lateral-do-editor.md):
+124 casos dirigidos distintos, 30 jornadas Chromium distintas e checks locais
+positivos. Recarga real e retomada sem replay conferidas nos seis projetos.

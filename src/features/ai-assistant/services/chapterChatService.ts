@@ -3,6 +3,7 @@ import { getFirebaseApp } from '@/shared/lib';
 import { getBYOKConfig } from './byokStorage';
 import { validateBYOKConfig } from '../model/byokConfig';
 import {
+  DEFAULT_PLATFORM_MODEL,
   DEFAULT_BYOK_CHAT_MODELS,
   normalizeChatGenerationRequest,
   resolveChatGeneration,
@@ -20,7 +21,6 @@ export interface ChatIdentity {
 }
 export function captureChatGeneration(
   reasoning: ChatReasoningLevel = 'auto',
-  platformModel?: string,
 ): ChatGenerationRequest {
   const config = getBYOKConfig();
   const validation = validateBYOKConfig(config);
@@ -30,9 +30,12 @@ export function captureChatGeneration(
     provider: config.provider === 'firebase_ai' ? 'platform' : config.provider,
     model:
       config.provider === 'firebase_ai'
-        ? (platformModel ?? null)
+        ? (config.platformModel ?? DEFAULT_PLATFORM_MODEL)
         : config.customModel || DEFAULT_BYOK_CHAT_MODELS[config.provider],
-    reasoning,
+    reasoning:
+      reasoning === 'auto' && config.provider === 'firebase_ai'
+        ? (config.platformReasoning ?? 'medium')
+        : reasoning,
   });
   if (!request) throw new Error('Configuração de geração inválida.');
   return request;

@@ -7,14 +7,36 @@ vi.mock('../services/chapterOrganizationService', () => ({
   deleteChapters: vi.fn(),
 }));
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createPortal } from 'react-dom';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { BookPage } from '../components/BookPage';
 import * as publicationService from '../services/publicationService';
 import * as bookService from '../services/bookService';
 import type { Book } from '../model/book';
+const bookAuth = vi.hoisted(() => ({ user: { uid: 'user-1' }, loading: false }));
+vi.mock('@/features/narrative-planning', () => ({
+  NarrativePlanner: ({
+    target,
+    onProjectChange,
+  }: {
+    target: { kind: string; id: string };
+    onProjectChange?: () => void;
+  }) => (
+    <>
+      <h2>
+        Planejamento de {target.kind}/{target.id}
+      </h2>
+      <input aria-label="Seleção privada da origem" defaultValue="" />
+      <button onClick={onProjectChange}>Atualizar metadados do projeto</button>
+    </>
+  ),
+}));
+function CurrentLocation() {
+  const location = useLocation();
+  return <output aria-label="Localização atual">{location.search}</output>;
+}
 
 vi.mock('@/features/editor', () => ({
   ExportDialog: ({ onClose }: { onClose: () => void }) => (
@@ -25,7 +47,7 @@ vi.mock('@/features/editor', () => ({
 }));
 
 vi.mock('@/features/auth', () => ({
-  useAuth: () => ({ user: { uid: 'user-1' }, loading: false }),
+  useAuth: () => bookAuth,
 }));
 
 vi.mock('@/features/lore', () => ({
@@ -63,9 +85,10 @@ describe('BookPage', () => {
     updatedAt: 2000,
   };
 
-  function renderBookPage(bookId = 'book-1') {
+  function renderBookPage(bookId = 'book-1', search = '') {
     return render(
-      <MemoryRouter initialEntries={[`/books/${bookId}`]}>
+      <MemoryRouter initialEntries={[`/books/${bookId}${search}`]}>
+        <CurrentLocation />
         <Routes>
           <Route path="/books/:bookId" element={<BookPage />} />
           <Route path="/" element={<div>Home</div>} />
@@ -75,6 +98,7 @@ describe('BookPage', () => {
   }
 
   beforeEach(() => {
+    bookAuth.user = { uid: 'user-1' };
     vi.restoreAllMocks();
     vi.spyOn(bookService, 'subscribeWritingBindings').mockReturnValue(() => undefined);
   });
@@ -95,12 +119,102 @@ describe('BookPage', () => {
     expect(screen.getByRole('tab', { name: /publicação/i })).toBeInTheDocument();
   });
 
+  it('restaura aba narrativa da URL e conserva contexto do arco ao trocar abas pelo teclado', async () => {
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+    renderBookPage('book-1', '?tab=narrative&narrativeArc=arco-1&narrativeView=arcs');
+    expect(
+      await screen.findByRole('heading', { name: 'Planejamento de book/book-1' }),
+    ).toBeInTheDocument();
+    const tab = screen.getByRole('tab', { name: 'Arcos e cronologia' });
+    expect(tab).toHaveAttribute('aria-selected', 'true');
+    tab.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { name: 'Compêndio' })).toHaveFocus();
+    expect(screen.getByLabelText('Localização atual')).toHaveTextContent('tab=compendium');
+    expect(screen.getByLabelText('Localização atual')).toHaveTextContent('narrativeArc=arco-1');
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'Arcos e cronologia' })).toHaveFocus();
+    expect(
+      screen.getByRole('heading', { name: 'Planejamento de book/book-1' }),
+    ).toBeInTheDocument();
+  });
+
+  it('troca de conta remove o planejamento carregado antes da resposta da nova conta', async () => {
+    vi.spyOn(bookService, 'getBook')
+      .mockResolvedValueOnce(mockBook)
+      .mockImplementationOnce(() => new Promise(() => undefined));
+    const view = renderBookPage('book-1', '?tab=narrative');
+    expect(
+      await screen.findByRole('heading', { name: 'Planejamento de book/book-1' }),
+    ).toBeInTheDocument();
+    bookAuth.user = { uid: 'another-user' };
+    view.rerender(
+      <MemoryRouter initialEntries={['/books/book-1?tab=narrative']}>
+        <Routes>
+          <Route path="/books/:bookId" element={<BookPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    expect(
+      screen.queryByRole('heading', { name: 'Planejamento de book/book-1' }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText(mockBook.synopsis!)).not.toBeInTheDocument();
+  });
+
   it('exibe ErrorState quando livro nao e encontrado', async () => {
     vi.spyOn(bookService, 'getBook').mockResolvedValue(null);
 
     renderBookPage();
 
     expect(await screen.findByText('Livro não encontrado')).toBeInTheDocument();
+  });
+
+  it('não mostra dados privados retornados do cache de outro dono', async () => {
+    bookAuth.user = { uid: 'another-user' };
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    renderBookPage('book-1', '?tab=narrative');
+    expect(await screen.findByText('Livro não encontrado')).toBeInTheDocument();
+    expect(screen.queryByText(mockBook.title)).not.toBeInTheDocument();
+    expect(screen.queryByText(mockBook.synopsis!)).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Planejamento de book/book-1' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('descarta estado da origem anterior ao desvincular universo e conserva o arco na URL', async () => {
+    vi.spyOn(bookService, 'getBook')
+      .mockResolvedValueOnce({ ...mockBook, universeId: 'old-world' })
+      .mockResolvedValueOnce({ ...mockBook, universeId: null });
+    renderBookPage('book-1', '?tab=narrative&narrativeView=arcs&narrativeArc=arc-1');
+    await screen.findByRole('heading', { name: 'Planejamento de book/book-1' });
+    await userEvent.type(
+      screen.getByLabelText('Seleção privada da origem'),
+      'Entidade do universo anterior',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Atualizar metadados do projeto' }));
+    await waitFor(() => expect(screen.getByLabelText('Seleção privada da origem')).toHaveValue(''));
+    expect(screen.getByLabelText('Localização atual')).toHaveTextContent('narrativeArc=arc-1');
+    expect(screen.getByRole('tab', { name: 'Arcos e cronologia' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+  });
+
+  it('atualização que retorna origem alheia remove o painel antes de exibir essa origem', async () => {
+    vi.spyOn(bookService, 'getBook')
+      .mockResolvedValueOnce(mockBook)
+      .mockResolvedValueOnce({
+        ...mockBook,
+        authorId: 'another-user',
+        title: 'Título privado alheio',
+      });
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+    renderBookPage();
+    await screen.findByText(mockBook.title);
+    await userEvent.click(screen.getByRole('tab', { name: 'Arcos e cronologia' }));
+    expect(await screen.findByText('Livro não encontrado')).toBeInTheDocument();
+    expect(screen.queryByText('Título privado alheio')).not.toBeInTheDocument();
   });
 
   it('navega entre abas', async () => {
@@ -118,8 +232,12 @@ describe('BookPage', () => {
 
     // Aba Publicação
     await user.click(screen.getByRole('tab', { name: /publicação/i }));
-    expect(screen.getByText('Obra em Rascunho')).toBeInTheDocument();
+    expect(screen.getByText('Obra não publicada')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /publicar obra/i })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('tab', { name: 'Progresso' }));
+    expect(screen.getByRole('heading', { name: 'Progresso de book/book-1' })).toBeVisible();
+    expect(screen.getByLabelText('Localização atual')).toHaveTextContent('tab=progress');
 
     // Volta para Capítulos
     await user.click(screen.getByRole('tab', { name: /capítulos/i }));
@@ -139,7 +257,7 @@ describe('BookPage', () => {
     expect(action.closest('[role="tablist"]')).toBeNull();
     getBook.mockResolvedValue(mockBook);
     await user.click(action);
-    await screen.findByText('Rascunho');
+    await screen.findByText('Não publicado');
     await user.click(screen.getByRole('tab', { name: 'Capítulos' }));
     expect(screen.queryByRole('button', { name: 'Concluir ação de lore' })).not.toBeInTheDocument();
   });
@@ -166,7 +284,7 @@ describe('BookPage', () => {
       'href',
       '/read/book-1',
     );
-    await user.click(screen.getByRole('button', { name: 'Reverter para Rascunho' }));
+    await user.click(screen.getByRole('button', { name: 'Despublicar obra' }));
     expect(publicationService.unpublishBook).toHaveBeenCalledWith('book-1');
   });
 
@@ -266,6 +384,7 @@ describe('BookPage', () => {
     expect(screen.queryByRole('button', { name: 'Importar Arquivo' })).not.toBeInTheDocument();
     await user.click(options);
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual([
+      'Histórico do texto',
       'Exportar',
       'Importar documento',
       'Persona de IA',
@@ -278,3 +397,15 @@ describe('BookPage', () => {
     expect(screen.queryByRole('dialog', { name: 'Exportar manuscrito' })).not.toBeInTheDocument();
   });
 });
+
+vi.mock('@/features/work-progress', async (original) => ({
+  ...(await original<object>()),
+  ProjectProgressPanel: ({ target }: { target: { kind: string; id: string } }) => (
+    <h2>
+      Progresso de {target.kind}/{target.id}
+    </h2>
+  ),
+  ContinueWorkPanel: () => <h2>Continuar meu trabalho</h2>,
+  useWorkActivity: vi.fn(() => ({ loading: false, error: '', conflict: false, retry: vi.fn() })),
+  WorkActivityNotice: () => null,
+}));

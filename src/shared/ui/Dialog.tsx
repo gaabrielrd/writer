@@ -51,6 +51,21 @@ export const DialogContent = React.forwardRef<
         }}
         onCloseAutoFocus={(event) => {
           onCloseAutoFocus?.(event);
+          if (event.defaultPrevented) return;
+          const focused = document.activeElement;
+          const closingScope = event.currentTarget instanceof Node ? event.currentTarget : null;
+          // Radix defers this callback. Respect a new focus target chosen after
+          // closing, rather than interrupting writing or another dialog.
+          if (
+            focused instanceof HTMLElement &&
+            focused !== document.body &&
+            focused !== opener.current &&
+            !focused.hasAttribute('data-radix-focus-guard') &&
+            !closingScope?.contains(focused)
+          ) {
+            event.preventDefault();
+            return;
+          }
           if (!event.defaultPrevented && opener.current?.isConnected) {
             event.preventDefault();
             opener.current.focus();

@@ -1,20 +1,32 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { chooseDropdown } from '../dropdown';
 import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
+import { installNativeBookLore } from './nativeBookLore.mjs';
 
 test('indicadores do minimapa usam as mesmas cores das tags de lore', async ({
   page,
 }, testInfo) => {
+  test.setTimeout(120_000);
+  await installNativeBookLore(page);
   await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
   const editor = page.getByLabel('Área de escrita do capítulo');
   await expect(editor).toBeVisible();
   await page.getByRole('button', { name: /^Compêndio(?: \d+)?$/ }).click();
   await page.getByRole('button', { name: 'Nova Entidade', exact: true }).click();
   const dialog = page.getByRole('dialog');
-  await dialog.getByLabel('Nome da Entidade').fill('Maré Fantasma');
+  await dialog.getByLabel('Nome', { exact: true }).fill('Maré Fantasma');
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Categoria');
   await chooseDropdown(dialog.getByRole('combobox', { name: 'Categoria' }), 'Outro');
-  await dialog.getByLabel('Resumo Curto').fill('Fenômeno fictício');
-  await dialog.getByRole('button', { name: 'Cadastrar Entidade', exact: true }).click();
+  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Resumo');
+  await dialog.getByRole('button', { name: 'Adicionar resumo', exact: true }).click();
+  await dialog.getByLabel('Resumo', { exact: true }).fill('Fenômeno fictício');
+  await dialog.getByRole('button', { name: 'Preparar ficha', exact: true }).click();
+  await expect(dialog.getByRole('button', { name: 'Criar ficha', exact: true })).toBeEnabled({
+    timeout: 60_000,
+  });
+  await dialog.getByRole('button', { name: 'Criar ficha', exact: true }).click();
+  await expect(dialog.getByText('Ficha criada no livro.', { exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Fechar', exact: true }).first().click();
   await expect(dialog).toHaveCount(0);
   await page.getByRole('button', { name: 'Fechar painel de lore' }).click();
   await editor.fill(

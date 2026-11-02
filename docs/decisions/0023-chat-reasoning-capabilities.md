@@ -29,7 +29,7 @@ remove limites: 4000 tokens de saída/completion e 90 segundos no provedor,
 com 120 segundos na callable e a cota existente de pedidos. Tokens internos
 podem consumir o limite do provedor; uma saída incompleta não vira sugestão.
 
-A callable informa o modelo da plataforma no load, valida a enumeração de
+A callable informa o modelo legado da plataforma no load, valida a enumeração de
 preferências e grava a escolha em cada conversa privada. Ações de preferência
 verificam autoria e recusam mudanças durante uma geração ativa. Não debitam
 nem consomem cota de geração. Conversas antigas sem campo usam Auto.
@@ -70,3 +70,27 @@ e `reasoning_effort` em Chat Completions, sem copiar nomes de parâmetros entre 
 O controle é compatível com o histórico antigo e exige liberação coordenada de
 frontend/callable. Veja [plano](../tasks/paridade-editor-gerador-temas.md) e
 [chat do capítulo](../chapter-chat.md).
+
+## Atualização em 2026-11-02
+
+O autor passa a selecionar o modelo da plataforma na aba Provedor.
+O contrato puro contém lista explícita de Gemini 3.8 Flash, 3.5 Flash-Lite e
+4 Argon; o servidor valida a escolha, em vez de substituir todos os modelos
+pelo parâmetro do ambiente. Gemini 3.7 continua reconhecido para compatibilidade
+dos pedidos de chat. O padrão geral novo é 3.8 Flash e Médio.
+
+A aba Provedor oferece Médio/Alto. Conversas existentes conservam sua preferência;
+novas conversas Firebase usam o padrão dessa aba. BYOK mantém o padrão por autor.
+Auto em pedidos Firebase herda o padrão geral. Auto em Flash-Lite BYOK conserva
+o padrão do provedor, sem inferir um nível inexistente no contrato.
+
+Temperatura deixa de ser enviada nas chamadas Gemini afetadas, conforme a
+[documentação atual de parâmetros](https://firebase.google.com/docs/ai-logic/model-parameters).
+A matriz também reconhece Argon e Flash-Lite. Limites por operação permanecem
+independentes da escolha do usuário. Snapshots das gerações de sinopse,
+criação assistida e lore também contêm apenas parâmetros públicos.
+
+Retries preservam o snapshot original. Alterar preferências não cancela uma
+geração em andamento; alterações no contexto do editor conservam seu mecanismo
+de invalidação. Publicação requer Functions e frontend coordenados. Detalhes em
+[configurações de provedor](../ai-provider-settings.md).

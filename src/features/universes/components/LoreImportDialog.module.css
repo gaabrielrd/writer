@@ -1,0 +1,70 @@
+.form {
+  display: grid;
+  gap: var(--space-4);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.candidate {
+  padding: var(--space-4);
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-lg);
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  display: grid;
+  gap: var(--space-3);
+  overflow-wrap: anywhere;
+}
+.candidate blockquote {
+  border-left: 3px solid hsl(var(--primary));
+  padding-left: var(--space-3);
+  white-space: pre-wrap;
+}
+.candidate summary {
+  cursor: pointer;
+  padding-block: var(--space-2);
+}
+.diff {
+  display: grid;
+  gap: var(--space-3);
+}
+.diff section {
+  border-top: 1px solid hsl(var(--border));
+  padding-top: var(--space-3);
+}
+.diff del,
+.diff ins {
+  display: block;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 18rem;
+  overflow: auto;
+  padding: var(--space-2);
+}
+.diff del {
+  background: hsl(var(--secondary));
+  color: hsl(var(--foreground));
+}
+.diff ins {
+  background: hsl(var(--accent));
+  color: hsl(var(--foreground));
+}
+
+.inlineDiff {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.inlineDiff del,
+.inlineDiff ins {
+  display: inline;
+  padding: 0;
+}
+.inlineDiff del {
+  color: hsl(var(--destructive));
+}
+.inlineDiff ins {
+  font-weight: 700;
+  text-decoration: underline;
+}

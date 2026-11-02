@@ -15,3 +15,47 @@ export { LoreTab, LoreCollection } from './components/LoreTab';
 export type { LoreTabProps } from './components/LoreTab';
 export * from './model/loreAnalysis';
 export * from './services/loreAnalysisService';
+
+export * from './model/adventureLore';
+export { useAdventureLoreContext } from './hooks/useAdventureLoreContext';
+export type { AdventureLoreContextValue } from './hooks/useAdventureLoreContext';
+export { AdventureLoreReader } from './components/AdventureLoreReader';
+
+export { BookLoreManualEditor } from './components/BookLoreManualEditor';
+export type { BookLoreManualEditorProps } from './components/BookLoreManualEditor';
+
+export { BookLoreRecoveries } from './components/BookLoreRecoveries';
+
+export { BookLoreCreationEditor } from './components/BookLoreCreationEditor';
+export type { BookLoreCreationEditorProps } from './components/BookLoreCreationEditor';
+export { BookLoreCreationRecoveries } from './components/BookLoreCreationRecoveries';
+export type { BookLoreCreationRecoveriesProps } from './components/BookLoreCreationRecoveries';
+
+export { BookLoreRemovalDialog } from './components/BookLoreRemovalDialog';
+export type { BookLoreRemovalDialogProps } from './components/BookLoreRemovalDialog';
+export { BookLoreRemovalRecoveries } from './components/BookLoreRemovalRecoveries';
+export type { BookLoreRemovalRecoveriesProps } from './components/BookLoreRemovalRecoveries';
+
+export { BookLoreRemovalSelectionDialog } from './components/BookLoreRemovalSelectionDialog';
+export type {
+  BookLoreRemovalSelectionDialogProps,
+  BookLoreRemovalSelectionResult,
+} from './components/BookLoreRemovalSelectionDialog';
+export { BookLoreRemovalSelectionRecoveries } from './components/BookLoreRemovalSelectionRecoveries';
+export type { BookLoreRemovalSelectionRecoveriesProps } from './components/BookLoreRemovalSelectionRecoveries';
+
+export { BookLoreVisibilitySelectionDialog } from './components/BookLoreVisibilitySelectionDialog';
+export type {
+  BookLoreVisibilitySelectionDialogProps,
+  BookLoreVisibilitySelectionResult,
+} from './components/BookLoreVisibilitySelectionDialog';
+export { BookLoreVisibilitySelectionRecoveries } from './components/BookLoreVisibilitySelectionRecoveries';
+export type { BookLoreVisibilitySelectionRecoveriesProps } from './components/BookLoreVisibilitySelectionRecoveries';
+
+export { BookLoreAuthoring } from './components/BookLoreAuthoring';
+export type {
+  BookLoreAuthoringProps,
+  BookLoreAuthoringTarget,
+} from './components/BookLoreAuthoring';
+export { BookLoreInlineDetails } from './components/BookLoreInlineDetails';
+export type { BookLoreInlineDetailsProps } from './components/BookLoreInlineDetails';

@@ -1,0 +1,42 @@
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  padding: 1rem;
+}
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  min-width: 0;
+}
+.row > :first-child {
+  flex: 0 1 10rem;
+}
+.row > :nth-child(2) {
+  flex: 1 1 16rem;
+}
+.preview {
+  color: hsl(var(--muted-foreground));
+  overflow-wrap: anywhere;
+}
+
+.errorMessage {
+  color: hsl(var(--foreground));
+}

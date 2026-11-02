@@ -10,9 +10,46 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function validStudioDate(value) {
+      return value is number && value >= 0 && value <= 8640000000000000;
+    }
+
+    function preserveBookDates() {
+      return (!validStudioDate(resource.data.get('updatedAt', null))
+          || validStudioDate(request.resource.data.get('updatedAt', null)))
+        && (!validStudioDate(resource.data.get('createdAt', null))
+          || validStudioDate(request.resource.data.get('createdAt', null)));
+    }
+
+    // Membership writes must invalidate paginated captures of a live book.
+    function bookStructureClockAdvanced(bookId) {
+      let before = get(/databases/$(database)/documents/books/$(bookId)).data.get('updatedAt', null);
+      let after = getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('updatedAt', null);
+      return validStudioDate(after) && (!validStudioDate(before) || after > before);
+    }
+
     function isBookAuthor(bookId) {
       return isAuthenticated()
         && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid;
+    }
+
+    function boundedSceneList() {
+      return request.query.limit != null && request.query.limit > 0 && request.query.limit <= 50;
+    }
+    function sceneBookReadable(bookId) {
+      return isBookAuthor(bookId)
+        && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
+    }
+    function sceneAdventureReadable(adventureId) {
+      return isOwner(get(/databases/$(database)/documents/adventures/$(adventureId)).data.ownerId)
+        && get(/databases/$(database)/documents/adventures/$(adventureId)).data.get('deleting', false) != true
+        && !exists(/databases/$(database)/documents/adventureDeletionReservations/$(adventureId));
+    }
+    function publicationSceneMatches(bookId, data) {
+      let book = get(/databases/$(database)/documents/books/$(bookId)).data;
+      return book.get('hasSceneResources', false) != true
+        || (data.get('sourceSceneRevision', -1) is int
+          && data.get('sourceSceneRevision', -1) == book.get('sceneRevision', 0));
     }
 
     function isPublished(bookId) {
@@ -51,10 +88,12 @@ service cloud.firestore {
 
     function validPublicBook(data) {
       return data.keys().hasAll(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt'])
-        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion', 'hasActs'])
+        && data.keys().hasOnly(['schemaVersion', 'title', 'authorName', 'revisionId', 'publishedAt', 'universeId', 'universePrivacyVersion', 'hasActs', 'sourceSceneRevision', 'sourcePublicationToken'])
+        && data.get('sourceSceneRevision', 0) is int && data.get('sourceSceneRevision', 0) >= 0
         && ((data.schemaVersion == 1 && data.get('universeId', null) == null && data.get('universePrivacyVersion', null) == null) || (data.schemaVersion == 2
           && nonemptyString(data.get('universeId', ''), 128)
           && data.get('universePrivacyVersion', -1) is int && data.universePrivacyVersion >= 0))
+        && (data.get('sourcePublicationToken', null) == null || (data.sourcePublicationToken is string && data.sourcePublicationToken.matches('^[a-f0-9]{64}$')))
         && data.get('hasActs', false) is bool
         && nonemptyString(data.title, 300)
         && nonemptyString(data.authorName, 120)
@@ -64,7 +103,11 @@ service cloud.firestore {
 
     function validRevision(data) {
       return data.keys().hasAll(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion'])
-        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion', 'actCount'])
+        && data.keys().hasOnly(['createdAt', 'chapterCount', 'loreCount', 'privacyVersion', 'universeId', 'universePrivacyVersion', 'actCount', 'sourceSceneRevision', 'sourceLoreToken', 'sourcePublicationToken'])
+        && data.get('sourceSceneRevision', 0) is int && data.get('sourceSceneRevision', 0) >= 0
+        && ((data.get('sourceLoreToken', null) == null && data.get('sourcePublicationToken', null) == null)
+          || (data.sourceLoreToken is string && data.sourceLoreToken.matches('^[a-f0-9]{64}$')
+            && data.sourcePublicationToken is string && data.sourcePublicationToken.matches('^[a-f0-9]{64}$')))
         && data.privacyVersion is int && data.privacyVersion >= 0
         && data.createdAt is int && data.createdAt >= 0
         && data.chapterCount is int && data.chapterCount >= 0
@@ -103,6 +146,37 @@ service cloud.firestore {
 
     function validAlias(aliases, index) {
       return aliases.size() <= index || (aliases[index] is string && aliases[index].size() <= 200);
+    }
+
+    function validBookLocalLoreVersion(value) {
+      return value is int && value >= 0 && value <= 9007199254740991;
+    }
+
+    function preserveBookLocalLoreVersion() {
+      let previous = resource.data.get('localLoreVersion', 0);
+      let next = request.resource.data.get('localLoreVersion', 0);
+      return validBookLocalLoreVersion(previous) && validBookLocalLoreVersion(next)
+        && (!resource.data.keys().hasAny(['localLoreVersion'])
+          || request.resource.data.keys().hasAll(['localLoreVersion']))
+        && (next == previous || (previous < 9007199254740991 && next == previous + 1));
+    }
+
+    function preserveWorkHistoryRevision() {
+      let before = resource.data.get('historyRevision', 0);
+      let after = request.resource.data.get('historyRevision', 0);
+      return before is int && before >= 0 && before <= 9007199254740991
+        && after is int && after == before
+        && (!resource.data.keys().hasAny(['historyRevision'])
+          || request.resource.data.keys().hasAll(['historyRevision']));
+    }
+
+    function bookLocalLoreAdvanced(bookId) {
+      let before = get(/databases/$(database)/documents/books/$(bookId)).data;
+      let after = getAfter(/databases/$(database)/documents/books/$(bookId)).data;
+      let previous = before.get('localLoreVersion', 0);
+      let next = after.get('localLoreVersion', null);
+      return validBookLocalLoreVersion(previous) && validBookLocalLoreVersion(next)
+        && previous < 9007199254740991 && next == previous + 1;
     }
 
     function validLore(data) {
@@ -177,78 +251,185 @@ service cloud.firestore {
           && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId))));
     }
 
-    function validPersonaTraitAt(traits, index) {
-      let trait = traits.size() > index ? traits[index] : null;
-      return traits.size() <= index || (trait is map && trait.value is int && trait.value >= 0 && trait.value <= 100);
+    function validPersonaTrait(trait) {
+      return trait is map && trait.value is int && trait.value >= 0 && trait.value <= 100;
     }
     function validAIPersona(data, personaId) {
-      return data.keys().hasOnly(['id', 'schemaVersion', 'name', 'description', 'instructions', 'traits', 'revision', 'archived', 'createdAt', 'updatedAt'])
+      let traits = data.traits;
+      let count = traits is list ? traits.size() : -1;
+      return data.keys().hasOnly(['id', 'schemaVersion', 'name', 'description', 'instructions', 'traits', 'revision', 'archived', 'createdAt', 'updatedAt', 'restoreOrigin'])
         && data.id == personaId && personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$')
         && data.schemaVersion == 1
+        && (!data.keys().hasAny(['restoreOrigin']) || validPersonaRestoreOrigin(data.restoreOrigin))
         && data.name is string && data.name.size() > 0 && data.name.size() <= 80
         && data.description is string && data.description.size() <= 500
         && data.instructions is string && data.instructions.size() > 0 && data.instructions.size() <= 6000
         && data.revision is int && data.revision >= 1
         && data.archived is bool && data.createdAt is int && data.updatedAt is int
-        && data.traits is list && data.traits.size() >= 8 && data.traits.size() <= 16
-        && validPersonaTraitAt(data.traits, 0)
-        && validPersonaTraitAt(data.traits, 1)
-        && validPersonaTraitAt(data.traits, 2)
-        && validPersonaTraitAt(data.traits, 3)
-        && validPersonaTraitAt(data.traits, 4)
-        && validPersonaTraitAt(data.traits, 5)
-        && validPersonaTraitAt(data.traits, 6)
-        && validPersonaTraitAt(data.traits, 7)
-        && validPersonaTraitAt(data.traits, 8)
-        && validPersonaTraitAt(data.traits, 9)
-        && validPersonaTraitAt(data.traits, 10)
-        && validPersonaTraitAt(data.traits, 11)
-        && validPersonaTraitAt(data.traits, 12)
-        && validPersonaTraitAt(data.traits, 13)
-        && validPersonaTraitAt(data.traits, 14)
-        && validPersonaTraitAt(data.traits, 15);
+        && traits is list && count >= 8 && count <= 16
+        && validPersonaTrait(traits[0])
+        && validPersonaTrait(traits[1])
+        && validPersonaTrait(traits[2])
+        && validPersonaTrait(traits[3])
+        && validPersonaTrait(traits[4])
+        && validPersonaTrait(traits[5])
+        && validPersonaTrait(traits[6])
+        && validPersonaTrait(traits[7])
+        && (count <= 8 || validPersonaTrait(traits[8]))
+        && (count <= 9 || validPersonaTrait(traits[9]))
+        && (count <= 10 || validPersonaTrait(traits[10]))
+        && (count <= 11 || validPersonaTrait(traits[11]))
+        && (count <= 12 || validPersonaTrait(traits[12]))
+        && (count <= 13 || validPersonaTrait(traits[13]))
+        && (count <= 14 || validPersonaTrait(traits[14]))
+        && (count <= 15 || validPersonaTrait(traits[15]));
+    }
+    function validPersonaRestoreOrigin(origin) {
+      return origin is map && (
+        (origin.schemaVersion == 1 && origin.keys().hasOnly(['schemaVersion','bookId','restoreId','jobToken'])
+          && origin.bookId is string && origin.bookId.matches('^restore-[a-f0-9]{64}$'))
+        || (origin.schemaVersion == 2 && origin.keys().hasOnly(['schemaVersion','target','restoreId','jobToken'])
+          && origin.target is map && origin.target.keys().hasOnly(['kind','id'])
+          && origin.target.kind == 'adventure' && origin.target.id is string
+          && origin.target.id.matches('^restore-a-[a-f0-9]{64}$')))
+        && origin.restoreId is string && origin.restoreId.matches('^[a-zA-Z0-9-]{16,80}$')
+        && origin.jobToken is string && origin.jobToken.matches('^[a-f0-9]{64}$');
+    }
+    function personaRestoreBatchActive(userId, origin) {
+      let projectId = origin.schemaVersion == 1 ? origin.bookId : origin.target.id;
+      let batch = getAfter(/databases/$(database)/documents/users/$(userId)/aiPersonaRestoreBatches/$(projectId)).data;
+      return batch.schemaVersion == origin.schemaVersion && batch.ownerId == userId
+        && (origin.schemaVersion == 1 ? batch.bookId == origin.bookId : batch.target == origin.target)
+        && batch.restoreId == origin.restoreId && batch.jobToken == origin.jobToken && batch.state == 'active';
+    }
+    function personaRestoreAvailable(userId, data) {
+      return !data.keys().hasAny(['restoreOrigin']) || (data.id is string && data.id.matches('^custom-[a-f0-9]{64}$')
+        && validPersonaRestoreOrigin(data.restoreOrigin) && personaRestoreBatchActive(userId, data.restoreOrigin));
+    }
+    function customPersonaAvailable(userId, personaId) {
+      return existsAfter(/databases/$(database)/documents/users/$(userId)/aiPersonas/$(personaId))
+        && personaRestoreAvailable(userId, getAfter(/databases/$(database)/documents/users/$(userId)/aiPersonas/$(personaId)).data);
     }
     function validPersonaReference(personaId) {
       return personaId == null || (personaId is string && (personaId in ['preset-atmospheric', 'preset-incisive', 'preset-intimate', 'preset-ironic', 'preset-epic', 'preset-unsettling']
-        || (personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$') && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid)/aiPersonas/$(personaId)))));
+        || (personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$') && customPersonaAvailable(request.auth.uid,personaId))));
     }
-    function validPersonaOverrideAt(overrides, index) {
-      return overrides.size() <= index || (overrides[index] is map
-        && overrides[index].keys().hasOnly(['traitId', 'value'])
-        && overrides[index].traitId is string && overrides[index].traitId.matches('^[a-zA-Z0-9-]{1,100}$')
-        && overrides[index].value is int && overrides[index].value >= 0 && overrides[index].value <= 100);
+    function validPersonaOverride(item) {
+      return item.keys().hasOnly(['traitId', 'value'])
+        && item.traitId.matches('^[a-zA-Z0-9-]{1,100}$')
+        && item.value is int && item.value >= 0 && item.value <= 100;
     }
     function validPersonaComplement(data) {
-      return data == null || (data is map && data.keys().hasOnly(['personaId', 'overrides'])
+      let overrides = data is map ? data.get('overrides', []) : [];
+      let size = overrides is list ? overrides.size() : -1;
+      return data == null ? true : (data is map && data.keys().hasOnly(['personaId', 'overrides'])
         && data.personaId != null && validPersonaReference(data.personaId)
-        && data.overrides is list && data.overrides.size() <= 16
-        && validPersonaOverrideAt(data.overrides, 0)
-        && validPersonaOverrideAt(data.overrides, 1)
-        && validPersonaOverrideAt(data.overrides, 2)
-        && validPersonaOverrideAt(data.overrides, 3)
-        && validPersonaOverrideAt(data.overrides, 4)
-        && validPersonaOverrideAt(data.overrides, 5)
-        && validPersonaOverrideAt(data.overrides, 6)
-        && validPersonaOverrideAt(data.overrides, 7)
-        && validPersonaOverrideAt(data.overrides, 8)
-        && validPersonaOverrideAt(data.overrides, 9)
-        && validPersonaOverrideAt(data.overrides, 10)
-        && validPersonaOverrideAt(data.overrides, 11)
-        && validPersonaOverrideAt(data.overrides, 12)
-        && validPersonaOverrideAt(data.overrides, 13)
-        && validPersonaOverrideAt(data.overrides, 14)
-        && validPersonaOverrideAt(data.overrides, 15));
+        && data.keys().hasAll(['overrides']) && size >= 0 && size <= 16
+        && (size <= 0 ? true : validPersonaOverride(overrides[0]))
+        && (size <= 1 ? true : validPersonaOverride(overrides[1]))
+        && (size <= 2 ? true : validPersonaOverride(overrides[2]))
+        && (size <= 3 ? true : validPersonaOverride(overrides[3]))
+        && (size <= 4 ? true : validPersonaOverride(overrides[4]))
+        && (size <= 5 ? true : validPersonaOverride(overrides[5]))
+        && (size <= 6 ? true : validPersonaOverride(overrides[6]))
+        && (size <= 7 ? true : validPersonaOverride(overrides[7]))
+        && (size <= 8 ? true : validPersonaOverride(overrides[8]))
+        && (size <= 9 ? true : validPersonaOverride(overrides[9]))
+        && (size <= 10 ? true : validPersonaOverride(overrides[10]))
+        && (size <= 11 ? true : validPersonaOverride(overrides[11]))
+        && (size <= 12 ? true : validPersonaOverride(overrides[12]))
+        && (size <= 13 ? true : validPersonaOverride(overrides[13]))
+        && (size <= 14 ? true : validPersonaOverride(overrides[14]))
+        && (size <= 15 ? true : validPersonaOverride(overrides[15])));
     }
+    function validThemePalette(p) {
+      return p is map && p.size() == 24 && p.keys().hasOnly(['background', 'foreground', 'card', 'card-foreground', 'popover', 'popover-foreground', 'primary', 'primary-hover', 'primary-foreground', 'secondary', 'secondary-foreground', 'muted', 'muted-foreground', 'accent', 'accent-foreground', 'destructive', 'destructive-foreground', 'border', 'input', 'ring', 'success', 'success-foreground', 'warning', 'warning-foreground'])
+        && p.values().join('|').matches('^#[0-9a-fA-F]{6}(\\|#[0-9a-fA-F]{6}){23}$');
+    }
+    function validCustomTheme(t) {
+      return t is map && (t.generatorVersion == 1 ? t.size() == 11 : t.generatorVersion == 2 && t.size() == 13
+          && t.backgroundIntensity is int && t.backgroundIntensity >= 0 && t.backgroundIntensity <= 100
+          && t.backgroundHue is string && t.backgroundHue.matches('^#[0-9a-fA-F]{6}$'))
+        && t.keys().hasOnly(['id','name','base','highlight','style','overrides','palette','generatorVersion','revision','createdAt','updatedAt','backgroundIntensity','backgroundHue'])
+        && t.id is string && t.id.matches('^custom-[a-zA-Z0-9-]{1,64}$')
+        && nonemptyString(t.name, 40) && t.base in ['light','dark']
+        && t.highlight is string && t.highlight.matches('^#[0-9a-fA-F]{6}$')
+        && t.style in ['neutral','tonal','expressive'] && t.generatorVersion in [1,2]
+        && t.revision is int && t.revision >= 1
+        && t.createdAt is int && t.createdAt >= 0 && t.updatedAt is int && t.updatedAt >= t.createdAt
+        && validThemePalette(t.palette) && t.overrides is map
+        && t.overrides.diff(t.palette).addedKeys().size() == 0
+        && t.overrides.diff(t.palette).changedKeys().size() == 0;
+    }
+    function validModifiedTheme(t, previous) {
+      return validCustomTheme(t) && t.revision == previous.get('revision',0) + 1
+        && t.createdAt == previous.get('createdAt',t.createdAt)
+        && t.updatedAt >= previous.get('updatedAt',0);
+    }
+    // Validate only the changed entry. Revalidating five full palettes exceeds
+    // Firestore's expression budget; the diff freezes every other theme.
+    function validThemeCatalog(c, previous) {
+      let oldThemes = previous.get('themes', {});
+      return c.keys().hasOnly(['schemaVersion','revision','themes','changedId']) && c.size() == 4
+        && c.schemaVersion == 1 && c.revision is int && c.revision == previous.get('revision',0) + 1
+        && c.changedId is string && c.changedId.matches('^custom-[a-zA-Z0-9-]{1,64}$')
+        && c.themes is map && c.themes.size() <= 5
+        && c.themes.diff(oldThemes).affectedKeys().hasOnly([c.changedId])
+        && (!(c.changedId in c.themes) || (validModifiedTheme(c.themes[c.changedId],oldThemes.get(c.changedId,{}))
+          && c.themes[c.changedId].id == c.changedId));
+    }
+
+    match /adventureImportReservations/{id} { allow read, write: if false; }
+    match /bookRestoreReservations/{id} { allow read, write: if false; }
+    match /adventureRestoreReservations/{id} { allow read, write: if false; }
     match /users/{userId} {
+      match /preferences/{preferenceId} {
+        allow read: if isOwner(userId) && preferenceId == 'themes';
+        allow create, update: if isOwner(userId) && preferenceId == 'themes'
+          && validThemeCatalog(request.resource.data, request.method == 'create' ? {} : resource.data);
+        allow delete: if false;
+      }
+      match /universeLoreImports/{document=**} { allow read, write: if false; }
+      match /universeLoreImportReceipts/{id} { allow read, write: if false; }
+      match /universeLoreImportLimits/{id} { allow read, write: if false; }
+      match /adventureImports/{document=**} { allow read, write: if false; }
+      match /bookRestores/{document=**} { allow read, write: if false; }
+      match /adventureRestores/{document=**} { allow read, write: if false; }
+      match /adventureRestoreOperations/{id} { allow read, write: if false; }
+      match /adventureRestoreStartFences/{id} { allow read, write: if false; }
+      match /bookLoreFieldUploads/{document=**} { allow read, write: if false; }
+      match /bookLoreSourceInspections/{document=**} { allow read, write: if false; }
+      match /bookLoreEdits/{document=**} { allow read, write: if false; }
+      match /bookLoreDeletions/{document=**} { allow read, write: if false; }
+      match /bookLoreRemovals/{document=**} { allow read, write: if false; }
+      match /bookLoreCreations/{document=**} { allow read, write: if false; }
+      match /bookLoreWriteRecoveries/{document=**} { allow read, write: if false; }
+      match /bookRestoreRecoveryKeys/{id} { allow read, write: if false; }
+      match /bookRestoreOperations/{id} { allow read, write: if false; }
+      match /bookRestoreMediaOperations/{id} { allow read, write: if false; }
+      match /bookRestoreArchiveOperations/{id} { allow read, write: if false; }
+      match /bookRestoreStartFences/{id} { allow read, write: if false; }
+      match /adventureImportRecoveryKeys/{id} { allow read, write: if false; }
+      match /adventureImportOperations/{id} { allow read, write: if false; }
+      match /adventureImportStartFences/{id} { allow read, write: if false; }
       // Conversations, provider origin and debit receipts are server controlled.
       match /chapterChats/{document=**} { allow read, write: if false; }
       match /chapterChatLimits/{id} { allow read, write: if false; }
+      match /editorChatContexts/{id} { allow read, write: if false; }
+      match /editorChatContextBodies/{id} { allow read, write: if false; }
+      match /editorChatOperations/{id} { allow read, write: if false; }
+      match /editorChatCleanup/{id} { allow read, write: if false; }
+      match /editorChats/{document=**} { allow read, write: if false; }
+      match /editorChatCatalogs/{id} { allow read, write: if false; }
+      match /aiPersonaRestoreBatches/{projectId} { allow read: if isOwner(userId); allow write: if false; }
       match /aiPersonas/{personaId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && validAIPersona(request.resource.data, personaId)
-          && (request.method == 'create' ? request.resource.data.revision == 1
+          && (request.method == 'create' ? request.resource.data.revision == 1 && !request.resource.data.keys().hasAny(['restoreOrigin'])
             : request.resource.data.revision == resource.data.revision + 1
-              && request.resource.data.createdAt == resource.data.createdAt);
+              && request.resource.data.createdAt == resource.data.createdAt
+              && request.resource.data.get('restoreOrigin', null) == resource.data.get('restoreOrigin', null)
+              && personaRestoreAvailable(userId,resource.data));
         allow delete: if false;
       }
 
@@ -259,6 +440,35 @@ service cloud.firestore {
       match /assistedCurrent/{id} { allow read, write: if false; }
       match /assistedLimits/{id} { allow read, write: if false; }
       match /assistedReceipts/{id} { allow read, write: if false; }
+      match /studioOperations/{operationId} { allow read, write: if false; }
+      match /studioPreparation/{preparationId} { allow read, write: if false; }
+      // Campaign adoption and its authorization clock are server controlled.
+      match /campaignAdoptions/{document=**} { allow read, write: if false; }
+      match /campaignAdoptionOperations/{id} { allow read, write: if false; }
+      match /campaignAdoptionStartFences/{id} { allow read, write: if false; }
+      match /campaignAdoptionGuards/{id} { allow read, write: if false; }
+      match /campaignVariantResolutionOperations/{id} { allow read, write: if false; }
+      match /campaignAuthorization/{id} { allow read, write: if false; }
+      match /campaignRestores/{document=**} { allow read, write: if false; }
+      match /campaignRestoreOperations/{document=**} { allow read, write: if false; }
+      match /campaignRestoreKeys/{document=**} { allow read, write: if false; }
+      match /campaignRestoreStartFences/{document=**} { allow read, write: if false; }
+      match /campaignDeletions/{document=**} { allow read, write: if false; }
+      match /campaignDeletionOperations/{id} { allow read, write: if false; }
+      match /campaignDeletionStartFences/{id} { allow read, write: if false; }
+      match /adventureLoreOperations/{id} { allow read, write: if false; }
+      match /adventureLoreFences/{id} { allow read, write: if false; }
+      match /campaignPreparationOperations/{id} { allow read, write: if false; }
+      match /campaignPreparationFences/{id} { allow read, write: if false; }
+      match /campaignSessionOperations/{id} { allow read, write: if false; }
+      match /campaignSessionReferenceOperations/{id} { allow read, write: if false; }
+      match /campaignSessionReferenceFences/{id} { allow read, write: if false; }
+      match /sceneOperations/{operationId} { allow read, write: if false; }
+      match /narrativeOperations/{operationId} { allow read, write: if false; }
+      match /workOperations/{operationId} { allow read, write: if false; }
+      match /workPreferences/{id} { allow read, write: if false; }
+      match /workActivity/{id} { allow read, write: if false; }
+      match /workActivityState/{id} { allow read, write: if false; }
       match /imageLibrary/{imageId} {
         allow read: if isOwner(userId);
         allow write: if false;
@@ -272,6 +482,9 @@ service cloud.firestore {
         allow read, write: if false;
       }
       match /loreAnalyses/{analysisId} { allow read, write: if false; }
+      match /loreAnalysisApplications/{document=**} { allow read, write: if false; }
+      match /loreAnalysisChildOwners/{document=**} { allow read, write: if false; }
+      match /loreAnalysisChildOwnerProofs/{document=**} { allow read, write: if false; }
       match /loreAnalysisLimits/{limitId} { allow read, write: if false; }
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) && validNewUser(request.resource.data, userId);
@@ -287,11 +500,7 @@ service cloud.firestore {
 
     // Irreversible IDs prevent a deleted book from reattaching orphaned snapshots.
     match /deletedBooks/{bookId} {
-      allow read, update, delete: if false;
-      allow create: if isBookAuthor(bookId)
-        && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
-        && request.resource.data.keys().hasOnly(['deletedAt'])
-        && request.resource.data.deletedAt == request.time;
+      allow read, write: if false;
     }
 
     // Originals are always private, including published books and public lore.
@@ -304,6 +513,82 @@ service cloud.firestore {
         allow write: if false;
       }
       match /books/{bookId} { allow read, write: if false; }
+      match /adventures/{adventureId} { allow read, write: if false; }
+      match /campaigns/{campaignId} { allow read, write: if false; }
+    }
+
+    match /adventures/{adventureId} {
+      match /lore/{document=**} { allow read, write: if false; }
+      match /loreBodies/{document=**} { allow read, write: if false; }
+      match /sceneBlocks/{blockId} {
+        allow read, write: if false;
+        match /{child}/{id} { allow read, write: if false; }
+      }
+      match /workVersions/{id} { allow read, write: if false; }
+      match /workVersionBodies/{id} { allow read, write: if false; }
+      allow get: if sceneAdventureReadable(adventureId);
+      // Server catalog applies the permanent reservation before loading summaries.
+      allow list, write: if false;
+      match /parts/{partId} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /scenes/{sceneId} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+        match /{child}/{childId} {
+          allow get: if child in ['body', 'planning', 'references'] && sceneAdventureReadable(adventureId);
+          allow list: if child == 'references' && sceneAdventureReadable(adventureId) && boundedSceneList();
+          allow write: if false;
+        }
+      }
+      match /sceneControls/{id} { allow read, write: if false; }
+      match /sceneJobs/{id} { allow read, write: if false; }
+      match /arcs/{arcId} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+        match /milestones/{id} {
+          allow get: if sceneAdventureReadable(adventureId)
+            && get(/databases/$(database)/documents/adventures/$(adventureId)/arcs/$(arcId)).data.get('deleting', false) != true;
+          allow list: if sceneAdventureReadable(adventureId) && boundedSceneList()
+            && get(/databases/$(database)/documents/adventures/$(adventureId)/arcs/$(arcId)).data.get('deleting', false) != true;
+          allow write: if false;
+        }
+      }
+      match /timelineEvents/{id} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /narrativeLinks/{id} {
+        allow get: if sceneAdventureReadable(adventureId);
+        allow list: if sceneAdventureReadable(adventureId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /{privateCollection}/{id} {
+        allow read, write: if false;
+      }
+    }
+
+    match /adventureDeletionReservations/{adventureId} { allow read, write: if false; }
+    match /campaignRestoreReservations/{campaignId} { allow read, write: if false; }
+    match /campaignDeletionReservations/{campaignId} { allow read, write: if false; }
+
+    match /campaigns/{campaignId} {
+      match /preparationItems/{document=**} { allow read, write: if false; }
+      match /preparationBodies/{document=**} { allow read, write: if false; }
+      match /preparationState/{document=**} { allow read, write: if false; }
+      match /sessionPreparationLinks/{document=**} { allow read, write: if false; }
+      match /sessionPreparationState/{document=**} { allow read, write: if false; }
+      match /loreGenerations/{document=**} { allow read, write: if false; }
+      match /sessions/{document=**} { allow read, write: if false; }
+      match /sessionState/{document=**} { allow read, write: if false; }
+      match /sessionReferences/{document=**} { allow read, write: if false; }
+      match /sessionReferenceState/{document=**} { allow read, write: if false; }
+      allow read, write: if false;
     }
 
     // Minimal public revocation signal, never names, descriptions or author identity.
@@ -313,6 +598,14 @@ service cloud.firestore {
     }
 
     match /books/{bookId} {
+      match /bookResourceLeases/{id} { allow read, write: if false; }
+      match /bookLoreRecoveryKeys/{document=**} { allow read, write: if false; }
+      match /bookLoreGenerations/{document=**} { allow read, write: if false; }
+      match /bookLoreTombstones/{document=**} { allow read, write: if false; }
+      match /bookLoreReservations/{document=**} { allow read, write: if false; }
+      match /bookResourceInventory/{document=**} { allow read, write: if false; }
+      match /workVersions/{id} { allow read, write: if false; }
+      match /workVersionBodies/{id} { allow read, write: if false; }
       // Allow an authenticated creator to read an absent ID before the atomic create.
       // Existing manuscripts remain restricted to their author.
       allow get: if isAuthenticated()
@@ -320,6 +613,21 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.authorId);
       allow create: if isAuthenticated()
         && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.get('restoreOrigin', null) == null
+        && validBookLocalLoreVersion(request.resource.data.get('localLoreVersion', null))
+        && request.resource.data.localLoreVersion == 0
+        && request.resource.data.get('hasSceneResources', false) == false
+        && request.resource.data.get('sceneRevision', 0) == 0
+        && request.resource.data.get('historyRevision', 0) is int
+        && request.resource.data.get('historyRevision', 0) == 0
+        && request.resource.data.get('hasNarrativeResources', false) == false
+        && request.resource.data.get('narrativeRevision', 0) == 0
+        && request.resource.data.get('hasProgressResources', false) == false
+        && request.resource.data.get('hasLoreResources', false) == false
+        && request.resource.data.get('editorialState', null) == null
+        && request.resource.data.get('sceneDeletionOperationId', null) == null
+        && validStudioDate(request.resource.data.get('createdAt', null))
+        && validStudioDate(request.resource.data.get('updatedAt', null))
         && request.resource.data.get('universeId', null) == null
         && request.resource.data.status == 'draft'
         && validPersonaReference(request.resource.data.get('personaId', null))
@@ -328,6 +636,20 @@ service cloud.firestore {
         && request.resource.data.get('deleting', false) == false
         && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
       allow update: if isOwner(resource.data.authorId)
+        && request.resource.data.get('restoreOrigin', null) == resource.data.get('restoreOrigin', null)
+        && preserveBookDates()
+        && preserveBookLocalLoreVersion()
+        && preserveWorkHistoryRevision()
+        && request.resource.data.get('hasSceneResources', false) == resource.data.get('hasSceneResources', false)
+        && request.resource.data.get('sceneRevision', 0) == resource.data.get('sceneRevision', 0)
+        && request.resource.data.get('hasNarrativeResources', false) == resource.data.get('hasNarrativeResources', false)
+        && request.resource.data.get('narrativeRevision', 0) == resource.data.get('narrativeRevision', 0)
+        && request.resource.data.get('hasProgressResources', false) == resource.data.get('hasProgressResources', false)
+        && request.resource.data.get('hasLoreResources', false) == resource.data.get('hasLoreResources', false)
+        && request.resource.data.get('editorialState', null) == resource.data.get('editorialState', null)
+        && (resource.data.get('hasProgressResources', false) != true
+          || request.resource.data.get('wordCount', 0) == resource.data.get('wordCount', 0))
+        && request.resource.data.get('sceneDeletionOperationId', null) == resource.data.get('sceneDeletionOperationId', null)
         && validPersonaReference(request.resource.data.get('personaId', null))
         && request.resource.data.get('universeId', null) == resource.data.get('universeId', null)
         && request.resource.data.authorId == resource.data.authorId
@@ -338,27 +660,89 @@ service cloud.firestore {
         && (request.resource.data.status == 'draft'
           || resource.data.status == 'published'
           || existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)));
-      allow delete: if isOwner(resource.data.authorId)
-        && resource.data.get('deleting', false) == true
-        && existsAfter(/databases/$(database)/documents/deletedBooks/$(bookId))
-        && !existsAfter(/databases/$(database)/documents/publicBooks/$(bookId));
+      // A missing flag cannot prove that private preparations or bodies are absent.
+      allow delete: if false;
 
       match /acts/{actId} {
         allow read: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId) && validAct(request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == false
+          && bookStructureClockAdvanced(bookId)
           && getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('actCount', 0) == request.resource.data.order;
         allow update: if false;
         allow delete: if isBookAuthor(bookId)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true;
       }
       match /chapters/{chapterId} {
-        allow read, delete: if isBookAuthor(bookId);
-        allow create, update: if isBookAuthor(bookId)
+        allow read: if isBookAuthor(bookId);
+        allow delete: if isBookAuthor(bookId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
+          && resource.data.get('contentMode', 'legacy') != 'scenes'
+          && resource.data.get('deleting', false) != true
+          && (get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
+            || bookStructureClockAdvanced(bookId));
+        allow create: if isBookAuthor(bookId)
+          && bookStructureClockAdvanced(bookId)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
+          && request.resource.data.get('contentMode', 'legacy') == 'legacy'
+          && validActLink(bookId, request.resource.data)
+          && validPersonaComplement(request.resource.data.get('personaComplement', null))
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
+        allow update: if isBookAuthor(bookId)
+          && resource.data.get('deleting', false) != true
+          && (get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
+            || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'actId', 'order', 'personaComplement', 'updatedAt']))
+          && (resource.data.get('contentMode', 'legacy') == 'legacy'
+            ? request.resource.data.get('contentMode', 'legacy') == 'legacy'
+            : (resource.data.get('contentMode', 'legacy') == 'scenes'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'actId', 'order', 'personaComplement', 'updatedAt'])))
           && validActLink(bookId, request.resource.data)
           && validPersonaComplement(request.resource.data.get('personaComplement', null))
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
       }
+
+      match /scenes/{sceneId} {
+        allow get: if sceneBookReadable(bookId);
+        allow list: if sceneBookReadable(bookId) && boundedSceneList();
+        allow write: if false;
+        match /{child}/{childId} {
+          allow get: if child in ['body', 'planning', 'references'] && sceneBookReadable(bookId);
+          allow list: if child == 'references' && sceneBookReadable(bookId) && boundedSceneList();
+          allow write: if false;
+        }
+      }
+      match /sceneControls/{id} { allow read, write: if false; }
+      match /sceneJobs/{id} { allow read, write: if false; }
+      match /sceneSources/{id} { allow read, write: if false; }
+      match /arcs/{arcId} {
+        allow get: if sceneBookReadable(bookId);
+        allow list: if sceneBookReadable(bookId) && boundedSceneList();
+        allow write: if false;
+        match /milestones/{id} {
+          allow get: if sceneBookReadable(bookId)
+            && get(/databases/$(database)/documents/books/$(bookId)/arcs/$(arcId)).data.get('deleting', false) != true;
+          allow list: if sceneBookReadable(bookId) && boundedSceneList()
+            && get(/databases/$(database)/documents/books/$(bookId)/arcs/$(arcId)).data.get('deleting', false) != true;
+          allow write: if false;
+        }
+      }
+      match /timelineEvents/{id} {
+        allow get: if sceneBookReadable(bookId);
+        allow list: if sceneBookReadable(bookId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /narrativeLinks/{id} {
+        allow get: if sceneBookReadable(bookId);
+        allow list: if sceneBookReadable(bookId) && boundedSceneList();
+        allow write: if false;
+      }
+      match /narrativeControls/{id} { allow read, write: if false; }
+      match /narrativeJobs/{id} { allow read, write: if false; }
+      match /sceneLoreLinks/{id} { allow read, write: if false; }
+      match /workProgress/{id} { allow read, write: if false; }
+      match /workWordSources/{id} { allow read, write: if false; }
+      match /workWordGroups/{id} { allow read, write: if false; }
+      match /workChecklist/{id} { allow read, write: if false; }
 
       match /lore/{loreId} {
         function publicationRevoked() {
@@ -368,25 +752,52 @@ service cloud.firestore {
               || getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0)
                 == get(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0) + 1);
         }
+        function inlineLore(data) { return !data.keys().hasAny(['payloadStorage']); }
+        // Server-owned, permanent barrier: native resources require native writers.
+        function inlineLoreWriter() {
+          return get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false;
+        }
         allow read: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId)
-          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
-        allow update: if isBookAuthor(bookId)
+          && inlineLoreWriter()
+          && !exists(/databases/$(database)/documents/books/$(bookId)/bookLoreTombstones/$(loreId))
+          && !exists(/databases/$(database)/documents/books/$(bookId)/bookLoreReservations/$(loreId))
+          && inlineLore(request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+          && bookLocalLoreAdvanced(bookId);
+        allow update: if isBookAuthor(bookId)
+          && inlineLoreWriter()
+          && !exists(/databases/$(database)/documents/books/$(bookId)/bookLoreTombstones/$(loreId))
+          && !exists(/databases/$(database)/documents/books/$(bookId)/bookLoreReservations/$(loreId))
+          && inlineLore(resource.data) && inlineLore(request.resource.data)
+          && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
+          && bookLocalLoreAdvanced(bookId)
           && (resource.data.get('isPublic', false) != true
             || request.resource.data.get('isPublic', false) == true
             || publicationRevoked());
         allow delete: if isBookAuthor(bookId)
+          && inlineLoreWriter()
+          && inlineLore(resource.data)
+          && (get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true
+            || bookLocalLoreAdvanced(bookId))
           && (resource.data.get('isPublic', false) != true || publicationRevoked());
       }
     }
 
     match /publicBooks/{bookId} {
+      function inlinePublicationWriter() {
+        return get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false
+          && (!exists(/databases/$(database)/documents/publicBooks/$(bookId))
+            || !get(/databases/$(database)/documents/publicBooks/$(bookId)).data.keys().hasAny(['sourcePublicationToken']));
+      }
       allow get: if isBookAuthor(bookId) || (isPublished(bookId)
         && (!exists(/databases/$(database)/documents/publicBooks/$(bookId)) || universePublicationCurrent(resource.data)));
       allow list: if false;
       allow create, update: if isBookAuthor(bookId)
+        && inlinePublicationWriter()
+        && !request.resource.data.keys().hasAny(['sourcePublicationToken'])
         && validPublicBook(request.resource.data)
+        && publicationSceneMatches(bookId, request.resource.data)
         && publicationUniverseMatches(bookId, request.resource.data)
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'published'
@@ -394,7 +805,8 @@ service cloud.firestore {
         && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.privacyVersion
           == getAfter(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0)
         && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('universeId', null) == request.resource.data.get('universeId', null)
-        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('universePrivacyVersion', null) == request.resource.data.get('universePrivacyVersion', null);
+        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('universePrivacyVersion', null) == request.resource.data.get('universePrivacyVersion', null)
+        && getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(request.resource.data.revisionId)).data.get('sourceSceneRevision', null) == request.resource.data.get('sourceSceneRevision', null);
       allow delete: if isBookAuthor(bookId)
         && getAfter(/databases/$(database)/documents/books/$(bookId)).data.status == 'draft';
 
@@ -403,6 +815,9 @@ service cloud.firestore {
         allow list: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
           && validRevision(request.resource.data)
+          && (get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false
+            || request.resource.data.keys().hasAll(['sourceLoreToken', 'sourcePublicationToken']))
+          && publicationSceneMatches(bookId, request.resource.data)
           && publicationUniverseMatches(bookId, request.resource.data)
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
           && request.resource.data.privacyVersion == get(/databases/$(database)/documents/books/$(bookId)).data.get('publicationPrivacyVersion', 0);
@@ -447,6 +862,9 @@ service cloud.firestore {
           allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
             && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
             && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId))
+            && (request.resource.data.get('sourceEntityId', null) != null
+              || (get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false
+                && !getAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId)).data.keys().hasAny(['sourcePublicationToken'])))
             && originalConsent()
             && validLore(request.resource.data);
           allow update: if false;

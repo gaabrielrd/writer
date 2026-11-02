@@ -18,8 +18,12 @@ Para trabalho com vários arquivos ou ambíguo:
 2. use a skill de planejamento (plan-feature);
 3. apresente o plano;
 4. implemente um incremento por vez;
-5. execute `npm run validate`;
+5. execute testes direcionados durante ajustes e `npm run validate` ao fechar grandes blocos;
 6. revise o diff final.
+
+Durante o desenvolvimento, mantenha commits locais e ignore a CI remota.
+Não faça push nem atualize PRs sem nova instrução do usuário; siga o registro
+de evidências do `AGENTS.md`.
 
 Não expanda o escopo, não adicione dependências, não exponha
 segredos e não altere a arquitetura sem antes explicar a necessidade.

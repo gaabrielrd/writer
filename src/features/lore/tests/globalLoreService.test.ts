@@ -9,19 +9,30 @@ import {
   subscribeLoreEntities,
   updateLoreEntity,
 } from '../services/loreService';
-vi.mock('@/shared/lib', () => ({ firestore: {}, getFirebaseApp: () => ({}) }));
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn((_db: unknown, ...path: string[]) => ({ path })),
-  doc: vi.fn((_db: unknown, ...path: string[]) => ({ path })),
-  query: vi.fn((ref: unknown) => ref),
-  orderBy: vi.fn(),
-  getDoc: vi.fn(),
-  getDocs: vi.fn(),
-  setDoc: vi.fn(),
-  updateDoc: vi.fn(),
-  runTransaction: vi.fn(),
-  onSnapshot: vi.fn(),
+vi.mock('@/shared/lib', () => ({
+  firestore: {},
+  auth: { currentUser: { uid: 'author' } },
+  getFirebaseApp: () => ({}),
 }));
+vi.mock('firebase/auth', () => ({ onAuthStateChanged: vi.fn(() => vi.fn()) }));
+vi.mock('firebase/firestore', () => {
+  const getDoc = vi.fn(),
+    getDocs = vi.fn();
+  return {
+    collection: vi.fn((_db: unknown, ...path: string[]) => ({ path })),
+    doc: vi.fn((_db: unknown, ...path: string[]) => ({ path })),
+    query: vi.fn((ref: unknown) => ref),
+    orderBy: vi.fn(),
+    getDoc,
+    getDocFromServer: getDoc,
+    getDocs,
+    getDocsFromServer: getDocs,
+    setDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    runTransaction: vi.fn(),
+    onSnapshot: vi.fn(),
+  };
+});
 vi.mock('firebase/functions', () => ({ getFunctions: vi.fn(), httpsCallable: vi.fn() }));
 const call = vi.fn();
 const scope = { kind: 'universe' as const, id: 'world' };
@@ -98,8 +109,10 @@ it('recebe atualizações do escopo correto e encaminha erros de sincronização
   args[2](new Error('Offline'));
   expect(failed).toHaveBeenCalled();
   subscribeLoreEntities('book', changed, failed);
-  const localArgs = vi.mocked(db.onSnapshot).mock.calls[1] as unknown as typeof args;
-  localArgs[1]({ docs: [snap] });
+  const localRoot = vi.mocked(db.onSnapshot).mock.calls[1] as unknown as typeof args;
+  localRoot[2]({ exists: () => true, data: () => ({ authorId: 'author' }) });
+  const localArgs = vi.mocked(db.onSnapshot).mock.calls[2] as unknown as typeof args;
+  localArgs[2]({ docs: [snap] });
   expect(changed).toHaveBeenLastCalledWith([
     expect.objectContaining({ id: 'arthur', bookId: 'book' }),
   ]);

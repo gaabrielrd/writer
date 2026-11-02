@@ -42,3 +42,8 @@
 .scale span:last-child {
   text-align: right;
 }
+
+.heading[hidden],
+.scale[hidden] {
+  display: none;
+}

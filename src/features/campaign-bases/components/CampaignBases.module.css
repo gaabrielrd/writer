@@ -1,0 +1,87 @@
+.stack {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.stack > *,
+.items > li {
+  min-width: 0;
+}
+.preparations {
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+.preparations h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.reader {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
+.reader > *,
+.reader header {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.reader header {
+  display: grid;
+  gap: 0.5rem;
+}
+.reader h2,
+.reader h3,
+.reader h4 {
+  font-weight: 600;
+  line-height: 1.4;
+}
+.reader h2 {
+  font-size: 1.25rem;
+}
+.reader h3 {
+  font-size: 1.125rem;
+}
+.items {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+.items button {
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 2.5rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.rich {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.rich img,
+.image {
+  max-width: 100%;
+  height: auto;
+}
+.rich table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.meta {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+}

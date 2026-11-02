@@ -1,3 +1,4 @@
+import { isPlatformTextModel } from './chatGeneration';
 export type AIProvider = 'firebase_ai' | 'gemini_byok' | 'openai_byok';
 
 export interface BYOKConfig {
@@ -5,6 +6,10 @@ export interface BYOKConfig {
   geminiApiKey?: string;
   openaiApiKey?: string;
   customModel?: string;
+  platformModel?: string;
+  platformReasoning?: 'medium' | 'high';
+  geminiModel?: string;
+  openaiModel?: string;
 }
 
 export function validateBYOKConfig(config: BYOKConfig): {
@@ -14,6 +19,16 @@ export function validateBYOKConfig(config: BYOKConfig): {
   if (!['firebase_ai', 'gemini_byok', 'openai_byok'].includes(config.provider)) {
     return { isValid: false, error: 'Provedor de IA inválido.' };
   }
+  if (config.platformModel !== undefined && !isPlatformTextModel(config.platformModel))
+    return { isValid: false, error: 'Modelo da plataforma inválido.' };
+  if (
+    config.platformReasoning !== undefined &&
+    !['medium', 'high'].includes(config.platformReasoning)
+  )
+    return { isValid: false, error: 'Raciocínio da plataforma inválido.' };
+  for (const model of [config.geminiModel, config.openaiModel])
+    if (model !== undefined && model !== '' && !/^[a-zA-Z0-9._:-]+$/.test(model.trim()))
+      return { isValid: false, error: 'Nome do modelo inválido.' };
   if (config.customModel && !/^[a-zA-Z0-9._:-]+$/.test(config.customModel.trim())) {
     return { isValid: false, error: 'Nome do modelo inválido.' };
   }

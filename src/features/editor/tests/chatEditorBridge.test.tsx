@@ -153,3 +153,15 @@ describe('contexto real do manuscrito', () => {
     expect(bridge).toBeNull();
   });
 });
+
+it('preserva os cortes e o formato legados na extração compartilhada', async () => {
+  const text = 'a'.repeat(17999) + '🐉' + 'b'.repeat(3998) + '🐉' + 'c';
+  editor.commands.setContent(`<p>${text}</p>`);
+  setup();
+  const value = await bridge!.capture('chapter');
+  expect(value.text).toBe(text.slice(0, 18000));
+  expect(value.surrounding).toBe(text.slice(0, 22000));
+  expect(value.target).toBeNull();
+  expect(value.title).toBe('Capítulo');
+  expect(value.lore).toEqual([]);
+});

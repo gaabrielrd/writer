@@ -74,6 +74,7 @@ describe('conferência do PDF', () => {
     expect(screen.getByText(/capítulos encontrados/)).toHaveTextContent('1 capítulos encontrados');
     await userEvent.click(screen.getByRole('button', { name: 'Importar 1 Capítulo(s)' }));
     expect(save).toHaveBeenCalledWith('livro', {
+      creationId: expect.any(String) as string,
       title: 'Parte 1: A chegada',
       content: blocks.map((b) => b.html).join(''),
     });

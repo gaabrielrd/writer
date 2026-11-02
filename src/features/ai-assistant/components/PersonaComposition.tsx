@@ -8,15 +8,27 @@ export function PersonaComposition({
   profile,
   showChapter = true,
   compact = false,
+  scope = 'book',
 }: {
   profile: ResolvedPersonaProfile;
   showChapter?: boolean;
   compact?: boolean;
+  scope?: 'book' | 'adventure';
 }) {
   const voices: { role: string; persona: AIPersona | null; fallback: string }[] = [
-    { role: 'Base do livro', persona: profile.base, fallback: 'Sem persona base' },
+    {
+      role: scope === 'adventure' ? 'Base da aventura' : 'Base do livro',
+      persona: profile.base,
+      fallback: 'Sem persona base',
+    },
     ...(showChapter
-      ? [{ role: 'Complemento do capítulo', persona: profile.chapter, fallback: 'Sem complemento' }]
+      ? [
+          {
+            role: scope === 'adventure' ? 'Complemento da cena' : 'Complemento do capítulo',
+            persona: profile.chapter,
+            fallback: 'Sem complemento',
+          },
+        ]
       : []),
   ];
   return (
@@ -52,7 +64,9 @@ export function PersonaComposition({
                       'Consulte as orientações efetivas para conhecer esta voz.'
                     : index === 0
                       ? 'Orientações padrão da operação.'
-                      : 'O capítulo acompanha a voz do livro.'}
+                      : scope === 'adventure'
+                        ? 'A cena acompanha a voz da aventura.'
+                        : 'O capítulo acompanha a voz do livro.'}
                 </p>
               )}
             </div>

@@ -83,7 +83,16 @@ export function processCompletion(child) {
 
 export async function stopProcess(child, completion, timeoutMs = 5000) {
   if (!child || !child.pid || child.exitCode !== null || child.signalCode !== null) return;
-  child.kill('SIGTERM');
+  if (process.platform === 'win32') {
+    // Java launchers and the Node test runner can own children that outlive a killed parent.
+    const killer = spawn('taskkill.exe', ['/PID', String(child.pid), '/T', '/F'], {
+      windowsHide: true,
+      stdio: 'ignore',
+    });
+    const result = await processCompletion(killer);
+    if ((result.error || result.code !== 0) && child.exitCode === null && child.signalCode === null)
+      child.kill('SIGTERM');
+  } else child.kill('SIGTERM');
   let timer;
   await Promise.race([
     completion,
@@ -125,14 +134,24 @@ async function waitUntilListening(port, child, timeoutMs = 30_000) {
   throw new Error('O emulador não iniciou em 30 segundos. Verifique o Java 21.');
 }
 
-export async function runFirestoreRules() {
+/** Deterministic, disjoint partitions; the default still includes every rules file. */
+export function shardRulesFiles(files, shard) {
+  if (shard === undefined) return [...files];
+  const match = /^([1-9]\d*)\/([1-9]\d*)$/.exec(shard);
+  if (!match || Number(match[1]) > Number(match[2]) || Number(match[2]) > 16)
+    throw new Error('Use --shard=N/T com 1 <= N <= T <= 16.');
+  return files.filter((_, index) => index % Number(match[2]) === Number(match[1]) - 1);
+}
+
+export async function runFirestoreRules({ shard } = {}) {
+  shardRulesFiles([], shard);
   const cache = resolve(process.env.WRITER_FIRESTORE_CACHE ?? join(root, '.firebase', 'emulators'));
   const jar = await verifiedArtifact(
     FIRESTORE_EMULATOR,
     join(cache, `cloud-firestore-emulator-v${FIRESTORE_EMULATOR.version}.jar`),
   );
   const port = await availablePort();
-  const logPath = join(cache, 'firestore-emulator.log');
+  const logPath = join(cache, `firestore-emulator-${port}.log`);
   const log = await open(logPath, 'w');
   const emulator = spawn(
     'java',
@@ -174,15 +193,16 @@ export async function runFirestoreRules() {
         throw result.error ?? new Error('O emulador encerrou antes de iniciar.');
       }),
     ]);
-    const files = (await readdir(join(root, 'tests', 'firestore')))
+    const allFiles = (await readdir(join(root, 'tests', 'firestore')))
       .filter((name) => name.endsWith('.rules.test.mjs'))
       .sort()
       .map((name) => join(root, 'tests', 'firestore', name));
+    const files = shardRulesFiles(allFiles, shard);
     if (files.length === 0) throw new Error('Nenhum teste de regras encontrado.');
     console.log(
       `Firestore ${FIRESTORE_EMULATOR.version} em ${host}:${port} (somente emulador demo).`,
     );
-    tests = spawn(process.execPath, ['--test', ...files], {
+    tests = spawn(process.execPath, ['--test', '--test-concurrency=4', ...files], {
       cwd: root,
       stdio: 'inherit',
       env: {
@@ -199,8 +219,8 @@ export async function runFirestoreRules() {
       }),
       new Promise((_, reject) => {
         timeout = setTimeout(
-          () => reject(new Error('Os testes de regras excederam cinco minutos.')),
-          300_000,
+          () => reject(new Error('Os testes de regras excederam trinta minutos.')),
+          1_800_000,
         );
       }),
     ]);
@@ -221,7 +241,11 @@ export async function runFirestoreRules() {
 }
 
 if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
-  runFirestoreRules()
+  const args = process.argv.slice(2);
+  const shard = args.length === 1 && args[0].startsWith('--shard=') ? args[0].slice(8) : undefined;
+  if (args.length && shard === undefined)
+    throw new Error('Argumento desconhecido. Use --shard=N/T.');
+  runFirestoreRules({ shard })
     .then((code) => {
       process.exitCode = code;
     })

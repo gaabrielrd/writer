@@ -311,3 +311,23 @@ describe('typing-only automatic generation', () => {
     expect(ai.generateAIResponse).toHaveBeenCalledOnce();
   });
 });
+
+it('invalida a oferta após intenção cancelada e preserva o pedido manual', async () => {
+  const { result, rerender } = renderAfterTyping();
+  await tick();
+  expect(result.current.suggestion).toBe('A floresta silenciou.');
+  rerender({ ...options, typingRevision: null });
+  expect(result.current.suggestion).toBeNull();
+  await act(async () => {
+    expect(await result.current.acceptSuggestion()).toBeNull();
+  });
+  expect(credits.deductCredit).not.toHaveBeenCalled();
+  await tick();
+  expect(ai.generateAIResponse).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    await result.current.triggerManualAutocomplete();
+  });
+  expect(ai.generateAIResponse).toHaveBeenCalledTimes(2);
+  expect(result.current.suggestion).toBe('A floresta silenciou.');
+  expect(credits.deductCredit).not.toHaveBeenCalled();
+});

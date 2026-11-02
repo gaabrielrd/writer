@@ -6,14 +6,15 @@ import styles from './CreditsBadge.module.css';
 export interface CreditsBadgeProps {
   credits: number;
   tier?: UserTier;
+  className?: string;
 }
 
-export function CreditsBadge({ credits, tier = 'free' }: CreditsBadgeProps) {
+export function CreditsBadge({ credits, tier = 'free', className = '' }: CreditsBadgeProps) {
   return (
     <Tooltip content={`${credits} créditos de IA · Plano ${tier.toUpperCase()}`}>
       <button
         type="button"
-        className={styles.badge}
+        className={styles.badge + ' ' + className}
         aria-label={`${credits} créditos de IA, plano ${tier}`}
       >
         <Sparkles className="icon icon-sm" aria-hidden="true" />

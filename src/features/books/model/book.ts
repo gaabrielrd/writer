@@ -1,9 +1,13 @@
+import type { BookPersonaAvailability } from '../../../../functions/src/bookPersonaAvailability.mjs';
+
 export type BookStatus = 'draft' | 'published';
 
 export interface Book {
   id: string;
   universeId?: string | null;
   personaId?: string | null;
+  personaAvailability?: BookPersonaAvailability;
+  localLoreVersion?: number;
   authorId: string;
   title: string;
   genre?: string;
@@ -11,7 +15,15 @@ export interface Book {
   coverUrl?: string | null;
   coverImageId?: string | null;
   status: BookStatus;
+  editorialState?: 'draft' | 'review' | 'ready';
+  hasProgressResources?: boolean;
+  hasLoreResources?: boolean;
   wordCount: number;
+  hasSceneResources?: boolean;
+  sceneRevision?: number;
+  hasNarrativeResources?: boolean;
+  narrativeRevision?: number;
+  deleting?: boolean;
   createdAt: number;
   updatedAt: number;
 }

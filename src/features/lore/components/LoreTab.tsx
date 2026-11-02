@@ -1,4 +1,5 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { BookLoreCollection } from './BookLoreCollection';
 import { createPortal } from 'react-dom';
 import { BookOpen, LayoutGrid, List, MapPin, Plus, Search, Tag, User, X } from 'lucide-react';
 import {
@@ -11,6 +12,8 @@ import {
   LoadingState,
   Dropdown,
 } from '@/shared/ui';
+import { useAuth } from '@/features/auth';
+import { AdventureLoreCollection } from './AdventureLoreCollection';
 import type { Book } from '@/features/books';
 import {
   type CreateLoreEntityInput,
@@ -49,14 +52,14 @@ export function LoreTab({ book, ...props }: LoreTabProps) {
 function BookLoreScopes({ book, actionsContainer, onEntitiesChanged, onBusyChange }: LoreTabProps) {
   const [selected, setSelected] = useState('local');
   const [busy, setBusy] = useState(false);
-  const collectionProps = {
-    actionsContainer,
-    onEntitiesChanged,
-    onBusyChange: (value: boolean) => {
+  const reportBusy = useCallback(
+    (value: boolean) => {
       setBusy(value);
       onBusyChange?.(value);
     },
-  };
+    [onBusyChange],
+  );
+  const collectionProps = { actionsContainer, onEntitiesChanged, onBusyChange: reportBusy };
   const globalScope = useMemo(
     () => (book.universeId ? { kind: 'universe' as const, id: book.universeId } : null),
     [book.universeId],
@@ -99,7 +102,7 @@ function BookLoreScopes({ book, actionsContainer, onEntitiesChanged, onBusyChang
     </>
   );
 }
-export function LoreCollection({
+function LegacyLoreCollection({
   scope,
   relatedEntities = [],
   actionsContainer,
@@ -488,4 +491,36 @@ export function LoreCollection({
       />
     </div>
   );
+}
+
+export function LoreCollection(props: {
+  scope: string | LoreScope;
+  active?: boolean;
+  relatedEntities?: LoreEntity[];
+  actionsContainer?: HTMLElement | null;
+  onEntitiesChanged?: () => void;
+  onBusyChange?: (busy: boolean) => void;
+}) {
+  return typeof props.scope !== 'string' && props.scope.kind === 'adventure' ? (
+    <AdventureLoreActor
+      adventureId={props.scope.id}
+      active={props.active}
+      onBusyChange={props.onBusyChange}
+      onEntitiesChanged={props.onEntitiesChanged}
+    />
+  ) : typeof props.scope === 'string' || props.scope.kind === 'book' ? (
+    <BookLoreCollection
+      {...props}
+      bookId={typeof props.scope === 'string' ? props.scope : props.scope.id}
+    />
+  ) : (
+    <LegacyLoreCollection {...props} />
+  );
+}
+
+function AdventureLoreActor(props: Parameters<typeof AdventureLoreCollection>[0]) {
+  const { user } = useAuth();
+  return user ? (
+    <AdventureLoreCollection key={JSON.stringify([user.uid, props.adventureId])} {...props} />
+  ) : null;
 }

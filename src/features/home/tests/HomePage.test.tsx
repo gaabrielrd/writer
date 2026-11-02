@@ -1,14 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { HomePage } from '../components/HomePage';
 import * as authHook from '@/features/auth';
-
-vi.mock('@/features/books', () => ({
-  BookList: vi.fn(({ authorId }: { authorId: string }) => (
-    <div data-testid="book-list">BookList do autor {authorId}</div>
-  )),
-}));
 
 describe('HomePage', () => {
   it('renderiza landing para usuarios anonimos', () => {
@@ -40,7 +34,7 @@ describe('HomePage', () => {
     ).toBeInTheDocument();
   });
 
-  it('renderiza BookList quando o autor esta logado', () => {
+  it('leva a conta autenticada ao Estúdio', () => {
     vi.spyOn(authHook, 'useAuth').mockReturnValue({
       user: {
         uid: 'author-456',
@@ -66,10 +60,13 @@ describe('HomePage', () => {
 
     render(
       <MemoryRouter>
-        <HomePage />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/studio" element={<p>Estúdio autenticado</p>} />
+        </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.getByTestId('book-list')).toHaveTextContent('BookList do autor author-456');
+    expect(screen.getByText('Estúdio autenticado')).toBeInTheDocument();
   });
 });

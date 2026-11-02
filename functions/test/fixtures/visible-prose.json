@@ -1,0 +1,416 @@
+[
+  {
+    "id": "empty",
+    "content": "",
+    "tokens": [],
+    "wordCount": 0
+  },
+  {
+    "id": "whitespace-only",
+    "content": " \n\t  ",
+    "tokens": [],
+    "wordCount": 0
+  },
+  {
+    "id": "symbols-only",
+    "content": "... — & + 👩‍🚀",
+    "tokens": [],
+    "wordCount": 0
+  },
+  {
+    "id": "plain-portuguese",
+    "content": "Lia encontra o mapa.",
+    "tokens": ["Lia", "encontra", "o", "mapa."],
+    "wordCount": 4
+  },
+  {
+    "id": "unicode-numbers",
+    "content": "22 1.5 αβ 東京 👩‍🚀",
+    "tokens": ["22", "1.5", "αβ", "東京"],
+    "wordCount": 4
+  },
+  {
+    "id": "word-punctuation",
+    "content": "guarda-chuva d'água",
+    "tokens": ["guarda-chuva", "d'água"],
+    "wordCount": 2
+  },
+  {
+    "id": "plain-lines",
+    "content": "sol\nlua\r\nestrela",
+    "tokens": ["sol", "lua", "estrela"],
+    "wordCount": 3
+  },
+  {
+    "id": "markdown-entity-is-literal",
+    "content": "céu&nbsp;azul",
+    "tokens": ["céu&nbsp;azul"],
+    "wordCount": 1
+  },
+  {
+    "id": "markdown-encoded-text",
+    "content": "&eacute; &#233;",
+    "tokens": ["&eacute;", "&#233;"],
+    "wordCount": 2
+  },
+  {
+    "id": "markdown-placeholder",
+    "content": "Olá <nome>, leia <capítulo>.",
+    "tokens": ["Olá", "<nome>,", "leia", "<capítulo>."],
+    "wordCount": 4
+  },
+  {
+    "id": "bare-placeholder",
+    "content": "<nome>",
+    "tokens": ["<nome>"],
+    "wordCount": 1
+  },
+  {
+    "id": "markdown-heading",
+    "content": "## Lua cheia",
+    "tokens": ["Lua", "cheia"],
+    "wordCount": 2
+  },
+  {
+    "id": "markdown-emphasis",
+    "content": "A **lua** e _maré_ ~~alta~~.",
+    "tokens": ["A", "lua", "e", "maré", "alta."],
+    "wordCount": 5
+  },
+  {
+    "id": "markdown-inline-join",
+    "content": "sol**lua**estrela",
+    "tokens": ["solluaestrela"],
+    "wordCount": 1
+  },
+  {
+    "id": "markdown-list",
+    "content": "- sol\n- lua\n\n1. estrela",
+    "tokens": ["sol", "lua", "estrela"],
+    "wordCount": 3
+  },
+  {
+    "id": "markdown-quote",
+    "content": "> Lia encontra\n> o mapa",
+    "tokens": ["Lia", "encontra", "o", "mapa"],
+    "wordCount": 4
+  },
+  {
+    "id": "markdown-rule",
+    "content": "sol\n\n---\n\nlua",
+    "tokens": ["sol", "lua"],
+    "wordCount": 2
+  },
+  {
+    "id": "markdown-link",
+    "content": "[Lia e Tomás](https://example.test/segredo-dois)",
+    "tokens": ["Lia", "e", "Tomás"],
+    "wordCount": 3
+  },
+  {
+    "id": "markdown-url-only-not-visible",
+    "content": "[...](https://private.test/palavras-secretas)",
+    "tokens": [],
+    "wordCount": 0
+  },
+  {
+    "id": "markdown-unsafe-link",
+    "content": "[Lia](javascript:evil)",
+    "tokens": ["Lia"],
+    "wordCount": 1
+  },
+  {
+    "id": "markdown-relative-link",
+    "content": "[Lia](./private-name)",
+    "tokens": ["Lia"],
+    "wordCount": 1
+  },
+  {
+    "id": "markdown-malformed-link",
+    "content": "[Lia e Tomás](https://example.test/sem-fechar",
+    "tokens": ["[Lia", "e", "Tomás](https://example.test/sem-fechar"],
+    "wordCount": 3
+  },
+  {
+    "id": "markdown-inline-code",
+    "content": "`[Lia](https://example.test)`",
+    "tokens": ["[Lia](https://example.test)"],
+    "wordCount": 1
+  },
+  {
+    "id": "markdown-code-block",
+    "content": "```html\n<p>Olá <nome></p>\n```",
+    "tokens": ["<p>Olá", "<nome></p>"],
+    "wordCount": 2
+  },
+  {
+    "id": "markdown-unclosed-code",
+    "content": "```\nLia encontra",
+    "tokens": ["Lia", "encontra"],
+    "wordCount": 2
+  },
+  {
+    "id": "markdown-angle-text",
+    "content": "A & B < 3 \"quoted\"",
+    "tokens": ["A", "B", "3", "\"quoted\""],
+    "wordCount": 4
+  },
+  {
+    "id": "html-paragraphs",
+    "content": "<p>sol</p><p>lua</p>",
+    "tokens": ["sol", "lua"],
+    "wordCount": 2
+  },
+  {
+    "id": "html-inline-join",
+    "content": "<p>sol<strong>lua</strong><em>estrela</em></p>",
+    "tokens": ["solluaestrela"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-inline-spaces",
+    "content": "<p>sol <strong>lua <em>cheia</em></strong></p>",
+    "tokens": ["sol", "lua", "cheia"],
+    "wordCount": 3
+  },
+  {
+    "id": "html-lines",
+    "content": "<p>sol<br>lua<hr>estrela</p>",
+    "tokens": ["sol", "lua", "estrela"],
+    "wordCount": 3
+  },
+  {
+    "id": "html-wrapper-boundaries",
+    "content": "<div>sol</div><section>lua</section><article>estrela</article>",
+    "tokens": ["sol", "lua", "estrela"],
+    "wordCount": 3
+  },
+  {
+    "id": "html-cells",
+    "content": "<table><tr><td>sol</td><td>lua</td></tr></table>",
+    "tokens": ["sol", "lua"],
+    "wordCount": 2
+  },
+  {
+    "id": "html-malformed-table",
+    "content": "<table><tr><td>sol<td>lua</table> fora",
+    "tokens": ["sol", "lua", "fora"],
+    "wordCount": 3
+  },
+  {
+    "id": "html-invalid-block-nesting",
+    "content": "<p>sol<div>lua</div>estrela</p>",
+    "tokens": ["sol", "lua", "estrela"],
+    "wordCount": 3
+  },
+  {
+    "id": "html-wrapper-inline-join",
+    "content": "<p>sol<span data-secret=\"privado\">lua</span></p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-metadata",
+    "content": "<p id=\"palavra privada\" class=\"autora\" onclick=\"secret()\">Lia</p>",
+    "tokens": ["Lia"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-image-alt",
+    "content": "<p>sol<img alt=\" lua cheia \" src=\"https://tracker.test\"></p>",
+    "tokens": ["sol", "lua", "cheia"],
+    "wordCount": 3
+  },
+  {
+    "id": "html-image-alt-inline-join",
+    "content": "<p>sol<img alt=\"lua\"></p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-image-no-alt",
+    "content": "<p><img src=\"https://tracker.test/segredo\" onerror=\"privado()\"></p>",
+    "tokens": [],
+    "wordCount": 0
+  },
+  {
+    "id": "html-image-decoded-alt",
+    "content": "<p><img alt=\"Lia &amp; Tomás &lt;mapa&gt;\"></p>",
+    "tokens": ["Lia", "Tomás", "<mapa>"],
+    "wordCount": 3
+  },
+  {
+    "id": "html-literal-placeholder",
+    "content": "<p>Olá <nome data-id=\"private\"> do mundo</p>",
+    "tokens": ["Olá", "<nome>", "do", "mundo"],
+    "wordCount": 4
+  },
+  {
+    "id": "html-unknown-closing-tag",
+    "content": "<p><placeholder data-lore-id=\"private\">nome</placeholder></p>",
+    "tokens": ["<placeholder>nome</placeholder>"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-named-entities",
+    "content": "<p>céu&nbsp;azul &eacute; &emsp; lua</p>",
+    "tokens": ["céu", "azul", "é", "lua"],
+    "wordCount": 4
+  },
+  {
+    "id": "html-numeric-entities",
+    "content": "<p>&#233; &#xE9; céu&#160;azul</p>",
+    "tokens": ["é", "é", "céu", "azul"],
+    "wordCount": 4
+  },
+  {
+    "id": "html-semicolonless-entities",
+    "content": "<p>céu&nbsp azul &eacute &#233 &#xE9</p>",
+    "tokens": ["céu", "azul", "é", "é", "é"],
+    "wordCount": 5
+  },
+  {
+    "id": "html-invalid-entities",
+    "content": "<p>&desconhecida; &#0; &#xD800; &#x110000;</p>",
+    "tokens": ["&desconhecida;"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-safe-link",
+    "content": "<p><a href=\"https://private.test/secret\">Lia</a></p>",
+    "tokens": ["Lia"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-unsafe-link",
+    "content": "<p><a href=\"jav&#x61;script:secret()\">Lia</a></p>",
+    "tokens": ["Lia"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-link-url-not-visible",
+    "content": "<p><a href=\"https://private.test/secret\">...</a></p>",
+    "tokens": [],
+    "wordCount": 0
+  },
+  {
+    "id": "html-comment",
+    "content": "<p>Lia<!-- segredo privado --> Tomás</p>",
+    "tokens": ["Lia", "Tomás"],
+    "wordCount": 2
+  },
+  {
+    "id": "html-import-comment",
+    "content": " <!-- importação --> <h2>Lua</h2><p>cheia</p>",
+    "tokens": ["Lua", "cheia"],
+    "wordCount": 2
+  },
+  {
+    "id": "html-document",
+    "content": "<!doctype html><html><head><title>Segredo</title></head><body><p>Lia</p></body></html>",
+    "tokens": ["Lia"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-code-literal",
+    "content": "<pre><code>&lt;script&gt;Lia&lt;/script&gt;</code></pre>",
+    "tokens": ["<script>Lia</script>"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-unclosed-script",
+    "content": "<p>Antes<script>segredo privado",
+    "tokens": ["Antes"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-unclosed-image",
+    "content": "<p>Antes<img alt=\"lua cheia",
+    "tokens": ["Antes"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-script",
+    "content": "<p>sol<script>segredo privado</script>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-style",
+    "content": "<p>sol<style>segredo privado</style>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-iframe",
+    "content": "<p>sol<iframe>segredo privado</iframe>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-object",
+    "content": "<p>sol<object>segredo privado</object>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-svg",
+    "content": "<p>sol<svg>segredo privado</svg>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-math",
+    "content": "<p>sol<math>segredo privado</math>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-template",
+    "content": "<p>sol<template>segredo privado</template>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-noscript",
+    "content": "<p>sol<noscript>segredo privado</noscript>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-form",
+    "content": "<p>sol<form>segredo privado</form>lua</p>",
+    "tokens": ["sol", "lua"],
+    "wordCount": 2
+  },
+  {
+    "id": "html-drop-button",
+    "content": "<p>sol<button>segredo privado</button>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-textarea",
+    "content": "<p>sol<textarea>segredo privado</textarea>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-select",
+    "content": "<p>sol<select>segredo privado</select>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-video",
+    "content": "<p>sol<video>segredo privado</video>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  },
+  {
+    "id": "html-drop-audio",
+    "content": "<p>sol<audio>segredo privado</audio>lua</p>",
+    "tokens": ["sollua"],
+    "wordCount": 1
+  }
+]

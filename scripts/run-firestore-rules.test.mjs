@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { once } from 'node:events';
+import { createConnection } from 'node:net';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
@@ -7,6 +9,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import {
   availablePort,
+  shardRulesFiles,
   FIRESTORE_EMULATOR,
   processCompletion,
   sha256File,
@@ -122,7 +125,65 @@ test('shuts down a child process and observes its completion', async () => {
   const completion = processCompletion(child);
   await stopProcess(child, completion, 500);
   const result = await completion;
-  assert.equal(result.signal, 'SIGTERM');
+  if (process.platform === 'win32') assert.ok(Number.isInteger(result.code));
+  else assert.equal(result.signal, 'SIGTERM');
   await stopProcess(child, completion);
   await stopProcess(undefined, undefined);
 });
+
+test('rules shards include every file exactly once and preserve their order', () => {
+  const files = Array.from({ length: 148 }, (_, index) => `rules-${index}.test.mjs`);
+  assert.deepEqual(shardRulesFiles(files), files);
+  const partitions = Array.from({ length: 8 }, (_, index) =>
+    shardRulesFiles(files, `${index + 1}/8`),
+  );
+  assert.equal(partitions.flat().length, files.length);
+  assert.equal(new Set(partitions.flat()).size, files.length);
+  assert.deepEqual(new Set(partitions.flat()), new Set(files));
+  for (const part of partitions)
+    assert.deepEqual(
+      part,
+      files.filter((file) => part.includes(file)),
+    );
+  assert.notEqual(shardRulesFiles(files), files);
+});
+
+test('invalid rules shards fail instead of silently skipping the suite', () => {
+  for (const shard of ['0/8', '9/8', '1/0', '2', '1/17', '1.5/8', ''])
+    assert.throws(() => shardRulesFiles(['test'], shard), /shard/);
+});
+
+test(
+  'Windows cleanup releases a listening grandchild instead of leaving an orphan emulator',
+  {
+    skip: process.platform !== 'win32',
+    timeout: 15000,
+  },
+  async () => {
+    const serverCode = `require('node:net').createServer().listen(0, '127.0.0.1', function () { console.log(this.address().port); });`;
+    const parentCode = `require('node:child_process').spawn(process.execPath, ['-e', ${JSON.stringify(serverCode)}], { stdio: ['ignore', 'inherit', 'ignore'] }); setInterval(() => {}, 1000);`;
+    const child = spawn(process.execPath, ['-e', parentCode], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    const completion = processCompletion(child);
+    const connect = (port) =>
+      new Promise((resolve, reject) => {
+        const socket = createConnection({ host: '127.0.0.1', port });
+        socket.once('connect', () => {
+          socket.destroy();
+          resolve();
+        });
+        socket.once('error', reject);
+      });
+    try {
+      const [ready] = await once(child.stdout, 'data');
+      const port = Number(String(ready).trim());
+      assert.ok(Number.isInteger(port) && port > 0);
+      await connect(port);
+      await stopProcess(child, completion, 500);
+      await assert.rejects(connect(port), { code: 'ECONNREFUSED' });
+    } finally {
+      await stopProcess(child, completion, 500);
+    }
+  },
+);

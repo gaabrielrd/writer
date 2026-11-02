@@ -17,7 +17,8 @@ beforeEach(() => {
 });
 
 it('personaliza um padrão com slider por teclado, atributo próprio e instruções salvas', async () => {
-  const user = userEvent.setup();
+  // O formulário não depende de pausas entre teclas; preserva os eventos sem timers por caractere.
+  const user = userEvent.setup({ delay: null });
   render(<PersonaManager ownerId="author" />);
   expect(await screen.findByText('Você ainda não criou personas')).toBeVisible();
   const avatarFiles = [
@@ -72,7 +73,7 @@ it('personaliza um padrão com slider por teclado, atributo próprio e instruç�
 });
 
 it('cria do zero, preserva o formulário em falha e permite retentativa', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   vi.mocked(savePersona).mockRejectedValueOnce(new Error('Offline'));
   render(<PersonaManager ownerId="author" />);
   await user.click(await screen.findByRole('button', { name: 'Nova persona' }));
@@ -87,7 +88,7 @@ it('cria do zero, preserva o formulário em falha e permite retentativa', async 
 });
 
 it('edita, arquiva, reativa e cancela sem alterar as personas padrão', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   items = [{ ...DEFAULT_PERSONAS[0]!, id: 'custom-test', name: 'Minha persona' }];
   render(<PersonaManager ownerId="author" />);
   await user.click(await screen.findByRole('button', { name: 'Ver detalhes de Minha persona' }));
@@ -110,7 +111,7 @@ it('mostra falhas da biblioteca, permite retry e impede gravação sem conta', a
     failed(new Error('Falha da biblioteca'));
     return vi.fn();
   });
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   const view = render(<PersonaManager ownerId="author" />);
   expect(await screen.findByText('Falha da biblioteca')).toBeVisible();
   await user.click(screen.getByRole('button', { name: 'Tentar novamente' }));
@@ -120,7 +121,7 @@ it('mostra falhas da biblioteca, permite retry e impede gravação sem conta', a
 });
 
 it('edita a definição de um atributo próprio, remove outro e salva sem perder instruções', async () => {
-  const user = userEvent.setup();
+  const user = userEvent.setup({ delay: null });
   items = [
     {
       ...DEFAULT_PERSONAS[0]!,

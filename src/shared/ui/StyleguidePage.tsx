@@ -26,7 +26,7 @@ import {
   ResizeHandle,
   SidePanelHeader,
 } from './index';
-import { useTheme, ThemeToggle, ThemeSelect } from '../theme';
+import { useTheme, ThemeToggle, ThemeSelect, ThemeSegmentedControl } from '../theme';
 
 export function StyleguidePage() {
   const { theme, resolvedTheme } = useTheme();
@@ -50,6 +50,18 @@ export function StyleguidePage() {
         }
       />
 
+      <section className="flex flex-col gap-2">
+        <h2 className="text-xl font-bold">Área de trabalho compacta</h2>
+        <div className="flex items-center gap-3">
+          <span className="text-sm">Tema visual</span>
+          <ThemeSegmentedControl />
+        </div>
+        <p className="text-sm text-[hsl(var(--muted-foreground))]">
+          A área logada usa navegação lateral recolhível, barra contextual e painéis com toda a
+          largura disponível. No celular, a navegação abre em gaveta. Os controles são compactos; a
+          tipografia do manuscrito mantém sua leitura.
+        </p>
+      </section>
       {/* Seção de Temas */}
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-bold">Formulários no seu ritmo</h2>

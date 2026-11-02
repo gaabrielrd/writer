@@ -1,6 +1,6 @@
 # W2-F2-04 — Acompanhar estados, metas e retomada
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** Concluído tecnicamente em `16e71f6`; validação local e CI verdes.
 **Dependências:** [W2-F2-01](../fase-02-criar-e-preparar/01-projetos-e-navegacao.md), [W2-F2-02](../fase-02-criar-e-preparar/02-planejamento-de-cenas.md)
 **Áreas propostas:** books, editor; propostas adventures e campaigns. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -10,7 +10,13 @@ Mostrar o próximo trabalho útil ao autor e ao mestre e acompanhar progresso se
 
 ## Entradas e resultado
 
-Entradas: estados aprovados, meta, atividade persistida e próxima sessão. Resultado: painel Continuar meu trabalho e progresso verificável.
+Entradas: estados aprovados, meta total, checklist privado e atividade persistida. Resultado: painel Continuar meu trabalho e progresso verificável.
+
+## Decisões confirmadas pelo operador
+
+- Medir o tamanho atual do manuscrito, com meta total por projeto. Reescrita, remoção e restauração ajustam o total; não acumular produção diária.
+- Preparação do mestre por checklist privado do projeto, com conclusão, reabertura e retomada; sessões continuam na entrega própria.
+- Fuso configurável por usuário, inicialmente o do dispositivo. Outro dispositivo não substitui uma preferência já salva; a meta total não reinicia por período.
 
 ## Escopo e comportamento
 
@@ -21,17 +27,20 @@ Entradas: estados aprovados, meta, atividade persistida e próxima sessão. Resu
 
 ## Passos de execução
 
-- [ ] Implementar modelo de estados/metas sem modificar status público legado.
-- [ ] Persistir atividade por usuário e projeto atrás de serviço.
-- [ ] Montar painel de retomada e progresso com estados claros.
-- [ ] Validar limites, mudança de período e conflito entre dispositivos.
+O [contrato executável](../execucao/10-estados-metas-e-retomada.md) fecha estados,
+contagem canônica, preparação retomável, APIs privadas e integrações deste incremento.
+
+- [x] Implementar modelo de estados/metas sem modificar status público legado.
+- [x] Persistir atividade por usuário e projeto atrás de serviço.
+- [x] Montar painel de retomada e progresso com estados claros.
+- [x] Validar limites, mudança de período e conflito entre dispositivos.
 
 ## Critérios de aceite
 
-- [ ] Autor e mestre têm ação de retomada apropriada ao seu trabalho.
-- [ ] Marcar pronto não publica ou revela materiais.
-- [ ] Texto de marcação HTML não inflaciona palavras; regra de reescrita é explícita.
-- [ ] Meta inexistente ou inválida tem feedback e não bloqueia escrita.
+- [x] Autor e mestre têm ação de retomada apropriada ao seu trabalho.
+- [x] Marcar pronto não publica ou revela materiais.
+- [x] Texto de marcação HTML não inflaciona palavras; regra de reescrita é explícita.
+- [x] Meta inexistente ou inválida tem feedback e não bloqueia escrita.
 
 ## Validação
 
@@ -39,6 +48,15 @@ Entradas: estados aprovados, meta, atividade persistida e próxima sessão. Resu
 - Componentes/E2E: retomar livro/campanha, item removido, temas e mobile.
 
 Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md) e registrar evidência real.
+
+Após corrigir as regressões da CI de `7988fb7`, validate local: 152 arquivos/1.380
+testes frontend, 77 scripts e 224 Functions; SDK real 85/85; Chromium 90/90 de
+progresso e 24/24 de navegação nos seis projetos, sem retries/skips/flaky,
+teclado e 320 px. Produção local: seis passaram e um skip preexistente Windows.
+Correção enviada; CI Node 22/24, auditoria, produção e agregado E2E verdes em
+`16e71f6`, com 822 cenários visuais diretos e 12 skips preexistentes, sem retry;
+regras reais 85/85. Ver
+[entrega](../../../entregas/2026-10-15-writer-v2-progresso.md).
 
 ## Riscos e decisões necessárias
 

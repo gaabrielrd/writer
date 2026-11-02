@@ -1,0 +1,36 @@
+.stack {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.stack h3 {
+  font-weight: 600;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.stack button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.text {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.list {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.list li {
+  min-width: 0;
+}
+
+.panel {
+  padding: clamp(1rem, 3vw, 1.5rem);
+}

@@ -1,4 +1,4 @@
-import { capture, expect, expectDialogWithinViewport, test } from './support';
+import { capture, expect, expectDialogWithinViewport, test, openBookImport } from './support';
 
 test('PDF real com nove capítulos e sumário é revisado sem páginas preliminares', async ({
   page,
@@ -44,7 +44,7 @@ test('PDF real com nove capítulos e sumário é revisado sem páginas prelimina
   });
   await source.close();
   await page.goto('/');
-  await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await openBookImport(page);
   await page
     .getByLabel('Arquivo do manuscrito')
     .setInputFiles({ name: 'nove-capitulos.pdf', mimeType: 'application/pdf', buffer: pdf });
@@ -68,7 +68,7 @@ test('Markdown preserva capítulos e permite selecionar e renomear antes de impo
   page,
 }, testInfo) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Importar Documento', exact: true }).click();
+  await openBookImport(page);
   await page.getByLabel('Arquivo do manuscrito').setInputFiles({
     name: 'manuscrito.md',
     mimeType: 'text/markdown',

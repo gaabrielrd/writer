@@ -3,13 +3,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderWithProviders, screen, waitFor } from '@/test/render';
 import { ExportButton } from '../components/ExportButton';
 import { exportManuscript } from '../services/exportManuscript';
+import { exportBookArchive } from '../services/exportBookArchive';
+import { bookArchivePicker } from '../services/bookArchiveDestination';
 import { exportBook, exportChapter } from './exportFixtures';
 
 vi.mock('../services/exportManuscript', () => ({ exportManuscript: vi.fn() }));
+vi.mock('../services/exportBookArchive', () => ({ exportBookArchive: vi.fn() }));
+vi.mock('../services/bookArchiveDestination', () => ({
+  bookArchivePicker: { supported: vi.fn() },
+}));
 
 beforeEach(() => {
   vi.resetAllMocks();
   vi.mocked(exportManuscript).mockResolvedValue();
+  vi.mocked(exportBookArchive).mockResolvedValue({ kind: 'saved' });
+  vi.mocked(bookArchivePicker.supported).mockReturnValue(true);
 });
 
 describe('ExportButton', () => {
@@ -134,11 +142,12 @@ describe('ExportButton', () => {
     await chooseDropdown(
       user,
       screen.getByLabelText('Formato do arquivo'),
-      'Backup completo (.json)',
+      'Backup JSON antigo (.json)',
     );
     expect(screen.getByLabelText('Conteúdo da exportação')).toBeDisabled();
     expect(screen.getByLabelText('Conteúdo da exportação')).toHaveTextContent('Livro inteiro');
     expect(screen.getByText(/fichas de lore privadas/)).toBeInTheDocument();
+    expect(screen.getByText(/backup v6 não inclui o histórico de versões do texto/)).toBeVisible();
     await user.click(screen.getByRole('button', { name: 'Baixar arquivo' }));
     expect(exportManuscript).toHaveBeenLastCalledWith(
       expect.objectContaining({ scope: 'book', format: 'json' }),
@@ -169,4 +178,84 @@ describe('ExportButton', () => {
     await user.click(screen.getByRole('button', { name: 'Exportar' }));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
+});
+
+it('saves the full private archive with history and explicit empty draft through the new producer', async () => {
+  const { user } = renderWithProviders(
+    <ExportButton book={exportBook} currentChapter={exportChapter} currentContent="" />,
+  );
+  await user.click(screen.getByRole('button', { name: 'Exportar' }));
+  await chooseDropdown(
+    user,
+    screen.getByLabelText('Formato do arquivo'),
+    'Backup privado com histórico (.writer)',
+  );
+  expect(screen.getByLabelText('Conteúdo da exportação')).toBeDisabled();
+  expect(screen.getByLabelText('Conteúdo da exportação')).toHaveTextContent('Livro inteiro');
+  await user.click(screen.getByRole('button', { name: 'Salvar backup' }));
+  expect(exportBookArchive).toHaveBeenCalledWith(
+    expect.objectContaining({
+      book: exportBook,
+      currentChapter: exportChapter,
+      currentContent: '',
+      signal: expect.any(AbortSignal) as AbortSignal,
+      isCurrent: expect.any(Function) as () => boolean,
+    }),
+  );
+  expect(exportManuscript).not.toHaveBeenCalled();
+  expect(await screen.findByRole('status')).toHaveTextContent('Backup salvo no arquivo escolhido');
+});
+it('native picker cancellation is shown as a neutral status and the archive can be tried again', async () => {
+  vi.mocked(exportBookArchive).mockResolvedValueOnce({ kind: 'cancelled' });
+  const { user } = renderWithProviders(<ExportButton book={exportBook} />);
+  await user.click(screen.getByRole('button', { name: 'Exportar' }));
+  await chooseDropdown(
+    user,
+    screen.getByLabelText('Formato do arquivo'),
+    'Backup privado com histórico (.writer)',
+  );
+  await user.click(screen.getByRole('button', { name: 'Salvar backup' }));
+  expect(await screen.findByRole('status')).toHaveTextContent('Seleção de arquivo cancelada');
+  expect(screen.queryByText('Falha na exportação')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Salvar backup' })).toBeEnabled();
+});
+it('unsupported archive saving explains availability while the older formats remain usable', async () => {
+  vi.mocked(bookArchivePicker.supported).mockReturnValue(false);
+  const { user } = renderWithProviders(<ExportButton book={exportBook} />);
+  await user.click(screen.getByRole('button', { name: 'Exportar' }));
+  await chooseDropdown(
+    user,
+    screen.getByLabelText('Formato do arquivo'),
+    'Backup privado com histórico (.writer)',
+  );
+  expect(screen.getByText(/não oferece a seleção e gravação/)).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Salvar backup' })).toBeDisabled();
+  await chooseDropdown(user, screen.getByLabelText('Formato do arquivo'), 'Markdown (.md)');
+  expect(screen.getByRole('button', { name: 'Baixar arquivo' })).toBeEnabled();
+  expect(exportBookArchive).not.toHaveBeenCalled();
+});
+it('switching books unmounts the archive operation and suppresses its late success', async () => {
+  let finish!: (value: { kind: 'saved' }) => void;
+  vi.mocked(exportBookArchive).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const { user, rerender } = renderWithProviders(<ExportButton book={exportBook} />);
+  await user.click(screen.getByRole('button', { name: 'Exportar' }));
+  await chooseDropdown(
+    user,
+    screen.getByLabelText('Formato do arquivo'),
+    'Backup privado com histórico (.writer)',
+  );
+  await user.click(screen.getByRole('button', { name: 'Salvar backup' }));
+  const signal = vi.mocked(exportBookArchive).mock.calls[0]![0].signal!;
+  rerender(<ExportButton book={{ ...exportBook, id: 'other-book', title: 'Outro livro' }} />);
+  expect(signal.aborted).toBe(true);
+  await act(async () => {
+    finish({ kind: 'saved' });
+    await Promise.resolve();
+  });
+  expect(screen.queryByRole('status')).not.toBeInTheDocument();
 });

@@ -39,7 +39,6 @@ test('transporte Gemini envia nível real, preserva papéis e não entrega pensa
         thinkingLevel: reasoning === 'auto' ? 'medium' : reasoning,
         includeThoughts: false,
       },
-      temperature: 0.7,
     });
     assert.deepEqual(
       body.contents.map((item) => item.role),

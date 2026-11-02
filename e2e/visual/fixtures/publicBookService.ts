@@ -40,9 +40,17 @@ const publications = new Map<string, Publication>([
   ],
 ]);
 const subscribers = new Map<string, Set<(book: PublicBook | null) => void>>();
+const savedPublications = sessionStorage.getItem('writer.visual.publications');
+if (savedPublications) {
+  publications.clear();
+  for (const [id, publication] of JSON.parse(savedPublications) as [string, Publication][]) {
+    publications.set(id, publication);
+  }
+}
 export function setFixturePublication(bookId: string, publication: Publication | null): void {
   if (publication) publications.set(bookId, structuredClone(publication));
   else publications.delete(bookId);
+  sessionStorage.setItem('writer.visual.publications', JSON.stringify([...publications.entries()]));
   for (const listener of subscribers.get(bookId) ?? [])
     listener(structuredClone(publication?.book ?? null));
 }

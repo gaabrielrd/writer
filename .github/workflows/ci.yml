@@ -17,12 +17,12 @@ jobs:
   validate:
     name: Validate (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
-        # 22 é o piso declarado em engines/.nvmrc; 24 antecipa a próxima LTS.
-        node: ['22', '24']
+        # Firebase Rules Testing 6 exige Node 24.12+; Functions usam runtime 24.
+        node: ['24']
     steps:
       - uses: actions/checkout@v7
 
@@ -52,7 +52,7 @@ jobs:
         run: npm run validate
 
       - name: Publicar relatório de cobertura
-        if: always() && matrix.node == '22'
+        if: always() && matrix.node == '24'
         uses: actions/upload-artifact@v7
         with:
           name: coverage
@@ -116,6 +116,9 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Instalar dependências dos contratos compartilhados
+        run: npm ci --prefix functions
+
       - name: Instalar Chromium
         run: npx playwright install --with-deps chromium
 
@@ -135,13 +138,13 @@ jobs:
           if-no-files-found: ignore
 
   visual:
-    name: Visual (${{ matrix.shard }}/3)
+    name: Visual (${{ matrix.shard }}/16)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
     steps:
       - uses: actions/checkout@v7
 
@@ -159,13 +162,16 @@ jobs:
       - name: Instalar dependências
         run: npm ci
 
+      - name: Instalar dependências dos contratos compartilhados
+        run: npm ci --prefix functions
+
       - name: Instalar Chromium
         run: npx playwright install --with-deps chromium
 
       # A suíte completa inclui a seleção parcial nos seis projetos;
       # o sharding distribui os casos sem repetir nem filtrar cenários.
       - name: Testar prévia visual com dados fictícios
-        run: npx playwright test -c playwright.visual.config.ts --shard=${{ matrix.shard }}/3
+        run: npx playwright test -c playwright.visual.config.ts --shard=${{ matrix.shard }}/16
 
       - name: Identificar resultados do shard
         if: always()

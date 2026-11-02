@@ -85,6 +85,11 @@ describe('image library', () => {
       });
     page();
     expect(await screen.findByRole('button', { name: 'Excluir Atlas' })).toBeDisabled();
+    expect(screen.getByText(/2 usos/)).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Excluir Atlas' })).toHaveAttribute(
+      'title',
+      'Remova os vínculos da imagem antes de excluir',
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Carregar mais imagens' }));
     await screen.findByText('Outra');
     expect(screen.getByText('Atlas')).toBeInTheDocument();

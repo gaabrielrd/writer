@@ -1,4 +1,6 @@
 import { getFunctions, httpsCallable } from 'firebase/functions';
+import { capturePlatformTextGeneration } from './byokStorage';
+import type { ChatGenerationRequest } from '../model/chatGeneration';
 import { getFirebaseApp } from '@/shared/lib';
 
 export interface BookGenerationContext {
@@ -58,10 +60,19 @@ export const generateBookAsset = (
   kind: BookAssetKind,
   requestId: string,
 ) =>
-  call<BookGenerationContext & { kind: BookAssetKind; requestId: string }, BookAssetSuggestion>(
-    'generateBookAsset',
-    { ...context, kind, requestId },
-  );
+  call<
+    BookGenerationContext & {
+      kind: BookAssetKind;
+      requestId: string;
+      generation?: ChatGenerationRequest;
+    },
+    BookAssetSuggestion
+  >('generateBookAsset', {
+    ...context,
+    kind,
+    requestId,
+    ...(kind === 'synopsis' ? { generation: capturePlatformTextGeneration() } : {}),
+  });
 export const acceptBookAsset = (id: string) =>
   call<{ id: string }, AcceptedBookAsset>('acceptBookAsset', { id });
 export const discardBookAsset = (id: string) =>

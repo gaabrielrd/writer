@@ -9,6 +9,7 @@ import { getChapter, updateChapter } from './bookService';
 import { deductCredit, getUserCredits } from './aiService';
 import { author } from './data';
 import {
+  DEFAULT_PLATFORM_MODEL,
   DEFAULT_BYOK_CHAT_MODELS,
   normalizeChatGenerationRequest,
   resolveChatGeneration,
@@ -29,7 +30,6 @@ const write = (identity: ChatIdentity, store: Store) =>
 export type { ChatIdentity } from './chapterChatStore';
 export function captureChatGeneration(
   reasoning: ChatReasoningLevel = 'auto',
-  platformModel?: string,
 ): ChatGenerationRequest {
   const config = getBYOKConfig();
   return normalizeChatGenerationRequest({
@@ -37,9 +37,12 @@ export function captureChatGeneration(
     provider: config.provider === 'firebase_ai' ? 'platform' : config.provider,
     model:
       config.provider === 'firebase_ai'
-        ? (platformModel ?? null)
+        ? (config.platformModel ?? DEFAULT_PLATFORM_MODEL)
         : config.customModel || DEFAULT_BYOK_CHAT_MODELS[config.provider],
-    reasoning,
+    reasoning:
+      reasoning === 'auto' && config.provider === 'firebase_ai'
+        ? (config.platformReasoning ?? 'medium')
+        : reasoning,
   })!;
 }
 export class ChapterChatError extends Error {
@@ -206,4 +209,15 @@ export async function sendChapterChat(
   });
   write(identity, store);
   return completed;
+}
+
+/** Unexpected real BYOK execution fails explicitly; this fixture never calls a paid provider. */
+export function readProviderStream(
+  _response: Response,
+  _provider: 'openai' | 'gemini',
+  _onChunk: (text: string) => void,
+  _signal: AbortSignal,
+): Promise<string> {
+  void [_response, _provider, _onChunk, _signal];
+  return Promise.reject(new Error('Provedor externo desativado na prévia visual.'));
 }
