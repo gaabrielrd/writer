@@ -422,6 +422,7 @@ service cloud.firestore {
       match /editorChats/{document=**} { allow read, write: if false; }
       match /editorChatCatalogs/{id} { allow read, write: if false; }
       match /aiPersonaRestoreBatches/{projectId} { allow read: if isOwner(userId); allow write: if false; }
+      match /personaGenerations/{requestId} { allow read, write: if false; }
       match /aiPersonas/{personaId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && validAIPersona(request.resource.data, personaId)

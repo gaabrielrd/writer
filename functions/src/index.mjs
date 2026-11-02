@@ -2,6 +2,10 @@ import { createSectorServices } from './domainServices.mjs';
 import { logger } from 'firebase-functions';
 import { FUNCTION_DOMAINS } from './functionDomains.mjs';
 import { createDomainHandler } from './domainCallable.mjs';
+import {
+  createPersonaGenerationService,
+  cleanupExpiredPersonaGenerations,
+} from './personaGeneration.mjs';
 import { createUniverseLoreImportService } from './universeLoreImport.mjs';
 import {
   ADVENTURE_RESTORE_METHODS,
@@ -654,3 +658,31 @@ export const planningApi = domainCallable('planningApi');
 export const universeImportAnalysisApi = domainCallable('universeImportAnalysisApi');
 export const universeImportApi = domainCallable('universeImportApi');
 export const workApi = domainCallable('workApi');
+export const personaGeneration = onCall(
+  {
+    region: 'us-central1',
+    enforceAppCheck: true,
+    timeoutSeconds: 120,
+    maxInstances: 5,
+    memory: '512MiB',
+    secrets: [key],
+  },
+  async (request) => {
+    try {
+      return await createPersonaGenerationService({
+        db,
+        generator: (input) => generatePlatformChat(input, () => {}, { apiKey: key.value() }),
+      }).dispatch(request.auth?.uid, request.data);
+    } catch (error) {
+      if (error instanceof GenerationError) throw new HttpsError(error.code, error.message);
+      throw new HttpsError(
+        'unavailable',
+        'Não foi possível concluir a criação da persona. Tente novamente.',
+      );
+    }
+  },
+);
+export const cleanupPersonaGenerations = onSchedule(
+  { schedule: 'every 60 minutes', region: 'us-central1', maxInstances: 1 },
+  () => cleanupExpiredPersonaGenerations(db),
+);
