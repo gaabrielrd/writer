@@ -390,3 +390,31 @@ test('proposal validation rejects duplicate names, malformed fields and self rel
   c.entities[0].summary = 'x'.repeat(141);
   assert.throws(() => validateProposal(c));
 });
+
+test('criação assistida congela parâmetros e retry não troca o modelo nem debita', async () => {
+  const inputs = [];
+  const f = fixture({
+    generator: async (context) => {
+      inputs.push(context);
+      if (inputs.length === 1) throw new Error('offline');
+      return proposal();
+    },
+  });
+  const session = await f.start();
+  const data = {
+    action: 'generate',
+    sessionId: session.id,
+    revision: session.revision,
+    requestId: randomUUID(),
+    brief: 'Viagem.',
+    generation: { version: 1, provider: 'platform', model: 'gemini-4-argon', reasoning: 'high' },
+  };
+  await assert.rejects(f.call(data), { code: 'unavailable' });
+  await f.call(data);
+  assert.deepEqual(inputs[0].generation, inputs[1].generation);
+  assert.equal(inputs[1].generation.effective.model, 'gemini-4-argon');
+  assert.equal(f.records.get('users/author').credits, 20);
+  await assert.rejects(f.call({ ...data, generation: { ...data.generation, model: 'unknown' } }), {
+    code: 'invalid-argument',
+  });
+});

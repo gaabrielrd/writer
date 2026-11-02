@@ -187,7 +187,7 @@ function fixture(
     },
   };
 }
-test('pedido congela raciocínio e modelo efetivo, sem permitir que o cliente escolha o modelo da plataforma', async () => {
+test('pedido aplica modelo autorizado e congela raciocínio e configuração efetiva', async () => {
   const inputs = [];
   const f = fixture(async (input) => {
     inputs.push(input);
@@ -197,11 +197,11 @@ test('pedido congela raciocínio e modelo efetivo, sem permitir que o cliente es
   const generation = {
     version: 1,
     provider: 'platform',
-    model: 'modelo-enviado-pelo-cliente',
+    model: 'gemini-4-argon',
     reasoning: 'high',
   };
   const first = await f.send({ mode: 'platform', generation });
-  assert.equal(inputs[0].generation.effective.model, 'gemini-3.7-flash');
+  assert.equal(inputs[0].generation.effective.model, 'gemini-4-argon');
   assert.equal(inputs[0].generation.effective.reasoning, 'high');
   assert.deepEqual(first.generation.requested, generation);
   f.setModel('gemini-3.8-flash');
@@ -240,7 +240,7 @@ test('retry após falha mantém parâmetros originais mesmo após alteração do
   const next = await f.send({
     requestId: 'next',
     mode: 'platform',
-    generation: { ...generation, reasoning: 'low' },
+    generation: { ...generation, model: 'gemini-3.8-flash', reasoning: 'low' },
   });
   assert.equal(next.generation.effective.model, 'gemini-3.8-flash');
   assert.equal(next.generation.effective.reasoning, 'low');
@@ -253,6 +253,7 @@ test('configuração inválida e troca de origem não registram mensagem nem con
   for (const extra of [
     { mode: 'byok' },
     { mode: 'unknown' },
+    { generation: { ...generation, model: 'unapproved-model' } },
     { generation: { ...generation, apiKey: 'private-key' } },
     { generation: { ...generation, reasoning: 'unbounded' } },
   ])

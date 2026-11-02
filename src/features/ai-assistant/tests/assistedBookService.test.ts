@@ -1,3 +1,5 @@
+import { saveBYOKConfig } from '../services/byokStorage';
+import type { AssistedRequest } from '../model/assistedBook';
 import { beforeEach, expect, it, vi } from 'vitest';
 import {
   AssistedBookError,
@@ -46,4 +48,28 @@ it('distinguishes definitive rejections from uncertain network responses', async
   expect(new AssistedBookError('Insuficiente', 'functions/resource-exhausted').uncertain).toBe(
     false,
   );
+});
+
+it('retry envia o snapshot público original mesmo após mudar preferências locais', async () => {
+  saveBYOKConfig({
+    provider: 'firebase_ai',
+    platformModel: 'gemini-4-argon',
+    platformReasoning: 'high',
+    geminiApiKey: 'private-test',
+  });
+  const data: AssistedRequest = {
+    action: 'generate',
+    sessionId: 'id',
+    requestId: 'retry',
+    revision: 0,
+    brief: 'Ideia',
+  };
+  mocks.call.mockRejectedValueOnce(new Error('offline'));
+  await expect(requestAssistedBook(data)).rejects.toThrow('offline');
+  const first = structuredClone(mocks.call.mock.calls.at(-1)![0]) as AssistedRequest;
+  saveBYOKConfig({ provider: 'firebase_ai', platformModel: 'gemini-3.8-flash' });
+  await requestAssistedBook(data);
+  expect(mocks.call).toHaveBeenLastCalledWith(first);
+  expect(first.generation).toMatchObject({ model: 'gemini-4-argon', reasoning: 'high' });
+  expect(JSON.stringify(first)).not.toContain('private-test');
 });

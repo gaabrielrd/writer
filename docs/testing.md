@@ -452,3 +452,13 @@ tap e drag sem mudança conservam a preferência de largura.
 Relatórios e resultados gerados pelo Playwright são ignorados pelo ESLint para
 evitar leitura de arquivos temporários durante execuções paralelas. As regras
 de lint do código-fonte e os limites de cobertura permanecem os mesmos.
+
+## Preferências de provedor de IA
+
+Os testes de ai-assistant cobrem o fluxo Firebase/BYOK, seleção de modelos e
+raciocínio, migração, chaves/modelos independentes e falha de armazenamento.
+Os testes das Functions verificam a lista autorizada, snapshot efetivo, retries,
+reparação por blocos de lore e ausência de novos débitos. O transporte do chat e
+o cliente Firebase verificam os parâmetros enviados, sem temperatura.
+O teste e2e/visual/ai-provider.visual.ts exercita a rota real com serviços fictícios,
+persistência após reload, restauração e layout até 320 px nos três temas.

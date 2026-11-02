@@ -6,6 +6,10 @@ import {
 beforeEach(() => {
   vi.restoreAllMocks();
   localStorage.clear();
+  localStorage.setItem(
+    'writer_byok_config',
+    JSON.stringify({ provider: 'openai_byok', openaiApiKey: 'test' }),
+  );
 });
 describe('padrão de raciocínio privado por usuário/navegador', () => {
   it('começa em Auto, conserva a escolha e isola usuários', () => {
@@ -30,7 +34,7 @@ describe('padrão de raciocínio privado por usuário/navegador', () => {
     const get = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('blocked');
     });
-    expect(readChatReasoningDefault('author')).toBe('auto');
+    expect(readChatReasoningDefault('author')).toBe('medium');
     get.mockRestore();
     const set = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('quota');
@@ -40,4 +44,13 @@ describe('padrão de raciocínio privado por usuário/navegador', () => {
     expect(writeChatReasoningDefault('author', 'high')).toBe(true);
     expect(readChatReasoningDefault('author')).toBe('high');
   });
+});
+
+it('Firebase herda o padrão da aba Provedor em vez do antigo padrão local do chat', () => {
+  writeChatReasoningDefault('author', 'max');
+  localStorage.setItem(
+    'writer_byok_config',
+    JSON.stringify({ provider: 'firebase_ai', platformReasoning: 'high' }),
+  );
+  expect(readChatReasoningDefault('author')).toBe('high');
 });

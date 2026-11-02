@@ -346,3 +346,11 @@ parâmetros solicitados/usados legíveis e quebra de linha. Conversas antigas
 identificam Auto e modelo não registrado. Não mostre chaves nem pensamentos
 internos. Retry conserva acesso após mudar preferências; regenerar indica
 que usa a configuração atual.
+
+## Aba Provedor de IA
+
+Em /settings/ai?tab=provider, o primeiro Dropdown escolhe Firebase AI Logic
+ou BYOK. Firebase apresenta modelo e raciocínio Médio/Alto; BYOK apresenta
+provedor, chave em campo de senha e modelo personalizado. O formulário usa
+Input, Dropdown, Alert e Button compartilhados, com salvar explícito,
+mensagem de erro e restauração. Não apresentar temperatura ou tooltip sobre ela.

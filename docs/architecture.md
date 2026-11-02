@@ -313,3 +313,13 @@ o modelo da plataforma e registra a configuração efetiva; reutiliza snapshots
 de parâmetros/histórico em retries. `chapterChatProvider.mjs` contém o transporte
 Gemini do servidor, e `chapterChatService.ts` mantém BYOK no navegador. Credenciais
 entram somente nos headers do provedor, fora do histórico e da callable.
+
+## Preferências de geração de texto
+
+A aba Provedor separa Firebase AI Logic de BYOK. A feature ai-assistant mantém o
+adaptador de preferências e exporta captura de parâmetros públicos para as
+outras features. Catálogo, capacidades e validação usam o contrato puro
+functions/src/chatGeneration.mjs. Functions validam a escolha da plataforma,
+registram o snapshot e mantêm geração e débito no servidor. A configuração local
+com chaves nunca é espalhada nos pedidos. Veja
+[configurações de provedor](ai-provider-settings.md).

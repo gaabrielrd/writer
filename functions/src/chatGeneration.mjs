@@ -1,4 +1,58 @@
 // Pure contract shared by the authenticated service and browser UI; no credentials or I/O.
+// Explicit IDs verified in Firebase AI Logic documentation on 2026-11-02.
+export const PLATFORM_TEXT_MODELS = Object.freeze([
+  Object.freeze({
+    id: 'gemini-3.8-flash',
+    label: 'Gemini 3.8 Flash',
+    description: 'Equilibrado para uso geral',
+  }),
+  Object.freeze({
+    id: 'gemini-3.5-flash-lite',
+    label: 'Gemini 3.5 Flash-Lite',
+    description: 'Menor custo do provedor',
+  }),
+  Object.freeze({
+    id: 'gemini-4-argon',
+    label: 'Gemini 4 Argon',
+    description: 'Raciocínio avançado',
+  }),
+]);
+export const DEFAULT_PLATFORM_MODEL = 'gemini-3.8-flash';
+export const DEFAULT_PLATFORM_REASONING = 'medium';
+export function isPlatformTextModel(model) {
+  return PLATFORM_TEXT_MODELS.some((item) => item.id === model);
+}
+// New platform preferences are strict; legacy chat snapshots retain their original levels.
+export function resolvePlatformTextGeneration(value) {
+  const requested =
+    value === undefined
+      ? {
+          version: 1,
+          provider: 'platform',
+          model: DEFAULT_PLATFORM_MODEL,
+          reasoning: DEFAULT_PLATFORM_REASONING,
+        }
+      : normalizeChatGenerationRequest(value);
+  if (
+    !requested ||
+    requested.provider !== 'platform' ||
+    !isPlatformTextModel(requested.model) ||
+    !['medium', 'high'].includes(requested.reasoning)
+  )
+    throw new Error('Modelo ou raciocínio da plataforma inválido.');
+  return resolveChatGeneration(requested);
+}
+export function geminiTextGenerationOptions(generation, maxOutputTokens) {
+  return {
+    maxOutputTokens,
+    ...(generation?.effective.reasoning && generation.effective.reasoning !== 'auto'
+      ? {
+          thinkingConfig: { thinkingLevel: generation.effective.reasoning, includeThoughts: false },
+        }
+      : {}),
+  };
+}
+
 export const CHAT_REASONING_LEVELS = Object.freeze([
   'auto',
   'none',
@@ -27,7 +81,9 @@ export function normalizeChatReasoning(value) {
 }
 export function getChatModelCapabilities(provider, model) {
   const name = typeof model === 'string' ? model.trim() : '';
-  const gemini = provider === 'gemini' && ['gemini-3.7-flash', 'gemini-3.8-flash'].includes(name);
+  const gemini =
+    provider === 'gemini' &&
+    [...PLATFORM_TEXT_MODELS.map((item) => item.id), 'gemini-3.7-flash'].includes(name);
   const openai =
     provider === 'openai' &&
     ['gpt-6-luna', 'gpt-6-sol', 'gpt-6.1-sol', 'gpt-6-astra'].includes(name);
@@ -43,7 +99,10 @@ export function getChatModelCapabilities(provider, model) {
     provider,
     model: name,
     levels: [...levels],
-    defaultReasoning: gemini || (openai && name !== 'gpt-6-astra') ? 'medium' : 'auto',
+    defaultReasoning:
+      (gemini && name !== 'gemini-3.5-flash-lite') || (openai && name !== 'gpt-6-astra')
+        ? 'medium'
+        : 'auto',
     api: gemini ? 'gemini-content' : openai ? 'openai-chat' : 'automatic',
     ...CHAT_GENERATION_LIMITS,
   };
@@ -77,7 +136,15 @@ export function resolveChatGeneration(value, platformModel = 'gemini-3.7-flash')
   const requested = normalizeChatGenerationRequest(value);
   if (!requested) throw new Error('Configuração de geração inválida.');
   const provider = requested.provider === 'openai_byok' ? 'openai' : 'gemini';
-  const model = requested.provider === 'platform' ? platformModel : requested.model;
+  const model =
+    requested.provider === 'platform' ? (requested.model ?? platformModel) : requested.model;
+  if (
+    requested.provider === 'platform' &&
+    requested.model !== null &&
+    !isPlatformTextModel(model) &&
+    model !== 'gemini-3.7-flash'
+  )
+    throw new Error('Modelo da plataforma indisponível.');
   if (typeof model !== 'string' || !/^[a-zA-Z0-9._:-]{1,120}$/.test(model))
     throw new Error('Modelo de geração inválido.');
   const capabilities = getChatModelCapabilities(provider, model);

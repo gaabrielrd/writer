@@ -15,6 +15,7 @@ import { useChapterChat } from '../hooks/useChapterChat';
 import { useAIConfig } from '../hooks/useAIConfig';
 import { useAISettings } from '../hooks/useAISettings';
 import {
+  DEFAULT_PLATFORM_MODEL,
   DEFAULT_BYOK_CHAT_MODELS,
   CHAT_REASONING_LABELS,
   CHAT_REASONING_LEVELS,
@@ -76,11 +77,11 @@ export function ChapterChatPanel({
   const reasoningHintId = hintId + '-reasoning';
   const modelLabel =
     config.provider === 'firebase_ai'
-      ? chat.page.platformModel || 'Modelo da plataforma'
+      ? (config.platformModel ?? DEFAULT_PLATFORM_MODEL)
       : config.customModel || DEFAULT_BYOK_CHAT_MODELS[config.provider];
   const capabilities = getChatModelCapabilities(
     config.provider === 'openai_byok' ? 'openai' : 'gemini',
-    config.provider === 'firebase_ai' ? chat.page.platformModel : modelLabel,
+    modelLabel,
   );
   const reasoningUnavailable = !capabilities.levels.includes(chat.reasoning);
   const [source, setSource] = useState<ChatContextSource>('auto');
@@ -131,7 +132,7 @@ export function ChapterChatPanel({
   useEffect(() => {
     stopRef.current = chat.stop;
   });
-  const configVersion = JSON.stringify([config, unavailable, contextVersion]);
+  const configVersion = JSON.stringify([unavailable, contextVersion]);
   const previousConfig = useRef(configVersion);
   useEffect(() => {
     if (previousConfig.current !== configVersion) {

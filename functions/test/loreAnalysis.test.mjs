@@ -360,3 +360,33 @@ test('free analyses are limited per hour and can be retrieved idempotently', asy
     { code: 'resource-exhausted' },
   );
 });
+
+test('todos os blocos e a reparação de lore conservam modelo/raciocínio validados', async () => {
+  const inputs = [];
+  const f = fixture(async (context) => {
+    inputs.push(context);
+    return JSON.stringify({
+      entities: [{ ...detected, evidence: inputs.length === 1 ? 'inventado' : detected.evidence }],
+    });
+  });
+  const generation = {
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-3.5-flash-lite',
+    reasoning: 'high',
+  };
+  const data = { ...request, text: detected.evidence + 'x'.repeat(13000), generation };
+  await f.service.analyzeChapterLore('author', data);
+  assert.equal(inputs.length, 3);
+  for (const input of inputs) {
+    assert.equal(input.generation.effective.model, generation.model);
+    assert.equal(input.generation.effective.reasoning, 'high');
+  }
+  await assert.rejects(
+    f.service.analyzeChapterLore('author', {
+      ...data,
+      generation: { ...generation, model: 'arbitrary' },
+    }),
+    { code: 'invalid-argument' },
+  );
+});

@@ -141,7 +141,7 @@ describe('aiClient service', () => {
     expect(firebaseAIModule.getGenerativeModel).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
-        model: 'gemini-3.7-flash',
+        model: 'gemini-3.8-flash',
       }),
     );
   });
@@ -284,5 +284,28 @@ describe('aiClient service', () => {
       generateAIResponse({ prompt: 'test', byokConfig: { provider: 'openai_byok' } }),
     ).rejects.toThrow('obrigatória');
     expect(firebaseAIModule.getGenerativeModel).not.toHaveBeenCalled();
+  });
+});
+
+it('envia o modelo e raciocínio escolhidos ao Firebase sem temperatura nem chaves BYOK', async () => {
+  vi.mocked(firebaseAIModule.getGenerativeModel).mockReturnValue({
+    generateContent: vi.fn().mockResolvedValue({ response: { text: () => 'Resposta.' } }),
+  } as unknown as firebaseAIModule.GenerativeModel);
+  await generateAIResponse({
+    prompt: 'Pedido',
+    byokConfig: {
+      provider: 'firebase_ai',
+      platformModel: 'gemini-4-argon',
+      platformReasoning: 'high',
+      geminiApiKey: 'private-test',
+    },
+  });
+  expect(firebaseAIModule.getGenerativeModel).toHaveBeenLastCalledWith(expect.anything(), {
+    model: 'gemini-4-argon',
+    systemInstruction: undefined,
+    generationConfig: {
+      maxOutputTokens: 600,
+      thinkingConfig: { thinkingLevel: 'high', includeThoughts: false },
+    },
   });
 });

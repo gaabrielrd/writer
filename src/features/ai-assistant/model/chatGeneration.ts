@@ -1,4 +1,10 @@
 export {
+  PLATFORM_TEXT_MODELS,
+  DEFAULT_PLATFORM_MODEL,
+  DEFAULT_PLATFORM_REASONING,
+  isPlatformTextModel,
+  resolvePlatformTextGeneration,
+  geminiTextGenerationOptions,
   CHAT_REASONING_LEVELS,
   CHAT_GENERATION_LIMITS,
   DEFAULT_BYOK_CHAT_MODELS,

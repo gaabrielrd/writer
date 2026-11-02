@@ -30,3 +30,5 @@ export { AIChatLauncher } from './components/AIChatLauncher';
 export { ChapterChatPanel } from './components/ChapterChatPanel';
 export type { ChatApplyInput } from './components/ChapterChatPanel';
 export * from './services/assistedBookService';
+
+export type { ChatGenerationRequest } from './model/chatGeneration';

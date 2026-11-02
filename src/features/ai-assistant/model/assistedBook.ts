@@ -1,3 +1,4 @@
+import type { ChatGenerationRequest } from './chatGeneration';
 import type { LoreCategory, LoreDetails, LoreRelation } from '@/features/lore';
 
 export interface AssistedEntity {
@@ -52,4 +53,5 @@ export interface AssistedRequest {
   brief?: string;
   proposal?: AssistedProposal;
   entityId?: string;
+  generation?: ChatGenerationRequest;
 }

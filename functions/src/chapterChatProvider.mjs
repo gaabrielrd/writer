@@ -34,7 +34,7 @@ export async function generatePlatformChat(input, onChunk, { apiKey, signal, fet
             parts: [{ text: JSON.stringify({ context: input.context, request: input.text }) }],
           },
         ],
-        generationConfig: { ...chatProviderGenerationOptions(input.generation), temperature: 0.7 },
+        generationConfig: chatProviderGenerationOptions(input.generation),
       }),
     },
   );

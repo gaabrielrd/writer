@@ -1,3 +1,4 @@
+import type { ChatGenerationRequest } from '@/features/ai-assistant';
 import type { LoreCategory, LoreEntity } from './loreEntity';
 export interface LoreAnalysisRequest {
   bookId: string;
@@ -6,6 +7,7 @@ export interface LoreAnalysisRequest {
   requestId: string;
   content: string;
   loreVersions: Array<[string, number]>;
+  generation?: ChatGenerationRequest;
 }
 
 export interface DetectedLoreEntity {
