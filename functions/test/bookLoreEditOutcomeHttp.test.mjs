@@ -1,3 +1,4 @@
+import { domainSdkFixture } from './helpers/domainSdkFixture.mjs';
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -13,7 +14,7 @@ import { adoptionFixture, adoptFixture } from './helpers/bookLoreEditAdoptionFix
 import { digest } from '../src/workProgressContracts.mjs';
 const previousProject = process.env.GCLOUD_PROJECT;
 process.env.GCLOUD_PROJECT = 'demo-writer-lore-edit-outcome';
-const { bookLoreEditOutcome } = await import('../src/index.mjs');
+const { bookLoreEditOutcome } = domainSdkFixture(await import('../src/index.mjs'));
 let server, address, input, outcome;
 before(async () => {
   const d = adventureImportDb({ nativeUpdates: true }),
@@ -98,10 +99,13 @@ test('exported callable applies no-store before Auth and closed DTO errors', asy
         return true;
       },
     );
-    assert.deepEqual(headers, [
-      ['Cache-Control', 'private, no-store'],
-      ['Vary', 'Authorization'],
-    ]);
+    assert.deepEqual(
+      [...new Map(headers)],
+      [
+        ['Cache-Control', 'private, no-store'],
+        ['Vary', auth ? 'Authorization' : 'Authorization, X-Firebase-AppCheck'],
+      ],
+    );
   }
 });
 test('HTTP fixture returns original metadata with private headers and rejects supplied UID', async () => {

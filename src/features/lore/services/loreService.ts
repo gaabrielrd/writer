@@ -10,7 +10,8 @@ import {
   runTransaction,
   onSnapshot,
 } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { firestore, getFirebaseApp } from '@/shared/lib';
 import { asLoreScope, loreEntityDocumentId, universeEntityId } from '../model/loreScope';
 import { bookLoreReadSession, hasBookLorePayload } from './bookLoreReadService';

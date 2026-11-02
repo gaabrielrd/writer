@@ -1,7 +1,8 @@
+import { domainSdkFixture } from './helpers/domainSdkFixture.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { FUNCTION_DOMAINS, FUNCTION_ROUTES } from '../src/functionDomains.mjs';
 import express from 'express';
 process.env.GCLOUD_PROJECT = 'demo-writer-orphans-sdk';
 process.env.FIREBASE_CONFIG = JSON.stringify({
@@ -10,12 +11,11 @@ process.env.FIREBASE_CONFIG = JSON.stringify({
 });
 process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:9';
 process.env.FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9';
-const endpoints = await import('../src/index.mjs'),
+const endpoints = domainSdkFixture(await import('../src/index.mjs')),
   names = ['listOrphanScenes', 'recoverOrphanScene'];
 test('actual SDK routes bind both scene methods, private headers and runtime limits and reject unauthenticated run', async () => {
-  const source = await readFile(new URL('../src/index.mjs', import.meta.url), 'utf8');
   for (const name of names) {
-    assert.match(source, new RegExp('export const ' + name + " = callable\\('" + name + "'\\)"));
+    assert.equal(FUNCTION_DOMAINS[FUNCTION_ROUTES[name]].actions[name], name);
     const handler = endpoints[name],
       headers = new Map();
     assert.deepEqual(handler.__endpoint.region, ['us-central1']);
@@ -29,7 +29,7 @@ test('actual SDK routes bind both scene methods, private headers and runtime lim
       { code: 'unauthenticated' },
     );
     assert.equal(headers.get('Cache-Control'), 'private, no-store');
-    assert.equal(headers.get('Vary'), 'Authorization');
+    assert.equal(headers.get('Vary'), 'Authorization, X-Firebase-AppCheck');
   }
 });
 test('actual SDK middleware refuses requests missing Auth/App Check before any project scan', async () => {

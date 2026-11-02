@@ -1,4 +1,5 @@
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { auth, getFirebaseApp } from '@/shared/lib';
 import { chatDocumentHash } from '@/features/ai-assistant';
 import type { Chapter, CreateChapterInput } from '../model/chapter';

@@ -1,4 +1,5 @@
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions } from 'firebase/functions';
+import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { auth, getFirebaseApp } from '@/shared/lib';
 import {
   BOOK_LORE_REMOVAL_CALLABLE,

@@ -1,3 +1,4 @@
+import { FUNCTION_ROUTES } from '../src/functionDomains.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 test('server entry loads all deployment exports without a provider secret or network call', async () => {
@@ -25,7 +26,7 @@ test('server entry loads all deployment exports without a provider secret or net
     'revokeBookLoreEditRecovery',
     'getBookLoreEditRecoveryKey',
   ])
-    assert.equal(typeof entry[name], 'function');
+    assert.equal(typeof entry[FUNCTION_ROUTES[name] ?? name], 'function');
   assert.ok(entry.getBookLoreEditRecoveryKey.__endpoint.httpsTrigger);
   assert.equal(entry.getBookLoreEditRecoveryKey.__endpoint.callableTrigger, undefined);
 });

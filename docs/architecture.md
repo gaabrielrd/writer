@@ -4,6 +4,11 @@ Este documento descreve como o código do `Writer Assistant` é organizado e as 
 
 ## Princípios
 
+As Functions são expostas por setor, com ações explícitas e serviços internos
+separados. O transporte é configurado pela aplicação; consulte a
+[ADR 0270](decisions/0270-functions-by-sector.md) e o
+[inventário de recursos](infrastructure/functions-inventory.json).
+
 - Organização por funcionalidades (features), não por camadas técnicas.
 - Cada parte tem uma responsabilidade clara.
 - Simplicidade primeiro: só adicione abstração quando houver necessidade real.
