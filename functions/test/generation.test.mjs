@@ -490,3 +490,40 @@ test('image-backed book creation initializes local lore baseline and updates pre
   );
   assert.deepEqual([...f.records], before);
 });
+
+test('sinopse aplica preferência validada, preserva o recibo e recusa troca no mesmo pedido', async () => {
+  const inputs = [];
+  const f = fixture({
+    generator: async (context) => {
+      inputs.push(context);
+      return { text: 'Sinopse.' };
+    },
+  });
+  const generation = {
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-4-argon',
+    reasoning: 'high',
+  };
+  const request = { ...f.input(), generation };
+  const first = await f.service.generate('author', request);
+  assert.equal(inputs[0].generation.effective.model, generation.model);
+  assert.equal(inputs[0].generation.effective.reasoning, generation.reasoning);
+  assert.deepEqual(await f.service.generate('author', request), first);
+  assert.equal(inputs.length, 1);
+  await assert.rejects(
+    f.service.generate('author', {
+      ...request,
+      generation: { ...generation, model: 'gemini-3.8-flash' },
+    }),
+    { code: 'invalid-argument' },
+  );
+  await assert.rejects(
+    f.service.generate('author', {
+      ...f.input('request-invalid01'),
+      generation: { ...generation, model: 'custom' },
+    }),
+    { code: 'invalid-argument' },
+  );
+  assert.equal(f.records.get('users/author').credits, 20);
+});

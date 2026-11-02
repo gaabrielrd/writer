@@ -3985,3 +3985,13 @@ A preferência tem o mesmo escopo local do tema, sem sincronização de conta.
 WorkPreferencesPage usa o contrato público de shared/ui; o shell aplica os
 limites por variável CSS, com largura fluida abaixo do limite e exceção para
 o modo expandido. Nenhuma chamada de backend foi acrescentada.
+
+## Preferências de geração de texto
+
+A aba Provedor separa Firebase AI Logic de BYOK. A feature ai-assistant mantém o
+adaptador de preferências e exporta captura de parâmetros públicos para as
+outras features. Catálogo, capacidades e validação usam o contrato puro
+functions/src/chatGeneration.mjs. Functions validam a escolha da plataforma,
+registram o snapshot e mantêm geração e débito no servidor. A configuração local
+com chaves nunca é espalhada nos pedidos. Veja
+[configurações de provedor](ai-provider-settings.md).

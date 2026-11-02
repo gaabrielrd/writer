@@ -4,6 +4,7 @@ import {
   saveBYOKConfig,
   clearBYOKConfig,
   subscribeBYOKConfig,
+  capturePlatformTextGeneration,
 } from '../services/byokStorage';
 import type { BYOKConfig } from '../model/byokConfig';
 
@@ -96,4 +97,47 @@ describe('byokStorage service', () => {
       }),
     ).toThrow('modelo inválido');
   });
+});
+
+it('migra o modelo BYOK legado e normaliza preferências inválidas sem perder a chave', () => {
+  localStorage.setItem(
+    'writer_byok_config',
+    JSON.stringify({
+      provider: 'gemini_byok',
+      geminiApiKey: 'private-test',
+      customModel: 'custom',
+      platformModel: 'unknown',
+      platformReasoning: 'max',
+    }),
+  );
+  expect(getBYOKConfig()).toMatchObject({
+    geminiApiKey: 'private-test',
+    customModel: 'custom',
+    geminiModel: 'custom',
+  });
+});
+
+it('captura apenas parâmetros públicos e mantém o snapshot independente das preferências posteriores', () => {
+  localStorage.clear();
+  expect(capturePlatformTextGeneration()).toEqual({
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-3.8-flash',
+    reasoning: 'medium',
+  });
+  saveBYOKConfig({
+    provider: 'firebase_ai',
+    platformModel: 'gemini-4-argon',
+    platformReasoning: 'high',
+    geminiApiKey: 'private-test',
+  });
+  const frozen = capturePlatformTextGeneration();
+  saveBYOKConfig({ provider: 'firebase_ai', platformModel: 'gemini-3.5-flash-lite' });
+  expect(frozen).toEqual({
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-4-argon',
+    reasoning: 'high',
+  });
+  expect(JSON.stringify(frozen)).not.toContain('private-test');
 });

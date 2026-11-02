@@ -1,3 +1,4 @@
+import { resolvePlatformTextGeneration } from './chatGeneration.mjs';
 import { imageRef, libraryImage, createImageLibraryService } from './imageLibrary.mjs';
 import { createHash } from 'node:crypto';
 
@@ -19,11 +20,23 @@ function text(value, limit, required = true) {
   }
   return value.trim();
 }
+export function platformTextGeneration(value, maxOutputTokens = 4000) {
+  try {
+    const generation = resolvePlatformTextGeneration(value);
+    generation.effective.maxOutputTokens = maxOutputTokens;
+    return generation;
+  } catch {
+    fail('invalid-argument', 'Modelo ou raciocínio da plataforma inválido.');
+  }
+}
 export function validateContext(data) {
   if (!['synopsis', 'cover'].includes(data?.kind))
     fail('invalid-argument', 'Tipo de geração inválido.');
   return {
     kind: data.kind,
+    ...(data.kind === 'synopsis' && data.generation !== undefined
+      ? { generation: platformTextGeneration(data.generation, 2048) }
+      : {}),
     title: text(data.title, 300),
     genre: text(data.genre, 120),
     synopsis: data.kind === 'cover' ? text(data.synopsis, 4000) : '',
@@ -63,8 +76,15 @@ export function createGenerationService({ db, generator, assets, costs, now = Da
     async generate(uid, data) {
       authorize(uid);
       const context = validateContext(data);
+      const generation =
+        context.kind === 'synopsis'
+          ? (context.generation ?? platformTextGeneration(undefined, 2048))
+          : null;
       const ref = requestRef(uid, data.requestId);
-      const contextHash = fingerprint(context);
+      const contextHash = fingerprint({
+        ...context,
+        ...(context.generation ? { generation: context.generation.requested } : {}),
+      });
       const cost = costs[context.kind];
       if (!Number.isSafeInteger(cost) || cost < 1)
         fail('failed-precondition', 'Custo de geração inválido.');
@@ -95,6 +115,7 @@ export function createGenerationService({ db, generator, assets, costs, now = Da
         tx.set(db.doc(`users/${uid}/generationLimits/current`), { windowStart, count: count + 1 });
         tx.set(ref, {
           ...context,
+          ...(generation ? { generation } : {}),
           contextHash,
           cost,
           state: 'generating',
@@ -106,7 +127,7 @@ export function createGenerationService({ db, generator, assets, costs, now = Da
       if (existing) return view(data.requestId, existing);
       const path = `book-covers/${uid}/${data.requestId}.png`;
       try {
-        const result = await generator(context);
+        const result = await generator({ ...context, ...(generation ? { generation } : {}) });
         let content;
         if (context.kind === 'synopsis') content = { text: text(result.text, 4000) };
         else {

@@ -106,12 +106,13 @@ import {
 import { createAssistedBookService, assistedInstruction } from './assistedBook.mjs';
 import { normalizeCover } from './normalizeCover.mjs';
 import { createChapterChatService } from './chapterChat.mjs';
+import { geminiTextGenerationOptions } from './chatGeneration.mjs';
 import { generatePlatformChat } from './chapterChatProvider.mjs';
 import { createGenerationService, generationPrompt, GenerationError } from './generation.mjs';
 
 initializeApp();
 const key = defineSecret('BOOK_GENERATION_GEMINI_KEY');
-const textModel = defineString('BOOK_SYNOPSIS_MODEL', { default: 'gemini-3.7-flash' });
+const textModel = defineString('BOOK_SYNOPSIS_MODEL', { default: 'gemini-3.8-flash' });
 const imageModel = defineString('BOOK_COVER_MODEL', { default: 'gemini-3.1-flash-image' });
 const synopsisCost = defineInt('BOOK_SYNOPSIS_CREDITS', { default: 1 });
 const coverCost = defineInt('BOOK_COVER_CREDITS', { default: 5 });
@@ -219,7 +220,7 @@ export const cleanupDeletedAccountChat = functionsV1
   });
 async function assistedGenerator(context) {
   if (context.mode === 'cover') return generator(context);
-  const model = textModel.value();
+  const model = context.generation.effective.model;
   if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Modelo inválido.');
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -232,9 +233,10 @@ async function assistedGenerator(context) {
         contents: [{ parts: [{ text: JSON.stringify(context) }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          maxOutputTokens: context.mode === 'proposal' ? 24000 : 8000,
-          temperature: 0.7,
-          thinkingConfig: { thinkingLevel: 'low' },
+          ...geminiTextGenerationOptions(
+            context.generation,
+            context.mode === 'proposal' ? 24000 : 8000,
+          ),
         },
       }),
     },
@@ -243,11 +245,14 @@ async function assistedGenerator(context) {
   const result = await response.json();
   if (result.candidates?.[0]?.finishReason !== 'STOP') throw new Error('Geração incompleta.');
   return JSON.parse(
-    (result.candidates[0].content?.parts ?? []).map((part) => part.text ?? '').join(''),
+    (result.candidates[0].content?.parts ?? [])
+      .filter((part) => !part.thought)
+      .map((part) => part.text ?? '')
+      .join(''),
   );
 }
 async function loreGenerator(context) {
-  const model = textModel.value();
+  const model = context.generation.effective.model;
   if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Modelo inválido.');
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -266,8 +271,7 @@ async function loreGenerator(context) {
         contents: [{ parts: [{ text: JSON.stringify(context) }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          maxOutputTokens: 12000,
-          temperature: 0.2,
+          ...geminiTextGenerationOptions(context.generation, 12000),
         },
       }),
     },
@@ -275,7 +279,10 @@ async function loreGenerator(context) {
   if (!response.ok) throw new Error('Falha no provedor.');
   const data = await response.json();
   if (data.candidates?.[0]?.finishReason !== 'STOP') throw new Error('Análise incompleta.');
-  return (data.candidates[0].content?.parts ?? []).map((part) => part.text ?? '').join('');
+  return (data.candidates[0].content?.parts ?? [])
+    .filter((part) => !part.thought)
+    .map((part) => part.text ?? '')
+    .join('');
 }
 const bucket = () => getStorage().bucket();
 const backupStorage = createBookBackupAssetStorage(bucket);
@@ -324,7 +331,7 @@ const assets = {
   },
 };
 async function generator(context) {
-  const model = context.kind === 'cover' ? imageModel.value() : textModel.value();
+  const model = context.kind === 'cover' ? imageModel.value() : context.generation.effective.model;
   if (!/^[a-zA-Z0-9._-]+$/.test(model)) throw new Error('Modelo inválido.');
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
@@ -341,9 +348,7 @@ async function generator(context) {
                 imageConfig: { aspectRatio: '2:3', imageSize: '1K' },
               }
             : {
-                maxOutputTokens: 2048,
-                temperature: 0.7,
-                thinkingConfig: { thinkingLevel: 'low' },
+                ...geminiTextGenerationOptions(context.generation, 2048),
               },
       }),
     },
@@ -356,6 +361,7 @@ async function generator(context) {
   if (context.kind === 'synopsis')
     return {
       text: parts
+        .filter((part) => !part.thought)
         .map((part) => part.text ?? '')
         .join('')
         .trim(),

@@ -403,3 +403,11 @@ precisos e 44 px para toque. Eles acompanham o título da seção quando há
 espaço e quebram linhas sem transbordar. Configurações de IA usam abas
 segmentadas compactas, PageHeader sem padding duplicado e EmptyState
 compartilhado para ausência de personas criadas; retorno é contextual.
+
+## Aba Provedor de IA
+
+Em /settings/ai?tab=provider, o primeiro Dropdown escolhe Firebase AI Logic
+ou BYOK. Firebase apresenta modelo e raciocínio Médio/Alto; BYOK apresenta
+provedor, chave em campo de senha e modelo personalizado. O formulário usa
+Input, Dropdown, Alert e Button compartilhados, com salvar explícito,
+mensagem de erro e restauração. Não apresentar temperatura ou tooltip sobre ela.

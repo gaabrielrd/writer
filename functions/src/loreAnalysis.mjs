@@ -4,7 +4,7 @@ import { loadApplication } from './loreAnalysisApplicationStore.mjs';
 import { applyPreparedAnalysisInTransaction } from './loreAnalysisApplicationApply.mjs';
 import { nextBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { createHash } from 'node:crypto';
-import { GenerationError, validateId } from './generation.mjs';
+import { GenerationError, validateId, platformTextGeneration } from './generation.mjs';
 import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
 import { readLoreAnalysisContext } from './loreAnalysisContext.mjs';
 import { text, aliases, patch, categories } from './loreAnalysisFields.mjs';
@@ -56,6 +56,8 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
   async function prepare(uid, data, provider) {
     if (!uid) fail('unauthenticated', 'Entre na sua conta.');
     if (!data) fail('invalid-argument', 'Solicitação inválida.');
+    const generation =
+      provider === 'platform' ? platformTextGeneration(data.generation, 12000) : null;
     const source = text(data.text, 120000);
     const content = text(data.content, 900000);
     const ref = ticketRef(uid, data.requestId);
@@ -67,6 +69,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       data.loreVersions,
       provider,
       provider === 'byok' ? data.entities : null,
+      ...(data.generation !== undefined && provider === 'platform' ? [generation.requested] : []),
     ]);
     const record = await db.runTransaction(async (tx) => {
       const previous = (await tx.get(ref)).data();
@@ -96,6 +99,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
         bookId: data.bookId,
         chapterId: data.chapterId,
         provider,
+        ...(generation ? { generation } : {}),
         fingerprint,
         textHash: hash(source),
         contentHash: hash(content),
@@ -129,6 +133,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
           let found;
           for (let attempt = 0; attempt < 2; attempt++) {
             const response = await generator({
+              generation: record.generation,
               text: part,
               lore: record.context,
               alreadyDetected: results,

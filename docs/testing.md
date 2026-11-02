@@ -3266,3 +3266,13 @@ criação/importação/restauração pelos diálogos existentes, filtros na URL,
 paginação independente e retorno filtrado após trocar abas do projeto.
 Conferir preferências de fuso, estados de dados e responsividade nos três
 temas. A documentação desses cenários não representa execução ou aprovação.
+
+## Preferências de provedor de IA
+
+Os testes de ai-assistant cobrem o fluxo Firebase/BYOK, seleção de modelos e
+raciocínio, migração, chaves/modelos independentes e falha de armazenamento.
+Os testes das Functions verificam a lista autorizada, snapshot efetivo, retries,
+reparação por blocos de lore e ausência de novos débitos. O transporte do chat e
+o cliente Firebase verificam os parâmetros enviados, sem temperatura.
+O teste e2e/visual/ai-provider.visual.ts exercita a rota real com serviços fictícios,
+persistência após reload, restauração e layout até 320 px nos três temas.

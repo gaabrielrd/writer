@@ -1,3 +1,4 @@
+import { capturePlatformTextGeneration } from '../services/byokStorage';
 import { useState } from 'react';
 import { MessageSquare, Plus, RefreshCw, Send, Square, Eye, Trash2 } from 'lucide-react';
 import {
@@ -498,16 +499,20 @@ function PanelContents({
                   ]}
                   onValueChange={(value) => {
                     const provider = value as ChatGenerationRequest['provider'];
-                    onGenerationChange({
-                      version: 1,
-                      provider,
-                      model: provider === 'platform' ? null : DEFAULT_BYOK_CHAT_MODELS[provider],
-                      reasoning: 'auto',
-                    });
+                    onGenerationChange(
+                      provider === 'platform'
+                        ? capturePlatformTextGeneration()
+                        : {
+                            version: 1,
+                            provider,
+                            model: DEFAULT_BYOK_CHAT_MODELS[provider],
+                            reasoning: 'auto',
+                          },
+                    );
                   }}
                 />
                 {generation.provider === 'platform' ? (
-                  <p>Modelo do Writer: {s.catalog?.platformModel ?? 'a confirmar no catálogo'}</p>
+                  <p>Modelo do Writer: {model || 'a confirmar no catálogo'}</p>
                 ) : (
                   <Input
                     label="Modelo"

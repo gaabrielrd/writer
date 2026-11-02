@@ -489,3 +489,17 @@ test('preflight budgets the actual full documents before quota, claim or provide
   assert.equal(quota(f), undefined);
   assert.equal(f.records.get(contextPath(f, context.contextId)).summary.phase, 'ready');
 });
+
+test('chat nativo usa o modelo autorizado selecionado e congela a configuração no turno', async () => {
+  for (const model of ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-4-argon']) {
+    const f = await editorChatGenerationFixture();
+    const generation = { version: 1, provider: 'platform', model, reasoning: 'high' };
+    const request = await f.request({ generation });
+    const result = await f.generate(request);
+    assert.equal(result.turn.generation.effective.model, model);
+    assert.equal(result.turn.generation.effective.reasoning, 'high');
+    assert.equal(f.calls[0].generation.effective.model, model);
+    assert.deepEqual((await f.generate(request)).receipt, result.receipt);
+    assert.equal(f.calls.length, 1);
+  }
+});

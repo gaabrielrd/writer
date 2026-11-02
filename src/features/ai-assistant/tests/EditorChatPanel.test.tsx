@@ -1,3 +1,4 @@
+import { saveBYOKConfig } from '../services/byokStorage';
 import { webcrypto } from 'node:crypto';
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -579,3 +580,46 @@ it.each(['context', 'conversation'] as const)(
     ).toHaveBeenCalledOnce();
   },
 );
+
+it('mostra o modelo selecionado e retoma as preferências Firebase ao voltar do BYOK', async () => {
+  saveBYOKConfig({
+    provider: 'firebase_ai',
+    platformModel: 'gemini-4-argon',
+    platformReasoning: 'high',
+  });
+  try {
+    const { user, props, update } = fixture();
+    update(
+      {},
+      {
+        generation: {
+          version: 1,
+          provider: 'platform',
+          model: 'gemini-4-argon',
+          reasoning: 'high',
+        },
+      },
+    );
+    expect(screen.getByText('Modelo do Writer: gemini-4-argon')).toBeVisible();
+    update(
+      {},
+      {
+        generation: {
+          version: 1,
+          provider: 'openai_byok',
+          model: 'gpt-4o-mini',
+          reasoning: 'auto',
+        },
+      },
+    );
+    await chooseDropdown(user, screen.getByRole('combobox', { name: 'Provedor' }), 'Writer');
+    expect(props.onGenerationChange).toHaveBeenLastCalledWith({
+      version: 1,
+      provider: 'platform',
+      model: 'gemini-4-argon',
+      reasoning: 'high',
+    });
+  } finally {
+    localStorage.clear();
+  }
+});

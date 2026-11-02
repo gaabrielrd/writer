@@ -90,9 +90,10 @@ test('preferências de IA na página com abas salvam em 320px', async ({ page },
   await page.getByRole('tab', { name: 'Provedor', exact: true }).click();
   await expect(page).toHaveURL(/settings\/ai\?tab=provider/);
   await chooseDropdown(
-    page.getByRole('combobox', { name: 'Provedor de IA' }),
-    'OpenAI API (Chave Própria — BYOK)',
+    page.getByRole('combobox', { name: 'Como deseja usar a IA?' }),
+    'Chave própria — BYOK',
   );
+  await chooseDropdown(page.getByRole('combobox', { name: 'Provedor BYOK' }), 'OpenAI API');
   await page.getByLabel('Chave de API da OpenAI').fill('chave-ficticia');
   const dialog = page.getByRole('tabpanel', { name: 'Provedor', exact: true });
   await expectNoHorizontalOverflow(page, 'configuração de IA');
@@ -104,7 +105,7 @@ test('preferências de IA na página com abas salvam em 320px', async ({ page },
     'aria-selected',
     'true',
   );
-  await expect(page.getByRole('combobox', { name: 'Provedor de IA' })).toContainText('OpenAI');
+  await expect(page.getByRole('combobox', { name: 'Provedor BYOK' })).toContainText('OpenAI');
   await expect(page.getByLabel('Chave de API da OpenAI')).toHaveValue('chave-ficticia');
   await capture(page, testInfo, 'pagina-ia-abas-provedor');
 });

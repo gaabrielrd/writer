@@ -332,3 +332,18 @@ describe('serviço do chat', () => {
     },
   );
 });
+
+it('captura o modelo selecionado e raciocínio da plataforma sem usar o modelo antigo carregado do servidor', () => {
+  vi.spyOn(byok, 'getBYOKConfig').mockReturnValue({
+    provider: 'firebase_ai',
+    platformModel: 'gemini-4-argon',
+    platformReasoning: 'high',
+    geminiApiKey: 'private-test',
+  });
+  expect(captureChatGeneration('auto')).toEqual({
+    version: 1,
+    provider: 'platform',
+    model: 'gemini-4-argon',
+    reasoning: 'high',
+  });
+});

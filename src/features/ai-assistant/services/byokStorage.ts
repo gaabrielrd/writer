@@ -1,3 +1,9 @@
+import {
+  DEFAULT_PLATFORM_MODEL,
+  DEFAULT_PLATFORM_REASONING,
+  isPlatformTextModel,
+  type ChatGenerationRequest,
+} from '../model/chatGeneration';
 import { validateBYOKConfig, type BYOKConfig } from '../model/byokConfig';
 
 const STORAGE_KEY = 'writer_byok_config';
@@ -35,6 +41,22 @@ export function getBYOKConfig(): BYOKConfig {
       geminiApiKey: typeof parsed.geminiApiKey === 'string' ? parsed.geminiApiKey : undefined,
       openaiApiKey: typeof parsed.openaiApiKey === 'string' ? parsed.openaiApiKey : undefined,
       customModel: typeof parsed.customModel === 'string' ? parsed.customModel : undefined,
+      platformModel: isPlatformTextModel(parsed.platformModel) ? parsed.platformModel : undefined,
+      platformReasoning: ['medium', 'high'].includes(parsed.platformReasoning ?? '')
+        ? parsed.platformReasoning
+        : undefined,
+      geminiModel:
+        typeof parsed.geminiModel === 'string'
+          ? parsed.geminiModel
+          : parsed.provider === 'gemini_byok' && typeof parsed.customModel === 'string'
+            ? parsed.customModel
+            : undefined,
+      openaiModel:
+        typeof parsed.openaiModel === 'string'
+          ? parsed.openaiModel
+          : parsed.provider === 'openai_byok' && typeof parsed.customModel === 'string'
+            ? parsed.customModel
+            : undefined,
     };
     return validateBYOKConfig(config).isValid ? config : { provider: 'firebase_ai' };
   } catch {
@@ -66,4 +88,15 @@ export function clearBYOKConfig(): void {
     throw new Error('Não foi possível remover a chave deste navegador.');
   }
   changed();
+}
+
+// Public parameters only. Never spread the credential-bearing configuration into a request.
+export function capturePlatformTextGeneration(): ChatGenerationRequest {
+  const config = getBYOKConfig();
+  return {
+    version: 1,
+    provider: 'platform',
+    model: config.platformModel ?? DEFAULT_PLATFORM_MODEL,
+    reasoning: config.platformReasoning ?? DEFAULT_PLATFORM_REASONING,
+  };
 }

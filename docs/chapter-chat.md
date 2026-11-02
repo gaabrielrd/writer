@@ -94,7 +94,8 @@ de conversa nem em requisições da callable.
 ### Contrato de raciocínio
 
 O seletor abaixo do campo conserva a escolha por conversa privada. Novas
-conversas recebem o padrão versionado por usuário/navegador; conversas antigas
+conversas Firebase recebem o padrão da aba Provedor; BYOK usa o padrão
+versionado por usuário/navegador. Conversas antigas
 sem preferência usam Auto. A configuração informa o modelo da plataforma;
 BYOK usa o modelo do navegador. Níveis sem suporte ficam desabilitados. Trocar
 modelo conserva a preferência e informa quando ela exige fallback para Auto.
@@ -110,7 +111,7 @@ saída/completion e 90 segundos no provedor; tokens internos podem consumir
 o limite. Máximo conserva esses tetos e a cota de 60 pedidos/hora.
 
 Cada pedido guarda configuração solicitada e efetiva, contexto e histórico
-utilizado. O modelo da plataforma é escolhido pelo servidor. Retry conserva
+utilizado. O modelo escolhido na aba Provedor é validado pela lista permitida no servidor. Retry conserva
 identidade, cronologia, histórico e parâmetros originais mesmo após mudanças
 de preferência/modelo; regenerar cria outro pedido com a escolha atual. Detalhes
 `Modelo e raciocínio` permitem consultar os parâmetros de cada resposta.
@@ -127,7 +128,7 @@ preferências. Frontend/callable devem ser liberados juntos.
 `functions/src/chapterChat.mjs` controla autoria, estados, origem do provedor,
 limites, persistência e aceite. A callable `chapterChat` usa Auth/App Check,
 `us-central1`, timeout de 120 segundos e o segredo existente
-`BOOK_GENERATION_GEMINI_KEY` com `BOOK_SYNOPSIS_MODEL`. Geração da plataforma
+`BOOK_GENERATION_GEMINI_KEY`; `BOOK_SYNOPSIS_MODEL` é fallback para pedidos legados. Geração da plataforma
 ocorre no servidor; OpenAI/Gemini BYOK usam serviços locais. Os três caminhos
 oferecem streaming real e conservam papéis do histórico.
 
@@ -180,3 +181,5 @@ Capítulo em remoção é indisponível. [Evidência](entregas/2026-10-22-writer
 inclui falha nativa de gravação sem débito e repetição concorrente com cobrança
 única; sugestões são fixtures, sem nova validação de IA externa em produção.
 Não houve deploy; a implantação segue a ordem e os gates P1 da ADR 0070.
+
+Veja [configurações de provedor](ai-provider-settings.md) para modelos, migração e precedência das preferências.
