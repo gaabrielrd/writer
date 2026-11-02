@@ -1,7 +1,7 @@
 import { Link, useSearchParams, useLocation } from 'react-router';
 import { ArrowLeft, Users, Settings2 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
-import { Button, Card, PageHeader } from '@/shared/ui';
+import { Button, Card } from '@/shared/ui';
 import { PersonaManager } from './PersonaManager';
 import { BYOKSettingsDialog } from './BYOKSettingsDialog';
 import styles from './Personas.module.css';
@@ -26,23 +26,17 @@ export function AISettingsPage() {
     setParams({ tab }, { state });
   };
   return (
-    <div className={styles.settingsPage}>
-      <PageHeader
-        title="Inteligência artificial"
-        description="Configure a conexão e as vozes que acompanham sua escrita."
-        breadcrumbs={
-          state?.returnTo && (
-            <Link to={returnTo} className={styles.backLink}>
-              <ArrowLeft className="icon icon-sm" aria-hidden="true" />
-              {returnTo.includes('/editor/')
-                ? 'Voltar ao editor'
-                : returnTo.startsWith('/books/')
-                  ? 'Voltar ao livro'
-                  : 'Voltar'}
-            </Link>
-          )
-        }
-      />
+    <section className={styles.settingsPage} aria-label="Inteligência artificial">
+      {state?.returnTo && (
+        <Link to={returnTo} className={styles.backLink}>
+          <ArrowLeft className="icon icon-sm" aria-hidden="true" />
+          {returnTo.includes('/editor/')
+            ? 'Voltar ao editor'
+            : returnTo.startsWith('/books/')
+              ? 'Voltar ao livro'
+              : 'Voltar'}
+        </Link>
+      )}
       <div
         className={styles.tabBar}
         role="tablist"
@@ -90,6 +84,6 @@ export function AISettingsPage() {
           </Card>
         )}
       </section>
-    </div>
+    </section>
   );
 }

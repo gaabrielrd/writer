@@ -8,6 +8,8 @@ import {
   ScrollText,
   FolderOpen,
   ArrowRight,
+  Sparkles,
+  Map,
 } from 'lucide-react';
 import { BookRestoreDialog, BookRestorePreparations } from '@/features/book-portability';
 import {
@@ -110,12 +112,31 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
                 </Button>
               }
             >
-              <DropdownItem onSelect={() => setForm('book')}>Livro</DropdownItem>
-              <DropdownItem onSelect={() => void navigate('/books/new/assisted')}>
+              <DropdownItem className={styles.creationMenuItem} onSelect={() => setForm('book')}>
+                <BookOpen className="icon icon-sm" aria-hidden="true" />
+                Livro
+              </DropdownItem>
+              <DropdownItem
+                className={styles.creationMenuItem}
+                onSelect={() => void navigate('/books/new/assisted')}
+              >
+                <Sparkles className="icon icon-sm" aria-hidden="true" />
                 Livro com IA
               </DropdownItem>
-              <DropdownItem onSelect={() => setForm('adventure')}>Aventura</DropdownItem>
-              <DropdownItem onSelect={() => setForm('campaign')}>Campanha</DropdownItem>
+              <DropdownItem
+                className={styles.creationMenuItem}
+                onSelect={() => setForm('adventure')}
+              >
+                <ScrollText className="icon icon-sm" aria-hidden="true" />
+                Aventura
+              </DropdownItem>
+              <DropdownItem
+                className={styles.creationMenuItem}
+                onSelect={() => setForm('campaign')}
+              >
+                <Map className="icon icon-sm" aria-hidden="true" />
+                Campanha
+              </DropdownItem>
             </Dropdown>
           )
         }

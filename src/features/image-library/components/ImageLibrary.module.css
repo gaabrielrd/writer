@@ -40,3 +40,26 @@
   display: grid;
   gap: var(--space-4);
 }
+
+.libraryScreen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+.pageContent {
+  width: 100%;
+}
+.emptyPage {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  flex: 1;
+}
+.emptyPage > [data-slot='empty-state'],
+.emptyPage > [data-slot='error-state'] {
+  margin-block: 0;
+  align-self: center;
+}
+.emptyPage > .grid:empty {
+  display: none;
+}

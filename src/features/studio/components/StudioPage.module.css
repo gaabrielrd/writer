@@ -315,3 +315,7 @@
     min-height: 44px;
   }
 }
+
+.creationMenuItem {
+  gap: var(--space-3);
+}

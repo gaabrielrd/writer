@@ -220,9 +220,6 @@
   min-width: 0;
   box-sizing: border-box;
 }
-.settingsPage > [data-slot='page-header'] {
-  margin-bottom: 0;
-}
 .backLink {
   display: inline-flex;
   align-items: center;

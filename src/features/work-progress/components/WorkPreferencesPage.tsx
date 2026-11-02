@@ -1,6 +1,6 @@
 import { Navigate } from 'react-router';
 import { useAuth } from '@/features/auth';
-import { Card, Dropdown, LoadingState, PageHeader, useWorkspaceLayout } from '@/shared/ui';
+import { Card, Dropdown, LoadingState, useWorkspaceLayout } from '@/shared/ui';
 import { WorkPreferencesPanel } from './WorkPreferencesPanel';
 import styles from './WorkProgress.module.css';
 
@@ -10,11 +10,7 @@ export function WorkPreferencesPage() {
   if (loading) return <LoadingState label="Carregando preferências…" />;
   if (!user) return <Navigate to="/login" replace />;
   return (
-    <div className={styles.preferencesPage}>
-      <PageHeader
-        title="Preferências"
-        description="Ajuste como o Writer apresenta as informações da sua conta."
-      />
+    <section className={styles.preferencesPage} aria-label="Preferências">
       <Card className={styles.preferencesCard}>
         <h2>Área de trabalho</h2>
         <p className={styles.hint}>
@@ -41,6 +37,6 @@ export function WorkPreferencesPage() {
         <p className={styles.hint}>O fuso salvo será usado ao apresentar sua atividade recente.</p>
         <WorkPreferencesPanel key={user.uid} />
       </Card>
-    </div>
+    </section>
   );
 }

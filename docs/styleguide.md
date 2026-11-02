@@ -411,3 +411,13 @@ ou BYOK. Firebase apresenta modelo e raciocínio Médio/Alto; BYOK apresenta
 provedor, chave em campo de senha e modelo personalizado. O formulário usa
 Input, Dropdown, Alert e Button compartilhados, com salvar explícito,
 mensagem de erro e restauração. Não apresentar temperatura ou tooltip sobre ela.
+
+Biblioteca de Imagens, Publicações, Catálogo e Biblioteca usam o título
+contextual da barra principal, sem repetir PageHeader explicativo no corpo.
+Estados vazios dessas páginas ocupam o centro horizontal e vertical da área
+disponível. Na biblioteca de imagens, falhas iniciais têm o mesmo alinhamento;
+erros com imagens já carregadas permanecem junto do conteúdo.
+
+Preferências e Inteligência artificial também usam somente o título da
+barra contextual. Seus títulos de grupos, formulários e abas permanecem no
+corpo; o retorno contextual da IA é preservado quando aberto de um projeto.

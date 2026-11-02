@@ -10,7 +10,6 @@ import {
   ErrorState,
   Input,
   LoadingState,
-  PageHeader,
 } from '@/shared/ui';
 import { Navigate, useLocation } from 'react-router';
 import {
@@ -21,7 +20,13 @@ import {
 import type { LibraryImage } from '../model/image';
 import styles from './ImageLibrary.module.css';
 
-function ImageGrid({ onSelect }: { onSelect?: (image: LibraryImage) => void }) {
+function ImageGrid({
+  onSelect,
+  fullPage = false,
+}: {
+  onSelect?: (image: LibraryImage) => void;
+  fullPage?: boolean;
+}) {
   const { user } = useAuth();
   const [images, setImages] = useState<LibraryImage[]>([]);
   const [migrationPending, setMigrationPending] = useState(false);
@@ -98,7 +103,13 @@ function ImageGrid({ onSelect }: { onSelect?: (image: LibraryImage) => void }) {
     }
   }
   return (
-    <div className={styles.page}>
+    <div
+      className={[
+        styles.page,
+        fullPage ? styles.pageContent : '',
+        fullPage && visibleImages.length === 0 ? styles.emptyPage : '',
+      ].join(' ')}
+    >
       {error && <ErrorState error={error} onRetry={() => void load(cursor ?? undefined)} />}
       {loading && <LoadingState />}
       {!loading && !error && visibleImages.length === 0 && (
@@ -267,12 +278,8 @@ export function ImageLibraryPage() {
   if (loading) return <LoadingState />;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   return (
-    <section>
-      <PageHeader
-        title="Biblioteca de Imagens"
-        description="Suas imagens aceitas da IA. Reutilize nas capas, fichas e aventuras sem consumir novos créditos."
-      />
-      <ImageGrid key={user.uid} />
+    <section className={styles.libraryScreen} aria-label="Biblioteca de Imagens">
+      <ImageGrid key={user.uid} fullPage />
     </section>
   );
 }
