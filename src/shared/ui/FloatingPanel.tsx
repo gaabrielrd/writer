@@ -95,7 +95,6 @@ export function FloatingPanel({
     <section
       ref={panel}
       aria-labelledby={id}
-      data-theme={base}
       data-floating-panel=""
       inert={blocked}
       className={styles.panel}

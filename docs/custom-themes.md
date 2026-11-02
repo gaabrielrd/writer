@@ -43,7 +43,8 @@ Valores aceitos têm formato `#RRGGBB`. Os pares essenciais de leitura são
 verificados com razão mínima 4,5 e campos/foco com razão 3. O formulário bloqueia
 cores inválidas e o salvamento bloqueia contraste insuficiente. Corrigir
 automaticamente é explícito; combinações conflitantes ainda mostram seus avisos.
-O painel usa as cores estáveis do tema base, mantendo as ações de recuperação legíveis.
+O painel herda os tokens da aparência aplicada à plataforma, acompanhando a prévia
+em tempo real. Comparar com o tema anterior também atualiza as cores do painel.
 
 Salvar confirma a persistência antes de fechar. Cancelar descarta a prévia.
 Fechar ou trocar a seleção com alterações oferece salvar, descartar ou continuar.
@@ -94,3 +95,11 @@ Use WRITER_VISUAL_PORT exclusivo por checkout.
 Compartilhar, importar/exportar temas e personalizar fontes/layout ficam fora
 desta versão. Não há publicação automática: as novas regras precisam ser
 publicadas antes de disponibilizar a interface em produção.
+
+O controle de intensidade omite textos e valor visíveis. Dois círculos, antes e
+depois do slider, mostram as cores dos extremos conforme a base e a matiz.
+O nome, o valor e a descrição dos extremos permanecem acessíveis ao leitor de tela.
+
+Sem temas salvos, o seletor apresenta o cabeçalho e o botão Criar novo, sem
+cartão de estado vazio. O botão ocupa toda a largura; os textos são compactos
+e o cabeçalho e a ação de criar usam cor discreta.

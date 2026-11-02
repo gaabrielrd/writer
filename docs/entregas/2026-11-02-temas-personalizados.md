@@ -167,3 +167,25 @@ Nenhuma dependência adicionada. Permanecem os avisos preexistentes de tamanho
 de bundle e importação dinâmica DOCX. Push, PR, CI remoto e deploy não
 executados. Publicar as regras atualizadas antes do frontend em produção;
 a prévia com fixtures não depende desse deploy.
+
+## Incremento — 2026-11-02: seletor compacto e extremos visuais
+
+O slider de fundo passa a exibir círculos com as cores dos extremos em vez
+de título, valor e escala visíveis, preservando o nome acessível e o teclado.
+O seletor remove o cartão vazio, reduz a tipografia e oferece Criar novo em
+toda a largura.
+
+Ajustes locais na mesma worktree. Por instrução expressa do usuário, não foram
+executados testes após o ajuste do seletor. A validação anterior dos círculos
+foi interrompida; seus seis cenários de navegador já haviam passado. Não se
+declara validação completa deste incremento. Sem push ou deploy.
+
+## Incremento — 2026-11-02: cores da prévia no painel
+
+O próprio painel de edição acompanha os tokens da prévia em tempo real,
+incluindo superfícies, campos, bordas e ações. Foi removida a declaração local
+de tema base que substituía os tokens herdados. Comparar com o tema anterior
+também acompanha a aparência exibida pela plataforma.
+
+Alterados FloatingPanel e documentação de temas. Sem execução de testes ou
+validação completa, conforme instrução expressa do usuário. Sem push ou deploy.

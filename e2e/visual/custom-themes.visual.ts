@@ -142,6 +142,20 @@ test('pickers e controles de fundo respeitam a base atual e persistem os ajustes
   await expect(panel.getByText('Base do tema', { exact: true })).toHaveCount(0);
   await panel.getByPlaceholder('Nome', { exact: true }).fill('Controles do fundo');
   const intensity = panel.getByRole('slider', { name: 'Intensidade', exact: true });
+  await expect(panel.getByText('Intensidade', { exact: true })).not.toBeVisible();
+  await expect(panel.locator('output')).not.toBeVisible();
+  await expect(
+    panel.getByText(dark ? '0 · Preto' : '0 · Branco', { exact: true }),
+  ).not.toBeVisible();
+  const start = panel.getByTitle('Cor inicial do fundo');
+  const end = panel.getByTitle('Cor final do fundo');
+  await expect(start).toHaveCSS('background-color', dark ? 'rgb(0, 0, 0)' : 'rgb(255, 255, 255)');
+  await expect(end).toHaveCSS('background-color', dark ? 'rgb(48, 48, 48)' : 'rgb(224, 224, 224)');
+  const startBounds = await start.boundingBox(),
+    endBounds = await end.boundingBox(),
+    rangeBounds = await intensity.boundingBox();
+  expect(startBounds!.x + startBounds!.width).toBeLessThan(rangeBounds!.x);
+  expect(endBounds!.x).toBeGreaterThan(rangeBounds!.x + rangeBounds!.width);
   await intensity.focus();
   await page.keyboard.press('Home');
   await expect(page.locator('html')).toHaveCSS(

@@ -364,3 +364,7 @@ No editor de temas, nome e base usam nome acessível sem label visual; Nome é o
 placeholder. Todas as cores oferecem Input type=color ao lado do hexadecimal.
 Slider de intensidade e picker de matiz compõem uma linha abaixo da base.
 A escala preserva a luminosidade e respeita Claro/Escuro na criação.
+
+O Slider aceita `hideLabels` para controles com indicadores visuais próprios.
+Essa opção oculta título, valor e escala visuais, preservando nome acessível,
+valor e descrição dos extremos no input. O padrão dos demais sliders não muda.

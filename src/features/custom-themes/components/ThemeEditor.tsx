@@ -5,6 +5,7 @@ import { type ColorToken, type ThemePalette } from '@/shared/theme';
 import {
   generatePalette,
   backgroundSettings,
+  backgroundColor,
   isHex,
   paletteIssues,
   repairPalette,
@@ -163,17 +164,42 @@ export function ThemeEditor({
         ]}
       />
       <div className={styles.backgroundControls}>
-        <Slider
-          label="Intensidade"
-          value={backgroundSettings(draft).backgroundIntensity}
-          low={draft.base === 'dark' ? 'Preto' : 'Branco'}
-          high={draft.base === 'dark' ? 'Cinza-escuro' : 'Cinza-claro'}
-          onValueChange={(backgroundIntensity) => {
-            const overrides = { ...draft.overrides };
-            delete overrides.background;
-            update({ backgroundIntensity, overrides });
-          }}
-        />
+        <div className={styles.intensityControls}>
+          <span
+            className={styles.endpoint}
+            aria-hidden="true"
+            title="Cor inicial do fundo"
+            style={{
+              backgroundColor: backgroundColor(draft.base, {
+                ...backgroundSettings(draft),
+                backgroundIntensity: 0,
+              }),
+            }}
+          />
+          <Slider
+            hideLabels
+            label="Intensidade"
+            value={backgroundSettings(draft).backgroundIntensity}
+            low={draft.base === 'dark' ? 'Preto' : 'Branco'}
+            high={draft.base === 'dark' ? 'Cinza-escuro' : 'Cinza-claro'}
+            onValueChange={(backgroundIntensity) => {
+              const overrides = { ...draft.overrides };
+              delete overrides.background;
+              update({ backgroundIntensity, overrides });
+            }}
+          />
+          <span
+            className={styles.endpoint}
+            aria-hidden="true"
+            title="Cor final do fundo"
+            style={{
+              backgroundColor: backgroundColor(draft.base, {
+                ...backgroundSettings(draft),
+                backgroundIntensity: 100,
+              }),
+            }}
+          />
+        </div>
         <div className={styles.backgroundHue}>
           <Input
             type="color"

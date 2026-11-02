@@ -18,7 +18,6 @@ import {
   AnchoredPanel,
   LoadingState,
   ErrorState,
-  EmptyState,
 } from '@/shared/ui';
 import {
   emptyCatalog,
@@ -288,11 +287,13 @@ function ThemeSession({ uid, children }: { uid: string | null; children: ReactNo
       {open && (
         <AnchoredPanel anchor={trigger} label="Temas personalizados" onClose={closeList}>
           <div className={styles.listTitle}>
-            <strong>Temas personalizados</strong>
+            <span>Temas personalizados</span>
             <span>{catalog.themes.length}/5</span>
           </div>
           <Button
             variant="ghost"
+            size="sm"
+            className={styles.createTheme}
             disabled={loading || !!error || catalog.themes.length >= MAX_THEMES}
             onClick={() => edit(newTheme(resolvedTheme === 'dark' ? 'dark' : 'light'))}
           >
@@ -314,17 +315,12 @@ function ThemeSession({ uid, children }: { uid: string | null; children: ReactNo
                 setRetry((r) => r + 1);
               }}
             />
-          ) : !catalog.themes.length ? (
-            <EmptyState
-              title="Crie seu primeiro tema"
-              className="p-3 my-2"
-              icon={<UserRoundPen className="icon" aria-hidden="true" />}
-            />
           ) : (
             catalog.themes.map((item) => (
               <div key={item.id} className={styles.listRow}>
                 <Button
                   variant="ghost"
+                  className={styles.themeName}
                   aria-label={'Aplicar tema ' + item.name}
                   aria-pressed={customTheme?.id === item.id}
                   onClick={() => apply(item)}

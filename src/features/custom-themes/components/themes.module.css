@@ -22,7 +22,19 @@
   justify-content: space-between;
   gap: var(--space-2);
   padding: var(--space-2);
+  font-size: var(--text-xs);
+  color: hsl(var(--muted-foreground));
+}
+.createTheme {
+  width: 100%;
+  justify-content: flex-start;
   font-size: var(--text-sm);
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+.themeName {
+  font-size: var(--text-sm);
+  font-weight: 400;
 }
 .listRow {
   display: flex;
@@ -193,4 +205,21 @@
 .backgroundControls > div:first-child {
   flex: 1;
   min-width: 0;
+}
+
+.intensityControls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.intensityControls > div {
+  flex: 1;
+  min-width: 0;
+}
+.endpoint {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border-radius: 50%;
+  border: var(--border-width) solid hsl(var(--border));
 }
