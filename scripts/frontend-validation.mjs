@@ -40,6 +40,12 @@ export function frontendFingerprint(root) {
       nodeEnv: process.env.NODE_ENV ?? null,
       tz: process.env.TZ ?? null,
       ci: process.env.CI ?? null,
+      options: process.env.NODE_OPTIONS ?? null,
+      configEnv: Object.fromEntries(
+        Object.entries(process.env)
+          .filter(([key]) => /^(VITE_|WRITER_)/.test(key))
+          .sort(([a], [b]) => a.localeCompare(b)),
+      ),
     }),
   );
   for (const name of [...new Set(files.stdout.split('\0').filter(relevant))].sort()) {
@@ -130,7 +136,7 @@ export function hasFrontendValidation(root) {
   }
 }
 
-export function runValidatedFrontend(root, { run = spawnSync } = {}) {
+export function runValidatedFrontend(root, { run = spawnSync, args = [] } = {}) {
   invalidateFrontendValidation(root);
   const fingerprint = frontendFingerprint(root);
   const result = run(
@@ -142,11 +148,12 @@ export function runValidatedFrontend(root, { run = spawnSync } = {}) {
       '--reporter=default',
       '--reporter=json',
       '--outputFile.json=coverage/results.json',
+      ...args,
     ],
     { cwd: root, stdio: 'inherit' },
   );
   if (result.error) throw result.error;
-  if (result.status === 0) {
+  if (result.status === 0 && args.length === 0) {
     if (recordFrontendValidation(root, fingerprint))
       console.log('Validação local do frontend registrada para o pre-push.');
     else
@@ -156,7 +163,7 @@ export function runValidatedFrontend(root, { run = spawnSync } = {}) {
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    process.exitCode = runValidatedFrontend(rootPath);
+    process.exitCode = runValidatedFrontend(rootPath, { args: process.argv.slice(2) });
   } catch (error) {
     console.error(error.message);
     process.exitCode = 1;

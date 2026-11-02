@@ -154,3 +154,31 @@ test('environment changes invalidate the local result without changing files', (
   process.env.CI = previous === 'true' ? 'false' : 'true';
   assert.equal(hasFrontendValidation(root), false);
 });
+
+test('filtered coverage forwards arguments and never records a full-suite approval', (t) => {
+  const { root } = fixture(t);
+  let actual;
+  assert.equal(
+    runValidatedFrontend(root, {
+      args: ['src/value.test.ts', '-t', 'one case'],
+      run: (_command, args) => {
+        actual = args;
+        return { status: 0 };
+      },
+    }),
+    0,
+  );
+  assert.deepEqual(actual.slice(-3), ['src/value.test.ts', '-t', 'one case']);
+  assert.equal(hasFrontendValidation(root), false);
+});
+test('Vite environment changes invalidate approval', (t) => {
+  const { root } = fixture(t);
+  const previous = process.env.VITE_WRITER_CACHE_TEST;
+  t.after(() => {
+    if (previous === undefined) delete process.env.VITE_WRITER_CACHE_TEST;
+    else process.env.VITE_WRITER_CACHE_TEST = previous;
+  });
+  approved(root);
+  process.env.VITE_WRITER_CACHE_TEST = 'changed';
+  assert.equal(hasFrontendValidation(root), false);
+});

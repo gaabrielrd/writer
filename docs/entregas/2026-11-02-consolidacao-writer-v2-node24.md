@@ -110,3 +110,7 @@ real, após conferir o diff dos arquivos testados.
 Resultado do ajuste: 24 testes direcionados aprovados; lint dos cinco scripts
 e validação da documentação aprovados. A suíte completa anterior permanece
 como evidência do código de produto inalterado.
+
+A conferência de filtros e ambiente repetiu somente seis casos afetados, todos
+aprovados. Filtros de arquivo/nome são preservados e não geram aprovação de
+suíte completa; variáveis Vite e opções do Node invalidam o registro.

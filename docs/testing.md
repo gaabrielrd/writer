@@ -3382,3 +3382,7 @@ configuração ou dependências retomam os testes afetados pelo destino real, co
 fallback completo. Alterações apenas em documentação/comandos do hook não
 exigem repetir testes de frontend; valide os scripts alterados separadamente.
 A CI continua executando os portões completos.
+
+Filtros enviados após -- continuam sendo encaminhados ao Vitest. Execuções
+filtradas não geram registro de aprovação completa. Mudanças em NODE_OPTIONS
+ou variáveis VITE_/WRITER_ também invalidam o reaproveitamento.
