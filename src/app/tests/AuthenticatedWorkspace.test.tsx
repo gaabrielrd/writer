@@ -11,7 +11,7 @@ vi.mock('@/features/auth', () => ({
 }));
 vi.mock('@/features/books', () => ({ BookNavigation: () => null }));
 vi.mock('@/features/ai-assistant', () => ({ useAISettings: () => vi.fn() }));
-vi.mock('@/shared/theme', () => ({ ThemeSegmentedControl: () => <button>Tema</button> }));
+vi.mock('@/features/custom-themes', () => ({ CustomThemeSelector: () => <button>Tema</button> }));
 
 function setup() {
   render(

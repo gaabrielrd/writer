@@ -9,6 +9,7 @@ export interface SliderProps {
   high: string;
   description?: string;
   disabled?: boolean;
+  hideLabels?: boolean;
 }
 export function Slider({
   label,
@@ -18,11 +19,12 @@ export function Slider({
   high,
   description,
   disabled,
+  hideLabels = false,
 }: SliderProps) {
   const id = useId();
   return (
     <div className={styles.field}>
-      <div className={styles.heading}>
+      <div className={styles.heading} hidden={hideLabels}>
         <label htmlFor={id}>{label}</label>
         <output htmlFor={id}>{value}/100</output>
       </div>
@@ -36,10 +38,15 @@ export function Slider({
         value={value}
         disabled={disabled}
         onChange={(event) => onValueChange(Number(event.target.value))}
-        aria-describedby={`${id}-scale${description ? ` ${id}-description` : ''}`}
+        aria-label={hideLabels ? label : undefined}
+        aria-describedby={
+          [!hideLabels && `${id}-scale`, description && `${id}-description`]
+            .filter(Boolean)
+            .join(' ') || undefined
+        }
         aria-valuetext={`${value} de 100; 0: ${low}; 100: ${high}`}
       />
-      <div id={`${id}-scale`} className={styles.scale}>
+      <div id={`${id}-scale`} className={styles.scale} hidden={hideLabels}>
         <span>0 · {low}</span>
         <span>100 · {high}</span>
       </div>

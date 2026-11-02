@@ -296,7 +296,7 @@ Os indicadores usam o fundo das tags correspondentes (`accent`, `success`,
 Marcas reservam 1 px de intervalo; ocorrências próximas são agrupadas, com
 categorias lado a lado para evitar sobreposição de cores.
 `--badge-success-background` acompanha o verde da variante `success` do Badge,
-incluindo sua preferência de esquema de cor do sistema. Um retângulo com borda
+seguindo a base clara/escura selecionada. Um retângulo com borda
 e fundo semântico indica o trecho visível. O controle
 mantém foco visível, rótulos de destino e tooltip pelo componente compartilhado.
 Em celular, a faixa acompanha a viewport durante a rolagem da página, sem
@@ -421,3 +421,26 @@ erros com imagens já carregadas permanecem junto do conteúdo.
 Preferências e Inteligência artificial também usam somente o título da
 barra contextual. Seus títulos de grupos, formulários e abas permanecem no
 corpo; o retorno contextual da IA é preservado quando aberto de um projeto.
+
+## Criação de temas
+
+A navegação usa Claro, Escuro, Sépia e Personalizados: no rodapé da lateral
+na área logada e no cabeçalho público. A lista ancorada tem
+seleção e ações em controles separados; menus de editar/remover usam Dropdown.
+FloatingPanel é não modal, recolhível, movível por ponteiro/teclado e fica
+abaixo dos modais. Suas cores acompanham a prévia aplicada à plataforma.
+FormSection organiza o Modo avançado com as 24 cores. Prévia afeta a aplicação
+inteira sem persistir ajustes. Veja [temas personalizados](custom-themes.md).
+
+As variantes dark acompanham a classe de tema, não a preferência do sistema.
+Badge de sucesso e marcas do minimapa compartilham o mesmo token, incluindo
+as paletas personalizadas. Fontes, dimensões e espaçamentos permanecem comuns.
+
+No editor de temas, nome e base usam nome acessível sem label visual; Nome é o
+placeholder. Todas as cores oferecem Input type=color ao lado do hexadecimal.
+Slider de intensidade e picker de matiz compõem uma linha abaixo da base.
+A escala preserva a luminosidade e respeita Claro/Escuro na criação.
+
+O Slider aceita `hideLabels` para controles com indicadores visuais próprios.
+Essa opção oculta título, valor e escala visuais, preservando nome acessível,
+valor e descrição dos extremos no input. O padrão dos demais sliders não muda.

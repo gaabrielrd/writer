@@ -4,7 +4,7 @@ import { Link, Outlet, useLocation } from 'react-router';
 import { AuthButton, CreditsBadge, useAuth } from '@/features/auth';
 import { BookNavigation } from '@/features/books';
 import { useAISettings } from '@/features/ai-assistant';
-import { ThemeSegmentedControl } from '@/shared/theme';
+import { CustomThemeSelector } from '@/features/custom-themes';
 import { Button, Card, Dialog, useWorkspaceLayout } from '@/shared/ui';
 import { StudioNavigation } from './StudioNavigation';
 import { workspaceLabel, workspaceSectionLabel } from './workspaceNavigation';
@@ -50,7 +50,7 @@ export function AuthenticatedWorkspace() {
               className={styles.footerControl}
             />
           )}
-          <ThemeSegmentedControl className={styles.footerControl} />
+          <CustomThemeSelector onOpenCustom={closeDrawer} />
         </div>
         <div className={styles.account}>
           <AuthButton

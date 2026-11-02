@@ -3995,3 +3995,12 @@ functions/src/chatGeneration.mjs. Functions validam a escolha da plataforma,
 registram o snapshot e mantêm geração e débito no servidor. A configuração local
 com chaves nunca é espalhada nos pedidos. Veja
 [configurações de provedor](ai-provider-settings.md).
+
+## Temas personalizados
+
+A feature custom-themes controla até cinco temas privados por conta, geração
+determinística, overrides e edição não modal. O ThemeProvider compartilhado
+conserva tema ativo e prévia separados e aplica os tokens na raiz, incluindo
+portais. Serviços transacionais e regras validam uma entrada por gravação e
+limitam o catálogo privado a cinco. A seleção local é isolada por UID.
+Veja [temas personalizados](custom-themes.md).
