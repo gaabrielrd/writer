@@ -49,3 +49,17 @@ Validação visual com fixtures locais, sem geração real de IA ou backend de
 produção. Sem commit, push ou deploy. `npm run validate` não executado, conforme
 a regra de reservá-lo para commit/merge ou pedido explícito. Alterações anteriores
 do checkout foram preservadas.
+
+## Ajuste de posicionamento — 2026-11-02
+
+A ideia e a entrevista agora ocupam a altura disponível do workspace. O campo
+de mensagem fica no rodapé; mensagens curtas ficam centralizadas verticalmente
+acima dele. Histórico longo rola em área própria, mantendo campo e ações no
+fundo. Respeita a área segura inferior e mantém Enter/Shift+Enter, foco, IME e
+recuperação existentes. Briefing, revisão e capa conservam rolagem de página.
+
+Validação desta rodada: sete testes de componente e seis cenários Chromium
+passaram em desktop/mobile, incluindo posição/altura, conversa longa, rolagem
+sem deslocar o campo, foco, criação completa e retomada em 320 px. Capturas
+desktop/mobile foram inspecionadas. Sem `npm run validate`, commit ou deploy
+nesta rodada.

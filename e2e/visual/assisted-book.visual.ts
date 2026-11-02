@@ -1,5 +1,43 @@
 import { capture, expect, expectDialogWithinViewport, test } from './support';
 
+test('mensagens ficam no centro e a caixa de resposta permanece no rodapé', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/books/new/assisted');
+  const idea = page.getByLabel('Sua ideia');
+  await expect(idea).toBeVisible();
+  const viewport = page.viewportSize()!;
+  const transcript = page.locator('[data-assisted-transcript]');
+  const area = (await transcript.boundingBox())!;
+  const stack = (await transcript.locator(':scope > div').boundingBox())!;
+  expect(Math.abs(stack.y + stack.height / 2 - area.y - area.height / 2)).toBeLessThan(3);
+  const input = (await idea.boundingBox())!;
+  expect(viewport.height - input.y - input.height).toBeLessThan(150);
+  expect(input.y).toBeGreaterThan(area.y + area.height - 1);
+  await capture(page, testInfo, 'criacao-assistida-chat-centralizado');
+  await idea.fill('Uma viagem entre ilhas. '.repeat(150));
+  await idea.press('Enter');
+  const response = page.getByLabel('Sua resposta');
+  await expect(response).toBeEnabled();
+  await response.fill('O oceano começou a desaparecer. '.repeat(100));
+  await response.press('Enter');
+  await expect(response).toHaveValue('');
+  await expect(response).toBeFocused();
+  const after = (await response.boundingBox())!;
+  expect(after.y).toBeGreaterThan(viewport.height / 2);
+  expect(after.y + after.height).toBeLessThan(viewport.height);
+  expect(await transcript.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
+    true,
+  );
+  await transcript.evaluate((element) => {
+    element.scrollTop = 0;
+  });
+  await expect(response).toBeInViewport();
+  const afterScroll = (await response.boundingBox())!;
+  expect(Math.abs(afterScroll.y - after.y)).toBeLessThan(1);
+  await capture(page, testInfo, 'criacao-assistida-conversa-com-rolagem');
+});
+
 test('ideia, entrevista, revisão privada, capa e compêndio criado', async ({ page }, testInfo) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();

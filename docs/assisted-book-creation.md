@@ -6,7 +6,9 @@ continua disponível. O fluxo exige login e backend implantado.
 ## Fluxo
 
 O fluxo começa com uma mensagem de boas-vindas do agente e segue em uma coluna
-de conversa. O progresso em cinco etapas complementa a entrevista. O campo de
+de conversa. Na ideia e na entrevista, o campo fica no rodapé da área útil;
+mensagens curtas ficam centralizadas no espaço acima e conversas longas rolam
+nessa área, mantendo a resposta disponível. O progresso em cinco etapas complementa a entrevista. O campo de
 mensagem tem nome acessível, sem label visual; Enter envia e Shift+Enter quebra
 a linha, preservando composição por IME. O foco retorna ao campo depois da
 resposta. “Ideias que reunimos” permite consultar decisões e reiniciar mediante

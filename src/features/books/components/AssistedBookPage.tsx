@@ -210,6 +210,7 @@ function AssistedCreation() {
     updatedAt: 0,
   })) as LoreEntity[];
   const answers = session?.messages.filter((item) => item.role === 'user').length ?? 0;
+  const chatting = phase === 'idea' || phase === 'interview';
   function startConversation() {
     if (disabled || !idea.trim() || !costs) return;
     void execute(
@@ -225,7 +226,7 @@ function AssistedCreation() {
   }
   if (loading) return <LoadingState label="Carregando planejamento..." />;
   return (
-    <section className={styles.page}>
+    <section className={styles.page} data-assisted-chat-layout={chatting}>
       {createdBookId && (
         <Alert title="Seu último livro foi criado">
           <Link to={`/books/${createdBookId}`}>Abrir livro criado</Link>
@@ -294,170 +295,183 @@ function AssistedCreation() {
         <p id="assisted-composer-help" className="sr-only">
           Enter envia a mensagem. Shift+Enter insere uma nova linha.
         </p>
-        <AgentMessage>
-          {phase === 'idea' || phase === 'interview' ? (
-            <>
-              <p className={styles.welcome}>Vamos dar vida ao seu próximo livro.</p>
-              <p>
-                Que história você tem vontade de contar? Pode ser uma ideia solta, um personagem ou
-                uma cena. Vamos descobrir o resto juntos.
-              </p>
-            </>
-          ) : phase === 'brief' ? (
-            <p>
-              Reuni o que conversamos. Confira se esta é a história que você quer contar e ajuste o
-              que precisar. Quando estiver do seu jeito, vou preparar uma proposta para o livro. Se
-              já houver uma proposta, a nova versão vai substituí-la.
-            </p>
-          ) : phase === 'review' ? (
-            <p>
-              Aqui está a proposta para o seu livro e as primeiras fichas do seu mundo. Explore,
-              ajuste e deixe tudo com a sua voz antes de escolhermos a capa. As fichas serão
-              privadas.
-            </p>
-          ) : (
-            <p>
-              Como você imagina a capa? Podemos criar uma juntos, escolher uma da sua biblioteca ou
-              deixar para depois. O livro só será criado quando você confirmar.
-            </p>
-          )}
-        </AgentMessage>
-        {phase === 'idea' && (
-          <form
-            className={styles.composer}
-            onSubmit={(event) => {
-              event.preventDefault();
-              startConversation();
-            }}
-          >
-            <Textarea
-              ref={composer}
-              aria-label="Sua ideia"
-              aria-describedby="assisted-composer-help"
-              placeholder="Me conte sua ideia…"
-              value={idea}
-              onChange={(event) => setIdea(event.target.value)}
-              maxLength={4000}
-              rows={3}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-                  event.preventDefault();
-                  startConversation();
-                }
-              }}
-            />
-            <Button
-              disabled={!idea.trim() || !costs}
-              type="submit"
-              size="icon"
-              aria-label="Começar conversa"
-            >
-              <ArrowUp className="icon icon-sm" aria-hidden="true" />
-            </Button>
-          </form>
-        )}
-        {session && phase === 'interview' && (
-          <div className={styles.conversation}>
-            <div role="log" aria-label="Conversa com a IA" aria-relevant="additions text">
-              <ol className={styles.messages}>
-                {session.messages.map((item, index) => (
-                  <li
-                    key={index}
-                    className={item.role === 'user' ? styles.userMessage : styles.assistantTurn}
-                  >
-                    {item.role === 'user' ? (
-                      <>
-                        <span className="sr-only">Você: </span>
-                        <p>{item.text}</p>
-                      </>
-                    ) : (
-                      <AgentMessage>
-                        <p>{item.text}</p>
-                      </AgentMessage>
-                    )}
-                  </li>
-                ))}
-              </ol>
-              <div ref={conversationEnd} />
-            </div>
-            {answers <= 8 && (
-              <form
-                className={styles.composer}
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (message.trim()) request('interview', 'interview', { message });
-                }}
-              >
-                <Textarea
-                  ref={composer}
-                  aria-label="Sua resposta"
-                  aria-describedby="assisted-composer-help"
-                  placeholder="Continue a conversa…"
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                  maxLength={4000}
-                  rows={3}
-                  onKeyDown={(event) => {
-                    if (
-                      event.key === 'Enter' &&
-                      !event.shiftKey &&
-                      !event.nativeEvent.isComposing
-                    ) {
-                      event.preventDefault();
-                      if (message.trim()) request('interview', 'interview', { message });
-                    }
-                  }}
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  aria-label="Enviar resposta"
-                  disabled={!message.trim()}
-                >
-                  <ArrowUp className="icon icon-sm" aria-hidden="true" />
-                </Button>
-              </form>
-            )}
-            <div className={styles.actions}>
-              {answers <= 8 && (
-                <Button
-                  variant="ghost"
-                  onClick={() =>
-                    request('interview', 'interview', {
-                      message:
-                        session.messages.length === 1
-                          ? ''
-                          : 'Sugira para mim as decisões desta pergunta.',
-                    })
-                  }
-                >
-                  {session.messages.length === 1 ? 'Fazer primeira pergunta' : 'Sugira para mim'}
-                </Button>
+        <div
+          className={chatting ? styles.chatTranscript : undefined}
+          data-assisted-transcript={chatting || undefined}
+        >
+          <div className={chatting ? styles.chatMessages : undefined}>
+            <AgentMessage>
+              {phase === 'idea' || phase === 'interview' ? (
+                <>
+                  <p className={styles.welcome}>Vamos dar vida ao seu próximo livro.</p>
+                  <p>
+                    Que história você tem vontade de contar? Pode ser uma ideia solta, um personagem
+                    ou uma cena. Vamos descobrir o resto juntos.
+                  </p>
+                </>
+              ) : phase === 'brief' ? (
+                <p>
+                  Reuni o que conversamos. Confira se esta é a história que você quer contar e
+                  ajuste o que precisar. Quando estiver do seu jeito, vou preparar uma proposta para
+                  o livro. Se já houver uma proposta, a nova versão vai substituí-la.
+                </p>
+              ) : phase === 'review' ? (
+                <p>
+                  Aqui está a proposta para o seu livro e as primeiras fichas do seu mundo. Explore,
+                  ajuste e deixe tudo com a sua voz antes de escolhermos a capa. As fichas serão
+                  privadas.
+                </p>
+              ) : (
+                <p>
+                  Como você imagina a capa? Podemos criar uma juntos, escolher uma da sua biblioteca
+                  ou deixar para depois. O livro só será criado quando você confirmar.
+                </p>
               )}
-              <Button
-                variant={session.ready ? 'primary' : 'ghost'}
-                onClick={() => setPhase('brief')}
-              >
-                Revisar ideia
-              </Button>
-            </div>
-            {session.ready && (
-              <AgentMessage>
-                <p>Já temos uma boa base. Vamos revisar a ideia e preparar seu livro?</p>
-              </AgentMessage>
+            </AgentMessage>
+            {session && phase === 'interview' && (
+              <>
+                <div role="log" aria-label="Conversa com a IA" aria-relevant="additions text">
+                  <ol className={styles.messages}>
+                    {session.messages.map((item, index) => (
+                      <li
+                        key={index}
+                        className={item.role === 'user' ? styles.userMessage : styles.assistantTurn}
+                      >
+                        {item.role === 'user' ? (
+                          <>
+                            <span className="sr-only">Você: </span>
+                            <p>{item.text}</p>
+                          </>
+                        ) : (
+                          <AgentMessage>
+                            <p>{item.text}</p>
+                          </AgentMessage>
+                        )}
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                {session.ready && (
+                  <AgentMessage>
+                    <p>Já temos uma boa base. Vamos revisar a ideia e preparar seu livro?</p>
+                  </AgentMessage>
+                )}
+                <div ref={conversationEnd} />
+              </>
             )}
-            <details className={styles.notes}>
-              <summary>Ideias que reunimos</summary>
-              <p className={styles.prose}>
-                {session.brief || 'Vamos reunir suas primeiras decisões nesta conversa.'}
-              </p>
-              <p>Sessão disponível até {date(session.expiresAt)}.</p>
-              <Button variant="ghost" onClick={() => setRestart(true)}>
-                Começar outra ideia
-              </Button>
-            </details>
           </div>
-        )}
+        </div>
+        <div className={chatting ? styles.chatDock : undefined} hidden={!chatting}>
+          {phase === 'idea' && (
+            <form
+              className={styles.composer}
+              onSubmit={(event) => {
+                event.preventDefault();
+                startConversation();
+              }}
+            >
+              <Textarea
+                ref={composer}
+                aria-label="Sua ideia"
+                aria-describedby="assisted-composer-help"
+                placeholder="Me conte sua ideia…"
+                value={idea}
+                onChange={(event) => setIdea(event.target.value)}
+                maxLength={4000}
+                rows={3}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                    event.preventDefault();
+                    startConversation();
+                  }
+                }}
+              />
+              <Button
+                disabled={!idea.trim() || !costs}
+                type="submit"
+                size="icon"
+                aria-label="Começar conversa"
+              >
+                <ArrowUp className="icon icon-sm" aria-hidden="true" />
+              </Button>
+            </form>
+          )}
+          {session && phase === 'interview' && (
+            <div className={styles.conversation}>
+              {answers <= 8 && (
+                <form
+                  className={styles.composer}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (message.trim()) request('interview', 'interview', { message });
+                  }}
+                >
+                  <Textarea
+                    ref={composer}
+                    aria-label="Sua resposta"
+                    aria-describedby="assisted-composer-help"
+                    placeholder="Continue a conversa…"
+                    value={message}
+                    onChange={(event) => setMessage(event.target.value)}
+                    maxLength={4000}
+                    rows={3}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === 'Enter' &&
+                        !event.shiftKey &&
+                        !event.nativeEvent.isComposing
+                      ) {
+                        event.preventDefault();
+                        if (message.trim()) request('interview', 'interview', { message });
+                      }
+                    }}
+                  />
+                  <Button
+                    type="submit"
+                    size="icon"
+                    aria-label="Enviar resposta"
+                    disabled={!message.trim()}
+                  >
+                    <ArrowUp className="icon icon-sm" aria-hidden="true" />
+                  </Button>
+                </form>
+              )}
+              <div className={styles.actions}>
+                {answers <= 8 && (
+                  <Button
+                    variant="ghost"
+                    onClick={() =>
+                      request('interview', 'interview', {
+                        message:
+                          session.messages.length === 1
+                            ? ''
+                            : 'Sugira para mim as decisões desta pergunta.',
+                      })
+                    }
+                  >
+                    {session.messages.length === 1 ? 'Fazer primeira pergunta' : 'Sugira para mim'}
+                  </Button>
+                )}
+                <Button
+                  variant={session.ready ? 'primary' : 'ghost'}
+                  onClick={() => setPhase('brief')}
+                >
+                  Revisar ideia
+                </Button>
+              </div>
+              <details className={styles.notes}>
+                <summary>Ideias que reunimos</summary>
+                <p className={styles.prose}>
+                  {session.brief || 'Vamos reunir suas primeiras decisões nesta conversa.'}
+                </p>
+                <p>Sessão disponível até {date(session.expiresAt)}.</p>
+                <Button variant="ghost" onClick={() => setRestart(true)}>
+                  Começar outra ideia
+                </Button>
+              </details>
+            </div>
+          )}
+        </div>
         {session && phase === 'brief' && (
           <Card className={styles.panel}>
             <Textarea

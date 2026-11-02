@@ -199,6 +199,10 @@ capítulos, atos, minimapa e personas permanecem intactos.
 ## Detalhes do livro
 
 A criação assistida usa uma conversa central de até 760 px. Mensagens do agente
+ficam centralizadas verticalmente na área livre durante a ideia e a entrevista;
+o histórico longo tem rolagem independente e o campo de resposta fica no rodapé
+do workspace, respeitando a área segura inferior. Briefing, revisão e capa
+mantêm seu fluxo normal de página. As mensagens do agente
 apresentam a ideia e orientam briefing, revisão e capa; falas do usuário usam
 superfície secundária. O campo de mensagem não possui rótulo visual nem hint;
 mantém nome acessível, envio por Enter, quebra por Shift+Enter e respeito à
