@@ -968,6 +968,7 @@ function EditorSession() {
           </Alert>
         )}
         <RichEditor
+          chapterLayout
           workspaceExpanded={expanded}
           chatOpen={activePanel === 'chat'}
           onOpenChat={(action) => {

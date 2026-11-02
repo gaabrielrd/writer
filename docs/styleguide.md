@@ -110,6 +110,16 @@ do manuscrito. Landing page, login e leitor público mantêm sua composição.
   shell autenticado; o manuscrito mantém sua fonte e entrelinha.
 - **Toque:** navegação e gatilhos têm pelo menos 44 px em ponteiros de toque.
   Recolher a lateral amplia o conteúdo sem remontar o editor.
+
+A Home combina um destaque editorial curto, desenho de livro/pena e acesso à
+criação com IA. Retomadas usam cartões compactos com identidade gráfica por tipo,
+título, data e ação de largura intrínseca; não consultam capas nem copiam conteúdo
+extra para o histórico. Atalhos são linhas com ícone e seta, sem blocos explicativos.
+Projetos conserva a lista e suas capas reais em 44 × 66 px. Importação mantém
+cartões compactos e as operações conservam seus controles de recuperação.
+Nos cabeçalhos, descrições e botões de ponteiro preciso são discretos; em toque,
+preservam-se as áreas de interação. Badges usam somente a largura do conteúdo.
+
 - **Área pública:** conserva a barra em cápsula e o fundo ambiente descritos
   abaixo. Não aplique a densidade do estúdio ao leitor público.
 
@@ -188,12 +198,21 @@ capítulos, atos, minimapa e personas permanecem intactos.
 
 ## Detalhes do livro
 
-A criação assistida usa página própria com progresso em cinco etapas, conversa
-e resumo lado a lado em telas largas, empilhados no celular. Revisão e fichas
-usam cards; edição reutiliza o formulário de lore por seções, com visibilidade
-privada fixa. A capa conserva 2:3. A mudança de etapa move o foco ao título;
-durante operações, campos ficam bloqueados e o status é anunciado. Preços,
-expiração e recuperação de respostas incertas aparecem junto das ações.
+A criação assistida usa uma conversa central de até 760 px. Mensagens do agente
+apresentam a ideia e orientam briefing, revisão e capa; falas do usuário usam
+superfície secundária. O campo de mensagem não possui rótulo visual nem hint;
+mantém nome acessível, envio por Enter, quebra por Shift+Enter e respeito à
+composição de texto. O foco retorna ao campo após cada resposta. As decisões
+ficam em “Ideias que reunimos”, recolhido por padrão; “Revisar ideia” encerra
+a entrevista explicitamente. O progresso numerado em cinco etapas é complementar;
+no celular, somente a etapa atual mostra seu nome visualmente.
+
+Revisão e fichas usam cards; edição reutiliza o formulário de lore por seções,
+com visibilidade privada fixa. A capa conserva 2:3. Etapas de revisão levam o foco
+ao título acessível. Operações bloqueiam os campos e anunciam status. Preços e
+privacidade ficam em uma seção recolhível, com total/saldo e confirmação explícita
+visíveis na criação. Avisos de expiração e recuperação incerta permanecem junto
+das ações.
 
 A sinopse começa limitada a duas linhas. O controle discreto “Mais” expande o
 texto completo; “Menos” recolhe novamente e informa o estado por `aria-expanded`.
@@ -242,6 +261,15 @@ do usuário do header e reutiliza o mesmo diálogo em todas as páginas. A barra
 contextual do capítulo usa espaçamento discreto; editor e compêndio usam superfícies
 opacas, controles compactos e estados ativos discretos. O manuscrito conserva
 Georgia, 18 px e entrelinha 1,85 em escrita e leitura.
+
+Na edição de capítulo, o cabeçalho e as ferramentas ocupam toda a largura útil
+do workspace. Somente a coluna da prosa tem limite de 720 px, centralizada em
+sua área de escrita, inclusive em tela cheia. O minimapa fica na extremidade
+esquerda, perto da navegação. A partir de 1100 px de viewport, os itens de lore
+mencionados aparecem em um painel de 280 px à direita, com rolagem própria.
+Abrir Compêndio ou Assistente substitui essa lista pelo painel ativo; ao fechar,
+a lista retorna. Abaixo desse breakpoint, os itens continuam em uma faixa
+horizontal rolável acima do texto. Os demais editores conservam seu layout.
 
 A área de escrita não exibe outline, inclusive em foco por teclado. Os demais
 controles preservam foco visível. Selecionar um trecho mostra uma

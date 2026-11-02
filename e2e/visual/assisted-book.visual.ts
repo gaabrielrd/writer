@@ -4,16 +4,18 @@ test('ideia, entrevista, revisão privada, capa e compêndio criado', async ({ p
   await page.goto('/');
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Livro com IA', exact: true }).click();
+  await expect(page.getByText('Vamos dar vida ao seu próximo livro.')).toBeVisible();
+  await capture(page, testInfo, 'criacao-assistida-boas-vindas');
   await page
     .getByLabel('Sua ideia')
     .fill('Uma navegadora descobre que o oceano está desaparecendo.');
-  await page.getByRole('button', { name: 'Começar conversa' }).click();
+  await page.getByLabel('Sua ideia').press('Enter');
   await expect(page.getByText('Que conflito move a protagonista?')).toBeVisible();
   await page.getByLabel('Sua resposta').fill('Ela precisa encontrar água para sua ilha.');
-  await page.getByRole('button', { name: 'Enviar resposta' }).click();
+  await page.getByLabel('Sua resposta').press('Enter');
   await expect(page.getByLabel('Sua resposta')).toHaveValue('');
   await capture(page, testInfo, 'criacao-assistida-conversa');
-  await page.getByRole('button', { name: 'Revisar briefing e encerrar entrevista' }).click();
+  await page.getByRole('button', { name: 'Revisar ideia' }).click();
   await page
     .getByLabel('Briefing do livro')
     .fill('Aventura marítima sem magia, para jovens adultos.');

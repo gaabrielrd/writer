@@ -1,20 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
-import { Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowUp, Check, Sparkles } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { ImageLibraryPicker, type LibraryImage } from '@/features/image-library';
 import { LoreEntityForm, type LoreEntity } from '@/features/lore';
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  Dialog,
-  Input,
-  LoadingState,
-  PageHeader,
-  Textarea,
-} from '@/shared/ui';
+import { Alert, Badge, Button, Card, Dialog, Input, LoadingState, Textarea } from '@/shared/ui';
 import {
   AssistedBookError,
   commitAssistedBook,
@@ -38,6 +28,18 @@ const phases: { id: Phase; label: string }[] = [
   { id: 'cover', label: 'Capa e criação' },
 ];
 const date = (time: number) => new Date(time).toLocaleString('pt-BR');
+
+function AgentMessage({ children }: { children: ReactNode }) {
+  return (
+    <div className={styles.agentMessage}>
+      <span className={styles.agentMark}>
+        <Sparkles className="icon icon-sm" aria-hidden="true" />
+        <span className="sr-only">Assistente</span>
+      </span>
+      <div className={styles.prose}>{children}</div>
+    </div>
+  );
+}
 
 function AssistedCreation() {
   const { user, updateUserCreditsState } = useAuth();
@@ -66,6 +68,8 @@ function AssistedCreation() {
   const [createdBookId, setCreatedBookId] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const heading = useRef<HTMLHeadingElement>(null);
+  const composer = useRef<HTMLTextAreaElement>(null);
+  const conversationEnd = useRef<HTMLDivElement>(null);
   const lock = useRef(false);
   const mounted = useRef(true);
   const disabled = busy || !!pending;
@@ -104,8 +108,14 @@ function AssistedCreation() {
     };
   }, [load]);
   useEffect(() => {
-    heading.current?.focus();
+    if (phase !== 'idea' && phase !== 'interview') heading.current?.focus();
   }, [phase, loading]);
+  useEffect(() => {
+    if (!loading && !busy && (phase === 'idea' || phase === 'interview')) composer.current?.focus();
+  }, [phase, loading, busy]);
+  useEffect(() => {
+    if (phase === 'interview') conversationEnd.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [phase, session?.messages.length, busy]);
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
@@ -200,6 +210,19 @@ function AssistedCreation() {
     updatedAt: 0,
   })) as LoreEntity[];
   const answers = session?.messages.filter((item) => item.role === 'user').length ?? 0;
+  function startConversation() {
+    if (disabled || !idea.trim() || !costs) return;
+    void execute(
+      {
+        action: 'start',
+        sessionId: crypto.randomUUID(),
+        requestId: crypto.randomUUID(),
+        revision: 0,
+        idea,
+      },
+      'interview',
+    );
+  }
   if (loading) return <LoadingState label="Carregando planejamento..." />;
   return (
     <section className={styles.page}>
@@ -208,15 +231,17 @@ function AssistedCreation() {
           <Link to={`/books/${createdBookId}`}>Abrir livro criado</Link>
         </Alert>
       )}
-      <PageHeader
-        title="Criar livro com IA"
-        description="Transforme sua ideia em uma base para começar a escrever."
-        actions={
-          <Button variant="secondary" onClick={() => void navigate('/')}>
-            Voltar aos livros
-          </Button>
-        }
-      />
+      <header className={styles.header}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Voltar aos livros"
+          onClick={() => void navigate('/')}
+        >
+          <ArrowLeft className="icon icon-sm" aria-hidden="true" />
+        </Button>
+        <h1>Criar livro com IA</h1>
+      </header>
       {error && (
         <Alert variant="destructive" title="Não foi possível concluir">
           <p>{error}</p>
@@ -246,119 +271,191 @@ function AssistedCreation() {
           )}
         </Alert>
       )}
-      {costs && (
-        <p className={styles.meta}>
-          Pacote textual: {costs.text} créditos. Capa gerada: {costs.cover} créditos. Cobrança
-          somente ao criar o livro.
-        </p>
-      )}
       <nav className={styles.steps} aria-label="Etapas da criação">
         <ol>
-          {phases.map((item) => (
+          {phases.map((item, index) => (
             <li key={item.id} aria-current={phase === item.id ? 'step' : undefined}>
-              {item.label}
+              <span className={styles.stepDot} aria-hidden="true">
+                {index < phases.findIndex((value) => value.id === phase) ? (
+                  <Check className="icon icon-sm" />
+                ) : (
+                  index + 1
+                )}
+              </span>
+              <span>{item.label}</span>
             </li>
           ))}
         </ol>
       </nav>
-      <h2 ref={heading} tabIndex={-1}>
+      <h2 ref={heading} tabIndex={-1} className="sr-only">
         {phases.find((item) => item.id === phase)?.label}
       </h2>
-      {busy && <div role="status">Processando sua solicitação. Seus dados serão preservados.</div>}
       <fieldset disabled={disabled} className={styles.content}>
+        <p id="assisted-composer-help" className="sr-only">
+          Enter envia a mensagem. Shift+Enter insere uma nova linha.
+        </p>
+        <AgentMessage>
+          {phase === 'idea' || phase === 'interview' ? (
+            <>
+              <p className={styles.welcome}>Vamos dar vida ao seu próximo livro.</p>
+              <p>
+                Que história você tem vontade de contar? Pode ser uma ideia solta, um personagem ou
+                uma cena. Vamos descobrir o resto juntos.
+              </p>
+            </>
+          ) : phase === 'brief' ? (
+            <p>
+              Reuni o que conversamos. Confira se esta é a história que você quer contar e ajuste o
+              que precisar. Quando estiver do seu jeito, vou preparar uma proposta para o livro. Se
+              já houver uma proposta, a nova versão vai substituí-la.
+            </p>
+          ) : phase === 'review' ? (
+            <p>
+              Aqui está a proposta para o seu livro e as primeiras fichas do seu mundo. Explore,
+              ajuste e deixe tudo com a sua voz antes de escolhermos a capa. As fichas serão
+              privadas.
+            </p>
+          ) : (
+            <p>
+              Como você imagina a capa? Podemos criar uma juntos, escolher uma da sua biblioteca ou
+              deixar para depois. O livro só será criado quando você confirmar.
+            </p>
+          )}
+        </AgentMessage>
         {phase === 'idea' && (
-          <Card className={styles.panel}>
+          <form
+            className={styles.composer}
+            onSubmit={(event) => {
+              event.preventDefault();
+              startConversation();
+            }}
+          >
             <Textarea
-              label="Sua ideia"
+              ref={composer}
+              aria-label="Sua ideia"
+              aria-describedby="assisted-composer-help"
+              placeholder="Me conte sua ideia…"
               value={idea}
               onChange={(event) => setIdea(event.target.value)}
               maxLength={4000}
-              rows={6}
-              hint="Descreva o que você imagina, mesmo que ainda esteja incompleto."
+              rows={3}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  event.preventDefault();
+                  startConversation();
+                }
+              }}
             />
             <Button
               disabled={!idea.trim() || !costs}
-              onClick={() =>
-                void execute(
-                  {
-                    action: 'start',
-                    sessionId: crypto.randomUUID(),
-                    requestId: crypto.randomUUID(),
-                    revision: 0,
-                    idea,
-                  },
-                  'interview',
-                )
-              }
+              type="submit"
+              size="icon"
+              aria-label="Começar conversa"
             >
-              <Sparkles className="icon icon-sm" aria-hidden="true" />
-              Começar conversa
+              <ArrowUp className="icon icon-sm" aria-hidden="true" />
             </Button>
-            <p>
-              O planejamento fica privado e pode ser retomado por 7 dias. Nenhum livro é criado
-              nesta etapa.
-            </p>
-          </Card>
+          </form>
         )}
         {session && phase === 'interview' && (
-          <div className={styles.columns}>
-            <Card className={styles.panel}>
-              <ol className={styles.messages} aria-label="Conversa com a IA">
+          <div className={styles.conversation}>
+            <div role="log" aria-label="Conversa com a IA" aria-relevant="additions text">
+              <ol className={styles.messages}>
                 {session.messages.map((item, index) => (
-                  <li key={index}>
-                    <strong>{item.role === 'user' ? 'Você' : 'Assistente'}</strong>
-                    <p>{item.text}</p>
+                  <li
+                    key={index}
+                    className={item.role === 'user' ? styles.userMessage : styles.assistantTurn}
+                  >
+                    {item.role === 'user' ? (
+                      <>
+                        <span className="sr-only">Você: </span>
+                        <p>{item.text}</p>
+                      </>
+                    ) : (
+                      <AgentMessage>
+                        <p>{item.text}</p>
+                      </AgentMessage>
+                    )}
                   </li>
                 ))}
               </ol>
+              <div ref={conversationEnd} />
+            </div>
+            {answers <= 8 && (
+              <form
+                className={styles.composer}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (message.trim()) request('interview', 'interview', { message });
+                }}
+              >
+                <Textarea
+                  ref={composer}
+                  aria-label="Sua resposta"
+                  aria-describedby="assisted-composer-help"
+                  placeholder="Continue a conversa…"
+                  value={message}
+                  onChange={(event) => setMessage(event.target.value)}
+                  maxLength={4000}
+                  rows={3}
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === 'Enter' &&
+                      !event.shiftKey &&
+                      !event.nativeEvent.isComposing
+                    ) {
+                      event.preventDefault();
+                      if (message.trim()) request('interview', 'interview', { message });
+                    }
+                  }}
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  aria-label="Enviar resposta"
+                  disabled={!message.trim()}
+                >
+                  <ArrowUp className="icon icon-sm" aria-hidden="true" />
+                </Button>
+              </form>
+            )}
+            <div className={styles.actions}>
               {answers <= 8 && (
-                <>
-                  <Textarea
-                    label="Sua resposta"
-                    value={message}
-                    onChange={(event) => setMessage(event.target.value)}
-                    maxLength={4000}
-                    rows={3}
-                    hint="Você pode corrigir decisões anteriores ou pedir sugestões."
-                  />
-                  <div className={styles.actions}>
-                    <Button
-                      disabled={!message.trim()}
-                      onClick={() => request('interview', 'interview', { message })}
-                    >
-                      Enviar resposta
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={() =>
-                        request('interview', 'interview', {
-                          message:
-                            session.messages.length === 1
-                              ? ''
-                              : 'Sugira para mim as decisões desta pergunta.',
-                        })
-                      }
-                    >
-                      {session.messages.length === 1
-                        ? 'Fazer primeira pergunta'
-                        : 'Sugira para mim'}
-                    </Button>
-                  </div>
-                </>
+                <Button
+                  variant="ghost"
+                  onClick={() =>
+                    request('interview', 'interview', {
+                      message:
+                        session.messages.length === 1
+                          ? ''
+                          : 'Sugira para mim as decisões desta pergunta.',
+                    })
+                  }
+                >
+                  {session.messages.length === 1 ? 'Fazer primeira pergunta' : 'Sugira para mim'}
+                </Button>
               )}
-            </Card>
-            <Card className={styles.panel}>
-              <h3>Decisões até agora</h3>
-              <p className={styles.prose}>{session.brief}</p>
-              {session.ready && <Badge variant="secondary">Pronto para gerar</Badge>}
-              <Button variant="secondary" onClick={() => setPhase('brief')}>
-                Revisar briefing e encerrar entrevista
+              <Button
+                variant={session.ready ? 'primary' : 'ghost'}
+                onClick={() => setPhase('brief')}
+              >
+                Revisar ideia
               </Button>
+            </div>
+            {session.ready && (
+              <AgentMessage>
+                <p>Já temos uma boa base. Vamos revisar a ideia e preparar seu livro?</p>
+              </AgentMessage>
+            )}
+            <details className={styles.notes}>
+              <summary>Ideias que reunimos</summary>
+              <p className={styles.prose}>
+                {session.brief || 'Vamos reunir suas primeiras decisões nesta conversa.'}
+              </p>
               <p>Sessão disponível até {date(session.expiresAt)}.</p>
               <Button variant="ghost" onClick={() => setRestart(true)}>
                 Começar outra ideia
               </Button>
-            </Card>
+            </details>
           </div>
         )}
         {session && phase === 'brief' && (
@@ -369,12 +466,7 @@ function AssistedCreation() {
               onChange={(event) => setBrief(event.target.value)}
               maxLength={6000}
               rows={12}
-              hint="Confira preferências, limites e sugestões antes de gerar."
             />
-            <p>
-              A IA preencherá as lacunas como sugestões. A nova proposta substituirá a revisão
-              anterior.
-            </p>
             <div className={styles.actions}>
               <Button variant="secondary" onClick={() => setPhase('interview')}>
                 Voltar à conversa
@@ -397,9 +489,6 @@ function AssistedCreation() {
         )}
         {session && proposal && phase === 'review' && (
           <>
-            <Alert>
-              Proposta da IA: revise e ajuste antes de criar. Todas as fichas serão privadas.
-            </Alert>
             {expired && (
               <Alert variant="warning">
                 A proposta expirou. Volte ao briefing e gere outra para criar o livro.
@@ -464,10 +553,12 @@ function AssistedCreation() {
                 </Card>
               ))}
             </div>
-            <p>
-              Regenerar uma ficha preserva os campos que você editou. Alterações da revisão são
-              salvas ao usar “Salvar revisão” ou “Continuar para capa”.
-            </p>
+            <AgentMessage>
+              <p>
+                Quer tentar outra versão de uma ficha? Vou preservar os campos que você editou.
+                Quando terminar os ajustes, salve a revisão ou continue para a capa.
+              </p>
+            </AgentMessage>
             <div className={styles.actions}>
               <Button variant="secondary" onClick={() => setPhase('brief')}>
                 Voltar ao briefing
@@ -581,6 +672,24 @@ function AssistedCreation() {
           </Card>
         )}
       </fieldset>
+      {busy && (
+        <div role="status" className={styles.thinking}>
+          <Sparkles className="icon icon-sm" aria-hidden="true" />
+          Estou preparando o próximo passo…
+        </div>
+      )}
+      {costs && (
+        <details className={styles.notes}>
+          <summary>Créditos e privacidade</summary>
+          <p>
+            Pacote textual: {costs.text} créditos. Capa gerada: {costs.cover} créditos. Cobrança
+            somente ao criar o livro.
+          </p>
+          <p>
+            O planejamento e as fichas são privados. Você pode retomar esta conversa por 7 dias.
+          </p>
+        </details>
+      )}
       {editing && proposal && (
         <LoreEntityForm
           open
