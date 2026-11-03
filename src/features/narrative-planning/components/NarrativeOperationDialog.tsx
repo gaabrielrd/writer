@@ -61,7 +61,10 @@ export function NarrativeOperationDialog({
       setConflict(isNarrativeConflict(failure));
       setError(narrativeErrorMessage(failure));
       if (definite) request.current = null;
-      requestAnimationFrame(() => feedback.current?.focus());
+      const focusAtFailure = document.activeElement;
+      requestAnimationFrame(() => {
+        if (active.current && document.activeElement === focusAtFailure) feedback.current?.focus();
+      });
     } finally {
       running.current = false;
       if (active.current) setBusy(false);

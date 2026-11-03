@@ -142,10 +142,24 @@ it('validação definitiva permite corrigir sem perder campos', async () => {
   );
   const user = userEvent.setup();
   await user.type(screen.getByLabelText('Título'), 'Lia');
-  await user.click(screen.getByRole('button', { name: 'Salvar' }));
-  await screen.findByText('Verifique o título');
-  expect(screen.getByLabelText('Título')).toBeEnabled();
-  await user.type(screen.getByLabelText('Título'), ' no farol');
+  const frames: FrameRequestCallback[] = [];
+  const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    frames.push(callback);
+    return frames.length;
+  });
+  try {
+    await user.click(screen.getByRole('button', { name: 'Salvar' }));
+    await screen.findByText('Verifique o título');
+    const title = screen.getByLabelText('Título');
+    expect(title).toBeEnabled();
+    await user.type(title, ' no');
+    expect(frames.length).toBeGreaterThan(0);
+    act(() => frames.splice(0).forEach((callback) => callback(0)));
+    expect(title).toHaveFocus();
+    await user.keyboard(' farol');
+  } finally {
+    raf.mockRestore();
+  }
   await user.click(screen.getByRole('button', { name: 'Salvar' }));
   await waitFor(() => expect(api.createNarrativeItem).toHaveBeenCalledTimes(2));
   expect(api.createNarrativeItem).toHaveBeenLastCalledWith(

@@ -126,3 +126,14 @@ do alvo de 44 px do divisor. A composição do editor coloca esse divisor na
 camada 47, sem alterar o componente neutro de shared nem o protocolo do gesto.
 Os nove cenários dirigidos de toque, painéis baixos e divisor do styleguide
 passaram nos três temas; formatação, documentação, styleguide e diff conferidos.
+
+O validador integral de `f1bbfed` aprovou 5.219 de 5.220 testes e revelou um
+callback de foco atrasado no diálogo narrativo: após erro definitivo, ele podia
+tirar o foco do título enquanto a pessoa já corrigia o texto, truncando o envio.
+O callback agora respeita foco movido e desmontagem. O teste segura o frame,
+retoma a digitação e só então o libera: falhou antes da correção por foco no
+alerta e passou depois, preservando a asserção do título integral. Os 11 testes
+do arquivo passaram com cobertura dirigida; os limites globais da CI continuam
+inalterados.
+Os 81 testes de planejamento narrativo e quatro jornadas de conflito/teclado
+em desktop/celular passaram, junto ao lint tipado e revisão do diff.
