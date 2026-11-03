@@ -1,6 +1,6 @@
 .panel {
   position: fixed;
-  z-index: 40;
+  z-index: 48;
   width: min(380px, calc(100vw - 24px));
   max-height: calc(100dvh - 24px);
   display: flex;

@@ -11,11 +11,13 @@ export default defineConfig((context) =>
         // Preserve the explicit lifecycle of existing test mocks after the Vitest 5 migration.
         clearMocks: false,
         // Usa melhor a máquina sem criar workers além dos CPUs ou perder isolamento.
-        maxWorkers: Math.min(4, availableParallelism()),
+        maxWorkers: Math.min(2, availableParallelism()),
         globals: true,
         setupFiles: './src/test/setup.ts',
         exclude: [
           ...configDefaults.exclude,
+          // Local Firebase release checkouts are not part of this checkout's suite.
+          '.firebase/**',
           'scripts/**/*.test.mjs',
           'tests/firestore/**',
           // Storage Rules use node:test and the dedicated emulator runner (test:media).

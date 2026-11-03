@@ -129,13 +129,16 @@ test('lista e barra de seleção cabem na largura de 320px', async ({ page }, te
   await expect(bar).toBeVisible();
   await expect
     .poll(async () => {
-      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page
+        .locator('#main-content')
+        .evaluate((element) => element.scrollTo(0, element.scrollHeight));
       const lastRow = await page.getByRole('table').getByRole('row').last().boundingBox();
       const selection = await bar.boundingBox();
       if (!lastRow || !selection) throw new Error('Lista e barra de seleção devem estar visíveis.');
       return lastRow.y + lastRow.height - selection.y;
     })
-    .toBeLessThanOrEqual(0);
+    // Bounding boxes may differ by a fractional CSS pixel at a shared border.
+    .toBeLessThanOrEqual(1);
   await capture(page, testInfo, 'compendio-lista-320px');
   await page
     .getByRole('region', { name: 'Ações da seleção' })

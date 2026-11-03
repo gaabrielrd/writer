@@ -256,7 +256,8 @@ test('tela cheia usa toda a largura sem remontar texto, seleção, undo ou chat'
   await editor.press('Control+A');
   const selected = await page.evaluate(() => window.getSelection()!.toString());
   const normalWidth = (await page.locator('#main-content').boundingBox())!.width;
-  expect(normalWidth).toBeLessThanOrEqual(1440);
+  expect(normalWidth).toBe(page.viewportSize()!.width - 240);
+  expect((await editor.boundingBox())!.width).toBeLessThanOrEqual(760);
   await editor.evaluate((element) => {
     element.setAttribute('data-original-editor', 'true');
   });
@@ -341,7 +342,9 @@ test('tela cheia conserva o trecho visível e restaura o shell ao sair da ediç�
     'data-workspace-expanded',
     'true',
   );
-  expect((await page.locator('#main-content').boundingBox())!.width).toBeLessThanOrEqual(1440);
+  expect((await page.locator('#main-content').boundingBox())!.width).toBe(
+    page.viewportSize()!.width - 240,
+  );
   await capture(page, testInfo, 'shell-restaurado');
 });
 

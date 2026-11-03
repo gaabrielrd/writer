@@ -5,6 +5,7 @@ import {
   expectNoHorizontalOverflow,
   openBookCreation,
   navigateWorkspace,
+  openWorkspaceNavigation,
 } from './support';
 import { books, FIXTURE_BOOK_ID } from './fixtures/data';
 
@@ -12,14 +13,12 @@ test('header compacto, menus por teclado e gerenciamento da biblioteca', async (
   page,
 }, testInfo) => {
   await page.goto('/studio');
-  if (page.viewportSize()!.width <= 760) {
-    await page.getByRole('button', { name: 'Abrir navegação' }).click();
-  }
   const credits = page.getByRole('button', { name: '84 créditos de IA, plano free' });
   await expect(credits).toHaveText('84');
   await credits.focus();
   await expect(page.getByRole('tooltip')).toContainText('Plano FREE');
   await page.keyboard.press('Escape');
+  await openWorkspaceNavigation(page);
   const account = page.getByRole('button', { name: /Marina de Exemplo/ });
   await account.focus();
   await page.keyboard.press('Enter');
@@ -29,7 +28,9 @@ test('header compacto, menus por teclado e gerenciamento da biblioteca', async (
   await expect(account).toBeFocused();
   await navigateWorkspace(page, 'Biblioteca de Imagens');
   await expect(page).toHaveURL(/\/library$/);
-  await expect(page.getByRole('heading', { name: 'Biblioteca de Imagens' })).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Biblioteca de Imagens', exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Excluir Capa em uso' })).toBeDisabled();
   await capture(page, testInfo, 'biblioteca-de-imagens');
   await page.getByRole('button', { name: 'Renomear Capa do Atlas' }).click();
@@ -50,16 +51,13 @@ test('header compacto, menus por teclado e gerenciamento da biblioteca', async (
 test('wizard seleciona capa da biblioteca sem consumir créditos', async ({ page }) => {
   await page.goto('/');
   await openBookCreation(page);
-  await page.getByLabel('Título da Obra').fill('Minha obra');
-  await page.getByLabel('Gênero Literário').fill('Fantasia');
+  await page.getByLabel('Título do projeto').fill('Minha obra');
+  await page.getByLabel('Gênero ou estilo').fill('Fantasia');
   await page.getByRole('button', { name: /^Capa/ }).click();
-  await page.getByRole('button', { name: 'Selecionar da biblioteca' }).click();
+  await page.getByRole('button', { name: 'Escolher imagem da biblioteca' }).click();
   await page.getByRole('button', { name: 'Selecionar Capa do Atlas' }).click();
-  await expect(page.getByAltText('Capa selecionada de Minha obra')).toBeVisible();
-  await page.getByRole('button', { name: 'Criar Livro', exact: true }).click();
+  await expect(page.getByText('Imagem selecionada: Capa do Atlas')).toBeVisible();
+  await page.getByRole('button', { name: 'Criar livro', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Minha obra' })).toBeVisible();
-  if (page.viewportSize()!.width <= 760) {
-    await page.getByRole('button', { name: 'Abrir navegação' }).click();
-  }
   await expect(page.getByRole('button', { name: '84 créditos de IA, plano free' })).toBeVisible();
 });

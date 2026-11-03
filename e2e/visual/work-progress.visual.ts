@@ -456,28 +456,20 @@ test('preferência existente vence inicialização de outro dispositivo e meta n
   await capture(page, testInfo, 'fuso-progresso-320');
 });
 
-test('retomada pagina sem duplicar projetos e filtra apenas o tipo solicitado', async ({
-  page,
-}) => {
+test('retomada compacta limita a Home e abre o catálogo de projetos por tipo', async ({ page }) => {
   await flags(page, { 'writer.visual.work-resume-pages': 'true' });
   await page.goto('/studio');
+  const region = page.getByRole('region', { name: 'Continuar meu trabalho', exact: true });
+  await expect(region.getByRole('heading', { level: 3 })).toHaveCount(4);
+  await expect(
+    region.getByRole('button', { name: 'Carregar mais projetos recentes', exact: true }),
+  ).toHaveCount(0);
   await page.getByRole('link', { name: 'Ver todos os projetos', exact: true }).click();
   await expect(page).toHaveURL(/\/studio\/projects$/);
-  const region = page.getByRole('region', { name: 'Continuar meu trabalho', exact: true });
-  await expect(region.getByRole('heading', { level: 3 })).toHaveCount(25);
-  await region
-    .getByRole('button', { name: 'Carregar mais projetos recentes', exact: true })
-    .click();
-  await expect(region.getByRole('heading', { level: 3 })).toHaveCount(28);
-  await expect(
-    region.getByRole('heading', { name: 'Projeto recente 28', exact: true }),
-  ).toBeVisible();
-  await chooseDropdown(region.getByLabel('Retomar tipo de projeto'), 'Aventuras');
-  await expect(region.getByText('Nenhum trabalho recente', { exact: true })).toBeVisible();
-  await chooseDropdown(region.getByLabel('Retomar tipo de projeto'), 'Livros');
-  await expect(region.getByRole('heading', { level: 3 })).toHaveCount(25);
-  await region
-    .getByRole('button', { name: 'Carregar mais projetos recentes', exact: true })
-    .click();
-  await expect(region.getByRole('heading', { level: 3 })).toHaveCount(28);
+  const types = page.getByRole('group', { name: 'Tipo de projeto', exact: true });
+  await types.getByRole('button', { name: 'Aventuras', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Aventuras', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Livros', exact: true })).toHaveCount(0);
+  await navigateWorkspace(page, 'Home');
+  await expect(region.getByRole('heading', { level: 3 })).toHaveCount(4);
 });

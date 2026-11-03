@@ -8,6 +8,7 @@ import { seedAssistedBook } from './bookService';
 import { seedAssistedLore } from './loreService';
 import { fixtureCreate, fixtureCreatedOperation, fixtureOwner } from './studioStore';
 import { author } from './data';
+import { fixtureLibraryImage } from './imageLibraryService';
 
 export class AssistedBookError extends Error {
   readonly uncertain = false;
@@ -179,10 +180,17 @@ export async function commitAssistedBook(input: AssistedCommit) {
   seedAssistedBook({
     id: input.sessionId,
     authorId: author.uid,
+    universeId: session?.universeId ?? null,
+    personaId: session?.personaId ?? null,
     title: input.proposal.title,
     genre: input.proposal.genre,
     synopsis: input.proposal.synopsis,
-    coverUrl: input.coverId ? session!.cover!.previewUrl : null,
+    coverImageId: input.imageId,
+    coverUrl: input.coverId
+      ? session!.cover!.previewUrl
+      : input.imageId
+        ? fixtureLibraryImage(input.imageId).url
+        : null,
     status: 'draft',
     wordCount: 0,
     createdAt: Date.now(),

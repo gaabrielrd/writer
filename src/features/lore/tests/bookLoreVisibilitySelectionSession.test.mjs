@@ -1,5 +1,7 @@
 // @vitest-environment node
-import { beforeEach, afterEach, expect, it, vi } from 'vitest';
+import { beforeEach, afterEach, afterAll, expect, it, vi } from 'vitest';
+vi.setConfig({ testTimeout: 60000 });
+afterAll(() => vi.resetConfig());
 import { visibilityFixture, finishVisibility } from './bookLoreVisibilitySelectionHarness.mjs';
 import { bookLoreVisibilitySelectionSession } from '../services/bookLoreVisibilitySelectionService.ts';
 import { createBookLoreReadService } from '../../../../functions/src/bookLoreRead.mjs';

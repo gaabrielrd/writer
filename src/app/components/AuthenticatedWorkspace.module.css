@@ -155,6 +155,9 @@
 .shell .main > [data-editor-page] {
   max-width: none;
 }
+.main:not(:has(> [data-editor-page])) {
+  padding-bottom: calc(var(--page-assistant-height, 0px) + var(--space-4));
+}
 .shell :global(.panel-surface),
 .shell :global(.glass-surface) {
   background: hsl(var(--card));

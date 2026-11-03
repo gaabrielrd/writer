@@ -521,3 +521,13 @@ respeita visualViewport, área segura e foco dos modais. Sobreposição ao campo
 caret recolhe temporariamente a barra sem mudar sua preferência salva. Conversa
 expandida rola separadamente do composer. Não criar uma segunda superfície
 flutuante para a concepção de projetos. Perfil e assistente seguem os três temas.
+
+Diálogos e páginas de catálogo reservam a altura medida da barra para manter
+ações acessíveis. Em diálogos até 760 px, a apresentação compacta recolhe
+temporariamente; expandir continua sendo uma ação explícita e a pergunta é
+preservada. A gaveta de navegação suspende a barra para manter seu ciclo de foco.
+O minimapa móvel rola o contêiner do workspace e limita o fim da navegação para
+preservar sua própria visibilidade, sem mover a seleção do manuscrito.
+A barra de seleção do compêndio respeita a altura do assistente também no
+portal. O editor flutuante de tema mantém seus controles acima da conversa e
+abaixo dos diálogos modais.

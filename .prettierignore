@@ -4,3 +4,11 @@ node_modules/
 package-lock.json
 .claude/skills/
 .agents/skills/
+.firebase/
+playwright-report/
+test-results/
+visual-test-results/
+visual-playwright-report/
+blob-report/
+all-blob-reports/
+verified-build/

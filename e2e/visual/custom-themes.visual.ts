@@ -1,4 +1,4 @@
-import { test, expect, capture } from './support';
+import { test, expect, capture, navigateWorkspace } from './support';
 import { chooseDropdown } from '../dropdown';
 import { FIXTURE_BOOK_ID } from './fixtures/data';
 test('cria tema com prévia navegável, modo avançado, edição e remoção', async ({
@@ -22,14 +22,14 @@ test('cria tema com prévia navegável, modo avançado, edição e remoção', a
   await capture(page, testInfo, 'criacao-tema-flutuante');
   await panel.getByRole('button', { name: 'Recolher painel de tema' }).click();
   // SPA navigation must preserve the panel and preview, including in the real editor.
-  await page.getByRole('link', { name: 'Writer Assistant Início' }).click();
+  await navigateWorkspace(page, 'Projetos');
   await expect(panel).toBeVisible();
   await page
     .locator('a[href="/books/' + FIXTURE_BOOK_ID + '"]')
     .first()
     .click();
   await page
-    .getByRole('button', { name: /Abrir capítulo/ })
+    .getByRole('button', { name: /Escrever/ })
     .first()
     .click();
   const manuscript = page.getByLabel('Área de escrita do capítulo');
@@ -95,7 +95,8 @@ test('painel cabe em 320 px, move por teclado e mantém foco e navegação', asy
   await panel.getByRole('button', { name: 'Salvar tema', exact: true }).click();
   await expect(panel.getByLabel('Fundo da página', { exact: true })).toBeFocused();
   await panel.getByRole('button', { name: 'Recolher painel de tema' }).click();
-  await expect(page.getByRole('link', { name: 'Writer Assistant Início' })).toBeVisible();
+  await navigateWorkspace(page, 'Projetos');
+  await expect(panel).toBeVisible();
   await panel.getByRole('button', { name: 'Expandir painel de tema' }).click();
   await panel.getByRole('button', { name: 'Cancelar', exact: true }).click();
   await expect(page.locator('html')).not.toHaveAttribute('data-custom-theme');

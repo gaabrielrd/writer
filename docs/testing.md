@@ -3376,6 +3376,18 @@ partes e aguarda a matriz completa antes da publicação.
 
 ## Reaproveitamento local no pre-push
 
+Vitest, ESLint e Prettier ignoram `.firebase/`, que pode conter checkouts temporários de
+publicação. Esses checkouts não pertencem ao inventário de testes da raiz.
+Artefatos gerados de Playwright e builds verificados também ficam fora da
+formatação. A cobertura mantém os mesmos limites e roda com até dois workers.
+Os protocolos de descarte, checkpoint, gate e visibilidade de lore e o backup
+de capa de 16 MiB têm orçamento por arquivo de 60 segundos por caso; o lote de
+53 fichas mantém todas as asserções com orçamento próprio de cinco minutos.
+
+A regressão de Storage de aventuras força rollback e repetição do callback da
+transação, tanto na reserva quanto no aceite dos bytes. O teste HTTP nativo
+percorre os endpoints por setor com o envelope público vigente.
+
 npm run test:coverage mantém cobertura, limites e relatórios, e registra em
 .firebase/local-validation/frontend.json uma assinatura do frontend aprovado.
 A assinatura cobre código, testes, contratos de Functions, assets, dependências,

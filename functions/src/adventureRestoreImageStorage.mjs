@@ -82,7 +82,7 @@ export function createAdventureRestoreImageStorageService(store, assets) {
     });
     if (initial.replay) return initial.replay;
     const first = initial.loaded.job.staging.phase === 'image-bytes-ready',
-      staging = first
+      preparedStaging = first
         ? {
             ...initial.loaded.job.staging,
             phase: 'image-storage',
@@ -113,7 +113,9 @@ export function createAdventureRestoreImageStorageService(store, assets) {
           sourceAdventureId: reader.sourceAdventureId,
           adventureId: reader.adventureId,
         }),
-        index = initial.pending ? initial.pending.data.sourceIndex - 1 : staging.storageIndex;
+        index = initial.pending
+          ? initial.pending.data.sourceIndex - 1
+          : preparedStaging.storageIndex;
       if (index >= reader.itemCount) inconsistent();
       source = await readImageStorageSource(reader, mapper, index);
       native = await store.db.runTransaction(async (tx) => {
@@ -154,20 +156,22 @@ export function createAdventureRestoreImageStorageService(store, assets) {
         await assets.verify(adventureImageStorageContext(initial.loaded, source.asset), storage);
       } else if (source.unit.record.kind === 'adventure-images') {
         if (
-          source.value.bindings !== staging.storageBindings ||
-          source.value.assets !== staging.storagePrepared ||
-          source.value.bytes !== staging.imageBytes ||
-          staging.storageIntents !== staging.imageAssets ||
-          staging.storageIndex + 1 !== reader.itemCount
+          source.value.bindings !== preparedStaging.storageBindings ||
+          source.value.assets !== preparedStaging.storagePrepared ||
+          source.value.bytes !== preparedStaging.imageBytes ||
+          preparedStaging.storageIntents !== preparedStaging.imageAssets ||
+          preparedStaging.storageIndex + 1 !== reader.itemCount
         )
           inconsistent();
-        staging.phase = 'image-storage-ready';
-        staging.storageIndex++;
+        preparedStaging.phase = 'image-storage-ready';
+        preparedStaging.storageIndex++;
       }
     } catch (error) {
       return replayAfterFailure(uid, request, error);
     }
     return store.db.runTransaction(async (tx) => {
+      // Firestore may retry this callback before either concurrent request commits.
+      const staging = structuredClone(preparedStaging);
       const loaded = await store.load(tx, uid, request.restoreId, request.jobToken),
         replay = await resolved(tx, loaded, request);
       if (replay) return replay;

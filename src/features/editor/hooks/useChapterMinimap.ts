@@ -92,23 +92,44 @@ export function useChapterMinimap(
     window.addEventListener('scroll', schedule, true);
     window.addEventListener('resize', resized);
     navigation.current = (ratio, position) => {
-      if (editor.isDestroyed || geometryDirty) return;
+      if (editor.isDestroyed) return;
+      if (position !== undefined && (position < 0 || position > editor.state.doc.content.size))
+        return;
+      if (geometryDirty) {
+        cancelAnimationFrame(frame);
+        measure();
+      }
       const rootBounds = root.getBoundingClientRect();
       const areaBounds = area.getBoundingClientRect();
       const target =
         position === undefined
           ? rootBounds.top + clampMinimap(ratio) * rootBounds.height
           : editor.view.coordsAtPos(position).top;
-      const internalScroll =
-        area.scrollHeight > area.clientHeight + 1 &&
-        /auto|scroll/.test(getComputedStyle(area).overflowY);
+      let scroller: HTMLElement | null = area;
+      while (
+        scroller &&
+        !(
+          scroller.scrollHeight > scroller.clientHeight + 1 &&
+          /auto|scroll/.test(getComputedStyle(scroller).overflowY)
+        )
+      )
+        scroller = scroller.parentElement;
       // Scroll only: a ProseMirror focus/selection command would move the caret.
-      if (internalScroll)
-        area.scrollTo({
-          top: area.scrollTop + target - areaBounds.top - area.clientTop,
+      if (scroller) {
+        const scrollBounds = scroller.getBoundingClientRect();
+        const offset = target - scrollBounds.top - scroller.clientTop;
+        scroller.scrollTo({
+          top:
+            scroller.scrollTop +
+            (scroller === area
+              ? offset
+              : Math.min(
+                  offset - 16,
+                  areaBounds.bottom - Math.min(window.innerHeight, scrollBounds.bottom) + 16,
+                )),
           behavior: 'instant',
         });
-      else {
+      } else {
         // Keep the end of the manuscript in view without scrolling past the rail.
         const top = Math.min(target - 16, areaBounds.bottom - window.innerHeight + 16);
         window.scrollTo({ top: window.scrollY + top, behavior: 'instant' });

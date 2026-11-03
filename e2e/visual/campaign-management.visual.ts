@@ -57,7 +57,7 @@ test('criação legada e edição por teclado em 320px preservam identidade e co
   await page.getByRole('button', { name: /^Premissa e detalhes/ }).click();
   await page.getByLabel('Conceito da campanha').fill('Notas particulares da expedição.');
   await page.getByRole('button', { name: 'Criar campanha', exact: true }).click();
-  await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
+  await page.getByRole('button', { name: 'Minimizar assistente' }).click();
   await expect(page).toHaveURL(/\/campaigns\/visual-created-campaign-/);
   await expect(
     page.getByRole('heading', { name: 'Campanha da expedição', exact: true, level: 1 }),

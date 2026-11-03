@@ -154,7 +154,7 @@ export function AuthenticatedWorkspace() {
           mobileTrigger.current?.focus();
         }}
       >
-        <div id="writer-mobile-navigation" className={styles.drawerBody}>
+        <div id="writer-mobile-navigation" data-writer-navigation className={styles.drawerBody}>
           {navigation}
         </div>
       </Dialog>

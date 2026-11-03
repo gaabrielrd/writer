@@ -24,7 +24,9 @@ test('menção cria, edita e retoma lore protegido sem alterar o texto do capít
     timeout: 60_000,
   });
   // Request an actual SPA route transition while the protected form owns navigation.
-  await page.evaluate(() => document.querySelector<HTMLAnchorElement>('a[href="/"]')?.click());
+  await page.evaluate(() =>
+    document.querySelector<HTMLAnchorElement>('a[href="/studio"]')?.click(),
+  );
   await expect(dialog.getByRole('button', { name: 'Continuar aqui', exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Continuar aqui', exact: true }).click();
   await capture(page, info, 'sidebar-criacao-protegida');

@@ -20,6 +20,7 @@ import { finishCounts } from '../../functions/test/helpers/adventureRestoreCount
 import { finishAudit } from '../../functions/test/helpers/adventureRestoreAuditFixture.mjs';
 import { finishImageLibrary } from '../../functions/test/helpers/adventureRestoreImageLibraryFixture.mjs';
 import { activationRequest } from '../../functions/test/helpers/adventureRestoreActivationFixture.mjs';
+import { domainSdkFixture } from '../../functions/test/helpers/domainSdkFixture.mjs';
 import { finishMedia } from '../../functions/test/helpers/adventureRestoreMediaFixture.mjs';
 import { finishArchiveCleanup } from '../../functions/test/helpers/adventureRestoreArchiveCleanupFixture.mjs';
 const requireFunctions = createRequire(new URL('../../functions/package.json', import.meta.url)),
@@ -38,7 +39,7 @@ process.env.FIREBASE_CONFIG = JSON.stringify({
   projectId,
   storageBucket: projectId + '.appspot.com',
 });
-const host = await import('../../functions/src/index.mjs');
+const host = domainSdkFixture(await import('../../functions/src/index.mjs'));
 let env, admin, server, url, auth, appCheck, oldAuth, oldAppCheck;
 before(async () => {
   const [hostname, port] = address.split(':');

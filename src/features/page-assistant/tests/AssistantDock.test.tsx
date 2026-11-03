@@ -6,6 +6,54 @@ vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { uid: 'writer' } })
 const key = 'writer-assistant-dock:v1:writer';
 const saved = () =>
   JSON.parse(localStorage.getItem(key) ?? '{}') as { x?: number; y?: number; mode?: string };
+
+it('reserves the measured dock height in dialogs and releases it on unmount', async () => {
+  const modal = document.createElement('div');
+  modal.setAttribute('role', 'dialog');
+  document.body.append(modal);
+  const view = render(tree());
+  try {
+    await waitFor(() =>
+      expect(modal.style.getPropertyValue('--page-assistant-height')).toBe('120px'),
+    );
+    view.unmount();
+    expect(modal.style.getPropertyValue('--page-assistant-height')).toBe('');
+  } finally {
+    modal.remove();
+  }
+});
+
+it('temporarily minimizes a compact dock in a narrow dialog and preserves explicit expansion', async () => {
+  vi.stubGlobal('innerWidth', 320);
+  render(tree());
+  const modal = document.createElement('div');
+  modal.setAttribute('role', 'dialog');
+  document.body.append(modal);
+  try {
+    await waitFor(() =>
+      expect(screen.getByRole('complementary')).toHaveAttribute('data-mode', 'minimized'),
+    );
+    expect(localStorage.getItem(key)).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
+    expect(screen.getByRole('complementary')).toHaveAttribute('data-mode', 'expanded');
+    expect(screen.getByLabelText('Pergunta do dock')).toHaveValue('Minha pergunta');
+  } finally {
+    modal.remove();
+  }
+});
+
+it('shares clearance with workspace portals and releases it on unmount', async () => {
+  const view = render(<div data-writer-workspace>{tree()}</div>);
+  await waitFor(() =>
+    expect(document.documentElement.style.getPropertyValue('--page-assistant-height')).toBe(
+      '120px',
+    ),
+  );
+  expect(localStorage.getItem(key)).toBeNull();
+  view.unmount();
+  expect(document.documentElement.style.getPropertyValue('--page-assistant-height')).toBe('');
+});
+
 function tree(external = false, initialOpen = false) {
   return (
     <>
@@ -163,19 +211,22 @@ it('opens a newly adopted conception without resetting its existing question', a
   );
   expect(screen.getByLabelText('Pergunta do dock')).toHaveValue('Minha pergunta preservada');
 });
-it('suspends the global dock during conception in a modal and restores it afterwards', async () => {
-  render(tree());
-  const modal = document.createElement('div');
-  modal.setAttribute('role', 'dialog');
-  modal.setAttribute('aria-label', 'Escolha de imagem');
-  const conception = document.createElement('div');
-  conception.setAttribute('data-conception-assistant', '');
-  modal.append(conception);
-  document.body.append(modal);
-  try {
-    await waitFor(() => expect(screen.queryByRole('complementary')).not.toBeInTheDocument());
-  } finally {
-    modal.remove();
-  }
-  await waitFor(() => expect(screen.getByRole('complementary')).toBeVisible());
-});
+it.each(['data-conception-assistant', 'data-writer-navigation'])(
+  'suspends the global dock in %s and restores it afterwards',
+  async (attribute) => {
+    render(tree());
+    const modal = document.createElement('div');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-label', 'Escolha de imagem');
+    const conception = document.createElement('div');
+    conception.setAttribute(attribute, '');
+    modal.append(conception);
+    document.body.append(modal);
+    try {
+      await waitFor(() => expect(screen.queryByRole('complementary')).not.toBeInTheDocument());
+    } finally {
+      modal.remove();
+    }
+    await waitFor(() => expect(screen.getByRole('complementary')).toBeVisible());
+  },
+);

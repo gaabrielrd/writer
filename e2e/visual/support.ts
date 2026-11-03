@@ -6,6 +6,7 @@ import {
   FIXTURE_TIME,
 } from './fixtures/data';
 import type { VisualOptions } from './options';
+import { chooseDropdown } from '../dropdown';
 
 // Automatic fixtures belong to the extended test type, unlike imported hooks,
 // whose registration can be cached with the first spec loaded in a worker.
@@ -84,11 +85,15 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
 });
 export { expect };
 
-export async function openBookCreation(page: Page): Promise<void> {
+export async function openBookCreation(page: Page, universe?: string): Promise<void> {
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
   await page.getByRole('button', { name: /^Manualmente/ }).click();
   await page.getByRole('button', { name: /^Livro/ }).click();
   await page.getByLabel('Ideia ou título inicial').fill('Novo livro');
+  if (universe) {
+    await page.getByRole('button', { name: /^Universo e persona/ }).click();
+    await chooseDropdown(page.getByLabel('Universo compartilhado'), universe);
+  }
   await page.getByRole('button', { name: 'Continuar', exact: true }).click();
   await expect(page.getByLabel('Título do projeto')).toBeVisible();
   await page.getByRole('button', { name: /^Premissa e detalhes/ }).click();

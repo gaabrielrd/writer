@@ -42,7 +42,10 @@ export function AssistantDock({
   const [unsaved, setUnsaved] = useState(false);
   const [writing, setWriting] = useState(false);
   const [conceptionInDialog, setConceptionInDialog] = useState(false);
-  const mode = writing ? 'minimized' : preferences.mode;
+  const mode =
+    writing || (dialog && bounds.width <= 760 && preferences.mode === 'compact')
+      ? 'minimized'
+      : preferences.mode;
   const panel = useRef<HTMLElement>(null);
   const grip = useRef<HTMLButtonElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -64,7 +67,9 @@ export function AssistantDock({
     origin: typeof preferences;
   } | null>(null);
   const suppress =
-    !visible || conceptionInDialog || Boolean(dialog?.querySelector('[data-writer-onboarding]'));
+    !visible ||
+    conceptionInDialog ||
+    Boolean(dialog?.querySelector('[data-writer-onboarding], [data-writer-navigation]'));
   useEffect(() => {
     const update = () =>
       setConceptionInDialog(Boolean(dialog?.querySelector('[data-conception-assistant]')));
@@ -100,6 +105,19 @@ export function AssistantDock({
     observer.observe(element);
     return () => observer.disconnect();
   }, [mode, dialog, suppress]);
+  useLayoutEffect(() => {
+    if (suppress) return;
+    const host =
+      dialog ??
+      (document.querySelector('[data-writer-workspace]') ? document.documentElement : null);
+    if (!host) return;
+    const previous = host.style.getPropertyValue('--page-assistant-height');
+    host.style.setProperty('--page-assistant-height', `${size.height}px`);
+    return () => {
+      if (previous) host.style.setProperty('--page-assistant-height', previous);
+      else host.style.removeProperty('--page-assistant-height');
+    };
+  }, [dialog, size.height, suppress]);
   useEffect(() => {
     const resize = () => setBounds(viewport());
     window.addEventListener('resize', resize);

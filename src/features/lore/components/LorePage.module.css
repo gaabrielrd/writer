@@ -183,7 +183,7 @@
 
 .bulkBar {
   position: fixed;
-  bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  bottom: calc(var(--page-assistant-height, 0px) + var(--space-4) + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   z-index: 40;

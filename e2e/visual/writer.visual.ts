@@ -269,7 +269,7 @@ test.describe('Biblioteca vazia', () => {
     await capture(page, testInfo, '20-criacao-capa');
     await page.getByRole('button', { name: 'Criar livro · 7 créditos' }).click();
     await expect(page.getByRole('heading', { name: 'Atlas de Outono', exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
+    await page.getByRole('button', { name: 'Minimizar assistente' }).click();
     await navigateWorkspace(page, 'Projetos');
     await expectCompactBooks(page, 1);
   });
@@ -299,7 +299,7 @@ test.describe('Biblioteca vazia', () => {
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'Livro vertical', exact: true })).toBeVisible();
     await expect(page).toHaveURL(/\/books\/[^/]+$/);
-    await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
+    await page.getByRole('button', { name: 'Minimizar assistente' }).click();
     await navigateWorkspace(page, 'Projetos');
     await expectCompactBooks(page, 1);
     await capture(page, testInfo, '17-biblioteca-um-livro');

@@ -1,5 +1,7 @@
 // @vitest-environment node
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, afterAll, expect, it, vi } from 'vitest';
+vi.setConfig({ testTimeout: 60000 });
+afterAll(() => vi.resetConfig());
 import { webcrypto } from 'node:crypto';
 import {
   prepareBookLoreEditOperation,

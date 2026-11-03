@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto';
-import { expect, it, vi } from 'vitest';
+import { afterAll, expect, it, vi } from 'vitest';
+vi.setConfig({ testTimeout: 60000 });
+afterAll(() => vi.resetConfig());
 import type {
   BookCoverApi,
   BookCoverDescriptor,

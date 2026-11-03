@@ -114,7 +114,7 @@ test('exporta o livro inteiro como DOCX real e backup JSON privado', async ({ pa
   expect(xml).toContain('w:pageBreakBefore');
   expect(xml).toContain('w:pStyle w:val="Heading1"');
   expect(await zip.file('word/styles.xml')!.async('string')).toContain('Georgia');
-  await chooseDropdown(page.getByLabel('Formato do arquivo'), 'Backup completo (.json)');
+  await chooseDropdown(page.getByLabel('Formato do arquivo'), 'Backup JSON antigo (.json)');
   await expect(page.getByLabel('Conteúdo da exportação')).toBeDisabled();
   await expect(page.getByText(/fichas de lore privadas/)).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCSS(

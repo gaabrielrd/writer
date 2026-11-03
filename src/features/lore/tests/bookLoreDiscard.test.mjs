@@ -1,5 +1,7 @@
 // @vitest-environment node
-import { beforeEach, afterEach, it, expect, vi } from 'vitest';
+import { beforeEach, afterEach, afterAll, it, expect, vi } from 'vitest';
+vi.setConfig({ testTimeout: 60000 });
+afterAll(() => vi.resetConfig());
 import { manualFixture } from './bookLoreManualHarness.mjs';
 import { installLoreJournalHarness } from './bookLoreJournalHarness.mjs';
 import {

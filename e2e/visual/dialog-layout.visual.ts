@@ -1,7 +1,14 @@
 import type { Locator, Page } from '@playwright/test';
 import { chooseDropdown } from '../dropdown';
-import { author, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
-import { capture, expect, expectNoHorizontalOverflow, test, openBookImport } from './support';
+import { FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
+import {
+  capture,
+  expect,
+  expectNoHorizontalOverflow,
+  test,
+  openBookImport,
+  navigateWorkspace,
+} from './support';
 
 async function checkScroll(page: Page, dialog: Locator) {
   await expect(dialog).toBeVisible();
@@ -83,9 +90,8 @@ test('importação extensa usa uma única área de rolagem', async ({ page }, te
 
 test('preferências de IA na página com abas salvam em 320px', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 640 });
-  await page.goto('/');
-  await page.getByRole('button', { name: new RegExp(author.displayName!) }).click();
-  await page.getByRole('menuitem', { name: 'Configurar inteligência artificial' }).click();
+  await page.goto('/studio');
+  await navigateWorkspace(page, 'Inteligência artificial');
   await page.getByRole('tab', { name: 'Provedor', exact: true }).click();
   await expect(page).toHaveURL(/settings\/ai\?tab=provider/);
   await chooseDropdown(

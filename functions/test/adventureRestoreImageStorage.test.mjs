@@ -11,6 +11,38 @@ import {
 import { cleanup, mutation } from './helpers/adventureRestoreTransferFixture.mjs';
 import { createAdventureRestoreTransferService } from '../src/adventureRestoreTransfer.mjs';
 const privatePath = (f, id) => 'book-covers/' + f.uid + '/' + id + '.png';
+
+test('transaction retries preserve one reservation and one upload contribution', async () => {
+  const { f, p } = await imageStorageFixture(),
+    run = f.db.runTransaction.bind(f.db),
+    retry = new Error('synthetic Firestore transaction retry');
+  let retries = 0;
+  f.db.runTransaction = (operation) =>
+    run((tx) =>
+      operation({
+        ...tx,
+        update(ref, value) {
+          if (ref.path === f.path && value.staging?.phase === 'image-storage') {
+            retries++;
+            throw retry;
+          }
+          return tx.update(ref, value);
+        },
+      }),
+    ).catch((error) => {
+      if (error !== retry) throw error;
+      return run(operation);
+    });
+  const reserved = await storageStep(f, p),
+    prepared = await storageStep(f, reserved);
+  assert.equal(retries, 2);
+  assert.equal(reserved.staging.storageBindings, 1);
+  assert.equal(reserved.staging.storageIntents, 1);
+  assert.equal(prepared.staging.storagePrepared, 1);
+  assert.equal(prepared.staging.storagePending, false);
+  assert.equal(storageRows(f).length, 1);
+  assert.equal((await finishImageStorage(f, prepared)).staging.phase, 'image-storage-ready');
+});
 test('durable image intent precedes every Storage write and exact PNG stays private without activating root or library', async () => {
   const { f, p } = await imageStorageFixture(),
     before = structuredClone([...f.records].filter(([k]) => k.startsWith('adventures/'))),

@@ -138,7 +138,7 @@ test('capítulo legado permanece editável e conversão explícita conserva o HT
   await expect(page.locator('strong').filter({ hasText: 'Ação' })).toHaveCount(1);
   await expectNoHorizontalOverflow(page, 'composicao-convertida');
   await page.goto(bookPath);
-  const backup = await downloadBook(page, 'Backup completo (.json)');
+  const backup = await downloadBook(page, 'Backup JSON antigo (.json)');
   expect(backup).toContain('"version": 5');
   expect(backup).toContain('"sources"');
   expect(backup).toContain('Ação');
@@ -253,7 +253,7 @@ test('rascunho legado anterior à conversão permanece privado e recuperável po
   await capture(page, testInfo, 'rascunho-legado-preservado');
   await page.goto(bookPath);
   expect(await downloadBook(page)).not.toContain(localText);
-  expect(await downloadBook(page, 'Backup completo (.json)')).not.toContain(localText);
+  expect(await downloadBook(page, 'Backup JSON antigo (.json)')).not.toContain(localText);
   await page.getByRole('tab', { name: 'Publicação', exact: true }).click();
   await page.getByRole('button', { name: 'Publicar Obra', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Publicar versão da obra', exact: true });
@@ -288,6 +288,7 @@ test('aventura reúne partes e cenas sem criar livro auxiliar', async ({ page },
     planner.getByRole('article', { name: 'Cena Uma porta entre as marés', exact: true }),
   ).toBeVisible();
   await navigateWorkspace(page, 'Estúdio');
+  await navigateWorkspace(page, 'Projetos');
   await expect(
     page.getByRole('region', { name: 'Livros', exact: true }).getByRole('heading', { level: 3 }),
   ).toHaveCount(3);
@@ -650,6 +651,7 @@ test('referência indisponível conserva identidade sem mostrar o nome antigo', 
   await page.getByLabel(/Resumo Curto/).fill('Guarda a identidade compartilhada.');
   await page.getByRole('button', { name: 'Cadastrar Entidade' }).click();
   await navigateWorkspace(page, 'Estúdio');
+  await navigateWorkspace(page, 'Projetos');
   await page.getByRole('link', { name: /O Atlas das Marés Esquecidas/ }).click();
   await page.getByRole('button', { name: 'Opções do livro', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Editar', exact: true }).click();

@@ -4,6 +4,7 @@ import { chooseDropdown } from '../dropdown';
 import { FIXTURE_BOOK_ID } from './fixtures/data';
 import {
   capture,
+  navigateWorkspace,
   expectWorkspaceButton,
   expect,
   expectDialogWithinViewport,
@@ -349,8 +350,7 @@ test('referência indisponível oculta nome anterior e pode ser removida sem blo
   await page.getByLabel('Nome da Entidade').fill('Guardião do farol');
   await page.getByLabel(/Resumo Curto/).fill('Guarda o mapa compartilhado.');
   await page.getByRole('button', { name: 'Cadastrar Entidade' }).click();
-  await page.getByRole('button', { name: 'Universos', exact: true }).click();
-  await page.getByRole('menuitem', { name: 'Estúdio', exact: true }).click();
+  await navigateWorkspace(page, 'Projetos');
   await page.getByRole('link', { name: /O Atlas das Marés Esquecidas/ }).click();
   await page.getByRole('button', { name: 'Opções do livro', exact: true }).click();
   await page.getByRole('menuitem', { name: 'Editar', exact: true }).click();
@@ -531,6 +531,7 @@ test('troca de conta descarta resposta tardia e oculta planejamento da conta ant
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
   await expectWorkspaceButton(page, /Marina de Exemplo/);
+  await navigateWorkspace(page, 'Projetos');
   await page.getByRole('link', { name: /O Atlas das Marés Esquecidas/ }).click();
   await page.getByRole('tab', { name: 'Arcos e cronologia', exact: true }).click();
   await expect(planner).toBeVisible();
@@ -671,7 +672,7 @@ test('backup real inclui planejamento privado e exportação de leitura inclui s
   await create(page, planner, 'marco', 'MARCO PRIVADO DA CARTA');
   await addReference(page, 'Cena', 'Cena publicada do farol', 'Capítulo publicado');
   await page.goto(bookPath);
-  const backup = await downloadBook(page, 'Backup completo (.json)');
+  const backup = await downloadBook(page, 'Backup JSON antigo (.json)');
   const parsed = JSON.parse(backup) as { version: number };
   expect(parsed.version).toBe(6);
   expect(backup).toContain(privateObjective);

@@ -112,10 +112,10 @@
 }
 
 :global([role='dialog']):has(> .dock.inDialog[data-mode='compact']) {
-  padding-bottom: 220px;
+  padding-bottom: calc(var(--page-assistant-height, 220px) + 16px);
 }
 :global([role='dialog']):has(> .dock.inDialog[data-mode='minimized']) {
-  padding-bottom: 80px;
+  padding-bottom: calc(var(--page-assistant-height, 80px) + 16px);
 }
 
 .conceptionSurface .launcher {
