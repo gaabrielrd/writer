@@ -507,3 +507,17 @@ Universo/persona, premissa e capa usam FormSection; não obrigue todas as seçõ
 abertas. Ações do assistente mostram rótulo e texto proposto antes de executar.
 O painel acompanha o diálogo ativo sem retirar seu foco contido ou a confirmação
 de salvamento. Temas usam os mesmos tokens semânticos e os controles compartilhados.
+
+## Primeiro acesso e assistência contínua
+
+O questionário usa Dialog, escolhas Button com aria-pressed e Dropdown select.
+Permite múltiplos interesses e explicita que todas as ferramentas continuam
+acessíveis. O guia é não modal, com progresso, pausa, links e destaque por token
+semântico; não deve capturar foco de escrita ao surgir.
+
+A barra do assistente nasce compacta no centro inferior, com alça por toque/
+ponteiro/setas e ações nomeadas de expandir, minimizar e restaurar. O painel
+respeita visualViewport, área segura e foco dos modais. Sobreposição ao campo/
+caret recolhe temporariamente a barra sem mudar sua preferência salva. Conversa
+expandida rola separadamente do composer. Não criar uma segunda superfície
+flutuante para a concepção de projetos. Perfil e assistente seguem os três temas.

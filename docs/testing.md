@@ -3413,3 +3413,18 @@ npx playwright test --config playwright.visual.config.ts e2e/visual/persona-gene
 
 Não há chamadas reais à IA nesses testes; qualidade literária exige revisão
 manual da proposta. Use WRITER_VISUAL_PORT exclusivo por checkout.
+
+## Primeiro acesso e assistente persistente
+
+Os contratos de regressão ficam em src/features/onboarding/tests,
+src/features/page-assistant/tests, functions/test/pageAssistant.test.mjs e
+tests/firestore/onboarding.rules.test.mjs. Cobrem preferências fechadas, CAS,
+primeiro acesso, pausa/retomada, troca de conta, posição, rascunho e inspeção
+sem provedor. Em 2026-11-02 foram escritos sem execução por pedido explícito.
+As jornadas de navegador, Rules, snapshots de /styleguide e piloto humano
+continuam pendentes; análise estática não comprova esses comportamentos.
+
+Em 2026-11-03, o operador autorizou executar os testes afetados, corrigir falhas
+e integrar localmente. O ambiente visual usa onboardingFixture e inspeção do
+chat fictícios, sem rede externa. O guia e a barra têm jornada própria em
+e2e/visual/onboarding.visual.ts, junto às regressões de Home e criação.

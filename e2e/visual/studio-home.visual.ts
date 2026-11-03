@@ -16,7 +16,7 @@ test('Home visual mantém retomada compacta e atalhos funcionais', async ({ page
   await recent.getByRole('button', { name: 'Continuar projeto' }).first().click();
   await expect(page).toHaveURL(/\/books\/work-recent-01$/);
   await page.goto('/studio');
-  const create = page.getByRole('link', { name: 'Criar com IA', exact: true });
+  const create = page.getByRole('link', { name: 'Começar um projeto', exact: true });
   await create.focus();
   await create.press('Enter');
   await expect(page.getByRole('heading', { name: 'Como deseja começar?' })).toBeVisible();

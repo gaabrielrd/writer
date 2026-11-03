@@ -37,7 +37,7 @@ for (const method of ['manual', 'assisted'] as const)
         page.getByRole('heading', { name: 'Projeto das lanternas', exact: true }),
       ).toBeVisible();
       await expect(page.getByRole('complementary', { name: 'Assistente da página' })).toBeVisible();
-      await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
+      await page.getByRole('button', { name: 'Minimizar assistente' }).click();
       await expectNoHorizontalOverflow(page, 'projeto-confirmado');
     });
   }
@@ -54,7 +54,7 @@ test('assistente abre ação existente, continua dentro do diálogo e preserva c
   await page.getByRole('button', { name: 'Assistente da página', exact: true }).click();
   await expect(page.getByLabel('Pedido ao assistente da página')).toBeVisible();
   await capture(page, testInfo, 'assistente-no-dialogo');
-  await page.getByRole('button', { name: 'Fechar assistente da página' }).click();
+  await page.getByRole('button', { name: 'Minimizar assistente' }).click();
   await page.getByRole('button', { name: 'Cancelar', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Crônicas do Porto das Lanternas' }),

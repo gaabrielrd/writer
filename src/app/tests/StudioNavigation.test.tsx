@@ -11,13 +11,15 @@ beforeEach(() => {
 });
 
 describe('espaços do Writer', () => {
-  it('oferece links diretos e conserva os cinco espaços, imagens e configurações', () => {
+  it('oferece links diretos e conserva os cinco espaços, imagens e configurações', async () => {
     render(
       <MemoryRouter initialEntries={['/studio']}>
         <StudioNavigation />
       </MemoryRouter>,
     );
     expect(screen.getByRole('navigation', { name: 'Navegação principal' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Catálogo' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Todas as ferramentas' }));
     for (const [name, path] of [
       ['Universos', '/universes'],
       ['Estúdio', '/studio'],

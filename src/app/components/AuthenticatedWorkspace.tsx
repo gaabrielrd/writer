@@ -1,4 +1,4 @@
-import { PageAssistant } from '@/features/page-assistant';
+import { OnboardingExperience } from '@/features/onboarding';
 import { useEffect, useRef, useState } from 'react';
 import { Feather, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router';
@@ -70,6 +70,7 @@ export function AuthenticatedWorkspace() {
         className={styles.sidebar}
         hidden={!sidebarVisible}
         aria-label="Barra lateral do Writer"
+        data-writer-tour="navigation"
       >
         <div className={styles.sidebarHeader}>
           <Link to="/studio" className={styles.brand} aria-label="Writer Assistant Início">
@@ -109,6 +110,7 @@ export function AuthenticatedWorkspace() {
           </Button>
           <Button
             ref={mobileTrigger}
+            data-writer-tour="navigation"
             variant="ghost"
             size="icon"
             className={styles.mobileToggle}
@@ -137,11 +139,11 @@ export function AuthenticatedWorkspace() {
             <CustomThemeSelector />
           </div>
         </header>
-        <main id="main-content" tabIndex={-1} className={styles.main}>
+        <main data-writer-tour="workspace" id="main-content" tabIndex={-1} className={styles.main}>
           <Outlet />
         </main>
       </div>
-      <PageAssistant />
+      <OnboardingExperience />
       <Dialog
         open={drawerPath === pathname}
         onClose={closeDrawer}

@@ -37,3 +37,8 @@ export async function askPageAssistant(input: {
     contextProof: 'fixture',
   };
 }
+
+export async function inspectPageAssistantContext() {
+  await Promise.resolve();
+  return { contextProof: 'fixture' };
+}

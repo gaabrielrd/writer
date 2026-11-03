@@ -33,3 +33,26 @@ export function pageAssistantTarget(path: string): PageAssistantTarget | null {
     id,
   };
 }
+
+export function pageContextLabel(path: string): string {
+  const target = pageAssistantTarget(path);
+  if (target) {
+    const label = {
+      book: 'Livro',
+      adventure: 'Aventura',
+      campaign: 'Campanha',
+      universe: 'Universo',
+    }[target.kind];
+    return `${label}${path.includes('/editor/') ? ' · Escrita' : path.includes('/sessions/') ? ' · Sessão' : path.includes('/scenes/') ? ' · Cena' : ''}`;
+  }
+  if (path.startsWith('/studio/new') || path.startsWith('/books/new')) return 'Criação de projeto';
+  if (path.startsWith('/studio/import')) return 'Importação e restauração';
+  if (path.startsWith('/studio/operations')) return 'Operações em andamento';
+  if (path.startsWith('/studio/projects')) return 'Meus projetos';
+  if (path.startsWith('/settings/preferences')) return 'Preferências';
+  if (path.startsWith('/settings/ai')) return 'Configurações de IA';
+  if (path.startsWith('/read/')) return 'Leitura · Ajuda geral';
+  if (path.startsWith('/library')) return 'Biblioteca de imagens';
+  if (path.startsWith('/universes')) return 'Universos';
+  return 'Estúdio · Ajuda da tela';
+}

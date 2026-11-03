@@ -29,3 +29,15 @@ export async function loadProjectConception(projectId: string): Promise<Assisted
     )({ action: 'conception', projectId })
   ).data;
 }
+
+/** Fresh native source proof; no generation, debit or replay of a UI action. */
+export async function inspectPageAssistantContext(
+  target: PageAssistantTarget | null,
+): Promise<{ contextProof: string | null }> {
+  return (
+    await httpsDomainCallable<unknown, { contextProof: string | null }>(
+      getFunctions(getFirebaseApp(), 'us-central1'),
+      'pageAssistant',
+    )({ action: 'inspect', target })
+  ).data;
+}

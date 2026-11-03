@@ -132,6 +132,15 @@ Distribuição e vendas por criadores convidados serão implementadas nos próxi
 incrementos. Veja [escopo e execução](docs/tasks/writer-v2/README.md)
 e [timeline reestimada](docs/tasks/writer-v2/timeline.md).
 
+## Experiência inicial
+
+O primeiro acesso oferece perfil por interesses, Estúdio personalizado e guia
+retomável. Um assistente flutuante acompanha as telas de criação e consulta,
+com contexto autorizado e posição ajustável. A implementação é local,
+com testes automatizados aprovados; não constitui lançamento de produção.
+Veja [primeiro acesso](docs/first-use.md) e a
+[evidência parcial](docs/entregas/2026-11-02-primeira-experiencia-e-assistente-persistente.md).
+
 ## Quando usar
 
 Indicado para:

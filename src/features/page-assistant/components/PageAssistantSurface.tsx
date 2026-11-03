@@ -10,7 +10,7 @@ export function PageAssistantSurface({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   if (!dialog) return <div data-page-assistant>{children}</div>;
   return createPortal(
-    <div data-page-assistant className={styles.inDialog}>
+    <div data-page-assistant className={styles.conceptionSurface} data-conception-assistant>
       {!open && (
         <Button className={styles.launcher} onClick={() => setOpen(true)}>
           Continuar conversa criativa

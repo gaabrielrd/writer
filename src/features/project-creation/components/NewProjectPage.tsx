@@ -1,3 +1,4 @@
+import { useOnboarding } from '@/features/onboarding';
 import {
   capturePageCapabilities,
   PageActionProposal,
@@ -6,7 +7,7 @@ import {
   type PageAction,
 } from '@/features/page-assistant';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
 import { BookOpen, Map, PenLine, ScrollText, Sparkles } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { ImageLibraryPicker, type LibraryImage } from '@/features/image-library';
@@ -72,9 +73,13 @@ export function NewProjectPage() {
 function ProjectCreationSession() {
   const { user, loading, updateUserCreditsState } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const onboarding = useOnboarding();
   const library = usePersonaLibrary(user?.uid);
   const [method, setMethod] = useState<Method | null>(null);
-  const [kind, setKind] = useState<CreationKind | null>(null);
+  const [kind, setKind] = useState<CreationKind | null>(
+    () => kinds.find((item) => item.id === params.get('kind'))?.id ?? null,
+  );
   const [universeId, setUniverseId] = useState<string | null>(null);
   const [personaId, setPersonaId] = useState<string | null>(null);
   const [universeForm, setUniverseForm] = useState(false);
@@ -359,7 +364,9 @@ function ProjectCreationSession() {
   };
   return (
     <section className={styles.page}>
-      <PageHeader title="Novo projeto" description="Da primeira ideia às primeiras palavras." />
+      <div data-writer-tour="project-start">
+        <PageHeader title="Novo projeto" description="Da primeira ideia às primeiras palavras." />
+      </div>
       <p className={styles.meta}>
         Etapa {step + 1} de 4 ·{' '}
         {
@@ -431,18 +438,24 @@ function ProjectCreationSession() {
             O que deseja criar?
           </h2>
           <div className={styles.choices}>
-            {kinds.map(({ id, title, description, icon: Icon }) => (
-              <Button
-                key={id}
-                className={styles.choice}
-                variant="secondary"
-                onClick={() => setKind(id)}
-              >
-                <Icon className="icon" aria-hidden="true" />
-                {title}
-                <span>{description}</span>
-              </Button>
-            ))}
+            {[...kinds]
+              .sort(
+                (a, b) =>
+                  Number(Boolean(onboarding?.profile?.interests.includes(b.id))) -
+                  Number(Boolean(onboarding?.profile?.interests.includes(a.id))),
+              )
+              .map(({ id, title, description, icon: Icon }) => (
+                <Button
+                  key={id}
+                  className={styles.choice}
+                  variant="secondary"
+                  onClick={() => setKind(id)}
+                >
+                  <Icon className="icon" aria-hidden="true" />
+                  {title}
+                  <span>{description}</span>
+                </Button>
+              ))}
           </div>
         </>
       )}

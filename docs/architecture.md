@@ -4036,3 +4036,23 @@ sem débito, vínculos automáticos ou alteração nos contratos de perfis resta
 O compilador puro personaProfile valida perfis; o transporte existente recebe
 snapshot público de geração. Pedidos são privados e temporários; o scheduler
 coleta expirados por lotes. Veja [ADR 0271](decisions/0271-contextual-persona-generation.md).
+
+## Primeiro acesso e assistente persistente
+
+A feature onboarding mantém perfil explícito e progresso de guia em preferências
+privadas por conta, com CAS e Rules fechadas. app compõe o provider; Estúdio,
+navegação, criação e Preferências consomem a API pública. Interesses priorizam
+atalhos sem alterar autorização ou disponibilidade de projetos.
+
+PageAssistant fica montado por UID, com uma barra compacta inferior central,
+modo expandido/minimizado e geometria local normalizada. O cache de conversas
+fica em RAM por escopo; navegação não transfere propostas de ação. A action
+inspect do serviço existente retorna somente prova atual de origem antes de
+reexibir respostas. Perguntas próprias sobrevivem à perda da origem. Os chats
+nativos do editor mantêm seus contratos de conteúdo e aplicação.
+
+Veja [primeiro acesso](first-use.md) e
+[ADR 0273](decisions/0273-profile-onboarding-and-persistent-assistant.md).
+Não há certificação de produção: o piloto humano e o rollout deste incremento
+continuam pendentes. A execução de testes foi autorizada em 2026-11-03;
+consulte os resultados na evidência do incremento.

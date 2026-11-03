@@ -901,3 +901,16 @@ prefixos e coleta; legado incompatível recebe motivo explícito de restart.
 326 casos Node distintos (sete novos) e uma jornada SDK/Rules positivos.
 Mídia/universo organizacional/C4/auditoria física/ativação/Estúdio permanecem;
 macro 8/35 (22,9%), checks dirigidos e validate integral no fechamento do bloco.
+
+## Ciclo de experiência inicial — 2026-11-02
+
+Perfil por interesses, guia retomável e assistente persistente implementados em
+worktree nova de master, sem monetização. Testes escritos, não executados por
+solicitação explícita. Este recorte não altera a contagem 8/35 nem conclui F5-01,
+pilotos ou lançamento. Veja o [plano](primeira-experiencia-producao.md) e a
+[evidência parcial](../../entregas/2026-11-02-primeira-experiencia-e-assistente-persistente.md).
+
+Em 2026-11-03, testes e integração local deste ciclo foram autorizados. As
+regressões dirigidas do assistente/navegação, serviço, Rules e as 66 jornadas
+Chromium afetadas passaram; consulte a evidência para o portão integral.
+A contagem macro e as pendências de piloto/lançamento permanecem inalteradas.

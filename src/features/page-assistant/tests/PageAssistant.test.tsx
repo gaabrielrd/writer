@@ -10,11 +10,13 @@ const mocks = vi.hoisted(() => ({
   uid: 'owner',
   load: vi.fn<typeof loadProjectConception>(),
   ask: vi.fn<typeof askPageAssistant>(),
+  inspect: vi.fn(),
 }));
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { uid: mocks.uid } }) }));
 vi.mock('../services/pageAssistantService', () => ({
   loadProjectConception: mocks.load,
   askPageAssistant: mocks.ask,
+  inspectPageAssistantContext: mocks.inspect,
 }));
 function tree() {
   return (
@@ -44,6 +46,9 @@ const session = (): AssistedSession => ({
 beforeEach(() => {
   mocks.uid = 'owner';
   vi.clearAllMocks();
+  localStorage.clear();
+  mocks.load.mockReset().mockResolvedValue(null);
+  mocks.inspect.mockResolvedValue({ contextProof: null });
 });
 it('keeps a late conception read when navigating to the first editor in the same project', async () => {
   let finish!: (value: AssistedSession | null) => void;
@@ -123,7 +128,10 @@ it('reviews a proposed field value before invoking the original controlled input
   await userEvent.type(screen.getByLabelText('Texto proposto'), 'Revisado pelo autor');
   await userEvent.click(screen.getByRole('button', { name: 'Executar: Título do projeto' }));
   expect(screen.getByLabelText('Título do projeto')).toHaveValue('Revisado pelo autor');
-  expect(screen.queryByLabelText('Pedido ao assistente da página')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Assistente da página' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
 });
 it('keeps author edits when a captured field changes before execution', async () => {
   vi.spyOn(HTMLElement.prototype, 'getClientRects').mockReturnValue([{}] as unknown as DOMRectList);
@@ -149,4 +157,17 @@ it('keeps author edits when a captured field changes before execution', async ()
   expect(
     screen.queryByRole('button', { name: 'Executar: Título do projeto' }),
   ).not.toBeInTheDocument();
+});
+
+it('keeps a question draft while navigating and labels its original context', async () => {
+  render(tree());
+  await userEvent.type(
+    screen.getByLabelText('Pedido ao assistente da página'),
+    'Minha pergunta ainda não enviada',
+  );
+  await userEvent.click(screen.getByRole('link', { name: 'Abrir editor' }));
+  expect(screen.getByLabelText('Pedido ao assistente da página')).toHaveValue(
+    'Minha pergunta ainda não enviada',
+  );
+  expect(mocks.ask).not.toHaveBeenCalled();
 });

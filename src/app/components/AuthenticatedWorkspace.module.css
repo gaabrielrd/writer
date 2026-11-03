@@ -295,3 +295,8 @@
     padding-bottom: var(--space-1);
   }
 }
+
+.main {
+  padding-bottom: max(240px, env(safe-area-inset-bottom));
+  scroll-padding-bottom: 240px;
+}

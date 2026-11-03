@@ -4,7 +4,9 @@ export function useActiveDialog() {
   useEffect(() => {
     const update = () => {
       const dialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]')).filter(
-        (d) => !d.closest('[data-page-assistant]') && d.getAttribute('data-state') !== 'closed',
+        (d) =>
+          !d.closest('[data-page-assistant], [data-writer-guide]') &&
+          d.getAttribute('data-state') !== 'closed',
       );
       setDialog(dialogs.at(-1) ?? null);
     };

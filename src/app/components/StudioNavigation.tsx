@@ -1,3 +1,5 @@
+import { useOnboarding, interestLabels } from '@/features/onboarding';
+import { useState } from 'react';
 import { studioDestinations } from '@/features/studio';
 import { ChevronDown, House, FolderOpen, Upload, Activity } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
@@ -16,6 +18,8 @@ export function StudioNavigation({
   presentation?: 'sidebar' | 'menu';
 }) {
   const { user } = useAuth();
+  const onboarding = useOnboarding();
+  const [showAll, setShowAll] = useState(false);
   const { pathname } = useLocation();
   if (!user) return null;
   const selected = workspaceLabel(pathname);
@@ -53,53 +57,73 @@ export function StudioNavigation({
     );
   }
   return (
-    <nav className={styles.nav} aria-label="Navegação principal">
-      {navigationSections.map((section) => (
-        <div key={section} className={styles.section} role="group" aria-label={section}>
-          <span className={styles.sectionTitle} aria-hidden="true">
-            {section}
-          </span>
-          {spaces
-            .filter((space) => space.section === section)
-            .map(({ path, label, Icon }) => (
-              <div key={path}>
-                <Link
-                  to={path}
-                  aria-current={
-                    selected === label && !(path === '/studio' && inStudio) ? 'page' : undefined
-                  }
-                  data-active={selected === label}
-                  onClick={onNavigate}
-                  className={styles.link}
-                >
-                  <Icon className="icon icon-sm" aria-hidden="true" />
-                  <span>{label}</span>
-                </Link>
-                {path === '/studio' && inStudio && (
-                  <div className={styles.subnav} role="group" aria-label="Seções do Estúdio">
-                    {studioDestinations.map((destination) => {
-                      const Icon = studioIcons[destination.id];
-                      return (
+    <nav data-writer-tour="navigation" className={styles.nav} aria-label="Navegação principal">
+      {navigationSections
+        .filter(
+          (section) =>
+            section !== 'Explorar' ||
+            showAll ||
+            spaces.some((space) => space.section === section && pathname.startsWith(space.path)),
+        )
+        .map((section) => (
+          <div key={section} className={styles.section} role="group" aria-label={section}>
+            <span className={styles.sectionTitle} aria-hidden="true">
+              {section}
+            </span>
+            {spaces
+              .filter((space) => space.section === section)
+              .map(({ path, label, Icon }) => (
+                <div key={path}>
+                  <Link
+                    to={path}
+                    aria-current={
+                      selected === label && !(path === '/studio' && inStudio) ? 'page' : undefined
+                    }
+                    data-active={selected === label}
+                    onClick={onNavigate}
+                    className={styles.link}
+                  >
+                    <Icon className="icon icon-sm" aria-hidden="true" />
+                    <span>{label}</span>
+                  </Link>
+                  {path === '/studio' && inStudio && (
+                    <div className={styles.subnav} role="group" aria-label="Seções do Estúdio">
+                      {onboarding?.profile?.interests.map((interest) => (
                         <Link
-                          key={destination.id}
-                          to={destination.path}
+                          key={interest}
+                          to={`/studio/projects?kind=${interest}`}
                           className={styles.sublink}
-                          aria-current={
-                            pathname.replace(/\/$/, '') === destination.path ? 'page' : undefined
-                          }
                           onClick={onNavigate}
                         >
-                          <Icon className="icon icon-sm" aria-hidden="true" />
-                          <span>{destination.label}</span>
+                          {interestLabels[interest]}
                         </Link>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            ))}
-        </div>
-      ))}
+                      ))}
+                      {studioDestinations.map((destination) => {
+                        const Icon = studioIcons[destination.id];
+                        return (
+                          <Link
+                            key={destination.id}
+                            to={destination.path}
+                            className={styles.sublink}
+                            aria-current={
+                              pathname.replace(/\/$/, '') === destination.path ? 'page' : undefined
+                            }
+                            onClick={onNavigate}
+                          >
+                            <Icon className="icon icon-sm" aria-hidden="true" />
+                            <span>{destination.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ))}
+          </div>
+        ))}
+      <Button variant="ghost" aria-expanded={showAll} onClick={() => setShowAll((old) => !old)}>
+        {showAll ? 'Recolher ferramentas' : 'Todas as ferramentas'}
+      </Button>
     </nav>
   );
 }

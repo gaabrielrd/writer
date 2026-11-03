@@ -383,6 +383,26 @@ service cloud.firestore {
     match /bookRestoreReservations/{id} { allow read, write: if false; }
     match /adventureRestoreReservations/{id} { allow read, write: if false; }
     match /users/{userId} {
+      match /preferences/onboarding {
+        function validOnboarding() {
+          let d = request.resource.data;
+          return d.keys().hasOnly(['schemaVersion', 'revision', 'interests', 'startingPoint', 'guidance', 'questionnaire', 'tour', 'step'])
+            && d.keys().hasAll(['schemaVersion', 'revision', 'interests', 'startingPoint', 'guidance', 'questionnaire', 'tour', 'step'])
+            && d.schemaVersion == 1 && d.revision is int && d.revision >= 1
+            && d.interests is list && d.interests.size() >= 1 && d.interests.size() <= 3
+            && d.interests.toSet().size() == d.interests.size()
+            && d.interests.hasOnly(['book', 'adventure', 'campaign'])
+            && d.startingPoint in ['empty', 'import', 'explore']
+            && d.guidance in ['guided', 'essential', 'independent']
+            && d.questionnaire in ['completed', 'skipped']
+            && d.tour in ['active', 'paused', 'completed']
+            && d.step is int && d.step >= 0 && d.step <= 5;
+        }
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && validOnboarding() && request.resource.data.revision == 1;
+        allow update: if isOwner(userId) && validOnboarding() && request.resource.data.revision == resource.data.revision + 1;
+        allow delete: if false;
+      }
       match /preferences/{preferenceId} {
         allow read: if isOwner(userId) && preferenceId == 'themes';
         allow create, update: if isOwner(userId) && preferenceId == 'themes'

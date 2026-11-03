@@ -1,3 +1,5 @@
+import { PageAssistant } from '@/features/page-assistant';
+import { OnboardingProvider } from '@/features/onboarding';
 import { Feather } from 'lucide-react';
 import { Link, Outlet, useLocation } from 'react-router';
 import { AuthProvider, AuthButton, CreditsBadge, useAuth } from '@/features/auth';
@@ -45,7 +47,10 @@ function ThemeWorkspace() {
   const { user } = useAuth();
   return (
     <CustomThemesProvider uid={user?.uid ?? null}>
-      <AppWorkspace />
+      <OnboardingProvider key={user?.uid ?? 'anonymous'}>
+        <AppWorkspace />
+        <PageAssistant />
+      </OnboardingProvider>
     </CustomThemesProvider>
   );
 }

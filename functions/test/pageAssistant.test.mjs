@@ -103,3 +103,29 @@ test('select proposals map opaque provider options back to their exact local val
   );
   assert.equal(result.action.value, 'Em revisão');
 });
+
+test('inspection reauthorizes the current source without provider calls or quota writes', async () => {
+  let calls = 0;
+  const f = fixture(async () => {
+    calls++;
+    return { reply: 'unused', action: null };
+  });
+  const before = structuredClone([...f.records]);
+  const first = await f.call({ action: 'inspect', target: request().target });
+  assert.match(first.contextProof, /^[a-f0-9]{64}$/);
+  assert.deepEqual([...f.records], before);
+  f.records.get('books/book').updatedAt++;
+  const second = await f.call({ action: 'inspect', target: request().target });
+  assert.notEqual(first.contextProof, second.contextProof);
+  assert.equal(calls, 0);
+  await assert.rejects(f.call({ action: 'inspect', target: request().target }, 'other'), {
+    code: 'permission-denied',
+  });
+  await assert.rejects(f.call({ action: 'inspect', target: null }, ''), {
+    code: 'unauthenticated',
+  });
+  f.records.get('books/book').deleting = true;
+  await assert.rejects(f.call({ action: 'inspect', target: request().target }), {
+    code: 'permission-denied',
+  });
+});

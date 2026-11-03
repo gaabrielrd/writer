@@ -1,3 +1,4 @@
+import { OnboardingPreferences } from '@/features/onboarding';
 import { Navigate } from 'react-router';
 import { useAuth } from '@/features/auth';
 import { Card, Dropdown, LoadingState, useWorkspaceLayout } from '@/shared/ui';
@@ -11,6 +12,7 @@ export function WorkPreferencesPage() {
   if (!user) return <Navigate to="/login" replace />;
   return (
     <section className={styles.preferencesPage} aria-label="Preferências">
+      <OnboardingPreferences />
       <Card className={styles.preferencesCard}>
         <h2>Área de trabalho</h2>
         <p className={styles.hint}>

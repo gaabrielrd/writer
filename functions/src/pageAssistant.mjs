@@ -83,6 +83,13 @@ export function createPageAssistantService({ db, generator, now = Date.now }) {
   return {
     async pageAssistant(uid, data) {
       if (!uid) fail('unauthenticated', 'Entre na sua conta.');
+      // Metadata-only reauthorization for RAM conversations when returning to a page.
+      // This never calls a provider or grants a content mutation capability.
+      if (data?.action === 'inspect') {
+        const source = await db.runTransaction((tx) => read(tx, uid, data.target));
+        return { contextProof: source.proof };
+      }
+
       const prompt = text(data?.prompt, 4000);
       const page = text(data.page, 500);
       const capabilities = normalizePageCapabilities(data.capabilities);

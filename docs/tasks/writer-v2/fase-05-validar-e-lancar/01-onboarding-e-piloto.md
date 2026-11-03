@@ -1,6 +1,6 @@
 # W2-F5-01 — Preparar onboarding e piloto das duas jornadas
 
-**Estado:** Planejada; execução não iniciada.
+**Estado:** onboarding não comercial implementado localmente em ciclo próprio; testes locais aprovados em 2026-11-03; piloto pendente. A jornada comercial desta tarefa não foi iniciada.
 **Dependências:** [W2-F4-11](../fase-04-publicar-e-comercializar/11-repasses-e-operacao.md), [W2-F4-12](../fase-04-publicar-e-comercializar/12-campanha-a-partir-de-compra.md), [W2-F1-05](../fase-01-direcao-e-fundamentos/05-prototipos-e-pilotos.md)
 **Áreas propostas:** app, books; propostas campaigns, library e commerce; produto. Nomes novos são propostas, sujeitos à fase 1.
 
@@ -48,3 +48,10 @@ Aplicar também o [contrato transversal de validação](../validacao-e-aceite.md
 ## Não escopo
 
 Carga financeira real nesta tarefa, recrutamento sem autorização e tutorial obrigatório que impeça usuários experientes.
+
+## Ciclo independente de experiência inicial — 2026-11-02
+
+O operador priorizou primeiro acesso, perfis, guia e assistente persistente, sem
+monetização e sem executar testes. Esse recorte não depende de W2-F4-11/12 e não
+conclui os aceites comerciais/humanos desta tarefa. Consulte o
+[plano e estado](../primeira-experiencia-producao.md).

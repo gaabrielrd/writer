@@ -1,3 +1,4 @@
+import { PersonalizedWelcome } from '@/features/onboarding';
 import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router';
 import {
@@ -8,8 +9,6 @@ import {
   ScrollText,
   FolderOpen,
   ArrowRight,
-  Sparkles,
-  Feather,
   Activity,
 } from 'lucide-react';
 import { BookRestoreDialog, BookRestorePreparations } from '@/features/book-portability';
@@ -85,20 +84,7 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
       />
       {section === 'home' && (
         <>
-          <div className={styles.homeHero}>
-            <div>
-              <span className={styles.eyebrow}>Seu espaço de criação</span>
-              <h2>Uma nova página começa aqui.</h2>
-              <Link to="/studio/new" className={styles.heroLink}>
-                <Sparkles className="icon icon-sm" aria-hidden="true" />
-                Criar com IA
-                <ArrowRight className="icon icon-sm" aria-hidden="true" />
-              </Link>
-            </div>
-            <div className={styles.heroArtwork} aria-hidden="true">
-              <Feather className="icon" />
-            </div>
-          </div>
+          <PersonalizedWelcome />
           <div className={styles.homeGrid}>
             <ContinueWorkPanel compact />
             <aside className={styles.homeAside} aria-label="Atalhos do Estúdio">
