@@ -99,3 +99,10 @@ prosa. Typecheck, lint dirigido, formatação integral, documentação e stylegu
 passaram. A revisão final não encontrou alteração fora das causas observadas.
 O novo SHA ainda exige CI; falhas do primeiro push não são apresentadas como
 execução aprovada.
+
+O validador de Hosting no SHA `296261c` concluiu 5.218 testes aprovados e uma
+falha: o caso de preparação cifrada maior que 8 MiB ultrapassou seu timeout
+explícito de 20 segundos (aproximadamente 22 segundos). O prazo desse único caso
+foi ampliado para 60 segundos; payload, contagem de frames, leitura integral e
+limpeza limitada a 50 frames permanecem iguais. A cobertura dirigida desse
+arquivo não substitui o gate global de cobertura do workflow final.

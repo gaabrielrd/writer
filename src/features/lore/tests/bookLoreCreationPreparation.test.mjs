@@ -450,6 +450,7 @@ it('does not trust a complete tombstone if a foreign or orphan frame is present'
   expect(resumed.snapshot().copyDiscarded).toBe(false);
   expect(frames()).toHaveLength(1);
 });
+// AES-GCM over >128 frames can exceed 20s on the shared coverage runner.
 it('streams a draft larger than 8 MiB and deletes at most 50 actual frames per call', async () => {
   const data = creationData();
   data.details = '\ufeff' + 'x'.repeat(8 * 1024 * 1024 + 1024) + '🌙\r\n';
@@ -469,7 +470,7 @@ it('streams a draft larger than 8 MiB and deletes at most 50 actual frames per c
   expect(s.copyDiscarded).toBe(false);
   expect(frames()).toHaveLength(size - 50);
   expect((await finishPreparationClose(closer, 'discard', 50)).deleted).toBe(size);
-}, 20000);
+}, 60000);
 
 it('paginates tickets within the account, with a stable exclusive cursor and bounded limit', async () => {
   const a = await preparationFixture({ writeId: 'a-ticket' }),
