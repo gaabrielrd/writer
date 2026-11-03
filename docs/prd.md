@@ -199,14 +199,14 @@ da operação pertinente; não há prazo fiscal presumido neste PRD.
 
 ## 10. Plataformas e distribuição
 
-- **Dispositivos e navegadores:** Suporte a navegadores modernos baseados em Chromium, Firefox e Safari (versões atuais em desktop e tablet/mobile). Foco de escrita primariamente em telas médias e grandes (desktop/laptop) e foco de leitura responsivo em todos os formatos de tela.
+- **Dispositivos e navegadores:** Desde 2026-11-03, o suporte inicial contempla desktop/laptop em navegadores modernos Chromium, Firefox e Safari. Celulares e tablets ficam fora do escopo inicial, inclusive na leitura pública. A automação atual verifica Chromium; isso não comprova Firefox/Safari. Veja a [direção de suporte](platform-support.md).
 - **Forma de entrega:** Aplicação Web SPA servida via hospedagem estática moderna (Firebase Hosting).
 - **Instalação e atualização:** Acesso direto via URL sem necessidade de instalação local; atualizações automáticas no reload do navegador.
 - **Uso sem conexão:** Rascunho próprio pode ser recuperado; divergências exigem resolução explícita. O V2 não oferece persistência offline do corpo pago/compartilhado na primeira versão; cache não concede autorização. Veja [contrato de acesso](tasks/writer-v2/execucao/03-permissoes-e-privacidade.md).
 
 ## 11. Restrições e requisitos de qualidade
 
-- **Acessibilidade da interface:** Componentes semânticos de `@/shared/ui`, tokens de tema, Claro/Escuro/Sépia, teclado/foco/ARIA, contraste WCAG AA e validação responsiva até 320 px. A meta exige inspeção pertinente; testes automatizados sozinhos não comprovam conformidade integral.
+- **Acessibilidade da interface:** Componentes semânticos de `@/shared/ui`, tokens de tema, Claro/Escuro/Sépia, teclado/foco/ARIA, contraste WCAG AA e validação de layout em desktop/laptop. Celular e 320 px deixam de ser critérios de aceite nesta fase. A meta exige inspeção pertinente; testes automatizados sozinhos não comprovam conformidade integral.
 - **Idiomas:** Interface e mensagens em Português do Brasil na V1; suporte a textos de ficção em qualquer idioma.
 - **Desempenho:** Detecção e marcação de entidades no editor em menos de 50ms para capítulos de até 15.000 palavras; tempo de resposta do autocomplete de IA otimizado com debounce de 600ms após pausa na digitação.
 - **Privacidade e acesso:** Regras de segurança do Firestore (`firestore.rules`) garantindo que apenas o criador possa editar ou ler capítulos em rascunho e fichas privadas.

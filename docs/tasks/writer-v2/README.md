@@ -9,6 +9,13 @@ implementação local e conclusão técnica.
 **Autorização deste trabalho:** implementar, planejar e validar cada tarefa em sequência, fase a fase.
 O [registro de execução](execucao/README.md) distingue documento, validação local e aceite final.
 
+## Direção de plataformas — 2026-11-03
+
+O foco inicial passa a desktop/laptop. A [direção de suporte](../../platform-support.md)
+substitui exigências de celular/tablet/320 px nos planos e contratos desta árvore
+para os próximos aceites. Resultados históricos e arquivos de teste são mantidos.
+Temas, teclado, foco, contraste e segurança continuam exigidos.
+
 ## Visão e decisões confirmadas
 
 O Writer evolui para um estúdio de criação, publicação e distribuição de livros e aventuras,

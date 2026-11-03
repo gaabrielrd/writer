@@ -36,7 +36,7 @@ pendências anteriores do Writer V2.
 - Troca de conta, conflito de revisão e falha de rede preservam isolamento.
 - Rascunho e resposta tardia não se perdem nem mudam o destino de uma ação.
 - Revogação oculta derivados; perguntas próprias são preservadas.
-- Todas as superfícies da matriz passam em desktop/mobile, teclado, toque e temas.
+- Todas as superfícies da matriz passam em desktop/laptop, teclado, foco e temas. Desde 2026-11-03, mobile/toque não são gates desta fase; veja a [direção de suporte](../../platform-support.md).
 - Nenhum controle final, campo ou caret fica inacessível pela barra.
 - Checks completos, snapshots afetados e piloto humano são aprovados antes de produção.
 

@@ -2,6 +2,12 @@
 
 Fluxo recomendado para levar uma ideia até o código, de forma organizada e verificável.
 
+## Plataforma inicial
+
+Planeje, implemente e valide as novas entregas para desktop/laptop, conforme a
+[direção de suporte](platform-support.md). Mobile/tablet e 320 px não são gates
+de aceite nesta fase; preserve arquivos de testes e comportamentos existentes.
+
 ## Fluxo
 
 1. **Descoberta do produto**: se a ideia ainda estiver vaga, use `plan-app`. Responda às perguntas até aprovar um escopo e um não escopo completos em `prd.md`.

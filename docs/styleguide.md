@@ -2,6 +2,13 @@
 
 A base visual do Writer Assistant é estruturada em torno do padrão **shadcn/ui** (utilizando **Tailwind CSS**, **Radix UI Primitives** e **Lucide React**), com componentes abertos, tipados e modulares localizados em `src/shared/ui` e motor de temas dinâmico em `src/shared/theme`. A referência interativa viva está disponível na rota `/styleguide`.
 
+## Plataforma inicial
+
+A [direção de suporte](platform-support.md), vigente desde 2026-11-03, prioriza
+exclusivamente desktop/laptop no aceite inicial. Temas, teclado, foco e contraste
+continuam obrigatórios. As descrições de celular e 320 px neste guia documentam
+comportamentos existentes preservados, sem exigir suporte mobile nesta fase.
+
 ## Instalação e imports
 
 O CSS global é importado uma única vez em `src/main.tsx`:

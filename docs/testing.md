@@ -12,6 +12,34 @@ locais e ignore a CI remota: não acompanhe, dispare ou repita workflows. Regist
 os resultados locais reais, seguindo o
 [processo de desenvolvimento](development-process.md).
 
+## Plataformas na execução automatizada
+
+Desde 2026-11-03, desktop/laptop é o alvo de suporte inicial, conforme a
+[direção de suporte](platform-support.md). A configuração visual executa por
+padrão somente `desktop-dark`, `desktop-light` e `desktop-sepia`. CI e deploy de
+Hosting consomem essa mesma configuração, sem habilitar mobile. O E2E de produção
+já utiliza somente Desktop Chrome. Temas, teclado, foco, acessibilidade e testes
+de unidade, componente, contratos e segurança permanecem ativos.
+
+```bash
+npx playwright test --config playwright.visual.config.ts
+npx playwright test --config playwright.visual.config.ts --list
+```
+
+Os projetos `mobile-*` e todos os arquivos/cenários são mantidos para investigação
+opcional. Para habilitar a matriz antiga em PowerShell, somente no processo filho:
+
+```powershell
+cmd /c "set WRITER_VISUAL_MOBILE=1&& npx playwright test --config playwright.visual.config.ts --project=mobile-dark --project=mobile-light --project=mobile-sepia"
+```
+
+Algumas jornadas funcionais compartilhadas alteram a viewport para 320 px dentro
+do próprio caso, inclusive quando executadas em um projeto desktop. Essas etapas
+continuam executando para preservar a cobertura funcional; a alteração retira a
+matriz de emulação mobile, sem excluir casos mistos nem alterar suas asserções.
+Relatos abaixo de execuções anteriores em celular/320 px são evidência histórica,
+sem ampliar o suporte atual.
+
 ## Tipos de teste
 
 - **Unidade**: funções e lógica isoladas (ex.: cálculo, formatação).

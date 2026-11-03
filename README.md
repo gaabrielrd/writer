@@ -2,6 +2,14 @@
 
 Estúdio de escrita em React/Vite/Firebase, com lore contextual, assistência de IA e publicação interativa.
 
+## Plataformas suportadas
+
+Desde 2026-11-03, o foco inicial do Writer é a experiência em **desktop/laptop**.
+Celulares e tablets estão fora do suporte e dos critérios de aceite desta fase,
+inclusive na leitura pública. A implementação responsiva e os arquivos de testes
+existentes são preservados. Veja a [direção de suporte](docs/platform-support.md)
+e a [execução dos testes](docs/testing.md#plataformas-na-execução-automatizada).
+
 ## Objetivo
 
 Centralizar o planejamento de universo narrativo (personagens, locais, conceitos e relações) e a escrita em um editor de texto rico com detecção automática de termos. O projeto oferece assistência de IA contextualizada com controle de créditos, exportação em múltiplos formatos (PDF, DOCX, Markdown) e publicação online para leitores em uma interface interativa.

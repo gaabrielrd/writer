@@ -4,6 +4,8 @@ import type { VisualOptions } from './e2e/visual/options';
 const port = Number(process.env.WRITER_VISUAL_PORT ?? 4177);
 const baseURL = `http://127.0.0.1:${port}`;
 const themes = ['dark', 'light', 'sepia'] as const;
+// Mobile is retained for optional investigation, outside the initial support scope.
+const includeMobile = process.env.WRITER_VISUAL_MOBILE === '1';
 
 export default defineConfig<VisualOptions>({
   testDir: './e2e/visual',
@@ -42,15 +44,19 @@ export default defineConfig<VisualOptions>({
         visualTheme,
       },
     },
-    {
-      name: `mobile-${visualTheme}`,
-      use: {
-        ...devices['Pixel 7'],
-        viewport: { width: 390, height: 844 },
-        deviceScaleFactor: 1,
-        visualTheme,
-      },
-    },
+    ...(includeMobile
+      ? [
+          {
+            name: `mobile-${visualTheme}`,
+            use: {
+              ...devices['Pixel 7'],
+              viewport: { width: 390, height: 844 },
+              deviceScaleFactor: 1,
+              visualTheme,
+            },
+          },
+        ]
+      : []),
   ]),
   webServer: {
     command: `npx vite --config vite.visual.config.ts --host 127.0.0.1 --port ${port} --strictPort`,

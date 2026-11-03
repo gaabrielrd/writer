@@ -11,7 +11,9 @@ A evidência desta rodada documental fica separada em [registro de validação](
 
 PT-BR e plataformas finais são fechadas em D-12; preservar a base web existente.
 Usar shared/ui, Dropdown de seleção/ação, tokens semânticos, Lucide e ThemeProvider existente.
-Cobrir claro/escuro/sépia, desktop/celular/320 px, teclado, foco, contraste e rótulos.
+Cobrir claro/escuro/sépia em desktop/laptop, teclado, foco, contraste e rótulos.
+Desde 2026-11-03, celular/tablet/320 px não são gates desta fase; a
+[direção de suporte](../../platform-support.md) substitui exigências antigas nos contratos específicos.
 Estados de dados: carregando, vazio, erro com retry, sucesso, sem permissão/revogado quando aplicável.
 Não remover textos pendentes ao navegar, fechar diálogo, consultar lore ou retomar após falha.
 Toda ação sensível mostra alvo e alcance em linguagem de produto; não inserir detalhes internos como requisito do usuário.
