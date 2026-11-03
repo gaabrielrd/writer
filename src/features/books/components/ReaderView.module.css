@@ -3,6 +3,7 @@
   max-width: var(--layout-max);
   margin: 0 auto;
   padding: var(--space-6);
+  padding-bottom: calc(var(--space-6) + var(--page-assistant-height, 0px));
   color: hsl(var(--foreground));
 }
 
@@ -224,6 +225,7 @@
   }
   .reader {
     padding: var(--space-3);
+    padding-bottom: calc(var(--space-3) + var(--page-assistant-height, 0px));
   }
   .header {
     flex-direction: column;

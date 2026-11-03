@@ -25,16 +25,21 @@ test('compêndio compacto com lista, seleção e confirmação de ações', asyn
   await expect(create).toBeVisible();
   await expect(view).toBeVisible();
   if (testInfo.project.name.startsWith('desktop')) {
-    const tabs = await page.getByRole('tab', { name: 'Compêndio', exact: true }).boundingBox();
-    const action = await create.boundingBox();
-    const toggle = await view.boundingBox();
-    expect(tabs).not.toBeNull();
-    expect(action).not.toBeNull();
-    expect(toggle).not.toBeNull();
-    if (tabs && action && toggle) {
-      expect(Math.abs(tabs.y + tabs.height / 2 - action.y - action.height / 2)).toBeLessThan(1);
-      expect(Math.abs(tabs.y + tabs.height / 2 - toggle.y - toggle.height / 2)).toBeLessThan(1);
-    }
+    // The full-width row fits with the workspace navigation collapsed.
+    await page.getByRole('button', { name: 'Recolher navegação', exact: true }).click();
+    await expect
+      .poll(async () => {
+        const tabs = await page.getByRole('tab', { name: 'Compêndio', exact: true }).boundingBox();
+        const action = await create.boundingBox();
+        const toggle = await view.boundingBox();
+        if (!tabs || !action || !toggle) return Infinity;
+        const center = tabs.y + tabs.height / 2;
+        return Math.max(
+          Math.abs(center - action.y - action.height / 2),
+          Math.abs(center - toggle.y - toggle.height / 2),
+        );
+      })
+      .toBeLessThan(1);
     const input = await page.getByRole('textbox', { name: 'Buscar no compêndio' }).boundingBox();
     const categories = await page.getByRole('tab', { name: /Conceitos \/ Itens/ }).boundingBox();
     expect(input).not.toBeNull();

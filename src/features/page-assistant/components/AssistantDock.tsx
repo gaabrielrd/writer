@@ -107,10 +107,7 @@ export function AssistantDock({
   }, [mode, dialog, suppress]);
   useLayoutEffect(() => {
     if (suppress) return;
-    const host =
-      dialog ??
-      (document.querySelector('[data-writer-workspace]') ? document.documentElement : null);
-    if (!host) return;
+    const host = dialog ?? document.documentElement;
     const previous = host.style.getPropertyValue('--page-assistant-height');
     host.style.setProperty('--page-assistant-height', `${size.height}px`);
     return () => {

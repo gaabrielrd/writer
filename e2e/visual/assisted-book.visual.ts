@@ -12,7 +12,11 @@ test('mensagens ficam no centro e a caixa de resposta permanece no rodapé', asy
   const stack = (await transcript.locator(':scope > div').boundingBox())!;
   expect(Math.abs(stack.y + stack.height / 2 - area.y - area.height / 2)).toBeLessThan(3);
   const input = (await idea.boundingBox())!;
-  expect(viewport.height - input.y - input.height).toBeLessThan(150);
+  const usableBottom = await page.locator('#main-content').evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    return rect.bottom - parseFloat(getComputedStyle(element).paddingBottom);
+  });
+  expect(usableBottom - input.y - input.height).toBeLessThan(150);
   expect(input.y).toBeGreaterThan(area.y + area.height - 1);
   await capture(page, testInfo, 'criacao-assistida-chat-centralizado');
   await idea.fill('Uma viagem entre ilhas. '.repeat(150));
@@ -24,7 +28,8 @@ test('mensagens ficam no centro e a caixa de resposta permanece no rodapé', asy
   await expect(response).toHaveValue('');
   await expect(response).toBeFocused();
   const after = (await response.boundingBox())!;
-  expect(after.y).toBeGreaterThan(viewport.height / 2);
+  const conversation = (await transcript.boundingBox())!;
+  expect(after.y).toBeGreaterThan(conversation.y + conversation.height - 1);
   expect(after.y + after.height).toBeLessThan(viewport.height);
   expect(await transcript.evaluate((element) => element.scrollHeight > element.clientHeight)).toBe(
     true,

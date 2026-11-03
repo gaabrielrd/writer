@@ -22,7 +22,9 @@ test.describe('Leitor público e publicação', () => {
     await capture(page, testInfo, 'reader-public-lore');
     await page.keyboard.press('Escape');
     await expect(page.getByRole('tooltip')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Próximo', exact: true }).click();
+    const next = page.getByRole('button', { name: 'Próximo', exact: true });
+    await next.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+    await next.click();
     await expect(page).toHaveURL(/chapter=visual-chapter-2$/);
     await expect(page.getByRole('heading', { name: chapters[1].title, level: 2 })).toBeVisible();
     await page.goBack();

@@ -69,3 +69,33 @@ os resultados remotos devem ser conferidos nesse SHA, junto ao Firestore Rules
 e ao workflow de Hosting. Os checks dirigidos acima não equivalem à aprovação
 remota. Consulte as [execuções da master](https://github.com/gaabrielrd/writer/actions?query=branch%3Amaster).
 Esta tarefa não executa implantação manual de Functions ou Firestore.
+
+## Correções após o primeiro push
+
+O push de `296261c` passou pelo pre-push completo: 392 arquivos e 5.219 testes,
+além do typecheck. O workflow Firestore Rules aprovou os oito jobs nesse SHA.
+A matriz visual remota revelou regressões adicionais de integração:
+
+- Reserva fixa duplicada de 240 px comprimia os painéis do editor em altura
+  baixa; removida, mantendo reserva medida nas páginas que precisam dela.
+- O leitor público passou a receber a altura medida do assistente e espaço de
+  rolagem no rodapé. As jornadas levam a navegação ao centro visível antes do
+  clique, sem force ou desativação da barra.
+- A barra contextual de IA da primeira linha cobria Negrito; o posicionamento
+  agora considera o início do editor antes de escolher acima/abaixo da seleção.
+- As verificações de exclusão consideram os campos do conteúdo da campanha,
+  preservando o assistente. A criação assistida mede o rodapé útil reservado.
+- O teste de alinhamento amplo do compêndio recolhe a navegação lateral antes
+  de exigir uma única linha. Com a lateral aberta, a quebra responsiva é válida.
+- Os helpers de navegação abrem Todas as ferramentas quando necessário e
+  aguardam a atualização da conta antes de decidir se precisam abrir a gaveta.
+
+Os testes dirigidos do dock e do adaptador de IA passaram: 23 testes. Os dois
+cenários de painéis em altura baixa também passaram. Os resultados das jornadas
+finais passaram em execuções frescas: exclusão e compêndio nas seis combinações
+(12 casos), leitor móvel em escuro/claro (quatro casos), formatação/conversão e
+troca de conta em desktop/celular, e seis casos de composer/minimapa/largura da
+prosa. Typecheck, lint dirigido, formatação integral, documentação e styleguide
+passaram. A revisão final não encontrou alteração fora das causas observadas.
+O novo SHA ainda exige CI; falhas do primeiro push não são apresentadas como
+execução aprovada.

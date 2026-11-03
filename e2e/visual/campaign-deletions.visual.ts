@@ -219,7 +219,7 @@ test('exclusão independente em 320px exige confirmação, preserva outra mesa e
       includeHidden: true,
     }),
   ).toHaveCount(0);
-  expect(await page.locator('textarea').count()).toBe(0);
+  await expect(page.locator('#main-content textarea')).toHaveCount(0);
   await expectDialogWithinViewport(page);
   await capture(page, info, 'exclusao-concluida-320');
   await dialog(page).getByRole('button', { name: 'Fechar exclusão', exact: true }).click();

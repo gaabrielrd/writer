@@ -162,16 +162,20 @@ export async function navigateWorkspace(page: Page, name: string): Promise<void>
   ) {
     await navigateWorkspace(page, 'Estúdio');
   }
-  let link = page
-    .getByRole('navigation', { name: 'Navegação principal' })
-    .getByRole('link', { name, exact: true });
+  let navigation = page.getByRole('navigation', { name: 'Navegação principal' });
   const toggle = page.getByRole('button', { name: 'Abrir navegação', exact: true });
-  await expect.poll(async () => (await link.isVisible()) || (await toggle.isVisible())).toBe(true);
-  if (!(await link.isVisible())) {
+  await expect
+    .poll(async () => (await navigation.isVisible()) || (await toggle.isVisible()))
+    .toBe(true);
+  if (!(await navigation.isVisible())) {
     await toggle.click();
-    link = page
+    navigation = page
       .getByRole('dialog', { name: 'Navegação do Writer' })
-      .getByRole('link', { name, exact: true });
+      .getByRole('navigation', { name: 'Navegação principal' });
+  }
+  const link = navigation.getByRole('link', { name, exact: true });
+  if (['Publicações', 'Catálogo', 'Biblioteca'].includes(name) && !(await link.isVisible())) {
+    await navigation.getByRole('button', { name: 'Todas as ferramentas', exact: true }).click();
   }
   await link.focus();
   await page.keyboard.press('Enter');
@@ -180,8 +184,12 @@ export async function navigateWorkspace(page: Page, name: string): Promise<void>
 /** Reveal a workspace control without leaving navigation open over the next action. */
 export async function expectWorkspaceButton(page: Page, name: string | RegExp): Promise<void> {
   const button = page.getByRole('button', { name, exact: true });
+  const toggle = page.getByRole('button', { name: 'Abrir navegação', exact: true });
+  await expect
+    .poll(async () => (await button.isVisible()) || (await toggle.isVisible()))
+    .toBe(true);
   const reveal = !(await button.isVisible());
-  if (reveal) await page.getByRole('button', { name: 'Abrir navegação', exact: true }).click();
+  if (reveal) await toggle.click();
   await expect(button).toBeVisible();
   if (reveal) {
     const drawer = page.getByRole('dialog', { name: 'Navegação do Writer' });

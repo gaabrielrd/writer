@@ -142,6 +142,7 @@
   overflow: auto;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scroll-padding-bottom: calc(var(--page-assistant-height, 0px) + var(--space-4));
   outline: none;
 }
 .shell .main > * {
@@ -297,9 +298,4 @@
     width: 100%;
     padding-bottom: var(--space-1);
   }
-}
-
-.main {
-  padding-bottom: max(240px, env(safe-area-inset-bottom));
-  scroll-padding-bottom: 240px;
 }

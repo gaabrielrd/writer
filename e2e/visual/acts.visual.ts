@@ -161,6 +161,8 @@ test('publicação e artefatos preservam atos e a sequência do manuscrito', asy
   await expect(page.getByRole('heading', { name: 'I', exact: true })).toBeVisible();
   await expect(page.getByText('Ato I', { exact: true })).toBeVisible();
   await capture(page, testInfo, 'atos-leitor-publico');
-  await page.getByRole('button', { name: 'Próximo', exact: true }).click();
+  const next = page.getByRole('button', { name: 'Próximo', exact: true });
+  await next.evaluate((element) => element.scrollIntoView({ block: 'center' }));
+  await next.click();
   await expect(page.getByText('Ato I', { exact: true })).toHaveCount(0);
 });

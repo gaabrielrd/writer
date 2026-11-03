@@ -531,3 +531,8 @@ preservar sua própria visibilidade, sem mover a seleção do manuscrito.
 A barra de seleção do compêndio respeita a altura do assistente também no
 portal. O editor flutuante de tema mantém seus controles acima da conversa e
 abaixo dos diálogos modais.
+
+O leitor público também reserva a altura medida do assistente no fim da página.
+O editor usa sua altura útil integral, sem reserva fixa de 240 px no workspace.
+A barra de IA da seleção fica dentro da área da prosa: se não houver espaço
+acima da seleção, aparece abaixo, preservando os botões de formatação.

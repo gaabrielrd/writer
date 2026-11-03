@@ -42,17 +42,20 @@ it('temporarily minimizes a compact dock in a narrow dialog and preserves explic
   }
 });
 
-it('shares clearance with workspace portals and releases it on unmount', async () => {
-  const view = render(<div data-writer-workspace>{tree()}</div>);
-  await waitFor(() =>
-    expect(document.documentElement.style.getPropertyValue('--page-assistant-height')).toBe(
-      '120px',
-    ),
-  );
-  expect(localStorage.getItem(key)).toBeNull();
-  view.unmount();
-  expect(document.documentElement.style.getPropertyValue('--page-assistant-height')).toBe('');
-});
+it.each([true, false])(
+  'shares clearance with workspace=%s and releases it on unmount',
+  async (workspace) => {
+    const view = render(workspace ? <div data-writer-workspace>{tree()}</div> : tree());
+    await waitFor(() =>
+      expect(document.documentElement.style.getPropertyValue('--page-assistant-height')).toBe(
+        '120px',
+      ),
+    );
+    expect(localStorage.getItem(key)).toBeNull();
+    view.unmount();
+    expect(document.documentElement.style.getPropertyValue('--page-assistant-height')).toBe('');
+  },
+);
 
 function tree(external = false, initialOpen = false) {
   return (

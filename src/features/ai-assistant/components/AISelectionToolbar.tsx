@@ -31,10 +31,18 @@ export function AISelectionToolbar({ anchor, onAction }: AISelectionToolbarProps
     const place = () => {
       const { width, height } = element.getBoundingClientRect();
       const above = anchor.top - height - 8;
+      const node = window.getSelection()?.anchorNode;
+      const selectedElement = node instanceof Element ? node : node?.parentElement;
+      const editorTop = selectedElement
+        ?.closest('[contenteditable="true"]')
+        ?.getBoundingClientRect().top;
       setPosition({
         top: Math.max(
           8,
-          Math.min(above >= 8 ? above : anchor.bottom + 8, window.innerHeight - height - 8),
+          Math.min(
+            above >= Math.max(8, editorTop ?? 8) ? above : anchor.bottom + 8,
+            window.innerHeight - height - 8,
+          ),
         ),
         left: Math.max(
           8,
