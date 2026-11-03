@@ -121,3 +121,8 @@ também passou para a camada 46; os timeouts e as asserções foram preservados.
 Validação desta rodada: 12 repetições de troca de conta, seis casos de
 seleção/autocomplete e seis casos de parâmetros/retomada do chat passaram.
 Lint dirigido, formatação, documentação, styleguide e revisão do diff passaram.
+O teste de toque remoto detectou que a nova camada do painel cobria a extensão
+do alvo de 44 px do divisor. A composição do editor coloca esse divisor na
+camada 47, sem alterar o componente neutro de shared nem o protocolo do gesto.
+Os nove cenários dirigidos de toque, painéis baixos e divisor do styleguide
+passaram nos três temas; formatação, documentação, styleguide e diff conferidos.

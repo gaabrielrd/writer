@@ -7,6 +7,10 @@
   position: relative;
 }
 
+.workspace > [role='separator'] {
+  z-index: 47;
+}
+
 .manuscript {
   display: flex;
   flex-direction: column;

@@ -540,3 +540,5 @@ Os controles de aceite e descarte do autocomplete ficam acima do dock e abaixo
 dos diálogos, mantendo o clique disponível também em telas estreitas.
 O painel nativo do chat de capítulo usa a mesma camada de interação para que
 o dock não cubra seletores de raciocínio, histórico ou composer.
+O divisor do workspace fica na camada 47, acima dos painéis, preservando sua
+área de toque ampliada de 44 px e permanecendo abaixo de temas e diálogos.
