@@ -183,16 +183,24 @@ export async function navigateWorkspace(page: Page, name: string): Promise<void>
 
 /** Reveal a workspace control without leaving navigation open over the next action. */
 export async function expectWorkspaceButton(page: Page, name: string | RegExp): Promise<void> {
+  // A UID transition can remount the workspace and close an already opened drawer.
+  // Wait for the requested account/control in the sidebar before deciding to open it.
+  await expect(
+    page.getByRole('button', { name, exact: true, includeHidden: true }).first(),
+  ).toBeAttached();
   const button = page.getByRole('button', { name, exact: true });
   const toggle = page.getByRole('button', { name: 'Abrir navegação', exact: true });
   await expect
     .poll(async () => (await button.isVisible()) || (await toggle.isVisible()))
     .toBe(true);
   const reveal = !(await button.isVisible());
-  if (reveal) await toggle.click();
-  await expect(button).toBeVisible();
+  const drawer = page.getByRole('dialog', { name: 'Navegação do Writer' });
+  await expect(async () => {
+    // A denied project may redirect to the Studio after the new account mounts.
+    if (!(await button.isVisible()) && !(await drawer.isVisible())) await toggle.click();
+    await expect(button).toBeVisible({ timeout: 500 });
+  }).toPass({ timeout: 10_000 });
   if (reveal) {
-    const drawer = page.getByRole('dialog', { name: 'Navegação do Writer' });
     if (await drawer.isVisible()) {
       await drawer.getByRole('button', { name: 'Fechar', exact: true }).click();
       await expect(drawer).toBeHidden();

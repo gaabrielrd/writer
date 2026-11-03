@@ -536,3 +536,7 @@ O leitor público também reserva a altura medida do assistente no fim da págin
 O editor usa sua altura útil integral, sem reserva fixa de 240 px no workspace.
 A barra de IA da seleção fica dentro da área da prosa: se não houver espaço
 acima da seleção, aparece abaixo, preservando os botões de formatação.
+Os controles de aceite e descarte do autocomplete ficam acima do dock e abaixo
+dos diálogos, mantendo o clique disponível também em telas estreitas.
+O painel nativo do chat de capítulo usa a mesma camada de interação para que
+o dock não cubra seletores de raciocínio, histórico ou composer.

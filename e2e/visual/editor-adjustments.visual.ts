@@ -92,7 +92,7 @@ test('assistente lateral mantém campo e envio acessíveis em 320px', async ({ p
   await expect(page.getByLabel('Área de escrita do capítulo')).toBeFocused();
 });
 
-test('seleção abre ações acima do trecho e aplica somente após aceite', async ({
+test('seleção abre ações sem cobrir a formatação e aplica somente após aceite', async ({
   page,
 }, testInfo) => {
   const editor = await openEditor(page);
@@ -124,16 +124,25 @@ test('seleção abre ações acima do trecho e aplica somente após aceite', asy
     return {
       bar: { top: bar.top, bottom: bar.bottom, left: bar.left, right: bar.right },
       selectionTop: selection.top,
+      selectionBottom: selection.bottom,
+      editorTop: document.querySelector('[contenteditable="true"]')!.getBoundingClientRect().top,
     };
   });
-  expect(position.bar.bottom).toBeLessThanOrEqual(position.selectionTop);
+  if (position.bar.top >= position.selectionBottom) {
+    expect(position.selectionTop - position.editorTop).toBeLessThan(
+      position.bar.bottom - position.bar.top + 8,
+    );
+  } else {
+    expect(position.bar.bottom).toBeLessThanOrEqual(position.selectionTop);
+    expect(position.bar.top).toBeGreaterThanOrEqual(position.editorTop);
+  }
   expect(position.bar.left).toBeGreaterThanOrEqual(0);
   expect(position.bar.right).toBeLessThanOrEqual(page.viewportSize()!.width);
   expect(await editor.evaluate((element) => getComputedStyle(element).outlineStyle)).toBe('none');
   expect(
     await page.evaluate(() => sessionStorage.getItem('writer_fixture_ai_action_calls')),
   ).toBeNull();
-  await capture(page, testInfo, 'acoes-acima-da-selecao');
+  await capture(page, testInfo, 'acoes-proximas-da-selecao');
   await toolbar.getByRole('button', { name: 'Aprimorar Estilo', exact: true }).click();
   const dialog = page.getByRole('complementary', { name: 'Painel lateral do Assistente IA' });
   await expect(dialog.getByLabel('Mensagem para o Assistente IA')).toHaveValue('/estilo ');

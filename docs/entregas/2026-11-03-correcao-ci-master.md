@@ -106,3 +106,18 @@ explícito de 20 segundos (aproximadamente 22 segundos). O prazo desse único ca
 foi ampliado para 60 segundos; payload, contagem de frames, leitura integral e
 limpeza limitada a 50 frames permanecem iguais. A cobertura dirigida desse
 arquivo não substitui o gate global de cobertura do workflow final.
+
+Na rodada `2b65552`, os oito jobs de Rules, a auditoria e o Chromium passaram.
+Os lotes visuais expuseram a transição de conta que redireciona ao Estúdio e
+fecha a gaveta depois de aberta. O helper agora aguarda a conta e reabre somente
+a navegação se essa transição a fechar, sem repetir mutações do produto.
+O aceite do autocomplete mantém a sugestão acima do dock (camada 46, abaixo
+dos modais). A jornada da seleção verifica a alternativa abaixo da primeira
+linha quando não há espaço acima dentro da prosa, além do caso acima quando
+cabe, conservando contraste, limites e aplicação somente após aceite.
+O trace de dois timeouts do chat identificou seletores cobertos pela conversa
+compacta do dock, sem relação com tempo de geração. O painel nativo do capítulo
+também passou para a camada 46; os timeouts e as asserções foram preservados.
+Validação desta rodada: 12 repetições de troca de conta, seis casos de
+seleção/autocomplete e seis casos de parâmetros/retomada do chat passaram.
+Lint dirigido, formatação, documentação, styleguide e revisão do diff passaram.
