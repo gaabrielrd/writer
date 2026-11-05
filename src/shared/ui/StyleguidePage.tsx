@@ -1,5 +1,18 @@
 import { useRef, useState } from 'react';
-import { Sparkles, BookOpen, Feather, MapPin, MoreHorizontal, X } from 'lucide-react';
+import {
+  Sparkles,
+  BookOpen,
+  Feather,
+  MapPin,
+  MoreHorizontal,
+  X,
+  PenLine,
+  Plus,
+  Layers,
+  Search,
+  Download,
+  Trash2,
+} from 'lucide-react';
 import {
   Button,
   Input,
@@ -25,6 +38,13 @@ import {
   TableCell,
   ResizeHandle,
   SidePanelHeader,
+  ObjectHeader,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  Toolbar,
+  FilterChips,
 } from './index';
 import { useTheme, ThemeToggle, ThemeSelect, ThemeSegmentedControl } from '../theme';
 
@@ -62,6 +82,7 @@ export function StyleguidePage() {
           tipografia do manuscrito mantém sua leitura.
         </p>
       </section>
+      <PageAnatomyDemo />
       {/* Seção de Temas */}
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-bold">Formulários no seu ritmo</h2>
@@ -388,5 +409,166 @@ export function StyleguidePage() {
         </Table>
       </section>
     </div>
+  );
+}
+
+const demoChapters = [
+  { order: 1, title: 'O mapa que aprendeu a lembrar', state: 'done', words: '4.210' },
+  { order: 2, title: 'A longa travessia', state: 'done', words: '3.880' },
+  { order: 3, title: 'O que o mar devolve', state: 'draft', words: '3.150' },
+] as const;
+
+function PageAnatomyDemo() {
+  const [section, setSection] = useState('chapters');
+  const [filter, setFilter] = useState<'all' | 'draft' | 'done'>('all');
+  const [lastAction, setLastAction] = useState('');
+  const visible = demoChapters.filter((chapter) => filter === 'all' || chapter.state === filter);
+  return (
+    <section className="flex flex-col gap-4" aria-labelledby="page-anatomy-title">
+      <h2 id="page-anatomy-title" className="text-xl font-bold">
+        Anatomia de página
+      </h2>
+      <p className="text-sm text-[hsl(var(--muted-foreground))]">
+        Páginas de objeto usam cabeçalho, seções, barra de ferramentas e conteúdo nesta ordem. Há
+        uma ação principal por região e exclusão fica no menu de opções.
+      </p>
+      <Card className="flex flex-col gap-5 p-6">
+        <ObjectHeader
+          headingLevel={2}
+          kind="Livro · Fantasia literária"
+          title="O Atlas das Marés Esquecidas"
+          media={
+            <div
+              role="img"
+              aria-label="Capa de exemplo"
+              className="aspect-[2/3] w-full rounded-[var(--radius-sm)] border border-[hsl(var(--border))] bg-[hsl(var(--secondary))]"
+            />
+          }
+          meta={
+            <>
+              <Badge variant="secondary">Rascunho</Badge>
+              <Badge variant="outline">Não publicado</Badge>
+              <span>18.420 palavras</span>
+            </>
+          }
+          description="Uma cartógrafa encontra um mapa que muda a cada amanhecer."
+          menu={
+            <Dropdown
+              mode="action"
+              label="Opções do livro"
+              iconOnly
+              icon={<MoreHorizontal className="icon" aria-hidden="true" />}
+              variant="outline"
+              options={[
+                {
+                  value: 'export',
+                  label: 'Exportar',
+                  icon: <Download className="icon icon-sm" aria-hidden="true" />,
+                  onSelect: () => setLastAction('Exportar'),
+                },
+                {
+                  value: 'delete',
+                  label: 'Excluir livro',
+                  variant: 'destructive',
+                  icon: <Trash2 className="icon icon-sm" aria-hidden="true" />,
+                  onSelect: () => setLastAction('Excluir livro'),
+                },
+              ]}
+            />
+          }
+          primaryAction={
+            <Button onClick={() => setLastAction('Continuar escrevendo')}>
+              <PenLine className="icon icon-sm" aria-hidden="true" />
+              Continuar escrevendo
+            </Button>
+          }
+        />
+        <Tabs value={section} onValueChange={setSection}>
+          <TabsList aria-label="Seções do livro de exemplo">
+            <TabsTrigger value="chapters" count={demoChapters.length}>
+              Capítulos
+            </TabsTrigger>
+            <TabsTrigger value="scenes" count={14}>
+              Cenas
+            </TabsTrigger>
+            <TabsTrigger value="lore" count={4}>
+              Compêndio
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="chapters" className="flex flex-col gap-4">
+            <Toolbar
+              label="Ferramentas de capítulos"
+              search={
+                <Input
+                  aria-label="Buscar capítulo"
+                  placeholder="Buscar capítulo"
+                  leftIcon={<Search className="icon icon-sm" aria-hidden="true" />}
+                />
+              }
+              filters={
+                <FilterChips
+                  label="Estado do capítulo"
+                  value={filter}
+                  onValueChange={setFilter}
+                  options={[
+                    { value: 'all', label: 'Todos', count: demoChapters.length },
+                    { value: 'draft', label: 'Rascunho', count: 1 },
+                    { value: 'done', label: 'Revisado', count: 2 },
+                  ]}
+                />
+              }
+              summary={`${visible.length} capítulos`}
+              actions={
+                <>
+                  <Button variant="ghost" size="sm">
+                    <Layers className="icon icon-sm" aria-hidden="true" />
+                    Novo ato
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Plus className="icon icon-sm" aria-hidden="true" />
+                    Novo capítulo
+                  </Button>
+                </>
+              }
+            />
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Capítulo</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Palavras</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {visible.map((chapter) => (
+                  <TableRow key={chapter.order}>
+                    <TableCell>
+                      {chapter.order}. {chapter.title}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={chapter.state === 'done' ? 'success' : 'secondary'}>
+                        {chapter.state === 'done' ? 'Revisado' : 'Rascunho'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">{chapter.words}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TabsContent>
+          <TabsContent value="scenes">
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              Cada seção repete a mesma barra de ferramentas.
+            </p>
+          </TabsContent>
+          <TabsContent value="lore">
+            <p className="text-sm text-[hsl(var(--muted-foreground))]">
+              Coleções longas, como o Compêndio, usam lista com inspetor.
+            </p>
+          </TabsContent>
+        </Tabs>
+        {lastAction && <p role="status">Ação de exemplo: {lastAction}</p>}
+      </Card>
+    </section>
   );
 }

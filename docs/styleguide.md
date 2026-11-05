@@ -73,8 +73,47 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
 - `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).
 - `LoadingState`, `EmptyState`, `ErrorState`: Estados padrão de ciclo de vida.
 - `PageHeader`: Cabeçalho padrão de páginas com suporte a breadcrumbs e ações.
+- `ObjectHeader`: Cabeçalho de página de objeto (livro, aventura, campanha, universo):
+  tipo, título `h1`, capa, metadados, descrição, uma ação principal, até duas
+  secundárias e o menu "…". `headingLevel={2}` só quando incorporado em outra página.
+- `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: abas sublinhadas sobre Radix, com
+  setas, Home/End, contagem opcional e ações da seção fora do `tablist`. Aceitam valor
+  controlado para abas guardadas na URL.
+- `Toolbar`: barra nomeada de uma seção, com busca e filtros à esquerda, resumo e
+  ações à direita. Campos, chips e botões `sm` dividem 36 px (44 px em toque).
+- `FilterChips`: filtro de escolha única com `aria-pressed` e contagem opcional; para
+  muitas opções, use `Dropdown mode="select"`.
 - `Table`: Tabelas responsivas estilizadas.
 - `StyleguidePage`: Página viva do catálogo acessível em `/styleguide`.
+
+## Anatomia de página
+
+Vigente desde 2026-11-05 ([ADR 0275](decisions/0275-page-anatomy.md)). Páginas da
+área logada seguem cinco zonas, nesta ordem:
+
+1. **Barra contextual** do shell, com o caminho até o objeto.
+2. **Cabeçalho**: `ObjectHeader` em páginas de objeto; `PageHeader` em coleções e
+   configurações. Toda página tem um título `h1`.
+3. **Seções**: um único `Tabs` por página.
+4. **Barra de ferramentas**: `Toolbar` com busca, `FilterChips` ou `Dropdown`, resumo
+   e a ação da seção.
+5. **Conteúdo**: tabela, lista ou grade com carregando, vazio, erro e seleção em lote.
+
+Regras:
+
+- No máximo um botão `primary` no cabeçalho e um na barra de ferramentas.
+- Excluir, arquivar, backup e exportar ficam no menu "…" (`Dropdown mode="action"`,
+  opção `variant: 'destructive'` para exclusão). O botão `destructive` aparece só no
+  diálogo de confirmação.
+- Ações de linha ou card aparecem no menu do item; o item inteiro abre o detalhe.
+- Listas se atualizam sozinhas; recarga manual só como "Tentar novamente" no erro.
+- Explicações de regra viram dica, badge ou texto do estado vazio, não parágrafos
+  entre controles.
+- Coleções longas de revisão (Compêndio e Personas) poderão usar lista com inspetor;
+  páginas de objeto podem mostrar "Continuar de onde parou" e próximos passos no topo.
+
+A migração das telas acontece por fases; a página de Inteligência artificial é a
+primeira a usar `PageHeader` e `Tabs`. A demonstração fica em `/styleguide`.
 
 ## Favicon
 

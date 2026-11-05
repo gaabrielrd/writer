@@ -25,6 +25,17 @@ export { LoadingState, type LoadingStateProps } from './LoadingState';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { ErrorState, type ErrorStateProps } from './ErrorState';
 export { PageHeader, type PageHeaderProps } from './PageHeader';
+export { ObjectHeader, type ObjectHeaderProps } from './ObjectHeader';
+export {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  type TabsListProps,
+  type TabsTriggerProps,
+} from './Tabs';
+export { Toolbar, type ToolbarProps } from './Toolbar';
+export { FilterChips, type FilterChipsProps, type FilterChipOption } from './FilterChips';
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';
 export { StyleguidePage } from './StyleguidePage';
 export { buttonVariants, badgeVariants, alertVariants } from './variants';
