@@ -269,7 +269,10 @@ it('arquivo e retorno explícito preservam descrição, checklist e procedência
   expect(screen.getByText('Descrição privada')).toBeVisible();
   expect(screen.getByRole('checkbox', { name: 'Conferir pistas' })).toBe(task);
   expect(task).toBeChecked();
-  expect(screen.getByText('Projeto independente, sem universo vinculado.')).toBeVisible();
+  expect(screen.getByText('Sem universo')).toHaveAttribute(
+    'title',
+    'Projeto independente, sem universo vinculado.',
+  );
   expect(getCampaign).toHaveBeenCalledTimes(1);
   await userEvent.click(screen.getByRole('button', { name: 'Editar campanha' }));
   expect(screen.getByLabelText('Estado da campanha')).toHaveTextContent('Arquivada');

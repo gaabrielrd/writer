@@ -668,3 +668,28 @@ it('closer S3 preserva replacement de prosa e formato futuro em vez de apagar sn
   expect(unreadable.items.find((item) => item.key === 'campaign-preparation')).toBeUndefined();
   expect(localStorage.getItem(key)).toBe(JSON.stringify(future));
 });
+
+it('modo controlado abre pelo pai, sem gatilho próprio, e avisa o fechamento', async () => {
+  const onOpenChange = vi.fn();
+  const view = render(
+    <CampaignDeletionControls
+      campaignId={campaignId}
+      open={false}
+      onOpenChange={onOpenChange}
+      renderTrigger={() => null}
+    />,
+  );
+  expect(screen.queryByRole('button', { name: 'Excluir campanha' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('dialog', { name: 'Excluir campanha' })).not.toBeInTheDocument();
+  view.rerender(
+    <CampaignDeletionControls
+      campaignId={campaignId}
+      open
+      onOpenChange={onOpenChange}
+      renderTrigger={() => null}
+    />,
+  );
+  expect(await screen.findByRole('dialog', { name: 'Excluir campanha' })).toBeVisible();
+  await userEvent.keyboard('{Escape}');
+  expect(onOpenChange).toHaveBeenCalledWith(false);
+});

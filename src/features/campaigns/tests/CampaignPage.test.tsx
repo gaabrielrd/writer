@@ -177,8 +177,23 @@ vi.mock('@/features/campaign-bases', () => ({
 }));
 vi.mock('../services/campaignService', () => ({ getCampaign: vi.fn() }));
 vi.mock('../components/CampaignDeletionControls', () => ({
-  CampaignDeletionControls: ({ onRevoked }: { onRevoked: () => void }) => (
-    <button onClick={onRevoked}>Retomar limpeza da campanha</button>
+  CampaignDeletionControls: ({
+    onRevoked,
+    open,
+    onOpenChange,
+  }: {
+    onRevoked: () => void;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+  }) => (
+    <>
+      <button onClick={onRevoked}>Retomar limpeza da campanha</button>
+      {open && (
+        <section aria-label="Exclusão da campanha aberta">
+          <button onClick={() => onOpenChange?.(false)}>Fechar exclusão observada</button>
+        </section>
+      )}
+    </>
   ),
 }));
 const resource: Campaign = {
@@ -230,7 +245,10 @@ it('abre metadados persistidos, mantém privacidade e permite retornar ao Estúd
   expect(screen.getByRole('region', { name: 'Notas próprias project' })).toBeInTheDocument();
   expect(screen.queryByRole('region', { name: /Lore da mesa/ })).not.toBeInTheDocument();
   expect(screen.getByText('Privada')).toBeInTheDocument();
-  expect(screen.getByText('Projeto independente, sem universo vinculado.')).toBeInTheDocument();
+  expect(screen.getByText('Sem universo')).toHaveAttribute(
+    'title',
+    'Projeto independente, sem universo vinculado.',
+  );
   expect(getCampaign).toHaveBeenCalledWith('project');
   await userEvent.click(screen.getByRole('link', { name: 'Voltar aos projetos' }));
   expect(screen.getByRole('heading', { name: 'Estúdio' })).toBeInTheDocument();
@@ -729,4 +747,17 @@ it('slot passa sessão salva ao host estável sem copiar ou salvar preparação 
   expect(screen.getByRole('textbox', { name: 'Texto próprio da pista' })).toBe(field);
   expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
   expect(sessionCalls.saveCampaignSession).not.toHaveBeenCalled();
+});
+
+it('abre a exclusão pelo menu de opções e pelo estado oculto, sem botão vermelho na página', async () => {
+  render(tree());
+  await screen.findByText('História privada');
+  expect(screen.queryByRole('button', { name: 'Excluir campanha' })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Opções da campanha' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Excluir campanha' }));
+  expect(await screen.findByRole('region', { name: 'Exclusão da campanha aberta' })).toBeVisible();
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar exclusão observada' }));
+  act(() => publishInvalidation({ actorId: 'owner', scope: 'campaign:project' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir campanha' }));
+  expect(screen.getByRole('region', { name: 'Exclusão da campanha aberta' })).toBeVisible();
 });

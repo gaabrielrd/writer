@@ -10,10 +10,28 @@
 .page a {
   overflow-wrap: anywhere;
 }
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
+.backLink {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+}
+.backLink:hover {
+  color: var(--ink);
+}
+.universeLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: hsl(var(--primary));
+}
+.description {
+  margin: 0;
+  white-space: pre-wrap;
 }
 .content {
   padding: var(--space-5);
@@ -30,10 +48,6 @@
 }
 .content p {
   white-space: pre-wrap;
-}
-.date {
-  font-size: var(--text-sm);
-  color: hsl(var(--muted-foreground));
 }
 .actions {
   display: flex;

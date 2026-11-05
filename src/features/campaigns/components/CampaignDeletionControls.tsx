@@ -16,6 +16,9 @@ interface Props {
   campaignId: string;
   onRevoked?: (progress: DeletionProgress) => void;
   renderTrigger?: (open: () => void) => ReactNode;
+  /** Controlled mode: the page opens the dialog from its own menu. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 export function CampaignDeletionControls(props: Props) {
   const { user } = useAuth();
@@ -23,15 +26,27 @@ export function CampaignDeletionControls(props: Props) {
     <ControlsSession key={user.uid + ':' + props.campaignId} uid={user.uid} {...props} />
   ) : null;
 }
-function ControlsSession({ uid, campaignId, onRevoked, renderTrigger }: Props & { uid: string }) {
-  const [open, setOpen] = useState(false),
+function ControlsSession({
+  uid,
+  campaignId,
+  onRevoked,
+  renderTrigger,
+  open: controlledOpen,
+  onOpenChange,
+}: Props & { uid: string }) {
+  const [ownOpen, setOwnOpen] = useState(false),
     recovery = useClosures(uid);
+  const open = controlledOpen ?? ownOpen;
+  const setOpen = (next: boolean) => {
+    if (controlledOpen === undefined) setOwnOpen(next);
+    onOpenChange?.(next);
+  };
   return (
     <>
       {renderTrigger ? (
         renderTrigger(() => setOpen(true))
       ) : (
-        <Button variant="destructive" onClick={() => setOpen(true)}>
+        <Button variant="outline" onClick={() => setOpen(true)}>
           Excluir campanha
         </Button>
       )}

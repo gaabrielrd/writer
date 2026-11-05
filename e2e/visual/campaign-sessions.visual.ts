@@ -321,7 +321,8 @@ test('sessão capturada preserva preparação revogada, confirma recibo históri
     },
     { prefix, recoveryPath, source, uid },
   );
-  await page.getByRole('button', { name: 'Excluir campanha', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções da campanha', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Excluir campanha', exact: true }).click();
   const deletion = page.getByRole('dialog', { name: 'Excluir campanha', exact: true });
   await deletion.getByRole('button', { name: 'Excluir definitivamente', exact: true }).click();
   await expect(

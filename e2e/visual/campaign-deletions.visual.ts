@@ -187,9 +187,10 @@ test('exclusão independente em 320px exige confirmação, preserva outra mesa e
   const source = await seed(page, false);
   await page.goto('/campaigns/' + source.campaignId);
   await expect(page.getByRole('heading', { name: source.title, exact: true })).toBeVisible();
-  const opener = page.getByRole('button', { name: 'Excluir campanha', exact: true });
+  const opener = page.getByRole('button', { name: 'Opções da campanha', exact: true });
   await opener.focus();
   await page.keyboard.press('Enter');
+  await page.getByRole('menuitem', { name: 'Excluir campanha', exact: true }).press('Enter');
   await expect(
     dialog(page).getByRole('heading', { name: source.title, exact: true }),
   ).toBeVisible();
@@ -204,6 +205,7 @@ test('exclusão independente em 320px exige confirmação, preserva outra mesa e
     0,
   );
   await opener.press('Enter');
+  await page.getByRole('menuitem', { name: 'Excluir campanha', exact: true }).press('Enter');
   await expect(
     dialog(page).getByRole('button', { name: 'Excluir definitivamente', exact: true }),
   ).toBeEnabled();
@@ -265,7 +267,8 @@ test('exclusão capturada retoma pedidos incertos após reload e encerra cipher 
     { prefix, source },
   );
   await flag(page, 'writer.visual.deletion-lost-response', 'startCampaignDeletion');
-  await page.getByRole('button', { name: 'Excluir campanha', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções da campanha', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Excluir campanha', exact: true }).click();
   await dialog(page).getByRole('button', { name: 'Excluir definitivamente', exact: true }).click();
   await expect(
     dialog(page).getByRole('button', { name: 'Confirmar pedido de exclusão', exact: true }),

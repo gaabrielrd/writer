@@ -470,7 +470,8 @@ test('cancelamento scene sobrevive reload e fence; closer C4 preserva pedido lor
   const oldLore = await pending(page, source.campaignId);
   await page.reload();
   expect(await pending(page, source.campaignId)).toEqual(oldLore);
-  await page.getByRole('button', { name: 'Excluir campanha', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções da campanha', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Excluir campanha', exact: true }).click();
   const deletion = page.getByRole('dialog', { name: 'Excluir campanha', exact: true });
   await deletion.getByRole('button', { name: 'Excluir definitivamente', exact: true }).click();
   await expect(

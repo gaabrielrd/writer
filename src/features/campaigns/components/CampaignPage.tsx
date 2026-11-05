@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getInvalidationGeneration, subscribeInvalidation } from '@/shared/services';
 import { Link, Navigate, useParams, useLocation } from 'react-router';
-import { Globe, Map } from 'lucide-react';
+import { ArrowLeft, Globe, MoreHorizontal, Trash2 } from 'lucide-react';
 import {
   ProjectProgressPanel,
   useWorkActivity,
@@ -36,10 +36,12 @@ import {
   Alert,
   Button,
   Card,
+  Dropdown,
+  DropdownItem,
   EmptyState,
   ErrorState,
   LoadingState,
-  PageHeader,
+  ObjectHeader,
   buttonVariants,
 } from '@/shared/ui';
 import { campaignStatusLabels, type Campaign } from '../model/campaign';
@@ -65,6 +67,7 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
     [error, setError] = useState(''),
     [checking, setChecking] = useState(false),
     [attempt, setAttempt] = useState(0),
+    [deletionOpen, setDeletionOpen] = useState(false),
     alive = useRef(true),
     generation = useRef(0);
   const scope = { actorId: ownerId, scope: 'campaign:' + id };
@@ -171,6 +174,13 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
       if (alive.current && own === generation.current) setChecking(false);
     }
   }
+  const preparation = (
+    <CampaignPreparationPanel
+      campaignId={id}
+      openRequest={preparationRequest}
+      onPendingChange={setPreparationPending}
+    />
+  );
   useEffect(() => {
     const focus = () => {
       void recheck();
@@ -182,17 +192,15 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
     <div className={styles.page}>
       <CampaignDeletionControls
         campaignId={id}
+        open={deletionOpen}
+        onOpenChange={setDeletionOpen}
+        renderTrigger={() => null}
         onRevoked={() => {
           setVisible(false);
           setError('');
         }}
       />
       <CampaignSessionReferenceControls campaignId={id} onPendingChange={setReferencesPending} />
-      <CampaignPreparationPanel
-        campaignId={id}
-        openRequest={preparationRequest}
-        onPendingChange={setPreparationPending}
-      />
       {error && <Alert variant="warning">{error}</Alert>}
       {visible ? (
         <>
@@ -205,7 +213,10 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
             onMaterialBase={onMaterialBase}
             onMaterialProjection={onMaterialProjection}
             onMaterialInvalidated={onMaterialInvalidated}
+            onDelete={() => setDeletionOpen(true)}
           />
+          {/* Stable host: reloading the content must not reset an open preparation. */}
+          {preparation}
           {sessionsReady && (
             <CampaignSessionsPanel
               campaignId={id}
@@ -215,17 +226,25 @@ function CampaignDetail({ id, ownerId }: { id: string; ownerId: string }) {
           )}
         </>
       ) : (
-        <Card className={styles.content}>
-          <h2>Conteúdo da campanha oculto</h2>
-          <p>
-            Consulte novamente para conferir a disponibilidade. A limpeza pode ser retomada pelo
-            controle de exclusão ou pelo Estúdio.
-          </p>
-          <Button disabled={checking} variant="outline" onClick={() => void recheck()}>
-            Conferir disponibilidade da campanha
-          </Button>
-          <Link to="/studio">Voltar ao Estúdio</Link>
-        </Card>
+        <>
+          {preparation}
+          <Card className={styles.content}>
+            <h2>Conteúdo da campanha oculto</h2>
+            <p>
+              Consulte novamente para conferir a disponibilidade. A limpeza pode ser retomada pelo
+              controle de exclusão ou pelo Estúdio.
+            </p>
+            <div className={styles.actions}>
+              <Button disabled={checking} variant="outline" onClick={() => void recheck()}>
+                Conferir disponibilidade da campanha
+              </Button>
+              <Button variant="outline" onClick={() => setDeletionOpen(true)}>
+                Excluir campanha
+              </Button>
+            </div>
+            <Link to="/studio">Voltar ao Estúdio</Link>
+          </Card>
+        </>
       )}
     </div>
   );
@@ -238,6 +257,7 @@ function CampaignContent({
   onMaterialBase,
   onMaterialProjection,
   onMaterialInvalidated,
+  onDelete,
 }: {
   id: string;
   ownerId: string;
@@ -246,6 +266,7 @@ function CampaignContent({
   onMaterialBase: (baseId: string | null) => void;
   onMaterialProjection: (projection: string | null) => void;
   onMaterialInvalidated: () => void;
+  onDelete: () => void;
 }) {
   const studioReturnState = useLocation().state as { studioReturnTo?: unknown } | null;
   const studioReturnTo =
@@ -314,6 +335,11 @@ function CampaignContent({
       Voltar aos projetos
     </Link>
   );
+  const deleteAction = (
+    <Button variant="outline" onClick={onDelete}>
+      Excluir campanha
+    </Button>
+  );
   if (result?.attempt !== attempt) return <LoadingState label="Carregando campanha..." />;
   if (result.error)
     return (
@@ -321,9 +347,12 @@ function CampaignContent({
         title="Não foi possível carregar a campanha"
         description={result.error}
         action={
-          <Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>
-            Tentar novamente
-          </Button>
+          <>
+            <Button variant="secondary" onClick={() => setAttempt((n) => n + 1)}>
+              Tentar novamente
+            </Button>
+            {deleteAction}
+          </>
         }
       />
     );
@@ -332,7 +361,12 @@ function CampaignContent({
       <EmptyState
         title="Campanha indisponível"
         description="Esta campanha não está disponível para sua conta."
-        action={back}
+        action={
+          <>
+            {back}
+            {deleteAction}
+          </>
+        }
       />
     );
   const campaign = result.campaign;
@@ -352,21 +386,68 @@ function CampaignContent({
         onPendingChange={onPendingChange}
         onConfirmed={(value) => setResult({ attempt, campaign: value })}
       />
-      <PageHeader
-        title={campaign.title}
-        description={
+      <Link to={studioReturnTo} className={styles.backLink}>
+        <ArrowLeft className="icon icon-sm" aria-hidden="true" />
+        Voltar aos projetos
+      </Link>
+      <ObjectHeader
+        kind={
           campaign.provenance.kind === 'original'
-            ? 'Campanha de aventura autoral'
-            : 'Campanha independente'
+            ? 'Campanha · de aventura autoral'
+            : 'Campanha · independente'
         }
-        breadcrumbs={<Link to="/studio">Estúdio</Link>}
-        actions={
-          <div className={styles.actions}>
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              Editar campanha
-            </Button>
-            {back}
-          </div>
+        title={campaign.title}
+        meta={
+          <>
+            <Badge variant="neutral">{status}</Badge>
+            <Badge variant="outline">Privada</Badge>
+            {campaign.universeId ? (
+              <Link
+                className={styles.universeLink}
+                to={'/universes/' + encodeURIComponent(campaign.universeId) + '/lore'}
+              >
+                <Globe className="icon icon-sm" aria-hidden="true" /> Abrir universo vinculado
+              </Link>
+            ) : (
+              <span title="Projeto independente, sem universo vinculado.">Sem universo</span>
+            )}
+            <span>
+              Atualizada em{' '}
+              <time dateTime={validDate ? new Date(campaign.updatedAt).toISOString() : undefined}>
+                {validDate
+                  ? new Intl.DateTimeFormat('pt-BR', {
+                      dateStyle: 'medium',
+                      timeStyle: 'short',
+                    }).format(campaign.updatedAt)
+                  : 'Data indisponível'}
+              </time>
+            </span>
+          </>
+        }
+        description={
+          <p className={styles.description}>
+            {campaign.description || 'Nenhuma descrição cadastrada.'}
+          </p>
+        }
+        secondaryActions={
+          <Button variant="outline" onClick={() => setEditing(true)}>
+            Editar campanha
+          </Button>
+        }
+        menu={
+          <Dropdown
+            mode="action"
+            label="Opções da campanha"
+            align="end"
+            variant="outline"
+            iconOnly
+            icon={<MoreHorizontal className="icon" aria-hidden="true" />}
+          >
+            <DropdownItem variant="destructive" onSelect={onDelete}>
+              <Trash2 className="icon icon-sm" aria-hidden="true" />
+              Excluir campanha
+            </DropdownItem>
+          </Dropdown>
         }
       />
       {pending && !editing && (
@@ -377,35 +458,6 @@ function CampaignContent({
             Confirmar alterações pendentes
           </Button>
         </Alert>
-      )}
-      <div className={styles.meta}>
-        <Badge variant="secondary">Campanha</Badge>
-        <Badge variant="neutral">{status}</Badge>
-        <Badge variant="outline">Privada</Badge>
-      </div>
-      <Card className={styles.content}>
-        <h2>
-          <Map className="icon" aria-hidden="true" /> Descrição
-        </h2>
-        <p>{campaign.description || 'Nenhuma descrição cadastrada.'}</p>
-        <p className={styles.date}>
-          Atualizada em{' '}
-          <time dateTime={validDate ? new Date(campaign.updatedAt).toISOString() : undefined}>
-            {validDate
-              ? new Intl.DateTimeFormat('pt-BR', {
-                  dateStyle: 'medium',
-                  timeStyle: 'short',
-                }).format(campaign.updatedAt)
-              : 'Data indisponível'}
-          </time>
-        </p>
-      </Card>
-      {campaign.universeId ? (
-        <Link to={'/universes/' + encodeURIComponent(campaign.universeId) + '/lore'}>
-          <Globe className="icon icon-sm" aria-hidden="true" /> Abrir universo vinculado
-        </Link>
-      ) : (
-        <p>Projeto independente, sem universo vinculado.</p>
       )}
       <ProjectProgressPanel target={{ kind: 'campaign', id: campaign.id }} />
       <CampaignNotesPanel campaignId={campaign.id} />

@@ -78,3 +78,35 @@ de livro, aventura, campanha e universo. Cada página entra em uma seção datad
 - O conteúdo da aba Cenas (planejador compartilhado com o livro) ainda tem botões
   largos e filtros em selects grandes; entra na fase de coleções.
 - A barra contextual da aventura mostra só "Estúdio", sem o nome do projeto.
+
+## Campanha — 2026-11-05
+
+### Entregue
+
+- Cabeçalho por `ObjectHeader`: "Campanha · de aventura autoral/independente",
+  título `h1`, estado, privada, universo (link) ou "Sem universo" e data; a
+  descrição deixou de ser um card separado.
+- A página não começa mais pelo botão vermelho "Excluir campanha". A exclusão
+  fica no menu "Opções da campanha"; "Editar campanha" segue visível.
+  `CampaignDeletionControls` ganhou modo controlado (`open`/`onOpenChange`) e o
+  gatilho padrão deixou de ser vermelho. Erro, indisponível e conteúdo oculto
+  mantêm um botão "Excluir campanha" para retomar a limpeza.
+- "Pistas e missões" saiu do topo: fica no host estável da página, depois do
+  conteúdo e junto das sessões, preservando o painel quando a campanha recarrega.
+  O painel ganhou espaçamento interno e botão de largura natural.
+
+### Testes
+
+- `CampaignPage.test.tsx`: novo caso de exclusão pelo menu e pelo estado oculto;
+  `campaignDeletionControls.test.tsx`: novo caso do modo controlado; textos de
+  universo atualizados. `npx vitest run src/features/campaigns`: 69 aprovados.
+- A primeira tentativa de levar "Pistas e missões" para baixo do cabeçalho foi
+  barrada pelo teste de host estável; a posição final preserva esse contrato.
+- Testes visuais de exclusão (cinco arquivos) passam pelo menu.
+
+### Limitações
+
+- As seções da campanha (progresso, notas, comparação, lore, base e sessões)
+  continuam empilhadas; organizá-las em abas exige revisar pendências de cada
+  painel e fica como continuação.
+- A barra contextual mostra só "Estúdio", sem o nome da campanha.
