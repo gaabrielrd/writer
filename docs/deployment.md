@@ -1,5 +1,16 @@
 # Deploy do Writer no Firebase
 
+## Hosting e listagem leve de lore publicados em 2026-11-05
+
+O bundle do commit `c24e0a2` foi publicado após atualizar somente `loreApi`,
+confirmada ACTIVE em Node 24. As outras 29 Functions conservaram seus hashes.
+O canal live ficou FINALIZED na versão `9ecd290be51cbbc1`; os 17 arquivos do
+artefato coincidiram por SHA-256, seis rotas SPA e Chromium anônimo passaram.
+Validação local foi concluída por etapas, com duas esperas de testes corrigidas
+e reconferência integral do frontend aprovada. CI remota e fluxo autenticado
+continuam evidências distintas. Veja o
+[registro desta publicação](entregas/2026-11-05-sincronizacao-lore-e-hosting.md).
+
 ## Primeira experiência publicada em 2026-11-03
 
 O commit `1bc6ba8` foi publicado na ordem `generationApi`, Firestore Rules e

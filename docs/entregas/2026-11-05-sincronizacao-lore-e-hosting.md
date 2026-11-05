@@ -1,4 +1,4 @@
-# Sincronização das melhorias de lore e preparação do Hosting
+# Sincronização das melhorias de lore e publicação do Hosting
 
 - **Data:** 2026-11-05
 - **Branch:** `master`
@@ -18,6 +18,10 @@ universos, além das evidências locais anteriores. A navegação dos campos foi
 adaptada ao `Tabs` compartilhado após o novo guardrail do remoto recusar a
 implementação própria. As jornadas do compêndio passaram a conferir também o
 inspetor de resumos antes de abrir a ficha completa.
+
+Durante o fechamento surgiram arquivos de Impeccable e alterações de emuladores
+em outra atividade no mesmo checkout. Eles foram preservados fora destes commits;
+o artefato publicado já estava congelado antes dessas alterações.
 
 ## Validação executada
 
@@ -58,10 +62,30 @@ A publicação autorizada limita-se a `loreApi` e Hosting. O ganho paralelo de
 `universeImportAnalysisApi` fica versionado, mas seu rollout não faz parte desta
 publicação. Rules, índices, Storage e outras Functions têm implantação própria.
 
-O Hosting será publicado com Firebase CLI `15.33.0`, configuração exclusiva do
+O Hosting foi publicado com Firebase CLI `15.33.0`, configuração exclusiva do
 site `writer-44cd5`, bundle congelado, marcador do commit e manifesto SHA-256.
 Conferência de arquivos, rotas SPA e Chromium anônimo ficam separadas da
 verificação autenticada real, que não foi executada nesta entrega.
+
+### Conferência da publicação
+
+- Código/bundle: `c24e0a28bcd41210cd1b385f5e0512b2660d724e`.
+- `loreApi` ACTIVE em `nodejs24`, hash de implantação
+  `c8c934e0d94841dc732d736a94efabf50d1d61e3`. As outras 29 Functions conservaram
+  seus hashes. Os dois módulos alterados da leitura foram comparados com o
+  pacote implantado da geração Storage `1793915052009950` e coincidiram.
+- Canal live: release `1793915288748000`, versão `9ecd290be51cbbc1`, FINALIZED,
+  publicada às 18:48 de 2026-11-05, no fuso America/Sao_Paulo.
+- Os 17 arquivos do artefato servidos coincidiram por SHA-256 com o manifesto.
+- Seis rotas SPA retornaram HTTP 200 com o mesmo index: `/studio`,
+  `/studio/projects`, `/studio/import`, `/studio/operations`,
+  `/books/new/assisted` e `/styleguide`.
+- Chromium anônimo: HTTP 200, título Writer Assistant e nenhum `pageerror`.
+  Captura da página inicial inspecionada; login e operações autenticadas não
+  foram exercitados.
+
+Configuração, bundle, manifesto, conferência por arquivo, canal live e captura
+ficam em `.firebase/hosting-sync-2026-11-05/`, ignorado pelo Git.
 
 ## Achados anteriores fora do escopo
 
