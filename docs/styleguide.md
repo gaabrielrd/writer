@@ -2,6 +2,23 @@
 
 A base visual do Writer Assistant é estruturada em torno do padrão **shadcn/ui** (utilizando **Tailwind CSS**, **Radix UI Primitives** e **Lucide React**), com componentes abertos, tipados e modulares localizados em `src/shared/ui` e motor de temas dinâmico em `src/shared/theme`. A referência interativa viva está disponível na rota `/styleguide`.
 
+## Como usar este guia
+
+Leia nesta ordem antes de mexer em interface:
+
+1. [Regras de interface](#regras-de-interface) e o
+   [kit de componentes](#kit-de-componentes-srcsharedui): tokens, ícones e peças.
+2. [Anatomia de página](#anatomia-de-página): as cinco zonas e as regras de ações
+   que toda página da área logada segue. Uma tela nova monta essas zonas com o kit
+   em vez de criar cabeçalho, abas, filtros ou barra próprios.
+3. [Verificação](#verificação): o que o `check:styleguide` barra.
+
+As seções a partir de [Direção visual](#direção-visual-estúdio-de-escrita) são
+notas por tela, escritas antes da anatomia de página. Elas descrevem
+comportamentos existentes e valem enquanto não contradizem os padrões acima; em
+caso de conflito, prevalecem a anatomia de página e a
+[ADR 0275](decisions/0275-page-anatomy.md).
+
 ## Plataforma inicial
 
 A [direção de suporte](platform-support.md), vigente desde 2026-11-03, prioriza
@@ -125,8 +142,11 @@ sem rótulo visual, que cresce com o texto, envia por Enter (Shift+Enter quebra 
 linha) e tem o envio por ícone. Expandir mostra a conversa; só a criação com IA
 chega aberta, com a conversa de concepção.
 
-A migração das telas acontece por fases; a página de Inteligência artificial é a
-primeira a usar `PageHeader` e `Tabs`. A demonstração fica em `/styleguide`.
+Seguem a anatomia: livro, aventura, campanha e universo (`ObjectHeader`, `Tabs`,
+menu "…"); Projetos, Compêndio, Imagens, lista de Universos, Em andamento e o
+planejador de Cenas (`Toolbar`, `FilterChips`, `Dropdown` compacto); Compêndio do
+livro e Personas com inspetor em telas largas; Inteligência artificial (`PageHeader`
+e `Tabs`). A demonstração fica em `/styleguide`.
 
 ## Favicon
 
@@ -144,6 +164,15 @@ substituir a identidade anterior. O asset é servido localmente, sem fontes ou i
 npm run check:styleguide
 npm run validate
 ```
+
+`check:styleguide` roda dois scripts. `scripts/check-styleguide.mjs` confere tokens,
+ícones e o kit base e só avisa. `scripts/check-page-anatomy.mjs` falha quando um
+arquivo de `src/` passa a usar `role="tablist"` fora do `Tabs` do kit ou um
+`<Button variant="destructive|danger">` além do que tinha. A contagem permitida
+por arquivo fica em `scripts/page-anatomy-baseline.json`, uma catraca que só deve
+diminuir: ao migrar um arquivo, rode `node scripts/check-page-anatomy.mjs
+--write-baseline` e revise o diff. Botões vermelhos continuam permitidos dentro de
+diálogos de confirmação já existentes.
 
 ## Direção visual: estúdio de escrita
 

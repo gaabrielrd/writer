@@ -1,0 +1,114 @@
+{
+  "src/features/adventure-deletions/components/AdventureDeletionDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/adventure-import/components/AdventureImportDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 2
+  },
+  "src/features/adventure-portability/components/AdventureRestoreDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 2
+  },
+  "src/features/ai-assistant/components/ChapterPersonaDialog.tsx": {
+    "tablists": 1,
+    "destructiveButtons": 0
+  },
+  "src/features/book-portability/components/BookRestoreDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 2
+  },
+  "src/features/books/components/AssistedBookPage.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/campaign-comparisons/components/ComparisonDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/campaign-deletions/components/CampaignDeletionDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/campaign-lore/components/CampaignLoreOperationControls.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/campaign-lore/components/CampaignLorePanel.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 2
+  },
+  "src/features/campaign-notes/components/CampaignNotesPanel.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/campaign-preparation/components/CampaignPreparationPanel.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 2
+  },
+  "src/features/campaign-sessions/components/CampaignSessionsPanel.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/campaigns/components/CampaignDeletionControls.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/custom-themes/components/CustomThemesProvider.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/lore/components/AdventureLoreCollection.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 2
+  },
+  "src/features/lore/components/BookLoreCollection.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/lore/components/BookLoreCreationEditor.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/lore/components/BookLoreManualEditor.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 2
+  },
+  "src/features/lore/components/BookLoreRemovalDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/lore/components/BookLoreRemovalSelectionDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/lore/components/LoreBulkActions.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/lore/components/LoreEntityForm.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/lore/components/LoreTab.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/manuscript-history/components/WorkHistoryDialog.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/narrative-planning/components/NarrativePlanner.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/features/universes/components/UniversePage.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  },
+  "src/shared/ui/StyleguidePage.tsx": {
+    "tablists": 0,
+    "destructiveButtons": 1
+  }
+}
