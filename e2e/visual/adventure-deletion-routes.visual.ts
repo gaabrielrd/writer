@@ -43,7 +43,8 @@ test('página revoga original, pausa no Estúdio e mantém consulta pela URL ant
   await page.goto('/adventures/' + id);
   await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
   await step(page, 'hold');
-  await page.getByRole('button', { name: 'Excluir aventura', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções da aventura', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Excluir aventura', exact: true }).click();
   await page.getByRole('button', { name: 'Excluir aventura definitivamente' }).click();
   await expect
     .poll(async () => (await inspect(page)).calls.filter((c) => c.method === 'advance').length)
@@ -109,7 +110,8 @@ test('troca de conta esconde o catálogo anterior e retorno consulta sem repetir
   page,
 }) => {
   await page.goto('/adventures/' + id);
-  await page.getByRole('button', { name: 'Excluir aventura', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções da aventura', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Excluir aventura', exact: true }).click();
   await page.getByRole('button', { name: 'Excluir aventura definitivamente' }).click();
   await expect(page.getByRole('heading', { name: 'Aventura excluída' })).toBeVisible();
   await page.keyboard.press('Escape');

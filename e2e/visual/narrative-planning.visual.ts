@@ -729,7 +729,7 @@ test('teclado e largura de 320px permitem navegar e preencher planejamento nos t
   await tab.press('Home');
   await expect(page.getByRole('tab', { name: 'Cenas', exact: true })).toBeFocused();
   await page.getByRole('tab', { name: 'Cenas', exact: true }).press('End');
-  const loreTab = page.getByRole('tab', { name: 'Lore', exact: true });
+  const loreTab = page.getByRole('tab', { name: 'Compêndio', exact: true });
   await expect(loreTab).toBeFocused();
   await expect(loreTab).toHaveAttribute('aria-selected', 'true');
   await loreTab.press('ArrowLeft');

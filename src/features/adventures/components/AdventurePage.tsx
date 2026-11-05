@@ -1,13 +1,14 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  useSyncExternalStore,
-  type KeyboardEvent,
-} from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Link, Navigate, useNavigate, useParams, useSearchParams, useLocation } from 'react-router';
-import { BookOpen, Globe, History, UserRound } from 'lucide-react';
+import {
+  ArrowLeft,
+  DatabaseBackup,
+  Globe,
+  History,
+  MoreHorizontal,
+  Trash2,
+  UserRound,
+} from 'lucide-react';
 import {
   AdventurePersonaDialog,
   readEditorChatOperation,
@@ -36,11 +37,16 @@ import {
   Badge,
   Alert,
   Button,
-  Card,
+  Dropdown,
+  DropdownItem,
   EmptyState,
   ErrorState,
   LoadingState,
-  PageHeader,
+  ObjectHeader,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   buttonVariants,
 } from '@/shared/ui';
 import type { Adventure } from '../model/adventure';
@@ -92,7 +98,6 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
   const tabs = ['scenes', 'narrative', 'progress', 'lore'] as const;
   const requestedTab = searchParams.get('tab');
   const activeTab = tabs.find((tab) => tab === requestedTab) ?? 'scenes';
-  const narrativeOpen = activeTab === 'narrative';
   const selectTab = (tab: 'scenes' | 'narrative' | 'progress' | 'lore') =>
     setSearchParams(
       (current) => {
@@ -102,21 +107,6 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
       },
       { state: studioReturnState },
     );
-  const handleTabKey = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-    event.preventDefault();
-    const index = tabs.indexOf(activeTab);
-    const next =
-      tabs[
-        event.key === 'Home'
-          ? 0
-          : event.key === 'End'
-            ? tabs.length - 1
-            : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length
-      ]!;
-    selectTab(next);
-    document.getElementById('adventure-tab-' + next)?.focus();
-  };
   const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<{
     attempt: number;
@@ -261,151 +251,122 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
           onClose={() => setHistoryOpen(false)}
           target={{ kind: 'adventure', id: adventure.id }}
         />
-        <PageHeader
-          title={adventure.title}
-          description={
-            adventure.origin.kind === 'imported' ? 'Aventura importada' : 'Aventura autoral'
+        <Link to={studioReturnTo} className={styles.backLink}>
+          <ArrowLeft className="icon icon-sm" aria-hidden="true" />
+          Voltar aos projetos
+        </Link>
+        <ObjectHeader
+          kind={
+            adventure.origin.kind === 'imported' ? 'Aventura · importada' : 'Aventura · autoral'
           }
-          breadcrumbs={<Link to="/studio">Estúdio</Link>}
-          actions={
-            <div className={styles.headerActions}>
-              {back}
-              <Button
-                variant="destructive"
-                disabled={pending || backupOpen || captureOpen || historyOpen || personaOpen}
-                onClick={() => setDeletionOpen(true)}
-              >
-                Excluir aventura
-              </Button>
-              <Button variant="outline" disabled={pending} onClick={() => setBackupOpen(true)}>
-                Backup da aventura
-              </Button>
-              <Button variant="outline" onClick={() => setPersonaOpen(true)}>
-                <UserRound className="icon icon-sm" aria-hidden="true" />
-                Persona da aventura
-              </Button>
-              <Button variant="outline" onClick={() => setCaptureOpen(true)}>
-                Criar campanha desta aventura
-              </Button>
-              <Button variant="outline" onClick={() => setHistoryOpen(true)}>
+          title={adventure.title}
+          meta={
+            <>
+              <Badge variant="neutral">{status}</Badge>
+              {adventure.status === 'archived' && <Badge variant="secondary">Arquivada</Badge>}
+              <Badge variant="outline">Privada</Badge>
+              {adventure.universeId ? (
+                <Link
+                  className={styles.universeLink}
+                  to={'/universes/' + encodeURIComponent(adventure.universeId) + '/lore'}
+                >
+                  <Globe className="icon icon-sm" aria-hidden="true" /> Abrir universo vinculado
+                </Link>
+              ) : (
+                <span title="Projeto independente, sem universo vinculado.">Sem universo</span>
+              )}
+              <span>
+                Atualizada em{' '}
+                <time
+                  dateTime={validDate ? new Date(adventure.updatedAt).toISOString() : undefined}
+                >
+                  {validDate
+                    ? new Intl.DateTimeFormat('pt-BR', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      }).format(adventure.updatedAt)
+                    : 'Data indisponível'}
+                </time>
+              </span>
+            </>
+          }
+          description={
+            <p className={styles.synopsis}>{adventure.synopsis || 'Nenhuma sinopse cadastrada.'}</p>
+          }
+          secondaryActions={
+            <Button variant="outline" onClick={() => setCaptureOpen(true)}>
+              Criar campanha desta aventura
+            </Button>
+          }
+          menu={
+            <Dropdown
+              mode="action"
+              label="Opções da aventura"
+              align="end"
+              variant="outline"
+              iconOnly
+              icon={<MoreHorizontal className="icon" aria-hidden="true" />}
+            >
+              <DropdownItem onSelect={() => setHistoryOpen(true)}>
                 <History className="icon icon-sm" aria-hidden="true" />
                 Histórico do texto
-              </Button>
-            </div>
+              </DropdownItem>
+              <DropdownItem onSelect={() => setPersonaOpen(true)}>
+                <UserRound className="icon icon-sm" aria-hidden="true" />
+                Persona da aventura
+              </DropdownItem>
+              <DropdownItem disabled={pending} onSelect={() => setBackupOpen(true)}>
+                <DatabaseBackup className="icon icon-sm" aria-hidden="true" />
+                Backup da aventura
+              </DropdownItem>
+              <DropdownItem
+                variant="destructive"
+                disabled={pending || backupOpen || captureOpen || historyOpen || personaOpen}
+                onSelect={() => setDeletionOpen(true)}
+              >
+                <Trash2 className="icon icon-sm" aria-hidden="true" />
+                Excluir aventura
+              </DropdownItem>
+            </Dropdown>
           }
         />
-        <div className={styles.meta}>
-          <Badge variant="secondary">Aventura</Badge>
-          <Badge variant="neutral">{status}</Badge>
-          {adventure.status === 'archived' && <Badge variant="secondary">Arquivada</Badge>}
-          <Badge variant="outline">Privada</Badge>
-        </div>
-        <Card className={styles.content}>
-          <h2>
-            <BookOpen className="icon" aria-hidden="true" /> Sinopse
-          </h2>
-          <p>{adventure.synopsis || 'Nenhuma sinopse cadastrada.'}</p>
-          <p className={styles.date}>
-            Atualizada em{' '}
-            <time dateTime={validDate ? new Date(adventure.updatedAt).toISOString() : undefined}>
-              {validDate
-                ? new Intl.DateTimeFormat('pt-BR', {
-                    dateStyle: 'medium',
-                    timeStyle: 'short',
-                  }).format(adventure.updatedAt)
-                : 'Data indisponível'}
-            </time>
-          </p>
-        </Card>
         <CampaignCapturePreparations adventureId={adventure.id} />
-        {adventure.universeId ? (
-          <Link to={'/universes/' + encodeURIComponent(adventure.universeId) + '/lore'}>
-            <Globe className="icon icon-sm" aria-hidden="true" /> Abrir universo vinculado
-          </Link>
-        ) : (
-          <p>Projeto independente, sem universo vinculado.</p>
-        )}
-        <div className={styles.tabs} role="tablist" aria-label="Preparação da aventura">
-          <Button
-            role="tab"
-            aria-selected={activeTab === 'scenes'}
-            onKeyDown={handleTabKey}
-            id="adventure-tab-scenes"
-            aria-controls="adventure-tab-panel"
-            tabIndex={activeTab === 'scenes' ? 0 : -1}
-            variant={activeTab === 'scenes' ? 'primary' : 'secondary'}
-            onClick={() => selectTab('scenes')}
-          >
-            Cenas
-          </Button>
-          <Button
-            role="tab"
-            aria-selected={narrativeOpen}
-            onKeyDown={handleTabKey}
-            id="adventure-tab-narrative"
-            aria-controls="adventure-tab-panel"
-            tabIndex={narrativeOpen ? 0 : -1}
-            variant={narrativeOpen ? 'primary' : 'secondary'}
-            onClick={() => selectTab('narrative')}
-          >
-            Arcos e cronologia
-          </Button>
-          <Button
-            role="tab"
-            aria-selected={activeTab === 'progress'}
-            onKeyDown={handleTabKey}
-            id="adventure-tab-progress"
-            aria-controls="adventure-tab-panel"
-            tabIndex={activeTab === 'progress' ? 0 : -1}
-            variant={activeTab === 'progress' ? 'primary' : 'secondary'}
-            onClick={() => selectTab('progress')}
-          >
-            Progresso
-          </Button>
-          <Button
-            role="tab"
-            aria-selected={activeTab === 'lore'}
-            onKeyDown={handleTabKey}
-            id="adventure-tab-lore"
-            aria-controls="adventure-tab-panel"
-            tabIndex={activeTab === 'lore' ? 0 : -1}
-            variant={activeTab === 'lore' ? 'primary' : 'secondary'}
-            onClick={() => selectTab('lore')}
-          >
-            Lore
-          </Button>
-        </div>
-        <div
-          role="tabpanel"
-          id="adventure-tab-panel"
-          aria-labelledby={'adventure-tab-' + activeTab}
-        >
-          <div hidden={activeTab !== 'lore'}>
-            <LoreCollection
-              scope={{ kind: 'adventure', id: adventure.id }}
-              active={activeTab === 'lore'}
-              onBusyChange={setLoreBusy}
-            />
-          </div>
-          {activeTab === 'lore' ? null : activeTab === 'progress' ? (
-            <ProjectProgressPanel
+        <Tabs value={activeTab} onValueChange={(value) => selectTab(value as typeof activeTab)}>
+          <TabsList aria-label="Preparação da aventura">
+            <TabsTrigger value="scenes">Cenas</TabsTrigger>
+            <TabsTrigger value="narrative">Arcos e cronologia</TabsTrigger>
+            <TabsTrigger value="progress">Progresso</TabsTrigger>
+            <TabsTrigger value="lore">Compêndio</TabsTrigger>
+          </TabsList>
+          <TabsContent value="scenes">
+            <ScenePlanner
               target={{ kind: 'adventure', id: adventure.id }}
-              manuscriptRefreshKey={adventure.updatedAt}
-              onProjectChange={() => setAttempt((n) => n + 1)}
+              projectTitle={adventure.title}
             />
-          ) : narrativeOpen ? (
+          </TabsContent>
+          <TabsContent value="narrative">
             <NarrativePlanner
               key={ownerId + ':' + adventure.id + ':' + (adventure.universeId ?? 'none')}
               target={{ kind: 'adventure', id: adventure.id }}
               onProjectChange={() => setAttempt((n) => n + 1)}
             />
-          ) : (
-            <ScenePlanner
+          </TabsContent>
+          <TabsContent value="progress">
+            <ProjectProgressPanel
               target={{ kind: 'adventure', id: adventure.id }}
-              projectTitle={adventure.title}
+              manuscriptRefreshKey={adventure.updatedAt}
+              onProjectChange={() => setAttempt((n) => n + 1)}
             />
-          )}
-        </div>
+          </TabsContent>
+          {/* Kept mounted so an unsaved lore draft survives switching sections. */}
+          <TabsContent value="lore" forceMount hidden={activeTab !== 'lore'}>
+            <LoreCollection
+              scope={{ kind: 'adventure', id: adventure.id }}
+              active={activeTab === 'lore'}
+              onBusyChange={setLoreBusy}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }

@@ -374,7 +374,8 @@ test('persona: base da aventura, complemento com ajuste, CAS e recuperação sem
     return ((await import(path)) as typeof Fixture).fixtureSeedEditorChat('block');
   });
   await page.goto(`/adventures/${value.target.id}`);
-  await page.getByRole('button', { name: 'Persona da aventura', exact: true }).click();
+  await page.getByRole('button', { name: 'Opções da aventura', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Persona da aventura', exact: true }).click();
   const base = page.getByRole('dialog', { name: 'Persona da aventura', exact: true });
   await chooseDropdown(
     base.getByRole('combobox', { name: 'Persona base', exact: true }),

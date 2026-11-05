@@ -45,3 +45,36 @@ de livro, aventura, campanha e universo. Cada página entra em uma seção datad
   próximo carregamento da página.
 - Os controles internos do Compêndio continuam no estilo antigo até a fase 4.
 - `npm run validate` completo e testes visuais ficam para o fim do plano.
+
+## Aventura — 2026-11-05
+
+### Entregue
+
+- Cabeçalho por `ObjectHeader`: "Aventura · autoral/importada", título `h1`,
+  estado, arquivada, privada, universo vinculado (link) ou "Sem universo" e data
+  de atualização em uma linha; sinopse como descrição.
+- Os seis botões ao lado do título viraram uma ação secundária ("Criar campanha
+  desta aventura") e o menu "Opções da aventura" com histórico, persona, backup e
+  exclusão. A exclusão é vermelha só no menu e conserva os mesmos bloqueios.
+- "Voltar aos projetos" deixou de ser botão grande e virou link, como no livro.
+- Abas por `Tabs`; "Lore" passou a se chamar "Compêndio", como no livro. O
+  Compêndio continua montado ao trocar de aba para preservar rascunhos.
+
+### Testes
+
+- `AdventurePage.test.tsx`: interações migradas para o menu e conferência de
+  itens desabilitados por `aria-disabled`; 24 testes aprovados.
+- Testes visuais ajustados: exclusão e persona pelo menu; aba "Compêndio".
+- `npx vitest run src/features/adventures src/features/scenes src/features/studio`:
+  226 aprovados.
+
+### Validações
+
+- `npx tsc -b`, `eslint`, `prettier`; prévia 1440 × 900 nos temas escuro e claro
+  com o menu aberto, sem transbordo e sem exceções.
+
+### Limitações
+
+- O conteúdo da aba Cenas (planejador compartilhado com o livro) ainda tem botões
+  largos e filtros em selects grandes; entra na fase de coleções.
+- A barra contextual da aventura mostra só "Estúdio", sem o nome do projeto.

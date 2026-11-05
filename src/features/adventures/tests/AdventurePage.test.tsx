@@ -131,6 +131,17 @@ function tree(search = '') {
     </MemoryRouter>
   );
 }
+async function chooseOption(name: string) {
+  await userEvent.click(await screen.findByRole('button', { name: 'Opções da aventura' }));
+  await userEvent.click(await screen.findByRole('menuitem', { name }));
+}
+async function expectOptionDisabled(name: string, disabled = true) {
+  await userEvent.click(await screen.findByRole('button', { name: 'Opções da aventura' }));
+  const item = await screen.findByRole('menuitem', { name });
+  if (disabled) expect(item).toHaveAttribute('aria-disabled', 'true');
+  else expect(item).not.toHaveAttribute('aria-disabled');
+  await userEvent.keyboard('{Escape}');
+}
 it('abre criação com a aventura atual e navega apenas após confirmação da campanha', async () => {
   render(tree());
   await userEvent.click(
@@ -155,7 +166,7 @@ it('abre narrativa contextual da aventura e alterna por teclado sem trocar o pro
     screen.queryByRole('heading', { name: 'Planejamento de adventure/project' }),
   ).not.toBeInTheDocument();
   await userEvent.keyboard('{End}');
-  expect(screen.getByRole('tab', { name: 'Lore' })).toHaveFocus();
+  expect(screen.getByRole('tab', { name: 'Compêndio' })).toHaveFocus();
   expect(screen.getByRole('heading', { name: 'Lore da aventura' })).toBeVisible();
   await userEvent.keyboard('{ArrowLeft}');
   expect(screen.getByRole('tab', { name: 'Progresso' })).toHaveFocus();
@@ -174,7 +185,10 @@ it('abre metadados persistidos, mantém privacidade e permite retornar ao Estúd
   expect(await screen.findByRole('heading', { name: 'Meu projeto' })).toBeInTheDocument();
   expect(screen.getByText('História privada')).toBeInTheDocument();
   expect(screen.getByText('Privada')).toBeInTheDocument();
-  expect(screen.getByText('Projeto independente, sem universo vinculado.')).toBeInTheDocument();
+  expect(screen.getByText('Sem universo')).toHaveAttribute(
+    'title',
+    'Projeto independente, sem universo vinculado.',
+  );
   expect(getAdventure).toHaveBeenCalledWith('project');
   await userEvent.click(screen.getByRole('link', { name: 'Voltar aos projetos' }));
   expect(screen.getByRole('heading', { name: 'Estúdio' })).toBeInTheDocument();
@@ -278,8 +292,8 @@ it('estado editorial atual substitui o legado ready e arquivo permanece condiç�
 
 it('abre a persona base pela API pública com a conta e aventura atuais, sem inventar cena', async () => {
   render(tree());
-  await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
-  expect(screen.getByRole('region', { name: 'Persona da aventura aberta' })).toBeVisible();
+  await chooseOption('Persona da aventura');
+  expect(await screen.findByRole('region', { name: 'Persona da aventura aberta' })).toBeVisible();
   expect(persona.props).toMatchObject({ uid: 'owner', adventureId: 'project', sceneId: null });
   await userEvent.click(screen.getByRole('button', { name: 'Fechar persona' }));
   expect(
@@ -296,8 +310,8 @@ it('compartilha o único guard de navegação e Auth com a pendência de persona
     { initialEntries: ['/adventures/project'] },
   );
   render(<RouterProvider router={router} />);
-  await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Pedido incerto' }));
+  await chooseOption('Persona da aventura');
+  await userEvent.click(await screen.findByRole('button', { name: 'Pedido incerto' }));
   expect(auth.setPendingEditorOperation).toHaveBeenLastCalledWith(true);
   await userEvent.click(screen.getByRole('link', { name: 'Voltar aos projetos' }));
   expect(screen.getByRole('heading', { name: 'Meu projeto' })).toBeVisible();
@@ -338,8 +352,8 @@ it('recarrega os metadados sem remontar ou sobrescrever o lore sujo, inclusive a
   await screen.findByRole('heading', { name: 'Meu projeto' });
   const draft = screen.getByLabelText('Rascunho de lore');
   await user.type(draft, 'Meu texto próprio ainda não salvo');
-  await user.click(screen.getByRole('button', { name: 'Persona da aventura' }));
-  await user.click(screen.getByRole('button', { name: 'Persona alterada' }));
+  await chooseOption('Persona da aventura');
+  await user.click(await screen.findByRole('button', { name: 'Persona alterada' }));
   expect(await screen.findByRole('heading', { name: 'Projeto atualizado' })).toBeVisible();
   expect(screen.getByLabelText('Rascunho de lore')).toBe(draft);
   expect(draft).toHaveValue('Meu texto próprio ainda não salvo');
@@ -352,8 +366,8 @@ it('recarrega os metadados sem remontar ou sobrescrever o lore sujo, inclusive a
 
 it('encerra a projeção da persona e libera o guard anterior ao trocar de conta', async () => {
   const view = render(tree());
-  await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Pedido incerto' }));
+  await chooseOption('Persona da aventura');
+  await userEvent.click(await screen.findByRole('button', { name: 'Pedido incerto' }));
   const previous = persona.props!;
   auth.user = { uid: 'new-owner' };
   vi.mocked(getAdventure).mockResolvedValueOnce(null);
@@ -381,8 +395,8 @@ vi.mock('@/features/adventure-portability', () => ({
 
 it('abre backup do projeto autorizado sem inventar rascunho ou alterar o original', async () => {
   render(tree());
-  await userEvent.click(await screen.findByRole('button', { name: 'Backup da aventura' }));
-  expect(screen.getByRole('region', { name: 'Backup observado' })).toBeInTheDocument();
+  await chooseOption('Backup da aventura');
+  expect(await screen.findByRole('region', { name: 'Backup observado' })).toBeInTheDocument();
   expect(backupView.props).toMatchObject({
     ownerId: 'owner',
     adventureId: resource.id,
@@ -395,7 +409,7 @@ it('abre backup do projeto autorizado sem inventar rascunho ou alterar o origina
 it('operações de persona pendentes bloqueiam abertura de nova captura', async () => {
   persona.pending = true;
   render(tree());
-  expect(await screen.findByRole('button', { name: 'Backup da aventura' })).toBeDisabled();
+  await expectOptionDisabled('Backup da aventura');
 });
 
 type DeletionProps = Parameters<
@@ -439,15 +453,15 @@ vi.mock('@/features/adventure-deletions', async (importOriginal) => ({
 }));
 it('revogação confirmada esconde o conteúdo e conserva o diálogo até voltar ao Estúdio', async () => {
   render(tree('?tab=lore'));
-  await userEvent.click(await screen.findByRole('button', { name: 'Excluir aventura' }));
-  const dialog = screen.getByRole('region', { name: 'Exclusão observada na aventura' });
+  await chooseOption('Excluir aventura');
+  const dialog = await screen.findByRole('region', { name: 'Exclusão observada na aventura' });
   expect(screen.getByText('História privada')).toBeVisible();
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar revogação observada' }));
   expect(screen.getByText('Acesso à aventura encerrado')).toBeVisible();
   expect(screen.queryByText('História privada')).not.toBeInTheDocument();
   expect(screen.queryByLabelText('Rascunho de lore')).not.toBeInTheDocument();
   expect(dialog).toBeInTheDocument();
-  expect(screen.queryByRole('button', { name: 'Backup da aventura' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: 'Opções da aventura' })).not.toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Fechar exclusão observada' }));
   expect(await screen.findByRole('heading', { name: 'Estúdio' })).toBeVisible();
 });
@@ -465,14 +479,15 @@ it('rascunho de lore e recuperação de persona pendentes impedem iniciar exclus
   render(tree('?tab=lore'));
   await screen.findByRole('heading', { name: 'Meu projeto' });
   await userEvent.type(screen.getByLabelText('Rascunho de lore'), 'Texto próprio');
-  expect(screen.getByRole('button', { name: 'Excluir aventura' })).toBeDisabled();
+  await expectOptionDisabled('Excluir aventura');
 });
 it('um diálogo editorial aberto impede abrir a exclusão simultaneamente', async () => {
   render(tree());
-  await userEvent.click(await screen.findByRole('button', { name: 'Backup da aventura' }));
-  expect(screen.getByRole('button', { name: 'Excluir aventura' })).toBeDisabled();
+  await chooseOption('Backup da aventura');
+  await screen.findByRole('region', { name: 'Backup observado' });
+  await expectOptionDisabled('Excluir aventura');
   await userEvent.click(screen.getByRole('button', { name: 'Fechar backup observado' }));
-  expect(screen.getByRole('button', { name: 'Excluir aventura' })).toBeEnabled();
+  await expectOptionDisabled('Excluir aventura', false);
 });
 it('resposta tardia de metadados não reabre conteúdo após a revogação', async () => {
   let finish!: (value: Adventure) => void;
@@ -485,12 +500,14 @@ it('resposta tardia de metadados não reabre conteúdo após a revogação', asy
         }),
     );
   render(tree());
-  await userEvent.click(await screen.findByRole('button', { name: 'Persona da aventura' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Persona alterada' }));
+  await chooseOption('Persona da aventura');
+  await userEvent.click(await screen.findByRole('button', { name: 'Persona alterada' }));
   await waitFor(() => expect(getAdventure).toHaveBeenCalledTimes(2));
   await userEvent.click(screen.getByRole('button', { name: 'Fechar persona' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Excluir aventura' }));
-  await userEvent.click(screen.getByRole('button', { name: 'Confirmar revogação observada' }));
+  await chooseOption('Excluir aventura');
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Confirmar revogação observada' }),
+  );
   await act(async () => {
     finish({ ...resource, title: 'Título tardio', synopsis: 'Conteúdo tardio' });
     await Promise.resolve();
