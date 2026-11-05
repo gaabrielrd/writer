@@ -110,3 +110,31 @@ de livro, aventura, campanha e universo. Cada página entra em uma seção datad
   continuam empilhadas; organizá-las em abas exige revisar pendências de cada
   painel e fica como continuação.
 - A barra contextual mostra só "Estúdio", sem o nome da campanha.
+
+## Universo — 2026-11-05
+
+### Entregue
+
+- Cabeçalho por `ObjectHeader`: "Universo", nome `h1`, uso em uma linha
+  ("N livros · N aventuras · N campanhas") e descrição.
+- "Importar lore" virou ação secundária com ícone; a ação principal da página é a
+  criação de entidades no Compêndio.
+- "Voltar aos universos" virou link simples. Antes era um `Button` dentro de um
+  `Link`, com dois elementos interativos aninhados.
+- A página usa a mesma moldura das outras páginas de objeto, sem o recuo extra e
+  a largura máxima de 1100 px herdados da lista de universos.
+
+### Testes
+
+- `UniversePage.test.tsx`: título `h1`, tipo, "Importar lore" e retorno pelo link;
+  `npx vitest run src/features/universes`: 31 aprovados.
+
+### Validações
+
+- `npx tsc -b`, `eslint`, `prettier`; prévia 1440 × 900 de um universo criado na
+  própria interface da prévia, sem transbordo e sem exceções.
+
+### Limitações
+
+- A lista de universos (cards com "Excluir universo" vermelho) é uma coleção e
+  entra na fase 4.

@@ -96,7 +96,9 @@ it('carrega a lista e abre o lore do universo selecionado', async () => {
     expect.any(Function),
     expect.any(Function),
   );
-  await userEvent.click(screen.getByRole('button', { name: 'Voltar aos universos' }));
+  expect(screen.getByText('Universo')).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Importar lore' })).toBeEnabled();
+  await userEvent.click(screen.getByRole('link', { name: 'Voltar aos universos' }));
   expect(await screen.findByRole('heading', { name: 'Lore compartilhado' })).toBeInTheDocument();
 });
 it('cria o primeiro universo preservando os dados e o ID após falha', async () => {

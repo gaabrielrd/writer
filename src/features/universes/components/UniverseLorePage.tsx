@@ -3,10 +3,22 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router';
 import { useAuth } from '@/features/auth';
 import { LoreCollection } from '@/features/lore';
-import { Button, ErrorState, LoadingState, PageHeader } from '@/shared/ui';
+import { ArrowLeft, Upload } from 'lucide-react';
+import { Button, ErrorState, LoadingState, ObjectHeader } from '@/shared/ui';
 import { getUniverse } from '../services/universeService';
 import type { Universe } from '../model/universe';
 import styles from './UniversePage.module.css';
+
+const count = (n: number, one: string, many: string) =>
+  `${n.toLocaleString('pt-BR')} ${n === 1 ? one : many}`;
+
+function usage(world: Universe) {
+  return [
+    count(world.bookCount, 'livro', 'livros'),
+    count(world.adventureCount ?? 0, 'aventura', 'aventuras'),
+    count(world.campaignCount ?? 0, 'campanha', 'campanhas'),
+  ].join(' · ');
+}
 
 export function UniverseLorePage() {
   const [importing, setImporting] = useState(false);
@@ -52,17 +64,21 @@ export function UniverseLorePage() {
       />
     );
   return (
-    <div className={styles.page}>
-      <PageHeader
+    <div className={styles.objectPage}>
+      <Link to="/universes" className={styles.backLink}>
+        <ArrowLeft className="icon icon-sm" aria-hidden="true" />
+        Voltar aos universos
+      </Link>
+      <ObjectHeader
+        kind="Universo"
         title={result.world.name}
-        description={result.world.description}
-        actions={
-          <>
-            <Button onClick={() => setImporting(true)}>Importar lore</Button>
-            <Link to="/universes">
-              <Button variant="secondary">Voltar aos universos</Button>
-            </Link>
-          </>
+        meta={<span>{usage(result.world)}</span>}
+        description={result.world.description || undefined}
+        secondaryActions={
+          <Button variant="outline" onClick={() => setImporting(true)}>
+            <Upload className="icon icon-sm" aria-hidden="true" />
+            Importar lore
+          </Button>
         }
       />
       <LoreCollection key={key} scope={scope} />

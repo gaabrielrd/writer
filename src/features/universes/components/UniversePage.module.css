@@ -50,3 +50,25 @@
     flex-direction: column;
   }
 }
+
+.backLink {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  text-decoration: none;
+}
+.backLink:hover {
+  color: var(--ink);
+}
+
+/* Same frame as the other object pages: full workspace width, shell spacing. */
+.objectPage {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
