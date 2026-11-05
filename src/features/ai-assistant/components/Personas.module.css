@@ -491,3 +491,49 @@
   margin: 0;
   padding: 0;
 }
+
+.inspectorTraits {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.inspectorTraits li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px 2.5ch;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.inspectorTraits span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inspectorTraits progress {
+  width: 100%;
+  height: 6px;
+  accent-color: hsl(var(--primary));
+}
+.inspectorTraits strong {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.inspectorTraits progress {
+  appearance: none;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: hsl(var(--muted));
+}
+.inspectorTraits progress::-webkit-progress-bar {
+  background: hsl(var(--muted));
+}
+.inspectorTraits progress::-webkit-progress-value {
+  background: hsl(var(--primary));
+}
+.inspectorTraits progress::-moz-progress-bar {
+  background: hsl(var(--primary));
+}

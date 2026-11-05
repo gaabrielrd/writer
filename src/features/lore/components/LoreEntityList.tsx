@@ -23,6 +23,8 @@ interface LoreEntityListProps<T extends LoreMentionEntity & { isPublic: boolean 
   onView: (entity: T) => void;
   onEdit: (entity: T) => void;
   onDelete: (id: string) => void;
+  /** Entity shown in the inspector, highlighted in the table. */
+  activeId?: string | null;
 }
 
 export function LoreEntityList<T extends LoreMentionEntity & { isPublic: boolean }>({
@@ -35,6 +37,7 @@ export function LoreEntityList<T extends LoreMentionEntity & { isPublic: boolean
   onView,
   onEdit,
   onDelete,
+  activeId = null,
 }: LoreEntityListProps<T>) {
   const selectedCount = entities.filter((entity) => selectedIds.has(entity.id)).length;
   return (
@@ -67,6 +70,7 @@ export function LoreEntityList<T extends LoreMentionEntity & { isPublic: boolean
           <TableRow
             key={entity.id}
             data-state={selectedIds.has(entity.id) ? 'selected' : undefined}
+            data-active={activeId === entity.id ? 'true' : undefined}
           >
             <TableCell className={styles.selectionCell}>
               <Input
@@ -86,6 +90,7 @@ export function LoreEntityList<T extends LoreMentionEntity & { isPublic: boolean
                 disabled={disabled}
                 title={entity.name}
                 aria-label={`Ver ficha de ${entity.name}`}
+                aria-current={activeId === entity.id ? 'true' : undefined}
               >
                 {entity.name}
               </Button>

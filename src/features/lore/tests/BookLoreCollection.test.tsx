@@ -1,4 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest';
+import { mockMatchMedia } from '@/test/matchMedia';
 import { act, renderHook, renderWithProviders, screen, waitFor, within } from '@/test/render';
 import { StrictMode } from 'react';
 import { BookLoreAuthoring } from '../components/BookLoreAuthoring';
@@ -723,4 +724,25 @@ it('public authoring transitions from reauthorized read to edit without closing 
   expect(last(s.edit)).toMatchObject({ bookId: 'book', loreId: 'arthur' });
   expect(closed).not.toHaveBeenCalled();
   expect(screen.getByRole('dialog', { name: 'Edição nativa' })).toBeInTheDocument();
+});
+
+it('em tela larga mostra o resumo no inspetor e só abre a ficha completa pelo botão', async () => {
+  const restore = mockMatchMedia('(min-width: 1100px)');
+  try {
+    const { user } = await list();
+    expect(screen.getByRole('complementary', { name: 'Detalhes' })).toHaveTextContent(
+      'Escolha uma entidade',
+    );
+    await user.click(screen.getByRole('button', { name: 'Ver ficha de Arthur' }));
+    const panel = screen.getByRole('complementary', { name: 'Detalhes de Arthur' });
+    expect(screen.getByRole('button', { name: 'Ver ficha de Arthur' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
+    expect(s.capture).not.toHaveBeenCalled();
+    await user.click(within(panel).getByRole('button', { name: 'Abrir ficha completa' }));
+    expect(s.capture).toHaveBeenCalledWith('book', 'arthur', 'a'.repeat(64));
+  } finally {
+    restore();
+  }
 });

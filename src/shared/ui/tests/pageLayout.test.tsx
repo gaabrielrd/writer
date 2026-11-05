@@ -7,6 +7,9 @@ import { FilterChips } from '../FilterChips';
 import { ObjectHeader } from '../ObjectHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../Tabs';
 import { Toolbar } from '../Toolbar';
+import { Inspector, InspectorEmpty, InspectorLayout } from '../InspectorLayout';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
+import { mockMatchMedia } from '@/test/matchMedia';
 
 function Sections({ onChange }: { onChange?: (value: string) => void }) {
   const [value, setValue] = useState('chapters');
@@ -165,4 +168,66 @@ it('usa título de nível 2 quando incorporado em outra página', () => {
   render(<ObjectHeader title="Exemplo incorporado" headingLevel={2} />);
   expect(screen.getByRole('heading', { level: 2, name: 'Exemplo incorporado' })).toBeVisible();
   expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+});
+
+it('mostra o inspetor ao lado da lista com título, ações e fechamento', async () => {
+  const user = userEvent.setup();
+  const close = vi.fn();
+  const { container } = render(
+    <InspectorLayout
+      list={<ul aria-label="Fichas" />}
+      inspector={
+        <Inspector
+          title="Lia"
+          eyebrow="Personagem"
+          actions={<Button>Abrir ficha completa</Button>}
+          onClose={close}
+        >
+          <p>Cartógrafa.</p>
+        </Inspector>
+      }
+    />,
+  );
+  expect(container.firstElementChild).toHaveAttribute('data-inspector', 'open');
+  const panel = screen.getByRole('complementary', { name: 'Detalhes de Lia' });
+  expect(within(panel).getByRole('heading', { level: 2, name: 'Lia' })).toBeVisible();
+  expect(within(panel).getByText('Personagem')).toBeVisible();
+  await user.click(within(panel).getByRole('button', { name: 'Fechar detalhes' }));
+  expect(close).toHaveBeenCalledOnce();
+});
+
+it('mantém a lista sozinha sem inspetor e explica o estado vazio', () => {
+  const { container, rerender } = render(<InspectorLayout list={<p>Lista</p>} />);
+  expect(container.firstElementChild).toHaveAttribute('data-inspector', 'closed');
+  rerender(
+    <InspectorLayout
+      list={<p>Lista</p>}
+      inspector={<InspectorEmpty>Selecione uma ficha.</InspectorEmpty>}
+    />,
+  );
+  expect(screen.getByRole('complementary', { name: 'Detalhes' })).toHaveTextContent(
+    'Selecione uma ficha.',
+  );
+});
+
+it('acompanha a media query simulada e responde falso sem matchMedia', () => {
+  function Probe() {
+    return <p>{useMediaQuery('(min-width: 1100px)') ? 'largo' : 'estreito'}</p>;
+  }
+  const descriptor = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+  Reflect.deleteProperty(window, 'matchMedia');
+  try {
+    const view = render(<Probe />);
+    expect(screen.getByText('estreito')).toBeVisible();
+    view.unmount();
+  } finally {
+    if (descriptor) Object.defineProperty(window, 'matchMedia', descriptor);
+  }
+  const restore = mockMatchMedia('(min-width: 1100px)');
+  try {
+    render(<Probe />);
+    expect(screen.getByText('largo')).toBeVisible();
+  } finally {
+    restore();
+  }
 });

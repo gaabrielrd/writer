@@ -229,3 +229,32 @@
     padding-inline: var(--space-2);
   }
 }
+
+.entityTable tr[data-active='true'] td {
+  background: hsl(var(--primary) / 0.08);
+}
+.entityTable tr[data-active='true'] .entityName {
+  font-weight: 600;
+}
+.inspectorAliases {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+}
+.inspectorSummary {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.inspectorDelete {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  margin-left: auto;
+  color: var(--ink-soft);
+}
+.inspectorDelete:hover,
+.inspectorDelete:focus-visible {
+  color: hsl(var(--destructive));
+}

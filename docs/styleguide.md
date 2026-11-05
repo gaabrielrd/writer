@@ -83,6 +83,11 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
   ações à direita. Campos, chips e botões `sm` dividem 36 px (44 px em toque).
 - `FilterChips`: filtro de escolha única com `aria-pressed` e contagem opcional; para
   muitas opções, use `Dropdown mode="select"`.
+- `InspectorLayout`, `Inspector`, `InspectorEmpty`: coleção com inspetor fixo de 320 px
+  à direita, cabeçalho por `SidePanelHeader`, ações no rodapé e região nomeada
+  "Detalhes de {item}". Mostre o inspetor só com espaço (`useMediaQuery('(min-width:
+1100px)')`); abaixo disso, o item abre como antes. Usado no Compêndio (Lista) e em
+  Personas.
 - `Table`: Tabelas responsivas estilizadas.
 - `StyleguidePage`: Página viva do catálogo acessível em `/styleguide`.
 

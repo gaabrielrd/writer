@@ -13,6 +13,10 @@ import {
   Slider,
   Textarea,
   FormSection,
+  Inspector,
+  InspectorEmpty,
+  InspectorLayout,
+  useMediaQuery,
 } from '@/shared/ui';
 import {
   STANDARD_TRAITS,
@@ -61,6 +65,8 @@ function PersonaManagerSession({
   const [generated, setGenerated] = useState<{ requestId: string; rationale: string } | null>(null);
   const [accepting, setAccepting] = useState<PersonaGenerationEditable | null>(null);
   const [selected, setSelected] = useState<AIPersona | null>(null);
+  const wide = useMediaQuery('(min-width: 1100px)') && !modal;
+  const [inspectedId, setInspectedId] = useState<string | null>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const { personas, loading, error, retry } = usePersonaLibrary(ownerId);
   const [draft, setDraft] = useState<AIPersona | null>(null);
@@ -142,6 +148,7 @@ function PersonaManagerSession({
     }
   };
   const items = personas.filter((persona) => showArchived || !persona.archived);
+  const inspected = items.find((persona) => persona.id === inspectedId) ?? null;
   let activeProfile: ResolvedPersonaProfile | null = null;
   let profileError: string | null = null;
   if (bindingContext && !loading && !error) {
@@ -210,69 +217,131 @@ function PersonaManagerSession({
           description="Explore um modelo abaixo e personalize para criar sua própria voz."
         />
       )}
-      <ul
-        className={`${styles.personaList} ${modal ? styles.modalPersonaList : ''}`}
-        aria-label="Personas disponíveis"
-      >
-        {items.map((persona) => (
-          <li key={persona.id}>
-            <Button
-              type="button"
-              variant="ghost"
-              className={styles.personaRow}
-              onClick={(event) => {
-                trigger.current = event.currentTarget;
-                setFailure(null);
-                setSelected(persona);
-              }}
-              aria-label={`Ver detalhes de ${persona.name}`}
-            >
-              <PersonaAvatar persona={persona} />
-              <span className={styles.rowCopy}>
-                <strong>{persona.name}</strong>
-                <span>{persona.description}</span>
-                <span className={styles.rowMeta}>
-                  {persona.archived
-                    ? 'Arquivada'
-                    : isDefaultPersona(persona.id)
+      <InspectorLayout
+        list={
+          <ul
+            className={`${styles.personaList} ${modal ? styles.modalPersonaList : ''}`}
+            aria-label="Personas disponíveis"
+          >
+            {items.map((persona) => (
+              <li key={persona.id}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={styles.personaRow}
+                  onClick={(event) => {
+                    trigger.current = event.currentTarget;
+                    setFailure(null);
+                    if (wide) setInspectedId(persona.id);
+                    else setSelected(persona);
+                  }}
+                  aria-label={`Ver detalhes de ${persona.name}`}
+                  aria-current={wide && inspected?.id === persona.id ? 'true' : undefined}
+                >
+                  <PersonaAvatar persona={persona} />
+                  <span className={styles.rowCopy}>
+                    <strong>{persona.name}</strong>
+                    <span>{persona.description}</span>
+                    <span className={styles.rowMeta}>
+                      {persona.archived
+                        ? 'Arquivada'
+                        : isDefaultPersona(persona.id)
+                          ? 'Persona padrão'
+                          : 'Sua persona'}{' '}
+                      · {persona.traits.length} atributos
+                    </span>
+                    {activeProfile?.base?.id === persona.id && (
+                      <Badge variant="secondary" className={styles.activeVoiceBadge}>
+                        Base do livro
+                      </Badge>
+                    )}
+                    {activeProfile?.chapter?.id === persona.id && (
+                      <Badge variant="secondary" className={styles.activeVoiceBadge}>
+                        Complemento do capítulo
+                      </Badge>
+                    )}
+                  </span>
+                  <ChevronRight className="icon icon-sm" aria-hidden="true" />
+                  {modal && (
+                    <span className={styles.miniProfile}>
+                      {[...persona.traits]
+                        .sort((a, b) => Math.abs(b.value - 50) - Math.abs(a.value - 50))
+                        .slice(0, 3)
+                        .map((trait) => (
+                          <span key={trait.id}>
+                            <span title={trait.name}>{trait.name}</span>
+                            <progress
+                              max={100}
+                              value={trait.value}
+                              aria-label={`${persona.name}: ${trait.name}`}
+                            />
+                            <strong>{trait.value}</strong>
+                          </span>
+                        ))}
+                    </span>
+                  )}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        }
+        inspector={
+          wide ? (
+            inspected ? (
+              <Inspector
+                title={inspected.name}
+                onClose={() => setInspectedId(null)}
+                eyebrow={
+                  <Badge variant="secondary">
+                    {isDefaultPersona(inspected.id)
                       ? 'Persona padrão'
-                      : 'Sua persona'}{' '}
-                  · {persona.traits.length} atributos
-                </span>
-                {activeProfile?.base?.id === persona.id && (
-                  <Badge variant="secondary" className={styles.activeVoiceBadge}>
-                    Base do livro
+                      : inspected.archived
+                        ? 'Arquivada'
+                        : 'Sua persona'}
                   </Badge>
-                )}
-                {activeProfile?.chapter?.id === persona.id && (
-                  <Badge variant="secondary" className={styles.activeVoiceBadge}>
-                    Complemento do capítulo
-                  </Badge>
-                )}
-              </span>
-              <ChevronRight className="icon icon-sm" aria-hidden="true" />
-              {modal && (
-                <span className={styles.miniProfile}>
-                  {[...persona.traits]
+                }
+                actions={
+                  <Button
+                    size="sm"
+                    onClick={(event) => {
+                      trigger.current = event.currentTarget;
+                      setFailure(null);
+                      setSelected(inspected);
+                    }}
+                  >
+                    Abrir detalhes
+                  </Button>
+                }
+              >
+                <div className={styles.identity}>
+                  <PersonaAvatar persona={inspected} />
+                  <p>{inspected.description}</p>
+                </div>
+                <ul className={styles.inspectorTraits} aria-label="Traços principais">
+                  {[...inspected.traits]
                     .sort((a, b) => Math.abs(b.value - 50) - Math.abs(a.value - 50))
                     .slice(0, 3)
                     .map((trait) => (
-                      <span key={trait.id}>
-                        <span title={trait.name}>{trait.name}</span>
+                      <li key={trait.id}>
+                        <span>{trait.name}</span>
                         <progress
                           max={100}
                           value={trait.value}
-                          aria-label={`${persona.name}: ${trait.name}`}
+                          aria-label={`${inspected.name}: ${trait.name}`}
                         />
                         <strong>{trait.value}</strong>
-                      </span>
+                      </li>
                     ))}
-                </span>
-              )}
-            </Button>
-          </li>
-        ))}
-      </ul>
+                </ul>
+              </Inspector>
+            ) : (
+              <InspectorEmpty>
+                Escolha uma persona para ver a voz e os traços principais.
+              </InspectorEmpty>
+            )
+          ) : undefined
+        }
+      />
       {modal && ownerId && !loading && !error && personas.length === 6 && (
         <p className={styles.bindingHelp}>
           Explore um modelo e personalize para criar sua própria voz.

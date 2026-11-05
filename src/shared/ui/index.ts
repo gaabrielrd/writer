@@ -36,6 +36,14 @@ export {
 } from './Tabs';
 export { Toolbar, type ToolbarProps } from './Toolbar';
 export { FilterChips, type FilterChipsProps, type FilterChipOption } from './FilterChips';
+export {
+  InspectorLayout,
+  Inspector,
+  InspectorEmpty,
+  type InspectorLayoutProps,
+  type InspectorProps,
+} from './InspectorLayout';
+export { useMediaQuery } from '../hooks/useMediaQuery';
 export { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './Table';
 export { StyleguidePage } from './StyleguidePage';
 export { buttonVariants, badgeVariants, alertVariants } from './variants';

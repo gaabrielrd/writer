@@ -96,3 +96,32 @@ src/features/adventure-import src/features/studio`: 1206 aprovados, sem alteraç
 - Ainda não implementados nesta fase: lista com inspetor para Compêndio e
   Personas, e a revisão do planejador de Cenas (botões largos e selects grandes).
 - `npm run validate` completo e testes visuais ficam para o fim do plano.
+
+## Lista com inspetor — 2026-11-05
+
+### Entregue
+
+- Kit: `InspectorLayout`, `Inspector` e `InspectorEmpty` em `@/shared/ui`, e o hook
+  neutro `useMediaQuery` em `src/shared/hooks`, também exportado pelo kit.
+- Compêndio do livro, visão Lista: a partir de 1100 px, o nome da entidade mostra
+  o resumo no inspetor (categoria, visibilidade, apelidos, resumo), com "Abrir ficha
+  completa", "Editar" e excluir discreto; a linha ativa fica destacada e marcada com
+  `aria-current`. Abaixo de 1100 px, a ficha completa abre como antes.
+- Personas na página de IA: a partir de 1100 px, a persona escolhida aparece no
+  inspetor com tipo, descrição e os três traços mais marcantes; "Abrir detalhes"
+  leva ao diálogo completo. O modo dentro do capítulo continua igual.
+- `src/test/matchMedia.ts` simula a viewport larga nos testes.
+
+### Testes e validações
+
+- Novos casos: inspetor e hook no kit; modo largo do Compêndio e de Personas.
+- Três testes de abas por teclado passaram a esperar a URL atualizar; falharam uma
+  vez sob carga e passaram em duas rodadas completas seguintes.
+- `npx vitest run src/shared/ui src/features/lore src/features/ai-assistant
+src/features/books`: 2252 aprovados (duas rodadas); `tsc`, `eslint`, `prettier`,
+  `check:architecture` e `check:styleguide`; prévia 1440 × 900.
+
+### Limitações
+
+- O Compêndio do universo e o da aventura ainda não usam o inspetor.
+- O planejador de Cenas segue pendente nesta fase.

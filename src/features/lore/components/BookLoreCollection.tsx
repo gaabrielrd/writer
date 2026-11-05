@@ -21,15 +21,19 @@ import {
   ErrorState,
   FilterChips,
   Input,
+  InspectorEmpty,
+  InspectorLayout,
   LoadingState,
   Toolbar,
   Tooltip,
+  useMediaQuery,
 } from '@/shared/ui';
 import { useBookLoreActor } from '../hooks/useBookLoreActor';
 import { useBookLoreCollection } from '../hooks/useBookLoreCollection';
 import type { LoreCategory, LoreMentionEntity } from '../model/loreEntity';
 import type { BookLorePresentation } from '../model/bookLorePresentation';
 import { LoreEntityCard } from './LoreEntityCard';
+import { LoreEntityInspector } from './LoreEntityInspector';
 import { LoreEntityList } from './LoreEntityList';
 import { BookLoreWorkspaceDialog, type BookLoreWorkspaceMode } from './BookLoreWorkspaceDialog';
 import styles from './LorePage.module.css';
@@ -73,6 +77,8 @@ function Content({
     selectAllRef = useRef<HTMLInputElement | null>(null),
     listRef = useRef<HTMLButtonElement>(null),
     returnFocus = useRef<HTMLElement | null>(null);
+  const wide = useMediaQuery('(min-width: 1100px)');
+  const [inspectedId, setInspectedId] = useState<string | null>(null);
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return rows.filter(
@@ -93,6 +99,7 @@ function Content({
     return () => onBusyChange?.(false);
   }, [locked, onBusyChange]);
   const clear = () => setSelection({ rows, ids: new Set() });
+  const inspected = filtered.find((entity) => entity.id === inspectedId) ?? null;
   const open = (next: BookLoreWorkspaceMode) => {
     returnFocus.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -268,33 +275,58 @@ function Content({
           }
         />
       ) : view === 'list' ? (
-        <LoreEntityList
-          entities={filtered}
-          selectedIds={selection.ids}
-          disabled={locked}
-          selectAllRef={(e) => {
-            selectAllRef.current = e;
-          }}
-          onSelect={(id) => {
-            const ids = new Set(selection.ids);
-            if (ids.has(id)) ids.delete(id);
-            else ids.add(id);
-            setSelection({ rows, ids });
-            setResult('');
-          }}
-          onSelectAll={() => {
-            setSelection({
-              rows,
-              ids:
-                selected.length === filtered.length
-                  ? new Set()
-                  : new Set(filtered.map((e) => e.id)),
-            });
-            setResult('');
-          }}
-          onView={(entity) => open({ kind: 'read', entity })}
-          onEdit={edit}
-          onDelete={remove}
+        <InspectorLayout
+          list={
+            <LoreEntityList
+              entities={filtered}
+              selectedIds={selection.ids}
+              disabled={locked}
+              selectAllRef={(e) => {
+                selectAllRef.current = e;
+              }}
+              onSelect={(id) => {
+                const ids = new Set(selection.ids);
+                if (ids.has(id)) ids.delete(id);
+                else ids.add(id);
+                setSelection({ rows, ids });
+                setResult('');
+              }}
+              onSelectAll={() => {
+                setSelection({
+                  rows,
+                  ids:
+                    selected.length === filtered.length
+                      ? new Set()
+                      : new Set(filtered.map((e) => e.id)),
+                });
+                setResult('');
+              }}
+              onView={(entity) =>
+                wide ? setInspectedId(entity.id) : open({ kind: 'read', entity })
+              }
+              onEdit={edit}
+              onDelete={remove}
+              activeId={wide ? (inspected?.id ?? null) : null}
+            />
+          }
+          inspector={
+            wide ? (
+              inspected ? (
+                <LoreEntityInspector
+                  entity={inspected}
+                  disabled={locked}
+                  onOpen={(entity) => open({ kind: 'read', entity })}
+                  onEdit={edit}
+                  onDelete={remove}
+                  onClose={() => setInspectedId(null)}
+                />
+              ) : (
+                <InspectorEmpty>
+                  Escolha uma entidade da lista para ver o resumo aqui.
+                </InspectorEmpty>
+              )
+            ) : undefined
+          }
         />
       ) : (
         <div className={styles.grid}>

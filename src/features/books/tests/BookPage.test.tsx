@@ -133,14 +133,16 @@ describe('BookPage', () => {
     expect(tab).toHaveAttribute('aria-selected', 'true');
     tab.focus();
     await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() =>
+      expect(screen.getByLabelText('Localização atual')).toHaveTextContent('tab=compendium'),
+    );
     expect(screen.getByRole('tab', { name: 'Compêndio' })).toHaveFocus();
-    expect(screen.getByLabelText('Localização atual')).toHaveTextContent('tab=compendium');
     expect(screen.getByLabelText('Localização atual')).toHaveTextContent('narrativeArc=arco-1');
     await userEvent.keyboard('{ArrowLeft}');
-    expect(screen.getByRole('tab', { name: 'Arcos e cronologia' })).toHaveFocus();
     expect(
-      screen.getByRole('heading', { name: 'Planejamento de book/book-1' }),
+      await screen.findByRole('heading', { name: 'Planejamento de book/book-1' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Arcos e cronologia' })).toHaveFocus();
   });
 
   it('troca de conta remove o planejamento carregado antes da resposta da nova conta', async () => {

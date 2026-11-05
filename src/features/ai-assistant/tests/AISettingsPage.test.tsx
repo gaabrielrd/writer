@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import { mockMatchMedia } from '@/test/matchMedia';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, expect, it, vi } from 'vitest';
@@ -54,9 +55,11 @@ it('navega pelo contexto para a rota com lista e abre detalhes gráficos, devolv
   const tab = screen.getByRole('tab', { name: 'Personas' });
   tab.focus();
   await user.keyboard('{ArrowRight}');
-  expect(screen.getByRole('tab', { name: 'Provedor' })).toHaveAttribute('aria-selected', 'true');
+  await waitFor(() =>
+    expect(screen.getByRole('tab', { name: 'Provedor' })).toHaveAttribute('aria-selected', 'true'),
+  );
   await user.keyboard('{Home}');
-  expect(tab).toHaveAttribute('aria-selected', 'true');
+  await waitFor(() => expect(tab).toHaveAttribute('aria-selected', 'true'));
   await user.keyboard('{End}');
   await user.keyboard('{ArrowLeft}');
   expect(tab).toHaveFocus();
@@ -92,4 +95,26 @@ it('abre diretamente a aba do provedor e salva as preferências na página', asy
     'href',
     '/books/book',
   );
+});
+
+it('em tela larga mostra a persona no inspetor e abre os detalhes completos pelo botão', async () => {
+  const user = userEvent.setup();
+  const restore = mockMatchMedia('(min-width: 1100px)');
+  try {
+    render(
+      <MemoryRouter initialEntries={['/settings/ai']}>
+        <AISettingsPage />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('complementary', { name: 'Detalhes' })).toHaveTextContent(
+      'Escolha uma persona',
+    );
+    await user.click(screen.getByRole('button', { name: 'Ver detalhes de O Épico' }));
+    const panel = screen.getByRole('complementary', { name: 'Detalhes de O Épico' });
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    await user.click(within(panel).getByRole('button', { name: 'Abrir detalhes' }));
+    expect(screen.getByRole('dialog', { name: 'O Épico' })).toBeVisible();
+  } finally {
+    restore();
+  }
 });
