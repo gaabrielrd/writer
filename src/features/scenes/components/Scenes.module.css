@@ -122,3 +122,54 @@
   border-radius: var(--radius-md);
   padding: var(--space-4);
 }
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-4);
+  min-width: 0;
+}
+.heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.heading h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+.heading .hint {
+  margin: 0;
+}
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.viewSwitch {
+  display: inline-flex;
+  gap: 2px;
+}
+.viewSwitch button {
+  color: var(--ink-soft);
+}
+.viewSwitch button[aria-pressed='true'] {
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
+  font-weight: 600;
+}
+.iconButton {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  color: var(--ink-soft);
+}
+.filter {
+  width: 220px;
+  max-width: 100%;
+}

@@ -117,7 +117,6 @@ export function SceneChapterView({
       </section>
       <ScenePlanner
         target={{ kind: 'book', id: book.id }}
-        projectTitle={book.title}
         initialParentId={chapter.id}
         onManuscriptChange={reload}
       />

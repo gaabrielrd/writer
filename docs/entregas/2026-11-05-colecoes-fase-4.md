@@ -125,3 +125,24 @@ src/features/books`: 2252 aprovados (duas rodadas); `tsc`, `eslint`, `prettier`,
 
 - O Compêndio do universo e o da aventura ainda não usam o inspetor.
 - O planejador de Cenas segue pendente nesta fase.
+
+## Planejador de Cenas — 2026-11-05
+
+### Entregue
+
+- Cabeçalho único: "Cenas" com uma dica curta sobre a composição e a privacidade;
+  à direita, Lista/Quadro, atualizar como ícone com dica, "Recuperar cenas sem
+  parte" (aventura) discreto, "Novo capítulo"/"Nova parte" e "Nova cena" como única
+  ação principal. O botão de largura total no topo foi removido.
+- Filtros em `Toolbar` com três `Dropdown` compactos de 220 px, nomeados por
+  `aria-label` (Capítulo/Parte, Estado da cena, Arquivo de cenas); as opções de
+  arquivo passaram a "Cenas ativas" e "Cenas arquivadas".
+- "Reorganizar posições" e "Remover" no tamanho compacto.
+- O título do projeto deixou de ser repetido abaixo de "Cenas"; a propriedade
+  `projectTitle` sem uso foi removida dos quatro chamadores.
+
+### Testes e validações
+
+- Nomes de opção atualizados em `ScenePlanner.test.tsx` e em dois testes visuais.
+- `npx vitest run src/features/scenes src/features/books src/features/adventures`:
+  697 aprovados; `tsc`, `eslint`, `prettier`; prévia 1440 × 900 no livro e na aventura.

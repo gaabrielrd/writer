@@ -93,7 +93,7 @@ beforeEach(() => {
 function mount(props: Partial<React.ComponentProps<typeof ScenePlanner>> = {}) {
   return render(
     <MemoryRouter>
-      <ScenePlanner target={target} projectTitle="O farol" initialParentId="chapter" {...props} />
+      <ScenePlanner target={target} initialParentId="chapter" {...props} />
     </MemoryRouter>,
   );
 }
@@ -140,7 +140,7 @@ it('filtros reiniciam cursor e não exibem resposta antiga', async () => {
   expect(api.listScenes).toHaveBeenLastCalledWith(
     expect.objectContaining({ stage: 'review', cursor: null, limit: 25 }),
   );
-  await choose('Arquivo de cenas', 'Arquivadas');
+  await choose('Arquivo de cenas', 'Cenas arquivadas');
   await waitFor(() =>
     expect(api.listScenes).toHaveBeenLastCalledWith(
       expect.objectContaining({ archived: true, cursor: null }),

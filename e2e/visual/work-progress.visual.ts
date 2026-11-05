@@ -235,7 +235,7 @@ test('aventura conta apenas cena agrupada, exclui notas e acompanha arquivo e re
   await expect(panel.getByText('0 palavras confirmadas', { exact: true })).toBeVisible();
   await page.getByRole('tab', { name: 'Cenas', exact: true }).click();
   await chooseDropdown(planner.getByLabel('Parte', { exact: true }), 'Parte do farol');
-  await chooseDropdown(planner.getByLabel('Arquivo de cenas'), 'Arquivadas');
+  await chooseDropdown(planner.getByLabel('Arquivo de cenas'), 'Cenas arquivadas');
   dialog = await sceneAction(page, planner, 'Cena fora da parte', 'Restaurar cena');
   await dialog.getByRole('button', { name: 'Restaurar cena', exact: true }).click();
   await expect(dialog).toHaveCount(0);

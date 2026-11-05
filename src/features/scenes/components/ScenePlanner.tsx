@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { Archive, Columns3, List, Plus, ArrowUpDown, FileText } from 'lucide-react';
+import {
+  Archive,
+  ArrowUpDown,
+  Columns3,
+  FileText,
+  LifeBuoy,
+  List,
+  Plus,
+  RefreshCw,
+} from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { renderRichText } from '@/shared/lib';
 import {
@@ -12,6 +21,8 @@ import {
   ErrorState,
   Input,
   LoadingState,
+  Toolbar,
+  Tooltip,
 } from '@/shared/ui';
 import type {
   SceneJob,
@@ -44,7 +55,6 @@ import { SceneOrphanDialog } from './SceneOrphanDialog';
 import styles from './Scenes.module.css';
 export interface ScenePlannerProps {
   target: SceneProject;
-  projectTitle?: string;
   initialParentId?: string | null;
   onManuscriptChange?: () => void;
 }
@@ -65,7 +75,6 @@ type Action =
   | { kind: 'group' | 'convert' | 'delete' | 'rebalance' };
 function ScenePlannerSession({
   target,
-  projectTitle,
   initialParentId = null,
   onManuscriptChange,
 }: ScenePlannerProps) {
@@ -182,66 +191,118 @@ function ScenePlannerSession({
           onRecovered={refresh}
         />
       )}
-      {target.kind === 'adventure' && (
-        <Button variant="outline" onClick={() => setOrphansOpen(true)}>
-          Recuperar cenas sem parte
-        </Button>
-      )}
-      <div className={styles.toolbar}>
-        <div>
+      <div className={styles.header}>
+        <div className={styles.heading}>
           <h2>Cenas</h2>
-          {projectTitle && <p className={styles.hint}>{projectTitle}</p>}
+          <p className={styles.hint}>
+            Cada cena tem prosa própria e compõe {target.kind === 'book' ? 'o capítulo' : 'a parte'}{' '}
+            na ordem escolhida. O planejamento é privado.
+          </p>
         </div>
-        <Button
-          disabled={Boolean(blocked) || archived}
-          onClick={() => setAction({ kind: 'create' })}
-        >
-          <Plus className="icon icon-sm" aria-hidden="true" />
-          Nova cena
-        </Button>
-        <Button variant="outline" onClick={() => setAction({ kind: 'group' })}>
-          <FileText className="icon icon-sm" aria-hidden="true" />
-          {target.kind === 'book' ? 'Novo capítulo' : 'Nova parte'}
-        </Button>
+        <div className={styles.headerActions}>
+          <div className={styles.viewSwitch} role="group" aria-label="Visualização de cenas">
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-pressed={view === 'list'}
+              onClick={() => setView('list')}
+            >
+              <List className="icon icon-sm" aria-hidden="true" />
+              Lista
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-pressed={view === 'board'}
+              onClick={() => setView('board')}
+            >
+              <Columns3 className="icon icon-sm" aria-hidden="true" />
+              Quadro
+            </Button>
+          </div>
+          <Tooltip content="Atualizar planejamento">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={styles.iconButton}
+              aria-label="Atualizar planejamento"
+              onClick={refresh}
+            >
+              <RefreshCw className="icon icon-sm" aria-hidden="true" />
+            </Button>
+          </Tooltip>
+          {target.kind === 'adventure' && (
+            <Button variant="ghost" size="sm" onClick={() => setOrphansOpen(true)}>
+              <LifeBuoy className="icon icon-sm" aria-hidden="true" />
+              Recuperar cenas sem parte
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setAction({ kind: 'group' })}>
+            <FileText className="icon icon-sm" aria-hidden="true" />
+            {target.kind === 'book' ? 'Novo capítulo' : 'Nova parte'}
+          </Button>
+          <Button
+            size="sm"
+            disabled={Boolean(blocked) || archived}
+            onClick={() => setAction({ kind: 'create' })}
+          >
+            <Plus className="icon icon-sm" aria-hidden="true" />
+            Nova cena
+          </Button>
+        </div>
       </div>
-      <div className={styles.filters}>
-        <Dropdown
-          mode="select"
-          label={target.kind === 'book' ? 'Capítulo' : 'Parte'}
-          value={parentId ?? ''}
-          options={groupOptions}
-          onValueChange={(value) => {
-            setParentId(value || null);
-            setSuccess('');
-          }}
-        />
-        <Dropdown
-          mode="select"
-          label="Estado da cena"
-          value={stage}
-          options={[
-            { value: 'all', label: 'Todos os estados' },
-            ...sceneStages.map((value) => ({ value, label: sceneStageLabels[value] })),
-          ]}
-          onValueChange={(value) => {
-            if (value === 'all') setStage('all');
-            else {
-              const match = sceneStages.find((item) => item === value);
-              if (match) setStage(match);
-            }
-          }}
-        />
-        <Dropdown
-          mode="select"
-          label="Arquivo de cenas"
-          value={archived ? 'archived' : 'active'}
-          options={[
-            { value: 'active', label: 'Ativas' },
-            { value: 'archived', label: 'Arquivadas' },
-          ]}
-          onValueChange={(value) => setArchived(value === 'archived')}
-        />
-      </div>
+      <Toolbar
+        label="Filtros de cenas"
+        filters={
+          <>
+            <div className={styles.filter}>
+              <Dropdown
+                mode="select"
+                size="sm"
+                aria-label={target.kind === 'book' ? 'Capítulo' : 'Parte'}
+                value={parentId ?? ''}
+                options={groupOptions}
+                onValueChange={(value) => {
+                  setParentId(value || null);
+                  setSuccess('');
+                }}
+              />
+            </div>
+            <div className={styles.filter}>
+              <Dropdown
+                mode="select"
+                size="sm"
+                aria-label="Estado da cena"
+                value={stage}
+                options={[
+                  { value: 'all', label: 'Todos os estados' },
+                  ...sceneStages.map((value) => ({ value, label: sceneStageLabels[value] })),
+                ]}
+                onValueChange={(value) => {
+                  if (value === 'all') setStage('all');
+                  else {
+                    const match = sceneStages.find((item) => item === value);
+                    if (match) setStage(match);
+                  }
+                }}
+              />
+            </div>
+            <div className={styles.filter}>
+              <Dropdown
+                mode="select"
+                size="sm"
+                aria-label="Arquivo de cenas"
+                value={archived ? 'archived' : 'active'}
+                options={[
+                  { value: 'active', label: 'Cenas ativas' },
+                  { value: 'archived', label: 'Cenas arquivadas' },
+                ]}
+                onValueChange={(value) => setArchived(value === 'archived')}
+              />
+            </div>
+          </>
+        }
+      />
       {groups.loading && <LoadingState label="Carregando agrupadores…" />}
       {groups.error && <ErrorState error={groups.error} onRetry={() => void groups.retry()} />}
       {groups.cursor && (
@@ -249,32 +310,6 @@ function ScenePlannerSession({
           Carregar mais agrupadores
         </Button>
       )}
-      <div className={styles.toolbar} aria-label="Visualização de cenas">
-        <Button
-          variant={view === 'list' ? 'secondary' : 'outline'}
-          aria-pressed={view === 'list'}
-          onClick={() => setView('list')}
-        >
-          <List className="icon icon-sm" aria-hidden="true" />
-          Lista
-        </Button>
-        <Button
-          variant={view === 'board' ? 'secondary' : 'outline'}
-          aria-pressed={view === 'board'}
-          onClick={() => setView('board')}
-        >
-          <Columns3 className="icon icon-sm" aria-hidden="true" />
-          Quadro
-        </Button>
-        <Button variant="ghost" onClick={refresh}>
-          Atualizar planejamento
-        </Button>
-      </div>
-      <p className={styles.hint}>
-        Cada cena tem prosa própria. Cenas ativas vinculadas compõem{' '}
-        {target.kind === 'book' ? 'o capítulo' : 'a parte'} na ordem escolhida; o planejamento
-        permanece privado.
-      </p>
       {success && <Alert variant="success">{success}</Alert>}
       {detailLoading && <LoadingState label="Carregando agrupador…" />}
       {detailError && <ErrorState error={detailError} onRetry={refresh} />}
@@ -308,12 +343,12 @@ function ScenePlannerSession({
       )}
       {group && group.contentMode === 'scenes' && (
         <div className={styles.actions}>
-          <Button variant="outline" onClick={() => setAction({ kind: 'rebalance' })}>
+          <Button variant="outline" size="sm" onClick={() => setAction({ kind: 'rebalance' })}>
             <ArrowUpDown className="icon icon-sm" aria-hidden="true" />
             {group.rebalancing ? 'Retomar reorganização' : 'Reorganizar posições'}
           </Button>
           {parentId && (
-            <Button variant="outline" onClick={() => setAction({ kind: 'delete' })}>
+            <Button variant="outline" size="sm" onClick={() => setAction({ kind: 'delete' })}>
               {group.deleting ? 'Retomar remoção' : 'Remover ' + groupLabel}
             </Button>
           )}

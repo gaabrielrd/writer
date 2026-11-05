@@ -415,7 +415,6 @@ function BookDetail() {
             <ScenePlanner
               key={user.uid + ':' + book.id}
               target={{ kind: 'book', id: book.id }}
-              projectTitle={book.title}
               onManuscriptChange={refreshBook}
             />
           )}

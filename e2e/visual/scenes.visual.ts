@@ -456,7 +456,7 @@ test('arquivo retira prosa da exportação e restauração devolve a cena ao man
   await dialog.getByRole('button', { name: 'Arquivar cena', exact: true }).click();
   await expect(planner.getByRole('article')).toHaveCount(0);
   expect(await downloadBook(page)).not.toContain('PROSA CANÔNICA');
-  await chooseDropdown(planner.getByLabel('Arquivo de cenas'), 'Arquivadas');
+  await chooseDropdown(planner.getByLabel('Arquivo de cenas'), 'Cenas arquivadas');
   const restore = await sceneAction(
     page,
     planner,
@@ -464,7 +464,7 @@ test('arquivo retira prosa da exportação e restauração devolve a cena ao man
     'Restaurar cena',
   );
   await restore.getByRole('button', { name: 'Restaurar cena', exact: true }).click();
-  await chooseDropdown(planner.getByLabel('Arquivo de cenas'), 'Ativas');
+  await chooseDropdown(planner.getByLabel('Arquivo de cenas'), 'Cenas ativas');
   await expect(
     planner.getByRole('article', { name: 'Cena Título privado do planejamento', exact: true }),
   ).toBeVisible();

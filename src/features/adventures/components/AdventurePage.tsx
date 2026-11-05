@@ -339,10 +339,7 @@ function AdventureDetail({ id, ownerId }: { id: string; ownerId: string }) {
             <TabsTrigger value="lore">Compêndio</TabsTrigger>
           </TabsList>
           <TabsContent value="scenes">
-            <ScenePlanner
-              target={{ kind: 'adventure', id: adventure.id }}
-              projectTitle={adventure.title}
-            />
+            <ScenePlanner target={{ kind: 'adventure', id: adventure.id }} />
           </TabsContent>
           <TabsContent value="narrative">
             <NarrativePlanner
