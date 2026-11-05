@@ -7,12 +7,10 @@ import {
   ChevronUp,
   Download,
   Edit2,
-  FileText,
   Globe,
   History,
   Lock,
   MoreHorizontal,
-  Scroll,
   Trash2,
   Upload,
 } from 'lucide-react';
@@ -26,7 +24,11 @@ import {
   Input,
   ErrorState,
   LoadingState,
-  PageHeader,
+  ObjectHeader,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
 } from '@/shared/ui';
 import { PersonaBindingDialog } from '@/features/ai-assistant';
 import { useAuth } from '@/features/auth';
@@ -45,6 +47,8 @@ import { LoreTab } from '@/features/lore';
 import type { Book } from '../model/book';
 import type { CreateBookInput } from '../model/book';
 import * as bookService from '../services/bookService';
+import { useChapters } from '../hooks/useChapters';
+import { BookResume } from './BookResume';
 import { ChapterList } from './ChapterList';
 import { BookFormDialog } from './BookFormDialog';
 import { ImportBookModal } from './ImportBookModal';
@@ -55,16 +59,15 @@ type TabId = 'chapters' | 'scenes' | 'narrative' | 'compendium' | 'publication' 
 interface TabDef {
   id: TabId;
   label: string;
-  icon: typeof FileText;
 }
 
 const TABS: TabDef[] = [
-  { id: 'chapters', label: 'Capítulos', icon: FileText },
-  { id: 'scenes', label: 'Cenas', icon: Scroll },
-  { id: 'narrative', label: 'Arcos e cronologia', icon: Scroll },
-  { id: 'compendium', label: 'Compêndio', icon: Scroll },
-  { id: 'progress', label: 'Progresso', icon: FileText },
-  { id: 'publication', label: 'Publicação', icon: Globe },
+  { id: 'chapters', label: 'Capítulos' },
+  { id: 'scenes', label: 'Cenas' },
+  { id: 'narrative', label: 'Arcos e cronologia' },
+  { id: 'compendium', label: 'Compêndio' },
+  { id: 'progress', label: 'Progresso' },
+  { id: 'publication', label: 'Publicação' },
 ];
 
 function BookDetail() {
@@ -108,6 +111,12 @@ function BookDetail() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [authorName, setAuthorName] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+  const [createChapterRequest, setCreateChapterRequest] = useState(0);
+  const {
+    chapters,
+    loading: chaptersLoading,
+    refreshChapters,
+  } = useChapters(book?.id === bookId ? bookId : null);
 
   useEffect(() => {
     let active = true;
@@ -254,60 +263,40 @@ function BookDetail() {
         </Link>
       </div>
 
-      <div className={`${styles.bookHeader} glass-surface`}>
-        <div className={styles.bookCover}>
-          {book.coverUrl ? (
-            <img src={book.coverUrl} alt={`Capa de ${book.title}`} className={styles.coverImage} />
-          ) : (
-            <div className={styles.coverFallback}>
-              <BookIcon className="icon" aria-hidden="true" />
-              <span>Sem capa</span>
-            </div>
-          )}
-        </div>
-
-        <div className={styles.bookInfo}>
-          <PageHeader
-            title={book.title}
-            className={styles.detailsHeading}
-            actions={
-              isOwner ? (
-                <Dropdown
-                  mode="action"
-                  label="Opções do livro"
-                  align="end"
-                  ref={bookOptionsRef}
-                  variant="ghost"
-                  iconOnly
-                  icon={<MoreHorizontal className="icon" aria-hidden="true" />}
-                >
-                  <DropdownItem onSelect={() => setHistoryOpen(true)}>
-                    <History className="icon icon-sm" aria-hidden="true" />
-                    Histórico do texto
-                  </DropdownItem>
-                  <DropdownItem onSelect={() => setIsExportOpen(true)}>
-                    <Download className="icon icon-sm" aria-hidden="true" />
-                    Exportar
-                  </DropdownItem>
-                  <DropdownItem onSelect={() => setIsImportOpen(true)}>
-                    <Upload className="icon icon-sm" aria-hidden="true" />
-                    Importar documento
-                  </DropdownItem>
-                  <DropdownItem onSelect={() => setIsPersonaOpen(true)}>Persona de IA</DropdownItem>
-                  <DropdownItem onSelect={() => setIsFormOpen(true)}>
-                    <Edit2 className="icon icon-sm" aria-hidden="true" />
-                    Editar
-                  </DropdownItem>
-                  <DropdownItem onSelect={handleDelete} disabled={isDeleting} variant="destructive">
-                    <Trash2 className="icon icon-sm" aria-hidden="true" />
-                    Excluir
-                  </DropdownItem>
-                </Dropdown>
-              ) : undefined
-            }
-          />
-
-          {book.synopsis && (
+      <ObjectHeader
+        kind={book.genre ? `Livro · ${book.genre}` : 'Livro'}
+        title={book.title}
+        media={
+          <div className={styles.cover}>
+            {book.coverUrl ? (
+              <img
+                src={book.coverUrl}
+                alt={`Capa de ${book.title}`}
+                className={styles.coverImage}
+              />
+            ) : (
+              <div className={styles.coverFallback}>
+                <BookIcon className="icon" aria-hidden="true" />
+                <span>Sem capa</span>
+              </div>
+            )}
+          </div>
+        }
+        meta={
+          <>
+            <Badge variant="neutral">{editorialStateLabels[book.editorialState ?? 'draft']}</Badge>
+            {isPublished ? (
+              <Badge variant="success">Publicado</Badge>
+            ) : (
+              <Badge variant="outline">Não publicado</Badge>
+            )}
+            <span className={styles.metaItem}>
+              {book.wordCount.toLocaleString('pt-BR')} palavras
+            </span>
+          </>
+        }
+        description={
+          book.synopsis && (
             <div className={styles.synopsisBlock}>
               <p
                 id={synopsisId}
@@ -332,173 +321,182 @@ function BookDetail() {
                 )}
               </Button>
             </div>
+          )
+        }
+        menu={
+          isOwner ? (
+            <Dropdown
+              mode="action"
+              label="Opções do livro"
+              align="end"
+              ref={bookOptionsRef}
+              variant="outline"
+              iconOnly
+              icon={<MoreHorizontal className="icon" aria-hidden="true" />}
+            >
+              <DropdownItem onSelect={() => setHistoryOpen(true)}>
+                <History className="icon icon-sm" aria-hidden="true" />
+                Histórico do texto
+              </DropdownItem>
+              <DropdownItem onSelect={() => setIsExportOpen(true)}>
+                <Download className="icon icon-sm" aria-hidden="true" />
+                Exportar
+              </DropdownItem>
+              <DropdownItem onSelect={() => setIsImportOpen(true)}>
+                <Upload className="icon icon-sm" aria-hidden="true" />
+                Importar documento
+              </DropdownItem>
+              <DropdownItem onSelect={() => setIsPersonaOpen(true)}>Persona de IA</DropdownItem>
+              <DropdownItem onSelect={() => setIsFormOpen(true)}>
+                <Edit2 className="icon icon-sm" aria-hidden="true" />
+                Editar
+              </DropdownItem>
+              <DropdownItem onSelect={handleDelete} disabled={isDeleting} variant="destructive">
+                <Trash2 className="icon icon-sm" aria-hidden="true" />
+                Excluir
+              </DropdownItem>
+            </Dropdown>
+          ) : undefined
+        }
+      />
+
+      {isOwner && !chaptersLoading && (
+        <BookResume
+          book={book}
+          chapters={chapters}
+          onStep={(step) => {
+            if (step.id === 'empty-chapter')
+              void navigate(`/books/${book.id}/editor/${step.chapterId}`);
+            else if (step.id === 'first-chapter') {
+              setActiveTab('chapters');
+              setCreateChapterRequest((n) => n + 1);
+            } else setIsFormOpen(true);
+          }}
+        />
+      )}
+
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => {
+          setActiveTab(value as TabId);
+          refreshBook();
+        }}
+      >
+        <TabsList
+          aria-label="Seções do livro"
+          actions={
+            activeTab === 'compendium' ? (
+              <div ref={setCompendiumActions} className={styles.tabActions} />
+            ) : undefined
+          }
+        >
+          {TABS.map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id} disabled={compendiumBusy}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        <TabsContent value={activeTab}>
+          {activeTab === 'progress' && (
+            <ProjectProgressPanel
+              target={{ kind: 'book', id: book.id }}
+              manuscriptRefreshKey={book.updatedAt + ':' + book.wordCount}
+              onProjectChange={refreshBook}
+            />
+          )}
+          {activeTab === 'narrative' && user && (
+            <NarrativePlanner
+              key={user.uid + ':' + book.id + ':' + (book.universeId ?? 'none')}
+              target={{ kind: 'book', id: book.id }}
+              onProjectChange={refreshBook}
+            />
+          )}
+          {activeTab === 'scenes' && user && (
+            <ScenePlanner
+              key={user.uid + ':' + book.id}
+              target={{ kind: 'book', id: book.id }}
+              projectTitle={book.title}
+              onManuscriptChange={refreshBook}
+            />
+          )}
+          {activeTab === 'chapters' && (
+            <ChapterList
+              book={book}
+              open={true}
+              onClose={() => {}}
+              onChapterCountChanged={() => {
+                refreshBook();
+                void refreshChapters();
+              }}
+              createRequest={createChapterRequest}
+              onCreateRequestHandled={() => setCreateChapterRequest(0)}
+              mode="inline"
+            />
           )}
 
-          <div className={styles.bookMeta}>
-            {book.genre && <Badge variant="neutral">{book.genre}</Badge>}
-            <span className={styles.metaItem}>
-              <FileText className="icon icon-sm" aria-hidden="true" />
-              {book.wordCount.toLocaleString('pt-BR')} palavras
-            </span>
-            <Badge variant="neutral">{editorialStateLabels[book.editorialState ?? 'draft']}</Badge>
-            {isPublished ? (
-              <Badge variant="success">Publicado</Badge>
-            ) : (
-              <Badge variant="neutral">Não publicado</Badge>
-            )}
-          </div>
-        </div>
-      </div>
+          {activeTab === 'compendium' && (
+            <LoreTab
+              book={book}
+              actionsContainer={compendiumActions}
+              onEntitiesChanged={refreshBook}
+              onBusyChange={setCompendiumBusy}
+            />
+          )}
 
-      <div className={styles.tabsHeader}>
-        <div className={styles.tabBar} role="tablist">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const IconComp = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                role="tab"
-                id={'book-tab-' + tab.id}
-                aria-controls="book-tab-panel"
-                tabIndex={isActive ? 0 : -1}
-                disabled={compendiumBusy}
-                aria-selected={isActive}
-                className={`${styles.tab} ${isActive ? styles.tabActive : ''}`}
-                onClick={() => {
-                  setActiveTab(tab.id);
-                  refreshBook();
-                }}
-                onKeyDown={(event) => {
-                  const index = TABS.findIndex((item) => item.id === tab.id);
-                  const next =
-                    event.key === 'ArrowRight'
-                      ? (index + 1) % TABS.length
-                      : event.key === 'ArrowLeft'
-                        ? (index + TABS.length - 1) % TABS.length
-                        : event.key === 'Home'
-                          ? 0
-                          : event.key === 'End'
-                            ? TABS.length - 1
-                            : null;
-                  if (next === null) return;
-                  event.preventDefault();
-                  const nextTab = TABS[next]!;
-                  setActiveTab(nextTab.id);
-                  refreshBook();
-                  document.getElementById('book-tab-' + nextTab.id)?.focus();
-                }}
-              >
-                <IconComp className="icon icon-sm" aria-hidden="true" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div ref={setCompendiumActions} className={styles.tabActions} />
-      </div>
-
-      <div
-        className={styles.tabContent}
-        role="tabpanel"
-        id="book-tab-panel"
-        aria-labelledby={'book-tab-' + activeTab}
-      >
-        {activeTab === 'progress' && (
-          <ProjectProgressPanel
-            target={{ kind: 'book', id: book.id }}
-            manuscriptRefreshKey={book.updatedAt + ':' + book.wordCount}
-            onProjectChange={refreshBook}
-          />
-        )}
-        {activeTab === 'narrative' && user && (
-          <NarrativePlanner
-            key={user.uid + ':' + book.id + ':' + (book.universeId ?? 'none')}
-            target={{ kind: 'book', id: book.id }}
-            onProjectChange={refreshBook}
-          />
-        )}
-        {activeTab === 'scenes' && user && (
-          <ScenePlanner
-            key={user.uid + ':' + book.id}
-            target={{ kind: 'book', id: book.id }}
-            projectTitle={book.title}
-            onManuscriptChange={refreshBook}
-          />
-        )}
-        {activeTab === 'chapters' && (
-          <ChapterList
-            book={book}
-            open={true}
-            onClose={() => {}}
-            onChapterCountChanged={refreshBook}
-            mode="inline"
-          />
-        )}
-
-        {activeTab === 'compendium' && (
-          <LoreTab
-            book={book}
-            actionsContainer={compendiumActions}
-            onEntitiesChanged={refreshBook}
-            onBusyChange={setCompendiumBusy}
-          />
-        )}
-
-        {activeTab === 'publication' && (
-          <div className={styles.publicationTab}>
-            <div className={styles.publicationCard}>
-              <div className={styles.publicationIcon}>
-                {isPublished ? (
-                  <Globe className="icon" aria-hidden="true" />
-                ) : (
-                  <Lock className="icon" aria-hidden="true" />
+          {activeTab === 'publication' && (
+            <div className={styles.publicationTab}>
+              <div className={styles.publicationCard}>
+                <div className={styles.publicationIcon}>
+                  {isPublished ? (
+                    <Globe className="icon" aria-hidden="true" />
+                  ) : (
+                    <Lock className="icon" aria-hidden="true" />
+                  )}
+                </div>
+                <h3 className={styles.publicationTitle}>
+                  {isPublished ? 'Obra Publicada' : 'Obra não publicada'}
+                </h3>
+                <p className={styles.publicationDescription}>
+                  {isPublished
+                    ? 'A versão publicada está disponível no link abaixo. Alterações no rascunho só aparecem após atualizar a publicação.'
+                    : 'Sua obra ainda não foi publicada e só você pode vê-la. Publique-a para compartilhar com leitores.'}
+                </p>
+                {isPublished && <Link to={`/read/${book.id}`}>Abrir leitor público</Link>}
+                {isOwner && isPublished && (
+                  <Button
+                    variant="secondary"
+                    disabled={isPublishing}
+                    onClick={() => setIsPublishOpen(true)}
+                  >
+                    Atualizar publicação
+                  </Button>
+                )}
+                {isOwner && (
+                  <Button
+                    variant={isPublished ? 'secondary' : 'primary'}
+                    onClick={() =>
+                      isPublished ? void handlePublication(false) : setIsPublishOpen(true)
+                    }
+                    disabled={isPublishing}
+                  >
+                    {isPublished ? (
+                      <>
+                        <Lock className="icon icon-sm" aria-hidden="true" />
+                        Despublicar obra
+                      </>
+                    ) : (
+                      <>
+                        <Globe className="icon icon-sm" aria-hidden="true" />
+                        Publicar Obra
+                      </>
+                    )}
+                  </Button>
                 )}
               </div>
-              <h3 className={styles.publicationTitle}>
-                {isPublished ? 'Obra Publicada' : 'Obra não publicada'}
-              </h3>
-              <p className={styles.publicationDescription}>
-                {isPublished
-                  ? 'A versão publicada está disponível no link abaixo. Alterações no rascunho só aparecem após atualizar a publicação.'
-                  : 'Sua obra ainda não foi publicada e só você pode vê-la. Publique-a para compartilhar com leitores.'}
-              </p>
-              {isPublished && <Link to={`/read/${book.id}`}>Abrir leitor público</Link>}
-              {isOwner && isPublished && (
-                <Button
-                  variant="secondary"
-                  disabled={isPublishing}
-                  onClick={() => setIsPublishOpen(true)}
-                >
-                  Atualizar publicação
-                </Button>
-              )}
-              {isOwner && (
-                <Button
-                  variant={isPublished ? 'secondary' : 'primary'}
-                  onClick={() =>
-                    isPublished ? void handlePublication(false) : setIsPublishOpen(true)
-                  }
-                  disabled={isPublishing}
-                >
-                  {isPublished ? (
-                    <>
-                      <Lock className="icon icon-sm" aria-hidden="true" />
-                      Despublicar obra
-                    </>
-                  ) : (
-                    <>
-                      <Globe className="icon icon-sm" aria-hidden="true" />
-                      Publicar Obra
-                    </>
-                  )}
-                </Button>
-              )}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {isPublishOpen && (
         <Dialog

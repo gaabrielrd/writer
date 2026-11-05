@@ -109,8 +109,11 @@ describe('BookPage', () => {
 
     renderBookPage();
 
-    expect(await screen.findByText('A Jornada do Herói')).toBeInTheDocument();
-    expect(screen.getByText('Fantasia Épica')).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'A Jornada do Herói' }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Livro · Fantasia Épica')).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'Seções do livro' })).toBeInTheDocument();
     expect(screen.getByText(/12\.500 palavras/)).toBeInTheDocument();
 
     // Abas presentes
@@ -241,7 +244,7 @@ describe('BookPage', () => {
 
     // Volta para Capítulos
     await user.click(screen.getByRole('tab', { name: /capítulos/i }));
-    expect(screen.getByText(/capítulo\(s\)/)).toBeInTheDocument();
+    expect(screen.getByText('0 capítulos · 0 palavras')).toBeInTheDocument();
   });
 
   it('atualiza o status após uma ação de lore e retira os controles ao sair da aba', async () => {
@@ -364,6 +367,57 @@ describe('BookPage', () => {
       'aria-expanded',
       'false',
     );
+  });
+
+  it('retoma o capítulo editado por último e lista os próximos passos', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    const chapter = (
+      id: string,
+      title: string,
+      order: number,
+      wordCount: number,
+      updatedAt: number,
+    ) => ({
+      id,
+      bookId: 'book-1',
+      title,
+      order,
+      wordCount,
+      content: '',
+      createdAt: 1,
+      updatedAt,
+    });
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([
+      chapter('c1', 'O chamado', 1, 900, 10),
+      chapter('c2', 'A travessia', 2, 400, 50),
+      chapter('c3', 'O retorno', 3, 0, 20),
+    ]);
+    renderBookPage();
+    const resume = await screen.findByRole('region', { name: 'Retomar o trabalho' });
+    expect(resume).toHaveTextContent('A travessia');
+    expect(screen.getByRole('link', { name: 'Continuar escrevendo' })).toHaveAttribute(
+      'href',
+      '/books/book-1/editor/c2',
+    );
+    expect(screen.getByRole('button', { name: /Escrever “O retorno”/ })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: /Escolher a capa/ }));
+    expect(await screen.findByRole('dialog', { name: 'Editar Obra' })).toBeVisible();
+  });
+
+  it('abre "Novo capítulo" a partir do passo do primeiro capítulo', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(bookService, 'getBook').mockResolvedValue(mockBook);
+    vi.spyOn(bookService, 'listChapters').mockResolvedValue([]);
+    renderBookPage('book-1', '?tab=publication');
+    await user.click(await screen.findByRole('button', { name: /Escrever o primeiro capítulo/ }));
+    expect(await screen.findByRole('dialog', { name: 'Novo capítulo' })).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Cancelar' }));
+    expect(screen.getByRole('tab', { name: 'Capítulos' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.queryByRole('link', { name: 'Continuar escrevendo' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('tab', { name: 'Cenas' }));
+    await user.click(screen.getByRole('tab', { name: 'Capítulos' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('não mostra o controle da sinopse quando ela está vazia', async () => {

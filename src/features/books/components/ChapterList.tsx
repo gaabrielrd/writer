@@ -27,6 +27,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  Toolbar,
 } from '@/shared/ui';
 import type { Book } from '../model/book';
 import type { Chapter } from '../model/chapter';
@@ -49,6 +50,10 @@ export interface ChapterListProps {
   mode?: 'dialog' | 'inline';
   /** Callback para abrir o modal de importação de documentos (.docx/.pdf) */
   onOpenImport?: () => void;
+  /** Pedido externo para abrir "Novo capítulo"; cada número novo abre uma vez. */
+  createRequest?: number;
+  /** Chamado ao fechar ou concluir o "Novo capítulo" aberto por `createRequest`. */
+  onCreateRequestHandled?: () => void;
 }
 
 export function ChapterList(props: ChapterListProps) {
@@ -62,6 +67,8 @@ function ChapterListSession({
   onChapterCountChanged,
   mode = 'dialog',
   onOpenImport,
+  createRequest = 0,
+  onCreateRequestHandled,
 }: ChapterListProps) {
   const navigate = useNavigate();
   const {
@@ -103,6 +110,11 @@ function ChapterListSession({
 
   const [newTitle, setNewTitle] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [handledCreateRequest, setHandledCreateRequest] = useState(0);
+  if (createRequest !== handledCreateRequest) {
+    setHandledCreateRequest(createRequest);
+    if (createRequest) setIsCreateOpen(true);
+  }
   const [creationError, setCreationError] = useState<string | null>(null);
   const createFormId = useId();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -121,6 +133,7 @@ function ChapterListSession({
         setNewTitle('');
         setIsCreateOpen(false);
         setNewActId('');
+        onCreateRequestHandled?.();
         onChapterCountChanged?.();
       } catch (cause) {
         setCreationError(
@@ -229,26 +242,19 @@ function ChapterListSession({
     setNewTitle('');
     setNewActId('');
     setCreationError(null);
+    onCreateRequestHandled?.();
   };
 
   const content = (
     <div className={styles.container}>
       <div className={styles.summary} ref={summaryRef} tabIndex={-1}>
-        <div className={styles.counts}>
-          <span>
-            <strong>{chapters.length}</strong> capítulo(s)
-          </span>
-          <span>
-            <strong>{totalWords.toLocaleString('pt-BR')}</strong> palavras
-          </span>
-        </div>
-        <div className={styles.summaryActions}>
-          <div className={styles.filterField}>
+        <Toolbar
+          label="Ferramentas de capítulos"
+          search={
             <Input
               aria-label="Filtrar capítulos por nome"
               placeholder="Filtrar capítulos"
               leftIcon={<Search className="icon icon-sm" aria-hidden="true" />}
-              className={styles.filterInput}
               value={query}
               disabled={isProcessing}
               onChange={(event) => {
@@ -256,39 +262,43 @@ function ChapterListSession({
                 setSelectedIds(new Set());
               }}
             />
-          </div>
-          <Button
-            size="sm"
-            className={styles.newChapterButton}
-            ref={chapterTriggerRef}
-            aria-label="Novo capítulo"
-            disabled={loading || isProcessing}
-            onClick={() => setIsCreateOpen(true)}
-          >
-            <Plus className="icon icon-sm" aria-hidden="true" />
-            <span className={styles.actionLabel}>Novo capítulo</span>
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            aria-label="Novo ato"
-            ref={actTriggerRef}
-            disabled={loading || isProcessing}
-            onClick={() => {
-              setActionError(null);
-              setIsActOpen(true);
-            }}
-          >
-            <Layers className="icon icon-sm" aria-hidden="true" />
-            <span className={styles.actionLabel}>Novo ato</span>
-          </Button>
-          {onOpenImport && (
-            <Button variant="secondary" size="sm" onClick={onOpenImport} disabled={isProcessing}>
-              <Upload className="icon icon-sm" aria-hidden="true" />
-              Importar Arquivo
-            </Button>
-          )}
-        </div>
+          }
+          summary={`${chapters.length} ${chapters.length === 1 ? 'capítulo' : 'capítulos'} · ${totalWords.toLocaleString('pt-BR')} palavras`}
+          actions={
+            <>
+              {onOpenImport && (
+                <Button variant="outline" size="sm" onClick={onOpenImport} disabled={isProcessing}>
+                  <Upload className="icon icon-sm" aria-hidden="true" />
+                  Importar Arquivo
+                </Button>
+              )}
+              <Button
+                size="sm"
+                variant="ghost"
+                aria-label="Novo ato"
+                ref={actTriggerRef}
+                disabled={loading || isProcessing}
+                onClick={() => {
+                  setActionError(null);
+                  setIsActOpen(true);
+                }}
+              >
+                <Layers className="icon icon-sm" aria-hidden="true" />
+                <span className={styles.actionLabel}>Novo ato</span>
+              </Button>
+              <Button
+                size="sm"
+                ref={chapterTriggerRef}
+                aria-label="Novo capítulo"
+                disabled={loading || isProcessing}
+                onClick={() => setIsCreateOpen(true)}
+              >
+                <Plus className="icon icon-sm" aria-hidden="true" />
+                <span className={styles.actionLabel}>Novo capítulo</span>
+              </Button>
+            </>
+          }
+        />
       </div>
 
       {error && (
@@ -322,10 +332,11 @@ function ChapterListSession({
           </Button>
           <Button
             size="sm"
-            variant="destructive"
+            variant="outline"
             disabled={isProcessing}
             onClick={() => openBulk('delete')}
           >
+            <Trash2 className="icon icon-sm" aria-hidden="true" />
             Excluir seleção
           </Button>
           <Button

@@ -6,30 +6,13 @@
 }
 
 .summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-3);
-  gap: var(--space-3);
-  background-color: var(--surface-quiet);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--ink);
-}
-
-.counts {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  white-space: nowrap;
-}
-
-.summaryActions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
   min-width: 0;
+  border-radius: var(--radius-sm);
+}
+
+.summary:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
 }
 
 .chapterTable {
@@ -107,7 +90,6 @@
 }
 
 .writeButton,
-.newChapterButton,
 .chapterMenuButton {
   min-height: var(--space-7);
 }
@@ -127,19 +109,7 @@
     display: none;
   }
 
-  .summary {
-    flex-wrap: wrap;
-    padding: var(--space-2);
-    font-size: var(--text-xs);
-    gap: var(--space-2);
-  }
-
-  .counts {
-    gap: var(--space-2);
-  }
-
-  .writeButton,
-  .newChapterButton {
+  .writeButton {
     width: var(--space-7);
     height: var(--space-7);
     padding: 0;
@@ -168,19 +138,6 @@
   color: hsl(var(--muted-foreground));
   font-size: var(--text-sm);
 }
-.filterField {
-  width: 11rem;
-  min-width: 0;
-}
-.filterInput {
-  height: var(--space-8);
-  border-color: transparent;
-  background: transparent;
-}
-.filterInput:hover,
-.filterInput:focus-visible {
-  border-color: hsl(var(--border));
-}
 .selectionCell > div {
   width: auto;
   flex-shrink: 0;
@@ -207,15 +164,6 @@
   overflow-wrap: anywhere;
 }
 @media (max-width: 600px) {
-  .summaryActions {
-    flex: 1 1 100%;
-    flex-wrap: wrap;
-  }
-  .filterField {
-    flex: 1;
-    width: auto;
-    min-width: 8rem;
-  }
   .chapterTable th,
   .chapterTable td {
     padding: var(--space-2);

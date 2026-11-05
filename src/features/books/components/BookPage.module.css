@@ -30,38 +30,16 @@
 
 /* ---------- Book header ---------- */
 
-.bookHeader {
-  display: flex;
-  gap: var(--space-6);
-  align-items: flex-start;
-  padding: var(--space-6);
-  border-radius: var(--radius-lg);
-}
-
-@media (max-width: 640px) {
-  .bookHeader {
-    flex-direction: column;
-  }
-}
-
-.bookCover {
-  flex-shrink: 0;
-  width: 180px;
-  height: 240px;
-  border-radius: var(--radius-md);
+.cover {
+  width: 100%;
+  aspect-ratio: 2 / 3;
   overflow: hidden;
   border: var(--border-width) solid var(--line);
+  border-radius: var(--radius-sm);
   background-color: var(--surface-quiet);
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-@media (max-width: 640px) {
-  .bookCover {
-    width: 100%;
-    height: 180px;
-  }
 }
 
 .coverImage {
@@ -74,38 +52,17 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-1);
+  padding: var(--space-1);
   color: var(--ink-soft);
-}
-
-.bookInfo {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  font-size: var(--text-xs);
+  text-align: center;
 }
 
 .synopsisBlock {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-}
-
-.detailsHeading {
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.detailsHeading > div {
-  flex-direction: row;
-  align-items: flex-start;
-}
-
-.detailsHeading > div > div:first-child {
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 
 .synopsis {
@@ -133,88 +90,22 @@
   gap: var(--space-1);
 }
 
-.bookMeta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  flex-wrap: wrap;
-  font-size: var(--text-sm);
-  color: var(--ink-soft);
-}
-
 .metaItem {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
 }
 
-/* ---------- Tab bar ---------- */
+/* ---------- Tabs ---------- */
 
-.tabsHeader {
+.tabActions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  min-width: 0;
+  max-width: 100%;
 }
 
 .tabActions:empty {
   display: none;
-}
-
-.tabActions {
-  margin-left: auto;
-  max-width: 100%;
-}
-
-.tabBar {
-  display: flex;
-  gap: var(--space-1);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-full);
-  align-self: flex-start;
-  max-width: 100%;
-  padding: var(--space-1);
-  background: hsl(var(--card) / var(--panel-opacity));
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.tab {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-3) var(--space-4);
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin: 0;
-  border-radius: var(--radius-full);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  color: var(--ink-soft);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all var(--transition-fast);
-}
-
-.tab:hover {
-  color: var(--ink);
-}
-
-.tabActive {
-  color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.1);
-  border-bottom-color: transparent;
-  font-weight: 700;
-}
-
-/* ---------- Tab content ---------- */
-
-.tabContent {
-  min-height: 200px;
 }
 
 /* ---------- Publication tab ---------- */
