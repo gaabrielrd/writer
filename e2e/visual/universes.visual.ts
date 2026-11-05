@@ -53,7 +53,6 @@ test('universo, lore por seções e vínculo compartilhado entre livros', async 
   await expect(
     page.getByRole('heading', { name: 'Histórias do Guardião', exact: true }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Minimizar assistente' }).click();
   await page.getByRole('tab', { name: 'Compêndio', exact: true }).click();
   await chooseDropdown(
     page.getByLabel('Escopo do compêndio'),

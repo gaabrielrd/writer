@@ -112,6 +112,14 @@ Regras:
 - Coleções longas de revisão (Compêndio e Personas) poderão usar lista com inspetor;
   páginas de objeto podem mostrar "Continuar de onde parou" e próximos passos no topo.
 
+O assistente da página continua flutuante e reposicionável, com a posição salva
+por conta. Ele chega minimizado como uma pílula "Assistente" e volta a minimizar
+ao trocar de projeto ou de área, mantendo o rascunho; dentro do mesmo projeto,
+conserva o estado. Aberto, o modo compacto mostra o contexto em um selo e um campo
+sem rótulo visual, que cresce com o texto, envia por Enter (Shift+Enter quebra a
+linha) e tem o envio por ícone. Expandir mostra a conversa; só a criação com IA
+chega aberta, com a conversa de concepção.
+
 A migração das telas acontece por fases; a página de Inteligência artificial é a
 primeira a usar `PageHeader` e `Tabs`. A demonstração fica em `/styleguide`.
 

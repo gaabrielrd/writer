@@ -19,12 +19,16 @@ test('perfil de campanha, guia retomável e barra persistente por teclado', asyn
   await page.reload();
   await expect(intro).toHaveCount(0);
   const dock = page.getByRole('complementary', { name: 'Assistente da página' });
-  await expect(dock).toBeVisible();
+  const toggle = dock.getByRole('button', { name: 'Assistente da página', exact: true });
+  await expect(dock).toHaveAttribute('data-mode', 'minimized');
+  await toggle.click();
   await page.getByLabel('Pedido ao assistente da página').fill('Uma pergunta ainda em elaboração');
   await page.getByRole('link', { name: 'Todos os projetos', exact: true }).click();
+  await expect(dock).toHaveAttribute('data-mode', 'minimized');
   await expect(page.getByLabel('Pedido ao assistente da página')).toHaveValue(
     'Uma pergunta ainda em elaboração',
   );
+  await toggle.click();
   const grip = dock.getByRole('button', { name: 'Mover assistente' });
   await grip.focus();
   const original = (await dock.boundingBox())!;
@@ -33,7 +37,7 @@ test('perfil de campanha, guia retomável e barra persistente por teclado', asyn
   await dock.getByRole('button', { name: 'Restaurar posição do assistente' }).click();
   await dock.getByRole('button', { name: 'Minimizar assistente' }).click();
   await expect(page.getByLabel('Pedido ao assistente da página')).toBeHidden();
-  await dock.getByRole('button', { name: 'Assistente da página', exact: true }).click();
+  await toggle.click();
   await expect(page.getByLabel('Pedido ao assistente da página')).toHaveValue(
     'Uma pergunta ainda em elaboração',
   );

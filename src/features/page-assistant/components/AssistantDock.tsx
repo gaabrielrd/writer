@@ -1,14 +1,15 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { Expand, GripVertical, LocateFixed, Minus, Sparkles } from 'lucide-react';
+import { Expand, GripVertical, LocateFixed, Minus, Shrink, Sparkles } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { Button } from '@/shared/ui';
 import { useActiveDialog } from '../hooks/useActiveDialog';
 import {
   defaultDock,
-  readDockPreferences,
-  saveDockPreferences,
+  readDockPosition,
+  saveDockPosition,
   type DockMode,
+  type DockPosition,
 } from '../services/dockPreferences';
 import styles from './PageAssistant.module.css';
 function viewport() {
@@ -22,30 +23,45 @@ function viewport() {
 }
 export function AssistantDock({
   context,
+  scope,
   initialOpen = false,
   visible = true,
   children,
 }: {
   context: string;
+  /**
+   * Project or area being assisted. The dock minimizes again whenever it
+   * changes, but stays as it is while moving inside the same project.
+   */
+  scope?: string;
   initialOpen?: boolean;
   visible?: boolean;
   children: (expanded: boolean, expand: () => void, compact: () => void) => ReactNode;
 }) {
   const { user } = useAuth();
   const dialog = useActiveDialog();
-  const [preferences, setPreferences] = useState<ReturnType<typeof readDockPreferences>>(() => {
-    const saved = user ? readDockPreferences(user.uid) : { ...defaultDock };
-    return initialOpen ? { ...saved, mode: 'expanded' } : saved;
-  });
+  const contentId = useId();
+  const [preferences, setPreferences] = useState<DockPosition>(() =>
+    user ? readDockPosition(user.uid) : { ...defaultDock },
+  );
+  const [chosenMode, setChosenMode] = useState<DockMode>(initialOpen ? 'expanded' : 'minimized');
+  const [observedScope, setObservedScope] = useState(scope);
   const [bounds, setBounds] = useState(viewport);
   const [size, setSize] = useState({ width: 560, height: 120 });
   const [unsaved, setUnsaved] = useState(false);
   const [writing, setWriting] = useState(false);
   const [conceptionInDialog, setConceptionInDialog] = useState(false);
+  if (observedScope !== scope) {
+    setObservedScope(scope);
+    if (!initialOpen) {
+      setWriting(false);
+      setChosenMode('minimized');
+    }
+  }
   const mode =
-    writing || (dialog && bounds.width <= 760 && preferences.mode === 'compact')
+    writing || (dialog && bounds.width <= 760 && chosenMode === 'compact')
       ? 'minimized'
-      : preferences.mode;
+      : chosenMode;
   const panel = useRef<HTMLElement>(null);
   const grip = useRef<HTMLButtonElement>(null);
   const content = useRef<HTMLDivElement>(null);
@@ -55,7 +71,7 @@ export function AssistantDock({
     if (initialOpen && !previousInitialOpen.current) {
       void Promise.resolve().then(() => {
         setWriting(false);
-        setPreferences((old) => ({ ...old, mode: 'expanded' }));
+        setChosenMode('expanded');
       });
     }
     previousInitialOpen.current = initialOpen;
@@ -78,15 +94,15 @@ export function AssistantDock({
     update();
     return () => observer.disconnect();
   }, [dialog]);
-  const persist = (next: typeof preferences) => {
+  const persist = (next: DockPosition) => {
     setPreferences(next);
-    if (user) setUnsaved(!saveDockPreferences(user.uid, next));
+    if (user) setUnsaved(!saveDockPosition(user.uid, next));
   };
-  const setMode = (mode: DockMode) => {
+  const setMode = (next: DockMode) => {
     setWriting(false);
-    if (mode !== 'expanded' && document.activeElement?.closest('[data-assistant-content]'))
+    if (next !== 'expanded' && document.activeElement?.closest('[data-assistant-content]'))
       document.querySelector<HTMLButtonElement>('[data-assistant-grip]')?.focus();
-    persist({ ...preferences, mode });
+    setChosenMode(next);
   };
   useLayoutEffect(() => {
     const element = panel.current;
@@ -284,46 +300,66 @@ export function AssistantDock({
         <Button
           variant="ghost"
           className={styles.title}
-          aria-expanded={mode === 'expanded'}
-          onClick={() => setMode('expanded')}
+          aria-label="Assistente da página"
+          aria-expanded={mode !== 'minimized'}
+          aria-controls={contentId}
+          onClick={() => {
+            if (mode !== 'minimized') setMode('minimized');
+            // Narrow dialogs keep the compact bar out of the way, so open the full conversation.
+            else setMode(dialog && bounds.width <= 760 ? 'expanded' : 'compact');
+          }}
         >
           <Sparkles className="icon icon-sm" aria-hidden="true" />
-          Assistente da página
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          aria-label="Restaurar posição do assistente"
-          onClick={() => persist({ ...preferences, x: 0.5, y: 1 })}
-        >
-          <LocateFixed className="icon icon-sm" aria-hidden="true" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          aria-label={mode === 'expanded' ? 'Recolher conversa' : 'Expandir conversa'}
-          onClick={() => setMode(mode === 'expanded' ? 'compact' : 'expanded')}
-        >
-          <Expand className="icon icon-sm" aria-hidden="true" />
+          Assistente
         </Button>
         {mode !== 'minimized' && (
-          <Button
-            size="icon"
-            variant="ghost"
-            aria-label="Minimizar assistente"
-            onClick={() => setMode('minimized')}
-          >
-            <Minus className="icon icon-sm" aria-hidden="true" />
-          </Button>
+          <>
+            <span className={styles.context} title={`Contexto: ${context}`}>
+              <span className="sr-only">Contexto: </span>
+              {context}
+            </span>
+            <span className={styles.spacer} />
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Restaurar posição do assistente"
+              title="Restaurar posição"
+              onClick={() => persist({ x: 0.5, y: 1 })}
+            >
+              <LocateFixed className="icon icon-sm" aria-hidden="true" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label={mode === 'expanded' ? 'Recolher conversa' : 'Expandir conversa'}
+              title={mode === 'expanded' ? 'Recolher conversa' : 'Expandir conversa'}
+              onClick={() => setMode(mode === 'expanded' ? 'compact' : 'expanded')}
+            >
+              {mode === 'expanded' ? (
+                <Shrink className="icon icon-sm" aria-hidden="true" />
+              ) : (
+                <Expand className="icon icon-sm" aria-hidden="true" />
+              )}
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              aria-label="Minimizar assistente"
+              title="Minimizar"
+              onClick={() => setMode('minimized')}
+            >
+              <Minus className="icon icon-sm" aria-hidden="true" />
+            </Button>
+          </>
         )}
       </header>
       <div
+        id={contentId}
         data-assistant-content
         ref={content}
         className={styles.dockContent}
         hidden={mode === 'minimized'}
       >
-        <p className={styles.meta}>Contexto: {context}</p>
         {children(
           mode === 'expanded',
           () => setMode('expanded'),

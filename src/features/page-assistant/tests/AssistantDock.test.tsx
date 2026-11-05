@@ -57,11 +57,11 @@ it.each([true, false])(
   },
 );
 
-function tree(external = false, initialOpen = false) {
+function tree(external = false, initialOpen = false, scope = 'book:atlas') {
   return (
     <>
       {external && <textarea aria-label="Texto principal" defaultValue="Prosa preservada" />}
-      <AssistantDock context="Livro" initialOpen={initialOpen}>
+      <AssistantDock context="Livro" scope={scope} initialOpen={initialOpen}>
         {(expanded, expand, compact) => (
           <>
             <span>{expanded ? 'Conversa aberta' : 'Barra compacta'}</span>
@@ -130,6 +130,9 @@ it('moves by keyboard, restores the lower center and preserves text through coll
   render(tree());
   const dock = screen.getByRole('complementary', { name: 'Assistente da página' });
   const grip = screen.getByRole('button', { name: 'Mover assistente' });
+  expect(dock).toHaveAttribute('data-mode', 'minimized');
+  await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
+  expect(dock).toHaveAttribute('data-mode', 'compact');
   const original = Number.parseFloat(dock.style.top);
   grip.focus();
   await userEvent.keyboard('{Shift>}{ArrowUp}{/Shift}');
@@ -174,13 +177,14 @@ it('commits a drag only on release and restores the original position on cancel 
   fireEvent.keyDown(grip, { key: 'Escape' });
   expect(dock.style.top).toBe(top);
   expect(saved()).toEqual(committed);
-  expect(dock).toHaveAttribute('data-mode', 'compact');
+  expect(dock).toHaveAttribute('data-mode', 'minimized');
 });
 it('keeps writing available when presentation storage fails and clamps after resizing', async () => {
   vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
     throw new Error('blocked');
   });
   render(tree());
+  await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
   await userEvent.click(screen.getByRole('button', { name: 'Restaurar posição do assistente' }));
   expect(screen.getByRole('status')).toHaveTextContent('armazenamento indisponível');
   const input = screen.getByLabelText('Pergunta do dock');
@@ -193,20 +197,23 @@ it('keeps writing available when presentation storage fails and clamps after res
 });
 it('temporarily minimizes for an overlapping writing field without persisting the preference', async () => {
   render(tree(true));
+  await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
+  expect(screen.getByRole('complementary')).toHaveAttribute('data-mode', 'compact');
   const main = screen.getByLabelText('Texto principal');
   main.focus();
   await waitFor(() =>
     expect(screen.getByRole('complementary')).toHaveAttribute('data-mode', 'minimized'),
   );
   expect(main).toHaveFocus();
-  expect(localStorage.getItem(key)).toBeNull();
   await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
+  expect(screen.getByRole('complementary')).toHaveAttribute('data-mode', 'compact');
   expect(main).toHaveValue('Prosa preservada');
-  expect(saved().mode).toBe('expanded');
+  expect(localStorage.getItem(key)).toBeNull();
 });
 
 it('opens a newly adopted conception without resetting its existing question', async () => {
   const view = render(tree());
+  await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
   await userEvent.type(screen.getByLabelText('Pergunta do dock'), ' preservada');
   view.rerender(tree(false, true));
   await waitFor(() =>
@@ -233,3 +240,35 @@ it.each(['data-conception-assistant', 'data-writer-navigation'])(
     await waitFor(() => expect(screen.getByRole('complementary')).toBeVisible());
   },
 );
+
+it('arrives minimized as a pill, opens compact and shows the context as a label', async () => {
+  localStorage.setItem(key, JSON.stringify({ mode: 'expanded', x: 0.2, y: 0.3 }));
+  render(tree());
+  const dock = screen.getByRole('complementary', { name: 'Assistente da página' });
+  const toggle = screen.getByRole('button', { name: 'Assistente da página' });
+  expect(dock).toHaveAttribute('data-mode', 'minimized');
+  expect(toggle).toHaveAttribute('aria-expanded', 'false');
+  expect(toggle).toHaveTextContent('Assistente');
+  expect(screen.queryByRole('button', { name: 'Minimizar assistente' })).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Pergunta do dock')).not.toBeVisible();
+  await userEvent.click(toggle);
+  expect(dock).toHaveAttribute('data-mode', 'compact');
+  expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  expect(screen.getByText('Barra compacta')).toBeVisible();
+  expect(screen.getByText('Livro')).toBeVisible();
+  expect(dock).toHaveTextContent('Contexto: Livro');
+  await userEvent.click(toggle);
+  expect(dock).toHaveAttribute('data-mode', 'minimized');
+  expect(saved()).toEqual({ mode: 'expanded', x: 0.2, y: 0.3 });
+});
+it('minimizes again when the assisted project changes but not inside the same project', async () => {
+  const view = render(tree());
+  const dock = screen.getByRole('complementary');
+  await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
+  expect(dock).toHaveAttribute('data-mode', 'compact');
+  view.rerender(tree(false, false, 'book:atlas'));
+  expect(dock).toHaveAttribute('data-mode', 'compact');
+  view.rerender(tree(false, false, '/studio/projects'));
+  expect(dock).toHaveAttribute('data-mode', 'minimized');
+  expect(screen.getByLabelText('Pergunta do dock')).toHaveValue('Minha pergunta');
+});

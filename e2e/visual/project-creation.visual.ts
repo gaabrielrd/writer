@@ -36,8 +36,12 @@ for (const method of ['manual', 'assisted'] as const)
       await expect(
         page.getByRole('heading', { name: 'Projeto das lanternas', exact: true }),
       ).toBeVisible();
-      await expect(page.getByRole('complementary', { name: 'Assistente da página' })).toBeVisible();
-      await page.getByRole('button', { name: 'Minimizar assistente' }).click();
+      const dock = page.getByRole('complementary', { name: 'Assistente da página' });
+      await expect(dock).toBeVisible();
+      // Only the AI conversation arrives open; manual creation keeps the pill.
+      if (method === 'assisted')
+        await page.getByRole('button', { name: 'Minimizar assistente' }).click();
+      await expect(dock).toHaveAttribute('data-mode', 'minimized');
       await expectNoHorizontalOverflow(page, 'projeto-confirmado');
     });
   }
@@ -51,7 +55,6 @@ test('assistente abre ação existente, continua dentro do diálogo e preserva c
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('button', { name: 'Executar: Editar campanha' }).click();
   await expect(page.getByRole('dialog', { name: 'Editar campanha' })).toBeVisible();
-  await page.getByRole('button', { name: 'Assistente da página', exact: true }).click();
   await expect(page.getByLabel('Pedido ao assistente da página')).toBeVisible();
   await capture(page, testInfo, 'assistente-no-dialogo');
   await page.getByRole('button', { name: 'Minimizar assistente' }).click();
@@ -97,6 +100,7 @@ test('concepção chega ao primeiro capítulo e à escrita sem repetir a ideia',
   await editor.fill('A primeira lanterna brilhou quando o mar desapareceu.');
   await expect(page.getByText('Salvo', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Assistente da página', exact: true }).click();
+  await page.getByRole('button', { name: 'Expandir conversa' }).click();
   await expect(
     page
       .getByRole('complementary', { name: 'Assistente da página' })

@@ -128,9 +128,9 @@ it('reviews a proposed field value before invoking the original controlled input
   await userEvent.type(screen.getByLabelText('Texto proposto'), 'Revisado pelo autor');
   await userEvent.click(screen.getByRole('button', { name: 'Executar: Título do projeto' }));
   expect(screen.getByLabelText('Título do projeto')).toHaveValue('Revisado pelo autor');
-  expect(screen.getByRole('button', { name: 'Assistente da página' })).toHaveAttribute(
-    'aria-expanded',
-    'false',
+  expect(screen.getByRole('complementary', { name: 'Assistente da página' })).toHaveAttribute(
+    'data-mode',
+    'compact',
   );
 });
 it('keeps author edits when a captured field changes before execution', async () => {
@@ -170,4 +170,19 @@ it('keeps a question draft while navigating and labels its original context', as
     'Minha pergunta ainda não enviada',
   );
   expect(mocks.ask).not.toHaveBeenCalled();
+});
+
+it('sends with Enter, breaks lines with Shift+Enter and keeps an accessible field without a visual label', async () => {
+  mocks.ask.mockResolvedValue({ reply: 'Pronto.', contextProof: null, action: null });
+  render(actionTree());
+  await userEvent.click(screen.getByRole('button', { name: /^Assistente da página$/ }));
+  const field = screen.getByRole('textbox', { name: 'Pedido ao assistente da página' });
+  expect(screen.queryByText('Pedido ao assistente da página')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Enviar pedido' })).toBeDisabled();
+  await userEvent.type(field, 'Primeira linha{Shift>}{Enter}{/Shift}segunda');
+  expect(field).toHaveValue('Primeira linha\nsegunda');
+  expect(mocks.ask).not.toHaveBeenCalled();
+  await userEvent.type(field, '{Enter}');
+  await screen.findByText('Pronto.');
+  expect(mocks.ask).toHaveBeenCalledOnce();
 });

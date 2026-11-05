@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation } from 'react-router';
+import { ArrowUp } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { Alert, Button, Textarea } from '@/shared/ui';
 import { AssistantDock } from './AssistantDock';
@@ -247,13 +248,18 @@ function AssistantSession({
       ? plan?.snapshot.capabilities.find((c) => c.id === plan.result.action?.id)
       : undefined;
   return (
-    <AssistantDock context={context} initialOpen={initialOpen} visible={surfaceVisible}>
+    <AssistantDock
+      context={context}
+      scope={scope}
+      initialOpen={initialOpen}
+      visible={surfaceVisible}
+    >
       {(expanded, expand, compact) => (
         <>
           {expanded && (
             <div className={styles.messages} aria-live="polite">
               {!visible.length && (
-                <p>
+                <p className={styles.meta}>
                   O que você deseja fazer nesta página? A escrita e as decisões continuam com você.
                 </p>
               )}
@@ -308,17 +314,31 @@ function AssistantSession({
           )}
           <form onSubmit={(event) => void send(event, expand)} className={styles.form}>
             <Textarea
-              label="Pedido ao assistente da página"
+              aria-label="Pedido ao assistente da página"
+              placeholder="Peça algo sobre esta página"
+              className={styles.composer}
               value={prompt}
               onChange={(e) => {
                 if (!prompt) setDraftContext(context);
                 setPrompt(e.target.value);
               }}
+              onKeyDown={(e) => {
+                if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) return;
+                e.preventDefault();
+                e.currentTarget.form?.requestSubmit();
+              }}
               maxLength={4000}
               rows={expanded ? 3 : 1}
             />
-            <Button type="submit" disabled={Boolean(busy) || !prompt.trim()}>
-              Enviar pedido
+            <Button
+              type="submit"
+              size="icon"
+              className={styles.send}
+              aria-label="Enviar pedido"
+              title="Enviar (Enter)"
+              disabled={Boolean(busy) || !prompt.trim()}
+            >
+              <ArrowUp className="icon icon-sm" aria-hidden="true" />
             </Button>
           </form>
         </>

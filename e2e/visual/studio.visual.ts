@@ -75,7 +75,6 @@ test('campanha independente persiste descrição e não cria um livro auxiliar',
   ).toBeVisible();
   await expect(page.getByText('Em preparação', { exact: true })).toBeVisible();
   await capture(page, testInfo, 'campanha-independente-detalhes');
-  await page.getByRole('button', { name: 'Minimizar assistente' }).click();
   await page.getByRole('link', { name: 'Voltar aos projetos', exact: true }).click();
   await navigateWorkspace(page, 'Projetos');
   await expect(
@@ -113,7 +112,6 @@ test('aventura vinculada a um universo mantém sinopse e acesso ao contexto', as
   ).toBeVisible();
   await expect(page.getByText('Rascunho', { exact: true })).toBeVisible();
   await capture(page, testInfo, 'aventura-universo-detalhes');
-  await page.getByRole('button', { name: 'Minimizar assistente' }).click();
   await page.getByRole('link', { name: 'Abrir universo vinculado' }).click();
   await expect(page).toHaveURL(/\/universes\/[^/]+\/lore$/);
 });
