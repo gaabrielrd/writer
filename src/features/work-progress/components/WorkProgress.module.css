@@ -186,6 +186,10 @@
   gap: var(--space-4);
   min-width: 0;
 }
+.preferencesProfile {
+  width: 100%;
+  max-width: 720px;
+}
 .preferencesCard {
   padding: var(--space-4);
   display: grid;

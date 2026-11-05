@@ -23,12 +23,24 @@ intensidade, valores e significados dos extremos. Os atributos ficam em duas
 colunas no desktop e uma no celular. Personalização e edição acontecem nesse
 mesmo modal, com sliders e definições; fechar devolve o foco à linha acionada.
 
+Na página em janelas a partir de 1100 px, selecionar uma linha abre o painel
+lateral com todos os atributos da persona, incluindo os personalizados, na ordem
+do perfil. Cada atributo mostra nome completo, barra e valor de 0 a 100; nomes
+longos quebram linha e o conteúdo rola quando necessário, mantendo as ações
+acessíveis. **Abrir detalhes** permite consultar as instruções e definições completas.
+
 Uma persona contém nome, descrição, instruções permanentes e oito atributos de
 0 a 100: Sensorialidade, Concisão, Introspecção, Humor e ironia, Solenidade,
 Tensão, Ambiguidade e Ritmo narrativo. Zero representa o extremo mínimo, não
 ausência de configuração. O usuário pode adicionar até oito sliders próprios,
 informando nome, significado e descrições dos extremos. Definições, valores e
 instruções podem ser editados. O resumo mostra as orientações resultantes.
+
+Ao criar ou editar, **Resumo das orientações** abre uma revisão recolhível com
+a direção de escrita separada dos atributos. A grade compacta mostra nome,
+valor, barra e significados de 0 e 100, incluindo atributos personalizados,
+e acompanha as alterações ainda não salvas. Instruções preservam as quebras
+de linha; sua ausência é explícita. Abrir ou recolher o resumo não salva a persona.
 
 Nome: até 80 caracteres; descrição: 500; instruções: 6.000. Cada atributo tem
 nome de até 80 caracteres, significado de até 300 e extremos de até 200.

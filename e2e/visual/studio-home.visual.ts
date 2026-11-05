@@ -1,5 +1,44 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 
+test('operações usa abas com URL, histórico e navegação por teclado', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/studio/operations?tab=invalid&source=shortcut');
+  const tabs = page.getByRole('tablist', { name: 'Operações em andamento' });
+  const imports = tabs.getByRole('tab', { name: 'Importações e restaurações' });
+  const campaigns = tabs.getByRole('tab', { name: 'Campanhas' });
+  const deletions = tabs.getByRole('tab', { name: 'Exclusões' });
+  await expect(imports).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel')).toHaveCount(1);
+  await expect(page.getByRole('region', { name: 'Importações e restaurações' })).toBeVisible();
+  await capture(page, testInfo, 'operacoes-importacoes');
+  await campaigns.click();
+  await expect(page).toHaveURL(/tab=campaigns&source=shortcut$/);
+  await expect(page.getByRole('region', { name: 'Operações de campanhas' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Importações e restaurações' })).toBeHidden();
+  await capture(page, testInfo, 'operacoes-campanhas');
+  await campaigns.press('End');
+  await expect(deletions).toBeFocused();
+  await expect(deletions).toHaveAttribute('aria-selected', 'true');
+  await expect(page).toHaveURL(/tab=deletions&source=shortcut$/);
+  await expect(page.getByRole('region', { name: 'Exclusões em andamento' })).toBeVisible();
+  await capture(page, testInfo, 'operacoes-exclusoes');
+  await page.goBack();
+  await expect(campaigns).toHaveAttribute('aria-selected', 'true');
+  await page.goForward();
+  await expect(deletions).toHaveAttribute('aria-selected', 'true');
+  await page.reload();
+  await expect(deletions).toHaveAttribute('aria-selected', 'true');
+  await deletions.focus();
+  await deletions.press('Home');
+  await expect(imports).toBeFocused();
+  await imports.press('ArrowRight');
+  await expect(campaigns).toHaveAttribute('aria-selected', 'true');
+  await expectNoHorizontalOverflow(page, 'Abas de operações');
+  await page.setViewportSize({ width: 1100, height: 720 });
+  await expectNoHorizontalOverflow(page, 'Abas de operações em laptop');
+});
+
 test('Home visual mantém retomada compacta e atalhos funcionais', async ({ page }, testInfo) => {
   await page.addInitScript(() => sessionStorage.setItem('writer.visual.work-resume-pages', 'true'));
   await page.goto('/studio');

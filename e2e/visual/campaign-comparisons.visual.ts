@@ -632,7 +632,7 @@ test('descarte sem origem permanece no Estúdio com cancelamento incerto e reloa
     },
     { prefix, source },
   );
-  await page.goto('/studio/operations');
+  await page.goto('/studio/operations?tab=campaigns');
   await reopen(page);
   await expect(dialog(page).getByText(/A origem ou a campanha não está disponível/)).toBeVisible();
   await flag(page, 'writer.visual.comparison-lost-response', 'cancelCampaignComparison');

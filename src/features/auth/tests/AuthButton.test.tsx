@@ -8,6 +8,7 @@ import { AuthContext, type AuthContextValue } from '../context/AuthContext';
 function renderWithAuth(
   authOverrides: Partial<AuthContextValue> = {},
   onOpenAISettings?: () => void,
+  compact = false,
 ) {
   const defaultAuth: AuthContextValue = {
     user: null,
@@ -28,7 +29,7 @@ function renderWithAuth(
     ...render(
       <MemoryRouter>
         <AuthContext.Provider value={defaultAuth}>
-          <AuthButton onOpenAISettings={onOpenAISettings} />
+          <AuthButton compact={compact} onOpenAISettings={onOpenAISettings} />
         </AuthContext.Provider>
       </MemoryRouter>,
     ),
@@ -37,6 +38,35 @@ function renderWithAuth(
 }
 
 describe('AuthButton', () => {
+  it('mantém a conta acessível pelo avatar compacto e preserva o bloqueio do editor', async () => {
+    renderWithAuth(
+      {
+        user: {
+          uid: 'u',
+          email: 'autora@livro.com',
+          displayName: 'Autora',
+          photoUrl: null,
+          credits: 0,
+          tier: 'free',
+          createdAt: 1,
+          updatedAt: 1,
+        },
+        pendingEditorOperation: true,
+      },
+      undefined,
+      true,
+    );
+    const account = screen.getByRole('button', { name: 'Sua conta: Autora' });
+    expect(screen.queryByText('Autora')).not.toBeInTheDocument();
+    await userEvent.click(account);
+    expect(screen.getByRole('menuitem', { name: 'Preferências' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    expect(screen.getByRole('menuitem', { name: 'Sair' })).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.keyboard('{Escape}');
+    expect(account).toHaveFocus();
+  });
   it('opens AI settings from the user dropdown and respects pending operations', async () => {
     const open = vi.fn();
     const auth = {

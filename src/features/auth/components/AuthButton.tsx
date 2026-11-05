@@ -4,7 +4,13 @@ import { Button, Dropdown, DropdownItem, DropdownLabel } from '@/shared/ui';
 import { useAuth } from '../hooks/useAuth';
 import styles from './AuthButton.module.css';
 
-export function AuthButton({ onOpenAISettings }: { onOpenAISettings?: () => void }) {
+export function AuthButton({
+  onOpenAISettings,
+  compact = false,
+}: {
+  onOpenAISettings?: () => void;
+  compact?: boolean;
+}) {
   const { user, loading, signOut, pendingEditorOperation } = useAuth();
   const navigate = useNavigate();
 
@@ -35,7 +41,11 @@ export function AuthButton({ onOpenAISettings }: { onOpenAISettings?: () => void
       label="Sua conta"
       align="end"
       trigger={
-        <Button variant="ghost" className={styles.profile}>
+        <Button
+          variant="ghost"
+          className={styles.profile}
+          aria-label={compact ? `Sua conta: ${displayName}` : undefined}
+        >
           {user.photoUrl ? (
             <img src={user.photoUrl} alt={`Foto de ${displayName}`} className={styles.avatar} />
           ) : (
@@ -43,8 +53,8 @@ export function AuthButton({ onOpenAISettings }: { onOpenAISettings?: () => void
               {initial || <User className="icon icon-sm" aria-hidden="true" />}
             </span>
           )}
-          <span className={styles.name}>{displayName}</span>
-          <ChevronDown className="icon icon-sm" aria-hidden="true" />
+          {!compact && <span className={styles.name}>{displayName}</span>}
+          {!compact && <ChevronDown className="icon icon-sm" aria-hidden="true" />}
         </Button>
       }
     >

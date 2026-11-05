@@ -19,6 +19,24 @@ na URL. Na criação, os interesses priorizam os tipos sem excluir alternativas;
 o parâmetro kind nos atalhos pode escolher um tipo, sem iniciar a criação.
 Todas as ferramentas expande a navegação complementar. Preferências permite
 mudar o perfil e retomar ou rever o guia.
+O painel de perfil de criação tem até 720 px de largura, alinhado à esquerda
+como os painéis existentes de Área de trabalho e Data e horário.
+
+No desktop, recolher a navegação mantém uma faixa de ícones com o símbolo do
+Writer e o menu da conta. Tooltips à direita identificam os atalhos no hover
+e no foco; Livros, Aventuras e Campanhas do perfil também têm ícones. Expandir
+ou recolher preserva o conteúdo e usa transição curta, desativada quando o
+usuário prefere movimento reduzido. A área principal tem recuo e cantos
+discretos, como um painel da lateral; o símbolo do Writer se alinha à barra
+principal nos dois estados. O modo expandido do editor conserva a área integral,
+e janelas estreitas continuam usando a gaveta de navegação.
+
+**Em andamento** (`/studio/operations`) separa os pedidos nas abas **Importações
+e restaurações**, **Campanhas** e **Exclusões**. A seleção fica no parâmetro
+`tab=imports|campaigns|deletions`, preserva os demais parâmetros e acompanha
+recarregar, voltar e avançar. Sem aba válida, abre Importações e restaurações.
+As abas usam setas, Home e End; os painéis permanecem montados ao alternar para
+preservar as operações e seus controles de retomada.
 
 O guia tem seis dicas no modo guiado e quatro no essencial. Explicações e links
 não comprovam execução de tarefas e nunca criam projetos, enviam prompts ou

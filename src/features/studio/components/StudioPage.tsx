@@ -31,7 +31,17 @@ import {
   CampaignAdoptionPreparations,
 } from '@/features/campaign-adoptions';
 import { ImportBookModal, getBook } from '@/features/books';
-import { Button, Card, FilterChips, LoadingState, PageHeader } from '@/shared/ui';
+import {
+  Button,
+  Card,
+  FilterChips,
+  LoadingState,
+  PageHeader,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/shared/ui';
 import { projectKinds, projectLabels } from '../model/project';
 import { StudioProjectSection } from './StudioProjectSection';
 import styles from './StudioPage.module.css';
@@ -42,11 +52,19 @@ import {
   type StudioSection,
 } from '../model/studioNavigation';
 
+const operationTabs = [
+  { value: 'imports', label: 'Importações e restaurações' },
+  { value: 'campaigns', label: 'Campanhas' },
+  { value: 'deletions', label: 'Exclusões' },
+] as const;
+
 function StudioSession({ ownerId, section }: { ownerId: string; section: StudioSection }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const selectedKind = params.get('kind');
   const kind = projectKinds.find((value) => value === selectedKind) ?? 'all';
+  const operationTab =
+    operationTabs.find((tab) => tab.value === params.get('tab'))?.value ?? 'imports';
   const [operationsLoaded, setOperationsLoaded] = useState(section === 'operations');
   if (section === 'operations' && !operationsLoaded) setOperationsLoaded(true);
   const destination = studioDestinations.find((item) => item.id === section)!;
@@ -199,74 +217,94 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
       )}
       <div hidden={section !== 'operations'} className={styles.sectionBody}>
         {operationsLoaded && (
-          <>
-            <section className={styles.toolSection} aria-label="Importações e restaurações">
-              <h2>Importações e restaurações</h2>
-              <div className={styles.operationPanels}>
-                <div>
-                  <BookRestorePreparations
-                    ownerId={ownerId}
-                    revision={restoreRevision}
-                    onResume={(id) => {
-                      setRestoreId(id);
-                      setRestoreOpen(true);
-                    }}
-                  />
+          <Tabs
+            value={operationTab}
+            onValueChange={(tab) => {
+              const next = new URLSearchParams(params);
+              next.set('tab', tab);
+              setParams(next);
+            }}
+          >
+            <TabsList aria-label="Operações em andamento">
+              {operationTabs.map(({ value, label }) => (
+                <TabsTrigger key={value} value={value}>
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            <TabsContent value="imports" forceMount hidden={operationTab !== 'imports'}>
+              <section className={styles.toolSection} aria-label="Importações e restaurações">
+                <h2>Importações e restaurações</h2>
+                <div className={styles.operationPanels}>
+                  <div>
+                    <BookRestorePreparations
+                      ownerId={ownerId}
+                      revision={restoreRevision}
+                      onResume={(id) => {
+                        setRestoreId(id);
+                        setRestoreOpen(true);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <AdventureRestorePreparations
+                      ownerId={ownerId}
+                      revision={adventureRestoreRevision}
+                      onResume={(id) => {
+                        setAdventureRestoreId(id);
+                        setAdventureRestoreOpen(true);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <AdventureImportPreparations
+                      onActivated={(id) => {
+                        if (active.current) void navigate('/adventures/' + encodeURIComponent(id));
+                      }}
+                    />
+                  </div>
                 </div>
-                <div>
-                  <AdventureRestorePreparations
-                    ownerId={ownerId}
-                    revision={adventureRestoreRevision}
-                    onResume={(id) => {
-                      setAdventureRestoreId(id);
-                      setAdventureRestoreOpen(true);
-                    }}
-                  />
-                </div>
-                <div>
-                  <AdventureImportPreparations
-                    onActivated={(id) => {
-                      if (active.current) void navigate('/adventures/' + encodeURIComponent(id));
-                    }}
-                  />
-                </div>
-              </div>
-            </section>
-            <section className={styles.toolSection} aria-label="Operações de campanhas">
-              <h2>Campanhas</h2>
-              <div className={styles.operationPanels}>
-                <div>
-                  <CampaignComparisonPreparations
-                    onReviewAdoption={(context) => {
-                      setAdoption({ ...context });
-                      setAdoptionAttempt((n) => n + 1);
-                      setAdoptionOpen(true);
-                    }}
-                  />
-                </div>
-                <div>
-                  <CampaignAdoptionPreparations />
-                </div>
+              </section>
+            </TabsContent>
+            <TabsContent value="campaigns" forceMount hidden={operationTab !== 'campaigns'}>
+              <section className={styles.toolSection} aria-label="Operações de campanhas">
+                <h2>Campanhas</h2>
+                <div className={styles.operationPanels}>
+                  <div>
+                    <CampaignComparisonPreparations
+                      onReviewAdoption={(context) => {
+                        setAdoption({ ...context });
+                        setAdoptionAttempt((n) => n + 1);
+                        setAdoptionOpen(true);
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <CampaignAdoptionPreparations />
+                  </div>
 
-                <div>
-                  <CampaignCapturePreparations
-                    onActivated={(id) => void navigate('/campaigns/' + encodeURIComponent(id))}
-                  />
+                  <div>
+                    <CampaignCapturePreparations
+                      onActivated={(id) => void navigate('/campaigns/' + encodeURIComponent(id))}
+                    />
+                  </div>
                 </div>
-              </div>
-            </section>
-            <section className={styles.toolSection} aria-label="Exclusões em andamento">
-              <h2>Exclusões</h2>
-              <div className={styles.operationPanels}>
-                <div>
-                  <AdventureDeletionPreparations />
+              </section>
+            </TabsContent>
+            <TabsContent value="deletions" forceMount hidden={operationTab !== 'deletions'}>
+              <section className={styles.toolSection} aria-label="Exclusões em andamento">
+                <h2>Exclusões</h2>
+                <div className={styles.operationPanels}>
+                  <div>
+                    <AdventureDeletionPreparations />
+                  </div>
+                  <div>
+                    <CampaignDeletionPreparations />
+                  </div>
                 </div>
-                <div>
-                  <CampaignDeletionPreparations />
-                </div>
-              </div>
-            </section>
-          </>
+              </section>
+            </TabsContent>
+          </Tabs>
         )}
       </div>
       <BookRestoreDialog

@@ -29,12 +29,22 @@ describe('área logada', () => {
   it('recolhe e reabre a navegação sem remover o conteúdo e conserva o foco', async () => {
     setup();
     await userEvent.click(screen.getAllByRole('button', { name: 'Recolher navegação' })[0]!);
-    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+    expect(screen.getByRole('navigation')).toBeVisible();
+    expect(screen.getByRole('complementary')).toHaveAttribute('data-collapsed', 'true');
     expect(screen.getByRole('heading', { name: 'Meus projetos' })).toBeVisible();
-    const trigger = screen.getAllByRole('button', { name: 'Abrir navegação' })[0]!;
+    const trigger = screen.getByRole('button', { name: 'Expandir navegação' });
     expect(trigger).toHaveFocus();
     await userEvent.keyboard('{Enter}');
     expect(screen.getByRole('navigation')).toBeVisible();
+    expect(screen.getByRole('complementary')).toHaveAttribute('data-collapsed', 'false');
     expect(screen.getByRole('button', { name: 'Conta' })).toBeVisible();
+  });
+
+  it('navega pelos ícones sem expandir a lateral', async () => {
+    setup();
+    await userEvent.click(screen.getByRole('button', { name: 'Recolher navegação' }));
+    await userEvent.click(screen.getByRole('link', { name: 'Universos' }));
+    expect(screen.getByRole('heading', { name: 'Meus universos' })).toBeVisible();
+    expect(screen.getByRole('complementary')).toHaveAttribute('data-collapsed', 'true');
   });
 });

@@ -9,6 +9,102 @@ import {
 import { chooseDropdown } from '../dropdown';
 import { author, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
 
+test('resumo da persona separa instruções e atributos e acompanha o rascunho', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/settings/ai');
+  await page.getByRole('button', { name: 'Ver detalhes de O Irônico' }).click();
+  await page.getByRole('button', { name: 'Abrir detalhes', exact: true }).click();
+  await page.getByRole('button', { name: 'Personalizar O Irônico' }).click();
+  await page
+    .getByLabel('Instruções permanentes')
+    .fill(
+      'Escreva com perspicácia, espírito e provocação leve.\n\n' +
+        'Prefira observações afiadas e diálogos vivos, sem interromper a cena.',
+    );
+  await page.getByRole('slider', { name: 'Sensorialidade', exact: true }).press('Home');
+  await page.getByRole('button', { name: /Criar slider personalizado/ }).click();
+  const customName = 'Formalidade nos diálogos entre personagens de diferentes origens';
+  await page.getByLabel('Nome do atributo').fill(customName);
+  await page.getByLabel('Significado do atributo').fill('Forma de tratamento nos diálogos.');
+  await page
+    .getByLabel('Significado de 0', { exact: true })
+    .fill('Tratamento coloquial e espontâneo');
+  await page
+    .getByLabel('Significado de 100', { exact: true })
+    .fill('Tratamento cerimonial e elaborado');
+  await page.getByRole('button', { name: 'Adicionar atributo', exact: true }).click();
+  await page.getByRole('slider', { name: customName, exact: true }).press('End');
+  const toggle = page.getByRole('button', { name: /^Resumo das orientações/ });
+  await toggle.focus();
+  await toggle.press('Enter');
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+  const summary = page.getByRole('region', { name: 'Atributos do resumo' });
+  await expect(summary.getByRole('term')).toHaveCount(9);
+  await expect(
+    summary.getByRole('progressbar', { name: 'Resumo de Sensorialidade' }),
+  ).toHaveAttribute('value', '0');
+  await expect(
+    summary.getByRole('progressbar', { name: `Resumo de ${customName}` }),
+  ).toHaveAttribute('value', '100');
+  const first = await summary.getByRole('term').nth(0).boundingBox();
+  const second = await summary.getByRole('term').nth(1).boundingBox();
+  expect(Math.abs(first!.y - second!.y)).toBeLessThanOrEqual(1);
+  expect(second!.x).toBeGreaterThan(first!.x);
+  await toggle.evaluate((element) => element.scrollIntoView({ block: 'start' }));
+  await capture(page, testInfo, 'persona-resumo-orientacoes');
+  await summary.getByRole('term').last().scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button', { name: 'Salvar persona', exact: true })).toBeInViewport();
+  await capture(page, testInfo, 'persona-resumo-atributo-proprio');
+  await page.setViewportSize({ width: 1100, height: 720 });
+  await expectDialogWithinViewport(page);
+  await expectNoHorizontalOverflow(page, 'Resumo da persona');
+  await toggle.focus();
+  await toggle.press('Space');
+  await expect(summary).toBeHidden();
+  await toggle.press('Enter');
+  await expect(
+    summary.getByRole('progressbar', { name: `Resumo de ${customName}` }),
+  ).toHaveAttribute('value', '100');
+});
+
+test('painel lateral mostra todos os atributos e mantém as ações acessíveis ao rolar', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/settings/ai');
+  await page.getByRole('button', { name: 'Ver detalhes de O Atmosférico' }).click();
+  const panel = page.getByRole('complementary', { name: 'Detalhes de O Atmosférico' });
+  const traits = panel.getByRole('list', { name: 'Atributos da persona' });
+  const names = [
+    'Sensorialidade',
+    'Concisão',
+    'Introspecção',
+    'Humor e ironia',
+    'Solenidade',
+    'Tensão',
+    'Ambiguidade',
+    'Ritmo narrativo',
+  ];
+  await expect(traits.getByRole('listitem')).toHaveCount(8);
+  for (const name of names) {
+    await expect(
+      traits.getByRole('progressbar', { name: `O Atmosférico: ${name}`, exact: true }),
+    ).toBeAttached();
+  }
+  await panel.scrollIntoViewIfNeeded();
+  await capture(page, testInfo, 'persona-painel-todos-atributos');
+  await page.setViewportSize({ width: 1100, height: 620 });
+  const last = traits.getByRole('progressbar', { name: 'O Atmosférico: Ritmo narrativo' });
+  await last.scrollIntoViewIfNeeded();
+  await expect(last).toBeInViewport();
+  const open = panel.getByRole('button', { name: 'Abrir detalhes' });
+  await expect(open).toBeInViewport();
+  await expectNoHorizontalOverflow(page, 'painel de atributos');
+  await capture(page, testInfo, 'persona-painel-janela-baixa');
+  await open.click();
+  await expect(page.getByRole('dialog')).toContainText('Mapa de personalidade');
+});
+
 test('personaliza uma persona com slider próprio e preserva formulário e ações em 320 px', async ({
   page,
 }, testInfo) => {

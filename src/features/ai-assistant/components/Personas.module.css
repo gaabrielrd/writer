@@ -182,10 +182,74 @@
 .actions button {
   white-space: normal;
 }
-.summary {
-  white-space: pre-wrap;
+.summaryDirection,
+.summaryAttributes {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
   overflow-wrap: anywhere;
   font-size: var(--text-sm);
+}
+.summaryDirection h4,
+.summaryHeading h4 {
+  font-weight: 600;
+}
+.summaryDirection p {
+  max-width: 75ch;
+  white-space: pre-wrap;
+  line-height: var(--leading-normal);
+}
+.summaryEmpty,
+.summaryHeading > span {
+  color: hsl(var(--muted-foreground));
+}
+.summaryHeading,
+.summaryTrait dt {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.summaryHeading > span {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+}
+.summaryTraits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4) var(--space-6);
+  margin: 0;
+}
+.summaryTrait {
+  display: grid;
+  align-content: start;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-top: var(--space-3);
+  border-top: 1px solid hsl(var(--border));
+}
+.summaryTrait dt {
+  font-weight: 500;
+}
+.summaryTrait strong {
+  flex-shrink: 0;
+  font-size: var(--text-lg);
+  font-variant-numeric: tabular-nums;
+}
+.summaryTrait small {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-xs);
+  font-weight: 400;
+}
+.summaryTrait dd {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .summaryTraits {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .stack summary {
   cursor: pointer;
@@ -502,17 +566,16 @@
 }
 .inspectorTraits li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px 2.5ch;
+  grid-template-columns: minmax(0, 1fr) 96px 3ch;
   align-items: center;
   gap: var(--space-2);
   font-size: var(--text-sm);
 }
 .inspectorTraits span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
-.inspectorTraits progress {
+.inspectorTraits progress,
+.summaryTrait progress {
   width: 100%;
   height: 6px;
   accent-color: hsl(var(--primary));
@@ -521,20 +584,24 @@
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
-.inspectorTraits progress {
+.inspectorTraits progress,
+.summaryTrait progress {
   appearance: none;
   overflow: hidden;
   border: 0;
   border-radius: var(--radius-full);
   background: hsl(var(--muted));
 }
-.inspectorTraits progress::-webkit-progress-bar {
+.inspectorTraits progress::-webkit-progress-bar,
+.summaryTrait progress::-webkit-progress-bar {
   background: hsl(var(--muted));
 }
-.inspectorTraits progress::-webkit-progress-value {
+.inspectorTraits progress::-webkit-progress-value,
+.summaryTrait progress::-webkit-progress-value {
   background: hsl(var(--primary));
 }
-.inspectorTraits progress::-moz-progress-bar {
+.inspectorTraits progress::-moz-progress-bar,
+.summaryTrait progress::-moz-progress-bar {
   background: hsl(var(--primary));
 }
 

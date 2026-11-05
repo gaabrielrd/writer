@@ -6,7 +6,7 @@ import { AuthButton, CreditsBadge, useAuth } from '@/features/auth';
 import { BookNavigation } from '@/features/books';
 import { useAISettings } from '@/features/ai-assistant';
 import { CustomThemeSelector } from '@/features/custom-themes';
-import { Button, Card, Dialog, useWorkspaceLayout } from '@/shared/ui';
+import { Button, Card, Dialog, Tooltip, useWorkspaceLayout } from '@/shared/ui';
 import { StudioNavigation } from './StudioNavigation';
 import { workspaceLabel, workspaceSectionLabel } from './workspaceNavigation';
 import styles from './AuthenticatedWorkspace.module.css';
@@ -32,25 +32,24 @@ export function AuthenticatedWorkspace() {
     return () => desktop.removeEventListener('change', closeOnDesktop);
   }, []);
   const mobileTrigger = useRef<HTMLButtonElement>(null);
-  const desktopTrigger = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (collapsed) desktopTrigger.current?.focus();
-  }, [collapsed]);
-  const sidebarVisible = !collapsed && !expanded;
+  const sidebarVisible = !expanded;
   const closeDrawer = () => setDrawerPath(null);
 
-  const navigation = (
+  const navigation = (compact = false) => (
     <>
-      <StudioNavigation onNavigate={closeDrawer} />
+      <StudioNavigation compact={compact} onNavigate={closeDrawer} />
       <Card tone="flat" className={styles.sidebarFooter}>
-        <div className={styles.account}>
-          <AuthButton
-            onOpenAISettings={() => {
-              closeDrawer();
-              openAISettings();
-            }}
-          />
-        </div>
+        <Tooltip content={user?.displayName || user?.email || 'Sua conta'} side="right">
+          <div className={styles.account}>
+            <AuthButton
+              compact={compact}
+              onOpenAISettings={() => {
+                closeDrawer();
+                openAISettings();
+              }}
+            />
+          </div>
+        </Tooltip>
       </Card>
     </>
   );
@@ -69,45 +68,38 @@ export function AuthenticatedWorkspace() {
         id="writer-sidebar"
         className={styles.sidebar}
         hidden={!sidebarVisible}
+        data-collapsed={collapsed}
         aria-label="Barra lateral do Writer"
         data-writer-tour="navigation"
       >
         <div className={styles.sidebarHeader}>
-          <Link to="/studio" className={styles.brand} aria-label="Writer Assistant Início">
-            <Feather className="icon icon-sm" aria-hidden="true" />
-            <span>Writer</span>
-          </Link>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Recolher navegação"
-            aria-controls="writer-sidebar"
-            aria-expanded={sidebarVisible}
-            onClick={() => {
-              setCollapsed(true);
-            }}
-          >
-            <PanelLeftClose className="icon icon-sm" aria-hidden="true" />
-          </Button>
+          <Tooltip content="Writer" side="right">
+            <Link to="/studio" className={styles.brand} aria-label="Writer Assistant Início">
+              <Feather className="icon icon-sm" aria-hidden="true" />
+              <span>Writer</span>
+            </Link>
+          </Tooltip>
+          <Tooltip content={collapsed ? 'Expandir navegação' : 'Recolher navegação'} side="right">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={collapsed ? 'Expandir navegação' : 'Recolher navegação'}
+              aria-controls="writer-sidebar"
+              aria-expanded={!collapsed}
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              {collapsed ? (
+                <PanelLeftOpen className="icon icon-sm" aria-hidden="true" />
+              ) : (
+                <PanelLeftClose className="icon icon-sm" aria-hidden="true" />
+              )}
+            </Button>
+          </Tooltip>
         </div>
-        {navigation}
+        {navigation(collapsed)}
       </aside>
       <div className={styles.workArea}>
         <header className={styles.toolbar}>
-          <Button
-            ref={desktopTrigger}
-            variant="ghost"
-            size="icon"
-            className={styles.desktopToggle}
-            hidden={sidebarVisible}
-            aria-label="Abrir navegação"
-            aria-expanded={sidebarVisible}
-            aria-controls="writer-sidebar"
-            disabled={expanded}
-            onClick={() => setCollapsed(!collapsed)}
-          >
-            <PanelLeftOpen className="icon icon-sm" aria-hidden="true" />
-          </Button>
           <Button
             ref={mobileTrigger}
             data-writer-tour="navigation"
@@ -155,7 +147,7 @@ export function AuthenticatedWorkspace() {
         }}
       >
         <div id="writer-mobile-navigation" data-writer-navigation className={styles.drawerBody}>
-          {navigation}
+          {navigation()}
         </div>
       </Dialog>
     </div>

@@ -2,7 +2,15 @@ import { useState, type ReactNode } from 'react';
 import * as Primitive from '@radix-ui/react-tooltip';
 import styles from './Floating.module.css';
 
-export function Tooltip({ children, content }: { children: ReactNode; content: string }) {
+export function Tooltip({
+  children,
+  content,
+  side = 'top',
+}: {
+  children: ReactNode;
+  content: string;
+  side?: 'top' | 'right' | 'bottom' | 'left';
+}) {
   const [open, setOpen] = useState(false);
   return (
     <Primitive.Provider delayDuration={200}>
@@ -11,7 +19,12 @@ export function Tooltip({ children, content }: { children: ReactNode; content: s
           {children}
         </Primitive.Trigger>
         <Primitive.Portal>
-          <Primitive.Content sideOffset={8} collisionPadding={12} className={styles.tooltip}>
+          <Primitive.Content
+            side={side}
+            sideOffset={8}
+            collisionPadding={12}
+            className={styles.tooltip}
+          >
             {content}
           </Primitive.Content>
         </Primitive.Portal>

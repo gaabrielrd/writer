@@ -12,7 +12,9 @@ export function WorkPreferencesPage() {
   if (!user) return <Navigate to="/login" replace />;
   return (
     <section className={styles.preferencesPage} aria-label="Preferências">
-      <OnboardingPreferences />
+      <div className={styles.preferencesProfile}>
+        <OnboardingPreferences />
+      </div>
       <Card className={styles.preferencesCard}>
         <h2>Área de trabalho</h2>
         <p className={styles.hint}>

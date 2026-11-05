@@ -21,7 +21,7 @@
   height: 100dvh;
   min-width: 0;
   overflow: hidden;
-  background: hsl(var(--background));
+  background: hsl(var(--card));
   color: hsl(var(--foreground));
   font-size: var(--text-sm);
 }
@@ -33,12 +33,44 @@
   gap: var(--space-3);
   padding: var(--space-3);
   overflow: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
-  border-right: 1px solid hsl(var(--border));
   background: hsl(var(--card));
+  transition:
+    width var(--transition-fast),
+    flex-basis var(--transition-fast),
+    padding var(--transition-fast);
 }
 .sidebar[hidden] {
   display: none;
+}
+.sidebar[data-collapsed='true'] {
+  width: 64px;
+  flex-basis: 64px;
+  padding: var(--space-2);
+}
+.sidebar[data-collapsed='true'] .sidebarHeader {
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-1);
+  margin: 0 calc(-1 * var(--space-2));
+  padding-inline: var(--space-2);
+}
+.sidebar[data-collapsed='true'] .brand {
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+.sidebar[data-collapsed='true'] .brand span {
+  display: none;
+}
+.sidebar[data-collapsed='true'] .sidebarFooter {
+  padding: 0;
+}
+.sidebar[data-collapsed='true'] .account button {
+  justify-content: center;
+  min-height: 40px;
+  padding-inline: 0;
 }
 .sidebarHeader,
 .toolbar {
@@ -51,7 +83,7 @@
   justify-content: space-between;
   gap: var(--space-2);
   min-height: 48px;
-  margin: calc(-1 * var(--space-3)) calc(-1 * var(--space-3)) 0;
+  margin: calc(var(--space-2) - var(--space-3)) calc(-1 * var(--space-3)) 0;
   padding: var(--space-1) var(--space-3);
 }
 .brand {
@@ -63,6 +95,8 @@
   font-weight: 600;
   color: inherit;
   text-decoration: none;
+  white-space: nowrap;
+  transform: translateY(var(--space-1));
 }
 .sidebarFooter {
   margin-top: auto;
@@ -109,6 +143,12 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  min-height: 0;
+  margin: var(--space-2) var(--space-2) var(--space-2) 0;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  background: hsl(var(--background));
 }
 .toolbar {
   display: flex;
@@ -193,7 +233,6 @@
 .shell :global(button:not([role='tab'])) {
   border-radius: var(--radius-sm);
 }
-.desktopToggle[hidden],
 .mobileToggle {
   display: none;
 }
@@ -245,8 +284,7 @@
   gap: var(--space-4);
 }
 @media (max-width: 760px) {
-  .sidebar,
-  .desktopToggle {
+  .sidebar {
     display: none;
   }
   .mobileToggle {
@@ -264,6 +302,9 @@
   .sidebarHeader button,
   .sidebarFooter button {
     min-width: 44px;
+    min-height: 44px;
+  }
+  .sidebar[data-collapsed='true'] .account button {
     min-height: 44px;
   }
 }
@@ -285,6 +326,17 @@
 }
 .shell[data-workspace-expanded='true'] {
   --workspace-content-max: 100%;
+}
+.shell[data-workspace-expanded='true'] .workArea {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar {
+    transition: none;
+  }
 }
 
 @media (max-width: 520px) {

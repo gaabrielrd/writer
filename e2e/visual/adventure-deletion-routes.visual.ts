@@ -60,7 +60,7 @@ test('página revoga original, pausa no Estúdio e mantém consulta pela URL ant
   await expect(page).toHaveURL(/\/studio$/);
   await otherProjects(page);
   await expect(page.getByRole('link', { name: new RegExp(title) })).toHaveCount(0);
-  await page.goto('/studio/operations');
+  await page.goto('/studio/operations?tab=deletions');
   await catalog(page).click();
   await expect(page.getByRole('button', { name: 'Continuar limpeza' })).toBeEnabled();
   expect((await inspect(page)).calls.filter((c) => c.method === 'advance')).toHaveLength(1);
@@ -94,7 +94,7 @@ test('cartão inicia, reload conserva pedido e catálogo confirma exatamente a u
   await expect(section.getByRole('link', { name: new RegExp(title) })).toHaveCount(0);
   const before = (await inspect(page)).calls.find((c) => c.method === 'advance')!;
   await page.reload();
-  await page.goto('/studio/operations');
+  await page.goto('/studio/operations?tab=deletions');
   await catalog(page).click();
   await expect(page.getByRole('button', { name: 'Confirmar pedido e continuar' })).toBeEnabled();
   expect((await inspect(page)).calls.filter((c) => c.method === 'advance')).toHaveLength(1);
@@ -115,7 +115,7 @@ test('troca de conta esconde o catálogo anterior e retorno consulta sem repetir
   await page.getByRole('button', { name: 'Excluir aventura definitivamente' }).click();
   await expect(page.getByRole('heading', { name: 'Aventura excluída' })).toBeVisible();
   await page.keyboard.press('Escape');
-  await page.goto('/studio/operations');
+  await page.goto('/studio/operations?tab=deletions');
   await expect(catalog(page)).toBeVisible();
   const count = (await inspect(page)).calls.length;
   await page.evaluate(() => {
@@ -130,7 +130,7 @@ test('troca de conta esconde o catálogo anterior e retorno consulta sem repetir
     sessionStorage.removeItem('writer.visual.account');
     window.dispatchEvent(new Event('writer.visual.auth-change'));
   });
-  await page.goto('/studio/operations');
+  await page.goto('/studio/operations?tab=deletions');
   await catalog(page).click();
   await expect(page.getByRole('heading', { name: 'Aventura excluída' })).toBeVisible();
   expect((await inspect(page)).calls).toHaveLength(count);

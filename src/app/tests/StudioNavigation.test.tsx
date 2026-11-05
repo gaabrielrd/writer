@@ -5,12 +5,51 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { StudioNavigation } from '../components/StudioNavigation';
 
 const auth: { user: { uid: string } | null } = vi.hoisted(() => ({ user: { uid: 'author' } }));
+const profile = vi.hoisted(() => ({ interests: [] as ('book' | 'adventure' | 'campaign')[] }));
 vi.mock('@/features/auth', () => ({ useAuth: () => auth }));
+vi.mock('@/features/onboarding', async (original) => ({
+  ...(await original<object>()),
+  useOnboarding: () => ({ profile }),
+}));
 beforeEach(() => {
   auth.user = { uid: 'author' };
+  profile.interests = [];
 });
 
 describe('espaços do Writer', () => {
+  it.each([false, true])('mostra ícones nos destaques do perfil (compacto: %s)', (compact) => {
+    profile.interests = ['book', 'adventure', 'campaign'];
+    render(
+      <MemoryRouter initialEntries={['/studio']}>
+        <StudioNavigation compact={compact} />
+      </MemoryRouter>,
+    );
+    for (const [name, kind] of [
+      ['Livros', 'book'],
+      ['Aventuras', 'adventure'],
+      ['Campanhas', 'campaign'],
+    ]) {
+      const link = screen.getByRole('link', { name });
+      expect(link).toHaveAttribute('href', `/studio/projects?kind=${kind}`);
+      expect(link.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    }
+  });
+
+  it('identifica os ícones por tooltip e conserva navegação e ferramentas', async () => {
+    const user = userEvent.setup({ delay: null });
+    render(
+      <MemoryRouter initialEntries={['/studio']}>
+        <StudioNavigation compact />
+      </MemoryRouter>,
+    );
+    const universes = screen.getByRole('link', { name: 'Universos' });
+    await user.hover(universes);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Universos');
+    await user.unhover(universes);
+    await user.click(screen.getByRole('button', { name: 'Todas as ferramentas' }));
+    expect(screen.getByRole('link', { name: 'Catálogo' })).toBeVisible();
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+  });
   it('oferece links diretos e conserva os cinco espaços, imagens e configurações', async () => {
     render(
       <MemoryRouter initialEntries={['/studio']}>

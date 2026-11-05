@@ -319,26 +319,23 @@ function PersonaManagerSession({
                   <PersonaAvatar persona={inspected} />
                   <p>{inspected.description}</p>
                 </div>
-                <ul className={styles.inspectorTraits} aria-label="Traços principais">
-                  {[...inspected.traits]
-                    .sort((a, b) => Math.abs(b.value - 50) - Math.abs(a.value - 50))
-                    .slice(0, 3)
-                    .map((trait) => (
-                      <li key={trait.id}>
-                        <span>{trait.name}</span>
-                        <progress
-                          max={100}
-                          value={trait.value}
-                          aria-label={`${inspected.name}: ${trait.name}`}
-                        />
-                        <strong>{trait.value}</strong>
-                      </li>
-                    ))}
+                <ul className={styles.inspectorTraits} aria-label="Atributos da persona">
+                  {inspected.traits.map((trait) => (
+                    <li key={trait.id}>
+                      <span>{trait.name}</span>
+                      <progress
+                        max={100}
+                        value={trait.value}
+                        aria-label={`${inspected.name}: ${trait.name}`}
+                      />
+                      <strong>{trait.value}</strong>
+                    </li>
+                  ))}
                 </ul>
               </Inspector>
             ) : (
               <InspectorEmpty>
-                Escolha uma persona para ver a voz e os traços principais.
+                Escolha uma persona para ver a voz e todos os atributos.
               </InspectorEmpty>
             )
           ) : undefined
@@ -706,15 +703,52 @@ function PersonaManagerSession({
                   Criar slider personalizado ({draft.traits.length - 8}/8)
                 </Button>
               )}
-              <details className={styles.summary}>
-                <summary>Resumo das orientações</summary>
-                <p>{draft.instructions}</p>
-                {draft.traits.map((trait) => (
-                  <p key={trait.id}>
-                    {trait.name}: {trait.value}/100 · 0: {trait.low} · 100: {trait.high}
+              <FormSection
+                title="Resumo das orientações"
+                description="Confira as instruções e intensidades antes de salvar."
+              >
+                <section
+                  className={styles.summaryDirection}
+                  aria-label="Direção de escrita do resumo"
+                >
+                  <h4>Direção de escrita</h4>
+                  <p className={!draft.instructions.trim() ? styles.summaryEmpty : undefined}>
+                    {draft.instructions.trim()
+                      ? draft.instructions
+                      : 'Nenhuma instrução permanente definida.'}
                   </p>
-                ))}
-              </details>
+                </section>
+                <section className={styles.summaryAttributes} aria-label="Atributos do resumo">
+                  <div className={styles.summaryHeading}>
+                    <h4>Atributos</h4>
+                    <span>{draft.traits.length} atributos</span>
+                  </div>
+                  <dl className={styles.summaryTraits}>
+                    {draft.traits.map((trait) => (
+                      <div key={trait.id} className={styles.summaryTrait}>
+                        <dt>
+                          <span>{trait.name}</span>
+                          <strong>
+                            {trait.value}
+                            <small>/100</small>
+                          </strong>
+                        </dt>
+                        <dd>
+                          <progress
+                            max={100}
+                            value={trait.value}
+                            aria-label={`Resumo de ${trait.name}`}
+                          />
+                          <div className={styles.traitScale}>
+                            <span>0 · {trait.low}</span>
+                            <span>100 · {trait.high}</span>
+                          </div>
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              </FormSection>
             </fieldset>
           </form>
         ) : selected ? (

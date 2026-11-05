@@ -287,7 +287,7 @@ beforeEach(() => {
 it('atualização continua descobrível no Estúdio mesmo sem root de campanha listado', async () => {
   adoptions.visible = true;
   vi.mocked(listCampaigns).mockResolvedValue({ items: [], nextCursor: null });
-  render(tree('operations'));
+  render(tree('operations?tab=campaigns'));
   expect(
     await screen.findByRole('region', { name: 'Atualizações sem campanha' }),
   ).toHaveTextContent('Retomar atualização própria');
@@ -295,14 +295,14 @@ it('atualização continua descobrível no Estúdio mesmo sem root de campanha l
 it('candidatas continuam acessíveis mesmo sem campanha listada', async () => {
   comparisons.visible = true;
   vi.mocked(listCampaigns).mockResolvedValue({ items: [], nextCursor: null });
-  render(tree('operations'));
+  render(tree('operations?tab=campaigns'));
   expect(await screen.findByRole('region', { name: 'Candidatas sem campanha' })).toHaveTextContent(
     'Retomar comparação privada',
   );
 });
 it('preparações permanecem acessíveis sem aventura listada e abrem a campanha confirmada', async () => {
   captures.visible = true;
-  render(tree('operations'));
+  render(tree('operations?tab=campaigns'));
   expect(
     await screen.findByRole('region', { name: 'Campanhas em preparação' }),
   ).toBeInTheDocument();
@@ -312,6 +312,38 @@ it('preparações permanecem acessíveis sem aventura listada e abrem a campanha
   );
   expect(await screen.findByRole('heading', { name: 'Campanha aberta' })).toBeInTheDocument();
 });
+it.each(['operations', 'operations?tab=invalid'])(
+  'separa operações em abas e preserva painéis montados ao alternar (%s)',
+  async (route) => {
+    restore.visible = true;
+    comparisons.visible = true;
+    render(tree(route));
+    const user = userEvent.setup({ delay: null });
+    const tabs = within(screen.getByRole('tablist', { name: 'Operações em andamento' }));
+    const imports = tabs.getByRole('tab', { name: 'Importações e restaurações' });
+    const campaigns = tabs.getByRole('tab', { name: 'Campanhas' });
+    const deletions = tabs.getByRole('tab', { name: 'Exclusões' });
+    expect(imports).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getAllByRole('tabpanel')).toHaveLength(1);
+    const resume = screen.getByRole('button', { name: 'Retomar restauração' });
+    await user.click(campaigns);
+    expect(screen.getByRole('region', { name: 'Candidatas sem campanha' })).toBeVisible();
+    expect(resume).toBeInTheDocument();
+    expect(resume).not.toBeVisible();
+    await user.click(deletions);
+    expect(screen.getByRole('region', { name: 'Exclusões em andamento' })).toBeVisible();
+    expect(
+      screen.queryByRole('region', { name: 'Operações de campanhas' }),
+    ).not.toBeInTheDocument();
+    await user.click(imports);
+    expect(screen.getByRole('button', { name: 'Retomar restauração' })).toBe(resume);
+    await user.click(resume);
+    expect(screen.getByRole('region', { name: 'Backup no Estúdio' })).toHaveTextContent(
+      'Preparação existente',
+    );
+  },
+);
+
 function tree(section = 'projects') {
   return (
     <MemoryRouter initialEntries={[section === 'home' ? '/studio' : '/studio/' + section]}>
@@ -592,7 +624,7 @@ vi.mock('@/features/work-progress', async (original) => ({
 it('Estúdio abre revisão com envelope observado da candidata e fecha sem criar campanha ou repetir captura', async () => {
   comparisons.visible = true;
   vi.mocked(listCampaigns).mockResolvedValue({ items: [], nextCursor: null });
-  render(tree('operations'));
+  render(tree('operations?tab=campaigns'));
   await userEvent.click(
     await screen.findByRole('button', { name: 'Revisar candidata observada no Estúdio' }),
   );

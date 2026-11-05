@@ -586,6 +586,15 @@ Essa opção oculta título, valor e escala visuais, preservando nome acessível
 valor e descrição dos extremos no input. O padrão dos demais sliders não muda.
 
 Tema e saldo de créditos ficam à direita na barra contextual da área logada.
+No desktop, a lateral alterna entre 240 px e uma faixa de 64 px com ícones,
+tooltips à direita e nomes acessíveis. O símbolo do Writer permanece e se
+alinha verticalmente ao centro da barra principal nos dois estados. Os atalhos
+do perfil usam BookOpen, ScrollText e Dices para Livros, Aventuras e Campanhas.
+O menu da conta mantém avatar, nome acessível e os bloqueios existentes.
+A troca de largura usa `--transition-fast`, sem animação em movimento reduzido.
+A área principal tem recuo de 8 px no topo, à direita e embaixo, borda semântica
+e raio pequeno; o modo expandido do editor conserva a área integral.
+
 Em telas estreitas, esses controles passam para uma segunda linha alinhada
 à direita. A lateral mantém apenas o perfil no rodapé. Seu menu oferece
 Preferências, Inteligência artificial e Sair, com ícones e os bloqueios
