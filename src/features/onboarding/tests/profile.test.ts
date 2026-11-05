@@ -7,7 +7,7 @@ describe('writer creation profile', () => {
     expect(profileLabel(profile)).toBe('Campanhas');
     profile.interests.push('book');
     expect(defaultProfile.interests).toEqual(['book', 'adventure', 'campaign']);
-    expect(profileLabel(parseProfile(valid()))).toBe('Livros e Aventuras e Campanhas');
+    expect(profileLabel(parseProfile(valid()))).toBe('Livros, aventuras e campanhas');
   });
   it.each([
     { interests: [] },

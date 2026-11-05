@@ -385,3 +385,15 @@
     min-height: 44px;
   }
 }
+/* Preparation panels render nothing when idle; say so instead of a bare heading. */
+.operationPanels:not(:has(> div > *))::after {
+  content: 'Nada pendente no momento.';
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+}
+.operationPanels > div:empty {
+  display: none;
+}
+.operationPanels:not(:has(> div > *))::after {
+  grid-column: 1 / -1;
+}

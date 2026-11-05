@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { FileQuestion } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export interface EmptyStateProps {
@@ -13,7 +13,7 @@ export interface EmptyStateProps {
 export function EmptyState({
   title,
   description,
-  icon = <FileQuestion className="icon h-12 w-12 text-[hsl(var(--muted-foreground))] opacity-60" />,
+  icon = <Inbox className="icon h-12 w-12 text-[hsl(var(--muted-foreground))] opacity-60" />,
   action,
   className = '',
 }: EmptyStateProps) {

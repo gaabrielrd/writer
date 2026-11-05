@@ -1,7 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
-import { BookOpen, Compass, Map, Sparkles, ArrowLeft, ArrowRight, CircleHelp } from 'lucide-react';
-import { Alert, Button, Card, Dialog, Dropdown } from '@/shared/ui';
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  CircleHelp,
+  Compass,
+  Map,
+  SlidersHorizontal,
+  Sparkles,
+} from 'lucide-react';
+import { Alert, Button, Card, Dialog, Dropdown, buttonVariants } from '@/shared/ui';
 import { useOnboarding } from '../context/onboardingContext';
 import {
   defaultProfile,
@@ -322,26 +331,34 @@ export function PersonalizedWelcome() {
             }[selected[0]!]
           : 'Um espaço para todas as suas histórias.'}
       </h2>
-      <p>{profileLabel(profile ?? null)}</p>
+      <p className={styles.hint}>{profileLabel(profile ?? null)}</p>
       <div className={styles.actions}>
-        <Link to={first}>
+        <Link to={first} className={buttonVariants({ variant: 'primary', size: 'sm' })}>
           <Sparkles className="icon icon-sm" aria-hidden="true" />
           {profile?.startingPoint === 'import' ? 'Trazer meu material' : 'Começar um projeto'}
         </Link>
-        <Link to="/studio/projects">Todos os projetos</Link>
-        <Button variant="ghost" onClick={() => state?.openQuestionnaire()}>
+        <Link to="/studio/projects" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+          Todos os projetos
+        </Link>
+        <Button variant="ghost" size="sm" onClick={() => state?.openQuestionnaire()}>
+          <SlidersHorizontal className="icon icon-sm" aria-hidden="true" />
           Personalizar meu espaço
         </Button>
       </div>
-      <div className={styles.choices}>
-        {selected.map((i) => (
-          <Link key={i} to={`/studio/projects?kind=${i}`}>
-            {interestLabels[i]}
-          </Link>
-        ))}
-      </div>
+      {selected.length > 1 && (
+        <nav className={styles.choices} aria-label="Ir direto para">
+          {selected.map((i) => (
+            <Link key={i} to={`/studio/projects?kind=${i}`}>
+              {interestLabels[i]}
+              <ArrowRight className="icon icon-sm" aria-hidden="true" />
+            </Link>
+          ))}
+        </nav>
+      )}
       {profile?.tour !== 'completed' && (
-        <Link to="/settings/preferences">Retomar ou conhecer o guia do Writer</Link>
+        <Link className={styles.guideLink} to="/settings/preferences">
+          Retomar ou conhecer o guia do Writer
+        </Link>
       )}
     </Card>
   );

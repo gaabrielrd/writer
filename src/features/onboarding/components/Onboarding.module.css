@@ -29,18 +29,28 @@
   flex-wrap: wrap;
   align-items: center;
 }
-.choices {
-  margin-top: 12px;
-}
-.actions a,
 .choices a {
   display: inline-flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+  padding: 6px 12px;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-full);
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+  text-decoration: none;
+}
+.choices a:hover {
+  color: hsl(var(--foreground));
+}
+.choices {
+  gap: 8px;
+}
+.guideLink {
+  justify-self: start;
   color: hsl(var(--primary));
-  text-decoration: underline;
+  font-size: 0.875rem;
   text-underline-offset: 4px;
-  padding-block: 8px;
 }
 .tour {
   position: fixed;

@@ -6,7 +6,6 @@ import {
   Badge,
   Card,
   Dialog,
-  EmptyState,
   ErrorState,
   Input,
   LoadingState,
@@ -212,10 +211,13 @@ function PersonaManagerSession({
         />
       )}
       {!modal && ownerId && !loading && !error && personas.length === 6 && (
-        <EmptyState
-          title="Você ainda não criou personas"
-          description="Explore um modelo abaixo e personalize para criar sua própria voz."
-        />
+        <p className={styles.personasNote}>
+          <strong>Você ainda não criou personas</strong>
+          <span>
+            Os modelos abaixo já estão prontos para usar. Abra um para duplicar e ajustar, ou crie o
+            seu com “Nova persona”.
+          </span>
+        </p>
       )}
       <InspectorLayout
         list={

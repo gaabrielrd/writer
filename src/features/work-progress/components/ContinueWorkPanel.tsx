@@ -90,8 +90,14 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
   const labels = { book: 'Livro', adventure: 'Aventura', campaign: 'Campanha' };
   return (
     <section className={styles.panel} aria-label="Continuar meu trabalho">
-      <header>
+      <header className={styles.panelHeader}>
         <h2>Continuar meu trabalho</h2>
+        {compact && (
+          <Link className={styles.headerLink} to="/studio/projects">
+            Ver todos os projetos
+            <ArrowRight className="icon icon-sm" aria-hidden="true" />
+          </Link>
+        )}
       </header>
       {!compact && (
         <Dropdown
@@ -110,12 +116,21 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
       {error && <Alert variant="warning">{error}</Alert>}
       {page.loading && !page.page && <LoadingState label="Carregando seus projetos recentes…" />}
       {page.error && !page.page && <ErrorState error={page.error} onRetry={page.retry} />}{' '}
-      {!page.loading && !page.error && page.items.length === 0 && !page.page?.nextCursor && (
-        <EmptyState
-          title="Nenhum trabalho recente"
-          description="Abra um livro, aventura ou campanha para poder continuar depois."
-        />
-      )}
+      {!page.loading &&
+        !page.error &&
+        page.items.length === 0 &&
+        !page.page?.nextCursor &&
+        (compact ? (
+          <p className={styles.emptyLine}>
+            <strong>Nenhum trabalho recente</strong>
+            <span>Abra um livro, aventura ou campanha e ele aparece aqui para você continuar.</span>
+          </p>
+        ) : (
+          <EmptyState
+            title="Nenhum trabalho recente"
+            description="Abra um livro, aventura ou campanha para poder continuar depois."
+          />
+        ))}
       <div className={styles.resumeGrid}>
         {(compact ? page.items.slice(0, 4) : page.items).map((item) => (
           <Card
@@ -174,7 +189,6 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
           {page.loading ? 'Carregando…' : 'Carregar mais projetos recentes'}
         </Button>
       )}
-      {compact && <Link to="/studio/projects">Ver todos os projetos</Link>}
     </section>
   );
 }

@@ -178,6 +178,12 @@ export function UniversePage() {
         />
       ) : !result.worlds.length ? (
         <EmptyState
+          icon={
+            <Globe
+              className="icon h-12 w-12 text-[hsl(var(--muted-foreground))] opacity-60"
+              aria-hidden="true"
+            />
+          }
           title="Nenhum universo cadastrado"
           description="Crie um universo para compartilhar personagens, locais e conceitos entre seus livros."
           action={<Button onClick={() => setForm({ key })}>Criar primeiro universo</Button>}

@@ -62,9 +62,13 @@ export function parseProfile(value: unknown): WriterProfile {
   return { ...p, interests: (p.interests as Interest[]).slice() } as WriterProfile;
 }
 export function profileLabel(profile: WriterProfile | null) {
-  return profile
-    ? profile.interests.map((i) => interestLabels[i]).join(' e ')
-    : 'Todas as formas de criar';
+  if (!profile) return 'Todas as formas de criar';
+  const labels = profile.interests.map((i, index) =>
+    index === 0 ? interestLabels[i] : interestLabels[i].toLocaleLowerCase('pt-BR'),
+  );
+  return labels.length > 1
+    ? `${labels.slice(0, -1).join(', ')} e ${labels.at(-1)}`
+    : (labels[0] ?? 'Todas as formas de criar');
 }
 export interface TourStep {
   title: string;

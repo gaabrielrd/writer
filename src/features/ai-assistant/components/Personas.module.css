@@ -537,3 +537,19 @@
 .inspectorTraits progress::-moz-progress-bar {
   background: hsl(var(--primary));
 }
+
+.personasNote {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed hsl(var(--border));
+  border-radius: var(--radius-md);
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+}
+.personasNote strong {
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
