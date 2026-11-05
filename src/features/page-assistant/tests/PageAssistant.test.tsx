@@ -25,6 +25,9 @@ function tree() {
     >
       <main id="main-content">
         <Link to="/books/project-id/editor/chapter-id">Abrir editor</Link>
+        <Link to="/studio/projects">Abrir projetos</Link>
+        <Link to="/books/other-project">Abrir outro livro</Link>
+        <Link to="/books/project-id">Voltar ao livro</Link>
       </main>
       <PageAssistant />
     </MemoryRouter>
@@ -169,6 +172,26 @@ it('keeps a question draft while navigating and labels its original context', as
   expect(screen.getByLabelText('Pedido ao assistente da página')).toHaveValue(
     'Minha pergunta ainda não enviada',
   );
+  expect(mocks.ask).not.toHaveBeenCalled();
+});
+
+it('keeps the conversation open and its draft visible across areas and projects without moving focus', async () => {
+  render(tree());
+  const field = screen.getByLabelText('Pedido ao assistente da página');
+  await userEvent.type(field, 'Minha pergunta ainda não enviada');
+  for (const name of ['Abrir projetos', 'Abrir outro livro', 'Voltar ao livro']) {
+    const link = screen.getByRole('link', { name });
+    await userEvent.click(link);
+    expect(screen.getByRole('complementary', { name: 'Assistente da página' })).toHaveAttribute(
+      'data-mode',
+      'expanded',
+    );
+    expect(field).toBeVisible();
+    expect(field).toHaveValue('Minha pergunta ainda não enviada');
+    expect(link).toHaveFocus();
+  }
+  expect(mocks.inspect).toHaveBeenCalledWith(null);
+  expect(mocks.inspect).toHaveBeenCalledWith({ kind: 'book', id: 'other-project' });
   expect(mocks.ask).not.toHaveBeenCalled();
 });
 

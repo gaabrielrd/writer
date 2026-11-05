@@ -262,14 +262,20 @@ it('arrives minimized as a pill, opens compact and shows the context as a label'
   expect(dock).toHaveAttribute('data-mode', 'minimized');
   expect(saved()).toEqual({ mode: 'expanded', x: 0.2, y: 0.3 });
 });
-it('minimizes again when the assisted project changes but not inside the same project', async () => {
-  const view = render(tree());
-  const dock = screen.getByRole('complementary');
-  await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
-  expect(dock).toHaveAttribute('data-mode', 'compact');
-  view.rerender(tree(false, false, 'book:atlas'));
-  expect(dock).toHaveAttribute('data-mode', 'compact');
-  view.rerender(tree(false, false, '/studio/projects'));
-  expect(dock).toHaveAttribute('data-mode', 'minimized');
-  expect(screen.getByLabelText('Pergunta do dock')).toHaveValue('Minha pergunta');
-});
+it.each(['minimized', 'compact', 'expanded'])(
+  'preserves the chosen %s mode across areas, projects and return navigation',
+  async (mode) => {
+    const view = render(tree());
+    const dock = screen.getByRole('complementary');
+    if (mode !== 'minimized')
+      await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
+    if (mode === 'expanded')
+      await userEvent.click(screen.getByRole('button', { name: 'Expandir conversa' }));
+    for (const scope of ['book:atlas', '/studio/projects', 'book:other', 'book:atlas']) {
+      view.rerender(tree(false, false, scope));
+      expect(dock).toHaveAttribute('data-mode', mode);
+      expect(screen.getByLabelText('Pergunta do dock')).toHaveValue('Minha pergunta');
+      if (mode !== 'minimized') expect(screen.getByLabelText('Pergunta do dock')).toBeVisible();
+    }
+  },
+);

@@ -30,8 +30,8 @@ export function AssistantDock({
 }: {
   context: string;
   /**
-   * Project or area being assisted. The dock minimizes again whenever it
-   * changes, but stays as it is while moving inside the same project.
+   * Project or area being assisted. Changes clear temporary writing overlap
+   * while preserving the user's chosen presentation mode.
    */
   scope?: string;
   initialOpen?: boolean;
@@ -53,10 +53,7 @@ export function AssistantDock({
   const [conceptionInDialog, setConceptionInDialog] = useState(false);
   if (observedScope !== scope) {
     setObservedScope(scope);
-    if (!initialOpen) {
-      setWriting(false);
-      setChosenMode('minimized');
-    }
+    setWriting(false);
   }
   const mode =
     writing || (dialog && bounds.width <= 760 && chosenMode === 'compact')
@@ -373,7 +370,6 @@ export function AssistantDock({
             Posição mantida apenas nesta sessão: armazenamento indisponível.
           </p>
         )}
-        <p className={`${styles.meta} ${styles.footerContext}`}>Contexto: {context}</p>
       </div>
     </aside>,
     dialog ?? document.body,

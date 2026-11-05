@@ -138,11 +138,6 @@
   font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
-.footerContext {
-  margin: 0;
-  padding: 0 2px;
-  font-size: 0.7rem;
-}
 /* Keep the modal focus scope while positioning the dock in viewport coordinates.
    A transformed dialog would otherwise become the fixed-position containing block. */
 :global([role='dialog']):has(> .dock.inDialog) {

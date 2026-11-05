@@ -135,9 +135,9 @@ Regras:
   páginas de objeto podem mostrar "Continuar de onde parou" e próximos passos no topo.
 
 O assistente da página continua flutuante e reposicionável, com a posição salva
-por conta. Ele chega minimizado como uma pílula "Assistente" e volta a minimizar
-ao trocar de projeto ou de área, mantendo o rascunho; dentro do mesmo projeto,
-conserva o estado. Aberto, o modo compacto mostra o contexto em um selo e um campo
+por conta. Ele chega minimizado como uma pílula "Assistente" e conserva o modo
+escolhido ao navegar entre páginas, projetos e áreas, mantendo o rascunho e
+atualizando o contexto sem mover o foco. Aberto, o modo compacto mostra o contexto em um selo e um campo
 sem rótulo visual, que cresce com o texto, envia por Enter (Shift+Enter quebra a
 linha) e tem o envio por ícone. Expandir mostra a conversa; só a criação com IA
 chega aberta, com a conversa de concepção.
@@ -617,7 +617,7 @@ caret recolhe temporariamente a barra sem mudar sua preferência salva. Conversa
 expandida rola separadamente do composer. Não criar uma segunda superfície
 flutuante para a concepção de projetos. Perfil e assistente seguem os três temas.
 
-O compositor mantém o contexto em texto discreto no rodapé. O campo usa um
+O assistente da página mostra o contexto somente no cabeçalho. O campo usa um
 placeholder contextual e nome acessível, sem rótulo visível repetido. Enviar é
 um botão de ícone no canto inferior direito do campo, com espaço reservado para
 não cobrir o texto e área ampliada em toque. A barra compacta tem até 420 px,

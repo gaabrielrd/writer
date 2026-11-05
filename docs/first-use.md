@@ -47,8 +47,9 @@ visitantes recebem um acesso ao login. Não consulta manuscritos privados a part
 da página pública. O conteúdo específico de capítulos/cenas continua nos chats
 nativos e em seus contratos de captura e aplicação.
 
-A barra nasce minimizada no centro inferior e volta a minimizar ao trocar de
-projeto ou área; dentro do mesmo projeto mantém o modo escolhido. A posição
+A barra nasce minimizada no centro inferior e mantém o modo escolhido
+(minimizado, compacto ou expandido) ao navegar entre páginas, áreas e projetos.
+A navegação atualiza o contexto sem fechar a conversa nem mover o foco. A posição
 normalizada é uma preferência local por UID, com fallback em memória. Alça aceita
 mouse/toque e setas; Shift amplia o passo. Escape cancela um arrasto ou recolhe a
 conversa. Restaurar posição retorna ao centro inferior. Resize e teclado virtual
