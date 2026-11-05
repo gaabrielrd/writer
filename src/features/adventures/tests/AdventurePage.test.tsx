@@ -167,7 +167,7 @@ it('abre narrativa contextual da aventura e alterna por teclado sem trocar o pro
   ).not.toBeInTheDocument();
   await userEvent.keyboard('{End}');
   expect(screen.getByRole('tab', { name: 'Compêndio' })).toHaveFocus();
-  expect(screen.getByRole('heading', { name: 'Lore da aventura' })).toBeVisible();
+  expect(await screen.findByRole('heading', { name: 'Lore da aventura' })).toBeVisible();
   await userEvent.keyboard('{ArrowLeft}');
   expect(screen.getByRole('tab', { name: 'Progresso' })).toHaveFocus();
   expect(

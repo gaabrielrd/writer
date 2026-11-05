@@ -41,7 +41,7 @@ test('compêndio compacto com lista, seleção e confirmação de ações', asyn
       })
       .toBeLessThan(1);
     const input = await page.getByRole('textbox', { name: 'Buscar no compêndio' }).boundingBox();
-    const categories = await page.getByRole('tab', { name: /Conceitos \/ Itens/ }).boundingBox();
+    const categories = await page.getByRole('button', { name: /Conceitos \/ Itens/ }).boundingBox();
     expect(input).not.toBeNull();
     expect(categories).not.toBeNull();
     if (input && categories)

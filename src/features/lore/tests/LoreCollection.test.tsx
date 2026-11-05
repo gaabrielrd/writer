@@ -103,7 +103,7 @@ describe('Compêndio em lista e ações em lote', () => {
     await user.clear(screen.getByRole('textbox', { name: 'Buscar no compêndio' }));
     expect(screen.getByRole('checkbox', { name: 'Selecionar Arthur' })).not.toBeChecked();
     await user.click(screen.getByRole('checkbox', { name: 'Selecionar Arthur' }));
-    await user.click(screen.getByRole('tab', { name: /Locais/ }));
+    await user.click(screen.getByRole('button', { name: /Locais/ }));
     expect(screen.queryByRole('region', { name: 'Ações da seleção' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('checkbox', { name: 'Selecionar Camelot' }));
     await user.click(screen.getByRole('button', { name: 'Visualização em grid' }));

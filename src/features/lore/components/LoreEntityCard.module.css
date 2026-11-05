@@ -87,3 +87,20 @@
   align-items: center;
   gap: var(--space-xs);
 }
+
+.iconAction {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  color: var(--ink-soft);
+}
+.deleteAction:hover,
+.deleteAction:focus-visible {
+  color: hsl(var(--destructive));
+}
+@media (pointer: coarse) {
+  .iconAction {
+    width: 44px;
+    height: 44px;
+  }
+}

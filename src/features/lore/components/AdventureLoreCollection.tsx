@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Button, Dialog, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
+import { Plus, RefreshCw } from 'lucide-react';
+import { Alert, Button, Dialog, EmptyState, ErrorState, LoadingState, Tooltip } from '@/shared/ui';
 import {
   adventureLoreEntity,
   type AdventureLoreSummary,
@@ -197,11 +198,27 @@ export function AdventureLoreCollection({
         Fichas privadas desta aventura. O lore local tem prioridade sobre os termos do universo.
       </p>
       <div className={styles.loreTabHeader}>
-        <Button type="button" disabled={locked || Boolean(form) || !context} onClick={create}>
+        <Tooltip content="Atualizar lore da aventura">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className={styles.refreshButton}
+            aria-label="Atualizar lore da aventura"
+            disabled={api.busy}
+            onClick={() => api.refresh()}
+          >
+            <RefreshCw className="icon icon-sm" aria-hidden="true" />
+          </Button>
+        </Tooltip>
+        <Button
+          type="button"
+          size="sm"
+          disabled={locked || Boolean(form) || !context}
+          onClick={create}
+        >
+          <Plus className="icon icon-sm" aria-hidden="true" />
           Nova Entidade
-        </Button>
-        <Button type="button" variant="secondary" disabled={api.busy} onClick={() => api.refresh()}>
-          Atualizar lore da aventura
         </Button>
       </div>
       {api.loading && <LoadingState label="Carregando lore da aventura…" />}

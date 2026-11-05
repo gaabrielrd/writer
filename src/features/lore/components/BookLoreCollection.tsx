@@ -7,6 +7,7 @@ import {
   List,
   MapPin,
   Plus,
+  RefreshCw,
   RotateCcw,
   Search,
   Tag,
@@ -14,7 +15,16 @@ import {
   User,
   X,
 } from 'lucide-react';
-import { Button, EmptyState, ErrorState, Input, LoadingState } from '@/shared/ui';
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  FilterChips,
+  Input,
+  LoadingState,
+  Toolbar,
+  Tooltip,
+} from '@/shared/ui';
 import { useBookLoreActor } from '../hooks/useBookLoreActor';
 import { useBookLoreCollection } from '../hooks/useBookLoreCollection';
 import type { LoreCategory, LoreMentionEntity } from '../model/loreEntity';
@@ -145,11 +155,21 @@ function Content({
           Grid
         </Button>
       </div>
-      <Button variant="secondary" disabled={locked} onClick={() => open({ kind: 'recoveries' })}>
+      <Button
+        variant="ghost"
+        size="sm"
+        disabled={locked}
+        onClick={() => open({ kind: 'recoveries' })}
+      >
         <RotateCcw className="icon icon-sm" aria-hidden="true" />
         Retomadas
       </Button>
-      <Button variant="primary" disabled={locked} onClick={() => open({ kind: 'create' })}>
+      <Button
+        variant="primary"
+        size="sm"
+        disabled={locked}
+        onClick={() => open({ kind: 'create' })}
+      >
         <Plus className="icon icon-sm" aria-hidden="true" />
         Nova Entidade
       </Button>
@@ -159,12 +179,13 @@ function Content({
     <div className={`${styles.loreTabContainer} ${selected.length ? styles.withSelection : ''}`}>
       {actionsContainer ? createPortal(controls, actionsContainer) : controls}
       {result && <p role="status">{result}</p>}
-      <div className={styles.filterSection}>
-        <div className={styles.searchBar}>
+      <Toolbar
+        label="Ferramentas do compêndio"
+        search={
           <Input
             aria-label="Buscar no compêndio"
             leftIcon={<Search className="icon icon-sm" aria-hidden="true" />}
-            placeholder="Buscar por nome, apelido ou resumo..."
+            placeholder="Buscar no compêndio"
             value={query}
             disabled={locked || loading}
             onChange={(e) => {
@@ -172,44 +193,45 @@ function Content({
               setQuery(e.target.value);
             }}
           />
-        </div>
-        <div className={styles.tabsRow} role="tablist" aria-label="Categorias do compêndio">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <Button
-                key={tab.value}
-                variant="ghost"
-                size="sm"
-                role="tab"
-                aria-selected={category === tab.value}
-                disabled={locked || loading}
-                className={`${styles.tabButton} ${category === tab.value ? styles.tabActive : ''}`}
-                onClick={() => {
-                  clear();
-                  setCategory(tab.value);
-                }}
-              >
-                <Icon className="icon icon-sm" aria-hidden="true" />
-                <span>{tab.label}</span>
-                <span className={styles.tabCount}>
-                  {tab.value === 'all'
+        }
+        filters={
+          <FilterChips
+            label="Categorias do compêndio"
+            value={category}
+            disabled={locked || loading}
+            onValueChange={(value) => {
+              clear();
+              setCategory(value);
+            }}
+            options={tabs.map((tab) => {
+              const Icon = tab.icon;
+              return {
+                value: tab.value,
+                label: tab.label,
+                icon: <Icon className="icon icon-sm" aria-hidden="true" />,
+                count:
+                  tab.value === 'all'
                     ? rows.length
-                    : rows.filter((e) => e.category === tab.value).length}
-                </span>
-              </Button>
-            );
-          })}
-        </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={locked || loading}
-          onClick={() => void refresh()}
-        >
-          Atualizar compêndio
-        </Button>
-      </div>
+                    : rows.filter((e) => e.category === tab.value).length,
+              };
+            })}
+          />
+        }
+        actions={
+          <Tooltip content="Atualizar compêndio">
+            <Button
+              variant="ghost"
+              size="icon"
+              className={styles.refreshButton}
+              aria-label="Atualizar compêndio"
+              disabled={locked || loading}
+              onClick={() => void refresh()}
+            >
+              <RefreshCw className="icon icon-sm" aria-hidden="true" />
+            </Button>
+          </Tooltip>
+        }
+      />
       {loading ? (
         <LoadingState label="Carregando compêndio de lore..." />
       ) : error ? (

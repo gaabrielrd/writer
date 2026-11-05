@@ -277,7 +277,7 @@ it('preserves filtered selection, category counts and grid/list switches', async
   await user.click(all());
   expect(bar()).toHaveTextContent('1 selecionada');
   await user.clear(screen.getByRole('textbox', { name: 'Buscar no compêndio' }));
-  await user.click(screen.getByRole('tab', { name: /Locais/ }));
+  await user.click(screen.getByRole('button', { name: /Locais/ }));
   expect(screen.queryByRole('checkbox', { name: 'Selecionar Arthur' })).not.toBeInTheDocument();
   expect(screen.getByRole('checkbox', { name: 'Selecionar Camelot' })).not.toBeChecked();
   await user.click(screen.getByRole('button', { name: 'Visualização em grid' }));

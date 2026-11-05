@@ -11,6 +11,8 @@ import {
   Input,
   LoadingState,
   Dropdown,
+  FilterChips,
+  Toolbar,
 } from '@/shared/ui';
 import { useAuth } from '@/features/auth';
 import { AdventureLoreCollection } from './AdventureLoreCollection';
@@ -265,7 +267,7 @@ function LegacyLoreCollection({
           Grid
         </Button>
       </div>
-      <Button variant="primary" disabled={busy} onClick={handleOpenCreate}>
+      <Button variant="primary" size="sm" disabled={busy} onClick={handleOpenCreate}>
         <Plus className="icon icon-sm" aria-hidden="true" />
         Nova Entidade
       </Button>
@@ -333,12 +335,13 @@ function LegacyLoreCollection({
       )}
       {actionsContainer ? createPortal(controls, actionsContainer) : controls}
 
-      <div className={styles.filterSection}>
-        <div className={styles.searchBar}>
+      <Toolbar
+        label="Ferramentas do compêndio"
+        search={
           <Input
             aria-label="Buscar no compêndio"
             leftIcon={<Search className="icon icon-sm" aria-hidden="true" />}
-            placeholder="Buscar por nome, apelido ou resumo..."
+            placeholder="Buscar no compêndio"
             value={searchQuery}
             disabled={busy}
             onChange={(e) => {
@@ -346,35 +349,28 @@ function LegacyLoreCollection({
               setSearchQuery(e.target.value);
             }}
           />
-        </div>
-
-        <div className={styles.tabsRow} role="tablist">
-          {CATEGORY_TABS.map((tab) => {
-            const isSelected = categoryFilter === tab.value;
-            const IconComp = tab.icon;
-            const count = categoryCounts[tab.value];
-
-            return (
-              <button
-                key={tab.value}
-                type="button"
-                role="tab"
-                aria-selected={isSelected}
-                disabled={busy}
-                className={`${styles.tabButton} ${isSelected ? styles.tabActive : ''}`}
-                onClick={() => {
-                  clearSelection();
-                  setCategoryFilter(tab.value);
-                }}
-              >
-                <IconComp className="icon icon-sm" aria-hidden="true" />
-                <span>{tab.label}</span>
-                <span className={styles.tabCount}>{count}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+        }
+        filters={
+          <FilterChips
+            label="Categorias do compêndio"
+            value={categoryFilter}
+            disabled={busy}
+            onValueChange={(value) => {
+              clearSelection();
+              setCategoryFilter(value);
+            }}
+            options={CATEGORY_TABS.map((tab) => {
+              const IconComp = tab.icon;
+              return {
+                value: tab.value,
+                label: tab.label,
+                icon: <IconComp className="icon icon-sm" aria-hidden="true" />,
+                count: categoryCounts[tab.value],
+              };
+            })}
+          />
+        }
+      />
 
       {entities.length === 0 ? (
         <EmptyState

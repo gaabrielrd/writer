@@ -97,7 +97,8 @@ export function LoreEntityCard<
 
         <div className={styles.actions}>
           <Button
-            variant="primary"
+            variant="outline"
+            size="sm"
             disabled={disabled}
             onClick={() => onView(entity)}
             title="Ver ficha completa da entidade"
@@ -107,7 +108,9 @@ export function LoreEntityCard<
 
           <div className={styles.actionButtons}>
             <Button
-              variant="secondary"
+              variant="ghost"
+              size="icon"
+              className={styles.iconAction}
               disabled={disabled}
               onClick={() => onEdit(entity)}
               title={`Editar ${entity.name}`}
@@ -116,7 +119,9 @@ export function LoreEntityCard<
               <Edit2 className="icon icon-sm" aria-hidden="true" />
             </Button>
             <Button
-              variant="danger"
+              variant="ghost"
+              size="icon"
+              className={`${styles.iconAction} ${styles.deleteAction}`}
               disabled={disabled}
               onClick={() => onDelete(entity.id)}
               title={`Excluir ${entity.name}`}
