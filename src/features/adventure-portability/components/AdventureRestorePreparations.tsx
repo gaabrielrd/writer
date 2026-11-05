@@ -1,5 +1,6 @@
+import { RefreshCw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, Card, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
+import { Alert, Button, Card, EmptyState, ErrorState, LoadingState, Tooltip } from '@/shared/ui';
 import { createAdventureRestoreStartSession } from '../services/adventureRestoreStartSession';
 import { listStoredAdventureRestoreEffects } from '../services/adventureRestoreEffectStore';
 import { checkAdventureRestoreAccount } from '../services/adventureRestoreLocalRecovery';
@@ -162,11 +163,19 @@ function PreparationsSession({
   return (
     <Card className={styles.panel}>
       <section className={styles.stack} aria-label="Restaurações de aventuras">
-        <div className={styles.actions}>
+        <div className={styles.panelHeader}>
           <h2>Restaurações de aventuras</h2>
-          <Button variant="secondary" disabled={loading} onClick={reload}>
-            Atualizar restaurações
-          </Button>
+          <Tooltip content="Atualizar restaurações">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Atualizar restaurações"
+              disabled={loading}
+              onClick={reload}
+            >
+              <RefreshCw className="icon icon-sm" aria-hidden="true" />
+            </Button>
+          </Tooltip>
         </div>
         <p className={styles.muted}>
           Retome preparações ou confira a finalização de uma cópia privada.

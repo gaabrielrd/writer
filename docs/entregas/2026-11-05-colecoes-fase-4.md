@@ -72,3 +72,27 @@ src/features/editor`: 1972 aprovados.
 - Quatro testes visuais passam a localizar "Abrir lore" como link.
 - `npx vitest run src/features/image-library src/features/universes
 src/features/books`: aprovados; `tsc`, `eslint`, `prettier`; prévia 1440 × 900.
+
+## Em andamento — 2026-11-05
+
+### Entregue
+
+- Restaurações de livros, restaurações de aventuras e importações de aventura em
+  preparação usam o mesmo cabeçalho de painel: título e botão de ícone com dica
+  ("Atualizar restaurações"/"Atualizar importações", mesmos nomes acessíveis).
+- O painel de importações ganhou espaçamento interno; a descrição ficou discreta e
+  o botão de largura total foi removido.
+
+### Testes e validações
+
+- `npx vitest run src/features/book-portability src/features/adventure-portability
+src/features/adventure-import src/features/studio`: 1206 aprovados, sem alteração
+  de testes; `tsc`, `eslint`, `prettier`; prévia 1440 × 900.
+
+### Limitações e próximos passos da fase
+
+- Os títulos "Campanhas" e "Exclusões" aparecem sem conteúdo quando não há
+  operações pendentes.
+- Ainda não implementados nesta fase: lista com inspetor para Compêndio e
+  Personas, e a revisão do planejador de Cenas (botões largos e selects grandes).
+- `npm run validate` completo e testes visuais ficam para o fim do plano.

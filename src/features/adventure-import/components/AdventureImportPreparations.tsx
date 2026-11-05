@@ -1,6 +1,7 @@
+import { RefreshCw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
-import { Alert, Button, Card, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
+import { Alert, Button, Card, EmptyState, ErrorState, LoadingState, Tooltip } from '@/shared/ui';
 import { listValidatedAdventureImports } from '../services/adventureImportService';
 import {
   listLocalAdventureImports,
@@ -95,13 +96,25 @@ function Preparations({ uid, onActivated }: { uid: string; onActivated: (id: str
   }
   const ids = [...new Set([...items.map((p) => p.importId), ...localIds])];
   return (
-    <Card>
+    <Card className={styles.preparationPanel}>
       <div className={styles.stack}>
-        <h2>Importações de aventura em preparação</h2>
-        <p>Retome ou encerre preparações privadas. Elas ainda não são aventuras utilizáveis.</p>
-        <Button variant="secondary" disabled={loading} onClick={reload}>
-          Atualizar importações
-        </Button>
+        <div className={styles.panelHeader}>
+          <h2>Importações de aventura em preparação</h2>
+          <Tooltip content="Atualizar importações">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Atualizar importações"
+              disabled={loading}
+              onClick={reload}
+            >
+              <RefreshCw className="icon icon-sm" aria-hidden="true" />
+            </Button>
+          </Tooltip>
+        </div>
+        <p className={styles.panelHint}>
+          Retome ou encerre preparações privadas. Elas ainda não são aventuras utilizáveis.
+        </p>
         {loading && <LoadingState label="Carregando importações..." />}
         {error && (
           <ErrorState
