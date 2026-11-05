@@ -1,6 +1,6 @@
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   gap: var(--space-4);
 }
 .item {
@@ -25,9 +25,29 @@
 }
 .actions {
   display: flex;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-1);
   flex-wrap: wrap;
   margin-top: var(--space-3);
+}
+.spacer {
+  flex: 1;
+}
+.iconAction {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  color: var(--ink-soft);
+}
+.deleteAction:hover,
+.deleteAction:focus-visible {
+  color: hsl(var(--destructive));
+}
+@media (pointer: coarse) {
+  .iconAction {
+    width: 44px;
+    height: 44px;
+  }
 }
 .preview {
   max-height: 50dvh;

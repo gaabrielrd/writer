@@ -88,7 +88,7 @@ function page(path = '/universes') {
 it('carrega a lista e abre o lore do universo selecionado', async () => {
   page();
   expect(screen.getByText('Carregando universos...')).toBeInTheDocument();
-  await userEvent.click(await screen.findByRole('button', { name: 'Abrir lore' }));
+  await userEvent.click(await screen.findByRole('link', { name: 'Abrir lore' }));
   expect(await screen.findByRole('heading', { name: 'Atlas' })).toBeInTheDocument();
   expect(await screen.findByText('Nenhuma entidade cadastrada')).toBeInTheDocument();
   expect(lore.subscribeLoreEntities).toHaveBeenCalledWith(
@@ -124,7 +124,8 @@ it('cria o primeiro universo preservando os dados e o ID após falha', async () 
 it('edita um universo e permite cancelar sem persistir', async () => {
   const user = userEvent.setup();
   page();
-  await user.click(await screen.findByRole('button', { name: 'Editar universo' }));
+  await user.click(await screen.findByRole('button', { name: /^Opções de / }));
+  await user.click(await screen.findByRole('menuitem', { name: 'Editar universo' }));
   expect(screen.getByLabelText('Nome do universo')).toHaveValue('Atlas');
   await user.clear(screen.getByLabelText('Nome do universo'));
   await user.type(screen.getByLabelText('Nome do universo'), 'Atlas II');
@@ -143,7 +144,8 @@ it('edita um universo e permite cancelar sem persistir', async () => {
 it('impede excluir universos vinculados e indica como desvincular', async () => {
   vi.mocked(service.listUniverses).mockResolvedValue([{ ...world, bookCount: 2 }]);
   page();
-  await userEvent.click(await screen.findByRole('button', { name: 'Excluir universo' }));
+  await userEvent.click(await screen.findByRole('button', { name: /^Opções de / }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Excluir universo' }));
   expect(screen.getByRole('button', { name: 'Confirmar exclusão' })).toBeDisabled();
   expect(screen.getByRole('link', { name: 'Abrir Meus Livros' })).toHaveAttribute('href', '/');
   await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
@@ -155,7 +157,8 @@ it('retoma uma exclusão incompleta e mantém erro disponível para retry', asyn
     .mockRejectedValueOnce(new Error('Falha na limpeza'))
     .mockResolvedValue(undefined);
   page();
-  await userEvent.click(await screen.findByRole('button', { name: 'Excluir universo' }));
+  await userEvent.click(await screen.findByRole('button', { name: /^Opções de / }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Excluir universo' }));
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }));
   expect(await screen.findByText('Falha na limpeza')).toBeInTheDocument();
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar exclusão' }));
@@ -302,7 +305,8 @@ it.each([
       counts.campaignCount === 2 ? '2 campanhas vinculadas' : '0 campanhas vinculadas',
     ),
   ).toBeInTheDocument();
-  await userEvent.click(screen.getByRole('button', { name: 'Excluir universo' }));
+  await userEvent.click(screen.getByRole('button', { name: /^Opções de / }));
+  await userEvent.click(await screen.findByRole('menuitem', { name: 'Excluir universo' }));
   expect(screen.getByRole('button', { name: 'Confirmar exclusão' })).toBeDisabled();
   expect(screen.getByRole('link', { name: 'Abrir Estúdio' })).toHaveAttribute('href', '/studio');
   expect(service.deleteUniverse).not.toHaveBeenCalled();

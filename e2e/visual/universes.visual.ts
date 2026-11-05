@@ -21,7 +21,7 @@ test('universo, lore por seções e vínculo compartilhado entre livros', async 
     .getByLabel('Descrição do universo')
     .fill('Personagens e locais compartilhados entre livros.');
   await page.getByRole('button', { name: 'Salvar universo' }).click();
-  await page.getByRole('button', { name: 'Abrir lore' }).click();
+  await page.getByRole('link', { name: 'Abrir lore' }).click();
   await page.getByRole('button', { name: 'Nova Entidade' }).click();
   await page.getByLabel('Nome da Entidade').fill('Guardião das Marés');
   await page.getByLabel(/Resumo Curto/).fill('Guarda os caminhos entre as ilhas.');

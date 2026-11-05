@@ -53,3 +53,22 @@ src/features/editor`: 1972 aprovados.
 
 - A variação de lista com inspetor para o Compêndio ainda não foi implementada;
   esta etapa alinhou barra, filtros e ações dos cards.
+
+## Imagens e lista de Universos — 2026-11-05
+
+### Entregue
+
+- Biblioteca de Imagens ganhou título e descrição por `PageHeader`. Nos cards,
+  "Visualizar" ficou em contorno e renomear/excluir viraram ícones discretos, com a
+  cor de exclusão só em hover e foco; a coluna mínima passou de 150 para 180 px
+  para manter as três ações em uma linha.
+- Lista de Universos: "Abrir lore" deixou de ser um `Button` dentro de `Link` e
+  virou link com aparência de botão; "Editar universo" e "Excluir universo" foram
+  para o menu "Opções de {nome}".
+
+### Testes e validações
+
+- `UniversePage.test.tsx`: abertura por link e edição/exclusão pelo menu.
+- Quatro testes visuais passam a localizar "Abrir lore" como link.
+- `npx vitest run src/features/image-library src/features/universes
+src/features/books`: aprovados; `tsc`, `eslint`, `prettier`; prévia 1440 × 900.

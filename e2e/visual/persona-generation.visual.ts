@@ -14,7 +14,7 @@ test('cria voz por universo e lore com revisão, zero, salvamento e retorno de f
   await page.getByLabel('Nome do universo').fill('Universo das Marés');
   await page.getByLabel('Descrição do universo').fill('Ilhas silenciosas e memórias de viagens.');
   await page.getByRole('button', { name: 'Salvar universo' }).click();
-  await page.getByRole('button', { name: 'Abrir lore' }).click();
+  await page.getByRole('link', { name: 'Abrir lore' }).click();
   await page.getByRole('button', { name: 'Nova Entidade' }).click();
   await page.getByLabel('Nome da Entidade').fill('Farol');
   await page.getByLabel(/Resumo Curto/).fill('Guia silencioso das ilhas.');

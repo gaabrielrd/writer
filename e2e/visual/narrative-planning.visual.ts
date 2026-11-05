@@ -345,7 +345,7 @@ test('referência indisponível oculta nome anterior e pode ser removida sem blo
   await page.getByLabel('Nome do universo').fill('Universo do guardião');
   await page.getByLabel('Descrição do universo').fill('Lore compartilhado do planejamento.');
   await page.getByRole('button', { name: 'Salvar universo' }).click();
-  await page.getByRole('button', { name: 'Abrir lore' }).click();
+  await page.getByRole('link', { name: 'Abrir lore' }).click();
   await page.getByRole('button', { name: 'Nova Entidade' }).click();
   await page.getByLabel('Nome da Entidade').fill('Guardião do farol');
   await page.getByLabel(/Resumo Curto/).fill('Guarda o mapa compartilhado.');

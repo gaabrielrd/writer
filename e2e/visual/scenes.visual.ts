@@ -645,7 +645,7 @@ test('referência indisponível conserva identidade sem mostrar o nome antigo', 
   await page.getByLabel('Nome do universo').fill('Universo das referências');
   await page.getByLabel('Descrição do universo').fill('Lore compartilhado das cenas.');
   await page.getByRole('button', { name: 'Salvar universo' }).click();
-  await page.getByRole('button', { name: 'Abrir lore' }).click();
+  await page.getByRole('link', { name: 'Abrir lore' }).click();
   await page.getByRole('button', { name: 'Nova Entidade' }).click();
   await page.getByLabel('Nome da Entidade').fill('Guardião das referências');
   await page.getByLabel(/Resumo Curto/).fill('Guarda a identidade compartilhada.');

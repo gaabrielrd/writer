@@ -2,19 +2,22 @@ import { useNavigate } from 'react-router';
 import { LoreImportDialog } from './LoreImportDialog';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, Navigate } from 'react-router';
-import { Globe, Plus } from 'lucide-react';
+import { Globe, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import {
   Alert,
   Badge,
   Button,
   Dialog,
+  Dropdown,
+  DropdownItem,
   EmptyState,
   ErrorState,
   Input,
   LoadingState,
   PageHeader,
   Textarea,
+  buttonVariants,
 } from '@/shared/ui';
 import {
   createUniverse,
@@ -206,24 +209,38 @@ export function UniversePage() {
               </div>
               <div className={styles.actions}>
                 {!world.deleting && (
-                  <>
-                    <Link to={`/universes/${encodeURIComponent(world.id)}/lore`}>
-                      <Button variant="secondary">Abrir lore</Button>
-                    </Link>
-                    <Button variant="ghost" onClick={() => setForm({ key, world })}>
-                      Editar universo
-                    </Button>
-                  </>
+                  <Link
+                    to={`/universes/${encodeURIComponent(world.id)}/lore`}
+                    className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                  >
+                    Abrir lore
+                  </Link>
                 )}
-                <Button
+                <Dropdown
+                  mode="action"
+                  label={`Opções de ${world.name}`}
+                  align="end"
                   variant="ghost"
-                  onClick={() => {
-                    setRemoving({ key, world });
-                    setActionError('');
-                  }}
+                  iconOnly
+                  icon={<MoreHorizontal className="icon" aria-hidden="true" />}
                 >
-                  Excluir universo
-                </Button>
+                  {!world.deleting && (
+                    <DropdownItem onSelect={() => setForm({ key, world })}>
+                      <Pencil className="icon icon-sm" aria-hidden="true" />
+                      Editar universo
+                    </DropdownItem>
+                  )}
+                  <DropdownItem
+                    variant="destructive"
+                    onSelect={() => {
+                      setRemoving({ key, world });
+                      setActionError('');
+                    }}
+                  >
+                    <Trash2 className="icon icon-sm" aria-hidden="true" />
+                    Excluir universo
+                  </DropdownItem>
+                </Dropdown>
               </div>
             </article>
           ))}

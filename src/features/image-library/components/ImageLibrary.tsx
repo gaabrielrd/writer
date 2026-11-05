@@ -10,6 +10,7 @@ import {
   ErrorState,
   Input,
   LoadingState,
+  PageHeader,
 } from '@/shared/ui';
 import { Navigate, useLocation } from 'react-router';
 import {
@@ -143,14 +144,18 @@ function ImageGrid({
                     <p className={styles.details}>Exclusão pendente. Tente excluir novamente.</p>
                   )}
                   <Button
-                    variant="secondary"
+                    variant="outline"
+                    size="sm"
                     disabled={image.state === 'deleting'}
                     onClick={() => setPreview(image)}
                   >
                     Visualizar
                   </Button>
+                  <span className={styles.spacer} />
                   <Button
-                    variant="secondary"
+                    variant="ghost"
+                    size="icon"
+                    className={styles.iconAction}
                     aria-label={`Renomear ${image.name}`}
                     disabled={image.state === 'deleting'}
                     onClick={() => {
@@ -161,7 +166,9 @@ function ImageGrid({
                     <Pencil className="icon icon-sm" aria-hidden="true" />
                   </Button>
                   <Button
-                    variant="secondary"
+                    variant="ghost"
+                    size="icon"
+                    className={`${styles.iconAction} ${styles.deleteAction}`}
                     aria-label={`Excluir ${image.name}`}
                     disabled={image.useCount > 0}
                     title={
@@ -279,6 +286,10 @@ export function ImageLibraryPage() {
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   return (
     <section className={styles.libraryScreen} aria-label="Biblioteca de Imagens">
+      <PageHeader
+        title="Biblioteca de Imagens"
+        description="Capas e imagens aceitas da IA, prontas para reutilizar nos seus projetos."
+      />
       <ImageGrid key={user.uid} fullPage />
     </section>
   );
