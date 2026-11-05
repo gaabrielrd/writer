@@ -264,7 +264,7 @@ function Content({
       open
       title="Editar lore do livro"
       description="Prepare as alterações, revise e confirme a aplicação na ficha."
-      maxWidthClass="max-w-3xl"
+      maxWidthClass="max-w-5xl"
       onClose={close}
       footer={
         <div className={styles.actions}>

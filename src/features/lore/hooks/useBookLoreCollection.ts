@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { bookLoreReadSession } from '../services/bookLoreReadService';
-import { presentBookLore, type BookLorePresentation } from '../model/bookLorePresentation';
+import type { BookLoreSummary } from '../model/bookLorePresentation';
 
-/** Mount under the exact actor + book key; source bodies live only in RAM. */
+/** Mount under the exact actor + book key; listing metadata lives only in RAM. */
 export function useBookLoreCollection(bookId: string) {
   const [state, setState] = useState<{
-      rows: BookLorePresentation[];
+      rows: BookLoreSummary[];
       loading: boolean;
       error: string;
     }>({
@@ -20,11 +20,11 @@ export function useBookLoreCollection(bookId: string) {
       current = () => owner.alive && owner.epoch === n;
     try {
       const reader = bookLoreReadSession(current, { tokenVersion: 2 }),
-        sources = await reader.captureList(bookId);
+        sources = await reader.listSummaries(bookId);
       reader.guard();
-      const rows = sources
-        .map(presentBookLore)
-        .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
+      const rows = [...sources].sort(
+        (a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id),
+      );
       if (current()) setState({ rows, loading: false, error: '' });
     } catch (e) {
       if (current())

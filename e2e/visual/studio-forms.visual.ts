@@ -56,10 +56,21 @@ test('ficha prepara alteração direta, preserva detalhes e mostra visibilidade 
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Editar lore do livro' });
   await expect(dialog.getByLabel('Nome', { exact: true })).toHaveValue('Lia');
+  const navigation = dialog.getByRole('tablist', { name: 'Campos da ficha' });
+  const editor = dialog.getByRole('tabpanel', { name: 'Edição de Nome', exact: true });
+  await expect(navigation).toHaveAttribute('aria-orientation', 'vertical');
+  expect(
+    (await navigation.boundingBox())!.x + (await navigation.boundingBox())!.width,
+  ).toBeLessThan((await editor.boundingBox())!.x);
+  await dialog.getByRole('tab', { name: 'Nome', exact: true }).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(dialog.getByRole('tab', { name: 'Categoria', exact: true })).toBeFocused();
+  await page.keyboard.press('Home');
+  await expect(dialog.getByRole('tab', { name: 'Nome', exact: true })).toBeFocused();
   await capture(page, testInfo, 'lore-essenciais');
-  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Resumo');
+  await dialog.getByRole('tab', { name: 'Resumo', exact: true }).click();
   await dialog.getByLabel('Resumo', { exact: true }).fill('Cartógrafa das ilhas esquecidas.');
-  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Visibilidade');
+  await dialog.getByRole('tab', { name: 'Visibilidade', exact: true }).click();
   await chooseDropdown(
     dialog.getByRole('combobox', { name: 'Visibilidade', exact: true }),
     'Privado',
@@ -79,15 +90,15 @@ test('ficha prepara alteração direta, preserva detalhes e mostra visibilidade 
   ).toBeFocused();
   await trigger.click();
   await expect(dialog.getByLabel('Nome', { exact: true })).toHaveValue('Lia');
-  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Resumo');
+  await dialog.getByRole('tab', { name: 'Resumo', exact: true }).click();
   await expect(dialog.getByLabel('Resumo', { exact: true })).toHaveValue(
     'Cartógrafa das ilhas esquecidas.',
   );
-  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Visibilidade');
+  await dialog.getByRole('tab', { name: 'Visibilidade', exact: true }).click();
   await expect(dialog.getByRole('combobox', { name: 'Visibilidade', exact: true })).toHaveText(
     'Privado',
   );
-  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Detalhes');
+  await dialog.getByRole('tab', { name: 'Detalhes', exact: true }).click();
   await expect(dialog.getByLabel('Detalhes', { exact: true })).toHaveValue(lore[0].details);
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'lore-secoes');
@@ -106,19 +117,16 @@ test('sidebar prepara lore protegido em 320px e conserva rodapé ao revisar deta
   await page.getByRole('button', { name: 'Nova Entidade', exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.getByLabel('Nome', { exact: true }).fill('Estação das Cartas');
-  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Resumo');
+  await dialog.getByRole('tab', { name: 'Resumo', exact: true }).click();
   await dialog.getByRole('button', { name: 'Adicionar resumo', exact: true }).click();
   await dialog.getByLabel('Resumo', { exact: true }).fill('Um refúgio entre as ilhas.');
-  await chooseDropdown(
-    dialog.getByRole('combobox', { name: 'Campo em edição' }),
-    'Características e notas',
-  );
+  await dialog.getByRole('tab', { name: 'Características e notas', exact: true }).click();
   await dialog
     .getByRole('button', { name: 'Adicionar características e notas', exact: true })
     .click();
   await dialog.getByRole('button', { name: 'Adicionar aparência', exact: true }).click();
   await dialog.getByLabel('Aparência', { exact: true }).fill('Uma casa de janelas azuis.');
-  await chooseDropdown(dialog.getByRole('combobox', { name: 'Campo em edição' }), 'Nome');
+  await dialog.getByRole('tab', { name: 'Nome', exact: true }).click();
   await expect(dialog.getByLabel('Aparência', { exact: true })).not.toBeVisible();
   const submit = dialog.getByRole('button', { name: 'Preparar ficha', exact: true });
   await expect(submit).toBeInViewport();

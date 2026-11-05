@@ -397,7 +397,7 @@ describe('BookPage', () => {
     ]);
     renderBookPage();
     const resume = await screen.findByRole('region', { name: 'Retomar o trabalho' });
-    expect(resume).toHaveTextContent('A travessia');
+    await waitFor(() => expect(resume).toHaveTextContent('A travessia'));
     expect(screen.getByRole('link', { name: 'Continuar escrevendo' })).toHaveAttribute(
       'href',
       '/books/book-1/editor/c2',

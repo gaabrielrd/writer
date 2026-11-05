@@ -1,5 +1,7 @@
 import { createBookLorePortableClient } from './bookLorePortableClient';
 import { createBookLoreUnitReader } from './bookLoreReadUnits';
+import { readBookLoreSummaryPage } from './bookLoreSummaryContracts';
+import type { BookLoreSummary } from '../model/bookLorePresentation';
 import { freezeBookLoreEditSource, type BookLoreEditSource } from './bookLoreWritePlan';
 import { validateBookBackupJSONItem } from '../../../../functions/src/bookBackupSchema.mjs';
 import {
@@ -175,7 +177,7 @@ export function createBookLoreReadClient(
     const source = await capture(bookId, id, readToken);
     return source ? { id: source.id, data: structuredClone(source.data) } : null;
   }
-  async function ids(bookId: string, expectedToken?: string) {
+  async function ids(bookId: string, expectedToken?: string, version = tokenVersion) {
     const items: LoreReadItem[] = [],
       seen = new Set<string>(),
       cursors = new Set<string>();
@@ -186,7 +188,7 @@ export function createBookLoreReadClient(
         await rpc('listBookLoreRead', {
           bookId,
           limit: 50,
-          ...emission,
+          ...(version === 2 ? { tokenVersion: 2 } : {}),
           ...(listToken === undefined ? {} : { listToken }),
           ...(cursor === null ? {} : { cursor }),
         }),
@@ -221,6 +223,50 @@ export function createBookLoreReadClient(
     if (!equal(final, initial)) throw invalidLoreRead();
     guard();
     return Object.freeze({ bookId, listToken: initial.listToken, sources: Object.freeze(result) });
+  }
+  async function listSummaries(bookId: string): Promise<BookLoreSummary[]> {
+    readId(bookId);
+    const rows: BookLoreSummary[] = [],
+      seen = new Set<string>(),
+      cursors = new Set<string>();
+    let listToken: string | undefined,
+      cursor: string | null = null;
+    do {
+      const page = readBookLoreSummaryPage(
+        await rpc('listBookLoreRead', {
+          bookId,
+          limit: 50,
+          tokenVersion: 2,
+          projection: 'summary',
+          ...(listToken === undefined ? {} : { listToken }),
+          ...(cursor === null ? {} : { cursor }),
+        }),
+        bookId,
+        listToken,
+      );
+      listToken = page.listToken;
+      for (const row of page.rows) {
+        if (seen.has(row.id)) throw invalidLoreRead();
+        seen.add(row.id);
+        rows.push(row);
+      }
+      cursor = page.nextCursor;
+      if (cursor !== null) {
+        if (cursors.has(cursor)) throw invalidLoreRead();
+        cursors.add(cursor);
+      }
+    } while (cursor !== null);
+    // Verify metadata only; a listing never becomes a complete authoring source.
+    const final = await ids(bookId, listToken, 2);
+    if (
+      !equal(
+        final.items,
+        rows.map((row) => ({ id: row.id, readToken: row.sourceToken })),
+      )
+    )
+      throw invalidLoreRead();
+    guard();
+    return rows;
   }
   async function verifyCollection(capture: BookLoreCollectionCapture): Promise<void> {
     readObject(capture, ['bookId', 'listToken', 'sources']);
@@ -263,6 +309,7 @@ export function createBookLoreReadClient(
     captureCollection,
     verifyCollection,
     metadata,
+    listSummaries,
     ...createBookLorePortableClient(rpc, guard),
   };
 }

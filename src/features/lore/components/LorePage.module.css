@@ -55,6 +55,12 @@
   table-layout: fixed;
 }
 
+.scopeDescription {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+}
+
 .entityTable th,
 .entityTable td {
   padding: var(--space-3);

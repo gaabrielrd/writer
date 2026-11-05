@@ -54,6 +54,27 @@ export function bookLoreReadSession(
     actor,
     guard,
     captureList,
+    async listSummaries(bookId: string) {
+      const entries = await listLoreEntities(bookId);
+      guard();
+      return entries.map((entity) => {
+        const data: Record<string, unknown> = { ...entity };
+        delete data.id;
+        delete data.bookId;
+        delete data.universeId;
+        return {
+          bookId,
+          id: entity.id,
+          sourceToken: bookLoreWriteHash({ bookId, id: entity.id, data }),
+          name: entity.name,
+          category: entity.category,
+          aliases: entity.aliases,
+          summary: entity.summary,
+          isPublic: entity.isPublic,
+          relationCount: entity.relations.length,
+        };
+      });
+    },
     capture,
     async get(bookId: string, id: string, token?: string) {
       const value = await capture(bookId, id, token);

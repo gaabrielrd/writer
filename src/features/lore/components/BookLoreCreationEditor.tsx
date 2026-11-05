@@ -292,7 +292,7 @@ function Content({
       open
       title="Nova ficha de lore"
       description="Prepare os campos, revise e confirme a criação no livro."
-      maxWidthClass="max-w-3xl"
+      maxWidthClass="max-w-5xl"
       onClose={close}
       footer={
         <div className={styles.actions}>

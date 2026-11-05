@@ -47,13 +47,19 @@ visitantes recebem um acesso ao login. Não consulta manuscritos privados a part
 da página pública. O conteúdo específico de capítulos/cenas continua nos chats
 nativos e em seus contratos de captura e aplicação.
 
-A barra nasce compacta no centro inferior. Expansão, minimização e posição
-normalizada são preferências locais por UID, com fallback em memória. Alça aceita
+A barra nasce minimizada no centro inferior e volta a minimizar ao trocar de
+projeto ou área; dentro do mesmo projeto mantém o modo escolhido. A posição
+normalizada é uma preferência local por UID, com fallback em memória. Alça aceita
 mouse/toque e setas; Shift amplia o passo. Escape cancela um arrasto ou recolhe a
 conversa. Restaurar posição retorna ao centro inferior. Resize e teclado virtual
 alteram os limites visuais sem substituir a posição salva. Sobreposição com um
 campo ou caret de escrita recolhe o painel temporariamente sem persistir o modo.
 Não há foco automático ao navegar ou receber resposta.
+
+Em modais, o assistente conserva suas coordenadas flutuantes fora da caixa do
+formulário, sem aumentar o diálogo. Continua acessível no mesmo escopo de foco;
+é possível escrever nas duas superfícies e mover a barra. Escape no assistente
+recolhe a conversa sem fechar o formulário.
 
 A concepção do projeto permanece inline e pode continuar no escopo de foco
 de um modal. Durante esse uso, a barra global fica suspensa para manter uma
@@ -95,12 +101,14 @@ nos três temas. Isso não equivale a um piloto humano de todas as capacidades.
 
 É necessário publicar o servidor com inspect e as Rules de onboarding antes do
 cliente. Uma versão anterior do servidor não fornece a prova de reautorização;
-uma regra anterior não libera o novo documento. Nenhum desses recursos foi
-implantado neste trabalho. Reversão do cliente pode preservar o documento de
+uma regra anterior não libera o novo documento. Esses recursos e o frontend foram
+publicados em 2026-11-03, conforme a [evidência do deploy](entregas/2026-11-03-deploy-primeira-experiencia.md).
+Reversão do cliente pode preservar o documento de
 preferências sem afetar conteúdo; não apagar preferências como rollback.
 
 Em 2026-11-03 o operador autorizou os testes dos arquivos afetados e a integração
-local. Os resultados estão na evidência; piloto humano e rollout continuam pendentes. A versão não está
-certificada para produção. Atualizar snapshots visuais afetados somente após
+local e, em seguida, o deploy. Os resultados estão nas evidências; a publicação
+foi conferida por estado remoto, hashes e navegador anônimo. O fluxo autenticado
+real e o piloto humano continuam pendentes. Atualizar snapshots visuais afetados somente após
 revisão da interface. Recrutamento, métricas de uso e rollout exigem trabalho
 próprio; não foram simulados ou declarados concluídos.

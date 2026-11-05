@@ -79,6 +79,28 @@ it('shows evidence, requires explicit target, edits removals and previews diff b
     input: { details: '' },
   });
 });
+it('continues analysis from the server batch cursor without applying automatically', async () => {
+  vi.mocked(service.getLoreImport).mockResolvedValue({
+    ...review,
+    state: 'analyzing',
+    cursor: 0,
+    total: 5,
+  });
+  vi.mocked(service.advanceLoreImport)
+    .mockResolvedValueOnce({ ...review, state: 'analyzing', cursor: 3, total: 5 })
+    .mockResolvedValueOnce({ ...review, cursor: 5, total: 5 });
+  const user = userEvent.setup();
+  render(
+    <LoreImportDialog uid="author" universeId="world" onClose={vi.fn()} onSuccess={vi.fn()} />,
+  );
+  await user.click(await screen.findByRole('button', { name: 'Continuar análise' }));
+  await screen.findByText('Fonte: lore.pdf, página 3');
+  expect(service.advanceLoreImport).toHaveBeenNthCalledWith(1, 'session', 0);
+  expect(service.advanceLoreImport).toHaveBeenNthCalledWith(2, 'session', 3);
+  expect(service.advanceLoreImport).toHaveBeenCalledTimes(2);
+  expect(service.applyLoreImport).not.toHaveBeenCalled();
+});
+
 it('new universe validates aggregate file selection and creates only selected entries', async () => {
   vi.mocked(service.getPendingLoreImport).mockReturnValue(null);
   vi.mocked(service.uploadLoreImport).mockResolvedValue({

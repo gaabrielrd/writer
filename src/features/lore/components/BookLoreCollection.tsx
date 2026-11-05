@@ -31,7 +31,7 @@ import {
 import { useBookLoreActor } from '../hooks/useBookLoreActor';
 import { useBookLoreCollection } from '../hooks/useBookLoreCollection';
 import type { LoreCategory, LoreMentionEntity } from '../model/loreEntity';
-import type { BookLorePresentation } from '../model/bookLorePresentation';
+import type { BookLoreSummary } from '../model/bookLorePresentation';
 import { LoreEntityCard } from './LoreEntityCard';
 import { LoreEntityInspector } from './LoreEntityInspector';
 import { LoreEntityList } from './LoreEntityList';
@@ -120,7 +120,7 @@ function Content({
     onEntitiesChanged?.();
     void refresh();
   };
-  const edit = (e: BookLorePresentation) => open({ kind: 'edit', loreId: e.id }),
+  const edit = (e: BookLoreSummary) => open({ kind: 'edit', loreId: e.id }),
     remove = (id: string) => {
       const e = rows.find((e) => e.id === id);
       if (e) open({ kind: 'remove', loreId: e.id, sourceToken: e.sourceToken, name: e.name });

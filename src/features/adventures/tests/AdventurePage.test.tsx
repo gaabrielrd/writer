@@ -159,24 +159,26 @@ it('abre narrativa contextual da aventura e alterna por teclado sem trocar o pro
   ).toBeInTheDocument();
   const narrative = screen.getByRole('tab', { name: 'Arcos e cronologia' });
   expect(narrative).toHaveAttribute('aria-selected', 'true');
-  narrative.focus();
+  act(() => narrative.focus());
   await userEvent.keyboard('{Home}');
   expect(screen.getByRole('tab', { name: 'Cenas' })).toHaveFocus();
-  expect(
-    screen.queryByRole('heading', { name: 'Planejamento de adventure/project' }),
-  ).not.toBeInTheDocument();
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('heading', { name: 'Planejamento de adventure/project' }),
+    ).not.toBeInTheDocument(),
+  );
   await userEvent.keyboard('{End}');
   expect(screen.getByRole('tab', { name: 'Compêndio' })).toHaveFocus();
   expect(await screen.findByRole('heading', { name: 'Lore da aventura' })).toBeVisible();
   await userEvent.keyboard('{ArrowLeft}');
   expect(screen.getByRole('tab', { name: 'Progresso' })).toHaveFocus();
   expect(
-    screen.getByRole('heading', { name: 'Progresso de adventure/project' }),
+    await screen.findByRole('heading', { name: 'Progresso de adventure/project' }),
   ).toBeInTheDocument();
   await userEvent.keyboard('{ArrowLeft}');
   expect(screen.getByRole('tab', { name: 'Arcos e cronologia' })).toHaveFocus();
   expect(
-    screen.getByRole('heading', { name: 'Planejamento de adventure/project' }),
+    await screen.findByRole('heading', { name: 'Planejamento de adventure/project' }),
   ).toBeInTheDocument();
 });
 it('abre metadados persistidos, mantém privacidade e permite retornar ao Estúdio', async () => {

@@ -7,15 +7,15 @@ const key = 'writer-assistant-dock:v1:writer';
 const saved = () =>
   JSON.parse(localStorage.getItem(key) ?? '{}') as { x?: number; y?: number; mode?: string };
 
-it('reserves the measured dock height in dialogs and releases it on unmount', async () => {
+it('keeps viewport coordinates in dialogs without reserving space inside the modal', async () => {
   const modal = document.createElement('div');
   modal.setAttribute('role', 'dialog');
   document.body.append(modal);
   const view = render(tree());
   try {
-    await waitFor(() =>
-      expect(modal.style.getPropertyValue('--page-assistant-height')).toBe('120px'),
-    );
+    await waitFor(() => expect(modal.querySelector('[data-page-assistant]')).not.toBeNull());
+    expect(modal.style.getPropertyValue('--page-assistant-height')).toBe('');
+    expect(screen.getByRole('complementary').style.top).not.toBe('');
     view.unmount();
     expect(modal.style.getPropertyValue('--page-assistant-height')).toBe('');
   } finally {
@@ -23,9 +23,10 @@ it('reserves the measured dock height in dialogs and releases it on unmount', as
   }
 });
 
-it('temporarily minimizes a compact dock in a narrow dialog and preserves explicit expansion', async () => {
+it('minimizes a compact dock in a narrow dialog and preserves explicit expansion', async () => {
   vi.stubGlobal('innerWidth', 320);
   render(tree());
+  await userEvent.click(screen.getByRole('button', { name: 'Assistente da página' }));
   const modal = document.createElement('div');
   modal.setAttribute('role', 'dialog');
   document.body.append(modal);

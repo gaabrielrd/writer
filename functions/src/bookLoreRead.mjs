@@ -1,5 +1,7 @@
 import { openBookLoreRecord, readBookLoreRecordPart } from './bookLoreStorageRead.mjs';
 import { BOOK_LORE_GENERATION_FIELDS } from './bookLoreGenerationContracts.mjs';
+import { createBookLoreContextReader } from './bookLoreContextRead.mjs';
+import { createBookLoreProjectionBudget } from './bookLoreTextProjection.mjs';
 import {
   BOOK_LORE_READ_METHODS,
   loreChanged,
@@ -27,16 +29,61 @@ export function createBookLoreReadService({ db }) {
     readEntity: ({ tx, c, id, snapshot }) => snapshot ?? tx.get(db.doc(c.path + '/lore/' + id)),
     readPart: ({ tx, opened, section, page, index, field }) =>
       readBookLoreRecordPart(tx, opened, section, page, index, field),
+    readSummaries: async ({ tx, c }) => {
+      const reader = await createBookLoreContextReader(tx, db, c.uid, c.bookId);
+      const budget = createBookLoreProjectionBudget({
+        bytes: 32 * 1024 * 1024,
+        parts: 512,
+        retainedBytes: 900000,
+      });
+      return async (id) => {
+        const result = await reader.read(
+          id,
+          {
+            name: null,
+            category: null,
+            aliases: { items: null, characters: null },
+            summary: null,
+          },
+          budget,
+        );
+        if (!result.fields.name || !result.fields.category) loreChanged();
+        return {
+          id,
+          readToken: result.sourceToken,
+          name: result.fields.name.value,
+          category: result.fields.category.value,
+          aliases: result.fields.aliases?.value ?? [],
+          summary: result.fields.summary?.value ?? '',
+          isPublic: result.privacy.value === true,
+          relationCount: result.relationCount,
+        };
+      };
+    },
   });
 }
 /** Internal operations shared by active-book and native restore-job authorization ports. */
-export function createBookLoreReadOperations({ db, readBook, readEntity, readPart }) {
+export function createBookLoreReadOperations({
+  db,
+  readBook,
+  readEntity,
+  readPart,
+  readSummaries,
+}) {
   if ([readBook, readEntity, readPart].some((value) => typeof value !== 'function')) loreInvalid();
   return {
     async listBookLoreRead(uid, data) {
-      const c = loreReadScope(db, uid, data, ['limit', 'listToken', 'cursor', 'tokenVersion']),
+      const c = loreReadScope(db, uid, data, [
+          'limit',
+          'listToken',
+          'cursor',
+          'tokenVersion',
+          ...(readSummaries ? ['projection'] : []),
+        ]),
         limit = data.limit ?? 50,
         tokenVersion = loreReadTokenVersion(data.tokenVersion);
+      const summaries = Object.hasOwn(data, 'projection');
+      if (summaries && (data.projection !== 'summary' || tokenVersion !== 2)) loreInvalid();
       if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) loreInvalid();
       if (data.listToken != null) loreReadToken(data.listToken);
       if (data.cursor != null && data.listToken == null) loreInvalid();
@@ -52,17 +99,36 @@ export function createBookLoreReadOperations({ db, readBook, readEntity, readPar
         if (after !== null) query = query.startAfter(after);
         const rows = await tx.get(query),
           selected = rows.docs.slice(0, limit);
-        return {
-          schemaVersion: 1,
-          bookId: c.bookId,
-          listToken: book.listToken,
-          items: await Promise.all(
+        let items;
+        if (summaries) {
+          const read = await readSummaries({ tx, c });
+          items = [];
+          for (let start = 0; start < selected.length; start += 4) {
+            const batch = await Promise.allSettled(
+              selected.slice(start, start + 4).map(async (snapshot) => {
+                const item = await read(snapshot.id);
+                if (item.readToken !== loreEntityToken(c, book, snapshot, 2)) loreChanged();
+                return item;
+              }),
+            );
+            for (const result of batch) {
+              if (result.status === 'rejected') throw result.reason;
+              items.push(result.value);
+            }
+          }
+        } else
+          items = await Promise.all(
             selected.map(async (snapshot) => {
               const native = await readEntity({ tx, c, book, id: snapshot.id, snapshot });
               if (!native.exists || native.id !== snapshot.id) loreChanged();
               return { id: native.id, readToken: loreEntityToken(c, book, native, tokenVersion) };
             }),
-          ),
+          );
+        return {
+          schemaVersion: summaries ? 2 : 1,
+          bookId: c.bookId,
+          listToken: book.listToken,
+          items,
           nextCursor:
             rows.docs.length > limit
               ? Buffer.from(

@@ -84,6 +84,11 @@ features/minha-feature/
 
 ## Acesso a APIs
 
+O compêndio dos detalhes do livro usa uma projeção própria de listagem, separada
+das capturas completas C1 e dos escritores. Veja o
+[contrato da listagem leve de lore](book-lore-listing.md), incluindo autorização,
+reconferência de metadata, limites e ordem de publicação.
+
 Todo acesso a APIs passa por `services/`, `adapters/` ou `repositories/` dentro
 da feature. Uma infraestrutura neutra e realmente compartilhada pode usar as
 mesmas pastas dentro de `shared`. Os componentes chamam essa fronteira; nunca

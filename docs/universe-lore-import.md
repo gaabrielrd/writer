@@ -23,7 +23,13 @@ Documentos são dados, nunca instruções. Não há BYOK neste fluxo.
 O servidor analisa partes de 12.000 caracteres com sobreposição de 300 dentro de
 cada página, valida evidências literais e consolida entidades por nome/apelidos e
 categoria. Ambiguidade de correspondências não escolhe uma ficha automaticamente.
-Análise inválida pode ser repetida no mesmo cursor, sem aplicar lote parcial.
+Cada chamada analisa até três trechos em paralelo, com o mesmo contexto já
+confirmado, e consolida os resultados na ordem original antes de avançar o cursor.
+O lote grava somente sugestões alteradas. Análise inválida pode ser repetida no
+mesmo cursor, sem gravar sugestões parciais do lote; as análises irmãs terminam
+antes de a falha ser retornada. Cancelamento e autorização são reconferidos na
+transação final. O ganho de tempo depende da latência e da cota do provedor;
+extração local e envio ordenado dos arquivos permanecem etapas próprias.
 
 Limites operacionais: dez importações novas por hora/autor; 20 milhões de
 caracteres extraídos incluindo sobreposições; 500 fichas de contexto, com até

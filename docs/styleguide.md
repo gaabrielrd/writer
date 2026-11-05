@@ -598,22 +598,38 @@ de salvamento. Temas usam os mesmos tokens semânticos e os controles compartilh
 
 ## Primeiro acesso e assistência contínua
 
+A edição e a criação nativas de lore do livro usam um modal de até 1024 px,
+com sidebar vertical por campo e área de edição centralizada à direita, limitada
+a 560 px. Abas têm ícones Lucide, seleção visível, indicação acessível de alteração
+pendente e navegação por setas, Home e End. Trocar de campo preserva o rascunho
+sem preparar ou aplicar automaticamente; os comandos de revisão e confirmação
+continuam no rodapé do modal. O assistente mantém sua posição flutuante externa.
+
 O questionário usa Dialog, escolhas Button com aria-pressed e Dropdown select.
 Permite múltiplos interesses e explicita que todas as ferramentas continuam
 acessíveis. O guia é não modal, com progresso, pausa, links e destaque por token
 semântico; não deve capturar foco de escrita ao surgir.
 
-A barra do assistente nasce compacta no centro inferior, com alça por toque/
+A barra do assistente nasce minimizada no centro inferior, com alça por toque/
 ponteiro/setas e ações nomeadas de expandir, minimizar e restaurar. O painel
 respeita visualViewport, área segura e foco dos modais. Sobreposição ao campo/
 caret recolhe temporariamente a barra sem mudar sua preferência salva. Conversa
 expandida rola separadamente do composer. Não criar uma segunda superfície
 flutuante para a concepção de projetos. Perfil e assistente seguem os três temas.
 
-Diálogos e páginas de catálogo reservam a altura medida da barra para manter
-ações acessíveis. Em diálogos até 760 px, a apresentação compacta recolhe
-temporariamente; expandir continua sendo uma ação explícita e a pergunta é
-preservada. A gaveta de navegação suspende a barra para manter seu ciclo de foco.
+O compositor mantém o contexto em texto discreto no rodapé. O campo usa um
+placeholder contextual e nome acessível, sem rótulo visível repetido. Enviar é
+um botão de ícone no canto inferior direito do campo, com espaço reservado para
+não cobrir o texto e área ampliada em toque. A barra compacta tem até 420 px,
+cabeçalho reduzido e sombra discreta. Lista/Grid do compêndio usa controles
+compactos com ícones, seleção por aria-pressed e foco visível.
+
+Páginas de catálogo reservam a altura medida da barra para manter ações
+acessíveis. Ao abrir um diálogo, o assistente conserva a posição flutuante no
+viewport, fora da caixa do modal, sem acrescentar altura ou padding ao formulário.
+Permanece no escopo de foco do diálogo para permitir escrita e cliques nas duas
+superfícies. A alça continua móvel e Escape no assistente recolhe a conversa sem
+fechar o modal. A gaveta de navegação suspende a barra para manter seu ciclo de foco.
 O minimapa móvel rola o contêiner do workspace e limita o fim da navegação para
 preservar sua própria visibilidade, sem mover a seleção do manuscrito.
 A barra de seleção do compêndio respeita a altura do assistente também no

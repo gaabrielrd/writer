@@ -116,6 +116,10 @@ export async function createBookLoreContextReader(tx, db, uid, bookId) {
           sourceToken: loreEntityToken(c, book, snapshot, 2),
           fields: projection.finish(present),
           privacy,
+          relationCount:
+            opened.mode === 'inline'
+              ? (opened.data.relations?.length ?? 0)
+              : opened.relations.count,
         };
         async function stream(section, field, manifest, consume) {
           budget.reserve({ bytes: manifest.byteLength, parts: manifest.chunkCount });

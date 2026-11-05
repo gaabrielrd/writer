@@ -29,6 +29,7 @@
   gap: 2px;
   min-width: 0;
   flex-shrink: 0;
+  color: hsl(var(--muted-foreground));
 }
 .header button {
   width: 32px;
@@ -137,22 +138,25 @@
   font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
+.footerContext {
+  margin: 0;
+  padding: 0 2px;
+  font-size: 0.7rem;
+}
+/* Keep the modal focus scope while positioning the dock in viewport coordinates.
+   A transformed dialog would otherwise become the fixed-position containing block. */
+:global([role='dialog']):has(> .dock.inDialog) {
+  inset: 0;
+  margin: auto;
+  height: fit-content;
+  transform: none;
+  translate: none;
+  animation: none;
+  overflow: visible;
+}
 .dock.inDialog {
-  position: absolute;
-  inset: auto 8px 8px;
-  width: calc(100% - 16px);
-  max-height: calc(100% - 48px);
+  position: fixed;
   z-index: 65;
-}
-.dock.inDialog[data-mode='expanded'] {
-  height: calc(100% - 48px);
-}
-.dock.inDialog[data-mode='minimized'] {
-  inset: auto auto 8px 8px;
-  width: auto;
-}
-:global([role='dialog']):has(.dock.inDialog[data-mode='expanded']) {
-  min-height: min(80dvh, 680px);
 }
 @media (pointer: coarse) {
   .header button {
@@ -178,13 +182,6 @@
 
 .dock:not([data-mode='minimized']) {
   padding-bottom: max(8px, env(safe-area-inset-bottom));
-}
-
-:global([role='dialog']):has(> .dock.inDialog[data-mode='compact']) {
-  padding-bottom: calc(var(--page-assistant-height, 220px) + 16px);
-}
-:global([role='dialog']):has(> .dock.inDialog[data-mode='minimized']) {
-  padding-bottom: calc(var(--page-assistant-height, 80px) + 16px);
 }
 
 .conceptionSurface .launcher {

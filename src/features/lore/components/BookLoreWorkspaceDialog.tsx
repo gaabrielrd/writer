@@ -18,7 +18,7 @@ type Target = { readonly loreId: string; readonly sourceToken: string };
 export type BookLoreWorkspaceMode =
   | { kind: 'create'; writeId?: string; initialName?: string }
   | { kind: 'edit'; loreId: string; writeId?: string }
-  | { kind: 'read'; entity: BookLorePresentation }
+  | { kind: 'read'; entity: Pick<BookLorePresentation, 'id' | 'sourceToken'> }
   | { kind: 'read-current'; loreId: string }
   | { kind: 'remove'; loreId: string; sourceToken?: string; name?: string; writeId?: string }
   | { kind: 'remove-selection'; targets?: readonly Target[]; selectionId?: string }

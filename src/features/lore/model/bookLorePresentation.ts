@@ -7,6 +7,14 @@ import {
 } from './loreEntity';
 import type { BookLoreEditSource } from '../services/bookLoreWritePlan';
 
+/** Listing projection only; never a complete C1 source or editor input. */
+export interface BookLoreSummary extends LoreMentionEntity {
+  bookId: string;
+  sourceToken: string;
+  isPublic: boolean;
+  relationCount: number;
+}
+
 /** Read-only presentation of a complete C1 source. Never a writer source. */
 export interface BookLorePresentation extends LoreMentionEntity {
   bookId: string;

@@ -9,6 +9,7 @@ import { chooseDropdown } from '@/test/dropdown';
 import { Dialog, Button } from '@/shared/ui';
 import { LoreCollection, LoreTab } from '../components/LoreTab';
 import type { Book } from '@/features/books';
+import type { BookLoreSummary } from '../model/bookLorePresentation';
 import type { BookLoreEditSource } from '../services/bookLoreWritePlan';
 import type { BookLoreCreationEditorProps } from '../components/BookLoreCreationEditor';
 import type { BookLoreManualEditorProps } from '../components/BookLoreManualEditor';
@@ -19,7 +20,7 @@ import type { BookLoreVisibilitySelectionDialogProps } from '../components/BookL
 const s = vi.hoisted(() => ({
   actor: { uid: 'author', displayName: '' },
   user: { uid: 'author' },
-  captureList: vi.fn<(bookId: string) => Promise<readonly BookLoreEditSource[]>>(),
+  listSummaries: vi.fn<(bookId: string) => Promise<readonly BookLoreSummary[]>>(),
   capture:
     vi.fn<(bookId: string, id: string, token?: string) => Promise<BookLoreEditSource | null>>(),
   reads: [] as unknown[],
@@ -46,9 +47,9 @@ vi.mock('../services/bookLoreReadService', () => ({
     return {
       actor,
       guard,
-      async captureList(bookId: string) {
+      async listSummaries(bookId: string) {
         guard();
-        const r = await s.captureList(bookId);
+        const r = await s.listSummaries(bookId);
         guard();
         return r;
       },
@@ -224,12 +225,25 @@ function sources(bookId = 'book'): BookLoreEditSource[] {
     },
   ];
 }
+function summaries(bookId = 'book'): BookLoreSummary[] {
+  return sources(bookId).map((source) => ({
+    bookId,
+    id: source.id,
+    sourceToken: source.sourceToken,
+    name: source.data.name as string,
+    category: source.data.category as BookLoreSummary['category'],
+    aliases: (source.data.aliases ?? []) as string[],
+    summary: (source.data.summary ?? '') as string,
+    isPublic: source.data.isPublic === true,
+    relationCount: (source.data.relations as unknown[] | undefined)?.length ?? 0,
+  }));
+}
 beforeEach(() => {
   vi.clearAllMocks();
   s.actor = { uid: 'author', displayName: '' };
   s.user = { uid: 'author' };
   s.reads = [];
-  s.captureList.mockImplementation((bookId: string) => Promise.resolve(sources(bookId)));
+  s.listSummaries.mockImplementation((bookId: string) => Promise.resolve(summaries(bookId)));
   s.capture.mockImplementation((bookId: string, id: string) =>
     Promise.resolve(sources(bookId).find((e) => e.id === id) ?? null),
   );
@@ -257,10 +271,11 @@ function deferred<T>() {
 }
 
 it.each(['book', { kind: 'book' as const, id: 'book' }])(
-  'book scope %j uses C1/v2 without legacy writers and missing consent stays private',
+  'book scope %j lists summaries with C1/v2 without legacy writers and missing consent stays private',
   async (scope) => {
     await show({ scope });
-    expect(s.captureList).toHaveBeenCalledWith('book');
+    expect(s.listSummaries).toHaveBeenCalledWith('book');
+    expect(s.capture).not.toHaveBeenCalled();
     expect(s.reads).toEqual([{ tokenVersion: 2 }]);
     expect(screen.getAllByText('Privado')).toHaveLength(1);
     expect(s.legacyList).not.toHaveBeenCalled();
@@ -369,11 +384,12 @@ it('closing a bulk choice preserves selection and restores its stable opener', a
   expect(s.visibility).not.toHaveBeenCalled();
 });
 it('freezes all 53 original targets before choosing visibility without a page-sized cap', async () => {
-  s.captureList.mockResolvedValueOnce(
+  s.listSummaries.mockResolvedValueOnce(
     Array.from({ length: 53 }, (_, i) => ({
-      ...sources()[0]!,
+      ...summaries()[0]!,
       id: 'id-' + i,
-      data: { name: 'Name ' + i, category: 'other' },
+      name: 'Name ' + i,
+      category: 'other',
     })),
   );
   const { user } = renderWithProviders(<LoreCollection scope="book" />);
@@ -400,9 +416,9 @@ it('partial removal rereads current data and keeps only failed remaining IDs sel
   expect(last(s.removeSelection).targets).toEqual(
     sources().map((e) => ({ loreId: e.id, sourceToken: e.sourceToken })),
   );
-  s.captureList.mockResolvedValueOnce(sources().slice(1));
+  s.listSummaries.mockResolvedValueOnce(summaries().slice(1));
   await user.click(screen.getByRole('button', { name: 'Confirmar no fluxo nativo' }));
-  await waitFor(() => expect(s.captureList).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(s.listSummaries).toHaveBeenCalledTimes(2));
   expect(screen.getByRole('dialog')).toBeInTheDocument();
   await user.click(screen.getByRole('button', { name: 'Fechar tentativa' }));
   await waitFor(() =>
@@ -418,11 +434,11 @@ it('visibility completion separates applied/unchanged and displays a fresh value
   await user.click(within(bar()).getByRole('button', { name: 'Alterar visibilidade' }));
   await chooseDropdown(user, screen.getByLabelText('Nova visibilidade'), 'Público');
   await user.click(screen.getByRole('button', { name: 'Revisar seleção' }));
-  const fresh = sources();
-  fresh[0] = { ...fresh[0]!, data: { ...fresh[0]!.data, isPublic: false } };
-  s.captureList.mockResolvedValueOnce(fresh);
+  const fresh = summaries();
+  fresh[0] = { ...fresh[0]!, isPublic: false };
+  s.listSummaries.mockResolvedValueOnce(fresh);
   await user.click(screen.getByRole('button', { name: 'Confirmar no fluxo nativo' }));
-  await waitFor(() => expect(s.captureList).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(s.listSummaries).toHaveBeenCalledTimes(2));
   await user.click(screen.getByRole('button', { name: 'Fechar tentativa' }));
   await waitFor(() => expect(screen.getAllByText('Privado')).toHaveLength(2));
   expect(screen.queryByRole('region', { name: 'Ações da seleção' })).not.toBeInTheDocument();
@@ -437,7 +453,7 @@ it.each([
 ] as const)(
   'recovery %s remains reachable independently of the source list',
   async (label, which, id, lore) => {
-    s.captureList.mockRejectedValueOnce(Error('Lista indisponível'));
+    s.listSummaries.mockRejectedValueOnce(Error('Lista indisponível'));
     const { user } = renderWithProviders(<LoreCollection scope="book" />);
     await screen.findByText('Lista indisponível');
     await user.click(screen.getByRole('button', { name: 'Retomadas' }));
@@ -469,7 +485,7 @@ it.each([
   },
 );
 it('list errors clear private rows and can retry without a legacy read', async () => {
-  s.captureList.mockRejectedValueOnce(Error('Sem conexão'));
+  s.listSummaries.mockRejectedValueOnce(Error('Sem conexão'));
   const { user } = renderWithProviders(<LoreCollection scope="book" />);
   await screen.findByText('Sem conexão');
   expect(screen.queryByText('Arthur')).not.toBeInTheDocument();
@@ -478,18 +494,18 @@ it('list errors clear private rows and can retry without a legacy read', async (
   expect(s.legacyList).not.toHaveBeenCalled();
 });
 it('book switch drops old late sources and removes portals from the previous workspace', async () => {
-  const pending = deferred<readonly BookLoreEditSource[]>();
-  s.captureList.mockReturnValueOnce(pending.promise);
+  const pending = deferred<readonly BookLoreSummary[]>();
+  s.listSummaries.mockReturnValueOnce(pending.promise);
   const slot = document.createElement('div');
   document.body.append(slot);
   const { rerender, unmount } = renderWithProviders(
     <LoreCollection scope="book" actionsContainer={slot} />,
   );
-  await waitFor(() => expect(s.captureList).toHaveBeenCalledWith('book'));
+  await waitFor(() => expect(s.listSummaries).toHaveBeenCalledWith('book'));
   rerender(<LoreCollection scope="other" actionsContainer={slot} />);
   await screen.findByText('Arthur');
   await act(async () => {
-    pending.resolve([{ ...sources()[0]!, data: { name: 'Old private name', category: 'other' } }]);
+    pending.resolve([{ ...summaries()[0]!, name: 'Old private name', category: 'other' }]);
     await pending.promise;
   });
   expect(screen.queryByText('Old private name')).not.toBeInTheDocument();
@@ -545,13 +561,13 @@ it('switching local/global book scopes clears selection and returns to a fresh l
     'Lore local — somente este livro',
   );
   await screen.findByText('Arthur');
-  expect(s.captureList).toHaveBeenCalledTimes(2);
+  expect(s.listSummaries).toHaveBeenCalledTimes(2);
   unmount();
   expect(slot).toBeEmptyDOMElement();
   slot.remove();
 });
 it('empty collection retains create and recovery actions', async () => {
-  s.captureList.mockResolvedValueOnce([]);
+  s.listSummaries.mockResolvedValueOnce([]);
   const { user } = renderWithProviders(<LoreCollection scope="book" />);
   await screen.findByText('Nenhuma entidade cadastrada');
   await user.click(screen.getByRole('button', { name: 'Cadastrar Primeira Entidade' }));
@@ -572,22 +588,24 @@ it('StrictMode rejects its obsolete initial read while keeping a single complete
 it('a newer explicit refresh wins even when an older request finishes afterwards', async () => {
   const hook = renderHook(() => useBookLoreCollection('book'));
   await waitFor(() => expect(hook.result.current.loading).toBe(false));
-  const older = deferred<readonly BookLoreEditSource[]>(),
-    newer = deferred<readonly BookLoreEditSource[]>();
-  s.captureList.mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise);
+  const older = deferred<readonly BookLoreSummary[]>(),
+    newer = deferred<readonly BookLoreSummary[]>();
+  s.listSummaries.mockReturnValueOnce(older.promise).mockReturnValueOnce(newer.promise);
   let oldRun!: Promise<void>, newRun!: Promise<void>;
   act(() => {
     oldRun = hook.result.current.refresh();
     newRun = hook.result.current.refresh();
   });
-  const fresh = [{ ...sources()[0]!, data: { name: 'Latest authorized', category: 'other' } }];
+  const fresh: BookLoreSummary[] = [
+    { ...summaries()[0]!, name: 'Latest authorized', category: 'other' },
+  ];
   await act(async () => {
     newer.resolve(fresh);
     await newRun;
   });
   expect(hook.result.current.rows[0]?.name).toBe('Latest authorized');
   await act(async () => {
-    older.resolve(sources());
+    older.resolve(summaries());
     await oldRun;
   });
   expect(hook.result.current.rows[0]?.name).toBe('Latest authorized');

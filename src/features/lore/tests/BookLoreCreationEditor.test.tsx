@@ -3,7 +3,6 @@ import { beforeEach, it, expect, vi } from 'vitest';
 import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryRouter, RouterProvider } from 'react-router';
-import { chooseDropdown } from '@/test/dropdown';
 import { BookLoreCreationEditor } from '../components/BookLoreCreationEditor';
 import { BookLoreCreationRecoveries } from '../components/BookLoreCreationRecoveries';
 import type { DurableBookLoreCreationSnapshot } from '../services/bookLoreCreationDurableOperation';
@@ -237,7 +236,7 @@ it('opens a protected creation draft only on request and checks the returned ori
   expect(await screen.findByLabelText('Nome', { exact: true })).toHaveValue('\ufeff Original\n');
   expect(s.ticket).toHaveBeenCalledWith('resume');
   expect(s.resume).toHaveBeenCalledWith('resume');
-  await chooseDropdown(user, screen.getByRole('combobox', { name: 'Campo em edição' }), 'Detalhes');
+  await user.click(screen.getByRole('tab', { name: 'Detalhes' }));
   expect(screen.getByLabelText('Detalhes', { exact: true })).toHaveValue('\ufeff PRIVATE\n');
   expect(s.apply).not.toHaveBeenCalled();
 });
@@ -335,7 +334,7 @@ it('lists only this book and incomplete discards, without creating or reading a 
 it('preserves large optional text without a field cap', async () => {
   const { user } = editor(),
     text = '\ufeff' + ' x '.repeat(60000) + '\n';
-  await chooseDropdown(user, screen.getByRole('combobox', { name: 'Campo em edição' }), 'Detalhes');
+  await user.click(screen.getByRole('tab', { name: 'Detalhes' }));
   await user.click(screen.getByRole('button', { name: 'Adicionar detalhes' }));
   fireEvent.change(screen.getByLabelText('Detalhes', { exact: true }), { target: { value: text } });
   await user.click(screen.getByRole('button', { name: 'Preparar ficha' }));

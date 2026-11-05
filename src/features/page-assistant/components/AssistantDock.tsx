@@ -123,7 +123,7 @@ export function AssistantDock({
   }, [mode, dialog, suppress]);
   useLayoutEffect(() => {
     if (suppress) return;
-    const host = dialog ?? document.documentElement;
+    const host = document.documentElement;
     const previous = host.style.getPropertyValue('--page-assistant-height');
     host.style.setProperty('--page-assistant-height', `${size.height}px`);
     return () => {
@@ -182,17 +182,25 @@ export function AssistantDock({
   useEffect(() => {
     const key = (event: KeyboardEvent) => {
       if (
-        event.key === 'Escape' &&
-        !event.defaultPrevented &&
-        panel.current?.contains(event.target as Node)
-      ) {
-        event.preventDefault();
-        event.stopPropagation();
-        setMode(mode === 'expanded' ? 'compact' : 'minimized');
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        !panel.current?.contains(event.target as Node)
+      )
+        return;
+      // Run before the modal's document-level Escape handler.
+      event.preventDefault();
+      event.stopPropagation();
+      if (drag.current) {
+        const origin = drag.current.origin;
+        drag.current = null;
+        preferencesRef.current = origin;
+        setPreferences(origin);
+        return;
       }
+      setMode(mode === 'expanded' ? 'compact' : 'minimized');
     };
-    document.addEventListener('keydown', key);
-    return () => document.removeEventListener('keydown', key);
+    window.addEventListener('keydown', key, true);
+    return () => window.removeEventListener('keydown', key, true);
   });
   const availableX = Math.max(0, bounds.width - size.width - 24);
   const availableY = Math.max(0, bounds.height - size.height - 24);
@@ -208,16 +216,12 @@ export function AssistantDock({
       data-writer-tour="assistant"
       data-mode={mode}
       className={`${styles.dock} ${dialog ? styles.inDialog : ''}`}
-      style={
-        dialog
-          ? undefined
-          : {
-              left,
-              top,
-              maxHeight: Math.max(96, bounds.height - 24),
-              maxWidth: Math.max(0, bounds.width - 24),
-            }
-      }
+      style={{
+        left,
+        top,
+        maxHeight: Math.max(96, bounds.height - 24),
+        maxWidth: Math.max(0, bounds.width - 24),
+      }}
       aria-label="Assistente da página"
     >
       <header className={styles.header}>
@@ -230,7 +234,7 @@ export function AssistantDock({
           aria-label="Mover assistente"
           title="Arraste ou use as setas; Escape cancela o movimento"
           onPointerDown={(e) => {
-            if (dialog || e.button !== 0) return;
+            if (e.button !== 0) return;
             preferencesRef.current = preferences;
             drag.current = {
               pointer: e.pointerId,
@@ -275,7 +279,6 @@ export function AssistantDock({
               setPreferences(origin);
               return;
             }
-            if (dialog) return;
             const delta: Record<string, [number, number]> = {
               ArrowLeft: [-1, 0],
               ArrowRight: [1, 0],
@@ -370,6 +373,7 @@ export function AssistantDock({
             Posição mantida apenas nesta sessão: armazenamento indisponível.
           </p>
         )}
+        <p className={`${styles.meta} ${styles.footerContext}`}>Contexto: {context}</p>
       </div>
     </aside>,
     dialog ?? document.body,

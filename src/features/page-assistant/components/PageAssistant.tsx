@@ -315,7 +315,7 @@ function AssistantSession({
           <form onSubmit={(event) => void send(event, expand)} className={styles.form}>
             <Textarea
               aria-label="Pedido ao assistente da página"
-              placeholder="Peça algo sobre esta página"
+              placeholder={`Peça ajuda com ${context === 'Universo' ? 'personagens, locais ou conceitos deste universo' : context.toLocaleLowerCase('pt-BR')}…`}
               className={styles.composer}
               value={prompt}
               onChange={(e) => {

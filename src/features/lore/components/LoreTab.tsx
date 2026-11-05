@@ -295,7 +295,7 @@ function LegacyLoreCollection({
         </Alert>
       )}
       {global && (
-        <p>
+        <p className={styles.scopeDescription}>
           Edite o lore global deste universo. As alterações são compartilhadas entre seus livros.
         </p>
       )}
@@ -377,7 +377,7 @@ function LegacyLoreCollection({
           title="Nenhuma entidade cadastrada"
           description={`Cadastre personagens, locais e conceitos para ${global ? 'este universo' : 'este livro'}.`}
           action={
-            <Button variant="primary" onClick={handleOpenCreate}>
+            <Button variant="primary" size="sm" onClick={handleOpenCreate}>
               <Plus className="icon icon-sm" aria-hidden="true" />
               Cadastrar Primeira Entidade
             </Button>

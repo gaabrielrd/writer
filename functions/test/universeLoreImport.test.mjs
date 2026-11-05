@@ -17,7 +17,7 @@ const input = {
   universeId: null,
   files: [{ name: 'lore.txt', size: Buffer.byteLength(source), parts: 1 }],
 };
-function fixture() {
+function fixture(generator) {
   const f = studioDb();
   let clock = 100;
   let calls = 0;
@@ -25,8 +25,9 @@ function fixture() {
   const api = createUniverseLoreImportService({
     db: f.db,
     now: () => clock,
-    generator: async () => {
+    generator: async (input) => {
       calls++;
+      if (generator) return generator(input);
       return JSON.stringify(response);
     },
   });
@@ -43,6 +44,146 @@ function fixture() {
     },
   };
 }
+async function analyzingPages(f, count = 4, universeId = null) {
+  await f.api.startUniverseLoreImport('author', {
+    ...input,
+    universeId,
+    files: [{ ...input.files[0], parts: count }],
+  });
+  await f.api.appendUniverseLoreImport('author', {
+    id: input.id,
+    kind: 'bytes',
+    file: 0,
+    index: 0,
+    payload: Buffer.from(source).toString('base64'),
+  });
+  for (let index = 0; index < count; index++)
+    await f.api.appendUniverseLoreImport('author', {
+      id: input.id,
+      kind: 'source',
+      file: 0,
+      index,
+      payload: `${source} Página ${index + 1}.`,
+      page: index + 1,
+    });
+  return f.api.sealUniverseLoreImport('author', { id: input.id });
+}
+const turn = () => new Promise((resolve) => setImmediate(resolve));
+
+test('analyzes at most three pages concurrently and merges in source order before advancing', async () => {
+  const pending = [];
+  const f = fixture(
+    ({ text }) =>
+      new Promise((resolve) =>
+        pending.push(() =>
+          resolve({
+            entities: [{ ...item, details: text, evidence: text }],
+          }),
+        ),
+      ),
+  );
+  await analyzingPages(f);
+  const advance = f.api.advanceUniverseLoreImport('author', { id: input.id, cursor: 0 });
+  await turn();
+  assert.equal(pending.length, 3);
+  pending[2]();
+  pending[0]();
+  await turn();
+  assert.equal((await f.api.getUniverseLoreImport('author', { id: input.id })).cursor, 0);
+  pending[1]();
+  const review = await advance;
+  assert.equal(review.cursor, 3);
+  assert.equal(review.state, 'analyzing');
+  assert.equal(review.candidates.length, 1);
+  assert.equal(
+    review.candidates[0].details,
+    [1, 2, 3].map((n) => `${source} Página ${n}.`).join('\n\n'),
+  );
+  assert.equal(review.candidates[0].page, 3);
+  const last = f.api.advanceUniverseLoreImport('author', { id: input.id, cursor: 3 });
+  await turn();
+  assert.equal(pending.length, 4);
+  pending[3]();
+  const done = await last;
+  assert.equal(done.cursor, 4);
+  assert.equal(done.state, 'ready');
+  assert.equal(done.candidates[0].id, review.candidates[0].id);
+  assert.equal(f.records.get('users/author').credits, 10);
+});
+
+test('failed parallel analysis drains siblings without advancing or saving partial suggestions; retry succeeds', async () => {
+  let broken = true;
+  const f = fixture(async ({ text }) => {
+    if (broken && text.endsWith('2.')) throw Error('provider unavailable');
+    return { entities: [{ ...item, details: text, evidence: text }] };
+  });
+  await analyzingPages(f, 3);
+  await assert.rejects(f.api.advanceUniverseLoreImport('author', { id: input.id, cursor: 0 }), {
+    code: 'unavailable',
+  });
+  const failed = await f.api.getUniverseLoreImport('author', { id: input.id });
+  assert.equal(failed.cursor, 0);
+  assert.equal(failed.candidates.length, 0);
+  broken = false;
+  const review = await f.api.advanceUniverseLoreImport('author', { id: input.id, cursor: 0 });
+  assert.equal(review.cursor, 3);
+  assert.equal(review.candidates.length, 1);
+  assert.equal(f.records.get('users/author').credits, 10);
+});
+
+test('cancel fences a late parallel batch without candidates or debit', async () => {
+  const pending = [];
+  const f = fixture(() => new Promise((resolve) => pending.push(resolve)));
+  await analyzingPages(f, 3);
+  const advance = f.api.advanceUniverseLoreImport('author', { id: input.id, cursor: 0 });
+  const rejection = assert.rejects(advance, { code: 'failed-precondition' });
+  await turn();
+  await f.api.cancelUniverseLoreImport('author', { id: input.id });
+  for (const resolve of pending) resolve({ entities: [item] });
+  await rejection;
+  assert.ok(![...f.records.keys()].some((path) => path.includes('/importCandidates/')));
+  assert.equal(f.records.get('users/author').credits, 10);
+});
+
+test('parallel results reauthorize universe before committing', async () => {
+  const pending = [];
+  const f = fixture(() => new Promise((resolve) => pending.push(resolve)));
+  f.records.set('universes/world', { authorId: 'author' });
+  await analyzingPages(f, 3, 'world');
+  const advance = f.api.advanceUniverseLoreImport('author', { id: input.id, cursor: 0 });
+  const rejection = assert.rejects(advance, { code: 'permission-denied' });
+  await turn();
+  assert.equal(pending.length, 3);
+  f.records.set('universes/world', { authorId: 'other' });
+  for (const resolve of pending) resolve({ entities: [item] });
+  await rejection;
+  assert.ok(![...f.records.keys()].some((path) => path.includes('/importCandidates/')));
+  assert.equal(f.records.get('users/author').credits, 10);
+});
+
+test('next batch does not rewrite candidates that have not changed', async () => {
+  const f = fixture(async ({ text }) => ({
+    entities: [
+      {
+        ...item,
+        name: `Personagem ${text.at(-2)}`,
+        aliases: [],
+        evidence: text,
+      },
+    ],
+  }));
+  await analyzingPages(f);
+  const review = await f.api.advanceUniverseLoreImport('author', { id: input.id, cursor: 0 });
+  const ref = f.db.doc(
+    `users/author/universeLoreImports/${input.id}/importCandidates/${review.candidates[0].id}`,
+  );
+  const before = (await ref.get()).updateTime;
+  const done = await f.api.advanceUniverseLoreImport('author', { id: input.id, cursor: 3 });
+  assert.equal(done.candidates.length, 4);
+  const after = (await ref.get()).updateTime;
+  assert.equal(after.seconds, before.seconds);
+  assert.equal(after.nanoseconds, before.nanoseconds);
+});
 async function ready(f, options = {}) {
   const start = { ...input, ...options };
   await f.api.startUniverseLoreImport('author', start);

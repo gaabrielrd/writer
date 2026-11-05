@@ -297,7 +297,7 @@ export function LoreImportDialog({
         controller.current.signal.throwIfAborted();
         if (alive.current) {
           setReview(current);
-          setMessage(`Analisando trecho ${current.cursor + 1} de ${current.total}…`);
+          setMessage(`Analisando lore… ${current.cursor} de ${current.total} trechos concluídos.`);
         }
         current = await advanceLoreImport(sessionId, current.cursor);
       }

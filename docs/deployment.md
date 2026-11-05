@@ -1,5 +1,13 @@
 # Deploy do Writer no Firebase
 
+## Primeira experiência publicada em 2026-11-03
+
+O commit `1bc6ba8` foi publicado na ordem `generationApi`, Firestore Rules e
+Hosting. A Function está ACTIVE em Node 24; as Rules coincidem integralmente com
+o snapshot e os 16 arquivos do frontend foram conferidos por SHA-256. Seis rotas
+SPA e o carregamento anônimo no Chromium passaram. Fluxos autenticados reais não
+foram exercitados nesta publicação. Veja a [evidência](entregas/2026-11-03-deploy-primeira-experiencia.md).
+
 ## Hosting visual publicado em 2026-11-02
 
 O frontend com Home visual, densidade do Estúdio, editor e criação assistida foi

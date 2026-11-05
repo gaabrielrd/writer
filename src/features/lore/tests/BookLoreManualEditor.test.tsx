@@ -147,6 +147,27 @@ function mount(props: Partial<Parameters<typeof BookLoreManualEditor>[0]> = {}, 
   ]);
   return { router, onClose, ...render(<RouterProvider router={router} />) };
 }
+it('navigates the field sidebar by keyboard and preserves drafts without sending requests', async () => {
+  const user = userEvent.setup();
+  mount();
+  const name = await screen.findByLabelText('Nome');
+  await user.clear(name);
+  await user.type(name, 'Nome em rascunho');
+  const tab = screen.getByRole('tab', { name: 'Nome' });
+  expect(tab).toHaveAccessibleDescription('Campo com alterações pendentes');
+  tab.focus();
+  await user.keyboard('{ArrowDown}');
+  expect(screen.getByRole('tab', { name: 'Categoria' })).toHaveFocus();
+  expect(screen.getByRole('tabpanel', { name: 'Edição de Categoria' })).toBeVisible();
+  await user.keyboard('{End}');
+  expect(screen.getByRole('tab', { name: 'Visibilidade' })).toHaveFocus();
+  await user.keyboard('{Home}');
+  expect(screen.getByRole('tab', { name: 'Nome' })).toHaveFocus();
+  expect(screen.getByLabelText('Nome')).toHaveValue('Nome em rascunho');
+  expect(state.manual).not.toHaveBeenCalled();
+  expect(state.apply).not.toHaveBeenCalled();
+});
+
 it('prepares only touched fields without trimming or applying automatically', async () => {
   const user = userEvent.setup(),
     onApplied = vi.fn();
@@ -175,7 +196,7 @@ it('distinguishes missing, empty and reverted optional fields', async () => {
   const user = userEvent.setup();
   mount();
   await screen.findByLabelText('Nome');
-  await chooseDropdown(user, screen.getByRole('combobox', { name: 'Campo em edição' }), 'Resumo');
+  await user.click(screen.getByRole('tab', { name: 'Resumo' }));
   expect(screen.getByText('Este campo não está presente na ficha.')).toBeVisible();
   await user.click(screen.getByRole('button', { name: 'Adicionar resumo' }));
   expect(screen.getByLabelText('Resumo')).toHaveValue('');
@@ -187,15 +208,11 @@ it('does not cap or resubmit a large untouched field when editing another field'
   const user = userEvent.setup();
   mount();
   await screen.findByLabelText('Nome');
-  await chooseDropdown(user, screen.getByRole('combobox', { name: 'Campo em edição' }), 'Detalhes');
+  await user.click(screen.getByRole('tab', { name: 'Detalhes' }));
   const text = screen.getByLabelText('Detalhes');
   expect(text).not.toHaveAttribute('maxlength');
   expect((text as HTMLTextAreaElement).value.length).toBeGreaterThan(150000);
-  await chooseDropdown(
-    user,
-    screen.getByRole('combobox', { name: 'Campo em edição' }),
-    'Categoria',
-  );
+  await user.click(screen.getByRole('tab', { name: 'Categoria' }));
   await chooseDropdown(user, screen.getByRole('combobox', { name: 'Categoria' }), 'Local');
   await user.click(screen.getByRole('button', { name: 'Preparar alterações' }));
   await screen.findByRole('button', { name: 'Aplicar alterações' });
@@ -207,7 +224,7 @@ it('preserves absent relation description and edits one relation at a time', asy
   const user = userEvent.setup();
   mount();
   await screen.findByLabelText('Nome');
-  await chooseDropdown(user, screen.getByRole('combobox', { name: 'Campo em edição' }), 'Relações');
+  await user.click(screen.getByRole('tab', { name: 'Relações' }));
   expect(screen.queryByLabelText('Descrição da relação')).not.toBeInTheDocument();
   const type = screen.getByLabelText('Tipo de relação');
   await user.clear(type);
@@ -364,7 +381,7 @@ it('keeps frozen fields copyable and allows review navigation before applying', 
   await user.type(screen.getByLabelText('Nome'), '!');
   await user.click(screen.getByRole('button', { name: 'Preparar alterações' }));
   await screen.findByRole('button', { name: 'Aplicar alterações' });
-  await chooseDropdown(user, screen.getByRole('combobox', { name: 'Campo em edição' }), 'Detalhes');
+  await user.click(screen.getByRole('tab', { name: 'Detalhes' }));
   expect(screen.getByLabelText('Detalhes')).toHaveAttribute('readonly');
   expect(screen.getByLabelText('Detalhes')).not.toBeDisabled();
   expect(state.apply).not.toHaveBeenCalled();
