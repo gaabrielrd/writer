@@ -181,7 +181,12 @@ export function createAssistedBookService({
       ]);
       const session = snapshot.data();
       usable(session);
-      if (session.flowVersion === 2 && session.method === 'manual' && mode !== 'save')
+      if (
+        session.flowVersion === 2 &&
+        session.method === 'manual' &&
+        mode !== 'save' &&
+        !(mode === 'cover' && session.kind === 'book')
+      )
         fail('failed-precondition', 'Este projeto usa criação manual.');
       const op = previous.data();
       if (op) {
@@ -199,7 +204,7 @@ export function createAssistedBookService({
       if (session.busy?.until > now()) fail('aborted', 'Aguarde a operação em andamento.');
       const windowStart = Math.floor(now() / HOUR) * HOUR;
       const count = quota.data()?.windowStart === windowStart ? quota.data().count : 0;
-      const metered = session.method !== 'manual';
+      const metered = session.method !== 'manual' || mode === 'cover';
       if (metered && count >= 60)
         fail('resource-exhausted', 'Limite de 60 operações de IA por hora atingido.');
       if (
@@ -443,7 +448,6 @@ export function createAssistedBookService({
           let cover = null,
             selected = null,
             selectedRef = null;
-          if (manual && data.coverId) fail('invalid-argument', 'Adicione a capa após criar.');
           if (data.coverId) {
             validateId(data.coverId);
             cover = (await tx.get(db.doc(`users/${uid}/bookGenerations/${data.coverId}`))).data();
@@ -661,7 +665,12 @@ export function createAssistedBookService({
             cover: null,
           };
         }
-        if (!session.proposal || session.proposalExpiresAt <= now())
+        const manualCover =
+          action === 'cover' &&
+          session.flowVersion === 2 &&
+          session.method === 'manual' &&
+          session.kind === 'book';
+        if (!manualCover && (!session.proposal || session.proposalExpiresAt <= now()))
           fail('failed-precondition', 'A proposta expirou. Gere outra.');
         const proposal = validateProposal(data.proposal, session.flowVersion === 2 ? 0 : 1);
         if (action === 'entity') {

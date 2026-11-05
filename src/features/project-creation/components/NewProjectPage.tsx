@@ -8,7 +8,7 @@ import {
 } from '@/features/page-assistant';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router';
-import { BookOpen, Map, PenLine, ScrollText, Sparkles } from 'lucide-react';
+import { BookOpen, History, Map, PenLine, ScrollText, Sparkles } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { ImageLibraryPicker, type LibraryImage } from '@/features/image-library';
 import { UniverseSelect, UniverseForm } from '@/features/universes';
@@ -64,6 +64,65 @@ const kinds = [
 ] as const;
 const destination = (kind: CreationKind, id: string) =>
   `/${{ book: 'books', adventure: 'adventures', campaign: 'campaigns' }[kind]}/${encodeURIComponent(id)}`;
+const genreSuggestions = [
+  'Fantasia',
+  'Ficção científica',
+  'Aventura',
+  'Romance',
+  'Mistério',
+  'Suspense',
+  'Terror',
+  'Drama',
+  'Histórico',
+  'Humor',
+  'Livre',
+];
+
+function GenreStyleField({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  disabled: boolean;
+}) {
+  const [custom, setCustom] = useState(false);
+  const isCustom = custom || (value !== '' && !genreSuggestions.includes(value));
+  return (
+    <>
+      <Dropdown
+        mode="select"
+        label="Gênero ou estilo"
+        value={isCustom ? 'custom' : value}
+        disabled={disabled}
+        options={[
+          { value: '', label: 'Definir depois' },
+          ...genreSuggestions.map((genre) => ({ value: genre, label: genre })),
+          { value: 'custom', label: 'Criar meu estilo' },
+        ]}
+        onValueChange={(next) => {
+          setCustom(next === 'custom');
+          if (next !== 'custom') onChange(next);
+        }}
+      />
+      {isCustom && (
+        <Input
+          label="Seu gênero ou estilo"
+          hint="Combine gêneros ou descreva o estilo que imagina."
+          value={value}
+          onChange={(event) => {
+            setCustom(true);
+            onChange(event.target.value);
+          }}
+          maxLength={120}
+          disabled={disabled}
+        />
+      )}
+    </>
+  );
+}
+
 export function NewProjectPage() {
   const { user, loading } = useAuth();
   if (loading) return <LoadingState label="Carregando sessão..." />;
@@ -323,12 +382,17 @@ function ProjectCreationSession() {
     });
   }
   const cover = session?.cover;
+  const creationProposal = {
+    ...proposal,
+    genre: proposal.genre || 'Livre',
+    synopsis: proposal.synopsis || proposal.title,
+  };
   const coverValid = Boolean(
     cover &&
     cover.expiresAt > Date.now() &&
     cover.context.title === proposal.title &&
-    cover.context.genre === proposal.genre &&
-    cover.context.synopsis === proposal.synopsis &&
+    cover.context.genre === creationProposal.genre &&
+    cover.context.synopsis === creationProposal.synopsis &&
     cover.context.direction === proposal.coverDirection,
   );
   const total =
@@ -340,11 +404,7 @@ function ProjectCreationSession() {
       flowVersion: 2,
       sessionId: session.id,
       revision: session.revision,
-      proposal: {
-        ...proposal,
-        genre: proposal.genre || 'Livre',
-        synopsis: proposal.synopsis || proposal.title,
-      },
+      proposal: creationProposal,
       expectedCost: total,
       coverId: useGenerated && coverValid ? cover!.id : null,
       imageId: !useGenerated ? (selectedImage?.id ?? null) : null,
@@ -423,8 +483,11 @@ function ProjectCreationSession() {
             </Button>
           </div>
           {resume && (
-            <Card>
-              <p>Você tem uma criação em andamento.</p>
+            <Card className={styles.resumeNotice} role="region" aria-label="Criação em andamento">
+              <div className={styles.resumeMessage}>
+                <History className="icon" aria-hidden="true" />
+                <p>Você tem uma criação em andamento.</p>
+              </div>
               <Button variant="secondary" disabled={busy} onClick={() => void resumeCreation()}>
                 Retomar criação
               </Button>
@@ -626,11 +689,9 @@ function ProjectCreationSession() {
                 title="Premissa e detalhes"
                 description="Você pode ajustar agora ou depois"
               >
-                <Input
-                  label="Gênero ou estilo"
+                <GenreStyleField
                   value={proposal.genre}
-                  onChange={(e) => setProposal({ ...proposal, genre: e.target.value })}
-                  maxLength={120}
+                  onChange={(genre) => setProposal({ ...proposal, genre })}
                   disabled={locked}
                 />
                 <Textarea
@@ -648,15 +709,15 @@ function ProjectCreationSession() {
                     <Button variant="secondary" disabled={locked} onClick={() => setPicker(true)}>
                       Escolher imagem da biblioteca
                     </Button>
-                    {method === 'assisted' && (
-                      <Button
-                        variant="secondary"
-                        disabled={locked || !proposal.title.trim()}
-                        onClick={() => action('cover', { proposal })}
-                      >
-                        Gerar capa · {costs?.cover ?? '…'} créditos
-                      </Button>
-                    )}
+                    <Button
+                      variant="secondary"
+                      disabled={
+                        locked || !proposal.title.trim() || !session || session.contextUnavailable
+                      }
+                      onClick={() => action('cover', { proposal: creationProposal })}
+                    >
+                      Gerar capa · {costs?.cover ?? '…'} créditos
+                    </Button>
                     <Button
                       variant="ghost"
                       disabled={locked}
@@ -687,7 +748,7 @@ function ProjectCreationSession() {
               )}
               <p className={styles.meta}>
                 {method === 'manual'
-                  ? 'Criação manual sem débito.'
+                  ? 'Texto manual sem débito. A capa gerada é opcional e cobrada somente ao confirmar a criação.'
                   : `Pacote textual: ${costs?.text ?? '…'} créditos, cobrados somente ao confirmar. Capa gerada é opcional e tem seu próprio custo.`}
               </p>
               <Button
@@ -695,11 +756,7 @@ function ProjectCreationSession() {
                 disabled={locked || !proposal.title.trim()}
                 onClick={() =>
                   action('save', {
-                    proposal: {
-                      ...proposal,
-                      genre: proposal.genre || 'Livre',
-                      synopsis: proposal.synopsis || proposal.title,
-                    },
+                    proposal: creationProposal,
                   })
                 }
               >
@@ -712,7 +769,7 @@ function ProjectCreationSession() {
                 }
               >
                 Criar {label.toLocaleLowerCase('pt-BR')}
-                {method === 'assisted' ? ` · ${total} créditos` : ''}
+                {method === 'assisted' || total > 0 ? ` · ${total} créditos` : ''}
               </Button>
               {method === 'assisted' && (
                 <Button variant="secondary" disabled={locked} onClick={() => setReview(false)}>

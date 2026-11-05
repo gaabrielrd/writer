@@ -97,7 +97,7 @@ export function requestAssistedBook(input: AssistedRequest) {
       : /abra.*detalhes/i.test(input.message ?? '')
         ? 'Premissa e detalhes'
         : /gênero|genero/i.test(input.message ?? '')
-          ? 'Gênero ou estilo'
+          ? 'Seu gênero ou estilo'
           : null;
     const capability = input.capabilities?.find((c) => match && c.label.startsWith(match));
     session.suggestedAction = capability

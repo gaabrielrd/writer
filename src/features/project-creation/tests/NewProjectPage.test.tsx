@@ -10,6 +10,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { NewProjectPage } from '../components/NewProjectPage';
+import { chooseDropdown } from '@/test/dropdown';
 const mocks = vi.hoisted(() => ({
   user: ((): { uid: string; credits: number } | null => ({ uid: 'owner', credits: 20 }))(),
   session: null as AssistedSession | null,
@@ -101,6 +102,30 @@ beforeEach(() => {
           entities: [],
         },
       };
+    else if (input.action === 'cover')
+      mocks.session = {
+        ...mocks.session!,
+        revision: mocks.session!.revision + 1,
+        proposal: input.proposal!,
+        cover: {
+          id: input.requestId,
+          previewUrl: 'data:image/png;base64,aW1hZ2U=',
+          expiresAt: Date.now() + 3600000,
+          contextHash: 'cover-hash',
+          context: {
+            title: input.proposal!.title,
+            genre: input.proposal!.genre,
+            synopsis: input.proposal!.synopsis,
+            direction: input.proposal!.coverDirection,
+          },
+        },
+      };
+    else if (input.action === 'save')
+      mocks.session = {
+        ...mocks.session!,
+        revision: Number(mocks.session!.revision) + 1,
+        proposal: input.proposal ?? null,
+      };
     return Promise.resolve(structuredClone(mocks.session!));
   });
   mocks.commit.mockImplementation(() =>
@@ -123,6 +148,39 @@ it('shows only the method choice first and preserves an idea when returning to c
   expect(screen.getByLabelText('Ideia ou título inicial')).toHaveValue('Ilhas');
   expect(mocks.commit).not.toHaveBeenCalled();
 });
+it.each([true, false])(
+  'manual creation charges only the selected generated cover: %s',
+  async (useCover) => {
+    render(tree());
+    await userEvent.click(screen.getByRole('button', { name: /^Manualmente/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Livro/ }));
+    await userEvent.type(screen.getByLabelText('Ideia ou título inicial'), 'Ilhas');
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    await screen.findByLabelText('Título do projeto');
+    await userEvent.click(screen.getByRole('button', { name: /^Capa opcional/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Gerar capa · 5 créditos' }));
+    expect(await screen.findByRole('img', { name: 'Capa proposta de Ilhas' })).toBeVisible();
+    expect(mocks.request.mock.lastCall?.[0]).toMatchObject({
+      action: 'cover',
+      proposal: { title: 'Ilhas', genre: 'Livre', synopsis: 'Ilhas', entities: [] },
+    });
+    expect(mocks.commit).not.toHaveBeenCalled();
+    expect(mocks.credits).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Criar livro · 5 créditos' })).toBeVisible();
+    if (!useCover) await userEvent.click(screen.getByRole('button', { name: 'Sem capa' }));
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: useCover ? 'Criar livro · 5 créditos' : 'Criar livro',
+      }),
+    );
+    await screen.findByRole('heading', { name: /Projeto aberto/ });
+    expect(mocks.commit.mock.lastCall?.[0]).toMatchObject({
+      expectedCost: useCover ? 5 : 0,
+      coverId: useCover ? mocks.session!.cover!.id : null,
+    });
+  },
+);
+
 for (const kind of ['Livro', 'Aventura', 'Campanha'])
   for (const method of ['manual', 'assisted'])
     it(`creates ${kind}/${method} only on confirmation and carries conception by ID`, async () => {
@@ -214,9 +272,104 @@ it('changing creation context does not carry a generated premise into a new manu
   await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
   await screen.findByLabelText('Título do projeto');
   await userEvent.click(screen.getByRole('button', { name: /^Premissa e detalhes/ }));
-  expect(screen.getByLabelText('Gênero ou estilo')).toHaveValue('');
+  expect(screen.getByRole('combobox', { name: 'Gênero ou estilo' })).toHaveTextContent(
+    'Definir depois',
+  );
   expect(screen.getByLabelText('Conceito da campanha')).toHaveValue('');
 });
+it.each([
+  ['Livro', 'Fantasia'],
+  ['Aventura', 'Ficção científica'],
+  ['Campanha', 'Terror'],
+])('sends the selected genre when creating %s', async (kind, genre) => {
+  render(tree());
+  await userEvent.click(screen.getByRole('button', { name: /^Manualmente/ }));
+  await userEvent.click(screen.getByRole('button', { name: new RegExp('^' + kind) }));
+  await userEvent.type(screen.getByLabelText('Ideia ou título inicial'), 'Ilhas');
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  await screen.findByLabelText('Título do projeto');
+  await userEvent.click(screen.getByRole('button', { name: /^Premissa e detalhes/ }));
+  await chooseDropdown(
+    userEvent,
+    screen.getByRole('combobox', { name: 'Gênero ou estilo' }),
+    genre,
+  );
+  expect(screen.queryByLabelText('Seu gênero ou estilo')).not.toBeInTheDocument();
+  await userEvent.click(
+    screen.getByRole('button', { name: new RegExp('^Criar ' + kind.toLowerCase()) }),
+  );
+  await screen.findByRole('heading', { name: /Projeto aberto/ });
+  expect(mocks.commit.mock.lastCall?.[0].proposal.genre).toBe(genre);
+});
+
+it('saves a custom genre, switches to a suggestion, and can leave it for later', async () => {
+  render(tree());
+  await userEvent.click(screen.getByRole('button', { name: /^Manualmente/ }));
+  await userEvent.click(screen.getByRole('button', { name: /^Livro/ }));
+  await userEvent.type(screen.getByLabelText('Ideia ou título inicial'), 'Ilhas');
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  await screen.findByLabelText('Título do projeto');
+  await userEvent.click(screen.getByRole('button', { name: /^Premissa e detalhes/ }));
+  const dropdown = screen.getByRole('combobox', { name: 'Gênero ou estilo' });
+  await chooseDropdown(userEvent, dropdown, 'Criar meu estilo');
+  await userEvent.type(screen.getByLabelText('Seu gênero ou estilo'), 'Fantasia marítima poética');
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar rascunho' }));
+  expect(mocks.request.mock.lastCall?.[0]).toMatchObject({
+    action: 'save',
+    proposal: { genre: 'Fantasia marítima poética' },
+  });
+  await chooseDropdown(userEvent, dropdown, 'Mistério');
+  expect(screen.queryByLabelText('Seu gênero ou estilo')).not.toBeInTheDocument();
+  await chooseDropdown(userEvent, dropdown, 'Definir depois');
+  await userEvent.click(screen.getByRole('button', { name: /^Criar livro/ }));
+  await screen.findByRole('heading', { name: /Projeto aberto/ });
+  expect(mocks.commit.mock.lastCall?.[0].proposal.genre).toBe('Livre');
+});
+
+it('preserves a resumed custom genre and allows clearing it without losing the field', async () => {
+  const session: AssistedSession = {
+    id: 'custom-session',
+    flowVersion: 2,
+    kind: 'book',
+    method: 'manual',
+    idea: 'Ilhas',
+    messages: [],
+    brief: '',
+    revision: 1,
+    ready: true,
+    proposal: {
+      title: 'Ilhas',
+      genre: 'Fantasia marítima',
+      synopsis: 'O mar',
+      coverDirection: '',
+      entities: [],
+    },
+    proposalExpiresAt: null,
+    cover: null,
+    expiresAt: Date.now() + 10000,
+    costs: { text: 2, cover: 5 },
+  };
+  mocks.load.mockResolvedValue({ session, costs: session.costs });
+  render(tree());
+  const notice = await screen.findByRole('region', { name: 'Criação em andamento' });
+  expect(notice.querySelector('svg[aria-hidden="true"]')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Retomar criação' }));
+  await screen.findByLabelText('Título do projeto');
+  await userEvent.click(screen.getByRole('button', { name: /^Premissa e detalhes/ }));
+  expect(screen.getByRole('combobox', { name: 'Gênero ou estilo' })).toHaveTextContent(
+    'Criar meu estilo',
+  );
+  const input = screen.getByLabelText('Seu gênero ou estilo');
+  expect(input).toHaveValue('Fantasia marítima');
+  await userEvent.clear(input);
+  expect(input).toBeVisible();
+  await userEvent.type(input, 'Fantasia');
+  expect(input).toBeVisible();
+  expect(screen.getByRole('combobox', { name: 'Gênero ou estilo' })).toHaveTextContent(
+    'Criar meu estilo',
+  );
+});
+
 it('resume rereads authorization and never renders an old derived answer from the cached offer', async () => {
   const original: AssistedSession = {
     id: 'resume-session',

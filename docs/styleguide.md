@@ -94,6 +94,7 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
   tipo, título `h1`, capa, metadados, descrição, uma ação principal, até duas
   secundárias e o menu "…". `headingLevel={2}` só quando incorporado em outra página.
 - `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`: abas sublinhadas sobre Radix, com
+  cantos inferiores retos para manter o sublinhado contínuo,
   setas, Home/End, contagem opcional e ações da seção fora do `tablist`. Aceitam valor
   controlado para abas guardadas na URL.
 - `Toolbar`: barra nomeada de uma seção, com busca e filtros à esquerda, resumo e
@@ -286,6 +287,16 @@ capítulos, atos, minimapa e personas permanecem intactos.
 
 ## Detalhes do livro
 
+A criação de projeto mantém formulário e conversa centralizados em até 760 px,
+inclusive dentro do layout autenticado. Gênero ou estilo oferece sugestões por
+`Dropdown mode="select"`, a opção de definir depois e um campo livre de até 120
+caracteres ao escolher "Criar meu estilo". Valores próprios de propostas ou
+rascunhos aparecem nesse campo sem conversão para uma sugestão.
+O aviso de criação em andamento usa ícone de histórico, padding de 16 px e
+espaçamento entre a mensagem e a ação "Retomar criação".
+A capa opcional do livro oferece biblioteca, geração e ausência de capa tanto
+no fluxo manual quanto no assistido. O botão de confirmação mostra o custo da
+capa gerada selecionada; o texto manual permanece sem débito.
 A criação assistida usa uma conversa central de até 760 px. Mensagens do agente
 ficam centralizadas verticalmente na área livre durante a ideia e a entrevista;
 o histórico longo tem rolagem independente e o campo de resposta fica no rodapé

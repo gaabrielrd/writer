@@ -190,7 +190,7 @@
     font-size: var(--text-xs);
   }
 }
-.shell :global(button) {
+.shell :global(button:not([role='tab'])) {
   border-radius: var(--radius-sm);
 }
 .desktopToggle[hidden],

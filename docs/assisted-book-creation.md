@@ -10,6 +10,12 @@ atômicos. O pacote textual custa 2 créditos nos três tipos; criação manual 
 debita esse pacote. Livros também podem usar imagem da biblioteca ou gerar capa
 por mais 5 créditos. A confirmação mostra o total.
 
+Na criação manual de livros, **Capa opcional** também oferece **Gerar capa**.
+O texto manual continua sem débito: somente a capa gerada selecionada entra no
+total da confirmação. Gerar a prévia não debita saldo; escolher **Sem capa** ou
+uma imagem da biblioteca retira esse custo. A geração respeita a cota de IA e a
+aceitação reconfere contexto, validade, saldo e recibo no servidor.
+
 A própria conversa de criação pode propor ações da tela, como gerar a proposta,
 abrir detalhes ou ajustar campos, sempre com prévia e confirmação. Os ajustes
 autorais não salvos permanecem intactos ao conversar. A sessão nova comporta

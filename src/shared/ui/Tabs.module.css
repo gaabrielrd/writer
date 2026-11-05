@@ -32,6 +32,8 @@
   padding: 0 var(--space-1);
   border: 0;
   border-bottom: 2px solid transparent;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
   background: transparent;
   color: var(--ink-soft);
   font: inherit;

@@ -1,4 +1,72 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
+
+test('livro manual permite gerar capa e mostra somente o custo da capa', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/studio/new');
+  await page.getByRole('button', { name: /^Manualmente/ }).click();
+  await page.getByRole('button', { name: /^Livro/ }).click();
+  await page.getByLabel('Ideia ou título inicial').fill('As ilhas do silêncio');
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^Capa opcional/ }).click();
+  await page.getByRole('button', { name: 'Gerar capa · 5 créditos', exact: true }).click();
+  await expect(
+    page.getByRole('img', { name: 'Capa proposta de As ilhas do silêncio' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Criar livro · 5 créditos', exact: true }),
+  ).toBeVisible();
+  await expectNoHorizontalOverflow(page, 'capa-na-criacao-manual');
+  await capture(page, testInfo, 'criacao-manual-capa-gerada');
+  await page.getByRole('button', { name: 'Sem capa', exact: true }).click();
+  await expect(
+    page.getByRole('img', { name: 'Capa proposta de As ilhas do silêncio' }),
+  ).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Criar livro', exact: true })).toBeVisible();
+});
+
+test('criação mantém largura de formulário, gêneros próprios e aviso de retomada', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/studio/new');
+  const form = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Novo projeto', exact: true }) })
+    .last();
+  expect((await form.boundingBox())!.width).toBeLessThanOrEqual(760);
+  await page.getByRole('button', { name: /^Manualmente/ }).click();
+  await page.getByRole('button', { name: /^Livro/ }).click();
+  await page.getByLabel('Ideia ou título inicial').fill('Ilhas de papel');
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await page.getByRole('button', { name: /^Premissa e detalhes/ }).click();
+  const genre = page.getByRole('combobox', { name: 'Gênero ou estilo', exact: true });
+  await genre.click();
+  await page.getByRole('option', { name: 'Mistério', exact: true }).click();
+  await expect(genre).toContainText('Mistério');
+  await genre.click();
+  await page.getByRole('option', { name: 'Criar meu estilo', exact: true }).click();
+  await page.getByLabel('Seu gênero ou estilo', { exact: true }).fill('Mistério poético');
+  await page.getByRole('button', { name: 'Salvar rascunho', exact: true }).click();
+  await expect(page.getByLabel('Seu gênero ou estilo', { exact: true })).toHaveValue(
+    'Mistério poético',
+  );
+  await expectNoHorizontalOverflow(page, 'criacao-formulario-compacto');
+  await capture(page, testInfo, 'criacao-estilo-proprio');
+  await page.goto('/studio/new');
+  const notice = page.getByRole('region', { name: 'Criação em andamento', exact: true });
+  await expect(notice).toBeVisible();
+  await expect(notice.locator('svg[aria-hidden="true"]')).toBeVisible();
+  expect(
+    await notice.evaluate((el) => parseFloat(getComputedStyle(el).padding)),
+  ).toBeGreaterThanOrEqual(16);
+  await capture(page, testInfo, 'criacao-aviso-retomada');
+  await page.getByRole('button', { name: 'Retomar criação', exact: true }).click();
+  await page.getByRole('button', { name: /^Premissa e detalhes/ }).click();
+  await expect(page.getByLabel('Seu gênero ou estilo', { exact: true })).toHaveValue(
+    'Mistério poético',
+  );
+});
+
 for (const method of ['manual', 'assisted'] as const)
   for (const kind of ['Livro', 'Aventura', 'Campanha']) {
     test(`novo projeto ${kind}/${method}: concepção, confirmação e continuidade`, async ({
@@ -127,10 +195,12 @@ test('conversa de concepção propõe ações revisáveis sem perder o rascunho'
   await page.getByLabel('Título do projeto').fill('Meu título preservado');
   await ask('Abra os detalhes');
   await page.getByRole('button', { name: /^Executar: Premissa e detalhes/ }).click();
+  await page.getByRole('combobox', { name: 'Gênero ou estilo', exact: true }).click();
+  await page.getByRole('option', { name: 'Criar meu estilo', exact: true }).click();
   await ask('Ajuste o gênero');
   await expect(page.getByLabel('Texto proposto')).toHaveValue('Fantasia marítima');
-  await page.getByRole('button', { name: 'Executar: Gênero ou estilo' }).click();
-  await expect(page.getByLabel('Gênero ou estilo', { exact: true })).toHaveValue(
+  await page.getByRole('button', { name: 'Executar: Seu gênero ou estilo' }).click();
+  await expect(page.getByLabel('Seu gênero ou estilo', { exact: true })).toHaveValue(
     'Fantasia marítima',
   );
   await expect(page.getByLabel('Título do projeto')).toHaveValue('Meu título preservado');

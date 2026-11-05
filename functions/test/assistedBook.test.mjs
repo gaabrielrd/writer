@@ -500,6 +500,88 @@ test('manual sessions cannot generate AI text and avoid its debit', async () => 
   await assert.rejects(f.op('generate', { brief: 'Bypass' }), { code: 'failed-precondition' });
   assert.equal(f.calls(), 0);
 });
+
+test('manual book cover is generated once and charged only on atomic confirmation', async () => {
+  const f = fixture();
+  await f.start({ flowVersion: 2, kind: 'book', method: 'manual' });
+  const draft = { ...proposal(), entities: [] };
+  const request = {
+    action: 'cover',
+    sessionId: f.session().id,
+    revision: f.session().revision,
+    requestId: randomUUID(),
+    proposal: draft,
+  };
+  await f.op('cover', { proposal: draft }, request.requestId);
+  await f.call(request);
+  const coverId = f.session().cover.id;
+  assert.equal(f.calls(), 1);
+  assert.equal(f.records.get('users/author').credits, 20);
+  assert.equal(f.records.get('users/author/assistedLimits/current').count, 1);
+  await assert.rejects(f.commit({ coverId, expectedCost: 0 }), { code: 'failed-precondition' });
+  assert.equal(f.records.has(`books/${f.session().id}`), false);
+  const result = await f.commit({ coverId, expectedCost: 5 });
+  const replay = await f.commit({ coverId, expectedCost: 5 });
+  assert.equal(result.credits, 15);
+  assert.equal(replay.credits, 15);
+  assert.equal(f.records.get(`users/author/imageLibrary/${coverId}`).useCount, 1);
+  assert.equal(f.records.get(`users/author/bookGenerations/${coverId}`).state, 'attached');
+});
+
+test('manual cover respects the AI quota while manual draft saves remain available', async () => {
+  const f = fixture();
+  await f.start({ flowVersion: 2, kind: 'book', method: 'manual' });
+  f.records.set('users/author/assistedLimits/current', { windowStart: 0, count: 60 });
+  await assert.rejects(f.op('cover', { proposal: { ...proposal(), entities: [] } }), {
+    code: 'resource-exhausted',
+  });
+  await f.op('save', { proposal: { ...proposal(), entities: [] } });
+  assert.equal(f.calls(), 0);
+  assert.equal(f.records.get('users/author/assistedLimits/current').count, 60);
+});
+
+for (const kind of ['adventure', 'campaign'])
+  test(`manual ${kind} cannot generate a book cover`, async () => {
+    const f = fixture();
+    await f.start({ flowVersion: 2, kind, method: 'manual' });
+    await assert.rejects(f.op('cover', { proposal: { ...proposal(), entities: [] } }), {
+      code: 'failed-precondition',
+    });
+    assert.equal(f.calls(), 0);
+  });
+
+for (const invalid of ['changed', 'expired', 'insufficient-credits'])
+  test(`manual cover cannot be accepted when ${invalid}`, async () => {
+    const f = fixture();
+    await f.start({ flowVersion: 2, kind: 'book', method: 'manual' });
+    await f.op('cover', { proposal: { ...proposal(), entities: [] } });
+    if (invalid === 'expired') f.advance(3600001);
+    if (invalid === 'insufficient-credits') f.records.set('users/author', { credits: 4 });
+    await assert.rejects(
+      f.commit({
+        coverId: f.session().cover.id,
+        expectedCost: 5,
+        ...(invalid === 'changed'
+          ? { proposal: { ...f.session().proposal, title: 'Outro título' } }
+          : {}),
+      }),
+      { code: invalid === 'insufficient-credits' ? 'resource-exhausted' : 'failed-precondition' },
+    );
+    assert.equal(f.records.has(`books/${f.session().id}`), false);
+    assert.equal(
+      f.records.get('users/author').credits,
+      invalid === 'insufficient-credits' ? 4 : 20,
+    );
+  });
+
+test('discarding a generated manual cover keeps the project free', async () => {
+  const f = fixture();
+  await f.start({ flowVersion: 2, kind: 'book', method: 'manual' });
+  await f.op('cover', { proposal: { ...proposal(), entities: [] } });
+  const result = await f.commit({ expectedCost: 0 });
+  assert.equal(result.credits, 20);
+  assert.equal(f.records.get(`books/${f.session().id}`).coverImageId, null);
+});
 test('new creation binds universe usage atomically and rejects a revoked source before commit', async () => {
   const f = fixture({ generator: async () => ({ ...proposal(), entities: [] }) });
   f.records.set('universes/world', {
