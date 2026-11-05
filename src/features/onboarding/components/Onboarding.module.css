@@ -68,6 +68,20 @@
   background: hsl(var(--card));
   color: hsl(var(--card-foreground));
   box-shadow: 0 8px 24px hsl(var(--foreground) / 0.12);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.tour[data-dragging='true'],
+.tour[data-dragging='true'] * {
+  cursor: grabbing;
+}
+.tour :is(a, button, input, select, textarea, summary, [role='button'], [role='link']) {
+  touch-action: manipulation;
+}
+.tour:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 3px;
 }
 .tourTop {
   display: flex;
@@ -78,6 +92,13 @@
 }
 .tour p {
   line-height: 1.6;
+}
+.tourGrip {
+  cursor: grab;
+  padding: 0;
+  font: inherit;
+  justify-content: flex-start;
+  flex: 1;
 }
 .tour a {
   color: hsl(var(--primary));

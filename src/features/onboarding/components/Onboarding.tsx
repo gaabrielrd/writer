@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import {
   ArrowLeft,
@@ -23,6 +23,7 @@ import {
   type StartingPoint,
 } from '../model/profile';
 import styles from './Onboarding.module.css';
+import { useGuideDrag } from './useGuideDrag';
 const icons = { book: BookOpen, adventure: Compass, campaign: Map };
 export function OnboardingExperience() {
   const state = useOnboarding();
@@ -165,6 +166,8 @@ function GuidedTour() {
   const step = steps[index]!;
   const heading = useRef<HTMLHeadingElement>(null);
   const [obscured, setObscured] = useState(false);
+  const movementHelp = useId();
+  const dragProps = useGuideDrag(panel, obscured);
   useEffect(() => {
     const update = () =>
       setObscured(
@@ -231,11 +234,26 @@ function GuidedTour() {
       tabIndex={-1}
       className={styles.tour}
       aria-label="Guia do Writer"
+      aria-describedby={movementHelp}
+      {...dragProps}
     >
+      <span id={movementHelp} className="sr-only">
+        Arraste pelo texto ou pelos espaços livres para mover o guia. Com o progresso do guia em
+        foco, use as setas; Shift amplia o movimento. Escape cancela um arrasto.
+      </span>
       <div className={styles.tourTop}>
-        <span>
-          Seu primeiro percurso · {index + 1} de {steps.length}
-        </span>
+        <Button
+          variant="ghost"
+          className={styles.tourGrip}
+          data-guide-drag-handle
+          aria-label={`Seu primeiro percurso · ${index + 1} de ${steps.length}. Mover guia`}
+          aria-describedby={movementHelp}
+          title="Arraste ou use as setas para mover o guia"
+        >
+          <span>
+            Seu primeiro percurso · {index + 1} de {steps.length}
+          </span>
+        </Button>
         <Button
           variant="ghost"
           disabled={state.saving}

@@ -1,5 +1,5 @@
-import { beforeEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
 import { OnboardingProvider } from '../context/OnboardingProvider';
@@ -33,6 +33,62 @@ beforeEach(() => {
   mocks.save.mockImplementation((_uid: string, revision: number, input: object) =>
     Promise.resolve({ ...input, schemaVersion: 1, revision: revision + 1 }),
   );
+});
+afterEach(() => vi.restoreAllMocks());
+
+it('moves the focused guide with arrow keys without saving the profile and keeps controls independent', async () => {
+  mocks.load.mockResolvedValue({
+    ...defaultProfile,
+    guidance: 'guided',
+    questionnaire: 'completed',
+    tour: 'active',
+    schemaVersion: 1,
+    revision: 1,
+  });
+  render(tree());
+  const guide = await screen.findByRole('dialog', { name: 'Guia do Writer' });
+  vi.spyOn(guide, 'getBoundingClientRect').mockImplementation(
+    () =>
+      new DOMRect(parseFloat(guide.style.left) || 12, parseFloat(guide.style.top) || 80, 370, 300),
+  );
+  const grip = screen.getByRole('button', { name: /Mover guia/ });
+  grip.focus();
+  await userEvent.keyboard('{ArrowRight}{Shift>}{ArrowDown}{/Shift}');
+  expect(guide).toHaveStyle({ left: '28px', top: '128px' });
+  expect(grip).toHaveFocus();
+  expect(mocks.save).not.toHaveBeenCalled();
+  const next = screen.getByRole('button', { name: 'Próxima dica' });
+  next.focus();
+  await userEvent.keyboard('{ArrowRight}');
+  expect(guide).toHaveStyle({ left: '28px', top: '128px' });
+  await userEvent.click(next);
+  await screen.findByText('Seu primeiro percurso · 2 de 6');
+  expect(guide).toHaveStyle({ left: '28px', top: '128px' });
+  expect(mocks.save).toHaveBeenCalledTimes(1);
+});
+
+it('keeps a moved guide inside a resized viewport', async () => {
+  mocks.load.mockResolvedValue({
+    ...defaultProfile,
+    tour: 'active',
+    schemaVersion: 1,
+    revision: 1,
+  });
+  render(tree());
+  const guide = await screen.findByRole('dialog', { name: 'Guia do Writer' });
+  vi.spyOn(guide, 'getBoundingClientRect').mockImplementation(
+    () =>
+      new DOMRect(parseFloat(guide.style.left) || 12, parseFloat(guide.style.top) || 80, 370, 300),
+  );
+  guide.focus();
+  await userEvent.keyboard('{Shift>}{ArrowRight}{ArrowRight}{ArrowDown}{/Shift}');
+  const width = vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(420);
+  const height = vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(360);
+  fireEvent(window, new Event('resize'));
+  expect(guide).toHaveStyle({ left: '38px', top: '48px' });
+  expect(mocks.save).not.toHaveBeenCalled();
+  width.mockRestore();
+  height.mockRestore();
 });
 it('saves the selected campaign profile only after confirmation and starts its tour', async () => {
   render(tree());

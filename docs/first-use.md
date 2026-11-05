@@ -44,6 +44,14 @@ consomem créditos. Pausa, etapa e conclusão são persistidas. Elementos visív
 recebem destaque; quando o alvo não existe na tela atual, o texto e o link
 continuam disponíveis. O guia é não modal; modais reais têm prioridade.
 
+Texto e espaços livres do cartão permitem arrastar o guia, sem ícone de alça
+adicional. Links, botões e a barra de rolagem conservam suas interações. O texto
+de progresso também recebe foco pelo teclado: setas movem o cartão e Shift
+amplia o passo. Escape cancela um arrasto e restaura a posição anterior; fora
+do arrasto mantém a pausa do guia. A posição permanece em memória enquanto o
+guia está ativo, inclusive ao mudar de dica ou página, e se ajusta aos limites
+da janela ao redimensionar. Mover o cartão não grava o perfil nem a etapa.
+
 ## Persistência e fronteiras
 
 A feature onboarding depende de auth/shared. app compõe o provider por UID;

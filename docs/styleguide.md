@@ -50,11 +50,12 @@ A aplicação possui suporte nativo e reativo a múltiplos temas, controlados pe
 4. **Sistema (`system`)**: Acompanha a preferência do sistema operacional (`prefers-color-scheme`).
 
 O controle de alternância de tema no cabeçalho é feito via `<ThemeToggle />` ou `<ThemeSelect />`.
-As barras de rolagem de toda a aplicação usam `--muted-foreground` no controle
-e `--background` no trilho, incluindo editor, campos, painéis e diálogos em portal.
-A regra global preserva largura e interação nativas e acompanha a troca de tema
-sem recarregar a página. Navegadores sem `scrollbar-color` recebem fallback
-WebKit; no modo de cores forçadas, prevalecem as cores de acessibilidade do sistema.
+As barras de rolagem de toda a aplicação são finas, com controle em
+`--muted-foreground` a 80% e trilho transparente, incluindo editor, campos,
+painéis e diálogos em portal. A regra acompanha a troca de tema sem recarregar
+a página. Navegadores sem `scrollbar-color` recebem fallback WebKit de 8 px,
+controle arredondado e sem setas; hover reforça a cor e arrastar usa `--primary`.
+No modo de cores forçadas, prevalecem largura e cores de acessibilidade do sistema.
 Existe um único `ThemeProvider`, em `App`; não o duplique no bootstrap, pois
 provedores independentes disputam o atributo do tema ao mudar a preferência do sistema.
 
@@ -629,6 +630,11 @@ O questionário usa Dialog, escolhas Button com aria-pressed e Dropdown select.
 Permite múltiplos interesses e explicita que todas as ferramentas continuam
 acessíveis. O guia é não modal, com progresso, pausa, links e destaque por token
 semântico; não deve capturar foco de escrita ao surgir.
+Texto e espaços livres usam cursor de arrasto e permitem reposicionar o cartão
+sem ícone de alça adicional. Controles e rolagem conservam suas interações.
+O progresso recebe foco para mover pelas setas (Shift amplia o passo), com
+instrução acessível e foco visível. Escape cancela o arrasto antes de pausar;
+o cartão permanece dentro da área útil da janela.
 
 A barra do assistente nasce minimizada no centro inferior, com alça por toque/
 ponteiro/setas e ações nomeadas de expandir, minimizar e restaurar. O painel
