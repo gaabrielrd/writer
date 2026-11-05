@@ -31,7 +31,7 @@ import {
   CampaignAdoptionPreparations,
 } from '@/features/campaign-adoptions';
 import { ImportBookModal, getBook } from '@/features/books';
-import { Button, Card, LoadingState, PageHeader } from '@/shared/ui';
+import { Button, Card, FilterChips, LoadingState, PageHeader } from '@/shared/ui';
 import { projectKinds, projectLabels } from '../model/project';
 import { StudioProjectSection } from './StudioProjectSection';
 import styles from './StudioPage.module.css';
@@ -113,23 +113,20 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
       <div hidden={section !== 'projects'} className={styles.sectionBody}>
         {section === 'projects' && (
           <>
-            <div className={styles.typeFilters} role="group" aria-label="Tipo de projeto">
-              {(['all', ...projectKinds] as const).map((type) => (
-                <Button
-                  key={type}
-                  variant="ghost"
-                  aria-pressed={kind === type}
-                  onClick={() => {
-                    const next = new URLSearchParams(params);
-                    if (type === 'all') next.delete('kind');
-                    else next.set('kind', type);
-                    setParams(next);
-                  }}
-                >
-                  {type === 'all' ? 'Todos' : projectLabels[type]}
-                </Button>
-              ))}
-            </div>
+            <FilterChips
+              label="Tipo de projeto"
+              value={kind}
+              onValueChange={(type) => {
+                const next = new URLSearchParams(params);
+                if (type === 'all') next.delete('kind');
+                else next.set('kind', type);
+                setParams(next);
+              }}
+              options={(['all', ...projectKinds] as const).map((type) => ({
+                value: type,
+                label: type === 'all' ? 'Todos' : projectLabels[type],
+              }))}
+            />
             {projectKinds
               .filter((type) => kind === 'all' || type === kind)
               .map((type) => (

@@ -43,36 +43,20 @@
   gap: var(--space-2);
   flex-wrap: wrap;
 }
-.filterField {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  min-width: 0;
+.sectionActions .filter {
+  width: 220px;
   max-width: 100%;
 }
-.filterLabel {
+.sectionActions .refresh {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
   color: hsl(var(--muted-foreground));
-  font-size: var(--text-xs);
-  font-weight: 500;
-}
-.sectionActions .typeFilters {
-  max-width: 100%;
-  padding: 2px;
-  gap: 2px;
-}
-.sectionActions button {
-  min-height: 28px;
-  padding: 3px 8px;
-  font-size: var(--text-xs);
-  line-height: 1.4;
-}
-.sectionActions .typeFilters button {
-  white-space: normal;
 }
 @media (pointer: coarse) {
-  .sectionActions button {
-    min-height: 44px;
+  .sectionActions .refresh {
+    width: 44px;
+    height: 44px;
   }
 }
 .updated {
@@ -155,19 +139,6 @@
 .projectIdentity:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
-}
-.typeFilters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  padding: var(--space-1);
-  align-self: flex-start;
-  border: 1px solid hsl(var(--border));
-  border-radius: var(--radius-md);
-}
-.typeFilters button[aria-pressed='true'] {
-  background: hsl(var(--accent));
-  color: hsl(var(--foreground));
 }
 .toolGrid,
 .operationPanels {

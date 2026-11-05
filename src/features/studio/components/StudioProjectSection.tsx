@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router';
-import { BookOpen, Map, MoreHorizontal } from 'lucide-react';
+import { BookOpen, Map, MoreHorizontal, RefreshCw } from 'lucide-react';
 import { editorialStateLabels, type EditorialState } from '@/features/work-progress';
 import { CampaignDeletionControls } from '@/features/campaigns';
 import { AdventureDeletionDialog } from '@/features/adventures';
@@ -13,6 +13,7 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  Tooltip,
 } from '@/shared/ui';
 import { useStudioProjects } from '../hooks/useStudioProjects';
 import {
@@ -54,33 +55,27 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
         <h2>{label}</h2>
         <div className={styles.sectionActions}>
           {kind !== 'campaign' && (
-            <div className={styles.filterField}>
-              <span className={styles.filterLabel}>Estado editorial</span>
-              <div
-                className={styles.typeFilters}
-                role="group"
+            <div className={styles.filter}>
+              <Dropdown
+                mode="select"
+                size="sm"
                 aria-label={'Estado editorial de ' + label}
-              >
-                {(['all', 'draft', 'review', 'ready'] as const).map((value) => (
-                  <Button
-                    key={value}
-                    variant="ghost"
-                    aria-pressed={editorialState === value}
-                    onClick={() => setEditorialState(value)}
-                  >
-                    {value === 'all' ? 'Todos' : editorialStateLabels[value]}
-                  </Button>
-                ))}
-              </div>
+                value={editorialState}
+                onValueChange={(value) => setEditorialState(value as 'all' | EditorialState)}
+                options={[
+                  { value: 'all', label: 'Todos os estados editoriais' },
+                  ...(['draft', 'review', 'ready'] as const).map((value) => ({
+                    value,
+                    label: editorialStateLabels[value],
+                  })),
+                ]}
+              />
             </div>
           )}
-          <div className={styles.filterField}>
-            <span className={styles.filterLabel}>
-              {kind === 'book' ? 'Publicação' : kind === 'adventure' ? 'Condição' : 'Estado'}
-            </span>
-            <div
-              className={styles.typeFilters}
-              role="group"
+          <div className={styles.filter}>
+            <Dropdown
+              mode="select"
+              size="sm"
               aria-label={
                 (kind === 'book'
                   ? 'Publicação de '
@@ -88,26 +83,37 @@ export function StudioProjectSection({ kind }: { kind: StudioProjectKind }) {
                     ? 'Condição de '
                     : 'Estado de ') + label
               }
-            >
-              {(['all', ...statusesByKind[kind]] as const).map((value) => (
-                <Button
-                  key={value}
-                  variant="ghost"
-                  aria-pressed={status === value}
-                  onClick={() => setStatus(value)}
-                >
-                  {value === 'all'
-                    ? 'Todos'
-                    : kind === 'book' && value === 'draft'
-                      ? 'Não publicado'
-                      : statusLabels[value]}
-                </Button>
-              ))}
-            </div>
+              value={status}
+              onValueChange={(value) => setStatus(value as 'all' | StudioStatus)}
+              options={[
+                {
+                  value: 'all',
+                  label:
+                    kind === 'book'
+                      ? 'Publicados ou não'
+                      : kind === 'adventure'
+                        ? 'Qualquer condição'
+                        : 'Todos os estados',
+                },
+                ...statusesByKind[kind].map((value) => ({
+                  value,
+                  label:
+                    kind === 'book' && value === 'draft' ? 'Não publicado' : statusLabels[value],
+                })),
+              ]}
+            />
           </div>
-          <Button variant="ghost" onClick={refresh}>
-            Atualizar {label.toLocaleLowerCase('pt-BR')}
-          </Button>
+          <Tooltip content={'Atualizar ' + label.toLocaleLowerCase('pt-BR')}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={styles.refresh}
+              aria-label={'Atualizar ' + label.toLocaleLowerCase('pt-BR')}
+              onClick={refresh}
+            >
+              <RefreshCw className="icon icon-sm" aria-hidden="true" />
+            </Button>
+          </Tooltip>
         </div>
       </div>
       {loading ? (

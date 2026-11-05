@@ -239,27 +239,27 @@ test('paginação e filtros de tipo e estado conservam listas independentes', as
     adventures.getByRole('button', { name: 'Carregar mais aventuras', exact: true }),
   ).toHaveCount(0);
   await expect(campaigns.getByRole('heading', { level: 3 })).toHaveCount(25);
-  await adventures
-    .getByRole('group', { name: 'Estado editorial de Aventuras', exact: true })
-    .getByRole('button', { name: 'Rascunho', exact: true })
-    .click();
+  await chooseDropdown(
+    adventures.getByRole('combobox', { name: 'Estado editorial de Aventuras', exact: true }),
+    'Rascunho',
+  );
   await expect(adventures.getByRole('heading', { level: 3 })).toHaveCount(1);
   await expect(
     adventures.getByRole('heading', { name: 'O farol entre as ilhas', exact: true }),
   ).toBeVisible();
   await expect(campaigns.getByRole('heading', { level: 3 })).toHaveCount(25);
-  await adventures
-    .getByRole('group', { name: 'Estado editorial de Aventuras', exact: true })
-    .getByRole('button', { name: 'Em revisão', exact: true })
-    .click();
+  await chooseDropdown(
+    adventures.getByRole('combobox', { name: 'Estado editorial de Aventuras', exact: true }),
+    'Em revisão',
+  );
   await expect(adventures.getByRole('heading', { level: 3 })).toHaveCount(1);
   await expect(
     adventures.getByRole('heading', { name: 'Aventura das marés 27', exact: true }),
   ).toBeVisible();
-  await adventures
-    .getByRole('group', { name: 'Estado editorial de Aventuras', exact: true })
-    .getByRole('button', { name: 'Pronto', exact: true })
-    .click();
+  await chooseDropdown(
+    adventures.getByRole('combobox', { name: 'Estado editorial de Aventuras', exact: true }),
+    'Pronto',
+  );
   await expect(adventures.getByRole('heading', { level: 3 })).toHaveCount(24);
   await adventures.getByRole('button', { name: 'Carregar mais aventuras', exact: true }).click();
   await expect(adventures.getByRole('heading', { level: 3 })).toHaveCount(26);
@@ -270,34 +270,34 @@ test('paginação e filtros de tipo e estado conservam listas independentes', as
     adventures.getByRole('heading', { name: 'Aventura das marés 27', exact: true }),
   ).toHaveCount(0);
   const bookSection = page.getByRole('region', { name: 'Livros', exact: true });
-  await bookSection
-    .getByRole('group', { name: 'Publicação de Livros', exact: true })
-    .getByRole('button', { name: 'Não publicado', exact: true })
-    .click();
-  await bookSection
-    .getByRole('group', { name: 'Estado editorial de Livros', exact: true })
-    .getByRole('button', { name: 'Em revisão', exact: true })
-    .click();
+  await chooseDropdown(
+    bookSection.getByRole('combobox', { name: 'Publicação de Livros', exact: true }),
+    'Não publicado',
+  );
+  await chooseDropdown(
+    bookSection.getByRole('combobox', { name: 'Estado editorial de Livros', exact: true }),
+    'Em revisão',
+  );
   await expect(bookSection.getByRole('heading', { level: 3 })).toHaveCount(1);
   await expect(
     bookSection.getByRole('heading', { name: books[0].title, exact: true }),
   ).toBeVisible();
-  await bookSection
-    .getByRole('group', { name: 'Publicação de Livros', exact: true })
-    .getByRole('button', { name: 'Publicado', exact: true })
-    .click();
+  await chooseDropdown(
+    bookSection.getByRole('combobox', { name: 'Publicação de Livros', exact: true }),
+    'Publicado',
+  );
   await expect(bookSection.getByRole('heading', { level: 3 })).toHaveCount(0);
-  await bookSection
-    .getByRole('group', { name: 'Estado editorial de Livros', exact: true })
-    .getByRole('button', { name: 'Pronto', exact: true })
-    .click();
+  await chooseDropdown(
+    bookSection.getByRole('combobox', { name: 'Estado editorial de Livros', exact: true }),
+    'Pronto',
+  );
   await expect(
     bookSection.getByRole('heading', { name: books[1].title, exact: true }),
   ).toBeVisible();
   await expect(campaigns.getByRole('heading', { level: 3 })).toHaveCount(25);
   await page.setViewportSize({ width: 320, height: 740 });
   await bookSection
-    .getByRole('group', { name: 'Publicação de Livros', exact: true })
+    .getByRole('combobox', { name: 'Publicação de Livros', exact: true })
     .scrollIntoViewIfNeeded();
   const bookFilters = testInfo.outputPath('estudio-publicacao-editorial-320.png');
   await page.screenshot({ path: bookFilters, animations: 'disabled', caret: 'hide' });
@@ -305,15 +305,15 @@ test('paginação e filtros de tipo e estado conservam listas independentes', as
     path: bookFilters,
     contentType: 'image/png',
   });
-  await adventures
-    .getByRole('group', { name: 'Estado editorial de Aventuras', exact: true })
-    .getByRole('button', { name: 'Em revisão', exact: true })
-    .click();
+  await chooseDropdown(
+    adventures.getByRole('combobox', { name: 'Estado editorial de Aventuras', exact: true }),
+    'Em revisão',
+  );
   await expect(
     adventures.getByRole('heading', { name: 'Aventura das marés 27', exact: true }),
   ).toBeVisible();
   await adventures
-    .getByRole('group', { name: 'Estado editorial de Aventuras', exact: true })
+    .getByRole('combobox', { name: 'Estado editorial de Aventuras', exact: true })
     .scrollIntoViewIfNeeded();
   const adventureFilters = testInfo.outputPath('estudio-condicao-editorial-320.png');
   await page.screenshot({ path: adventureFilters, animations: 'disabled', caret: 'hide' });
@@ -321,16 +321,16 @@ test('paginação e filtros de tipo e estado conservam listas independentes', as
     path: adventureFilters,
     contentType: 'image/png',
   });
-  await page
-    .getByRole('group', { name: 'Tipo de projeto', exact: true })
-    .getByRole('button', { name: 'Campanhas', exact: true })
-    .click();
+  await chooseDropdown(
+    page.getByRole('combobox', { name: 'Tipo de projeto', exact: true }),
+    'Campanhas',
+  );
   await expect(page.getByRole('region', { name: 'Livros', exact: true })).toHaveCount(0);
   await expect(adventures).toHaveCount(0);
-  await campaigns
-    .getByRole('group', { name: 'Estado de Campanhas', exact: true })
-    .getByRole('button', { name: 'Em preparação', exact: true })
-    .click();
+  await chooseDropdown(
+    campaigns.getByRole('combobox', { name: 'Estado de Campanhas', exact: true }),
+    'Em preparação',
+  );
   await expect(campaigns.getByRole('heading', { level: 3 })).toHaveCount(1);
   await page.setViewportSize({ width: 320, height: 740 });
   await capture(page, testInfo, 'estudio-filtros-campanhas-320');
