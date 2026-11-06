@@ -1,4 +1,5 @@
 import { createRequire } from 'node:module';
+import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { createUniverseLoreImportService } from '../../functions/src/universeLoreImport.mjs';
 import { readFile } from 'node:fs/promises';
@@ -205,6 +206,7 @@ test('universe import bytes, suggestions, review, quota and receipts are server-
   const paths = [
     'users/author/universeLoreImports/import',
     'users/author/universeLoreImports/import/importUploads/bytes-0-0',
+    'users/author/universeLoreImports/import/importSources/000000',
     'users/author/universeLoreImports/import/importCandidates/candidate',
     'users/author/universeLoreImports/import/importReview/0',
     'users/author/universeLoreImportLimits/current',
@@ -244,26 +246,42 @@ test('native Firestore atomically creates, replays and updates reviewed universe
       db,
       generator: () => Promise.resolve(JSON.stringify({ entities: [entity] })),
     });
-    async function prepare(session, universeId = null) {
+    async function prepare(session, universeId = null, version = 1) {
+      const spans = [{ start: 0, end: entity.evidence.length, page: null }];
+      const hash = createHash('sha256')
+        .update(JSON.stringify({ text: entity.evidence, spans }))
+        .digest('hex');
+      const sourceHash = createHash('sha256').update(`:${hash}`).digest('hex');
       await api.startUniverseLoreImport('import-author', {
         id: session,
+        version,
         universeId,
-        files: [{ name: 'lore.txt', size: Buffer.byteLength(entity.evidence), parts: 1 }],
+        files: [
+          {
+            name: 'lore.txt',
+            size: Buffer.byteLength(entity.evidence),
+            parts: 1,
+            ...(version === 2
+              ? { sourceBytes: Buffer.byteLength(entity.evidence), sourceHash }
+              : {}),
+          },
+        ],
       });
-      await api.appendUniverseLoreImport('import-author', {
-        id: session,
-        kind: 'bytes',
-        file: 0,
-        index: 0,
-        payload: Buffer.from(entity.evidence).toString('base64'),
-      });
+      if (version === 1)
+        await api.appendUniverseLoreImport('import-author', {
+          id: session,
+          kind: 'bytes',
+          file: 0,
+          index: 0,
+          payload: Buffer.from(entity.evidence).toString('base64'),
+        });
       await api.appendUniverseLoreImport('import-author', {
         id: session,
         kind: 'source',
         file: 0,
         index: 0,
         payload: entity.evidence,
-        page: null,
+        ...(version === 2 ? { spans, sha256: hash } : { page: null }),
       });
       await api.sealUniverseLoreImport('import-author', { id: session });
       return api.advanceUniverseLoreImport('import-author', { id: session, cursor: 0 });
@@ -289,7 +307,15 @@ test('native Firestore atomically creates, replays and updates reviewed universe
     const rows = await db.collection(`universes/${result.universeId}/lore`).get();
     assert.equal(rows.size, 1);
     assert.equal(rows.docs[0].data().isPublic, false);
-    const second = await prepare('native-update', result.universeId);
+    const second = await prepare('native-update', result.universeId, 2);
+    assert.equal(second.version, 2);
+    assert.ok(
+      (
+        await db
+          .doc('users/import-author/universeLoreImports/native-update/importSources/000000')
+          .get()
+      ).data().analysis.fingerprint,
+    );
     const update = {
       ...request,
       id: second.id,

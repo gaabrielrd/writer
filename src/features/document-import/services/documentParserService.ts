@@ -7,6 +7,7 @@ import {
 } from '../model/documentImport';
 import { parsePdfLayout, throwIfAborted, readPdfSourcePages } from './pdfDocumentService';
 import { extractPdfLorePages } from './pdfLayoutExtraction';
+import type { LoreDocumentPage } from './loreDocumentPreparation';
 export type { ParsedChapter, DocumentParseResult } from '../model/documentImport';
 export { parsePdfFile } from './pdfDocumentService';
 
@@ -284,11 +285,14 @@ export async function parseDocumentFile(
 }
 
 /** Complete source extraction for lore, without manuscript chapter/TOC filtering. */
-export async function extractLoreDocument(file: File, options: ParseOptions = {}) {
+export async function extractLoreDocument(
+  file: File,
+  options: ParseOptions & { legacyLore?: boolean } = {},
+): Promise<LoreDocumentPage[]> {
   throwIfAborted(options.signal);
   if (file.name.toLowerCase().endsWith('.pdf')) {
     const pages = await readPdfSourcePages(file, options);
-    const result = extractPdfLorePages(pages);
+    const result = extractPdfLorePages(pages, !options.legacyLore);
     if (!result.some((page) => page.text.trim()))
       throw new Error('O PDF não contém texto extraível. Execute OCR antes de importar.');
     return result;

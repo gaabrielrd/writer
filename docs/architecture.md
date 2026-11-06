@@ -12,6 +12,11 @@ usam `generationApi`; veja a [ADR 0272](decisions/0272-project-creation-and-cont
 
 ## Princípios
 
+A importação de universos usa preparação local por document-import e upload v2
+somente de texto com hashes/faixas. O servidor seleciona contexto, guarda análises
+privadas por unidade e confirma o lote reautorizado sob lease. Sessões v1 seguem
+retomáveis; veja a [ADR 0276](decisions/0276-local-prepared-lore-import.md).
+
 As Functions são expostas por setor, com ações explícitas e serviços internos
 separados. O transporte é configurado pela aplicação; consulte a
 [ADR 0270](decisions/0270-functions-by-sector.md) e o

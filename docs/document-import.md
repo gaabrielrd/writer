@@ -70,6 +70,12 @@ livro antes da confirmação.
 
 ## Revisão e limites
 
+A importação de universos reutiliza este parser para preparar texto localmente,
+incluindo agrupamento de páginas curtas e origem literal. O PDF original não é
+enviado no protocolo novo. Esse fluxo tem revisão de entidades e limites próprios;
+veja [importação de universos e lore](universe-lore-import.md). A criação de livros
+e aventuras continua sem IA para extrair ou dividir o documento.
+
 Antes de confirmar, confira a quantidade, títulos, prévias e palavras. Você pode
 renomear capítulos, escolher quais importar ou trocar de arquivo. A criação de
 capítulos mantém a ordem exibida e recalcula o total de palavras do livro.

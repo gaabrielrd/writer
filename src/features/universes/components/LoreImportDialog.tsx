@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Check, FileText, Upload, X } from 'lucide-react';
 import {
   Alert,
   Button,
@@ -24,6 +25,7 @@ import {
 } from '../services/loreImportService';
 import {
   loreImportDiff,
+  LORE_IMPORT_MAX_BYTES,
   loreTextDiff,
   matchingImportEntities,
   validateLoreImportFiles,
@@ -35,6 +37,15 @@ import {
   type LoreImportSubmission,
 } from '../model/loreImport';
 import styles from './LoreImportDialog.module.css';
+
+function fileSize(bytes: number) {
+  if (bytes === 0) return '0 KB';
+  if (bytes < 1_000) return `${bytes.toLocaleString('pt-BR')} bytes`;
+  const megabytes = bytes >= 1_000_000;
+  return `${(bytes / (megabytes ? 1_000_000 : 1_000)).toLocaleString('pt-BR', {
+    maximumFractionDigits: 1,
+  })} ${megabytes ? 'MB' : 'KB'}`;
+}
 
 interface Choice extends LoreImportChoice {
   selected: boolean;
@@ -124,20 +135,37 @@ function CandidateEditor({
   const update = (input: Partial<ImportLoreFields>) =>
     onChange({ ...choice, input: { ...choice.input, ...input } });
   return (
-    <article className={styles.candidate}>
-      <div className={styles.actions}>
+    <article className={styles.candidate} data-selected={choice.selected}>
+      <div className={styles.candidateHeader}>
+        <div>
+          <h3>{choice.input.name || candidate.name}</h3>
+          <p className={styles.caption}>
+            {LORE_CATEGORIES.find((item) => item.value === choice.input.category)?.label}
+            {' · '}
+            {choice.targetId ? 'Atualizar ficha' : 'Nova entrada privada'}
+          </p>
+        </div>
         <Button
-          variant={choice.selected ? 'primary' : 'secondary'}
+          variant="secondary"
           aria-pressed={choice.selected}
           disabled={disabled}
           onClick={() => onChange({ ...choice, selected: !choice.selected })}
         >
-          {choice.selected ? 'Selecionada' : 'Selecionar'}: {candidate.name}
+          {choice.selected && <Check className="icon icon-sm" aria-hidden="true" />}
+          <span aria-hidden="true">{choice.selected ? 'Selecionada' : 'Selecionar'}</span>
+          <span className="sr-only">
+            {choice.selected ? 'Selecionada' : 'Selecionar'}: {candidate.name}
+          </span>
         </Button>
       </div>
-      <p>
+      <p>{choice.input.summary}</p>
+      <p className={styles.caption}>
         Fonte: {candidate.fileName}
-        {candidate.page ? `, página ${candidate.page}` : ''}
+        {candidate.pages && candidate.pages.length > 1
+          ? `, páginas ${candidate.pages.join(', ')}`
+          : candidate.page
+            ? `, página ${candidate.page}`
+            : ''}
       </p>
       <blockquote>{candidate.evidence}</blockquote>
       {!!matches.length && (
@@ -228,7 +256,12 @@ export function LoreImportDialog({
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [recovering, setRecovering] = useState(() => !!getPendingLoreImport(uid, universeId));
+  const [dragging, setDragging] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const fileHintId = useId();
+  const dragDepth = useRef(0);
   const alive = useRef(true);
   const controller = useRef(new AbortController());
   useEffect(() => {
@@ -252,6 +285,9 @@ export function LoreImportDialog({
             setError(
               'Não foi possível recuperar a importação. Selecione os mesmos arquivos para retomar o envio, ou descarte a tentativa.',
             );
+        })
+        .finally(() => {
+          if (alive.current) setRecovering(false);
         });
     }
     return () => {
@@ -287,6 +323,7 @@ export function LoreImportDialog({
           id: sessionId,
           universeId,
           files,
+          version: current ? (current.version ?? 1) : 2,
           signal: controller.current.signal,
           onProgress: (value) => {
             if (alive.current) setMessage(value);
@@ -309,6 +346,7 @@ export function LoreImportDialog({
   }
   async function target(candidate: LoreImportCandidate, targetId: string) {
     await perform(async () => {
+      setMessage('Carregando ficha para comparação…');
       const before = targetId ? await getLoreImportTarget(sessionId, targetId) : undefined;
       if (!alive.current) return;
       const input = pickFields(candidate);
@@ -338,6 +376,7 @@ export function LoreImportDialog({
     updates;
   async function confirm() {
     await perform(async () => {
+      setMessage('Salvando a revisão e confirmando a importação…');
       const submission = pending ?? {
         id: sessionId,
         operationId: crypto.randomUUID(),
@@ -359,54 +398,118 @@ export function LoreImportDialog({
   }
   async function discard() {
     await perform(async () => {
+      setMessage('Descartando importação…');
       await cancelLoreImport(sessionId);
       if (!alive.current) return;
       clearPendingLoreImport(uid, universeId);
       onClose();
     });
   }
-  const locked = busy || !!pending;
+  const locked = busy || recovering || !!pending;
+  const needsFiles = !review || review.state === 'uploading';
+  const canAnalyze = needsFiles || review?.state === 'analyzing';
+  const stage =
+    review?.state === 'ready' || review?.state === 'applied'
+      ? 2
+      : busy || review?.state === 'analyzing'
+        ? 1
+        : 0;
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  const selectedCount = pending ? pending.changes.length : selected.length;
+  function addFiles(incoming: File[]) {
+    if (locked) return;
+    const next = [...files, ...incoming];
+    try {
+      validateLoreImportFiles(next);
+      setFiles(next);
+      setError('');
+    } catch (cause) {
+      setError((cause as Error).message);
+    }
+  }
   return (
     <Dialog
       open
       title={universeId ? 'Importar lore para o universo' : 'Importar universo'}
+      description="Transforme seus documentos em fichas de lore. Revise tudo antes de importar."
+      maxWidthClass="max-w-3xl"
+      className={styles.dialog}
       onClose={onClose}
       footer={
-        <>
-          <Button variant="secondary" onClick={onClose}>
-            Fechar e continuar depois
-          </Button>
-          <Button variant="ghost" disabled={busy} onClick={() => setConfirmDiscard(true)}>
-            Descartar importação
-          </Button>
-          {review?.state === 'ready' && (
-            <Button
-              disabled={
-                busy ||
-                (!pending &&
-                  (!selected.length || invalid || duplicates || (!universeId && !name.trim())))
-              }
-              onClick={() => void confirm()}
-            >
-              {pending
-                ? 'Retomar confirmação'
-                : universeId
-                  ? `Confirmar: ${selected.length - updates} novas e ${updates} atualizadas`
-                  : `Criar universo com ${selected.length} entradas`}
-            </Button>
+        <div className={styles.footer}>
+          {(canAnalyze || review?.state === 'ready') && (
+            <div className={styles.confirmationSummary} aria-live="polite">
+              <strong>
+                {review?.state === 'ready'
+                  ? `${selectedCount} ${selectedCount === 1 ? 'ficha selecionada' : 'fichas selecionadas'}`
+                  : 'Analisar não debita créditos'}
+              </strong>
+              <span>{review?.cost ?? 1} crédito na confirmação do lote</span>
+            </div>
           )}
-        </>
+          <div className={styles.footerActions}>
+            <Button
+              variant="ghost"
+              disabled={busy || recovering}
+              onClick={() => setConfirmDiscard(true)}
+            >
+              Descartar importação
+            </Button>
+            <div className={styles.actions}>
+              <Button variant="secondary" onClick={onClose}>
+                {review || recovering ? 'Fechar e continuar depois' : 'Fechar'}
+              </Button>
+              {canAnalyze && (
+                <Button
+                  disabled={locked || confirmDiscard || (needsFiles && !files.length)}
+                  onClick={() => void analyze()}
+                >
+                  {busy
+                    ? 'Analisando…'
+                    : review?.state === 'analyzing'
+                      ? 'Continuar análise'
+                      : 'Analisar arquivos'}
+                </Button>
+              )}
+              {review?.state === 'ready' && (
+                <Button
+                  disabled={
+                    busy ||
+                    recovering ||
+                    confirmDiscard ||
+                    (!pending &&
+                      (!selected.length || invalid || duplicates || (!universeId && !name.trim())))
+                  }
+                  onClick={() => void confirm()}
+                >
+                  {pending
+                    ? 'Retomar confirmação'
+                    : universeId
+                      ? `Confirmar: ${selected.length - updates} ${selected.length - updates === 1 ? 'nova' : 'novas'} e ${updates} ${updates === 1 ? 'atualizada' : 'atualizadas'}`
+                      : `Criar universo com ${selected.length} ${selected.length === 1 ? 'entrada' : 'entradas'}`}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
       }
     >
       <div className={styles.form}>
-        <p>
-          PDF com texto, TXT e Markdown. Até 50 arquivos, somando 10 MB (10.000.000 bytes). O lote
-          custa 1 crédito na confirmação; analisar ou descartar não debita.
-        </p>
-        <p>
-          Novas entradas são privadas. Atualizações preservam visibilidade, relações e notas
-          estruturadas. Os textos serão enviados ao provedor de IA da plataforma.
-        </p>
+        <ol className={styles.steps} aria-label="Etapas da importação">
+          {['Arquivos', 'Análise', 'Revisão'].map((label, index) => (
+            <li
+              key={label}
+              aria-current={stage === index ? 'step' : undefined}
+              data-complete={stage > index}
+            >
+              <span className={styles.stepNumber} aria-hidden="true">
+                {stage > index ? <Check className="icon icon-sm" /> : index + 1}
+              </span>
+              {label}
+            </li>
+          ))}
+        </ol>
+        {recovering && <LoadingState label="Recuperando sua importação…" />}
         {error && <Alert variant="destructive">{error}</Alert>}
         {confirmDiscard && (
           <Alert variant="warning">
@@ -418,61 +521,161 @@ export function LoreImportDialog({
               Confirmar descarte
             </Button>
             <Button variant="secondary" disabled={busy} onClick={() => setConfirmDiscard(false)}>
-              Voltar à revisão
+              Continuar importação
             </Button>
           </Alert>
         )}
-        {busy && <LoadingState label={message || 'Processando importação…'} />}
-        {(!review || review.state === 'uploading') && (
-          <>
-            <Input
-              type="file"
-              label="Arquivos para importar"
-              accept=".pdf,.txt,.text,.md,.markdown"
-              multiple
-              disabled={locked}
-              onChange={(event) => {
-                const next = [...files, ...Array.from(event.target.files ?? [])];
-                try {
-                  validateLoreImportFiles(next);
-                  setFiles(next);
-                  setError('');
-                } catch (cause) {
-                  setError((cause as Error).message);
-                }
-                event.target.value = '';
-              }}
-            />
-            <ul>
-              {files.map((file, index) => (
-                <li key={`${file.name}-${index}`}>
-                  {file.name} — {file.size.toLocaleString('pt-BR')} bytes{' '}
-                  <Button
-                    variant="ghost"
-                    disabled={locked}
-                    onClick={() => setFiles(files.filter((_, i) => i !== index))}
-                  >
-                    Remover {file.name}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-            <p>
-              Total: {files.reduce((sum, file) => sum + file.size, 0).toLocaleString('pt-BR')} /
-              10.000.000 bytes
-            </p>
-          </>
+        {!recovering && (busy || review?.state === 'analyzing') && (
+          <section className={styles.progressPanel} aria-label="Progresso da importação">
+            <h3>
+              {review?.state === 'ready'
+                ? 'Atualizando a importação'
+                : needsFiles
+                  ? 'Preparando seus arquivos'
+                  : 'Identificando o lore'}
+            </h3>
+            {busy ? (
+              <LoadingState label={message || 'Processando importação…'} />
+            ) : (
+              <p>A análise está pausada. Continue de onde parou.</p>
+            )}
+            {review?.state === 'analyzing' && (
+              <>
+                <progress
+                  className={styles.progress}
+                  aria-label="Trechos analisados"
+                  value={review.cursor}
+                  max={Math.max(1, review.total)}
+                />
+                <p className={styles.caption}>
+                  {review.cursor} de {review.total} trechos concluídos
+                </p>
+              </>
+            )}
+            {canAnalyze && (
+              <p className={styles.caption}>
+                Você poderá revisar as sugestões antes de confirmar. Analisar não debita créditos.
+              </p>
+            )}
+          </section>
         )}
-        {(!review || ['uploading', 'analyzing'].includes(review.state)) && (
-          <Button
-            disabled={busy || ((!review || review.state === 'uploading') && !files.length)}
-            onClick={() => void analyze()}
-          >
-            {review?.state === 'analyzing' ? 'Continuar análise' : 'Analisar arquivos'}
-          </Button>
+        {!recovering && needsFiles && !busy && (
+          <section className={styles.form} aria-label="Seleção de arquivos">
+            {review?.state === 'uploading' && (
+              <Alert variant="info">
+                Para retomar o envio, selecione os mesmos arquivos usados no início desta
+                importação.
+              </Alert>
+            )}
+            <div>
+              <h3 className={styles.sectionTitle}>Adicione seus documentos</h3>
+              <p id={fileHintId} className={styles.caption}>
+                PDF com texto, TXT ou Markdown · Até 50 arquivos e 10 MB no total.
+              </p>
+            </div>
+            <div
+              className={styles.dropzone}
+              data-dragging={dragging}
+              data-disabled={locked}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                dragDepth.current++;
+                if (!locked) setDragging(true);
+              }}
+              onDragOver={(event) => event.preventDefault()}
+              onDragLeave={(event) => {
+                event.preventDefault();
+                dragDepth.current = Math.max(0, dragDepth.current - 1);
+                if (!dragDepth.current) setDragging(false);
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                dragDepth.current = 0;
+                setDragging(false);
+                addFiles(Array.from(event.dataTransfer.files));
+              }}
+            >
+              <Upload className="icon" aria-hidden="true" />
+              <p>Arraste seus arquivos para cá</p>
+              <Button
+                variant="secondary"
+                disabled={locked}
+                onClick={() => fileInput.current?.click()}
+              >
+                {files.length ? 'Adicionar arquivos' : 'Escolher arquivos'}
+              </Button>
+              <Input
+                ref={fileInput}
+                className="sr-only"
+                tabIndex={-1}
+                type="file"
+                aria-label="Arquivos para importar"
+                aria-describedby={fileHintId}
+                accept=".pdf,.txt,.text,.md,.markdown"
+                multiple
+                disabled={locked}
+                onChange={(event) => {
+                  addFiles(Array.from(event.target.files ?? []));
+                  event.target.value = '';
+                }}
+              />
+            </div>
+            <div className={styles.fileTotals} aria-live="polite">
+              <span>{files.length} de 50 arquivos</span>
+              <span>
+                {fileSize(totalBytes)} de {fileSize(LORE_IMPORT_MAX_BYTES)}
+              </span>
+            </div>
+            {!!files.length && (
+              <ul className={styles.fileList} aria-label="Arquivos selecionados">
+                {files.map((file, index) => (
+                  <li key={`${file.name}-${index}`}>
+                    <FileText className="icon icon-sm" aria-hidden="true" />
+                    <span className={styles.fileName}>{file.name}</span>
+                    <span className={styles.fileSize}>{fileSize(file.size)}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      aria-label={`Remover ${file.name}`}
+                      disabled={locked}
+                      onClick={() => setFiles(files.filter((_, i) => i !== index))}
+                    >
+                      <X className="icon icon-sm" aria-hidden="true" />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <p className={styles.caption}>
+              Os arquivos selecionados ficam nesta janela até você iniciar a análise.
+            </p>
+          </section>
+        )}
+        {canAnalyze && !recovering && (
+          <div className={styles.importNotes}>
+            <p>
+              Os textos serão enviados ao provedor de IA da plataforma. Novas entradas são privadas.
+            </p>
+            <details>
+              <summary>Como seus dados são tratados</summary>
+              <p>
+                Atualizações preservam visibilidade, relações e notas estruturadas. Fichas ausentes
+                dos arquivos permanecem intactas. PDFs precisam ter texto selecionável. Limite
+                total: 10.000.000 bytes. Descartar a importação não debita créditos.
+              </p>
+            </details>
+          </div>
         )}
         {review?.state === 'ready' && (
           <>
+            <div>
+              <h3 className={styles.sectionTitle}>Revise as fichas sugeridas</h3>
+              <p className={styles.caption}>
+                Selecione o que deseja importar. Para atualizar uma ficha, escolha o destino e
+                confira as diferenças. Novas entradas são privadas; atualizações preservam
+                visibilidade, relações e notas estruturadas.
+              </p>
+            </div>
             {!pending && (
               <Alert variant="info">
                 A análise pode ser retomada. Edições locais ainda não confirmadas serão perdidas ao
@@ -483,6 +686,8 @@ export function LoreImportDialog({
               <>
                 <Input
                   label="Nome do universo"
+                  required
+                  hint="Obrigatório para criar o universo."
                   value={name}
                   maxLength={200}
                   disabled={locked}
@@ -545,6 +750,18 @@ export function LoreImportDialog({
                     description="Nenhuma ficha foi criada. Tente documentos com informações sobre o universo."
                   />
                 )}
+                {!!review.candidates.length && !selected.length && (
+                  <p className={styles.caption}>
+                    Selecione ao menos uma ficha para confirmar. Possíveis correspondências precisam
+                    da sua escolha.
+                  </p>
+                )}
+                {invalid && (
+                  <Alert variant="warning">
+                    Confira os campos das fichas selecionadas: nome e resumo são obrigatórios, com
+                    até 20 apelidos e 150.000 caracteres nos detalhes.
+                  </Alert>
+                )}
                 {duplicates && (
                   <Alert variant="destructive">
                     Cada ficha existente pode receber somente uma atualização por lote. Consolide as
@@ -568,9 +785,11 @@ export function LoreImportDialog({
                     ),
                 )}
                 <p>
-                  {selected.length - updates} novas entradas e {updates} atualizações. Confira os
-                  trechos removidos e acrescentados antes de confirmar. Fichas ausentes dos arquivos
-                  permanecem intactas.
+                  {selected.length - updates}{' '}
+                  {selected.length - updates === 1 ? 'nova entrada' : 'novas entradas'} e {updates}{' '}
+                  {updates === 1 ? 'atualização' : 'atualizações'}. Confira os trechos removidos e
+                  acrescentados antes de confirmar. Fichas ausentes dos arquivos permanecem
+                  intactas.
                 </p>
               </>
             )}
@@ -579,8 +798,10 @@ export function LoreImportDialog({
         {review?.state === 'applied' && review.result && (
           <Alert>
             <p>
-              Importação confirmada: {review.result.created} novas entradas e{' '}
-              {review.result.updated} atualizações.
+              Importação confirmada: {review.result.created}{' '}
+              {review.result.created === 1 ? 'nova entrada' : 'novas entradas'} e{' '}
+              {review.result.updated} {review.result.updated === 1 ? 'atualização' : 'atualizações'}
+              .
             </p>
             <Button
               onClick={() => {
@@ -591,6 +812,12 @@ export function LoreImportDialog({
               Abrir universo
             </Button>
           </Alert>
+        )}
+        {review?.state === 'cancelled' && (
+          <EmptyState
+            title="Importação descartada"
+            description="Feche esta janela e inicie uma nova importação quando quiser. Nenhuma ficha existente foi removida."
+          />
         )}
       </div>
     </Dialog>

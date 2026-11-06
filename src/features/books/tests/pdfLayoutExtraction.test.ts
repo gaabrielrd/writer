@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { extractPdfLorePages } from '@/features/document-import';
 import {
   extractPdfLayout,
   type LayoutItem,
@@ -16,6 +17,32 @@ const body = (prefix: string, x: number, y: number) =>
   Array.from({ length: 4 }, (_, i) =>
     item(prefix + ' linha de texto ' + (i + 1) + '.', x, y - i * 16),
   );
+
+it('cleans recurring margins for lore without removing body occurrences or introductory sections', () => {
+  const pages = Array.from({ length: 4 }, (_, index) =>
+    page(index + 1, [
+      item('Atlas do mundo', 40, 780),
+      item(String(index + 1), 40, 20),
+      item(index === 0 ? 'Introdução' : index === 3 ? 'Apêndice A' : 'Sumário', 40, 700, 24),
+      ...body('Atlas do mundo', 40, 600),
+      item('Atlas do mundo', 40, 450),
+    ]),
+  );
+  const cleaned = extractPdfLorePages(pages);
+  expect(cleaned[0]!.text).toContain('Introdução');
+  expect(cleaned[3]!.text).toContain('Apêndice A');
+  expect(cleaned[1]!.text).toContain('Sumário');
+  expect(
+    cleaned.every(
+      (value) => value.text.split('\n').filter((line) => line === 'Atlas do mundo').length === 1,
+    ),
+  ).toBe(true);
+  expect(cleaned.every((value) => value.text.includes('Atlas do mundo linha de texto 1.'))).toBe(
+    true,
+  );
+  expect(cleaned[0]!.sectionStarts.length).toBeGreaterThan(0);
+  expect(extractPdfLorePages(pages, false)[0]!.text).toContain('Atlas do mundo\n');
+});
 
 describe('PDF de aventuras', () => {
   it('preserva níveis de títulos e subtítulos em vez de achatar todos como h2', () => {

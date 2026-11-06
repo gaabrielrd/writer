@@ -1,9 +1,11 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { GenerationError, platformTextGeneration } from './generation.mjs';
 import { validateDetectedLore } from './loreAnalysis.mjs';
 import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
+import { selectImportContext, locateImportEvidence } from './universeLoreImportAnalysis.mjs';
 
 const hash = (v) => createHash('sha256').update(JSON.stringify(v)).digest('hex');
+const hashText = (v) => createHash('sha256').update(v).digest('hex');
 const ANALYSIS_CONCURRENCY = 3;
 const fail = (code, message) => {
   throw new GenerationError(code, message);
@@ -45,10 +47,11 @@ const owned = (world, uid) => {
 };
 const stamp = (snap) =>
   hash([snap.updateTime?.seconds ?? null, snap.updateTime?.nanoseconds ?? null, snap.data()]);
-const manifest = (files) => {
+const manifest = (files, version) => {
   if (!Array.isArray(files) || !files.length || files.length > 50)
     fail('invalid-argument', 'Selecione de 1 a 50 arquivos.');
   let size = 0;
+  let sourceBytes = 0;
   const result = files.map((file) => {
     const name = text(file.name, 255);
     if (
@@ -61,11 +64,64 @@ const manifest = (files) => {
     )
       fail('invalid-argument', 'Arquivo inválido.');
     size += file.size;
-    return { name, size: file.size, parts: file.parts };
+    const result = { name, size: file.size, parts: file.parts };
+    if (version === 2) {
+      if (
+        !Number.isSafeInteger(file.sourceBytes) ||
+        file.sourceBytes < 1 ||
+        typeof file.sourceHash !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(file.sourceHash)
+      )
+        fail('invalid-argument', 'Manifesto de texto preparado inválido.');
+      sourceBytes += file.sourceBytes;
+      Object.assign(result, { sourceBytes: file.sourceBytes, sourceHash: file.sourceHash });
+    }
+    return result;
   });
   if (size > 10000000) fail('invalid-argument', 'O total dos arquivos deve ser de até 10 MB.');
+  if (sourceBytes > 20000000) fail('invalid-argument', 'O texto preparado deve ser de até 20 MB.');
   return result;
 };
+
+/** Closed metadata retained after all private source/candidate families are collected. */
+export function projectUniverseLoreImportTerminal(record) {
+  return {
+    state: record.state,
+    version: record.version ?? 1,
+    fingerprint: record.fingerprint,
+    ...(record.result ? { result: record.result } : {}),
+    expiresAt: Number.MAX_SAFE_INTEGER,
+    cursor: record.cursor ?? 0,
+    total: record.total ?? 0,
+  };
+}
+
+function sourceSpans(value, source) {
+  if (!Array.isArray(value) || !value.length || value.length > 200)
+    fail('invalid-argument', 'Origem do texto inválida.');
+  let end = 0;
+  let page = value[0]?.page;
+  const spans = value.map((span) => {
+    if (
+      !span ||
+      Object.keys(span).some((key) => !['start', 'end', 'page'].includes(key)) ||
+      !Number.isSafeInteger(span.start) ||
+      !Number.isSafeInteger(span.end) ||
+      span.start !== end ||
+      span.end <= end ||
+      span.end > source.length ||
+      /[\uD800-\uDBFF]/.test(source[span.end - 1]) ||
+      (span.page !== null && (!Number.isSafeInteger(span.page) || span.page < 1)) ||
+      (page === null ? span.page !== null : span.page === null || span.page < page)
+    )
+      fail('invalid-argument', 'Faixas de origem inválidas.');
+    end = span.end;
+    page = span.page;
+    return { start: span.start, end, page };
+  });
+  if (end !== source.length) fail('invalid-argument', 'Origem incompleta.');
+  return spans;
+}
 export function createUniverseLoreImportService({ db, generator, now = Date.now }) {
   const root = (uid, value) => {
     if (!uid) fail('unauthenticated', 'Entre na sua conta.');
@@ -96,6 +152,7 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
       if (record.state === 'applied')
         return {
           id: request.id,
+          version: record.version ?? 1,
           state: 'applied',
           universeId: record.result.universeId,
           cursor: record.cursor,
@@ -111,6 +168,7 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
         : null;
       return {
         id: ref.id ?? request.id,
+        version: record.version ?? 1,
         state: record.state,
         universeId: record.universeId,
         cursor: record.cursor,
@@ -139,9 +197,11 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
       const ref = root(uid, request.id);
       if (request.id.length > 100)
         fail('invalid-argument', 'Identificador de importação longo demais.');
-      const files = manifest(request.files);
+      const version = request.version ?? 1;
+      if (![1, 2].includes(version)) fail('invalid-argument', 'Versão de importação inválida.');
+      const files = manifest(request.files, version);
       const universeId = request.universeId == null ? null : id(request.universeId);
-      const fingerprint = hash([files, universeId]);
+      const fingerprint = hash(version === 1 ? [files, universeId] : [files, universeId, version]);
       await db.runTransaction(async (tx) => {
         const old = (await tx.get(ref)).data();
         if (old) {
@@ -176,6 +236,7 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
         tx.set(quotaRef, { window, count: count + 1 });
         tx.create(ref, {
           fingerprint,
+          version,
           files,
           universeId,
           worldStamp: worldSnapshot ? stamp(worldSnapshot) : null,
@@ -185,6 +246,8 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
           uploaded: files.map(() => 0),
           sourceCounts: files.map(() => 0),
           sourceChars: 0,
+          sourceBytes: files.map(() => 0),
+          sourceHashes: files.map(() => ''),
           cursor: 0,
           total: 0,
           expiresAt: now() + 86400000,
@@ -204,11 +267,26 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
           request.index < 0
         )
           fail('invalid-argument', 'Parte inválida.');
-        if (!['bytes', 'source'].includes(request.kind))
+        if (
+          !['bytes', 'source'].includes(request.kind) ||
+          (record.version === 2 && request.kind !== 'source')
+        )
           fail('invalid-argument', 'Tipo de parte inválido.');
         const child = db.doc(`${ref.path}/importUploads/${request.kind}-${file}-${request.index}`);
         const previous = (await tx.get(child)).data();
-        const fingerprint = hash([request.payload, request.page ?? null]);
+        let spans;
+        if (record.version === 2) {
+          text(request.payload, 12000, false);
+          if (!request.payload.length || Buffer.byteLength(request.payload) > 32000)
+            fail('invalid-argument', 'Trecho preparado grande demais ou vazio.');
+          spans = sourceSpans(request.spans, request.payload);
+        }
+        const fingerprint =
+          record.version === 2
+            ? hash({ text: request.payload, spans })
+            : hash([request.payload, request.page ?? null]);
+        if (record.version === 2 && request.sha256 !== fingerprint)
+          fail('invalid-argument', 'Hash do trecho preparado inválido.');
         if (previous) {
           if (previous.fingerprint !== fingerprint)
             fail('failed-precondition', 'Parte alterada no reenvio.');
@@ -232,7 +310,7 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
           tx.create(child, { fingerprint, payload: request.payload });
           tx.update(ref, { uploaded });
         } else {
-          const source = text(request.payload, 12000);
+          const source = text(request.payload, 12000, record.version !== 2);
           if (
             request.index !== record.sourceCounts[file] ||
             request.index >= record.files[file].parts ||
@@ -242,16 +320,37 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
             fail('invalid-argument', 'Texto extraído inválido ou grande demais.');
           const sourceCounts = [...record.sourceCounts];
           sourceCounts[file]++;
-          tx.create(child, { fingerprint, text: source, page: request.page ?? null, file });
+          let prepared = {};
+          if (record.version === 2) {
+            const sourceBytes = [...record.sourceBytes];
+            sourceBytes[file] += Buffer.byteLength(source);
+            if (
+              sourceBytes[file] > record.files[file].sourceBytes ||
+              sourceBytes.reduce((sum, value) => sum + value, 0) > 20000000
+            )
+              fail('invalid-argument', 'Bytes preparados excedem o manifesto.');
+            const sourceHashes = [...record.sourceHashes];
+            sourceHashes[file] = hashText(`${sourceHashes[file]}:${fingerprint}`);
+            prepared = { sourceBytes, sourceHashes };
+          }
+          // V2 keeps the text once, in importSources; upload receipts contain metadata only.
+          tx.create(
+            child,
+            record.version === 2
+              ? { fingerprint, file }
+              : { fingerprint, text: source, page: request.page ?? null, file },
+          );
           tx.create(db.doc(`${ref.path}/importSources/${String(record.total).padStart(6, '0')}`), {
             text: source,
-            page: request.page ?? null,
+            page: spans?.[0].page ?? request.page ?? null,
+            ...(spans ? { spans } : {}),
             fileName: record.files[file].name,
           });
           tx.update(ref, {
             sourceCounts,
             sourceChars: record.sourceChars + source.length,
             total: record.total + 1,
+            ...prepared,
           });
         }
         return { accepted: true };
@@ -264,8 +363,11 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
         if (
           record.files.some(
             (file, i) =>
-              record.uploaded[i] !== Math.ceil(file.size / 500000) ||
-              record.sourceCounts[i] !== file.parts,
+              record.sourceCounts[i] !== file.parts ||
+              (record.version === 2
+                ? record.sourceBytes[i] !== file.sourceBytes ||
+                  record.sourceHashes[i] !== file.sourceHash
+                : record.uploaded[i] !== Math.ceil(file.size / 500000)),
           )
         )
           fail('failed-precondition', 'Envie todos os arquivos e textos antes de analisar.');
@@ -274,12 +376,18 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
       return view(uid, request);
     },
     async advanceUniverseLoreImport(uid, request) {
+      const leaseId = randomUUID();
       const captured = await db.runTransaction(async (tx) => {
         const loaded = await load(tx, uid, request);
         const { ref, record } = loaded;
         if (record.state === 'ready') return null;
         if (record.state !== 'analyzing' || request.cursor !== record.cursor)
           fail('failed-precondition', 'Progresso alterado. Atualize a importação.');
+        if (record.analysisLease?.expiresAt > now())
+          fail(
+            'failed-precondition',
+            'Este lote já está sendo analisado. Aguarde antes de retomar.',
+          );
         const sources = await Promise.all(
           Array.from(
             { length: Math.min(ANALYSIS_CONCURRENCY, record.total - record.cursor) },
@@ -297,6 +405,9 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
           ),
         );
         const previous = await tx.get(db.collection(`${ref.path}/importCandidates`).limit(201));
+        tx.update(ref, {
+          analysisLease: { id: leaseId, cursor: record.cursor, expiresAt: now() + 240000 },
+        });
         return {
           ...loaded,
           sources,
@@ -305,105 +416,157 @@ export function createUniverseLoreImportService({ db, generator, now = Date.now 
       });
       if (!captured) return view(uid, request);
       const { record, sources, previous } = captured;
-      const detected = await Promise.allSettled(
-        sources.map(async (source) => {
-          for (let attempt = 0; attempt < 2; attempt++) {
-            try {
-              const response = await generator({
-                generation: record.generation,
-                text: source.text,
-                lore: record.existing,
-                alreadyDetected: previous.map(({ name, aliases, category, summary }) => ({
-                  name,
-                  aliases,
-                  category,
-                  summary,
-                })),
-                ...(attempt
-                  ? {
-                      validationFeedback:
-                        'Use o formato obrigatório e evidência literal deste trecho.',
-                    }
-                  : {}),
-              });
-              const parsed =
-                typeof response === 'string'
-                  ? JSON.parse(response.replace(/^```(?:json)?\s*|\s*```$/g, ''))
-                  : response;
-              return { source, entities: validateDetectedLore(parsed.entities, source.text) };
-            } catch (error) {
-              if (attempt || !(error instanceof SyntaxError || error instanceof GenerationError))
-                fail(
-                  'unavailable',
-                  'A análise não foi concluída. Tente novamente; nenhum crédito foi debitado.',
-                );
-            }
-          }
-        }),
-      );
-      // Drain the bounded batch before returning an error; no partial batch is committed.
-      const failed = detected.find((result) => result.status === 'rejected');
-      if (failed) throw failed.reason;
-      await db.runTransaction(async (tx) => {
-        const { ref, record: current } = await load(tx, uid, request);
-        if (current.cursor > record.cursor) return;
-        if (current.state !== 'analyzing' || current.cursor !== record.cursor)
-          fail('failed-precondition', 'Progresso alterado.');
-        const consolidated = [...previous];
-        const changed = new Set();
-        // allSettled preserves source order, regardless of model completion order.
-        for (const result of detected) {
-          const { source, entities } = result.value;
-          for (const item of entities) {
-            const terms = [item.name, ...item.aliases].map(norm);
-            const matches = consolidated.filter(
-              (v) =>
-                v.category === item.category &&
-                [v.name, ...v.aliases].some((v) => terms.includes(norm(v))),
-            );
-            const before = matches.length === 1 ? matches[0] : null;
-            const candidateId =
-              before?.id ?? hash([source.ordinal, consolidated.length, item.name]).slice(0, 32);
-            const candidate = {
-              ...item,
-              fileName: source.fileName,
-              page: source.page,
-              ...(before
-                ? {
-                    details: [...new Set([before.details, item.details].filter(Boolean))].join(
-                      '\n\n',
-                    ),
-                    aliases: [...new Set([...before.aliases, ...item.aliases])],
-                  }
-                : {}),
-              id: candidateId,
+      try {
+        const detected = await Promise.allSettled(
+          sources.map(async (source) => {
+            const context = {
+              analysisVersion: 2,
+              generation: record.generation,
+              text: source.text,
+              lore: selectImportContext(source.text, record.existing),
+              alreadyDetected: selectImportContext(source.text, previous).map(
+                ({ name, aliases, category, summary }) => ({ name, aliases, category, summary }),
+              ),
             };
-            if (candidate.aliases.length > 20)
+            const fingerprint = hash([context, source.spans ?? null]);
+            if (source.analysis?.fingerprint === fingerprint)
+              return {
+                source,
+                entities: validateDetectedLore(source.analysis.entities, source.text),
+              };
+            let entities;
+            for (let attempt = 0; attempt < 2; attempt++) {
+              try {
+                const response = await generator({
+                  ...context,
+                  ...(attempt
+                    ? {
+                        validationFeedback:
+                          'Use o formato obrigatório e evidência literal deste trecho.',
+                      }
+                    : {}),
+                });
+                const parsed =
+                  typeof response === 'string'
+                    ? JSON.parse(response.replace(/^```(?:json)?\s*|\s*```$/g, ''))
+                    : response;
+                entities = validateDetectedLore(parsed.entities, source.text);
+                break;
+              } catch (error) {
+                if (attempt || !(error instanceof SyntaxError || error instanceof GenerationError))
+                  fail(
+                    'unavailable',
+                    'A análise não foi concluída. Tente novamente; nenhum crédito foi debitado.',
+                  );
+              }
+            }
+            if (Buffer.byteLength(JSON.stringify({ text: source.text, entities })) > 900000)
               fail(
                 'resource-exhausted',
-                'Mais de 20 apelidos consolidados. Divida os documentos em importações menores.',
+                'A análise deste trecho excede o limite. Divida o documento.',
               );
-            if (candidate.details.length > 150000)
-              fail('resource-exhausted', 'Detalhes consolidados excedem o limite da ficha.');
-            if (before) consolidated[consolidated.indexOf(before)] = candidate;
-            else consolidated.push(candidate);
-            changed.add(candidateId);
+            await db.runTransaction(async (tx) => {
+              const { ref, record: current } = await load(tx, uid, request);
+              const sourceRef = db.doc(
+                `${ref.path}/importSources/${String(source.ordinal).padStart(6, '0')}`,
+              );
+              const currentSource = (await tx.get(sourceRef)).data();
+              if (
+                current.state !== 'analyzing' ||
+                current.cursor !== record.cursor ||
+                current.analysisLease?.id !== leaseId ||
+                current.analysisLease.expiresAt <= now() ||
+                !currentSource ||
+                hash([currentSource.text, currentSource.spans ?? null]) !==
+                  hash([source.text, source.spans ?? null])
+              )
+                fail('failed-precondition', 'O lote ou a origem da análise mudou.');
+              tx.update(sourceRef, { analysis: { fingerprint, entities } });
+            });
+            return { source, entities };
+          }),
+        );
+        // Drain the bounded batch before returning an error; no partial batch is committed.
+        const failed = detected.find((result) => result.status === 'rejected');
+        if (failed) throw failed.reason;
+        await db.runTransaction(async (tx) => {
+          const { ref, record: current } = await load(tx, uid, request);
+          if (current.cursor > record.cursor) return;
+          if (
+            current.state !== 'analyzing' ||
+            current.cursor !== record.cursor ||
+            current.analysisLease?.id !== leaseId ||
+            current.analysisLease.expiresAt <= now()
+          )
+            fail('failed-precondition', 'Progresso alterado.');
+          const consolidated = [...previous];
+          const changed = new Set();
+          // allSettled preserves source order, regardless of model completion order.
+          for (const result of detected) {
+            const { source, entities } = result.value;
+            for (const item of entities) {
+              const terms = [item.name, ...item.aliases].map(norm);
+              const matches = consolidated.filter(
+                (v) =>
+                  v.category === item.category &&
+                  [v.name, ...v.aliases].some((v) => terms.includes(norm(v))),
+              );
+              const before = matches.length === 1 ? matches[0] : null;
+              const candidateId =
+                before?.id ?? hash([source.ordinal, consolidated.length, item.name]).slice(0, 32);
+              const candidate = {
+                ...item,
+                fileName: source.fileName,
+                ...locateImportEvidence(source, item.evidence),
+                ...(before
+                  ? {
+                      details: [...new Set([before.details, item.details].filter(Boolean))].join(
+                        '\n\n',
+                      ),
+                      aliases: [...new Set([...before.aliases, ...item.aliases])],
+                    }
+                  : {}),
+                id: candidateId,
+              };
+              if (candidate.aliases.length > 20)
+                fail(
+                  'resource-exhausted',
+                  'Mais de 20 apelidos consolidados. Divida os documentos em importações menores.',
+                );
+              if (candidate.details.length > 150000)
+                fail('resource-exhausted', 'Detalhes consolidados excedem o limite da ficha.');
+              if (before) consolidated[consolidated.indexOf(before)] = candidate;
+              else consolidated.push(candidate);
+              changed.add(candidateId);
+            }
           }
-        }
-        if (consolidated.length > 200 || Buffer.byteLength(JSON.stringify(consolidated)) > 4000000)
-          fail(
-            'resource-exhausted',
-            'Mais de 200 sugestões ou resultado acima de 4 MB. Divida os documentos em importações menores.',
-          );
-        for (const candidate of consolidated)
-          if (changed.has(candidate.id))
-            tx.set(db.doc(`${ref.path}/importCandidates/${candidate.id}`), candidate);
-        tx.update(ref, {
-          cursor: current.cursor + sources.length,
-          state: current.cursor + sources.length === current.total ? 'ready' : 'analyzing',
+          if (
+            consolidated.length > 200 ||
+            Buffer.byteLength(JSON.stringify(consolidated)) > 4000000
+          )
+            fail(
+              'resource-exhausted',
+              'Mais de 200 sugestões ou resultado acima de 4 MB. Divida os documentos em importações menores.',
+            );
+          for (const candidate of consolidated)
+            if (changed.has(candidate.id))
+              tx.set(db.doc(`${ref.path}/importCandidates/${candidate.id}`), candidate);
+          tx.update(ref, {
+            cursor: current.cursor + sources.length,
+            state: current.cursor + sources.length === current.total ? 'ready' : 'analyzing',
+            analysisLease: null,
+          });
         });
-      });
-      return view(uid, request);
+        return view(uid, request);
+      } finally {
+        // Metadata-only release also works after cancellation/revocation. A stale
+        // invocation must never clear a successor's lease or recreate cleaned data.
+        await db.runTransaction(async (tx) => {
+          const ref = root(uid, request.id);
+          const current = (await tx.get(ref)).data();
+          if (current?.analysisLease?.id === leaseId) tx.update(ref, { analysisLease: null });
+        });
+      }
     },
     getUniverseLoreImport: view,
     async getUniverseLoreImportTarget(uid, request) {

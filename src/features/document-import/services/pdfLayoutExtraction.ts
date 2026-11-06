@@ -452,7 +452,7 @@ function contentsTitle(text: string): string {
   ).toLocaleLowerCase();
 }
 
-export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
+function orderedPages(pages: LayoutPage[]) {
   const layouts = pages.map((page) => {
     const layout = pageLines(page);
     return { ...layout, lines: mergeHeadingLines(layout.lines, layout.bodyHeight) };
@@ -465,6 +465,18 @@ export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
       repeated.set(text, (repeated.get(text) ?? 0) + 1);
   });
   const threshold = Math.max(3, Math.ceil(pages.length * 0.4));
+  return layouts.map((layout, index) => ({
+    ...layout,
+    lines: layout.lines.filter(
+      (line) =>
+        !margin(line, pages[index]!) ||
+        (!/^\d+$/.test(line.text) && (repeated.get(line.text) ?? 0) < threshold),
+    ),
+  }));
+}
+
+export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
+  const layouts = orderedPages(pages);
   const warnings: ImportWarning[] = [];
   const sections: PdfSection[] = [];
   let title = 'Capítulo 1';
@@ -479,11 +491,7 @@ export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
   };
   pages.forEach((page, pageIndex) => {
     const layout = layouts[pageIndex]!;
-    const lines = layout.lines.filter(
-      (line) =>
-        !margin(line, page) ||
-        (!/^\d+$/.test(line.text) && (repeated.get(line.text) ?? 0) < threshold),
-    );
+    const lines = layout.lines;
     const entries = lines.filter((line) => ENTRY.test(line.text));
     const containsTitle = lines.some((line) => CONTENTS.test(line.text));
     // Only remove a TOC page when entries point to real later headings. No hard-coded page numbers.
@@ -552,10 +560,22 @@ export function extractPdfLayout(pages: LayoutPage[]): PdfLayoutResult {
 }
 
 /** Ordered source for lore: retain headings, front matter and appendices. */
-export function extractPdfLorePages(pages: LayoutPage[]) {
-  return pages.map((page) => {
-    const layout = pageLines(page);
-    const lines = mergeHeadingLines(layout.lines, layout.bodyHeight);
-    return { page: page.number, text: lines.map((line) => line.text).join('\n') };
+export function extractPdfLorePages(pages: LayoutPage[], cleanMargins = true) {
+  const layouts = cleanMargins
+    ? orderedPages(pages)
+    : pages.map((page) => {
+        const layout = pageLines(page);
+        return { ...layout, lines: mergeHeadingLines(layout.lines, layout.bodyHeight) };
+      });
+  return layouts.map((layout, index) => {
+    const sectionStarts: number[] = [];
+    let offset = 0;
+    const lines = layout.lines.map((line) => {
+      if (isHeading(line, layout.bodyHeight) || isInternalHeading(line, layout.bodyHeight))
+        sectionStarts.push(offset);
+      offset += line.text.length + 1;
+      return line.text;
+    });
+    return { page: pages[index]!.number, text: lines.join('\n'), sectionStarts };
   });
 }

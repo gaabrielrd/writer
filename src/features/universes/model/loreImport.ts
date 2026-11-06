@@ -14,12 +14,14 @@ export interface LoreImportCandidate extends ImportLoreFields {
   evidence: string;
   fileName: string;
   page: number | null;
+  pages?: number[];
 }
 export interface LoreImportExisting extends ImportLoreFields {
   id: string;
 }
 export interface LoreImportReview {
   id: string;
+  version?: 1 | 2;
   state: 'uploading' | 'analyzing' | 'ready' | 'applied' | 'cancelled';
   universeId: string | null;
   cursor: number;

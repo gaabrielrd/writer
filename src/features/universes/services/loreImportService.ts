@@ -1,7 +1,12 @@
 import { getFunctions } from 'firebase/functions';
 import { httpsDomainCallable as httpsCallable } from '@/shared/api/domainCallable';
 import { getFirebaseApp } from '@/shared/lib';
-import { extractLoreDocument } from '@/features/document-import';
+import {
+  extractLoreDocument,
+  prepareLoreSources,
+  describeLoreSources,
+  type PreparedLorePart,
+} from '@/features/document-import';
 import {
   validateLoreImportFiles,
   type LoreImportExisting,
@@ -65,32 +70,53 @@ export async function uploadLoreImport(input: {
   files: File[];
   signal: AbortSignal;
   onProgress: (message: string) => void;
+  version?: 1 | 2;
 }) {
   validateLoreImportFiles(input.files);
-  const sources: Array<Array<{ page: number | null; text: string }>> = [];
+  const version = input.version ?? 2;
+  const sources: Array<Array<{ page: number | null; text: string } | PreparedLorePart>> = [];
+  const descriptions: Awaited<ReturnType<typeof describeLoreSources>>[] = [];
   for (const file of input.files) {
     input.signal.throwIfAborted();
     input.onProgress(`Extraindo ${file.name}…`);
     const pages = await extractLoreDocument(file, {
       signal: input.signal,
+      legacyLore: version === 1,
       onProgress: (current, total) =>
         input.onProgress(`Extraindo ${file.name}: página ${current} de ${total}`),
     });
-    sources.push(sourceParts(pages));
+    const parts = version === 1 ? sourceParts(pages) : prepareLoreSources(pages);
+    sources.push(parts);
+    if (version === 2) {
+      const description = await describeLoreSources(parts as PreparedLorePart[]);
+      descriptions.push(description);
+      if (descriptions.reduce((sum, value) => sum + value.sourceBytes, 0) > 20000000)
+        throw new Error('O texto preparado excede o limite de 20 MB. Divida a importação.');
+      input.onProgress(
+        `${file.name}: ${pages.length} páginas preparadas em ${parts.length} trechos.`,
+      );
+    }
   }
   input.signal.throwIfAborted();
   let review = await call<LoreImportReview>('startUniverseLoreImport', {
     id: input.id,
+    ...(version === 2 ? { version } : {}),
     universeId: input.universeId ?? null,
     files: input.files.map((file, index) => ({
       name: file.name,
       size: file.size,
       parts: sources[index]!.length,
+      ...(version === 2
+        ? {
+            sourceBytes: descriptions[index]!.sourceBytes,
+            sourceHash: descriptions[index]!.sourceHash,
+          }
+        : {}),
     })),
   });
   if (review.state !== 'uploading') return review;
   for (const [index, file] of input.files.entries()) {
-    const bytes = new Uint8Array(await file.arrayBuffer());
+    const bytes = version === 1 ? new Uint8Array(await file.arrayBuffer()) : new Uint8Array();
     for (let start = 0; start < bytes.length; start += 500000) {
       input.signal.throwIfAborted();
       input.onProgress(`Enviando ${file.name}: ${Math.round((start / bytes.length) * 100)}%`);
@@ -113,7 +139,9 @@ export async function uploadLoreImport(input: {
         file: index,
         index: partIndex,
         payload: part.text,
-        page: part.page,
+        ...('spans' in part
+          ? { spans: part.spans, sha256: descriptions[index]!.hashes[partIndex] }
+          : { page: part.page }),
       });
     }
   }

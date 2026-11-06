@@ -3,7 +3,10 @@ import { createSectorServices } from './domainServices.mjs';
 import { logger } from 'firebase-functions';
 import { FUNCTION_DOMAINS } from './functionDomains.mjs';
 import { createDomainHandler } from './domainCallable.mjs';
-import { createUniverseLoreImportService } from './universeLoreImport.mjs';
+import {
+  createUniverseLoreImportService,
+  projectUniverseLoreImportTerminal,
+} from './universeLoreImport.mjs';
 import {
   ADVENTURE_RESTORE_METHODS,
   invokeAdventureRestoreCallable,
@@ -586,14 +589,7 @@ export const cleanupUniverseLoreImports = onSchedule(
       await db.runTransaction(async (tx) => {
         const current = (await tx.get(document.ref)).data();
         if (!current || current.expiresAt !== 0) return;
-        tx.set(document.ref, {
-          state: current.state,
-          fingerprint: current.fingerprint,
-          ...(current.result ? { result: current.result } : {}),
-          expiresAt: Number.MAX_SAFE_INTEGER,
-          cursor: current.cursor ?? 0,
-          total: current.total ?? 0,
-        });
+        tx.set(document.ref, projectUniverseLoreImportTerminal(current));
       });
     }
   },

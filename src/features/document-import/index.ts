@@ -3,6 +3,7 @@ export * from './services/documentParserService';
 export * from './services/pdfDocumentService';
 export * from './services/pdfLayoutExtraction';
 export * from './services/pdfTextExtraction';
+export * from './services/loreDocumentPreparation';
 export {
   DocumentSectionReview,
   type DocumentSectionReviewProps,
