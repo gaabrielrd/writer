@@ -8,6 +8,74 @@
 .welcome {
   padding: 24px;
 }
+.welcome {
+  gap: var(--space-4);
+  border-radius: var(--radius-md);
+  background: hsl(var(--card));
+}
+.welcome h2 {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 600;
+}
+.welcome p {
+  margin: 0;
+}
+.welcomeMotto {
+  color: hsl(var(--primary));
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+.welcomeActions > a {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  border-radius: var(--radius-sm);
+  white-space: normal;
+  text-align: center;
+}
+.welcomeChoices {
+  display: grid;
+  gap: var(--space-1);
+}
+.welcomeChoices a {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 40px;
+  padding: var(--space-2);
+  color: hsl(var(--foreground));
+  font-size: var(--text-sm);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+}
+.welcomeChoices a > span {
+  flex: 1;
+}
+.welcomeChoices svg {
+  flex-shrink: 0;
+  color: hsl(var(--muted-foreground));
+}
+.welcomeChoices a:hover {
+  background: hsl(var(--accent));
+}
+.welcomeChoices a:focus-visible,
+.guideLink:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+.welcomeSettings {
+  display: grid;
+  justify-items: start;
+  padding-top: var(--space-3);
+  border-top: 1px solid hsl(var(--border));
+}
+.welcomeSettings > button {
+  padding-inline: 0;
+  white-space: normal;
+  text-align: left;
+}
 .fieldset {
   border: 0;
   padding: 0;
@@ -104,10 +172,19 @@
   color: hsl(var(--primary));
   text-decoration: underline;
 }
-.tour h2,
-.welcome h2 {
+.tour h2 {
   font-size: 1.2rem;
   line-height: 1.4;
+}
+.welcome h2 {
+  font-size: var(--text-xl);
+  line-height: 1.4;
+}
+@media (pointer: coarse) {
+  .welcomeActions > a,
+  .welcomeChoices a {
+    min-height: 44px;
+  }
 }
 .notice {
   position: fixed;

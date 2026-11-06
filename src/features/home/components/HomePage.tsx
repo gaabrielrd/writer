@@ -13,52 +13,48 @@ export function HomePage() {
     <div className={styles.landing}>
       <section className={styles.heroHeader} aria-labelledby="home-title">
         <h1 id="home-title" className={styles.heroTitle}>
-          Assistente para Autores de Ficção
+          Assistente para Autores de <em>Ficção</em>
         </h1>
         <p className={styles.heroDescription}>
           Um lugar para escrever seus capítulos, construir universos e dar continuidade às suas
           ideias.
         </p>
-        <p className={styles.heroMotto}>Organize. Escreva. Imagine.</p>
+        <Link
+          to="/login"
+          className={`${buttonVariants({ size: 'lg', variant: 'primary' })} ${styles.ctaButton}`}
+        >
+          Começar a Escrever Gratuitamente
+          <ArrowUpRight className="icon icon-sm" aria-hidden="true" />
+        </Link>
       </section>
       <section aria-label="Comece sua história">
         <Card tone="flat" className={styles.creationPanel}>
+          <Feather className={`icon ${styles.writingIcon}`} aria-hidden="true" />
+          <p className={styles.heroMotto}>
+            <span>Organize.</span> <span>Escreva.</span> <span>Imagine.</span>
+          </p>
           <div className={styles.panelHeading}>
-            <span className={styles.writingIcon}>
-              <Feather className="icon" aria-hidden="true" />
-            </span>
-            <div>
-              <h2>Sua próxima história começa aqui.</h2>
-              <p>Do primeiro rascunho ao universo completo.</p>
-            </div>
-          </div>
-          <div className={styles.features}>
-            <div className={styles.featureItem}>
-              <BookOpen className="icon icon-sm" aria-hidden="true" />
-              <div>
-                <h3>Gestão de Livros e Capítulos</h3>
-                <p>Estruture a narrativa e acompanhe suas palavras.</p>
-              </div>
-            </div>
-            <div className={styles.featureItem}>
-              <Sparkles className="icon icon-sm" aria-hidden="true" />
-              <div>
-                <h3>Lore e Personagens Conectados</h3>
-                <p>Mantenha seu universo sempre por perto.</p>
-              </div>
-            </div>
-          </div>
-          <div className={styles.cta}>
-            <Link
-              to="/login"
-              className={`${buttonVariants({ size: 'md', variant: 'primary' })} ${styles.ctaButton}`}
-            >
-              Começar a Escrever Gratuitamente
-              <ArrowUpRight className="icon icon-sm" aria-hidden="true" />
-            </Link>
+            <h2>Sua próxima história começa aqui.</h2>
+            <p>Do primeiro rascunho ao universo completo.</p>
           </div>
         </Card>
       </section>
+      <div className={styles.features}>
+        <div className={styles.featureItem}>
+          <BookOpen className="icon icon-sm" aria-hidden="true" />
+          <div>
+            <h3>Gestão de Livros e Capítulos</h3>
+            <p>Estruture a narrativa e acompanhe suas palavras.</p>
+          </div>
+        </div>
+        <div className={styles.featureItem}>
+          <Sparkles className="icon icon-sm" aria-hidden="true" />
+          <div>
+            <h3>Lore e Personagens Conectados</h3>
+            <p>Mantenha seu universo sempre por perto.</p>
+          </div>
+        </div>
+      </div>
       <p className={styles.footerNote}>Seu texto no centro. Seu universo ao alcance.</p>
     </div>
   );

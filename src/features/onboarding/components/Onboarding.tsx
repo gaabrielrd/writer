@@ -338,8 +338,7 @@ export function PersonalizedWelcome() {
         ? `/studio/new?kind=${selected[0]}`
         : '/studio/new';
   return (
-    <Card className={styles.welcome} data-writer-tour="project-start">
-      <span className={styles.hint}>Seu espaço, no seu ritmo</span>
+    <Card tone="flat" className={styles.welcome} data-writer-tour="project-start">
       <h2>
         {selected.length === 1
           ? {
@@ -349,30 +348,34 @@ export function PersonalizedWelcome() {
             }[selected[0]!]
           : 'Um espaço para todas as suas histórias.'}
       </h2>
+      <p className={styles.welcomeMotto}>Seu espaço, no seu ritmo</p>
       <p className={styles.hint}>{profileLabel(profile ?? null)}</p>
-      <div className={styles.actions}>
+      <div className={styles.welcomeActions}>
         <Link to={first} className={buttonVariants({ variant: 'primary', size: 'sm' })}>
           <Sparkles className="icon icon-sm" aria-hidden="true" />
           {profile?.startingPoint === 'import' ? 'Trazer meu material' : 'Começar um projeto'}
         </Link>
-        <Link to="/studio/projects" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-          Todos os projetos
-        </Link>
+      </div>
+      {selected.length > 1 && (
+        <nav className={styles.welcomeChoices} aria-label="Ir direto para">
+          {selected.map((i) => {
+            const Icon = icons[i];
+            return (
+              <Link key={i} to={`/studio/projects?kind=${i}`}>
+                <Icon className="icon icon-sm" aria-hidden="true" />
+                <span>{interestLabels[i]}</span>
+                <ArrowRight className="icon icon-sm" aria-hidden="true" />
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+      <div className={styles.welcomeSettings}>
         <Button variant="ghost" size="sm" onClick={() => state?.openQuestionnaire()}>
           <SlidersHorizontal className="icon icon-sm" aria-hidden="true" />
           Personalizar meu espaço
         </Button>
       </div>
-      {selected.length > 1 && (
-        <nav className={styles.choices} aria-label="Ir direto para">
-          {selected.map((i) => (
-            <Link key={i} to={`/studio/projects?kind=${i}`}>
-              {interestLabels[i]}
-              <ArrowRight className="icon icon-sm" aria-hidden="true" />
-            </Link>
-          ))}
-        </nav>
-      )}
       {profile?.tour !== 'completed' && (
         <Link className={styles.guideLink} to="/settings/preferences">
           Retomar ou conhecer o guia do Writer

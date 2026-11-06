@@ -23,7 +23,7 @@ test('perfil de campanha, guia retomável e barra persistente por teclado', asyn
   await expect(dock).toHaveAttribute('data-mode', 'minimized');
   await toggle.click();
   await page.getByLabel('Pedido ao assistente da página').fill('Uma pergunta ainda em elaboração');
-  await page.getByRole('link', { name: 'Todos os projetos', exact: true }).click();
+  await page.getByRole('link', { name: 'Ver todos os projetos', exact: true }).click();
   await expect(dock).toHaveAttribute('data-mode', 'compact');
   await expect(page.getByLabel('Pedido ao assistente da página')).toHaveValue(
     'Uma pergunta ainda em elaboração',

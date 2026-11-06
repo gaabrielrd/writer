@@ -202,10 +202,16 @@ e superfícies opacas. O leitor conserva a composição e a tipografia de leitur
 - **Toque:** navegação e gatilhos têm pelo menos 44 px em ponteiros de toque.
   Recolher a lateral amplia o conteúdo sem remontar o editor.
 
-A Home combina um destaque editorial curto, desenho de livro/pena e acesso à
-criação com IA. Retomadas usam cartões compactos com identidade gráfica por tipo,
-título, data e ação de largura intrínseca; não consultam capas nem copiam conteúdo
-extra para o histórico. Atalhos são linhas com ícone e seta, sem blocos explicativos.
+A Home logada equilibra retomada e criação na mesma faixa: projetos recentes à
+esquerda e criação personalizada à direita, sem repetir a ação no cabeçalho.
+Retomadas compactas usam linhas com ícone por tipo, título, data e ação de largura
+intrínseca; a primeira recebe destaque e as demais usam ação contornada. Não
+consultam capas nem copiam conteúdo extra para o histórico. A largura disponível
+no painel determina se a ação fica ao lado ou abaixo do título. O acesso geral
+aos projetos fica no cabeçalho da retomada; filtros por tipo, personalização e
+guia continuam no painel de criação. Importação e operações formam uma faixa
+inferior de atalhos com ícone e seta. Até 960 px, as duas áreas passam para uma
+coluna, preservando a ordem de leitura e teclado.
 Projetos conserva a lista e suas capas reais em 44 × 66 px. Importação mantém
 cartões compactos e as operações conservam seus controles de recuperação.
 Nos cabeçalhos, descrições e botões de ponteiro preciso são discretos; em toque,
@@ -215,8 +221,11 @@ preservam-se as áreas de interação. Badges usam somente a largura do conteúd
   cabeçalho compacto de pelo menos 48 px e superfícies opacas, sem vidro ou
   sombras decorativas. É o padrão da home, login/cadastro, leitor, catálogo e
   demais páginas exibidas sem sessão; não altera seus gates de acesso.
-- **Homepage pública:** apresentação em duas colunas, título editorial moderado,
-  recursos em um `Card tone="flat"` e ação principal visível em notebooks.
+- **Homepage pública:** apresentação em duas colunas, título editorial amplo com
+  destaque em itálico e bronze, e ação principal junto da apresentação, visível
+  em notebooks. Um `Card tone="flat"` com superfície `primary` e texto
+  `primary-foreground` apresenta o lema em três linhas; os recursos ficam em uma
+  faixa inferior separada por borda semântica, sem cartões adicionais.
   Até 800 px, a composição passa para uma coluna. Temas e tipografia continuam
   pelos providers compartilhados.
 - **Login e cadastro:** formulário centralizado em `Card tone="flat"`, largura

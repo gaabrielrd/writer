@@ -1,115 +1,42 @@
 .landing {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
   align-items: center;
   gap: var(--space-8) clamp(2rem, 5vw, 5rem);
   width: 100%;
-  max-width: 1040px;
+  max-width: 1240px;
   margin: auto;
-  padding: clamp(2rem, 6vh, 4rem) var(--space-5);
+  padding: clamp(2rem, 5vh, 4rem) var(--space-8);
 }
 .heroHeader {
   min-width: 0;
 }
 .heroTitle {
   font-family: var(--font-display);
-  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-size: clamp(2.75rem, 4.5vw, 4.5rem);
   font-weight: 400;
-  line-height: 1.18;
-  letter-spacing: -0.025em;
+  line-height: 1.12;
+  letter-spacing: -0.035em;
   text-wrap: balance;
   margin: 0;
 }
-.heroDescription {
-  color: hsl(var(--muted-foreground));
-  font-size: var(--text-sm);
-  line-height: 1.75;
-  max-width: 48ch;
-  margin: var(--space-4) 0 0;
-}
-.heroMotto {
-  color: hsl(var(--foreground));
-  font-size: var(--text-sm);
-  font-weight: 500;
-  margin: var(--space-6) 0 0;
-}
-.creationPanel {
-  padding: var(--space-5);
-  border-radius: var(--radius-md);
-  background: hsl(var(--card));
-  box-shadow: none;
-  backdrop-filter: none;
-}
-.panelHeading {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-.writingIcon {
-  width: 36px;
-  height: 36px;
-  flex-shrink: 0;
-  border-radius: var(--radius-sm);
-  display: grid;
-  place-items: center;
-  background: hsl(var(--secondary));
+.heroTitle em {
   color: hsl(var(--primary));
 }
-.panelHeading h2 {
-  font-family: var(--font-sans);
-  font-size: var(--text-base);
-  font-weight: 600;
-  line-height: 1.4;
-  letter-spacing: -0.015em;
-  margin: 0;
-}
-.panelHeading p {
+.heroDescription {
   color: hsl(var(--muted-foreground));
-  font-size: var(--text-xs);
-  line-height: 1.6;
-  margin: var(--space-1) 0 0;
-}
-.features {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  padding: var(--space-6) 0;
-}
-.featureItem {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-.featureItem > svg {
-  color: hsl(var(--muted-foreground));
-  flex-shrink: 0;
-  margin-top: var(--space-1);
-}
-.featureItem h3 {
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  line-height: 1.5;
-  margin: 0 0 var(--space-1);
-}
-.featureItem p {
-  color: hsl(var(--muted-foreground));
-  font-size: var(--text-xs);
-  line-height: 1.6;
-  margin: 0;
-}
-.cta {
-  padding-top: var(--space-4);
-  border-top: 1px solid hsl(var(--border));
+  font-size: var(--text-lg);
+  line-height: 1.7;
+  max-width: 42ch;
+  margin: var(--space-6) 0 var(--space-7);
 }
 .ctaButton {
-  width: 100%;
   justify-content: space-between;
-  gap: var(--space-2);
-  min-height: 36px;
+  gap: var(--space-5);
+  min-height: 48px;
   height: auto;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-base);
   white-space: normal;
   text-align: left;
   text-decoration: none;
@@ -117,38 +44,127 @@
 }
 .ctaButton > svg {
   flex-shrink: 0;
+  transition: transform var(--transition-base);
+}
+.ctaButton:hover > svg {
+  transform: translate(2px, -2px);
+}
+.ctaButton:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 4px;
+}
+.creationPanel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: clamp(1.75rem, 3vw, 3rem);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: none;
+}
+.writingIcon {
+  width: 32px;
+  height: 32px;
+  stroke-width: 1.25;
+}
+.heroMotto {
+  font-family: var(--font-display);
+  font-size: clamp(2.5rem, 4.2vw, 4rem);
+  font-weight: 400;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  margin: var(--space-7) 0;
+}
+.heroMotto span {
+  display: block;
+}
+.heroMotto span:last-child {
+  font-style: italic;
+}
+.panelHeading {
+  align-self: stretch;
+  padding-top: var(--space-5);
+  border-top: 1px solid hsl(var(--primary-foreground) / 0.4);
+}
+.panelHeading h2 {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0;
+}
+.panelHeading p {
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin: var(--space-1) 0 0;
+}
+.features {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-7);
+  padding-top: var(--space-7);
+  border-top: 1px solid hsl(var(--border));
+}
+.featureItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.featureItem > svg {
+  color: hsl(var(--primary));
+  flex-shrink: 0;
+  margin-top: var(--space-1);
+}
+.featureItem h3 {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0 0 var(--space-1);
+}
+.featureItem p {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  margin: 0;
 }
 .footerNote {
   grid-column: 1 / -1;
-  color: hsl(var(--muted-foreground));
-  text-align: center;
-  font-size: var(--text-xs);
-  margin: var(--space-2) 0 0;
-  padding-top: var(--space-5);
-  border-top: 1px solid hsl(var(--border));
+  color: hsl(var(--primary));
+  text-align: left;
+  font-style: italic;
+  font-size: var(--text-sm);
+  margin: 0;
 }
 @media (max-width: 800px) {
   .landing {
     grid-template-columns: minmax(0, 1fr);
-    max-width: 560px;
-    gap: var(--space-6);
-    padding: var(--space-7) var(--space-4);
+    max-width: 600px;
+    gap: var(--space-7);
+    padding: var(--space-7) var(--space-5);
   }
   .heroTitle {
-    font-size: clamp(1.75rem, 5vw, 2.25rem);
+    font-size: clamp(2.25rem, 7vw, 3.5rem);
   }
   .heroDescription {
-    max-width: none;
+    font-size: var(--text-base);
   }
   .heroMotto {
-    margin-top: var(--space-4);
+    font-size: clamp(2.5rem, 7vw, 3.5rem);
   }
-  .footerNote {
-    margin: 0;
+  .features {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-5);
   }
 }
-@media (pointer: coarse) {
-  .ctaButton {
-    min-height: 44px;
+@media (prefers-reduced-motion: reduce) {
+  .ctaButton > svg {
+    transition: none;
+  }
+  .ctaButton:hover > svg {
+    transform: none;
   }
 }

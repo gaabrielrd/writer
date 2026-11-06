@@ -89,22 +89,17 @@
 }
 .homeGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
-  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1.65fr) minmax(280px, 1fr);
+  gap: var(--space-6);
   align-items: start;
 }
 .homeAside,
-.homeCard,
 .toolSection {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
 }
-.homeCard {
-  padding: var(--space-4);
-}
-.homeCard h2,
 .toolSection > h2 {
   font-size: var(--text-sm);
   font-weight: 600;
@@ -122,7 +117,7 @@
 .shortcut {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   min-height: 40px;
   padding: var(--space-2);
   border-radius: var(--radius-sm);
@@ -131,6 +126,28 @@
 }
 .shortcut span {
   flex: 1;
+}
+.shortcut > svg {
+  flex-shrink: 0;
+  color: hsl(var(--muted-foreground));
+}
+.homeTools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid hsl(var(--border));
+}
+.homeTools h2 {
+  margin: 0;
+  color: hsl(var(--muted-foreground));
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+.homeTools .shortcut {
+  font-size: var(--text-sm);
 }
 .shortcut:hover {
   background: hsl(var(--accent));
@@ -162,8 +179,7 @@
   font-size: var(--text-lg);
   font-weight: 600;
 }
-.toolCard button,
-.homeCard > a {
+.toolCard button {
   white-space: normal;
 }
 .projectList {
@@ -261,8 +277,12 @@
   display: none;
 }
 @media (max-width: 1100px) {
-  .homeGrid,
   .operationPanels {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 960px) {
+  .homeGrid {
     grid-template-columns: minmax(0, 1fr);
   }
 }
@@ -351,13 +371,6 @@
 .heroArtwork > svg {
   width: 40px;
   height: 40px;
-}
-.homeCard {
-  gap: var(--space-2);
-  padding: var(--space-3);
-}
-.homeCard h2 {
-  padding-inline: var(--space-2);
 }
 .toolCard {
   gap: var(--space-2);

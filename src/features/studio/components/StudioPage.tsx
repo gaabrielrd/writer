@@ -7,7 +7,6 @@ import {
   ArchiveRestore,
   BookOpen,
   ScrollText,
-  FolderOpen,
   ArrowRight,
   Activity,
 } from 'lucide-react';
@@ -92,7 +91,7 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
         title={destination.title}
         description={section === 'home' ? undefined : destination.description}
         actions={
-          (section === 'home' || section === 'projects') && (
+          section === 'projects' && (
             <Button onClick={() => void navigate('/studio/new')}>
               <Plus className="icon icon-sm" aria-hidden="true" />
               Novo projeto
@@ -102,30 +101,25 @@ function StudioSession({ ownerId, section }: { ownerId: string; section: StudioS
       />
       {section === 'home' && (
         <>
-          <PersonalizedWelcome />
           <div className={styles.homeGrid}>
             <ContinueWorkPanel compact />
-            <aside className={styles.homeAside} aria-label="Atalhos do Estúdio">
-              <Card className={styles.homeCard}>
-                <h2>Acesso rápido</h2>
-                <Link to="/studio/projects" className={styles.shortcut}>
-                  <FolderOpen className="icon icon-sm" aria-hidden="true" />
-                  <span>Ver meus projetos</span>
-                  <ArrowRight className="icon icon-sm" aria-hidden="true" />
-                </Link>
-                <Link to="/studio/import" className={styles.shortcut}>
-                  <Upload className="icon icon-sm" aria-hidden="true" />
-                  <span>Importar ou restaurar</span>
-                  <ArrowRight className="icon icon-sm" aria-hidden="true" />
-                </Link>
-                <Link to="/studio/operations" className={styles.shortcut}>
-                  <Activity className="icon icon-sm" aria-hidden="true" />
-                  <span>Ver operações em andamento</span>
-                  <ArrowRight className="icon icon-sm" aria-hidden="true" />
-                </Link>
-              </Card>
+            <aside className={styles.homeAside} aria-label="Criar no Estúdio">
+              <PersonalizedWelcome />
             </aside>
           </div>
+          <nav className={styles.homeTools} aria-label="Atalhos do Estúdio">
+            <h2>Acesso rápido</h2>
+            <Link to="/studio/import" className={styles.shortcut}>
+              <Upload className="icon icon-sm" aria-hidden="true" />
+              <span>Importar ou restaurar</span>
+              <ArrowRight className="icon icon-sm" aria-hidden="true" />
+            </Link>
+            <Link to="/studio/operations" className={styles.shortcut}>
+              <Activity className="icon icon-sm" aria-hidden="true" />
+              <span>Ver operações em andamento</span>
+              <ArrowRight className="icon icon-sm" aria-hidden="true" />
+            </Link>
+          </nav>
         </>
       )}
       <div hidden={section !== 'projects'} className={styles.sectionBody}>

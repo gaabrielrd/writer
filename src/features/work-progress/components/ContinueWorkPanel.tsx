@@ -89,7 +89,10 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
   }
   const labels = { book: 'Livro', adventure: 'Aventura', campaign: 'Campanha' };
   return (
-    <section className={styles.panel} aria-label="Continuar meu trabalho">
+    <section
+      className={`${styles.panel} ${compact ? styles.compact : ''}`}
+      aria-label="Continuar meu trabalho"
+    >
       <header className={styles.panelHeader}>
         <h2>Continuar meu trabalho</h2>
         {compact && (
@@ -132,10 +135,11 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
           />
         ))}
       <div className={styles.resumeGrid}>
-        {(compact ? page.items.slice(0, 4) : page.items).map((item) => (
+        {(compact ? page.items.slice(0, 4) : page.items).map((item, index) => (
           <Card
             role="article"
             aria-label={item.title}
+            tone={compact ? 'flat' : 'default'}
             className={styles.resumeCard}
             key={item.target.kind + ':' + item.target.id}
           >
@@ -158,6 +162,7 @@ function ResumeSession({ uid, compact }: { uid: string; compact: boolean }) {
             </div>
             <Button
               size="sm"
+              variant={compact && index > 0 ? 'outline' : 'primary'}
               className={styles.resumeButton}
               disabled={Boolean(busy)}
               onClick={() => void resume(item)}

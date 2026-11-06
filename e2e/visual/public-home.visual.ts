@@ -14,6 +14,7 @@ test.describe('homepage pública', () => {
 
     for (const viewport of [
       { width: 1440, height: 1000 },
+      { width: 1280, height: 720 },
       { width: 1024, height: 768 },
       { width: 800, height: 900 },
     ]) {

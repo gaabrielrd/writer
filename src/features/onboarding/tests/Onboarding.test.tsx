@@ -107,9 +107,9 @@ it('saves the selected campaign profile only after confirmation and starts its t
     }),
   );
   expect(screen.getByText('Prepare a próxima sessão da sua mesa.')).toBeVisible();
-  expect(screen.getByRole('link', { name: 'Todos os projetos' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Começar um projeto' })).toHaveAttribute(
     'href',
-    '/studio/projects',
+    '/studio/new?kind=campaign',
   );
 });
 it('skips durably without starting a tour or creating content', async () => {

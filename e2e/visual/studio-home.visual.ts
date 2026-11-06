@@ -50,12 +50,35 @@ test('Home visual mantém retomada compacta e atalhos funcionais', async ({ page
   await expect(recent.getByRole('button', { name: 'Continuar projeto' })).toHaveCount(4);
   const card = cards.first();
   expect((await card.boundingBox())!.height).toBeLessThan(220);
+  const create = page.getByRole('link', { name: 'Começar um projeto', exact: true });
+  await expect(page.getByRole('button', { name: 'Novo projeto', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Ver todos os projetos', exact: true })).toHaveCount(
+    1,
+  );
+  for (const viewport of [
+    { width: 1440, height: 1000 },
+    { width: 1280, height: 720 },
+    { width: 1024, height: 768 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.evaluate(() => document.fonts.ready);
+    for (const action of [
+      create,
+      recent.getByRole('button', { name: 'Continuar projeto' }).first(),
+    ]) {
+      const bounds = (await action.boundingBox())!;
+      expect(bounds.y).toBeGreaterThan(0);
+      expect(bounds.y + bounds.height).toBeLessThan(viewport.height);
+    }
+    await expectNoHorizontalOverflow(page, `Home equilibrada ${viewport.width}`);
+    await capture(page, testInfo, `home-equilibrada-${viewport.width}`);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await expectNoHorizontalOverflow(page, 'Home visual');
   await capture(page, testInfo, 'home-visual');
   await recent.getByRole('button', { name: 'Continuar projeto' }).first().click();
   await expect(page).toHaveURL(/\/books\/work-recent-01$/);
   await page.goto('/studio');
-  const create = page.getByRole('link', { name: 'Começar um projeto', exact: true });
   await create.focus();
   await create.press('Enter');
   await expect(page.getByRole('heading', { name: 'Como deseja começar?' })).toBeVisible();
@@ -75,4 +98,27 @@ test('Home visual mantém retomada compacta e atalhos funcionais', async ({ page
   await page.goto('/studio/operations');
   await expect(page.getByRole('heading', { name: 'Em andamento', exact: true })).toBeVisible();
   await expectNoHorizontalOverflow(page, 'Operações');
+});
+
+test('Home sem retomadas mantém criação, personalização e atalhos disponíveis', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/studio');
+  await expect(page.getByText('Nenhum trabalho recente', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Começar um projeto', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Importar ou restaurar', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Personalizar meu espaço', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Personalizar meu espaço', exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(
+    page.getByRole('dialog', { name: 'Personalizar meu espaço', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole('button', { name: 'Personalizar meu espaço', exact: true }),
+  ).toBeFocused();
+  await capture(page, testInfo, 'home-sem-retomadas');
 });
