@@ -165,3 +165,20 @@ Os ajustes de testes visuais realizados durante o gate também foram conferidos
 por ESLint e Prettier. A revisão final não identificou bloqueadores adicionais
 no diff. Push, CI, publicação de Functions e Hosting serão conferidos após este
 registro; a captura Linux do styleguide permanece pendente na plataforma da CI.
+
+### Backend publicado antes do Hosting
+
+Depois do commit `b7352f3`, o deploy restrito com Firebase CLI 15.33.0 publicou
+`generationApi`, `universeImportApi`, `universeImportAnalysisApi` e
+`cleanupUniverseLoreImports` no projeto `writer-44cd5` com sucesso.
+
+A auditoria posterior confirmou as quatro Functions ACTIVE em Node 24, conferiu
+os módulos dos pacotes pelas gerações Storage fixadas e preservou os hashes das
+outras 26 Functions. Firestore/Storage Rules continuam correspondendo ao código
+local, com a diferença já registrada de CRLF/LF em Storage; os 66 índices estão
+READY. Não houve deploy de Rules, índices ou Hosting nesta etapa.
+
+As três APIs retornaram HTTP 401 às sondas sem autenticação. Isso confere a
+barreira de acesso, sem comprovar operações autenticadas, geração de IA ou
+débito real. Os resultados locais estão em
+`.firebase/public-release-2026-11-06/after-summary.json` e `after-audit.json`.
