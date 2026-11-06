@@ -13,6 +13,9 @@
     --shadow-soft: 0 12px 40px hsl(var(--shadow-color) / 0.07);
     --shadow-panel: 0 24px 80px hsl(var(--shadow-color) / 0.13);
     --font-reading: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --reading-font-size: 1.125rem;
+    --reading-max-width: 38rem;
+    --reading-line-height: 1.7;
     --text-md: 1rem;
     --line-height-normal: 1.5;
     --line-height-relaxed: 1.85;

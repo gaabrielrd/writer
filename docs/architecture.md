@@ -13,7 +13,7 @@ usam `generationApi`; veja a [ADR 0272](decisions/0272-project-creation-and-cont
 ## Princípios
 
 A [tipografia literária](typography.md) é aplicada por `shared/typography`, com
-três tokens globais, catálogo fechado de fontes e persistência local isolada por
+tokens globais de famílias e calibração da prosa, catálogo fechado de fontes e persistência local isolada por
 UID no adaptador `shared/services/typographyStorage`. A composição em app fornece
 a identidade; shared permanece neutro. As fontes são hospedadas no próprio app.
 

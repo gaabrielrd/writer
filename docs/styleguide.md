@@ -541,8 +541,10 @@ semânticos dos três temas e os componentes compartilhados.
 ### Largura dos painéis
 
 Preferências oferece Pequeno (960 px), Médio (1280 px, padrão) e Grande
-(1600 px) para as páginas. A coluna de escrita usa limites próprios de
-640/760/880 px, respectivamente. O limite se aplica ao conteúdo centralizado da área logada e
+(1600 px) para as páginas. A coluna de escrita usa a largura calibrada da
+[tipografia literária](typography.md): 38 rem em Médio, ou 36 rem quando a prosa
+usa EB Garamond/Crimson Pro. Pequeno e Grande aplicam 85% e 115% desse limite.
+O limite se aplica ao conteúdo centralizado da área logada e
 sempre respeita o espaço disponível. A lateral e a barra contextual
 conservam sua largura. O modo expandido do editor libera as ferramentas para toda
 a área, preservando o limite escolhido para a prosa. Cabeçalho e formatação têm

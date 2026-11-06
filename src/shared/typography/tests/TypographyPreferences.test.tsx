@@ -36,14 +36,20 @@ it('prévia e cancelamento não persistem e a troca de fonte não remonta o edit
   await user.type(editor, ' novo');
   await chooseDropdown(user, screen.getByLabelText('Preset de fontes'), 'Poético');
   expect(root.style.getPropertyValue('--font-display')).toContain('Cormorant Garamond');
+  expect(root.style.getPropertyValue('--reading-font-size')).toBe('1.25rem');
   expect(readTypography('author').preset).toBe('classic');
   expect(screen.getByLabelText('Rascunho do capítulo')).toBe(editor);
   expect(editor).toHaveValue('Meu manuscrito novo');
   await user.click(screen.getByRole('button', { name: 'Cancelar prévia' }));
   expect(root.style.getPropertyValue('--font-display')).toContain('Libre Baskerville');
+  expect(root.style.getPropertyValue('--reading-font-size')).toBe('1.125rem');
+  expect(root.style.getPropertyValue('--reading-max-width')).toBe('38rem');
   await chooseDropdown(user, screen.getByLabelText('Preset de fontes'), 'Romance humanista');
   unmount();
   expect(root).not.toHaveAttribute('data-typography-preset');
+  expect(root.style.getPropertyValue('--reading-font-size')).toBe('');
+  expect(root.style.getPropertyValue('--reading-max-width')).toBe('');
+  expect(root.style.getPropertyValue('--reading-line-height')).toBe('');
   expect(readTypography('author').preset).toBe('classic');
 });
 
@@ -62,6 +68,7 @@ it('personaliza o preset observado, salva e recupera os três papéis após remo
   expect(root.style.getPropertyValue('--font-display')).toContain('EB Garamond');
   expect(root.style.getPropertyValue('--font-sans')).toContain('Nunito Sans');
   expect(root.style.getPropertyValue('--font-reading')).toContain('Crimson Pro');
+  expect(root.style.getPropertyValue('--reading-font-size')).toBe('1.25rem');
   expect(screen.getByRole('button', { name: 'Salvar fontes' })).toBeDisabled();
 });
 
@@ -72,8 +79,10 @@ it('retira a prévia ao trocar de conta e recupera somente a escolha da conta or
   await chooseDropdown(user, screen.getByLabelText('Preset de fontes'), 'Poético');
   rerender(<Session uid="other" />);
   expect(root).toHaveAttribute('data-typography-preset', 'classic');
+  expect(root.style.getPropertyValue('--reading-font-size')).toBe('1.125rem');
   rerender(<Session />);
   expect(root).toHaveAttribute('data-typography-preset', 'romance');
+  expect(root.style.getPropertyValue('--reading-font-size')).toBe('1.25rem');
   rerender(<Session uid={null} />);
   expect(root).toHaveAttribute('data-typography-preset', 'classic');
 });

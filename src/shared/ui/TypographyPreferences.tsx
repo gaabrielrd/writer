@@ -81,6 +81,10 @@ export function TypographyPreferences() {
           Quando Clara voltou à casa, o mar ainda estava no mesmo lugar. Parecia uma gentileza:
           depois de tantos anos, alguma coisa havia decidido esperá-la.
         </p>
+        <p className={styles.prose} style={{ fontFamily: fontStack(fonts.editor) }}>
+          — Você voltou às 23h? — perguntou João. <em>Talvez amanhã tudo faça sentido</em>, pensou
+          Clara. Sobre a mesa, a anotação dizia: <strong>não esquecer a bússola</strong>.
+        </p>
         <p className={styles.hint} style={{ fontFamily: fontStack(fonts.interface) }}>
           Capítulo 3 · Manuscrito · Compêndio
         </p>

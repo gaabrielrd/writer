@@ -1,7 +1,12 @@
 import { useCallback, useLayoutEffect, useMemo, useState, type ReactNode } from 'react';
 import { readTypography, saveTypography as persistTypography } from '../services/typographyStorage';
 import { TypographyContext } from './TypographyContext';
-import { fontStack, typographyFonts, type TypographyPreferences } from './typography';
+import {
+  fontStack,
+  readingMetrics,
+  typographyFonts,
+  type TypographyPreferences,
+} from './typography';
 
 export function TypographyProvider({ uid, children }: { uid: string | null; children: ReactNode }) {
   return (
@@ -21,9 +26,20 @@ function TypographySession({ uid, children }: { uid: string | null; children: Re
     root.style.setProperty('--font-display', fontStack(fonts.titles));
     root.style.setProperty('--font-sans', fontStack(fonts.interface));
     root.style.setProperty('--font-reading', fontStack(fonts.editor));
+    const reading = readingMetrics(fonts.editor);
+    root.style.setProperty('--reading-font-size', reading.size);
+    root.style.setProperty('--reading-max-width', reading.measure);
+    root.style.setProperty('--reading-line-height', reading.leading);
     root.setAttribute('data-typography-preset', active.preset);
     return () => {
-      for (const token of ['--font-display', '--font-sans', '--font-reading'])
+      for (const token of [
+        '--font-display',
+        '--font-sans',
+        '--font-reading',
+        '--reading-font-size',
+        '--reading-max-width',
+        '--reading-line-height',
+      ])
         root.style.removeProperty(token);
       root.removeAttribute('data-typography-preset');
     };
