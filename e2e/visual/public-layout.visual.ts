@@ -2,18 +2,20 @@ import { test, expect, capture, expectNoHorizontalOverflow } from './support';
 
 test.use({ authenticated: false });
 
-test('rotas públicas compartilham a moldura compacta da home', async ({ page }, testInfo) => {
-  for (const path of [
-    '/login',
-    '/catalog',
-    '/read/visual-public-atlas',
-    '/rota-inexistente',
-    '/styleguide',
-    '/library',
-    '/settings/ai',
-    '/universes',
-    '/books/new/assisted',
-  ]) {
+for (const path of [
+  '/login',
+  '/catalog',
+  '/read/visual-public-atlas',
+  '/rota-inexistente',
+  '/styleguide',
+  '/library',
+  '/settings/ai',
+  '/universes',
+  '/books/new/assisted',
+]) {
+  test(`rota pública ${path} compartilha a moldura compacta da home`, async ({
+    page,
+  }, testInfo) => {
     await page.goto(path, { waitUntil: 'domcontentloaded' });
     const header = page.getByRole('banner');
     await expect(header.getByRole('link', { name: 'Writer Assistant Início' })).toBeVisible();
@@ -39,8 +41,8 @@ test('rotas públicas compartilham a moldura compacta da home', async ({ page },
       }
       await capture(page, testInfo, path.slice(1).replaceAll('/', '-'));
     }
-  }
-});
+  });
+}
 
 test('login e cadastro mantêm ações acessíveis em notebooks', async ({ page }, testInfo) => {
   await page.goto('/login');

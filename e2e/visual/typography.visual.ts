@@ -91,19 +91,24 @@ test('fontes personalizadas sobrevivem à recarga e ficam isoladas por conta', a
   await expect(page.getByLabel('Preset de fontes')).toHaveText('Clássico editorial');
 });
 
-test('presets mantêm prosa legível no shell compacto e no leitor sem alterar o manuscrito', async ({
-  page,
-}, testInfo) => {
-  test.setTimeout(90_000);
-  const presets = [
-    ['Clássico editorial', '18px'],
-    ['Romance humanista', '20px'],
-    ['Contemporâneo acolhedor', '18px'],
-    ['Leitura digital', '18px'],
-    ['Poético', '20px'],
-  ];
-  let manuscript: string | null = null;
-  for (const [index, [label, size]] of presets.entries()) {
+const legibilityPresets = [
+  ['Clássico editorial', '18px'],
+  ['Romance humanista', '20px'],
+  ['Contemporâneo acolhedor', '18px'],
+  ['Leitura digital', '18px'],
+  ['Poético', '20px'],
+] as const;
+for (const [index, [label, size]] of legibilityPresets.entries()) {
+  test(`preset ${label} mantém prosa legível no shell e no leitor sem alterar o manuscrito`, async ({
+    page,
+  }, testInfo) => {
+    test.setTimeout(90_000);
+    await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    const initialEditor = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+    await expect(initialEditor).toBeVisible();
+    const manuscript = await initialEditor.textContent();
     await page.goto('/settings/preferences', { waitUntil: 'domcontentloaded' });
     await chooseDropdown(page.getByLabel('Preset de fontes'), label);
     const sample = page.getByLabel('Prévia da tipografia');
@@ -119,9 +124,7 @@ test('presets mantêm prosa legível no shell compacto e no leitor sem alterar o
     });
     const editor = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
     await expect(editor).toHaveCSS('font-size', size);
-    const text = await editor.textContent();
-    manuscript ??= text;
-    expect(text).toBe(manuscript);
+    await expect(editor).toHaveText(manuscript ?? '');
     await page.evaluate(() => document.fonts.ready);
     // Count actual characters on wrapped lines, rather than assuming 1ch = 1 character.
     const fullLines = async (paragraph: import('@playwright/test').Locator) =>
@@ -158,5 +161,5 @@ test('presets mantêm prosa legível no shell compacto e no leitor sem alterar o
       expect(length).toBeLessThanOrEqual(80);
     }
     await capture(page, testInfo, `legibility-${index}-reader`);
-  }
-});
+  });
+}
