@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { LiterarySequencePanel } from '../components/LiterarySequencePanel';
@@ -413,4 +413,80 @@ it('required publication blocks sequence advance until an explicit inspection ch
     admissionInspectionId: 'inspected-chapter-a',
     expectedRevision: 1,
   });
+});
+
+it('reorders downward, removes and discards the selection without registering or retaining an old preview', async () => {
+  const user = userEvent.setup();
+  render(<LiterarySequencePanel bookId="book" collaborationMode="continuous" />);
+  await user.click(screen.getByRole('button', { name: 'Consultar capítulos para sequência' }));
+  await choose(user);
+  await choose(user, 'A resposta');
+  await user.click(screen.getByRole('button', { name: 'Descer A carta' }));
+  await user.click(screen.getByRole('button', { name: 'Conferir escopo e preparar prévia' }));
+  await screen.findByRole('region', { name: 'Prévia da sequência' });
+  expect(api.getLiterarySequenceScope).toHaveBeenLastCalledWith('book', ['chapter-b', 'chapter-a']);
+  await user.click(screen.getByRole('button', { name: 'Retirar A resposta' }));
+  expect(screen.queryByRole('region', { name: 'Prévia da sequência' })).not.toBeInTheDocument();
+  await user.click(screen.getByRole('button', { name: 'Descartar seleção e orientação' }));
+  expect(screen.queryByRole('button', { name: 'Retirar A carta' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Conferir escopo e preparar prévia' })).toBeDisabled();
+  expect(api.startLiterarySequence).not.toHaveBeenCalled();
+});
+
+it('freezes aggregate budgets, ordered phases and between-chapter consent in the separate preview', async () => {
+  const user = userEvent.setup();
+  render(<LiterarySequencePanel bookId="book" collaborationMode="continuous" />);
+  await user.click(screen.getByRole('button', { name: 'Consultar capítulos para sequência' }));
+  await choose(user);
+  for (const [label, value] of [
+    ['Limite agregado de aplicações', '7'],
+    ['Limite agregado de créditos', '9'],
+    ['Limite agregado de passos', '400'],
+  ]) {
+    fireEvent.change(screen.getByLabelText(label!), { target: { value } });
+  }
+  for (const phase of ['Primeira versão', 'Revisão integral', 'Versão revisada']) {
+    await user.click(
+      screen.getByRole('combobox', { name: 'Autorizar fase na sequência: ' + phase }),
+    );
+    await user.click(
+      screen.getByRole('option', { name: 'Autorizar no escopo e limites da sequência' }),
+    );
+  }
+  await user.click(screen.getByRole('combobox', { name: 'Passagem entre capítulos da seleção' }));
+  await user.click(
+    screen.getByRole('option', { name: 'Continuar dentro da seleção e dos limites' }),
+  );
+  await user.click(screen.getByRole('button', { name: 'Conferir escopo e preparar prévia' }));
+  await user.click(
+    await screen.findByRole('button', { name: 'Registrar esta sequência com estes limites' }),
+  );
+  await screen.findByRole('region', { name: 'Checkpoint da sequência' });
+  expect(api.startLiterarySequence).toHaveBeenCalledWith(
+    expect.objectContaining({
+      limits: { maxApplications: 7, maxCredits: 9, maxSteps: 400 },
+      authorizedPhases: ['firstVersion', 'review', 'revisedVersion'],
+      continueBetweenChapters: true,
+    }),
+    'author',
+  );
+  expect(api.advanceLiterarySequence).not.toHaveBeenCalled();
+});
+
+it('explicitly cancels a registered sequence and prepares a clean selection without changing the saved project', async () => {
+  vi.mocked(api.setLiterarySequenceControl).mockResolvedValue(
+    frame({ state: 'canceled', revision: 2 }),
+  );
+  const user = await registered();
+  await user.click(screen.getByRole('button', { name: 'Cancelar sequência no servidor' }));
+  await screen.findByText('Sequência cancelada');
+  expect(api.setLiterarySequenceControl).toHaveBeenCalledWith(
+    expect.objectContaining({ action: 'cancel', expectedRevision: 1 }),
+    'author',
+  );
+  await user.click(screen.getByRole('button', { name: 'Preparar outra seleção de capítulos' }));
+  expect(screen.queryByRole('region', { name: 'Checkpoint da sequência' })).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Orientação para esta sequência')).toHaveValue('');
+  expect(api.startLiterarySequence).toHaveBeenCalledOnce();
+  expect(api.advanceLiterarySequence).not.toHaveBeenCalled();
 });

@@ -107,6 +107,60 @@ const mount = () => {
   return onWorkChange;
 };
 const open = async () => userEvent.click(await screen.findByRole('button', { name: 'A carta' }));
+it('paginates documents and history while keeping the open draft and closes historical consultation separately', async () => {
+  const original = transport.invoke.getMockImplementation();
+  if (!original) throw new Error('Transporte indisponível');
+  let pages = 0,
+    histories = 0;
+  transport.invoke.mockImplementation((method, input) => {
+    if (method === 'listLiteraryPlans')
+      return Promise.resolve(
+        pages++ === 0
+          ? { ...page, nextAfterId: 'next-plan' }
+          : { ...page, items: [], nextAfterId: null },
+      );
+    if (method === 'listLiteraryPlanVersions')
+      return Promise.resolve(
+        histories++ === 0
+          ? { items: [{ id: 'brief', revision: 1, updatedAt: 1 }], nextBeforeRevision: 1 }
+          : { items: [{ id: 'brief', revision: 0, updatedAt: 0 }], nextBeforeRevision: null },
+      );
+    return original(method, input);
+  });
+  mount();
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais documentos' }));
+  await open();
+  fireEvent.change(screen.getByLabelText('Objetivo'), { target: { value: 'Rascunho preservado' } });
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar versões' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais versões' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Consultar revisão 0' }));
+  await screen.findByRole('region', { name: 'Planejamento histórico' });
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar consulta' }));
+  expect(screen.queryByRole('region', { name: 'Planejamento histórico' })).not.toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: 'Comparar com servidor' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Manter rascunho' }));
+  expect(screen.getByLabelText('Objetivo')).toHaveValue('Rascunho preservado');
+  await userEvent.click(screen.getByRole('button', { name: 'Remover vínculo' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar documento' }));
+  await screen.findByText('Documento salvo como revisão 2.');
+  expect(request().plan.references).toEqual([]);
+});
+
+it('prepares a different document locally, changes title and status and closes it without a write', async () => {
+  mount();
+  await userEvent.click(await screen.findByRole('combobox', { name: 'Documento' }));
+  await userEvent.click(screen.getByRole('option', { name: 'Visão do livro' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Preparar documento' }));
+  fireEvent.change(screen.getByLabelText('Título do documento'), {
+    target: { value: 'Minha visão' },
+  });
+  await userEvent.click(screen.getByRole('combobox', { name: 'Situação editorial' }));
+  await userEvent.click(screen.getByRole('option', { name: 'Proposta' }));
+  fireEvent.change(screen.getByLabelText('Premissa'), { target: { value: 'Uma carta.' } });
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar rascunho sem salvar' }));
+  expect(screen.queryByLabelText('Premissa')).not.toBeInTheDocument();
+  expect(transport.invoke.mock.calls.some(([method]) => method === 'saveLiteraryPlan')).toBe(false);
+});
 it('reconciles a changed source only in the draft, resets approval, and saves with the original CAS revision', async () => {
   const onWorkChange = mount();
   await open();

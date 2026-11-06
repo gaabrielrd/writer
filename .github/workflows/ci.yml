@@ -55,6 +55,16 @@ jobs:
           src/features/book-portability/tests/bookEditorialReview.test.ts
           src/features/book-portability/tests/EditorialRestoreReferencePicker.test.tsx
           src/features/book-portability/tests/BookEditorialRestorePanel.test.tsx
+          src/features/book-portability/tests/bookEditorialReviewApi.test.ts
+          src/features/literary-production/tests/EditorialProposalFields.test.tsx
+          src/features/literary-production/tests/LiteraryProductionPanel.test.tsx
+          src/features/literary-production/tests/LiteraryProsePanel.test.tsx
+          src/features/literary-production/tests/LiteraryWorkflowPanel.test.tsx
+          src/features/literary-production/tests/LiterarySequencePanel.test.tsx
+          src/features/literary-production/tests/LiteraryProgressPanel.test.tsx
+          src/features/literary-production/tests/LiteraryReaderGuideEditor.test.tsx
+          src/features/literary-production/tests/LiteraryPublicationPanel.test.tsx
+          src/features/literary-production/tests/LiteraryPlanningPanel.test.tsx
           src/features/literary-production/tests/EditorialContractPanel.test.tsx
           src/features/literary-production/tests/LiteraryIntegrationPanel.test.tsx
           src/features/literary-production/tests/LiteraryMilestonePanel.test.tsx

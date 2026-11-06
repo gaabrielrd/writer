@@ -29,8 +29,9 @@ devem preservar as funcionalidades dos dois lados e os contratos vigentes.
 
 Hooks são pulados somente nos comandos autorizados com `HUSKY=0`, sem mudar
 `.husky` nem a configuração permanente do Git. Não executar testes, lint,
-typecheck, formatação automática, build ou `npm run validate` localmente nesta
-integração; a verificação técnica ocorre na CI remota.
+typecheck, build ou `npm run validate` localmente nesta integração; a verificação
+técnica ocorre na CI remota. A formatação pontual dos arquivos corrigidos usa
+`prettier --write`, sem executar a conferência de formatação local.
 
 ## Estado da evidência
 
@@ -93,3 +94,11 @@ A CI passa a executar primeiro os cenários direcionados desta integração para
 dar retorno rápido sobre regressões. A validação completa, sua cobertura e os
 demais jobs continuam obrigatórios. Nenhuma validação local foi executada nesta
 publicação.
+
+Em `5af1fa19`, o frontend remoto passou com 5.786 testes em 448 arquivos;
+a cobertura de funções chegou a 88,99%, ainda abaixo de 90%. Os 16 shards
+visuais, Chromium de produção, auditoria e oito shards de Rules passaram.
+Foram acrescentados testes de redação, controles explícitos do ciclo e da
+sequência, progresso, guia público, navegação entre áreas com rascunhos e
+transporte da revisão restaurada. A nova medição depende da CI do commit
+seguinte; os limites de cobertura não foram alterados.

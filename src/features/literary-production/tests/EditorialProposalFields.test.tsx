@@ -1,9 +1,66 @@
 import { useState } from 'react';
 import { expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorialProposalFields } from '../components/EditorialProposalFields';
-import type { EditorialContract } from '../model/editorial';
+import { editorialFields, type EditorialContract } from '../model/editorial';
+
+it('removes a proposed decision and its superseding proposals without deleting independent decisions or prose', async () => {
+  const saved = vi.fn<(contract: EditorialContract) => void>();
+  function Form() {
+    const [value, setValue] = useState<EditorialContract>({
+      schemaVersion: 1,
+      fields: Object.fromEntries(
+        Object.keys(editorialFields).map((key) => [key, 'Intenção preservada']),
+      ) as EditorialContract['fields'],
+      decisions: [
+        {
+          id: 'first',
+          text: 'Evitar narrador externo',
+          status: 'proposal',
+          category: 'preference',
+          source: 'author',
+          supersedes: null,
+        },
+        {
+          id: 'replacement',
+          text: 'Narrador limitado',
+          status: 'proposal',
+          category: 'preference',
+          source: 'author',
+          supersedes: 'first',
+        },
+        {
+          id: 'independent',
+          text: 'Preservar a carta',
+          status: 'proposal',
+          category: 'requirement',
+          source: 'author',
+          supersedes: null,
+        },
+      ],
+    });
+    return (
+      <EditorialProposalFields
+        value={value}
+        disabled={false}
+        onChange={(next) => {
+          setValue(next);
+          saved(next);
+        }}
+      />
+    );
+  }
+  render(<Form />);
+  const decision = screen.getByText('Evitar narrador externo · Proposta').closest('li');
+  if (!decision) throw new Error('Decisão ausente');
+  await userEvent.click(
+    within(decision).getByRole('button', { name: 'Excluir proposta de decisão' }),
+  );
+  expect(saved.mock.lastCall?.[0].decisions.map((row) => row.id)).toEqual(['independent']);
+  expect(screen.getByLabelText('Premissa')).toHaveValue('Intenção preservada');
+  expect(screen.queryByText(/Narrador limitado/)).not.toBeInTheDocument();
+});
 
 it('author can add and remove a proposal publication unit without losing the literary draft', async () => {
   const saved = vi.fn<(contract: EditorialContract) => void>();

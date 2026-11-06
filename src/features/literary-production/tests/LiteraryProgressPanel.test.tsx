@@ -2,6 +2,8 @@ import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { LiteraryProgressPanel } from '../components/LiteraryProgressPanel';
 import type { ProgressDetail, ProgressPage } from '../services/literaryProgressService';
+import { getLiteraryOperation } from '../services/literaryProductionService';
+import userEvent from '@testing-library/user-event';
 const api = vi.hoisted(() => ({ list: vi.fn(), get: vi.fn(), save: vi.fn() }));
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { uid: 'author' } }) }));
 vi.mock('../services/literaryProgressService', () => ({
@@ -82,6 +84,74 @@ async function open() {
   await screen.findByLabelText('Próximo passo');
 }
 describe('progresso por artefato', () => {
+  it('paginates one stage before explicitly selecting another and never treats empty stages as completed', async () => {
+    api.list
+      .mockResolvedValueOnce({ ...page(), nextAfterId: 'next' })
+      .mockResolvedValueOnce({ ...page(), items: [], nextAfterId: null })
+      .mockResolvedValueOnce({ ...page(), stage: 'review', items: [] });
+    render(<LiteraryProgressPanel bookId="book" />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Mais registros' }));
+    await waitFor(() => expect(api.list).toHaveBeenCalledTimes(2));
+    expect(api.list.mock.calls[1]).toEqual(['book', 'planning', 'next']);
+    await userEvent.click(screen.getByRole('combobox', { name: 'Etapa do trabalho' }));
+    await userEvent.click(screen.getByRole('option', { name: 'Revisão' }));
+    await screen.findByText('Nenhum artefato registrado nesta etapa');
+    expect(api.list.mock.calls[2]).toEqual(['book', 'review', null]);
+    expect(api.save).not.toHaveBeenCalled();
+  });
+  it('normalizes explicit blocker lines while preserving the next step and artifact identity', async () => {
+    render(<LiteraryProgressPanel bookId="book" />);
+    await open();
+    fireEvent.change(screen.getByLabelText('Bloqueios deste artefato — um por linha'), {
+      target: { value: '  Rever motivação  \n\n Conferir ordem ' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar próximo passo e bloqueios' }));
+    await screen.findByText('Bloqueios e próximo passo salvos.');
+    expect(api.save.mock.calls[0]![0]).toMatchObject({
+      notes: { blockers: ['Rever motivação', 'Conferir ordem'], nextStep: 'Conferir cena.' },
+    });
+  });
+  it('queries an uncertain save and rejects a receipt from another artifact before adopting the confirmed note', async () => {
+    api.save.mockRejectedValueOnce(new Error('Sem resposta'));
+    vi.mocked(getLiteraryOperation)
+      .mockResolvedValueOnce({ state: 'unconfirmed' })
+      .mockResolvedValueOnce({
+        state: 'confirmed',
+        kind: 'progress',
+        id: 'another',
+        revision: 2,
+        updatedAt: 2,
+        noOp: false,
+      })
+      .mockResolvedValueOnce({
+        state: 'confirmed',
+        kind: 'progress',
+        id: artifact.noteId,
+        revision: 2,
+        updatedAt: 2,
+        noOp: false,
+      });
+    render(<LiteraryProgressPanel bookId="book" />);
+    await open();
+    fireEvent.change(screen.getByLabelText('Próximo passo'), {
+      target: { value: 'Rascunho privado.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Salvar próximo passo e bloqueios' }));
+    await screen.findByText('Sem resposta');
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar salvamento' }));
+    await screen.findByText(/Salvamento ainda sem confirmação/);
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar salvamento' }));
+    await screen.findByText('A confirmação não corresponde a esta anotação. Preserve a pendência.');
+    expect(screen.getByLabelText('Próximo passo')).toHaveValue('Rascunho privado.');
+    api.get.mockResolvedValueOnce({
+      ...detail,
+      note: { ...detail.note, revision: 2, nextStep: 'Nota confirmada.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Consultar salvamento' }));
+    await screen.findByText('Salvamento confirmado; anotação atual recuperada.');
+    expect(screen.getByLabelText('Próximo passo')).toHaveValue('Nota confirmada.');
+    expect(api.save).toHaveBeenCalledOnce();
+  });
   it('shows the saved stage without claiming a complete book or published quality', async () => {
     render(<LiteraryProgressPanel bookId="book" />);
     await open();

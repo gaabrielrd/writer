@@ -1,6 +1,6 @@
 import { listLiteraryIntegrations } from '../services/literaryIntegrationService';
 import { beforeEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StrictMode } from 'react';
 import { LiteraryWorkflowPanel } from '../components/LiteraryWorkflowPanel';
@@ -505,4 +505,132 @@ it('required publication cannot register a new cycle before the inspection is ex
   ).toBeInTheDocument();
   expect(startLiteraryWorkflow).not.toHaveBeenCalled();
   expect(getLiteraryWorkflowScope).not.toHaveBeenCalled();
+});
+
+it.each([
+  [
+    'firstVersion',
+    'manualConfirmation',
+    'Confirmar primeira versão escrita manualmente',
+    'confirmManual',
+  ],
+  [
+    'review',
+    'firstVersionAcceptance',
+    'Aceitar primeira versão e iniciar revisão',
+    'acceptFirstVersion',
+  ],
+  ['review', 'reviewAcceptance', 'Aceitar revisão e preservar versão revisada', 'acceptReview'],
+  [
+    'revisedVersion',
+    'revisedVersionAuthorization',
+    'Autorizar preservação da versão revisada',
+    'startRevisedVersion',
+  ],
+  ['review', 'reconciliation', 'Reconciliar etapa com o texto atual', 'reconcileReview'],
+  ['firstVersion', 'corrections', 'Reconciliar etapa com o texto atual', 'reconcileDraft'],
+] as const)(
+  'keeps the %s/%s decision explicit and bound to the observed cycle',
+  async (phase, stop, label, action) => {
+    vi.mocked(startLiteraryWorkflow).mockResolvedValue(frame(phase, stop));
+    vi.mocked(setLiteraryWorkflowControl).mockResolvedValue(frame('done'));
+    render(<LiteraryWorkflowPanel bookId="book" chapterId="chapter" />);
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Registrar novo ciclo deste capítulo' }),
+    );
+    await userEvent.click(await screen.findByRole('button', { name: label }));
+    await screen.findByText('Ciclo do capítulo concluído');
+    expect(setLiteraryWorkflowControl).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ action, expectedRevision: 1, expectedOriginToken: 'f'.repeat(64) }),
+      'author',
+    );
+    expect(advanceLiteraryWorkflow).not.toHaveBeenCalled();
+  },
+);
+
+it('lists and paginates saved cycles before opening one and rechecks its checkpoint without producing', async () => {
+  vi.mocked(listLiteraryWorkflows)
+    .mockResolvedValueOnce({ items: [], nextAfterId: 'page-two' })
+    .mockResolvedValueOnce({ items: [priorCycle()], nextAfterId: null });
+  vi.mocked(getLiteraryWorkflow).mockResolvedValue(frame('done'));
+  render(<LiteraryWorkflowPanel bookId="book" chapterId="chapter" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar ciclos do capítulo' }));
+  await screen.findByText('Nenhum ciclo registrado');
+  await userEvent.click(screen.getByRole('button', { name: 'Mais ciclos' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: /Ciclo do capítulo concluído ·/ }),
+  );
+  await screen.findByRole('region', { name: 'Checkpoint do ciclo' });
+  expect(listLiteraryWorkflows).toHaveBeenLastCalledWith('book', 'chapter', 'page-two');
+  expect(getLiteraryWorkflow).toHaveBeenCalledWith('book', 'workflow-prior-0001');
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar checkpoint do ciclo' }));
+  await waitFor(() => expect(getLiteraryWorkflow).toHaveBeenCalledTimes(2));
+  await userEvent.click(screen.getByRole('button', { name: 'Preparar novo ciclo deste capítulo' }));
+  expect(screen.queryByRole('region', { name: 'Checkpoint do ciclo' })).not.toBeInTheDocument();
+  expect(startLiteraryWorkflow).not.toHaveBeenCalled();
+  expect(advanceLiteraryWorkflow).not.toHaveBeenCalled();
+});
+
+it('amends all budgets and phase choices only through explicit authorization and retries the exact uncertain control', async () => {
+  const continuous = frame('firstVersion', 'budget');
+  continuous.job.collaboration.mode = 'continuous';
+  vi.mocked(startLiteraryWorkflow).mockResolvedValue(continuous);
+  vi.mocked(setLiteraryWorkflowControl)
+    .mockRejectedValueOnce(new Error('Controle incerto'))
+    .mockResolvedValueOnce(continuous);
+  render(
+    <LiteraryWorkflowPanel bookId="book" chapterId="chapter" collaborationMode="continuous" />,
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Registrar novo ciclo deste capítulo' }),
+  );
+  await screen.findByRole('region', { name: 'Checkpoint do ciclo' });
+  fireEvent.change(screen.getByLabelText('Limite total de créditos do ciclo'), {
+    target: { value: '8' },
+  });
+  fireEvent.change(screen.getByLabelText('Limite total de passos do ciclo'), {
+    target: { value: '500' },
+  });
+  for (const name of ['Revisão integral', 'Versão revisada']) {
+    await userEvent.click(screen.getByRole('combobox', { name: 'Passagem: ' + name }));
+    await userEvent.click(screen.getByRole('option', { name: 'Autorizar passagem contínua' }));
+  }
+  await userEvent.click(screen.getByRole('combobox', { name: 'Passagem: Revisão integral' }));
+  await userEvent.click(screen.getByRole('option', { name: 'Aguardar minha decisão' }));
+  expect(setLiteraryWorkflowControl).not.toHaveBeenCalled();
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Autorizar estes limites e retomar ciclo' }),
+  );
+  await screen.findByText('Controle incerto');
+  await userEvent.click(screen.getByRole('button', { name: 'Recuperar controle do ciclo' }));
+  await waitFor(() => expect(setLiteraryWorkflowControl).toHaveBeenCalledTimes(2));
+  const calls = vi.mocked(setLiteraryWorkflowControl).mock.calls;
+  expect(calls[0]).toEqual(calls[1]);
+  expect(calls[0]![0]).toMatchObject({
+    action: 'resume',
+    limits: { maxApplications: 2, maxCredits: 8, maxSteps: 500 },
+    authorizedPhases: ['revisedVersion'],
+  });
+});
+
+it('keeps an unsent instruction in the frozen registration and exposes definitive registration errors without a pending retry', async () => {
+  vi.mocked(startLiteraryWorkflow).mockRejectedValueOnce(
+    Object.assign(new Error('Sem autorização'), { code: 'functions/permission-denied' }),
+  );
+  render(<LiteraryWorkflowPanel bookId="book" chapterId="chapter" />);
+  fireEvent.change(screen.getByLabelText('Orientação para este ciclo'), {
+    target: { value: 'Preserve a dúvida.' },
+  });
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Registrar novo ciclo deste capítulo' }),
+  );
+  await screen.findByText('Sem autorização');
+  expect(screen.getByLabelText('Orientação para este ciclo')).toHaveValue('Preserve a dúvida.');
+  expect(startLiteraryWorkflow).toHaveBeenCalledWith(
+    expect.objectContaining({ instruction: 'Preserve a dúvida.' }),
+    'author',
+  );
+  expect(
+    screen.queryByRole('button', { name: 'Recuperar registro do ciclo' }),
+  ).not.toBeInTheDocument();
 });

@@ -27,8 +27,12 @@ vi.mock('@/shared/lib', async (original) => ({
 vi.mock('../components/LiteraryReaderGuideEditor', () => ({
   LiteraryReaderGuideEditor: ({
     onWorkChange,
+    onSaved,
+    onPreview,
   }: {
     onWorkChange: (value: { dirty: boolean; pending: boolean }) => void;
+    onSaved: () => void;
+    onPreview: (id: string) => void;
   }) => (
     <>
       <button onClick={() => onWorkChange({ dirty: true, pending: false })}>
@@ -37,6 +41,8 @@ vi.mock('../components/LiteraryReaderGuideEditor', () => ({
       <button onClick={() => onWorkChange({ dirty: false, pending: false })}>
         Descartar rascunho do guia
       </button>
+      <button onClick={onSaved}>Confirmar salvamento do guia</button>
+      <button onClick={() => onPreview('chapter')}>Conferir fonte do guia</button>
     </>
   ),
 }));
@@ -246,6 +252,71 @@ const authorize = async () => {
 const verified = () => {
   current = { ...current, state: 'verified', guideHash: 'c'.repeat(64), verifiedGuideEntries: 1 };
 };
+
+it('refreshes the exact edition after a guide save, previews its frozen source and reopens the guide explicitly', async () => {
+  const original = rpc.invoke.getMockImplementation();
+  if (!original) throw new Error('Transporte indisponível');
+  rpc.invoke.mockImplementation((name, input) => {
+    if (name === 'reopenLiteraryPublicationGuide') {
+      current = { ...current, state: 'prepared', guideHash: null };
+      return Promise.resolve(structuredClone(current));
+    }
+    return original(name, input);
+  });
+  verified();
+  mount();
+  await open();
+  await userEvent.click(screen.getByRole('button', { name: 'Conferir fonte do guia' }));
+  await screen.findByText('Texto preparado.');
+  await userEvent.click(screen.getByRole('button', { name: 'Confirmar salvamento do guia' }));
+  await waitFor(() => expect(commands('getLiteraryPublication')).toHaveLength(2));
+  await userEvent.click(screen.getByRole('button', { name: 'Reabrir guia para editar' }));
+  await screen.findByRole('button', { name: 'Conferir guia e limites de revelação' });
+  expect(commands('reopenLiteraryPublicationGuide')).toEqual([
+    { target: { kind: 'book', id: 'book' }, jobId: 'edition' },
+  ]);
+  expect(commands('confirmLiteraryPublication')).toEqual([]);
+});
+
+it('paginates editions and accepted integrations, refreshes a checkpoint and cancels only the selected edition', async () => {
+  const original = rpc.invoke.getMockImplementation();
+  if (!original) throw new Error('Transporte indisponível');
+  let pages = 0,
+    integrations = 0;
+  rpc.invoke.mockImplementation((name, input) => {
+    if (name === 'listLiteraryPublications')
+      return Promise.resolve(
+        pages++ === 0
+          ? { items: [current], nextAfterId: 'edition' }
+          : { items: [], nextAfterId: null },
+      );
+    if (name === 'listLiteraryIntegrations')
+      return Promise.resolve({
+        items: [],
+        nextAfterId: integrations++ === 0 ? 'integration' : null,
+      });
+    if (name === 'cancelLiteraryPublication') {
+      current = { ...current, state: 'canceled' };
+      return Promise.resolve(structuredClone(current));
+    }
+    return original(name, input);
+  });
+  mount();
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais edições' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Mais integrações' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Atualizar integrações' }));
+  await open();
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar checkpoint' }));
+  await waitFor(() => expect(commands('getLiteraryPublication')).toHaveLength(2));
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar esta edição' }));
+  await waitFor(() =>
+    expect(screen.queryByRole('button', { name: 'Cancelar esta edição' })).not.toBeInTheDocument(),
+  );
+  expect(commands('cancelLiteraryPublication')).toEqual([
+    { target: { kind: 'book', id: 'book' }, jobId: 'edition' },
+  ]);
+  expect(commands('confirmLiteraryPublication')).toEqual([]);
+});
 it('a prepared manuscript remains unpublished until guide verification and all four explicit final confirmations', async () => {
   mount();
   await open();

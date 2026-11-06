@@ -274,3 +274,78 @@ it('keeps independent evidence, uncertainty and reveal chapters for facts, relat
     appearances: [{ kind: 'document', chapterId: 'chapter', quote: 'A carta dizia Ana.' }],
   });
 });
+
+it('paginates the public guide and explicitly removes one native entry from this edition', async () => {
+  vi.mocked(api.listLiteraryPublicationGuide)
+    .mockResolvedValueOnce({
+      items: [entry()],
+      guideRevision: 1,
+      guideCount: 1,
+      nextAfterId: 'identity',
+    })
+    .mockResolvedValueOnce({ items: [], guideRevision: 1, guideCount: 1, nextAfterId: null });
+  const { onSaved } = mount();
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais entradas do guia' }));
+  expect(api.listLiteraryPublicationGuide).toHaveBeenLastCalledWith('book', 'edition', 'identity');
+  await open();
+  await userEvent.click(screen.getByRole('button', { name: 'Opções da entrada' }));
+  await userEvent.click(
+    await screen.findByRole('menuitem', { name: 'Remover entrada desta edição' }),
+  );
+  await screen.findByText('Entrada removida do guia desta edição.');
+  expect(savedInput()).toMatchObject({ id: 'identity', expectedRevision: 1, guide: null });
+  expect(screen.queryByLabelText('Nome público')).not.toBeInTheDocument();
+  expect(onSaved).toHaveBeenCalledOnce();
+});
+
+it('creates only an unsaved local entry, discards its edits and retries a failed guide read', async () => {
+  vi.mocked(api.listLiteraryPublicationGuide)
+    .mockRejectedValueOnce(new Error('Guia indisponível'))
+    .mockResolvedValueOnce({ items: [], guideRevision: 1, guideCount: 0, nextAfterId: null });
+  mount();
+  await screen.findByText('Guia indisponível');
+  await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
+  await screen.findByText('Guia sem entradas públicas');
+  await userEvent.click(screen.getByRole('button', { name: 'Nova entrada pública' }));
+  fireEvent.change(screen.getByLabelText('Nome público'), {
+    target: { value: 'Nome ainda privado' },
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Descartar alterações da entrada' }));
+  expect(screen.getByLabelText('Nome público')).toHaveValue('');
+  expect(api.saveLiteraryPublicationGuideEntry).not.toHaveBeenCalled();
+  await userEvent.click(screen.getByRole('button', { name: 'Atualizar guia' }));
+  await waitFor(() => expect(api.listLiteraryPublicationGuide).toHaveBeenCalledTimes(3));
+});
+
+it('previews each cited chapter and removes individual public facts, relations and appearances before saving', async () => {
+  const rich = entry();
+  rich.guide = {
+    ...api.emptyReaderGuide(),
+    ...rich.guide,
+    facts: [
+      { text: 'Observa a praça.', certainty: 'fact', chapterId: 'chapter', quote: 'Ana observa.' },
+    ],
+    relationships: [
+      {
+        targetId: 'other',
+        description: 'Escreve para outra pessoa.',
+        certainty: 'uncertain',
+        chapterId: 'chapter',
+        quote: 'A carta.',
+      },
+    ],
+    appearances: [{ kind: 'direct', chapterId: 'chapter', quote: 'Ana.' }],
+  };
+  vi.mocked(api.getLiteraryPublicationGuideEntry).mockResolvedValue(rich);
+  const { onPreview } = mount();
+  await open();
+  for (const name of ['Ver fonte do fato 1', 'Ver fonte da relação 1', 'Ver fonte da aparição 1'])
+    await userEvent.click(screen.getByRole('button', { name }));
+  expect(onPreview).toHaveBeenCalledTimes(3);
+  expect(onPreview).toHaveBeenLastCalledWith('chapter');
+  for (const name of ['Remover fato 1', 'Remover relação 1', 'Remover aparição 1'])
+    await userEvent.click(screen.getByRole('button', { name }));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar entrada pública' }));
+  await screen.findByText('Entrada pública salva; confira suas evidências antes de publicar.');
+  expect(savedInput().guide).toMatchObject({ facts: [], relationships: [], appearances: [] });
+});
