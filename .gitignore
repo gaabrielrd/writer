@@ -22,6 +22,7 @@ all-blob-reports/
 .env.*.local
 .gemini-api-key
 functions/.env.*
+functions/.secret.local
 !functions/.env.example
 
 # Skills geradas (cópias sincronizadas por npm run sync:skills).

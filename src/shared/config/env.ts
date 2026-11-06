@@ -46,6 +46,8 @@ export interface Env {
   readonly apiUrl: string | undefined;
   /** Configuração do Firebase */
   readonly firebase: FirebaseConfig;
+  /** Opt-in local: Auth, Firestore, Storage e Functions em loopback. */
+  readonly useFirebaseEmulators: boolean;
 }
 
 export class EnvValidationError extends Error {
@@ -96,6 +98,14 @@ export function createEnv(raw: ImportMetaEnv): Env {
   }
 
   const apiUrl = readUrl(raw, 'VITE_API_URL', problems);
+  const emulatorFlag = readOptional(raw, 'VITE_USE_FIREBASE_EMULATORS');
+  if (emulatorFlag && !['true', 'false'].includes(emulatorFlag)) {
+    problems.push('VITE_USE_FIREBASE_EMULATORS deve ser true ou false.');
+  }
+  const useFirebaseEmulators = emulatorFlag === 'true';
+  if (useFirebaseEmulators && raw.PROD) {
+    problems.push('Emuladores Firebase são permitidos somente no desenvolvimento.');
+  }
 
   if (problems.length > 0) throw new EnvValidationError(problems);
 
@@ -118,11 +128,26 @@ export function createEnv(raw: ImportMetaEnv): Env {
       readOptional(raw, 'VITE_GOOGLE_CLIENT_ID') ?? DEFAULT_FIREBASE_CONFIG.googleClientId,
   };
 
+  if (useFirebaseEmulators) {
+    Object.assign(firebase, {
+      apiKey: 'demo-writer-key',
+      projectId: 'demo-writer',
+      authDomain: 'demo-writer.firebaseapp.com',
+      storageBucket: 'demo-writer.firebasestorage.app',
+      appId: '1:1234567890:web:demo-writer',
+      messagingSenderId: '1234567890',
+      measurementId: undefined,
+      appCheckKey: undefined,
+      googleClientId: undefined,
+    });
+  }
+
   return {
     mode: raw.MODE,
     isProduction: raw.PROD,
     apiUrl,
     firebase,
+    useFirebaseEmulators,
   };
 }
 

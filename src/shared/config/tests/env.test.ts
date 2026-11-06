@@ -7,6 +7,30 @@ function raw(overrides: Record<string, unknown> = {}): ImportMetaEnv {
 }
 
 describe('createEnv', () => {
+  it('mantém os emuladores desligados por padrão', () => {
+    expect(createEnv(raw()).useFirebaseEmulators).toBe(false);
+  });
+
+  it('isola emuladores em projeto demo mesmo com configuração remota presente', () => {
+    const env = createEnv(
+      raw({
+        VITE_USE_FIREBASE_EMULATORS: 'true',
+        VITE_FIREBASE_PROJECT_ID: 'remote-project',
+        VITE_FIREBASE_STORAGE_BUCKET: 'remote-bucket',
+      }),
+    );
+    expect(env.useFirebaseEmulators).toBe(true);
+    expect(env.firebase.projectId).toBe('demo-writer');
+    expect(env.firebase.storageBucket).toBe('demo-writer.firebasestorage.app');
+    expect(env.firebase.appCheckKey).toBeUndefined();
+  });
+
+  it('recusa emuladores em build de produção e flags malformadas', () => {
+    expect(() => createEnv(raw({ PROD: true, VITE_USE_FIREBASE_EMULATORS: 'true' }))).toThrow(
+      /somente no desenvolvimento/,
+    );
+    expect(() => createEnv(raw({ VITE_USE_FIREBASE_EMULATORS: 'yes' }))).toThrow(/true ou false/);
+  });
   it('expoe o modo e a flag de producao', () => {
     const env = createEnv(raw({ MODE: 'production', PROD: true }));
 

@@ -5,8 +5,16 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
-  const projectId =
-    loadEnv(mode, import.meta.dirname, 'VITE_').VITE_FIREBASE_PROJECT_ID?.trim() || 'writer-44cd5';
+  const localEnv = loadEnv(mode, import.meta.dirname, 'VITE_');
+  const useEmulators = localEnv.VITE_USE_FIREBASE_EMULATORS === 'true';
+  const projectId = useEmulators
+    ? 'demo-writer'
+    : localEnv.VITE_FIREBASE_PROJECT_ID?.trim() || 'writer-44cd5';
+  const functionsTarget = useEmulators
+    ? 'http://127.0.0.1:5001'
+    : `https://us-central1-${projectId}.cloudfunctions.net`;
+  const functionPath = (name: string) =>
+    useEmulators ? `/${projectId}/us-central1/${name}` : `/${name}`;
   if (command === 'serve' && !/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)) {
     throw new Error('VITE_FIREBASE_PROJECT_ID inválido para encaminhar a API local.');
   }
@@ -14,20 +22,25 @@ export default defineConfig(({ command, mode }) => {
     plugins: [react(), tailwindcss()],
     server: {
       proxy: {
-        '^/api/adventure-restore/recovery-key(?:\\?.*)?$': {
-          target: `https://us-central1-${projectId}.cloudfunctions.net`,
+        '^/api/book-lore/recovery-key(?:\\?.*)?$': {
+          target: functionsTarget,
           changeOrigin: true,
-          rewrite: () => '/getAdventureRestoreRecoveryKey',
+          rewrite: () => functionPath('getBookLoreEditRecoveryKey'),
+        },
+        '^/api/adventure-restore/recovery-key(?:\\?.*)?$': {
+          target: functionsTarget,
+          changeOrigin: true,
+          rewrite: () => functionPath('getAdventureRestoreRecoveryKey'),
         },
         '^/api/book-restore/recovery-key(?:\\?.*)?$': {
-          target: `https://us-central1-${projectId}.cloudfunctions.net`,
+          target: functionsTarget,
           changeOrigin: true,
-          rewrite: () => '/getBookRestoreRecoveryKey',
+          rewrite: () => functionPath('getBookRestoreRecoveryKey'),
         },
         '^/api/adventure-import/recovery-key(?:\\?.*)?$': {
-          target: `https://us-central1-${projectId}.cloudfunctions.net`,
+          target: functionsTarget,
           changeOrigin: true,
-          rewrite: () => '/getAdventureImportRecoveryKey',
+          rewrite: () => functionPath('getAdventureImportRecoveryKey'),
         },
       },
     },

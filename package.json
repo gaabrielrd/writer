@@ -10,6 +10,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:local": "vite --mode emulators --host 127.0.0.1 --port 5173 --strictPort",
+    "emulators": "firebase emulators:start --project demo-writer --only auth,functions,firestore,storage",
     "build": "npm run typecheck && npm run build:bundle && npm run smoke:build",
     "build:bundle": "vite build",
     "check:architecture": "node scripts/check-architecture.mjs",

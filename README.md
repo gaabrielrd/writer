@@ -187,6 +187,9 @@ npm run dev
 
 O Vite mostra no terminal o endereço local (algo como `http://localhost:5173`).
 
+Para usar Auth, Firestore, Storage e Functions locais, execute `npm run emulators`
+e `npm run dev:local` em terminais separados. Veja [backend local](docs/local-backend.md).
+
 ## Validação
 
 Durante ajustes, execute os checks afetados. Ao fechar grandes blocos, rode:
