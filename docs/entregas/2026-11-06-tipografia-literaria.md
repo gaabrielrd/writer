@@ -96,3 +96,34 @@ A borda do painel `.instructions` em Personas continua como pendência visual
 preexistente, separada desta entrega. Não recebeu exceção nem alteração visual;
 ajustá-la ampliaria o escopo da tipografia.
 
+## Correção visual autorizada após a triagem
+
+Após autorização explícita do usuário, `.instructions` em Personas passou da
+faixa lateral primária de 3 px para um contorno uniforme de 1 px com o token
+semântico `--border`. Conteúdo, fundo, espaçamento e funcionamento foram
+preservados. A pendência visual descrita acima está resolvida.
+
+A borda de `blockquote` do leitor permanece como tratamento de citação
+semântica. Sua exceção restrita continua válida; nenhuma nova supressão foi
+adicionada para Personas.
+
+Verificações desta correção:
+
+- Detector Impeccable nos dois arquivos: nenhum apontamento com a configuração
+  vigente. O detector CSS é estático e não equivale à auditoria completa da tela.
+- `npm run check:styleguide`, Prettier do CSS alterado e `git diff --check`:
+  passaram.
+- Conferência direta no Chromium com serviços fictícios e rede externa
+  bloqueada: abertura da biblioteca, painel lateral e diálogo de detalhes nos
+  temas Claro, Escuro e Sépia. Contorno computado de 1 px nos quatro lados,
+  sem transbordamento em 1440 × 1000 e 1024 × 768, sem erros JavaScript.
+  Capturas `personas-instrucoes-{light,dark,sepia}.png` inspecionadas no diretório
+  do artefato deste chat.
+- O cenário existente `personaliza uma persona com slider próprio` de
+  `e2e/visual/personas.visual.ts` falhou nos três temas ao buscar a progressbar
+  `Concisão` por nome exato, antes de chegar ao diálogo. O painel atual usa nomes
+  contextualizados por persona. A atualização desse cenário fica registrada
+  separadamente; a jornada direta acima conferiu o alvo corrigido.
+
+Sem mudança de comportamento, novos testes, commit ou deploy. `npm run validate`
+não foi executado, conforme a fronteira vigente do projeto.

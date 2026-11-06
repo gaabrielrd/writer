@@ -401,7 +401,7 @@
 }
 .instructions {
   padding: var(--space-4);
-  border-left: 3px solid hsl(var(--primary));
+  border: 1px solid hsl(var(--border));
   border-radius: var(--radius-md);
   background: hsl(var(--primary) / 0.06);
 }
