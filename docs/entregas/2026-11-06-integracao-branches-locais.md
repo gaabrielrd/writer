@@ -102,3 +102,10 @@ Foram acrescentados testes de redação, controles explícitos do ciclo e da
 sequência, progresso, guia público, navegação entre áreas com rascunhos e
 transporte da revisão restaurada. A nova medição depende da CI do commit
 seguinte; os limites de cobertura não foram alterados.
+
+O job de validação completo do Hosting para `f5330875` passou: 450 arquivos,
+5.819 testes de frontend, 90,11% de funções, backend, typecheck, bundle e smoke.
+O cenário de menção após cancelar modal passou em `bc014899`. Timeouts dos
+cenários que acumulavam nove rotas públicas e cinco presets foram tratados
+dividindo os casos, preservando as asserções, a comparação literal do manuscrito
+e os prazos existentes. O resultado da revisão final continua sendo o da CI.

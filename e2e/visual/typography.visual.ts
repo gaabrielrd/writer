@@ -124,7 +124,7 @@ for (const [index, [label, size]] of legibilityPresets.entries()) {
     });
     const editor = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
     await expect(editor).toHaveCSS('font-size', size);
-    await expect(editor).toHaveText(manuscript ?? '');
+    expect(await editor.textContent()).toBe(manuscript);
     await page.evaluate(() => document.fonts.ready);
     // Count actual characters on wrapped lines, rather than assuming 1ch = 1 character.
     const fullLines = async (paragraph: import('@playwright/test').Locator) =>
