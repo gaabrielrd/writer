@@ -106,9 +106,9 @@ for (const method of ['manual', 'assisted'] as const)
       ).toBeVisible();
       const dock = page.getByRole('complementary', { name: 'Assistente da página' });
       await expect(dock).toBeVisible();
-      // Only the AI conversation arrives open; manual creation keeps the pill.
-      if (method === 'assisted')
-        await page.getByRole('button', { name: 'Minimizar assistente' }).click();
+      // Both methods carry their conception into the newly created project.
+      await expect(dock).toHaveAttribute('data-mode', 'expanded');
+      await dock.getByRole('button', { name: 'Minimizar assistente' }).click();
       await expect(dock).toHaveAttribute('data-mode', 'minimized');
       await expectNoHorizontalOverflow(page, 'projeto-confirmado');
     });
@@ -149,9 +149,14 @@ test('concepção chega ao primeiro capítulo e à escrita sem repetir a ideia',
       .getByText('A primeira lanterna de uma ilha perdida.'),
   ).toBeVisible();
   async function ask(prompt: string, action: string) {
-    if (!(await page.getByLabel('Pedido ao assistente da página').isVisible()))
-      await page.getByRole('button', { name: 'Assistente da página', exact: true }).click();
-    await page.getByLabel('Pedido ao assistente da página').fill(prompt);
+    const dock = page.getByRole('complementary', { name: 'Assistente da página' });
+    const toggle = dock.getByRole('button', { name: 'Assistente da página', exact: true });
+    if ((await toggle.getAttribute('aria-expanded')) === 'true') await toggle.click();
+    await expect(dock).toHaveAttribute('data-mode', 'minimized');
+    await toggle.click();
+    const field = dock.getByLabel('Pedido ao assistente da página');
+    await expect(field).toBeVisible();
+    await field.fill(prompt);
     await page.getByRole('button', { name: 'Enviar pedido' }).click();
     await page.getByRole('button', { name: 'Executar: ' + action }).click();
   }
@@ -167,8 +172,13 @@ test('concepção chega ao primeiro capítulo e à escrita sem repetir a ideia',
   const editor = page.locator('[contenteditable="true"]').first();
   await editor.fill('A primeira lanterna brilhou quando o mar desapareceu.');
   await expect(page.getByText('Salvo', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Assistente da página', exact: true }).click();
-  await page.getByRole('button', { name: 'Expandir conversa' }).click();
+  const dock = page.getByRole('complementary', { name: 'Assistente da página' });
+  const minimize = dock.getByRole('button', { name: 'Minimizar assistente', exact: true });
+  if (await minimize.isVisible()) await minimize.click();
+  await expect(dock).toHaveAttribute('data-mode', 'minimized');
+  await dock.getByRole('button', { name: 'Assistente da página', exact: true }).click();
+  await dock.getByRole('button', { name: 'Expandir conversa', exact: true }).click();
+  await expect(dock).toHaveAttribute('data-mode', 'expanded');
   await expect(
     page
       .getByRole('complementary', { name: 'Assistente da página' })

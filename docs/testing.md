@@ -3447,6 +3447,14 @@ fallback completo. Alterações apenas em documentação/comandos do hook não
 exigem repetir testes de frontend; valide os scripts alterados separadamente.
 A CI continua executando os portões completos.
 
+Nos jobs de navegador de CI e Hosting, a instalação do Chromium remove apenas
+o mirror Azure de `/etc/apt/apt-mirrors.txt` quando esse arquivo existe. Os
+fallbacks HTTPS oficiais de Ubuntu permanecem na lista criada pelo runner.
+Isso evita a lentidão observada no download de fontes pelo mirror Azure,
+sem alterar assinatura de pacotes, comandos de teste ou limites dos jobs.
+Referências: [configuração do runner](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/configure-apt-sources.sh)
+e [incidente do mirror](https://github.com/actions/runner-images/issues/14594).
+
 Filtros enviados após -- continuam sendo encaminhados ao Vitest. Execuções
 filtradas não geram registro de aprovação completa. Mudanças em NODE_OPTIONS
 ou variáveis VITE_/WRITER_ também invalidam o reaproveitamento.

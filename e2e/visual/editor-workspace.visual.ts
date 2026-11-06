@@ -1,5 +1,23 @@
 import { capture, expect, expectNoHorizontalOverflow, test } from './support';
 import { author, FIXTURE_BOOK_ID, FIXTURE_CHAPTER_ID } from './fixtures/data';
+import type { Page } from '@playwright/test';
+
+async function expectNormalWorkspaceWidth(page: Page) {
+  const main = page.locator('#main-content');
+  const sidebar = page.getByRole('complementary', { name: 'Barra lateral do Writer' });
+  const sidebarWidth = (await sidebar.boundingBox())!.width;
+  const frameSpacing = await main.evaluate((element) => {
+    const style = getComputedStyle(element.parentElement!);
+    return ['margin-left', 'margin-right', 'border-left-width', 'border-right-width'].reduce(
+      (sum, property) => sum + parseFloat(style.getPropertyValue(property)),
+      0,
+    );
+  });
+  expect(sidebarWidth).toBe(240);
+  expect((await main.boundingBox())!.width + sidebarWidth + frameSpacing).toBe(
+    page.viewportSize()!.width,
+  );
+}
 
 test('Escape cancela drag com foco no manuscrito antes de sair da tela cheia', async ({ page }) => {
   await page.setViewportSize({ width: 2160, height: 900 });
@@ -255,15 +273,16 @@ test('tela cheia usa toda a largura sem remontar texto, seleção, undo ou chat'
   await draft.fill('Rascunho antes de expandir');
   await editor.press('Control+A');
   const selected = await page.evaluate(() => window.getSelection()!.toString());
-  const normalWidth = (await page.locator('#main-content').boundingBox())!.width;
-  expect(normalWidth).toBe(page.viewportSize()!.width - 240);
+  await expectNormalWorkspaceWidth(page);
   expect((await editor.boundingBox())!.width).toBeLessThanOrEqual(760);
   await editor.evaluate((element) => {
     element.setAttribute('data-original-editor', 'true');
   });
   await page.getByRole('button', { name: 'Entrar em tela cheia' }).click();
   await expect(page.getByRole('button', { name: 'Sair da tela cheia' })).toBeVisible();
-  expect((await page.locator('#main-content').boundingBox())!.width).toBeGreaterThan(2100);
+  expect((await page.locator('#main-content').boundingBox())!.width).toBe(
+    page.viewportSize()!.width,
+  );
   await expect(editor).toHaveAttribute('data-original-editor', 'true');
   expect(await page.evaluate(() => window.getSelection()!.toString())).toBe(selected);
   await expect(draft).toHaveValue('Rascunho antes de expandir');
@@ -338,13 +357,11 @@ test('tela cheia conserva o trecho visível e restaura o shell ao sair da ediç�
   await expect(page.locator('[data-editor-selection-actions]')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Sair da tela cheia' })).toBeVisible();
   await page.getByRole('link', { name: 'Voltar para o livro' }).click();
-  await expect(page.locator('#main-content')).not.toHaveAttribute(
+  await expect(page.locator('[data-writer-workspace]')).toHaveAttribute(
     'data-workspace-expanded',
-    'true',
+    'false',
   );
-  expect((await page.locator('#main-content').boundingBox())!.width).toBe(
-    page.viewportSize()!.width - 240,
-  );
+  await expectNormalWorkspaceWidth(page);
   await capture(page, testInfo, 'shell-restaurado');
 });
 

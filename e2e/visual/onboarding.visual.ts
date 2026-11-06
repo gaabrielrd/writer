@@ -24,11 +24,11 @@ test('perfil de campanha, guia retomável e barra persistente por teclado', asyn
   await toggle.click();
   await page.getByLabel('Pedido ao assistente da página').fill('Uma pergunta ainda em elaboração');
   await page.getByRole('link', { name: 'Todos os projetos', exact: true }).click();
-  await expect(dock).toHaveAttribute('data-mode', 'minimized');
+  await expect(dock).toHaveAttribute('data-mode', 'compact');
   await expect(page.getByLabel('Pedido ao assistente da página')).toHaveValue(
     'Uma pergunta ainda em elaboração',
   );
-  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
   const grip = dock.getByRole('button', { name: 'Mover assistente' });
   await grip.focus();
   const original = (await dock.boundingBox())!;

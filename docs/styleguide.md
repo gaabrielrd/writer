@@ -676,6 +676,9 @@ viewport, fora da caixa do modal, sem acrescentar altura ou padding ao formulár
 Permanece no escopo de foco do diálogo para permitir escrita e cliques nas duas
 superfícies. A alça continua móvel e Escape no assistente recolhe a conversa sem
 fechar o modal. A gaveta de navegação suspende a barra para manter seu ciclo de foco.
+Trocas de rota conservam a apresentação escolhida do assistente. A criação manual
+e a assistida carregam a concepção no projeto confirmado com a conversa expandida;
+o operador pode minimizá-la explicitamente sem perder essa continuidade.
 O minimapa móvel rola o contêiner do workspace e limita o fim da navegação para
 preservar sua própria visibilidade, sem mover a seleção do manuscrito.
 A barra de seleção do compêndio respeita a altura do assistente também no

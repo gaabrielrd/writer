@@ -197,3 +197,40 @@ GitHub. As capturas originais e da repetição são idênticas, com SHA-256
 Após inspeção visual, a captura Linux foi copiada integralmente para
 `e2e/__screenshots__/linux/styleguide.png`, sem alteração de pixels ou tolerância.
 A aprovação da nova referência será conferida em outra execução da CI.
+
+### Regressões herdadas e instalação do navegador
+
+Na rodada de `5dcbf90`, os oito shards de Rules e os testes de navegador das
+oito integrações de Hosting aprovaram a referência Linux. A matriz visual
+identificou outras expectativas anteriores à composição autenticada atual:
+
+- Largura normal do editor sem considerar a moldura; a prova agora soma lateral,
+  conteúdo, margens e bordas. Tela cheia exige exatamente a largura do viewport,
+  preservando seleção, undo, rascunho e retorno ao shell.
+- Persona aberta diretamente no modal em desktop largo; a jornada passa pelo
+  inspetor e abre os detalhes, conferindo o valor do atributo nos dois contextos.
+- Assistente reiniciado ao trocar rota e criação manual sem conversa de concepção;
+  os testes conferem apresentação preservada e continuidade dos dois métodos.
+- Contexto do universo como parágrafo abaixo do campo; agora é identificado pelo
+  título acessível na barra superior do assistente.
+- Título de capítulo importado consultado em toda a página; o seletor usa o botão
+  `Abrir capítulo O retorno`, distinguindo a lista do resumo de retomada.
+
+A rodada dirigida dos cinco grupos aprovou 86 de 87 casos. O caso restante
+identificou uma disputa de foco após preencher título pelo assistente; a jornada
+passou a minimizar e reabrir explicitamente o compositor antes de cada pedido.
+Essa continuidade passou nos três temas, assim como os três casos de PDF. A
+importação Markdown também passou nos três temas após o seletor específico.
+Typecheck, ESLint, Prettier e os 121 testes de scripts/guardas de deploy passaram.
+
+Separadamente, logs de jobs cancelados mostraram cerca de 13 minutos gastos no
+download de fontes de `azure.archive.ubuntu.com`, antes do fallback HTTPS oficial
+e do esgotamento do limite do job. CI e Hosting removem somente esse mirror da
+lista do runner antes de instalar Chromium. Os fallbacks oficiais, a validação
+de pacotes, os comandos de testes e os limites existentes são preservados.
+Os três blocos foram conferidos por parser YAML e `bash -n`; uma lista de exemplo
+confirmou que o filtro mantém os dois fallbacks HTTPS do runner.
+
+Esses ajustes alteram testes, workflows e documentação. O código de produto e
+Functions permanece o mesmo aprovado pelo gate integral e pela auditoria de
+publicação. A nova rodada remota será acompanhada após o próximo push.

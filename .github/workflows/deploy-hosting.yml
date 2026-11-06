@@ -90,7 +90,12 @@ jobs:
       - run: npm audit --audit-level=high
       - run: npm ci --prefix functions
       - run: npm run test:rules -- --shard=${{ matrix.shard }}/8
-      - run: npx playwright install --with-deps chromium
+      - name: Instalar Chromium pelo arquivo oficial do Ubuntu
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+          fi
+          npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npx playwright test -c playwright.visual.config.ts --shard=${{ matrix.shard }}/8
 

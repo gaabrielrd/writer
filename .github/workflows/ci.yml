@@ -120,7 +120,11 @@ jobs:
         run: npm ci --prefix functions
 
       - name: Instalar Chromium
-        run: npx playwright install --with-deps chromium
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+          fi
+          npx playwright install --with-deps chromium
 
       - name: Testar no navegador
         run: npm run test:e2e
@@ -166,7 +170,11 @@ jobs:
         run: npm ci --prefix functions
 
       - name: Instalar Chromium
-        run: npx playwright install --with-deps chromium
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then
+            sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+          fi
+          npx playwright install --with-deps chromium
 
       # A suíte completa inclui a seleção parcial nos seis projetos;
       # o sharding distribui os casos sem repetir nem filtrar cenários.

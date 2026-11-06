@@ -142,6 +142,12 @@ test('personaliza uma persona com slider próprio e preserva formulário e açõ
   await page.evaluate(() => window.scrollTo(0, 0));
   await capture(page, testInfo, 'biblioteca-com-avatares');
   await page.getByRole('button', { name: 'Ver detalhes de O Incisivo' }).click();
+  const inspector = page.getByRole('complementary', { name: 'Detalhes de O Incisivo' });
+  await expect(inspector).toBeVisible();
+  await expect(
+    inspector.getByRole('progressbar', { name: 'O Incisivo: Concisão', exact: true }),
+  ).toHaveAttribute('value', '95');
+  await inspector.getByRole('button', { name: 'Abrir detalhes', exact: true }).click();
   await expect(page.getByRole('progressbar', { name: 'Concisão', exact: true })).toHaveAttribute(
     'value',
     '95',

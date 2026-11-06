@@ -85,6 +85,8 @@ test('Markdown preserva capítulos e permite selecionar e renomear antes de impo
   await capture(page, testInfo, 'importacao-markdown-revisao');
   await page.getByRole('button', { name: 'Importar 1 Capítulo(s)', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'manuscrito', exact: true })).toBeVisible();
-  await expect(page.getByText('O retorno', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: 'Abrir capítulo O retorno', exact: true }),
+  ).toBeVisible();
   await expect(page.getByText('A partida', { exact: true })).toHaveCount(0);
 });

@@ -78,8 +78,9 @@ test('controles compactos do universo e compositor contextual do assistente', as
   const sendBounds = (await send.boundingBox())!;
   expect(sendBounds.x + sendBounds.width).toBeLessThan(fieldBounds.x + fieldBounds.width);
   expect(sendBounds.y + sendBounds.height).toBeLessThan(fieldBounds.y + fieldBounds.height);
-  const context = dock.locator('p').filter({ hasText: 'Contexto: Universo' });
-  expect((await context.boundingBox())!.y).toBeGreaterThan(fieldBounds.y + fieldBounds.height);
+  const context = dock.getByTitle('Contexto: Universo', { exact: true });
+  await expect(context).toBeVisible();
+  expect((await context.boundingBox())!.y).toBeLessThan(fieldBounds.y);
   await expectNoHorizontalOverflow(page, 'universo-controles');
   await capture(page, testInfo, 'universo-controles');
 });
