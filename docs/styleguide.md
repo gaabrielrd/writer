@@ -575,7 +575,11 @@ inteira sem persistir ajustes. Veja [temas personalizados](custom-themes.md).
 
 As variantes dark acompanham a classe de tema, não a preferência do sistema.
 Badge de sucesso e marcas do minimapa compartilham o mesmo token, incluindo
-as paletas personalizadas. Fontes, dimensões e espaçamentos permanecem comuns.
+as paletas personalizadas. Dimensões e espaçamentos permanecem comuns. As fontes
+são escolhidas separadamente em Preferências → Tipografia literária, com cinco
+presets e Personalizado. Clássico editorial é o padrão. Títulos usam
+`--font-display`, interface usa `--font-sans` e prosa usa `--font-reading`.
+Prévia é reversível e só persiste após Salvar fontes. Veja [tipografia](typography.md).
 
 No editor de temas, nome e base usam nome acessível sem label visual; Nome é o
 placeholder. Todas as cores oferecem Input type=color ao lado do hexadecimal.

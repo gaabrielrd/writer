@@ -5,6 +5,7 @@ import { Link, Outlet, useLocation } from 'react-router';
 import { AuthProvider, AuthButton, CreditsBadge, useAuth } from '@/features/auth';
 import { BookNavigation } from '@/features/books';
 import { ThemeProvider } from '@/shared/theme';
+import { TypographyProvider } from '@/shared/typography';
 import { AISettingsProvider, useAISettings } from '@/features/ai-assistant';
 import { WorkspaceLayoutProvider, useWorkspaceLayout } from '@/shared/ui';
 import styles from './App.module.css';
@@ -46,12 +47,14 @@ function AppHeader() {
 function ThemeWorkspace() {
   const { user } = useAuth();
   return (
-    <CustomThemesProvider uid={user?.uid ?? null}>
-      <OnboardingProvider key={user?.uid ?? 'anonymous'}>
-        <AppWorkspace />
-        <PageAssistant />
-      </OnboardingProvider>
-    </CustomThemesProvider>
+    <TypographyProvider uid={user?.uid ?? null}>
+      <CustomThemesProvider uid={user?.uid ?? null}>
+        <OnboardingProvider key={user?.uid ?? 'anonymous'}>
+          <AppWorkspace />
+          <PageAssistant />
+        </OnboardingProvider>
+      </CustomThemesProvider>
+    </TypographyProvider>
   );
 }
 

@@ -1,0 +1,315 @@
+{
+  "downloadedAt": "2026-11-06",
+  "sources": [
+    {
+      "family": "Libre Baskerville",
+      "cssURL": "https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/librebaskerville/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/librebaskerville/v24/kmKhZrc3Hgbbcjq75U4uslyuy4kn0qNcWx8QDP2V.woff2",
+          "bytes": 35228,
+          "sha256": "890c2ae602dfc42b941667f13dcb5ddb196a31e8d7aa76cea20f2afaa7531eff"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/librebaskerville/v24/kmKhZrc3Hgbbcjq75U4uslyuy4kn0qNcWxEQDA.woff2",
+          "bytes": 31244,
+          "sha256": "1203eb6186789060d1376ca7ab20734b179e241c85ddc2d84502c818afb63210"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/librebaskerville/v24/kmKnZrc3Hgbbcjq75U4uslyuy4kn0qNXaxMICA.woff2",
+          "bytes": 35468,
+          "sha256": "8f7537ce3a6c1c0d0e93a9530432df13953312d378713a059e9a6cf0d0cde8b9"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/librebaskerville/v24/kmKnZrc3Hgbbcjq75U4uslyuy4kn0qNZaxM.woff2",
+          "bytes": 33872,
+          "sha256": "22219fb90e3b9bd28debd1825fe8d9a0154a0e31f8b3fa601ac1a0a5aa5e6d1b"
+        }
+      ]
+    },
+    {
+      "family": "Source Sans 3",
+      "cssURL": "https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/sourcesans3/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/sourcesans3/v20/nwpMtKy2OAdR1K-IwhWudF-R3woqaeLY1HY.woff2",
+          "bytes": 59496,
+          "sha256": "6fe10a66ec416f77a26309b645471d032ad8175063bb605b886e9b7e57efaaa8"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/sourcesans3/v20/nwpMtKy2OAdR1K-IwhWudF-R3woqZ-LY.woff2",
+          "bytes": 28460,
+          "sha256": "5fbc14d56cea35e60596c72ca969b349443c6a536f74e11748eed8b3a396e61d"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/sourcesans3/v20/nwpStKy2OAdR1K-IwhWudF-R3wEaZfrc.woff2",
+          "bytes": 60088,
+          "sha256": "a85a7459bdb3cdc1136751e151a506bae653fc29ada3ca86237477df6f1b59e6"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/sourcesans3/v20/nwpStKy2OAdR1K-IwhWudF-R3w8aZQ.woff2",
+          "bytes": 28872,
+          "sha256": "19143dca075972bc84e3fd9eab7416dd40cc565dccb2435a044bdfabe060c7d5"
+        }
+      ]
+    },
+    {
+      "family": "Source Serif 4",
+      "cssURL": "https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/sourceserif4/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/sourceserif4/v15/vEFH2_tTDB4M7-auWDN0ahZJW1ge6NmXpVAHV83Bfb_US0r0aX2AzA.woff2",
+          "bytes": 44420,
+          "sha256": "14e38c2d6a4ea6effcddde38f0262c03af252cbf82dbc68037f2d6c9112f2097"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/sourceserif4/v15/vEFH2_tTDB4M7-auWDN0ahZJW1ge6NmXpVAHV83Bfb_US0r6aX0.woff2",
+          "bytes": 51576,
+          "sha256": "b4f56ddc9873487f1c9a3ad5bbce31982fe89b951f57e4604f62b4c8a540fb19"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/sourceserif4/v15/vEFF2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6kA3r4cXk.woff2",
+          "bytes": 42212,
+          "sha256": "d10ccbbd0dc4ebae2938958dc1f622a53460fe297e9c958564742dd684309c3f"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/sourceserif4/v15/vEFF2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6kDXr4.woff2",
+          "bytes": 50936,
+          "sha256": "382475f38242c52d42a3e5ff8dc69b5d73f10d0d21e4550b5fe232984688779a"
+        }
+      ]
+    },
+    {
+      "family": "EB Garamond",
+      "cssURL": "https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/ebgaramond/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/ebgaramond/v33/SlGWmQSNjdsmc35JDF1K5GRweDU1ZzPJ.woff2",
+          "bytes": 88576,
+          "sha256": "fa866520f8b7fb646ebc730fd0d3cbf8945db74d92f25fdd6fee486808652fdf"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/ebgaramond/v33/SlGWmQSNjdsmc35JDF1K5GRweDs1Zw.woff2",
+          "bytes": 47940,
+          "sha256": "c664773f7e1d42d36326aa457becf7674236168c74cf7d74e87e5778ef7640f9"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/ebgaramond/v33/SlGUmQSNjdsmc35JDF1K5GR7SDktYw.woff2",
+          "bytes": 113928,
+          "sha256": "f8d3fa06e20989a938972165406a1b731cdc7fe33ff2b0b6798c75aa63709901"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/ebgaramond/v33/SlGUmQSNjdsmc35JDF1K5GR1SDk.woff2",
+          "bytes": 44336,
+          "sha256": "88603384163d301aebd5bd769832a8bfe3c9004ec24178417b9817f0ad32c63b"
+        }
+      ]
+    },
+    {
+      "family": "IBM Plex Sans",
+      "cssURL": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/ibmplexsans/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/ibmplexsans/v23/zYXxKVElMYYaJe8bpLHnCwDKhdTEG46kmUZQCX598fQbGYrYALZg.woff2",
+          "bytes": 33900,
+          "sha256": "bf44b77cc751203b2f0ce95c048a9d8f984313f84b58106c7c4410ca50314016"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/ibmplexsans/v23/zYXxKVElMYYaJe8bpLHnCwDKhdTEG46kmUZQCX598fQbGYTYAA.woff2",
+          "bytes": 50184,
+          "sha256": "4363757d2695c7633f98472855849f7c30528eba869d7968ee35b58c87cf14c1"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/ibmplexsans/v23/zYXzKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1syxQKYbABA.woff2",
+          "bytes": 30964,
+          "sha256": "d160e20920ae4d6556518d352d3af27a74e9b0de3d8fe17b1c1044fc75aa2f81"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/ibmplexsans/v23/zYXzKVElMYYaJe8bpLHnCwDKr932-G7dytD-Dmu1syxeKYY.woff2",
+          "bytes": 45712,
+          "sha256": "e2291e842cf5af167122a22881a740c7f2dda7716f1e8cd76680264f4a859470"
+        }
+      ]
+    },
+    {
+      "family": "Lora",
+      "cssURL": "https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/lora/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/lora/v37/0QIhMX1D_JOuMw_LL_tLp_A.woff2",
+          "bytes": 21128,
+          "sha256": "45f989df83f3a9f40007d2ecdea98bff248c8767a1a0bbe60e94fb37b605ecee"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/lora/v37/0QIhMX1D_JOuMw_LIftL.woff2",
+          "bytes": 40772,
+          "sha256": "d824d807d4d832d12c87932d0b8ec1314dcfd502157a56dee6bb04cf8a3768ae"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/lora/v37/0QIvMX1D_JOuMwT7I-NP.woff2",
+          "bytes": 20088,
+          "sha256": "2a2d9c22c9863086a23f5013fede1428585321812b25f2662542c39d02967c5e"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/lora/v37/0QIvMX1D_JOuMwr7Iw.woff2",
+          "bytes": 37788,
+          "sha256": "ddb8c66035104e233fc024669183aad3738b6daa16deee2ebb1241bd0f98ace1"
+        }
+      ]
+    },
+    {
+      "family": "Nunito Sans",
+      "cssURL": "https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/nunitosans/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/nunitosans/v19/pe0RMImSLYBIv1o4X1M8cce4OdVisMz5nZRqy6cmmmU3t2FQWEAEOvV9wNvrwlNstMKW3Y6K5WMwd-daLY50.woff2",
+          "bytes": 30344,
+          "sha256": "f3093f72aabbc08b8f00f185aef1b9503519a227c3d75a057dc7a3c47d7c6151"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/nunitosans/v19/pe0RMImSLYBIv1o4X1M8cce4OdVisMz5nZRqy6cmmmU3t2FQWEAEOvV9wNvrwlNstMKW3Y6K5WMwd-laLQ.woff2",
+          "bytes": 33080,
+          "sha256": "8904d953726b43ded1a16bfd43398325d2382dd50780c10f18d048e0e73f84a8"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/nunitosans/v19/pe0TMImSLYBIv1o4X1M8ce2xCx3yop4tQpF_MeTm0lfGWVpNn64CL7U8upHZIbMV51Q42ptCp7t7R-tCKQ.woff2",
+          "bytes": 27908,
+          "sha256": "c648ee5bfda70d44b9fb628f4114d1cc4f984d050cbb4881052237ede3638a2e"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/nunitosans/v19/pe0TMImSLYBIv1o4X1M8ce2xCx3yop4tQpF_MeTm0lfGWVpNn64CL7U8upHZIbMV51Q42ptCp7t1R-s.woff2",
+          "bytes": 31076,
+          "sha256": "29e3890496844a9ea81975c52771c587c872b4eb317026422d1995b88d21b57d"
+        }
+      ]
+    },
+    {
+      "family": "Literata",
+      "cssURL": "https://fonts.googleapis.com/css2?family=Literata:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/literata/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/literata/v40/or3YQ6P12-iJxAIgLYT1PLs1Zd0nfUwAbeGVKoRYzNiCp1OUedn8_7W0QmBjb1Q2pR1hvosNy7sNNK25.woff2",
+          "bytes": 32320,
+          "sha256": "499f5be6a3878fbc269fe70c527e75126ac4b278a20cb3d25c0c96b17c07fb50"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/literata/v40/or3YQ6P12-iJxAIgLYT1PLs1Zd0nfUwAbeGVKoRYzNiCp1OUedn8_7W0QmBjb1Q2pR1hvosNy7UNNA.woff2",
+          "bytes": 40236,
+          "sha256": "2cda4b397ec56ddc28c1de3dfc5f11d33292eb8281d0cc8dc37ff087c4f5dc20"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/literata/v40/or3aQ6P12-iJxAIgLa78DkrbXsDgk0oVDaDPYLanFLHpPf2TbBG_df3-vbgKBM6YoggA-vpA-7cVMA.woff2",
+          "bytes": 32260,
+          "sha256": "7be72f53edd9aba2cffe8326fbb60dd7ae00b578ff5e103b399c14dfec3257d9"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/literata/v40/or3aQ6P12-iJxAIgLa78DkrbXsDgk0oVDaDPYLanFLHpPf2TbBG_df3-vbgKBM6YoggA-vpO-7c.woff2",
+          "bytes": 38996,
+          "sha256": "fde3d14f78c3431ee5e2f676a46dd18a1dd48ee4d0a71cc76c751f9e6f76f58e"
+        }
+      ]
+    },
+    {
+      "family": "Cormorant Garamond",
+      "cssURL": "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/cormorantgaramond/v21/co3ZmX5slCNuHLi8bLeY9MK7whWMhyjYrEtGmSq17w.woff2",
+          "bytes": 34392,
+          "sha256": "cd5bf126b2c84ab41b254a6a9a1ffb5c326a0f9f82c22fb4704daa31c9aaa415"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/cormorantgaramond/v21/co3ZmX5slCNuHLi8bLeY9MK7whWMhyjYrEtImSo.woff2",
+          "bytes": 39260,
+          "sha256": "6f2f5c3b1abc3d0bb035a927f66a90ca873f94fc31c4966c8d024142c2036e55"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYp3tKgS4.woff2",
+          "bytes": 33736,
+          "sha256": "cfa9a397d86f66c5c51775a2500a712d5f632a04f0c5eca6930dfaf612d4566d"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/cormorantgaramond/v21/co3bmX5slCNuHLi8bLeY9MK7whWMhyjYqXtK.woff2",
+          "bytes": 37640,
+          "sha256": "d80df8ff5aecd299a61549f9e29ab1ed0b9b05f4ea71d50fe978e07d5240b235"
+        }
+      ]
+    },
+    {
+      "family": "Crimson Pro",
+      "cssURL": "https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400..700;1,400..700&display=swap",
+      "licenseURL": "https://raw.githubusercontent.com/google/fonts/main/ofl/crimsonpro/OFL.txt",
+      "files": [
+        {
+          "file": "italic-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/crimsonpro/v28/q5uBsoa5M_tv7IihmnkabARekY1wDfKi.woff2",
+          "bytes": 39808,
+          "sha256": "01df7b443a6f81915a65df47439121da8307f8a574fadd7cde57c77d0b68c77b"
+        },
+        {
+          "file": "italic-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/crimsonpro/v28/q5uBsoa5M_tv7IihmnkabARekYNwDQ.woff2",
+          "bytes": 51432,
+          "sha256": "b3faa8f9ce36db53253e11fb107d77b983150c5c21dc8fcf3906234530ab69f2"
+        },
+        {
+          "file": "normal-latin-ext.woff2",
+          "url": "https://fonts.gstatic.com/s/crimsonpro/v28/q5uDsoa5M_tv7IihmnkabARVoYFoCQ.woff2",
+          "bytes": 37988,
+          "sha256": "ac89a08a6e022ad4f3af961eb95474b7d8531c67ff88b40194bb3569d2d64e1d"
+        },
+        {
+          "file": "normal-latin.woff2",
+          "url": "https://fonts.gstatic.com/s/crimsonpro/v28/q5uDsoa5M_tv7IihmnkabARboYE.woff2",
+          "bytes": 48200,
+          "sha256": "20ce4189b9e41b3439a2a36dd63deff44b6d91182532202cb96b65521b4a3c23"
+        }
+      ]
+    }
+  ]
+}

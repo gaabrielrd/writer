@@ -1,0 +1,40 @@
+.panel {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+.fonts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: var(--space-3);
+}
+.hint {
+  color: hsl(var(--muted-foreground));
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.sample {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  border-top: 1px solid hsl(var(--border));
+  border-bottom: 1px solid hsl(var(--border));
+}
+.sample h3 {
+  font-size: var(--text-xl);
+  font-weight: 400;
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+.prose {
+  max-width: 70ch;
+  font-size: var(--text-lg);
+  line-height: var(--line-height-relaxed);
+  overflow-wrap: anywhere;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}

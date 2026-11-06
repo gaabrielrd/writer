@@ -45,6 +45,7 @@ import {
   TabsContent,
   Toolbar,
   FilterChips,
+  TypographyPreferences,
 } from './index';
 import { useTheme, ThemeToggle, ThemeSelect, ThemeSegmentedControl } from '../theme';
 
@@ -83,6 +84,10 @@ export function StyleguidePage() {
         </p>
       </section>
       <PageAnatomyDemo />
+      <section className="flex flex-col gap-4">
+        <h2 className="text-xl font-bold">Tipografia literária</h2>
+        <TypographyPreferences />
+      </section>
       {/* Seção de Temas */}
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-bold">Formulários no seu ritmo</h2>

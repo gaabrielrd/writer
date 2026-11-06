@@ -12,6 +12,11 @@ usam `generationApi`; veja a [ADR 0272](decisions/0272-project-creation-and-cont
 
 ## Princípios
 
+A [tipografia literária](typography.md) é aplicada por `shared/typography`, com
+três tokens globais, catálogo fechado de fontes e persistência local isolada por
+UID no adaptador `shared/services/typographyStorage`. A composição em app fornece
+a identidade; shared permanece neutro. As fontes são hospedadas no próprio app.
+
 A importação de universos usa preparação local por document-import e upload v2
 somente de texto com hashes/faixas. O servidor seleciona contexto, guarda análises
 privadas por unidade e confirma o lote reautorizado sob lease. Sessões v1 seguem

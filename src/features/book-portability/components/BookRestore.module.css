@@ -42,7 +42,7 @@
   overflow-wrap: anywhere;
 }
 .heading {
-  font-family: Georgia, serif;
+  font-family: var(--font-display);
   font-size: var(--text-xl);
   overflow-wrap: anywhere;
 }

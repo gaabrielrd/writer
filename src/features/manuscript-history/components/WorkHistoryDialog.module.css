@@ -81,7 +81,7 @@
   padding: var(--space-3);
   background: hsl(var(--card));
   color: hsl(var(--card-foreground));
-  font-family: Georgia, serif;
+  font-family: var(--font-reading);
   line-height: 1.85;
   overflow-wrap: anywhere;
 }

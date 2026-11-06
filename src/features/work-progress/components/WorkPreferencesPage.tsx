@@ -1,7 +1,13 @@
 import { OnboardingPreferences } from '@/features/onboarding';
 import { Navigate } from 'react-router';
 import { useAuth } from '@/features/auth';
-import { Card, Dropdown, LoadingState, useWorkspaceLayout } from '@/shared/ui';
+import {
+  Card,
+  Dropdown,
+  LoadingState,
+  TypographyPreferences,
+  useWorkspaceLayout,
+} from '@/shared/ui';
 import { WorkPreferencesPanel } from './WorkPreferencesPanel';
 import styles from './WorkProgress.module.css';
 
@@ -15,6 +21,10 @@ export function WorkPreferencesPage() {
       <div className={styles.preferencesProfile}>
         <OnboardingPreferences />
       </div>
+      <Card className={styles.preferencesCard}>
+        <h2>Tipografia literária</h2>
+        <TypographyPreferences />
+      </Card>
       <Card className={styles.preferencesCard}>
         <h2>Área de trabalho</h2>
         <p className={styles.hint}>

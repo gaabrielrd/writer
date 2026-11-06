@@ -42,6 +42,12 @@ sem ampliar o suporte atual.
 
 ## Tipos de teste
 
+Os presets de fontes têm testes de modelo, persistência e interface em
+`src/shared/typography/tests`. A jornada
+`e2e/visual/typography.visual.ts` verifica fontes locais reais, prévia,
+cancelamento, recarga, editor e isolamento por conta nos três temas de desktop,
+com serviços fictícios e rede externa bloqueada. Veja [tipografia](typography.md).
+
 - **Unidade**: funções e lógica isoladas (ex.: cálculo, formatação).
 - **Componente**: renderização e interação de componentes, com Vitest + React Testing Library.
 - **Contrato local**: setup transacional, regras arquiteturais, links da documentação e artefato de build.

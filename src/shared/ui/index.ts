@@ -65,4 +65,5 @@ export { useWorkspaceLayout } from '../hooks/useWorkspaceLayout';
 export { SidePanelHeader, type SidePanelHeaderProps } from './SidePanelHeader';
 
 export { FloatingPanel } from './FloatingPanel';
+export { TypographyPreferences } from './TypographyPreferences';
 export { AnchoredPanel } from './AnchoredPanel';

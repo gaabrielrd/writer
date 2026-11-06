@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './literary-fonts.css';
 
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -11,7 +12,7 @@
     --shadow-color: 24 15% 5%;
     --shadow-soft: 0 12px 40px hsl(var(--shadow-color) / 0.07);
     --shadow-panel: 0 24px 80px hsl(var(--shadow-color) / 0.13);
-    --font-reading: Georgia, 'Times New Roman', serif;
+    --font-reading: 'Source Serif 4', Georgia, 'Times New Roman', serif;
     --text-md: 1rem;
     --line-height-normal: 1.5;
     --line-height-relaxed: 1.85;
@@ -44,10 +45,8 @@
     --text-xl: 1.25rem;
     --text-2xl: 1.5rem;
     --text-3xl: 1.875rem;
-    --font-sans:
-      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --font-display:
-      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', sans-serif;
+    --font-display: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
     --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
     --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -246,11 +245,19 @@
     }
   }
 
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+  }
+
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
-    font-family:
-      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-family: var(--font-sans);
     min-height: 100vh;
     margin: 0;
     line-height: 1.5;

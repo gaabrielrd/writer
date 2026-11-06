@@ -92,7 +92,9 @@ Execute `npm run validate`, `npm run test:rules` e os cenários com
 `npx playwright test --config playwright.visual.config.ts e2e/visual/custom-themes.visual.ts`.
 Use WRITER_VISUAL_PORT exclusivo por checkout.
 
-Compartilhar, importar/exportar temas e personalizar fontes/layout ficam fora
+As fontes têm cinco presets e uma combinação personalizada em Preferências,
+independentes das paletas de cores; veja [tipografia literária](typography.md).
+Compartilhar, importar/exportar temas e personalizar layout ficam fora
 desta versão. Não há publicação automática: as novas regras precisam ser
 publicadas antes de disponibilizar a interface em produção.
 

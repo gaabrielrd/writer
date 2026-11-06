@@ -227,7 +227,7 @@
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-md);
   overflow-wrap: anywhere;
-  font-family: Georgia, serif;
+  font-family: var(--font-reading);
   line-height: 1.85;
 }
 
