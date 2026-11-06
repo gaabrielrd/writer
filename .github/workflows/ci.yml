@@ -54,6 +54,7 @@ jobs:
           src/features/book-portability/tests/bookEditorialHistoryApi.test.ts
           src/features/book-portability/tests/bookEditorialReview.test.ts
           src/features/book-portability/tests/EditorialRestoreReferencePicker.test.tsx
+          src/features/book-portability/tests/BookEditorialRestorePanel.test.tsx
           src/features/literary-production/tests/EditorialContractPanel.test.tsx
           src/features/literary-production/tests/LiteraryIntegrationPanel.test.tsx
           src/features/literary-production/tests/LiteraryMilestonePanel.test.tsx

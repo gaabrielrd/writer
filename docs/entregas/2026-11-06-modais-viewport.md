@@ -9,7 +9,8 @@ viewport de 1974 × 1068 px. O assistente já estava dentro do foco modal.
 O CSS compilado resetava transform, mas a centralização por translate continuava
 ativa: a caixa era deslocada uma segunda vez para cima e para a esquerda.
 
-A centralização do Dialog compartilhado usa agora somente transform. A regra
+A centralização do Dialog compartilhado usa agora inset e margens automáticas,
+sem deslocamentos por transform ou translate. A regra
 para filhos fixos pertence ao componente compartilhado e usa o slot neutro
 data-dialog-viewport-child. O assistente declara esse slot ao entrar no diálogo;
 o foco permanece no mesmo escopo modal e somente o corpo mantém a rolagem.

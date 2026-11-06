@@ -88,9 +88,9 @@ provedores independentes disputam o atributo do tema ao mudar a preferência do 
   de ações, tokens semânticos e controles de 36 px (44 px em ponteiro de toque).
   Demonstração no painel redimensionável do styleguide.
 - `Dialog`: Modais acessíveis construídos sobre o Radix UI Dialog, com altura máxima de `80vh`. Header e footer ficam visíveis; apenas `DialogBody` rola. Passe ações finais por `footer`/`actions`; botões de envio fora do formulário usam `form={id}`. Na API de composição, coloque o conteúdo entre `DialogHeader`, `DialogBody` e `DialogFooter`.
-  A centralização usa uma única transformação. Um filho fixo que precise das
-  coordenadas da viewport deve declarar `data-dialog-viewport-child`; nesse caso,
-  o componente centraliza por inset/margens e remove a transformação do pai,
+  A centralização usa inset e margens automáticas, sem translate. Um filho fixo
+  que precise das coordenadas da viewport declara `data-dialog-viewport-child`;
+  nesse caso, o componente remove as transformações de animação do pai,
   preservando o foco modal. Não combine resets de transform com utilidades de
   translate independentes: a otimização do CSS pode manter o deslocamento ativo.
 - `Alert`: Avisos contextuais (`info`, `success`, `warning`, `destructive`).

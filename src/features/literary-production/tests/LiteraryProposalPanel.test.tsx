@@ -159,8 +159,9 @@ it('fences a canceled producer so a late proposal cannot reappear', async () => 
   await userEvent.click(screen.getByRole('button', { name: 'Gerar proposta' }));
   await userEvent.click(await screen.findByRole('button', { name: 'Cancelar análise pendente' }));
   await screen.findByText('Análise cancelada. Você pode preparar outro pedido.');
-  await act(() => {
+  await act(async () => {
     finish(completed());
+    await Promise.resolve();
   });
   expect(screen.queryByRole('region', { name: 'Proposta para revisão' })).not.toBeInTheDocument();
   expect(f.onUse).not.toHaveBeenCalled();

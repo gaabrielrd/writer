@@ -228,9 +228,7 @@ it('keeps selection changes reversible and confirms scope only after explicit bo
   await userEvent.click(screen.getByRole('button', { name: 'Descartar alterações da seleção' }));
   await userEvent.click(await screen.findByRole('button', { name: 'Continuar selecionando' }));
   await userEvent.click(screen.getByRole('button', { name: 'Descartar alterações da seleção' }));
-  await userEvent.click(
-    await screen.findByRole('button', { name: 'Descartar seleção', exact: true }),
-  );
+  await userEvent.click(await screen.findByRole('button', { name: 'Descartar seleção' }));
   expect(screen.getByRole('combobox', { name: 'Livro da fonte' })).toHaveTextContent('Este livro');
   expect(api.getLiteraryImpactScope).not.toHaveBeenCalled();
   expect(api.startLiteraryImpact).not.toHaveBeenCalled();
@@ -357,8 +355,6 @@ it('saves only explicit private resolution notes and requires confirmation to di
   await userEvent.click(await screen.findByRole('button', { name: 'Continuar revisando' }));
   expect(screen.getByLabelText('Justificativa')).toHaveValue('Conferi a relação.');
   await userEvent.click(screen.getByRole('button', { name: 'Fechar rascunho da resolução' }));
-  await userEvent.click(
-    await screen.findByRole('button', { name: 'Fechar rascunho', exact: true }),
-  );
+  await userEvent.click(await screen.findByRole('button', { name: 'Fechar rascunho' }));
   expect(screen.queryByLabelText('Justificativa')).not.toBeInTheDocument();
 });

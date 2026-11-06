@@ -1,9 +1,11 @@
-/* Fixed descendants need viewport coordinates without leaving the modal focus scope.
-   Use inset/margins instead of a second translation when this slot is present. */
-.content:has(> [data-dialog-viewport-child]) {
+.content {
   inset: 0;
   margin: auto;
   height: fit-content;
+}
+
+/* Fixed descendants need viewport coordinates without leaving the modal focus scope. */
+.content:has(> [data-dialog-viewport-child]) {
   transform: none;
   animation: none;
   overflow: visible;
