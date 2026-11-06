@@ -267,7 +267,9 @@ it('refreshes the exact edition after a guide save, previews its frozen source a
   mount();
   await open();
   await userEvent.click(screen.getByRole('button', { name: 'Conferir fonte do guia' }));
-  await screen.findByText('Texto preparado.');
+  expect(await screen.findByLabelText('Texto da fonte para copiar citações')).toHaveValue(
+    'Texto preparado.',
+  );
   await userEvent.click(screen.getByRole('button', { name: 'Confirmar salvamento do guia' }));
   await waitFor(() => expect(commands('getLiteraryPublication')).toHaveLength(2));
   await userEvent.click(screen.getByRole('button', { name: 'Reabrir guia para editar' }));

@@ -143,27 +143,25 @@ it('records explicit criterion assessments, literal evidence and author acceptan
   render(<LiteraryPreparationPanel bookId="book" />);
   await selectChapter(userEvent.setup());
   for (const label of Object.values(preparationApi.LITERARY_GATE_CRITERIA)) {
-    const result = screen.getByRole('combobox', { name: 'Resultado: ' + label });
+    const result = screen.getByLabelText('Resultado: ' + label);
     const section = within(result.closest('section')!);
     await userEvent.click(result);
     await userEvent.click(screen.getByRole('option', { name: 'Atendido' }));
     fireEvent.change(section.getByLabelText('Justificativa, correção ou pendência'), {
       target: { value: `Conferi: ${label}` },
     });
-    await userEvent.click(section.getByRole('button', { name: 'Adicionar evidência' }));
-    await userEvent.click(section.getByRole('combobox', { name: 'Fonte da evidência' }));
+    fireEvent.click(section.getByRole('button', { name: 'Adicionar evidência' }));
+    await userEvent.click(section.getByLabelText('Fonte da evidência'));
     await userEvent.click(screen.getByRole('option', { name: 'Ficha da carta' }));
     fireEvent.change(section.getByLabelText('Citação literal da fonte'), {
       target: { value: 'A carta muda a confiança.' },
     });
   }
   const first = within(
-    screen
-      .getByRole('combobox', { name: 'Resultado: Função singular e transformação' })
-      .closest('section')!,
+    screen.getByLabelText('Resultado: Função singular e transformação').closest('section')!,
   );
-  await userEvent.click(first.getByRole('button', { name: 'Remover evidência' }));
-  await userEvent.click(first.getByRole('button', { name: 'Adicionar evidência' }));
+  fireEvent.click(first.getByRole('button', { name: 'Remover evidência' }));
+  fireEvent.click(first.getByRole('button', { name: 'Adicionar evidência' }));
   fireEvent.change(first.getByLabelText('Citação literal da fonte'), {
     target: { value: 'A carta muda a confiança.' },
   });

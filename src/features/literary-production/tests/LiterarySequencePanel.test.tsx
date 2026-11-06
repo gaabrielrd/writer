@@ -474,14 +474,15 @@ it('freezes aggregate budgets, ordered phases and between-chapter consent in the
 });
 
 it('explicitly cancels a registered sequence and prepares a clean selection without changing the saved project', async () => {
+  vi.mocked(api.getLiterarySequence).mockResolvedValue(frame({ revision: 5 }));
   vi.mocked(api.setLiterarySequenceControl).mockResolvedValue(
-    frame({ state: 'canceled', revision: 2 }),
+    frame({ state: 'canceled', revision: 6 }),
   );
   const user = await registered();
   await user.click(screen.getByRole('button', { name: 'Cancelar sequência no servidor' }));
   await screen.findByText('Sequência cancelada');
   expect(api.setLiterarySequenceControl).toHaveBeenCalledWith(
-    expect.objectContaining({ action: 'cancel', expectedRevision: 1 }),
+    expect.objectContaining({ action: 'cancel', expectedRevision: 5 }),
     'author',
   );
   await user.click(screen.getByRole('button', { name: 'Preparar outra seleção de capítulos' }));
