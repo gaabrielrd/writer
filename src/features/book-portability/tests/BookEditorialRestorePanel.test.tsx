@@ -16,7 +16,11 @@ const api = vi.hoisted(() => ({
   retire: vi.fn<EditorialReviewApi['retire']>(),
   resolve: vi.fn<EditorialReviewApi['resolve']>(),
 }));
-const session = vi.hoisted(() => ({ uid: 'author', row: null as unknown, unavailable: false }));
+const session = vi.hoisted((): { uid: string; row: unknown; unavailable: boolean } => ({
+  uid: 'author',
+  row: null,
+  unavailable: false,
+}));
 vi.mock('@/features/auth', () => ({
   useAuth: () => ({ user: session.uid ? { uid: session.uid } : null }),
 }));
