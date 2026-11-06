@@ -116,14 +116,15 @@ export function LoginPage() {
   if (user) {
     return (
       <div className={styles.container}>
-        <Card className={`${styles.card} glass-surface`}>
+        <Card tone="flat" className={styles.card}>
           <div className={styles.header}>
             <h1 className={styles.title}>Você já está autenticado</h1>
             <p className={styles.description}>Conectado como {user.displayName || user.email}</p>
           </div>
           <Button
             variant="primary"
-            size="lg"
+            size="md"
+            className={styles.submitButton}
             onClick={() => {
               void navigate('/');
             }}
@@ -137,7 +138,7 @@ export function LoginPage() {
 
   return (
     <div className={styles.container}>
-      <Card className={`${styles.card} glass-surface`}>
+      <Card tone="flat" className={styles.card}>
         <div className={styles.header}>
           <h1 className={styles.title}>
             {isSignUp ? 'Criar sua conta de autor' : 'Entrar no Writer Assistant'}
@@ -169,7 +170,7 @@ export function LoginPage() {
         <Button
           type="button"
           variant="secondary"
-          size="lg"
+          size="md"
           className={styles.googleButton}
           onClick={handleGoogleSignIn}
           disabled={isSubmitting}
@@ -217,9 +218,9 @@ export function LoginPage() {
             <Button
               type="submit"
               variant="primary"
-              size="lg"
+              size="md"
               disabled={isSubmitting}
-              className="w-full"
+              className={styles.submitButton}
             >
               {isSignUp ? (
                 <>

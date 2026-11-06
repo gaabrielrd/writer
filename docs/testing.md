@@ -42,6 +42,18 @@ sem ampliar o suporte atual.
 
 ## Tipos de teste
 
+A homepage pública tem a jornada `e2e/visual/public-home.visual.ts`, com os três
+temas de desktop. Ela verifica a ação principal dentro da janela em 1440, 1024 e
+800 px, ausência de transbordamento, navegação por teclado até o login e
+redirecionamento de uma conta autenticada ao Estúdio. Usa rotas/componentes reais
+com autenticação fictícia e rede externa bloqueada; não comprova login real.
+
+A jornada `e2e/visual/public-layout.visual.ts` confere o shell compacto das rotas
+públicas, incluindo login, catálogo, leitor, 404, styleguide e páginas sem sessão.
+Também verifica login/cadastro em notebooks, preservação dos campos ao alternar,
+erro de senha curta e navegação por teclado até o Estúdio com conta fictícia.
+A regressão do leitor continua em `e2e/visual/reader.publication.visual.ts`.
+
 Os presets de fontes têm testes de modelo, persistência e interface em
 `src/shared/typography/tests`. A jornada
 `e2e/visual/typography.visual.ts` verifica fontes locais reais, prévia,

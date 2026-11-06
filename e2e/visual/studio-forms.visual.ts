@@ -21,7 +21,7 @@ test('livro cria pelos dados essenciais e mantém detalhes opcionais ao recolher
   await form
     .getByLabel('Título do projeto')
     .fill('As histórias que atravessam as estações e voltam para casa');
-  await form.getByLabel('Gênero ou estilo').fill('Fantasia');
+  await chooseDropdown(form.getByLabel('Gênero ou estilo'), 'Fantasia');
   const details = form.getByRole('button', { name: /^Premissa e detalhes/ });
   await details.click();
   await expect(form.getByLabel('Premissa', { exact: true })).not.toBeVisible();

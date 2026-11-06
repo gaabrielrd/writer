@@ -46,7 +46,7 @@ test('universo, lore por seções e vínculo compartilhado entre livros', async 
   await navigateWorkspace(page, 'Estúdio');
   await openBookCreation(page, 'Universo das Marés');
   await page.getByLabel('Título do projeto').fill('Histórias do Guardião');
-  await page.getByLabel('Gênero ou estilo').fill('Fantasia');
+  await chooseDropdown(page.getByLabel('Gênero ou estilo'), 'Fantasia');
   await capture(page, testInfo, 'universo-criacao-livro');
 
   await page.getByRole('button', { name: 'Criar livro', exact: true }).click();
@@ -70,6 +70,10 @@ test('universo, lore por seções e vínculo compartilhado entre livros', async 
   await bookOptions.click();
   await page.getByRole('menuitem', { name: 'Editar', exact: true }).click();
   await chooseDropdown(page.getByLabel('Universo compartilhado'), 'Universo das Marés');
+  // The floating conversation keeps its position when a dialog opens.
+  const assistant = page.getByRole('complementary', { name: 'Assistente da página', exact: true });
+  await assistant.getByRole('button', { name: 'Minimizar assistente', exact: true }).click();
+  await expect(assistant).toHaveAttribute('data-mode', 'minimized');
   await page.getByRole('button', { name: 'Salvar Alterações' }).click();
   await page.getByRole('tab', { name: 'Compêndio', exact: true }).click();
   await chooseDropdown(

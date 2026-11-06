@@ -1,27 +1,36 @@
 .appBackdrop {
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
   min-height: 100dvh;
-  background:
-    radial-gradient(ellipse at 12% 0%, hsl(var(--primary) / 0.14), transparent 45%),
-    radial-gradient(ellipse at 100% 85%, hsl(var(--primary) / 0.06), transparent 45%),
-    hsl(var(--background));
+  background: hsl(var(--card));
+  padding: var(--space-2);
   color: hsl(var(--foreground));
 }
 .appWrapper {
-  max-width: var(--layout-max);
+  max-width: none;
   margin: 0 auto;
-  padding: var(--space-4) var(--space-5) var(--space-8);
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
-  min-height: 100dvh;
+  gap: 0;
+  min-height: calc(100dvh - 2 * var(--space-2));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  background: hsl(var(--background));
 }
 .header {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-6);
-  border-radius: var(--radius-full);
-  padding: var(--space-3) var(--space-5);
+  min-height: 48px;
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  border-bottom: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: hsl(var(--background));
+  box-shadow: none;
+  backdrop-filter: none;
 }
 .topBar {
   display: flex;
@@ -34,24 +43,20 @@
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   text-decoration: none;
   color: inherit;
 }
 .brandMark {
-  width: 36px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
-  border-radius: var(--radius-full);
-  border: 1px solid hsl(var(--primary) / 0.25);
-  color: hsl(var(--primary));
-  background: hsl(var(--primary) / 0.08);
+  color: hsl(var(--foreground));
 }
 .brandText {
-  font-size: var(--text-base);
-  font-weight: 650;
-  letter-spacing: -0.035em;
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 .userBar {
   display: flex;
@@ -59,6 +64,13 @@
   justify-content: flex-end;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+.userBar > a > button {
+  min-height: 32px;
+  height: auto;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
 }
 .mainContent {
   display: flex;
@@ -113,25 +125,15 @@
 .skipLink:focus {
   transform: translateY(0);
 }
+@media (pointer: coarse) {
+  .userBar > a > button {
+    min-height: 44px;
+  }
+}
 @media (max-width: 700px) {
-  .appWrapper {
-    padding: var(--space-2) var(--space-3) var(--space-6);
-    gap: var(--space-4);
-  }
-  .header {
-    border-radius: var(--radius-lg);
-    padding: var(--space-3);
-  }
   .topBar {
     flex-wrap: wrap;
     gap: var(--space-2);
-  }
-  .brandText {
-    font-size: var(--text-sm);
-  }
-  .brandMark {
-    width: 30px;
-    height: 30px;
   }
   .userBar {
     gap: var(--space-1);

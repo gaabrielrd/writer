@@ -70,9 +70,7 @@ test('campanha independente persiste descrição e não cria um livro auxiliar',
   await expect(
     page.getByText('Guardar as consequências da jornada em minhas notas.', { exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByText('Projeto independente, sem universo vinculado.', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('Sem universo', { exact: true })).toBeVisible();
   await expect(page.getByText('Em preparação', { exact: true })).toBeVisible();
   await capture(page, testInfo, 'campanha-independente-detalhes');
   await page.getByRole('link', { name: 'Voltar aos projetos', exact: true }).click();
@@ -321,10 +319,10 @@ test('paginação e filtros de tipo e estado conservam listas independentes', as
     path: adventureFilters,
     contentType: 'image/png',
   });
-  await chooseDropdown(
-    page.getByRole('combobox', { name: 'Tipo de projeto', exact: true }),
-    'Campanhas',
-  );
+  await page
+    .getByRole('group', { name: 'Tipo de projeto', exact: true })
+    .getByRole('button', { name: 'Campanhas', exact: true })
+    .click();
   await expect(page.getByRole('region', { name: 'Livros', exact: true })).toHaveCount(0);
   await expect(adventures).toHaveCount(0);
   await chooseDropdown(

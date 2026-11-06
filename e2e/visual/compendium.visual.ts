@@ -32,14 +32,12 @@ test('compêndio compacto com lista, seleção e confirmação de ações', asyn
         const tabs = await page.getByRole('tab', { name: 'Compêndio', exact: true }).boundingBox();
         const action = await create.boundingBox();
         const toggle = await view.boundingBox();
-        if (!tabs || !action || !toggle) return Infinity;
+        if (!tabs || !action || !toggle) return false;
+        // Different control heights are valid; wrapping to another row is not.
         const center = tabs.y + tabs.height / 2;
-        return Math.max(
-          Math.abs(center - action.y - action.height / 2),
-          Math.abs(center - toggle.y - toggle.height / 2),
-        );
+        return [action, toggle].every((box) => box.y <= center && box.y + box.height >= center);
       })
-      .toBeLessThan(1);
+      .toBe(true);
     const input = await page.getByRole('textbox', { name: 'Buscar no compêndio' }).boundingBox();
     const categories = await page.getByRole('button', { name: /Conceitos \/ Itens/ }).boundingBox();
     expect(input).not.toBeNull();
@@ -58,11 +56,24 @@ test('compêndio compacto com lista, seleção e confirmação de ações', asyn
     exact: true,
   });
   await readerOpener.click();
+  let fullReaderOpener = readerOpener;
+  const inspector = page.getByRole('complementary', { name: `Detalhes de ${entity.name}` });
+  const wide = page.viewportSize()!.width >= 1100;
+  if (wide) {
+    await expect(inspector).toBeVisible();
+    await expect(inspector).toContainText(entity.summary);
+    fullReaderOpener = inspector.getByRole('button', { name: 'Abrir ficha completa', exact: true });
+    await fullReaderOpener.click();
+  }
   const readerDialog = page.getByRole('dialog', { name: entity.name, exact: true });
   await expect(readerDialog).toBeVisible();
   if (entity.details) await expect(readerDialog).toContainText(entity.details.split('\n')[0]);
   await page.keyboard.press('Escape');
-  await expect(readerOpener).toBeFocused();
+  await expect(fullReaderOpener).toBeFocused();
+  if (wide) {
+    await inspector.getByRole('button', { name: 'Fechar detalhes', exact: true }).click();
+    await expect(inspector).toHaveCount(0);
+  }
   const check = page.getByRole('checkbox', { name: `Selecionar ${entity.name}`, exact: true });
   await check.focus();
   await page.keyboard.press('Space');

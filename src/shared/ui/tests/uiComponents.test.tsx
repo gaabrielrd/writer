@@ -30,6 +30,7 @@ import {
   StyleguidePage,
 } from '../index';
 import { ThemeProvider } from '@/shared/theme';
+import { TypographyProvider } from '@/shared/typography';
 
 describe('UI Design System Components', () => {
   it('keeps repeated field labels uniquely associated with their own feedback', () => {
@@ -250,7 +251,9 @@ describe('UI Design System Components', () => {
   it('renderiza StyleguidePage com catalogo completo e lida com interações', () => {
     render(
       <ThemeProvider defaultTheme="light">
-        <StyleguidePage />
+        <TypographyProvider uid={null}>
+          <StyleguidePage />
+        </TypographyProvider>
       </ThemeProvider>,
     );
 

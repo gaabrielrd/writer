@@ -381,6 +381,7 @@ test('Estúdio retoma e limpa preparação privada mesmo após a origem ficar in
   await dialog.getByRole('button', { name: 'Fechar e manter preparação', exact: true }).click();
   await flag(page, 'writer.visual.capture-revoked', original.id);
   await page.goto('/studio/operations');
+  await page.getByRole('tab', { name: 'Campanhas', exact: true }).click();
   await expect(
     page.getByRole('heading', { name: 'Campanhas em preparação', exact: true }),
   ).toBeVisible();

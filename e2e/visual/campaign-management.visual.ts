@@ -189,9 +189,14 @@ test('vínculo organizacional preserva nome do universo no reload e permite desv
   await dialog.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(link).toHaveCount(0);
-  await expect(
-    page.getByText('Projeto independente, sem universo vinculado.', { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText('Sem universo', { exact: true })).toBeVisible();
+  expect(await campaignMetadata(page, 'visual-campaign-1')).toMatchObject({
+    universeId: null,
+    description: originalDescription,
+  });
+  await page.reload();
+  await expect(link).toHaveCount(0);
+  await expect(page.getByText('Sem universo', { exact: true })).toBeVisible();
   await expect(page.getByText(originalDescription, { exact: true })).toBeVisible();
 });
 

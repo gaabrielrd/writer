@@ -22,7 +22,7 @@ function AppHeader() {
   const openAISettings = useAISettings();
 
   return (
-    <header className={`${styles.header} glass-surface`} data-workspace-expanded={expanded}>
+    <header className={styles.header} data-workspace-expanded={expanded}>
       <div className={styles.topBar}>
         <div className={styles.leftBar}>
           <Link to="/" className={styles.brand} aria-label="Writer Assistant Início">
@@ -68,7 +68,7 @@ function AppWorkspace() {
     return <AuthenticatedWorkspace key={user.uid} />;
   }
   return (
-    <div className={styles.appBackdrop}>
+    <div className={styles.appBackdrop} data-public-home={pathname === '/'}>
       <div className={styles.appWrapper} data-workspace-expanded={expanded}>
         <a href="#main-content" className={styles.skipLink}>
           Pular para o conteúdo

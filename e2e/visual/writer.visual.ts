@@ -6,6 +6,7 @@ import {
   FIXTURE_CHAPTER_ID,
   FIXTURE_LIBRARY_STATE_KEY,
 } from './fixtures/data';
+import { chooseDropdown } from '../dropdown';
 import {
   capture,
   expect,
@@ -84,7 +85,7 @@ test('biblioteca populada, modal por teclado e devolução de foco', async ({ pa
 
   await openBookCreation(page);
   await page.getByLabel('Título do projeto').fill(books[1].title);
-  await page.getByLabel('Gênero ou estilo').fill('Fantasia');
+  await chooseDropdown(page.getByLabel('Gênero ou estilo'), 'Fantasia');
   await page.getByLabel('Premissa', { exact: true }).fill(books[0].synopsis ?? '');
   await capture(page, testInfo, '05-novo-livro-progressivo');
   await page.getByRole('link', { name: 'Voltar ao Estúdio', exact: true }).click();
@@ -293,7 +294,7 @@ test.describe('Biblioteca vazia', () => {
     await page.goto('/studio/projects');
     await openBookCreation(page);
     await page.getByLabel('Título do projeto').fill('Livro vertical');
-    await page.getByLabel('Gênero ou estilo').fill('Fantasia');
+    await chooseDropdown(page.getByLabel('Gênero ou estilo'), 'Fantasia');
 
     await page.getByRole('button', { name: 'Criar livro', exact: true }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);

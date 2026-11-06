@@ -181,7 +181,8 @@ diálogos de confirmação já existentes.
 Na área logada, a referência de organização é a interface do ChatGPT fornecida
 pelo operador: navegação lateral, marca discreta e área de trabalho contínua.
 O Writer conserva suas cores semânticas, os três temas e a tipografia editorial
-do manuscrito. Landing page, login e leitor público mantêm sua composição.
+do manuscrito. A área pública compartilha essa linguagem, com cabeçalho compacto
+e superfícies opacas. O leitor conserva a composição e a tipografia de leitura.
 
 - **Área logada:** lateral de 240 px recolhível, barra contextual de 48 px e
   conteúdo sem largura máxima. Margens de 12–16 px; rolagem principal dentro da
@@ -210,8 +211,23 @@ cartões compactos e as operações conservam seus controles de recuperação.
 Nos cabeçalhos, descrições e botões de ponteiro preciso são discretos; em toque,
 preservam-se as áreas de interação. Badges usam somente a largura do conteúdo.
 
-- **Área pública:** conserva a barra em cápsula e o fundo ambiente descritos
-  abaixo. Não aplique a densidade do estúdio ao leitor público.
+- **Shell público:** moldura com borda semântica, recuo externo de 8 px,
+  cabeçalho compacto de pelo menos 48 px e superfícies opacas, sem vidro ou
+  sombras decorativas. É o padrão da home, login/cadastro, leitor, catálogo e
+  demais páginas exibidas sem sessão; não altera seus gates de acesso.
+- **Homepage pública:** apresentação em duas colunas, título editorial moderado,
+  recursos em um `Card tone="flat"` e ação principal visível em notebooks.
+  Até 800 px, a composição passa para uma coluna. Temas e tipografia continuam
+  pelos providers compartilhados.
+- **Login e cadastro:** formulário centralizado em `Card tone="flat"`, largura
+  total de até 440 px, espaçamentos compactos, benefícios separados por linhas
+  discretas e botões com raio pequeno. Campos e mensagens conservam os componentes
+  compartilhados; troca de modo preserva os valores e limpa o erro anterior.
+  O leitor mantém corpo de 18 px e entrelinha de 1,85, sem herdar densidade de edição.
+- **Catálogo e rotas indisponíveis:** estados vazios ficam centralizados, sem
+  painel decorativo adicional; o fallback de rota usa uma superfície neutra
+  limitada a 560 px e mantém a ação de retorno. O leitor usa raios pequenos no
+  sumário e no artigo, com navegação compacta e prosa preservada.
 
 - **Hierarquia:** fundo ambiente → shell translúcido → superfície de trabalho → controles.
 - **Vidro:** `.glass-surface` usa fallback opaco e aplica `backdrop-filter` somente

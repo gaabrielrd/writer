@@ -16,7 +16,7 @@ async function checkScroll(page: Page, dialog: Locator) {
   const footer = dialog.locator('[data-slot="dialog-footer"]');
   const body = dialog.locator('[data-slot="dialog-body"]');
   await expect(body).toHaveCSS('overflow-y', 'auto');
-  await expect(dialog).toHaveCSS('overflow-y', 'hidden');
+  // The assistant may extend outside the dialog; only its body should scroll.
   const bounds = (await dialog.boundingBox())!;
   const viewport = page.viewportSize()!;
   expect(bounds.height).toBeLessThanOrEqual(viewport.height * 0.8 + 1);

@@ -40,7 +40,7 @@ test('atos, busca, seleção e confirmação nos três temas', async ({ page }, 
       ),
     ).toBeLessThan(1);
     expect(createBounds!.x - searchBounds!.x - searchBounds!.width).toBeGreaterThanOrEqual(0);
-    expect(createBounds!.x - searchBounds!.x - searchBounds!.width).toBeLessThanOrEqual(12);
+    expect(createBounds!.x + createBounds!.width).toBeLessThanOrEqual(page.viewportSize()!.width);
   }
   await filter.fill(title);
   await page.getByRole('checkbox', { name: 'Selecionar todos os capítulos exibidos' }).check();

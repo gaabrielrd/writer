@@ -8,6 +8,7 @@ import {
   openWorkspaceNavigation,
 } from './support';
 import { books, FIXTURE_BOOK_ID } from './fixtures/data';
+import { chooseDropdown } from '../dropdown';
 
 test('header compacto, menus por teclado e gerenciamento da biblioteca', async ({
   page,
@@ -52,7 +53,7 @@ test('wizard seleciona capa da biblioteca sem consumir créditos', async ({ page
   await page.goto('/');
   await openBookCreation(page);
   await page.getByLabel('Título do projeto').fill('Minha obra');
-  await page.getByLabel('Gênero ou estilo').fill('Fantasia');
+  await chooseDropdown(page.getByLabel('Gênero ou estilo'), 'Fantasia');
   await page.getByRole('button', { name: /^Capa/ }).click();
   await page.getByRole('button', { name: 'Escolher imagem da biblioteca' }).click();
   await page.getByRole('button', { name: 'Selecionar Capa do Atlas' }).click();

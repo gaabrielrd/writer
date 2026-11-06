@@ -1,11 +1,13 @@
 import { capture, expect, expectNoHorizontalOverflow, openBookCreation, test } from './support';
+import { chooseDropdown } from '../dropdown';
 test('revisão de livro preserva campos e imagem da biblioteca sem obrigar capa', async ({
   page,
 }, testInfo) => {
   await page.goto('/studio/projects');
   await openBookCreation(page);
   await page.getByLabel('Título do projeto').fill('O jardim das histórias');
-  await page.getByLabel('Gênero ou estilo').fill('Fantasia literária');
+  await chooseDropdown(page.getByLabel('Gênero ou estilo'), 'Criar meu estilo');
+  await page.getByLabel('Seu gênero ou estilo', { exact: true }).fill('Fantasia literária');
   await page.getByLabel('Premissa', { exact: true }).fill('Uma cartógrafa explora as ilhas.');
   await page.getByRole('button', { name: /^Capa opcional/ }).click();
   await page.getByRole('button', { name: 'Escolher imagem da biblioteca' }).click();

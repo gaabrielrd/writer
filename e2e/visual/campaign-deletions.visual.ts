@@ -277,6 +277,7 @@ test('exclusão capturada retoma pedidos incertos após reload e encerra cipher 
   expect(start?.kind).toBe('start');
   await page.reload();
   await page.goto('/studio/operations');
+  await page.getByRole('tab', { name: 'Exclusões', exact: true }).click();
   const preparations = page
     .getByRole('heading', { name: 'Exclusões em andamento', exact: true })
     .locator('..');
@@ -299,6 +300,7 @@ test('exclusão capturada retoma pedidos incertos após reload e encerra cipher 
   ).toBeEnabled();
   const step = await control(page, source.campaignId);
   await page.reload();
+  await page.getByRole('tab', { name: 'Exclusões', exact: true }).click();
   await page
     .getByRole('heading', { name: 'Exclusões em andamento', exact: true })
     .locator('..')
