@@ -148,12 +148,18 @@ test('concepção chega ao primeiro capítulo e à escrita sem repetir a ideia',
       .getByRole('complementary', { name: 'Assistente da página' })
       .getByText('A primeira lanterna de uma ilha perdida.'),
   ).toBeVisible();
-  async function ask(prompt: string, action: string) {
+  async function minimizeAssistant() {
     const dock = page.getByRole('complementary', { name: 'Assistente da página' });
-    const toggle = dock.getByRole('button', { name: 'Assistente da página', exact: true });
-    if ((await toggle.getAttribute('aria-expanded')) === 'true') await toggle.click();
+    const grip = dock.getByRole('button', { name: 'Mover assistente', exact: true });
+    // Escape goes expanded -> compact -> minimized and preserves the active dialog.
+    await grip.press('Escape');
+    await grip.press('Escape');
     await expect(dock).toHaveAttribute('data-mode', 'minimized');
-    await toggle.click();
+    return dock;
+  }
+  async function ask(prompt: string, action: string) {
+    const dock = await minimizeAssistant();
+    await dock.getByRole('button', { name: 'Assistente da página', exact: true }).click();
     const field = dock.getByLabel('Pedido ao assistente da página');
     await expect(field).toBeVisible();
     await field.fill(prompt);
@@ -172,10 +178,7 @@ test('concepção chega ao primeiro capítulo e à escrita sem repetir a ideia',
   const editor = page.locator('[contenteditable="true"]').first();
   await editor.fill('A primeira lanterna brilhou quando o mar desapareceu.');
   await expect(page.getByText('Salvo', { exact: true })).toBeVisible();
-  const dock = page.getByRole('complementary', { name: 'Assistente da página' });
-  const minimize = dock.getByRole('button', { name: 'Minimizar assistente', exact: true });
-  if (await minimize.isVisible()) await minimize.click();
-  await expect(dock).toHaveAttribute('data-mode', 'minimized');
+  const dock = await minimizeAssistant();
   await dock.getByRole('button', { name: 'Assistente da página', exact: true }).click();
   await dock.getByRole('button', { name: 'Expandir conversa', exact: true }).click();
   await expect(dock).toHaveAttribute('data-mode', 'expanded');

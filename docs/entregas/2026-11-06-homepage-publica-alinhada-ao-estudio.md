@@ -234,3 +234,17 @@ confirmou que o filtro mantém os dois fallbacks HTTPS do runner.
 Esses ajustes alteram testes, workflows e documentação. O código de produto e
 Functions permanece o mesmo aprovado pelo gate integral e pela auditoria de
 publicação. A nova rodada remota será acompanhada após o próximo push.
+
+### Estabilidade da jornada de continuidade
+
+A rodada de `853576b` aprovou Rules, auditoria, navegador e referência Linux,
+mas expôs uma corrida no teste de continuidade: o campo do capítulo recebia
+foco entre a leitura de `aria-expanded` e a escolha do próximo clique. O teste
+agora usa duas ações Escape na alça do assistente para percorrer
+expandido/compacto/minimizado, mantendo o modal ativo, antes de abrir novamente
+o compositor. Todas as verificações de contexto, ação, capítulo salvo e prosa
+continuam presentes.
+
+O cenário passou cinco vezes por tema com dois workers: 15 testes aprovados em
+`visual-assistant-focus-repeats.log`. ESLint e Prettier aprovaram o arquivo.
+Não houve alteração de código de produto, timeout ou asserções de resultado.
