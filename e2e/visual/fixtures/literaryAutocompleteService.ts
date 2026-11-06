@@ -11,6 +11,12 @@ import { auth } from './firebase';
 import { getBook, getChapter, fixtureWriteChapter } from './bookService';
 import { generateAIResponse, deductCredit, getUserCredits } from './aiService';
 import { getLiteraryWritingContext } from './literaryWritingService';
+import {
+  DEFAULT_PERSONAS,
+  resolveWritingPersona,
+} from '../../../src/features/ai-assistant/model/persona';
+import { buildAutocompletePrompt } from '../../../src/features/ai-assistant/model/aiPrompt';
+import { listPersonas } from './personaService';
 
 const offers = new Map<string, AutocompleteOffer>();
 const receipts = new Map<string, AutocompleteApplication>();
@@ -27,7 +33,8 @@ export async function generateLiteraryAutocomplete(
   config: BYOKConfig,
   signal: AbortSignal,
 ): Promise<AutocompleteOffer> {
-  await authorize(input);
+  const chapter = await authorize(input);
+  const book = await getBook(input.bookId);
   signal.throwIfAborted();
   await getLiteraryWritingContext({
     target: { kind: 'book', id: input.bookId },
@@ -35,7 +42,14 @@ export async function generateLiteraryAutocomplete(
     planIds: input.planIds,
     mode: 'autocomplete',
   });
-  const text = await generateAIResponse();
+  const writingPersona = resolveWritingPersona(
+    [...DEFAULT_PERSONAS, ...(await listPersonas(auth.currentUser!.uid))],
+    book?.personaId,
+    chapter.personaComplement,
+  );
+  const text = await generateAIResponse(
+    buildAutocompletePrompt({ textBeforeCursor: input.textBeforeCursor, writingPersona }),
+  );
   if (!text) throw new Error('Autocomplete fictício desativado.');
   const offer: AutocompleteOffer = {
     ...input,

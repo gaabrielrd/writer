@@ -8,7 +8,9 @@ test('sequência de capítulos: prévia, consentimento, orçamento agregado e fr
     await page.setViewportSize({ width: 320, height: 844 });
   await page.goto('/books/' + FIXTURE_BOOK_ID + '?literarySequence=1');
   await page.getByRole('tab', { name: 'Produção literária' }).click();
-  await page.getByRole('button', { name: 'Minimizar assistente', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Assistente da página', exact: true }),
+  ).toHaveAttribute('aria-expanded', 'false');
   await page.getByRole('combobox', { name: 'Método de colaboração' }).click();
   await page
     .getByRole('option', { name: 'Execução contínua com escopo e limites', exact: true })

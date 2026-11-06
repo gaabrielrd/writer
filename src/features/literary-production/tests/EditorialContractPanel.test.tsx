@@ -1,9 +1,10 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { EditorialContractPanel } from '../components/EditorialContractPanel';
 import { editorialFields, type EditorialContract, type EditorialState } from '../model/editorial';
 import { getLiteraryContract, saveLiteraryContract } from '../services/literaryProductionService';
+import * as contractApi from '../services/literaryProductionService';
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { uid: 'author' } }) }));
 vi.mock('../services/literaryProductionService', () => ({
   getLiteraryContract: vi.fn(),
@@ -119,4 +120,105 @@ it('saves the publication unit chosen by the author as part of the same contract
     version: 1,
     unit: 'act',
   });
+});
+it('preserves every authored field and the provenance of approved and superseding decisions in one save', async () => {
+  const user = userEvent.setup();
+  vi.mocked(saveLiteraryContract).mockImplementation((input) =>
+    Promise.resolve({ revision: 1, updatedAt: 1, contract: input.contract }),
+  );
+  render(<EditorialContractPanel bookId="book" />);
+  await screen.findByLabelText('Premissa');
+  for (const [key, label] of Object.entries(editorialFields)) {
+    fireEvent.change(screen.getByLabelText(label), { target: { value: `Autoria ${key}` } });
+  }
+  fireEvent.change(screen.getByLabelText('Decisão'), { target: { value: 'Preservar a voz' } });
+  fireEvent.change(screen.getByLabelText('Fonte'), { target: { value: 'Entrevista autoral' } });
+  await user.click(screen.getByRole('combobox', { name: 'Classe' }));
+  await user.click(screen.getByRole('option', { name: 'Requisito' }));
+  await user.click(screen.getByRole('combobox', { name: 'Situação' }));
+  await user.click(screen.getByRole('option', { name: 'Aprovado pelo autor' }));
+  await user.click(screen.getByRole('button', { name: 'Adicionar ao rascunho' }));
+  await user.click(screen.getByRole('button', { name: 'Registrar decisão substituta' }));
+  await user.click(screen.getByRole('button', { name: 'Cancelar substituição' }));
+  await user.click(screen.getByRole('button', { name: 'Registrar decisão substituta' }));
+  fireEvent.change(screen.getByLabelText('Decisão'), {
+    target: { value: 'Preservar voz e ritmo' },
+  });
+  await user.click(screen.getByRole('button', { name: 'Adicionar ao rascunho' }));
+  expect(saveLiteraryContract).not.toHaveBeenCalled();
+  await user.click(screen.getByRole('button', { name: 'Salvar contrato e decisões' }));
+  await waitFor(() => expect(saveLiteraryContract).toHaveBeenCalledOnce());
+  const saved = vi.mocked(saveLiteraryContract).mock.calls[0]![0].contract;
+  expect(saved.fields).toEqual(
+    Object.fromEntries(Object.keys(editorialFields).map((key) => [key, `Autoria ${key}`])),
+  );
+  expect(saved.decisions).toHaveLength(2);
+  expect(saved.decisions[0]).toMatchObject({
+    text: 'Preservar a voz',
+    source: 'Entrevista autoral',
+    category: 'requirement',
+    status: 'approved',
+    supersedes: null,
+  });
+  expect(saved.decisions[1]).toMatchObject({
+    text: 'Preservar voz e ritmo',
+    source: 'Entrevista autoral',
+    supersedes: saved.decisions[0]!.id,
+  });
+});
+
+it('paginates historical contracts and closes the read without replacing the current draft', async () => {
+  const historical = empty();
+  historical.fields.premise = 'Premissa histórica';
+  historical.decisions = [
+    {
+      id: 'old',
+      text: 'Decisão preservada',
+      source: 'Autor',
+      category: 'preference',
+      status: 'working',
+      supersedes: null,
+    },
+  ];
+  vi.mocked(contractApi.listLiteraryContractVersions)
+    .mockResolvedValueOnce({ items: [{ revision: 3, updatedAt: 3 }], nextBeforeRevision: 3 })
+    .mockResolvedValueOnce({ items: [{ revision: 2, updatedAt: 2 }], nextBeforeRevision: null });
+  vi.mocked(contractApi.getLiteraryContractVersion).mockResolvedValue({
+    revision: 2,
+    updatedAt: 2,
+    contract: historical,
+  });
+  render(<EditorialContractPanel bookId="book" />);
+  fireEvent.change(await screen.findByLabelText('Premissa'), { target: { value: 'Meu rascunho' } });
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar histórico' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais versões' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Consultar revisão 2' }));
+  const version = await screen.findByRole('region', { name: 'Versão histórica' });
+  expect(within(version).getByText('Premissa histórica')).toBeVisible();
+  expect(within(version).getByText(/Decisão preservada/)).toBeVisible();
+  expect(screen.getByLabelText('Premissa')).toHaveValue('Meu rascunho');
+  await userEvent.click(within(version).getByRole('button', { name: 'Fechar consulta' }));
+  expect(screen.queryByRole('region', { name: 'Versão histórica' })).not.toBeInTheDocument();
+  expect(contractApi.listLiteraryContractVersions).toHaveBeenLastCalledWith('book', 3);
+  expect(saveLiteraryContract).not.toHaveBeenCalled();
+});
+
+it('retries an unavailable initial read and adopts a compared server revision only by explicit choice', async () => {
+  vi.mocked(getLiteraryContract).mockRejectedValueOnce(new Error('Leitura indisponível'));
+  render(<EditorialContractPanel bookId="book" />);
+  await userEvent.click(await screen.findByRole('button', { name: /Tentar novamente/ }));
+  fireEvent.change(await screen.findByLabelText('Premissa'), { target: { value: 'Meu rascunho' } });
+  const remote = empty();
+  remote.fields.premise = 'Versão concorrente';
+  vi.mocked(getLiteraryContract).mockResolvedValue({ revision: 8, updatedAt: 8, contract: remote });
+  await userEvent.click(screen.getByRole('button', { name: 'Comparar com servidor' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Manter rascunho' }));
+  expect(screen.getByLabelText('Premissa')).toHaveValue('Meu rascunho');
+  await userEvent.click(screen.getByRole('button', { name: 'Comparar com servidor' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Descartar rascunho e abrir versão do servidor' }),
+  );
+  expect(screen.getByLabelText('Premissa')).toHaveValue('Versão concorrente');
+  expect(screen.getByText('Revisão 8')).toBeVisible();
+  expect(saveLiteraryContract).not.toHaveBeenCalled();
 });

@@ -35,7 +35,9 @@ function fixture(text = 'Texto original 🌙\r\nsem alterações') {
   });
   return { id, bytes, metadata, header, text };
 }
-beforeEach(() => call.mockReset());
+beforeEach(() => {
+  call.mockReset();
+});
 describe('leitura privada do arquivo editorial', () => {
   it('consulta uma página limitada sob o guard da sessão', async () => {
     const f = fixture(),

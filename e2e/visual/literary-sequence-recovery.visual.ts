@@ -33,7 +33,9 @@ test('sequência: consulta somente metadata e retoma o passo original por ação
   );
   await page.goto('/books/' + FIXTURE_BOOK_ID);
   await page.getByRole('tab', { name: 'Produção literária' }).click();
-  await page.getByRole('button', { name: 'Minimizar assistente', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Assistente da página', exact: true }),
+  ).toHaveAttribute('aria-expanded', 'false');
   const recovery = page.getByRole('region', { name: 'Recuperação de salvamentos editoriais' });
   const lookup = recovery.getByRole('button', { name: /Consultar sequência/ });
   await expect(lookup).toBeVisible();

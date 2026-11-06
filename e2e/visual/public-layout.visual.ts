@@ -14,7 +14,7 @@ test('rotas públicas compartilham a moldura compacta da home', async ({ page },
     '/universes',
     '/books/new/assisted',
   ]) {
-    await page.goto(path);
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
     const header = page.getByRole('banner');
     await expect(header.getByRole('link', { name: 'Writer Assistant Início' })).toBeVisible();
     const appearance = await header.evaluate((element) => {

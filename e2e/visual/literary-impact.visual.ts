@@ -29,7 +29,9 @@ test('impacto: abertura sem produção, consulta por teclado e resolução priva
   );
   await page.goto('/books/' + FIXTURE_BOOK_ID);
   await page.getByRole('tab', { name: 'Produção literária' }).click();
-  await page.getByRole('button', { name: 'Minimizar assistente', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Assistente da página', exact: true }),
+  ).toHaveAttribute('aria-expanded', 'false');
   await page.getByRole('button', { name: 'Impacto editorial', exact: true }).click();
   const panel = page.getByRole('region', { name: 'Mapa de impacto editorial' });
   const calls = () =>

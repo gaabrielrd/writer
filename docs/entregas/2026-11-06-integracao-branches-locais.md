@@ -80,3 +80,11 @@ uma fixture transacional própria, com autorização da conta fictícia, hashes,
 recibo e atualização conjunta de prosa/crédito. A fixture recusa contexto
 editorial configurado que não consegue representar. O teste de movimento por
 teclado aguarda a pintura da posição, preservando a comparação estrita.
+
+A primeira validação completa remota da integração registrou 5.590 testes
+aprovados e seis falhas na fixture da consulta histórica: o beforeEach retornava
+um mock executável, interpretado como cleanup pelo Vitest. O retorno foi removido.
+A cobertura global de funções foi 84,99%, abaixo dos 90% exigidos. Foram
+acrescentados testes de autoria, histórico, paginação, captura de marcos,
+identidade do transporte e pedidos incertos da revisão editorial. Os testes
+novos aguardam execução remota; o limite de cobertura permanece inalterado.

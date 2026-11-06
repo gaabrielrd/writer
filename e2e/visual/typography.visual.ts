@@ -104,7 +104,7 @@ test('presets mantêm prosa legível no shell compacto e no leitor sem alterar o
   ];
   let manuscript: string | null = null;
   for (const [index, [label, size]] of presets.entries()) {
-    await page.goto('/settings/preferences');
+    await page.goto('/settings/preferences', { waitUntil: 'domcontentloaded' });
     await chooseDropdown(page.getByLabel('Preset de fontes'), label);
     const sample = page.getByLabel('Prévia da tipografia');
     await expect(sample.locator('p').first()).toHaveCSS('font-size', size);
@@ -114,7 +114,9 @@ test('presets mantêm prosa legível no shell compacto e no leitor sem alterar o
     await expect(sample.locator('strong')).toHaveCSS('font-weight', '700');
     const save = page.getByRole('button', { name: 'Salvar fontes', exact: true });
     if (await save.isEnabled()) await save.click();
-    await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+    await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`, {
+      waitUntil: 'domcontentloaded',
+    });
     const editor = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
     await expect(editor).toHaveCSS('font-size', size);
     const text = await editor.textContent();
@@ -145,8 +147,7 @@ test('presets mantêm prosa legível no shell compacto e no leitor sem alterar o
       expect(length).toBeLessThanOrEqual(80);
     }
     await capture(page, testInfo, `legibility-${index}-editor`);
-    await page.goto('/read/visual-public-atlas');
-    await page.waitForLoadState('networkidle');
+    await page.goto('/read/visual-public-atlas', { waitUntil: 'domcontentloaded' });
     const reader = page.locator('article > div').first();
     await expect(reader).toHaveCSS('font-size', size);
     await page.evaluate(() => document.fonts.ready);

@@ -1,9 +1,10 @@
 import { beforeEach, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LiteraryIntegrationPanel } from '../components/LiteraryIntegrationPanel';
 import * as integrationService from '../services/literaryIntegrationService';
 import * as findingService from '../services/literaryFindingService';
+import * as booksApi from '@/features/books';
 import {
   startLiteraryIntegration,
   advanceLiteraryIntegration,
@@ -202,4 +203,148 @@ it('keeps decision drafts mounted while navigating between analyses and open dec
   expect(findingService.getLiteraryFindingContext).toHaveBeenCalledTimes(2);
   expect(findingService.saveLiteraryFindingDecision).not.toHaveBeenCalled();
   await waitFor(() => expect(work).toHaveBeenLastCalledWith({ dirty: true, pending: false }));
+});
+it('loads explicit act scope and preserves author instructions without starting execution', async () => {
+  vi.mocked(booksApi.listActs).mockResolvedValue([
+    { id: 'act', name: 'Ato das cartas', order: 1, createdAt: 1, updatedAt: 1 },
+  ]);
+  render(<LiteraryIntegrationPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('combobox', { name: 'Escopo da integração' }));
+  await userEvent.click(screen.getByRole('option', { name: 'Um ato' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar atos disponíveis' }));
+  await userEvent.click(await screen.findByRole('combobox', { name: 'Ato para integrar' }));
+  await userEvent.click(screen.getByRole('option', { name: 'Ato das cartas' }));
+  fireEvent.change(screen.getByLabelText('Orientação para a integração'), {
+    target: { value: 'Conferir a carta' },
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Descartar orientação de integração' }));
+  expect(screen.getByLabelText('Orientação para a integração')).toHaveValue('');
+  fireEvent.change(screen.getByLabelText('Orientação para a integração'), {
+    target: { value: 'Preservar as reservas' },
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Registrar integração' }));
+  await waitFor(() => expect(startLiteraryIntegration).toHaveBeenCalledOnce());
+  expect(vi.mocked(startLiteraryIntegration).mock.calls[0]![0]).toMatchObject({
+    level: 'act',
+    actId: 'act',
+    instruction: 'Preservar as reservas',
+  });
+  expect(advanceLiteraryIntegration).not.toHaveBeenCalled();
+});
+
+it('paginates checkpoints, reauthorizes the chosen job and prepares a successor without registering it', async () => {
+  vi.mocked(integrationService.listLiteraryIntegrations)
+    .mockResolvedValueOnce({ items: [state('reading')], nextAfterId: 'cursor' })
+    .mockResolvedValueOnce({
+      items: [{ ...state('done'), jobId: 'second-integration' }],
+      nextAfterId: null,
+    });
+  vi.mocked(integrationService.getLiteraryIntegration).mockResolvedValue({
+    ...state('done'),
+    jobId: 'second-integration',
+  });
+  vi.mocked(integrationService.getLiteraryIntegrationSetup).mockResolvedValue({
+    level: 'book',
+    actId: null,
+    instruction: 'Orientação preservada',
+    generation: {
+      version: 1,
+      provider: 'platform',
+      model: 'gemini-2.5-flash',
+      reasoning: 'medium',
+    },
+  });
+  render(<LiteraryIntegrationPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar integrações' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais integrações' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: /Livro.*Cobertura integrada concluída/ }),
+  );
+  await screen.findByRole('region', { name: 'Checkpoint da integração' });
+  expect(integrationService.getLiteraryIntegration).toHaveBeenCalledWith(
+    'book',
+    'second-integration',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar checkpoint da integração' }));
+  await waitFor(() => expect(integrationService.getLiteraryIntegration).toHaveBeenCalledTimes(2));
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Preparar integração sucessora com estas orientações' }),
+  );
+  await waitFor(() =>
+    expect(screen.getByLabelText('Orientação para a integração')).toHaveValue(
+      'Orientação preservada',
+    ),
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Usar configuração atual de IA' }));
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Descartar preparação da integração sucessora' }),
+  );
+  expect(screen.getByLabelText('Orientação para a integração')).toHaveValue('');
+  expect(startLiteraryIntegration).not.toHaveBeenCalled();
+  expect(acceptLiteraryIntegration).not.toHaveBeenCalled();
+});
+
+it('keeps an uncertain registration frozen until explicit retry or cancellation', async () => {
+  vi.mocked(startLiteraryIntegration).mockRejectedValueOnce(new Error('Resultado incerto'));
+  vi.mocked(integrationService.cancelPendingLiteraryIntegration).mockResolvedValue(
+    state('canceled'),
+  );
+  render(<LiteraryIntegrationPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Registrar integração' }));
+  await screen.findByText('Resultado incerto');
+  expect(screen.getByLabelText('Orientação para a integração')).toBeDisabled();
+  const original = vi.mocked(startLiteraryIntegration).mock.calls[0]![0];
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar registro pendente' }));
+  await screen.findByText('Integração cancelada');
+  expect(integrationService.cancelPendingLiteraryIntegration).toHaveBeenCalledWith(
+    original,
+    'author',
+  );
+  expect(startLiteraryIntegration).toHaveBeenCalledOnce();
+});
+
+it('queries and paginates author decisions and never infers acceptance from an empty page', async () => {
+  vi.mocked(startLiteraryIntegration).mockResolvedValue(state('done'));
+  vi.mocked(findingService.listLiteraryFindingDecisions)
+    .mockResolvedValueOnce({ items: [], nextAfterId: 'decision-cursor' })
+    .mockResolvedValueOnce({ items: [], nextAfterId: null });
+  render(<LiteraryIntegrationPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Registrar integração' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Consultar decisões e correções' }),
+  );
+  await screen.findByText('Nenhuma decisão registrada');
+  await userEvent.click(screen.getByRole('button', { name: 'Mais decisões e correções' }));
+  await waitFor(() =>
+    expect(findingService.listLiteraryFindingDecisions).toHaveBeenLastCalledWith(
+      'book',
+      state().jobId,
+      'decision-cursor',
+    ),
+  );
+  expect(acceptLiteraryIntegration).not.toHaveBeenCalled();
+});
+
+it('retries or cancels only the selected pending analysis while preserving the integration', async () => {
+  const attention = { ...state('attention'), pendingRequestId: 'pending-analysis' };
+  vi.mocked(startLiteraryIntegration).mockResolvedValue(attention);
+  vi.mocked(integrationService.retryLiteraryIntegrationAnalysis).mockResolvedValue(attention);
+  vi.mocked(integrationService.cancelPendingLiteraryIntegrationAnalysis).mockResolvedValue(
+    state('reading'),
+  );
+  render(<LiteraryIntegrationPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Registrar integração' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Preparar nova tentativa da análise' }),
+  );
+  await waitFor(() =>
+    expect(integrationService.retryLiteraryIntegrationAnalysis).toHaveBeenCalledOnce(),
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Cancelar somente análise pendente' }));
+  await screen.findByText('Leitura em andamento');
+  expect(integrationService.cancelPendingLiteraryIntegrationAnalysis).toHaveBeenCalledWith(
+    'book',
+    state().jobId,
+  );
+  expect(cancelLiteraryIntegration).not.toHaveBeenCalled();
 });
