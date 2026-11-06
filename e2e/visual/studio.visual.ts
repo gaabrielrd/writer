@@ -4,6 +4,7 @@ import { books } from './fixtures/data';
 import { capture, navigateWorkspace, expect, expectNoHorizontalOverflow, test } from './support';
 
 async function newProject(page: Page, kind: 'Aventura' | 'Campanha', universe?: string) {
+  await navigateWorkspace(page, 'Projetos');
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
   await page.getByRole('button', { name: /^Manualmente/ }).click();
   await page.getByRole('button', { name: new RegExp('^' + kind) }).click();

@@ -48,7 +48,7 @@ test('criação legada e edição por teclado em 320px preservam identidade e co
   page,
 }, testInfo) => {
   await page.setViewportSize({ width: 320, height: 740 });
-  await page.goto('/studio');
+  await page.goto('/studio/projects');
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
   await page.getByRole('button', { name: /^Manualmente/ }).click();
   await page.getByRole('button', { name: /^Campanha/ }).click();

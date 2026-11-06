@@ -86,6 +86,7 @@ export const test = base.extend<VisualOptions & { visualEnvironment: void }>({
 export { expect };
 
 export async function openBookCreation(page: Page, universe?: string): Promise<void> {
+  await navigateWorkspace(page, 'Projetos');
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
   await page.getByRole('button', { name: /^Manualmente/ }).click();
   await page.getByRole('button', { name: /^Livro/ }).click();

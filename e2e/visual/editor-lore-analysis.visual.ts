@@ -67,6 +67,8 @@ test('editor discreto, configurações no usuário e revisão do compêndio por 
   await expectDialogWithinViewport(page);
   await capture(page, testInfo, 'compendio-revisao-de-campos');
   await page.getByLabel('Sugestão: Nara').getByText('Revisar campos').click();
+  await page.getByRole('checkbox', { name: 'Selecionar Nara', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Selecionar Farol do Norte', exact: true }).check();
   await page.getByRole('button', { name: 'Aplicar 2 alterações' }).click();
   await expect(page.getByText('Lote aplicado. O compêndio foi atualizado.')).toBeVisible();
   await page.getByRole('button', { name: 'Concluir', exact: true }).click();
@@ -91,6 +93,8 @@ test('BYOK aplica o lote sem consumir créditos da plataforma', async ({ page })
   await page.getByRole('button', { name: 'Analisar capítulo', exact: true }).click();
   await expect(page.getByLabel('Sugestão: Nara')).toBeVisible();
   await expect(page.getByText(/BYOK: sem consumir créditos/)).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Selecionar Nara', exact: true }).check();
+  await page.getByRole('checkbox', { name: 'Selecionar Farol do Norte', exact: true }).check();
   await page.getByRole('button', { name: 'Aplicar 2 alterações' }).click();
   await expect(page.getByText('Lote aplicado. O compêndio foi atualizado.')).toBeVisible();
   await page.getByRole('button', { name: 'Concluir', exact: true }).click();

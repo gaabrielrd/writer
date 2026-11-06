@@ -72,7 +72,7 @@ for (const method of ['manual', 'assisted'] as const)
     test(`novo projeto ${kind}/${method}: concepção, confirmação e continuidade`, async ({
       page,
     }, testInfo) => {
-      await page.goto('/studio');
+      await page.goto('/studio/projects');
       await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
       await expect(page.getByRole('heading', { name: 'Como deseja começar?' })).toBeFocused();
       await expect(page.getByRole('button', { name: /^Livro/ })).toHaveCount(0);
@@ -150,7 +150,7 @@ test('assistente abre ação existente, continua dentro do diálogo e preserva c
 test('concepção chega ao primeiro capítulo e à escrita sem repetir a ideia', async ({
   page,
 }, testInfo) => {
-  await page.goto('/studio');
+  await page.goto('/studio/projects');
   await page.getByRole('button', { name: 'Novo projeto', exact: true }).click();
   await page.getByRole('button', { name: /^Com ajuda da IA/ }).click();
   await page.getByRole('button', { name: /^Livro/ }).click();

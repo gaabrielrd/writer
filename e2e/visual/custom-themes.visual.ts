@@ -83,8 +83,7 @@ test('painel cabe em 320 px, move por teclado e mantém foco e navegação', asy
     const before = await panel.boundingBox();
     await panel.getByRole('button', { name: 'Mover painel de tema' }).focus();
     await page.keyboard.press('ArrowLeft');
-    const after = await panel.boundingBox();
-    expect(after!.x).toBeLessThan(before!.x);
+    await expect.poll(async () => (await panel.boundingBox())!.x).toBeLessThan(before!.x);
   }
   await page.setViewportSize({ width: 320, height: 640 });
   await panel.getByRole('button', { name: /Modo avançado/ }).click();

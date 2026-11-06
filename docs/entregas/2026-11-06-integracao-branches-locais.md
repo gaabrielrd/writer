@@ -73,3 +73,10 @@ A formatação dos arquivos integrados foi aplicada como correção. Os gates
 continuam sendo executados na CI, sem alterações de limites ou testes pulados.
 O diagnóstico estático adicional após falha coleta tipos, estilo, formatação e
 lint remotos, sem substituir a obrigação de `npm run validate` aprovado.
+
+Os cenários visuais foram alinhados aos fluxos atuais: a criação parte de
+Projetos, as sugestões de lore exigem seleção explícita e o autocomplete usa
+uma fixture transacional própria, com autorização da conta fictícia, hashes,
+recibo e atualização conjunta de prosa/crédito. A fixture recusa contexto
+editorial configurado que não consegue representar. O teste de movimento por
+teclado aguarda a pintura da posição, preservando a comparação estrita.
