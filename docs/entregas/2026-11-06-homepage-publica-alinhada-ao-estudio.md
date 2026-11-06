@@ -182,3 +182,18 @@ As três APIs retornaram HTTP 401 às sondas sem autenticação. Isso confere a
 barreira de acesso, sem comprovar operações autenticadas, geração de IA ou
 débito real. Os resultados locais estão em
 `.firebase/public-release-2026-11-06/after-summary.json` e `after-audit.json`.
+
+### Referência Linux conferida na CI
+
+O push de `d26b1cb` iniciou CI `42214441168`, Rules `42214441385` e Hosting
+`42214441250`. A etapa de navegador aprovou seis testes e falhou somente na
+referência Linux antiga do styleguide (1280 × 3078), diante da composição atual
+(1280 × 4118), que inclui o catálogo de tipografia e a moldura pública nova.
+
+O artefato `playwright-report` `13499044632` pertence ao mesmo commit e foi
+baixado pelo conector GitHub. Seu SHA-256 foi conferido contra o digest do
+GitHub. As capturas originais e da repetição são idênticas, com SHA-256
+`d75b07f7e96122ee3f139bbc07848bfa2eb6e2960756e3151dad187063551048`.
+Após inspeção visual, a captura Linux foi copiada integralmente para
+`e2e/__screenshots__/linux/styleguide.png`, sem alteração de pixels ou tolerância.
+A aprovação da nova referência será conferida em outra execução da CI.
