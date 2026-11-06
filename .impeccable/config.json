@@ -17,6 +17,13 @@
         "files": ["src/features/books/components/ReaderView.module.css"],
         "createdAt": "2026-11-06T10:09:47.982Z",
         "reason": "Codex review: the border marks semantic literary blockquote content, not a card accent; this quotation treatment is unchanged from HEAD."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": ["src/features/editor/components/RichEditor.module.css"],
+        "createdAt": "2026-11-06T16:29:46.558Z",
+        "reason": "Agent: .richText blockquote marks semantic manuscript quotations, not a decorative card accent."
       }
     ]
   }
