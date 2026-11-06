@@ -90,3 +90,72 @@ test('fontes personalizadas sobrevivem à recarga e ficam isoladas por conta', a
   await page.goto('/settings/preferences');
   await expect(page.getByLabel('Preset de fontes')).toHaveText('Clássico editorial');
 });
+
+test('presets mantêm prosa legível no shell compacto e no leitor sem alterar o manuscrito', async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(90_000);
+  const presets = [
+    ['Clássico editorial', '18px'],
+    ['Romance humanista', '20px'],
+    ['Contemporâneo acolhedor', '18px'],
+    ['Leitura digital', '18px'],
+    ['Poético', '20px'],
+  ];
+  let manuscript: string | null = null;
+  for (const [index, [label, size]] of presets.entries()) {
+    await page.goto('/settings/preferences');
+    await chooseDropdown(page.getByLabel('Preset de fontes'), label);
+    const sample = page.getByLabel('Prévia da tipografia');
+    await expect(sample.locator('p').first()).toHaveCSS('font-size', size);
+    await expect(sample.locator('h3')).toHaveCSS('font-size', '24px');
+    await expect(sample.locator('h3')).toHaveCSS('font-weight', '600');
+    await expect(sample.locator('em')).toHaveCSS('font-style', 'italic');
+    await expect(sample.locator('strong')).toHaveCSS('font-weight', '700');
+    const save = page.getByRole('button', { name: 'Salvar fontes', exact: true });
+    if (await save.isEnabled()) await save.click();
+    await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+    const editor = page.getByRole('textbox', { name: 'Área de escrita do capítulo' });
+    await expect(editor).toHaveCSS('font-size', size);
+    const text = await editor.textContent();
+    manuscript ??= text;
+    expect(text).toBe(manuscript);
+    await page.evaluate(() => document.fonts.ready);
+    // Count actual characters on wrapped lines, rather than assuming 1ch = 1 character.
+    const fullLines = async (paragraph: import('@playwright/test').Locator) =>
+      paragraph.evaluate((element) => {
+        const lines = new Map<number, number>();
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          for (let offset = 0; offset < (node.textContent?.length ?? 0); offset++) {
+            const range = document.createRange();
+            range.setStart(node, offset);
+            range.setEnd(node, offset + 1);
+            const top = Math.round(range.getBoundingClientRect().top);
+            lines.set(top, (lines.get(top) ?? 0) + 1);
+          }
+        }
+        return [...lines.values()].slice(0, -1);
+      });
+    const editorLines = await fullLines(editor.locator('p').first());
+    expect(editorLines.length).toBeGreaterThan(0);
+    for (const length of editorLines) {
+      expect(length).toBeGreaterThanOrEqual(45);
+      expect(length).toBeLessThanOrEqual(80);
+    }
+    await capture(page, testInfo, `legibility-${index}-editor`);
+    await page.goto('/read/visual-public-atlas');
+    await page.waitForLoadState('networkidle');
+    const reader = page.locator('article > div').first();
+    await expect(reader).toHaveCSS('font-size', size);
+    await page.evaluate(() => document.fonts.ready);
+    const readerLines = await fullLines(reader.locator('p').first());
+    expect(readerLines.length).toBeGreaterThan(0);
+    for (const length of readerLines) {
+      expect(length).toBeGreaterThanOrEqual(45);
+      expect(length).toBeLessThanOrEqual(80);
+    }
+    await capture(page, testInfo, `legibility-${index}-reader`);
+  }
+});

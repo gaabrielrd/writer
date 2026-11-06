@@ -11,6 +11,15 @@ export const FONT_FAMILIES = [
   'Crimson Pro',
 ] as const;
 export type FontFamily = (typeof FONT_FAMILIES)[number];
+
+// Calibrate prose by its actual family, including custom combinations.
+export function readingMetrics(font: FontFamily) {
+  if (font === 'EB Garamond' || font === 'Crimson Pro') {
+    return { size: '1.25rem', measure: '36rem', leading: '1.65' };
+  }
+  return { size: '1.125rem', measure: '38rem', leading: '1.7' };
+}
+
 export interface TypographyFonts {
   titles: FontFamily;
   interface: FontFamily;

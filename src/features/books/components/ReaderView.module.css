@@ -109,10 +109,11 @@
   outline-offset: 3px;
 }
 .article {
+  --reader-padding: clamp(1.25rem, 4vw, 3rem);
   min-width: 0;
   width: 100%;
-  max-width: 52rem;
-  padding: clamp(1.25rem, 4vw, 3rem);
+  max-width: calc(var(--reading-max-width) + 2 * var(--reader-padding));
+  padding: var(--reader-padding);
   border: 1px solid hsl(var(--border));
   border-radius: var(--radius-md);
   background: hsl(var(--card));
@@ -125,8 +126,9 @@
 }
 .prose {
   font-family: var(--font-reading);
-  font-size: 1.125rem;
-  line-height: 1.85;
+  font-size: var(--reading-font-size);
+  line-height: var(--reading-line-height);
+  max-width: var(--reading-max-width);
   overflow-wrap: anywhere;
 }
 .prose p,

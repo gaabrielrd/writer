@@ -17,6 +17,27 @@ cria uma combinação personalizada a partir das fontes exibidas. Trocar somente
 o preset conserva a combinação personalizada anterior para retomá-la pela opção
 Personalizado.
 
+## Legibilidade da prosa
+
+A prosa do editor e do leitor e a amostra em Preferências usam métricas próprias,
+independentes dos controles compactos da interface:
+
+| Fonte da prosa            | Tamanho base      | Entrelinha | Largura equilibrada máxima |
+| ------------------------- | ----------------- | ---------- | -------------------------- |
+| EB Garamond e Crimson Pro | 1,25 rem (20 px)  | 1,65       | 36 rem (576 px)            |
+| Demais famílias           | 1,125 rem (18 px) | 1,7        | 38 rem (608 px)            |
+
+Os valores em pixels pressupõem a base de 16 px do navegador. A calibração segue
+a família do papel Editor, inclusive em combinações personalizadas. A largura
+deve respeitar o espaço disponível; ela busca linhas de cerca de 65–75 caracteres
+em prosa comum, sem tratar `ch` como contagem de caracteres.
+
+Na área logada, Pequeno e Grande ajustam a coluna para 85% e 115% da largura
+equilibrada, respectivamente. O leitor público conserva a largura equilibrada.
+Títulos do manuscrito mantêm contraste de tamanho/peso com a prosa, e títulos
+compactos de `SidePanelHeader` usam a fonte da interface. A amostra inclui diálogo,
+acentos, números, itálico e negrito para comparar as famílias antes de salvar.
+
 ## Prévia e salvamento
 
 Os seletores aplicam uma prévia global, incluindo menus e portais, sem gravar a
@@ -45,6 +66,8 @@ fontes entre dispositivos nem alteração dos documentos de temas no Firestore.
 - `--font-display`, `--font-sans` e `--font-reading`: títulos, interface e prosa.
   Escrita, leitura, histórico e prévias reutilizam os tokens, sem gerar estilos
   portáteis dentro dos documentos nem alterar exportações.
+- `--reading-font-size`, `--reading-line-height` e `--reading-max-width`:
+  calibração da prosa, aplicada e revertida pelo mesmo provider das fontes.
 
 Somente os nomes da lista permitida chegam aos tokens CSS. Dados inválidos,
 JSON corrompido ou falha de leitura usam o padrão. Nenhum CSS livre, URL ou nome
@@ -67,7 +90,10 @@ as fontes para abrir a página). Preserve licenças e procedência ao atualizar.
 
 - Unidade e interface: `npx vitest run src/shared/typography/tests`.
 - Integração visual com serviços fictícios e rede externa bloqueada:
-  `npx playwright test --config playwright.visual.config.ts e2e/visual/typography.visual.ts`.
+  `npx playwright test --config playwright.visual.config.ts e2e/visual/typography.visual.ts e2e/visual/typography-scaling.visual.ts`.
 - A jornada visual cobre os cinco presets, fontes locais reais, escolha
   personalizada, salvar/cancelar, recarga, styleguide, editor e troca de conta nos
-  três temas de desktop.
+  três temas de desktop. Confere também tamanho computado, medida real das linhas
+  no editor/leitor, hierarquia da amostra e preservação do manuscrito.
+  A jornada de ampliação confere prosa a 200% do tamanho de texto, com preset e
+  combinação personalizada, além da fonte dos títulos operacionais do painel.
