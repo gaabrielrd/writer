@@ -2,7 +2,7 @@
 
 Registro do plano apresentado neste chat, preservado para auditoria de escopo. Fonte: resposta do chat 01a19d46-d63f-7273-954a-01274befea7c. O texto abaixo registra o escopo aprovado, sem comprovar implementação ou aprovação dos testes; o estado real está em README.md e no relatório de validação. A solicitação posterior do autor autorizou os testes após incorporar a principal consolidada.
 
-Sim. O plano é transformar o método do seu [rulebook](C:/Users/gaabr/Downloads/rulebook_producao_literaria.md) em um fluxo editorial integrado ao Writer, desde a concepção até a publicação, com o mesmo contexto orientando a IA durante a edição.
+Sim. O plano é transformar o método do rulebook fornecido pelo autor (`rulebook_producao_literaria.md`) em um fluxo editorial integrado ao Writer, desde a concepção até a publicação, com o mesmo contexto orientando a IA durante a edição.
 
 A base já documentada do Writer permite reaproveitar criação assistida, personas, lore, atos, cenas, arcos, cronologia, histórico, progresso e publicação. A implementação deve conectar e ampliar essas capacidades. Os detalhes de integração precisam ser conferidos no checkout escolhido, pois há muitas alterações locais em andamento.
 

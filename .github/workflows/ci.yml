@@ -51,6 +51,22 @@ jobs:
       - name: Validar
         run: npm run validate
 
+      - name: Diagnosticar falhas de integração
+        if: failure()
+        shell: bash
+        run: |
+          result=0
+          for gate in typecheck check:styleguide format:check lint; do
+            echo "::group::Diagnóstico remoto: $gate"
+            if npm run "$gate"; then
+              echo "Diagnóstico aprovado: $gate"
+            else
+              result=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$result"
+
       - name: Publicar relatório de cobertura
         if: always() && matrix.node == '24'
         uses: actions/upload-artifact@v7
