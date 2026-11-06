@@ -10,7 +10,7 @@ import * as finding from '../services/literaryFindingService';
 import * as integration from '../services/literaryIntegrationService';
 import * as publication from '../services/literaryPublicationService';
 import * as progress from '../services/literaryProgressService';
-import { listLiteraryOperations } from '../services/literaryRecoveryStorage';
+import { listLiteraryPendingOperations } from '../services/literaryRecoveryStorage';
 
 const transport = vi.hoisted(() => ({ invoke: vi.fn(), callable: vi.fn(), functions: {} }));
 vi.mock('@/shared/api/domainCallable', () => ({
@@ -329,7 +329,7 @@ describe('sector transport, frozen identities and explicit author actions', () =
     expect(await item.invoke()).toBe(response);
     expect(transport.invoke).toHaveBeenCalledExactlyOnceWith(item.wire);
     expect(transport.callable.mock.calls[0]?.[1]).toBe(item.name);
-    expect(listLiteraryOperations('author', 'book')).toEqual([]);
+    expect(listLiteraryPendingOperations('author', 'book')).toEqual([]);
   });
   it.each(cases)(
     '$name propagates an uncertain result without retrying or changing its wire',
@@ -339,7 +339,7 @@ describe('sector transport, frozen identities and explicit author actions', () =
       await expect(item.invoke()).rejects.toBe(error);
       expect(transport.invoke).toHaveBeenCalledExactlyOnceWith(item.wire);
       expect(transport.callable).toHaveBeenCalledOnce();
-      expect(listLiteraryOperations('other', 'book')).toEqual([]);
+      expect(listLiteraryPendingOperations('other', 'book')).toEqual([]);
     },
   );
   it('keeps an unconfirmed prose request discoverable without generating it again', async () => {
@@ -348,7 +348,7 @@ describe('sector transport, frozen identities and explicit author actions', () =
       'sem reenviar',
     );
     expect(transport.callable.mock.calls.map((call) => call[1])).toEqual(['getLiteraryProse']);
-    expect(listLiteraryOperations('author', 'book')).toMatchObject([
+    expect(listLiteraryPendingOperations('author', 'book')).toMatchObject([
       { kind: 'prose', id: operationId, operationId },
     ]);
   });

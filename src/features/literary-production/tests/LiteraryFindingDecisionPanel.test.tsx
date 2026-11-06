@@ -385,3 +385,52 @@ it('ignores a late architecture page after the authenticated account changes', a
   await user.click(screen.getByRole('combobox', { name: 'Destino da alteração' }));
   expect(screen.queryByRole('option', { name: /Old private milestone/ })).not.toBeInTheDocument();
 });
+it('paginates decision history and inspects it without overwriting the authored rationale', async () => {
+  vi.mocked(service.getLiteraryFindingDecision).mockResolvedValue(decision());
+  vi.mocked(service.listLiteraryFindingDecisionVersions)
+    .mockResolvedValueOnce({
+      items: [{ id: 'decision', revision: 2, action: 'retain', state: 'retained', updatedAt: 2 }],
+      nextBeforeRevision: 2,
+    })
+    .mockResolvedValueOnce({
+      items: [{ id: 'decision', revision: 1, action: 'retain', state: 'retained', updatedAt: 1 }],
+      nextBeforeRevision: null,
+    });
+  vi.mocked(service.getLiteraryFindingDecisionVersion).mockResolvedValue(
+    decision({ rationale: 'Justificativa histórica' }),
+  );
+  render(<LiteraryFindingDecisionPanel bookId="book" trackingKey="history" source={source} />);
+  await screen.findByDisplayValue('Escolha anterior.');
+  await userEvent.type(screen.getByLabelText('Justificativa da decisão'), ' Meu acréscimo.');
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar histórico da decisão' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais versões da decisão' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Consultar decisão na revisão 1' }),
+  );
+  await screen.findByText('Justificativa histórica');
+  expect(screen.getByLabelText('Justificativa da decisão')).toHaveValue(
+    'Escolha anterior. Meu acréscimo.',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar consulta histórica' }));
+  expect(screen.queryByRole('region', { name: 'Decisão histórica' })).not.toBeInTheDocument();
+  expect(service.saveLiteraryFindingDecision).not.toHaveBeenCalled();
+});
+it('comparison keeps the local decision until the author explicitly adopts the newer revision', async () => {
+  vi.mocked(service.getLiteraryFindingDecision)
+    .mockResolvedValueOnce(decision())
+    .mockResolvedValue(decision({ revision: 3, rationale: 'Nova justificativa' }));
+  render(<LiteraryFindingDecisionPanel bookId="book" trackingKey="comparison" source={source} />);
+  await screen.findByDisplayValue('Escolha anterior.');
+  await userEvent.type(screen.getByLabelText('Justificativa da decisão'), ' Meu acréscimo.');
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar versão atual da decisão' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Manter meu rascunho' }));
+  expect(screen.getByLabelText('Justificativa da decisão')).toHaveValue(
+    'Escolha anterior. Meu acréscimo.',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar versão atual da decisão' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Adotar esta revisão e descartar meu rascunho' }),
+  );
+  expect(screen.getByLabelText('Justificativa da decisão')).toHaveValue('Nova justificativa');
+  expect(service.saveLiteraryFindingDecision).not.toHaveBeenCalled();
+});

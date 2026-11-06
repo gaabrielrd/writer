@@ -48,6 +48,22 @@ jobs:
       - name: Instalar dependências do backend
         run: npm ci --prefix functions
 
+      - name: Verificar regressões da integração editorial
+        run: >-
+          npx vitest run
+          src/features/book-portability/tests/bookEditorialHistoryApi.test.ts
+          src/features/book-portability/tests/bookEditorialReview.test.ts
+          src/features/book-portability/tests/EditorialRestoreReferencePicker.test.tsx
+          src/features/literary-production/tests/EditorialContractPanel.test.tsx
+          src/features/literary-production/tests/LiteraryIntegrationPanel.test.tsx
+          src/features/literary-production/tests/LiteraryMilestonePanel.test.tsx
+          src/features/literary-production/tests/literaryTransportRecovery.test.ts
+          src/features/literary-production/tests/LiteraryPreparationPanel.test.tsx
+          src/features/literary-production/tests/LiteraryReviewPanel.test.tsx
+          src/features/literary-production/tests/LiteraryDraftPanel.test.tsx
+          src/features/literary-production/tests/LiteraryFindingDecisionPanel.test.tsx
+          src/features/literary-production/tests/WritingSourcePicker.test.tsx
+
       - name: Validar
         run: npm run validate
 

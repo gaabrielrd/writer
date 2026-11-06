@@ -46,17 +46,23 @@ function fixture() {
       return Promise.resolve(true);
     }),
   };
-  const api: EditorialReviewApi = {
-    list: vi.fn(),
-    get: vi.fn(),
-    apply: vi.fn(async (input) => outcome(input)),
-    retire: vi.fn(async (input) => ({
-      schemaVersion: 1,
-      bookId: 'book',
-      kind: 'retired',
-      receipt: { id: input.id, operationId: input.operationId, retiredAt: 2 },
-    })),
-    resolve: vi.fn(async () => ({ schemaVersion: 1, bookId: 'book', state: 'unconfirmed' })),
+  const api = {
+    list: vi.fn<EditorialReviewApi['list']>(),
+    get: vi.fn<EditorialReviewApi['get']>(),
+    apply: vi
+      .fn<EditorialReviewApi['apply']>()
+      .mockImplementation((input) => Promise.resolve(outcome(input))),
+    retire: vi.fn<EditorialReviewApi['retire']>().mockImplementation((input) =>
+      Promise.resolve({
+        schemaVersion: 1,
+        bookId: 'book',
+        kind: 'retired',
+        receipt: { id: input.id, operationId: input.operationId, retiredAt: 2 },
+      }),
+    ),
+    resolve: vi
+      .fn<EditorialReviewApi['resolve']>()
+      .mockResolvedValue({ schemaVersion: 1, bookId: 'book', state: 'unconfirmed' }),
   };
   const guard = vi.fn(),
     onChange = vi.fn();
@@ -187,11 +193,11 @@ it('rejects a mismatched receipt and retains the original request instead of ado
 });
 it('checks the live account again after dispatch and preserves the durable debt on revocation', async () => {
   const f = fixture();
-  vi.mocked(f.api.apply).mockImplementation(async (input) => {
+  vi.mocked(f.api.apply).mockImplementation((input) => {
     f.guard.mockImplementation(() => {
       throw new Error('Conta alterada');
     });
-    return outcome(input);
+    return Promise.resolve(outcome(input));
   });
   await expect(f.driver.submit(wire())).rejects.toThrow('Conta alterada');
   expect(f.journal.compare.mock.calls.at(-1)?.[1]).toMatchObject({ phase: 'sent' });

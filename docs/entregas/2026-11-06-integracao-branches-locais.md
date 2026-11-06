@@ -88,3 +88,8 @@ A cobertura global de funções foi 84,99%, abaixo dos 90% exigidos. Foram
 acrescentados testes de autoria, histórico, paginação, captura de marcos,
 identidade do transporte e pedidos incertos da revisão editorial. Os testes
 novos aguardam execução remota; o limite de cobertura permanece inalterado.
+
+A CI passa a executar primeiro os cenários direcionados desta integração para
+dar retorno rápido sobre regressões. A validação completa, sua cobertura e os
+demais jobs continuam obrigatórios. Nenhuma validação local foi executada nesta
+publicação.

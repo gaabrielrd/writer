@@ -1,7 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LiteraryDraftPanel } from '../components/LiteraryDraftPanel';
+import * as draftApi from '../services/literaryDraftService';
 import {
   getLiteraryDraft,
   startLiteraryDraft,
@@ -317,4 +318,76 @@ it('an older coordinator frame cannot roll back scene acceptance already confirm
   expect(
     screen.queryByRole('button', { name: 'Revisar aceite desta cena · 1 crédito' }),
   ).not.toBeInTheDocument();
+});
+it('paginates saved drafts and opens the current checkpoint without generating prose', async () => {
+  vi.mocked(draftApi.listLiteraryDrafts)
+    .mockResolvedValueOnce({ items: [frame().job], nextAfterId: 'cursor' })
+    .mockResolvedValueOnce({
+      items: [{ ...frame('done').job, jobId: 'second' }],
+      nextAfterId: null,
+    });
+  vi.mocked(getLiteraryDraft).mockResolvedValue(frame('done'));
+  render(<LiteraryDraftPanel bookId="book" chapterId="chapter" collaborationMode="continuous" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar redações do capítulo' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais redações' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: /· Primeira versão preservada/ }),
+  );
+  await screen.findByRole('button', { name: 'Consultar checkpoint da redação' });
+  expect(getLiteraryDraft).toHaveBeenCalledWith('book', 'second');
+  expect(startLiteraryDraft).not.toHaveBeenCalled();
+  expect(advanceLiteraryDraft).not.toHaveBeenCalled();
+});
+it('preserves existing scene prose through explicit adoption and retries an uncertain adoption unchanged', async () => {
+  const existing: LiteraryDraftFrame = {
+    ...frame('existingText'),
+    existing: {
+      sceneId: 'scene',
+      title: 'Texto do autor',
+      content: '<p>Prosa que já existe.</p>',
+      sourceToken: 'a'.repeat(64),
+    },
+  };
+  vi.mocked(startLiteraryDraft).mockResolvedValue(existing);
+  vi.mocked(draftApi.adoptLiteraryDraftScene)
+    .mockRejectedValueOnce(new Error('Aceite incerto'))
+    .mockResolvedValueOnce(frame('writing'));
+  render(<LiteraryDraftPanel bookId="book" chapterId="chapter" collaborationMode="continuous" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Registrar redação do capítulo' }));
+  await screen.findByText('Prosa que já existe.');
+  await userEvent.click(screen.getByRole('button', { name: 'Preservar este texto e avançar' }));
+  await screen.findByText('Aceite incerto');
+  await userEvent.click(screen.getByRole('button', { name: 'Recuperar a mesma adoção' }));
+  await waitFor(() => expect(draftApi.adoptLiteraryDraftScene).toHaveBeenCalledTimes(2));
+  expect(vi.mocked(draftApi.adoptLiteraryDraftScene).mock.calls[0]).toEqual(
+    vi.mocked(draftApi.adoptLiteraryDraftScene).mock.calls[1],
+  );
+  expect(acceptLiteraryDraftScene).not.toHaveBeenCalled();
+});
+it('regenerates only by request and starts a separate preservation attempt after all scenes are accepted', async () => {
+  vi.mocked(startLiteraryDraft).mockResolvedValue(frame('awaitingAcceptance'));
+  vi.mocked(draftApi.regenerateLiteraryDraftScene).mockResolvedValue({
+    ...frame('attention'),
+    job: { ...frame('attention').job, accepted: 1 },
+  });
+  vi.mocked(draftApi.restartLiteraryDraftPreservation).mockResolvedValue(frame('preserving'));
+  render(<LiteraryDraftPanel bookId="book" chapterId="chapter" collaborationMode="continuous" />);
+  fireEvent.change(screen.getByLabelText('Orientação para a redação do capítulo'), {
+    target: { value: 'Conferir voz' },
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Descartar orientação de redação' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Registrar redação do capítulo' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Gerar outra proposta para esta cena' }),
+  );
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Preparar nova tentativa de preservação' }),
+  );
+  await waitFor(() =>
+    expect(draftApi.restartLiteraryDraftPreservation).toHaveBeenCalledWith(
+      'book',
+      frame().job.jobId,
+    ),
+  );
+  expect(acceptLiteraryDraftScene).not.toHaveBeenCalled();
 });

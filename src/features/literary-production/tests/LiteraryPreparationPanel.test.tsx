@@ -1,8 +1,9 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LiteraryPreparationPanel } from '../components/LiteraryPreparationPanel';
 import { listLiteraryReferences } from '../services/literaryPlanningService';
+import * as preparationApi from '../services/literaryPreparationService';
 import {
   getLiteraryPreparationContext,
   getLiteraryPreparationGate,
@@ -131,5 +132,130 @@ it('a failed recapture preserves authored observations and evidence for correcti
   expect(screen.getByLabelText('Observações e próximo passo')).toHaveValue(
     'Atravessar na maré baixa.',
   );
+  expect(saveLiteraryPreparationGate).not.toHaveBeenCalled();
+});
+it('records explicit criterion assessments, literal evidence and author acceptance together', async () => {
+  vi.mocked(saveLiteraryPreparationGate).mockResolvedValue({
+    chapterId: 'chapter',
+    revision: 1,
+    updatedAt: 1,
+  });
+  render(<LiteraryPreparationPanel bookId="book" />);
+  await selectChapter(userEvent.setup());
+  for (const label of Object.values(preparationApi.LITERARY_GATE_CRITERIA)) {
+    const result = screen.getByRole('combobox', { name: label });
+    const section = within(result.closest('section')!);
+    await userEvent.click(result);
+    await userEvent.click(screen.getByRole('option', { name: 'Atendido', exact: true }));
+    fireEvent.change(section.getByLabelText('Justificativa, correção ou pendência'), {
+      target: { value: `Conferi: ${label}` },
+    });
+    await userEvent.click(section.getByRole('button', { name: 'Adicionar evidência' }));
+    await userEvent.click(section.getByRole('combobox', { name: 'Fonte da evidência' }));
+    await userEvent.click(screen.getByRole('option', { name: 'Ficha da carta' }));
+    fireEvent.change(section.getByLabelText('Citação literal da fonte'), {
+      target: { value: 'A carta muda a confiança.' },
+    });
+  }
+  const first = within(
+    screen.getByRole('combobox', { name: 'Função singular e transformação' }).closest('section')!,
+  );
+  await userEvent.click(first.getByRole('button', { name: 'Remover evidência' }));
+  await userEvent.click(first.getByRole('button', { name: 'Adicionar evidência' }));
+  fireEvent.change(first.getByLabelText('Citação literal da fonte'), {
+    target: { value: 'A carta muda a confiança.' },
+  });
+  await userEvent.click(screen.getByRole('combobox', { name: 'Aceite autoral da preparação' }));
+  await userEvent.click(screen.getByRole('option', { name: 'Aceito esta preparação' }));
+  fireEvent.change(screen.getByLabelText('Observações e próximo passo'), {
+    target: { value: 'Conferência concluída pelo autor.' },
+  });
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar verificação e evidências' }));
+  await waitFor(() => expect(saveLiteraryPreparationGate).toHaveBeenCalledOnce());
+  const input = vi.mocked(saveLiteraryPreparationGate).mock.calls[0]![0];
+  expect(input.gate.authorAccepted).toBe(true);
+  expect(input.gate.criteria).toHaveLength(14);
+  expect(
+    input.gate.criteria.every(
+      (item) =>
+        item.result === 'pass' &&
+        item.rationale.startsWith('Conferi:') &&
+        item.evidence[0]?.quote === 'A carta muda a confiança.',
+    ),
+  ).toBe(true);
+  expect(input.stateToken).toBe(context().snapshot.stateToken);
+  await screen.findByText(/Verificação salva na revisão 1/);
+});
+
+it('compares historical preparation without replacing the saved baseline or the author draft', async () => {
+  const gate: preparationApi.LiteraryGate = {
+    criteria: Object.keys(preparationApi.LITERARY_GATE_CRITERIA).map((id) => ({
+      id,
+      result: 'gap',
+      rationale: 'Pendência anterior',
+      evidence: [{ documentId: 'plan:brief', quote: 'A carta muda a confiança.' }],
+    })),
+    notes: 'Notas antigas',
+    authorAccepted: false,
+  };
+  const saved: preparationApi.PreparationGateState = {
+    schemaVersion: 1,
+    chapterId: 'chapter',
+    revision: 2,
+    updatedAt: 2,
+    stateToken: context().snapshot.stateToken,
+    manifest: context().snapshot.manifest,
+    gate,
+    ready: false,
+    authorAccepted: false,
+    assessment: 'author',
+    current: true,
+    recordedReady: false,
+    recordedAuthorAccepted: false,
+  };
+  vi.mocked(getLiteraryPreparationGate).mockImplementation((_book, _chapter, revision) =>
+    Promise.resolve({ ...saved, revision: revision ?? saved.revision }),
+  );
+  vi.mocked(preparationApi.listLiteraryPreparationGateVersions)
+    .mockResolvedValueOnce({
+      items: [{ chapterId: 'chapter', revision: 2, updatedAt: 2 }],
+      nextBeforeRevision: 2,
+    })
+    .mockResolvedValueOnce({
+      items: [{ chapterId: 'chapter', revision: 1, updatedAt: 1 }],
+      nextBeforeRevision: null,
+    });
+  render(<LiteraryPreparationPanel bookId="book" />);
+  await selectChapter(userEvent.setup());
+  fireEvent.change(screen.getByLabelText('Observações e próximo passo'), {
+    target: { value: 'Rascunho a descartar' },
+  });
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Descartar alterações da verificação' }),
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar verificação salva' }));
+  await screen.findByText('Verificação salva carregada. Capture as fontes para editar.');
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar histórico da preparação' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Versões anteriores' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Ver revisão 1' }));
+  const historical = await screen.findByRole('region', { name: 'Verificação histórica' });
+  expect(within(historical).getByText('Notas antigas')).toBeVisible();
+  expect(within(historical).getAllByText('A carta muda a confiança.')).toHaveLength(14);
+  expect(getLiteraryPreparationGate).toHaveBeenLastCalledWith('book', 'chapter', 1);
+  expect(saveLiteraryPreparationGate).not.toHaveBeenCalled();
+});
+
+it('paginates chapter choices without producing preparation or overwriting a dirty draft', async () => {
+  const first = await vi.mocked(listLiteraryReferences).getMockImplementation()!('book', 'chapter');
+  vi.mocked(listLiteraryReferences)
+    .mockResolvedValueOnce({ ...first, nextAfterId: 'cursor' })
+    .mockResolvedValueOnce({ items: [], nextAfterId: null });
+  render(<LiteraryPreparationPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar capítulos' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais capítulos' }));
+  await waitFor(() =>
+    expect(listLiteraryReferences).toHaveBeenLastCalledWith('book', 'chapter', 'cursor', 'subject'),
+  );
+  expect(getLiteraryPreparationContext).not.toHaveBeenCalled();
   expect(saveLiteraryPreparationGate).not.toHaveBeenCalled();
 });
