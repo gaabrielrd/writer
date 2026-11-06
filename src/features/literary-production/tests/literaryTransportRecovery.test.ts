@@ -12,7 +12,18 @@ import * as publication from '../services/literaryPublicationService';
 import * as progress from '../services/literaryProgressService';
 import { listLiteraryPendingOperations } from '../services/literaryRecoveryStorage';
 
-const transport = vi.hoisted(() => ({ invoke: vi.fn(), callable: vi.fn(), functions: {} }));
+const transport = vi.hoisted(() => ({
+  invoke: vi.fn<(input: unknown) => Promise<{ data: unknown }>>(),
+  callable:
+    vi.fn<
+      (
+        service: unknown,
+        name: string,
+        options?: unknown,
+      ) => (input: unknown) => Promise<{ data: unknown }>
+    >(),
+  functions: {},
+}));
 vi.mock('@/shared/api/domainCallable', () => ({
   getFunctions: () => transport.functions,
   httpsCallable: transport.callable,

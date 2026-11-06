@@ -210,6 +210,7 @@ export function AssistantDock({
       tabIndex={-1}
       ref={panel}
       data-page-assistant
+      data-dialog-viewport-child={dialog ? '' : undefined}
       data-writer-tour="assistant"
       data-mode={mode}
       className={`${styles.dock} ${dialog ? styles.inDialog : ''}`}

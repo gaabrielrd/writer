@@ -143,10 +143,10 @@ it('records explicit criterion assessments, literal evidence and author acceptan
   render(<LiteraryPreparationPanel bookId="book" />);
   await selectChapter(userEvent.setup());
   for (const label of Object.values(preparationApi.LITERARY_GATE_CRITERIA)) {
-    const result = screen.getByRole('combobox', { name: label });
+    const result = screen.getByRole('combobox', { name: 'Resultado: ' + label });
     const section = within(result.closest('section')!);
     await userEvent.click(result);
-    await userEvent.click(screen.getByRole('option', { name: 'Atendido', exact: true }));
+    await userEvent.click(screen.getByRole('option', { name: 'Atendido' }));
     fireEvent.change(section.getByLabelText('Justificativa, correção ou pendência'), {
       target: { value: `Conferi: ${label}` },
     });
@@ -158,7 +158,9 @@ it('records explicit criterion assessments, literal evidence and author acceptan
     });
   }
   const first = within(
-    screen.getByRole('combobox', { name: 'Função singular e transformação' }).closest('section')!,
+    screen
+      .getByRole('combobox', { name: 'Resultado: Função singular e transformação' })
+      .closest('section')!,
   );
   await userEvent.click(first.getByRole('button', { name: 'Remover evidência' }));
   await userEvent.click(first.getByRole('button', { name: 'Adicionar evidência' }));
@@ -239,7 +241,7 @@ it('compares historical preparation without replacing the saved baseline or the 
   await userEvent.click(await screen.findByRole('button', { name: 'Versões anteriores' }));
   await userEvent.click(await screen.findByRole('button', { name: 'Ver revisão 1' }));
   const historical = await screen.findByRole('region', { name: 'Verificação histórica' });
-  expect(within(historical).getByText('Notas antigas')).toBeVisible();
+  expect(within(historical).getAllByText('Pendência anterior')).toHaveLength(14);
   expect(within(historical).getAllByText('A carta muda a confiança.')).toHaveLength(14);
   expect(getLiteraryPreparationGate).toHaveBeenLastCalledWith('book', 'chapter', 1);
   expect(saveLiteraryPreparationGate).not.toHaveBeenCalled();

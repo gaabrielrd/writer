@@ -175,3 +175,190 @@ it('a complete registered census is distinguished from historical or semantic co
   ).toBeVisible();
   expect(api.advanceLiteraryImpact).not.toHaveBeenCalled();
 });
+it('paginates saved maps and adopts then releases only their local tracking after a fresh scope check', async () => {
+  vi.mocked(api.listLiteraryImpacts)
+    .mockResolvedValueOnce({ items: [impactFrame], nextAfterId: 'cursor' })
+    .mockResolvedValueOnce({ items: [impactFrame], nextAfterId: null });
+  render(<LiteraryImpactPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar mapas existentes' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Mais mapas existentes' }));
+  await waitFor(() => expect(api.listLiteraryImpacts).toHaveBeenLastCalledWith('book', 'cursor'));
+  expect(screen.getAllByRole('button', { name: 'Acompanhar este mapa' })).toHaveLength(1);
+  await userEvent.click(screen.getByRole('button', { name: 'Acompanhar este mapa' }));
+  await screen.findByText('Mapa acompanhado neste navegador');
+  expect(api.getLiteraryImpact).toHaveBeenCalledWith(
+    'book',
+    impactFrame.jobId,
+    impactFrame.originToken,
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Liberar acompanhamento local' }));
+  await waitFor(() => expect(storage.readImpactJournal('author', 'book')).toBeNull());
+  expect(api.startLiteraryImpact).not.toHaveBeenCalled();
+  expect(api.cancelLiteraryImpact).not.toHaveBeenCalled();
+});
+it('keeps selection changes reversible and confirms scope only after explicit book and source choices', async () => {
+  vi.mocked(planning.listLiteraryPlans).mockResolvedValue({
+    schema: {},
+    items: [
+      {
+        id: 'plan',
+        title: 'Ficha de preparação',
+        kind: 'chapterBrief',
+        revision: 1,
+        status: 'approved',
+      },
+    ],
+    nextAfterId: null,
+    projectUpdatedAt: 1,
+  });
+  render(<LiteraryImpactPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar outros livros' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'O segundo volume' }));
+  await userEvent.click(screen.getByRole('combobox', { name: 'Livro da fonte' }));
+  await userEvent.click(screen.getByRole('option', { name: 'O segundo volume' }));
+  await userEvent.click(screen.getByRole('combobox', { name: 'Tipo de fonte' }));
+  await userEvent.click(screen.getByRole('option', { name: 'Ficha de planejamento' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar fontes' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Ficha de preparação · O segundo volume' }),
+  );
+  await userEvent.click(
+    screen.getByRole('button', { name: 'Remover fonte Ficha de preparação · O segundo volume' }),
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Descartar alterações da seleção' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Continuar selecionando' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Descartar alterações da seleção' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Descartar seleção', exact: true }),
+  );
+  expect(screen.getByRole('combobox', { name: 'Livro da fonte' })).toHaveTextContent('Este livro');
+  expect(api.getLiteraryImpactScope).not.toHaveBeenCalled();
+  expect(api.startLiteraryImpact).not.toHaveBeenCalled();
+});
+it('reads propagation, resources and author notes as separate paginated projections', async () => {
+  await storage.adoptImpactJournal('author', 'book', impactFrame);
+  const metadata = {
+    labelsAreCurrent: true as const,
+    semanticCompleteness: false as const,
+    publicationReady: false as const,
+  };
+  vi.mocked(api.readLiteraryImpactPage)
+    .mockResolvedValueOnce({
+      ...metadata,
+      items: [
+        {
+          id: 'visit',
+          observationToken: 'a'.repeat(64),
+          label: 'Capítulo visitado',
+          visit: {
+            node: impactStart.sources[0]!,
+            source: impactStart.sources[0]!,
+            effect: 'dependency-check',
+            depth: 2,
+          },
+        },
+      ],
+      nextAfterId: null,
+    })
+    .mockResolvedValueOnce({
+      ...metadata,
+      items: [
+        {
+          id: 'node',
+          observationToken: 'a'.repeat(64),
+          label: 'Livro observado',
+          node: impactStart.sources[0]!,
+        },
+      ],
+      nextAfterId: null,
+    })
+    .mockResolvedValueOnce({
+      ...metadata,
+      items: [
+        {
+          id: 'decision',
+          jobId: impactFrame.jobId,
+          checkId: 'check',
+          observationToken: 'a'.repeat(64),
+          revision: 1,
+          status: 'reviewed',
+          rationale: 'Conferido pelo autor',
+          evidence: [{ note: 'Evidência privada' }],
+          updatedAt: 1,
+        },
+      ],
+      nextAfterId: null,
+    });
+  render(<LiteraryImpactPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar estado atual' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Consultar propagação' }));
+  await screen.findByText('Capítulo visitado');
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar recursos' }));
+  await screen.findByText('Livro observado');
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar notas próprias' }));
+  await screen.findByText('Evidência privada');
+  expect(screen.getByText('Conferido pelo autor')).toBeVisible();
+  expect(api.resolveLiteraryImpact).not.toHaveBeenCalled();
+});
+it('saves only explicit private resolution notes and requires confirmation to discard the session draft', async () => {
+  await storage.adoptImpactJournal('author', 'book', impactFrame);
+  const check: ImpactCheck = {
+    id: 'check',
+    jobId: impactFrame.jobId,
+    from: impactStart.sources[0]!,
+    to: { kind: 'chapter', id: 'chapter', scopeKind: 'book', scopeId: 'book' },
+    relation: 'source',
+    sourceLabel: 'Livro',
+    targetLabel: 'A carta',
+    observationToken: 'e'.repeat(64),
+    facts: { status: 'unverified', sourceIdentityVerified: false, versionMatches: null },
+  };
+  vi.mocked(api.readLiteraryImpactPage).mockResolvedValue({
+    items: [check],
+    nextAfterId: null,
+    labelsAreCurrent: true,
+    semanticCompleteness: false,
+    publicationReady: false,
+  });
+  vi.mocked(api.resolveLiteraryImpact).mockResolvedValue({
+    jobId: impactFrame.jobId,
+    decisionId: 'decision',
+    decisionRevision: 1,
+    revision: 2,
+    status: 'reviewed',
+    publicationReady: false,
+  });
+  render(<LiteraryImpactPanel bookId="book" />);
+  await userEvent.click(screen.getByRole('button', { name: 'Consultar estado atual' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Consultar vínculos' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Revisar este vínculo' }));
+  await userEvent.click(screen.getByRole('combobox', { name: 'Decisão do autor' }));
+  await userEvent.click(screen.getByRole('option', { name: 'Revisado pelo autor' }));
+  await userEvent.type(screen.getByLabelText('Justificativa'), 'Conferi a relação.');
+  await userEvent.type(screen.getByLabelText('Evidência da decisão'), 'Capítulo salvo.');
+  await userEvent.click(screen.getByRole('button', { name: 'Adicionar evidência' }));
+  await userEvent.type(screen.getByLabelText('Evidência adicional 1'), 'Nota temporária');
+  await userEvent.click(screen.getByRole('button', { name: 'Remover evidência 2' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Salvar resolução' }));
+  await screen.findByText(/Resolução salva. Consulte os vínculos/);
+  expect(api.resolveLiteraryImpact).toHaveBeenCalledWith(
+    expect.objectContaining({
+      checkId: 'check',
+      expectedDecisionRevision: 0,
+      status: 'reviewed',
+      rationale: 'Conferi a relação.',
+      evidence: [{ note: 'Capítulo salvo.' }],
+    }),
+  );
+  expect(JSON.stringify(storage.readImpactJournal('author', 'book'))).not.toContain(
+    'Conferi a relação.',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar rascunho da resolução' }));
+  await userEvent.click(await screen.findByRole('button', { name: 'Continuar revisando' }));
+  expect(screen.getByLabelText('Justificativa')).toHaveValue('Conferi a relação.');
+  await userEvent.click(screen.getByRole('button', { name: 'Fechar rascunho da resolução' }));
+  await userEvent.click(
+    await screen.findByRole('button', { name: 'Fechar rascunho', exact: true }),
+  );
+  expect(screen.queryByLabelText('Justificativa')).not.toBeInTheDocument();
+});

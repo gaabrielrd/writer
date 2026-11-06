@@ -138,17 +138,6 @@
   font-size: 0.8rem;
   overflow-wrap: anywhere;
 }
-/* Keep the modal focus scope while positioning the dock in viewport coordinates.
-   A transformed dialog would otherwise become the fixed-position containing block. */
-:global([role='dialog']):has(> .dock.inDialog) {
-  inset: 0;
-  margin: auto;
-  height: fit-content;
-  transform: none;
-  translate: none;
-  animation: none;
-  overflow: visible;
-}
 .dock.inDialog {
   position: fixed;
   z-index: 65;

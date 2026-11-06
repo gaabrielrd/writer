@@ -118,7 +118,7 @@ it('paginates volumes and sends their explicit book and unit scope without treat
   await userEvent.click(screen.getByRole('button', { name: 'Consultar meus volumes' }));
   await userEvent.click(await screen.findByRole('button', { name: 'Mais volumes' }));
   await choose('Volume de origem', 'Segundo volume');
-  await choose('Unidade de origem', 'Cena');
+  await choose('Unidade de origem', 'Cenas');
   await userEvent.click(screen.getByRole('button', { name: 'Consultar referências atuais' }));
   await screen.findByText('Nenhuma referência disponível');
   expect(listLiteraryReferences).toHaveBeenLastCalledWith('book', 'volumeUnit', null, 'source', {

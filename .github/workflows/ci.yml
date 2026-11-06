@@ -63,6 +63,8 @@ jobs:
           src/features/literary-production/tests/LiteraryDraftPanel.test.tsx
           src/features/literary-production/tests/LiteraryFindingDecisionPanel.test.tsx
           src/features/literary-production/tests/WritingSourcePicker.test.tsx
+          src/features/literary-production/tests/LiteraryProposalPanel.test.tsx
+          src/features/literary-production/tests/LiteraryImpactPanel.test.tsx
 
       - name: Validar
         run: npm run validate

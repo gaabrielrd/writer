@@ -141,7 +141,7 @@ it('pauses after the pending preservation step and resumes only after another ex
   );
   await waitFor(() => expect(api.advanceLiteraryMilestone).toHaveBeenCalledOnce());
   await userEvent.click(screen.getByRole('button', { name: 'Pausar após a etapa atual' }));
-  await act(async () => {
+  await act(() => {
     complete(job('capturing'));
   });
   await screen.findByText('Preservando versões');

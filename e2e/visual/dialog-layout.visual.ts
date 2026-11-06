@@ -5,10 +5,37 @@ import {
   capture,
   expect,
   expectNoHorizontalOverflow,
+  expectDialogWithinViewport,
   test,
   openBookImport,
   navigateWorkspace,
 } from './support';
+
+test('modal de persona permanece na tela após carregar com assistente embutido e redimensionar', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto(`/books/${FIXTURE_BOOK_ID}/editor/${FIXTURE_CHAPTER_ID}`);
+  await page.getByRole('button', { name: 'Opções do capítulo', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Persona', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Persona', exact: true });
+  await expect(dialog.getByLabel('Persona complementar', { exact: true })).toBeVisible();
+  await expect(dialog.locator('[data-dialog-viewport-child]')).toBeAttached();
+  for (const viewport of [
+    { width: 1366, height: 768 },
+    { width: 640, height: 480 },
+    { width: 320, height: 640 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await expect(async () => {
+      await expectDialogWithinViewport(page);
+      await expect(dialog.getByRole('button', { name: 'Cancelar', exact: true })).toBeInViewport();
+    }).toPass();
+  }
+  await capture(page, testInfo, 'persona-modal-na-viewport');
+  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+});
 
 async function checkScroll(page: Page, dialog: Locator) {
   await expect(dialog).toBeVisible();
