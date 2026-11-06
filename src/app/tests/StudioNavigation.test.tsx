@@ -68,6 +68,7 @@ describe('espaços do Writer', () => {
       ['Biblioteca de Imagens', '/library'],
       ['Inteligência artificial', '/settings/ai'],
       ['Preferências', '/settings/preferences'],
+      ['Ajuda', '/help'],
     ]) {
       expect(screen.getByRole('link', { name })).toHaveAttribute('href', path);
     }
@@ -84,6 +85,7 @@ describe('espaços do Writer', () => {
     ['/library', 'Biblioteca de Imagens'],
     ['/settings/ai', 'Inteligência artificial'],
     ['/settings/preferences', 'Preferências'],
+    ['/help', 'Ajuda'],
     ['/studio', 'Home'],
     ['/studio/projects?kind=book', 'Projetos'],
     ['/studio/import', 'Importar e restaurar'],

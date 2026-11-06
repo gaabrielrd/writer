@@ -15,6 +15,18 @@ function renderAt(path: string, definitions: RouteObject[] = routes) {
  * Se um provider ou uma rota quebrar, falha aqui antes de chegar ao build.
  */
 describe('composicao da aplicacao', () => {
+  it('oferece ajuda pública e abre um artigo diretamente sem login', async () => {
+    renderAt('/help?article=mapa-do-writer');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Central de ajuda' }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('heading', { level: 2, name: 'Como o Writer se organiza' }),
+    ).toBeVisible();
+    expect(screen.getByRole('banner')).toContainElement(
+      screen.getByRole('link', { name: 'Ajuda' }),
+    );
+  });
   it('monta a rota raiz com o layout e a pagina inicial', async () => {
     renderAt('/');
 

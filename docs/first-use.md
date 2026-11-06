@@ -1,5 +1,9 @@
 # Primeiro acesso e espaço pessoal
 
+A [Central de ajuda](help.md) complementa o guia inicial com conceitos e passos
+consultáveis em `/help`. **Ajuda** na navegação ou no cabeçalho público abre a
+busca e os assuntos, sem iniciar tarefas nem enviar pedidos ao assistente.
+
 O Writer organiza o Estúdio a partir de interesses declarados: livros, aventuras,
 campanhas ou qualquer combinação. O perfil não concede acesso, não transforma
 projetos e não remove ferramentas. Monetização não faz parte deste ciclo.

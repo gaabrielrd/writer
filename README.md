@@ -142,6 +142,10 @@ e [timeline reestimada](docs/tasks/writer-v2/timeline.md).
 
 ## Experiência inicial
 
+A [Central de ajuda](docs/help.md), em `/help`, reúne conceitos, guias de tarefas,
+busca e leituras relacionadas para consultar os recursos do Writer. O acesso
+**Ajuda** fica na navegação autenticada e no cabeçalho público.
+
 O primeiro acesso oferece perfil por interesses, Estúdio personalizado e guia
 retomável. Um assistente flutuante acompanha as telas de criação e consulta,
 com contexto autorizado e posição ajustável. A implementação é local,

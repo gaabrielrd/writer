@@ -42,6 +42,12 @@ sem ampliar o suporte atual.
 
 ## Tipos de teste
 
+A Central de ajuda tem testes de conteúdo e interação em
+`src/features/help/tests`, composição pública em `src/app/tests/App.test.tsx`
+e a jornada `e2e/visual/help.visual.ts`. O Chromium confere busca, artigos,
+teclado, recarga, voltar, acesso anônimo e larguras desktop/laptop nos três temas,
+com serviços fictícios e rede externa bloqueada. Não faz chamadas de IA.
+
 A homepage pública tem a jornada `e2e/visual/public-home.visual.ts`, com os três
 temas de desktop. Ela verifica a ação principal dentro da janela em 1440, 1024 e
 800 px, ausência de transbordamento, navegação por teclado até o login e

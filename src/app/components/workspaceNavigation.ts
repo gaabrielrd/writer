@@ -8,6 +8,7 @@ import {
   Send,
   Settings2,
   SlidersHorizontal,
+  CircleHelp,
 } from 'lucide-react';
 
 export const spaces = [
@@ -29,6 +30,7 @@ export const spaces = [
     Icon: Settings2,
     section: 'Configurar',
   },
+  { path: '/help', label: 'Ajuda', Icon: CircleHelp, section: 'Configurar' },
 ] as const;
 
 export const navigationSections = ['Criar', 'Explorar', 'Configurar'] as const;

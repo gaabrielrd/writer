@@ -1,5 +1,13 @@
 # Arquitetura
 
+## Central de ajuda
+
+`help` reúne conteúdo tipado local e consulta por busca, assunto e artigo em
+`/help`. Depende somente de shared e bibliotecas da plataforma, sem leitura de
+projetos ou geração de IA. `app` compõe sua API pública nas rotas e nos acessos
+de navegação. Os destinos dos guias preservam os gates originais de cada recurso.
+Veja [Central de ajuda](help.md).
+
 Este documento descreve como o código do `Writer Assistant` é organizado e as regras que mantêm o projeto simples e sustentável.
 
 ## Criação e assistência contextual

@@ -20,6 +20,7 @@ import { SceneEditorPage } from '@/features/scenes';
 import { CampaignPage } from '@/features/campaigns';
 import { SignedInRoute } from '@/app/components/SignedInRoute';
 import { FutureSpacePage } from '@/app/components/FutureSpacePage';
+import { HelpPage } from '@/features/help';
 
 /**
  * Definicao das rotas, separada do router para permitir montar a mesma
@@ -40,6 +41,7 @@ export const routes: RouteObject[] = [
         path: 'login',
         element: <LoginPage />,
       },
+      { path: 'help', element: <HelpPage /> },
       {
         path: 'studio/new',
         element: (

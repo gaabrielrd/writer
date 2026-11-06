@@ -35,6 +35,7 @@ function AppHeader() {
           <BookNavigation />
         </div>
         <div className={styles.userBar}>
+          <Link to="/help">Ajuda</Link>
           {user && <CreditsBadge credits={user.credits} tier={user.tier} />}
           <CustomThemeSelector />
           <AuthButton onOpenAISettings={openAISettings} />

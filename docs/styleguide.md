@@ -279,6 +279,12 @@ Os exemplos de Dropdown e Tooltip ficam no modal de demonstração do catálogo.
 
 ## Hierarquia e continuidade
 
+A Central de ajuda (`/help`) usa `PageHeader` e `Toolbar`, índice de assuntos
+à esquerda e lista de artigos à direita. A leitura individual usa coluna de
+até 72 caracteres, passos numerados quando há sequência e links relacionados.
+Em janelas estreitas, o índice passa para uma faixa de links que quebra linhas.
+Busca vazia e artigo inexistente usam `EmptyState` com retorno explícito.
+
 Os controles de campo compartilham `--control-height` (44 px), raio
 `--radius-sm`, rótulos de 14 px em caixa normal e feedback discreto. Formulários
 usam intervalos de `--space-4`; seções opcionais têm borda fina e superfície
