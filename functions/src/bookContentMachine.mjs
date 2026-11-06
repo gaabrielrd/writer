@@ -1,3 +1,8 @@
+import {
+  createBookEditorialContentState,
+  validateBookEditorialContentState,
+  createBookEditorialContent,
+} from './bookEditorialContent.mjs';
 import { BOOK_RESOURCE_KINDS } from './bookBackupResources.mjs';
 import { BOOK_PERSONA_SCOPES } from './bookBackupPersonas.mjs';
 import { readBookPersonaAvailability } from './bookPersonaAvailability.mjs';
@@ -87,9 +92,14 @@ function rawExpectation(kind, recordId, manifest, binary, after) {
     after,
   };
 }
-export function createBookContentState(bookId, legacy = false) {
+export function createBookContentState(bookId, legacy = false, packageVersion = 1) {
   id(bookId);
-  if (typeof legacy !== 'boolean') bad();
+  if (
+    typeof legacy !== 'boolean' ||
+    ![1, 2].includes(packageVersion) ||
+    (legacy && packageVersion !== 1)
+  )
+    bad();
   const totals = {
     acts: 0,
     chapters: 0,
@@ -111,6 +121,14 @@ export function createBookContentState(bookId, legacy = false) {
     legacyCover: false,
   };
   if (legacy) Object.assign(warnings, { missingPersonas: 0, unknownOverrides: 0 });
+  if (packageVersion === 2) {
+    Object.assign(totals, { editorialArtifacts: 0, editorialLinks: 0 });
+    Object.assign(warnings, {
+      editorialUnavailable: 0,
+      editorialExternal: 0,
+      editorialUnverifiedVersions: 0,
+    });
+  }
 
   return {
     schemaVersion: 1,
@@ -130,30 +148,40 @@ export function createBookContentState(bookId, legacy = false) {
     raw: null,
     relations: null,
     lore: null,
+    ...(packageVersion === 2 ? { editorial: createBookEditorialContentState() } : {}),
   };
 }
 function checkpoint(value) {
   const state = jsonCopy(value, BOOK_CONTENT_CHECKPOINT_BYTES);
   if (!Object.hasOwn(state, 'lore')) state.lore = null;
-  closed(state, [
-    'schemaVersion',
-    'bookId',
-    'legacy',
-    'phase',
-    'edgeCount',
-    'rowCount',
-    'edgeCursor',
-    'rowCursor',
-    'totals',
-    'warnings',
-    'book',
-    'origin',
-    'cover',
-    'ended',
-    'raw',
-    'relations',
-    'lore',
-  ]);
+  closed(
+    state,
+    [
+      'schemaVersion',
+      'bookId',
+      'legacy',
+      'phase',
+      'edgeCount',
+      'rowCount',
+      'edgeCursor',
+      'rowCursor',
+      'totals',
+      'warnings',
+      'book',
+      'origin',
+      'cover',
+      'ended',
+      'raw',
+      'relations',
+      'lore',
+    ],
+    ['editorial'],
+  );
+  const editorial = Object.hasOwn(state, 'editorial');
+  if (editorial) {
+    validateBookEditorialContentState(state.editorial);
+    if (state.legacy || (state.editorial.walk !== null && state.phase !== 'rows')) bad();
+  }
   if (
     state.schemaVersion !== 1 ||
     typeof state.legacy !== 'boolean' ||
@@ -171,7 +199,7 @@ function checkpoint(value) {
     (state.phase === 'done' && state.rowCursor !== state.rowCount)
   )
     bad();
-  const shape = createBookContentState(state.bookId, state.legacy);
+  const shape = createBookContentState(state.bookId, state.legacy, editorial ? 2 : 1);
   closed(state.totals, Object.keys(shape.totals));
   for (const key of Object.keys(shape.totals)) {
     if (typeof shape.totals[key] === 'object') {
@@ -191,8 +219,15 @@ function checkpoint(value) {
   }
   if (
     !Array.isArray(state.ended) ||
-    state.ended.some((k) => !tags.includes(k)) ||
+    state.ended.some((k) => !(editorial ? [...tags, 'book-editorial'] : tags).includes(k)) ||
     new Set(state.ended).size !== state.ended.length
+  )
+    bad();
+  if (
+    editorial &&
+    (state.editorial.artifacts !== state.totals.editorialArtifacts ||
+      state.editorial.links !== state.totals.editorialLinks ||
+      state.editorial.closed !== state.ended.includes('book-editorial'))
   )
     bad();
   if (state.book !== null) {
@@ -237,7 +272,10 @@ function checkpoint(value) {
     count(pending.position);
     count(pending.total);
     if (
-      pending.record.kind !== 'book-lore' ||
+      ![
+        'book-lore',
+        ...(editorial ? ['book-editorial-artifact', 'book-editorial-link'] : []),
+      ].includes(pending.record.kind) ||
       pending.record.part !== 0 ||
       pending.position >= pending.total ||
       state.phase !== 'records'
@@ -261,7 +299,10 @@ function checkpoint(value) {
   if ([state.raw, state.relations, state.lore].filter((item) => item !== null).length > 1) bad();
   if (
     state.phase !== 'records' &&
-    (!state.book || !state.origin || !state.cover || tags.some((k) => !state.ended.includes(k)))
+    (!state.book ||
+      !state.origin ||
+      !state.cover ||
+      (editorial ? [...tags, 'book-editorial'] : tags).some((k) => !state.ended.includes(k)))
   )
     bad();
   return state;
@@ -393,6 +434,20 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
     check();
     return checkpoint({ ...state, edgeCount, rowCount, book, origin, cover, ended: [...ended] });
   };
+  const editorial = state.editorial
+    ? createBookEditorialContent({
+        state: state.editorial,
+        bookId,
+        add,
+        get,
+        edge,
+        row,
+        hashJSON,
+        totals,
+        warnings,
+        bookBinding: () => book,
+      })
+    : null;
   const acceptJSON = operation(async (record, input) => {
     if (state.phase !== 'records' || state.raw || state.relations || state.lore) bad();
     closed(record, ['kind', 'id', 'part']);
@@ -400,9 +455,8 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
     if (record.part !== 0) bad();
     // Clone before any asynchronous index effect; callers cannot edit a pending record.
     record = structuredClone(record);
-    const value = jsonCopy(input, BOOK_CONTENT_ITEM_BYTES),
-      kind = record.kind;
-    validateBookBackupJSONItem(kind, value, bookId);
+    const kind = record.kind,
+      value = validateBookBackupJSONItem(kind, jsonCopy(input, BOOK_CONTENT_ITEM_BYTES), bookId);
     if (kind === 'book-metadata') {
       once(kind);
       if (record.id !== bookId) bad();
@@ -488,6 +542,19 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
           true,
           'cover',
         );
+    } else if (
+      ['book-editorial-artifact', 'book-editorial-link', 'book-editorial'].includes(kind)
+    ) {
+      if (!editorial || ended.has('book-editorial')) bad();
+      const total = await editorial.accept(kind, record, value);
+      if (kind === 'book-editorial') once(kind);
+      else if (total)
+        state.relations = {
+          record: { kind, id: record.id, part: 0 },
+          hash: hashJSON(value),
+          position: 0,
+          total,
+        };
     } else {
       if (ended.has('book-resources')) bad();
       const type = value.kind,
@@ -601,8 +668,7 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
     if (state.phase !== 'records' || !state.relations) bad();
     count(limit);
     if (limit < 1 || limit > BOOK_CONTENT_STEP_ITEMS) bad();
-    const value = jsonCopy(input, BOOK_CONTENT_ITEM_BYTES),
-      pending = state.relations;
+    const pending = state.relations;
     closed(record, ['kind', 'id', 'part']);
     if (
       record.kind !== pending.record.kind ||
@@ -610,7 +676,24 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
       record.part !== pending.record.part
     )
       bad();
-    validateBookBackupJSONItem(record.kind, value, bookId);
+    const value = validateBookBackupJSONItem(
+      record.kind,
+      jsonCopy(input, BOOK_CONTENT_ITEM_BYTES),
+      bookId,
+    );
+    if (record.kind.startsWith('book-editorial-')) {
+      if (
+        !editorial ||
+        hashJSON(value) !== pending.hash ||
+        editorial.descriptors(record.kind, value).length !== pending.total
+      )
+        bad();
+      const end = Math.min(pending.total, pending.position + limit);
+      await editorial.advance(record.kind, value, pending.position, end);
+      pending.position = end;
+      if (end === pending.total) state.relations = null;
+      return;
+    }
     if (hashJSON(value) !== pending.hash || value.data.relations?.length !== pending.total) bad();
     const end = Math.min(pending.total, pending.position + limit);
     for (let at = pending.position; at < end; at++)
@@ -649,7 +732,8 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
         'work-history',
         'book-draft',
         'book-cover',
-      ].every((k) => ended.has(k))
+      ].every((k) => ended.has(k)) ||
+      (editorial && !ended.has('book-editorial'))
     )
       bad();
     if (
@@ -677,7 +761,10 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
       if (edgeValue.required) bad();
       bump(warnings, edgeValue.group ? 'orphanGroups' : 'danglingLocalReferences');
     }
-    if (edgeValue.expected?.mode) {
+    if (edgeValue.expected?.editorial) {
+      if (!editorial) bad();
+      await editorial.validateEdge(target, edgeValue.expected);
+    } else if (edgeValue.expected?.mode) {
       if (target && target.contentMode !== edgeValue.expected.mode) bad();
     } else if (edgeValue.expected) {
       const body = await get(['body', edgeValue.target[2]]);
@@ -688,6 +775,10 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
   async function oneRow() {
     const item = await get(['row', String(state.rowCursor)]);
     if (!item) bad();
+    if (typeof item.kind === 'string' && item.kind.startsWith('editorial-')) {
+      if (!editorial) bad();
+      return editorial.oneRow(item);
+    }
     if (item.kind === 'lore-relation') {
       if (!(await get(nodeKey('lore', item.target)))) {
         if (/^(adventure|universe):([^:]+):(.+)$/.test(item.target))
@@ -745,8 +836,8 @@ export function createBookContentMachine(initial, { index, hash, signal } = {}) 
           state.phase = 'done';
           continue;
         }
-        await oneRow();
-        state.rowCursor++;
+        const complete = await oneRow();
+        if (complete !== false) state.rowCursor++;
       }
       used++;
     }

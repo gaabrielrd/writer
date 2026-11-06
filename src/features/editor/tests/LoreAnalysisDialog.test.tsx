@@ -9,6 +9,7 @@ import * as ai from '@/features/ai-assistant';
 vi.mock('@/features/lore', async (original) => ({
   ...(await original<typeof lore>()),
   analyzeChapterLore: vi.fn(),
+  getLoreAnalysisEditorialContext: vi.fn(),
   prepareBYOKLore: vi.fn(),
   applyLoreAnalysis: vi.fn(),
 }));
@@ -55,10 +56,23 @@ function setup(extra: Partial<Parameters<typeof LoreAnalysisDialog>[0]> = {}) {
 async function analyze(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole('button', { name: 'Analisar capítulo' }));
   await screen.findByLabelText('Sugestão: Arthur');
+  const selected = screen.getByLabelText<HTMLInputElement>('Selecionar Arthur');
+  if (!selected.disabled && !selected.checked) await user.click(selected);
 }
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(ai.useAIConfig).mockReturnValue({ provider: 'firebase_ai' });
+  vi.mocked(lore.getLoreAnalysisEditorialContext).mockResolvedValue({
+    version: 1,
+    bookId: 'book',
+    chapterId: 'chapter',
+    scope: 'editorial-contract-only',
+    wholeBook: false,
+    present: false,
+    revision: 0,
+    contextToken: 'f'.repeat(64),
+    instruction: '',
+  });
   vi.mocked(lore.analyzeChapterLore).mockResolvedValue({
     id: 'ticket',
     provider: 'platform',
@@ -113,6 +127,7 @@ describe('revisão do compêndio', () => {
       screen.getByLabelText('Destino da sugestão'),
       'Atualizar Arthur — global',
     );
+    await user.click(screen.getByLabelText('Selecionar Arthur'));
     expect(screen.getByText(/afeta todos os livros/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Aplicar 1 alteração' }));
     expect(lore.applyLoreAnalysis).toHaveBeenCalledWith('ticket', detected.evidence, [
@@ -143,6 +158,7 @@ describe('revisão do compêndio', () => {
       screen.getByLabelText('Destino da sugestão'),
       'Criar no lore global do universo',
     );
+    await user.click(screen.getByLabelText('Selecionar Arthur'));
     expect(screen.getByText(/nova entidade será privada/)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Aplicar 1 alteração' }));
     expect(vi.mocked(lore.applyLoreAnalysis).mock.calls[0]?.[2][0]?.scope).toBe('global');
@@ -221,4 +237,80 @@ describe('revisão do compêndio', () => {
     resolve({ applied: 1, credits: 4 });
     await waitFor(() => expect(base.onApplied).toHaveBeenCalled());
   });
+});
+
+it('shows the exact editorial guide used and binds BYOK registration to its native proof', async () => {
+  vi.mocked(ai.useAIConfig).mockReturnValue({
+    provider: 'openai_byok',
+    openaiApiKey: 'private-key',
+  });
+  vi.mocked(ai.analyzeLoreWithBYOK).mockResolvedValue([detected]);
+  const editorial: lore.LoreAnalysisEditorialContext = {
+    version: 1,
+    bookId: 'book',
+    chapterId: 'chapter',
+    scope: 'editorial-contract-only',
+    wholeBook: false,
+    present: true,
+    revision: 4,
+    contextToken: 'e'.repeat(64),
+    instruction: 'POV limitado; a reserva não é fato observado.',
+  };
+  vi.mocked(lore.getLoreAnalysisEditorialContext).mockResolvedValue(editorial);
+  const { user } = setup();
+  await analyze(user);
+  expect(vi.mocked(ai.analyzeLoreWithBYOK).mock.calls[0]?.[4]).toEqual(editorial);
+  expect(vi.mocked(lore.prepareBYOKLore).mock.calls[0]?.[0].editorialContextToken).toBe(
+    editorial.contextToken,
+  );
+  await user.click(screen.getByText('Guia editorial utilizado · revisão 4'));
+  expect(screen.getByText(editorial.instruction)).toBeInTheDocument();
+  expect(screen.getByText(/Não inclui leitura integral do livro/)).toBeInTheDocument();
+  expect(JSON.stringify(vi.mocked(lore.prepareBYOKLore).mock.calls)).not.toContain('private-key');
+});
+
+it('interpretations stay unselected and show their claim evidence until the author explicitly chooses them', async () => {
+  const classified: lore.DetectedLoreEntity = {
+    ...detected,
+    claims: {
+      version: 1,
+      items: [
+        {
+          field: 'summary',
+          text: detected.summary,
+          kind: 'interpretation',
+          evidence: detected.evidence,
+          rationale: 'A conclusão não é declarada pelo narrador.',
+        },
+      ],
+    },
+  };
+  vi.mocked(lore.analyzeChapterLore).mockResolvedValue({
+    id: 'ticket',
+    provider: 'platform',
+    entities: [classified],
+  });
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: 'Analisar capítulo' }));
+  await screen.findByLabelText('Sugestão: Arthur');
+  expect(screen.getByLabelText('Selecionar Arthur')).not.toBeChecked();
+  expect(screen.getByRole('button', { name: 'Aplicar 0 alterações' })).toBeDisabled();
+  expect(screen.getByText('Classificação sugerida pela IA: Interpretação')).toBeInTheDocument();
+  await user.click(screen.getByText('Revisar classificação das afirmações'));
+  expect(screen.getByText(/A conclusão não é declarada/)).toBeInTheDocument();
+  await user.click(screen.getByLabelText('Selecionar Arthur'));
+  await user.click(screen.getByRole('button', { name: 'Aplicar 1 alteração' }));
+  await screen.findByText('Lote aplicado. O compêndio foi atualizado.');
+  expect(vi.mocked(lore.applyLoreAnalysis).mock.calls[0]?.[2][0]?.input).not.toHaveProperty(
+    'claims',
+  );
+});
+
+it('legacy unclassified suggestions are not silently promoted into selected facts', async () => {
+  const { user } = setup();
+  await user.click(screen.getByRole('button', { name: 'Analisar capítulo' }));
+  await screen.findByLabelText('Sugestão: Arthur');
+  expect(screen.getByLabelText('Selecionar Arthur')).not.toBeChecked();
+  expect(screen.getByText(/Sem classificação estruturada/)).toBeInTheDocument();
+  expect(lore.applyLoreAnalysis).not.toHaveBeenCalled();
 });

@@ -1,3 +1,4 @@
+import { preparePersonaCatalogWrite } from './personaCatalogClock.mjs';
 import { createHash } from 'node:crypto';
 import { GenerationError } from './generationError.mjs';
 import { platformTextGeneration, validateId } from './generation.mjs';
@@ -291,10 +292,12 @@ export function createPersonaGenerationService({ db, generator, now = Date.now }
           const target = db.doc(`users/${uid}/aiPersonas/${persona.id}`);
           if ((await tx.get(target)).exists)
             fail('already-exists', 'A persona já existe. Nenhum perfil foi sobrescrito.');
+          const catalog = await preparePersonaCatalogWrite(tx, db, uid);
           tx.create(target, persona);
           const accepted = { ...record, state: 'accepted', personaId: persona.id, acceptedHash };
           delete accepted.proposal;
           tx.set(ref, accepted);
+          catalog.commit();
           return view(data.requestId, accepted);
         });
       }

@@ -50,3 +50,10 @@
   margin-top: var(--space-3);
   font-size: var(--text-sm);
 }
+
+.editorialContext {
+  white-space: pre-wrap;
+  max-height: 24rem;
+  overflow: auto;
+  font-family: inherit;
+}

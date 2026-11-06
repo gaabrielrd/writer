@@ -1,3 +1,4 @@
+import { getLiteraryWritingContext } from '@/features/literary-production';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChapterChatPanel } from '../components/ChapterChatPanel';
@@ -7,6 +8,13 @@ import userEvent from '@testing-library/user-event';
 import * as settingsAPI from '../hooks/useAISettings';
 import * as configAPI from '../hooks/useAIConfig';
 
+vi.mock('@/features/literary-production', () => ({
+  getLiteraryWritingContext: vi.fn().mockResolvedValue(null),
+  editorialFields: [],
+  statusLabels: {},
+  WritingSourcePicker: () => null,
+  WritingContextPreview: () => null,
+}));
 vi.mock('../services/chapterChatService', () => ({
   loadChapterChat: vi.fn(),
   createChapterChat: vi.fn(),
@@ -413,7 +421,7 @@ describe('chat do capítulo', () => {
     await waitFor(() => expect(ui.input).toHaveValue('Outro rascunho'));
     expect(service.chapterChatCall).toHaveBeenCalledWith(
       expect.objectContaining({ conversationId: 'chat' }),
-      { action: 'draft', draft: 'Meu rascunho' },
+      { action: 'draft', draft: 'Meu rascunho', draftEpoch: 0 },
     );
     fireEvent.click(screen.getByRole('button', { name: 'Mais conversas' }));
     await waitFor(() =>
@@ -525,7 +533,7 @@ describe('chat do capítulo', () => {
     await screen.findByText('Novo trecho.');
     expect(vi.mocked(service.sendChapterChat).mock.calls[1]![1].requestId).toBe(requestId);
     expect(vi.mocked(service.sendChapterChat).mock.calls[1]![1]).toEqual(firstRequest);
-    expect(service.captureChatGeneration).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(service.captureChatGeneration).toHaveBeenCalledTimes(1));
   });
   it('oferece novo destino com prévia e mantém falha de aplicação sem marcar como paga', async () => {
     page.messages = [authorMessage, assistantMessage];
@@ -570,7 +578,10 @@ describe('chat do capítulo', () => {
     const remove = await screen.findByRole('dialog', { name: 'Excluir conversa?' });
     fireEvent.click(within(remove).getByRole('button', { name: 'Excluir conversa' }));
     await waitFor(() =>
-      expect(service.chapterChatCall).toHaveBeenCalledWith(expect.anything(), { action: 'delete' }),
+      expect(service.chapterChatCall).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ action: 'delete', mutationId: expect.any(String) as unknown }),
+      ),
     );
   });
   it('interrompe uma resposta e não mostra resultado tardio', async () => {
@@ -670,4 +681,35 @@ it('trocar preferências não cancela a resposta que já capturou sua configura�
     await Promise.resolve();
   });
   await screen.findByText(assistantMessage.text);
+});
+
+it('congela o modelo antes de esperar pelo contexto editorial', async () => {
+  let release: (value: null) => void = () => undefined;
+  let model = 'gemini-3.8-flash';
+  vi.mocked(getLiteraryWritingContext).mockImplementationOnce(
+    () =>
+      new Promise<null>((resolve) => {
+        release = resolve;
+      }),
+  );
+  vi.mocked(service.captureChatGeneration).mockImplementation((reasoning = 'auto') => ({
+    version: 1,
+    provider: 'platform',
+    model,
+    reasoning,
+  }));
+  const ui = await setup();
+  fireEvent.change(ui.input, { target: { value: 'Pedido com contexto demorado' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Enviar' }));
+  await waitFor(() => expect(service.captureChatGeneration).toHaveBeenCalledTimes(1));
+  expect(service.sendChapterChat).not.toHaveBeenCalled();
+  model = 'gemini-4-argon';
+  await act(async () => {
+    release(null);
+    await Promise.resolve();
+  });
+  await waitFor(() => expect(service.sendChapterChat).toHaveBeenCalledTimes(1));
+  expect(vi.mocked(service.sendChapterChat).mock.calls[0]?.[1].generation?.model).toBe(
+    'gemini-3.8-flash',
+  );
 });

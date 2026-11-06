@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { countVisibleWords } from '../../../../functions/src/visibleWordCount.mjs';
+import {
+  countVisibleWords,
+  renderPublicRichText,
+} from '../../../../functions/src/visibleWordCount.mjs';
 import corpusJson from '../../../../functions/test/fixtures/visible-prose.json?raw';
 import { renderRichText } from '@/shared/lib/sanitizeRichText';
 import { countWords } from '../model/chapter';
@@ -26,5 +29,6 @@ describe('server count matches the existing visible manuscript', () => {
     expect(visibleTokens).toEqual(tokens);
     expect(countWords(content)).toBe(wordCount);
     expect(countVisibleWords(content)).toBe(wordCount);
+    expect(renderPublicRichText(content)).toBe(renderRichText(content));
   });
 });

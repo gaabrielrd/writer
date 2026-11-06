@@ -10,7 +10,7 @@ export async function prepareBookRestoreValidationCleanup(tx, db, loaded, limit)
       'validation-state': 'validationState',
     },
     name = names[phase];
-  if (![3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(loaded.job.cleanupVersion) || !name)
+  if (![3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(loaded.job.cleanupVersion) || !name)
     inconsistent();
   const page = await tx.get(
     db

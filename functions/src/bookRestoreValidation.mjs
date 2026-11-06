@@ -166,7 +166,12 @@ export function createBookRestoreValidationService({
           if (end === loaded.job.checkedChunks) {
             report = state.legacy
               ? completeBookLegacyValidation(state, loaded.job.source.sha256, store.index)
-              : completeBookValidation(state, loaded.job.source.sha256, store.index);
+              : completeBookValidation(
+                  state,
+                  loaded.job.source.sha256,
+                  store.index,
+                  loaded.job.source,
+                );
             state.phase = 'done';
           }
         } else {
@@ -181,7 +186,7 @@ export function createBookRestoreValidationService({
           });
           if (state.legacy && state.phase.startsWith('legacy-'))
             await prepareBookLegacyValidationStep(state, source, store, loaded.job.source);
-          else await prepareBookValidationStep(state, source, store);
+          else await prepareBookValidationStep(state, source, store, loaded.job.source);
           if (state.machine?.bookId === loaded.job.bookId)
             throw new BookBackupFormatError(
               'invalid-record',

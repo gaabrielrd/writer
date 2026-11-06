@@ -10,6 +10,14 @@ export const BOOK_PACKAGE_SECTIONS = Object.freeze([
   'draft',
   'cover',
 ]);
+// Reader support is separate from the production default. V2 producers stay gated.
+export const BOOK_PACKAGE_SUPPORTED_VERSIONS = Object.freeze([1, 2]);
+const editorialSections = Object.freeze([...BOOK_PACKAGE_SECTIONS, 'editorial']);
+export function bookPackageSections(version = BOOK_PACKAGE_VERSION) {
+  if (!BOOK_PACKAGE_SUPPORTED_VERSIONS.includes(version))
+    throw new BookBackupFormatError('unsupported-version', 'Versão de pacote não suportada.');
+  return version === 1 ? BOOK_PACKAGE_SECTIONS : editorialSections;
+}
 const kinds = Object.freeze({
   structure: Object.freeze(['book-metadata', 'act', 'chapter']),
   resources: Object.freeze([
@@ -32,6 +40,7 @@ const kinds = Object.freeze({
   history: Object.freeze(['work-version', 'work-version-text', 'work-history']),
   draft: Object.freeze(['book-draft', 'book-draft-text']),
   cover: Object.freeze(['book-cover', 'book-cover-bytes']),
+  editorial: Object.freeze(['book-editorial-artifact', 'book-editorial-link', 'book-editorial']),
 });
 const encoder = new TextEncoder(),
   decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true });
@@ -64,16 +73,16 @@ function id(value) {
 }
 const count = (value) => Number.isSafeInteger(value) && value >= 0;
 export function bookPackageSection(kind) {
-  return BOOK_PACKAGE_SECTIONS.find((section) => kinds[section].includes(kind)) ?? null;
+  return editorialSections.find((section) => kinds[section].includes(kind)) ?? null;
 }
-export function createBookPackageCounts() {
+export function createBookPackageCounts(version = BOOK_PACKAGE_VERSION) {
   return Object.fromEntries(
-    BOOK_PACKAGE_SECTIONS.map((section) => [section, { records: 0, payloadBytes: 0 }]),
+    bookPackageSections(version).map((section) => [section, { records: 0, payloadBytes: 0 }]),
   );
 }
-export function countBookPackageRecord(counts, section, record) {
+export function countBookPackageRecord(counts, section, record, version = BOOK_PACKAGE_VERSION) {
   if (
-    !BOOK_PACKAGE_SECTIONS.includes(section) ||
+    !bookPackageSections(version).includes(section) ||
     bookPackageSection(record.kind) !== section ||
     record.payload.byteLength > 65536
   )
@@ -85,11 +94,12 @@ export function countBookPackageRecord(counts, section, record) {
   item.records = records;
   item.payloadBytes = payloadBytes;
 }
-function countsCopy(value, complete = true) {
-  if (!closed(value, [...BOOK_PACKAGE_SECTIONS])) invalid();
+function countsCopy(value, complete = true, version = BOOK_PACKAGE_VERSION) {
+  const sections = bookPackageSections(version);
+  if (!closed(value, [...sections])) invalid();
   return Object.freeze(
     Object.fromEntries(
-      BOOK_PACKAGE_SECTIONS.map((section) => {
+      sections.map((section) => {
         const item = value[section];
         if (
           !closed(item, ['records', 'payloadBytes']) ||
@@ -103,7 +113,7 @@ function countsCopy(value, complete = true) {
     ),
   );
 }
-export function bookPackageHeader(bookId) {
+export function bookPackageHeader(bookId, version = BOOK_PACKAGE_VERSION) {
   return {
     kind: 'book-package',
     id: id(bookId),
@@ -111,21 +121,23 @@ export function bookPackageHeader(bookId) {
     payload: encoder.encode(
       JSON.stringify({
         format: BOOK_PACKAGE_FORMAT,
-        version: BOOK_PACKAGE_VERSION,
+        version,
         containerVersion: 1,
         projectKind: 'book',
         bookId,
-        sections: [...BOOK_PACKAGE_SECTIONS],
+        sections: [...bookPackageSections(version)],
       }),
     ),
   };
 }
-export function bookPackageEnd(bookId, counts) {
+export function bookPackageEnd(bookId, counts, version = BOOK_PACKAGE_VERSION) {
   return {
     kind: 'book-package-end',
     id: id(bookId),
     part: 0,
-    payload: encoder.encode(JSON.stringify({ schemaVersion: 1, sections: countsCopy(counts) })),
+    payload: encoder.encode(
+      JSON.stringify({ schemaVersion: 1, sections: countsCopy(counts, true, version) }),
+    ),
   };
 }
 function control(record) {
@@ -153,22 +165,22 @@ function header(record) {
     value.format !== BOOK_PACKAGE_FORMAT
   )
     invalid();
-  if (value.version !== BOOK_PACKAGE_VERSION || value.containerVersion !== 1)
+  if (!BOOK_PACKAGE_SUPPORTED_VERSIONS.includes(value.version) || value.containerVersion !== 1)
     throw new BookBackupFormatError('unsupported-version', 'Versão de pacote não suportada.');
   if (
     value.projectKind !== 'book' ||
     value.bookId !== record.id ||
-    JSON.stringify(value.sections) !== JSON.stringify(BOOK_PACKAGE_SECTIONS) ||
-    parsed.text !== decoder.decode(bookPackageHeader(value.bookId).payload)
+    JSON.stringify(value.sections) !== JSON.stringify(bookPackageSections(value.version)) ||
+    parsed.text !== decoder.decode(bookPackageHeader(value.bookId, value.version).payload)
   )
     invalid();
   return Object.freeze({
     format: BOOK_PACKAGE_FORMAT,
-    version: 1,
+    version: value.version,
     containerVersion: 1,
     projectKind: 'book',
     bookId: value.bookId,
-    sections: BOOK_PACKAGE_SECTIONS,
+    sections: bookPackageSections(value.version),
   });
 }
 /** A bounded frame/package transition. Cursor must come from the trusted host. */
@@ -203,12 +215,15 @@ export async function readBookPackageStep(source, cursor = null, options = {}) {
       state.schemaVersion !== 1 ||
       !Number.isInteger(state.sectionIndex) ||
       state.sectionIndex < -1 ||
-      state.sectionIndex >= BOOK_PACKAGE_SECTIONS.length ||
+      state.sectionIndex >=
+        bookPackageSections(state.manifest?.version ?? BOOK_PACKAGE_VERSION).length ||
       typeof state.ended !== 'boolean' ||
       state.done !== false
     )
       invalid();
-    state.counts = structuredClone(countsCopy(state.counts, false));
+    state.counts = structuredClone(
+      countsCopy(state.counts, false, state.manifest?.version ?? BOOK_PACKAGE_VERSION),
+    );
     if (state.manifest === null) {
       if (
         state.container !== null ||
@@ -220,7 +235,7 @@ export async function readBookPackageStep(source, cursor = null, options = {}) {
     } else {
       if (
         JSON.stringify(state.manifest) !==
-        JSON.stringify(header(bookPackageHeader(state.manifest.bookId)))
+        JSON.stringify(header(bookPackageHeader(state.manifest.bookId, state.manifest.version)))
       )
         invalid();
       if (
@@ -231,7 +246,11 @@ export async function readBookPackageStep(source, cursor = null, options = {}) {
             Object.values(state.counts).reduce((sum, v) => sum + v.records, 0)
       )
         invalid();
-      if (state.ended && state.sectionIndex !== BOOK_PACKAGE_SECTIONS.length - 1) invalid();
+      if (
+        state.ended &&
+        state.sectionIndex !== bookPackageSections(state.manifest.version).length - 1
+      )
+        invalid();
     }
   }
   const next = await readBookBackupFrame(source, state.container, options);
@@ -239,6 +258,7 @@ export async function readBookPackageStep(source, cursor = null, options = {}) {
   if (state.manifest === null) {
     if (next.seal || !next.record) invalid();
     state.manifest = header(next.record);
+    state.counts = createBookPackageCounts(state.manifest.version);
     return { cursor: state, event: { type: 'manifest', manifest: state.manifest } };
   }
   if (next.seal) {
@@ -248,8 +268,8 @@ export async function readBookPackageStep(source, cursor = null, options = {}) {
       cursor: state,
       report: Object.freeze({
         validation: 'envelope-only',
-        manifest: header(bookPackageHeader(state.manifest.bookId)),
-        sections: countsCopy(state.counts),
+        manifest: header(bookPackageHeader(state.manifest.bookId, state.manifest.version)),
+        sections: countsCopy(state.counts, true, state.manifest.version),
         seal: Object.freeze({ ...next.seal }),
       }),
     };
@@ -259,26 +279,30 @@ export async function readBookPackageStep(source, cursor = null, options = {}) {
   if (record.kind === 'book-package-end') {
     if (
       record.id !== state.manifest.bookId ||
-      state.sectionIndex !== BOOK_PACKAGE_SECTIONS.length - 1
+      state.sectionIndex !== bookPackageSections(state.manifest.version).length - 1
     )
       invalid();
     const parsed = control(record);
     if (
       !closed(parsed.value, ['schemaVersion', 'sections']) ||
       parsed.value.schemaVersion !== 1 ||
-      JSON.stringify(countsCopy(parsed.value.sections)) !==
-        JSON.stringify(countsCopy(state.counts)) ||
-      parsed.text !== decoder.decode(bookPackageEnd(state.manifest.bookId, state.counts).payload)
+      JSON.stringify(countsCopy(parsed.value.sections, true, state.manifest.version)) !==
+        JSON.stringify(countsCopy(state.counts, true, state.manifest.version)) ||
+      parsed.text !==
+        decoder.decode(
+          bookPackageEnd(state.manifest.bookId, state.counts, state.manifest.version).payload,
+        )
     )
       invalid();
     state.ended = true;
     return { cursor: state, event: { type: 'footer' } };
   }
   const section = bookPackageSection(record.kind),
-    index = BOOK_PACKAGE_SECTIONS.indexOf(section);
-  if (!section || index < state.sectionIndex || index > state.sectionIndex + 1) invalid();
+    index = bookPackageSections(state.manifest.version).indexOf(section);
+  if (!section || index < 0 || index < state.sectionIndex || index > state.sectionIndex + 1)
+    invalid();
   state.sectionIndex = index;
-  countBookPackageRecord(state.counts, section, record);
+  countBookPackageRecord(state.counts, section, record, state.manifest.version);
   return { cursor: state, event: { type: 'record', section, record }, span: next.span };
 }
 /** The generator and server checkpoints share exactly the same framing rules. */

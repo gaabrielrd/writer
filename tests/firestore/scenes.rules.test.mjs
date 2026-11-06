@@ -147,9 +147,18 @@ test('direct scene/part/body/planning/reference access is private, writes and le
 test('legacy edits remain allowed while old clients cannot overwrite composed prosa, mode, counters or deletion guards', async () => {
   const own = client(),
     legacy = doc(own, 'books/book/chapters/legacy');
-  await assertSucceeds(
-    updateDoc(legacy, { title: 'Legado editado', content: '<p>Texto original</p>' }),
-  );
+  const mutateLegacy = async (patch, method = 'update') => {
+    const root = doc(own, 'books/book'),
+      previous = await getDoc(root),
+      batch = writeBatch(own);
+    if (method === 'delete') batch.delete(legacy);
+    else if (method === 'set') batch.set(legacy, patch);
+    else batch.update(legacy, patch);
+    batch.update(root, { updatedAt: Math.max(Date.now(), previous.data().updatedAt + 1) });
+    return batch.commit();
+  };
+  await assertFails(updateDoc(legacy, { title: 'Sem relógio' }));
+  await assertSucceeds(mutateLegacy({ title: 'Legado editado', content: '<p>Texto original</p>' }));
   const original = await api.getSceneGroup('author', { target, parentId: 'legacy' });
   await api.convertChapterToScenes('author', {
     target,
@@ -157,7 +166,9 @@ test('legacy edits remain allowed while old clients cannot overwrite composed pr
     operationId: op(1),
     expectedSourceVersion: original.sourceVersion,
   });
-  await assertSucceeds(updateDoc(legacy, { title: 'Título novo' }));
+  await assertSucceeds(mutateLegacy({ title: 'Título novo' })).catch((cause) => {
+    throw new Error('Título composto sem substituições', { cause });
+  });
   const maximumComplement = {
     personaId: 'preset-incisive',
     overrides: Array.from({ length: 16 }, (_, index) => ({
@@ -165,12 +176,18 @@ test('legacy edits remain allowed while old clients cannot overwrite composed pr
       value: index,
     })),
   };
-  await assertSucceeds(updateDoc(legacy, { personaComplement: maximumComplement }));
-  await assertSucceeds(updateDoc(legacy, { title: 'Título com 16 substituições' }));
+  await assertSucceeds(mutateLegacy({ personaComplement: maximumComplement })).catch((cause) => {
+    throw new Error('Persona preset com 16 substituições', { cause });
+  });
+  await assertSucceeds(mutateLegacy({ title: 'Título com 16 substituições' })).catch((cause) => {
+    throw new Error('Título preservando 16 substituições', { cause });
+  });
   await admin.doc('users/author/aiPersonas/custom-full').set({ name: 'Persona própria' });
   await assertSucceeds(
-    updateDoc(legacy, { personaComplement: { ...maximumComplement, personaId: 'custom-full' } }),
-  );
+    mutateLegacy({ personaComplement: { ...maximumComplement, personaId: 'custom-full' } }),
+  ).catch((cause) => {
+    throw new Error('Persona própria com 16 substituições', { cause });
+  });
   for (const override of [
     null,
     1,
@@ -183,12 +200,12 @@ test('legacy edits remain allowed while old clients cannot overwrite composed pr
     { traitId: 'x', value: 1, private: 'extra' },
   ])
     await assertFails(
-      updateDoc(legacy, {
+      mutateLegacy({
         personaComplement: { personaId: 'preset-incisive', overrides: [override] },
       }),
     );
   await assertFails(
-    updateDoc(legacy, {
+    mutateLegacy({
       personaComplement: {
         ...maximumComplement,
         overrides: [...maximumComplement.overrides, { traitId: 'overflow', value: 50 }],
@@ -203,9 +220,9 @@ test('legacy edits remain allowed while old clients cannot overwrite composed pr
     { wordCount: 0 },
     { sceneCount: 0 },
   ])
-    await assertFails(updateDoc(legacy, patch));
-  await assertFails(setDoc(legacy, { title: 'Capítulo', content: 'Antigo' }));
-  await assertFails(deleteDoc(legacy));
+    await assertFails(mutateLegacy(patch));
+  await assertFails(mutateLegacy({ title: 'Capítulo', content: 'Antigo' }, 'set'));
+  await assertFails(mutateLegacy(null, 'delete'));
   const book = doc(own, 'books/book');
   await assertFails(updateDoc(book, { hasSceneResources: deleteField() }));
   await assertFails(updateDoc(book, { sceneRevision: 0 }));

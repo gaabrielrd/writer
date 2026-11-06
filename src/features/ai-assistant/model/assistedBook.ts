@@ -3,6 +3,7 @@ import type {
   PageAction,
 } from '../../../../functions/src/pageAssistantCapabilities.mjs';
 import type { ChatGenerationRequest } from './chatGeneration';
+import type { EditorialContract } from '@/features/literary-production';
 import type { LoreCategory, LoreDetails, LoreRelation } from '@/features/lore';
 
 export interface AssistedEntity {
@@ -21,6 +22,7 @@ export interface AssistedProposal {
   synopsis: string;
   coverDirection: string;
   entities: AssistedEntity[];
+  editorialContract?: EditorialContract;
 }
 export interface AssistedCosts {
   text: number;

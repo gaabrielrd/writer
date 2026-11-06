@@ -148,6 +148,19 @@ test('seleção abre ações sem cobrir a formatação e aplica somente após ac
   await expect(dialog.getByLabel('Mensagem para o Assistente IA')).toHaveValue('/estilo ');
   await dialog.getByRole('button', { name: 'Enviar', exact: true }).click();
   await expect(dialog.getByText('O trecho ganhou novos detalhes.', { exact: true })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(
+          sessionStorage.getItem('writer.visual.literary-writing-context') ?? 'null',
+        ) as unknown,
+    ),
+  ).toEqual({
+    target: { kind: 'book', id: FIXTURE_BOOK_ID },
+    resource: { kind: 'chapter', id: FIXTURE_CHAPTER_ID },
+    mode: 'chat',
+    result: 'unconfigured',
+  });
   await expect(editor).toHaveText(manuscript);
   expect(
     await page.evaluate(() => sessionStorage.getItem('writer_fixture_ai_action_prompt')),

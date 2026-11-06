@@ -55,13 +55,67 @@ export class ChapterChatError extends Error {
     ].includes((cause as { code?: string })?.code ?? '');
   }
 }
+type PendingChatMutation = {
+  id: string;
+  conversationId: string;
+  kind: 'edit' | 'delete';
+  state: 'running';
+  deletedDocuments: number;
+};
+function pendingChatMutation(value: unknown): PendingChatMutation | null {
+  if (!value || typeof value !== 'object') return null;
+  const record = value as { mutation?: unknown; pendingMutation?: unknown };
+  const pending = record.mutation ?? record.pendingMutation;
+  if (pending === undefined || pending === null) return null;
+  if (typeof pending !== 'object') throw new Error('Operação pendente inválida.');
+  const item = pending as Partial<PendingChatMutation>;
+  if (
+    typeof item.id !== 'string' ||
+    !/^[a-zA-Z0-9_-]{1,128}$/.test(item.id) ||
+    typeof item.conversationId !== 'string' ||
+    !/^[a-zA-Z0-9_-]{1,128}$/.test(item.conversationId) ||
+    !['edit', 'delete'].includes(item.kind ?? '') ||
+    item.state !== 'running' ||
+    !Number.isSafeInteger(item.deletedDocuments) ||
+    (item.deletedDocuments ?? -1) < 0
+  )
+    throw new Error('Operação pendente inválida.');
+  return item as PendingChatMutation;
+}
 export async function chapterChatCall<T>(identity: ChatIdentity, data: object): Promise<T> {
   try {
-    return (
-      await httpsCallable<object, T>(getFunctions(getFirebaseApp(), 'us-central1'), 'chapterChat', {
-        timeout: 120000,
-      })({ ...identity, ...data })
-    ).data;
+    const request = data as { action?: string; mutationId?: string };
+    const body = ['edit', 'delete'].includes(request.action ?? '')
+      ? { ...data, mutationId: request.mutationId ?? crypto.randomUUID() }
+      : data;
+    const call = async (payload: object) =>
+      (
+        await httpsCallable<object, unknown>(
+          getFunctions(getFirebaseApp(), 'us-central1'),
+          'chapterChat',
+          { timeout: 120000 },
+        )({ ...identity, ...payload })
+      ).data;
+    let result = await call(body);
+    if (['edit', 'delete', 'resumeMutation', 'load'].includes(request.action ?? '')) {
+      let pending = pendingChatMutation(result);
+      while (pending) {
+        result = await call({
+          action: 'resumeMutation',
+          conversationId: pending.conversationId,
+          mutationId: pending.id,
+        });
+        const next = pendingChatMutation(result);
+        if (next && next.id === pending.id && next.deletedDocuments <= pending.deletedDocuments)
+          throw new Error('A operação permanece pendente. Reabra a conversa para retomar.');
+        pending = next;
+        if (!pending && request.action === 'load') {
+          result = await call(data);
+          pending = pendingChatMutation(result);
+        }
+      }
+    }
+    return result as T;
   } catch (cause) {
     throw new ChapterChatError(cause);
   }
@@ -166,6 +220,7 @@ export async function sendChapterChat(
   identity: ChatIdentity,
   request: {
     requestId: string;
+    messageInstance?: string;
     text: string;
     context: ChatContext;
     generation?: ChatGenerationRequest;
@@ -180,6 +235,7 @@ export async function sendChapterChat(
     requested?.provider ?? (legacyProvider === 'firebase_ai' ? 'platform' : legacyProvider);
   const wireRequest = {
     requestId: request.requestId,
+    ...(request.messageInstance ? { messageInstance: request.messageInstance } : {}),
     text: request.text,
     context: request.context,
     ...(requested ? { generation: requested } : {}),
@@ -209,6 +265,12 @@ export async function sendChapterChat(
     mode: 'byok',
   });
   if (!started.input) return started;
+  if (
+    !started.messageInstance ||
+    !started.generationAttempt ||
+    (request.messageInstance && request.messageInstance !== started.messageInstance)
+  )
+    throw new Error('Reabra o pedido para confirmar a tentativa antes de usar seu provedor.');
   const { input } = started;
   const system = `${input.systemInstruction}\n${input.context.persona.instruction}`;
   const user = JSON.stringify({ context: input.context, request: input.text });
@@ -290,14 +352,19 @@ export async function sendChapterChat(
     );
     return chapterChatCall<ChatMessage>(identity, {
       action: 'completeBYOK',
+      messageInstance: started.messageInstance,
+      generationAttempt: started.generationAttempt,
       requestId: request.requestId,
       output,
     });
   } catch (cause) {
     if (!signal.aborted)
-      await chapterChatCall(identity, { action: 'failBYOK', requestId: request.requestId }).catch(
-        () => undefined,
-      );
+      await chapterChatCall(identity, {
+        action: 'failBYOK',
+        requestId: request.requestId,
+        messageInstance: started.messageInstance,
+        generationAttempt: started.generationAttempt,
+      }).catch(() => undefined);
     if (boundedSignal.aborted && !signal.aborted)
       throw new Error('O provedor excedeu o limite de 90 segundos. Tente novamente.', { cause });
     throw cause;

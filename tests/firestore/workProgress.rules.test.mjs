@@ -7,7 +7,7 @@ import {
   assertFails,
   assertSucceeds,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteField, writeBatch } from 'firebase/firestore';
 import { createWorkProgressService } from '../../functions/src/workProgress.mjs';
 import { createScenesService } from '../../functions/src/scenes.mjs';
 import { digest } from '../../functions/src/sceneContracts.mjs';
@@ -109,17 +109,29 @@ test('estado/meta são privados, pronto não publica e escritores diretos não a
   assert.equal((await admin.doc('books/book').get()).data().status, 'draft');
   assert.equal((await admin.doc('publicBooks/book').get()).exists, false);
   const owner = client();
-  await assertSucceeds(updateDoc(doc(owner, 'books/book/chapters/aaa'), { title: 'Título novo' }));
+  const commit = async (method, reference, patch) => {
+    const root = doc(owner, 'books/book'),
+      previous = await getDoc(root),
+      batch = writeBatch(owner);
+    if (method === 'delete') batch.delete(reference);
+    else if (method === 'set') batch.set(reference, patch);
+    else batch.update(reference, patch);
+    batch.update(root, { updatedAt: Math.max(Date.now(), previous.data().updatedAt + 1) });
+    return batch.commit();
+  };
+  await assertSucceeds(
+    commit('update', doc(owner, 'books/book/chapters/aaa'), { title: 'Título novo' }),
+  );
   for (const patch of [{ content: 'Adulterado' }, { wordCount: 500 }, { contentMode: 'scenes' }])
-    await assertFails(updateDoc(doc(owner, 'books/book/chapters/aaa'), patch));
+    await assertFails(commit('update', doc(owner, 'books/book/chapters/aaa'), patch));
   await assertFails(
-    setDoc(doc(owner, 'books/book/chapters/forged'), {
+    commit('set', doc(owner, 'books/book/chapters/forged'), {
       title: 'Novo',
       content: 'Direto',
       order: 2,
     }),
   );
-  await assertFails(deleteDoc(doc(owner, 'books/book/chapters/aaa')));
+  await assertFails(commit('delete', doc(owner, 'books/book/chapters/aaa')));
   for (const patch of [
     { wordCount: 0 },
     { hasProgressResources: false },

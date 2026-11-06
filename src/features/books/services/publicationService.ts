@@ -46,6 +46,10 @@ export async function publishBook(bookId: string, authorName: string): Promise<v
   const bookSnapshot = await getDocFromServer(bookRef);
   if (!bookSnapshot.exists()) throw new Error('Livro não encontrado.');
   const book = bookSnapshot.data();
+  if (book.hasLiteraryPublications === true)
+    throw new Error(
+      'Use a publicação versionada na área de produção literária para conferir o manifesto antes de publicar.',
+    );
   const sceneMetadata = book.hasSceneResources
     ? { sourceSceneRevision: (book.sceneRevision ?? 0) as number }
     : {};

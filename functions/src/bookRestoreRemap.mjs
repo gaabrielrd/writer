@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { createBookEditorialRemapper } from './bookEditorialRemap.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
   bookContentClosed as closed,
@@ -56,6 +58,20 @@ export function createBookRestoreRemapper(input) {
       })
     );
   }
+  const editorial = createBookEditorialRemapper({
+    sourceBookId: context.sourceBookId,
+    bookId: context.bookId,
+    // Bind new archive IDs to this native job without expanding the pure mapper's closed input.
+    hashBytes: (bytes) =>
+      createHash('sha256')
+        .update('writer-book-restore-editorial-v1\0')
+        .update(context.jobToken)
+        .update('\0')
+        .update(bytes)
+        .digest('hex'),
+    mapResource: (kind, original, parent) =>
+      kinds.includes(kind) ? identity(kind, original, parent) : null,
+  });
   const maybe = (kind, value) => (value === null ? null : identity(kind, value));
   function complement(value) {
     if (value) value.personaId = identity('persona', value.personaId);
@@ -119,6 +135,30 @@ export function createBookRestoreRemapper(input) {
       kind = record.kind;
     let newId,
       relations = null;
+    if (['book-editorial-artifact', 'book-editorial-link', 'book-editorial'].includes(kind)) {
+      const restoration = {
+        execution: 'disabled',
+        publication: 'private',
+        review: 'required',
+        historical: true,
+      };
+      if (kind === 'book-editorial') {
+        if (record.id !== context.sourceBookId || value.bookId !== context.sourceBookId) bad();
+        return {
+          record: { kind, id: context.bookId, part: 0 },
+          value: { ...value, bookId: context.bookId },
+          relations,
+          restoration,
+        };
+      }
+      if (record.id !== value.id) bad();
+      const mapped =
+        kind === 'book-editorial-artifact'
+          ? editorial.artifact(value).record
+          : editorial.link(value);
+      return { record: { kind, id: mapped.id, part: 0 }, value: mapped, relations, restoration };
+    }
+
     if (singletonRecords.has(kind)) {
       if (record.id !== context.sourceBookId) bad();
       newId = context.bookId;
@@ -221,5 +261,25 @@ export function createBookRestoreRemapper(input) {
     value.targetEntityId = identity('lore', value.targetEntityId);
     return value;
   }
-  return Object.freeze({ identity, mapJSON, mapLoreRelation, rawIdentity });
+  function editorialIdentity(record) {
+    closed(record, ['kind', 'id', 'part']);
+    if (record.part !== 0) bad();
+    if (record.kind === 'book-editorial') {
+      if (record.id !== context.sourceBookId) bad();
+      return digest({ domain: 'writer-book-restore-editorial-summary-v1', ...context });
+    }
+    const kind = { 'book-editorial-artifact': 'artifact', 'book-editorial-link': 'link' }[
+      record.kind
+    ];
+    if (!kind) bad();
+    return editorial.identity(kind, record.id);
+  }
+  return Object.freeze({
+    identity,
+    mapJSON,
+    mapLoreRelation,
+    rawIdentity,
+    editorialIdentity,
+    editorialReference: editorial.reference,
+  });
 }

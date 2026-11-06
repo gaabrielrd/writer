@@ -178,3 +178,35 @@ inacessíveis para leitores após troca ou revogação da revisão.
 A preparação segue a ordem de atos/capítulos; capítulos públicos recebem uma
 ordem global. A exclusão de livro limpa também as coleções de atos.
 Veja [atos](book-acts.md).
+
+## Edição literária e guia do leitor
+
+O fluxo literário prepara uma edição congelada e mantém manifesto, provas,
+versões do guia e recibos privados em `functions`. A preparação não muda o
+apontador público. A confirmação exige conferência explícita de texto, guia e
+remoções, vinculada aos três hashes daquela edição; somente então grava a
+revisão, o apontador, o status e o recibo na mesma transação.
+
+O guia público é escrito separadamente das fichas privadas. Cada resumo,
+fato, relação e aparição conserva seu limite de revelação por livro, revisão
+e capítulo. A verificação exige citação literal no texto congelado e preserva
+informações incertas como incertas. Citações de trabalho, provas, notas
+editoriais e dados do autor não entram na projeção pública.
+
+O leitor apresenta o catálogo conforme o maior progresso daquela edição,
+preservado localmente pelo adaptador de progresso. Uma edição nova reinicia
+esse limite. Relações exigem que a identidade de destino também esteja
+liberada. A detecção de nomes ambíguos considera as identidades da edição
+inteira, inclusive as ainda ocultas, e suprime o tooltip sem revelar essas
+entradas. O limite de revelação controla a apresentação de uma edição pública;
+os originais editoriais continuam sob autorização privada no servidor.
+
+Repetir uma confirmação já aceita devolve o recibo histórico e informa se o
+apontador ainda corresponde à edição. Esse replay não restaura um apontador
+retirado nem republica o livro. Resposta de salvamento perdida conserva a mesma
+operação e a revisão esperada; a recuperação consulta sua versão exata.
+
+O estado real dos gates desta evolução está no
+[relatório de validação local](tasks/producao-literaria/validacao-local-2026-11-02.md).
+A existência das provas direcionadas não significa aprovação integral nem
+implantação deste fluxo.

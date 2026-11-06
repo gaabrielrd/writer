@@ -33,6 +33,11 @@ vi.mock('@/features/narrative-planning', () => ({
     </>
   ),
 }));
+vi.mock('@/features/literary-production', () => ({
+  LiteraryProductionPanel: ({ bookId }: { bookId: string }) => (
+    <h2>Produção literária de {bookId}</h2>
+  ),
+}));
 function CurrentLocation() {
   const location = useLocation();
   return <output aria-label="Localização atual">{location.search}</output>;
@@ -134,11 +139,21 @@ describe('BookPage', () => {
     tab.focus();
     await userEvent.keyboard('{ArrowRight}');
     await waitFor(() =>
+      expect(screen.getByLabelText('Localização atual')).toHaveTextContent('tab=editorial'),
+    );
+    expect(screen.getByRole('tab', { name: 'Produção literária' })).toHaveFocus();
+    expect(screen.getByLabelText('Localização atual')).toHaveTextContent('tab=editorial');
+    expect(screen.getByLabelText('Localização atual')).toHaveTextContent('narrativeArc=arco-1');
+    await userEvent.keyboard('{ArrowRight}');
+    await waitFor(() =>
       expect(screen.getByLabelText('Localização atual')).toHaveTextContent('tab=compendium'),
     );
     expect(screen.getByRole('tab', { name: 'Compêndio' })).toHaveFocus();
     expect(screen.getByLabelText('Localização atual')).toHaveTextContent('narrativeArc=arco-1');
     await userEvent.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'Produção literária' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('tab', { name: 'Arcos e cronologia' })).toHaveFocus();
     expect(
       await screen.findByRole('heading', { name: 'Planejamento de book/book-1' }),
     ).toBeInTheDocument();

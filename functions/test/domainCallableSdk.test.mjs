@@ -33,6 +33,14 @@ test('real sector composition reaches progress, campaigns, adventures and image 
   try {
     const progress = await call('workApi', 'getWorkProgress', { target: book });
     assert.equal(progress.target.id, 'book');
+    const editorial = await call('planningApi', 'getLiteraryContract', { target: book });
+    assert.equal(editorial.revision, 0);
+    await assert.rejects(call('planningApi', 'startLiteraryProse', { target: book }), {
+      code: 'invalid-argument',
+    });
+    await assert.rejects(call('generationApi', 'getLiteraryContract', { target: book }), {
+      code: 'invalid-argument',
+    });
     const campaign = await call('campaignsApi', 'createCampaign', {
       operationId: 'domain-campaign-0001',
       title: 'Private campaign',
@@ -105,5 +113,153 @@ test('real HTTP middleware rejects missing Auth/App Check for all sectors withou
   } finally {
     server.closeAllConnections();
     await new Promise((resolve) => server.close(resolve));
+  }
+});
+
+test('actual SDK sector composition registers and controls native chapter sequences while keeping internal hooks unreachable', async () => {
+  const { setup } = await import('./helpers/literarySequenceFixtures.mjs');
+  const f = await setup(),
+    descriptors = new Map();
+  for (const method of ['doc', 'collection', 'collectionGroup', 'runTransaction']) {
+    descriptors.set(method, Object.getOwnPropertyDescriptor(Firestore.prototype, method));
+    Object.defineProperty(Firestore.prototype, method, {
+      configurable: true,
+      value: (...args) => f.db[method](...args),
+    });
+  }
+  const call = (endpoint, action, payload) =>
+    endpoints[endpoint].run({
+      auth: { uid: 'author' },
+      app: { appId: 'demo' },
+      data: { version: 1, action, payload },
+    });
+  try {
+    const source = await call('planningApi', 'getLiterarySequenceScope', {
+      target: f.input.target,
+      chapterIds: f.input.chapterIds,
+    });
+    const registered = await call('planningApi', 'startLiterarySequence', {
+      ...f.input,
+      expectedScopeToken: source.originToken,
+      requestHash: 'a'.repeat(64),
+    });
+    assert.equal(registered.job.currentWorkflowId, null);
+    const first = await call('generationApi', 'advanceLiterarySequence', {
+      target: f.input.target,
+      jobId: f.input.jobId,
+      operationId: 'sdk-sequence-advance-0001',
+      expectedRevision: registered.job.revision,
+      expectedOriginToken: registered.job.originToken,
+      requestHash: 'b'.repeat(64),
+    });
+    assert.ok(first.job.currentWorkflowId);
+    const outcome = await call('planningApi', 'getLiterarySequenceOperation', {
+      target: f.input.target,
+      jobId: f.input.jobId,
+      operationId: 'sdk-sequence-advance-0001',
+    });
+    assert.equal(outcome.state, 'confirmed');
+    assert.equal(outcome.requestHash, 'b'.repeat(64));
+    const replay = await call('generationApi', 'resumeLiterarySequenceOperation', {
+      target: f.input.target,
+      jobId: f.input.jobId,
+      operationId: 'sdk-sequence-advance-0001',
+    });
+    assert.equal(replay.job.currentWorkflowId, first.job.currentWorkflowId);
+    const paused = await call('planningApi', 'setLiterarySequenceControl', {
+      target: f.input.target,
+      jobId: f.input.jobId,
+      operationId: 'sdk-sequence-control-0001',
+      expectedRevision: first.job.revision,
+      expectedOriginToken: first.job.originToken,
+      action: 'pause',
+      requestHash: 'c'.repeat(64),
+    });
+    assert.equal(paused.job.paused, true);
+    const listed = await call('planningApi', 'listLiterarySequences', {
+      target: f.input.target,
+      limit: 1,
+    });
+    assert.equal(listed.items[0].jobId, f.input.jobId);
+    const current = await call('planningApi', 'getLiterarySequence', {
+      target: f.input.target,
+      jobId: f.input.jobId,
+    });
+    assert.equal(current.job.paused, true);
+    for (const helper of [
+      'workflowHooks',
+      'completeLiterarySequenceChapter',
+      'createLiterarySequenceDriver',
+    ])
+      await assert.rejects(call('planningApi', helper, { target: f.input.target }), {
+        code: 'invalid-argument',
+      });
+    await assert.rejects(call('planningApi', 'advanceLiterarySequence', {}), {
+      code: 'invalid-argument',
+    });
+    await assert.rejects(call('generationApi', 'getLiterarySequence', {}), {
+      code: 'invalid-argument',
+    });
+    assert.equal(f.records.get('users/author').credits, 10);
+  } finally {
+    for (const [method, descriptor] of descriptors) {
+      if (descriptor) Object.defineProperty(Firestore.prototype, method, descriptor);
+      else delete Firestore.prototype[method];
+    }
+  }
+});
+
+test('sector exposes managed impact actions while refusing its raw graph and index helpers', async () => {
+  const { studioDb } = await import('./helpers/studioDb.mjs'),
+    f = studioDb({ sharedBirth: true }),
+    descriptors = new Map();
+  f.records.set('books/book', {
+    authorId: 'author',
+    title: 'Private',
+    status: 'draft',
+    updatedAt: 10,
+  });
+  for (const method of ['doc', 'collection', 'collectionGroup', 'runTransaction']) {
+    descriptors.set(method, Object.getOwnPropertyDescriptor(Firestore.prototype, method));
+    Object.defineProperty(Firestore.prototype, method, {
+      configurable: true,
+      value: (...args) => f.db[method](...args),
+    });
+  }
+  const call = (action, payload) =>
+    endpoints.planningApi.run({
+      auth: { uid: 'author' },
+      app: { appId: 'demo-app' },
+      data: { version: 1, action, payload },
+    });
+  try {
+    const intent = {
+      target: { kind: 'book', id: 'book' },
+      bookIds: ['book'],
+      sources: [{ kind: 'book', id: 'book', scopeKind: 'book', scopeId: 'book' }],
+      prepareIndices: false,
+    };
+    const scope = await call('getLiteraryImpactScope', intent);
+    const frame = await call('startLiteraryImpact', {
+      ...intent,
+      jobId: 'impact-sector-000001',
+      expectedBookToken: scope.bookToken,
+      expectedScopeToken: scope.scopeToken,
+      requestHash: 'a'.repeat(64),
+    });
+    assert.equal(frame.phase, 'freezing');
+    assert.equal(frame.publicationReady, false);
+    for (const action of [
+      'readLiteraryImpactBookInventoryPage',
+      'verifyLiteraryImpactInventoryLink',
+      'backfillLiteraryGuideDependencyIndex',
+      'append',
+    ])
+      await assert.rejects(call(action, { target: intent.target }), { code: 'invalid-argument' });
+  } finally {
+    for (const [method, descriptor] of descriptors) {
+      if (descriptor) Object.defineProperty(Firestore.prototype, method, descriptor);
+      else delete Firestore.prototype[method];
+    }
   }
 });

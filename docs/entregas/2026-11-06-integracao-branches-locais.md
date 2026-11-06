@@ -34,6 +34,12 @@ integração; a verificação técnica ocorre na CI remota.
 
 ## Estado da evidência
 
+Os rascunhos foram registrados em `6cd34b7` (ajuda), `8f764c4b` (produção
+literária) e `18102f84` (tipografia). A integração exigiu resolver quatro arquivos:
+página e testes do livro, testes do assistente e criação de projetos. Foram
+preservados as abas modulares atuais, o painel editorial, o assistente persistente
+e a geração opcional de capa também na criação manual.
+
 Este registro documenta o escopo e a autorização. Os commits finais, o push e o
 resultado da CI devem ser conferidos nas referências remotas e no relatório
 final desta integração. Registros anteriores de testes descrevem as respectivas

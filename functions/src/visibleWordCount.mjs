@@ -264,6 +264,13 @@ function visibleHtml(content) {
   return serialize(output);
 }
 
+/** Safe public prose projection, matching the existing browser renderer. */
+export function renderPublicRichText(content) {
+  if (typeof content !== 'string' || !content.isWellFormed())
+    throw new TypeError('O manuscrito deve ser texto válido.');
+  return visibleHtml(content);
+}
+
 /** Counts the prose the existing reader displays; no DOM, I/O or manuscript mutation. */
 export function countVisibleWords(content) {
   if (typeof content !== 'string') throw new TypeError('O manuscrito deve ser texto.');

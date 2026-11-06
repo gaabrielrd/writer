@@ -87,3 +87,23 @@ describe('análise BYOK', () => {
     ).rejects.toThrow('interrompida');
   });
 });
+
+it('BYOK sends the canonical editorial context as directions and never as manuscript evidence', async () => {
+  vi.mocked(generateAIResponse).mockResolvedValue(JSON.stringify({ entities: [entity] }));
+  const editorial = {
+    version: 1 as const,
+    bookId: 'book',
+    chapterId: 'chapter',
+    scope: 'editorial-contract-only' as const,
+    wholeBook: false as const,
+    present: true,
+    revision: 2,
+    contextToken: 'a'.repeat(64),
+    instruction: 'A origem da carta é reserva futura.',
+  };
+  await analyzeLoreWithBYOK('Arthur chegou.', [], config, new AbortController().signal, editorial);
+  const call = vi.mocked(generateAIResponse).mock.calls[0]?.[0];
+  const prompt: unknown = JSON.parse(call?.prompt ?? '{}');
+  expect(prompt).toMatchObject({ editorialContext: editorial, text: 'Arthur chegou.' });
+  expect(call?.systemInstruction).toContain('não use lore ou editorialContext como evidência');
+});

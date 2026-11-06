@@ -14,7 +14,22 @@ export function workFixture() {
       const value = snapshot.data();
       return !value
         ? value
-        : Object.fromEntries(fields.filter((key) => key in value).map((key) => [key, value[key]]));
+        : fields.reduce((result, path) => {
+            const keys = path.split('.');
+            let source = value,
+              target = result;
+            for (let index = 0; index < keys.length; index++) {
+              const key = keys[index];
+              if (!source || !Object.hasOwn(source, key)) break;
+              if (index === keys.length - 1) target[key] = source[key];
+              else {
+                target[key] ??= {};
+                target = target[key];
+                source = source[key];
+              }
+            }
+            return result;
+          }, {});
     },
   });
   function wrap(query, fields = null) {

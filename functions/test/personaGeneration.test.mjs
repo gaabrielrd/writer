@@ -310,3 +310,25 @@ test('atributos próprios de propostas diferentes não colidem ao compor base e 
   });
   assert.equal(profile.traits.length, 10);
 });
+
+test('first AI persona acceptance advances its catalog once and historical replay preserves the current library revision', async () => {
+  const f = fixture();
+  f.records.set('users/author/aiPersonaCatalog/current', { schemaVersion: 1, revision: 4 });
+  const proposal = await f.generate();
+  const input = {
+    action: 'accept',
+    requestId: 'request-persona-000001',
+    persona: f.editable(proposal),
+  };
+  const accepted = await f.call(input);
+  assert.deepEqual(f.records.get('users/author/aiPersonaCatalog/current'), {
+    schemaVersion: 1,
+    revision: 5,
+  });
+  assert.ok(f.records.has('users/author/aiPersonas/' + accepted.personaId));
+  f.records.set('users/author/aiPersonaCatalog/current', { schemaVersion: 1, revision: 8 });
+  const before = structuredClone([...f.records]);
+  assert.deepEqual(await f.call(input), accepted);
+  assert.deepEqual([...f.records], before);
+  assert.equal(f.records.get('users/author').credits, 0);
+});

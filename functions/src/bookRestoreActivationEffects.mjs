@@ -1,4 +1,5 @@
 import { digest } from './sceneContracts.mjs';
+import { preparePersonaCatalogWrite } from './personaCatalogClock.mjs';
 import { inconsistent } from './bookRestoreUploadContracts.mjs';
 import { readBookRestoreArtifact } from './bookRestoreArtifacts.mjs';
 import { projectPersonaRestoreBatch } from './personaAvailabilityContracts.mjs';
@@ -81,6 +82,7 @@ export async function prepareBookRestoreActivationEffects(
       createdAt: timestamp,
       updatedAt: timestamp,
       restoreOrigin,
+      ...(decision.editorial ? decision.editorial.rootState : {}),
     },
     control = { ...decision.control.value, countReady: true, phase: 'done', cursor: null },
     batch = projectPersonaRestoreBatch({
@@ -125,9 +127,12 @@ export async function prepareBookRestoreActivationEffects(
       },
     };
   }
+  const personaCatalog =
+    batch.profileCount > 0 ? await preparePersonaCatalogWrite(tx, db, uid) : null;
   return {
     root,
     commit() {
+      personaCatalog?.commit();
       tx.create(db.doc('books/' + bookId), root);
       tx.update(decision.control.ref, control);
       tx.update(decision.batch.snapshot.ref, batch);

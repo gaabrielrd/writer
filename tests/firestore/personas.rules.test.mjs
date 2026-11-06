@@ -6,6 +6,7 @@ import {
   initializeTestEnvironment,
 } from '@firebase/rules-unit-testing';
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch } from 'firebase/firestore';
+import { setPersonaWithCatalog, updatePersonaWithCatalog } from './helpers/personaCatalog.mjs';
 
 const [host, port] = (process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080').split(':');
 let environment;
@@ -31,6 +32,10 @@ const persona = {
   ].map((id) => ({ id, name: id, description: '', low: 'Discreto', high: 'Intenso', value: 50 })),
 };
 const path = 'users/author/aiPersonas/custom-test';
+const setPersona = (database, path, value) =>
+  setPersonaWithCatalog(database, doc(database, path), value);
+const updatePersona = (database, path, value) =>
+  updatePersonaWithCatalog(database, doc(database, path), value);
 const db = (id) =>
   id
     ? environment.authenticatedContext(id).firestore()
@@ -46,7 +51,7 @@ after(async () => environment?.cleanup());
 
 it('permite personas privadas apenas ao dono e mantém revisão monotônica sem exclusão', async () => {
   await assertSucceeds(
-    setDoc(doc(db('author'), path), {
+    setPersona(db('author'), path, {
       ...persona,
       traits: [
         ...persona.traits,
@@ -61,36 +66,34 @@ it('permite personas privadas apenas ao dono e mantém revisão monotônica sem 
   await assertSucceeds(getDoc(doc(db('author'), path)));
   await assertFails(getDoc(doc(db(), path)));
   await assertFails(getDoc(doc(db('intruder'), path)));
-  await assertFails(updateDoc(doc(db('author'), path), { name: 'Nova voz' }));
+  await assertFails(updatePersona(db('author'), path, { name: 'Nova voz' }));
   await assertSucceeds(
-    updateDoc(doc(db('author'), path), { archived: true, revision: 2, updatedAt: 2 }),
+    updatePersona(db('author'), path, { archived: true, revision: 2, updatedAt: 2 }),
   );
   await assertFails(deleteDoc(doc(db('author'), path)));
   await assertFails(setDoc(doc(db('intruder'), path), persona));
 });
 
 it('nega campos estranhos, perfis reservados, limites e atributos fora da escala', async () => {
-  await assertFails(setDoc(doc(db('author'), path), { ...persona, apiKey: 'secret' }));
+  await assertFails(setPersona(db('author'), path, { ...persona, apiKey: 'secret' }));
   await assertFails(
-    setDoc(doc(db('author'), path), { ...persona, traits: [null, ...persona.traits.slice(1)] }),
+    setPersona(db('author'), path, { ...persona, traits: [null, ...persona.traits.slice(1)] }),
   );
+  await assertFails(setPersona(db('author'), path, { ...persona, instructions: 'x'.repeat(6001) }));
   await assertFails(
-    setDoc(doc(db('author'), path), { ...persona, instructions: 'x'.repeat(6001) }),
-  );
-  await assertFails(
-    setDoc(doc(db('author'), path), {
+    setPersona(db('author'), path, {
       ...persona,
       traits: persona.traits.map((trait) => ({ ...trait, value: 101 })),
     }),
   );
   await assertFails(
-    setDoc(doc(db('author'), path), {
+    setPersona(db('author'), path, {
       ...persona,
       traits: persona.traits.map((trait) => ({ ...trait, value: 0.5 })),
     }),
   );
   await assertFails(
-    setDoc(doc(db('author'), 'users/author/aiPersonas/preset-incisive'), {
+    setPersona(db('author'), 'users/author/aiPersonas/preset-incisive', {
       ...persona,
       id: 'preset-incisive',
     }),
@@ -99,7 +102,7 @@ it('nega campos estranhos, perfis reservados, limites e atributos fora da escala
 
 it('vincula apenas personas próprias ou padrões e valida substituições do capítulo', async () => {
   const firestore = db('author');
-  await assertSucceeds(setDoc(doc(firestore, path), persona));
+  await assertSucceeds(setPersona(firestore, path, persona));
   const book = doc(firestore, 'books/book');
   await assertSucceeds(
     setDoc(book, {
@@ -148,6 +151,24 @@ it('vincula apenas personas próprias ou padrões e valida substituições do ca
       },
     }),
   );
-  await assertSucceeds(updateDoc(chapter, { personaComplement: null }));
+  const clear = writeBatch(firestore);
+  clear.update(chapter, { personaComplement: null });
+  clear.update(book, { updatedAt: 3 });
+  await assertSucceeds(clear.commit());
   await assertSucceeds(updateDoc(book, { personaId: null }));
+});
+
+it('exige o avanço do catálogo na mesma gravação e protege seu escopo e formato', async () => {
+  const own = db('author'),
+    profile = doc(own, path),
+    catalog = doc(own, 'users/author/aiPersonaCatalog/current');
+  await assertFails(setDoc(profile, persona));
+  await assertSucceeds(setPersona(own, path, persona));
+  await assertFails(updateDoc(profile, { revision: 2, name: 'Sem catálogo' }));
+  await assertSucceeds(updatePersona(own, path, { revision: 2, name: 'Com catálogo' }));
+  await assertFails(setDoc(catalog, { schemaVersion: 1, revision: 100 }));
+  await assertFails(updateDoc(catalog, { instructions: 'private' }));
+  await assertFails(deleteDoc(catalog));
+  await assertFails(getDoc(doc(db('intruder'), 'users/author/aiPersonaCatalog/current')));
+  await assertFails(getDoc(doc(db(), 'users/author/aiPersonaCatalog/current')));
 });

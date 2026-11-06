@@ -8,6 +8,7 @@ export interface UseAutoSaveOptions {
   chapterId?: string | null;
   ownerId?: string;
   enabled?: boolean;
+  paused?: boolean;
   content: string;
   debounceMs?: number;
   onSaved?: (wordCount: number) => void;
@@ -28,6 +29,7 @@ export function useAutoSave({
   chapterId,
   ownerId,
   enabled = true,
+  paused = false,
   content,
   debounceMs = 1000,
   onSaved,
@@ -35,6 +37,8 @@ export function useAutoSave({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
   const saved = useRef(content);
   const latest = useRef(content);
   const pending = useRef<Promise<void> | null>(null);
@@ -65,11 +69,11 @@ export function useAutoSave({
 
   const performSave = useCallback(
     async function saveLatest(): Promise<void> {
-      if (!bookId || !chapterId || !enabled) return;
+      if (!bookId || !chapterId || !enabled || pausedRef.current) return;
       while (pending.current) {
         await pending.current;
       }
-      if (!mounted.current) return;
+      if (!mounted.current || pausedRef.current) return;
       if (latest.current === saved.current) return;
       const text = latest.current;
       if (mounted.current) {
@@ -135,6 +139,10 @@ export function useAutoSave({
       setSaveStatus('unsaved');
       if (backupError) setError(backupError);
     });
+    if (paused)
+      return () => {
+        active = false;
+      };
     timer.current = setTimeout(() => {
       timer.current = null;
       void performSave();
@@ -144,7 +152,7 @@ export function useAutoSave({
       if (timer.current) clearTimeout(timer.current);
       timer.current = null;
     };
-  }, [content, enabled, bookId, chapterId, ownerId, debounceMs, performSave]);
+  }, [content, enabled, paused, bookId, chapterId, ownerId, debounceMs, performSave]);
 
   useEffect(() => {
     mounted.current = true;
@@ -160,7 +168,13 @@ export function useAutoSave({
       window.removeEventListener('beforeunload', warn);
       // Enqueue the final captured text synchronously, before a new route session
       // can append its edits. Never let an old session's delayed drain run later.
-      if (enabled && bookId && chapterId && (latest.current !== saved.current || pending.current)) {
+      if (
+        enabled &&
+        !pausedRef.current &&
+        bookId &&
+        chapterId &&
+        (latest.current !== saved.current || pending.current)
+      ) {
         const finalText = latest.current;
         void saveChapterContent(bookId, chapterId, finalText, () => saved.current, ownerId)
           .then(() => {

@@ -69,3 +69,6 @@ export type { AdventurePersonaDialogProps } from './components/AdventurePersonaD
 export type { ChatGenerationRequest } from './model/chatGeneration';
 
 export { PersonaManager } from './components/PersonaManager';
+export * from './model/atomicAutocomplete';
+export * from './services/literaryAutocompleteService';
+export * from './services/autocompleteApplyStorage';

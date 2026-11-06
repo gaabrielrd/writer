@@ -1,6 +1,28 @@
+import {
+  resolveLoreEvidence,
+  normalizeLoreClaims,
+} from '../../../../functions/src/loreClaimProtocol.mjs';
+import type { LoreClaimSet } from '../../../../functions/src/loreClaimProtocol.mjs';
+export type {
+  LoreClaim,
+  LoreClaimKind,
+  LoreClaimSet,
+} from '../../../../functions/src/loreClaimProtocol.mjs';
 import type { ChatGenerationRequest } from '@/features/ai-assistant';
 import type { LoreCategory, LoreEntity } from './loreEntity';
+export interface LoreAnalysisEditorialContext {
+  version: 1;
+  bookId: string;
+  chapterId: string;
+  scope: 'editorial-contract-only';
+  wholeBook: false;
+  present: boolean;
+  revision: number;
+  contextToken: string;
+  instruction: string;
+}
 export interface LoreAnalysisRequest {
+  editorialContextToken?: string;
   bookId: string;
   chapterId: string;
   text: string;
@@ -11,6 +33,7 @@ export interface LoreAnalysisRequest {
 }
 
 export interface DetectedLoreEntity {
+  claims?: LoreClaimSet;
   name: string;
   category: LoreCategory;
   summary: string;
@@ -19,6 +42,7 @@ export interface DetectedLoreEntity {
   evidence: string;
 }
 export interface LoreAnalysis {
+  editorialContext?: LoreAnalysisEditorialContext;
   id: string;
   provider: 'platform' | 'byok';
   entities: DetectedLoreEntity[];
@@ -66,20 +90,15 @@ export function parseDetectedLore(text: string, source: string): DetectedLoreEnt
     ) {
       throw new Error('A análise contém dados ou evidências inválidas. Tente novamente.');
     }
-    const quote = item.evidence.trim();
-    const pattern = quote
-      .split(/\s+/u)
-      .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .join('\\s+');
-    const evidence = source.includes(quote) ? quote : source.match(new RegExp(pattern, 'u'))?.[0];
-    if (!evidence || evidence.length > 1000)
-      throw new Error('A análise contém evidências ausentes no capítulo. Tente novamente.');
+    const evidence = resolveLoreEvidence(source, item.evidence);
+    const claims = normalizeLoreClaims(item.claims, item, source);
     return {
       name: item.name.trim(),
       category: item.category,
       summary: item.summary.trim(),
       details: item.details,
       aliases: item.aliases,
+      ...(claims ? { claims } : {}),
       evidence,
     };
   });

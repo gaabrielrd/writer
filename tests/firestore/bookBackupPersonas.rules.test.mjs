@@ -1,3 +1,4 @@
+import { setPersonaWithCatalog } from './helpers/personaCatalog.mjs';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
@@ -7,7 +8,7 @@ import {
   assertFails,
   assertSucceeds,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
 import { createBookBackupReadService } from '../../functions/src/bookBackupRead.mjs';
 import { createBookBackupPersonaService } from '../../functions/src/bookBackupPersonaRead.mjs';
 import { createBookBackupResourceService } from '../../functions/src/bookBackupResourceRead.mjs';
@@ -149,7 +150,7 @@ test('real SDK profile update leaves root unchanged and invalidates old native t
     row = (await list(pin)).items[0],
     db = environment.authenticatedContext('author').firestore();
   await assertSucceeds(
-    setDoc(doc(db, 'users/author/aiPersonas/custom-used'), {
+    setPersonaWithCatalog(db, doc(db, 'users/author/aiPersonas/custom-used'), {
       ...profile,
       instructions: 'New instructions',
       revision: 2,

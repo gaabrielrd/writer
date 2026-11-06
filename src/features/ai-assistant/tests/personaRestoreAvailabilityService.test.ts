@@ -172,7 +172,11 @@ it('editing an active restored profile preserves native origin, revision CAS and
       get: (reference: unknown) =>
         Promise.resolve(
           snapshot(
-            String(reference) === batchPath ? { ...batch, state: 'active' } : restored,
+            String(reference).endsWith('/aiPersonaCatalog/current')
+              ? undefined
+              : String(reference) === batchPath
+                ? { ...batch, state: 'active' }
+                : restored,
             String(reference) === batchPath ? bookId : restored.id,
           ),
         ),
@@ -186,6 +190,10 @@ it('editing an active restored profile preserves native origin, revision CAS and
     },
     saved = await savePersona(owner, input, 7);
   expect(saved.revision).toBe(8);
+  expect(set).toHaveBeenCalledWith('users/' + owner + '/aiPersonaCatalog/current', {
+    schemaVersion: 1,
+    revision: 1,
+  });
   expect(saved.createdAt).toBe(restored.createdAt);
   expect(set).toHaveBeenCalledWith(profiles + '/' + restored.id, {
     ...saved,
@@ -283,7 +291,11 @@ it('edits an active adventure persona with its native origin and rejects conflic
       get: (ref: unknown) =>
         Promise.resolve(
           snapshot(
-            String(ref) === adventureBatchPath ? adventureBatch : adventureProfile,
+            String(ref).endsWith('/aiPersonaCatalog/current')
+              ? undefined
+              : String(ref) === adventureBatchPath
+                ? adventureBatch
+                : adventureProfile,
             String(ref) === adventureBatchPath ? adventureOrigin.target.id : adventureProfile.id,
           ),
         ),
@@ -297,6 +309,10 @@ it('edits an active adventure persona with its native origin and rejects conflic
     },
     saved = await savePersona(owner, input, 7);
   expect(saved.revision).toBe(8);
+  expect(set).toHaveBeenCalledWith('users/' + owner + '/aiPersonaCatalog/current', {
+    schemaVersion: 1,
+    revision: 1,
+  });
   expect(saved.createdAt).toBe(adventureProfile.createdAt);
   expect(saved).not.toHaveProperty('restoreOrigin');
   expect(set).toHaveBeenCalledWith(profiles + '/' + adventureProfile.id, {

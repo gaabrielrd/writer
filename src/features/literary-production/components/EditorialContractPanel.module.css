@@ -1,0 +1,80 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.decisionForm,
+.comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius-md);
+  min-width: 0;
+}
+.comparison dd,
+.decisions p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.comparison dt {
+  font-weight: 600;
+}
+.decisions {
+  display: grid;
+  gap: 1rem;
+  padding-inline-start: 1.25rem;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+@media (max-width: 760px) {
+  .fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.contextText {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.guideFields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+
+.mapContent {
+  overflow-wrap: anywhere;
+}
+
+.production {
+  padding-bottom: 6rem;
+}
+.sourceButton {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+
+.sequenceAction {
+  min-height: 2.5rem;
+  height: auto;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

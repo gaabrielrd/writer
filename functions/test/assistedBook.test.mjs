@@ -1,7 +1,12 @@
+import { emptyEditorialContract } from '../src/literaryContracts.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createAssistedBookService, validateProposal } from '../src/assistedBook.mjs';
+import {
+  createAssistedBookService,
+  validateProposal,
+  assistedInstruction,
+} from '../src/assistedBook.mjs';
 
 const proposal = () => ({
   title: 'Atlas',
@@ -714,4 +719,105 @@ test('conception chat rejects invented action IDs and supports actions beyond ei
   await assert.rejects(f.op('interview', { message: 'Continue', capabilities: [] }), {
     code: 'failed-precondition',
   });
+});
+
+test('manual v2 book creates its optional editorial contract and version atomically with replay', async () => {
+  const f = fixture();
+  await f.start({
+    flowVersion: 2,
+    kind: 'book',
+    method: 'manual',
+    universeId: null,
+    personaId: null,
+  });
+  const contract = emptyEditorialContract();
+  contract.fields.narrator = 'Primeira pessoa, POV limitado';
+  contract.publicationPolicy = { version: 1, unit: 'chapter' };
+  const input = {
+    proposal: { ...proposal(), entities: [], editorialContract: contract },
+    expectedCost: 0,
+  };
+  const result = await f.commit(input);
+  const id = result.project.id;
+  assert.equal(f.records.get(`books/${id}`).literaryRevision, 1);
+  assert.equal(f.records.get(`books/${id}`).hasLiteraryPublications, true);
+  const current = f.records.get(`books/${id}/literaryProduction/current`);
+  assert.deepEqual(current.contract, contract);
+  assert.deepEqual(f.records.get(`books/${id}/literaryContractVersions/1`), current);
+  assert.equal(result.credits, 20);
+  const committed = structuredClone([...f.records]);
+  await f.commit(input);
+  assert.deepEqual([...f.records], committed);
+});
+
+test('v2 generated book retains editorial hypotheses as proposals until explicit author approval', async () => {
+  const contract = emptyEditorialContract();
+  contract.collaborationPolicy = { version: 1, mode: 'continuous' };
+  contract.publicationPolicy = { version: 1, unit: 'book' };
+  contract.decisions = [
+    {
+      id: 'decision-one',
+      text: 'A narradora suspeita da ilha',
+      category: 'hypothesis',
+      status: 'approved',
+      source: 'Sugestão da IA',
+      supersedes: null,
+    },
+  ];
+  const f = fixture({
+    generator: async () => ({ ...proposal(), entities: [], editorialContract: contract }),
+  });
+  await f.start({
+    flowVersion: 2,
+    kind: 'book',
+    method: 'assisted',
+    universeId: null,
+    personaId: null,
+  });
+  const generated = await f.op('generate', { brief: f.session().brief });
+  assert.equal(generated.proposal.editorialContract.decisions[0].status, 'proposal');
+  assert.equal(Object.hasOwn(generated.proposal.editorialContract, 'collaborationPolicy'), false);
+  assert.equal(Object.hasOwn(generated.proposal.editorialContract, 'publicationPolicy'), false);
+  const result = await f.commit();
+  assert.equal(
+    f.records.get(`books/${result.project.id}/literaryProduction/current`).contract.decisions[0]
+      .status,
+    'proposal',
+  );
+  assert.equal(
+    Object.hasOwn(
+      f.records.get(`books/${result.project.id}/literaryProduction/current`).contract,
+      'collaborationPolicy',
+    ),
+    false,
+  );
+  assert.equal(result.credits, 18);
+});
+
+for (const kind of ['adventure', 'campaign']) {
+  test(`v2 ${kind} rejects book editorial data without committing or charging`, async () => {
+    const f = fixture();
+    await f.start({ flowVersion: 2, kind, method: 'manual', universeId: null, personaId: null });
+    const before = structuredClone([...f.records]);
+    await assert.rejects(
+      f.commit({
+        proposal: { ...proposal(), entities: [], editorialContract: emptyEditorialContract() },
+        expectedCost: 0,
+      }),
+      { code: 'invalid-argument' },
+    );
+    assert.deepEqual([...f.records], before);
+    assert.equal(
+      [...f.records.keys()].some((path) => path.startsWith('books/')),
+      false,
+    );
+  });
+}
+
+test('project instructions scope editorial guidance to books and retain the three project kinds', () => {
+  assert.match(assistedInstruction('project-interview'), /Somente para projectKind book:/);
+  assert.match(
+    assistedInstruction('project-proposal'),
+    /para aventura ou campanha não inclua editorialContract/,
+  );
 });

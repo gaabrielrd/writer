@@ -1,5 +1,13 @@
 import type { ActHeading } from './act';
+export interface ReaderGuideBoundary {
+  version: 1;
+  bookId: string;
+  revisionId: string;
+  chapterId: string;
+}
 export interface PublicBook {
+  readerGuideVersion?: 1;
+  literaryManifestHash?: string;
   hasActs?: true;
   universeId?: string;
   universePrivacyVersion?: number;
@@ -17,6 +25,26 @@ export interface PublicChapter {
   content: string;
 }
 export interface PublicLoreEntity {
+  readerGuide?: ReaderGuideBoundary;
+  certainty?: 'fact' | 'uncertain';
+  disambiguation?: string;
+  facts?: Array<{
+    text: string;
+    certainty: 'fact' | 'uncertain';
+    readerGuide: ReaderGuideBoundary;
+  }>;
+  relationships?: Array<{
+    targetId: string;
+    targetName?: string;
+    description: string;
+    certainty: 'fact' | 'uncertain';
+    readerGuide: ReaderGuideBoundary;
+  }>;
+  appearances?: Array<{
+    kind: 'direct' | 'document' | 'mention' | 'uncertain';
+    chapterTitle?: string;
+    readerGuide: ReaderGuideBoundary;
+  }>;
   id: string;
   name: string;
   aliases: string[];

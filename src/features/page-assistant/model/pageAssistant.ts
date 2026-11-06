@@ -3,7 +3,15 @@ export type {
   PageCapability,
   PageAction,
 } from '../../../../functions/src/pageAssistantCapabilities.mjs';
+export interface PageEditorialContext {
+  bookId: string;
+  revision: number;
+  scope: 'editorial-contract-only';
+  instruction: string;
+  wholeBook: false;
+}
 export interface PageAssistantReply {
+  editorialContext?: PageEditorialContext;
   reply: string;
   action: PageAction | null;
   contextProof: string | null;

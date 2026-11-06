@@ -165,7 +165,10 @@ export function createBookRestorePersonaLibraryService({
         preparation.personaLibrary.revoked = true;
         const batch = { ...value, state: 'cancelled', lastOperationId: request.operationId };
         projectPersonaRestoreBatch(batch);
-        const record = next(loaded.job, request, { preparation, cleanupPhase: 'cover-storage' });
+        const record = next(loaded.job, request, {
+          preparation,
+          cleanupPhase: 'cover-storage',
+        });
         return commit(tx, loaded, request, action, record, batch, null);
       });
     },

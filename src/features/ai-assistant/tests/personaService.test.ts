@@ -6,7 +6,7 @@ import { collection, getDocs, onSnapshot, runTransaction } from 'firebase/firest
 vi.mock('@/shared/lib', () => ({ firestore: {} }));
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(() => 'collection'),
-  doc: vi.fn(() => 'reference'),
+  doc: vi.fn((...args: unknown[]) => (args.includes('aiPersonaCatalog') ? 'catalog' : 'reference')),
   getDocs: vi.fn(),
   getDoc: vi.fn(),
   onSnapshot: vi.fn(),
@@ -42,12 +42,19 @@ it('isola leitura e assinatura pelo autor e valida dados recebidos', async () =>
 });
 
 it('cria atomicamente, incrementa revisão e mantém data de criação nas edições', async () => {
-  const set = vi.fn();
+  let catalog: { schemaVersion: 1; revision: number } | null = null;
+  const set = vi.fn((reference: unknown, value: unknown) => {
+    if (reference === 'catalog') catalog = value as typeof catalog;
+  });
   let previous: AIPersona | null = null;
   vi.mocked(runTransaction).mockImplementation(async (_db, callback) =>
     callback({
-      get: () =>
-        Promise.resolve({ exists: () => Boolean(previous), data: () => previous, id: persona.id }),
+      get: (reference: unknown) =>
+        Promise.resolve(
+          reference === 'catalog'
+            ? { exists: () => Boolean(catalog), data: () => catalog }
+            : { exists: () => Boolean(previous), data: () => previous, id: persona.id },
+        ),
       set,
     } as never),
   );
@@ -58,7 +65,10 @@ it('cria atomicamente, incrementa revisão e mantém data de criação nas ediç
   const edited = await savePersona('author', { ...created, name: 'Nova voz' }, 1);
   expect(edited.revision).toBe(2);
   expect(edited.createdAt).toBe(created.createdAt);
+  expect(catalog).toEqual({ schemaVersion: 1, revision: 2 });
+  previous = edited;
   await expect(savePersona('author', persona, null)).rejects.toThrow('outra janela');
   await expect(savePersona('author', persona, 9)).rejects.toThrow('outra janela');
   await expect(savePersona('author', DEFAULT_PERSONAS[0]!, null)).rejects.toThrow('Duplique');
+  expect(catalog).toEqual({ schemaVersion: 1, revision: 2 });
 });

@@ -9,6 +9,7 @@ import { readBookLocalLoreVersion } from './bookLoreVersion.mjs';
 import { GenerationError } from './generation.mjs';
 import { universeDocumentId } from './universes.mjs';
 import { readBookChapterText } from './bookChapterText.mjs';
+import { readLoreAnalysisEditorialContext } from './loreAnalysisEditorialContext.mjs';
 const hash = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 const fail = (code, message) => {
   throw new GenerationError(code, message);
@@ -21,6 +22,10 @@ export async function readLoreAnalysisContext(tx, db, uid, bookId, chapterId) {
   if (!book || book.authorId !== uid || book.deleting || !chapter.exists || chapter.data().deleting)
     fail('permission-denied', 'Livro ou capítulo indisponível.');
   const localLoreVersion = readBookLocalLoreVersion(book);
+  const editorial = await readLoreAnalysisEditorialContext(tx, db, uid, bookId, chapterId, {
+    book: bookDoc,
+    chapter,
+  });
   const worldRef = book.universeId
     ? db.doc(`universes/${universeDocumentId(book.universeId)}`)
     : null;
@@ -86,6 +91,8 @@ export async function readLoreAnalysisContext(tx, db, uid, bookId, chapterId) {
     world,
     entities,
     localPayloadIds,
+    editorialContext: editorial.snapshot,
+    editorialProof: editorial.proof,
     revision: hash([
       born(bookDoc),
       worldSnapshot ? born(worldSnapshot) : null,
@@ -93,6 +100,11 @@ export async function readLoreAnalysisContext(tx, db, uid, bookId, chapterId) {
       localLoreVersion,
       world?.loreVersion ?? 0,
       entities,
+      ...(editorial.snapshot.present ||
+      editorial.proof.contextRevision > 0 ||
+      editorial.proof.manuscriptBase
+        ? [editorial.proof]
+        : []),
     ]),
     chapterHash: hash(
       chapter.data().contentMode === 'scenes'

@@ -14,6 +14,7 @@ import {
 } from './bookRestoreActivationReview.mjs';
 import { prepareBookRestoreUniverseLink } from './bookRestoreUniverse.mjs';
 import { prepareBookRestoreActivationEffects } from './bookRestoreActivationEffects.mjs';
+import { isBookRestoreEditorial, prepareBookRestoreEditorialRetirement } from './bookRestoreEditorialActivation.mjs';
 const action = 'activateBookRestore';
 export function createBookRestoreActivationService({
   db,
@@ -25,6 +26,7 @@ export function createBookRestoreActivationService({
   next,
   pickProgress,
   keyContext,
+  editorialActivation = false,
 }) {
   return {
     async retireBookRestoreActivation(uid, input) {
@@ -48,9 +50,12 @@ export function createBookRestoreActivationService({
           loaded.job.preparation.phase !== 'activation-ready'
         )
           fail('failed-precondition', 'activation-phase-conflict');
-        await verifyBookRestoreActivationAudit(tx, db, loaded, readOp);
+        const editorial = isBookRestoreEditorial(loaded.job)
+          ? await prepareBookRestoreEditorialRetirement(tx, db, loaded, readOp, request.operationId)
+          : null;
+        if (!editorial) await verifyBookRestoreActivationAudit(tx, db, loaded, readOp);
         const preparation = structuredClone(loaded.job.preparation);
-        preparation.audit.sealOperationId = request.operationId;
+        if (!editorial) preparation.audit.sealOperationId = request.operationId;
         const record = next(loaded.job, request, { preparation }),
           receipt = writeOp(
             tx,
@@ -63,6 +68,7 @@ export function createBookRestoreActivationService({
             null,
             action,
           );
+        editorial?.commit();
         tx.update(loaded.ref, record);
         return confirmed({ ...loaded, view: { ...loaded.view, ...pickProgress(record) } }, receipt);
       });
@@ -82,6 +88,8 @@ export function createBookRestoreActivationService({
           : null;
       }
       function available(loaded) {
+        if (isBookRestoreEditorial(loaded.job) && !editorialActivation)
+          fail('failed-precondition', 'editorial-activation-unavailable');
         if (loaded.job.state !== 'content-verified') fail('failed-precondition', 'state-conflict');
         if (loaded.job.checkpoint !== request.expectedCheckpoint)
           fail('failed-precondition', 'checkpoint-conflict');
@@ -115,7 +123,7 @@ export function createBookRestoreActivationService({
           };
         async function decision(tx, loaded) {
           available(loaded);
-          const result = await prepareBookRestoreActivationReview(tx, db, loaded, items, readOp);
+          const result = await prepareBookRestoreActivationReview(tx, db, loaded, items, readOp, editorialActivation);
           if (result.result.reviewToken !== request.reviewToken)
             fail('failed-precondition', 'activation-review-changed');
           return result;
@@ -146,6 +154,7 @@ export function createBookRestoreActivationService({
             sourceCheckpoint: request.expectedCheckpoint,
             activatedAt: record.updatedAt,
             mediaState: reviewed.cover.kind === 'library' ? 'pending' : 'none',
+            ...(reviewed.editorial ? { editorial: reviewed.editorial.certificate } : {}),
           };
           const universe = await prepareBookRestoreUniverseLink(
             tx,

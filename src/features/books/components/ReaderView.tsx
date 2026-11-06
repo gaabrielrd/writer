@@ -3,6 +3,13 @@ import { Link, useParams, useSearchParams } from 'react-router';
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
 import { Button, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
 import { ReaderContent } from './ReaderContent';
+import { ReaderGuideCatalog } from './ReaderGuideCatalog';
+import { visibleReaderGuide } from '../model/readerGuide';
+import {
+  readReaderProgress,
+  advanceReaderProgress,
+  writeReaderProgress,
+} from '../services/readerProgressStorage';
 import { ReaderHeader } from './ReaderHeader';
 import {
   getPublicBook,
@@ -43,6 +50,7 @@ function ReaderSession({ bookId, onRetry }: { bookId: string; onRetry: () => voi
   const heading = useRef<HTMLHeadingElement>(null);
   const previousChapterId = useRef<string | undefined>(undefined);
   const requestedChapter = searchParams.get('chapter');
+  const [readingProgress, setReadingProgress] = useState(() => readReaderProgress(bookId));
 
   useEffect(() => {
     let active = true;
@@ -104,8 +112,31 @@ function ReaderSession({ bookId, onRetry }: { bookId: string; onRetry: () => voi
   const currentChapter =
     state.kind === 'ready'
       ? (state.content.chapters.find((chapter) => chapter.id === requestedChapter) ??
+        (state.book.readerGuideVersion === 1 && readingProgress?.bookId === bookId
+          ? state.content.chapters.find(
+              (chapter) => chapter.id === readingProgress.currentChapterId,
+            )
+          : undefined) ??
         state.content.chapters[0])
       : undefined;
+  useEffect(() => {
+    if (state.kind !== 'ready' || state.book.readerGuideVersion !== 1 || !currentChapter) return;
+    const next = advanceReaderProgress(
+      state.book,
+      state.content.chapters,
+      currentChapter.id,
+      readingProgress,
+    );
+    if (JSON.stringify(next) === JSON.stringify(readingProgress)) return;
+    writeReaderProgress(next);
+    let active = true;
+    queueMicrotask(() => {
+      if (active) setReadingProgress(next);
+    });
+    return () => {
+      active = false;
+    };
+  }, [state, currentChapter, readingProgress]);
   useEffect(() => {
     if (currentChapter) {
       heading.current?.focus({ preventScroll: true });
@@ -162,6 +193,10 @@ function ReaderSession({ bookId, onRetry }: { bookId: string; onRetry: () => voi
     book,
     content: { chapters, lore, acts = [] },
   } = state;
+  const through = currentChapter
+    ? advanceReaderProgress(book, chapters, currentChapter.id, readingProgress).furthestChapterId
+    : '';
+  const visibleLore = visibleReaderGuide(book, chapters, lore, through);
   const index = chapters.findIndex((chapter) => chapter.id === currentChapter?.id);
   const previous = chapters[index - 1];
   const next = chapters[index + 1];
@@ -213,6 +248,7 @@ function ReaderSession({ bookId, onRetry }: { bookId: string; onRetry: () => voi
                   </section>
                 ))}
             </nav>
+            <ReaderGuideCatalog book={book} chapters={chapters} entities={visibleLore} />
           </aside>
           <article className={styles.article} aria-labelledby="reader-chapter-title">
             {currentChapter.actId && (
@@ -236,7 +272,8 @@ function ReaderSession({ bookId, onRetry }: { bookId: string; onRetry: () => voi
                 <ReaderContent
                   key={currentChapter.id}
                   content={currentChapter.content}
-                  lore={lore}
+                  lore={visibleLore}
+                  allLore={lore}
                 />
               ) : (
                 <p>Este capítulo ainda não contém texto.</p>

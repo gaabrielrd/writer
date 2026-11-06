@@ -87,11 +87,15 @@ function fixture(
     ref: db.doc(path),
     exists: records.has(path),
     data: () => structuredClone(records.get(path)),
+    createTime: { seconds: 1, nanoseconds: 0 },
+    updateTime: { seconds: 2, nanoseconds: 0 },
   });
   const query = (path, options = {}) => ({
+    collectionPath: path,
     orderBy: (field, direction) => query(path, { ...options, field, direction }),
     startAfter: (after) => query(path, { ...options, after }),
     limit: (limit) => query(path, { ...options, limit }),
+    select: (...fields) => query(path, { ...options, fields }),
     where: (field, _operator, minimum) => query(path, { ...options, where: field, minimum }),
     async get() {
       let values = [...records.keys()]
@@ -133,10 +137,19 @@ function fixture(
         const tx = {
           get: async (ref) => {
             assert.equal(writing, false);
-            return snap(ref.path);
+            return ref.path === undefined ? ref.get() : snap(ref.path);
+          },
+          delete: (ref) => {
+            writing = true;
+            writes.push(() => records.delete(ref.path));
           },
           set: (ref, value) => {
             writing = true;
+            writes.push(() => records.set(ref.path, structuredClone(value)));
+          },
+          create: (ref, value) => {
+            writing = true;
+            assert.equal(records.has(ref.path), false);
             writes.push(() => records.set(ref.path, structuredClone(value)));
           },
           update: (ref, value) => {
@@ -155,8 +168,37 @@ function fixture(
     },
   };
   let service = createChapterChatService({ db, generator, now: () => time++ });
-  const call = (data, uid = 'author', chunk) =>
+  const rawCall = (data, uid = 'author', chunk) =>
     service.chapterChat(uid, { ...identity, ...data }, chunk);
+  const applyProofs = new Map();
+  const call = (data, uid = 'author', chunk) => {
+    const message = records.get(
+      'users/' +
+        uid +
+        '/chapterChats/book/chapters/chapter/conversations/conversation/messages/' +
+        (data.action === 'apply' ? data.messageId : data.requestId),
+    );
+    const controls =
+      ['stop', 'completeBYOK', 'failBYOK'].includes(data.action) && message
+        ? {
+            messageInstance: message.messageInstance,
+            ...(['completeBYOK', 'failBYOK'].includes(data.action)
+              ? { generationAttempt: message.generationAttempt }
+              : {}),
+          }
+        : {};
+    if (data.action === 'apply') {
+      const key = uid + '/' + data.requestId;
+      if (!applyProofs.has(key) && message)
+        applyProofs.set(key, {
+          messageInstance: message.messageInstance,
+          generationAttempt: message.generationAttempt,
+          suggestionHash: sha(message.suggestion ?? ''),
+        });
+      return rawCall({ ...applyProofs.get(key), ...data }, uid, chunk);
+    }
+    return rawCall({ ...controls, ...data }, uid, chunk);
+  };
   const send = (extra = {}) =>
     call({
       action: 'send',
@@ -176,7 +218,9 @@ function fixture(
       ...extra,
     });
   return {
+    db,
     records,
+    rawCall,
     call,
     send,
     apply,
@@ -518,10 +562,22 @@ test('salva rascunho, pagina mensagens, edita a sequência e exclui sem alterar 
   assert.equal((await f.call({ action: 'load' })).conversation.draft, 'Pedido incompleto');
   for (let i = 0; i < 17; i++) await f.send({ requestId: `request-${i}` });
   const page = await f.call({ action: 'load' });
-  assert.equal(page.messages.length, 30);
+  assert.equal(page.messages.length, 10);
   assert.ok(page.before);
   const older = await f.call({ action: 'load', before: page.before });
-  assert.equal(older.messages.length, 4);
+  assert.equal(older.messages.length, 10);
+  const earlier = await f.call({ action: 'load', before: older.before });
+  assert.equal(earlier.messages.length, 10);
+  const oldest = await f.call({ action: 'load', before: earlier.before });
+  assert.equal(oldest.messages.length, 4);
+  assert.equal(
+    new Set(
+      [...page.messages, ...older.messages, ...earlier.messages, ...oldest.messages].map(
+        (message) => message.id,
+      ),
+    ).size,
+    34,
+  );
   await f.call({ action: 'edit', before: page.messages.at(-2).createdAt, draft: 'Outro pedido' });
   const edited = await f.call({ action: 'load' });
   assert.equal(edited.messages.at(-1).id, 'request-15');
@@ -529,4 +585,262 @@ test('salva rascunho, pagina mensagens, edita a sequência e exclui sem alterar 
   await f.call({ action: 'delete' });
   assert.equal((await f.call({ action: 'load' })).conversation, null);
   assert.equal(f.records.get('books/book/chapters/chapter').content, '<p>Texto</p>');
+});
+
+test('o relógio legado acompanha criação, turnos, preferências e edição sem repetir replay ou cobrar conversa', async () => {
+  const f = fixture(),
+    revision = () => f.records.get('books/book').literaryDependencyRevision ?? 0;
+  await f.create();
+  const created = revision();
+  assert.ok(created > 0);
+  await f.create();
+  assert.equal(revision(), created);
+  await f.send();
+  const done = revision();
+  assert.ok(done > created);
+  await f.send();
+  assert.equal(revision(), done);
+  assert.equal(f.records.get('users/author').credits, 5);
+  await f.call({ action: 'preferences', reasoning: 'high' });
+  const preferred = revision();
+  assert.ok(preferred > done);
+  await f.call({ action: 'edit', before: 0, draft: 'Pedido revisto' });
+  assert.ok(revision() > preferred);
+  const loaded = await f.call({ action: 'load' });
+  assert.deepEqual(loaded.messages, []);
+  assert.equal(loaded.conversation.draft, 'Pedido revisto');
+  assert.equal(f.records.get('users/author').credits, 5);
+});
+test('a exclusão marca a conversa antes de apagar corpos e rejeita uma resposta tardia ou novo envio', async () => {
+  let entered, finish, deleteEntered, releaseDelete;
+  const waiting = new Promise((resolve) => {
+      finish = resolve;
+    }),
+    started = new Promise((resolve) => {
+      entered = resolve;
+    }),
+    deleting = new Promise((resolve) => {
+      deleteEntered = resolve;
+    }),
+    allowDelete = new Promise((resolve) => {
+      releaseDelete = resolve;
+    });
+  const f = fixture(async () => {
+    entered();
+    return waiting;
+  });
+  await f.create();
+  const outcome = f.send().then(
+    (value) => ({ value }),
+    (error) => ({ error }),
+  );
+  await started;
+  const nativeTransaction = f.db.runTransaction.bind(f.db);
+  let blocked = false;
+  f.db.runTransaction = (work) =>
+    nativeTransaction(async (tx) => {
+      const get = tx.get;
+      tx.get = async (ref) => {
+        if (
+          !blocked &&
+          ref.collectionPath?.endsWith('/messages') &&
+          f.records.get(
+            'users/author/chapterChats/book/chapters/chapter/conversations/conversation',
+          )?.deleting
+        ) {
+          blocked = true;
+          deleteEntered();
+          await allowDelete;
+        }
+        return get(ref);
+      };
+      return work(tx);
+    });
+  const before = f.records.get('books/book').literaryDependencyRevision;
+  const removal = f.call({ action: 'delete' });
+  await deleting;
+  const path = 'users/author/chapterChats/book/chapters/chapter/conversations/conversation';
+  assert.equal(f.records.get(path).deleting, true);
+  assert.ok(f.records.get('books/book').literaryDependencyRevision > before);
+  f.records.get(path).until = 0;
+  await assert.rejects(f.send({ requestId: 'late-new-request' }), { code: 'not-found' });
+  finish('Resposta tardia [[SUGESTAO]]Não pode ser aplicada[[/SUGESTAO]]');
+  assert.notEqual(f.records.get(path + '/messages/request')?.state, 'done');
+  releaseDelete();
+  await removal;
+  const result = await outcome;
+  assert.ok(result.error);
+  const loaded = await f.call({ action: 'load' });
+  assert.equal(loaded.conversation, null);
+  assert.deepEqual(loaded.messages, []);
+  assert.equal(
+    [...f.records.keys()].some((key) => key === path || key.startsWith(path + '/')),
+    false,
+  );
+  assert.equal(f.records.get('users/author').credits, 5);
+});
+test('uma sessão em edição não aceita geração após vencer o prazo e uma raiz de outro autor não recebe relógio', async () => {
+  const f = fixture();
+  await f.create();
+  const path = 'users/author/chapterChats/book/chapters/chapter/conversations/conversation';
+  Object.assign(f.records.get(path), { busy: 'editing', until: 0 });
+  await assert.rejects(f.send(), { code: 'failed-precondition' });
+  const before = f.records.get('books/book').literaryDependencyRevision;
+  f.records.get(path).busy = null;
+  f.beforeTransaction(() => {
+    f.records.get('books/book').authorId = 'other';
+  });
+  await assert.rejects(f.call({ action: 'preferences', reasoning: 'low' }), {
+    code: 'not-found',
+  });
+  assert.equal(f.records.get('books/book').literaryDependencyRevision, before);
+});
+
+test('autosave de revisão anterior não substitui o rascunho depois da edição', async () => {
+  const f = fixture();
+  await f.create();
+  await f.send();
+  await f.call({ action: 'edit', mutationId: 'draft-edit', before: 0, draft: 'Pedido editado' });
+  await assert.rejects(f.call({ action: 'draft', draft: 'Autosave antigo', draftEpoch: 0 }), {
+    code: 'failed-precondition',
+  });
+  assert.equal((await f.call({ action: 'load' })).conversation.draft, 'Pedido editado');
+  await f.call({ action: 'draft', draft: 'Novo rascunho', draftEpoch: 1 });
+  assert.equal((await f.call({ action: 'load' })).conversation.draft, 'Novo rascunho');
+});
+
+test('um worker antigo não conclui a mensagem recriada com o mesmo requestId', async () => {
+  let entered, finish;
+  const started = new Promise((resolve) => {
+      entered = resolve;
+    }),
+    waiting = new Promise((resolve) => {
+      finish = resolve;
+    });
+  const f = fixture(async () => {
+    entered();
+    return waiting;
+  });
+  await f.create();
+  const old = f.send({ messageInstance: 'old-instance' }).then(
+    (value) => ({ value }),
+    (error) => ({ error }),
+  );
+  await started;
+  const path = 'users/author/chapterChats/book/chapters/chapter/conversations/conversation';
+  const prior = structuredClone(f.records.get(path + '/messages/request'));
+  await assert.rejects(
+    f.call({ action: 'edit', mutationId: 'replace-message', before: 0, draft: 'Novo pedido' }),
+    { code: 'failed-precondition' },
+  );
+  await f.call({
+    action: 'stop',
+    requestId: 'request',
+    messageInstance: 'old-instance',
+    partial: '',
+  });
+  await f.call({ action: 'edit', mutationId: 'replace-message', before: 0, draft: 'Novo pedido' });
+  const current = await f.send({ mode: 'byok', messageInstance: 'new-instance' });
+  assert.notEqual(current.generationAttempt, prior.generationAttempt);
+  finish('Resposta antiga [[SUGESTAO]]Não deve entrar[[/SUGESTAO]]');
+  assert.ok((await old).error);
+  const stored = f.records.get(path + '/messages/request');
+  assert.equal(stored.state, 'running');
+  assert.equal(stored.messageInstance, 'new-instance');
+  assert.equal(stored.suggestion, undefined);
+  assert.equal(f.records.get(path).busy, 'request');
+});
+test('conclusão, falha e parada antigas não afetam a nova instância BYOK', async () => {
+  const f = fixture();
+  await f.create();
+  const first = await f.send({ mode: 'byok', messageInstance: 'first-instance' });
+  await f.call({
+    action: 'stop',
+    requestId: 'request',
+    messageInstance: first.messageInstance,
+    partial: '',
+  });
+  await f.call({
+    action: 'edit',
+    mutationId: 'new-byok-message',
+    before: 0,
+    draft: 'Outro pedido',
+  });
+  const next = await f.send({ mode: 'byok', messageInstance: 'next-instance' });
+  const snapshot = structuredClone([...f.records]);
+  for (const action of ['completeBYOK', 'failBYOK', 'stop'])
+    await assert.rejects(
+      f.rawCall({
+        action,
+        requestId: 'request',
+        messageInstance: first.messageInstance,
+        generationAttempt: first.generationAttempt,
+        output: 'Saída antiga',
+        partial: 'Parcial antigo',
+      }),
+      { code: 'failed-precondition' },
+    );
+  assert.deepEqual([...f.records], snapshot);
+  await assert.rejects(
+    f.rawCall({
+      action: 'completeBYOK',
+      requestId: 'request',
+      messageInstance: next.messageInstance,
+      output: 'Sem tentativa',
+    }),
+    { code: 'failed-precondition' },
+  );
+  const done = await f.rawCall({
+    action: 'completeBYOK',
+    requestId: 'request',
+    messageInstance: next.messageInstance,
+    generationAttempt: next.generationAttempt,
+    output: 'Resposta válida',
+  });
+  assert.equal(done.state, 'done');
+  assert.equal(done.messageInstance, next.messageInstance);
+});
+test('retry da mesma instância usa outra tentativa e não aceita saída da tentativa anterior', async () => {
+  const f = fixture();
+  await f.create();
+  const first = await f.send({ mode: 'byok', messageInstance: 'stable-instance' });
+  await f.call({
+    action: 'failBYOK',
+    requestId: 'request',
+    messageInstance: first.messageInstance,
+    generationAttempt: first.generationAttempt,
+  });
+  const next = await f.send({ mode: 'byok', messageInstance: 'stable-instance' });
+  assert.equal(next.messageInstance, first.messageInstance);
+  assert.notEqual(next.generationAttempt, first.generationAttempt);
+  await assert.rejects(
+    f.rawCall({
+      action: 'completeBYOK',
+      requestId: 'request',
+      messageInstance: next.messageInstance,
+      generationAttempt: first.generationAttempt,
+      output: 'Antigo',
+    }),
+    { code: 'failed-precondition' },
+  );
+  const path =
+    'users/author/chapterChats/book/chapters/chapter/conversations/conversation/messages/request';
+  assert.equal(f.records.get(path).state, 'running');
+  assert.equal(f.records.get(path).generationAttempt, next.generationAttempt);
+});
+
+test('controles sem a instância atual não adotam uma resposta nova pelo requestId', async () => {
+  const f = fixture();
+  await f.create();
+  await f.send({ mode: 'byok', messageInstance: 'required-instance' });
+  const snapshot = structuredClone([...f.records]);
+  await assert.rejects(
+    f.rawCall({ action: 'stop', requestId: 'request', partial: 'Sem vínculo' }),
+    { code: 'failed-precondition' },
+  );
+  await assert.rejects(
+    f.rawCall({ action: 'completeBYOK', requestId: 'request', output: 'Sem vínculo' }),
+    { code: 'failed-precondition' },
+  );
+  assert.deepEqual([...f.records], snapshot);
 });

@@ -6,6 +6,7 @@ import {
   canonicalEditorChatJSON,
   verifyEditorChatRequest,
   normalizeEditorChatDTO,
+  normalizeEditorChatReceipt,
   nextEditorChatRevision,
 } from './editorChatContracts.mjs';
 import { assertEditorChatHTML } from './editorChatDocument.mjs';
@@ -22,6 +23,7 @@ import { readHistorySource } from './workHistoryContracts.mjs';
 import { createScenesService } from './scenes.mjs';
 import { createAdventureBlocksService } from './adventureBlocks.mjs';
 import { countVisibleWords } from './visibleWordCount.mjs';
+import { prepareLiteraryNativeChatApplication } from './literaryNativeChatApplication.mjs';
 
 const same = (a, b) => canonicalEditorChatJSON(a) === canonicalEditorChatJSON(b);
 const baseOf = (source) => ({
@@ -127,7 +129,35 @@ export function createEditorChatApplyService({ db, now = Date.now }) {
         revision: nextEditorChatRevision(conversation.summary.revision),
         updatedAt: catalog.updatedAt,
       });
+      const receiptResult = {
+        kind: 'apply',
+        conversationId: request.conversationId,
+        conversationToken: request.conversationToken,
+        turnId: request.turnId,
+        resourceToken: current.resourceToken,
+        revision: current.revision,
+        contentHash: current.contentHash,
+        bodyBytes: current.bodyBytes,
+        wordCount: current.wordCount,
+        projectRevision: current.projectRevision,
+        chargedCredits,
+      };
+      const expectedReceipt = normalizeEditorChatReceipt({
+        schemaVersion: 1,
+        operationId: request.operationId,
+        action: request.action,
+        requestHash: request.requestHash,
+        outcome: 'confirmed',
+        confirmedAt: catalog.updatedAt,
+        result: receiptResult,
+      });
+      const applicationIndex = await prepareLiteraryNativeChatApplication(tx, db, uid, {
+        request,
+        turn,
+        receipt: expectedReceipt,
+      });
       // No reads after this point. The receipt and credit cannot diverge from the text.
+      applicationIndex.commit();
       write.commit();
       if (chargedCredits) tx.update(userRef, { credits: credits - chargedCredits });
       tx.set(turn.ref, { ...turn.record, summary });
@@ -138,19 +168,7 @@ export function createEditorChatApplyService({ db, now = Date.now }) {
         operation,
         uid,
         request,
-        {
-          kind: 'apply',
-          conversationId: request.conversationId,
-          conversationToken: request.conversationToken,
-          turnId: request.turnId,
-          resourceToken: current.resourceToken,
-          revision: current.revision,
-          contentHash: current.contentHash,
-          bodyBytes: current.bodyBytes,
-          wordCount: current.wordCount,
-          projectRevision: current.projectRevision,
-          chargedCredits,
-        },
+        receiptResult,
         catalog.updatedAt,
       );
       return { receipt, current };

@@ -30,7 +30,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/shared/ui';
-import { PersonaBindingDialog } from '@/features/ai-assistant';
+import { PersonaBindingDialog, capturePlatformTextGeneration } from '@/features/ai-assistant';
 import { useAuth } from '@/features/auth';
 import { ExportDialog } from '@/features/editor';
 import { ScenePlanner } from '@/features/scenes';
@@ -41,6 +41,7 @@ import {
   editorialStateLabels,
 } from '@/features/work-progress';
 import { NarrativePlanner } from '@/features/narrative-planning';
+import { LiteraryProductionPanel } from '@/features/literary-production';
 import { WorkHistoryDialog } from '@/features/manuscript-history';
 import { publishBook, unpublishBook } from '../services/publicationService';
 import { LoreTab } from '@/features/lore';
@@ -54,7 +55,14 @@ import { BookFormDialog } from './BookFormDialog';
 import { ImportBookModal } from './ImportBookModal';
 import styles from './BookPage.module.css';
 
-type TabId = 'chapters' | 'scenes' | 'narrative' | 'compendium' | 'publication' | 'progress';
+type TabId =
+  | 'chapters'
+  | 'scenes'
+  | 'narrative'
+  | 'compendium'
+  | 'publication'
+  | 'progress'
+  | 'editorial';
 
 interface TabDef {
   id: TabId;
@@ -65,6 +73,7 @@ const TABS: TabDef[] = [
   { id: 'chapters', label: 'Capítulos' },
   { id: 'scenes', label: 'Cenas' },
   { id: 'narrative', label: 'Arcos e cronologia' },
+  { id: 'editorial', label: 'Produção literária' },
   { id: 'compendium', label: 'Compêndio' },
   { id: 'progress', label: 'Progresso' },
   { id: 'publication', label: 'Publicação' },
@@ -103,6 +112,13 @@ function BookDetail() {
   const [expandedSynopsisBookId, setExpandedSynopsisBookId] = useState<string | null>(null);
   const synopsisId = useId();
   const bookOptionsRef = useRef<HTMLButtonElement>(null);
+  const refreshEpoch = useRef(0);
+  useEffect(() => {
+    refreshEpoch.current += 1;
+    return () => {
+      refreshEpoch.current += 1;
+    };
+  }, [bookId, user?.uid]);
   const [compendiumActions, setCompendiumActions] = useState<HTMLDivElement | null>(null);
   const [compendiumBusy, setCompendiumBusy] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -157,12 +173,15 @@ function BookDetail() {
 
   const refreshBook = () => {
     if (!bookId) return;
+    const current = refreshEpoch.current;
     void bookService
-      .getBook(bookId)
+      .getBook(bookId, { source: 'server' })
       .then((data) => {
+        if (current !== refreshEpoch.current) return;
         setBook(data?.id === bookId && data.authorId === user?.uid ? data : null);
       })
       .catch((cause: unknown) => {
+        if (current !== refreshEpoch.current) return;
         setActionError(
           cause instanceof Error ? cause.message : 'Não foi possível atualizar a obra.',
         );
@@ -397,6 +416,15 @@ function BookDetail() {
           ))}
         </TabsList>
         <TabsContent value={activeTab}>
+          {activeTab === 'editorial' && user && (
+            <LiteraryProductionPanel
+              key={user.uid + ':' + book.id}
+              bookId={book.id}
+              captureGeneration={capturePlatformTextGeneration}
+              onPublicationChange={refreshBook}
+              initialView={searchParams.get('publication') === '1' ? 'publication' : undefined}
+            />
+          )}
           {activeTab === 'progress' && (
             <ProjectProgressPanel
               target={{ kind: 'book', id: book.id }}
@@ -465,7 +493,16 @@ function BookDetail() {
                   <Button
                     variant="secondary"
                     disabled={isPublishing}
-                    onClick={() => setIsPublishOpen(true)}
+                    onClick={() =>
+                      book.hasLiteraryPublications
+                        ? setSearchParams((current) => {
+                            const next = new URLSearchParams(current);
+                            next.set('tab', 'editorial');
+                            next.set('publication', '1');
+                            return next;
+                          })
+                        : setIsPublishOpen(true)
+                    }
                   >
                     Atualizar publicação
                   </Button>
@@ -474,7 +511,16 @@ function BookDetail() {
                   <Button
                     variant={isPublished ? 'secondary' : 'primary'}
                     onClick={() =>
-                      isPublished ? void handlePublication(false) : setIsPublishOpen(true)
+                      isPublished
+                        ? void handlePublication(false)
+                        : book.hasLiteraryPublications
+                          ? setSearchParams((current) => {
+                              const next = new URLSearchParams(current);
+                              next.set('tab', 'editorial');
+                              next.set('publication', '1');
+                              return next;
+                            })
+                          : setIsPublishOpen(true)
                     }
                     disabled={isPublishing}
                   >

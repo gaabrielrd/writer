@@ -1,3 +1,5 @@
+import { composeEditorialContract } from '../../../functions/src/literaryEditorialComposition.mjs';
+import { getLiteraryContract } from './literaryProductionService';
 import type { LoreAnalysisRequest } from '../../../src/features/lore/model/loreAnalysis';
 import type {
   DetectedLoreEntity,
@@ -62,4 +64,19 @@ export async function applyLoreAnalysis(id: string, text: string, changes: LoreC
   };
   applied.set(id, result);
   return result;
+}
+
+export async function getLoreAnalysisEditorialContext(bookId: string, chapterId: string) {
+  const state = await getLiteraryContract();
+  return {
+    version: 1 as const,
+    bookId,
+    chapterId,
+    scope: 'editorial-contract-only' as const,
+    wholeBook: false as const,
+    present: state.revision > 0,
+    revision: state.revision,
+    contextToken: 'c'.repeat(64),
+    instruction: state.revision > 0 ? composeEditorialContract(state.contract).instruction : '',
+  };
 }

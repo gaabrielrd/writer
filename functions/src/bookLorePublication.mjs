@@ -15,6 +15,10 @@ export const BOOK_PUBLICATION_METHODS = Object.freeze([
   'finalizeBookPublication',
 ]);
 import { publicationCandidate } from './bookLorePublicationValidation.mjs';
+import {
+  assertLiteraryPublicationReady,
+  literaryPublicationScope,
+} from './literaryPublicationContracts.mjs';
 import { inspectionPaths, inspectionRequest } from './bookLoreSourceInspectionContracts.mjs';
 import { openBookLoreSourceInspection } from './bookLoreSourceInspectionStore.mjs';
 const conflict = () =>
@@ -44,6 +48,7 @@ const rootFields = [
   'localLoreVersion',
   'publicationPrivacyVersion',
   'hasSceneResources',
+  'hasLiteraryPublications',
   'sceneRevision',
   'universeId',
 ];
@@ -228,6 +233,12 @@ export function setBookPublicationHeaders(method, request) {
   request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
   request.rawRequest?.res?.setHeader('Vary', 'Authorization');
 }
+// Capture the same native privacy proof inside a caller-owned transaction.
+export async function readBookPublicationSource(tx, db, uid, bookId) {
+  const c = loreReadScope(db, uid, { bookId }, []),
+    value = await source(tx, db, c);
+  return { source: value.proof, sourceToken: value.sourceToken };
+}
 export function createBookPublicationService({ db }) {
   return {
     async getBookPublicationSource(uid, data) {
@@ -258,6 +269,11 @@ export function createBookPublicationService({ db }) {
         invalid();
       return db.runTransaction(async (tx) => {
         const current = await source(tx, db, c);
+        if (current.p.hasLiteraryPublications === true)
+          workFail(
+            'failed-precondition',
+            'Use o guia do leitor com evidências da edição preparada.',
+          );
         if (current.sourceToken !== data.sourceToken) conflict();
         const header = (await tx.get(c.revisionRef)).data();
         revision(header, current.proof, data.sourceToken);
@@ -381,6 +397,12 @@ export function createBookPublicationService({ db }) {
           };
         }
         if (current.sourceToken !== data.sourceToken) conflict();
+        await assertLiteraryPublicationReady(
+          tx,
+          literaryPublicationScope(db, uid, { target: { kind: 'book', id: c.bookId } }, []),
+          c.revisionId,
+          data.sourceToken,
+        );
         tx.set(c.publicRef, projection);
         tx.update(db.doc(c.path), { status: 'published', updatedAt: header.createdAt });
         return {

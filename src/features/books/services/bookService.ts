@@ -40,6 +40,8 @@ import {
 } from '../model/chapter';
 
 interface StoredBookDoc {
+  hasLiteraryPublications?: boolean;
+  hasLiteraryArchiveResources?: boolean;
   personaAvailability?: unknown;
   deleting?: boolean;
   localLoreVersion?: number;
@@ -86,7 +88,8 @@ function bookAvailability(data: StoredBookDoc) {
   const marker = currentBookPersonaAvailability(data.personaAvailability, data.personaId);
   if (marker && marker.reason !== 'profile-not-recorded')
     throw new Error('Disponibilidade de persona do livro inválida.');
-  return marker ? { personaAvailability: marker } : {};
+  return { ...(marker ? { personaAvailability: marker } : {}),
+    ...(data.hasLiteraryArchiveResources === true ? { hasLiteraryArchiveResources: true } : {}) };
 }
 function chapterSettings(data: StoredChapterDoc) {
   const complement = validateComplement(data.personaComplement),
@@ -127,6 +130,7 @@ export async function listBooksByAuthor(authorId: string): Promise<Book[]> {
       status: data.status ?? 'draft',
       ...(data.editorialState ? { editorialState: data.editorialState } : {}),
       ...(data.hasProgressResources ? { hasProgressResources: true } : {}),
+      ...(data.hasLiteraryPublications === true ? { hasLiteraryPublications: true } : {}),
       wordCount: data.wordCount ?? 0,
       ...(data.hasSceneResources
         ? { hasSceneResources: true, sceneRevision: data.sceneRevision ?? 0 }
@@ -171,6 +175,7 @@ export async function getBook(
     status: data.status ?? 'draft',
     ...(data.editorialState ? { editorialState: data.editorialState } : {}),
     ...(data.hasProgressResources ? { hasProgressResources: true } : {}),
+    ...(data.hasLiteraryPublications === true ? { hasLiteraryPublications: true } : {}),
     wordCount: data.wordCount ?? 0,
     ...(data.hasSceneResources
       ? { hasSceneResources: true, sceneRevision: data.sceneRevision ?? 0 }
@@ -549,7 +554,10 @@ export function subscribeWritingBindings(
     personaComplement?: PersonaComplement | null;
   }) => void,
   onError: (error: Error) => void,
+  onContextHint?: (version: string) => void,
 ): () => void {
+  let bookHint = '',
+    chapterHint = '';
   let bookReady = false;
   let chapterReady = chapterId === null;
   let failed = false;
@@ -570,7 +578,19 @@ export function subscribeWritingBindings(
         failure(new Error('Livro indisponível.'));
         return;
       }
-      personaId = (snapshot.data() as StoredBookDoc).personaId ?? null;
+      const root = snapshot.data();
+      personaId = (root as StoredBookDoc).personaId ?? null;
+      const nextHint = JSON.stringify([
+        root.literaryContextRevision ?? 0,
+        root.localLoreVersion ?? 0,
+        root.sceneRevision ?? 0,
+        root.narrativeRevision ?? 0,
+        root.universeId ?? null,
+      ]);
+      if (nextHint !== bookHint) {
+        bookHint = nextHint;
+        onContextHint?.(JSON.stringify([bookHint, chapterHint]));
+      }
       bookReady = true;
       notify();
     },
@@ -582,7 +602,17 @@ export function subscribeWritingBindings(
         (snapshot) => {
           try {
             if (!snapshot.exists()) throw new Error('Capítulo indisponível.');
-            personaComplement = validateComplement(snapshot.data().personaComplement);
+            const current = snapshot.data();
+            const nextHint = JSON.stringify([
+              current.actId ?? null,
+              current.createdAt ?? null,
+              current.contentMode ?? null,
+            ]);
+            if (nextHint !== chapterHint) {
+              chapterHint = nextHint;
+              onContextHint?.(JSON.stringify([bookHint, chapterHint]));
+            }
+            personaComplement = validateComplement(current.personaComplement);
             chapterReady = true;
             notify();
           } catch (error) {

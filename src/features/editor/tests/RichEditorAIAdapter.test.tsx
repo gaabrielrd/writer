@@ -39,6 +39,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   adapter.current = null;
   vi.mocked(ai.useAIAutocomplete).mockReturnValue({
+    editorial: null,
     suggestion: null,
     isLoading: false,
     isAccepting: false,
@@ -271,6 +272,7 @@ describe('RichEditor explicit AI capabilities', () => {
     const acceptSuggestion = vi.fn().mockResolvedValue('Resultado');
     const discardSuggestion = vi.fn();
     vi.mocked(ai.useAIAutocomplete).mockReturnValue({
+      editorial: null,
       suggestion: 'Resultado',
       isLoading: false,
       isAccepting: false,

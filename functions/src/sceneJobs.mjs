@@ -1,3 +1,7 @@
+import {
+  prepareBookEditorialArchiveDeletion,
+  hasBookEditorialArchiveResources,
+} from './bookEditorialArchiveDeletion.mjs';
 import { prepareBookLoreDeletion } from './bookLoreDeletion.mjs';
 import { readAdventureDeletionReservation } from './adventureDeletionGuard.mjs';
 import { assertBookLorePayloadsEmpty } from './bookLoreDeletionStore.mjs';
@@ -32,12 +36,82 @@ const BOOK_DELETE_FLAT_PHASES = [
   'workChecklist',
   'workVersionBodies',
   'workVersions',
+  'literaryProduction',
+  'literaryContractVersions',
+  'literaryOperations',
+  'literaryPlans',
+  'literaryPlanLinks',
+  'literaryPlanVersions',
+  'literaryGenerations',
+  'literaryPreparationGates',
+  'literaryPreparationGateVersions',
+  'literaryAutocompleteApplications',
+  'literaryAutocompleteRequests',
+  'literaryAutocompleteReservations',
+  'literaryDraftReceipts',
+  'literaryDraftUnits',
+  'literarySequenceJobs',
+  'literaryPassageInspections',
+  'literaryWorkflowJobs',
+  'literaryDraftJobs',
+  'literaryIntegrationRechecks',
+  'literaryIntegrationRecheckChapters',
+  'literaryImpactControls',
+  'literaryImpactChecks',
+  'literaryImpactDecisions',
+  'literaryImpactDecisionVersions',
+  'literaryImpactWitnesses',
+  'literaryImpactVisits',
+  'literaryImpactLinks',
+  'literaryImpactNodes',
+  'literaryImpactJobs',
+  'literaryChatContexts',
+  'literaryChatTurns',
+  'literaryLegacyChatMessages',
+  'literaryLegacyChatApplications',
+  'literaryPublications',
+  'literaryPublicationCandidates',
+  'literaryPublicationChapters',
+  'literaryPublicationUnits',
+  'literaryPublicationBodies',
+  'literaryPublicationRemovals',
+  'literaryPublicationGuideDependencies',
+  'literaryPublicationGuide',
+  'literaryPublicationGuideVersions',
+  'literaryPublicationGuideProofs',
+  'literaryPublicationConfirmations',
+  'literaryProgressNotes',
+  'literaryProgressNoteVersions',
+  'literaryChatApplications',
+  'literaryApplications',
+  'literaryFindingDecisions',
+  'literaryFindingDecisionVersions',
+  'literaryIntegrationUnitLinks',
+  'literaryIntegrationSourceLinks',
+  'literaryIntegrationJobs',
+  'literaryIntegrationChapters',
+  'literaryIntegrationSelectedChapters',
+  'literaryIntegrationUnits',
+  'literaryIntegrationArchitecture',
+  'literaryIntegrationRequests',
+  'literaryIntegrationResults',
+  'literaryIntegrationNodes',
+  'literaryIntegrationSequence',
+  'literaryReviewAnalyses',
+  'literaryReviewUnits',
+  'literaryReviewJobs',
+  'literaryProseApplications',
+  'literaryProseRequests',
+  'literaryMilestoneUnits',
+  'literaryMilestones',
+  'literaryBackupControls',
 ];
 const BOOK_DELETE_PHASES = [
   'lore-resources',
   'scenes',
   'revisions',
   'arcs',
+  'editorial-archive',
   ...BOOK_DELETE_FLAT_PHASES,
   'text-bodies',
   'finish',
@@ -377,6 +451,18 @@ export function addSceneJobs(api, helpers) {
                 ? 'arcs'
                 : 'chapters';
           state.childPhase = 0;
+          if (state.phase === 'chapters') {
+            const archive = await prepareBookEditorialArchiveDeletion(tx, {
+              db,
+              uid,
+              bookId: context.target.id,
+              limit,
+            });
+            if (!archive.complete) {
+              state.phase = 'editorial-archive';
+              deleted = archive.remove;
+            }
+          }
         } else {
           const children =
             state.phase === 'scenes'
@@ -401,6 +487,15 @@ export function addSceneJobs(api, helpers) {
             state.childPhase = 0;
           }
         }
+      } else if (state.phase === 'editorial-archive') {
+        const archive = await prepareBookEditorialArchiveDeletion(tx, {
+          db,
+          uid,
+          bookId: context.target.id,
+          limit,
+        });
+        deleted = archive.remove;
+        if (archive.complete) state.phase = 'chapters';
       } else if (state.phase === 'text-bodies') {
         const bodies = await tx.get(
           db
@@ -425,18 +520,35 @@ export function addSceneJobs(api, helpers) {
         const at = phases.indexOf(state.phase);
         if (at >= 0) {
           const page = await tx.get(
-            db.collection(`${context.path}/${state.phase}`).orderBy('__name__').limit(limit),
+            db
+              .collection(`${context.path}/${state.phase}`)
+              .orderBy('__name__')
+              .limit(limit)
+              .select(),
           );
           deleted = page.docs.map((item) => item.ref);
           if (page.docs.length < limit) state.phase = phases[at + 1] ?? 'text-bodies';
         } else if (state.phase === 'finish') {
-          const remaining = await tx.get(
-            db
-              .collection(context.path + '/bookTextBodies')
-              .select()
-              .limit(1),
-          );
-          if (remaining.docs.length) state.phase = 'text-bodies';
+          const [remaining, literary, editorial] = await Promise.all([
+            tx.get(
+              db
+                .collection(context.path + '/bookTextBodies')
+                .select()
+                .limit(1),
+            ),
+            tx.get(
+              db
+                .collection(context.path + '/literaryBackupControls')
+                .select()
+                .limit(1),
+            ),
+            hasBookEditorialArchiveResources(tx, { db, uid, bookId: context.target.id }),
+          ]);
+          if (editorial) state.phase = 'editorial-archive';
+          else if (remaining.docs.length) state.phase = 'text-bodies';
+          // Explicit closing writers may commit after their family's cleanup page.
+          // Their marker forces another bounded literary pass before root deletion.
+          else if (literary.docs.length) state.phase = 'literaryProduction';
           else {
             await assertBookLorePayloadsEmpty(tx, db, context.target.id);
             let universe, link;

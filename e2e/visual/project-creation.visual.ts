@@ -98,6 +98,21 @@ for (const method of ['manual', 'assisted'] as const)
         await page.getByRole('button', { name: 'Revisar proposta inicial' }).click();
       }
       await page.getByLabel('Título do projeto').fill('Projeto das lanternas');
+      if (kind === 'Livro') {
+        if (testInfo.project.name.startsWith('mobile-'))
+          await page.setViewportSize({ width: 320, height: 844 });
+        await page.getByRole('button', { name: /^Direção editorial do livro/ }).click();
+        await page.getByRole('button', { name: 'Adicionar direção editorial' }).click();
+        const guide = page.getByRole('region', { name: 'Direção editorial da proposta' });
+        await guide.getByLabel('Narrador e POV').fill('Primeira pessoa limitada');
+        await guide.getByLabel('Limites de conteúdo').fill('Preserve as reservas do narrador');
+        await page.getByRole('button', { name: /^Direção editorial do livro/ }).click();
+        await page.getByRole('button', { name: /^Direção editorial do livro/ }).click();
+        await expect(guide.getByLabel('Narrador e POV')).toHaveValue('Primeira pessoa limitada');
+        await guide.getByLabel('Narrador e POV').scrollIntoViewIfNeeded();
+        await expectNoHorizontalOverflow(page, 'guia-editorial-na-criacao');
+        await capture(page, testInfo, `novo-livro-${method}-guia-editorial`);
+      }
       await expectNoHorizontalOverflow(page, 'revisao-novo-projeto');
       await capture(page, testInfo, `novo-${kind}-${method}-revisao`);
       await page.getByRole('button', { name: new RegExp('^Criar ' + kind.toLowerCase()) }).click();

@@ -365,7 +365,7 @@ export function createBookRestoreCoverMaterializationService({
         if (artifacts.created !== 0) inconsistent();
         const record = next(loaded.job, request, {
           preparation,
-          cleanupPhase: 'resource-children',
+          cleanupPhase: loaded.job.cleanupVersion >= 15 ? 'editorial' : 'resource-children',
         });
         return commit(tx, loaded, request, action, record, artifacts);
       });

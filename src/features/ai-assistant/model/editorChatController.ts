@@ -1,6 +1,7 @@
 import type { ChatGenerationRequest } from './chatGeneration';
 import type {
   EditorChatAction,
+  EditorChatScope,
   EditorChatReceipt,
   EditorChatContextSummary,
   EditorChatContextInspection,
@@ -67,6 +68,7 @@ export interface EditorChatByokControl {
   readonly attemptToken: string;
 }
 export interface EditorChatController {
+  scope?: EditorChatScope;
   state: EditorChatControllerState;
   hasUnsentDraft: boolean;
   setDraft(this: void, text: string): void;
@@ -77,7 +79,11 @@ export interface EditorChatController {
   renameConversation(this: void, title: string): Promise<void>;
   loadMoreMessages(this: void): Promise<void>;
   readTurn(this: void, id: string): Promise<void>;
-  prepareContext(this: void, source: EditorChatCaptureSource): Promise<void>;
+  prepareContext(
+    this: void,
+    source: EditorChatCaptureSource,
+    literaryPlanIds?: string[],
+  ): Promise<void>;
   advanceContext(this: void): Promise<void>;
   inspectContext(this: void): Promise<void>;
   send(this: void, generation: ChatGenerationRequest): Promise<void>;

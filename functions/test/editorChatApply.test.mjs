@@ -284,3 +284,182 @@ test('concurrent same operation has one committed application and one historical
   assert.deepEqual(results[0].receipt, results[1].receipt);
   assert.equal(f.records.get(`users/${uid}`).credits, 4);
 });
+
+import { workScope, digest } from '../src/workProgressContracts.mjs';
+import { literaryNativeChatApplicationId } from '../src/literaryNativeChatApplication.mjs';
+import { readLiteraryImpactBookInventoryPage } from '../src/literaryImpactInventory.mjs';
+import { verifyLiteraryImpactInventoryLink } from '../src/literaryImpactRecordVerification.mjs';
+import { literaryImpactLinkKey } from '../src/literaryImpactProtocol.mjs';
+import { createEditorChatGenerationService } from '../src/editorChatGeneration.mjs';
+
+function impactHelpers(f, operationId = 'apply-first') {
+  const c = workScope(f.db, uid, { target: f.target }, []),
+    id = literaryNativeChatApplicationId(c, operationId),
+    indexPath = f.path + '/literaryChatApplications/' + id;
+  const inventory = () =>
+    f.db.runTransaction((tx) =>
+      readLiteraryImpactBookInventoryPage(tx, c, {
+        bookId: f.target.id,
+        collection: 'literaryChatApplications',
+        recordId: id,
+      }),
+    );
+  const verify = (item, link) =>
+    f.db.runTransaction((tx) =>
+      verifyLiteraryImpactInventoryLink(tx, c, {
+        bookId: f.target.id,
+        collection: 'literaryChatApplications',
+        recordId: id,
+        recordToken: item.recordToken,
+        linkId: digest(literaryImpactLinkKey(link)),
+      }),
+    );
+  return { c, id, indexPath, inventory, verify };
+}
+test('book native application atomically captures only metadata; replay and paid reapplication preserve charging', async () => {
+  const f = await fixture(),
+    h = impactHelpers(f),
+    beforeClock = f.records.get(f.path).literaryDependencyRevision;
+  const result = await f.apply.dispatch(uid, f.request),
+    index = f.records.get(h.indexPath);
+  assert.ok(index);
+  assert.equal(index.afterHash, result.current.contentHash);
+  assert.equal(index.receiptToken, digest(result.receipt));
+  assert.equal(index.origins, null);
+  for (const text of ['Texto novo aplicado', 'Explicação', 'Pergunta', 'systemInstruction'])
+    assert.equal(JSON.stringify(index).includes(text), false);
+  assert.equal(f.records.get(f.path).literaryDependencyRevision, beforeClock + 1);
+  const snapshot = structuredClone([...f.records]);
+  await f.apply.dispatch(uid, f.request);
+  assert.deepEqual([...f.records], snapshot);
+  const item = (await h.inventory()).items[0],
+    link = item.links.find((value) => value.capture?.scheme === 'native-chat-application-source');
+  assert.ok(link);
+  assert.equal(link.relation, 'target');
+  assert.ok(item.issues.includes('native-chat-applied-context-not-retained'));
+  f.events.length = 0;
+  const proof = await h.verify(item, link);
+  assert.equal(proof.status, 'current');
+  assert.equal(proof.currentManuscriptEquivalence, 'not-checked');
+  assert.equal(proof.derivedBodyAuthorized, false);
+  assert.equal(proof.byteIntegrityChecked, false);
+  assert.equal(
+    f.events.some((event) => /\/(turnBodies|turnQuestions)\//.test(event.path ?? '')),
+    false,
+  );
+  const source = await f.history.getWorkVersionSource(uid, f.resourceScope);
+  const again = await signed({
+    ...f.request,
+    operationId: 'apply-new-accept',
+    placement: 'retargeted',
+    base: base(source),
+  });
+  assert.equal((await f.apply.dispatch(uid, again)).current.chargedCredits, 0);
+  assert.equal(f.records.get('users/' + uid).credits, 4);
+  assert.ok(f.records.has(impactHelpers(f, 'apply-new-accept').indexPath));
+});
+test('receipt alteration and destination reincarnation exclude the native association', async () => {
+  const f = await fixture(),
+    h = impactHelpers(f);
+  await f.apply.dispatch(uid, f.request);
+  const native = f.records.get('users/' + uid + '/editorChatOperations/apply-first');
+  native.receipt.result.contentHash = 'e'.repeat(64);
+  assert.deepEqual((await h.inventory()).items[0].links, []);
+  const other = await fixture(),
+    next = impactHelpers(other);
+  await other.apply.dispatch(uid, other.request);
+  other.metadata.set(other.path + '/scenes/' + other.resource.id, { createdAt: 99999 });
+  const item = (await next.inventory()).items[0];
+  assert.deepEqual(item.links, []);
+  assert.ok(item.issues.includes('native-chat-application-destination-unavailable-or-recreated'));
+});
+test('index collision leaves native text, credit and operation confirmation unchanged', async () => {
+  const f = await fixture(),
+    h = impactHelpers(f),
+    source = await f.history.getWorkVersionSource(uid, f.resourceScope);
+  f.records.set(h.indexPath, { unknown: true });
+  await assert.rejects(f.apply.dispatch(uid, f.request), { code: 'already-exists' });
+  assert.equal(f.records.get('users/' + uid).credits, 5);
+  assert.equal(
+    (await f.history.getWorkVersionSource(uid, f.resourceScope)).contentHash,
+    source.contentHash,
+  );
+  assert.equal(f.records.has('users/' + uid + '/editorChatOperations/apply-first'), false);
+});
+test('generated native origins survive cleanup of private questions and answers as metadata only', async () => {
+  const f = await fixture('book', false, { world: true }),
+    generation = createEditorChatGenerationService({
+      db: f.db,
+      now: () => 4500,
+      generator: async () => 'Resposta [[SUGESTAO]]Texto novo aplicado[[/SUGESTAO]]',
+    });
+  const conversation = f.records.get(convPath(f)).summary;
+  const generated = await generation.dispatch(
+    uid,
+    await signed({
+      action: 'send',
+      ...f.scope,
+      operationId: 'origin-generated-turn',
+      contextId: f.ready.contextId,
+      contextToken: f.ready.contextToken,
+      expectedContextRevision: f.ready.revision,
+      expectedConversationRevision: conversation.revision,
+      prompt: 'PRIVATE QUESTION',
+      generation: { version: 1, provider: 'platform', model: null, reasoning: 'auto' },
+    }),
+  );
+  const application = await signed({
+    ...f.request,
+    operationId: 'apply-generated-origin',
+    turnId: generated.turn.turnId,
+  });
+  await f.apply.dispatch(uid, application);
+  const h = impactHelpers(f, 'apply-generated-origin'),
+    index = f.records.get(h.indexPath);
+  assert.ok(index.origins.contextOrigins);
+  assert.equal(index.origins.contextOrigins.loreDependencies.length, 1);
+  assert.equal(JSON.stringify(index).includes('PRIVATE QUESTION'), false);
+  assert.equal(JSON.stringify(index).includes('Fato secreto'), false);
+  const live = (await h.inventory()).items[0],
+    lore = live.links.find((value) => value.capture?.scheme === 'native-chat-lore');
+  assert.ok(lore);
+  assert.equal((await h.verify(live, lore)).status, 'current');
+  const deletion = await f.mutate({
+    action: 'deleteConversation',
+    ...f.scope,
+    operationId: 'delete-applied-conversation',
+  });
+  let cleanup = deletion.current;
+  for (let page = 0; page < 10 && cleanup.state !== 'deleted'; page++)
+    cleanup = (
+      await f.mutate({
+        action: 'advanceCleanup',
+        cleanupId: cleanup.cleanupId,
+        cleanupToken: cleanup.cleanupToken,
+        expectedRevision: cleanup.revision,
+        operationId: 'clean-applied-' + page,
+      })
+    ).current;
+  assert.equal(cleanup.state, 'deleted');
+  assert.equal(f.records.has(h.indexPath), true);
+  f.events.length = 0;
+  const item = (await h.inventory()).items[0],
+    link = item.links.find((value) => value.capture?.scheme === 'native-chat-application-source');
+  const proof = await h.verify(item, link);
+  assert.equal(proof.status, 'preserved');
+  assert.equal(proof.liveSourceAvailable, false);
+  assert.equal(proof.derivedBodyAuthorized, false);
+  assert.equal(
+    f.events.some((event) => /\/(turnBodies|turnQuestions)\//.test(event.path ?? '')),
+    false,
+  );
+  assert.ok(item.issues.includes('native-chat-applied-history-origins-incomplete'));
+});
+test('adventure applies keep their native behavior without a book application sidecar', async () => {
+  const f = await fixture('adventure', true);
+  await f.apply.dispatch(uid, f.request);
+  assert.equal(
+    [...f.records.keys()].some((path) => path.includes('/literaryChatApplications/')),
+    false,
+  );
+});

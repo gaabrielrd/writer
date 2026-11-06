@@ -188,3 +188,21 @@ A liberação exige frontend, ação `personaGeneration` de `generationApi`, sch
 `cleanupBookAssets`, regras e índice de collection-group para `expiresAt`.
 Reutiliza o segredo servidor de geração existente. Nenhuma implantação é
 executada automaticamente. Veja [decisão de geração contextual](decisions/0271-contextual-persona-generation.md).
+
+### Revisão do catálogo e dependências literárias
+
+Salvar ou arquivar um perfil pelo serviço atual grava o perfil e a revisão
+de users/{uid}/aiPersonaCatalog/current na mesma transação. As Rules exigem
+essa gravação conjunta. A ativação de perfis restaurados também avança o
+catálogo quando torna essas cópias disponíveis.
+
+O contador é privado, não debita créditos e não altera os tokens de escrita
+por si só. Mudanças no perfil selecionado continuam invalidando sugestões
+pelas provas nativas existentes. O mapa de impacto acompanha as identidades
+e versões de perfis e vínculos sem copiar instruções privadas.
+
+Essa evolução está implementada em código e possui cenários escritos. Testes,
+Rules e compatibilidade de cliente/servidor aguardam o gate de integração.
+Não implantar a regra de bloqueio isoladamente do cliente e dos writers.
+
+As Rules preservam a presença e o conteúdo da origem restaurada e revalidam o lote atual. A validação da origem e as leituras do catálogo não são repetidas: edições válidas com 8–16 traços permanecem dentro do limite de expressões. As comparações dos campos de servidor dos livros usam os mesmos defaults legados, agrupados para permitir a gravação atômica do relógio com 16 substituições de persona.

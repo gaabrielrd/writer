@@ -18,6 +18,7 @@ import {
   pageContextLabel,
   pageAssistantTarget,
   type PageAssistantReply,
+  type PageEditorialContext,
 } from '../model/pageAssistant';
 import styles from './PageAssistant.module.css';
 interface Message {
@@ -26,6 +27,7 @@ interface Message {
   text: string;
   context: string;
   proof?: string | null;
+  editorial?: PageEditorialContext;
 }
 function scopeFor(page: string) {
   const target = pageAssistantTarget(page);
@@ -215,6 +217,7 @@ function AssistantSession({
             text: result.reply,
             context,
             proof: result.contextProof,
+            editorial: result.editorialContext,
           },
         ].slice(-100),
       );
@@ -269,6 +272,23 @@ function AssistantSession({
                   <strong>{item.role === 'user' ? 'Você' : 'Assistente'}</strong>
                   <small className={styles.meta}> · {item.context}</small>
                   <p>{item.text}</p>
+                  {item.editorial && (
+                    <details>
+                      <summary>
+                        Guia editorial utilizado · revisão {item.editorial.revision}
+                      </summary>
+                      <p>
+                        Este contexto contém o guia do livro; não inclui leitura integral do
+                        manuscrito.
+                      </p>
+                      <Textarea
+                        label="Guia editorial enviado nesta resposta"
+                        value={item.editorial.instruction}
+                        rows={8}
+                        readOnly
+                      />
+                    </details>
+                  )}
                 </div>
               ))}
               {capability && plan?.result.action && (

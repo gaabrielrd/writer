@@ -105,7 +105,7 @@ test('rejects future versions, noncanonical/extended controls and invalid book i
       inspect(good.map((r, i) => (i === index ? json(r, (v) => ({ ...v, extra: true })) : r))),
     );
   }
-  for (const version of [2, '1'])
+  for (const version of [3, '1'])
     await assert.rejects(
       () => inspect(good.map((r, i) => (i === 0 ? json(r, (v) => ({ ...v, version })) : r))),
       { code: 'unsupported-version' },

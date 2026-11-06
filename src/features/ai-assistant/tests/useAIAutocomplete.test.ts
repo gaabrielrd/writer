@@ -6,6 +6,8 @@ import * as credits from '../services/creditsService';
 import * as storage from '../services/byokStorage';
 import { DEFAULT_PERSONAS, resolveWritingPersona } from '../model/persona';
 
+import * as literary from '../services/literaryAutocompleteService';
+vi.mock('../services/literaryAutocompleteService');
 vi.mock('../services/aiClient');
 vi.mock('../services/creditsService');
 vi.mock('../services/byokStorage');
@@ -330,4 +332,67 @@ it('invalida a oferta após intenção cancelada e preserva o pedido manual', as
   expect(ai.generateAIResponse).toHaveBeenCalledTimes(2);
   expect(result.current.suggestion).toBe('A floresta silenciou.');
   expect(credits.deductCredit).not.toHaveBeenCalled();
+});
+
+describe('atomic literary autocomplete', () => {
+  it('routes an accepted offer through its host exactly once and never uses SDK credits', async () => {
+    const offer = {
+      requestId: 'autocomplete-request-00001',
+      bookId: 'book',
+      chapterId: 'chapter',
+      beforeHash: 'a'.repeat(64),
+      text: 'A floresta silenciou.',
+      expiresAt: Date.now() + 60000,
+      applyCost: 1,
+    };
+    vi.mocked(literary.generateLiteraryAutocomplete).mockResolvedValue(offer);
+    const { result } = renderAfterTyping({
+      atomicScope: { bookId: 'book', chapterId: 'chapter' },
+      captureDocument: () => '<p>O vento uivava através das árvores antigas.</p>',
+      planIds: ['chapter-brief'],
+    });
+    await tick();
+    expect(literary.generateLiteraryAutocomplete).toHaveBeenCalledWith(
+      expect.objectContaining({
+        bookId: 'book',
+        chapterId: 'chapter',
+        planIds: ['chapter-brief'],
+      }),
+      expect.any(Object),
+      expect.any(AbortSignal),
+    );
+    const apply = vi.fn().mockResolvedValue(undefined);
+    await act(async () => {
+      expect(await result.current.acceptSuggestion(() => true, apply)).toBeNull();
+    });
+    expect(apply).toHaveBeenCalledExactlyOnceWith(offer);
+    expect(await result.current.acceptSuggestion(() => true, apply)).toBeNull();
+    expect(credits.deductCredit).not.toHaveBeenCalled();
+    expect(ai.generateAIResponse).not.toHaveBeenCalled();
+  });
+  it('does not fall back to a legacy debit when an atomic host is missing or the reply is lost', async () => {
+    vi.mocked(literary.generateLiteraryAutocomplete).mockResolvedValue({
+      requestId: 'autocomplete-request-00001',
+      bookId: 'book',
+      chapterId: 'chapter',
+      beforeHash: 'a'.repeat(64),
+      text: 'A floresta silenciou.',
+      expiresAt: Date.now() + 60000,
+      applyCost: 1,
+    });
+    const dialog = vi.fn();
+    const { result } = renderAfterTyping({
+      atomicScope: { bookId: 'book', chapterId: 'chapter' },
+      captureDocument: () => '<p>Texto</p>',
+      onShowOutOfCredits: dialog,
+    });
+    await tick();
+    const apply = vi.fn().mockRejectedValue(new Error('Resposta incerta. Consulte o recibo.'));
+    await act(async () => {
+      await result.current.acceptSuggestion(() => true, apply);
+    });
+    expect(result.current.error).toContain('Resposta incerta');
+    expect(dialog).not.toHaveBeenCalled();
+    expect(credits.deductCredit).not.toHaveBeenCalled();
+  });
 });

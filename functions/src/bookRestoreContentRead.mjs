@@ -1,7 +1,8 @@
+import { BOOK_EDITORIAL_ARTIFACT_KINDS } from './bookEditorialProtocol.mjs';
 import { digest } from './sceneContracts.mjs';
 import { validateBookRestoreRawPosition } from './bookRestoreHistoryContracts.mjs';
 import { createBookRestoreRemapper, BOOK_RESTORE_RELATION_ITEMS } from './bookRestoreRemap.mjs';
-import { inconsistent, integer, chunkId } from './bookRestoreUploadContracts.mjs';
+import { inconsistent, integer, sum, chunkId } from './bookRestoreUploadContracts.mjs';
 import { BOOK_PORTABLE_LORE_FIELDS } from './bookPortableLoreIndex.mjs';
 import { readMappedBookRestoreLoreField } from './bookRestoreLoreProjection.mjs';
 import { readMappedBookRestoreLorePage } from './bookRestoreLorePages.mjs';
@@ -83,7 +84,7 @@ function finalReport(state, loaded, index) {
   const pending = { ...state, phase: 'recheck' },
     report = state.legacy
       ? completeBookLegacyValidation(pending, loaded.job.source.sha256, index)
-      : completeBookValidation(pending, loaded.job.source.sha256, index),
+      : completeBookValidation(pending, loaded.job.source.sha256, index, loaded.job.source),
     summary = {
       sourceBookId: report.sourceBookId,
       totals: report.totals,
@@ -173,6 +174,20 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
     itemCount: initial.state.items,
     bookId: initial.loaded.job.bookId,
     sourceBookId: initial.loaded.job.validationSummary.sourceBookId,
+    async readMappedDraft() {
+      // Native validation fixes section order and certifies these logical counts.
+      // Raw frames do not contribute to itemCount. V2 appends one editorial summary.
+      const totals = initial.loaded.job.validationSummary.totals;
+      const editorialTail =
+        !initial.state.legacy && initial.loaded.job.source.version === 2
+          ? sum(sum(totals.editorialArtifacts, totals.editorialLinks), 1)
+          : 0;
+      const index = initial.state.items - editorialTail - 2;
+      integer(index);
+      const item = await api.readMappedItem(index);
+      if (item.record.kind !== 'book-draft' || item.record.id !== api.bookId) inconsistent();
+      return item;
+    },
     async openIndexedLore(index) {
       integer(index);
       if (index >= initial.state.items) inconsistent();
@@ -326,7 +341,189 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
         },
       });
     },
+    /** Original JSON bytes, with identity projection kept out of the preserved body. */
+    async openEditorialItem(index) {
+      integer(index);
+      if (index >= initial.state.items || initial.state.legacy) inconsistent();
+      const store = createBookRestoreValidationStore(db, initial.loaded, null);
+      const pointer = await store.getItem(index);
+      const record = pointer.record;
+      if (
+        !record ||
+        typeof record.kind !== 'string' ||
+        typeof record.id !== 'string' ||
+        record.part !== 0
+      )
+        inconsistent();
+      async function verifyMetadata(tx) {
+        await pinned(tx);
+        await store.verify(tx);
+      }
+      await db.runTransaction(verifyMetadata);
+      const editorial = [
+        'book-editorial-artifact',
+        'book-editorial-link',
+        'book-editorial',
+      ].includes(record?.kind);
+      if (!editorial)
+        return Object.freeze({
+          editorial: false,
+          index,
+          record: Object.freeze({ ...record }),
+          verify: verifyMetadata,
+        });
+      if (
+        record.part !== 0 ||
+        pointer.legacy ||
+        pointer.raw !== null ||
+        pointer.lore ||
+        !Array.isArray(pointer.spans) ||
+        !pointer.spans.length ||
+        pointer.spans.length > 128 ||
+        !Number.isSafeInteger(pointer.byteLength) ||
+        pointer.byteLength < 1 ||
+        pointer.byteLength > BOOK_CONTENT_ITEM_BYTES
+      )
+        inconsistent();
+      let total = 0,
+        previousEnd = -1;
+      for (const span of pointer.spans) {
+        if (
+          !Number.isSafeInteger(span.offset) ||
+          span.offset < 0 ||
+          span.offset < previousEnd ||
+          !Number.isSafeInteger(span.length) ||
+          span.length < 1 ||
+          span.length > 262144 ||
+          !Number.isSafeInteger(span.offset + span.length)
+        )
+          inconsistent();
+        total += span.length;
+        previousEnd = span.offset + span.length;
+      }
+      if (total !== pointer.byteLength) inconsistent();
+      const native = store.reads.get(
+        initial.loaded.ref.path + '/validationItems/' + chunkId(index),
+      );
+      if (!native?.token) inconsistent();
+      let artifact = null,
+        valueHash;
+      if (record.kind === 'book-editorial-artifact') {
+        const entry = await store.index.get(['editorial-artifact', record.id]);
+        if (
+          !entry ||
+          !BOOK_EDITORIAL_ARTIFACT_KINDS.includes(entry.kind) ||
+          !/^[a-f0-9]{64}$/.test(entry.hash)
+        )
+          inconsistent();
+        valueHash = entry.hash;
+        artifact = Object.freeze({
+          kind: entry.kind,
+          revision: entry.revision,
+          availability: entry.availability,
+          role: entry.role,
+        });
+      } else if (record.kind === 'book-editorial-link') {
+        const entry = await store.index.get(['editorial-link', record.id]);
+        if (!entry || !/^[a-f0-9]{64}$/.test(entry.hash)) inconsistent();
+        valueHash = entry.hash;
+      } else {
+        if (record.id !== api.sourceBookId) inconsistent();
+        const totals = initial.loaded.job.validationSummary.totals;
+        integer(totals.editorialArtifacts);
+        integer(totals.editorialLinks);
+        valueHash = digest({
+          schemaVersion: 1,
+          bookId: api.sourceBookId,
+          presence: 'captured',
+          artifacts: totals.editorialArtifacts,
+          links: totals.editorialLinks,
+        });
+      }
+      await db.runTransaction(verifyMetadata);
+      const metadata = {
+        schemaVersion: 1,
+        index,
+        artifact,
+        record: Object.freeze({ ...record }),
+        id: mapper.editorialIdentity(record),
+        sourceBookId: api.sourceBookId,
+        bookId: api.bookId,
+        byteLength: total,
+        chunkCount: Math.ceil(total / 65536),
+        valueHash,
+        sourceToken: digest({
+          domain: 'writer-book-restore-editorial-source-v1',
+          uid,
+          id,
+          jobToken: initial.loaded.view.jobToken,
+          sourceSha256: initial.loaded.job.source.sha256,
+          index,
+          artifact,
+          pointer: native.token,
+          valueHash,
+          validation: initial.snapshotToken,
+          birth: initial.birthToken,
+        }),
+      };
+      return Object.freeze({
+        editorial: true,
+        ...metadata,
+        verify: verifyMetadata,
+        async readPart(part) {
+          integer(part);
+          if (part >= metadata.chunkCount) inconsistent();
+          const start = part * 65536,
+            length = Math.min(65536, total - start);
+          const bytes = new Uint8Array(length),
+            observed = observationSet(),
+            source = await bytesSource(observed);
+          let logical = 0,
+            copied = 0;
+          for (const span of pointer.spans) {
+            const left = Math.max(start, logical),
+              right = Math.min(start + length, logical + span.length);
+            if (right > left) {
+              const piece = await source.read(span.offset + left - logical, right - left);
+              if (piece.length !== right - left) inconsistent();
+              bytes.set(piece, copied);
+              copied += piece.length;
+            }
+            logical += span.length;
+          }
+          if (copied !== length) inconsistent();
+          async function verify(tx) {
+            const current = await pinned(tx);
+            await store.verify(tx);
+            await observed.verify(tx, current);
+          }
+          await db.runTransaction(verify);
+          return { part, bytes, done: part + 1 === metadata.chunkCount, verify };
+        },
+      });
+    },
     async readMappedItem(index) {
+      if (!initial.state.legacy && initial.loaded.job.source.version === 2) {
+        const preserved = await api.openEditorialItem(index);
+        if (preserved.editorial)
+          return {
+            record: preserved.record,
+            value: null,
+            raw: null,
+            readRawPart: null,
+            rawIdentity: null,
+            loreRelations: null,
+            lorePayloadRequired: false,
+            preservedEditorial: preserved,
+            restoration: {
+              execution: 'disabled',
+              publication: 'private',
+              review: 'required',
+              historical: true,
+            },
+            verify: preserved.verify,
+          };
+      }
       const item = await api.readItem(index),
         mapped = mapper.mapJSON(item.record, item.value);
       let rawIdentity = null;
@@ -371,6 +568,7 @@ export async function createVerifiedBookRestoreContent({ db, uid, id, token, loa
       return {
         record: mapped.record,
         value: mapped.value,
+        ...(mapped.restoration ? { restoration: mapped.restoration } : {}),
         raw: item.raw,
         readRawPart: item.readRawPart,
         rawIdentity,

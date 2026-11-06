@@ -1,3 +1,4 @@
+import { setPersonaWithCatalog } from './helpers/personaCatalog.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -69,7 +70,7 @@ test('native activation releases adventure and personas atomically, preserves bi
   // Existing Rules allow the owner to inspect pending metadata, but not use/edit it.
   await assertSucceeds(getDoc(doc(own, profile.ref.path)));
   await assertFails(
-    setDoc(doc(own, profile.ref.path), {
+    setPersonaWithCatalog(own, doc(own, profile.ref.path), {
       ...profile.data(),
       revision: profile.data().revision + 1,
     }),
@@ -130,7 +131,7 @@ test('native activation releases adventure and personas atomically, preserves bi
   await assertSucceeds(getDoc(doc(own, rootRef.path)));
   await assertSucceeds(getDoc(doc(own, profile.ref.path)));
   await assertSucceeds(
-    setDoc(doc(own, profile.ref.path), {
+    setPersonaWithCatalog(own, doc(own, profile.ref.path), {
       ...profile.data(),
       revision: profile.data().revision + 1,
     }),

@@ -1,3 +1,5 @@
+import { createBookBackupStage, type BookBackupStage } from './bookBackupStage';
+import { inspectBookBackupContent } from './inspectBookBackupContent';
 import type { BookBackupSeal } from '../model/backupContainer';
 import { BookBackupFormatError } from '../model/backupContainer';
 import { streamBookBackup, type BookBackupOptions } from './streamBookBackup';
@@ -56,9 +58,12 @@ export function saveBookBackup(
   return write();
   async function write(): Promise<BookBackupSeal> {
     let sink: BookBackupSink | undefined,
+      stage: BookBackupStage | undefined,
       complete = false;
     try {
       sink = await destination;
+      check(settings);
+      if (settings.apis.editorial) stage = await createBookBackupStage(() => check(settings));
       check(settings);
       for (;;) {
         const next = await stream.next();
@@ -78,9 +83,36 @@ export function saveBookBackup(
               'incomplete-archive',
               'O backup não retornou seu selo completo.',
             );
+          if (stage) {
+            const source = await stage.finish();
+            check(settings);
+            const report = await inspectBookBackupContent(source, { signal: settings.signal });
+            check(settings);
+            if (
+              report.validation !== 'content-only' ||
+              report.envelope.manifest.version !== 2 ||
+              report.envelope.manifest.bookId !== bookId ||
+              report.envelope.seal.archiveBytes !== source.size ||
+              report.envelope.seal.records !== seal.records ||
+              report.envelope.seal.payloadBytes !== seal.payloadBytes ||
+              report.envelope.seal.chainHash !== seal.chainHash
+            )
+              throw new BookBackupFormatError(
+                'integrity-mismatch',
+                'A validação não corresponde ao arquivo editorial produzido.',
+              );
+            // Remove encrypted staging before committing the destination. Failure stays provisional.
+            await stage.dispose();
+            stage = undefined;
+            check(settings);
+          }
           await sink.close();
           check(settings);
           return seal;
+        }
+        if (stage) {
+          await stage.write(next.value);
+          check(settings);
         }
         await sink.write(next.value);
         check(settings);
@@ -90,6 +122,13 @@ export function saveBookBackup(
       if (!complete) {
         try {
           await stream.return(undefined);
+        } catch (cleanup) {
+          failures.push(cleanup);
+        }
+      }
+      if (stage) {
+        try {
+          await stage.dispose();
         } catch (cleanup) {
           failures.push(cleanup);
         }

@@ -76,7 +76,7 @@ export function createBookRestorePersonasService({
         });
         item = await reader.readMappedItem(cursor.itemIndex);
         if (item.record.kind === 'book-personas') {
-          draft = await reader.readMappedItem(reader.itemCount - 2);
+          draft = await reader.readMappedDraft();
           if (draft.record.kind !== 'book-draft' || draft.record.id !== initial.loaded.job.bookId)
             inconsistent();
         }

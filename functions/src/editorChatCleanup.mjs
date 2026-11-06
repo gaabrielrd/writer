@@ -8,6 +8,8 @@ import {
   editorChatRevision,
 } from './editorChatContracts.mjs';
 import { readWorkMetadata } from './workProgressContracts.mjs';
+import { prepareLiteraryChatContextIndexDeletion } from './literaryChatContextIndex.mjs';
+import { prepareLiteraryChatTurnIndexCleanup } from './literaryChatTurnIndex.mjs';
 
 export const editorChatCleanupRef = (db, uid, id) => db.doc(`users/${uid}/editorChatCleanup/${id}`);
 export async function readEditorChatCleanup(tx, db, uid, id, token) {
@@ -112,16 +114,29 @@ export async function advanceEditorChatConversationCleanup(
   const index = phases.indexOf(summary.phase);
   if (index < 0 || index === 3) editorChatFail('inconsistent');
   const namespaces = ['turnBodies', 'turnQuestions', 'turns'];
+  const pageSize = conversation.summary.target.kind === 'book' && index === 2 ? 23 : 47;
   let query = db
     .collection(`${conversation.ref.path}/${namespaces[index]}`)
     .orderBy('__name__')
-    .limit(47)
+    .limit(pageSize)
     .select();
   if (cleanup.record.cursor !== null) query = query.startAfter(cleanup.record.cursor);
   const docs = (await tx.get(query)).docs;
-  const nextPhase = docs.length < 47 ? phases[index + 1] : summary.phase;
-  const cursor = docs.length < 47 ? null : docs.at(-1).id;
-  const deletedDocuments = editorChatRevision(summary.deletedDocuments + docs.length);
+  const dependencyIndex =
+    index === 2
+      ? await prepareLiteraryChatTurnIndexCleanup(
+          tx,
+          db,
+          uid,
+          conversation,
+          docs.map((doc) => doc.id),
+        )
+      : { count: 0, commit() {} };
+  const nextPhase = docs.length < pageSize ? phases[index + 1] : summary.phase;
+  const cursor = docs.length < pageSize ? null : docs.at(-1).id;
+  const deletedDocuments = editorChatRevision(
+    summary.deletedDocuments + docs.length + dependencyIndex.count,
+  );
   const next = normalizeEditorChatDTO('cleanup', {
     ...summary,
     revision: nextEditorChatRevision(summary.revision),
@@ -133,6 +148,7 @@ export async function advanceEditorChatConversationCleanup(
   return {
     summary: next,
     commit() {
+      dependencyIndex.commit();
       docs.forEach((doc) => tx.delete(doc.ref));
       tx.set(cleanup.ref, { ...cleanup.record, summary: next, cursor });
       if (next.state === 'deleted')
@@ -179,9 +195,16 @@ export async function prepareEditorChatContextDeletion(tx, db, uid, context, id,
     updatedAt: now,
   });
   const record = { schemaVersion: 1, ownerId: uid, birthNonce, summary };
+  const dependencyIndex = await prepareLiteraryChatContextIndexDeletion(
+    tx,
+    db,
+    uid,
+    context.summary,
+  );
   return {
     summary,
     commit() {
+      dependencyIndex.commit();
       tx.create(ref, record);
     },
   };
@@ -208,6 +231,12 @@ export async function advanceEditorChatCleanup(tx, db, uid, cleanup, context, no
     deletedDocuments: summary.deletedDocuments + Number(body.exists),
     updatedAt: now,
   });
+  const dependencyIndex = await prepareLiteraryChatContextIndexDeletion(
+    tx,
+    db,
+    uid,
+    context.summary,
+  );
   const terminal = {
     ...context.record,
     summary: {
@@ -225,6 +254,7 @@ export async function advanceEditorChatCleanup(tx, db, uid, cleanup, context, no
   return {
     summary: next,
     commit() {
+      dependencyIndex.commit();
       if (body.exists) tx.delete(bodyRef);
       tx.set(context.ref, terminal);
       tx.set(cleanup.ref, { ...cleanup.record, summary: next });

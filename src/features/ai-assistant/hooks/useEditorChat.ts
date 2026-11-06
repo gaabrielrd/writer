@@ -730,7 +730,7 @@ function controllerRuntime(config: {
         }));
       });
     },
-    async prepareContext(source) {
+    async prepareContext(source, literaryPlanIds) {
       await write('capture', async (check) => {
         const previous = state().context;
         if (
@@ -752,6 +752,9 @@ function controllerRuntime(config: {
               operationId: id,
               contextId: id,
               ...own,
+              ...(scope.target.kind === 'book' && literaryPlanIds !== undefined
+                ? { literaryPlanIds: [...literaryPlanIds] }
+                : {}),
             });
             scopedCheck();
             confirmed(result.receipt);
@@ -1225,8 +1228,8 @@ export function useEditorChat(options: UseEditorChatOptions): EditorChatControll
       async readTurn(id) {
         await runtimeRef.current?.methods.readTurn(id);
       },
-      async prepareContext(source) {
-        await runtimeRef.current?.methods.prepareContext(source);
+      async prepareContext(source, literaryPlanIds) {
+        await runtimeRef.current?.methods.prepareContext(source, literaryPlanIds);
       },
       async advanceContext() {
         await runtimeRef.current?.methods.advanceContext();
@@ -1273,5 +1276,5 @@ export function useEditorChat(options: UseEditorChatOptions): EditorChatControll
       : enabled
         ? state
         : { ...initial(key), draft: state.draft };
-  return { ...methods, state: visible, hasUnsentDraft: visible.draft.length > 0 };
+  return { ...methods, scope, state: visible, hasUnsentDraft: visible.draft.length > 0 };
 }

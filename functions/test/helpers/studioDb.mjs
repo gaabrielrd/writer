@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 
 // A bounded query/transaction double; actual lock/retry behavior is covered in the emulator.
-export function studioDb() {
+export function studioDb({ sharedBirth = false } = {}) {
   const records = new Map(),
     metadata = new Map(),
     versions = new Map(),
+    changedClocks = new Map(),
     creations = new Map(),
     reads = [],
     metadataReads = [];
@@ -47,8 +48,9 @@ export function studioDb() {
       metadata.get(path)?.createdAtNanoseconds ?? creations.get(path) ?? 0,
     ),
     updateTime: stamp(
-      metadata.get(path)?.updatedAt ?? 20,
-      metadata.get(path)?.updatedAtNanoseconds ?? versions.get(path) ?? 0,
+      metadata.get(path)?.updatedAt ?? (sharedBirth ? 10 : 20),
+      metadata.get(path)?.updatedAtNanoseconds ??
+        (sharedBirth ? (changedClocks.get(path) ?? 0) : (versions.get(path) ?? 0)),
     ),
   });
   const field = (path, key) =>
@@ -63,40 +65,72 @@ export function studioDb() {
     maximum = Infinity,
     cursor = null,
     fields = null,
+    group = false,
   ) {
-    const definition = { collectionPath: path, filters, orders, maximum, cursor, fields };
+    const definition = { collectionPath: path, filters, orders, maximum, cursor, fields, group };
     return {
       ...definition,
       where: (key, op, value) => {
-        assert.ok(['==', 'in'].includes(op));
-        return query(path, [...filters, [key, value, op]], orders, maximum, cursor, fields);
+        assert.ok(['==', 'in', '>=', '>', '<'].includes(op));
+        return query(path, [...filters, [key, value, op]], orders, maximum, cursor, fields, group);
       },
       orderBy: (key, direction = 'asc') =>
-        query(path, filters, [...orders, [key, direction]], maximum, cursor, fields),
-      limit: (value) => query(path, filters, orders, value, cursor, fields),
-      startAfter: (...value) => query(path, filters, orders, maximum, value, fields),
-      select: (...value) => query(path, filters, orders, maximum, cursor, value),
+        query(path, filters, [...orders, [key, direction]], maximum, cursor, fields, group),
+      limit: (value) => query(path, filters, orders, value, cursor, fields, group),
+      startAfter: (...value) => query(path, filters, orders, maximum, value, fields, group),
+      select: (...value) => query(path, filters, orders, maximum, cursor, value, group),
       get: async () => execute(definition),
     };
   }
   function execute(definition) {
-    const { collectionPath, filters, orders, maximum, cursor, fields } = definition;
+    const { collectionPath, filters, orders, maximum, cursor, fields, group } = definition;
+    const fieldValue = (path, key) => (group && key === '__name__' ? path : field(path, key));
+    const bound = (value, key) =>
+      key === '__name__' && value && typeof value === 'object' && value.path
+        ? group
+          ? value.path
+          : value.id
+        : value;
+    const ordered = (a, b, key) => {
+      if (!group || key !== '__name__') return compare(a, b);
+      const left = a.split('/'),
+        right = b.split('/');
+      for (let i = 0; i < Math.min(left.length, right.length); i++) {
+        const value = Buffer.compare(Buffer.from(left[i]), Buffer.from(right[i]));
+        if (value) return value;
+      }
+      return compare(left.length, right.length);
+    };
     assert.ok(Number.isFinite(maximum), 'Every query must have a bounded limit');
     const comparator = (a, b) => {
       for (const [key, direction] of orders) {
-        const value = compare(field(a, key), field(b, key)) * (direction === 'desc' ? -1 : 1);
+        const value =
+          ordered(fieldValue(a, key), fieldValue(b, key), key) * (direction === 'desc' ? -1 : 1);
         if (value) return value;
       }
       return 0;
     };
     const paths = [...records.keys()].filter(
       (path) =>
-        path.startsWith(collectionPath + '/') &&
-        !path.slice(collectionPath.length + 1).includes('/') &&
-        filters.every(([key, value, op]) =>
-          op === 'in' ? value.includes(field(path, key)) : field(path, key) === value,
-        ) &&
-        orders.every(([key]) => field(path, key) !== undefined),
+        (group
+          ? path.split('/').at(-2) === collectionPath
+          : path.startsWith(collectionPath + '/') &&
+            !path.slice(collectionPath.length + 1).includes('/')) &&
+        filters.every(([key, value, op]) => {
+          const current = fieldValue(path, key),
+            expected = bound(value, key);
+          if (op === 'in') return value.includes(current);
+          if (op !== '==' && current === undefined) return false;
+          const comparison = ordered(current, expected, key);
+          return op === '>='
+            ? comparison >= 0
+            : op === '>'
+              ? comparison > 0
+              : op === '<'
+                ? comparison < 0
+                : current === expected;
+        }) &&
+        orders.every(([key]) => fieldValue(path, key) !== undefined),
     );
     paths.sort(comparator);
     const selected = paths
@@ -106,22 +140,34 @@ export function studioDb() {
           (() => {
             for (let i = 0; i < orders.length; i++) {
               const value =
-                compare(field(path, orders[i][0]), cursor[i]) * (orders[i][1] === 'desc' ? -1 : 1);
+                ordered(
+                  fieldValue(path, orders[i][0]),
+                  bound(cursor[i], orders[i][0]),
+                  orders[i][0],
+                ) * (orders[i][1] === 'desc' ? -1 : 1);
               if (value) return value > 0;
             }
             return false;
           })(),
       )
       .slice(0, maximum);
-    reads.push({ collectionPath, maximum, count: selected.length, fields });
+    reads.push({
+      collectionPath,
+      maximum,
+      count: selected.length,
+      fields,
+      ...(group ? { group: true } : {}),
+    });
     return { docs: selected.map((path) => snapshot(path, fields)) };
   }
   const db = {
     doc: (path) => ({ path, id: path.split('/').at(-1), get: async () => snapshot(path) }),
     collection: (path) => query(path),
+    collectionGroup: (name) => query(name, [], [], Infinity, null, null, true),
     runTransaction(operation) {
       const result = queue.then(async () => {
         const writes = [];
+        const transactionBirth = sharedBirth ? ++creationSequence : null;
         const tx = {
           getAll: async (ref, options) => {
             assert.equal(writes.length, 0, 'Reads precede writes');
@@ -134,27 +180,32 @@ export function studioDb() {
           },
           set: (ref, value) =>
             writes.push(() => {
-              if (!records.has(ref.path)) creations.set(ref.path, ++creationSequence);
+              if (!records.has(ref.path))
+                creations.set(ref.path, transactionBirth ?? ++creationSequence);
               records.set(ref.path, structuredClone(value));
               versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
+              if (sharedBirth) changedClocks.set(ref.path, transactionBirth);
             }),
           create: (ref, value) =>
             writes.push(() => {
               assert.ok(!records.has(ref.path));
-              creations.set(ref.path, ++creationSequence);
+              creations.set(ref.path, transactionBirth ?? ++creationSequence);
               records.set(ref.path, structuredClone(value));
               versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
+              if (sharedBirth) changedClocks.set(ref.path, transactionBirth);
             }),
           update: (ref, value) =>
             writes.push(() => {
               assert.ok(records.has(ref.path));
               records.set(ref.path, { ...records.get(ref.path), ...structuredClone(value) });
               versions.set(ref.path, (versions.get(ref.path) ?? 0) + 1);
+              if (sharedBirth) changedClocks.set(ref.path, transactionBirth);
             }),
           delete: (ref) =>
             writes.push(() => {
               records.delete(ref.path);
               creations.delete(ref.path);
+              changedClocks.delete(ref.path);
             }),
         };
         const value = await operation(tx);
@@ -169,6 +220,7 @@ export function studioDb() {
         if (path === ref.path || path.startsWith(ref.path + '/')) {
           records.delete(path);
           creations.delete(path);
+          changedClocks.delete(path);
         }
     },
   };

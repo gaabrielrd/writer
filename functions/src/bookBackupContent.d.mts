@@ -23,6 +23,8 @@ export interface BookContentReport {
     historyChunks: number;
     draftBytes: number;
     coverBytes: number;
+    editorialArtifacts?: number;
+    editorialLinks?: number;
   };
   warnings: {
     missingDates: number;
@@ -30,6 +32,9 @@ export interface BookContentReport {
     externalReferences: number;
     orphanGroups: number;
     legacyCover: boolean;
+    editorialUnavailable?: number;
+    editorialExternal?: number;
+    editorialUnverifiedVersions?: number;
     missingPersonas?: number;
     unknownOverrides?: number;
   };

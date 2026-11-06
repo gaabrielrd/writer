@@ -104,11 +104,14 @@ async function validateRecordContent(stream, { index, hash, signal } = {}, legac
     check();
     if (first.done || first.value.type !== 'manifest') bad();
     bookId = first.value.manifest.bookId;
-    const machine = createBookContentMachine(createBookContentState(bookId, legacy), {
-      index,
-      hash,
-      signal,
-    });
+    const machine = createBookContentMachine(
+      createBookContentState(bookId, legacy, legacy ? 1 : first.value.manifest.version),
+      {
+        index,
+        hash,
+        signal,
+      },
+    );
     current = await next();
     while (current) {
       if (current.kind === 'book-lore') {

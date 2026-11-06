@@ -3,13 +3,29 @@ import { renderRichText } from '@/shared/lib';
 import type { PublicLoreEntity } from '../services/publicBookService';
 import { ReaderLoreTooltip } from './ReaderLoreTooltip';
 
-function highlightText(text: string, lore: PublicLoreEntity[], key: string): ReactNode {
+function highlightText(
+  text: string,
+  lore: PublicLoreEntity[],
+  allLore: PublicLoreEntity[],
+  key: string,
+): ReactNode {
+  const ownership = new Map<string, Set<string>>();
+  for (const entity of allLore)
+    for (const name of [entity.name, ...entity.aliases]) {
+      const key = name.trim().toLocaleLowerCase();
+      if (!ownership.has(key)) ownership.set(key, new Set());
+      ownership.get(key)!.add(entity.id);
+    }
   const terms = lore
     .filter((entity) => entity.isPublic === true)
     .flatMap((entity) =>
       [entity.name, ...entity.aliases]
         .filter((term) => term.trim())
         .map((term) => ({ term: term.trim(), entity })),
+    )
+    .filter(
+      ({ term, entity }) =>
+        !entity.readerGuide || (ownership.get(term.toLocaleLowerCase())?.size ?? 0) <= 1,
     )
     .sort((a, b) => b.term.length - a.term.length);
   if (!terms.length) return text;
@@ -38,14 +54,24 @@ function highlightText(text: string, lore: PublicLoreEntity[], key: string): Rea
   return children;
 }
 
-export function ReaderContent({ content, lore }: { content: string; lore: PublicLoreEntity[] }) {
+export function ReaderContent({
+  content,
+  lore,
+  allLore = lore,
+}: {
+  content: string;
+  lore: PublicLoreEntity[];
+  allLore?: PublicLoreEntity[];
+}) {
   const children = useMemo(() => {
     const template = document.createElement('template');
     template.innerHTML = renderRichText(content);
     if (!template.content.textContent?.trim()) return <p>Este capítulo ainda não contém texto.</p>;
     function renderNode(node: Node, key: string, interactive = false): ReactNode {
       if (node.nodeType === Node.TEXT_NODE)
-        return interactive ? node.textContent : highlightText(node.textContent ?? '', lore, key);
+        return interactive
+          ? node.textContent
+          : highlightText(node.textContent ?? '', lore, allLore, key);
       if (!(node instanceof Element)) return null;
       const tag = node.tagName.toLowerCase();
       const props =
@@ -64,6 +90,6 @@ export function ReaderContent({ content, lore }: { content: string; lore: Public
     return Array.from(template.content.childNodes).map((node, index) =>
       renderNode(node, String(index)),
     );
-  }, [content, lore]);
+  }, [content, lore, allLore]);
   return <>{children}</>;
 }

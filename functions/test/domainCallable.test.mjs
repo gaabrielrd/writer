@@ -14,9 +14,21 @@ const request = (action, payload = {}, uid = 'author') => ({
   data: { version: 1, action, payload },
 });
 
-test('308 actions have exactly one destination and retain every private payload/context', async () => {
+test('453 actions have exactly one destination and retain every private payload/context', async () => {
   assert.equal(Object.keys(FUNCTION_DOMAINS).length, 16);
-  assert.equal(Object.keys(FUNCTION_ROUTES).length, 308);
+  assert.equal(Object.keys(FUNCTION_ROUTES).length, 453);
+  for (const action of [
+    'getBookEditorialCaptureSource',
+    'getBookEditorialCaptureCatalog',
+    'listBookEditorialCaptureRecords',
+    'readBookEditorialCaptureRecord',
+    'inspectBookEditorialCaptureRecord',
+    'verifyBookEditorialCaptureRecord',
+    'verifyBookEditorialCaptureSource',
+  ]) {
+    assert.equal(FUNCTION_ROUTES[action], 'bookPortabilityApi');
+    assert.equal(FUNCTION_DOMAINS.bookPortabilityApi.actions[action], action);
+  }
   const seen = new Set();
   for (const [name, domain] of Object.entries(FUNCTION_DOMAINS)) {
     for (const [action, method] of Object.entries(domain.actions)) {

@@ -66,7 +66,7 @@ async function snapshots(paths) {
   );
 }
 
-test('SDK concurrent native reservations preserve publication and clocks, block the reserved ID and leave unrelated creation usable', async () => {
+test('SDK concurrent native reservations preserve publication and clocks while the inline barrier requires native creation', async () => {
   await seedCreationBook(admin, 'book', 'author', {
     title: 'Book',
     localLoreVersion: 0,
@@ -105,11 +105,13 @@ test('SDK concurrent native reservations preserve publication and clocks, block 
     editId: 'unrelated-edit-native-0001',
   });
   await adoptCreation(unrelated);
+  const afterNativeCreation = await data('books/book');
+  assert.equal(afterNativeCreation.localLoreVersion, 1);
   const rejected = writeBatch(client);
   rejected.update(doc(client, 'books/book'), { localLoreVersion: 2 });
   rejected.set(doc(client, 'books/book/lore/' + p.loreId), head);
   await assertFails(rejected.commit());
-  assert.equal((await data('books/book')).localLoreVersion, 1);
+  assert.deepEqual(await data('books/book'), afterNativeCreation);
   await admin.runTransaction(async (tx) =>
     assertCreationOpening(tx, await openCreationReservation(tx, f.c, { jobToken: p.jobToken })),
   );

@@ -8,6 +8,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { groupChapters, type ActHeading } from '../model/act';
+import { parseReaderGuideFields } from '../model/readerGuide';
 import { firestore, renderRichText } from '@/shared/lib';
 
 import type {
@@ -37,6 +38,11 @@ function mapBook(snapshot: DocumentSnapshot): PublicBook | null {
   const data: Record<string, unknown> = snapshot.data();
   if (
     (data.schemaVersion !== 1 && data.schemaVersion !== 2) ||
+    (Object.hasOwn(data, 'readerGuideVersion') && data.readerGuideVersion !== 1) ||
+    (data.readerGuideVersion === 1 &&
+      (data.literaryPublicationId !== data.revisionId ||
+        typeof data.literaryManifestHash !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(data.literaryManifestHash))) ||
     (data.schemaVersion === 2 &&
       (typeof data.universeId !== 'string' ||
         !/^[a-zA-Z0-9_-]{1,128}$/.test(data.universeId) ||
@@ -53,6 +59,12 @@ function mapBook(snapshot: DocumentSnapshot): PublicBook | null {
     return null;
   return {
     id: snapshot.id,
+    ...(data.readerGuideVersion === 1
+      ? {
+          readerGuideVersion: 1 as const,
+          literaryManifestHash: data.literaryManifestHash as string,
+        }
+      : {}),
     ...(data.hasActs === true ? { hasActs: true as const } : {}),
     title: data.title,
     authorName: data.authorName,
@@ -201,9 +213,12 @@ export async function getPublicBookContent(book: PublicBook): Promise<PublicBook
       !['character', 'location', 'concept', 'other'].includes(String(data.category))
     )
       return [];
+    const guide = book.readerGuideVersion === 1 ? parseReaderGuideFields(book, chapters, data) : {};
+    if (guide === null) return [];
     return [
       {
         id: snapshot.id,
+        ...guide,
         name: data.name,
         summary: data.summary,
         category: data.category as PublicLoreEntity['category'],

@@ -114,47 +114,11 @@ export async function readEditorChatConversation(tx, db, uid, id, token, scope) 
     scope,
   );
 }
-async function catalog(tx, db, uid) {
-  const ref = db.doc(`users/${uid}/editorChatCatalogs/current`),
-    value = (await tx.get(ref)).data();
-  if (!value) {
-    if (
-      (
-        await tx.get(
-          db.collection(`users/${uid}/editorChats`).orderBy('__name__').limit(1).select(),
-        )
-      ).docs.length
-    )
-      editorChatFail('inconsistent');
-    return { ref, revision: 0, updatedAt: 0 };
-  }
-  try {
-    editorChatClosed(value, ['schemaVersion', 'ownerId', 'revision', 'updatedAt']);
-    if (
-      value.schemaVersion !== 1 ||
-      value.ownerId !== uid ||
-      !Number.isSafeInteger(value.updatedAt) ||
-      value.updatedAt < 0
-    )
-      editorChatFail('inconsistent');
-    editorChatRevision(value.revision);
-    return { ref, revision: value.revision, updatedAt: value.updatedAt };
-  } catch {
-    editorChatFail('inconsistent');
-  }
-}
-export async function prepareEditorChatCatalogUpdate(tx, db, uid, timestamp) {
-  const previous = await catalog(tx, db, uid),
-    updatedAt = at(() => timestamp, previous.updatedAt),
-    revision = nextEditorChatRevision(previous.revision);
-  return {
-    revision,
-    updatedAt,
-    commit() {
-      tx.set(previous.ref, { schemaVersion: 1, ownerId: uid, revision, updatedAt });
-    },
-  };
-}
+import {
+  readEditorChatCatalog as catalog,
+  prepareEditorChatCatalogUpdate,
+} from './editorChatCatalog.mjs';
+export { prepareEditorChatCatalogUpdate };
 function cursorInput(raw, expected) {
   if (raw === undefined) return null;
   let value;

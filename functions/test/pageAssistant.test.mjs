@@ -1,3 +1,6 @@
+import { studioDb } from './helpers/studioDb.mjs';
+import { emptyEditorialContract } from '../src/literaryContracts.mjs';
+import { composeEditorialContract } from '../src/literaryEditorialComposition.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createPageAssistantService } from '../src/pageAssistant.mjs';
@@ -128,4 +131,111 @@ test('inspection reauthorizes the current source without provider calls or quota
   await assert.rejects(f.call({ action: 'inspect', target: request().target }), {
     code: 'permission-denied',
   });
+});
+function editorialFixture(generator) {
+  const f = studioDb();
+  const contract = emptyEditorialContract();
+  contract.fields.narrator = 'Primeira pessoa limitada';
+  contract.decisions = [
+    {
+      id: 'decision-old',
+      text: 'Antiga regra da voz',
+      category: 'preference',
+      status: 'approved',
+      source: 'Autor',
+      supersedes: null,
+    },
+    {
+      id: 'decision-new',
+      text: 'Nova voz',
+      category: 'preference',
+      status: 'approved',
+      source: 'Autor',
+      supersedes: 'decision-old',
+    },
+    {
+      id: 'decision-idea',
+      text: 'Possível traição',
+      category: 'hypothesis',
+      status: 'approved',
+      source: 'Autor',
+      supersedes: null,
+    },
+  ];
+  f.records.set('books/book', { authorId: 'author', title: 'Ilhas', updatedAt: 10 });
+  f.records.set('users/author', { credits: 7 });
+  f.records.set('books/book/literaryProduction/current', { revision: 1, updatedAt: 10, contract });
+  return {
+    ...f,
+    contract,
+    call: (uid = 'author') =>
+      createPageAssistantService({ db: f.db, now: () => 200, generator }).pageAssistant(
+        uid,
+        request(),
+      ),
+  };
+}
+
+test('page assistant uses the effective editorial guide and returns its exact limited source', async () => {
+  let captured;
+  const f = editorialFixture(async (context) => {
+    captured = context;
+    return { reply: 'Confira o POV.', action: null };
+  });
+  const result = await f.call();
+  const expected = composeEditorialContract(f.contract).instruction;
+  assert.equal(captured.context.editorial.instruction, expected);
+  assert.deepEqual(result.editorialContext, {
+    bookId: 'book',
+    revision: 1,
+    scope: 'editorial-contract-only',
+    wholeBook: false,
+    instruction: expected,
+  });
+  assert.equal(expected.includes('Antiga regra da voz'), false);
+  assert.match(expected, /HIPÓTESES DE TRABALHO APROVADAS/);
+  assert.match(expected, /Possível traição/);
+  assert.equal(f.records.get('users/author').credits, 7);
+  assert.equal(
+    [...f.records.keys()].some((path) => path.includes('literaryContractVersions')),
+    false,
+  );
+});
+
+for (const mutation of ['changed', 'recreated', 'removed']) {
+  test(`page assistant discards a response if its editorial guide is ${mutation} during generation`, async () => {
+    const f = editorialFixture(async () => {
+      const ref = f.db.doc('books/book/literaryProduction/current');
+      const previous = structuredClone(f.records.get(ref.path));
+      if (mutation === 'changed')
+        await f.db.runTransaction(async (tx) =>
+          tx.set(ref, {
+            ...previous,
+            contract: {
+              ...previous.contract,
+              fields: { ...previous.contract.fields, narrator: 'Outro POV' },
+            },
+          }),
+        );
+      else {
+        await f.db.runTransaction(async (tx) => tx.delete(ref));
+        if (mutation === 'recreated')
+          await f.db.runTransaction(async (tx) => tx.create(ref, previous));
+      }
+      return { reply: 'Resposta obsoleta', action: null };
+    });
+    await assert.rejects(f.call(), { code: 'failed-precondition' });
+    assert.equal(f.records.get('books/book').updatedAt, 10);
+    assert.equal(f.records.get('users/author').credits, 7);
+  });
+}
+
+test('page assistant never sends the private guide to another account', async () => {
+  let calls = 0;
+  const f = editorialFixture(async () => {
+    calls++;
+    return { reply: 'Private', action: null };
+  });
+  await assert.rejects(f.call('other'), { code: 'permission-denied' });
+  assert.equal(calls, 0);
 });

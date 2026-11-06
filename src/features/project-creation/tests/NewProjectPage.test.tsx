@@ -6,7 +6,7 @@ import type {
   commitAssistedBook,
 } from '@/features/ai-assistant';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { NewProjectPage } from '../components/NewProjectPage';
@@ -449,3 +449,41 @@ it('asking in the chat preserves unsaved manual edits of the proposed metadata',
   expect(screen.getByLabelText('Título do projeto')).toHaveValue('Título autoral');
   expect(mocks.request.mock.lastCall?.[0].proposal?.title).toBe('Título autoral');
 });
+
+it('reviews optional book editorial guidance and preserves author edits when collapsed', async () => {
+  render(tree());
+  await userEvent.click(screen.getByRole('button', { name: /^Manualmente/ }));
+  await userEvent.click(screen.getByRole('button', { name: /^Livro/ }));
+  await userEvent.type(screen.getByLabelText('Ideia ou título inicial'), 'Ilhas');
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+  const section = await screen.findByRole('button', { name: /^Direção editorial do livro/ });
+  await userEvent.click(section);
+  await userEvent.click(screen.getByRole('button', { name: 'Adicionar direção editorial' }));
+  const fields = within(screen.getByRole('region', { name: 'Direção editorial da proposta' }));
+  await userEvent.type(fields.getByLabelText('Premissa'), 'Uma viajante busca sua ilha');
+  await userEvent.type(fields.getByLabelText('Narrador e POV'), 'Primeira pessoa limitada');
+  await userEvent.click(section);
+  await userEvent.click(section);
+  expect(fields.getByLabelText('Narrador e POV')).toHaveValue('Primeira pessoa limitada');
+  expect(mocks.commit).not.toHaveBeenCalled();
+  await userEvent.click(screen.getByRole('button', { name: /^Criar livro/ }));
+  await screen.findByRole('heading', { name: /Projeto aberto/ });
+  expect(mocks.commit.mock.calls[0]![0].proposal.editorialContract).toMatchObject({
+    schemaVersion: 1,
+    fields: { premise: 'Uma viajante busca sua ilha', narrator: 'Primeira pessoa limitada' },
+    decisions: [],
+  });
+});
+
+for (const kind of ['Aventura', 'Campanha'])
+  it(`does not offer book editorial guidance for ${kind}`, async () => {
+    render(tree());
+    await userEvent.click(screen.getByRole('button', { name: /^Manualmente/ }));
+    await userEvent.click(screen.getByRole('button', { name: new RegExp('^' + kind) }));
+    await userEvent.type(screen.getByLabelText('Ideia ou título inicial'), 'Ilhas');
+    await userEvent.click(screen.getByRole('button', { name: 'Continuar' }));
+    await screen.findByLabelText('Título do projeto');
+    expect(
+      screen.queryByRole('button', { name: /^Direção editorial do livro/ }),
+    ).not.toBeInTheDocument();
+  });
