@@ -5,8 +5,9 @@ export function useActiveDialog() {
     const update = () => {
       const dialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"]')).filter(
         (d) =>
-          !d.closest('[data-page-assistant], [data-writer-guide]') &&
-          d.getAttribute('data-state') !== 'closed',
+          !d.closest(
+            '[data-page-assistant], [data-writer-guide], [data-slot="dropdown-content"]',
+          ) && d.getAttribute('data-state') !== 'closed',
       );
       setDialog(dialogs.at(-1) ?? null);
     };

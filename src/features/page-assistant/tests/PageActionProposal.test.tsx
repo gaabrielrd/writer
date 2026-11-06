@@ -3,8 +3,32 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { PageActionProposal } from '../components/PageActionProposal';
 import { PageAssistantSurface } from '../components/PageAssistantSurface';
+import { Dropdown } from '@/shared/ui';
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => vi.restoreAllMocks());
+it('keeps conception content on the page while a search dropdown is open', async () => {
+  render(
+    <>
+      <Dropdown
+        mode="select"
+        searchable
+        label="Persona"
+        options={[{ value: 'poet', label: 'Poeta' }]}
+      />
+      <PageAssistantSurface>
+        <p>Minha conversa criativa.</p>
+      </PageAssistantSurface>
+    </>,
+  );
+  await userEvent.click(screen.getByRole('combobox', { name: 'Persona' }));
+  await userEvent.type(await screen.findByRole('textbox', { name: 'Buscar em Persona' }), 'Poe');
+  const popup = screen.getByRole('dialog', { name: 'Persona' });
+  expect(screen.getByText('Minha conversa criativa.')).toBeInTheDocument();
+  expect(popup.querySelector('[data-conception-assistant]')).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: 'Continuar conversa criativa' }),
+  ).not.toBeInTheDocument();
+});
 it('reviews and edits a text proposal before executing, without invoking during render', async () => {
   const execute = vi.fn(),
     discard = vi.fn();

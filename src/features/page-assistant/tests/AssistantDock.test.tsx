@@ -2,10 +2,70 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AssistantDock } from '../components/AssistantDock';
+import { Dialog, Dropdown } from '@/shared/ui';
 vi.mock('@/features/auth', () => ({ useAuth: () => ({ user: { uid: 'writer' } }) }));
 const key = 'writer-assistant-dock:v1:writer';
 const saved = () =>
   JSON.parse(localStorage.getItem(key) ?? '{}') as { x?: number; y?: number; mode?: string };
+
+it.each([false, true])(
+  'search dropdown does not become the assistant host inside modal=%s',
+  async (inModal) => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    const dropdown = (
+      <Dropdown
+        mode="select"
+        searchable
+        label="Universo compartilhado"
+        options={[
+          { value: '', label: 'Sem universo' },
+          { value: 'atlas', label: 'Atlas' },
+        ]}
+      />
+    );
+    render(
+      <>
+        {inModal ? (
+          <Dialog open title="Contexto do projeto" onClose={() => undefined}>
+            {dropdown}
+          </Dialog>
+        ) : (
+          dropdown
+        )}
+        {tree()}
+      </>,
+    );
+    const modal = inModal
+      ? screen.getByRole('dialog', { name: 'Contexto do projeto' })
+      : document.body;
+    await waitFor(() => expect(modal.querySelector('[data-page-assistant]')).not.toBeNull());
+    const getDock = () => document.querySelector<HTMLElement>('[data-page-assistant]')!;
+    const initialParent = getDock().parentElement;
+    await userEvent.click(screen.getByRole('combobox', { name: 'Universo compartilhado' }));
+    const search = await screen.findByRole('textbox', { name: 'Buscar em Universo compartilhado' });
+    await userEvent.type(search, 'Atl');
+    expect(search).toHaveFocus();
+    expect(screen.getByRole('option', { name: 'Atlas' })).toBeVisible();
+    const popup = screen.getByRole('dialog', { name: 'Universo compartilhado' });
+    expect(popup).not.toContainElement(getDock());
+    expect(getDock().parentElement).toBe(initialParent);
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Universo compartilhado' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(getDock().parentElement).toBe(initialParent);
+    expect(screen.getByRole('combobox', { name: 'Universo compartilhado' })).toHaveFocus();
+  },
+);
 
 it('keeps viewport coordinates in dialogs without reserving space inside the modal', async () => {
   const modal = document.createElement('div');

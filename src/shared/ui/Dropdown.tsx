@@ -140,6 +140,7 @@ function DropdownSurface({
         <Menu.Portal>
           <Menu.Content
             ref={contentRef}
+            data-slot="dropdown-content"
             aria-label={label}
             aria-labelledby={undefined}
             role={searchable ? 'dialog' : selecting ? 'listbox' : 'menu'}

@@ -81,6 +81,10 @@ Os selects das telas usam `Dropdown mode="select"`. `Select` permanece apenas
 como nome compatível para esse modo, com a API `onValueChange`; não renderiza um
 select nativo. Os testes abrem o controle e escolhem pelo label visível.
 
+A superfície recebe `data-slot="dropdown-content"`. Mesmo quando a busca usa
+`role="dialog"`, ela continua sendo um menu transitório e não recebe o assistente.
+O assistente conserva seu host na página ou no modal que contém o gatilho.
+
 ## Verificação
 
 Os contratos ficam em `src/shared/ui/tests/Dropdown.test.tsx` e a verificação
