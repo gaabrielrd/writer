@@ -24,6 +24,21 @@ test('área de trabalho ocupa a tela e a lateral recolhe sem perder o conteúdo'
           return Math.abs(logo!.y + logo!.height / 2 - header!.y - header!.height / 2);
         })
         .toBeLessThanOrEqual(1);
+      const brand = await sidebar
+        .getByRole('link', { name: 'Writer Assistant Início' })
+        .boundingBox();
+      const toggle = await sidebar
+        .getByRole('button', { name: /^(Recolher|Expandir) navegação$/ })
+        .boundingBox();
+      if ((await sidebar.getAttribute('data-collapsed')) === 'true') {
+        expect(
+          Math.abs(brand!.x + brand!.width / 2 - toggle!.x - toggle!.width / 2),
+        ).toBeLessThanOrEqual(1);
+      } else {
+        expect(
+          Math.abs(brand!.y + brand!.height / 2 - toggle!.y - toggle!.height / 2),
+        ).toBeLessThanOrEqual(1);
+      }
     };
     const panel = page.locator('[data-writer-workspace] > div').first();
     const panelBox = await panel.boundingBox();
