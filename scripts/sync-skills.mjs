@@ -8,9 +8,10 @@
 // Compatível com macOS, Linux e Windows: usa apenas APIs nativas do Node
 // (node:fs, node:path, node:url) — sem comandos de shell.
 
-import { existsSync, mkdirSync, readdirSync, rmSync, cpSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, rmSync, cpSync, realpathSync } from 'node:fs';
+import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { externalSkills } from './skill-registry.mjs';
 
 // Raiz do projeto: diretório pai de `scripts/`.
 const scriptDir = dirname(fileURLToPath(import.meta.url));
@@ -39,6 +40,7 @@ function listSkillDirs(dir) {
 
 function syncSkills() {
   const skills = listSkillDirs(sourceDir);
+  const external = externalSkills(projectRoot);
 
   if (skills.length === 0) {
     console.error(`Nenhuma skill encontrada em "${sourceDir}". Nada a sincronizar.`);
@@ -46,9 +48,18 @@ function syncSkills() {
   }
 
   for (const destRoot of destinations) {
-    // Remove a pasta antiga inteira e recria do zero.
+    // Preserve registered provider installations, including platform-specific
+    // agents and binaries. Everything else remains generated from skills/.
     if (existsSync(destRoot)) {
-      rmSync(destRoot, { recursive: true, force: true });
+      const actualRoot = realpathSync(destRoot);
+      if (!actualRoot.startsWith(realpathSync(projectRoot) + sep))
+        throw new Error('Destino de skills fora do projeto.');
+      for (const entry of readdirSync(destRoot)) {
+        if (external.has(entry)) continue;
+        const target = resolve(actualRoot, entry);
+        if (!target.startsWith(actualRoot + sep)) throw new Error('Destino de skill inválido.');
+        rmSync(target, { recursive: true, force: true });
+      }
     }
     mkdirSync(destRoot, { recursive: true });
 

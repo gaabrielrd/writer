@@ -10,12 +10,15 @@
 //  3. O `name` do frontmatter bate com o nome da pasta.
 //  4. As cópias em `.claude/skills` e `.agents/skills` existem e são
 //     idênticas (mesmo conjunto de arquivos e conteúdo byte a byte).
+//  5. Skills externas registradas conservam as variantes do fornecedor; quando
+//     instaladas, metadata e versão devem corresponder ao registro canônico.
 //
 // Compatível com macOS, Linux e Windows: apenas APIs nativas do Node.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { externalSkills } from './skill-registry.mjs';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const projectRoot = resolve(scriptDir, '..');
@@ -28,6 +31,7 @@ const destinations = [
 
 /** @type {string[]} */
 const errors = [];
+const external = externalSkills(projectRoot);
 
 function listSkillDirs(dir) {
   if (!existsSync(dir)) {
@@ -113,8 +117,8 @@ function parseFrontmatter(content) {
   return data;
 }
 
-function validateMetadata(skill) {
-  const skillMd = join(sourceDir, skill, 'SKILL.md');
+function validateMetadata(skill, base = sourceDir, version = null) {
+  const skillMd = join(base, skill, 'SKILL.md');
   if (!existsSync(skillMd) || !statSync(skillMd).isFile()) {
     errors.push(`Skill "${skill}": arquivo SKILL.md ausente.`);
     return;
@@ -140,6 +144,8 @@ function validateMetadata(skill) {
   if (!meta.description) {
     errors.push(`Skill "${skill}": campo "description" ausente ou vazio no frontmatter.`);
   }
+  if (version !== null && meta.version !== version)
+    errors.push(`Skill externa "${skill}" em "${base}": versão diferente de ${version}.`);
 }
 
 function compareCopies(skills) {
@@ -156,7 +162,9 @@ function compareCopies(skills) {
     // Conjunto de skills deve ser o mesmo.
     const destSkills = listSkillDirs(destRoot);
     const missing = skills.filter((s) => !destSkills.includes(s));
-    const extra = destSkills.filter((s) => !skills.includes(s));
+    const extra = destSkills.filter((s) => !skills.includes(s) && !external.has(s));
+    for (const [skill, version] of external)
+      if (existsSync(join(destRoot, skill))) validateMetadata(skill, destRoot, version);
     if (missing.length > 0) {
       errors.push(
         `"${destRoot}": skill(s) faltando: ${missing.join(', ')}. Rode "npm run sync:skills".`,

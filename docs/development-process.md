@@ -26,6 +26,13 @@ de aceite nesta fase; preserve arquivos de testes e comportamentos existentes.
 Atualizações herdadas do template usam `npm run update:template -- --dry-run`
 antes da aplicação. Veja [updating.md](updating.md).
 
+`skills/` é a fonte das cópias geradas em `.agents/skills` e `.claude/skills`.
+Instalações externas opcionais são registradas explicitamente por nome/versão em
+`skills/external-skills.json`. A sincronização preserva suas variantes de plataforma
+e binários; a verificação confere metadata/versão das instalações presentes e
+continua recusando extras não registrados e divergências nas skills canônicas.
+Assets distribuídos pelo Impeccable e seu cache gerado não são reformatados.
+
 ## Mensagens de commit
 
 Use um prefixo de tipo:

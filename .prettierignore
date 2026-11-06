@@ -12,3 +12,9 @@ visual-playwright-report/
 blob-report/
 all-blob-reports/
 verified-build/
+
+# Provider-distributed Impeccable assets and generated cache; preserve upstream bytes.
+.github/skills/impeccable/
+.github/agents/impeccable-*.agent.md
+.claude/agents/impeccable-*.md
+.impeccable/hook.cache.json
