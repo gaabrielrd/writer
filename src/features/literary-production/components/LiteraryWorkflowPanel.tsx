@@ -750,7 +750,7 @@ function WorkflowSession({
                     Autorizar estes limites e retomar ciclo
                   </Button>
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     disabled={canceling}
                     onClick={() => void control('cancel')}
                   >

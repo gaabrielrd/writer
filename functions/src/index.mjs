@@ -1,4 +1,7 @@
-import { BOOK_EDITORIAL_HISTORY_METHODS, invokeBookEditorialHistoryCallable } from './bookEditorialHistoryCallable.mjs';
+import {
+  BOOK_EDITORIAL_HISTORY_METHODS,
+  invokeBookEditorialHistoryCallable,
+} from './bookEditorialHistoryCallable.mjs';
 import { LORE_ANALYSIS_INSTRUCTION } from './loreAnalysisInstruction.mjs';
 import { cleanupExpiredPersonaGenerations } from './personaGeneration.mjs';
 import { createSectorServices } from './domainServices.mjs';
@@ -418,7 +421,11 @@ async function invokeCallable(method, request, domain) {
         request.data,
       );
     if (BOOK_RESTORE_METHODS.includes(method) || BOOK_EDITORIAL_HISTORY_METHODS.includes(method))
-      return await (BOOK_RESTORE_METHODS.includes(method) ? invokeBookRestoreCallable : invokeBookEditorialHistoryCallable)(
+      return await (
+        BOOK_RESTORE_METHODS.includes(method)
+          ? invokeBookRestoreCallable
+          : invokeBookEditorialHistoryCallable
+      )(
         createBookRestoreUploadService({
           ...BOOK_RESTORE_RUNTIME,
           db,

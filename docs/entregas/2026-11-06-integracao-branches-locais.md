@@ -47,3 +47,29 @@ entregas e não comprovam validação deste conjunto integrado.
 
 O pedido não autoriza implantação manual de Functions ou Firestore. Workflows
 já configurados para responder ao push conservam seu comportamento existente.
+
+## Correções guiadas pela CI
+
+O primeiro push foi `38d51d16`. A rodada remota identificou um link absoluto para
+Downloads e a referência Linux do styleguide anterior às mudanças de tipografia
+e ao acesso Ajuda. O link foi corrigido e a captura estável da CI foi inspecionada
+antes de atualizar a referência em `c7c61c10`; o navegador de produção passou
+nessa revisão.
+
+As Rules apontaram um callback de transação síncrono em fixture, limpeza de
+livro sem o estado deleting preparado e um alias externo indevido no bundle de
+teste da portabilidade. As correções preservam as proteções do servidor.
+Os contratos de teste do transporte também precisam reconhecer os oito métodos
+editoriais acrescentados pelo rascunho, mantendo a conferência de unicidade,
+destino e preservação integral do payload.
+
+O rascunho referenciava um componente de consulta histórica ausente. A leitura
+privada foi completada com paginação, seleção explícita, limites de bytes,
+conferência SHA por parte e integral, nova autorização final e guard da sessão.
+Não aplica conteúdo nem persiste corpos. Foram preparados testes de integridade,
+revogação, paginação, leitura e recuperação de erro, sem execução local.
+
+A formatação dos arquivos integrados foi aplicada como correção. Os gates
+continuam sendo executados na CI, sem alterações de limites ou testes pulados.
+O diagnóstico estático adicional após falha coleta tipos, estilo, formatação e
+lint remotos, sem substituir a obrigação de `npm run validate` aprovado.

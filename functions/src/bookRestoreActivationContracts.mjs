@@ -1,20 +1,28 @@
 import { closed, inconsistent } from './bookRestoreInput.mjs';
 import { validateId } from './generation.mjs';
 export function validateBookRestoreActivation(value) {
-  closed(value, [
-    'schemaVersion',
-    'operationId',
-    'requestHash',
-    'reviewToken',
-    'sourceCheckpoint',
-    'activatedAt',
-    'mediaState',
-  ], ['editorial']);
+  closed(
+    value,
+    [
+      'schemaVersion',
+      'operationId',
+      'requestHash',
+      'reviewToken',
+      'sourceCheckpoint',
+      'activatedAt',
+      'mediaState',
+    ],
+    ['editorial'],
+  );
   if (Object.hasOwn(value, 'editorial')) {
     closed(value.editorial, ['schemaVersion', 'contextToken', 'controlToken', 'sealToken']);
-    if (value.editorial.schemaVersion !== 1 ||
+    if (
+      value.editorial.schemaVersion !== 1 ||
       ['contextToken', 'controlToken', 'sealToken'].some(
-        key => typeof value.editorial[key] !== 'string' || !/^[a-f0-9]{64}$/.test(value.editorial[key])))
+        (key) =>
+          typeof value.editorial[key] !== 'string' || !/^[a-f0-9]{64}$/.test(value.editorial[key]),
+      )
+    )
       inconsistent();
   }
   if (

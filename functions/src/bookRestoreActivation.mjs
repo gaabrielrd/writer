@@ -14,7 +14,10 @@ import {
 } from './bookRestoreActivationReview.mjs';
 import { prepareBookRestoreUniverseLink } from './bookRestoreUniverse.mjs';
 import { prepareBookRestoreActivationEffects } from './bookRestoreActivationEffects.mjs';
-import { isBookRestoreEditorial, prepareBookRestoreEditorialRetirement } from './bookRestoreEditorialActivation.mjs';
+import {
+  isBookRestoreEditorial,
+  prepareBookRestoreEditorialRetirement,
+} from './bookRestoreEditorialActivation.mjs';
 const action = 'activateBookRestore';
 export function createBookRestoreActivationService({
   db,
@@ -123,7 +126,14 @@ export function createBookRestoreActivationService({
           };
         async function decision(tx, loaded) {
           available(loaded);
-          const result = await prepareBookRestoreActivationReview(tx, db, loaded, items, readOp, editorialActivation);
+          const result = await prepareBookRestoreActivationReview(
+            tx,
+            db,
+            loaded,
+            items,
+            readOp,
+            editorialActivation,
+          );
           if (result.result.reviewToken !== request.reviewToken)
             fail('failed-precondition', 'activation-review-changed');
           return result;

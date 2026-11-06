@@ -64,8 +64,12 @@ export function headRecords({ contracts = [currentContract()], plan = currentPla
   return rows;
 }
 export async function readyEditableEditorial(options) {
-  const f = await readyEditorial({ db: options?.db, id: options?.id, records: options?.records ?? headRecords(options),
-    editorialActivation: options?.editorialActivation ?? false });
+  const f = await readyEditorial({
+    db: options?.db,
+    id: options?.id,
+    records: options?.records ?? headRecords(options),
+    editorialActivation: options?.editorialActivation ?? false,
+  });
   f.p = await finishEditorial(f);
   return f;
 }

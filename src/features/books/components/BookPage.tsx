@@ -56,13 +56,7 @@ import { ImportBookModal } from './ImportBookModal';
 import styles from './BookPage.module.css';
 
 type TabId =
-  | 'chapters'
-  | 'scenes'
-  | 'narrative'
-  | 'compendium'
-  | 'publication'
-  | 'progress'
-  | 'editorial';
+  'chapters' | 'scenes' | 'narrative' | 'compendium' | 'publication' | 'progress' | 'editorial';
 
 interface TabDef {
   id: TabId;

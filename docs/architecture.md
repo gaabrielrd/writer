@@ -4966,7 +4966,6 @@ externos não fazem parte desse inventário. Cancelamento do restore conserva se
 protocolo nativo próprio. Ver
 [ADR0298](decisions/0298-book-editorial-archive-deletion.md).
 
-
 ## Ativação editorial interna
 
 bookRestoreEditorialActivation compõe censo nativo, metadados da revisão e estado
@@ -4984,7 +4983,6 @@ aceita o certificado no estado ativado, sem relaxar o inventário/fonte exigidos
 Não há novos métodos públicos ou mudança de Rules. Ver
 [ADR 0299](decisions/0299-editorial-restore-activation.md). Testes preparados sem
 execução; leitor, pendências, recaptura e interface continuam pendentes.
-
 
 ## Leitor do arquivo editorial depois da limpeza da origem
 
@@ -5006,7 +5004,6 @@ original. O aceite persistido/CAS, a interface e a recaptura não são implement
 pela leitura. Métodos continuam internos. Ver
 [ADR 0300](decisions/0300-editorial-history-reader-after-source-cleanup.md).
 Testes preparados sem execução; nenhuma abertura de produção.
-
 
 ## Aceite das pendências editoriais restauradas
 

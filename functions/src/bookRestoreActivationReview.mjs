@@ -18,7 +18,10 @@ import { validateBookBackupCover } from './bookBackupCover.mjs';
 import { BOOK_RESTORE_AUDIT_LAYOUT, verifyAuditAnchor } from './bookRestoreAuditInventory.mjs';
 
 import { verifyBookRestoreEditorialAudit } from './bookRestoreEditorialAudit.mjs';
-import { isBookRestoreEditorial, prepareBookRestoreEditorialActivation } from './bookRestoreEditorialActivation.mjs';
+import {
+  isBookRestoreEditorial,
+  prepareBookRestoreEditorialActivation,
+} from './bookRestoreEditorialActivation.mjs';
 
 function available(loaded, editorialActivation = false) {
   const editorial = isBookRestoreEditorial(loaded.job);
@@ -55,7 +58,13 @@ function proof(artifact) {
   };
 }
 /** Certifies the current frozen audit seal before review or atomic retirement. */
-export async function verifyBookRestoreActivationAudit(tx, db, loaded, readOp, editorialActivation = false) {
+export async function verifyBookRestoreActivationAudit(
+  tx,
+  db,
+  loaded,
+  readOp,
+  editorialActivation = false,
+) {
   available(loaded, editorialActivation);
   if (isBookRestoreEditorial(loaded.job))
     return (await verifyBookRestoreEditorialAudit(tx, db, loaded, readOp)).seal;
@@ -89,7 +98,14 @@ export async function verifyBookRestoreActivationAudit(tx, db, loaded, readOp, e
 }
 
 /** Internal transaction port shared with atomic activation. No writes or grants. */
-export async function prepareBookRestoreActivationReview(tx, db, loaded, items, readOp, editorialActivation = false) {
+export async function prepareBookRestoreActivationReview(
+  tx,
+  db,
+  loaded,
+  items,
+  readOp,
+  editorialActivation = false,
+) {
   available(loaded, editorialActivation);
   const p = loaded.job.preparation;
   for (const [key, kind] of [
@@ -103,8 +119,9 @@ export async function prepareBookRestoreActivationReview(tx, db, loaded, items, 
   }
   if (!same(items.universe.value.origin, p.universe.origin)) inconsistent();
   const editorial = isBookRestoreEditorial(loaded.job)
-    ? await prepareBookRestoreEditorialActivation(tx, db, loaded, readOp) : null;
-  const seal = editorial?.seal ?? await verifyBookRestoreActivationAudit(tx, db, loaded, readOp);
+    ? await prepareBookRestoreEditorialActivation(tx, db, loaded, readOp)
+    : null;
+  const seal = editorial?.seal ?? (await verifyBookRestoreActivationAudit(tx, db, loaded, readOp));
   const control = await readBookRestoreArtifact(tx, db, loaded, 'work-control', 'current'),
     index = await readBookRestoreArtifact(tx, db, loaded, 'entity-index-control', 'entity-scenes'),
     coverDefinition = await readBookRestoreArtifact(tx, db, loaded, 'cover-definition', 'current'),
@@ -205,7 +222,13 @@ export async function prepareBookRestoreActivationReview(tx, db, loaded, items, 
           },
   };
 }
-export function createBookRestoreActivationReviewService({ db, load, readOp, assets, editorialActivation = false }) {
+export function createBookRestoreActivationReviewService({
+  db,
+  load,
+  readOp,
+  assets,
+  editorialActivation = false,
+}) {
   return {
     async getBookRestoreActivationReview(uid, input) {
       authorize(uid);

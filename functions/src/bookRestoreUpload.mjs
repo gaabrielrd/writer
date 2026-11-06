@@ -118,7 +118,11 @@ export function createBookRestoreUploadService({
   editorialActivation = false,
 }) {
   // Coordinated D3 rollout: existing streamed jobs always resume; enable new ones after reconciliation.
-  if ([indexedLoreBodies, editorialPreparation, editorialActivation].some(value => typeof value !== 'boolean'))
+  if (
+    [indexedLoreBodies, editorialPreparation, editorialActivation].some(
+      (value) => typeof value !== 'boolean',
+    )
+  )
     inconsistent();
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
   const opRef = (uid, id) => db.doc('users/' + uid + '/bookRestoreOperations/' + id);
@@ -297,7 +301,9 @@ export function createBookRestoreUploadService({
       (r.preparation?.schemaVersion !== 13 ||
         r.preparation.phase !== 'activation-ready' ||
         (Object.hasOwn(r.preparation, 'editorialAddedArtifacts')
-          ? loaded.job.cleanupVersion !== 15 || loaded.job.source.format !== 'writer-book-archive' || loaded.job.source.version !== 2
+          ? loaded.job.cleanupVersion !== 15 ||
+            loaded.job.source.format !== 'writer-book-archive' ||
+            loaded.job.source.version !== 2
           : r.preparation.audit?.sealOperationId !== r.operationId))
     )
       inconsistent();
@@ -1283,7 +1289,13 @@ export function createBookRestoreUploadService({
     ...createBookEditorialHistoryService({ db, load, readOp }),
     ...createBookEditorialRestoreReviewCatalog({ db, load, readOp }),
     ...createBookEditorialRestoreReviewService({ db, load, readOp, now }),
-    ...createBookRestoreActivationReviewService({ db, load, readOp, assets: restoreAssets, editorialActivation }),
+    ...createBookRestoreActivationReviewService({
+      db,
+      load,
+      readOp,
+      assets: restoreAssets,
+      editorialActivation,
+    }),
     ...createBookRestoreActivationService({
       editorialActivation,
       db,

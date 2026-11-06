@@ -401,7 +401,6 @@ commit conjunto e conferência final para retomadas antigas. São8Node+1SDK
 preparados, sem execução. Ativação continua fechada; revisão/clocks, leitores,
 recaptura e auditoria integral seguem pendentes. Objetivoativo,0/5 encerradas.
 
-
 O [incremento 51](51-ativacao-editorial-interna.md) liga revisão/ativação ao censo
 v15 sob opção interna desligada. O recibo fixa contexto e tokens nativos; a raiz
 privada recebe clocks literários, preservando arquivo original e pendências.
@@ -410,14 +409,12 @@ Foram preparados 17Node+1SDK, nenhum executado. Leitor, CAS das pendências,
 recaptura e interface ainda faltam; a rodada 5.898/5.480 não valida este código.
 O objetivo integral continua ativo, 0/5 etapas formalmente encerradas.
 
-
 O [incremento 52](52-leitor-privado-do-arquivo-editorial.md) prepara o leitor interno
 por autorização atual, raiz nativa e testemunho de ativação preservado após
 cleanup da origem. Leitura limitada por partes e prova transacional; pendências
 expõem a base atual sem restaurar grants. São 22Node+2SDK preparados, sem execução.
 Aceite com CAS, recaptura e interface permanecem pendentes. As aprovações da
 rodada anterior não validam 51–52; o objetivo integral segue ativo, 0/5 encerradas.
-
 
 O [incremento 53](53-aceite-e-reconciliacao-das-pendencias.md) implementa o escritor
 interno de aceite/CAS: manter corrente ou reconciliar somente referências

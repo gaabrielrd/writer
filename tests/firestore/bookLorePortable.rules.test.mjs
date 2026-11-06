@@ -94,7 +94,8 @@ before(async () => {
       rolldownOptions: {
         output: { codeSplitting: false },
         external: (id) =>
-          (id.startsWith('@/') && id !== '@/shared/streams') || id.startsWith('firebase/'),
+          (id.startsWith('@/') && !['@/shared/streams', '@/shared/validation'].includes(id)) ||
+          id.startsWith('firebase/'),
       },
     },
   });

@@ -82,9 +82,12 @@ export async function assertBookRestoreEditorialHeadNamespacesEmpty(tx, db, load
     );
 }
 
-
 /** Active-book review resources must never be inherited by a rootless restore. */
 export async function assertBookEditorialReviewNamespacesEmpty(tx, db, loaded) {
-  for (const name of [BOOK_EDITORIAL_HISTORY_COLLECTIONS.resolutions, BOOK_EDITORIAL_HISTORY_COLLECTIONS.operations, BOOK_EDITORIAL_HISTORY_COLLECTIONS.withdrawals])
+  for (const name of [
+    BOOK_EDITORIAL_HISTORY_COLLECTIONS.resolutions,
+    BOOK_EDITORIAL_HISTORY_COLLECTIONS.operations,
+    BOOK_EDITORIAL_HISTORY_COLLECTIONS.withdrawals,
+  ])
     await emptyCollection(tx, db, 'books/' + loaded.job.bookId + '/' + name);
 }

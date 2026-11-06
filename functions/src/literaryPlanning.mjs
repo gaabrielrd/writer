@@ -148,10 +148,22 @@ export function createLiteraryPlanningService({ db, now = Date.now }) {
             workFail('invalid-argument', 'Operação usada por outro documento.');
           return { id, revision: previous.revision, updatedAt: previous.updatedAt };
         }
-        const prepared = await prepareLiteraryPlanSave(tx, { context, root, current, id, expectedRevision, plan, now });
+        const prepared = await prepareLiteraryPlanSave(tx, {
+          context,
+          root,
+          current,
+          id,
+          expectedRevision,
+          plan,
+          now,
+        });
         prepared.commit();
-        tx.create(receiptRef, { method: 'saveLiteraryPlan', fingerprint, ...prepared.result,
-          ...(!prepared.changed ? { noOp: true } : {}) });
+        tx.create(receiptRef, {
+          method: 'saveLiteraryPlan',
+          fingerprint,
+          ...prepared.result,
+          ...(!prepared.changed ? { noOp: true } : {}),
+        });
         return prepared.result;
       });
     },

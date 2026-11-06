@@ -88,8 +88,10 @@ function bookAvailability(data: StoredBookDoc) {
   const marker = currentBookPersonaAvailability(data.personaAvailability, data.personaId);
   if (marker && marker.reason !== 'profile-not-recorded')
     throw new Error('Disponibilidade de persona do livro inválida.');
-  return { ...(marker ? { personaAvailability: marker } : {}),
-    ...(data.hasLiteraryArchiveResources === true ? { hasLiteraryArchiveResources: true } : {}) };
+  return {
+    ...(marker ? { personaAvailability: marker } : {}),
+    ...(data.hasLiteraryArchiveResources === true ? { hasLiteraryArchiveResources: true } : {}),
+  };
 }
 function chapterSettings(data: StoredChapterDoc) {
   const complement = validateComplement(data.personaComplement),

@@ -667,7 +667,7 @@ function PublicationSession({
             )}
             {!['published', 'canceled'].includes(job.state) && (
               <Button
-                variant="destructive"
+                variant="outline"
                 disabled={locked || guideWork.dirty}
                 onClick={() =>
                   void run(async (current) => {

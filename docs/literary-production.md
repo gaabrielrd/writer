@@ -926,7 +926,6 @@ de livro, com partes antes de headers e conferência antes da raiz. São8Node+1S
 preparados, sem execução. Isso não libera a ativação nem encerra a portabilidade;
 revisão, leitores e recaptura continuam pendentes.
 
-
 O [incremento 51](tasks/producao-literaria/51-ativacao-editorial-interna.md)
 prepara revisão e ativação da cópia editorial no protocolo existente, sob opção
 interna desligada por padrão. A confirmação liga o censo à raiz privada com
@@ -935,7 +934,6 @@ sem copiar execução/publicação. O fluxo de pedido incerto preserva o selo ba
 Há 17Node+1SDK preparados, sem execução. Isso não abre restauração pela interface:
 leitor autorizado, pendências com CAS e recaptura continuam necessários.
 
-
 O [incremento 52](tasks/producao-literaria/52-leitor-privado-do-arquivo-editorial.md)
 prepara a leitura privada do arquivo depois da limpeza da origem de restauração.
 A autorização vem da raiz atual e da identidade nativa, com partes limitadas,
@@ -943,7 +941,6 @@ hashes e conferência no consumo. Pendências distinguem corrente original,
 alterada e removida; referência histórica não vira autorização de fonte atual.
 Há 22Node+2SDK preparados, sem execução. Aceite persistido com CAS, recaptura e
 interface continuam necessários antes de abrir o fluxo público.
-
 
 O [incremento 53](tasks/producao-literaria/53-aceite-e-reconciliacao-das-pendencias.md)
 prepara o aceite persistido das pendências no servidor. O autor pode manter o

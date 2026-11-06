@@ -4975,7 +4975,6 @@ fechado; leitor privado e fontes pendentes CAS; recaptura sem duplicar current
 ou expandir JSON8MiB; auditar E1–E5, resolver cobertura90% e Rules completas.
 Não confundir materialização/censo interno com restauração pública utilizável.
 
-
 ## Incremento 51 — ativação editorial interna
 
 Turno anterior foi progresso: reconferência de principal, execução das suítes,
@@ -5016,7 +5015,6 @@ privado do arquivo/pendências por autorização atual e CAS, incluindo cleanup 
 origem de restore; recaptura agrupandohistórico sem duplicarcurrent/nemexpandir
 JSON8MiB; UI e abertura pública sódepois. AuditarE1–E5 e gatesintegrais comsync
 principalantes, coveragefunctions90% e Rulesfull. Não fechar pelo caminho interno.
-
 
 ## Incremento 52 — leitor privado após cleanup da origem
 
@@ -5062,7 +5060,6 @@ comCAS eUI; recaptura agrupada preservandoJSON/IDscontextuaiss em8MiB sem duplic
 current; integração cliente+abertura somente apósgates. AuditarE1–E5 e reconferir
 principal antes de testes; resolverfunctions90% e Rulesfull. Não encerrar pelo
 leitor interno nem tratar tokenreadonly como aceite persistido.
-
 
 ## Incremento 53 — aceite e reconciliação com CAS
 

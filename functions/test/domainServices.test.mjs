@@ -9,6 +9,7 @@ import { ADVENTURE_BACKUP_METHODS } from '../src/adventureBackupCallable.mjs';
 import { ADVENTURE_DELETION_METHODS } from '../src/adventureDeletionCallable.mjs';
 import { BOOK_PUBLICATION_METHODS } from '../src/bookLorePublication.mjs';
 import { BOOK_LORE_RECOVERY_METHODS } from '../src/bookLoreWriteRecovery.mjs';
+import { BOOK_EDITORIAL_HISTORY_METHODS } from '../src/bookEditorialHistoryCallable.mjs';
 import { workFixture } from './workProgressFixtures.mjs';
 
 test('every registered action belongs to a real sector service or its explicit specialized port', () => {
@@ -37,6 +38,7 @@ test('every registered action belongs to a real sector service or its explicit s
       ...ADVENTURE_DELETION_METHODS,
       ...BOOK_PUBLICATION_METHODS,
       ...BOOK_LORE_RECOVERY_METHODS,
+      ...BOOK_EDITORIAL_HISTORY_METHODS,
       'bookLoreEdit',
       'bookLoreEditOutcome',
       'bookLoreRemoval',

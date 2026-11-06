@@ -24,7 +24,7 @@ function RouterGuard({ dirty, pending }: { dirty: boolean; pending: boolean }) {
             Continuar nesta área
           </Button>
           {!pending && (
-            <Button variant="destructive" onClick={() => blocker.proceed()}>
+            <Button variant="primary" onClick={() => blocker.proceed()}>
               Descartar e sair
             </Button>
           )}

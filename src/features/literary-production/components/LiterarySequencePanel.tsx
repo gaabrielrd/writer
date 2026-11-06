@@ -1020,7 +1020,7 @@ function SequenceSession({
             {!['done', 'canceled'].includes(job.state) && (
               <Button
                 className={styles.sequenceAction}
-                variant="destructive"
+                variant="outline"
                 disabled={controlling && controlPending?.action === 'cancel'}
                 onClick={() => void control('cancel')}
               >

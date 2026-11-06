@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Button, EmptyState, ErrorState, LoadingState } from '@/shared/ui';
+import {
+  Alert,
+  Button,
+  Dropdown,
+  DropdownItem,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from '@/shared/ui';
+import { MoreHorizontal } from 'lucide-react';
 import { ReaderGuideFields } from './ReaderGuideFields';
 import {
   listLiteraryPublicationGuide,
@@ -287,13 +296,21 @@ export function LiteraryReaderGuideEditor({
               Comparar entrada atual
             </Button>
             {selected.revision > 0 && (
-              <Button
-                variant="destructive"
-                disabled={locked || readOnly || dirty}
-                onClick={() => void save(true)}
+              <Dropdown
+                mode="action"
+                label="Opções da entrada"
+                iconOnly
+                icon={<MoreHorizontal className="icon" aria-hidden="true" />}
+                variant="outline"
               >
-                Remover entrada desta edição
-              </Button>
+                <DropdownItem
+                  variant="destructive"
+                  disabled={locked || readOnly || dirty}
+                  onSelect={() => void save(true)}
+                >
+                  Remover entrada desta edição
+                </DropdownItem>
+              </Dropdown>
             )}
             <Button
               variant="ghost"

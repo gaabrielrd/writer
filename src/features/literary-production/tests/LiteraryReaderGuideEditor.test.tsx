@@ -175,7 +175,10 @@ it('verified editions remain readable while all mutations are disabled', async (
   expect(screen.getByLabelText('Nome público')).toHaveValue('Ana');
   expect(screen.getByLabelText('Nome público')).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Nova entrada pública' })).toBeDisabled();
-  expect(screen.getByRole('button', { name: 'Remover entrada desta edição' })).toBeDisabled();
+  await userEvent.click(screen.getByRole('button', { name: 'Opções da entrada' }));
+  expect(
+    await screen.findByRole('menuitem', { name: 'Remover entrada desta edição' }),
+  ).toHaveAttribute('aria-disabled', 'true');
   expect(api.saveLiteraryPublicationGuideEntry).not.toHaveBeenCalled();
 });
 it('recovers the exact accepted revision after a missing acknowledgement without replaying the save', async () => {
