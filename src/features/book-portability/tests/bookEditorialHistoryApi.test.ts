@@ -91,7 +91,7 @@ describe('leitura privada do arquivo editorial', () => {
     call.mockImplementation((method: string, input: { index: number }) => {
       if (method === 'getBookEditorialHistory' && ++reads === 2)
         return Promise.resolve({ ...f.header, readToken: 'c'.repeat(64) });
-      return implementation(method, input);
+      return implementation(method, input) as Promise<unknown>;
     });
     await expect(readEditorialHistory('book', f.id, () => {})).rejects.toThrow('conferir');
   });

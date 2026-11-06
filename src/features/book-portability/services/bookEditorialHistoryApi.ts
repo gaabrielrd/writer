@@ -78,14 +78,15 @@ function item(raw: unknown): EditorialHistoryItem {
     );
     check(
       artifact.role === null ||
-        [
-          'architecture',
-          'series',
-          'preparation',
-          'progress',
-          'readerGuide',
-          'publicationManifest',
-        ].includes(String(artifact.role)),
+        (typeof artifact.role === 'string' &&
+          [
+            'architecture',
+            'series',
+            'preparation',
+            'progress',
+            'readerGuide',
+            'publicationManifest',
+          ].includes(artifact.role)),
     );
   }
   check((value.recordKind === 'book-editorial-artifact') === (value.artifact !== null));
@@ -146,7 +147,7 @@ export async function listEditorialHistory(
   );
   const items = value.items.map(item);
   check(new Set(items.map((row) => row.id)).size === items.length);
-  return { items, next: value.next as string | null };
+  return { items, next: value.next };
 }
 /** Private, bounded read: verify every part, the aggregate and a fresh authorization before exposing content. */
 export async function readEditorialHistory(

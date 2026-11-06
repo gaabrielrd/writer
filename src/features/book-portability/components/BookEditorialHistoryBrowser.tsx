@@ -29,7 +29,9 @@ export function BookEditorialHistoryBrowser({
   guard: () => void;
 }) {
   const currentGuard = useRef(guard);
-  currentGuard.current = guard;
+  useEffect(() => {
+    currentGuard.current = guard;
+  }, [guard]);
   const generation = useRef(0),
     selection = useRef(0);
   const [page, setPage] = useState<EditorialHistoryPage | null>(null);
@@ -52,8 +54,7 @@ export function BookEditorialHistoryBrowser({
         if (generation.current === epoch) setLoading(false);
       });
     return () => {
-      generation.current++;
-      selection.current++;
+      generation.current = epoch + 1;
     };
   }, [bookId, scopedGuard]);
   async function load(after: string | null = null) {
