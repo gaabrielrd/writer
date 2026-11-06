@@ -493,7 +493,14 @@ test('menções @ permitem criação cancelável e seleção sem trocar de capí
   await dialog.getByRole('button', { name: 'Fechar', exact: true }).first().click();
   await expect(dialog).toHaveCount(0);
   await expect(manuscript).toHaveText('@Avalon');
-  await manuscript.fill('@Li');
+  // Replace through ProseMirror's native selection after the modal releases focus.
+  // DOM-only fill can race the editor selection restored by the canceled dialog.
+  await manuscript.click();
+  await expect(manuscript).toBeFocused();
+  await manuscript.press('ControlOrMeta+A');
+  await manuscript.pressSequentially('@Li');
+  await expect(manuscript).toHaveText('@Li');
+  await expect(page.getByRole('option', { name: /^Lia/ })).toBeVisible();
   await manuscript.press('Enter');
   await expect(manuscript).toHaveText('Lia');
   await expect(page.getByRole('listbox', { name: 'Sugestões de menção do compêndio' })).toHaveCount(
